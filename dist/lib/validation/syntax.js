@@ -8,9 +8,11 @@ import '../parser/tokenize.js';
 import '../parser/utils/config.js';
 import { wildCardFuncs, isIdentColor, mathFuncs } from '../syntax/syntax.js';
 import { renderToken } from '../renderer/render.js';
-import { funcLike, colorsFunc } from '../syntax/color/utils/constants.js';
+import '../renderer/sourcemap/lib/encode.js';
 import { getSyntaxConfig, getParsedSyntax, getSyntax } from './config.js';
 import './syntaxes/complex-selector.js';
+import { funcLike, colorsFunc } from '../syntax/color/utils/constants.js';
+import '../ast/features/type.js';
 
 const config = getSyntaxConfig();
 // @ts-ignore

@@ -129,6 +129,8 @@ import {a98rgb2srgbvalues, srgb2a98values} from "./a98rgb.ts";
  * @param token
  * @param to
  *
+ * @private
+ *
  * <code>
  *
  *     const token = {typ: EnumToken.ColorTokenType, kin: ColorType.HEX, val: '#F00'}

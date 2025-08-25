@@ -639,5 +639,5 @@ export enum ColorType {
     /**
      * alias for cmyk
      */
-    DEVICE_CMYK= CMYK
+    DEVICE_CMYK = CMYK
 }

@@ -1,12 +1,12 @@
 import { EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
 import { renderToken } from '../../renderer/render.js';
-import '../../syntax/color/utils/constants.js';
+import '../../renderer/sourcemap/lib/encode.js';
+import { mathFuncs } from '../../syntax/syntax.js';
 import { splitRule } from '../minify.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
-import { mathFuncs } from '../../syntax/syntax.js';
 
 function inlineExpression(token) {
     const result = [];

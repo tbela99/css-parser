@@ -31,6 +31,11 @@ export const fontFormat: string[] = ['collection', 'embedded-opentype', 'opentyp
 export const colorFontTech: string[] = ['color-colrv0', 'color-colrv1', 'color-svg', 'color-sbix', 'color-cbdt'];
 export const fontFeaturesTech: string[] = ['features-opentype', 'features-aat', 'features-graphite', 'incremental-patch', 'incremental-range', 'incremental-auto', 'variations', 'palettes'];
 
+/**
+ * supported transform functions
+ *
+ * @internal
+ */
 export const transformFunctions: string[] = [
     'translate', 'scale', 'rotate', 'skew', 'perspective',
     'translateX', 'translateY', 'translateZ',
@@ -46,6 +51,11 @@ export const mediaTypes: string[] = ['all', 'print', 'screen',
     'aural', 'braille', 'embossed', 'handheld', 'projection', 'tty', 'tv', 'speech'];
 
 // https://www.w3.org/TR/css-values-4/#math-function
+/**
+ * supported math functions
+ *
+ * @internal
+ */
 export const mathFuncs: string[] = ['minmax', 'repeat', 'fit-content', 'calc', 'clamp', 'min', 'max', 'round', 'mod', 'rem', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'pow', 'sqrt', 'hypot', 'log', 'exp', 'abs', 'sign'];
 export const wildCardFuncs: string[] = ['var', 'env'];
 

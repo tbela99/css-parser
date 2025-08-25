@@ -188,14 +188,9 @@ function peek(parseInfo: ParseInfo, count: number = 1): string {
     return parseInfo.stream.slice(parseInfo.currentPosition.ind + 1, parseInfo.currentPosition.ind + count + 1);
 }
 
-function prev(parseInfo: ParseInfo, count: number = 1): string {
+function prev(parseInfo: ParseInfo): string {
 
-    if (count == 1) {
-
-        return parseInfo.currentPosition.ind == 0 ? '' : parseInfo.stream.charAt(parseInfo.currentPosition.ind - 1);
-    }
-
-    return parseInfo.stream.slice(parseInfo.currentPosition.ind - 1 - count, parseInfo.currentPosition.ind - 1);
+    return parseInfo.stream.charAt(parseInfo.currentPosition.ind - 1);
 }
 
 function next(parseInfo: ParseInfo, count: number = 1): string {
@@ -584,7 +579,6 @@ export function* tokenize(parseInfo: ParseInfo, yieldEOFToken: boolean = true): 
                     // let cp: number;
                     let whitespace: string = '';
                     let hasWhiteSpace = false;
-                    let errorState = false;
 
                     if (value == '"' || value == "'") {
 
@@ -615,13 +609,6 @@ export function* tokenize(parseInfo: ParseInfo, yieldEOFToken: boolean = true): 
                                             inquote = false;
                                             break;
                                         }
-                                    }
-
-                                    if (value === '') {
-
-                                        yield pushToken(buffer, parseInfo, EnumToken.BadUrlTokenType);
-                                        buffer = '';
-                                        break;
                                     }
 
                                     charCode = value.charCodeAt(0);
@@ -680,21 +667,6 @@ export function* tokenize(parseInfo: ParseInfo, yieldEOFToken: boolean = true): 
                                 while (value = next(parseInfo)) {
 
                                     charCode = value.charCodeAt(0);
-
-                                    if (charCode == 0x5c) {
-
-                                        buffer += value + next(parseInfo);
-                                        continue;
-                                    }
-
-                                    if (charCode == 0x29) {
-
-                                        yield pushToken(buffer, parseInfo, EnumToken.BadStringTokenType);
-                                        yield pushToken('', parseInfo, EnumToken.EndParensTokenType);
-                                        buffer = '';
-                                        break;
-                                    }
-
                                     buffer += value;
                                 }
 
@@ -719,27 +691,13 @@ export function* tokenize(parseInfo: ParseInfo, yieldEOFToken: boolean = true): 
 
                             charCode = value.charCodeAt(0);
 
-                            // ')'
-                            if (charCode == 0x29) {
+                            if (charCode == 0x29) { // ')'
 
                                 yield pushToken(buffer, parseInfo, EnumToken.UrlTokenTokenType);
                                 yield pushToken('', parseInfo, EnumToken.EndParensTokenType);
                                 buffer = '';
                                 break;
                             }
-
-                            // if (isWhiteSpace(charCode)) {
-                            //
-                            //     hasWhiteSpace = true;
-                            //     whitespace = value;
-                            //
-                            //     while (isWhiteSpace(peek(parseInfo)?.charCodeAt(0))) {
-                            //
-                            //         whitespace += next(parseInfo);
-                            //     }
-                            //
-                            //     continue;
-                            // }
 
                             if (isNonPrintable(charCode) ||
                                 // '"'
@@ -750,36 +708,7 @@ export function* tokenize(parseInfo: ParseInfo, yieldEOFToken: boolean = true): 
                                 charCode == 0x28 ||
                                 hasWhiteSpace) {
 
-                                errorState = true;
                             }
-
-                            // if (errorState) {
-                            //
-                            //     buffer += whitespace + value;
-                            //
-                            //     while (value = peek(parseInfo)) {
-                            //
-                            //         charCode = value.charCodeAt(0);
-                            //
-                            //         if (charCode == 0x5c) {
-                            //
-                            //             buffer += next(parseInfo, 2);
-                            //             continue;
-                            //         }
-                            //
-                            //         // ')'
-                            //         if (charCode == 0x29) {
-                            //
-                            //             break;
-                            //         }
-                            //
-                            //         buffer += next(parseInfo);
-                            //     }
-                            //
-                            //     yield pushToken(buffer, parseInfo, EnumToken.BadUrlTokenType);
-                            //     buffer = '';
-                            //     break;
-                            // }
 
                             buffer += value;
                         }
@@ -835,12 +764,6 @@ export function* tokenize(parseInfo: ParseInfo, yieldEOFToken: boolean = true): 
 
             case TokenMap.AT:
 
-                if (buffer.length > 0) {
-
-                    yield pushToken(buffer, parseInfo);
-                    buffer = '';
-                }
-
                 buffer = value;
 
             {
@@ -867,27 +790,6 @@ export function* tokenize(parseInfo: ParseInfo, yieldEOFToken: boolean = true): 
             default:
 
                 buffer += value;
-
-                if (buffer.length == 1) {
-
-                    if (buffer == 'h') {
-
-                        if (match(parseInfo, 'ttp://') || match(parseInfo, 'ttps://')) {
-
-                            let val: string = peek(parseInfo);
-                            while (val != ')' && val != ';'&& !isWhiteSpace(val.charCodeAt(0))) {
-
-                                buffer += next(parseInfo);
-                                val = peek(parseInfo);
-                            }
-
-                            yield pushToken(buffer, parseInfo);
-                            buffer = '';
-                            break;
-                        }
-                    }
-                }
-
                 break;
         }
     }
@@ -899,16 +801,14 @@ export function* tokenize(parseInfo: ParseInfo, yieldEOFToken: boolean = true): 
         }
 
         yield pushToken('', parseInfo, EnumToken.EOFTokenType);
-    }
-
-    else {
+    } else {
 
         parseInfo.buffer = buffer;
     }
 }
 
 /**
- * tokenize css stream
+ * tokenize readable stream
  * @param input
  */
 export async function* tokenizeStream(input: ReadableStream): AsyncGenerator<TokenizeResult> {
@@ -928,7 +828,7 @@ export async function* tokenizeStream(input: ReadableStream): AsyncGenerator<Tok
         const {done, value} = await reader.read();
 
         parseInfo.stream += decoder.decode(value, {stream: true});
-        yield *tokenize(parseInfo, done);
+        yield* tokenize(parseInfo, done);
 
         if (done) {
             break;

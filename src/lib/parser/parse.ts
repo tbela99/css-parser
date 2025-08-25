@@ -125,7 +125,6 @@ import {validateKeyframeSelector} from "../validation/syntaxes/index.ts";
 import {evaluateSyntax} from "../validation/syntax.ts";
 import {splitTokenList} from "../validation/utils/index.ts";
 import {buildExpression} from "../ast/math/index.ts";
-import Iterator = NodeJS.Iterator;
 
 export const urlTokenMatcher: RegExp = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 const trimWhiteSpace: EnumToken[] = [EnumToken.CommentTokenType, EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType];
@@ -153,6 +152,8 @@ function reject(reason?: any) {
  * parse css string
  * @param iter
  * @param options
+ *
+ * @private
  */
 export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<TokenizeResult>, options: ParserOptions = {}): Promise<ParseResult> {
 
@@ -488,37 +489,43 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
             ) {
 
                 const callable: DeclarationVisitorHandler = typeof options.visitor.Declaration == 'function' ? options.visitor.Declaration : options.visitor.Declaration[(<AstDeclaration>result.node).nam];
-                const results: AstDeclaration | AstDeclaration[] | void | null = await callable(<AstDeclaration>result.node);
+                const isAsync: boolean = Object.getPrototypeOf(callable).constructor.name == 'AsyncFunction';
+                const results = isAsync ? await callable(<AstDeclaration>result.node) : callable(<AstDeclaration>result.node);
 
                 if (results == null || (Array.isArray(results) && results.length == 0)) {
 
                     continue;
                 }
 
+                // @ts-ignore
                 result.parent!.chi.splice(result.parent!.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
             } else if (options.visitor.Rule != null && result.node.typ == EnumToken.RuleNodeType) {
 
-                const results: AstRule | AstRule[] | void | null = await options.visitor.Rule(<AstRule>result.node);
+                const isAsync: boolean = Object.getPrototypeOf(options.visitor.Rule).constructor.name == 'AsyncFunction';
+                const results = isAsync ? await options.visitor.Rule(<AstRule>result.node) : options.visitor.Rule(<AstRule>result.node);
 
                 if (results == null || (Array.isArray(results) && results.length == 0)) {
 
                     continue;
                 }
 
+                // @ts-ignore
                 result.parent!.chi.splice(result.parent!.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
             } else if (options.visitor.AtRule != null &&
                 result.node.typ == EnumToken.AtRuleNodeType &&
-                // @ts-ignore
+
                 (typeof options.visitor.AtRule == 'function' || options.visitor.AtRule?.[(<AstAtRule>result.node).nam] != null)) {
 
                 const callable: AtRuleVisitorHandler = typeof options.visitor.AtRule == 'function' ? options.visitor.AtRule : options.visitor.AtRule[(<AstAtRule>result.node).nam];
-                const results: AstAtRule | AstAtRule[] | void | null = await callable(<AstAtRule>result.node);
+                const isAsync: boolean = Object.getPrototypeOf(callable).constructor.name == 'AsyncFunction';
+                const results = isAsync ? await callable(<AstAtRule>result.node) : callable(<AstAtRule>result.node);
 
                 if (results == null || (Array.isArray(results) && results.length == 0)) {
 
                     continue;
                 }
 
+                // @ts-ignore
                 result.parent!.chi.splice(result.parent!.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
             }
         }
@@ -1531,6 +1538,30 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken | AstAtR
 }
 
 /**
+ * parse a string as an array of declaration nodes
+ * @param declaration
+ *
+ * Example:
+ * ````ts
+ *
+ * const declarations = await parseDeclarations('color: red; background: blue');
+ * console.log(declarations);
+ * ```
+ */
+export async function parseDeclarations(declaration: string) {
+
+    return doParse(tokenize({
+        stream: `.x{${declaration}}`,
+        buffer: '',
+        position: {ind: 0, lin: 1, col: 1},
+        currentPosition: {ind: -1, lin: 1, col: 0}
+    } as ParseInfo), {setParent: false, minify: false, validation: false}).then(result => {
+
+        return (result.ast.chi[0] as AstRule).chi.filter(t => t.typ == EnumToken.DeclarationNodeType)
+    });
+}
+
+/**
  * parse selector
  * @param tokens
  */
@@ -1660,9 +1691,24 @@ export function parseSelector(tokens: Token[]): Token[] {
 }
 
 /**
- * parse css string
+ * parse css string and return an array of tokens
  * @param src
  * @param options
+ *
+ * @private
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ * import {parseString} from '@tbela99/css-parser';
+ *
+ * let tokens = parseString('body { color: red; }');
+ * console.log(tokens);
+ *
+ *  tokens = parseString('#c322c980');
+ * console.log(tokens);
+ * ```
  */
 export function parseString(src: string, options: { location: boolean } = {location: false}): Token[] {
 
@@ -1693,6 +1739,11 @@ export function parseString(src: string, options: { location: boolean } = {locat
     }, [] as Token[]));
 }
 
+/**
+ * get token type from a string
+ * @param val
+ * @param hint
+ */
 export function getTokenType(val: string, hint?: EnumToken): Token {
 
     if (hint != null) {
@@ -1887,9 +1938,24 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
 }
 
 /**
- * parse token array into a tree structure
+ * parse function tokens in a token array
  * @param tokens
  * @param options
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ * import {parseString, parseTokens} from '@tbela99/css-parser';
+ *
+ * let tokens = parseString('body { color: red; }');
+ * console.log(parseTokens(tokens));
+ *
+ *  tokens = parseString('#c322c980');
+ * console.log(parseTokens(tokens));
+ * ```
+ *
+ * @private
  */
 export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): Token[] {
 

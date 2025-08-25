@@ -1,11 +1,39 @@
 import { encode } from './lib/encode.js';
 
+/**
+ * Source map class
+ * @internal
+ */
 class SourceMap {
+    /**
+     * Last location
+     */
     lastLocation = null;
+    /**
+     * Version
+     * @private
+     */
     #version = 3;
+    /**
+     * Sources
+     * @private
+     */
     #sources = [];
+    /**
+     * Map
+     * @private
+     */
     #map = new Map;
+    /**
+     * Line
+     * @private
+     */
     #line = -1;
+    /**
+     * Add a location
+     * @param source
+     * @param original
+     */
     add(source, original) {
         if (original.src !== '') {
             if (!this.#sources.includes(original.src)) {
@@ -32,10 +60,16 @@ class SourceMap {
             this.lastLocation = original;
         }
     }
+    /**
+     * Convert to URL encoded string
+     */
     toUrl() {
         // /*# sourceMappingURL = ${url} */
         return `data:application/json,${encodeURIComponent(JSON.stringify(this.toJSON()))}`;
     }
+    /**
+     * Convert to JSON object
+     */
     toJSON() {
         const mappings = [];
         let i = 0;

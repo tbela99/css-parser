@@ -48,6 +48,11 @@ import {SourceMap} from "./sourcemap/index.ts";
 import {colorsFunc, funcLike} from "../syntax/color/utils/index.ts";
 import {isColor, isNewLine, mathFuncs, minifyNumber, pseudoElements} from "../syntax/index.ts";
 
+/**
+ * Update position
+ * @param position
+ * @param str
+ */
 function update(position: Position, str: string) {
 
     let i: number = 0;
@@ -69,6 +74,7 @@ function update(position: Position, str: string) {
  * render ast
  * @param data
  * @param options
+ * @private
  */
 export function doRender(data: AstNode, options: RenderOptions = {}): RenderResult {
 
@@ -165,6 +171,17 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
     return result;
 }
 
+/**
+ * Update source map
+ * @param node
+ * @param options
+ * @param cache
+ * @param sourcemap
+ * @param position
+ * @param str
+ *
+ * @internal
+ */
 function updateSourceMap(node: AstRuleList | AstComment, options: RenderOptions, cache: {
     [p: string]: any
 }, sourcemap: SourceMap, position: Position, str: string) {
@@ -212,6 +229,8 @@ function updateSourceMap(node: AstRuleList | AstComment, options: RenderOptions,
  * @param cache
  * @param level
  * @param indents
+ *
+ * @internal
  */
 function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceMap | null, position: Position, errors: ErrorDescription[], reducer: (acc: string, curr: Token) => string, cache: {
     [key: string]: any
@@ -359,12 +378,20 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 }
 
 /**
+ *
+ * @param token
+ * @param options
+ *
+ * @private
+ */
+export function renderToken(token: Token, options?: RenderOptions, cache?: {
+    [key: string]: any
+} , reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string;
+
+/**
  * render ast token
  * @param token
  * @param options
- * @param cache
- * @param reducer
- * @param errors
  */
 export function renderToken(token: Token, options: RenderOptions = {}, cache: {
     [key: string]: any
@@ -913,6 +940,12 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
     return '';
 }
 
+/**
+ * Remove whitespace tokens that are not needed
+ * @param values
+ *
+ * @internal
+ */
 export function filterValues(values: Token[]): Token[] {
 
     let i: number = 0;

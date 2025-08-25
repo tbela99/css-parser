@@ -146,11 +146,8 @@ function peek(parseInfo, count = 1) {
     }
     return parseInfo.stream.slice(parseInfo.currentPosition.ind + 1, parseInfo.currentPosition.ind + count + 1);
 }
-function prev(parseInfo, count = 1) {
-    if (count == 1) {
-        return parseInfo.currentPosition.ind == 0 ? '' : parseInfo.stream.charAt(parseInfo.currentPosition.ind - 1);
-    }
-    return parseInfo.stream.slice(parseInfo.currentPosition.ind - 1 - count, parseInfo.currentPosition.ind - 1);
+function prev(parseInfo) {
+    return parseInfo.stream.charAt(parseInfo.currentPosition.ind - 1);
 }
 function next(parseInfo, count = 1) {
     let char = '';
@@ -440,11 +437,6 @@ function* tokenize(parseInfo, yieldEOFToken = true) {
                                             break;
                                         }
                                     }
-                                    if (value === '') {
-                                        yield pushToken(buffer, parseInfo, EnumToken.BadUrlTokenType);
-                                        buffer = '';
-                                        break;
-                                    }
                                     charCode = value.charCodeAt(0);
                                 }
                                 // '\\'
@@ -482,16 +474,6 @@ function* tokenize(parseInfo, yieldEOFToken = true) {
                                 }
                                 while (value = next(parseInfo)) {
                                     charCode = value.charCodeAt(0);
-                                    if (charCode == 0x5c) {
-                                        buffer += value + next(parseInfo);
-                                        continue;
-                                    }
-                                    if (charCode == 0x29) {
-                                        yield pushToken(buffer, parseInfo, EnumToken.BadStringTokenType);
-                                        yield pushToken('', parseInfo, EnumToken.EndParensTokenType);
-                                        buffer = '';
-                                        break;
-                                    }
                                     buffer += value;
                                 }
                                 if (hasNewLine) {
@@ -508,40 +490,12 @@ function* tokenize(parseInfo, yieldEOFToken = true) {
                         buffer = '';
                         while (value = next(parseInfo)) {
                             charCode = value.charCodeAt(0);
-                            // ')'
-                            if (charCode == 0x29) {
+                            if (charCode == 0x29) { // ')'
                                 yield pushToken(buffer, parseInfo, EnumToken.UrlTokenTokenType);
                                 yield pushToken('', parseInfo, EnumToken.EndParensTokenType);
                                 buffer = '';
                                 break;
                             }
-                            // if (errorState) {
-                            //
-                            //     buffer += whitespace + value;
-                            //
-                            //     while (value = peek(parseInfo)) {
-                            //
-                            //         charCode = value.charCodeAt(0);
-                            //
-                            //         if (charCode == 0x5c) {
-                            //
-                            //             buffer += next(parseInfo, 2);
-                            //             continue;
-                            //         }
-                            //
-                            //         // ')'
-                            //         if (charCode == 0x29) {
-                            //
-                            //             break;
-                            //         }
-                            //
-                            //         buffer += next(parseInfo);
-                            //     }
-                            //
-                            //     yield pushToken(buffer, parseInfo, EnumToken.BadUrlTokenType);
-                            //     buffer = '';
-                            //     break;
-                            // }
                             buffer += value;
                         }
                     }
@@ -580,10 +534,6 @@ function* tokenize(parseInfo, yieldEOFToken = true) {
                 buffer = '!';
                 break;
             case 64 /* TokenMap.AT */:
-                if (buffer.length > 0) {
-                    yield pushToken(buffer, parseInfo);
-                    buffer = '';
-                }
                 buffer = value;
                 {
                     let val = peek(parseInfo);
@@ -601,20 +551,6 @@ function* tokenize(parseInfo, yieldEOFToken = true) {
                 break;
             default:
                 buffer += value;
-                if (buffer.length == 1) {
-                    if (buffer == 'h') {
-                        if (match(parseInfo, 'ttp://') || match(parseInfo, 'ttps://')) {
-                            let val = peek(parseInfo);
-                            while (val != ')' && val != ';' && !isWhiteSpace(val.charCodeAt(0))) {
-                                buffer += next(parseInfo);
-                                val = peek(parseInfo);
-                            }
-                            yield pushToken(buffer, parseInfo);
-                            buffer = '';
-                            break;
-                        }
-                    }
-                }
                 break;
         }
     }
@@ -629,7 +565,7 @@ function* tokenize(parseInfo, yieldEOFToken = true) {
     }
 }
 /**
- * tokenize css stream
+ * tokenize readable stream
  * @param input
  */
 async function* tokenizeStream(input) {

@@ -4,7 +4,7 @@ import '../parser/utils/config.js';
 import { EnumToken } from './types.js';
 import { walkValues } from './walk.js';
 import { doRender, renderToken } from '../renderer/render.js';
-import '../syntax/color/utils/constants.js';
+import '../renderer/sourcemap/lib/encode.js';
 import { isWhiteSpace, isIdent, isFunction, isIdentStart } from '../syntax/syntax.js';
 import { eq } from '../parser/utils/eq.js';
 import * as index from './features/index.js';
@@ -22,7 +22,8 @@ const features = Object.values(index).sort((a, b) => a.ordering - b.ordering);
  * @param recursive
  * @param errors
  * @param nestingContent
- * @param context
+ *
+ * @private
  */
 function minify(ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
     let preprocess = false;
@@ -120,6 +121,15 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
     }
     return ast;
 }
+/**
+ * reduce selectors
+ * @param acc
+ * @param curr
+ * @param index
+ * @param array
+ *
+ * @private
+ */
 function reduce(acc, curr, index, array) {
     // trim :is()
     // if (array.length == 1 && array[0][0] == ':is(' && array[0].at(-1) == ')') {
@@ -134,6 +144,17 @@ function reduce(acc, curr, index, array) {
     acc.push(curr.join(''));
     return acc;
 }
+/**
+ * apply minification rules to the ast tree
+ * @param ast
+ * @param options
+ * @param recursive
+ * @param errors
+ * @param nestingContent
+ * @param context
+ *
+ * @private
+ */
 function doMinify(ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
     if (!('nodes' in context)) {
         context.nodes = new Set;
@@ -469,6 +490,12 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
     }
     return ast;
 }
+/**
+ * check if a rule has a declaration
+ * @param node
+ *
+ * @private
+ */
 function hasDeclaration(node) {
     // @ts-ignore
     for (let i = 0; i < node.chi?.length; i++) {
@@ -484,6 +511,8 @@ function hasDeclaration(node) {
 /**
  * optimize selector
  * @param selector
+ *
+ * @private
  */
 function optimizeSelector(selector) {
     selector = selector.reduce((acc, curr) => {
@@ -580,6 +609,8 @@ function optimizeSelector(selector) {
 /**
  * split selector string
  * @param buffer
+ *
+ * @internal
  */
 function splitRule(buffer) {
     const result = [[]];
@@ -680,6 +711,13 @@ function splitRule(buffer) {
     }
     return result;
 }
+/**
+ * reduce selector
+ * @param acc
+ * @param curr
+ *
+ * @private
+ */
 function reduceSelector(acc, curr) {
     let hasCompoundSelector = true;
     // @ts-ignore
@@ -726,6 +764,13 @@ function reduceSelector(acc, curr) {
     acc.push(this.match.length == 0 ? ['&'] : (hasCompoundSelector && curr[0] != '&' && (curr.length == 0 || !combinators.includes(curr[0].charAt(0))) ? ['&'].concat(curr) : curr));
     return acc;
 }
+/**
+ * match selectors
+ * @param selector1
+ * @param selector2
+ *
+ * @private
+ */
 function matchSelectors(selector1, selector2 /*, parentType: EnumToken, errors: ErrorDescription[] */) {
     let match = [[]];
     const j = Math.min(selector1.reduce((acc, curr) => Math.min(acc, curr.length), selector1.length > 0 ? selector1[0].length : 0), selector2.reduce((acc, curr) => Math.min(acc, curr.length), selector2.length > 0 ? selector2[0].length : 0));
@@ -794,6 +839,12 @@ function matchSelectors(selector1, selector2 /*, parentType: EnumToken, errors: 
         selector2
     };
 }
+/**
+ * fix selector
+ * @param node
+ *
+ * @private
+ */
 function fixSelector(node) {
     // @ts-ignore
     if (node.sel.includes('&')) {
@@ -811,6 +862,18 @@ function fixSelector(node) {
         node.sel = attributes.reduce((acc, curr) => acc + renderToken(curr), '');
     }
 }
+/**
+ * wrap nodes
+ * @param previous
+ * @param node
+ * @param match
+ * @param ast
+ * @param reducer
+ * @param i
+ * @param nodeIndex
+ *
+ * @private
+ */
 function wrapNodes(previous, node, match, ast, reducer, i, nodeIndex) {
     // @ts-ignore
     let pSel = match.selector1.reduce(reducer, []).join(',');
@@ -856,6 +919,15 @@ function wrapNodes(previous, node, match, ast, reducer, i, nodeIndex) {
     reduceRuleSelector(wrapper);
     return wrapper;
 }
+/**
+ * diff nodes
+ * @param n1
+ * @param n2
+ * @param reducer
+ * @param options
+ *
+ * @private
+ */
 function diff(n1, n2, reducer, options = {}) {
     if (!('cache' in options)) {
         options.cache = new WeakMap();
@@ -978,6 +1050,12 @@ function diff(n1, n2, reducer, options = {}) {
     }
     return { result, node1: exchanged ? node2 : node1, node2: exchanged ? node1 : node2 };
 }
+/**
+ * reduce rule selector
+ * @param node
+ *
+ * @private
+ */
 function reduceRuleSelector(node) {
     if (node.raw == null) {
         Object.defineProperty(node, 'raw', { ...definedPropertySettings, value: splitRule(node.sel) });

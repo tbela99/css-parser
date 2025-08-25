@@ -1,13 +1,31 @@
 var WalkerOptionEnum;
 (function (WalkerOptionEnum) {
+    /**
+     * ignore the current node and its children
+     */
     WalkerOptionEnum[WalkerOptionEnum["Ignore"] = 0] = "Ignore";
+    /**
+     * stop walking the tree
+     */
     WalkerOptionEnum[WalkerOptionEnum["Stop"] = 1] = "Stop";
+    /**
+     * ignore node and process children
+     */
     WalkerOptionEnum[WalkerOptionEnum["Children"] = 2] = "Children";
+    /**
+     * ignore children
+     */
     WalkerOptionEnum[WalkerOptionEnum["IgnoreChildren"] = 3] = "IgnoreChildren";
 })(WalkerOptionEnum || (WalkerOptionEnum = {}));
 var WalkerValueEvent;
 (function (WalkerValueEvent) {
+    /**
+     * enter node
+     */
     WalkerValueEvent[WalkerValueEvent["Enter"] = 0] = "Enter";
+    /**
+     * leave node
+     */
     WalkerValueEvent[WalkerValueEvent["Leave"] = 1] = "Leave";
 })(WalkerValueEvent || (WalkerValueEvent = {}));
 /**

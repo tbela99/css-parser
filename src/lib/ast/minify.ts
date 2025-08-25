@@ -39,9 +39,22 @@ const features: MinifyFeature[] = <MinifyFeature[]>Object.values(allFeatures).so
  * @param recursive
  * @param errors
  * @param nestingContent
- * @param context
+ *
+ * @private
  */
-export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boolean = false, errors?: ErrorDescription[], nestingContent?: boolean, context: {
+export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptions, recursive: boolean, errors?: ErrorDescription[], nestingContent?: boolean): AstNode;
+
+/**
+ * apply minification rules to the ast tree
+ * @param ast
+ * @param options
+ * @param recursive
+ * @param errors
+ * @param nestingContent
+ *
+ * @private
+ */
+export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptions = {}, recursive: boolean = false, errors?: ErrorDescription[], nestingContent?: boolean, context: {
     [key: string]: any
 } = {}): AstNode {
 
@@ -180,6 +193,15 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
     return ast;
 }
 
+/**
+ * reduce selectors
+ * @param acc
+ * @param curr
+ * @param index
+ * @param array
+ *
+ * @private
+ */
 function reduce(acc: string[], curr: string[], index: number, array: string[][]): string[] {
 
     // trim :is()
@@ -200,6 +222,17 @@ function reduce(acc: string[], curr: string[], index: number, array: string[][])
     return acc;
 }
 
+/**
+ * apply minification rules to the ast tree
+ * @param ast
+ * @param options
+ * @param recursive
+ * @param errors
+ * @param nestingContent
+ * @param context
+ *
+ * @private
+ */
 function doMinify(ast: AstNode, options: ParserOptions = {}, recursive: boolean = false, errors?: ErrorDescription[], nestingContent?: boolean, context: {
     [key: string]: any
 } = {}): AstNode {
@@ -658,7 +691,12 @@ function doMinify(ast: AstNode, options: ParserOptions = {}, recursive: boolean 
     return ast;
 }
 
-
+/**
+ * check if a rule has a declaration
+ * @param node
+ *
+ * @private
+ */
 function hasDeclaration(node: AstRule): boolean {
 
     // @ts-ignore
@@ -679,6 +717,8 @@ function hasDeclaration(node: AstRule): boolean {
 /**
  * optimize selector
  * @param selector
+ *
+ * @private
  */
 function optimizeSelector(selector: string[][]): OptimizedSelector | null {
 
@@ -812,6 +852,8 @@ function optimizeSelector(selector: string[][]): OptimizedSelector | null {
 /**
  * split selector string
  * @param buffer
+ *
+ * @internal
  */
 export function splitRule(buffer: string): string[][] {
 
@@ -942,6 +984,13 @@ export function splitRule(buffer: string): string[][] {
     return result;
 }
 
+/**
+ * reduce selector
+ * @param acc
+ * @param curr
+ *
+ * @private
+ */
 function reduceSelector(acc: string[][], curr: string[]): string[][] | null {
 
     let hasCompoundSelector: boolean = true;
@@ -1016,6 +1065,13 @@ function reduceSelector(acc: string[][], curr: string[]): string[][] | null {
     return acc;
 }
 
+/**
+ * match selectors
+ * @param selector1
+ * @param selector2
+ *
+ * @private
+ */
 function matchSelectors(selector1: string[][], selector2: string[][] /*, parentType: EnumToken, errors: ErrorDescription[] */): null | MatchedSelector {
 
     let match: string[][] = [[]];
@@ -1120,6 +1176,12 @@ function matchSelectors(selector1: string[][], selector2: string[][] /*, parentT
     }
 }
 
+/**
+ * fix selector
+ * @param node
+ *
+ * @private
+ */
 function fixSelector(node: AstRule) {
 
     // @ts-ignore
@@ -1147,6 +1209,18 @@ function fixSelector(node: AstRule) {
     }
 }
 
+/**
+ * wrap nodes
+ * @param previous
+ * @param node
+ * @param match
+ * @param ast
+ * @param reducer
+ * @param i
+ * @param nodeIndex
+ *
+ * @private
+ */
 function wrapNodes(previous: AstRule, node: AstRule, match: MatchedSelector, ast: AstNode, reducer: Function, i: number, nodeIndex: number): AstRule {
 
     // @ts-ignore
@@ -1203,6 +1277,15 @@ function wrapNodes(previous: AstRule, node: AstRule, match: MatchedSelector, ast
     return wrapper;
 }
 
+/**
+ * diff nodes
+ * @param n1
+ * @param n2
+ * @param reducer
+ * @param options
+ *
+ * @private
+ */
 function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOptions = {}) {
 
     if (!('cache' in options)) {
@@ -1393,6 +1476,12 @@ function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOption
     return {result, node1: exchanged ? node2 : node1, node2: exchanged ? node1 : node2};
 }
 
+/**
+ * reduce rule selector
+ * @param node
+ *
+ * @private
+ */
 function reduceRuleSelector(node: AstRule) {
 
     if (node.raw == null) {

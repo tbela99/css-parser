@@ -1,4 +1,15 @@
 /**
+ * syntax validation enum
+ */
+declare enum SyntaxValidationResult {
+    /** valid syntax */
+    Valid = 0,
+    /** drop invalid syntax */
+    Drop = 1,
+    /** preserve unknown at-rules, declarations and pseudo-classes */
+    Lenient = 2
+}
+/**
  * enum of validation levels
  */
 declare enum ValidationLevel {
@@ -629,20 +640,37 @@ declare enum ColorType {
  * @param recursive
  * @param errors
  * @param nestingContent
- * @param context
+ *
+ * @private
  */
-declare function minify(ast: AstNode, options?: ParserOptions, recursive?: boolean, errors?: ErrorDescription[], nestingContent?: boolean, context?: {
-    [key: string]: any;
-}): AstNode;
+declare function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptions, recursive: boolean, errors?: ErrorDescription[], nestingContent?: boolean): AstNode;
 
 declare enum WalkerOptionEnum {
+    /**
+     * ignore the current node and its children
+     */
     Ignore = 0,
+    /**
+     * stop walking the tree
+     */
     Stop = 1,
+    /**
+     * ignore node and process children
+     */
     Children = 2,
+    /**
+     * ignore children
+     */
     IgnoreChildren = 3
 }
 declare enum WalkerValueEvent {
+    /**
+     * enter node
+     */
     Enter = 0,
+    /**
+     * leave node
+     */
     Leave = 1
 }
 /**
@@ -667,47 +695,102 @@ declare function walkValues(values: Token[], root?: AstNode | Token | null, filt
 /**
  * expand css nesting ast nodes
  * @param ast
+ *
+ * @private
  */
 declare function expand(ast: AstNode): AstNode;
 
 /**
- * render ast token
+ *
  * @param token
  * @param options
- * @param cache
- * @param reducer
- * @param errors
+ *
+ * @private
  */
 declare function renderToken(token: Token, options?: RenderOptions, cache?: {
     [key: string]: any;
 }, reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string;
 
 /**
- * Calculate the distance between two okLab colors.
- * @param okLab1
- * @param okLab2
+ * Source map class
+ * @internal
  */
-declare function okLabDistance(okLab1: [number, number, number], okLab2: [number, number, number]): number;
-/**
- * Check if two colors are close in okLab space.
- * @param color1
- * @param color2
- * @param threshold
- */
-declare function isOkLabClose(color1: ColorToken, color2: ColorToken, threshold?: number): boolean;
+declare class SourceMap {
+    #private;
+    /**
+     * Last location
+     */
+    lastLocation: Location | null;
+    /**
+     * Add a location
+     * @param source
+     * @param original
+     */
+    add(source: Location, original: Location): void;
+    /**
+     * Convert to URL encoded string
+     */
+    toUrl(): string;
+    /**
+     * Convert to JSON object
+     */
+    toJSON(): SourceMapObject;
+}
 
 /**
- * parse css string
+ * parse a string as an array of declaration nodes
+ * @param declaration
+ *
+ * Example:
+ * ````ts
+ *
+ * const declarations = await parseDeclarations('color: red; background: blue');
+ * console.log(declarations);
+ * ```
+ */
+declare function parseDeclarations(declaration: string): Promise<AstDeclaration[]>;
+/**
+ * parse css string and return an array of tokens
  * @param src
  * @param options
+ *
+ * @private
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ * import {parseString} from '@tbela99/css-parser';
+ *
+ * let tokens = parseString('body { color: red; }');
+ * console.log(tokens);
+ *
+ *  tokens = parseString('#c322c980');
+ * console.log(tokens);
+ * ```
  */
 declare function parseString(src: string, options?: {
     location: boolean;
 }): Token[];
 /**
- * parse token array into a tree structure
+ * parse function tokens in a token array
  * @param tokens
  * @param options
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ * import {parseString, parseTokens} from '@tbela99/css-parser';
+ *
+ * let tokens = parseString('body { color: red; }');
+ * console.log(parseTokens(tokens));
+ *
+ *  tokens = parseString('#c322c980');
+ * console.log(parseTokens(tokens));
+ * ```
+ *
+ * @private
  */
 declare function parseTokens(tokens: Token[], options?: ParseTokenOptions): Token[];
 
@@ -1382,6 +1465,13 @@ declare enum ValidationTokenEnum {
     Character = 39,
     InfinityToken = 40
 }
+declare const enum ValidationSyntaxGroupEnum {
+    Declarations = "declarations",
+    Functions = "functions",
+    Syntaxes = "syntaxes",
+    Selectors = "selectors",
+    AtRules = "atRules"
+}
 interface Position$1 {
     ind: number;
     lin: number;
@@ -1402,6 +1492,74 @@ interface ValidationToken {
     };
 }
 
+export declare interface ValidationSyntaxNode {
+
+    syntax: string;
+    ast?: ValidationToken[];
+}
+
+interface ValidationSelectorOptions extends ValidationOptions {
+
+    nestedSelector?: boolean;
+}
+
+export declare interface ValidationConfiguration {
+
+    [ValidationSyntaxGroupEnum.Declarations]: ValidationSyntaxNode;
+    [ValidationSyntaxGroupEnum.Functions]: ValidationSyntaxNode;
+    [ValidationSyntaxGroupEnum.Syntaxes]: ValidationSyntaxNode;
+    [ValidationSyntaxGroupEnum.Selectors]: ValidationSyntaxNode;
+    [ValidationSyntaxGroupEnum.AtRules]: ValidationSyntaxNode;
+}
+
+//= Record<keyof ValidationSyntaxGroupEnum, ValidationSyntaxNode>;
+
+interface ValidationResult {
+
+    valid: SyntaxValidationResult;
+    node: AstNode | Token | null;
+    syntax: ValidationToken | string | null;
+    error: string;
+    cycle?: boolean;
+}
+
+interface ValidationSyntaxResult extends ValidationResult {
+
+    syntax: ValidationToken | string | null;
+    context: Context<Token> | Token[];
+}
+
+interface Context<Type> {
+
+    index: number;
+
+    /**
+     * The length of the context tokens to be consumed
+     */
+
+    readonly length: number;
+
+    current<Type>(): Type | null;
+
+    update<Type>(context: Context<Type>): void;
+
+    consume<Type>(token: Type, howMany?: number): boolean;
+
+    peek<Type>(): Type | null;
+
+    // tokens<Type>(): Type[];
+
+    next<Type>(): Type | null;
+
+    consume<Type>(token: Type, howMany?: number): boolean;
+
+    slice<Type>(): Type[];
+
+    clone<Type>(): Context<Type>;
+
+    done(): boolean;
+}
+
 /**
  * Converts a color to another color space
  * @param token
@@ -1416,17 +1574,59 @@ interface ValidationToken {
  */
 declare function convertColor(token: ColorToken, to: ColorType): ColorToken | null;
 
+/**
+ * Calculate the distance between two okLab colors.
+ * @param okLab1
+ * @param okLab2
+ *
+ * @private
+ */
+declare function okLabDistance(okLab1: [number, number, number], okLab2: [number, number, number]): number;
+/**
+ * Check if two colors are close in okLab space.
+ * @param color1
+ * @param color2
+ * @param threshold
+ *
+ * @private
+ */
+declare function isOkLabClose(color1: ColorToken, color2: ColorToken, threshold?: number): boolean;
+
+/**
+ * Position
+ */
 export declare interface Position {
 
+    /**
+     * index in the source
+     */
     ind: number;
+    /**
+     * line number
+     */
     lin: number;
+    /**
+     * column number
+     */
     col: number;
 }
 
+/**
+ * token or node location
+ */
 export declare interface Location {
 
+    /**
+     * start position
+     */
     sta: Position;
+    /**
+     * end position
+     */
     end: Position;
+    /**
+     * source file
+     */
     src: string;
 }
 
@@ -1474,6 +1674,13 @@ export declare interface AstInvalidDeclaration extends BaseToken {
     val: Array<AstNode>;
 }
 
+export declare interface AstInvalidAtRule extends BaseToken {
+
+    typ: EnumToken.InvalidAtRuleTokenType;
+    val: string;
+    chi?: Array<AstNode>;
+}
+
 export declare interface AstKeyFrameRule extends BaseToken {
 
     typ: EnumToken.KeyFrameRuleNodeType;
@@ -1490,6 +1697,13 @@ export declare interface OptimizedSelector {
     match: boolean;
     optimized: string[];
     selector: string[][],
+    reducible: boolean;
+}
+
+export declare interface OptimizedSelectorToken {
+    match: boolean;
+    optimized: Token[];
+    selector: Token[][],
     reducible: boolean;
 }
 
@@ -1544,37 +1758,210 @@ export declare type AstNode =
 /**
  * Declaration visitor handler
  */
-export declare type DeclarationVisitorHandler = (node: AstDeclaration) => AstDeclaration | AstDeclaration[] | null | Promise<AstDeclaration | AstDeclaration[] | null>;
+export declare type DeclarationVisitorHandler = (node: AstDeclaration) => (AstDeclaration | AstDeclaration[] | null | Promise<AstDeclaration> | Promise<AstDeclaration[]> | Promise<null>);
 /**
  * Rule visitor handler
  */
-export declare type RuleVisitorHandler = (node: AstRule) => AstRule | AstRule[] | null | Promise<AstRule | AstRule[] | null>;
+export declare type RuleVisitorHandler = (node: AstRule) => (AstRule | AstRule[] | null | Promise<AstRule> | Promise<AstRule[]> | Promise<null>);
 
 /**
  * AtRule visitor handler
  */
-export declare type AtRuleVisitorHandler = (node: AstAtRule) => AstAtRule | AstAtRule[] | null | Promise<AstAtRule | AstAtRule[] | null>;
+export declare type AtRuleVisitorHandler = (node: AstAtRule) => (AstAtRule | AstAtRule[] | null | Promise<AstAtRule> | Promise<AstAtRule[]> | Promise<null>);
 
 /**
- * Value visitor handler
+ * node visitor callback map
+ *
  */
-export declare type ValueVisitorHandler = (node: Token) => Token | Token[] | null | Promise<Token | Token[] | null>;
-
-
 export declare interface VisitorNodeMap {
 
+    /**
+     * at rule visitor
+     *
+     * Example: change media at-rule prelude
+     *
+     * ```ts
+     *
+     * import {transform, AstAtRule, ParserOptions} from "@tbela99/css-parser";
+     *
+     * const options: ParserOptions = {
+     *
+     *     visitor: {
+     *
+     *         AtRule: {
+     *
+     *             media: (node: AstAtRule): AstAtRule => {
+     *
+     *                 node.val = 'tv,screen';
+     *                 return node
+     *             }
+     *         }
+     *     }
+     * };
+     *
+     * const css = `
+     *
+     * @media screen {
+     *
+     *     .foo {
+     *
+     *             height: calc(100px * 2/ 15);
+     *     }
+     * }
+     * `;
+     *
+     * const result = await transform(css, options);
+     *
+     * console.debug(result.code);
+     *
+     * // @media tv,screen{.foo{height:calc(40px/3)}}
+     * ```
+     */
     AtRule?: Record<string, AtRuleVisitorHandler> | AtRuleVisitorHandler;
+    /**
+     * declaration visitor
+     *
+     *  Example: add 'width: 3px' everytime a declaration with the name 'height' is found
+     *
+     * ```ts
+     *
+     * import {transform, parseDeclarations} from "@tbela99/css-parser";
+     *
+     * const options: ParserOptions = {
+     *
+     *     removeEmpty: false,
+     *     visitor: {
+     *
+     *         Declaration: {
+     *
+     *             // called only for height declaration
+     *             height: (node: AstDeclaration): AstDeclaration[] => {
+     *
+     *
+     *                 return [
+     *                     node,
+     *                     {
+     *
+     *                         typ: EnumToken.DeclarationNodeType,
+     *                         nam: 'width',
+     *                         val: [
+     *                             <LengthToken>{
+     *                                 typ: EnumToken.LengthTokenType,
+     *                                 val: 3,
+     *                                 unit: 'px'
+     *                             }
+     *                         ]
+     *                     }
+     *                 ];
+     *             }
+     *            }
+     *         }
+     * };
+     *
+     * const css = `
+     *
+     * .foo {
+     *     height: calc(100px * 2/ 15);
+     * }
+     * .selector {
+     * color: lch(from peru calc(l * 0.8) calc(c * 0.7) calc(h + 180))
+     * }
+     * `;
+     *
+     * console.debug(await transform(css, options));
+     *
+     * // .foo{height:calc(40px/3);width:3px}.selector{color:#0880b0}
+     * ```
+     *
+     * Example: rename 'margin' to 'padding' and 'height' to 'width'
+     *
+     * ```ts
+     * import {AstDeclaration, ParserOptions, transform} from "../src/node.ts";
+     *
+     * const options: ParserOptions = {
+     *
+     *     visitor: {
+     *
+     *         // called for every declaration
+     *         Declaration: (node: AstDeclaration): null => {
+     *
+     *
+     *             if (node.nam == 'height') {
+     *
+     *                 node.nam = 'width';
+     *             }
+     *
+     *             else if (node.nam == 'margin') {
+     *
+     *                 node.nam = 'padding'
+     *             }
+     *
+     *             return null;
+     *         }
+     *     }
+     * };
+     *
+     * const css = `
+     *
+     * .foo {
+     *     height: calc(100px * 2/ 15);
+     *     margin: 10px;
+     * }
+     * .selector {
+     *
+     * margin: 20px;}
+     * `;
+     *
+     * const result = await transform(css, options);
+     *
+     * console.debug(result.code);
+     *
+     * // .foo{width:calc(40px/3);padding:10px}.selector{padding:20px}
+     * ```
+     */
     Declaration?: Record<string, DeclarationVisitorHandler> | DeclarationVisitorHandler;
-    Rule?: RuleVisitorHandler;
-    Value?: Record<EnumToken, ValueVisitorHandler> | ValueVisitorHandler;
-}
 
-declare class SourceMap {
-    #private;
-    lastLocation: Location | null;
-    add(source: Location, original: Location): void;
-    toUrl(): string;
-    toJSON(): SourceMapObject;
+    /**
+     * rule visitor
+     *
+     *  Example: add 'width: 3px' to every rule with the selector '.foo'
+     *
+     * ```ts
+     *
+     * import {transform, parseDeclarations} from "@tbela99/css-parser";
+     *
+     * const options: ParserOptions = {
+     *
+     *     removeEmpty: false,
+     *     visitor: {
+     *
+     *         Rule: async (node: AstRule): Promise<AstRule | null> => {
+     *
+     *             if (node.sel == '.foo') {
+     *
+     *                 node.chi.push(...await parseDeclarations('width: 3px'));
+     *                 return node;
+     *             }
+     *
+     *             return null;
+     *         }
+     *     }
+     * };
+     *
+     * const css = `
+     *
+     * .foo {
+     *     .foo {
+     *     }
+     * }
+     * `;
+     *
+     * console.debug(await transform(css, options));
+     *
+     * // .foo{width:3px;.foo{width:3px}}
+     * ```
+     */
+    Rule?: RuleVisitorHandler;
 }
 
 export declare interface PropertyListOptions {
@@ -1591,9 +1978,427 @@ export declare interface ParseInfo {
     currentPosition: Position;
 }
 
+/**
+ * feature walk mode
+ */
 declare enum FeatureWalkMode {
+    /**
+     * pre process
+     */
     Pre = 0,
+    /**
+     * post process
+     */
     Post = 1
+}
+
+/**
+ * supported transform functions
+ *
+ * @internal
+ */
+declare const transformFunctions: string[];
+/**
+ * supported math functions
+ *
+ * @internal
+ */
+declare const mathFuncs: string[];
+
+interface PropertyType {
+
+    shorthand: string;
+}
+
+interface ShorthandPropertyType {
+
+    shorthand: string;
+    map?: string;
+    properties: string[];
+    types: string[];
+    multiple: boolean;
+    separator: {
+        typ: keyof EnumToken;
+        val: string
+    };
+    keywords: string[];
+}
+
+interface PropertySetType {
+
+    [key: string]: PropertyType | ShorthandPropertyType;
+}
+
+interface PropertyMapType {
+
+    default: string[];
+    types: string[];
+    keywords: string[];
+    required?: boolean;
+    multiple?: boolean;
+    prefix?: {
+        typ: keyof EnumToken;
+        val: string
+    };
+    previous?: string;
+    separator?: {
+
+        typ: keyof EnumToken;
+    };
+    constraints?: {
+        [key: string]: {
+            [key: string]: any;
+        }
+    };
+    mapping?: Record<string, string>
+}
+
+interface ShorthandMapType {
+
+    shorthand: string;
+    pattern: string;
+    keywords: string[];
+    default: string[];
+    mapping?: Record<string, string>;
+    multiple?: boolean;
+    separator?: { typ: keyof EnumToken; val?: string };
+    set?: Record<string, string[]>
+    properties: {
+        [property: string]: PropertyMapType;
+    }
+}
+
+interface ShorthandProperties {
+    types: EnumToken[];
+    default: string[];
+    keywords: string[];
+    required?: boolean;
+    multiple?: boolean;
+    constraints?: Array<any>;
+    mapping?: {
+        [key: string]: any;
+    };
+    validation?: {
+        [key: string]: any;
+    };
+    prefix?: string;
+}
+
+interface ShorthandDef {
+    shorthand: string;
+    pattern: string;
+    keywords: string;
+    defaults: string[];
+    multiple?: boolean;
+    separator?: string;
+}
+
+interface ShorthandType {
+    shorthand: string;
+    properties: ShorthandProperties;
+}
+
+// generated from config.json at https://app.quicktype.io/?l=ts
+
+export declare interface PropertiesConfig {
+    properties: PropertiesConfigProperties;
+    map:        Map$1;
+}
+
+interface Map$1 {
+    border:                  Border;
+    "border-color":          BackgroundPositionClass;
+    "border-style":          BackgroundPositionClass;
+    "border-width":          BackgroundPositionClass;
+    outline:                 Outline;
+    "outline-color":         BackgroundPositionClass;
+    "outline-style":         BackgroundPositionClass;
+    "outline-width":         BackgroundPositionClass;
+    font:                    Font;
+    "font-weight":           BackgroundPositionClass;
+    "font-style":            BackgroundPositionClass;
+    "font-size":             BackgroundPositionClass;
+    "line-height":           BackgroundPositionClass;
+    "font-stretch":          BackgroundPositionClass;
+    "font-variant":          BackgroundPositionClass;
+    "font-family":           BackgroundPositionClass;
+    background:              Background;
+    "background-repeat":     BackgroundPositionClass;
+    "background-color":      BackgroundPositionClass;
+    "background-image":      BackgroundPositionClass;
+    "background-attachment": BackgroundPositionClass;
+    "background-clip":       BackgroundPositionClass;
+    "background-origin":     BackgroundPositionClass;
+    "background-position":   BackgroundPositionClass;
+    "background-size":       BackgroundPositionClass;
+}
+
+interface Background {
+    shorthand:  string;
+    pattern:    string;
+    keywords:   string[];
+    default:    any[];
+    multiple:   boolean;
+    separator:  Separator;
+    properties: BackgroundProperties;
+}
+
+interface BackgroundProperties {
+    "background-repeat":     BackgroundRepeat;
+    "background-color":      PurpleBackgroundAttachment;
+    "background-image":      PurpleBackgroundAttachment;
+    "background-attachment": PurpleBackgroundAttachment;
+    "background-clip":       PurpleBackgroundAttachment;
+    "background-origin":     PurpleBackgroundAttachment;
+    "background-position":   BackgroundPosition;
+    "background-size":       BackgroundSize;
+}
+
+interface PurpleBackgroundAttachment {
+    types:     string[];
+    default:   string[];
+    keywords:  string[];
+    required?: boolean;
+    mapping?:  BackgroundAttachmentMapping;
+}
+
+interface BackgroundAttachmentMapping {
+    "ultra-condensed": string;
+    "extra-condensed": string;
+    condensed:         string;
+    "semi-condensed":  string;
+    normal:            string;
+    "semi-expanded":   string;
+    expanded:          string;
+    "extra-expanded":  string;
+    "ultra-expanded":  string;
+}
+
+interface BackgroundPosition {
+    multiple:    boolean;
+    types:       string[];
+    default:     string[];
+    keywords:    string[];
+    mapping:     BackgroundPositionMapping;
+    constraints: BackgroundPositionConstraints;
+}
+
+interface BackgroundPositionConstraints {
+    mapping: ConstraintsMapping;
+}
+
+interface ConstraintsMapping {
+    max: number;
+}
+
+interface BackgroundPositionMapping {
+    left:   string;
+    top:    string;
+    center: string;
+    bottom: string;
+    right:  string;
+}
+
+interface BackgroundRepeat {
+    types:    any[];
+    default:  string[];
+    multiple: boolean;
+    keywords: string[];
+    mapping:  BackgroundRepeatMapping;
+}
+
+interface BackgroundRepeatMapping {
+    "repeat no-repeat":    string;
+    "no-repeat repeat":    string;
+    "repeat repeat":       string;
+    "space space":         string;
+    "round round":         string;
+    "no-repeat no-repeat": string;
+}
+
+interface BackgroundSize {
+    multiple: boolean;
+    previous: string;
+    prefix:   Prefix;
+    types:    string[];
+    default:  string[];
+    keywords: string[];
+    mapping:  BackgroundSizeMapping;
+}
+
+interface BackgroundSizeMapping {
+    "auto auto": string;
+}
+
+interface Prefix {
+    typ: string;
+    val: string;
+}
+
+interface Separator {
+    typ: string;
+}
+
+interface BackgroundPositionClass {
+    shorthand: string;
+}
+
+interface Border {
+    shorthand:  string;
+    pattern:    string;
+    keywords:   string[];
+    default:    string[];
+    properties: BorderProperties;
+}
+
+interface BorderProperties {
+    "border-color": BorderColorClass;
+    "border-style": BorderColorClass;
+    "border-width": BorderColorClass;
+}
+
+interface BorderColorClass {
+}
+
+interface Font {
+    shorthand:  string;
+    pattern:    string;
+    keywords:   string[];
+    default:    any[];
+    properties: FontProperties;
+}
+
+interface FontProperties {
+    "font-weight":  FontWeight;
+    "font-style":   PurpleBackgroundAttachment;
+    "font-size":    PurpleBackgroundAttachment;
+    "line-height":  LineHeight;
+    "font-stretch": PurpleBackgroundAttachment;
+    "font-variant": PurpleBackgroundAttachment;
+    "font-family":  FontFamily;
+}
+
+interface FontFamily {
+    types:     string[];
+    default:   any[];
+    keywords:  string[];
+    required:  boolean;
+    multiple:  boolean;
+    separator: Separator;
+}
+
+interface FontWeight {
+    types:       string[];
+    default:     string[];
+    keywords:    string[];
+    constraints: FontWeightConstraints;
+    mapping:     FontWeightMapping;
+}
+
+interface FontWeightConstraints {
+    value: Value;
+}
+
+interface Value {
+    min: string;
+    max: string;
+}
+
+interface FontWeightMapping {
+    thin:          string;
+    hairline:      string;
+    "extra light": string;
+    "ultra light": string;
+    light:         string;
+    normal:        string;
+    regular:       string;
+    medium:        string;
+    "semi bold":   string;
+    "demi bold":   string;
+    bold:          string;
+    "extra bold":  string;
+    "ultra bold":  string;
+    black:         string;
+    heavy:         string;
+    "extra black": string;
+    "ultra black": string;
+}
+
+interface LineHeight {
+    types:    string[];
+    default:  string[];
+    keywords: string[];
+    previous: string;
+    prefix:   Prefix;
+}
+
+interface Outline {
+    shorthand:  string;
+    pattern:    string;
+    keywords:   string[];
+    default:    string[];
+    properties: OutlineProperties;
+}
+
+interface OutlineProperties {
+    "outline-color": PurpleBackgroundAttachment;
+    "outline-style": PurpleBackgroundAttachment;
+    "outline-width": PurpleBackgroundAttachment;
+}
+
+interface PropertiesConfigProperties {
+    inset:                        BorderRadius;
+    top:                          BackgroundPositionClass;
+    right:                        BackgroundPositionClass;
+    bottom:                       BackgroundPositionClass;
+    left:                         BackgroundPositionClass;
+    margin:                       BorderRadius;
+    "margin-top":                 BackgroundPositionClass;
+    "margin-right":               BackgroundPositionClass;
+    "margin-bottom":              BackgroundPositionClass;
+    "margin-left":                BackgroundPositionClass;
+    padding:                      BorderColor;
+    "padding-top":                BackgroundPositionClass;
+    "padding-right":              BackgroundPositionClass;
+    "padding-bottom":             BackgroundPositionClass;
+    "padding-left":               BackgroundPositionClass;
+    "border-radius":              BorderRadius;
+    "border-top-left-radius":     BackgroundPositionClass;
+    "border-top-right-radius":    BackgroundPositionClass;
+    "border-bottom-right-radius": BackgroundPositionClass;
+    "border-bottom-left-radius":  BackgroundPositionClass;
+    "border-width":               BorderColor;
+    "border-top-width":           BackgroundPositionClass;
+    "border-right-width":         BackgroundPositionClass;
+    "border-bottom-width":        BackgroundPositionClass;
+    "border-left-width":          BackgroundPositionClass;
+    "border-style":               BorderColor;
+    "border-top-style":           BackgroundPositionClass;
+    "border-right-style":         BackgroundPositionClass;
+    "border-bottom-style":        BackgroundPositionClass;
+    "border-left-style":          BackgroundPositionClass;
+    "border-color":               BorderColor;
+    "border-top-color":           BackgroundPositionClass;
+    "border-right-color":         BackgroundPositionClass;
+    "border-bottom-color":        BackgroundPositionClass;
+    "border-left-color":          BackgroundPositionClass;
+}
+
+interface BorderColor {
+    shorthand:  string;
+    map?:       string;
+    properties: string[];
+    types:      string[];
+    keywords:   string[];
+}
+
+interface BorderRadius {
+    shorthand:  string;
+    properties: string[];
+    types:      string[];
+    multiple:   boolean;
+    separator:  null | string;
+    keywords:   string[];
 }
 
 export declare type WalkerOption = WalkerOptionEnum | Token | null;
@@ -1630,173 +2435,601 @@ export declare interface WalkAttributesResult {
     list: Token[] | null;
 }
 
+/**
+ * error description
+ */
 export declare interface ErrorDescription {
 
-    // drop rule or declaration | fix rule or declaration
+    /**
+     *  drop rule or declaration
+     */
+
     action: 'drop' | 'ignore';
+    /**
+     * error message
+     */
     message: string;
+    /**
+     * syntax error description
+     */
     syntax?: string | null;
+    /**
+     * error node
+     */
     node?: Token | AstNode | null;
+    /**
+     * error location
+     */
     location?: Location;
+    /**
+     * error object
+     */
     error?: Error;
+    /**
+     * raw tokens
+     */
     rawTokens?: TokenizeResult[];
 }
 
+/**
+ * css validation options
+ */
 interface ValidationOptions {
 
+    /**
+     * enable css validation
+     *
+     * see {@link ValidationLevel}
+     */
     validation?: boolean | ValidationLevel;
+    /**
+     * lenient validation. retain nodes that failed validation
+     */
     lenient?: boolean;
+    /**
+     * visited tokens
+     *
+     * @private
+     */
     visited?: WeakMap<Token, Map<string, Set<ValidationToken>>>;
-    isOptional?:boolean | null;
-    isRepeatable?:boolean | null;
-    isList?:boolean | null;
-    occurence?:boolean | null;
+    /**
+     * is optional
+     *
+     * @private
+     */
+    isOptional?: boolean | null;
+    /**
+     * is repeatable
+     *
+     * @private
+     */
+    isRepeatable?: boolean | null;
+    /**
+     * is list
+     *
+     * @private
+     */
+    isList?: boolean | null;
+    /**
+     * occurence
+     *
+     * @private
+     */
+    occurence?: boolean | null;
+    /**
+     * at least once
+     *
+     * @private
+     */
     atLeastOnce?: boolean | null;
 }
 
+/**
+ * minify options
+ */
 interface MinifyOptions {
 
+    /**
+     * enable minification
+     */
     minify?: boolean;
+    /**
+     * parse color tokens
+     */
     parseColor?: boolean;
+    /**
+     * generate nested rules
+     */
     nestingRules?: boolean;
+    /**
+     * expand nested rules
+     */
     expandNestingRules?: boolean;
+    /**
+     * remove duplicate declarations from the same rule
+     */
     removeDuplicateDeclarations?: boolean;
+    /**
+     * compute shorthand properties
+     */
     computeShorthand?: boolean;
+    /**
+     * compute transform functions
+     * see supported functions {@link transformFunctions}
+     */
     computeTransform?: boolean;
+    /**
+     * compute math functions
+     * see supported functions {@link mathFuncs}
+     */
     computeCalcExpression?: boolean;
+    /**
+     * inline css variables
+     */
     inlineCssVariables?: boolean;
+    /**
+     * remove empty ast nodes
+     */
     removeEmpty?: boolean;
+    /**
+     * define minification passes.
+     */
     pass?: number;
 }
 
+/**
+ * parser options
+ */
 export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptions, ValidationOptions, PropertyListOptions {
 
+    /**
+     * source file to be used for sourcemap
+     */
     src?: string;
+    /**
+     * include sourcemap in the ast. sourcemap info is always generated
+     */
     sourcemap?: boolean | 'inline';
+    /**
+     * remove @charset at-rule
+     */
     removeCharset?: boolean;
+    /**
+     * resolve urls
+     */
     resolveUrls?: boolean;
+    /**
+     * resolve import
+     */
     resolveImport?: boolean;
+    /**
+     * current working directory
+     * @ignore
+     */
     cwd?: string;
+    /**
+     * remove css prefix
+     */
     removePrefix?: boolean;
-    getStream?:(url: string, currentUrl: string) => Promise<ReadableStream<string>>;
+    /**
+     * get file or url as stream
+     * @param url
+     * @param currentUrl
+     *
+     * @private
+     */
+    getStream?: (url: string, currentUrl: string) => Promise<ReadableStream<string>>;
+    /**
+     * get directory name
+     * @param path
+     *
+     * @private
+     */
     dirname?: (path: string) => string;
+    /**
+     * resolve path
+     * @param url
+     * @param currentUrl
+     * @param currentWorkingDirectory
+     *
+     * @private
+     */
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => {
         absolute: string;
         relative: string;
     };
+    /**
+     * node visitor
+     * {@link VisitorNodeMap}
+     */
     visitor?: VisitorNodeMap;
+    /**
+     * abort signal
+     *
+     * Example: abort after 10 seconds
+     * ```ts
+     *
+     * const result = await parse(cssString, {
+     *     signal: AbortSignal.timeout(10000)
+     * });
+     *
+     * ```
+     */
     signal?: AbortSignal;
+    /**
+     * set parent node
+     */
     setParent?: boolean;
+    /**
+     * cache
+     *
+     * @private
+     */
     cache?: WeakMap<AstNode, string>;
 }
 
-export declare interface MinifyFeatureOptions  {
+/**
+ * minify feature options
+ *
+ * @internal
+ */
+export declare interface MinifyFeatureOptions {
 
+    /**
+     * minify features
+     *
+     * @internal
+     */
     features?: MinifyFeature[];
 }
 
+/**
+ * minify feature
+ *
+ * @internal
+ */
 export declare interface MinifyFeature {
 
+    /**
+     * ordering
+     */
     ordering: number;
-
-    register(options: MinifyFeatureOptions | ParserOptions): void;
-
-    // run(ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: { [key: string]: any }): void;
-
-    // cleanup?(ast: AstRuleStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }): void;
-}
-
-export declare interface MinifyFeature {
-
-    ordering: number;
+    /**
+     * use in pre process
+     */
     preProcess: boolean;
+    /**
+     * use in post process
+     */
     postProcess: boolean;
+    /**
+     * register feature
+     * @param options
+     */
     register: (options: MinifyFeatureOptions | ParserOptions) => void;
+    /**
+     * run feature
+     * @param ast
+     * @param options
+     * @param parent
+     * @param context
+     * @param mode
+     */
     run: (ast: AstRule | AstAtRule, options: ParserOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
         [key: string]: any
     }, mode: FeatureWalkMode) => void;
 }
 
+/**
+ * resolved path
+ * @internal
+ */
 export declare interface ResolvedPath {
+    /**
+     * absolute path
+     */
     absolute: string;
+    /**
+     * relative path
+     */
     relative: string;
 }
 
+/**
+ * ast node render options
+ */
 export declare interface RenderOptions {
 
+    /**
+     * minify ast node.
+     */
     minify?: boolean;
+    /**
+     * pretty print css
+     */
     beautify?: boolean;
+    /**
+     * remove empty rule lists from the ast
+     */
     removeEmpty?: boolean;
+    /**
+     * expand nesting rules
+     */
     expandNestingRules?: boolean;
+    /**
+     * preserve license comments. license comments are comments that start with /*!
+     */
     preserveLicense?: boolean;
+    /**
+     * generate sourcemap object. 'inline' will embed it in the css
+     */
     sourcemap?: boolean | 'inline';
+    /**
+     * indent string
+     */
     indent?: string;
+    /**
+     * new line string
+     */
     newLine?: string;
+    /**
+     * remove comments
+     */
     removeComments?: boolean;
+    /**
+     * convert color to the specified color space. 'true' will convert to HEX
+     */
     convertColor?: boolean | ColorType;
+    /**
+     * ernder the node along with its parents
+     */
     withParents?: boolean;
+    /**
+     * output file. used for url resolution
+     * @internal
+     */
     output?: string;
+    /**
+     * current working directory
+     * @internal
+     */
     cwd?: string;
-    load?: (url: string, currentUrl: string) => Promise<string>;
+    /**
+     * resolve path
+     * @internal
+     */
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => ResolvedPath;
 }
 
+/**
+ * transform options
+ */
 export declare interface TransformOptions extends ParserOptions, RenderOptions {
 
 }
 
+/**
+ * parse result stats object
+ */
 export declare interface ParseResultStats {
+    /**
+     * source file
+     */
     src: string;
+    /**
+     * bytes read
+     */
     bytesIn: number;
+    /**
+     * bytes read from imported files
+     */
     importedBytesIn: number;
+    /**
+     * parse time
+     */
     parse: string;
+    /**
+     * minify time
+     */
     minify: string;
+    /**
+     * total time
+     */
     total: string;
+    /**
+     * imported files stats
+     */
     imports: ParseResultStats[]
 }
 
+/**
+ * parse result object
+ */
 export declare interface ParseResult {
+    /**
+     * parsed ast tree
+     */
     ast: AstRuleStyleSheet;
+    /**
+     * parse errors
+     */
     errors: ErrorDescription[];
+    /**
+     * parse stats
+     */
     stats: ParseResultStats
 }
 
+/**
+ * render result object
+ */
 export declare interface RenderResult {
+    /**
+     * rendered css
+     */
     code: string;
+    /**
+     * render errors
+     */
     errors: ErrorDescription[];
+    /**
+     * render stats
+     */
     stats: {
+        /**
+         * render time
+         */
         total: string;
     },
+    /**
+     * source map
+     */
     map?: SourceMap
 }
 
+/**
+ * transform result object
+ */
 export declare interface TransformResult extends ParseResult, RenderResult {
 
+    /**
+     * transform stats
+     */
     stats: {
+        /**
+         * source file
+         */
         src: string;
+        /**
+         * bytes read
+         */
         bytesIn: number;
+        /**
+         * generated css size
+         */
         bytesOut: number;
+        /**
+         * bytes read from imported files
+         */
         importedBytesIn: number;
+        /**
+         * parse time
+         */
         parse: string;
+        /**
+         * minify time
+         */
         minify: string;
+        /**
+         * render time
+         */
         render: string;
+        /**
+         * total time
+         */
         total: string;
+        /**
+         * imported files stats
+         */
         imports: ParseResultStats[];
     }
 }
 
+/**
+ * parse token options
+ */
 export declare interface ParseTokenOptions extends ParserOptions {
 }
 
+/**
+ * tokenize result object
+ * @internal
+ */
 export declare interface TokenizeResult {
+    /**
+     * token
+     */
     token: string;
+    /**
+     * token length
+     */
     len: number;
+    /**
+     * token type hint
+     */
     hint?: EnumToken;
+    /**
+     * token start position
+     */
     sta: Position;
+    /**
+     * token end position
+     */
     end: Position;
+    /**
+     * bytes in
+     */
     bytesIn: number;
 }
 
+/**
+ * matched selector object
+ * @internal
+ */
+export declare interface MatchedSelector {
+    /**
+     * matched selector
+     */
+    match: string[][];
+    /**
+     * selector 1
+     */
+    selector1: string[][];
+    /**
+     * selector 2
+     */
+    selector2: string[][];
+    /**
+     * selectors partially match
+     */
+    eq: boolean
+}
+
+/**
+ * variable scope info object
+ * @internal
+ */
+export declare interface VariableScopeInfo {
+    /**
+     * global scope
+     */
+    globalScope: boolean;
+    /**
+     * parent nodes
+     */
+    parent: Set<AstRule | AstAtRule>;
+    /**
+     * declaration count
+     */
+    declarationCount: number;
+    /**
+     * replaceable
+     */
+    replaceable: boolean;
+    /**
+     * declaration node
+     */
+    node: AstDeclaration;
+    /**
+     * declaration values
+     */
+    values: Token[];
+}
+
+/**
+ * source map object
+ * @internal
+ */
 export declare interface SourceMapObject {
     version: number;
     file?: string;
@@ -1810,13 +3043,16 @@ export declare interface SourceMapObject {
 /**
  * return the directory name of a path
  * @param path
+ * @internal
  */
 declare function dirname(path: string): string;
 /**
  * resolve path
- * @param url
- * @param currentDirectory
- * @param cwd
+ * @param url url or path to resolve
+ * @param currentDirectory directory used to resolve the path
+ * @param cwd current working directory
+ *
+ * @private
  */
 declare function resolve(url: string, currentDirectory: string, cwd?: string): {
     absolute: string;
@@ -1824,34 +3060,123 @@ declare function resolve(url: string, currentDirectory: string, cwd?: string): {
 };
 
 /**
+ * node module entry point
+ * @module node
+ */
+
+/**
  * load file or url as stream
  * @param url
  * @param currentFile
+ *
+ * @private
  */
 declare function getStream(url: string, currentFile?: string): Promise<ReadableStream<string>>;
-
 /**
  * render ast tree
  * @param data
  * @param options
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ *  import {render, ColorType} from '@tbela99/css-parser';
+ *
+ *  // remote file
+ * let result = render(ast);
+ * console.log(result.code);
+ *
+ * // local file
+ * result = await parseFile(ast, {beatify: true, convertColor: ColorType.SRGB});
+ * console.log(result.code);
+ * ```
  */
 declare function render(data: AstNode, options?: RenderOptions): RenderResult;
 /**
  * parse css file
  * @param file url or path
  * @param options
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ *  import {parseFile} from '@tbela99/css-parser';
+ *
+ *  // remote file
+ * let result = await parseFile('https://docs.deno.com/styles.css');
+ * console.log(result.ast);
+ *
+ * // local file
+ * result = await parseFile('./css/styles.css');
+ * console.log(result.ast);
+ * ```
  */
 declare function parseFile(file: string, options?: ParserOptions): Promise<ParseResult>;
 /**
  * parse css
- * @param iterator
+ * @param stream
  * @param opt
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  let result = await transform(css);
+ *  console.log(result.code);
+ * ```
+ *
+ * Example using stream
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser';
+ * import {Readable} from "node:stream";
+ *
+ * // usage: node index.ts < styles.css or cat styles.css | node index.ts
+ *
+ *  const readableStream = Readable.toWeb(process.stdin);
+ *  const result = await parse(readableStream, {beautify: true});
+ *
+ *  console.log(result.ast);
+ * ```
+ *
+ * Example using fetch
+ *
+ * ```ts
+ *
+ *  import {parse} from '@tbela99/css-parser';
+ *
+ *  const response = await fetch('https://docs.deno.com/styles.css');
+ *  result = await parse(response.body, {beautify: true});
+ *
+ *  console.log(result.ast);
+ * ```
  */
-declare function parse(iterator: string | ReadableStream<string>, opt?: ParserOptions): Promise<ParseResult>;
+declare function parse(stream: string | ReadableStream<string>, opt?: ParserOptions): Promise<ParseResult>;
 /**
  * transform css file
  * @param file url or path
  * @param options
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ *  import {transformFile} from '@tbela99/css-parser';
+ *
+ *  // remote file
+ * let result = await transformFile('https://docs.deno.com/styles.css');
+ * console.log(result.code);
+ *
+ * // local file
+ * result = await transformFile('./css/styles.css');
+ * console.log(result.code);
+ * ```
  */
 declare function transformFile(file: string, options?: TransformOptions): Promise<TransformResult>;
 /**
@@ -1859,17 +3184,45 @@ declare function transformFile(file: string, options?: TransformOptions): Promis
  * @param css
  * @param options
  *
- * ```ts
- *     // remote file
- *     let result = await transform('https://docs.deno.com/styles.css');
- *     console.log(result.code);
+ * Example:
  *
- *     // local file
- *      result = await transform('./css/styles.css');
- *     console.log(result.code);
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  let result = await transform(css);
+ *  console.log(result.code);
+ * ```
+ *
+ * Example using stream
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ * import {Readable} from "node:stream";
+ *
+ * // usage: node index.ts < styles.css or cat styles.css | node index.ts
+ *
+ *  const readableStream = Readable.toWeb(process.stdin);
+ *  const result = await transform(readableStream, {beautify: true});
+ *
+ *  console.log(result.code);
+ * ```
+ *
+ * Example using fetch
+ *
+ * ```ts
+ *
+ *  import {transform} from '@tbela99/css-parser';
+ *
+ *  const response = await fetch('https://docs.deno.com/styles.css');
+ *  result = await transform(response.body, {beautify: true});
+ *
+ *  console.log(result.code);
  * ```
  */
 declare function transform(css: string | ReadableStream<string>, options?: TransformOptions): Promise<TransformResult>;
 
-export { ColorType, EnumToken, ValidationLevel, convertColor, dirname, expand, getStream, isOkLabClose, minify, okLabDistance, parse, parseFile, parseString, parseTokens, render, renderToken, resolve, transform, transformFile, walk, walkValues };
-export type { AstNode, ParseInfo, ParseResult, ParserOptions, RenderOptions, RenderResult, TransformOptions, TransformResult };
+export { ColorType, EnumToken, FeatureWalkMode, SourceMap, ValidationLevel, WalkerOptionEnum, WalkerValueEvent, convertColor, dirname, expand, getStream, isOkLabClose, mathFuncs, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, parseTokens, render, renderToken, resolve, transform, transformFile, transformFunctions, walk, walkValues };
+export type { AddToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyFrameRule, AstKeyframAtRule, AstKeyframeRule, AstNode, AstRule, AstRuleList, AstRuleStyleSheet, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ConstraintsMapping, ContainMatchToken, Context, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionImageToken, FunctionToken, FunctionURLToken, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, ImportantToken, IncludeMatchToken, InvalidAttrToken, InvalidClassSelectorToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, Location, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureAndToken, MediaFeatureNotToken, MediaFeatureOnlyToken, MediaFeatureOrToken, MediaFeatureToken, MediaQueryConditionToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, MulToken, NameSpaceAttributeToken, NestingSelectorToken, NextSiblingCombinatorToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo, ParseResult, ParseResultStats, ParseTokenOptions, ParserOptions, PercentageToken, Position, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token, TokenizeResult, TransformOptions, TransformResult, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, Value, VariableScopeInfo, VisitorNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerValueFilter, WhitespaceToken };

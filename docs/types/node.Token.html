@@ -1,0 +1,174 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>Token | @tbela99/css-parser</title><meta name="description" content="Documentation for @tbela99/css-parser"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script><style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --md-sys-color-primary: #f6be46;
+    --md-sys-color-on-primary: #412d00;
+    --md-sys-color-primary-container: #5d4200;
+    --md-sys-color-on-primary-container: #ffdea3;
+    --md-sys-color-secondary: #d9c4a0;
+    --md-sys-color-on-secondary: #3b2f15;
+    --md-sys-color-secondary-container: #53452a;
+    --md-sys-color-on-secondary-container: #f6e0bb;
+    --md-sys-color-tertiary: #b2cfa8;
+    --md-sys-color-on-tertiary: #1e361a;
+    --md-sys-color-tertiary-container: #344d2f;
+    --md-sys-color-on-tertiary-container: #cdebc2;
+    --md-sys-color-error: #ffb4ab;
+    --md-sys-color-on-error: #690005;
+    --md-sys-color-error-container: #93000a;
+    --md-sys-color-on-error-container: #ffb4ab;
+    --md-sys-color-background: #1e1b16;
+    --md-sys-color-on-background: #e9e1d9;
+    --md-sys-color-surface: #1e1b16;
+    --md-sys-color-on-surface: #e9e1d9;
+    --md-sys-color-surface-variant: #4e4639;
+    --md-sys-color-on-surface-variant: #d1c5b4;
+    --md-sys-color-outline: #9a8f80;
+    --md-sys-color-outline-variant: #4e4639;
+    --md-sys-color-shadow: #000000;
+    --md-sys-color-scrim: #000000;
+    --md-sys-color-inverse-surface: #e9e1d9;
+    --md-sys-color-inverse-on-surface: #34302a;
+    --md-sys-color-inverse-primary: #7a5900;
+    --md-sys-color-surface-dim: #16130e;
+    --md-sys-color-surface-bright: #3d3933;
+    --md-sys-color-surface-container-lowest: #110e09;
+    --md-sys-color-surface-container-low: #1e1b16;
+    --md-sys-color-surface-container: #221f1a;
+    --md-sys-color-surface-container-high: #2d2924;
+    --md-sys-color-surface-container-highest: #38342e
+  }
+}
+:root[data-theme="dark"] {
+  --md-sys-color-primary: #f6be46;
+  --md-sys-color-on-primary: #412d00;
+  --md-sys-color-primary-container: #5d4200;
+  --md-sys-color-on-primary-container: #ffdea3;
+  --md-sys-color-secondary: #d9c4a0;
+  --md-sys-color-on-secondary: #3b2f15;
+  --md-sys-color-secondary-container: #53452a;
+  --md-sys-color-on-secondary-container: #f6e0bb;
+  --md-sys-color-tertiary: #b2cfa8;
+  --md-sys-color-on-tertiary: #1e361a;
+  --md-sys-color-tertiary-container: #344d2f;
+  --md-sys-color-on-tertiary-container: #cdebc2;
+  --md-sys-color-error: #ffb4ab;
+  --md-sys-color-on-error: #690005;
+  --md-sys-color-error-container: #93000a;
+  --md-sys-color-on-error-container: #ffb4ab;
+  --md-sys-color-background: #1e1b16;
+  --md-sys-color-on-background: #e9e1d9;
+  --md-sys-color-surface: #1e1b16;
+  --md-sys-color-on-surface: #e9e1d9;
+  --md-sys-color-surface-variant: #4e4639;
+  --md-sys-color-on-surface-variant: #d1c5b4;
+  --md-sys-color-outline: #9a8f80;
+  --md-sys-color-outline-variant: #4e4639;
+  --md-sys-color-shadow: #000000;
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-inverse-surface: #e9e1d9;
+  --md-sys-color-inverse-on-surface: #34302a;
+  --md-sys-color-inverse-primary: #7a5900;
+  --md-sys-color-surface-dim: #16130e;
+  --md-sys-color-surface-bright: #3d3933;
+  --md-sys-color-surface-container-lowest: #110e09;
+  --md-sys-color-surface-container-low: #1e1b16;
+  --md-sys-color-surface-container: #221f1a;
+  --md-sys-color-surface-container-high: #2d2924;
+  --md-sys-color-surface-container-highest: #38342e
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --md-sys-color-primary: #7a5900;
+    --md-sys-color-on-primary: #ffffff;
+    --md-sys-color-primary-container: #ffdea3;
+    --md-sys-color-on-primary-container: #261900;
+    --md-sys-color-secondary: #6c5c3f;
+    --md-sys-color-on-secondary: #ffffff;
+    --md-sys-color-secondary-container: #f6e0bb;
+    --md-sys-color-on-secondary-container: #251a04;
+    --md-sys-color-tertiary: #4b6545;
+    --md-sys-color-on-tertiary: #ffffff;
+    --md-sys-color-tertiary-container: #cdebc2;
+    --md-sys-color-on-tertiary-container: #092007;
+    --md-sys-color-error: #ba1a1a;
+    --md-sys-color-on-error: #ffffff;
+    --md-sys-color-error-container: #ffdad6;
+    --md-sys-color-on-error-container: #410002;
+    --md-sys-color-background: #fffbff;
+    --md-sys-color-on-background: #1e1b16;
+    --md-sys-color-surface: #fffbff;
+    --md-sys-color-on-surface: #1e1b16;
+    --md-sys-color-surface-variant: #ede1cf;
+    --md-sys-color-on-surface-variant: #4e4639;
+    --md-sys-color-outline: #7f7667;
+    --md-sys-color-outline-variant: #d1c5b4;
+    --md-sys-color-shadow: #000000;
+    --md-sys-color-scrim: #000000;
+    --md-sys-color-inverse-surface: #34302a;
+    --md-sys-color-inverse-on-surface: #f8efe7;
+    --md-sys-color-inverse-primary: #f6be46;
+    --md-sys-color-surface-dim: #e1d9d0;
+    --md-sys-color-surface-bright: #fff8f2;
+    --md-sys-color-surface-container-lowest: #ffffff;
+    --md-sys-color-surface-container-low: #fbf2e9;
+    --md-sys-color-surface-container: #f5ede4;
+    --md-sys-color-surface-container-high: #efe7de;
+    --md-sys-color-surface-container-highest: #e9e1d9
+  }
+}
+:root[data-theme="light"] {
+  --md-sys-color-primary: #7a5900;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #ffdea3;
+  --md-sys-color-on-primary-container: #261900;
+  --md-sys-color-secondary: #6c5c3f;
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: #f6e0bb;
+  --md-sys-color-on-secondary-container: #251a04;
+  --md-sys-color-tertiary: #4b6545;
+  --md-sys-color-on-tertiary: #ffffff;
+  --md-sys-color-tertiary-container: #cdebc2;
+  --md-sys-color-on-tertiary-container: #092007;
+  --md-sys-color-error: #ba1a1a;
+  --md-sys-color-on-error: #ffffff;
+  --md-sys-color-error-container: #ffdad6;
+  --md-sys-color-on-error-container: #410002;
+  --md-sys-color-background: #fffbff;
+  --md-sys-color-on-background: #1e1b16;
+  --md-sys-color-surface: #fffbff;
+  --md-sys-color-on-surface: #1e1b16;
+  --md-sys-color-surface-variant: #ede1cf;
+  --md-sys-color-on-surface-variant: #4e4639;
+  --md-sys-color-outline: #7f7667;
+  --md-sys-color-outline-variant: #d1c5b4;
+  --md-sys-color-shadow: #000000;
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-inverse-surface: #34302a;
+  --md-sys-color-inverse-on-surface: #f8efe7;
+  --md-sys-color-inverse-primary: #f6be46;
+  --md-sys-color-surface-dim: #e1d9d0;
+  --md-sys-color-surface-bright: #fff8f2;
+  --md-sys-color-surface-container-lowest: #ffffff;
+  --md-sys-color-surface-container-low: #fbf2e9;
+  --md-sys-color-surface-container: #f5ede4;
+  --md-sys-color-surface-container-high: #efe7de;
+  --md-sys-color-surface-container-highest: #e9e1d9
+}
+</style><link rel="stylesheet" href="../assets/material-style.css"/></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index.html" class="title">@tbela99/css-parser</a><div id="tsd-toolbar-links"><a href="https://tbela99.github.io/css-parser/benchmark/index.html">Benchmark</a><a href="https://tbela99.github.io/css-parser/docs/">Docs</a><a href="https://tbela99.github.io/css-parser/playground/">Playground</a><a href="https://github.com/tbela99/css-parser">GitHub</a></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="../modules/node.html">node</a></li><li><a href="" aria-current="page">Token</a></li></ul><h1>Type Alias Token</h1></div><div class="tsd-signature"><span class="tsd-kind-type-alias">Token</span><span class="tsd-signature-symbol">:</span><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.InvalidClassSelectorToken.html" class="tsd-signature-type tsd-kind-interface">InvalidClassSelectorToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.InvalidAttrToken.html" class="tsd-signature-type tsd-kind-interface">InvalidAttrToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.LiteralToken.html" class="tsd-signature-type tsd-kind-interface">LiteralToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.IdentToken.html" class="tsd-signature-type tsd-kind-interface">IdentToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.IdentListToken.html" class="tsd-signature-type tsd-kind-interface">IdentListToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.DashedIdentToken.html" class="tsd-signature-type tsd-kind-interface">DashedIdentToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.CommaToken.html" class="tsd-signature-type tsd-kind-interface">CommaToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.ColonToken.html" class="tsd-signature-type tsd-kind-interface">ColonToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.SemiColonToken.html" class="tsd-signature-type tsd-kind-interface">SemiColonToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.ClassSelectorToken.html" class="tsd-signature-type tsd-kind-interface">ClassSelectorToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.UniversalSelectorToken.html" class="tsd-signature-type tsd-kind-interface">UniversalSelectorToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.ChildCombinatorToken.html" class="tsd-signature-type tsd-kind-interface">ChildCombinatorToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.DescendantCombinatorToken.html" class="tsd-signature-type tsd-kind-interface">DescendantCombinatorToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.NextSiblingCombinatorToken.html" class="tsd-signature-type tsd-kind-interface">NextSiblingCombinatorToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.SubsequentCombinatorToken.html" class="tsd-signature-type tsd-kind-interface">SubsequentCombinatorToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.ColumnCombinatorToken.html" class="tsd-signature-type tsd-kind-interface">ColumnCombinatorToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.NestingSelectorToken.html" class="tsd-signature-type tsd-kind-interface">NestingSelectorToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.MediaQueryConditionToken.html" class="tsd-signature-type tsd-kind-interface">MediaQueryConditionToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.MediaFeatureToken.html" class="tsd-signature-type tsd-kind-interface">MediaFeatureToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.MediaFeatureNotToken.html" class="tsd-signature-type tsd-kind-interface">MediaFeatureNotToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.MediaFeatureOnlyToken.html" class="tsd-signature-type tsd-kind-interface">MediaFeatureOnlyToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.MediaFeatureAndToken.html" class="tsd-signature-type tsd-kind-interface">MediaFeatureAndToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.MediaFeatureOrToken.html" class="tsd-signature-type tsd-kind-interface">MediaFeatureOrToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.AstDeclaration.html" class="tsd-signature-type tsd-kind-interface">AstDeclaration</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.NumberToken.html" class="tsd-signature-type tsd-kind-interface">NumberToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.AtRuleToken.html" class="tsd-signature-type tsd-kind-interface">AtRuleToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.PercentageToken.html" class="tsd-signature-type tsd-kind-interface">PercentageToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.FlexToken.html" class="tsd-signature-type tsd-kind-interface">FlexToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.FunctionURLToken.html" class="tsd-signature-type tsd-kind-interface">FunctionURLToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.FunctionImageToken.html" class="tsd-signature-type tsd-kind-interface">FunctionImageToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.TimingFunctionToken.html" class="tsd-signature-type tsd-kind-interface">TimingFunctionToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.TimelineFunctionToken.html" class="tsd-signature-type tsd-kind-interface">TimelineFunctionToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.FunctionToken.html" class="tsd-signature-type tsd-kind-interface">FunctionToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.GridTemplateFuncToken.html" class="tsd-signature-type tsd-kind-interface">GridTemplateFuncToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.DimensionToken.html" class="tsd-signature-type tsd-kind-interface">DimensionToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.LengthToken.html" class="tsd-signature-type tsd-kind-interface">LengthToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.AngleToken.html" class="tsd-signature-type tsd-kind-interface">AngleToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.StringToken.html" class="tsd-signature-type tsd-kind-interface">StringToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.TimeToken.html" class="tsd-signature-type tsd-kind-interface">TimeToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.FrequencyToken.html" class="tsd-signature-type tsd-kind-interface">FrequencyToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.ResolutionToken.html" class="tsd-signature-type tsd-kind-interface">ResolutionToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.UnclosedStringToken.html" class="tsd-signature-type tsd-kind-interface">UnclosedStringToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.HashToken.html" class="tsd-signature-type tsd-kind-interface">HashToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.BadStringToken.html" class="tsd-signature-type tsd-kind-interface">BadStringToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.BlockStartToken.html" class="tsd-signature-type tsd-kind-interface">BlockStartToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.BlockEndToken.html" class="tsd-signature-type tsd-kind-interface">BlockEndToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.AttrStartToken.html" class="tsd-signature-type tsd-kind-interface">AttrStartToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.AttrEndToken.html" class="tsd-signature-type tsd-kind-interface">AttrEndToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.ParensStartToken.html" class="tsd-signature-type tsd-kind-interface">ParensStartToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.ParensEndToken.html" class="tsd-signature-type tsd-kind-interface">ParensEndToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.ParensToken.html" class="tsd-signature-type tsd-kind-interface">ParensToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.CDOCommentToken.html" class="tsd-signature-type tsd-kind-interface">CDOCommentToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.BadCDOCommentToken.html" class="tsd-signature-type tsd-kind-interface">BadCDOCommentToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.CommentToken.html" class="tsd-signature-type tsd-kind-interface">CommentToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.BadCommentToken.html" class="tsd-signature-type tsd-kind-interface">BadCommentToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.WhitespaceToken.html" class="tsd-signature-type tsd-kind-interface">WhitespaceToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.IncludeMatchToken.html" class="tsd-signature-type tsd-kind-interface">IncludeMatchToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.StartMatchToken.html" class="tsd-signature-type tsd-kind-interface">StartMatchToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.EndMatchToken.html" class="tsd-signature-type tsd-kind-interface">EndMatchToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.ContainMatchToken.html" class="tsd-signature-type tsd-kind-interface">ContainMatchToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.MatchExpressionToken.html" class="tsd-signature-type tsd-kind-interface">MatchExpressionToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.NameSpaceAttributeToken.html" class="tsd-signature-type tsd-kind-interface">NameSpaceAttributeToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.DashMatchToken.html" class="tsd-signature-type tsd-kind-interface">DashMatchToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.EqualMatchToken.html" class="tsd-signature-type tsd-kind-interface">EqualMatchToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.LessThanToken.html" class="tsd-signature-type tsd-kind-interface">LessThanToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.LessThanOrEqualToken.html" class="tsd-signature-type tsd-kind-interface">LessThanOrEqualToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.GreaterThanToken.html" class="tsd-signature-type tsd-kind-interface">GreaterThanToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.GreaterThanOrEqualToken.html" class="tsd-signature-type tsd-kind-interface">GreaterThanOrEqualToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.ListToken.html" class="tsd-signature-type tsd-kind-interface">ListToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.PseudoClassToken.html" class="tsd-signature-type tsd-kind-interface">PseudoClassToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.PseudoPageToken.html" class="tsd-signature-type tsd-kind-interface">PseudoPageToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.PseudoElementToken.html" class="tsd-signature-type tsd-kind-interface">PseudoElementToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.PseudoClassFunctionToken.html" class="tsd-signature-type tsd-kind-interface">PseudoClassFunctionToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.DelimToken.html" class="tsd-signature-type tsd-kind-interface">DelimToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.BinaryExpressionToken.html" class="tsd-signature-type tsd-kind-interface">BinaryExpressionToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.UnaryExpression.html" class="tsd-signature-type tsd-kind-interface">UnaryExpression</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.FractionToken.html" class="tsd-signature-type tsd-kind-interface">FractionToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.AddToken.html" class="tsd-signature-type tsd-kind-interface">AddToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.SubToken.html" class="tsd-signature-type tsd-kind-interface">SubToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.DivToken.html" class="tsd-signature-type tsd-kind-interface">DivToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.MulToken.html" class="tsd-signature-type tsd-kind-interface">MulToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.BadUrlToken.html" class="tsd-signature-type tsd-kind-interface">BadUrlToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.UrlToken.html" class="tsd-signature-type tsd-kind-interface">UrlToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.ImportantToken.html" class="tsd-signature-type tsd-kind-interface">ImportantToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.ColorToken.html" class="tsd-signature-type tsd-kind-interface">ColorToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.AttrToken.html" class="tsd-signature-type tsd-kind-interface">AttrToken</a><br/>    <span class="tsd-signature-symbol">|</span> <a href="../interfaces/node.EOFToken.html" class="tsd-signature-type tsd-kind-interface">EOFToken</a></div><aside class="tsd-sources"><ul><li>Defined in <a href="https://github.com/tbela99/css-parser/blob/5125bf1acd2d8826723f3b270d07e2bbf3fc65d4/src/@types/token.d.ts#L532">@types/token.d.ts:532</a></li></ul></aside></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div></div><div class="site-menu"><nav id="tsd-sidebar-links" class="tsd-navigation"><a href="https://tbela99.github.io/css-parser/benchmark/index.html" class="tsd-nav-link">Benchmark</a><a href="https://tbela99.github.io/css-parser/docs/" class="tsd-nav-link">Docs</a><a href="https://tbela99.github.io/css-parser/playground/" class="tsd-nav-link">Playground</a><a href="https://github.com/tbela99/css-parser" class="tsd-nav-link">GitHub</a></nav><nav class="tsd-navigation"><a href="../modules.html">@tbela99/css-parser</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div><script>
+          try {
+            const generateLinkElement = document.querySelector(".tsd-generator a");
+            const link = document.createElement("a");
+            Object.assign(link, {
+              href: "https://github.com/dmnsgn/typedoc-material-theme",
+              target: "_blank",
+              rel: "noreferrer",
+              innerText: "typedoc-material-theme."
+            });
+            generateLinkElement.insertAdjacentElement("afterend", link);
+            generateLinkElement.insertAdjacentText("afterend", " with ");
+          } catch (error) {
+
+          }
+        </script></body></html>

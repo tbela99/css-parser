@@ -6,6 +6,7 @@ import { expand } from '../ast/expand.js';
 import './utils/config.js';
 import { parseDeclarationNode } from './utils/declaration.js';
 import { renderToken } from '../renderer/render.js';
+import '../renderer/sourcemap/lib/encode.js';
 import { funcLike, timingFunc, timelineFunc, COLORS_NAMES, systemColors, deprecatedSystemColors, colorsFunc } from '../syntax/color/utils/constants.js';
 import { buildExpression } from '../ast/math/expression.js';
 import { tokenize, tokenizeStream } from './tokenize.js';
@@ -42,6 +43,8 @@ function reject(reason) {
  * parse css string
  * @param iter
  * @param options
+ *
+ * @private
  */
 async function doParse(iter, options = {}) {
     if (options.signal != null) {
@@ -284,28 +287,33 @@ async function doParse(iter, options = {}) {
             if (result.node.typ == EnumToken.DeclarationNodeType &&
                 (typeof options.visitor.Declaration == 'function' || options.visitor.Declaration?.[result.node.nam] != null)) {
                 const callable = typeof options.visitor.Declaration == 'function' ? options.visitor.Declaration : options.visitor.Declaration[result.node.nam];
-                const results = await callable(result.node);
+                const isAsync = Object.getPrototypeOf(callable).constructor.name == 'AsyncFunction';
+                const results = isAsync ? await callable(result.node) : callable(result.node);
                 if (results == null || (Array.isArray(results) && results.length == 0)) {
                     continue;
                 }
+                // @ts-ignore
                 result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
             }
             else if (options.visitor.Rule != null && result.node.typ == EnumToken.RuleNodeType) {
-                const results = await options.visitor.Rule(result.node);
+                const isAsync = Object.getPrototypeOf(options.visitor.Rule).constructor.name == 'AsyncFunction';
+                const results = isAsync ? await options.visitor.Rule(result.node) : options.visitor.Rule(result.node);
                 if (results == null || (Array.isArray(results) && results.length == 0)) {
                     continue;
                 }
+                // @ts-ignore
                 result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
             }
             else if (options.visitor.AtRule != null &&
                 result.node.typ == EnumToken.AtRuleNodeType &&
-                // @ts-ignore
                 (typeof options.visitor.AtRule == 'function' || options.visitor.AtRule?.[result.node.nam] != null)) {
                 const callable = typeof options.visitor.AtRule == 'function' ? options.visitor.AtRule : options.visitor.AtRule[result.node.nam];
-                const results = await callable(result.node);
+                const isAsync = Object.getPrototypeOf(callable).constructor.name == 'AsyncFunction';
+                const results = isAsync ? await callable(result.node) : callable(result.node);
                 if (results == null || (Array.isArray(results) && results.length == 0)) {
                     continue;
                 }
+                // @ts-ignore
                 result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
             }
         }
@@ -1020,6 +1028,27 @@ function parseAtRulePrelude(tokens, atRule) {
     return tokens;
 }
 /**
+ * parse a string as an array of declaration nodes
+ * @param declaration
+ *
+ * Example:
+ * ````ts
+ *
+ * const declarations = await parseDeclarations('color: red; background: blue');
+ * console.log(declarations);
+ * ```
+ */
+async function parseDeclarations(declaration) {
+    return doParse(tokenize({
+        stream: `.x{${declaration}}`,
+        buffer: '',
+        position: { ind: 0, lin: 1, col: 1 },
+        currentPosition: { ind: -1, lin: 1, col: 0 }
+    }), { setParent: false, minify: false, validation: false }).then(result => {
+        return result.ast.chi[0].chi.filter(t => t.typ == EnumToken.DeclarationNodeType);
+    });
+}
+/**
  * parse selector
  * @param tokens
  */
@@ -1120,9 +1149,24 @@ function parseSelector(tokens) {
     return tokens;
 }
 /**
- * parse css string
+ * parse css string and return an array of tokens
  * @param src
  * @param options
+ *
+ * @private
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ * import {parseString} from '@tbela99/css-parser';
+ *
+ * let tokens = parseString('body { color: red; }');
+ * console.log(tokens);
+ *
+ *  tokens = parseString('#c322c980');
+ * console.log(tokens);
+ * ```
  */
 function parseString(src, options = { location: false }) {
     const parseInfo = {
@@ -1143,6 +1187,11 @@ function parseString(src, options = { location: false }) {
         return acc;
     }, []));
 }
+/**
+ * get token type from a string
+ * @param val
+ * @param hint
+ */
 function getTokenType(val, hint) {
     if (hint != null) {
         return enumTokenHints.has(hint) ? { typ: hint } : { typ: hint, val };
@@ -1308,9 +1357,24 @@ function getTokenType(val, hint) {
     };
 }
 /**
- * parse token array into a tree structure
+ * parse function tokens in a token array
  * @param tokens
  * @param options
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ * import {parseString, parseTokens} from '@tbela99/css-parser';
+ *
+ * let tokens = parseString('body { color: red; }');
+ * console.log(parseTokens(tokens));
+ *
+ *  tokens = parseString('#c322c980');
+ * console.log(parseTokens(tokens));
+ * ```
+ *
+ * @private
  */
 function parseTokens(tokens, options = {}) {
     for (let i = 0; i < tokens.length; i++) {
@@ -1598,4 +1662,4 @@ function parseTokens(tokens, options = {}) {
     return tokens;
 }
 
-export { doParse, getTokenType, parseAtRulePrelude, parseSelector, parseString, parseTokens, urlTokenMatcher };
+export { doParse, getTokenType, parseAtRulePrelude, parseDeclarations, parseSelector, parseString, parseTokens, urlTokenMatcher };

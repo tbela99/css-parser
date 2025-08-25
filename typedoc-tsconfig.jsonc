@@ -1,7 +1,7 @@
 {
   "typedocOptions": {
 
-    "entryPoints": ["src/node.ts", "src/web/index.ts"],
+    "entryPoints": ["src/node.ts", "src/web.ts"],
     "out": "docs"
   },
   "compilerOptions": {

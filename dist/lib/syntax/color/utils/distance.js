@@ -13,6 +13,8 @@ import '../../../renderer/sourcemap/lib/encode.js';
  * Calculate the distance between two okLab colors.
  * @param okLab1
  * @param okLab2
+ *
+ * @private
  */
 function okLabDistance(okLab1, okLab2) {
     return Math.sqrt(Math.pow(okLab1[0] - okLab2[0], 2) + Math.pow(okLab1[1] - okLab2[1], 2) + Math.pow(okLab1[2] - okLab2[2], 2));
@@ -22,6 +24,8 @@ function okLabDistance(okLab1, okLab2) {
  * @param color1
  * @param color2
  * @param threshold
+ *
+ * @private
  */
 function isOkLabClose(color1, color2, threshold = .01) {
     color1 = convertColor(color1, ColorType.OKLAB);

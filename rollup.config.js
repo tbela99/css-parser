@@ -6,7 +6,7 @@ import commonjs from "@rollup/plugin-commonjs";
 
 export default [
     {
-        input: ['src/node/index.ts', 'src/web/index.ts'],
+        input: ['src/node.ts', 'src/web.ts'],
         plugins: [nodeResolve(), commonjs({transformMixedEsModules: true}), json(), typescript()],
         output: [
             {
@@ -17,7 +17,7 @@ export default [
         ]
     },
     {
-        input: 'src/node/index.ts',
+        input: 'src/node.ts',
         plugins: [nodeResolve(), commonjs({transformMixedEsModules: true}), json(), typescript()],
         output: [            
             {
@@ -28,7 +28,7 @@ export default [
         ]
     },
     {
-        input: 'src/web/index.ts',
+        input: 'src/web.ts',
         plugins: [nodeResolve(), commonjs({transformMixedEsModules: true}), json(), typescript()],
         output: [ 
             {
@@ -39,7 +39,7 @@ export default [
         ]
     },
     {
-        input: 'src/node/index.ts',
+        input: 'src/node.ts',
         plugins: [dts()],
         output: {
 

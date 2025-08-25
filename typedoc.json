@@ -1,6 +1,61 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["./src/node/index.ts", "./src/web/index.ts"],
+  "entryPoints": [
+    "./src"
+  ],
+  "entryPointStrategy": "resolve",
+  "navigationLinks": {
+    "Benchmark": "https://tbela99.github.io/css-parser/benchmark/index.html",
+    "Docs": "https://tbela99.github.io/css-parser/docs/",
+    "Playground": "https://tbela99.github.io/css-parser/playground/",
+    "GitHub": "https://github.com/tbela99/css-parser"
+  },
+  "plugin": [
+    "typedoc-material-theme"
+  ],
   "out": "docs",
+  "projectDocuments": [
+    "README.md"
+  ],
+  "groupOrder": [
+    "Functions",
+    "Classes",
+    "TypeAlias",
+    "Enumerations",
+    "*"
+  ],
+  "categoryOrder": [
+    "Functions",
+    "Classes",
+    "TypeAlias",
+    "Enumerations",
+    "*"
+  ],
+  "kindSortOrder": [
+    "Document",
+    "Project",
+    "Module",
+    "Namespace",
+    "Function",
+    "Class",
+    "Constructor",
+    "Property",
+    "Variable",
+    "Accessor",
+    "Method",
+    "Parameter",
+    "TypeParameter",
+    "TypeLiteral",
+    "CallSignature",
+    "ConstructorSignature",
+    "IndexSignature",
+    "GetSignature",
+    "SetSignature",
+    "Enum",
+    "EnumMember",
+    "TypeAlias",
+    "Interface",
+    "Reference"
+  ],
   "json": "docs/typedoc.json"
 }

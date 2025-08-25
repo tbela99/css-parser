@@ -1,14 +1,42 @@
 import type {Location, SourceMapObject} from "../../../@types/index.d.ts";
 import {encode} from "./lib/index.ts";
 
+/**
+ * Source map class
+ * @internal
+ */
 export class SourceMap {
 
+    /**
+     * Last location
+     */
     lastLocation: Location | null = null;
+    /**
+     * Version
+     * @private
+     */
     #version: number = 3;
+    /**
+     * Sources
+     * @private
+     */
     #sources: string[] = [];
+    /**
+     * Map
+     * @private
+     */
     #map: Map<number, number[][]> = new Map;
+    /**
+     * Line
+     * @private
+     */
     #line: number = -1;
 
+    /**
+     * Add a location
+     * @param source
+     * @param original
+     */
     add(source: Location, original: Location) {
 
         if (original.src !== '') {
@@ -50,12 +78,18 @@ export class SourceMap {
         }
     }
 
+    /**
+     * Convert to URL encoded string
+     */
     toUrl(): string {
 
         // /*# sourceMappingURL = ${url} */
         return `data:application/json,${encodeURIComponent(JSON.stringify(this.toJSON()))}`;
     }
 
+    /**
+     * Convert to JSON object
+     */
     toJSON(): SourceMapObject
     {
 

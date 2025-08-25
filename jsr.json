@@ -1,6 +1,6 @@
 {
   "name": "@tbela99/css-parser",
-  "version": "1.3.0",
+  "version": "1.3.1-alpha1",
   "publish": {
     "include": [
       "src",
@@ -36,8 +36,8 @@
     ]
   },
   "exports": {
-    ".": "./src/node/index.ts",
-    "./node": "./src/node/index.ts",
-    "./web": "./src/web/index.ts"
+    ".": "./src/node.ts",
+    "./node": "./src/node.ts",
+    "./web": "./src/web.ts"
   }
 }

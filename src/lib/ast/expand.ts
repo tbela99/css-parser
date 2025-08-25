@@ -8,26 +8,10 @@ import {EnumToken} from "./types.ts";
 /**
  * expand css nesting ast nodes
  * @param ast
+ *
+ * @private
  */
 export function expand(ast: AstNode): AstNode {
-    //
-    // if (![EnumToken.RuleNodeType, EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType].includes(ast.typ)) {
-    //
-    //     return ast;
-    // }
-
-    // if (EnumToken.RuleNodeType == ast.typ) {
-    //
-    //     return <AstRuleStyleSheet>{
-    //         typ: EnumToken.StyleSheetNodeType,
-    //         chi: expandRule(<AstRule>ast)
-    //     }
-    // }
-    //
-    // if (!('chi' in ast)) {
-    //
-    //     return ast;
-    // }
 
     const result = <AstRuleStyleSheet | AstAtRule>{...ast, chi: []};
 
@@ -60,11 +44,6 @@ export function expand(ast: AstNode): AstNode {
             // @ts-ignore
             result.chi.push(<AstAtRule>{...(hasRule ? expand(node) : node)});
         }
-        // else {
-        //
-        //     // @ts-ignore
-        //     result.chi.push(node);
-        // }
     }
 
     return result;
@@ -88,16 +67,6 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                 if (!rule.sel.includes('&')) {
 
                     const selRule: string[][] = splitRule(rule.sel);
-
-                    // if (selRule.length > 1) {
-                    //
-                    //     const r: string = ':is(' + selRule.map(a => a.join('')).join(',') + ')';
-                    //     rule.sel = splitRule(ast.sel).reduce((a: string[], b: string[]): string[] => a.concat([b.join('') + r]), <string[]>[]).join(',');
-                    //
-                    // }
-                    // else {
-
-                    // selRule = splitRule(selRule.reduce((acc, curr) => acc + (acc.length > 0 ? ',' : '') + curr.join(''), ''));
 
                     const arSelf: string = splitRule(ast.sel).filter((r: string[]): boolean => r.every((t: string): boolean => t != ':before' && t != ':after' && !t.startsWith('::'))).reduce((acc: string[], curr: string[]): string[] => acc.concat([curr.join('')]), <string[]>[]).join(',');
 
@@ -154,10 +123,6 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                                             withCompound.push(s);
                                         }
-                                        // else {
-                                        //
-                                        //     withoutCompound.push(s.slice(1));
-                                        // }
                                     }
                                 } else {
 
@@ -170,10 +135,6 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                             }
 
                         }
-                        // else {
-                        //
-                        //     withoutCompound.push(s);
-                        // }
                     }
 
                     const selectors: string[] = [];
@@ -221,13 +182,6 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                             selectors.push(replaceCompound(withCompound[0], selector));
 
                         }
-                        // else {
-                        //
-                        //     for (const w of withCompound) {
-                        //
-                        //         selectors.push(replaceCompound(w, selector));
-                        //     }
-                        // }
                     }
 
                     rule.sel = selectors.reduce((acc, curr) => curr.length == 0 ? acc : acc + (acc.length > 0 ? ',' : '') + curr, '');
@@ -284,11 +238,6 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                             // @ts-ignore
                             astAtRule.chi.push(...expandRule(r));
                         }
-                        // else {
-                        //
-                        //     // @ts-ignore
-                        //     astAtRule.chi.push(r);
-                        // }
                     }
                 }
 
@@ -326,13 +275,6 @@ export function replaceCompound(input: string, replace: string): string {
                         replacement = parseString(replace);
                     }
 
-                    // if (tokens[1].typ == EnumToken.IdenTokenType) {
-                    //
-                    //
-                    //     (t.value as LiteralToken).val = (replacement as Token[]).length == 1 || (!replace.includes(' ') && replace.charAt(0).match(/[:.]/)) ? (tokens[1] as IdentToken).val + replace : replaceCompoundLiteral((tokens[1] as IdentToken).val + '&', replace);
-                    //     tokens.splice(1, 1);
-                    // } else {
-
                     (t.value as LiteralToken).val = replaceCompoundLiteral((t.value as LiteralToken).val, replace);
                     // }
 
@@ -343,10 +285,6 @@ export function replaceCompound(input: string, replace: string): string {
 
                 (t.value as LiteralToken).val = rule.length > 1 ? ':is(' + replace + ')' : replace;
             }
-            // else if ((t.value as LiteralToken).val.length > 1 && (t.value as LiteralToken).val.charAt(0) == '&') {
-            //
-            //     (t.value as LiteralToken).val = replaceCompoundLiteral((t.value as LiteralToken).val, replace);
-            // }
         }
     }
 
@@ -366,10 +304,6 @@ function replaceCompoundLiteral(selector: string, replace: string) {
             tokens.push('&');
             tokens.push('');
         }
-        // else {
-        //
-        //     tokens[tokens.length - 1] += selector.charAt(i);
-        // }
     }
 
     return tokens.sort((a, b) => {
