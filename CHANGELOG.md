@@ -1,10 +1,14 @@
 # Changelog
 
+## v1.3.2
+
+- [x] add missing return type #102
+
 ## v1.3.1
 
-- [x] generate documentation
-- [x] parse input from readable stream
-- [x] add parseFile() and transformFile()
+- [x] generate documentation #100
+- [x] parse input from readable stream #100
+- [x] add parseFile() and transformFile() #100
 - 
 ## v1.3.0
 
