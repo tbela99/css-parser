@@ -649,36 +649,66 @@ declare enum WalkerOptionEnum {
     /**
      * ignore the current node and its children
      */
-    Ignore = 0,
+    Ignore = 1,
     /**
      * stop walking the tree
      */
-    Stop = 1,
+    Stop = 2,
     /**
      * ignore node and process children
      */
-    Children = 2,
+    Children = 4,
     /**
      * ignore children
      */
-    IgnoreChildren = 3
+    IgnoreChildren = 8
 }
 declare enum WalkerValueEvent {
     /**
      * enter node
      */
-    Enter = 0,
+    Enter = 1,
     /**
      * leave node
      */
-    Leave = 1
+    Leave = 2
 }
 /**
  * walk ast nodes
- * @param node
- * @param filter
+ * @param node initial node
+ * @param filter control the walk process
+ * @param reverse walk in reverse order
+ *
+ * ```ts
+ *
+ * import {walk} from '@tbela99/css-parser';
+ *
+ * for (const {node, parent, root} of walk(ast)) {
+ *
+ *     // do something with node
+ * }
+ * ```
+ *
+ * Using a filter to control the walk process:
+ *
+ * ```ts
+ *
+ * import {walk} from '@tbela99/css-parser';
+ *
+ * for (const {node, parent, root} of walk(ast, (node) => {
+ *
+ *     if (node.typ == EnumToken.AstRule && node.sel.includes('html')) {
+ *
+ *         // skip the children of the current node
+ *         return WalkerOptionEnum.IgnoreChildren;
+ *     }
+ * })) {
+ *
+ *     // do something with node
+ * }
+ * ```
  */
-declare function walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResult>;
+declare function walk(node: AstNode, filter?: WalkerFilter | null, reverse?: boolean): Generator<WalkResult>;
 /**
  * walk ast node value tokens
  * @param values
@@ -686,7 +716,7 @@ declare function walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
  * @param filter
  * @param reverse
  */
-declare function walkValues(values: Token[], root?: AstNode | Token | null, filter?: WalkerValueFilter | {
+declare function walkValues(values: Token[], root?: AstNode | Token | null, filter?: WalkerValueFilter | null | {
     event?: WalkerValueEvent;
     fn?: WalkerValueFilter;
     type?: EnumToken | EnumToken[] | ((token: Token) => boolean);
@@ -748,7 +778,7 @@ declare class SourceMap {
  * console.log(declarations);
  * ```
  */
-declare function parseDeclarations(declaration: string): Promise<AstDeclaration[]>;
+declare function parseDeclarations(declaration: string): Promise<Array<AstDeclaration | AstComment>>;
 /**
  * parse css string and return an array of tokens
  * @param src
@@ -1565,6 +1595,8 @@ interface Context<Type> {
  * @param token
  * @param to
  *
+ * @private
+ *
  * <code>
  *
  *     const token = {typ: EnumToken.ColorTokenType, kin: ColorType.HEX, val: '#F00'}
@@ -1980,16 +2012,18 @@ export declare interface ParseInfo {
 
 /**
  * feature walk mode
+ *
+ * @internal
  */
 declare enum FeatureWalkMode {
     /**
      * pre process
      */
-    Pre = 0,
+    Pre = 1,
     /**
      * post process
      */
-    Post = 1
+    Post = 2
 }
 
 /**
@@ -2401,24 +2435,23 @@ interface BorderRadius {
     keywords:   string[];
 }
 
+/**
+ * node walker option
+ */
 export declare type WalkerOption = WalkerOptionEnum | Token | null;
 /**
  * returned value:
- * - WalkerOptionEnum.Ignore: ignore this node and its children
- * - WalkerOptionEnum.Stop: stop walking the tree
- * - WalkerOptionEnum.Children: walk the children and ignore the node itself
- * - WalkerOptionEnum.IgnoreChildren: walk the node and ignore children
+ * - {@link WalkerOptionEnum.Ignore}: ignore this node and its children
+ * - {@link WalkerOptionEnum.Stop}: stop walking the tree
+ * - {@link WalkerOptionEnum.Children}: walk the children and ignore the current node
+ * - {@link WalkerOptionEnum.IgnoreChildren}: walk the node and ignore children
  */
 export declare type WalkerFilter = (node: AstNode) => WalkerOption;
 
 /**
- * returned value:
- * - 'ignore': ignore this node and its children
- * - 'stop': stop walking the tree
- * - 'children': walk the children and ignore the node itself
- * - 'ignore-children': walk the node and ignore children
+ * filter nod
  */
-export declare type WalkerValueFilter = (node: AstNode | Token, parent?: FunctionToken | ParensToken | BinaryExpressionToken, event?: WalkerValueEvent) => WalkerOption | null;
+export declare type WalkerValueFilter = (node: AstNode | Token, parent?: AstNode | Token | null, event?: WalkerValueEvent) => WalkerOption | null;
 
 export declare interface WalkResult {
     node: AstNode;
@@ -2430,9 +2463,8 @@ export declare interface WalkAttributesResult {
     value: Token;
     previousValue: Token | null;
     nextValue: Token | null;
-    root?: AstNode;
+    root?: AstNode | Token | null;
     parent: AstNode | Token | null;
-    list: Token[] | null;
 }
 
 /**
@@ -2695,13 +2727,9 @@ export declare interface MinifyFeature {
      */
     ordering: number;
     /**
-     * use in pre process
+     * process mode
      */
-    preProcess: boolean;
-    /**
-     * use in post process
-     */
-    postProcess: boolean;
+    processMode: FeatureWalkMode;
     /**
      * register feature
      * @param options
@@ -3043,7 +3071,8 @@ export declare interface SourceMapObject {
 /**
  * return the directory name of a path
  * @param path
- * @internal
+ *
+ * @private
  */
 declare function dirname(path: string): string;
 /**
@@ -3060,18 +3089,14 @@ declare function resolve(url: string, currentDirectory: string, cwd?: string): {
 };
 
 /**
- * node module entry point
- * @module node
- */
-
-/**
  * load file or url as stream
  * @param url
  * @param currentFile
+ * @throws Error file not found
  *
  * @private
  */
-declare function getStream(url: string, currentFile?: string): Promise<ReadableStream<string>>;
+declare function getStream(url: string, currentFile?: string): Promise<ReadableStream<Uint8Array> | string>;
 /**
  * render ast tree
  * @param data
@@ -3083,13 +3108,21 @@ declare function getStream(url: string, currentFile?: string): Promise<ReadableS
  *
  *  import {render, ColorType} from '@tbela99/css-parser';
  *
- *  // remote file
- * let result = render(ast);
+ *  const css = 'body { color: color(from hsl(0 100% 50%) xyz x y z); }';
+ *  const parseResult = await parse(css);
+ *
+ * let renderResult = render(parseResult.ast);
  * console.log(result.code);
  *
- * // local file
- * result = await parseFile(ast, {beatify: true, convertColor: ColorType.SRGB});
- * console.log(result.code);
+ * // body{color:red}
+ *
+ *
+ * renderResult = render(parseResult.ast, {beautify: true, convertColor: ColorType.SRGB});
+ * console.log(renderResult.code);
+ *
+ * // body {
+ * //  color: color(srgb 1 0 0)
+ * // }
  * ```
  */
 declare function render(data: AstNode, options?: RenderOptions): RenderResult;
@@ -3097,6 +3130,8 @@ declare function render(data: AstNode, options?: RenderOptions): RenderResult;
  * parse css file
  * @param file url or path
  * @param options
+ *
+ * @throws Error file not found
  *
  * Example:
  *
@@ -3123,11 +3158,11 @@ declare function parseFile(file: string, options?: ParserOptions): Promise<Parse
  *
  * ```ts
  *
- * import {transform} from '@tbela99/css-parser';
+ * import {parse} from '@tbela99/css-parser';
  *
  *  // css string
- *  let result = await transform(css);
- *  console.log(result.code);
+ *  let result = await parse(css);
+ *  console.log(result.ast);
  * ```
  *
  * Example using stream
@@ -3157,11 +3192,13 @@ declare function parseFile(file: string, options?: ParserOptions): Promise<Parse
  *  console.log(result.ast);
  * ```
  */
-declare function parse(stream: string | ReadableStream<string>, opt?: ParserOptions): Promise<ParseResult>;
+declare function parse(stream: string | ReadableStream<Uint8Array>, opt?: ParserOptions): Promise<ParseResult>;
 /**
  * transform css file
  * @param file url or path
  * @param options
+ *
+ * @throws Error file not found
  *
  * Example:
  *
@@ -3222,7 +3259,7 @@ declare function transformFile(file: string, options?: TransformOptions): Promis
  *  console.log(result.code);
  * ```
  */
-declare function transform(css: string | ReadableStream<string>, options?: TransformOptions): Promise<TransformResult>;
+declare function transform(css: string | ReadableStream<Uint8Array>, options?: TransformOptions): Promise<TransformResult>;
 
 export { ColorType, EnumToken, FeatureWalkMode, SourceMap, ValidationLevel, WalkerOptionEnum, WalkerValueEvent, convertColor, dirname, expand, getStream, isOkLabClose, mathFuncs, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, parseTokens, render, renderToken, resolve, transform, transformFile, transformFunctions, walk, walkValues };
 export type { AddToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyFrameRule, AstKeyframAtRule, AstKeyframeRule, AstNode, AstRule, AstRuleList, AstRuleStyleSheet, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ConstraintsMapping, ContainMatchToken, Context, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionImageToken, FunctionToken, FunctionURLToken, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, ImportantToken, IncludeMatchToken, InvalidAttrToken, InvalidClassSelectorToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, Location, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureAndToken, MediaFeatureNotToken, MediaFeatureOnlyToken, MediaFeatureOrToken, MediaFeatureToken, MediaQueryConditionToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, MulToken, NameSpaceAttributeToken, NestingSelectorToken, NextSiblingCombinatorToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo, ParseResult, ParseResultStats, ParseTokenOptions, ParserOptions, PercentageToken, Position, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token, TokenizeResult, TransformOptions, TransformResult, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, Value, VariableScopeInfo, VisitorNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerValueFilter, WhitespaceToken };

@@ -21,28 +21,37 @@ import './lib/validation/syntax.js';
 import { resolve, matchUrl, dirname } from './lib/fs/resolve.js';
 import { Readable } from 'node:stream';
 import { createReadStream } from 'node:fs';
+import { lstat } from 'node:fs/promises';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 
-/**
- * node module entry point
- * @module node
- */
 /**
  * load file or url as stream
  * @param url
  * @param currentFile
+ * @throws Error file not found
  *
  * @private
  */
 async function getStream(url, currentFile = '.') {
     const resolved = resolve(url, currentFile);
     // @ts-ignore
-    return matchUrl.test(resolved.absolute) ? fetch(resolved.absolute).then((response) => {
-        if (!response.ok) {
-            throw new Error(`${response.status} ${response.statusText} ${response.url}`);
+    if (matchUrl.test(resolved.absolute)) {
+        return fetch(resolved.absolute).then((response) => {
+            if (!response.ok) {
+                throw new Error(`${response.status} ${response.statusText} ${response.url}`);
+            }
+            return response.body;
+        });
+    }
+    try {
+        const stats = await lstat(resolved.absolute);
+        if (stats.isFile()) {
+            return Readable.toWeb(createReadStream(resolved.absolute));
         }
-        return response.body;
-    }) : Readable.toWeb(createReadStream(resolved.absolute));
+    }
+    catch (error) {
+    }
+    throw new Error(`File not found: '${resolved.absolute || url}'`);
 }
 /**
  * render ast tree
@@ -55,13 +64,21 @@ async function getStream(url, currentFile = '.') {
  *
  *  import {render, ColorType} from '@tbela99/css-parser';
  *
- *  // remote file
- * let result = render(ast);
+ *  const css = 'body { color: color(from hsl(0 100% 50%) xyz x y z); }';
+ *  const parseResult = await parse(css);
+ *
+ * let renderResult = render(parseResult.ast);
  * console.log(result.code);
  *
- * // local file
- * result = await parseFile(ast, {beatify: true, convertColor: ColorType.SRGB});
- * console.log(result.code);
+ * // body{color:red}
+ *
+ *
+ * renderResult = render(parseResult.ast, {beautify: true, convertColor: ColorType.SRGB});
+ * console.log(renderResult.code);
+ *
+ * // body {
+ * //  color: color(srgb 1 0 0)
+ * // }
  * ```
  */
 function render(data, options = {}) {
@@ -71,6 +88,8 @@ function render(data, options = {}) {
  * parse css file
  * @param file url or path
  * @param options
+ *
+ * @throws Error file not found
  *
  * Example:
  *
@@ -99,11 +118,11 @@ async function parseFile(file, options = {}) {
  *
  * ```ts
  *
- * import {transform} from '@tbela99/css-parser';
+ * import {parse} from '@tbela99/css-parser';
  *
  *  // css string
- *  let result = await transform(css);
- *  console.log(result.code);
+ *  let result = await parse(css);
+ *  console.log(result.ast);
  * ```
  *
  * Example using stream
@@ -145,6 +164,8 @@ async function parse(stream, opt = {}) {
  * transform css file
  * @param file url or path
  * @param options
+ *
+ * @throws Error file not found
  *
  * Example:
  *

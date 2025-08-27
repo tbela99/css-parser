@@ -45,10 +45,10 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
         options.features.sort((a, b) => a.ordering - b.ordering);
     }
     for (const feature of options.features) {
-        if (feature.preProcess) {
+        if (feature.processMode & FeatureWalkMode.Pre) {
             preprocess = true;
         }
-        if (feature.postProcess) {
+        if (feature.processMode & FeatureWalkMode.Post) {
             postprocess = true;
         }
     }
@@ -64,7 +64,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                 continue;
             }
             for (const feature of options.features) {
-                if (!feature.preProcess) {
+                if ((feature.processMode & FeatureWalkMode.Pre) === 0) {
                     continue;
                 }
                 feature.run(parent, options, parent.parent ?? ast, context, FeatureWalkMode.Pre);
@@ -80,7 +80,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
             }
         }
         for (const feature of options.features) {
-            if (feature.preProcess && 'cleanup' in feature) {
+            if ((feature.processMode & FeatureWalkMode.Pre) && 'cleanup' in feature) {
                 // @ts-ignore
                 feature.cleanup(ast, options, context, FeatureWalkMode.Pre);
             }
@@ -95,7 +95,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
         }
         if (postprocess) {
             for (const feature of options.features) {
-                if (!feature.postProcess) {
+                if ((feature.processMode & FeatureWalkMode.Post) === 0) {
                     continue;
                 }
                 feature.run(parent, options, parent.parent ?? ast, context, FeatureWalkMode.Post);
@@ -113,7 +113,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
     }
     if (postprocess) {
         for (const feature of options.features) {
-            if (feature.postProcess && 'cleanup' in feature) {
+            if (feature.processMode & FeatureWalkMode.Post && 'cleanup' in feature) {
                 // @ts-ignore
                 feature.cleanup(ast, options, context, FeatureWalkMode.Post);
             }

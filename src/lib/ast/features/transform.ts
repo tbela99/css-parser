@@ -13,6 +13,7 @@ import {consumeWhitespace} from "../../validation/utils/index.ts";
 import {compute} from "../transform/compute.ts";
 import {filterValues, renderToken} from "../../renderer/index.ts";
 import {eqMatrix} from "../transform/minify.ts";
+import {FeatureWalkMode} from "./type.ts";
 
 export class TransformCssFeature {
 
@@ -20,12 +21,8 @@ export class TransformCssFeature {
         return 4;
     }
 
-    get preProcess(): boolean {
-        return false;
-    }
-
-    get postProcess(): boolean {
-        return true;
+    get processMode(): FeatureWalkMode {
+        return FeatureWalkMode.Post;
     }
 
     static register(options: ParserOptions): void {

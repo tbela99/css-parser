@@ -11,7 +11,7 @@ import {
     srgb2lsrgbvalues
 } from "./srgb.ts";
 import type {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
-import {color2srgbvalues, getNumber} from "./color.ts";
+import {color2srgbvalues, getNumber, toPrecisionValue} from "./color.ts";
 import {ColorType, EnumToken} from "../../ast/index.ts";
 import {getOKLCHComponents} from "./oklch.ts";
 import {lchvalues2labvalues} from "./lab.ts";
@@ -119,9 +119,9 @@ function oklabToken(values: number[]): ColorToken | null {
 
     const chi: Token[] = <Token[]>[
 
-        {typ: EnumToken.NumberTokenType, val: values[0]},
-        {typ: EnumToken.NumberTokenType, val: values[1]},
-        {typ: EnumToken.NumberTokenType, val: values[2]},
+        {typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0])},
+        {typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[1])},
+        {typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[2])},
     ];
 
     if (values.length == 4) {

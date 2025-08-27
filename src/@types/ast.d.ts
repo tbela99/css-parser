@@ -41,19 +41,40 @@ export declare interface Location {
 
 export declare interface BaseToken {
 
+    /**
+     * token type
+     */
     typ: EnumToken;
+    /**
+     * location info
+     */
     loc?: Location;
-    tokens?: Token[];
+    /**
+     * prelude or selector tokens
+     */
+    tokens?: Token[] | null;
+    /**
+     * parent node
+     */
     parent?: AstRuleList;
+    /**
+     * private
+     */
     validSyntax?: boolean;
 }
 
+/**
+ * comment node
+ */
 export declare interface AstComment extends BaseToken {
 
     typ: EnumToken.CommentNodeType | EnumToken.CDOCOMMNodeType,
     val: string;
 }
 
+/**
+ * declaration node
+ */
 export declare interface AstDeclaration extends BaseToken {
 
     nam: string,
@@ -61,6 +82,9 @@ export declare interface AstDeclaration extends BaseToken {
     typ: EnumToken.DeclarationNodeType
 }
 
+/**
+ * rule node
+ */
 export declare interface AstRule extends BaseToken {
 
     typ: EnumToken.RuleNodeType;
@@ -70,6 +94,9 @@ export declare interface AstRule extends BaseToken {
     raw?: RawSelectorTokens | null;
 }
 
+/**
+ * invalid rule node
+ */
 export declare interface AstInvalidRule extends BaseToken {
 
     typ: EnumToken.InvalidRuleTokenType;
@@ -77,12 +104,18 @@ export declare interface AstInvalidRule extends BaseToken {
     chi: Array<AstNode>;
 }
 
+/**
+ * invalid declaration node
+ */
 export declare interface AstInvalidDeclaration extends BaseToken {
 
     typ: EnumToken.InvalidDeclarationNodeType;
     val: Array<AstNode>;
 }
 
+/**
+ * invalid at rule node
+ */
 export declare interface AstInvalidAtRule extends BaseToken {
 
     typ: EnumToken.InvalidAtRuleTokenType;
@@ -90,6 +123,9 @@ export declare interface AstInvalidAtRule extends BaseToken {
     chi?: Array<AstNode>;
 }
 
+/**
+ * keyframe rule node
+ */
 export declare interface AstKeyFrameRule extends BaseToken {
 
     typ: EnumToken.KeyFrameRuleNodeType;
@@ -100,8 +136,16 @@ export declare interface AstKeyFrameRule extends BaseToken {
     tokens?: Token[]
 }
 
+/**
+ * raw selector tokens
+ */
 export declare type RawSelectorTokens = string[][];
 
+/**
+ * optimized selector
+ *
+ * @private
+ */
 export declare interface OptimizedSelector {
     match: boolean;
     optimized: string[];
@@ -109,6 +153,11 @@ export declare interface OptimizedSelector {
     reducible: boolean;
 }
 
+/**
+ * optimized selector token
+ *
+ * @private
+ */
 export declare interface OptimizedSelectorToken {
     match: boolean;
     optimized: Token[];
@@ -116,6 +165,9 @@ export declare interface OptimizedSelectorToken {
     reducible: boolean;
 }
 
+/**
+ * at rule node
+ */
 export declare interface AstAtRule extends BaseToken {
 
     typ: EnumToken.AtRuleNodeType,
@@ -124,6 +176,9 @@ export declare interface AstAtRule extends BaseToken {
     chi?: Array<AstDeclaration | AstInvalidDeclaration | AstComment> | Array<AstRule | AstComment>
 }
 
+/**
+ * keyframe rule node
+ */
 export declare interface AstKeyframeRule extends BaseToken {
 
     typ: EnumToken.KeyFrameRuleNodeType;
@@ -133,6 +188,9 @@ export declare interface AstKeyframeRule extends BaseToken {
     raw?: RawSelectorTokens;
 }
 
+/**
+ * keyframe at rule node
+ */
 export declare interface AstKeyframAtRule extends BaseToken {
 
     typ: EnumToken.KeyframeAtRuleNodeType,
@@ -141,17 +199,27 @@ export declare interface AstKeyframAtRule extends BaseToken {
     chi: Array<AstKeyframeRule | AstComment>;
 }
 
+/**
+ * rule list node
+ */
 export declare interface AstRuleList extends BaseToken {
 
     typ: EnumToken.StyleSheetNodeType | EnumToken.RuleNodeType | EnumToken.AtRuleNodeType | EnumToken.KeyframeAtRuleNodeType | EnumToken.KeyFrameRuleNodeType | EnumToken.InvalidRuleTokenType | EnumToken.InvalidAtRuleTokenType,
     chi: Array<BaseToken | AstComment>;
 }
 
+/**
+ * rule list node
+ */
 export declare interface AstRuleStyleSheet extends AstRuleList {
     typ: EnumToken.StyleSheetNodeType,
-    chi: Array<AstRuleList | AstComment>
+    chi: Array<AstRuleList | AstComment>;
+    tokens?: null;
 }
 
+/**
+ * ast node
+ */
 export declare type AstNode =
     AstRuleStyleSheet
     | AstRuleList

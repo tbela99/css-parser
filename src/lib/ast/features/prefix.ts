@@ -26,6 +26,7 @@ import type {ValidationConfiguration} from "../../../@types/validation.d.ts";
 import {renderToken} from "../../renderer/index.ts";
 import {funcLike} from "../../syntax/color/utils/index.ts";
 import {evaluateSyntax} from "../../validation/syntax.ts";
+import {FeatureWalkMode} from "./type.ts";
 
 const config: ValidationConfiguration = getSyntaxConfig();
 
@@ -95,12 +96,8 @@ export class ComputePrefixFeature {
         return 2;
     }
 
-    get preProcess(): boolean {
-        return true;
-    }
-
-    get postProcess(): boolean {
-        return false;
+    get processMode(): FeatureWalkMode {
+        return FeatureWalkMode.Pre;
     }
 
     static register(options: ParserOptions) {

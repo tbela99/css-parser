@@ -1,8 +1,3 @@
-/**
- * web module entry point
- * @module web
- */
-
 import type {
     AstNode,
     ParseInfo,
@@ -63,7 +58,7 @@ export {dirname, resolve};
  *
  * @private
  */
-export async function getStream(url: string, currentFile: string = '.'): Promise<ReadableStream<string>> {
+export async function getStream(url: string, currentFile: string = '.'): Promise<ReadableStream<Uint8Array>> {
 
     let t: URL;
 
@@ -93,9 +88,32 @@ export async function getStream(url: string, currentFile: string = '.'): Promise
 }
 
 /**
- * render ast node
+ * render ast tree
  * @param data
  * @param options
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ *  import {render, ColorType} from '@tbela99/css-parser';
+ *
+ *  const css = 'body { color: color(from hsl(0 100% 50%) xyz x y z); }';
+ *  const parseResult = await parse(css);
+ *
+ * let renderResult = render(parseResult.ast);
+ * console.log(result.code);
+ *
+ * // body{color:red}
+ *
+ *
+ * renderResult = render(parseResult.ast, {beautify: true, convertColor: ColorType.SRGB});
+ * console.log(renderResult.code);
+ *
+ * // body {
+ * //  color: color(srgb 1 0 0)
+ * // }
+ * ```
  */
 export function render(data: AstNode, options: RenderOptions = {}): RenderResult {
 
@@ -107,10 +125,28 @@ export function render(data: AstNode, options: RenderOptions = {}): RenderResult
     }));
 }
 
+
 /**
  * parse css file
  * @param file url or path
  * @param options
+ *
+ * @throws Error file not found
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ *  import {parseFile} from '@tbela99/css-parser/web';
+ *
+ *  // remote file
+ * let result = await parseFile('https://docs.deno.com/styles.css');
+ * console.log(result.ast);
+ *
+ * // local file
+ * result = await parseFile('./css/styles.css');
+ * console.log(result.ast);
+ * ```
  */
 export async function parseFile(file: string, options: ParserOptions = {}): Promise<ParseResult> {
 
@@ -121,8 +157,31 @@ export async function parseFile(file: string, options: ParserOptions = {}): Prom
  * parse css
  * @param stream
  * @param opt
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser/web';
+ *
+ *  // css string
+ *  const result = await parse(css);
+ *  console.log(result.ast);
+ * ```
+ *
+ * Example using fetch and readable stream
+ *
+ * ```ts
+ *
+ *  import {parse} from '@tbela99/css-parser/web';
+ *
+ *  const response = await fetch('https://docs.deno.com/styles.css');
+ *  const result = await parse(response.body, {beautify: true});
+ *
+ *  console.log(result.ast);
+ * ```
  */
-export async function parse(stream: string | ReadableStream<string>, opt: ParserOptions = {}): Promise<ParseResult> {
+export async function parse(stream: string | ReadableStream<Uint8Array>, opt: ParserOptions = {}): Promise<ParseResult> {
 
     return doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
         stream,
@@ -184,7 +243,7 @@ export async function transformFile(file: string, options: TransformOptions = {}
  *  console.log(result.code);
  * ```
  */
-export async function transform(css: string | ReadableStream<string>, options: TransformOptions = {}): Promise<TransformResult> {
+export async function transform(css: string | ReadableStream<Uint8Array>, options: TransformOptions = {}): Promise<TransformResult> {
 
     options = {minify: true, removeEmpty: true, removeCharset: true, ...options};
 

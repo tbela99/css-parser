@@ -279,13 +279,9 @@ export declare interface MinifyFeature {
      */
     ordering: number;
     /**
-     * use in pre process
+     * process mode
      */
-    preProcess: boolean;
-    /**
-     * use in post process
-     */
-    postProcess: boolean;
+    processMode: FeatureWalkMode;
     /**
      * register feature
      * @param options

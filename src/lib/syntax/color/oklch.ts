@@ -1,6 +1,6 @@
 import type {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {getComponents} from "./utils/index.ts";
-import {color2srgbvalues, getAngle, getNumber, toPrecisionAngle} from "./color.ts";
+import {color2srgbvalues, getAngle, getNumber, toPrecisionAngle, toPrecisionValue} from "./color.ts";
 import {ColorType, EnumToken} from "../../ast/index.ts";
 import {labvalues2lchvalues} from "./lch.ts";
 import {
@@ -117,8 +117,8 @@ function oklchToken(values: number[]): ColorToken | null {
 
     const chi: Token[] = <Token[]>[
 
-        {typ: EnumToken.NumberTokenType, val: values[0]},
-        {typ: EnumToken.NumberTokenType, val: values[1]},
+        {typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0])},
+        {typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[1])},
         {typ: EnumToken.NumberTokenType, val: values[2]},
     ];
 
@@ -176,22 +176,40 @@ export function cmyk2oklchvalues(token: ColorToken): number[] {
     return values == null ? null : srgb2oklch(...values);
 }
 
-export function lab2oklchvalues(token: ColorToken): number[] {
+export function lab2oklchvalues(token: ColorToken): number[] | null {
+
+    const values: number[] | null = lab2oklabvalues(token);
+
+    if (values == null) {
+        return null;
+    }
 
     // @ts-ignore
-    return labvalues2lchvalues(...lab2oklabvalues(token));
+    return labvalues2lchvalues(...values);
 }
 
-export function lch2oklchvalues(token: ColorToken): number[] {
+export function lch2oklchvalues(token: ColorToken): number[] | null {
+
+    const values: number[] | null = lch2oklabvalues(token);
+
+    if (values == null) {
+        return null;
+    }
 
     // @ts-ignore
-    return labvalues2lchvalues(...lch2oklabvalues(token));
+    return labvalues2lchvalues(...values);
 }
 
-export function oklab2oklchvalues(token: ColorToken): number[] {
+export function oklab2oklchvalues(token: ColorToken): number[] | null {
+
+    const values: number[] | null = getOKLABComponents(token);
+
+    if (values == null) {
+        return null;
+    }
 
     // @ts-ignore
-    return labvalues2lchvalues(...getOKLABComponents(token));
+    return labvalues2lchvalues(...values);
 }
 
 export function srgb2oklch(r: number, g: number, blue: number, alpha: number | null): number[] {

@@ -7,6 +7,7 @@ import { splitRule } from '../minify.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
+import { FeatureWalkMode } from './type.js';
 
 function inlineExpression(token) {
     const result = [];
@@ -54,11 +55,8 @@ class InlineCssVariablesFeature {
     get ordering() {
         return 0;
     }
-    get preProcess() {
-        return true;
-    }
-    get postProcess() {
-        return false;
+    get processMode() {
+        return FeatureWalkMode.Pre;
     }
     static register(options) {
         if (options.inlineCssVariables) {

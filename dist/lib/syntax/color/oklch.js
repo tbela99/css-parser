@@ -1,6 +1,6 @@
 import './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { color2srgbvalues, toPrecisionAngle, getNumber, getAngle } from './color.js';
+import { color2srgbvalues, toPrecisionAngle, toPrecisionValue, getNumber, getAngle } from './color.js';
 import { srgb2oklab, lch2oklabvalues, getOKLABComponents, lab2oklabvalues, hwb2oklabvalues, hsl2oklabvalues, rgb2oklabvalues, hex2oklabvalues } from './oklab.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import '../../ast/minify.js';
@@ -76,8 +76,8 @@ function color2oklchToken(token) {
 function oklchToken(values) {
     values[2] = toPrecisionAngle(values[2]);
     const chi = [
-        { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.NumberTokenType, val: values[1] },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[1]) },
         { typ: EnumToken.NumberTokenType, val: values[2] },
     ];
     if (values.length == 4) {
@@ -119,16 +119,28 @@ function cmyk2oklchvalues(token) {
     return values == null ? null : srgb2oklch(...values);
 }
 function lab2oklchvalues(token) {
+    const values = lab2oklabvalues(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return labvalues2lchvalues(...lab2oklabvalues(token));
+    return labvalues2lchvalues(...values);
 }
 function lch2oklchvalues(token) {
+    const values = lch2oklabvalues(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return labvalues2lchvalues(...lch2oklabvalues(token));
+    return labvalues2lchvalues(...values);
 }
 function oklab2oklchvalues(token) {
+    const values = getOKLABComponents(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return labvalues2lchvalues(...getOKLABComponents(token));
+    return labvalues2lchvalues(...values);
 }
 function srgb2oklch(r, g, blue, alpha) {
     // @ts-ignore

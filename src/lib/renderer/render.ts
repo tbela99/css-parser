@@ -386,7 +386,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
  */
 export function renderToken(token: Token, options?: RenderOptions, cache?: {
     [key: string]: any
-} , reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string;
+}, reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string;
 
 /**
  * render ast token

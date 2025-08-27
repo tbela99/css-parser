@@ -3,6 +3,7 @@
 var process = require('node:process');
 var node_stream = require('node:stream');
 var node_fs = require('node:fs');
+var promises = require('node:fs/promises');
 
 /**
  * syntax validation enum
@@ -951,12 +952,15 @@ function color2lchToken(token) {
 function lchToken(values) {
     values[2] = toPrecisionAngle(values[2]);
     const chi = [
-        { typ: exports.EnumToken.NumberTokenType, val: values[0] },
-        { typ: exports.EnumToken.NumberTokenType, val: values[1] },
+        { typ: exports.EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
+        { typ: exports.EnumToken.NumberTokenType, val: toPrecisionValue(values[1]) },
         { typ: exports.EnumToken.NumberTokenType, val: values[2] },
     ];
     if (values.length == 4) {
-        chi.push({ typ: exports.EnumToken.LiteralTokenType, val: '/' }, { typ: exports.EnumToken.PercentageTokenType, val: values[3] * 100 });
+        chi.push({ typ: exports.EnumToken.LiteralTokenType, val: '/' }, {
+            typ: exports.EnumToken.PercentageTokenType,
+            val: values[3] * 100
+        });
     }
     return {
         typ: exports.EnumToken.ColorTokenType,
@@ -1219,8 +1223,8 @@ function color2oklchToken(token) {
 function oklchToken(values) {
     values[2] = toPrecisionAngle(values[2]);
     const chi = [
-        { typ: exports.EnumToken.NumberTokenType, val: values[0] },
-        { typ: exports.EnumToken.NumberTokenType, val: values[1] },
+        { typ: exports.EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
+        { typ: exports.EnumToken.NumberTokenType, val: toPrecisionValue(values[1]) },
         { typ: exports.EnumToken.NumberTokenType, val: values[2] },
     ];
     if (values.length == 4) {
@@ -1262,16 +1266,28 @@ function cmyk2oklchvalues(token) {
     return values == null ? null : srgb2oklch(...values);
 }
 function lab2oklchvalues(token) {
+    const values = lab2oklabvalues(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return labvalues2lchvalues(...lab2oklabvalues(token));
+    return labvalues2lchvalues(...values);
 }
 function lch2oklchvalues(token) {
+    const values = lch2oklabvalues(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return labvalues2lchvalues(...lch2oklabvalues(token));
+    return labvalues2lchvalues(...values);
 }
 function oklab2oklchvalues(token) {
+    const values = getOKLABComponents(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return labvalues2lchvalues(...getOKLABComponents(token));
+    return labvalues2lchvalues(...values);
 }
 function srgb2oklch(r, g, blue, alpha) {
     // @ts-ignore
@@ -1371,9 +1387,9 @@ function color2oklabToken(token) {
 }
 function oklabToken(values) {
     const chi = [
-        { typ: exports.EnumToken.NumberTokenType, val: values[0] },
-        { typ: exports.EnumToken.NumberTokenType, val: values[1] },
-        { typ: exports.EnumToken.NumberTokenType, val: values[2] },
+        { typ: exports.EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
+        { typ: exports.EnumToken.NumberTokenType, val: toPrecisionValue(values[1]) },
+        { typ: exports.EnumToken.NumberTokenType, val: toPrecisionValue(values[2]) },
     ];
     if (values.length == 4) {
         chi.push({ typ: exports.EnumToken.LiteralTokenType, val: '/' }, {
@@ -1589,9 +1605,9 @@ function color2labToken(token) {
 }
 function labToken(values) {
     const chi = [
-        { typ: exports.EnumToken.NumberTokenType, val: values[0] },
-        { typ: exports.EnumToken.NumberTokenType, val: values[1] },
-        { typ: exports.EnumToken.NumberTokenType, val: values[2] },
+        { typ: exports.EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
+        { typ: exports.EnumToken.NumberTokenType, val: toPrecisionValue(values[1]) },
+        { typ: exports.EnumToken.NumberTokenType, val: toPrecisionValue(values[2]) },
     ];
     if (values.length == 4) {
         chi.push({ typ: exports.EnumToken.LiteralTokenType, val: '/' }, {
@@ -2492,12 +2508,15 @@ function color2HslToken(token) {
 function hslToken(values) {
     values[0] = toPrecisionAngle(values[0] * 360);
     const chi = [
-        { typ: exports.EnumToken.NumberTokenType, val: values[0] },
-        { typ: exports.EnumToken.PercentageTokenType, val: values[1] * 100 },
-        { typ: exports.EnumToken.PercentageTokenType, val: values[2] * 100 },
+        { typ: exports.EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
+        { typ: exports.EnumToken.PercentageTokenType, val: toPrecisionValue(values[1]) * 100 },
+        { typ: exports.EnumToken.PercentageTokenType, val: toPrecisionValue(values[2]) * 100 },
     ];
     if (values.length == 4 && values[3] != 1) {
-        chi.push({ typ: exports.EnumToken.LiteralTokenType, val: '/' }, { typ: exports.EnumToken.PercentageTokenType, val: values[3] * 100 });
+        chi.push({ typ: exports.EnumToken.LiteralTokenType, val: '/' }, {
+            typ: exports.EnumToken.PercentageTokenType,
+            val: values[3] * 100
+        });
     }
     return {
         typ: exports.EnumToken.ColorTokenType,
@@ -2563,12 +2582,20 @@ function hwb2hslvalues(token) {
     return hsv2hsl(...hwb2hsv(...Object.values(hslvalues(token))));
 }
 function lab2hslvalues(token) {
+    const values = lab2rgbvalues(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return rgbvalues2hslvalues(...lab2rgbvalues(token));
+    return rgbvalues2hslvalues(...values);
 }
 function lch2hslvalues(token) {
+    const values = lch2rgbvalues(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return rgbvalues2hslvalues(...lch2rgbvalues(token));
+    return rgbvalues2hslvalues(...values);
 }
 function oklab2hslvalues(token) {
     const t = oklab2srgbvalues(token);
@@ -2674,8 +2701,8 @@ function hwbToken(values) {
     values[0] = toPrecisionAngle(values[0] * 360);
     const chi = [
         { typ: exports.EnumToken.NumberTokenType, val: values[0] },
-        { typ: exports.EnumToken.PercentageTokenType, val: values[1] * 100 },
-        { typ: exports.EnumToken.PercentageTokenType, val: values[2] * 100 },
+        { typ: exports.EnumToken.PercentageTokenType, val: toPrecisionValue(values[1]) * 100 },
+        { typ: exports.EnumToken.PercentageTokenType, val: toPrecisionValue(values[2]) * 100 },
     ];
     if (values.length == 4) {
         chi.push({ typ: exports.EnumToken.LiteralTokenType, val: '/' }, {
@@ -4058,11 +4085,14 @@ function cmyktoken(values) {
         chi: values.reduce((acc, curr, index) => index < 4 ? [...acc, {
                 typ: exports.EnumToken.PercentageTokenType,
                 // @ts-ignore
-                val: curr * 100
+                val: toPrecisionValue(curr) * 100
             }] : [...acc, {
                 typ: exports.EnumToken.LiteralTokenType,
                 val: '/'
-            }, { typ: exports.EnumToken.PercentageTokenType, val: curr * 100 }], []),
+            }, {
+                typ: exports.EnumToken.PercentageTokenType,
+                val: toPrecisionValue(curr) * 100
+            }], []),
         kin: exports.ColorType.DEVICE_CMYK
     };
 }
@@ -4121,10 +4151,261 @@ function xyz2la98rgb(x, y, z, a = null) {
     return multiplyMatrices(M, [x, y, z]).concat(a == null || a == 1 ? [] : [a]);
 }
 
+const epsilon = 1e-5;
+function identity() {
+    return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+}
+function pLength(point) {
+    return Math.sqrt(point[0] * point[0] + point[1] * point[1] + point[2] * point[2]);
+}
+function normalize(point) {
+    const [x, y, z] = point;
+    const norm = Math.sqrt(point[0] * point[0] + point[1] * point[1] + point[2] * point[2]);
+    return norm === 0 ? [0, 0, 0] : [x / norm, y / norm, z / norm];
+}
+function dot(point1, point2) {
+    if (point1.length === 4 && point2.length === 4) {
+        return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2] + point1[3] * point2[3];
+    }
+    return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2];
+}
+function multiply(matrixA, matrixB) {
+    let result = new Array(16).fill(0);
+    for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+            for (let k = 0; k < 4; k++) {
+                // Utiliser l'indexation linéaire pour accéder aux éléments
+                // Pour une matrice 4x4, l'index est (row * 4 + col)
+                result[j * 4 + i] += matrixA[k * 4 + i] * matrixB[j * 4 + k];
+            }
+        }
+    }
+    return result;
+}
+function inverse(matrix) {
+    // Create augmented matrix [matrix | identity]
+    let augmented = [
+        1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1,
+        1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1
+    ];
+    // Gaussian elimination with partial pivoting
+    for (let col = 0; col < 4; col++) {
+        // Find pivot row with maximum absolute value
+        let maxRow = col;
+        let maxVal = Math.abs(augmented[col * 4 + col]);
+        for (let row = col + 1; row < 4; row++) {
+            let val = Math.abs(augmented[row * 4 + col]);
+            if (val > maxVal) {
+                maxVal = val;
+                maxRow = row;
+            }
+        }
+        // Check for singularity
+        if (maxVal < 1e-5) {
+            return null;
+        }
+        // Swap rows if necessary
+        if (maxRow !== col) {
+            [augmented[col], augmented[maxRow]] = [augmented[maxRow], augmented[col]];
+        }
+        // Scale pivot row to make pivot element 1
+        let pivot = augmented[col * 4 + col];
+        for (let j = 0; j < 8; j++) {
+            augmented[col * 4 + j] /= pivot;
+        }
+        // Eliminate column in other rows
+        for (let row = 0; row < 4; row++) {
+            if (row !== col) {
+                let factor = augmented[row * 4 + col];
+                for (let j = 0; j < 8; j++) {
+                    augmented[row * 4 + j] -= factor * augmented[col * 4 + j];
+                }
+            }
+        }
+    }
+    // Extract the inverse from the right side of the augmented matrix
+    return augmented.slice(0, 16);
+}
+// function transpose(matrix: Matrix): Matrix {
+//     // Crée une nouvelle matrice vide 4x4
+//     // @ts-ignore
+//     let transposed: Matrix = [[], [], [], []] as Matrix;
+//
+//     // Parcourt chaque ligne et colonne pour transposer
+//     for (let i = 0; i < 4; i++) {
+//
+//         for (let j = 0; j < 4; j++) {
+//
+//             transposed[j][i] = matrix[i][j];
+//         }
+//     }
+//
+//     return transposed;
+// }
+function round(number) {
+    return Math.abs(number) < epsilon ? 0 : +number.toPrecision(6);
+}
+// translate3d(25.9808px, 0, 15px ) rotateY(60deg) skewX(49.9999deg) scale(1, 1.2)
+// translate → rotate → skew → scale
+function decompose(original) {
+    const matrix = original.slice();
+    // Normalize last row
+    if (matrix[15] === 0) {
+        return null;
+    }
+    for (let i = 0; i < 16; i++)
+        matrix[i] /= matrix[15];
+    // Perspective extraction
+    const perspective = [0, 0, 0, 1];
+    if (matrix[3] !== 0 || matrix[7] !== 0 || matrix[11] !== 0) {
+        const rightHandSide = [matrix[3], matrix[7], matrix[11], matrix[15]];
+        const perspectiveMatrix = matrix.slice();
+        perspectiveMatrix[3] = 0;
+        perspectiveMatrix[7] = 0;
+        perspectiveMatrix[11] = 0;
+        perspectiveMatrix[15] = 1;
+        // @ts-ignore
+        const inverted = inverse(original.slice());
+        if (!inverted) {
+            return null;
+        }
+        const transposedInverse = transposeMatrix4(inverted);
+        perspective[0] = dot(rightHandSide, transposedInverse.slice(0, 4));
+        perspective[1] = dot(rightHandSide, transposedInverse.slice(4, 8));
+        perspective[2] = dot(rightHandSide, transposedInverse.slice(8, 12));
+        perspective[3] = dot(rightHandSide, transposedInverse.slice(12, 16));
+        // Clear perspective from matrix
+        matrix[3] = 0;
+        matrix[7] = 0;
+        matrix[11] = 0;
+        matrix[15] = 1;
+    }
+    // Translation
+    const translate = [matrix[12], matrix[13], matrix[14]];
+    matrix[12] = matrix[13] = matrix[14] = 0;
+    // Build the 3x3 matrix
+    const row0 = [matrix[0], matrix[1], matrix[2]];
+    const row1 = [matrix[4], matrix[5], matrix[6]];
+    const row2 = [matrix[8], matrix[9], matrix[10]];
+    // Compute scale
+    const scaleX = pLength(row0);
+    const row0Norm = normalize(row0);
+    const skewXY = dot(row0Norm, row1);
+    const row1Proj = [
+        row1[0] - skewXY * row0Norm[0],
+        row1[1] - skewXY * row0Norm[1],
+        row1[2] - skewXY * row0Norm[2]
+    ];
+    const scaleY = pLength(row1Proj);
+    const row1Norm = normalize(row1Proj);
+    const skewXZ = dot(row0Norm, row2);
+    const skewYZ = dot(row1Norm, row2);
+    const row2Proj = [
+        row2[0] - skewXZ * row0Norm[0] - skewYZ * row1Norm[0],
+        row2[1] - skewXZ * row0Norm[1] - skewYZ * row1Norm[1],
+        row2[2] - skewXZ * row0Norm[2] - skewYZ * row1Norm[2]
+    ];
+    const scaleZ = pLength(row2Proj);
+    const row2Norm = normalize(row2Proj);
+    // Build rotation matrix from orthonormalized vectors
+    const r00 = row0Norm[0], r01 = row1Norm[0], r02 = row2Norm[0];
+    const r10 = row0Norm[1], r11 = row1Norm[1], r12 = row2Norm[1];
+    const r20 = row0Norm[2], r21 = row1Norm[2], r22 = row2Norm[2];
+    // Convert to quaternion
+    const trace = r00 + r11 + r22;
+    let qw, qx, qy, qz;
+    if (trace > 0) {
+        const s = 0.5 / Math.sqrt(trace + 1.0);
+        qw = 0.25 / s;
+        qx = (r21 - r12) * s;
+        qy = (r02 - r20) * s;
+        qz = (r10 - r01) * s;
+    }
+    else if (r00 > r11 && r00 > r22) {
+        const s = 2.0 * Math.sqrt(1.0 + r00 - r11 - r22);
+        qw = (r21 - r12) / s;
+        qx = 0.25 * s;
+        qy = (r01 + r10) / s;
+        qz = (r02 + r20) / s;
+    }
+    else if (r11 > r22) {
+        const s = 2.0 * Math.sqrt(1.0 + r11 - r00 - r22);
+        qw = (r02 - r20) / s;
+        qx = (r01 + r10) / s;
+        qy = 0.25 * s;
+        qz = (r12 + r21) / s;
+    }
+    else {
+        const s = 2.0 * Math.sqrt(1.0 + r22 - r00 - r11);
+        qw = (r10 - r01) / s;
+        qx = (r02 + r20) / s;
+        qy = (r12 + r21) / s;
+        qz = 0.25 * s;
+    }
+    [qx, qy, qz] = toZero([qx, qy, qz]);
+    // const q = gcd(qx, gcd(qy, qz));
+    let q = [Math.abs(qx), Math.abs(qy), Math.abs(qz)].reduce((acc, curr) => {
+        if (acc == 0 || (curr > 0 && curr < acc)) {
+            acc = curr;
+        }
+        return acc;
+    }, 0);
+    if (q > 0) {
+        qx /= q;
+        qy /= q;
+        qz /= q;
+    }
+    const rotate = [qx, qy, qz, Object.is(qw, 0) ? 0 : 2 * Math.acos(qw) * 180 / Math.PI];
+    const scale = [scaleX, scaleY, scaleZ];
+    const skew = [skewXY, skewXZ, skewYZ];
+    return {
+        translate,
+        scale,
+        rotate,
+        skew,
+        perspective
+    };
+}
+function transposeMatrix4(m) {
+    return [
+        m[0], m[4], m[8], m[12],
+        m[1], m[5], m[9], m[13],
+        m[2], m[6], m[10], m[14],
+        m[3], m[7], m[11], m[15],
+    ];
+}
+function toZero(v) {
+    for (let i = 0; i < v.length; i++) {
+        if (Math.abs(v[i]) <= epsilon) {
+            v[i] = 0;
+        }
+        else {
+            v[i] = +v[i].toPrecision(6);
+        }
+    }
+    return v;
+}
+// https://drafts.csswg.org/css-transforms-1/#2d-matrix
+function is2DMatrix(matrix) {
+    // m13,m14,  m23, m24, m31, m32, m34, m43 are all 0
+    return matrix[0 * 4 + 2] === 0 &&
+        matrix[0 * 4 + 3] === 0 &&
+        matrix[1 * 4 + 2] === 0 &&
+        matrix[1 * 4 + 3] === 0 &&
+        matrix[2 * 4 + 0] === 0 &&
+        matrix[2 * 4 + 1] === 0 &&
+        matrix[2 * 4 + 3] === 0 &&
+        matrix[3 * 4 + 2] === 0 &&
+        matrix[2 * 4 + 2] === 1 &&
+        matrix[3 * 4 + 3] === 1;
+}
+
 /**
  * Converts a color to another color space
  * @param token
  * @param to
+ *
+ * @private
  *
  * <code>
  *
@@ -4183,6 +4464,11 @@ function convertColor(token, to) {
     if (token.kin == exports.ColorType.COLOR) {
         const colorSpace = token.chi.find(t => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(t.typ));
         if (colorSpace.val == exports.ColorType[to].toLowerCase().replaceAll('_', '-')) {
+            for (const chi of token.chi) {
+                if (chi.typ == exports.EnumToken.NumberTokenType && typeof chi.val == 'number') {
+                    chi.val = toPrecisionValue(getNumber(chi));
+                }
+            }
             return token;
         }
     }
@@ -4606,9 +4892,9 @@ function color2srgbvalues(token) {
 function values2colortoken(values, to) {
     values = srgb2srgbcolorspace(values, to);
     const chi = [
-        { typ: exports.EnumToken.NumberTokenType, val: values[0] },
-        { typ: exports.EnumToken.NumberTokenType, val: values[1] },
-        { typ: exports.EnumToken.NumberTokenType, val: values[2] },
+        { typ: exports.EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
+        { typ: exports.EnumToken.NumberTokenType, val: toPrecisionValue(values[1]) },
+        { typ: exports.EnumToken.NumberTokenType, val: toPrecisionValue(values[2]) },
     ];
     if (values.length == 4) {
         chi.push({ typ: exports.EnumToken.LiteralTokenType, val: "/" }, {
@@ -4633,8 +4919,17 @@ function getNumber(token) {
     if (token.typ == exports.EnumToken.IdenTokenType && token.val == 'none') {
         return 0;
     }
+    let val;
     // @ts-ignore
-    return token.typ == exports.EnumToken.PercentageTokenType ? token.val / 100 : token.val;
+    if (typeof token.val != 'number' && token.val?.typ == exports.EnumToken.FractionTokenType) {
+        // @ts-ignore
+        val = token.val.l.val / token.val.r.val;
+    }
+    else {
+        val = token.val;
+    }
+    // @ts-ignore
+    return token.typ == exports.EnumToken.PercentageTokenType ? val / 100 : val;
 }
 /**
  * convert angle to turn
@@ -4664,6 +4959,10 @@ function getAngle(token) {
     }
     // @ts-ignore
     return token.val / 360;
+}
+function toPrecisionValue(value) {
+    value = +value.toFixed(colorPrecision);
+    return Math.abs(value) < epsilon ? 0 : value;
 }
 function toPrecisionAngle(angle) {
     angle = +angle.toPrecision(colorPrecision);
@@ -8563,7 +8862,7 @@ async function* tokenizeStream(input) {
     const reader = input.getReader();
     while (true) {
         const { done, value } = await reader.read();
-        parseInfo.stream += decoder.decode(value, { stream: true });
+        parseInfo.stream += ArrayBuffer.isView(value) ? decoder.decode(value, { stream: true }) : value;
         yield* tokenize$1(parseInfo, done);
         if (done) {
             break;
@@ -14367,7 +14666,8 @@ const matchUrl = /^(https?:)?\/\//;
 /**
  * return the directory name of a path
  * @param path
- * @internal
+ *
+ * @private
  */
 function dirname(path) {
     if (path == '/' || path === '') {
@@ -14470,17 +14770,19 @@ function resolve(url, currentDirectory, cwd) {
 
 /**
  * feature walk mode
+ *
+ * @internal
  */
 exports.FeatureWalkMode = void 0;
 (function (FeatureWalkMode) {
     /**
      * pre process
      */
-    FeatureWalkMode[FeatureWalkMode["Pre"] = 0] = "Pre";
+    FeatureWalkMode[FeatureWalkMode["Pre"] = 1] = "Pre";
     /**
      * post process
      */
-    FeatureWalkMode[FeatureWalkMode["Post"] = 1] = "Post";
+    FeatureWalkMode[FeatureWalkMode["Post"] = 2] = "Post";
 })(exports.FeatureWalkMode || (exports.FeatureWalkMode = {}));
 
 const config$2 = getSyntaxConfig();
@@ -18853,58 +19155,91 @@ exports.WalkerOptionEnum = void 0;
     /**
      * ignore the current node and its children
      */
-    WalkerOptionEnum[WalkerOptionEnum["Ignore"] = 0] = "Ignore";
+    WalkerOptionEnum[WalkerOptionEnum["Ignore"] = 1] = "Ignore";
     /**
      * stop walking the tree
      */
-    WalkerOptionEnum[WalkerOptionEnum["Stop"] = 1] = "Stop";
+    WalkerOptionEnum[WalkerOptionEnum["Stop"] = 2] = "Stop";
     /**
      * ignore node and process children
      */
-    WalkerOptionEnum[WalkerOptionEnum["Children"] = 2] = "Children";
+    WalkerOptionEnum[WalkerOptionEnum["Children"] = 4] = "Children";
     /**
      * ignore children
      */
-    WalkerOptionEnum[WalkerOptionEnum["IgnoreChildren"] = 3] = "IgnoreChildren";
+    WalkerOptionEnum[WalkerOptionEnum["IgnoreChildren"] = 8] = "IgnoreChildren";
 })(exports.WalkerOptionEnum || (exports.WalkerOptionEnum = {}));
 exports.WalkerValueEvent = void 0;
 (function (WalkerValueEvent) {
     /**
      * enter node
      */
-    WalkerValueEvent[WalkerValueEvent["Enter"] = 0] = "Enter";
+    WalkerValueEvent[WalkerValueEvent["Enter"] = 1] = "Enter";
     /**
      * leave node
      */
-    WalkerValueEvent[WalkerValueEvent["Leave"] = 1] = "Leave";
+    WalkerValueEvent[WalkerValueEvent["Leave"] = 2] = "Leave";
 })(exports.WalkerValueEvent || (exports.WalkerValueEvent = {}));
 /**
  * walk ast nodes
- * @param node
- * @param filter
+ * @param node initial node
+ * @param filter control the walk process
+ * @param reverse walk in reverse order
+ *
+ * ```ts
+ *
+ * import {walk} from '@tbela99/css-parser';
+ *
+ * for (const {node, parent, root} of walk(ast)) {
+ *
+ *     // do something with node
+ * }
+ * ```
+ *
+ * Using a filter to control the walk process:
+ *
+ * ```ts
+ *
+ * import {walk} from '@tbela99/css-parser';
+ *
+ * for (const {node, parent, root} of walk(ast, (node) => {
+ *
+ *     if (node.typ == EnumToken.AstRule && node.sel.includes('html')) {
+ *
+ *         // skip the children of the current node
+ *         return WalkerOptionEnum.IgnoreChildren;
+ *     }
+ * })) {
+ *
+ *     // do something with node
+ * }
+ * ```
  */
-function* walk(node, filter) {
+function* walk(node, filter, reverse) {
     const parents = [node];
     const root = node;
     const map = new Map;
+    let isNumeric = false;
     while ((node = parents.shift())) {
         let option = null;
         if (filter != null) {
             option = filter(node);
-            if (option === exports.WalkerOptionEnum.Ignore) {
-                continue;
-            }
-            if (option === exports.WalkerOptionEnum.Stop) {
-                break;
+            isNumeric = typeof option == 'number';
+            if (isNumeric) {
+                if ((option & exports.WalkerOptionEnum.Ignore)) {
+                    continue;
+                }
+                if ((option & exports.WalkerOptionEnum.Stop)) {
+                    break;
+                }
             }
         }
-        // @ts-ignore
-        if (option !== 'children') {
+        if (!isNumeric || (option & exports.WalkerOptionEnum.Children) === 0) {
             // @ts-ignore
             yield { node, parent: map.get(node), root };
         }
-        if (option !== exports.WalkerOptionEnum.IgnoreChildren && 'chi' in node) {
-            parents.unshift(...node.chi);
+        if ('chi' in node && (!isNumeric || ((option & exports.WalkerOptionEnum.IgnoreChildren) === 0))) {
+            parents.unshift(...node.chi[reverse ? 'reverse' : 'slice']());
             for (const child of node.chi.slice()) {
                 map.set(child, node);
             }
@@ -18923,7 +19258,6 @@ function* walkValues(values, root = null, filter, reverse) {
     const stack = values.slice();
     const map = new Map;
     let previous = null;
-    // let parent: FunctionToken | ParensToken | BinaryExpressionToken | null = null;
     if (filter != null && typeof filter == 'function') {
         filter = {
             event: exports.WalkerValueEvent.Enter,
@@ -18935,21 +19269,23 @@ function* walkValues(values, root = null, filter, reverse) {
             event: exports.WalkerValueEvent.Enter
         };
     }
+    let isNumeric = false;
     const eventType = filter.event ?? exports.WalkerValueEvent.Enter;
     while (stack.length > 0) {
         let value = reverse ? stack.pop() : stack.shift();
         let option = null;
-        if (filter.fn != null && eventType == exports.WalkerValueEvent.Enter) {
+        if (filter.fn != null && (eventType & exports.WalkerValueEvent.Enter)) {
             const isValid = filter.type == null || value.typ == filter.type ||
                 (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
                 (typeof filter.type == 'function' && filter.type(value));
             if (isValid) {
                 option = filter.fn(value, map.get(value) ?? root);
-                if (option === exports.WalkerOptionEnum.Ignore) {
-                    continue;
+                isNumeric = typeof option == 'number';
+                if (isNumeric && (option & exports.WalkerOptionEnum.Stop)) {
+                    return;
                 }
-                if (option === exports.WalkerOptionEnum.Stop) {
-                    break;
+                if (isNumeric && (option & exports.WalkerOptionEnum.Ignore)) {
+                    continue;
                 }
                 // @ts-ignore
                 if (option != null && typeof option == 'object' && 'typ' in option) {
@@ -18957,7 +19293,7 @@ function* walkValues(values, root = null, filter, reverse) {
                 }
             }
         }
-        if (eventType == exports.WalkerValueEvent.Enter && option !== exports.WalkerOptionEnum.Children) {
+        if ((eventType & exports.WalkerValueEvent.Enter) && (!isNumeric || (option & exports.WalkerOptionEnum.Children) === 0)) {
             yield {
                 value,
                 parent: map.get(value) ?? root,
@@ -18967,28 +19303,23 @@ function* walkValues(values, root = null, filter, reverse) {
                 root: root ?? null
             };
         }
-        if (option !== exports.WalkerOptionEnum.IgnoreChildren && 'chi' in value) {
+        if ('chi' in value && (!isNumeric || (option & exports.WalkerOptionEnum.IgnoreChildren) === 0)) {
             const sliced = value.chi.slice();
             for (const child of sliced) {
                 map.set(child, value);
             }
-            if (reverse) {
-                stack.push(...sliced);
-            }
-            else {
-                stack.unshift(...sliced);
-            }
+            stack[reverse ? 'push' : 'unshift'](...sliced);
         }
         else {
             const values = [];
             if ('l' in value && value.l != null) {
                 // @ts-ignore
-                values.push(value.l);
+                values[reverse ? 'push' : 'unshift'](value.l);
                 // @ts-ignore
                 map.set(value.l, value);
             }
             if ('op' in value && typeof value.op == 'object') {
-                values.push(value.op);
+                values[reverse ? 'push' : 'unshift'](value.op);
                 // @ts-ignore
                 map.set(value.op, value);
             }
@@ -18996,23 +19327,23 @@ function* walkValues(values, root = null, filter, reverse) {
                 if (Array.isArray(value.r)) {
                     for (const r of value.r) {
                         // @ts-ignore
-                        values.push(r);
+                        values[reverse ? 'push' : 'unshift'](r);
                         // @ts-ignore
                         map.set(r, value);
                     }
                 }
                 else {
                     // @ts-ignore
-                    values.push(value.r);
+                    values[reverse ? 'push' : 'unshift'](value.r);
                     // @ts-ignore
                     map.set(value.r, value);
                 }
             }
             if (values.length > 0) {
-                stack.unshift(...values);
+                stack[reverse ? 'push' : 'unshift'](...values);
             }
         }
-        if (eventType == exports.WalkerValueEvent.Leave && filter.fn != null) {
+        if ((eventType & exports.WalkerValueEvent.Leave) && filter.fn != null) {
             const isValid = filter.type == null || value.typ == filter.type ||
                 (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
                 (typeof filter.type == 'function' && filter.type(value));
@@ -19024,7 +19355,7 @@ function* walkValues(values, root = null, filter, reverse) {
                 }
             }
         }
-        if (eventType == exports.WalkerValueEvent.Leave && option !== exports.WalkerOptionEnum.Children) {
+        if ((eventType & exports.WalkerValueEvent.Leave) && (!isNumeric && (option & exports.WalkerOptionEnum.Children) === 0)) {
             yield {
                 value,
                 parent: map.get(value) ?? root,
@@ -19083,11 +19414,8 @@ class ComputePrefixFeature {
     get ordering() {
         return 2;
     }
-    get preProcess() {
-        return true;
-    }
-    get postProcess() {
-        return false;
+    get processMode() {
+        return exports.FeatureWalkMode.Pre;
     }
     static register(options) {
         if (options.removePrefix) {
@@ -19223,11 +19551,8 @@ class InlineCssVariablesFeature {
     get ordering() {
         return 0;
     }
-    get preProcess() {
-        return true;
-    }
-    get postProcess() {
-        return false;
+    get processMode() {
+        return exports.FeatureWalkMode.Pre;
     }
     static register(options) {
         if (options.inlineCssVariables) {
@@ -20207,11 +20532,8 @@ class ComputeShorthandFeature {
     get ordering() {
         return 3;
     }
-    get preProcess() {
-        return false;
-    }
-    get postProcess() {
-        return true;
+    get processMode() {
+        return exports.FeatureWalkMode.Post;
     }
     static register(options) {
         if (options.computeShorthand) {
@@ -20262,11 +20584,8 @@ class ComputeCalcExpressionFeature {
     get ordering() {
         return 1;
     }
-    get preProcess() {
-        return false;
-    }
-    get postProcess() {
-        return true;
+    get processMode() {
+        return exports.FeatureWalkMode.Post;
     }
     static register(options) {
         if (options.computeCalcExpression) {
@@ -20356,255 +20675,6 @@ class ComputeCalcExpressionFeature {
             }
         }
     }
-}
-
-const epsilon = 1e-5;
-function identity() {
-    return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
-}
-function pLength(point) {
-    return Math.sqrt(point[0] * point[0] + point[1] * point[1] + point[2] * point[2]);
-}
-function normalize(point) {
-    const [x, y, z] = point;
-    const norm = Math.sqrt(point[0] * point[0] + point[1] * point[1] + point[2] * point[2]);
-    return norm === 0 ? [0, 0, 0] : [x / norm, y / norm, z / norm];
-}
-function dot(point1, point2) {
-    if (point1.length === 4 && point2.length === 4) {
-        return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2] + point1[3] * point2[3];
-    }
-    return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2];
-}
-function multiply(matrixA, matrixB) {
-    let result = new Array(16).fill(0);
-    for (let i = 0; i < 4; i++) {
-        for (let j = 0; j < 4; j++) {
-            for (let k = 0; k < 4; k++) {
-                // Utiliser l'indexation linéaire pour accéder aux éléments
-                // Pour une matrice 4x4, l'index est (row * 4 + col)
-                result[j * 4 + i] += matrixA[k * 4 + i] * matrixB[j * 4 + k];
-            }
-        }
-    }
-    return result;
-}
-function inverse(matrix) {
-    // Create augmented matrix [matrix | identity]
-    let augmented = [
-        1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1,
-        1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1
-    ];
-    // Gaussian elimination with partial pivoting
-    for (let col = 0; col < 4; col++) {
-        // Find pivot row with maximum absolute value
-        let maxRow = col;
-        let maxVal = Math.abs(augmented[col * 4 + col]);
-        for (let row = col + 1; row < 4; row++) {
-            let val = Math.abs(augmented[row * 4 + col]);
-            if (val > maxVal) {
-                maxVal = val;
-                maxRow = row;
-            }
-        }
-        // Check for singularity
-        if (maxVal < 1e-5) {
-            return null;
-        }
-        // Swap rows if necessary
-        if (maxRow !== col) {
-            [augmented[col], augmented[maxRow]] = [augmented[maxRow], augmented[col]];
-        }
-        // Scale pivot row to make pivot element 1
-        let pivot = augmented[col * 4 + col];
-        for (let j = 0; j < 8; j++) {
-            augmented[col * 4 + j] /= pivot;
-        }
-        // Eliminate column in other rows
-        for (let row = 0; row < 4; row++) {
-            if (row !== col) {
-                let factor = augmented[row * 4 + col];
-                for (let j = 0; j < 8; j++) {
-                    augmented[row * 4 + j] -= factor * augmented[col * 4 + j];
-                }
-            }
-        }
-    }
-    // Extract the inverse from the right side of the augmented matrix
-    return augmented.slice(0, 16);
-}
-// function transpose(matrix: Matrix): Matrix {
-//     // Crée une nouvelle matrice vide 4x4
-//     // @ts-ignore
-//     let transposed: Matrix = [[], [], [], []] as Matrix;
-//
-//     // Parcourt chaque ligne et colonne pour transposer
-//     for (let i = 0; i < 4; i++) {
-//
-//         for (let j = 0; j < 4; j++) {
-//
-//             transposed[j][i] = matrix[i][j];
-//         }
-//     }
-//
-//     return transposed;
-// }
-function round(number) {
-    return Math.abs(number) < epsilon ? 0 : +number.toPrecision(6);
-}
-// translate3d(25.9808px, 0, 15px ) rotateY(60deg) skewX(49.9999deg) scale(1, 1.2)
-// translate → rotate → skew → scale
-function decompose(original) {
-    const matrix = original.slice();
-    // Normalize last row
-    if (matrix[15] === 0) {
-        return null;
-    }
-    for (let i = 0; i < 16; i++)
-        matrix[i] /= matrix[15];
-    // Perspective extraction
-    const perspective = [0, 0, 0, 1];
-    if (matrix[3] !== 0 || matrix[7] !== 0 || matrix[11] !== 0) {
-        const rightHandSide = [matrix[3], matrix[7], matrix[11], matrix[15]];
-        const perspectiveMatrix = matrix.slice();
-        perspectiveMatrix[3] = 0;
-        perspectiveMatrix[7] = 0;
-        perspectiveMatrix[11] = 0;
-        perspectiveMatrix[15] = 1;
-        // @ts-ignore
-        const inverted = inverse(original.slice());
-        if (!inverted) {
-            return null;
-        }
-        const transposedInverse = transposeMatrix4(inverted);
-        perspective[0] = dot(rightHandSide, transposedInverse.slice(0, 4));
-        perspective[1] = dot(rightHandSide, transposedInverse.slice(4, 8));
-        perspective[2] = dot(rightHandSide, transposedInverse.slice(8, 12));
-        perspective[3] = dot(rightHandSide, transposedInverse.slice(12, 16));
-        // Clear perspective from matrix
-        matrix[3] = 0;
-        matrix[7] = 0;
-        matrix[11] = 0;
-        matrix[15] = 1;
-    }
-    // Translation
-    const translate = [matrix[12], matrix[13], matrix[14]];
-    matrix[12] = matrix[13] = matrix[14] = 0;
-    // Build the 3x3 matrix
-    const row0 = [matrix[0], matrix[1], matrix[2]];
-    const row1 = [matrix[4], matrix[5], matrix[6]];
-    const row2 = [matrix[8], matrix[9], matrix[10]];
-    // Compute scale
-    const scaleX = pLength(row0);
-    const row0Norm = normalize(row0);
-    const skewXY = dot(row0Norm, row1);
-    const row1Proj = [
-        row1[0] - skewXY * row0Norm[0],
-        row1[1] - skewXY * row0Norm[1],
-        row1[2] - skewXY * row0Norm[2]
-    ];
-    const scaleY = pLength(row1Proj);
-    const row1Norm = normalize(row1Proj);
-    const skewXZ = dot(row0Norm, row2);
-    const skewYZ = dot(row1Norm, row2);
-    const row2Proj = [
-        row2[0] - skewXZ * row0Norm[0] - skewYZ * row1Norm[0],
-        row2[1] - skewXZ * row0Norm[1] - skewYZ * row1Norm[1],
-        row2[2] - skewXZ * row0Norm[2] - skewYZ * row1Norm[2]
-    ];
-    const scaleZ = pLength(row2Proj);
-    const row2Norm = normalize(row2Proj);
-    // Build rotation matrix from orthonormalized vectors
-    const r00 = row0Norm[0], r01 = row1Norm[0], r02 = row2Norm[0];
-    const r10 = row0Norm[1], r11 = row1Norm[1], r12 = row2Norm[1];
-    const r20 = row0Norm[2], r21 = row1Norm[2], r22 = row2Norm[2];
-    // Convert to quaternion
-    const trace = r00 + r11 + r22;
-    let qw, qx, qy, qz;
-    if (trace > 0) {
-        const s = 0.5 / Math.sqrt(trace + 1.0);
-        qw = 0.25 / s;
-        qx = (r21 - r12) * s;
-        qy = (r02 - r20) * s;
-        qz = (r10 - r01) * s;
-    }
-    else if (r00 > r11 && r00 > r22) {
-        const s = 2.0 * Math.sqrt(1.0 + r00 - r11 - r22);
-        qw = (r21 - r12) / s;
-        qx = 0.25 * s;
-        qy = (r01 + r10) / s;
-        qz = (r02 + r20) / s;
-    }
-    else if (r11 > r22) {
-        const s = 2.0 * Math.sqrt(1.0 + r11 - r00 - r22);
-        qw = (r02 - r20) / s;
-        qx = (r01 + r10) / s;
-        qy = 0.25 * s;
-        qz = (r12 + r21) / s;
-    }
-    else {
-        const s = 2.0 * Math.sqrt(1.0 + r22 - r00 - r11);
-        qw = (r10 - r01) / s;
-        qx = (r02 + r20) / s;
-        qy = (r12 + r21) / s;
-        qz = 0.25 * s;
-    }
-    [qx, qy, qz] = toZero([qx, qy, qz]);
-    // const q = gcd(qx, gcd(qy, qz));
-    let q = [Math.abs(qx), Math.abs(qy), Math.abs(qz)].reduce((acc, curr) => {
-        if (acc == 0 || (curr > 0 && curr < acc)) {
-            acc = curr;
-        }
-        return acc;
-    }, 0);
-    if (q > 0) {
-        qx /= q;
-        qy /= q;
-        qz /= q;
-    }
-    const rotate = [qx, qy, qz, Object.is(qw, 0) ? 0 : 2 * Math.acos(qw) * 180 / Math.PI];
-    const scale = [scaleX, scaleY, scaleZ];
-    const skew = [skewXY, skewXZ, skewYZ];
-    return {
-        translate,
-        scale,
-        rotate,
-        skew,
-        perspective
-    };
-}
-function transposeMatrix4(m) {
-    return [
-        m[0], m[4], m[8], m[12],
-        m[1], m[5], m[9], m[13],
-        m[2], m[6], m[10], m[14],
-        m[3], m[7], m[11], m[15],
-    ];
-}
-function toZero(v) {
-    for (let i = 0; i < v.length; i++) {
-        if (Math.abs(v[i]) <= epsilon) {
-            v[i] = 0;
-        }
-        else {
-            v[i] = +v[i].toPrecision(6);
-        }
-    }
-    return v;
-}
-// https://drafts.csswg.org/css-transforms-1/#2d-matrix
-function is2DMatrix(matrix) {
-    // m13,m14,  m23, m24, m31, m32, m34, m43 are all 0
-    return matrix[0 * 4 + 2] === 0 &&
-        matrix[0 * 4 + 3] === 0 &&
-        matrix[1 * 4 + 2] === 0 &&
-        matrix[1 * 4 + 3] === 0 &&
-        matrix[2 * 4 + 0] === 0 &&
-        matrix[2 * 4 + 1] === 0 &&
-        matrix[2 * 4 + 3] === 0 &&
-        matrix[3 * 4 + 2] === 0 &&
-        matrix[2 * 4 + 2] === 1 &&
-        matrix[3 * 4 + 3] === 1;
 }
 
 function translateX(x, from) {
@@ -21392,11 +21462,8 @@ class TransformCssFeature {
     get ordering() {
         return 4;
     }
-    get preProcess() {
-        return false;
-    }
-    get postProcess() {
-        return true;
+    get processMode() {
+        return exports.FeatureWalkMode.Post;
     }
     static register(options) {
         // @ts-ignore
@@ -21501,10 +21568,10 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
         options.features.sort((a, b) => a.ordering - b.ordering);
     }
     for (const feature of options.features) {
-        if (feature.preProcess) {
+        if (feature.processMode & exports.FeatureWalkMode.Pre) {
             preprocess = true;
         }
-        if (feature.postProcess) {
+        if (feature.processMode & exports.FeatureWalkMode.Post) {
             postprocess = true;
         }
     }
@@ -21520,7 +21587,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                 continue;
             }
             for (const feature of options.features) {
-                if (!feature.preProcess) {
+                if ((feature.processMode & exports.FeatureWalkMode.Pre) === 0) {
                     continue;
                 }
                 feature.run(parent, options, parent.parent ?? ast, context, exports.FeatureWalkMode.Pre);
@@ -21536,7 +21603,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
             }
         }
         for (const feature of options.features) {
-            if (feature.preProcess && 'cleanup' in feature) {
+            if ((feature.processMode & exports.FeatureWalkMode.Pre) && 'cleanup' in feature) {
                 // @ts-ignore
                 feature.cleanup(ast, options, context, exports.FeatureWalkMode.Pre);
             }
@@ -21551,7 +21618,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
         }
         if (postprocess) {
             for (const feature of options.features) {
-                if (!feature.postProcess) {
+                if ((feature.processMode & exports.FeatureWalkMode.Post) === 0) {
                     continue;
                 }
                 feature.run(parent, options, parent.parent ?? ast, context, exports.FeatureWalkMode.Post);
@@ -21569,7 +21636,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
     }
     if (postprocess) {
         for (const feature of options.features) {
-            if (feature.postProcess && 'cleanup' in feature) {
+            if (feature.processMode & exports.FeatureWalkMode.Post && 'cleanup' in feature) {
                 // @ts-ignore
                 feature.cleanup(ast, options, context, exports.FeatureWalkMode.Post);
             }
@@ -22776,25 +22843,33 @@ function replaceCompoundLiteral(selector, replace) {
 }
 
 /**
- * node module entry point
- * @module node
- */
-/**
  * load file or url as stream
  * @param url
  * @param currentFile
+ * @throws Error file not found
  *
  * @private
  */
 async function getStream(url, currentFile = '.') {
     const resolved = resolve(url, currentFile);
     // @ts-ignore
-    return matchUrl.test(resolved.absolute) ? fetch(resolved.absolute).then((response) => {
-        if (!response.ok) {
-            throw new Error(`${response.status} ${response.statusText} ${response.url}`);
+    if (matchUrl.test(resolved.absolute)) {
+        return fetch(resolved.absolute).then((response) => {
+            if (!response.ok) {
+                throw new Error(`${response.status} ${response.statusText} ${response.url}`);
+            }
+            return response.body;
+        });
+    }
+    try {
+        const stats = await promises.lstat(resolved.absolute);
+        if (stats.isFile()) {
+            return node_stream.Readable.toWeb(node_fs.createReadStream(resolved.absolute));
         }
-        return response.body;
-    }) : node_stream.Readable.toWeb(node_fs.createReadStream(resolved.absolute));
+    }
+    catch (error) {
+    }
+    throw new Error(`File not found: '${resolved.absolute || url}'`);
 }
 /**
  * render ast tree
@@ -22807,13 +22882,21 @@ async function getStream(url, currentFile = '.') {
  *
  *  import {render, ColorType} from '@tbela99/css-parser';
  *
- *  // remote file
- * let result = render(ast);
+ *  const css = 'body { color: color(from hsl(0 100% 50%) xyz x y z); }';
+ *  const parseResult = await parse(css);
+ *
+ * let renderResult = render(parseResult.ast);
  * console.log(result.code);
  *
- * // local file
- * result = await parseFile(ast, {beatify: true, convertColor: ColorType.SRGB});
- * console.log(result.code);
+ * // body{color:red}
+ *
+ *
+ * renderResult = render(parseResult.ast, {beautify: true, convertColor: ColorType.SRGB});
+ * console.log(renderResult.code);
+ *
+ * // body {
+ * //  color: color(srgb 1 0 0)
+ * // }
  * ```
  */
 function render(data, options = {}) {
@@ -22823,6 +22906,8 @@ function render(data, options = {}) {
  * parse css file
  * @param file url or path
  * @param options
+ *
+ * @throws Error file not found
  *
  * Example:
  *
@@ -22851,11 +22936,11 @@ async function parseFile(file, options = {}) {
  *
  * ```ts
  *
- * import {transform} from '@tbela99/css-parser';
+ * import {parse} from '@tbela99/css-parser';
  *
  *  // css string
- *  let result = await transform(css);
- *  console.log(result.code);
+ *  let result = await parse(css);
+ *  console.log(result.ast);
  * ```
  *
  * Example using stream
@@ -22897,6 +22982,8 @@ async function parse(stream, opt = {}) {
  * transform css file
  * @param file url or path
  * @param options
+ *
+ * @throws Error file not found
  *
  * Example:
  *

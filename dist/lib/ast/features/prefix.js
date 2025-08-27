@@ -13,6 +13,7 @@ import '../../renderer/sourcemap/lib/encode.js';
 import '../../validation/syntaxes/complex-selector.js';
 import { evaluateSyntax } from '../../validation/syntax.js';
 import { funcLike } from '../../syntax/color/utils/constants.js';
+import { FeatureWalkMode } from './type.js';
 
 const config = getSyntaxConfig();
 function replacePseudo(tokens) {
@@ -59,11 +60,8 @@ class ComputePrefixFeature {
     get ordering() {
         return 2;
     }
-    get preProcess() {
-        return true;
-    }
-    get postProcess() {
-        return false;
+    get processMode() {
+        return FeatureWalkMode.Pre;
     }
     static register(options) {
         if (options.removePrefix) {

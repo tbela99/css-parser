@@ -21,10 +21,6 @@ import { matchUrl, resolve, dirname } from './lib/fs/resolve.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 
 /**
- * web module entry point
- * @module web
- */
-/**
  * load file or url as stream
  * @param url
  * @param currentFile

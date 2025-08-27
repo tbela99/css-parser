@@ -16,6 +16,7 @@ import {WalkerOptionEnum, WalkerValueEvent, walkValues} from "../walk.ts";
 import {evaluate} from "../math/index.ts";
 import {renderToken} from "../../renderer/index.ts";
 import {mathFuncs} from "../../syntax/index.ts";
+import {FeatureWalkMode} from "./type.ts";
 
 export class ComputeCalcExpressionFeature {
 
@@ -23,12 +24,8 @@ export class ComputeCalcExpressionFeature {
         return 1;
     }
 
-    get preProcess(): boolean {
-        return false;
-    }
-
-    get postProcess(): boolean {
-        return true;
+    get processMode(): FeatureWalkMode {
+        return FeatureWalkMode.Post;
     }
 
     static register(options: ParserOptions): void {

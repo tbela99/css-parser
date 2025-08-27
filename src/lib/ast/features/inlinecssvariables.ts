@@ -18,6 +18,7 @@ import {walkValues} from "../walk.ts";
 import {renderToken} from "../../renderer/index.ts";
 import {mathFuncs} from "../../syntax/index.ts";
 import {splitRule} from "../minify.ts";
+import {FeatureWalkMode} from "./type.ts";
 
 function inlineExpression(token: Token): Token[] {
 
@@ -88,12 +89,8 @@ export class InlineCssVariablesFeature {
         return 0;
     }
 
-    get preProcess(): boolean {
-        return true;
-    }
-
-    get postProcess(): boolean {
-        return false;
+    get processMode(): FeatureWalkMode {
+        return FeatureWalkMode.Pre;
     }
 
     static register(options: ParserOptions): void {

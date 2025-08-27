@@ -1,4 +1,12 @@
-import type {AngleToken, ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
+import type {
+    AngleToken,
+    ColorToken,
+    FractionToken,
+    IdentToken,
+    NumberToken,
+    PercentageToken,
+    Token
+} from "../../../@types/index.d.ts";
 import {ColorType, EnumToken} from "../../ast/index.ts";
 import {
     cmyk2RgbToken,
@@ -123,6 +131,7 @@ import {
     rgb2cmykToken
 } from "./cmyk.ts";
 import {a98rgb2srgbvalues, srgb2a98values} from "./a98rgb.ts";
+import {epsilon} from "../../ast/transform/utils.ts";
 
 /**
  * Converts a color to another color space
@@ -214,6 +223,14 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
         const colorSpace: IdentToken = (token.chi as Token[]).find(t => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ)) as IdentToken;
 
         if (colorSpace.val == ColorType[to].toLowerCase().replaceAll('_', '-')) {
+
+            for (const chi of (token as ColorToken).chi as Token[]) {
+
+                if (chi.typ == EnumToken.NumberTokenType && typeof chi.val == 'number') {
+
+                    chi.val = toPrecisionValue(getNumber(chi)) as number;
+                }
+            }
 
             return token;
         }
@@ -859,7 +876,7 @@ export function color2srgbvalues(token: ColorToken): number[] | null {
     }
 
     const colorSpace: IdentToken = components.shift() as IdentToken;
-    let values: number[] = components.map((val: Token) => getNumber(val as IdentToken | NumberToken | PercentageToken));
+    let values: number[] = components.map((val: Token) => getNumber(val as IdentToken | NumberToken | PercentageToken | FractionToken));
 
     switch (colorSpace.val.toLowerCase()) {
 
@@ -908,9 +925,9 @@ function values2colortoken(values: number[], to: ColorType): ColorToken {
 
     const chi: Token[] = [
 
-        {typ: EnumToken.NumberTokenType, val: values[0]},
-        {typ: EnumToken.NumberTokenType, val: values[1]},
-        {typ: EnumToken.NumberTokenType, val: values[2]},
+        {typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0])},
+        {typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[1])},
+        {typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[2])},
     ] as Token[];
 
     if (values.length == 4) {
@@ -974,15 +991,27 @@ export function clamp(token: ColorToken): ColorToken {
     return token;
 }
 
-export function getNumber(token: NumberToken | PercentageToken | IdentToken): number {
+export function getNumber(token: NumberToken | PercentageToken | IdentToken | FractionToken): number {
 
     if (token.typ == EnumToken.IdenTokenType && token.val == 'none') {
 
         return 0;
     }
 
+    let val: number;
+
     // @ts-ignore
-    return (token as PercentageToken | NumberToken).typ == EnumToken.PercentageTokenType ? (token as PercentageToken | NumberToken).val / 100 : (token as PercentageToken | NumberToken).val;
+    if (typeof token.val != 'number' && (token.val as FractionToken)?.typ == EnumToken.FractionTokenType) {
+
+        // @ts-ignore
+        val = ((token as NumberToken | PercentageToken).val as FractionToken).l.val as number / ((token as NumberToken | PercentageToken).val as FractionToken).r.val as number;
+    } else {
+
+        val = (token as PercentageToken | NumberToken).val as number;
+    }
+
+    // @ts-ignore
+    return (token as PercentageToken | NumberToken).typ == EnumToken.PercentageTokenType ? val / 100 : val;
 }
 
 /**
@@ -1022,12 +1051,18 @@ export function getAngle(token: NumberToken | AngleToken | IdentToken): number {
 
                 // @ts-ignore
                 return +token.val;
-
         }
     }
 
     // @ts-ignore
     return token.val / 360;
+}
+
+export function toPrecisionValue(value: number): number {
+
+    value = +value.toFixed(colorPrecision);
+
+    return Math.abs(value) < epsilon ? 0 : value;
 }
 
 export function toPrecisionAngle(angle: number): number {

@@ -1,7 +1,7 @@
 import {hsl2hsv} from "./hsv.ts";
 import type {AngleToken, ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {getComponents} from "./utils/index.ts";
-import {color2srgbvalues, getAngle, getNumber, toPrecisionAngle} from "./color.ts";
+import {color2srgbvalues, getAngle, getNumber, toPrecisionAngle, toPrecisionValue} from "./color.ts";
 import {ColorType, EnumToken} from "../../ast/index.ts";
 import {cmyk2srgbvalues, lab2srgbvalues, lch2srgbvalues, oklab2srgbvalues, oklch2srgbvalues} from "./srgb.ts";
 
@@ -100,8 +100,8 @@ export function hwbToken(values: number[]): ColorToken {
     const chi: Token[] = <Token[]>[
 
         {typ: EnumToken.NumberTokenType, val: values[0]},
-        {typ: EnumToken.PercentageTokenType, val: values[1] * 100},
-        {typ: EnumToken.PercentageTokenType, val: values[2] * 100},
+        {typ: EnumToken.PercentageTokenType, val: toPrecisionValue(values[1]) * 100},
+        {typ: EnumToken.PercentageTokenType, val: toPrecisionValue(values[2]) * 100},
     ];
 
     if (values.length == 4) {

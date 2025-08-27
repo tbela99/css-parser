@@ -8,6 +8,7 @@ import type {
     ParserOptions,
     PropertyListOptions
 } from "../../../@types/index.d.ts";
+import {FeatureWalkMode} from "./type.ts";
 
 export class ComputeShorthandFeature {
 
@@ -15,12 +16,8 @@ export class ComputeShorthandFeature {
         return 3;
     }
 
-    get preProcess(): boolean {
-        return false;
-    }
-
-    get postProcess(): boolean {
-        return true;
+    get processMode(): FeatureWalkMode {
+        return FeatureWalkMode.Post;
     }
 
     static register(options: ParserOptions): void {

@@ -156,7 +156,7 @@ export function lch2HexToken(token: ColorToken): ColorToken | null {
     return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, '0'), '#'));
 }
 
- function hexToken(value: string): ColorToken {
+function hexToken(value: string): ColorToken {
 
     value = reduceHexValue(value);
 

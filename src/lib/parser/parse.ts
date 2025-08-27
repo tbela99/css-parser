@@ -1557,7 +1557,7 @@ export async function parseDeclarations(declaration: string): Promise<Array<AstD
         currentPosition: {ind: -1, lin: 1, col: 0}
     } as ParseInfo), {setParent: false, minify: false, validation: false}).then(result => {
 
-        return (result.ast.chi[0] as AstRule).chi.filter(t => t.typ == EnumToken.DeclarationNodeType)
+        return (result.ast.chi[0] as AstRule).chi.filter(t => t.typ == EnumToken.DeclarationNodeType || t.typ == EnumToken.CommentNodeType) as Array<AstDeclaration | AstComment>
     });
 }
 

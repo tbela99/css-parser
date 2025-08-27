@@ -2,7 +2,8 @@ const matchUrl = /^(https?:)?\/\//;
 /**
  * return the directory name of a path
  * @param path
- * @internal
+ *
+ * @private
  */
 function dirname(path) {
     if (path == '/' || path === '') {
