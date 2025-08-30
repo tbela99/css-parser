@@ -738,4 +738,24 @@ content: '\\21 now\\21';
  margin-left: 200px
 }`));
     });
+
+    it('duplicate declarations #36', function () {
+        const file = `
+
+.table {
+
+    width: 100%;
+    width: calc(100% + 40px);
+    margin-left: 20px;
+    margin-left: min(100% , 20px)
+}
+`;
+        return transform(file, {
+            beautify: true,
+            removeDuplicateDeclarations: ['width']}).then(result => expect(result.code).equals(`.table {
+ width: 100%;
+ width: calc(100% + 40px);
+ margin-left: min(100%,20px)
+}`));
+    });
 }

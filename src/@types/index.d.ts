@@ -1,11 +1,10 @@
-import {VisitorNodeMap} from "./visitor.d.ts";
-import {AstAtRule, AstDeclaration, AstNode, AstRule, AstRuleStyleSheet, Location, Position} from "./ast.d.ts";
+import type {VisitorNodeMap} from "./visitor.d.ts";
+import type {AstAtRule, AstDeclaration, AstNode, AstRule, AstRuleStyleSheet, Location, Position} from "./ast.d.ts";
 import {SourceMap} from "../lib/renderer/sourcemap/index.ts";
-import {PropertyListOptions} from "./parse.d.ts";
-import {ColorType, EnumToken, ValidationLevel, ValidationToken} from "../lib/index.ts";
+import type {PropertyListOptions} from "./parse.d.ts";
+import {ColorType, EnumToken, ValidationLevel} from "../lib/index.ts";
 import type {Token} from "./token.d.ts";
 import {FeatureWalkMode} from "../lib/ast/features/type.ts";
-
 import {mathFuncs, transformFunctions} from "../lib/syntax/syntax.ts";
 
 export {mathFuncs, transformFunctions} from '../lib/syntax/syntax.ts';
@@ -130,9 +129,37 @@ export interface MinifyOptions {
      */
     expandNestingRules?: boolean;
     /**
-     * remove duplicate declarations from the same rule
+     * remove duplicate declarations from the same rule. if passed as a string array, duplicated declarations are removed, except for those in the array
+     *
+     *
+     * ```ts
+     *
+     * import {transform} from '@tbela99/css-parser';
+     *
+     * const css = `
+     *
+     * .table {
+     *
+     *     width: 100%;
+     *     width: calc(100% + 40px);
+     *     margin-left: 20px;
+     *     margin-left: min(100% , 20px)
+     * }
+     *
+     * `;
+     * const result = await transform(css, {
+     *
+     *     beautify: true,
+     *     validation: true,
+     *     removeDuplicateDeclarations: ['width']
+     * }
+     * );
+     *
+     * console.log(result.code);
+     *
+     * ```
      */
-    removeDuplicateDeclarations?: boolean;
+    removeDuplicateDeclarations?: boolean | string[];
     /**
      * compute shorthand properties
      */
@@ -156,10 +183,16 @@ export interface MinifyOptions {
      */
     removeEmpty?: boolean;
     /**
+     * remove css prefix
+     */
+    removePrefix?: boolean;
+    /**
      * define minification passes.
      */
     pass?: number;
 }
+
+export declare type LoadResult = Promise<ReadableStream<Uint8Array>> | ReadableStream<Uint8Array> | string | Promise<string>;
 
 /**
  * parser options
@@ -175,34 +208,26 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
      */
     sourcemap?: boolean | 'inline';
     /**
-     * remove @charset at-rule
+     * remove at-rule charset
      */
     removeCharset?: boolean;
-    /**
-     * resolve urls
-     */
-    resolveUrls?: boolean;
     /**
      * resolve import
      */
     resolveImport?: boolean;
     /**
      * current working directory
-     * @ignore
+     *
+     * @internal
      */
     cwd?: string;
     /**
-     * remove css prefix
-     */
-    removePrefix?: boolean;
-    /**
-     * get file or url as stream
+     * url and file loader
      * @param url
      * @param currentUrl
      *
-     * @private
      */
-    getStream?: (url: string, currentUrl: string) => Promise<ReadableStream<string>>;
+    load?: (url: string, currentUrl: string) => LoadResult;
     /**
      * get directory name
      * @param path
@@ -211,17 +236,21 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
      */
     dirname?: (path: string) => string;
     /**
-     * resolve path
+     * resolve urls
+     */
+    resolveUrls?: boolean;
+    /**
+     * url and path resolver
      * @param url
      * @param currentUrl
      * @param currentWorkingDirectory
      *
-     * @private
      */
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => {
         absolute: string;
         relative: string;
     };
+
     /**
      * node visitor
      * {@link VisitorNodeMap}
@@ -242,6 +271,8 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
     signal?: AbortSignal;
     /**
      * set parent node
+     *
+     * @private
      */
     setParent?: boolean;
     /**
@@ -262,7 +293,7 @@ export declare interface MinifyFeatureOptions {
     /**
      * minify features
      *
-     * @internal
+     * @private
      */
     features?: MinifyFeature[];
 }
@@ -297,7 +328,7 @@ export declare interface MinifyFeature {
      */
     run: (ast: AstRule | AstAtRule, options: ParserOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
         [key: string]: any
-    }, mode: FeatureWalkMode) => void;
+    }, mode: FeatureWalkMode) => AstNode | null;
 }
 
 /**
@@ -321,15 +352,31 @@ export declare interface ResolvedPath {
 export declare interface RenderOptions {
 
     /**
-     * minify ast node.
+     * minify css values.
      */
     minify?: boolean;
     /**
      * pretty print css
+     *
+     * ```ts
+     * const result = await transform(css, {beautify: true});
+     * ```
      */
     beautify?: boolean;
     /**
-     * remove empty rule lists from the ast
+     * remove empty nodes. empty nodes are removed by default
+     *
+     * ```ts
+     *
+     * const css = `
+     * @supports selector(:-ms-input-placeholder) {
+     *
+     * :-ms-input-placeholder {
+     *
+     * }
+     * }`;
+     * const result = await transform(css, {removeEmpty: false});
+     * ```
      */
     removeEmpty?: boolean;
     /**
@@ -361,7 +408,7 @@ export declare interface RenderOptions {
      */
     convertColor?: boolean | ColorType;
     /**
-     * ernder the node along with its parents
+     * render the node along with its parents
      */
     withParents?: boolean;
     /**

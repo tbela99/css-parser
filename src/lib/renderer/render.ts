@@ -189,7 +189,7 @@ function updateSourceMap(node: AstRuleList | AstComment, options: RenderOptions,
 
     if ([
         EnumToken.RuleNodeType, EnumToken.AtRuleNodeType,
-        EnumToken.KeyFrameRuleNodeType, EnumToken.KeyframeAtRuleNodeType
+        EnumToken.KeyFramesRuleNodeType, EnumToken.KeyframesAtRuleNodeType
     ].includes(node.typ)) {
 
         let src: string = (<Location>node.loc)?.src ?? '';
@@ -299,10 +299,10 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
         case EnumToken.AtRuleNodeType:
         case EnumToken.RuleNodeType:
-        case EnumToken.KeyFrameRuleNodeType:
-        case EnumToken.KeyframeAtRuleNodeType:
+        case EnumToken.KeyFramesRuleNodeType:
+        case EnumToken.KeyframesAtRuleNodeType:
 
-            if ([EnumToken.AtRuleNodeType, EnumToken.KeyframeAtRuleNodeType].includes(data.typ) && !('chi' in data)) {
+            if ([EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ) && !('chi' in data)) {
 
                 return `${indent}@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val};`;
             }
@@ -360,7 +360,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
                 children = children.slice(0, -1);
             }
 
-            if ([EnumToken.AtRuleNodeType, EnumToken.KeyframeAtRuleNodeType].includes(data.typ)) {
+            if ([EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ)) {
 
                 return `@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val}${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`
             }

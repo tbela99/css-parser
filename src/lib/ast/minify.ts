@@ -1,4 +1,4 @@
-import {parseString} from "../parser/index.ts";
+import {parseString, replaceToken} from "../parser/index.ts";
 import {eq} from "../parser/utils/eq.ts";
 import {doRender, renderToken} from "../renderer/index.ts";
 import * as allFeatures from "./features/index.ts";
@@ -6,8 +6,8 @@ import {walkValues} from "./walk.ts";
 import type {
     AstAtRule,
     AstDeclaration,
-    AstKeyframAtRule,
     AstKeyFrameRule,
+    AstKeyframesAtRule,
     AstNode,
     AstRule,
     AstRuleStyleSheet,
@@ -62,6 +62,9 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
     let postprocess: boolean = false;
 
     let parents: Array<AstNode>;
+    let i: number = 0;
+    let parent: AstNode;
+    let replacement: AstNode | null;
 
     if (!('features' in <MinifyFeatureOptions>options)) {
 
@@ -98,17 +101,21 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
 
         parents = [<AstRuleStyleSheet>ast];
 
-        for (const parent of parents) {
+        for (i = 0; i < parents.length; i++) {
+
+            parent = parents[i];
 
             if (parent.typ == EnumToken.CommentTokenType ||
                 parent.typ == EnumToken.CDOCOMMTokenType) {
 
-                Object.defineProperty(parent, 'parent', {
-                    ...definedPropertySettings,
-                    value: parent
-                })
+                // Object.defineProperty(parent, 'parent', {
+                //     ...definedPropertySettings,
+                //     value: parent
+                // })
                 continue;
             }
+
+            replacement = parent;
 
             for (const feature of options.features as MinifyFeature[]) {
 
@@ -116,19 +123,30 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
                     continue;
                 }
 
-                feature.run(<AstRule | AstAtRule>parent, options, <AstRule | AstAtRule | AstRuleStyleSheet>parent.parent ?? ast, context, FeatureWalkMode.Pre);
+                const result =feature.run(<AstRule | AstAtRule>replacement, options, <AstRule | AstAtRule | AstRuleStyleSheet>parent.parent ?? ast, context, FeatureWalkMode.Pre);
+
+                if (result != null) {
+
+                    replacement = result;
+                }
             }
 
-            if (('chi' in parent)) {
+            if (('chi' in replacement)) {
 
                 // @ts-ignore
-                for (const node of parent.chi) {
+                for (const node of replacement.chi) {
 
                     parents.push(Object.defineProperty(node, 'parent', {
                         ...definedPropertySettings,
-                        value: parent
+                        value: replacement
                     }) as AstNode);
                 }
+            }
+
+            if (replacement != null && replacement != parent && parent.parent != null) {
+
+                // @ts-ignore
+                replaceToken(parent.parent as AstRule | AstAtRule | AstRuleStyleSheet, parent, replacement);
             }
         }
 
@@ -153,6 +171,8 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
             continue;
         }
 
+        replacement = parent;
+
         if (postprocess) {
 
             for (const feature of options.features as MinifyFeature[]) {
@@ -161,20 +181,30 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
                     continue;
                 }
 
-                feature.run(<AstRule | AstAtRule>parent, options, <AstRule | AstAtRule | AstRuleStyleSheet>parent.parent ?? ast, context, FeatureWalkMode.Post);
+                const result = feature.run(replacement as AstRule | AstAtRule, options, <AstRule | AstAtRule | AstRuleStyleSheet>parent.parent ?? ast, context, FeatureWalkMode.Post);
+
+                if (result != null) {
+                    replacement = result;
+                }
             }
         }
 
-        if (('chi' in parent)) {
+        if (('chi' in replacement)) {
 
             // @ts-ignore
-            for (const node of parent.chi) {
+            for (const node of replacement.chi) {
 
                 parents.push(Object.defineProperty(node, 'parent', {
                     ...definedPropertySettings,
-                    value: parent
+                    value: replacement
                 }) as AstNode);
             }
+        }
+
+        if (replacement != null && replacement != parent && parent.parent != null) {
+
+            // @ts-ignore
+            replaceToken(parent.parent as AstRule | AstAtRule | AstRuleStyleSheet, parent, replacement);
         }
     }
 
@@ -278,12 +308,12 @@ function doMinify(ast: AstNode, options: ParserOptions = {}, recursive: boolean 
                 continue;
             }
 
-            if (node.typ == EnumToken.KeyframeAtRuleNodeType) {
+            if (node.typ == EnumToken.KeyframesAtRuleNodeType) {
 
                 if (
-                    previous?.typ == EnumToken.KeyframeAtRuleNodeType &&
-                    (<AstKeyframAtRule>node).nam == (<AstKeyframAtRule>previous).nam &&
-                    (<AstKeyframAtRule>node).val == (<AstKeyframAtRule>previous).val
+                    previous?.typ == EnumToken.KeyframesAtRuleNodeType &&
+                    (<AstKeyframesAtRule>node).nam == (<AstKeyframesAtRule>previous).nam &&
+                    (<AstKeyframesAtRule>node).val == (<AstKeyframesAtRule>previous).val
                 ) {
 
                     ast.chi?.splice(nodeIndex--, 1);
@@ -293,13 +323,13 @@ function doMinify(ast: AstNode, options: ParserOptions = {}, recursive: boolean 
                     continue;
                 }
 
-                if ((<AstKeyframAtRule>node).chi.length > 0) {
+                // if ((<AstKeyframesAtRule>node).chi.length > 0) {
+                //
+                //     doMinify(node, options, recursive, errors, nestingContent, context);
+                // }
+            } else if (node.typ == EnumToken.KeyFramesRuleNodeType) {
 
-                    doMinify(node, options, true, errors, nestingContent, context);
-                }
-            } else if (node.typ == EnumToken.KeyFrameRuleNodeType) {
-
-                if (previous?.typ == EnumToken.KeyFrameRuleNodeType &&
+                if (previous?.typ == EnumToken.KeyFramesRuleNodeType &&
                     (<AstKeyFrameRule>node).sel == (<AstKeyFrameRule>previous).sel) {
 
                     (<AstKeyFrameRule>previous).chi.push(...(<AstKeyFrameRule>node).chi);
@@ -573,7 +603,7 @@ function doMinify(ast: AstNode, options: ParserOptions = {}, recursive: boolean 
 
                         if (shouldMerge) {
                             // @ts-ignore
-                            if (((node.typ == EnumToken.RuleNodeType || node.typ == EnumToken.KeyFrameRuleNodeType) && node.sel == previous.sel) ||
+                            if (((node.typ == EnumToken.RuleNodeType || node.typ == EnumToken.KeyFramesRuleNodeType) && node.sel == previous.sel) ||
                                 // @ts-ignore
                                 (node.typ == EnumToken.AtRuleNodeType) && node.val != 'font-face' && node.val == previous.val) {
 
@@ -586,7 +616,7 @@ function doMinify(ast: AstNode, options: ParserOptions = {}, recursive: boolean 
                                 previous = node;
                                 nodeIndex = i;
                                 continue;
-                            } else if (node.typ == previous?.typ && [EnumToken.KeyFrameRuleNodeType, EnumToken.RuleNodeType].includes(node.typ)) {
+                            } else if (node.typ == previous?.typ && [EnumToken.KeyFramesRuleNodeType, EnumToken.RuleNodeType].includes(node.typ)) {
 
                                 const intersect = diff(<AstRule>previous, <AstRule>node, reducer, options);
 
@@ -667,7 +697,7 @@ function doMinify(ast: AstNode, options: ParserOptions = {}, recursive: boolean 
         if (recursive && node != null && ('chi' in node)) {
 
             // @ts-ignore
-            if (node.typ == EnumToken.KeyframeAtRuleNodeType || !node.chi.some(n => n.typ == EnumToken.DeclarationNodeType)) {
+            if (node.typ == EnumToken.KeyframesAtRuleNodeType || !node.chi.some(n => n.typ == EnumToken.DeclarationNodeType)) {
 
                 // @ts-ignore
                 if (!(node.typ == EnumToken.AtRuleNodeType && (<AstAtRule>node).nam != 'font-face')) {

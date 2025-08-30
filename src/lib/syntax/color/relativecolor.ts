@@ -43,7 +43,7 @@ export function parseRelativeColor(relativeKeys: string, original: ColorToken, r
     let values: Record<RelativeColorTypes, number | Token | null> = <Record<RelativeColorTypes, number | Token | null>>{};
 
     // colorFuncColorSpace x,y,z or r,g,b
-    const names: string = relativeKeys.startsWith('xyz') ? 'xyz' : relativeKeys.slice(-3);
+    const names: string = relativeKeys.startsWith('xyz') ? 'xyz' : ['srgb', 'srgb-linear', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'rgb'].includes(relativeKeys.toLowerCase()) ? 'rgb' : relativeKeys.slice(-3);
     const converted: ColorToken = <ColorToken>convertColor(original, ColorType[relativeKeys.toUpperCase().replaceAll('-', '_') as keyof typeof ColorType]);
 
     if (converted == null) {
@@ -222,6 +222,7 @@ function computeComponentValue(expr: Record<RelativeColorTypes, Token>, converte
     return <Record<RelativeColorTypes, Token>>expr;
 }
 
+
 export function replaceValue(parent: FunctionToken | ParensToken | BinaryExpressionToken, value: Token, newValue: Token) {
 
     for (const {value: val, parent: pr} of walkValues([parent])) {
@@ -232,14 +233,17 @@ export function replaceValue(parent: FunctionToken | ParensToken | BinaryExpress
 
                 if ((pr as BinaryExpressionToken).l == val) {
 
-                    (pr as BinaryExpressionToken).l = newValue
+                    (pr as BinaryExpressionToken).l = newValue;
+                    return
                 } else {
 
                     (pr as BinaryExpressionToken).r = newValue;
+                    return;
                 }
             } else {
 
                 (pr as FunctionToken | ParensToken).chi.splice((pr as FunctionToken | ParensToken).chi.indexOf(val), 1, newValue);
+                return;
             }
         }
     }

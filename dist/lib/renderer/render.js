@@ -111,7 +111,7 @@ function doRender(data, options = {}) {
 function updateSourceMap(node, options, cache, sourcemap, position, str) {
     if ([
         EnumToken.RuleNodeType, EnumToken.AtRuleNodeType,
-        EnumToken.KeyFrameRuleNodeType, EnumToken.KeyframeAtRuleNodeType
+        EnumToken.KeyFramesRuleNodeType, EnumToken.KeyframesAtRuleNodeType
     ].includes(node.typ)) {
         let src = node.loc?.src ?? '';
         let output = options.output ?? '';
@@ -185,9 +185,9 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
             }, '');
         case EnumToken.AtRuleNodeType:
         case EnumToken.RuleNodeType:
-        case EnumToken.KeyFrameRuleNodeType:
-        case EnumToken.KeyframeAtRuleNodeType:
-            if ([EnumToken.AtRuleNodeType, EnumToken.KeyframeAtRuleNodeType].includes(data.typ) && !('chi' in data)) {
+        case EnumToken.KeyFramesRuleNodeType:
+        case EnumToken.KeyframesAtRuleNodeType:
+            if ([EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ) && !('chi' in data)) {
                 return `${indent}@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val};`;
             }
             // @ts-ignore
@@ -228,7 +228,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
             if (children.endsWith(';')) {
                 children = children.slice(0, -1);
             }
-            if ([EnumToken.AtRuleNodeType, EnumToken.KeyframeAtRuleNodeType].includes(data.typ)) {
+            if ([EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ)) {
                 return `@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val}${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
             }
             return data.sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;

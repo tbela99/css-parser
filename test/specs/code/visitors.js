@@ -1,4 +1,4 @@
-import {EnumToken} from "../../../dist/lib/ast/types.js";
+import {ColorType, EnumToken} from "../../../dist/lib/ast/types.js";
 
 export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
 
@@ -56,6 +56,131 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
             }
 
             return transform(css, options).then(result => expect(result.code).equals('.foo,.bar,.fubar{height:calc(40px/3);width:3px}'));
+        });
+
+        it('visitor #2', function () {
+
+            const css = `
+
+body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
+
+html,
+body {
+    line-height: 1.474;
+}
+
+.ruler {
+
+    height: 10px;
+    background-color: orange
+}
+`;
+            const options = {
+
+                beautify: true,
+                visitor: {
+
+                    DeclarationNodeType: (declaration) => {
+
+                        if (declaration.nam == 'height') {
+
+                            declaration.nam = 'width';
+                        }
+                    },
+                    ColorTokenType: (color) => {
+
+                        return {
+                            typ: EnumToken.Color,
+                            val: 'red',
+                            kin: ColorType.HEX
+                        }
+                    }
+                }
+            }
+
+            return transform(css, options).then(result => expect(result.code).equals(`body {
+ color: color(from var(--base-color) display-p3 r calc(g + .24) calc(b + .15))
+}
+html,body {
+ line-height: 1.474
+}
+.ruler {
+ width: 10px;
+ background-color: red
+}`));
+        });
+
+        it('visitor #3', function () {
+
+            const css = `
+
+@media screen {
+        
+    .foo:-webkit-autofill {
+            height: calc(100px * 2/ 15);
+    }
+}
+
+
+body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
+
+html,
+body {
+    line-height: 1.474;
+}
+
+.ruler {
+
+    height: 10px;
+    background-color: orange
+}
+`;
+            const options = {
+
+                beautify: true,
+                inlineCssVariables: true,
+                resolveImport: true,
+                visitor: {
+
+                    StyleSheetNodeType: async (node) => {
+
+                        // insert a new rule
+                        node.chi.unshift(await parse('html {--base-color: pink}').then(result => result.ast.chi[0]))
+                    },
+
+                    ColorTokenType:  (node) => {
+
+                        // dump all color tokens
+                        // console.debug(node);
+                    },
+                    FunctionTokenType:  (node) => {
+
+                        // dump all function tokens
+                        // console.debug(node);
+                    },
+                    DeclarationNodeType:  (node) => {
+
+                        // dump all declaration nodes
+                        // console.debug(node);
+                    }
+                }
+            };
+
+            return transform(css, options).then(result => expect(result.code).equals(`@media screen {
+ .foo:-webkit-autofill {
+  height: calc(40px/3)
+ }
+}
+body {
+ color: #f3fff0
+}
+html,body {
+ line-height: 1.474
+}
+.ruler {
+ height: 10px;
+ background-color: orange
+}`));
         });
     });
 

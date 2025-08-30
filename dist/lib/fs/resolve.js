@@ -6,9 +6,10 @@ const matchUrl = /^(https?:)?\/\//;
  * @private
  */
 function dirname(path) {
-    if (path == '/' || path === '') {
-        return path;
-    }
+    // if (path == '/' || path === '') {
+    //
+    //     return path;
+    // }
     let i = 0;
     let parts = [''];
     for (; i < path.length; i++) {

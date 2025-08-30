@@ -199,7 +199,8 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
 
                 token = {
                     ...token,
-                    chi: [...((token as ColorToken).val == 'color' ? [chi[offset]] : []), ...Object.values(components)]
+                    chi: [...((token as ColorToken).val == 'color' ? [chi[offset]] : []), ...Object.values(components)],
+                    kin: ColorType[token.val.toUpperCase().replaceAll('-', '_') as keyof typeof ColorType]
                 };
 
                 delete (token as ColorToken).cal;

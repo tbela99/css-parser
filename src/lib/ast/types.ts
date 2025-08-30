@@ -331,7 +331,7 @@ export enum EnumToken {
     /**
      * keyframe rule node type
      */
-    KeyFrameRuleNodeType,
+    KeyFramesRuleNodeType,
     /**
      * class selector token type
      */
@@ -411,7 +411,7 @@ export enum EnumToken {
     /**
      * keyframe at rule node type
      */
-    KeyframeAtRuleNodeType,
+    KeyframesAtRuleNodeType,
     /**
      * invalid declaration node type
      */

@@ -28,7 +28,7 @@ class TransformCssFeature {
     }
     run(ast) {
         if (!('chi' in ast)) {
-            return;
+            return null;
         }
         let i = 0;
         let node;
@@ -75,6 +75,7 @@ class TransformCssFeature {
                 return acc;
             }, [matrix]);
         }
+        return null;
     }
 }
 

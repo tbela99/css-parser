@@ -171,6 +171,14 @@ function next(parseInfo, count = 1) {
  * @param yieldEOFToken
  */
 function* tokenize(parseInfo, yieldEOFToken = true) {
+    if (typeof parseInfo == 'string') {
+        parseInfo = {
+            stream: parseInfo,
+            buffer: '',
+            position: { ind: 0, lin: 1, col: 1 },
+            currentPosition: { ind: -1, lin: 1, col: 0 }
+        };
+    }
     let value;
     let buffer = parseInfo.buffer;
     let charCode;

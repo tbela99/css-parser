@@ -76,7 +76,8 @@ function convertColor(token, to) {
             if (components != null) {
                 token = {
                     ...token,
-                    chi: [...(token.val == 'color' ? [chi[offset]] : []), ...Object.values(components)]
+                    chi: [...(token.val == 'color' ? [chi[offset]] : []), ...Object.values(components)],
+                    kin: ColorType[token.val.toUpperCase().replaceAll('-', '_')]
                 };
                 delete token.cal;
             }

@@ -61,7 +61,7 @@ export {dirname, resolve};
  *
  * @private
  */
-export async function getStream(url: string, currentFile: string = '.'): Promise<ReadableStream<Uint8Array> | string> {
+export async function load(url: string, currentFile: string = '.'): Promise<ReadableStream<Uint8Array> | string> {
 
     const resolved = resolve(url, currentFile);
 
@@ -124,7 +124,7 @@ export async function getStream(url: string, currentFile: string = '.'): Promise
  */
 export function render(data: AstNode, options: RenderOptions = {}): RenderResult {
 
-    return doRender(data, Object.assign(options, {getStream, resolve, dirname, cwd: options.cwd ?? process.cwd()}));
+    return doRender(data, Object.assign(options, {resolve, dirname, cwd: options.cwd ?? process.cwd()}));
 }
 
 /**
@@ -151,7 +151,7 @@ export function render(data: AstNode, options: RenderOptions = {}): RenderResult
  */
 export async function parseFile(file: string, options: ParserOptions = {}): Promise<ParseResult> {
 
-    return getStream(file).then(stream => parse(stream, {src: file, ...options}));
+    return load(file).then(stream => parse(stream, {src: file, ...options}));
 }
 
 /**
@@ -204,7 +204,7 @@ export async function parse(stream: string | ReadableStream<Uint8Array>, opt: Pa
         buffer: '',
         position: {ind: 0, lin: 1, col: 1},
         currentPosition: {ind: -1, lin: 1, col: 0}
-    } as ParseInfo), Object.assign(opt, {getStream, resolve, dirname, cwd: opt.cwd ?? process.cwd()}));
+    } as ParseInfo), Object.assign(opt, {load, resolve, dirname, cwd: opt.cwd ?? process.cwd()}));
 }
 
 /**
@@ -231,7 +231,7 @@ export async function parse(stream: string | ReadableStream<Uint8Array>, opt: Pa
  */
 export async function transformFile(file: string, options: TransformOptions = {}): Promise<TransformResult> {
 
-    return getStream(file).then(stream => transform(stream, {src: file, ...options}));
+    return load(file).then(stream => transform(stream, {src: file, ...options}));
 }
 
 /**

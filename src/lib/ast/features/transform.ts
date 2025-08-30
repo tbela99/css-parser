@@ -35,11 +35,11 @@ export class TransformCssFeature {
         }
     }
 
-    run(ast: AstRule | AstAtRule): void {
+    run(ast: AstRule | AstAtRule): AstNode | null {
 
         if (!('chi' in ast)) {
 
-            return;
+            return null;
         }
 
         let i: number = 0;
@@ -116,5 +116,7 @@ export class TransformCssFeature {
 
             }, [matrix]);
         }
+
+        return null;
     }
 }

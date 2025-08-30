@@ -31,11 +31,11 @@ export class ComputeShorthandFeature {
 
     run(ast: AstRule | AstAtRule, options: PropertyListOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
         [key: string]: any
-    }) {
+    }): AstNode | null {
 
         if (!('chi' in ast)) {
 
-            return ast;
+            return null;
         }
 
         // @ts-ignore

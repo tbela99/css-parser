@@ -126,7 +126,7 @@ class ComputePrefixFeature {
                 }
             }
         }
-        else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframeAtRuleNodeType) {
+        else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframesAtRuleNodeType) {
             if (node.nam.startsWith('-')) {
                 const match = node.nam.match(/^-([^-]+)-(.+)$/);
                 if (match != null && '@' + match[2] in config.atRules) {
@@ -134,14 +134,6 @@ class ComputePrefixFeature {
                 }
             }
             if (node.typ == EnumToken.AtRuleNodeType && node.val !== '') {
-                // if ((node as AstAtRule).tokens == null) {
-                //
-                //     Object.defineProperty(node, 'tokens', {
-                //         // @ts-ignore
-                //         ...definedPropertySettings,
-                //         value: parseAtRulePrelude(parseString((node as AstAtRule).val), node as AstAtRule),
-                //     })
-                // }
                 if (replaceAstNodes(node.tokens)) {
                     node.val = node.tokens.reduce((acc, curr) => acc + renderToken(curr), '');
                 }

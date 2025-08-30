@@ -24,7 +24,7 @@ class ComputeShorthandFeature {
     }
     run(ast, options = {}, parent, context) {
         if (!('chi' in ast)) {
-            return ast;
+            return null;
         }
         // @ts-ignore
         const j = ast.chi.length;

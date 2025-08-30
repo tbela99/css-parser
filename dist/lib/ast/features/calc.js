@@ -25,7 +25,7 @@ class ComputeCalcExpressionFeature {
     }
     run(ast) {
         if (!('chi' in ast)) {
-            return;
+            return null;
         }
         for (const node of ast.chi) {
             if (node.typ != EnumToken.DeclarationNodeType) {
@@ -104,6 +104,7 @@ class ComputeCalcExpressionFeature {
                 }
             }
         }
+        return null;
     }
 }
 

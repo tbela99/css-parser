@@ -18,7 +18,7 @@ function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
     let keys = {};
     let values = {};
     // colorFuncColorSpace x,y,z or r,g,b
-    const names = relativeKeys.startsWith('xyz') ? 'xyz' : relativeKeys.slice(-3);
+    const names = relativeKeys.startsWith('xyz') ? 'xyz' : ['srgb', 'srgb-linear', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'rgb'].includes(relativeKeys.toLowerCase()) ? 'rgb' : relativeKeys.slice(-3);
     const converted = convertColor(original, ColorType[relativeKeys.toUpperCase().replaceAll('-', '_')]);
     if (converted == null) {
         return null;
@@ -166,13 +166,16 @@ function replaceValue(parent, value, newValue) {
             if (pr.typ == EnumToken.BinaryExpressionTokenType) {
                 if (pr.l == val) {
                     pr.l = newValue;
+                    return;
                 }
                 else {
                     pr.r = newValue;
+                    return;
                 }
             }
             else {
                 pr.chi.splice(pr.chi.indexOf(val), 1, newValue);
+                return;
             }
         }
     }

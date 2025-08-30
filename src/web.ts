@@ -52,13 +52,13 @@ export {dirname, resolve};
 
 
 /**
- * load file or url as stream
+ * default file or url loader
  * @param url
  * @param currentFile
  *
  * @private
  */
-export async function getStream(url: string, currentFile: string = '.'): Promise<ReadableStream<Uint8Array>> {
+export async function load(url: string, currentFile: string = '.'): Promise<ReadableStream<Uint8Array>> {
 
     let t: URL;
 
@@ -118,7 +118,6 @@ export async function getStream(url: string, currentFile: string = '.'): Promise
 export function render(data: AstNode, options: RenderOptions = {}): RenderResult {
 
     return doRender(data, Object.assign(options, {
-        getStream,
         resolve,
         dirname,
         cwd: options.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
@@ -150,7 +149,7 @@ export function render(data: AstNode, options: RenderOptions = {}): RenderResult
  */
 export async function parseFile(file: string, options: ParserOptions = {}): Promise<ParseResult> {
 
-    return getStream(file).then(stream => parse(stream, {src: file, ...options}));
+    return load(file).then(stream => parse(stream, {src: file, ...options}));
 }
 
 /**
@@ -189,7 +188,7 @@ export async function parse(stream: string | ReadableStream<Uint8Array>, opt: Pa
         position: {ind: 0, lin: 1, col: 1},
         currentPosition: {ind: -1, lin: 1, col: 0}
     } as ParseInfo), Object.assign(opt, {
-        getStream,
+        load,
         resolve,
         dirname,
         cwd: opt.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
@@ -218,7 +217,7 @@ export async function parse(stream: string | ReadableStream<Uint8Array>, opt: Pa
  */
 export async function transformFile(file: string, options: TransformOptions = {}): Promise<TransformResult> {
 
-    return getStream(file).then(stream => transform(stream, {src: file, ...options}));
+    return load(file).then(stream => transform(stream, {src: file, ...options}));
 }
 
 /**

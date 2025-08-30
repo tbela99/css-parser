@@ -2,6 +2,7 @@ import type {
     AstAtRule,
     AstComment,
     AstDeclaration,
+    AstNode,
     AstRule,
     AstRuleList,
     AstRuleStyleSheet,
@@ -104,11 +105,11 @@ export class InlineCssVariablesFeature {
 
     run(ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
         [key: string]: any
-    }): void {
+    }): AstNode | null {
 
         if (!('chi' in ast)) {
 
-            return;
+            return null;
         }
 
         if (!('variableScope' in context)) {
@@ -169,6 +170,8 @@ export class InlineCssVariablesFeature {
                 replace(node, variableScope);
             }
         }
+
+        return null;
     }
 
     cleanup(ast: AstRuleStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }) {

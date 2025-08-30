@@ -37,11 +37,11 @@ export class ComputeCalcExpressionFeature {
         }
     }
 
-    run(ast: AstRule | AstAtRule): void {
+    run(ast: AstRule | AstAtRule): AstNode | null {
 
         if (!('chi' in ast)) {
 
-            return;
+            return null;
         }
 
         for (const node of ast.chi! as Token[]) {
@@ -153,5 +153,7 @@ export class ComputeCalcExpressionFeature {
                 }
             }
         }
+
+        return null;
     }
 }

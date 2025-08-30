@@ -330,7 +330,7 @@ var EnumToken;
     /**
      * keyframe rule node type
      */
-    EnumToken[EnumToken["KeyFrameRuleNodeType"] = 73] = "KeyFrameRuleNodeType";
+    EnumToken[EnumToken["KeyFramesRuleNodeType"] = 73] = "KeyFramesRuleNodeType";
     /**
      * class selector token type
      */
@@ -410,7 +410,7 @@ var EnumToken;
     /**
      * keyframe at rule node type
      */
-    EnumToken[EnumToken["KeyframeAtRuleNodeType"] = 93] = "KeyframeAtRuleNodeType";
+    EnumToken[EnumToken["KeyframesAtRuleNodeType"] = 93] = "KeyframesAtRuleNodeType";
     /**
      * invalid declaration node type
      */

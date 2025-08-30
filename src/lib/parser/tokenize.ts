@@ -216,12 +216,26 @@ function next(parseInfo: ParseInfo, count: number = 1): string {
     return char;
 }
 
+export function tokenize(parseInfo: string): Generator<TokenizeResult>;
+export function tokenize(parseInfo: ParseInfo, yieldEOFToken?: boolean): Generator<TokenizeResult>;
+
 /**
  * tokenize css string
  * @param parseInfo
  * @param yieldEOFToken
  */
-export function* tokenize(parseInfo: ParseInfo, yieldEOFToken: boolean = true): Generator<TokenizeResult> {
+export function* tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean = true): Generator<TokenizeResult> {
+
+    if (typeof parseInfo == 'string') {
+
+        parseInfo = {
+            stream: parseInfo,
+            buffer: '',
+            position: {ind: 0, lin: 1, col: 1},
+            currentPosition: {ind: -1, lin: 1, col: 0}
+        };
+    }
+
 
     let value: string;
     let buffer: string = parseInfo.buffer;

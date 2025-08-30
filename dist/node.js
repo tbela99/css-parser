@@ -32,7 +32,7 @@ export { FeatureWalkMode } from './lib/ast/features/type.js';
  *
  * @private
  */
-async function getStream(url, currentFile = '.') {
+async function load(url, currentFile = '.') {
     const resolved = resolve(url, currentFile);
     // @ts-ignore
     if (matchUrl.test(resolved.absolute)) {
@@ -82,7 +82,7 @@ async function getStream(url, currentFile = '.') {
  * ```
  */
 function render(data, options = {}) {
-    return doRender(data, Object.assign(options, { getStream, resolve, dirname, cwd: options.cwd ?? process.cwd() }));
+    return doRender(data, Object.assign(options, { resolve, dirname, cwd: options.cwd ?? process.cwd() }));
 }
 /**
  * parse css file
@@ -107,7 +107,7 @@ function render(data, options = {}) {
  * ```
  */
 async function parseFile(file, options = {}) {
-    return getStream(file).then(stream => parse(stream, { src: file, ...options }));
+    return load(file).then(stream => parse(stream, { src: file, ...options }));
 }
 /**
  * parse css
@@ -135,19 +135,19 @@ async function parseFile(file, options = {}) {
  * // usage: node index.ts < styles.css or cat styles.css | node index.ts
  *
  *  const readableStream = Readable.toWeb(process.stdin);
- *  const result = await parse(readableStream, {beautify: true});
+ *  let result = await parse(readableStream, {beautify: true});
  *
  *  console.log(result.ast);
  * ```
  *
- * Example using fetch
+ * Example using fetch and readable stream
  *
  * ```ts
  *
  *  import {parse} from '@tbela99/css-parser';
  *
  *  const response = await fetch('https://docs.deno.com/styles.css');
- *  result = await parse(response.body, {beautify: true});
+ *  const result = await parse(response.body, {beautify: true});
  *
  *  console.log(result.ast);
  * ```
@@ -158,7 +158,7 @@ async function parse(stream, opt = {}) {
         buffer: '',
         position: { ind: 0, lin: 1, col: 1 },
         currentPosition: { ind: -1, lin: 1, col: 0 }
-    }), Object.assign(opt, { getStream, resolve, dirname, cwd: opt.cwd ?? process.cwd() }));
+    }), Object.assign(opt, { load, resolve, dirname, cwd: opt.cwd ?? process.cwd() }));
 }
 /**
  * transform css file
@@ -183,7 +183,7 @@ async function parse(stream, opt = {}) {
  * ```
  */
 async function transformFile(file, options = {}) {
-    return getStream(file).then(stream => transform(stream, { src: file, ...options }));
+    return load(file).then(stream => transform(stream, { src: file, ...options }));
 }
 /**
  * transform css
@@ -197,7 +197,7 @@ async function transformFile(file, options = {}) {
  * import {transform} from '@tbela99/css-parser';
  *
  *  // css string
- *  let result = await transform(css);
+ *  const result = await transform(css);
  *  console.log(result.code);
  * ```
  *
@@ -247,4 +247,4 @@ async function transform(css, options = {}) {
     });
 }
 
-export { dirname, getStream, parse, parseFile, render, resolve, transform, transformFile };
+export { dirname, load, parse, parseFile, render, resolve, transform, transformFile };

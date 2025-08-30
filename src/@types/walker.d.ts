@@ -1,5 +1,5 @@
-import {AstNode, AstRuleList} from "./ast.d.ts";
-import {Token} from "./token.d.ts";
+import type {AstNode, AstRuleList} from "./ast.d.ts";
+import type {Token} from "./token.d.ts";
 import {WalkerOptionEnum, WalkerValueEvent} from '../lib/ast/walk.ts';
 
 /**

@@ -235,7 +235,7 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
 
             if (isValid) {
 
-                option = filter.fn(value, <FunctionToken | ParensToken>map.get(value) ?? root);
+                option = filter.fn(value, <FunctionToken | ParensToken>map.get(value) ?? root, WalkerValueEvent.Enter);
 
                 isNumeric = typeof option == 'number';
 
@@ -257,7 +257,7 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
             }
         }
 
-        if ((eventType & WalkerValueEvent.Enter) && (!isNumeric || ((option as number) & WalkerOptionEnum.Children) === 0)) {
+        // if ((eventType & WalkerValueEvent.Enter) && (!isNumeric || ((option as number) & WalkerOptionEnum.Children) === 0)) {
 
             yield {
                 value,
@@ -267,7 +267,7 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
                 // @ts-ignore
                 root: root ?? null
             };
-        }
+        // }
 
         if ('chi' in value && (!isNumeric || ((option as number) & WalkerOptionEnum.IgnoreChildren) === 0)) {
 
@@ -333,7 +333,7 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
 
             if (isValid) {
 
-                option = filter.fn(value, <FunctionToken | ParensToken>map.get(value));
+                option = filter.fn(value, <FunctionToken | ParensToken>map.get(value), WalkerValueEvent.Leave);
 
                 // @ts-ignore
                 if (option != null && 'typ' in option) {
@@ -343,17 +343,17 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
             }
         }
 
-        if ((eventType & WalkerValueEvent.Leave) && (!isNumeric && ((option as number) & WalkerOptionEnum.Children) === 0)) {
-
-            yield {
-                value,
-                parent: <FunctionToken | ParensToken>map.get(value) ?? root,
-                previousValue: previous,
-                nextValue: <Token>stack[0] ?? null,
-                // @ts-ignore
-                root: root ?? null
-            };
-        }
+        // if ((eventType & WalkerValueEvent.Leave) && (!isNumeric && ((option as number) & WalkerOptionEnum.Children) === 0)) {
+        //
+        //     yield {
+        //         value,
+        //         parent: <FunctionToken | ParensToken>map.get(value) ?? root,
+        //         previousValue: previous,
+        //         nextValue: <Token>stack[0] ?? null,
+        //         // @ts-ignore
+        //         root: root ?? null
+        //     };
+        // }
 
         previous = value;
     }
