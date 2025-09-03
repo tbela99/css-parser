@@ -1,18 +1,28 @@
-import {AstAtRule, AstDeclaration, AstRule} from "./ast.d.ts";
+import type {AstAtRule, AstDeclaration, AstKeyframesAtRule, AstKeyframesRule, AstRule} from "./ast.d.ts";
+
+export declare type VisitorEventType = 'Enter' | 'Leave' ;
+export declare type GenericVisitorResult<T> = T | T[] | Promise<T> | Promise<T[]> | null | Promise<null>;
+export declare type GenericVisitorHandler<T> = ((node: T, parent?: AstNode | Token, root?: AstNode | Token) => GenericVisitorResult<T>);
+export declare type GenericVisitorAstNodeHandlerMap<T> =
+    Record<string, GenericVisitorHandler<T>>
+    | GenericVisitorHandler<T>
+    | { type: VisitorEventType, handler: Record<string, GenericVisitorHandler<T>> | GenericVisitorHandler<T> };
+
+export declare type ValueVisitorHandler = GenericVisitorHandler<Token>;
 
 /**
  * Declaration visitor handler
  */
-export declare type DeclarationVisitorHandler = (node: AstDeclaration) => (AstDeclaration | AstDeclaration[] | null | Promise<AstDeclaration> | Promise<AstDeclaration[]> | Promise<null>);
+export declare type DeclarationVisitorHandler = GenericVisitorHandler<AstDeclaration>;
 /**
  * Rule visitor handler
  */
-export declare type RuleVisitorHandler = (node: AstRule) => (AstRule | AstRule[] | null | Promise<AstRule> | Promise<AstRule[]> | Promise<null>);
+export declare type RuleVisitorHandler = GenericVisitorHandler<AstRule>;
 
 /**
  * AtRule visitor handler
  */
-export declare type AtRuleVisitorHandler = (node: AstAtRule) => (AstAtRule | AstAtRule[] | null | Promise<AstAtRule> | Promise<AstAtRule[]> | Promise<null>);
+export declare type AtRuleVisitorHandler = GenericVisitorHandler<AstAtRule>;
 
 /**
  * node visitor callback map
@@ -62,7 +72,7 @@ export declare interface VisitorNodeMap {
      * // @media tv,screen{.foo{height:calc(40px/3)}}
      * ```
      */
-    AtRule?: Record<string, AtRuleVisitorHandler> | AtRuleVisitorHandler;
+    AtRule?: GenericVisitorAstNodeHandlerMap<AstAtRule>;
     /**
      * declaration visitor
      *
@@ -164,7 +174,7 @@ export declare interface VisitorNodeMap {
      * // .foo{width:calc(40px/3);padding:10px}.selector{padding:20px}
      * ```
      */
-    Declaration?: Record<string, DeclarationVisitorHandler> | DeclarationVisitorHandler;
+    Declaration?: GenericVisitorAstNodeHandlerMap<AstDeclaration>;
 
     /**
      * rule visitor
@@ -206,5 +216,69 @@ export declare interface VisitorNodeMap {
      * // .foo{width:3px;.foo{width:3px}}
      * ```
      */
-    Rule?: RuleVisitorHandler;
+    Rule?: GenericVisitorAstNodeHandlerMap<AstRule>;
+
+    KeyframesRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesRule>;
+
+    KeyframesAtRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule> | Record<string, GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule>>;
+
+    /**
+     * value visitor
+     */
+    Value?: GenericVisitorHandler<Token> | Record<keyof EnumToken, GenericVisitorHandler<Token>> | {
+        type: VisitorEventType,
+        handler: GenericVisitorHandler<Token> | Record<keyof EnumToken, GenericVisitorHandler<Token>>
+    };
+
+    /**
+     * generic token visitor. the key name is of type keyof EnumToken.
+     * generic tokens are called for every token of the specified type.
+     *
+     * ```ts
+     *
+     * import {transform, parse, parseDeclarations} from "@tbela99/css-parser";
+     *
+     * const options: ParserOptions = {
+     *
+     *     inlineCssVariables: true,
+     *     visitor: {
+     *
+     *         // Stylesheet node visitor
+     *         StyleSheetNodeType: async (node) => {
+     *
+     *             // insert a new rule
+     *             node.chi.unshift(await parse('html {--base-color: pink}').then(result => result.ast.chi[0]))
+     *         },
+     *         ColorTokenType:  (node) => {
+     *
+     *             // dump all color tokens
+     *             // console.debug(node);
+     *          },
+     *          FunctionTokenType:  (node) => {
+     *
+     *              // dump all function tokens
+     *              // console.debug(node);
+     *          },
+     *          DeclarationNodeType:  (node) => {
+     *
+     *              // dump all declaration nodes
+     *              // console.debug(node);
+     *          }
+     *     }
+     * };
+     *
+     * const css = `
+     *
+     * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
+     * `;
+     *
+     * console.debug(await transform(css, options));
+     *
+     * // body {color:#f3fff0}
+     * ```
+     */
+    [key: keyof EnumToken]: GenericVisitorHandler<Token> | {
+        type: VisitorEventType,
+        handler: GenericVisitorHandler<Token>
+    };
 }

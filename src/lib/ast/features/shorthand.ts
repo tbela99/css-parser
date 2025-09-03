@@ -4,10 +4,11 @@ import type {
     AstAtRule,
     AstNode,
     AstRule,
-    AstRuleStyleSheet,
+    AstStyleSheet,
     ParserOptions,
     PropertyListOptions
 } from "../../../@types/index.d.ts";
+import {FeatureWalkMode} from "./type.ts";
 
 export class ComputeShorthandFeature {
 
@@ -15,12 +16,8 @@ export class ComputeShorthandFeature {
         return 3;
     }
 
-    get preProcess(): boolean {
-        return false;
-    }
-
-    get postProcess(): boolean {
-        return true;
+    get processMode(): FeatureWalkMode {
+        return FeatureWalkMode.Post;
     }
 
     static register(options: ParserOptions): void {
@@ -32,13 +29,13 @@ export class ComputeShorthandFeature {
         }
     }
 
-    run(ast: AstRule | AstAtRule, options: PropertyListOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
+    run(ast: AstRule | AstAtRule, options: PropertyListOptions = {}, parent: AstRule | AstAtRule | AstStyleSheet, context: {
         [key: string]: any
-    }) {
+    }): AstNode | null {
 
         if (!('chi' in ast)) {
 
-            return ast;
+            return null;
         }
 
         // @ts-ignore

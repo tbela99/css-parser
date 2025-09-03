@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.3.3
+
+- [x] relative color computation bug #105
+- [x] allow duplicated declarations of whitelisted properties #106
+
 ## v1.3.2
 
 - [x] add missing return type

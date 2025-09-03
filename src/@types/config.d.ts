@@ -1,11 +1,17 @@
 
 // generated from config.json at https://app.quicktype.io/?l=ts
 
+/**
+ * @private
+ */
 export declare interface PropertiesConfig {
     properties: PropertiesConfigProperties;
     map:        Map;
 }
 
+/**
+ * @private
+ */
 export interface Map {
     border:                  Border;
     "border-color":          BackgroundPositionClass;
@@ -34,6 +40,9 @@ export interface Map {
     "background-size":       BackgroundPositionClass;
 }
 
+/**
+ * @private
+ */
 export interface Background {
     shorthand:  string;
     pattern:    string;
@@ -44,6 +53,9 @@ export interface Background {
     properties: BackgroundProperties;
 }
 
+/**
+ * @private
+ */
 export interface BackgroundProperties {
     "background-repeat":     BackgroundRepeat;
     "background-color":      PurpleBackgroundAttachment;
@@ -55,6 +67,9 @@ export interface BackgroundProperties {
     "background-size":       BackgroundSize;
 }
 
+/**
+ * @private
+ */
 export interface PurpleBackgroundAttachment {
     types:     string[];
     default:   string[];
@@ -63,6 +78,9 @@ export interface PurpleBackgroundAttachment {
     mapping?:  BackgroundAttachmentMapping;
 }
 
+/**
+ * @private
+ */
 export interface BackgroundAttachmentMapping {
     "ultra-condensed": string;
     "extra-condensed": string;
@@ -75,6 +93,9 @@ export interface BackgroundAttachmentMapping {
     "ultra-expanded":  string;
 }
 
+/**
+ * @private
+ */
 export interface BackgroundPosition {
     multiple:    boolean;
     types:       string[];
@@ -84,14 +105,23 @@ export interface BackgroundPosition {
     constraints: BackgroundPositionConstraints;
 }
 
+/**
+ * @private
+ */
 export interface BackgroundPositionConstraints {
     mapping: ConstraintsMapping;
 }
 
+/**
+ * @private
+ */
 export interface ConstraintsMapping {
     max: number;
 }
 
+/**
+ * @private
+ */
 export interface BackgroundPositionMapping {
     left:   string;
     top:    string;
@@ -100,6 +130,9 @@ export interface BackgroundPositionMapping {
     right:  string;
 }
 
+/**
+ * @private
+ */
 export interface BackgroundRepeat {
     types:    any[];
     default:  string[];
@@ -108,6 +141,9 @@ export interface BackgroundRepeat {
     mapping:  BackgroundRepeatMapping;
 }
 
+/**
+ * @private
+ */
 export interface BackgroundRepeatMapping {
     "repeat no-repeat":    string;
     "no-repeat repeat":    string;
@@ -117,6 +153,9 @@ export interface BackgroundRepeatMapping {
     "no-repeat no-repeat": string;
 }
 
+/**
+ * @private
+ */
 export interface BackgroundSize {
     multiple: boolean;
     previous: string;
@@ -127,23 +166,38 @@ export interface BackgroundSize {
     mapping:  BackgroundSizeMapping;
 }
 
+/**
+ * @private
+ */
 export interface BackgroundSizeMapping {
     "auto auto": string;
 }
 
+/**
+ * @private
+ */
 export interface Prefix {
     typ: string;
     val: string;
 }
 
+/**
+ * @private
+ */
 export interface Separator {
     typ: string;
 }
 
+/**
+ * @private
+ */
 export interface BackgroundPositionClass {
     shorthand: string;
 }
 
+/**
+ * @private
+ */
 export interface Border {
     shorthand:  string;
     pattern:    string;
@@ -152,15 +206,24 @@ export interface Border {
     properties: BorderProperties;
 }
 
+/**
+ * @private
+ */
 export interface BorderProperties {
     "border-color": BorderColorClass;
     "border-style": BorderColorClass;
     "border-width": BorderColorClass;
 }
 
+/**
+ * @private
+ */
 export interface BorderColorClass {
 }
 
+/**
+ * @private
+ */
 export interface Font {
     shorthand:  string;
     pattern:    string;
@@ -169,6 +232,9 @@ export interface Font {
     properties: FontProperties;
 }
 
+/**
+ * @private
+ */
 export interface FontProperties {
     "font-weight":  FontWeight;
     "font-style":   PurpleBackgroundAttachment;
@@ -179,6 +245,9 @@ export interface FontProperties {
     "font-family":  FontFamily;
 }
 
+/**
+ * @private
+ */
 export interface FontFamily {
     types:     string[];
     default:   any[];
@@ -188,6 +257,9 @@ export interface FontFamily {
     separator: Separator;
 }
 
+/**
+ * @private
+ */
 export interface FontWeight {
     types:       string[];
     default:     string[];
@@ -196,15 +268,24 @@ export interface FontWeight {
     mapping:     FontWeightMapping;
 }
 
+/**
+ * @private
+ */
 export interface FontWeightConstraints {
     value: Value;
 }
 
+/**
+ * @private
+ */
 export interface Value {
     min: string;
     max: string;
 }
 
+/**
+ * @private
+ */
 export interface FontWeightMapping {
     thin:          string;
     hairline:      string;
@@ -225,6 +306,9 @@ export interface FontWeightMapping {
     "ultra black": string;
 }
 
+/**
+ * @private
+ */
 export interface LineHeight {
     types:    string[];
     default:  string[];
@@ -233,6 +317,9 @@ export interface LineHeight {
     prefix:   Prefix;
 }
 
+/**
+ * @private
+ */
 export interface Outline {
     shorthand:  string;
     pattern:    string;
@@ -241,12 +328,18 @@ export interface Outline {
     properties: OutlineProperties;
 }
 
+/**
+ * @private
+ */
 export interface OutlineProperties {
     "outline-color": PurpleBackgroundAttachment;
     "outline-style": PurpleBackgroundAttachment;
     "outline-width": PurpleBackgroundAttachment;
 }
 
+/**
+ * @private
+ */
 export interface PropertiesConfigProperties {
     inset:                        BorderRadius;
     top:                          BackgroundPositionClass;
@@ -285,6 +378,9 @@ export interface PropertiesConfigProperties {
     "border-left-color":          BackgroundPositionClass;
 }
 
+/**
+ * @private
+ */
 export interface BorderColor {
     shorthand:  string;
     map?:       string;
@@ -293,6 +389,9 @@ export interface BorderColor {
     keywords:   string[];
 }
 
+/**
+ * @private
+ */
 export interface BorderRadius {
     shorthand:  string;
     properties: string[];

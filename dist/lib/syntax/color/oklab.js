@@ -1,7 +1,7 @@
 import { multiplyMatrices } from './utils/matrix.js';
 import './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { color2srgbvalues, getNumber } from './color.js';
+import { color2srgbvalues, toPrecisionValue, getNumber } from './color.js';
 import { srgb2lsrgbvalues, lch2srgbvalues, lab2srgbvalues, cmyk2srgbvalues, hwb2srgbvalues, hsl2srgb, rgb2srgb, hex2srgbvalues, lsrgb2srgbvalues } from './srgb.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import '../../ast/minify.js';
@@ -78,9 +78,9 @@ function color2oklabToken(token) {
 }
 function oklabToken(values) {
     const chi = [
-        { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.NumberTokenType, val: values[1] },
-        { typ: EnumToken.NumberTokenType, val: values[2] },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[1]) },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[2]) },
     ];
     if (values.length == 4) {
         chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, {

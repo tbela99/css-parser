@@ -1,17 +1,21 @@
-import type {
+import {
+    renderSyntax,
     ValidationAmpersandToken,
     ValidationBracketToken,
     ValidationColumnToken,
+    ValidationDeclarationDefinitionToken,
     ValidationDeclarationToken,
     ValidationFunctionDefinitionToken,
     ValidationFunctionToken,
     ValidationKeywordToken,
     ValidationPipeToken,
     ValidationPropertyToken,
+    ValidationSyntaxGroupEnum,
     ValidationToken,
+    ValidationTokenEnum,
 } from "./parser/index.ts";
-import {renderSyntax, ValidationSyntaxGroupEnum, ValidationTokenEnum} from "./parser/index.ts";
 import type {
+    AstAtRule,
     AstDeclaration,
     AstNode,
     ColorToken,
@@ -36,6 +40,136 @@ const config: ValidationConfiguration = getSyntaxConfig();
 
 // @ts-ignore
 const allValues: string[] = getSyntaxConfig()[ValidationSyntaxGroupEnum.Declarations].all.syntax.trim().split(/[\s|]+/g);
+
+export function isNodeAllowedInContext(node: AstNode, context: AstNode): boolean {
+
+    if (node.typ == EnumToken.CommentNodeType) {
+
+        return true;
+    }
+
+    switch (context.typ) {
+
+        case EnumToken.StyleSheetNodeType:
+        case EnumToken.RuleNodeType:
+
+            return node.typ == EnumToken.RuleNodeType ||
+                node.typ == EnumToken.AtRuleNodeType ||
+                node.typ == EnumToken.KeyframesAtRuleNodeType;
+
+        case EnumToken.KeyframesAtRuleNodeType:
+
+            return node.typ == EnumToken.KeyFramesRuleNodeType;
+
+        case EnumToken.KeyFramesRuleNodeType:
+            return node.typ == EnumToken.DeclarationNodeType;
+
+        case EnumToken.AtRuleNodeType:
+
+            // @ts-ignore
+            const syntax = getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, '@' + (context as AstAtRule).nam)?.[0].chi ?? null;
+
+            //
+            if (syntax == null) {
+
+                return false;
+            }
+
+            const stack: ValidationToken[] = syntax.slice();
+
+            for (const child of stack) {
+
+                if (Array.isArray(child)) {
+
+                    stack.push(...child);
+                    continue;
+                }
+
+                if ('chi' in child && Array.isArray(child.chi)) {
+
+                    stack.push(...child.chi!);
+                    continue;
+                }
+
+                // @ts-ignore
+                if (child.l != null) {
+
+                    // @ts-ignore
+                    stack.push(child.l);
+
+                    // @ts-ignore
+                    if (child.r != null) {
+
+                        // @ts-ignore
+                        stack.push(...(Array.isArray(child.r) ? child.r : [child.r]));
+                    }
+
+                    continue;
+                }
+
+                if (node.typ == EnumToken.DeclarationNodeType) {
+
+                    if (child.typ == ValidationTokenEnum.DeclarationDefinitionToken) {
+
+                        if (node.nam == (child as ValidationDeclarationDefinitionToken).nam) {
+
+                            return true;
+                        }
+                    }
+                }
+
+                if (child.typ == ValidationTokenEnum.PropertyType) {
+
+                    if (['group-rule-body', 'block-contents', 'rule-list', 'stylesheet'].includes((child as ValidationPropertyToken).val) && (node.typ == EnumToken.RuleNodeType ||
+                        node.typ == EnumToken.AtRuleNodeType ||
+                        node.typ == EnumToken.KeyframesAtRuleNodeType)) {
+
+                        return true;
+                    }
+
+                    if (['declaration-list', 'feature-value-declaration'].includes((child as ValidationPropertyToken).val)  && node.typ == EnumToken.DeclarationNodeType) {
+
+                        return true;
+                    }
+
+                    if ((child as ValidationPropertyToken).val == 'page-body' && (node.typ == EnumToken.DeclarationNodeType || (node.typ == EnumToken.AtRuleNodeType && [
+                        'top-left-corner', 'top-left', 'top-center', 'top-right', 'top-right-corner',
+                        'bottom-left-corner', 'bottom-left', 'bottom-center', 'bottom-right', 'bottom-right-corner',
+                        'left-top', 'left-middle', 'left-bottom', 'right-top', 'right-middle', 'right-bottom'
+                    ].includes((node as AstAtRule).nam)))) {
+
+                        return true;
+                    }
+
+                    // if ((child as ValidationPropertyToken).val == 'feature-value-block-list') {
+                    //
+                    //     console.error({node});
+                    // }
+
+                    if ((child as ValidationPropertyToken).val == 'feature-value-block-list' &&
+                        (node.typ == EnumToken.AtRuleNodeType && ['stylistic', 'historical-forms', 'styleset', 'character-variant', 'swash', 'ornaments', 'annotation'].includes((node as AstAtRule).nam))) {
+
+                        return true;
+                    }
+
+                    if (['feature-value-declaration-list', 'feature-value-declaration'].includes((child as ValidationPropertyToken).val) && node.typ == EnumToken.DeclarationNodeType) {
+
+                        return true;
+                    }
+                }
+            }
+
+            // console.error(JSON.stringify({
+            //     syntax,
+            //     node: [EnumToken[node.typ], node.nam ?? node.sel],
+            //     context: [EnumToken[context.typ], context.nam ?? context.sel]
+            // }, null, 1));
+
+            break;
+    }
+
+    return false;
+}
 
 export function createContext(input: Token[]): Context<Token> {
 

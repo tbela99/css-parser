@@ -10,16 +10,14 @@ import { filterValues, renderToken } from '../../renderer/render.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import { compute } from '../transform/compute.js';
 import { eqMatrix } from '../transform/minify.js';
+import { FeatureWalkMode } from './type.js';
 
 class TransformCssFeature {
     get ordering() {
         return 4;
     }
-    get preProcess() {
-        return false;
-    }
-    get postProcess() {
-        return true;
+    get processMode() {
+        return FeatureWalkMode.Post;
     }
     static register(options) {
         // @ts-ignore
@@ -30,7 +28,7 @@ class TransformCssFeature {
     }
     run(ast) {
         if (!('chi' in ast)) {
-            return;
+            return null;
         }
         let i = 0;
         let node;
@@ -77,6 +75,7 @@ class TransformCssFeature {
                 return acc;
             }, [matrix]);
         }
+        return null;
     }
 }
 

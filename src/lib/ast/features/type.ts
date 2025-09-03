@@ -8,9 +8,9 @@ export enum FeatureWalkMode {
     /**
      * pre process
      */
-    Pre,
+    Pre = 0x1,
     /**
      * post process
      */
-    Post
+    Post = 0x2
 }

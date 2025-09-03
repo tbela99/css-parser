@@ -7,16 +7,14 @@ import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
 import '../../syntax/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
+import { FeatureWalkMode } from './type.js';
 
 class ComputeShorthandFeature {
     get ordering() {
         return 3;
     }
-    get preProcess() {
-        return false;
-    }
-    get postProcess() {
-        return true;
+    get processMode() {
+        return FeatureWalkMode.Post;
     }
     static register(options) {
         if (options.computeShorthand) {
@@ -26,7 +24,7 @@ class ComputeShorthandFeature {
     }
     run(ast, options = {}, parent, context) {
         if (!('chi' in ast)) {
-            return ast;
+            return null;
         }
         // @ts-ignore
         const j = ast.chi.length;

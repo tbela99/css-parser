@@ -350,7 +350,7 @@ export function lab2srgbvalues(token: ColorToken): number[] | null {
 
     const rgb: number[] = Lab_to_sRGB(l, a, b);
 
-    if (alpha != null && alpha != 1) {
+    if (alpha != null && alpha < 1) {
 
         rgb.push(alpha);
     }

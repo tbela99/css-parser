@@ -43,7 +43,7 @@ export function parseRelativeColor(relativeKeys: string, original: ColorToken, r
     let values: Record<RelativeColorTypes, number | Token | null> = <Record<RelativeColorTypes, number | Token | null>>{};
 
     // colorFuncColorSpace x,y,z or r,g,b
-    const names: string = relativeKeys.startsWith('xyz') ? 'xyz' : relativeKeys.slice(-3);
+    const names: string = relativeKeys.startsWith('xyz') ? 'xyz' : ['srgb', 'srgb-linear', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'rgb'].includes(relativeKeys.toLowerCase()) ? 'rgb' : relativeKeys.slice(-3);
     const converted: ColorToken = <ColorToken>convertColor(original, ColorType[relativeKeys.toUpperCase().replaceAll('-', '_') as keyof typeof ColorType]);
 
     if (converted == null) {
@@ -61,13 +61,13 @@ export function parseRelativeColor(relativeKeys: string, original: ColorToken, r
         // @ts-ignore
         alpha: alpha == null ? {
             typ: EnumToken.NumberTokenType,
-            val: '1'
+            val: 1
         } : (alpha.typ == EnumToken.IdenTokenType && alpha.val == 'none') ? {
             typ: EnumToken.NumberTokenType,
-            val: '0'
+            val: 0
         } : (alpha.typ == EnumToken.PercentageTokenType ? {
             typ: EnumToken.NumberTokenType,
-            val: String(getNumber(<PercentageToken>alpha))
+            val: getNumber(<PercentageToken>alpha)
         } : alpha)
     };
 
@@ -78,10 +78,10 @@ export function parseRelativeColor(relativeKeys: string, original: ColorToken, r
         // @ts-ignore
         alpha: getValue(aExp == null ? {
             typ: EnumToken.NumberTokenType,
-            val: '1'
+            val: 1
         } : (aExp.typ == EnumToken.IdenTokenType && aExp.val == 'none') ? {
             typ: EnumToken.NumberTokenType,
-            val: '0'
+            val: 0
         } : aExp)
     };
 
@@ -89,11 +89,6 @@ export function parseRelativeColor(relativeKeys: string, original: ColorToken, r
 }
 
 function getValue(t: Token, converted: ColorToken, component: string): Token {
-
-    // if (t == null) {
-    //
-    //     return t;
-    // }
 
     if (t.typ == EnumToken.PercentageTokenType) {
 
@@ -137,63 +132,17 @@ function computeComponentValue(expr: Record<RelativeColorTypes, Token>, converte
 
     for (const [key, exp] of Object.entries(expr)) {
 
-        /*
-        if (exp == null) {
-
-            if (key in values) {
-
-                if (typeof values[<RelativeColorTypes>key] == 'number') {
-
-                    expr[<RelativeColorTypes>key] = {
-                        typ: EnumToken.NumberTokenType,
-                        val: reduceNumber(<number>values[<RelativeColorTypes>key])
-                    };
-                } else {
-
-                    expr[<RelativeColorTypes>key] = <Token>values[<RelativeColorTypes>key];
-                }
-            }
-
-        } else
-            */
         if ([EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.LengthTokenType].includes(exp.typ)) {
 
         } else if (exp.typ == EnumToken.IdenTokenType && exp.val in values) {
 
-            // if (typeof values[<RelativeColorTypes>exp.val] == 'number') {
-            //
-            //     expr[<RelativeColorTypes>key] = {
-            //         typ: EnumToken.NumberTokenType,
-            //         val: reduceNumber(<number>values[<RelativeColorTypes>exp.val])
-            //     };
-            // } else {
-
             expr[<RelativeColorTypes>key] = <Token>values[<RelativeColorTypes>exp.val];
-            // }
 
         } else if (exp.typ == EnumToken.FunctionTokenType && mathFuncs.includes((exp as FunctionToken).val)) {
 
             for (let {value, parent} of walkValues((exp as FunctionToken).chi, exp)) {
 
-                // if (parent == null) {
-                //
-                //     parent = exp;
-                // }
-
-                /*
-                if (value.typ == EnumToken.PercentageTokenType) {
-
-                    replaceValue(parent as BinaryExpressionToken | FunctionToken | ParensToken, value, getValue(value, converted, <RelativeColorTypes>key));
-                } else
-                    */
-
                 if (value.typ == EnumToken.IdenTokenType) {
-
-                    // @ts-ignore
-                    // if (!(value.val in values || typeof Math[(value as IdentToken).val.toUpperCase()] == 'number')) {
-                    //
-                    //     return null;
-                    // }
 
                     // @ts-ignore
                     replaceValue(parent as BinaryExpressionToken | FunctionToken | ParensToken, value, values[value.val] ?? {
@@ -211,16 +160,12 @@ function computeComponentValue(expr: Record<RelativeColorTypes, Token>, converte
 
                 expr[<RelativeColorTypes>key] = result[0];
             }
-
-            // else {
-            //
-            //     return null;
-            // }
         }
     }
 
     return <Record<RelativeColorTypes, Token>>expr;
 }
+
 
 export function replaceValue(parent: FunctionToken | ParensToken | BinaryExpressionToken, value: Token, newValue: Token) {
 
@@ -232,14 +177,17 @@ export function replaceValue(parent: FunctionToken | ParensToken | BinaryExpress
 
                 if ((pr as BinaryExpressionToken).l == val) {
 
-                    (pr as BinaryExpressionToken).l = newValue
+                    (pr as BinaryExpressionToken).l = newValue;
+                    return
                 } else {
 
                     (pr as BinaryExpressionToken).r = newValue;
+                    return;
                 }
             } else {
 
                 (pr as FunctionToken | ParensToken).chi.splice((pr as FunctionToken | ParensToken).chi.indexOf(val), 1, newValue);
+                return;
             }
         }
     }

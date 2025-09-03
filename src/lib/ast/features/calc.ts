@@ -16,6 +16,7 @@ import {WalkerOptionEnum, WalkerValueEvent, walkValues} from "../walk.ts";
 import {evaluate} from "../math/index.ts";
 import {renderToken} from "../../renderer/index.ts";
 import {mathFuncs} from "../../syntax/index.ts";
+import {FeatureWalkMode} from "./type.ts";
 
 export class ComputeCalcExpressionFeature {
 
@@ -23,12 +24,8 @@ export class ComputeCalcExpressionFeature {
         return 1;
     }
 
-    get preProcess(): boolean {
-        return false;
-    }
-
-    get postProcess(): boolean {
-        return true;
+    get processMode(): FeatureWalkMode {
+        return FeatureWalkMode.Post;
     }
 
     static register(options: ParserOptions): void {
@@ -40,11 +37,11 @@ export class ComputeCalcExpressionFeature {
         }
     }
 
-    run(ast: AstRule | AstAtRule): void {
+    run(ast: AstRule | AstAtRule): AstNode | null {
 
         if (!('chi' in ast)) {
 
-            return;
+            return null;
         }
 
         for (const node of ast.chi! as Token[]) {
@@ -156,5 +153,7 @@ export class ComputeCalcExpressionFeature {
                 }
             }
         }
+
+        return null;
     }
 }

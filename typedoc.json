@@ -15,7 +15,7 @@
   ],
   "out": "docs",
   "projectDocuments": [
-    "README.md"
+    "files/index.md"
   ],
   "groupOrder": [
     "Functions",

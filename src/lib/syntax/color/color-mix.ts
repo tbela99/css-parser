@@ -173,12 +173,11 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
     const calculate = () => [colorSpace].concat((<number[]>values1).map((v1: number, i: number) => {
 
         return {
-            // @ts-ignore
-            typ: EnumToken.NumberTokenType, val: String((mul1 * v1 * p1 + mul2 * values2[i] * p2) / mul)
+            typ: EnumToken.NumberTokenType, val: (mul1 * v1 * p1 + mul2 * values2[i] * p2) / mul
         }
     }).concat(mul == 1 ? [] : [{
-        typ: EnumToken.NumberTokenType, val: String(mul)
-    }]));
+        typ: EnumToken.NumberTokenType, val: mul
+    }] ));
 
     switch (colorSpace.val) {
 

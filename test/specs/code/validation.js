@@ -159,13 +159,7 @@ html, body, div, span, applet, object, iframe,
 `, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.foo-bar {
  width: 12px;
  height: 25%;
- >a {
-  color: #fff
- }
- >a,+a,~a b {
-  color: #fff
- }
- & b {
+ >a,+a,~a b,& b {
   color: #fff
  }
 }`));

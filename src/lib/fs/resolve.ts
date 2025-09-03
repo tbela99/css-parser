@@ -8,10 +8,10 @@ export const matchUrl: RegExp = /^(https?:)?\/\//;
  */
 export function dirname(path: string): string {
 
-    if (path == '/' || path === '') {
-
-        return path;
-    }
+    // if (path == '/' || path === '') {
+    //
+    //     return path;
+    // }
 
     let i: number = 0;
 

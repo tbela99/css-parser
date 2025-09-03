@@ -129,11 +129,10 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
     // @ts-ignore
     const calculate = () => [colorSpace].concat(values1.map((v1, i) => {
         return {
-            // @ts-ignore
-            typ: EnumToken.NumberTokenType, val: String((mul1 * v1 * p1 + mul2 * values2[i] * p2) / mul)
+            typ: EnumToken.NumberTokenType, val: (mul1 * v1 * p1 + mul2 * values2[i] * p2) / mul
         };
     }).concat(mul == 1 ? [] : [{
-            typ: EnumToken.NumberTokenType, val: String(mul)
+            typ: EnumToken.NumberTokenType, val: mul
         }]));
     switch (colorSpace.val) {
         case 'srgb':
