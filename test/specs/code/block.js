@@ -758,4 +758,71 @@ content: '\\21 now\\21';
  margin-left: min(100%,20px)
 }`));
     });
+
+    it('duplicate declarations #37', function () {
+        const file = `
+
+@media tv {
+
+  .rule {
+    
+    width: 100%;
+    width: calc(100% + 40px);
+    margin-left: min(100% , 20px)
+  }
+}
+    
+@media tv {
+
+  .rule {
+    
+    margin-left: min(100% , 20px)
+  }
+}
+
+    #converted-text { color: color(from green display-p3 r calc(g + .2) b ); 
+      background: -o-linear-gradient(top, white, black);
+      background: -webkit-gradient(linear, left top, left bottom, from(white), to(black));
+      background: linear-gradient(to bottom, white, black);}
+`;
+        return transform(file, {
+            beautify: true,
+            removeDuplicateDeclarations:  ['background', 'width']}).then(result => expect(result.code).equals(`@media tv {
+ .rule {
+  width: 100%;
+  width: calc(100% + 40px);
+  margin-left: min(100%,20px)
+ }
+}
+#converted-text {
+ color: #00b400;
+ background: -o-linear-gradient(top,#fff,#000);
+ background: -webkit-gradient(linear,left top,left bottom,from(#fff),to(#000));
+ background: linear-gradient(to bottom,#fff,#000)
+}`));
+    });
+
+    it('duplicate declarations #38', function () {
+        const file = `
+
+.table tr:nth-child(even){background-color: #f2f2f2;}
+`;
+        return transform(file, {
+            beautify: true
+        }).then(result => expect(result.code).equals(`.table tr:nth-child(2n) {
+ background-color: #f2f2f2
+}`));
+    });
+
+    it('duplicate declarations #39', function () {
+        const file = `
+
+.table tr:nth-child(2n     +   1){background-color: #f2f2f2;}
+`;
+        return transform(file, {
+            beautify: true
+        }).then(result => expect(result.code).equals(`.table tr:nth-child(odd) {
+ background-color: #f2f2f2
+}`));
+    });
 }

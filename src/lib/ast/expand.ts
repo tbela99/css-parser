@@ -2,7 +2,7 @@ import {combinators, splitRule} from "./minify.ts";
 import {parseString} from "../parser/index.ts";
 import {walkValues} from "./walk.ts";
 import {renderToken} from "../renderer/index.ts";
-import type {AstAtRule, AstNode, AstRule, AstRuleStyleSheet, LiteralToken, Token} from "../../@types/index.d.ts";
+import type {AstAtRule, AstNode, AstRule, AstStyleSheet, LiteralToken, Token} from "../../@types/index.d.ts";
 import {EnumToken} from "./types.ts";
 
 /**
@@ -13,7 +13,7 @@ import {EnumToken} from "./types.ts";
  */
 export function expand(ast: AstNode): AstNode {
 
-    const result = <AstRuleStyleSheet | AstAtRule>{...ast, chi: []};
+    const result = <AstStyleSheet | AstAtRule>{...ast, chi: []};
 
     // @ts-ignore
     for (let i = 0; i < ast.chi.length; i++) {

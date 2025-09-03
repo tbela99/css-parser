@@ -41,6 +41,8 @@ the default file loader can be overridden via the options [ParseOptions.load](..
 
 ### From the web browser
 
+load as javascript module
+
 ```html
 <script type="module">
 
@@ -63,6 +65,46 @@ const result = await transform(css, {
 });
 
 console.debug(result.code);
+
+</script>
+```
+
+load as umd module
+
+```html
+
+<script src="https://unpkg.com/@tbela99/css-parser@1.3.2/dist/index-umd-web.js"></script>
+<script>
+
+    (async () => {
+
+        const css = `
+
+.table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.table td, .table th {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+.table tr:nth-child(even){background-color: #f2f2f2;}
+
+.table tr:hover {background-color: #ddd;}
+
+.table th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: #4CAF50;
+    color: white;
+}
+    `;
+
+        console.debug(await CSSParser.transform(css, {beautify: true, convertColor: CSSParser.ColorType.OKLCH}).then(r => r.code));
+    })();
 
 </script>
 ```
@@ -152,13 +194,16 @@ by default css output is minified. that behavior can be changed by passing the `
 
 const result = await transform(css, {beautify: true}); 
 // or render(ast, {beautify: true})
+
+console.log(result.code);
+
 ```
 
 #### Preserving license comments
 
 by default all comments are removed. they can be preserved by passing the `{removeComments:false}` option,
 
-license comments are preserved by passing `{preserveLicense:true}` regardless of the configuration of the removeComments option.
+if you only want to preserve license comments, and remove other comments, you can pass `{preserveLicense:true}` instead.
 
 ```ts
 
@@ -178,7 +223,7 @@ const result = await transform(css, {preserveLicense: true});
 #### Converting colors
 
 color conversion is controlled by the `convertColor` option. colors are converted to the HEX format by default.
-that behavior can be changed by passing the the chose color type to the convertColor option:
+that behavior can be changed by passing the chosen color type to the convertColor option:
 
 - ColorType.HEX
 - ColorType.RGB or ColorType.RGBA

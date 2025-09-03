@@ -29,8 +29,6 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
     let preprocess = false;
     let postprocess = false;
     let parents;
-    let i = 0;
-    let parent;
     let replacement;
     if (!('features' in options)) {
         // @ts-ignore
@@ -41,7 +39,6 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
             removePrefix: false,
             features: [], ...options
         };
-        // @ts-ignore
         for (const feature of features) {
             feature.register(options);
         }
@@ -56,15 +53,10 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
         }
     }
     if (preprocess) {
-        parents = [ast];
-        for (i = 0; i < parents.length; i++) {
-            parent = parents[i];
+        parents = new Set([ast]);
+        for (const parent of parents) {
             if (parent.typ == EnumToken.CommentTokenType ||
                 parent.typ == EnumToken.CDOCOMMTokenType) {
-                // Object.defineProperty(parent, 'parent', {
-                //     ...definedPropertySettings,
-                //     value: parent
-                // })
                 continue;
             }
             replacement = parent;
@@ -77,18 +69,18 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                     replacement = result;
                 }
             }
+            if (replacement != parent && parent.parent != null) {
+                // @ts-ignore
+                replaceToken(parent.parent, parent, replacement);
+            }
             if (('chi' in replacement)) {
                 // @ts-ignore
                 for (const node of replacement.chi) {
-                    parents.push(Object.defineProperty(node, 'parent', {
+                    parents.add(Object.defineProperty(node, 'parent', {
                         ...definedPropertySettings,
                         value: replacement
                     }));
                 }
-            }
-            if (replacement != null && replacement != parent && parent.parent != null) {
-                // @ts-ignore
-                replaceToken(parent.parent, parent, replacement);
             }
         }
         for (const feature of options.features) {
@@ -99,7 +91,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
         }
     }
     doMinify(ast, options, recursive, errors, nestingContent, context);
-    parents = [ast];
+    parents = new Set([ast]);
     for (const parent of parents) {
         if (parent.typ == EnumToken.CommentTokenType ||
             parent.typ == EnumToken.CDOCOMMTokenType) {
@@ -117,18 +109,17 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                 }
             }
         }
-        if (('chi' in replacement)) {
+        if (replacement != null && replacement != parent && parent.parent != null) {
             // @ts-ignore
+            replaceToken(parent.parent, parent, replacement);
+        }
+        if (('chi' in replacement)) {
             for (const node of replacement.chi) {
-                parents.push(Object.defineProperty(node, 'parent', {
+                parents.add(Object.defineProperty(node, 'parent', {
                     ...definedPropertySettings,
                     value: replacement
                 }));
             }
-        }
-        if (replacement != null && replacement != parent && parent.parent != null) {
-            // @ts-ignore
-            replaceToken(parent.parent, parent, replacement);
         }
     }
     if (postprocess) {
@@ -145,12 +136,10 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
  * reduce selectors
  * @param acc
  * @param curr
- * @param index
- * @param array
  *
  * @private
  */
-function reduce(acc, curr, index, array) {
+function reduce(acc, curr) {
     // trim :is()
     // if (array.length == 1 && array[0][0] == ':is(' && array[0].at(-1) == ')') {
     //
@@ -191,15 +180,12 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
         }
         let i = 0;
         let previous = null;
-        let node;
+        let node = null;
         let nodeIndex = -1;
-        // @ts-ignore
         for (; i < ast.chi.length; i++) {
-            // @ts-ignore
             if (ast.chi[i].typ == EnumToken.CommentNodeType) {
                 continue;
             }
-            // @ts-ignore
             node = ast.chi[i];
             if (node.typ == EnumToken.AtRuleNodeType && node.nam == 'font-face') {
                 continue;
@@ -213,16 +199,11 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     i = nodeIndex;
                     continue;
                 }
-                // if ((<AstKeyframesAtRule>node).chi.length > 0) {
-                //
-                //     doMinify(node, options, recursive, errors, nestingContent, context);
-                // }
             }
             else if (node.typ == EnumToken.KeyFramesRuleNodeType) {
                 if (previous?.typ == EnumToken.KeyFramesRuleNodeType &&
                     node.sel == previous.sel) {
                     previous.chi.push(...node.chi);
-                    // @ts-ignore
                     ast.chi.splice(i--, 1);
                     continue;
                 }
@@ -244,25 +225,25 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                 }
             }
             else if (node.typ == EnumToken.AtRuleNodeType) {
-                // @ts-ignore
                 if (node.nam == 'media' && ['all', '', null].includes(node.val)) {
-                    // @ts-ignore
                     ast.chi?.splice(i, 1, ...node.chi);
                     i--;
                     continue;
                 }
-                // @ts-ignore
                 if (previous?.typ == EnumToken.AtRuleNodeType &&
                     previous.nam == node.nam &&
                     previous.val == node.val) {
                     if ('chi' in node) {
                         // @ts-ignore
                         previous.chi.push(...node.chi);
+                        if (!hasDeclaration(previous)) {
+                            context.nodes.delete(previous);
+                            doMinify(previous, options, recursive, errors, nestingContent, context);
+                        }
                     }
                     ast?.chi?.splice(i--, 1);
                     continue;
                 }
-                // @ts-ignore
                 if (!hasDeclaration(node)) {
                     doMinify(node, options, recursive, errors, nestingContent, context);
                 }
@@ -273,47 +254,33 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
             // @ts-ignore
             else if (node.typ == EnumToken.RuleNodeType) {
                 reduceRuleSelector(node);
-                let wrapper;
+                let wrapper = null;
                 let match;
-                // @ts-ignore
                 if (options.nestingRules) {
-                    // @ts-ignore
                     if (previous?.typ == EnumToken.RuleNodeType) {
-                        // @ts-ignore
                         reduceRuleSelector(previous);
                         // @ts-ignore
                         match = matchSelectors(previous.raw, node.raw, ast.typ);
-                        // @ts-ignore
                         if (match != null) {
-                            // @ts-ignore
                             wrapper = wrapNodes(previous, node, match, ast, reducer, i, nodeIndex);
                             nodeIndex = i - 1;
-                            // @ts-ignore
                             previous = ast.chi[nodeIndex];
                         }
                     }
-                    // @ts-ignore
                     if (wrapper != null) {
-                        // @ts-ignore
                         while (i < ast.chi.length) {
-                            // @ts-ignore
                             const nextNode = ast.chi[i];
-                            // @ts-ignore
                             if (nextNode.typ != EnumToken.RuleNodeType) {
                                 break;
                             }
                             reduceRuleSelector(nextNode);
-                            // @ts-ignore
-                            match = matchSelectors(wrapper.raw, nextNode.raw, ast.typ);
-                            // @ts-ignore
+                            match = matchSelectors(wrapper.raw, nextNode.raw);
                             if (match == null) {
                                 break;
                             }
-                            // @ts-ignore
                             wrapper = wrapNodes(wrapper, nextNode, match, ast, reducer, i, nodeIndex);
                         }
                         nodeIndex = --i;
-                        // @ts-ignore
                         previous = ast.chi[nodeIndex];
                         doMinify(wrapper, options, recursive, errors, nestingContent, context);
                         continue;
@@ -360,7 +327,6 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                             curr.unshift('&');
                             wrap = false;
                         }
-                        // @ts-ignore
                         acc.push(curr);
                         return acc;
                     }, []);
@@ -386,49 +352,40 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                         }
                     }
                     if (rule == null) {
-                        rule = selector.map(s => {
+                        rule = selector.map((s) => {
                             if (s[0] == '&') {
                                 s.splice(0, 1, ...node.optimized.optimized);
                             }
                             return s.join('');
                         }).join(',');
                     }
-                    // @ts-ignore
                     let sel = wrap ? node.optimized.optimized.join('') + `:is(${rule})` : rule;
                     if (sel.length < node.sel.length) {
                         node.sel = sel;
                     }
                 }
+                doMinify(node, options, recursive, errors, nestingContent, context);
             }
-            // @ts-ignore
             if (previous != null) {
-                // @ts-ignore
                 if ('chi' in previous && ('chi' in node)) {
-                    // @ts-ignore
                     if (previous.typ == node.typ) {
                         let shouldMerge = true;
-                        // @ts-ignore
                         let k = previous.chi.length;
                         while (k-- > 0) {
-                            // @ts-ignore
                             if (previous.chi[k].typ == EnumToken.CommentNodeType) {
                                 continue;
                             }
-                            // @ts-ignore
                             shouldMerge = previous.chi[k].typ == EnumToken.DeclarationNodeType;
                             break;
                         }
                         if (shouldMerge) {
-                            // @ts-ignore
                             if (((node.typ == EnumToken.RuleNodeType || node.typ == EnumToken.KeyFramesRuleNodeType) && node.sel == previous.sel) ||
-                                // @ts-ignore
                                 (node.typ == EnumToken.AtRuleNodeType) && node.val != 'font-face' && node.val == previous.val) {
                                 // @ts-ignore
                                 node.chi.unshift(...previous.chi);
-                                // @ts-ignore
+                                doMinify(node, options, recursive, errors, nestingContent, context);
                                 ast.chi.splice(nodeIndex, 1);
-                                i--;
-                                previous = node;
+                                previous = ast.chi[--i];
                                 nodeIndex = i;
                                 continue;
                             }
@@ -436,32 +393,24 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                 const intersect = diff(previous, node, reducer, options);
                                 if (intersect != null) {
                                     if (intersect.node1.chi.length == 0) {
-                                        // @ts-ignore
                                         ast.chi.splice(i--, 1);
                                     }
                                     else {
-                                        // @ts-ignore
                                         ast.chi.splice(i--, 1, intersect.node1);
                                     }
                                     if (intersect.node2.chi.length == 0) {
-                                        // @ts-ignore
                                         ast.chi.splice(nodeIndex, 1, intersect.result);
                                         i--;
-                                        // @ts-ignore
                                         if (nodeIndex == i) {
                                             nodeIndex = i;
                                         }
                                     }
                                     else {
-                                        // @ts-ignore
                                         ast.chi.splice(nodeIndex, 1, intersect.result, intersect.node2);
-                                        // @ts-ignore
                                         i = (nodeIndex ?? 0) + 1;
                                     }
                                     reduceRuleSelector(intersect.result);
-                                    // @ts-ignore
                                     if (node != ast.chi[i]) {
-                                        // @ts-ignore
                                         node = ast.chi[i];
                                     }
                                     previous = intersect.result;
@@ -470,9 +419,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                             }
                         }
                     }
-                    // @ts-ignore
                     if (recursive && previous != node) {
-                        // @ts-ignore
                         if (!hasDeclaration(previous)) {
                             doMinify(previous, options, recursive, errors, nestingContent, context);
                         }
@@ -480,9 +427,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                 }
             }
             if (!nestingContent &&
-                // @ts-ignore
                 previous != null &&
-                // previous.optimized != null &&
                 previous.typ == EnumToken.RuleNodeType &&
                 previous.sel.includes('&')) {
                 fixSelector(previous);
@@ -490,20 +435,15 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
             previous = node;
             nodeIndex = i;
         }
-        // @ts-ignore
         if (recursive && node != null && ('chi' in node)) {
-            // @ts-ignore
             if (node.typ == EnumToken.KeyframesAtRuleNodeType || !node.chi.some(n => n.typ == EnumToken.DeclarationNodeType)) {
-                // @ts-ignore
                 if (!(node.typ == EnumToken.AtRuleNodeType && node.nam != 'font-face')) {
                     doMinify(node, options, recursive, errors, nestingContent, context);
                 }
             }
         }
         if (!nestingContent &&
-            // @ts-ignore
             node != null &&
-            // previous.optimized != null &&
             node.typ == EnumToken.RuleNodeType &&
             node.sel.includes('&')) {
             fixSelector(node);
@@ -654,7 +594,6 @@ function splitRule(buffer) {
         }
         if (chr == ',') {
             if (str !== '') {
-                // @ts-ignore
                 result.at(-1).push(str);
                 str = '';
             }
@@ -663,7 +602,6 @@ function splitRule(buffer) {
         }
         if (chr == '.') {
             if (str !== '') {
-                // @ts-ignore
                 result.at(-1).push(str);
                 str = '';
             }
@@ -672,20 +610,17 @@ function splitRule(buffer) {
         }
         if (combinators.includes(chr)) {
             if (str !== '') {
-                // @ts-ignore
                 result.at(-1).push(str);
                 str = '';
             }
             if (chr == '|' && buffer.charAt(i + 1) == '|') {
                 chr += buffer.charAt(++i);
             }
-            // @ts-ignore
             result.at(-1).push(chr);
             continue;
         }
         if (chr == ':') {
             if (str !== '') {
-                // @ts-ignore
                 result.at(-1).push(str);
                 str = '';
             }
@@ -727,7 +662,6 @@ function splitRule(buffer) {
         }
     }
     if (str !== '') {
-        // @ts-ignore
         result.at(-1).push(str);
     }
     return result;
@@ -792,7 +726,7 @@ function reduceSelector(acc, curr) {
  *
  * @private
  */
-function matchSelectors(selector1, selector2 /*, parentType: EnumToken, errors: ErrorDescription[] */) {
+function matchSelectors(selector1, selector2) {
     let match = [[]];
     const j = Math.min(selector1.reduce((acc, curr) => Math.min(acc, curr.length), selector1.length > 0 ? selector1[0].length : 0), selector2.reduce((acc, curr) => Math.min(acc, curr.length), selector2.length > 0 ? selector2[0].length : 0));
     let i = 0;
@@ -867,7 +801,6 @@ function matchSelectors(selector1, selector2 /*, parentType: EnumToken, errors: 
  * @private
  */
 function fixSelector(node) {
-    // @ts-ignore
     if (node.sel.includes('&')) {
         const attributes = parseString(node.sel);
         for (const attr of walkValues(attributes)) {
@@ -902,40 +835,27 @@ function wrapNodes(previous, node, match, ast, reducer, i, nodeIndex) {
     let nSel = match.selector2.reduce(reducer, []).join(',');
     // @ts-ignore
     const wrapper = { ...previous, chi: [], sel: match.match.reduce(reducer, []).join(',') };
-    // @ts-ignore
     Object.defineProperty(wrapper, 'raw', {
         ...definedPropertySettings,
-        // @ts-ignore
         value: match.match.map(t => t.slice())
     });
     if (pSel == '&' || pSel === '') {
-        // @ts-ignore
         wrapper.chi.push(...previous.chi);
-        // @ts-ignore
         if ((nSel == '&' || nSel === '')) {
-            // @ts-ignore
             wrapper.chi.push(...node.chi);
         }
         else {
-            // @ts-ignore
             wrapper.chi.push(node);
         }
     }
     else {
-        // @ts-ignore
         wrapper.chi.push(previous, node);
     }
-    // @ts-ignore
     ast.chi.splice(i, 1, wrapper);
-    // @ts-ignore
     ast.chi.splice(nodeIndex, 1);
-    // @ts-ignore
     previous.sel = pSel;
-    // @ts-ignore
     previous.raw = match.selector1;
-    // @ts-ignore
     node.sel = nSel;
-    // @ts-ignore
     node.raw = match.selector2;
     reduceRuleSelector(wrapper);
     return wrapper;

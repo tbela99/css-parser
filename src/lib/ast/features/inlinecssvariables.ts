@@ -5,7 +5,7 @@ import type {
     AstNode,
     AstRule,
     AstRuleList,
-    AstRuleStyleSheet,
+    AstStyleSheet,
     BinaryExpressionToken,
     CommentToken,
     DashedIdentToken,
@@ -103,7 +103,7 @@ export class InlineCssVariablesFeature {
         }
     }
 
-    run(ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
+    run(ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstStyleSheet, context: {
         [key: string]: any
     }): AstNode | null {
 
@@ -174,7 +174,7 @@ export class InlineCssVariablesFeature {
         return null;
     }
 
-    cleanup(ast: AstRuleStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }) {
+    cleanup(ast: AstStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }) {
 
         const variableScope = <Map<string, VariableScopeInfo>>context.variableScope;
 

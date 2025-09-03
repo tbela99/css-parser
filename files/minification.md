@@ -15,6 +15,44 @@ individual flags can be set to control specific minification features.
 
 keyframes rules are minified.
 
+```ts
+
+import {transform, TransformOptions} from "../src/node.ts";
+
+const options: TransformOptions = {
+
+    beautify: true,
+};
+
+const css = `@keyframes slide-in {
+  from {
+    transform: translateX(0%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+    `;
+
+const result = await transform(css, options);
+
+console.debug(result.code);
+
+```
+
+output
+```css
+@keyframes slide-in {
+    0% {
+        transform: translateX(0)
+    }
+    to {
+        transform: translateX(100%)
+    }
+}
+```
+
 ### CSS variables inlining
 
 this feature is disabled by default.
@@ -53,7 +91,7 @@ output
 
 ### Math functions
 
-this feature is enaled by default. it can be disabled using `{computeCalcExpression: false}`.
+this feature is enabled by default. it can be disabled using `{computeCalcExpression: false}`.
 [math functions](../variables/node.mathFuncs.html) such as `calc()` are evaluated when enabled using `{computeCalcExpression: true}`.
 
 ```ts
@@ -86,10 +124,101 @@ output
 }
 ```
 
+### Color minification
+
+CSS colors level 4&5 are fully supported. the library will convert between all supported color formats.
+it can also compute relative colors and color-mix() functions.
+
+```ts
+
+import {transform, ColorType, TransformOptions} from '@tbela99/css-parser';
+
+const options: TransformOptions = {
+
+    beautify: true,
+};
+
+const css = `
+
+.color1 {
+    --color1: color(from green srgb r g b / 0.5);
+    --color2: color(from #123456 xyz calc(x + 0.75) y calc(z - 0.35));
+    --color3: 
+color(display-p3 1 0.5 0);
+--color4: color(display-p3 1 0.5 0 / .5);
+--color5: color-mix(in lab, plum 60%, #123456 50%);
+--color6: color-mix(in lch longer hue, hsl(200deg 50% 80%), coral);
+}
+    `;
+
+const result = await transform(css, options);
+
+console.debug(result.code);
+
+```
+
+output
+
+```css
+.color1 {
+ --color1: #00800080;
+ --color2: red;
+ --color3: #ff7600;
+ --color4: #ff760080;
+ --color5: #816d9d;
+ --color6: #88ca86
+}
+```
+
+the color result color format can be specified using the `convertColor` option.
+
+```ts
+
+import {transform, ColorType, TransformOptions} from '@tbela99/css-parser';
+
+const options: TransformOptions = {
+
+    beautify: true,
+        convertColor: ColorType.OKLCH
+};
+
+const css = `
+
+.color1 {
+    --color1: color(from green srgb r g b / 0.5);
+    --color2: color(from #123456 xyz calc(x + 0.75) y calc(z - 0.35));
+    --color3: 
+color(display-p3 1 0.5 0);
+--color4: color(display-p3 1 0.5 0 / .5);
+--color5: color-mix(in lab, plum 60%, #123456 50%);
+--color6: color-mix(in lch longer hue, hsl(200deg 50% 80%), coral);
+}
+    `;
+
+const result = await transform(css, options);
+
+console.debug(result.code);
+
+```
+
+output
+
+```css
+.color1 {
+    --color1: oklch(.519752 .176858 142.495/50%);
+    --color2: oklch(.473385 .954378 47.1833);
+    --color3: oklch(.742513 .219804 51.1597);
+    --color4: oklch(.742513 .219804 51.1597/50%);
+    --color5: oklch(.572282 .075648 303.425);
+    --color6: oklch(.77643 .115501 143.964)
+}
+```
+
+
 ### Transform functions
 
 compute css transform functions and preserve the shortest possible value. this feature is enabled by default. it can be disabled using `{computeTransform: false}`.
-this feature is enabled by default.
+
 
 ```ts
 
@@ -142,49 +271,9 @@ output
 .now{width:0}
 ```
 
-### Merge adjacent rules
-
-adjacent rules with common declarations and at-rules with the same name and prelude are merged.
-
-### Shorthands
-
-shorthand properties are computed and default values are removed.
-
-```ts
-import {transform} from '@tbela99/css-parser';
-
-const css = `
-
-.table {
-
-    margin-left: 25px;
-    margin-top: 20px;
-    margin-right: 25px;
-    margin-bottom: 15px;
-}
-    
-`;
-const result = await transform(css, {
-
-            beautify: true,
-        }
-);
-
-console.log(result.code);
-
-```
-
-output
-
-```css
-.table {
- margin: 20px 25px 15px
-}
-```
-
 ### Redundant declarations
 
-by default, only the last declaration is preserved. 
+by default, only the last declaration is preserved.
 
 
 to preserve all declarations, pass the option `{removeDuplicateDeclarations: false}`.
@@ -264,6 +353,69 @@ output
 }
 ```
 
+### Merging adjacent rules
+
+adjacent rules with common declarations and at-rules with the same name and prelude are merged.
+
+```ts
+
+const options: TransformOptions = {
+
+    beautify: true,
+    validation: true,
+    removeDuplicateDeclarations: ['background', 'width']
+};
+
+const css = `
+
+@media tv {
+
+  .rule {
+    
+    width: 100%;
+    width: calc(100% + 40px);
+    margin-left: min(100% , 20px)
+  }
+}
+    
+@media tv {
+
+  .rule {
+    
+    margin-left: min(100% , 20px)
+  }
+}
+
+    #converted-text { color: color(from green display-p3 r calc(g + .2) b ); 
+      background: -o-linear-gradient(top, white, black);
+      background: -webkit-gradient(linear, left top, left bottom, from(white), to(black));
+      background: linear-gradient(to bottom, white, black);}
+    `;
+
+const result = await transform(css, options);
+
+console.debug(result.code);
+
+```
+
+output
+
+```css
+@media tv {
+ .rule {
+  width: 100%;
+  width: calc(100% + 40px);
+  margin-left: min(100%,20px)
+ }
+}
+#converted-text {
+ color: #00b400;
+ background: -o-linear-gradient(top,#fff,#000);
+ background: -webkit-gradient(linear,left top,left bottom,from(#fff),to(#000));
+ background: linear-gradient(to bottom,#fff,#000)
+}
+```
+
 ### Conditional wrapping or unwrapping selectors using :is()
 
 this feature is enabled by default. it can be disabled by turning off minification using `{minify: false}`.
@@ -310,7 +462,7 @@ output
 
 ### CSS Nesting
 
-this feature is enabled by default. it can be disabled using `{cssNesting: false}`.
+this feature is enabled by default. it can be disabled using `{nestingRules: false}`.
 when enabled, css rules are automatically nested.
 
 ```ts
@@ -343,7 +495,8 @@ const css = `
 `;
 const result = await transform(css, {
 
-            beautify: true
+            beautify: true,
+    convertColor: ColorType.OKLCH
         }
 );
 
@@ -357,23 +510,23 @@ output
     border-collapse: collapse;
     width: 100%;
     & td,& th {
-        border: 1px solid #ddd;
+        border: 1px solid oklch(.897547 0 0);
         padding: 8px
     }
     & tr {
-        &:nth-child(even) {
-            background-color: #f2f2f2
+        &:nth-child(2n) {
+            background-color: oklch(.961151 0 0)
         }
         &:hover {
-            background-color: #ddd
+            background-color: oklch(.897547 0 0)
         }
     }
     & th {
         padding-top: 12px;
         padding-bottom: 12px;
         text-align: left;
-        background-color: #4CAF50;
-        color: #fff
+        background-color: oklch(.673098 .162442 144.208);
+        color: oklch(1 0 0)
     }
 }
 ```
@@ -576,3 +729,93 @@ output
  grid-area: footer
 }
 ```
+
+### Shorthands
+
+shorthand properties are computed and default values are removed.
+
+```ts
+import {transform} from '@tbela99/css-parser';
+
+const css = `
+
+.table {
+
+    margin-left: 25px;
+    margin-top: 20px;
+    margin-right: 25px;
+    margin-bottom: 15px;
+}
+    
+`;
+const result = await transform(css, {
+
+            beautify: true,
+        }
+);
+
+console.log(result.code);
+
+```
+
+output
+
+```css
+.table {
+ margin: 20px 25px 15px
+}
+```
+
+#### Computed shorthands properties
+
+list of computed shorthands properties:
+
+- [ ] ~all~
+- [x] animation
+- [x] background
+- [x] border
+- [ ] border-block-end
+- [ ] border-block-start
+- [x] border-bottom
+- [x] border-color
+- [ ] border-image
+- [ ] border-inline-end
+- [ ] border-inline-start
+- [x] border-left
+- [x] border-radius
+- [x] border-right
+- [x] border-style
+- [x] border-top
+- [x] border-width
+- [x] column-rule
+- [x] columns
+- [x] container
+- [ ] contain-intrinsic-size
+- [x] flex
+- [x] flex-flow
+- [x] font
+- [ ] font-synthesis
+- [ ] font-variant
+- [x] gap
+- [ ] grid
+- [ ] grid-area
+- [ ] grid-column
+- [ ] grid-row
+- [ ] grid-template
+- [x] inset
+- [x] list-style
+- [x] margin
+- [ ] mask
+- [ ] offset
+- [x] outline
+- [x] overflow
+- [x] padding
+- [ ] place-content
+- [ ] place-items
+- [ ] place-self
+- [ ] scroll-margin
+- [ ] scroll-padding
+- [ ] scroll-timeline
+- [x] text-decoration
+- [x] text-emphasis
+- [x] transition

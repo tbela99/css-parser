@@ -4,7 +4,7 @@ import type {
     AstAtRule,
     AstNode,
     AstRule,
-    AstRuleStyleSheet,
+    AstStyleSheet,
     ParserOptions,
     PropertyListOptions
 } from "../../../@types/index.d.ts";
@@ -29,7 +29,7 @@ export class ComputeShorthandFeature {
         }
     }
 
-    run(ast: AstRule | AstAtRule, options: PropertyListOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
+    run(ast: AstRule | AstAtRule, options: PropertyListOptions = {}, parent: AstRule | AstAtRule | AstStyleSheet, context: {
         [key: string]: any
     }): AstNode | null {
 

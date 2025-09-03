@@ -19,7 +19,6 @@ export function reduceHexValue(value: string): string {
 
     const named_color: string = NAMES_COLORS[expandHexValue(value)];
 
-
     if (value.length == 7) {
 
         if (value[1] == value[2] &&
@@ -28,6 +27,7 @@ export function reduceHexValue(value: string): string {
 
             value = `#${value[1]}${value[3]}${value[5]}`;
         }
+
     } else if (value.length == 9) {
 
         if (value[1] == value[2] &&
@@ -36,6 +36,11 @@ export function reduceHexValue(value: string): string {
             value[7] == value[8]) {
 
             value = `#${value[1]}${value[3]}${value[5]}${value[7] == 'f' ? '' : value[7]}`;
+        }
+
+        if (value.endsWith('ff')) {
+
+            value = value.slice(0, -2);
         }
     }
 

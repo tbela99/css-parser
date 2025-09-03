@@ -20,6 +20,9 @@ var WalkerOptionEnum;
      */
     WalkerOptionEnum[WalkerOptionEnum["IgnoreChildren"] = 8] = "IgnoreChildren";
 })(WalkerOptionEnum || (WalkerOptionEnum = {}));
+/**
+ * event types for the walkValues function
+ */
 var WalkerValueEvent;
 (function (WalkerValueEvent) {
     /**

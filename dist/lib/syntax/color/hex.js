@@ -33,6 +33,9 @@ function reduceHexValue(value) {
             value[7] == value[8]) {
             value = `#${value[1]}${value[3]}${value[5]}${value[7] == 'f' ? '' : value[7]}`;
         }
+        if (value.endsWith('ff')) {
+            value = value.slice(0, -2);
+        }
     }
     return named_color != null && named_color.length <= value.length ? named_color : value;
 }

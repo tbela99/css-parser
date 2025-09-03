@@ -50,7 +50,6 @@ export {
 export {FeatureWalkMode} from './lib/ast/features/type.ts';
 export {dirname, resolve};
 
-
 /**
  * default file or url loader
  * @param url
@@ -88,7 +87,7 @@ export async function load(url: string, currentFile: string = '.'): Promise<Read
 }
 
 /**
- * render ast tree
+ * render the ast tree
  * @param data
  * @param options
  *
@@ -155,7 +154,7 @@ export async function parseFile(file: string, options: ParserOptions = {}): Prom
 /**
  * parse css
  * @param stream
- * @param opt
+ * @param options
  *
  * Example:
  *
@@ -180,18 +179,18 @@ export async function parseFile(file: string, options: ParserOptions = {}): Prom
  *  console.log(result.ast);
  * ```
  */
-export async function parse(stream: string | ReadableStream<Uint8Array>, opt: ParserOptions = {}): Promise<ParseResult> {
+export async function parse(stream: string | ReadableStream<Uint8Array>, options: ParserOptions = {}): Promise<ParseResult> {
 
     return doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
         stream,
         buffer: '',
         position: {ind: 0, lin: 1, col: 1},
         currentPosition: {ind: -1, lin: 1, col: 0}
-    } as ParseInfo), Object.assign(opt, {
+    } as ParseInfo), Object.assign(options, {
         load,
         resolve,
         dirname,
-        cwd: opt.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
+        cwd: options.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
     }));
 }
 
@@ -245,12 +244,12 @@ export async function transformFile(file: string, options: TransformOptions = {}
 export async function transform(css: string | ReadableStream<Uint8Array>, options: TransformOptions = {}): Promise<TransformResult> {
 
     options = {minify: true, removeEmpty: true, removeCharset: true, ...options};
-
     const startTime: number = performance.now();
 
     return parse(css, options).then((parseResult: ParseResult) => {
 
-        const rendered: RenderResult = render(parseResult.ast, options);
+        // ast already expanded by parse
+        const rendered: RenderResult = render(parseResult.ast, {...options, expandNestingRules: false});
 
         return {
             ...parseResult,

@@ -36,6 +36,9 @@ export enum WalkerOptionEnum {
     IgnoreChildren = 0x8
 }
 
+/**
+ * event types for the walkValues function
+ */
 export enum WalkerValueEvent {
 
     /**

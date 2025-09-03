@@ -61,11 +61,16 @@ function applyPatches(...patches: PatchSyntax[]) {
 
     for (const patch of patches) {
 
-        for (const [key, value] of Object.entries(patch.atrules)) {
+        for (let [key, value] of Object.entries(patch.atrules)) {
+
+            if (key.charAt(0) != '@') {
+
+                key = '@' + key;
+            }
 
             if (!(key in json.atRules)) {
 
-                console.error(`>> adding at-rule declarations >> ${key}`);
+                console.error(`>> adding at-rule >> ${key}`);
                 json.atRules[key] = {syntax: value.prelude};
             }
         }

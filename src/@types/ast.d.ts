@@ -56,7 +56,7 @@ export declare interface BaseToken {
     /**
      * parent node
      */
-    parent?: AstRuleList;
+    parent?: AstRuleList | null;
     /**
      * @private
      */
@@ -119,6 +119,7 @@ export declare interface AstInvalidDeclaration extends BaseToken {
 export declare interface AstInvalidAtRule extends BaseToken {
 
     typ: EnumToken.InvalidAtRuleTokenType;
+    nam: string;
     val: string;
     chi?: Array<AstNode>;
 }
@@ -211,7 +212,7 @@ export declare interface AstRuleList extends BaseToken {
 /**
  * rule list node
  */
-export declare interface AstRuleStyleSheet extends AstRuleList {
+export declare interface AstStyleSheet extends AstRuleList {
     typ: EnumToken.StyleSheetNodeType,
     chi: Array<AstRuleList | AstComment>;
     tokens?: null;
@@ -221,7 +222,7 @@ export declare interface AstRuleStyleSheet extends AstRuleList {
  * ast node
  */
 export declare type AstNode =
-    AstRuleStyleSheet
+    AstStyleSheet
     | AstRuleList
     | AstComment
     | AstAtRule

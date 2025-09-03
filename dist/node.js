@@ -54,7 +54,7 @@ async function load(url, currentFile = '.') {
     throw new Error(`File not found: '${resolved.absolute || url}'`);
 }
 /**
- * render ast tree
+ * render the ast tree
  * @param data
  * @param options
  *
@@ -112,7 +112,7 @@ async function parseFile(file, options = {}) {
 /**
  * parse css
  * @param stream
- * @param opt
+ * @param options
  *
  * Example:
  *
@@ -152,13 +152,13 @@ async function parseFile(file, options = {}) {
  *  console.log(result.ast);
  * ```
  */
-async function parse(stream, opt = {}) {
+async function parse(stream, options = {}) {
     return doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
         stream,
         buffer: '',
         position: { ind: 0, lin: 1, col: 1 },
         currentPosition: { ind: -1, lin: 1, col: 0 }
-    }), Object.assign(opt, { load, resolve, dirname, cwd: opt.cwd ?? process.cwd() }));
+    }), Object.assign(options, { load, resolve, dirname, cwd: options.cwd ?? process.cwd() }));
 }
 /**
  * transform css file
@@ -232,7 +232,8 @@ async function transform(css, options = {}) {
     options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
     const startTime = performance.now();
     return parse(css, options).then((parseResult) => {
-        const rendered = render(parseResult.ast, options);
+        // ast already expanded by parse
+        const rendered = render(parseResult.ast, { ...options, expandNestingRules: false });
         return {
             ...parseResult,
             ...rendered,

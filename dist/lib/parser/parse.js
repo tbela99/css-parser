@@ -39,6 +39,9 @@ const enumTokenHints = new Set([
 function reject(reason) {
     throw new Error(reason ?? 'Parsing aborted');
 }
+function normalizeVisitorKeyName(keyName) {
+    return keyName.replace(/-([a-z])/g, (all, one) => one.toUpperCase());
+}
 function replaceToken(parent, value, replacement) {
     // @ts-ignore
     if ('parent' in value && value.parent != replacement.parent) {
@@ -149,7 +152,7 @@ async function doParse(iter, options = {}) {
     const rawTokens = [];
     const imports = [];
     // @ts-ignore ignore error
-    const isAsync = typeof iter[Symbol.asyncIterator] === 'function';
+    let isAsync = typeof iter[Symbol.asyncIterator] === 'function';
     while (item = isAsync ? (await iter.next()).value : iter.next().value) {
         stats.bytesIn = item.bytesIn;
         rawTokens.push(item);
@@ -270,7 +273,12 @@ async function doParse(iter, options = {}) {
             try {
                 const result = options.load(url, options.src);
                 const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == 'AsyncFunction' ? await result : result;
-                const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize(stream), Object.assign({}, options, {
+                const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
+                    stream,
+                    buffer: '',
+                    position: { ind: 0, lin: 1, col: 1 },
+                    currentPosition: { ind: -1, lin: 1, col: 0 }
+                }), Object.assign({}, options, {
                     minify: false,
                     setParent: false,
                     src: options.resolve(url, options.src).absolute
@@ -302,14 +310,15 @@ async function doParse(iter, options = {}) {
     if (options.expandNestingRules) {
         ast = expand(ast);
     }
+    const valuesHandlers = new Map;
+    const preValuesHandlers = new Map;
+    const postValuesHandlers = new Map;
+    const preVisitorsHandlersMap = new Map;
+    const visitorsHandlersMap = new Map;
+    const postVisitorsHandlersMap = new Map;
+    const allValuesHandlers = [];
     if (options.visitor != null) {
-        const valuesHandlers = new Map;
-        const preValuesHandlers = new Map;
-        const postValuesHandlers = new Map;
-        const preVisitorsHandlersMap = new Map;
-        const visitorsHandlersMap = new Map;
-        const postVisitorsHandlersMap = new Map;
-        for (const [key, value] of Object.entries(options.visitor).concat(options.visitor.Value == null ? [] : Object.entries(options.visitor.Value))) {
+        for (const [key, value] of Object.entries(options.visitor)) {
             if (key in EnumToken) {
                 if (typeof value == 'function') {
                     valuesHandlers.set(EnumToken[key], value);
@@ -351,7 +360,6 @@ async function doParse(iter, options = {}) {
                 console.warn(`doParse: visitor.${key} is not a valid key name`);
             }
         }
-        const allValuesHandlers = [];
         if (preValuesHandlers.size > 0) {
             allValuesHandlers.push(preValuesHandlers);
         }
@@ -361,157 +369,169 @@ async function doParse(iter, options = {}) {
         if (postValuesHandlers.size > 0) {
             allValuesHandlers.push(postValuesHandlers);
         }
+    }
+    for (const result of walk(ast)) {
+        // if (result.parent != null && !isNodeAllowedInContext(result.node, result.parent as AstNode)) {
+        //
+        //     errors.push({
+        //         action: 'drop',
+        //         message: `${EnumToken[result.parent.typ]}: child ${EnumToken[result.node.typ]}${result.node.typ == EnumToken.DeclarationNodeType ? ` '${(result.node as AstDeclaration).nam}'` :  result.node.typ == EnumToken.AtRuleNodeType || result.node.typ == EnumToken.KeyframesAtRuleNodeType ? ` '@${(result.node as AstAtRule).nam}'` : ''} not allowed in context${result.parent.typ == EnumToken.AtRuleNodeType ? ` '@${(result.parent as AstAtRule).nam}'` : result.parent.typ == EnumToken.StyleSheetNodeType ? ` 'stylesheet'` : ''}`,
+        //         // @ts-ignore
+        //         location: result.node.loc ?? map.get(result.node ) ?? null
+        //     });
+        //
+        //     // @ts-ignore
+        //     removeNode(result.node, result.parent as AstNode);
+        //     continue;
+        // }
         if (allValuesHandlers.length > 0 || preVisitorsHandlersMap.size > 0 || visitorsHandlersMap.size > 0 || postVisitorsHandlersMap.size > 0) {
-            for (const result of walk(ast)) {
-                if ((result.node.typ == EnumToken.DeclarationNodeType &&
-                    (preVisitorsHandlersMap.has('Declaration') || visitorsHandlersMap.has('Declaration') || postVisitorsHandlersMap.has('Declaration'))) ||
-                    (result.node.typ == EnumToken.AtRuleNodeType && (preVisitorsHandlersMap.has('AtRule') || visitorsHandlersMap.has('AtRule') || postVisitorsHandlersMap.has('AtRule'))) ||
-                    (result.node.typ == EnumToken.KeyframesAtRuleNodeType && (preVisitorsHandlersMap.has('KeyframesAtRule') || visitorsHandlersMap.has('KeyframesAtRule') || postVisitorsHandlersMap.has('KeyframesAtRule')))) {
-                    const handlers = [];
-                    const key = result.node.typ == EnumToken.DeclarationNodeType ? 'Declaration' : result.node.typ == EnumToken.AtRuleNodeType ? 'AtRule' : 'KeyframesAtRule';
-                    if (preVisitorsHandlersMap.has(key)) {
-                        // @ts-ignore
-                        handlers.push(preVisitorsHandlersMap.get(key));
-                    }
-                    if (visitorsHandlersMap.has(key)) {
-                        // @ts-ignore
-                        handlers.push(visitorsHandlersMap.get(key));
-                    }
-                    if (postVisitorsHandlersMap.has(key)) {
-                        // @ts-ignore
-                        handlers.push(postVisitorsHandlersMap.get(key));
-                    }
-                    let callable;
-                    let node = result.node;
-                    for (const handler of handlers) {
-                        callable = typeof handler == 'function' ? handler : handler[node.nam];
-                        if (callable == null) {
-                            continue;
-                        }
-                        let replacement = callable(node, result.parent);
-                        if (replacement == null) {
-                            continue;
-                        }
-                        replacement instanceof Promise || Object.getPrototypeOf(replacement).constructor.name == 'AsyncFunction';
-                        if (replacement) {
-                            replacement = await replacement;
-                        }
-                        if (replacement == null || replacement == node) {
-                            continue;
-                        }
-                        // @ts-ignore
-                        node = replacement;
-                        //
-                        if (Array.isArray(node)) {
-                            break;
-                        }
-                    }
-                    if (node != result.node) {
-                        // @ts-ignore
-                        replaceToken(result.parent, result.node, node);
-                    }
+            if ((result.node.typ == EnumToken.DeclarationNodeType &&
+                (preVisitorsHandlersMap.has('Declaration') || visitorsHandlersMap.has('Declaration') || postVisitorsHandlersMap.has('Declaration'))) ||
+                (result.node.typ == EnumToken.AtRuleNodeType && (preVisitorsHandlersMap.has('AtRule') || visitorsHandlersMap.has('AtRule') || postVisitorsHandlersMap.has('AtRule'))) ||
+                (result.node.typ == EnumToken.KeyframesAtRuleNodeType && (preVisitorsHandlersMap.has('KeyframesAtRule') || visitorsHandlersMap.has('KeyframesAtRule') || postVisitorsHandlersMap.has('KeyframesAtRule')))) {
+                const handlers = [];
+                const key = result.node.typ == EnumToken.DeclarationNodeType ? 'Declaration' : result.node.typ == EnumToken.AtRuleNodeType ? 'AtRule' : 'KeyframesAtRule';
+                if (preVisitorsHandlersMap.has(key)) {
+                    // @ts-ignore
+                    handlers.push(preVisitorsHandlersMap.get(key));
                 }
-                else if ((result.node.typ == EnumToken.RuleNodeType && (preVisitorsHandlersMap.has('Rule') || visitorsHandlersMap.has('Rule') || postVisitorsHandlersMap.has('Rule'))) ||
-                    (result.node.typ == EnumToken.KeyFramesRuleNodeType && (preVisitorsHandlersMap.has('KeyframesRule') || visitorsHandlersMap.has('KeyframesRule') || postVisitorsHandlersMap.has('KeyframesRule')))) {
-                    const handlers = [];
-                    const key = result.node.typ == EnumToken.RuleNodeType ? 'Rule' : 'KeyframesRule';
-                    if (preVisitorsHandlersMap.has(key)) {
-                        // @ts-ignore
-                        handlers.push(preVisitorsHandlersMap.get(key));
+                if (visitorsHandlersMap.has(key)) {
+                    // @ts-ignore
+                    handlers.push(visitorsHandlersMap.get(key));
+                }
+                if (postVisitorsHandlersMap.has(key)) {
+                    // @ts-ignore
+                    handlers.push(postVisitorsHandlersMap.get(key));
+                }
+                let callable;
+                let node = result.node;
+                for (const handler of handlers) {
+                    callable = typeof handler == 'function' ? handler : handler[normalizeVisitorKeyName(node.typ == EnumToken.DeclarationNodeType || node.typ == EnumToken.AtRuleNodeType ? node.nam : node.val)];
+                    if (callable == null) {
+                        continue;
                     }
-                    if (visitorsHandlersMap.has(key)) {
-                        // @ts-ignore
-                        handlers.push(visitorsHandlersMap.get(key));
+                    let replacement = callable(node, result.parent);
+                    if (replacement == null) {
+                        continue;
                     }
-                    if (postVisitorsHandlersMap.has(key)) {
-                        // @ts-ignore
-                        handlers.push(postVisitorsHandlersMap.get(key));
+                    isAsync = replacement instanceof Promise || Object.getPrototypeOf(replacement).constructor.name == 'AsyncFunction';
+                    if (replacement) {
+                        replacement = await replacement;
                     }
-                    let node = result.node;
-                    for (const callable of handlers) {
-                        // @ts-ignore
-                        let replacement = callable(node, result.parent);
-                        if (replacement == null) {
-                            continue;
-                        }
-                        replacement instanceof Promise || Object.getPrototypeOf(replacement).constructor.name == 'AsyncFunction';
-                        if (replacement) {
-                            replacement = await replacement;
-                        }
-                        if (replacement == null || replacement == node) {
-                            continue;
-                        }
-                        // @ts-ignore
-                        node = replacement;
-                        //
-                        if (Array.isArray(node)) {
-                            break;
-                        }
+                    if (replacement == null || replacement == node) {
+                        continue;
                     }
                     // @ts-ignore
-                    if (node != result.node) {
-                        // @ts-ignore
-                        replaceToken(result.parent, result.node, node);
+                    node = replacement;
+                    //
+                    if (Array.isArray(node)) {
+                        break;
                     }
                 }
-                else if (allValuesHandlers.length > 0) {
-                    let callable;
-                    let isAsync;
-                    let node = null;
-                    node = result.node;
+                if (node != result.node) {
+                    // @ts-ignore
+                    replaceToken(result.parent, result.node, node);
+                }
+            }
+            else if ((result.node.typ == EnumToken.RuleNodeType && (preVisitorsHandlersMap.has('Rule') || visitorsHandlersMap.has('Rule') || postVisitorsHandlersMap.has('Rule'))) ||
+                (result.node.typ == EnumToken.KeyFramesRuleNodeType && (preVisitorsHandlersMap.has('KeyframesRule') || visitorsHandlersMap.has('KeyframesRule') || postVisitorsHandlersMap.has('KeyframesRule')))) {
+                const handlers = [];
+                const key = result.node.typ == EnumToken.RuleNodeType ? 'Rule' : 'KeyframesRule';
+                if (preVisitorsHandlersMap.has(key)) {
+                    // @ts-ignore
+                    handlers.push(preVisitorsHandlersMap.get(key));
+                }
+                if (visitorsHandlersMap.has(key)) {
+                    // @ts-ignore
+                    handlers.push(visitorsHandlersMap.get(key));
+                }
+                if (postVisitorsHandlersMap.has(key)) {
+                    // @ts-ignore
+                    handlers.push(postVisitorsHandlersMap.get(key));
+                }
+                let node = result.node;
+                for (const callable of handlers) {
+                    // @ts-ignore
+                    let replacement = callable(node, result.parent);
+                    if (replacement == null) {
+                        continue;
+                    }
+                    isAsync = replacement instanceof Promise || Object.getPrototypeOf(replacement).constructor.name == 'AsyncFunction';
+                    if (replacement) {
+                        replacement = await replacement;
+                    }
+                    if (replacement == null || replacement == node) {
+                        continue;
+                    }
+                    // @ts-ignore
+                    node = replacement;
+                    //
+                    if (Array.isArray(node)) {
+                        break;
+                    }
+                }
+                // @ts-ignore
+                if (node != result.node) {
+                    // @ts-ignore
+                    replaceToken(result.parent, result.node, node);
+                }
+            }
+            else if (allValuesHandlers.length > 0) {
+                let callable;
+                let node = null;
+                node = result.node;
+                for (const valueHandler of allValuesHandlers) {
+                    if (valueHandler.has(node.typ)) {
+                        callable = valueHandler.get(node.typ);
+                        let replacement = callable(node, result.parent);
+                        if (replacement == null) {
+                            continue;
+                        }
+                        isAsync = replacement instanceof Promise || Object.getPrototypeOf(replacement).constructor.name == 'AsyncFunction';
+                        if (isAsync) {
+                            replacement = await replacement;
+                        }
+                        if (replacement != null && replacement != node) {
+                            node = replacement;
+                        }
+                    }
+                }
+                if (node != result.node) {
+                    // @ts-ignore
+                    replaceToken(result.parent, value, node);
+                }
+                const tokens = 'tokens' in result.node ? result.node.tokens : [];
+                if ('val' in result.node && Array.isArray(result.node.val)) {
+                    tokens.push(...result.node.val);
+                }
+                if (tokens.length == 0) {
+                    continue;
+                }
+                for (const { value, parent, root } of walkValues(tokens, result.node)) {
+                    node = value;
                     for (const valueHandler of allValuesHandlers) {
                         if (valueHandler.has(node.typ)) {
                             callable = valueHandler.get(node.typ);
-                            let replacement = callable(node, result.parent);
-                            if (replacement == null) {
+                            let result = callable(node, parent, root);
+                            if (result == null) {
                                 continue;
                             }
-                            isAsync = replacement instanceof Promise || Object.getPrototypeOf(replacement).constructor.name == 'AsyncFunction';
+                            isAsync = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == 'AsyncFunction';
                             if (isAsync) {
-                                replacement = await replacement;
+                                result = await result;
                             }
-                            if (replacement != null && replacement != node) {
-                                node = replacement;
+                            if (result != null && result != node) {
+                                node = result;
+                            }
+                            //
+                            if (Array.isArray(node)) {
+                                break;
                             }
                         }
                     }
-                    if (node != result.node) {
+                    if (node != value) {
                         // @ts-ignore
-                        replaceToken(result.parent, value, node);
-                    }
-                    const tokens = 'tokens' in result.node ? result.node.tokens : [];
-                    if ('val' in result.node && Array.isArray(result.node.val)) {
-                        tokens.push(...result.node.val);
-                    }
-                    if (tokens.length == 0) {
-                        continue;
-                    }
-                    for (const { value, parent, root } of walkValues(tokens, result.node)) {
-                        node = value;
-                        for (const valueHandler of allValuesHandlers) {
-                            if (valueHandler.has(node.typ)) {
-                                callable = valueHandler.get(node.typ);
-                                let result = callable(node, parent, root);
-                                if (result == null) {
-                                    continue;
-                                }
-                                isAsync = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == 'AsyncFunction';
-                                if (isAsync) {
-                                    result = await result;
-                                }
-                                if (result != null && result != node) {
-                                    node = result;
-                                }
-                                //
-                                if (Array.isArray(node)) {
-                                    break;
-                                }
-                            }
-                        }
-                        if (node != value) {
-                            // @ts-ignore
-                            replaceToken(parent, value, node);
-                        }
+                        replaceToken(parent, value, node);
                     }
                 }
             }
@@ -573,7 +593,6 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                 continue;
             }
             loc = location;
-            // @ts-ignore
             context.chi.push(tokens[i]);
             if (options.sourcemap) {
                 tokens[i].loc = loc;
@@ -607,9 +626,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
         rawTokens.shift();
         if (atRule.val == 'import') {
             // only @charset and @layer are accepted before @import
-            // @ts-ignore
             if (context.chi.length > 0) {
-                // @ts-ignore
                 let i = context.chi.length;
                 while (i--) {
                     // @ts-ignore
@@ -618,11 +635,8 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                         continue;
                     }
                     if (type != EnumToken.AtRuleNodeType) {
-                        // @ts-ignore
                         if (!(type == EnumToken.InvalidAtRuleTokenType &&
-                            // @ts-ignore
                             ['charset', 'layer', 'import'].includes(context.chi[i].nam))) {
-                            // @ts-ignore
                             errors.push({
                                 action: 'drop',
                                 message: 'invalid @import',
@@ -633,7 +647,6 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                             return null;
                         }
                     }
-                    // @ts-ignore
                     const name = context.chi[i].nam;
                     if (name != 'charset' && name != 'import' && name != 'layer') {
                         errors.push({ action: 'drop', message: 'invalid @import', location });
@@ -811,6 +824,34 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                         if (curr.typ == EnumToken.CommentTokenType) {
                             return acc;
                         }
+                        if (options.minify) {
+                            if (curr.typ == EnumToken.PseudoClassFuncTokenType && curr.val == ':nth-child') {
+                                let i = 0;
+                                for (; i < curr.chi.length; i++) {
+                                    if (curr.chi[i].typ == EnumToken.IdenTokenType && curr.chi[i].val == 'even') {
+                                        Object.assign(curr.chi[i], {
+                                            typ: EnumToken.Dimension,
+                                            val: 2,
+                                            unit: 'n'
+                                        });
+                                    }
+                                    else if (curr.chi[i].typ == EnumToken.Dimension &&
+                                        curr.chi[i].val == 2 &&
+                                        curr.chi[i].unit == 'n' &&
+                                        curr.chi[i + 1]?.typ == EnumToken.WhitespaceTokenType &&
+                                        curr.chi[i + 2]?.typ == EnumToken.LiteralTokenType &&
+                                        curr.chi[i + 2].val == '+' &&
+                                        curr.chi[i + 3]?.typ == EnumToken.WhitespaceTokenType &&
+                                        curr.chi[i + 4]?.typ == EnumToken.NumberTokenType &&
+                                        curr.chi[i + 4].val == 1) {
+                                        curr.chi.splice(i, 5, Object.assign(curr.chi[i], {
+                                            typ: EnumToken.IdenTokenType,
+                                            val: 'odd'
+                                        }));
+                                    }
+                                }
+                            }
+                        }
                         if (curr.typ == EnumToken.WhitespaceTokenType) {
                             if (trimWhiteSpace.includes(array[index - 1]?.typ) ||
                                 trimWhiteSpace.includes(array[index + 1]?.typ) ||
@@ -819,7 +860,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                                 return acc;
                             }
                         }
-                        if (ruleType == EnumToken.KeyFramesRuleNodeType) {
+                        if (ruleType == EnumToken.KeyFramesRuleNodeType && options.minify) {
                             if (curr.typ == EnumToken.IdenTokenType && curr.val == 'from') {
                                 Object.assign(curr, { typ: EnumToken.PercentageTokenType, val: '0' });
                             }

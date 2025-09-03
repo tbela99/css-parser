@@ -24,7 +24,6 @@ export declare type RuleVisitorHandler = GenericVisitorHandler<AstRule>;
  */
 export declare type AtRuleVisitorHandler = GenericVisitorHandler<AstAtRule>;
 
-
 /**
  * node visitor callback map
  *
@@ -221,7 +220,7 @@ export declare interface VisitorNodeMap {
 
     KeyframesRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesRule>;
 
-    KeyframesAtRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule>;
+    KeyframesAtRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule> | Record<string, GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule>>;
 
     /**
      * value visitor
@@ -237,7 +236,7 @@ export declare interface VisitorNodeMap {
      *
      * ```ts
      *
-     * import {transform, parseDeclarations} from "@tbela99/css-parser";
+     * import {transform, parse, parseDeclarations} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *

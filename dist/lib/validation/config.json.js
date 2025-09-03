@@ -1619,6 +1619,9 @@ var declarations = {
 	"text-anchor": {
 		syntax: "start | middle | end"
 	},
+	"text-autospace": {
+		syntax: "normal | <autospace> | auto"
+	},
 	"text-box": {
 		syntax: "normal | <'text-box-trim'> || <'text-box-edge'>"
 	},
@@ -4186,19 +4189,8 @@ var atRules = {
 			}
 		}
 	},
-	charset: {
-		syntax: "<string>"
-	},
-	container: {
-		syntax: "[ <container-name> ]? <container-condition>"
-	},
-	nest: {
+	"@nest": {
 		syntax: "<complex-selector-list>"
-	},
-	scope: {
-		syntax: "[ ( <scope-start> ) ]? [ to ( <scope-end> ) ]?"
-	},
-	"position-try": {
 	}
 };
 var config = {

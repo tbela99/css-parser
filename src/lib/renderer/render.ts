@@ -6,7 +6,7 @@ import type {
     AstNode,
     AstRule,
     AstRuleList,
-    AstRuleStyleSheet,
+    AstStyleSheet,
     AtRuleToken,
     AttrToken,
     BinaryExpressionToken,
@@ -268,7 +268,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
         case EnumToken.StyleSheetNodeType:
 
-            return (<AstRuleStyleSheet>data).chi.reduce((css: string, node: AstRuleList | AstComment) => {
+            return (<AstStyleSheet>data).chi.reduce((css: string, node: AstRuleList | AstComment) => {
 
                 const str: string = renderAstNode(node, options, sourcemap, {...position}, errors, reducer, cache, level, indents);
 

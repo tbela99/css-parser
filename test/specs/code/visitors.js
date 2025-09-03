@@ -182,6 +182,79 @@ html,body {
  background-color: orange
 }`));
         });
+
+        it('visitor #4', function () {
+
+            const css = `
+
+@keyframes slide-in {
+  from {
+    transform: translateX(0%);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes identifier {
+  0% {
+    top: 0;
+    left: 0;
+  }
+  30% {
+    top: 50px;
+  }
+  68%,
+  72% {
+    left: 50px;
+  }
+  100% {
+    top: 100px;
+    left: 100%;
+  }
+}
+`;
+            const options = {
+
+                removePrefix: true,
+                beautify: true,
+                visitor: {
+                    KeyframesAtRule: {
+                        slideIn(node) {
+
+                            node.val = 'slide-in-out';
+                            return node;
+                        }
+                    }
+                }
+            }
+
+            return transform(css, options).then(result => expect(result.code).equals(`@keyframes slide-in-out {
+ 0% {
+  transform: translateX(0)
+ }
+ to {
+  transform: translateX(100%)
+ }
+}
+@keyframes identifier {
+ 0% {
+  top: 0;
+  left: 0
+ }
+ 30% {
+  top: 50px
+ }
+ 68%,72% {
+  left: 50px
+ }
+ to {
+  top: 100px;
+  left: 100%
+ }
+}`));
+        });
+
     });
 
 }

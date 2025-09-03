@@ -666,6 +666,9 @@ declare enum WalkerOptionEnum {
      */
     IgnoreChildren = 8
 }
+/**
+ * event types for the walkValues function
+ */
 declare enum WalkerValueEvent {
     /**
      * enter node
@@ -2002,7 +2005,7 @@ export declare interface BaseToken {
     /**
      * parent node
      */
-    parent?: AstRuleList;
+    parent?: AstRuleList | null;
     /**
      * @private
      */
@@ -2065,6 +2068,7 @@ export declare interface AstInvalidDeclaration extends BaseToken {
 export declare interface AstInvalidAtRule extends BaseToken {
 
     typ: EnumToken$1.InvalidAtRuleTokenType;
+    nam: string;
     val: string;
     chi?: Array<AstNode$1>;
 }
@@ -2157,7 +2161,7 @@ export declare interface AstRuleList extends BaseToken {
 /**
  * rule list node
  */
-export declare interface AstRuleStyleSheet extends AstRuleList {
+export declare interface AstStyleSheet extends AstRuleList {
     typ: EnumToken$1.StyleSheetNodeType,
     chi: Array<AstRuleList | AstComment>;
     tokens?: null;
@@ -2167,7 +2171,7 @@ export declare interface AstRuleStyleSheet extends AstRuleList {
  * ast node
  */
 export declare type AstNode$1 =
-    AstRuleStyleSheet
+    AstStyleSheet
     | AstRuleList
     | AstComment
     | AstAtRule
@@ -2201,7 +2205,6 @@ export declare type RuleVisitorHandler = GenericVisitorHandler<AstRule>;
  * AtRule visitor handler
  */
 export declare type AtRuleVisitorHandler = GenericVisitorHandler<AstAtRule>;
-
 
 /**
  * node visitor callback map
@@ -2399,7 +2402,7 @@ export declare interface VisitorNodeMap {
 
     KeyframesRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesRule>;
 
-    KeyframesAtRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule>;
+    KeyframesAtRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule> | Record<string, GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule>>;
 
     /**
      * value visitor
@@ -2415,7 +2418,7 @@ export declare interface VisitorNodeMap {
      *
      * ```ts
      *
-     * import {transform, parseDeclarations} from "@tbela99/css-parser";
+     * import {transform, parse, parseDeclarations} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
@@ -3139,10 +3142,6 @@ interface MinifyOptions {
      */
     nestingRules?: boolean;
     /**
-     * expand nested rules
-     */
-    expandNestingRules?: boolean;
-    /**
      * remove duplicate declarations from the same rule. if passed as a string array, duplicated declarations are removed, except for those in the array
      *
      *
@@ -3206,7 +3205,11 @@ interface MinifyOptions {
     pass?: number;
 }
 
-export declare type LoadResult = Promise<ReadableStream<Uint8Array>> | ReadableStream<Uint8Array> | string | Promise<string>;
+export declare type LoadResult =
+    Promise<ReadableStream<Uint8Array>>
+    | ReadableStream<Uint8Array>
+    | string
+    | Promise<string>;
 
 /**
  * parser options
@@ -3235,6 +3238,10 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
      * @internal
      */
     cwd?: string;
+    /**
+     * expand nested rules
+     */
+    expandNestingRules?: boolean;
     /**
      * url and file loader
      * @param url
@@ -3340,7 +3347,7 @@ export declare interface MinifyFeature {
      * @param context
      * @param mode
      */
-    run: (ast: AstRule | AstAtRule, options: ParserOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
+    run: (ast: AstRule | AstAtRule, options: ParserOptions, parent: AstRule | AstAtRule | AstStyleSheet, context: {
         [key: string]: any
     }, mode: FeatureWalkMode) => AstNode$1 | null;
 }
@@ -3490,7 +3497,7 @@ export declare interface ParseResult {
     /**
      * parsed ast tree
      */
-    ast: AstRuleStyleSheet;
+    ast: AstStyleSheet;
     /**
      * parse errors
      */
@@ -3711,7 +3718,7 @@ declare function resolve(url: string, currentDirectory: string, cwd?: string): {
  */
 declare function load(url: string, currentFile?: string): Promise<ReadableStream<Uint8Array> | string>;
 /**
- * render ast tree
+ * render the ast tree
  * @param data
  * @param options
  *
@@ -3765,7 +3772,7 @@ declare function parseFile(file: string, options?: ParserOptions): Promise<Parse
 /**
  * parse css
  * @param stream
- * @param opt
+ * @param options
  *
  * Example:
  *
@@ -3805,7 +3812,7 @@ declare function parseFile(file: string, options?: ParserOptions): Promise<Parse
  *  console.log(result.ast);
  * ```
  */
-declare function parse(stream: string | ReadableStream<Uint8Array>, opt?: ParserOptions): Promise<ParseResult>;
+declare function parse(stream: string | ReadableStream<Uint8Array>, options?: ParserOptions): Promise<ParseResult>;
 /**
  * transform css file
  * @param file url or path
@@ -3875,4 +3882,4 @@ declare function transformFile(file: string, options?: TransformOptions): Promis
 declare function transform(css: string | ReadableStream<Uint8Array>, options?: TransformOptions): Promise<TransformResult>;
 
 export { ColorType, EnumToken$1 as EnumToken, FeatureWalkMode, SourceMap, ValidationLevel, WalkerOptionEnum, WalkerValueEvent, convertColor, dirname, expand, isOkLabClose, load, mathFuncs, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, parseTokens, render, renderToken, resolve, transform, transformFile, transformFunctions, walk, walkValues };
-export type { AddToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyFrameRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstRule, AstRuleList, AstRuleStyleSheet, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ConstraintsMapping, ContainMatchToken, Context, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorHandler, GenericVisitorResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, ImportantToken, IncludeMatchToken, InvalidAttrToken, InvalidClassSelectorToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Location, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureAndToken, MediaFeatureNotToken, MediaFeatureOnlyToken, MediaFeatureOrToken, MediaFeatureToken, MediaQueryConditionToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, MulToken, NameSpaceAttributeToken, NestingSelectorToken, NextSiblingCombinatorToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo, ParseResult, ParseResultStats, ParseTokenOptions, ParserOptions, PercentageToken, Position, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenizeResult, TransformOptions, TransformResult, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, Value, ValueVisitorHandler, VariableScopeInfo, VisitorEventType, VisitorNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerValueFilter, WhitespaceToken };
+export type { AddToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyFrameRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstRule, AstRuleList, AstStyleSheet, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ConstraintsMapping, ContainMatchToken, Context, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorHandler, GenericVisitorResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, ImportantToken, IncludeMatchToken, InvalidAttrToken, InvalidClassSelectorToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Location, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureAndToken, MediaFeatureNotToken, MediaFeatureOnlyToken, MediaFeatureOrToken, MediaFeatureToken, MediaQueryConditionToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, MulToken, NameSpaceAttributeToken, NestingSelectorToken, NextSiblingCombinatorToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo, ParseResult, ParseResultStats, ParseTokenOptions, ParserOptions, PercentageToken, Position, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenizeResult, TransformOptions, TransformResult, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, Value, ValueVisitorHandler, VariableScopeInfo, VisitorEventType, VisitorNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerValueFilter, WhitespaceToken };

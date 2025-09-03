@@ -1,5 +1,5 @@
 import type {VisitorNodeMap} from "./visitor.d.ts";
-import type {AstAtRule, AstDeclaration, AstNode, AstRule, AstRuleStyleSheet, Location, Position} from "./ast.d.ts";
+import type {AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet, Location, Position} from "./ast.d.ts";
 import {SourceMap} from "../lib/renderer/sourcemap/index.ts";
 import type {PropertyListOptions} from "./parse.d.ts";
 import {ColorType, EnumToken, ValidationLevel} from "../lib/index.ts";
@@ -125,10 +125,6 @@ export interface MinifyOptions {
      */
     nestingRules?: boolean;
     /**
-     * expand nested rules
-     */
-    expandNestingRules?: boolean;
-    /**
      * remove duplicate declarations from the same rule. if passed as a string array, duplicated declarations are removed, except for those in the array
      *
      *
@@ -192,7 +188,11 @@ export interface MinifyOptions {
     pass?: number;
 }
 
-export declare type LoadResult = Promise<ReadableStream<Uint8Array>> | ReadableStream<Uint8Array> | string | Promise<string>;
+export declare type LoadResult =
+    Promise<ReadableStream<Uint8Array>>
+    | ReadableStream<Uint8Array>
+    | string
+    | Promise<string>;
 
 /**
  * parser options
@@ -221,6 +221,10 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
      * @internal
      */
     cwd?: string;
+    /**
+     * expand nested rules
+     */
+    expandNestingRules?: boolean;
     /**
      * url and file loader
      * @param url
@@ -326,7 +330,7 @@ export declare interface MinifyFeature {
      * @param context
      * @param mode
      */
-    run: (ast: AstRule | AstAtRule, options: ParserOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
+    run: (ast: AstRule | AstAtRule, options: ParserOptions, parent: AstRule | AstAtRule | AstStyleSheet, context: {
         [key: string]: any
     }, mode: FeatureWalkMode) => AstNode | null;
 }
@@ -476,7 +480,7 @@ export declare interface ParseResult {
     /**
      * parsed ast tree
      */
-    ast: AstRuleStyleSheet;
+    ast: AstStyleSheet;
     /**
      * parse errors
      */

@@ -95,7 +95,7 @@ export async function load(url: string, currentFile: string = '.'): Promise<Read
 }
 
 /**
- * render ast tree
+ * render the ast tree
  * @param data
  * @param options
  *
@@ -157,7 +157,7 @@ export async function parseFile(file: string, options: ParserOptions = {}): Prom
 /**
  * parse css
  * @param stream
- * @param opt
+ * @param options
  *
  * Example:
  *
@@ -197,14 +197,14 @@ export async function parseFile(file: string, options: ParserOptions = {}): Prom
  *  console.log(result.ast);
  * ```
  */
-export async function parse(stream: string | ReadableStream<Uint8Array>, opt: ParserOptions = {}): Promise<ParseResult> {
+export async function parse(stream: string | ReadableStream<Uint8Array>, options: ParserOptions = {}): Promise<ParseResult> {
 
     return doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
         stream,
         buffer: '',
         position: {ind: 0, lin: 1, col: 1},
         currentPosition: {ind: -1, lin: 1, col: 0}
-    } as ParseInfo), Object.assign(opt, {load, resolve, dirname, cwd: opt.cwd ?? process.cwd()}));
+    } as ParseInfo), Object.assign(options, {load, resolve, dirname, cwd: options.cwd ?? process.cwd()}));
 }
 
 /**
@@ -285,7 +285,8 @@ export async function transform(css: string | ReadableStream<Uint8Array>, option
 
     return parse(css, options).then((parseResult: ParseResult) => {
 
-        const rendered: RenderResult = render(parseResult.ast, options);
+        // ast already expanded by parse
+        const rendered: RenderResult = render(parseResult.ast, {...options, expandNestingRules: false});
 
         return {
             ...parseResult,
