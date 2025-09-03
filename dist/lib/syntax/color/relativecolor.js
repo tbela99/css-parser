@@ -18,7 +18,7 @@ function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
     let keys = {};
     let values = {};
     // colorFuncColorSpace x,y,z or r,g,b
-    const names = relativeKeys.startsWith('xyz') ? 'xyz' : relativeKeys.slice(-3);
+    const names = relativeKeys.startsWith('xyz') ? 'xyz' : ['srgb', 'srgb-linear', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'rgb'].includes(relativeKeys.toLowerCase()) ? 'rgb' : relativeKeys.slice(-3);
     const converted = convertColor(original, ColorType[relativeKeys.toUpperCase().replaceAll('-', '_')]);
     if (converted == null) {
         return null;
@@ -32,13 +32,13 @@ function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
         // @ts-ignore
         alpha: alpha == null ? {
             typ: EnumToken.NumberTokenType,
-            val: '1'
+            val: 1
         } : (alpha.typ == EnumToken.IdenTokenType && alpha.val == 'none') ? {
             typ: EnumToken.NumberTokenType,
-            val: '0'
+            val: 0
         } : (alpha.typ == EnumToken.PercentageTokenType ? {
             typ: EnumToken.NumberTokenType,
-            val: String(getNumber(alpha))
+            val: getNumber(alpha)
         } : alpha)
     };
     keys = {
@@ -48,19 +48,15 @@ function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
         // @ts-ignore
         alpha: getValue(aExp == null ? {
             typ: EnumToken.NumberTokenType,
-            val: '1'
+            val: 1
         } : (aExp.typ == EnumToken.IdenTokenType && aExp.val == 'none') ? {
             typ: EnumToken.NumberTokenType,
-            val: '0'
+            val: 0
         } : aExp)
     };
     return computeComponentValue(keys, converted, values);
 }
 function getValue(t, converted, component) {
-    // if (t == null) {
-    //
-    //     return t;
-    // }
     if (t.typ == EnumToken.PercentageTokenType) {
         let value = getNumber(t);
         let colorSpace = ColorType[converted.kin].toLowerCase().replaceAll('-', '_');
@@ -90,55 +86,13 @@ function computeComponentValue(expr, converted, values) {
         }
     }
     for (const [key, exp] of Object.entries(expr)) {
-        /*
-        if (exp == null) {
-
-            if (key in values) {
-
-                if (typeof values[<RelativeColorTypes>key] == 'number') {
-
-                    expr[<RelativeColorTypes>key] = {
-                        typ: EnumToken.NumberTokenType,
-                        val: reduceNumber(<number>values[<RelativeColorTypes>key])
-                    };
-                } else {
-
-                    expr[<RelativeColorTypes>key] = <Token>values[<RelativeColorTypes>key];
-                }
-            }
-
-        } else
-            */
         if ([EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.LengthTokenType].includes(exp.typ)) ;
         else if (exp.typ == EnumToken.IdenTokenType && exp.val in values) {
-            // if (typeof values[<RelativeColorTypes>exp.val] == 'number') {
-            //
-            //     expr[<RelativeColorTypes>key] = {
-            //         typ: EnumToken.NumberTokenType,
-            //         val: reduceNumber(<number>values[<RelativeColorTypes>exp.val])
-            //     };
-            // } else {
             expr[key] = values[exp.val];
-            // }
         }
         else if (exp.typ == EnumToken.FunctionTokenType && mathFuncs.includes(exp.val)) {
             for (let { value, parent } of walkValues(exp.chi, exp)) {
-                // if (parent == null) {
-                //
-                //     parent = exp;
-                // }
-                /*
-                if (value.typ == EnumToken.PercentageTokenType) {
-
-                    replaceValue(parent as BinaryExpressionToken | FunctionToken | ParensToken, value, getValue(value, converted, <RelativeColorTypes>key));
-                } else
-                    */
                 if (value.typ == EnumToken.IdenTokenType) {
-                    // @ts-ignore
-                    // if (!(value.val in values || typeof Math[(value as IdentToken).val.toUpperCase()] == 'number')) {
-                    //
-                    //     return null;
-                    // }
                     // @ts-ignore
                     replaceValue(parent, value, values[value.val] ?? {
                         typ: EnumToken.NumberTokenType,
@@ -152,10 +106,6 @@ function computeComponentValue(expr, converted, values) {
             if (result.length == 1 && result[0].typ != EnumToken.BinaryExpressionTokenType) {
                 expr[key] = result[0];
             }
-            // else {
-            //
-            //     return null;
-            // }
         }
     }
     return expr;
@@ -166,13 +116,16 @@ function replaceValue(parent, value, newValue) {
             if (pr.typ == EnumToken.BinaryExpressionTokenType) {
                 if (pr.l == val) {
                     pr.l = newValue;
+                    return;
                 }
                 else {
                     pr.r = newValue;
+                    return;
                 }
             }
             else {
                 pr.chi.splice(pr.chi.indexOf(val), 1, newValue);
+                return;
             }
         }
     }

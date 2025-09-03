@@ -827,7 +827,7 @@ export async function* tokenizeStream(input: ReadableStream): AsyncGenerator<Tok
 
         const {done, value} = await reader.read();
 
-        parseInfo.stream += decoder.decode(value, {stream: true});
+        parseInfo.stream += ArrayBuffer.isView(value) ? decoder.decode(value, {stream: true}) : value;
         yield* tokenize(parseInfo, done);
 
         if (done) {

@@ -1,6 +1,6 @@
 import { e, k, D50 } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { color2srgbvalues, getNumber } from './color.js';
+import { color2srgbvalues, toPrecisionValue, getNumber } from './color.js';
 import { getOKLABComponents, OKLab_to_XYZ } from './oklab.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import '../../ast/minify.js';
@@ -76,9 +76,9 @@ function color2labToken(token) {
 }
 function labToken(values) {
     const chi = [
-        { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.NumberTokenType, val: values[1] },
-        { typ: EnumToken.NumberTokenType, val: values[2] },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[1]) },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[2]) },
     ];
     if (values.length == 4) {
         chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, {

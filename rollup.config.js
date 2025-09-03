@@ -30,7 +30,7 @@ export default [
     {
         input: 'src/web.ts',
         plugins: [nodeResolve(), commonjs({transformMixedEsModules: true}), json(), typescript()],
-        output: [ 
+        output: [
             {
                 file: './dist/index-umd-web.js',
                 format: 'umd',

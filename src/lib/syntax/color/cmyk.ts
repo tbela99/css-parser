@@ -1,6 +1,6 @@
 import type {ColorToken, Token} from "../../../@types/token.d.ts";
 import {ColorType, EnumToken} from "../../ast/index.ts";
-import {color2srgbvalues} from "./color.ts";
+import {color2srgbvalues, toPrecisionValue} from "./color.ts";
 import {
     hwb2srgbvalues,
     lab2srgbvalues,
@@ -121,6 +121,7 @@ export function srgb2cmykvalues(r: number, g: number, b: number, a: number | nul
 
     return result;
 }
+
 function cmyktoken(values: number[]): ColorToken {
 
     return {
@@ -129,11 +130,14 @@ function cmyktoken(values: number[]): ColorToken {
         chi: values.reduce((acc: Token[], curr: number, index: number) => index < 4 ? [...acc, {
             typ: EnumToken.PercentageTokenType,
             // @ts-ignore
-            val: curr * 100
+            val: toPrecisionValue(curr) * 100
         } as Token] : [...acc, {
             typ: EnumToken.LiteralTokenType,
             val: '/'
-        } as Token, {typ: EnumToken.PercentageTokenType, val: curr * 100} as Token], [] as Token[]) as Token[],
+        } as Token, {
+            typ: EnumToken.PercentageTokenType,
+            val: toPrecisionValue(curr) * 100
+        } as Token], [] as Token[]) as Token[],
         kin: ColorType.DEVICE_CMYK
     }
 }

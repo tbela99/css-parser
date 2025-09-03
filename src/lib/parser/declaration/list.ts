@@ -38,7 +38,7 @@ export class PropertyList {
     add(...declarations: AstNode[]) {
 
         for (const declaration of declarations) {
-            if (declaration.typ != EnumToken.DeclarationNodeType || !this.options.removeDuplicateDeclarations) {
+            if (declaration.typ != EnumToken.DeclarationNodeType || (Array.isArray(this.options.removeDuplicateDeclarations) ? this.options.removeDuplicateDeclarations.includes((<AstDeclaration>declaration).nam) : !this.options.removeDuplicateDeclarations)) {
 
                 this.declarations.set(Number(Math.random().toString().slice(2)).toString(36), declaration);
                 continue;
@@ -47,7 +47,8 @@ export class PropertyList {
             if (!this.options.computeShorthand) {
 
                 this.declarations.set((<AstDeclaration>declaration).nam, declaration);
-                continue            }
+                continue
+            }
 
             let propertyName: string = <string>(<AstDeclaration>declaration).nam;
             let shortHandType: 'map' | 'set';

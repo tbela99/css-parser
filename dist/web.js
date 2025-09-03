@@ -21,17 +21,13 @@ import { matchUrl, resolve, dirname } from './lib/fs/resolve.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 
 /**
- * web module entry point
- * @module web
- */
-/**
- * load file or url as stream
+ * default file or url loader
  * @param url
  * @param currentFile
  *
  * @private
  */
-async function getStream(url, currentFile = '.') {
+async function load(url, currentFile = '.') {
     let t;
     if (matchUrl.test(url)) {
         t = new URL(url);
@@ -53,13 +49,35 @@ async function getStream(url, currentFile = '.') {
     });
 }
 /**
- * render ast node
+ * render the ast tree
  * @param data
  * @param options
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ *  import {render, ColorType} from '@tbela99/css-parser';
+ *
+ *  const css = 'body { color: color(from hsl(0 100% 50%) xyz x y z); }';
+ *  const parseResult = await parse(css);
+ *
+ * let renderResult = render(parseResult.ast);
+ * console.log(result.code);
+ *
+ * // body{color:red}
+ *
+ *
+ * renderResult = render(parseResult.ast, {beautify: true, convertColor: ColorType.SRGB});
+ * console.log(renderResult.code);
+ *
+ * // body {
+ * //  color: color(srgb 1 0 0)
+ * // }
+ * ```
  */
 function render(data, options = {}) {
     return doRender(data, Object.assign(options, {
-        getStream,
         resolve,
         dirname,
         cwd: options.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
@@ -69,26 +87,66 @@ function render(data, options = {}) {
  * parse css file
  * @param file url or path
  * @param options
+ *
+ * @throws Error file not found
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ *  import {parseFile} from '@tbela99/css-parser/web';
+ *
+ *  // remote file
+ * let result = await parseFile('https://docs.deno.com/styles.css');
+ * console.log(result.ast);
+ *
+ * // local file
+ * result = await parseFile('./css/styles.css');
+ * console.log(result.ast);
+ * ```
  */
 async function parseFile(file, options = {}) {
-    return getStream(file).then(stream => parse(stream, { src: file, ...options }));
+    return load(file).then(stream => parse(stream, { src: file, ...options }));
 }
 /**
  * parse css
  * @param stream
- * @param opt
+ * @param options
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser/web';
+ *
+ *  // css string
+ *  const result = await parse(css);
+ *  console.log(result.ast);
+ * ```
+ *
+ * Example using fetch and readable stream
+ *
+ * ```ts
+ *
+ *  import {parse} from '@tbela99/css-parser/web';
+ *
+ *  const response = await fetch('https://docs.deno.com/styles.css');
+ *  const result = await parse(response.body, {beautify: true});
+ *
+ *  console.log(result.ast);
+ * ```
  */
-async function parse(stream, opt = {}) {
+async function parse(stream, options = {}) {
     return doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
         stream,
         buffer: '',
         position: { ind: 0, lin: 1, col: 1 },
         currentPosition: { ind: -1, lin: 1, col: 0 }
-    }), Object.assign(opt, {
-        getStream,
+    }), Object.assign(options, {
+        load,
         resolve,
         dirname,
-        cwd: opt.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
+        cwd: options.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
     }));
 }
 /**
@@ -112,7 +170,7 @@ async function parse(stream, opt = {}) {
  * ```
  */
 async function transformFile(file, options = {}) {
-    return getStream(file).then(stream => transform(stream, { src: file, ...options }));
+    return load(file).then(stream => transform(stream, { src: file, ...options }));
 }
 /**
  * transform css
@@ -140,7 +198,8 @@ async function transform(css, options = {}) {
     options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
     const startTime = performance.now();
     return parse(css, options).then((parseResult) => {
-        const rendered = render(parseResult.ast, options);
+        // ast already expanded by parse
+        const rendered = render(parseResult.ast, { ...options, expandNestingRules: false });
         return {
             ...parseResult,
             ...rendered,
@@ -155,4 +214,4 @@ async function transform(css, options = {}) {
     });
 }
 
-export { dirname, getStream, parse, parseFile, render, resolve, transform, transformFile };
+export { dirname, load, parse, parseFile, render, resolve, transform, transformFile };

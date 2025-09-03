@@ -13,6 +13,7 @@ import {consumeWhitespace} from "../../validation/utils/index.ts";
 import {compute} from "../transform/compute.ts";
 import {filterValues, renderToken} from "../../renderer/index.ts";
 import {eqMatrix} from "../transform/minify.ts";
+import {FeatureWalkMode} from "./type.ts";
 
 export class TransformCssFeature {
 
@@ -20,12 +21,8 @@ export class TransformCssFeature {
         return 4;
     }
 
-    get preProcess(): boolean {
-        return false;
-    }
-
-    get postProcess(): boolean {
-        return true;
+    get processMode(): FeatureWalkMode {
+        return FeatureWalkMode.Post;
     }
 
     static register(options: ParserOptions): void {
@@ -38,11 +35,11 @@ export class TransformCssFeature {
         }
     }
 
-    run(ast: AstRule | AstAtRule): void {
+    run(ast: AstRule | AstAtRule): AstNode | null {
 
         if (!('chi' in ast)) {
 
-            return;
+            return null;
         }
 
         let i: number = 0;
@@ -119,5 +116,7 @@ export class TransformCssFeature {
 
             }, [matrix]);
         }
+
+        return null;
     }
 }

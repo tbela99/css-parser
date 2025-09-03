@@ -1,8 +1,3 @@
-/**
- * node module entry point
- * @module node
- */
-
 import type {
     AstNode,
     ParseInfo,
@@ -18,6 +13,7 @@ import {doParse, doRender, tokenize, tokenizeStream} from "./lib/index.ts";
 import {dirname, matchUrl, resolve} from "./lib/fs/index.ts";
 import {Readable} from "node:stream";
 import {createReadStream} from "node:fs";
+import {lstat} from "node:fs/promises";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -61,27 +57,45 @@ export {dirname, resolve};
  * load file or url as stream
  * @param url
  * @param currentFile
+ * @throws Error file not found
  *
  * @private
  */
-export async function getStream(url: string, currentFile: string = '.'): Promise<ReadableStream<string>> {
+export async function load(url: string, currentFile: string = '.'): Promise<ReadableStream<Uint8Array> | string> {
 
     const resolved = resolve(url, currentFile);
 
     // @ts-ignore
-    return matchUrl.test(resolved.absolute) ? fetch(resolved.absolute).then((response: Response) => {
+    if (matchUrl.test(resolved.absolute)) {
 
-        if (!response.ok) {
+        return fetch(resolved.absolute).then((response: Response) => {
 
-            throw new Error(`${response.status} ${response.statusText} ${response.url}`)
+            if (!response.ok) {
+
+                throw new Error(`${response.status} ${response.statusText} ${response.url}`)
+            }
+
+            return response.body as ReadableStream<Uint8Array<ArrayBuffer>>;
+        })
+    }
+
+    try {
+
+        const stats = await lstat(resolved.absolute);
+
+        if (stats.isFile()) {
+
+            return Readable.toWeb(createReadStream(resolved.absolute)) as ReadableStream<Uint8Array>;
         }
+    } catch (error) {
 
-        return response.body;
-    }) : Readable.toWeb(createReadStream(resolved.absolute));
+    }
+
+    throw new Error(`File not found: '${resolved.absolute || url}'`);
 }
 
 /**
- * render ast tree
+ * render the ast tree
  * @param data
  * @param options
  *
@@ -91,24 +105,34 @@ export async function getStream(url: string, currentFile: string = '.'): Promise
  *
  *  import {render, ColorType} from '@tbela99/css-parser';
  *
- *  // remote file
- * let result = render(ast);
+ *  const css = 'body { color: color(from hsl(0 100% 50%) xyz x y z); }';
+ *  const parseResult = await parse(css);
+ *
+ * let renderResult = render(parseResult.ast);
  * console.log(result.code);
  *
- * // local file
- * result = await parseFile(ast, {beatify: true, convertColor: ColorType.SRGB});
- * console.log(result.code);
+ * // body{color:red}
+ *
+ *
+ * renderResult = render(parseResult.ast, {beautify: true, convertColor: ColorType.SRGB});
+ * console.log(renderResult.code);
+ *
+ * // body {
+ * //  color: color(srgb 1 0 0)
+ * // }
  * ```
  */
 export function render(data: AstNode, options: RenderOptions = {}): RenderResult {
 
-    return doRender(data, Object.assign(options, {getStream, resolve, dirname, cwd: options.cwd ?? process.cwd()}));
+    return doRender(data, Object.assign(options, {resolve, dirname, cwd: options.cwd ?? process.cwd()}));
 }
 
 /**
  * parse css file
  * @param file url or path
  * @param options
+ *
+ * @throws Error file not found
  *
  * Example:
  *
@@ -127,23 +151,23 @@ export function render(data: AstNode, options: RenderOptions = {}): RenderResult
  */
 export async function parseFile(file: string, options: ParserOptions = {}): Promise<ParseResult> {
 
-    return getStream(file).then(stream => parse(stream, {src: file, ...options}));
+    return load(file).then(stream => parse(stream, {src: file, ...options}));
 }
 
 /**
  * parse css
  * @param stream
- * @param opt
+ * @param options
  *
  * Example:
  *
  * ```ts
  *
- * import {transform} from '@tbela99/css-parser';
+ * import {parse} from '@tbela99/css-parser';
  *
  *  // css string
- *  let result = await transform(css);
- *  console.log(result.code);
+ *  let result = await parse(css);
+ *  console.log(result.ast);
  * ```
  *
  * Example using stream
@@ -156,37 +180,39 @@ export async function parseFile(file: string, options: ParserOptions = {}): Prom
  * // usage: node index.ts < styles.css or cat styles.css | node index.ts
  *
  *  const readableStream = Readable.toWeb(process.stdin);
- *  const result = await parse(readableStream, {beautify: true});
+ *  let result = await parse(readableStream, {beautify: true});
  *
  *  console.log(result.ast);
  * ```
  *
- * Example using fetch
+ * Example using fetch and readable stream
  *
  * ```ts
  *
  *  import {parse} from '@tbela99/css-parser';
  *
  *  const response = await fetch('https://docs.deno.com/styles.css');
- *  result = await parse(response.body, {beautify: true});
+ *  const result = await parse(response.body, {beautify: true});
  *
  *  console.log(result.ast);
  * ```
  */
-export async function parse(stream: string | ReadableStream<string>, opt: ParserOptions = {}): Promise<ParseResult> {
+export async function parse(stream: string | ReadableStream<Uint8Array>, options: ParserOptions = {}): Promise<ParseResult> {
 
     return doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
         stream,
         buffer: '',
         position: {ind: 0, lin: 1, col: 1},
         currentPosition: {ind: -1, lin: 1, col: 0}
-    } as ParseInfo), Object.assign(opt, {getStream, resolve, dirname, cwd: opt.cwd ?? process.cwd()}));
+    } as ParseInfo), Object.assign(options, {load, resolve, dirname, cwd: options.cwd ?? process.cwd()}));
 }
 
 /**
  * transform css file
  * @param file url or path
  * @param options
+ *
+ * @throws Error file not found
  *
  * Example:
  *
@@ -205,7 +231,7 @@ export async function parse(stream: string | ReadableStream<string>, opt: Parser
  */
 export async function transformFile(file: string, options: TransformOptions = {}): Promise<TransformResult> {
 
-    return getStream(file).then(stream => transform(stream, {src: file, ...options}));
+    return load(file).then(stream => transform(stream, {src: file, ...options}));
 }
 
 /**
@@ -220,7 +246,7 @@ export async function transformFile(file: string, options: TransformOptions = {}
  * import {transform} from '@tbela99/css-parser';
  *
  *  // css string
- *  let result = await transform(css);
+ *  const result = await transform(css);
  *  console.log(result.code);
  * ```
  *
@@ -251,7 +277,7 @@ export async function transformFile(file: string, options: TransformOptions = {}
  *  console.log(result.code);
  * ```
  */
-export async function transform(css: string | ReadableStream<string>, options: TransformOptions = {}): Promise<TransformResult> {
+export async function transform(css: string | ReadableStream<Uint8Array>, options: TransformOptions = {}): Promise<TransformResult> {
 
     options = {minify: true, removeEmpty: true, removeCharset: true, ...options};
 
@@ -259,7 +285,8 @@ export async function transform(css: string | ReadableStream<string>, options: T
 
     return parse(css, options).then((parseResult: ParseResult) => {
 
-        const rendered: RenderResult = render(parseResult.ast, options);
+        // ast already expanded by parse
+        const rendered: RenderResult = render(parseResult.ast, {...options, expandNestingRules: false});
 
         return {
             ...parseResult,

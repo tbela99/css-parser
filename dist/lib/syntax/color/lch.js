@@ -1,6 +1,6 @@
 import './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { color2srgbvalues, toPrecisionAngle, getNumber, getAngle } from './color.js';
+import { color2srgbvalues, toPrecisionAngle, toPrecisionValue, getNumber, getAngle } from './color.js';
 import { cmyk2srgbvalues } from './srgb.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import '../../ast/minify.js';
@@ -77,12 +77,15 @@ function color2lchToken(token) {
 function lchToken(values) {
     values[2] = toPrecisionAngle(values[2]);
     const chi = [
-        { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.NumberTokenType, val: values[1] },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[1]) },
         { typ: EnumToken.NumberTokenType, val: values[2] },
     ];
     if (values.length == 4) {
-        chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, { typ: EnumToken.PercentageTokenType, val: values[3] * 100 });
+        chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, {
+            typ: EnumToken.PercentageTokenType,
+            val: values[3] * 100
+        });
     }
     return {
         typ: EnumToken.ColorTokenType,

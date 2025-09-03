@@ -2,9 +2,10 @@ import type {
     AstAtRule,
     AstComment,
     AstDeclaration,
+    AstNode,
     AstRule,
     AstRuleList,
-    AstRuleStyleSheet,
+    AstStyleSheet,
     BinaryExpressionToken,
     CommentToken,
     DashedIdentToken,
@@ -18,6 +19,7 @@ import {walkValues} from "../walk.ts";
 import {renderToken} from "../../renderer/index.ts";
 import {mathFuncs} from "../../syntax/index.ts";
 import {splitRule} from "../minify.ts";
+import {FeatureWalkMode} from "./type.ts";
 
 function inlineExpression(token: Token): Token[] {
 
@@ -88,12 +90,8 @@ export class InlineCssVariablesFeature {
         return 0;
     }
 
-    get preProcess(): boolean {
-        return true;
-    }
-
-    get postProcess(): boolean {
-        return false;
+    get processMode(): FeatureWalkMode {
+        return FeatureWalkMode.Pre;
     }
 
     static register(options: ParserOptions): void {
@@ -105,13 +103,13 @@ export class InlineCssVariablesFeature {
         }
     }
 
-    run(ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
+    run(ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstStyleSheet, context: {
         [key: string]: any
-    }): void {
+    }): AstNode | null {
 
         if (!('chi' in ast)) {
 
-            return;
+            return null;
         }
 
         if (!('variableScope' in context)) {
@@ -172,9 +170,11 @@ export class InlineCssVariablesFeature {
                 replace(node, variableScope);
             }
         }
+
+        return null;
     }
 
-    cleanup(ast: AstRuleStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }) {
+    cleanup(ast: AstStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }) {
 
         const variableScope = <Map<string, VariableScopeInfo>>context.variableScope;
 

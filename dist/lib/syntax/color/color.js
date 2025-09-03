@@ -25,12 +25,15 @@ import { reduceHexValue, rgb2HexToken, color2HexToken, lch2HexToken, lab2HexToke
 import { parseRelativeColor } from './relativecolor.js';
 import { color2cmykToken, lch2cmykToken, lab2cmykToken, oklch2cmykToken, oklab2cmyk, hwb2cmykToken, hsl2cmykToken, rgb2cmykToken } from './cmyk.js';
 import { a98rgb2srgbvalues, srgb2a98values } from './a98rgb.js';
+import { epsilon } from '../../ast/transform/utils.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
 /**
  * Converts a color to another color space
  * @param token
  * @param to
+ *
+ * @private
  *
  * <code>
  *
@@ -73,7 +76,8 @@ function convertColor(token, to) {
             if (components != null) {
                 token = {
                     ...token,
-                    chi: [...(token.val == 'color' ? [chi[offset]] : []), ...Object.values(components)]
+                    chi: [...(token.val == 'color' ? [chi[offset]] : []), ...Object.values(components)],
+                    kin: ColorType[token.val.toUpperCase().replaceAll('-', '_')]
                 };
                 delete token.cal;
             }
@@ -89,6 +93,11 @@ function convertColor(token, to) {
     if (token.kin == ColorType.COLOR) {
         const colorSpace = token.chi.find(t => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
         if (colorSpace.val == ColorType[to].toLowerCase().replaceAll('_', '-')) {
+            for (const chi of token.chi) {
+                if (chi.typ == EnumToken.NumberTokenType && typeof chi.val == 'number') {
+                    chi.val = toPrecisionValue(getNumber(chi));
+                }
+            }
             return token;
         }
     }
@@ -512,9 +521,9 @@ function color2srgbvalues(token) {
 function values2colortoken(values, to) {
     values = srgb2srgbcolorspace(values, to);
     const chi = [
-        { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.NumberTokenType, val: values[1] },
-        { typ: EnumToken.NumberTokenType, val: values[2] },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[1]) },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[2]) },
     ];
     if (values.length == 4) {
         chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
@@ -539,8 +548,17 @@ function getNumber(token) {
     if (token.typ == EnumToken.IdenTokenType && token.val == 'none') {
         return 0;
     }
+    let val;
     // @ts-ignore
-    return token.typ == EnumToken.PercentageTokenType ? token.val / 100 : token.val;
+    if (typeof token.val != 'number' && token.val?.typ == EnumToken.FractionTokenType) {
+        // @ts-ignore
+        val = token.val.l.val / token.val.r.val;
+    }
+    else {
+        val = token.val;
+    }
+    // @ts-ignore
+    return token.typ == EnumToken.PercentageTokenType ? val / 100 : val;
 }
 /**
  * convert angle to turn
@@ -571,6 +589,10 @@ function getAngle(token) {
     // @ts-ignore
     return token.val / 360;
 }
+function toPrecisionValue(value) {
+    value = +value.toFixed(colorPrecision);
+    return Math.abs(value) < epsilon ? 0 : value;
+}
 function toPrecisionAngle(angle) {
     angle = +angle.toPrecision(colorPrecision);
     if (Math.abs(angle) >= 360) {
@@ -585,4 +607,4 @@ function toPrecisionAngle(angle) {
     return angle;
 }
 
-export { cmyk2colorToken, color2colorToken, color2srgbvalues, convertColor, getAngle, getNumber, hex2colorToken, hsl2colorToken, hwb2colorToken, lab2colorToken, lch2colorToken, minmax, oklab2colorToken, oklch2colorToken, rgb2colorToken, toPrecisionAngle };
+export { cmyk2colorToken, color2colorToken, color2srgbvalues, convertColor, getAngle, getNumber, hex2colorToken, hsl2colorToken, hwb2colorToken, lab2colorToken, lch2colorToken, minmax, oklab2colorToken, oklch2colorToken, rgb2colorToken, toPrecisionAngle, toPrecisionValue };

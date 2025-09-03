@@ -12,7 +12,7 @@ import {
 } from "./srgb.ts";
 import {getLCHComponents} from "./lch.ts";
 import {getOKLABComponents, OKLab_to_XYZ} from "./oklab.ts";
-import {color2srgbvalues, getNumber} from "./color.ts";
+import {color2srgbvalues, getNumber, toPrecisionValue} from "./color.ts";
 import {ColorType, EnumToken} from "../../ast/index.ts";
 import {XYZ_D65_to_D50} from "./xyzd50.ts";
 
@@ -115,9 +115,9 @@ function labToken(values: number[]): ColorToken | null {
 
     const chi: Token[] = <Token[]>[
 
-        {typ: EnumToken.NumberTokenType, val: values[0]},
-        {typ: EnumToken.NumberTokenType, val: values[1]},
-        {typ: EnumToken.NumberTokenType, val: values[2]},
+        {typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0])},
+        {typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[1])},
+        {typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[2])},
     ];
 
     if (values.length == 4) {

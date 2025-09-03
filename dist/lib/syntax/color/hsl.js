@@ -1,5 +1,5 @@
 import { hwb2hsv } from './hsv.js';
-import { color2srgbvalues, toPrecisionAngle, getNumber } from './color.js';
+import { color2srgbvalues, toPrecisionAngle, toPrecisionValue, getNumber } from './color.js';
 import { lch2rgbvalues, lab2rgbvalues, cmyk2rgbvalues } from './rgb.js';
 import './utils/constants.js';
 import { getComponents } from './utils/components.js';
@@ -76,12 +76,15 @@ function color2HslToken(token) {
 function hslToken(values) {
     values[0] = toPrecisionAngle(values[0] * 360);
     const chi = [
-        { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.PercentageTokenType, val: values[1] * 100 },
-        { typ: EnumToken.PercentageTokenType, val: values[2] * 100 },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
+        { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(values[1]) * 100 },
+        { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(values[2]) * 100 },
     ];
     if (values.length == 4 && values[3] != 1) {
-        chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, { typ: EnumToken.PercentageTokenType, val: values[3] * 100 });
+        chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, {
+            typ: EnumToken.PercentageTokenType,
+            val: values[3] * 100
+        });
     }
     return {
         typ: EnumToken.ColorTokenType,
@@ -147,12 +150,20 @@ function hwb2hslvalues(token) {
     return hsv2hsl(...hwb2hsv(...Object.values(hslvalues(token))));
 }
 function lab2hslvalues(token) {
+    const values = lab2rgbvalues(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return rgbvalues2hslvalues(...lab2rgbvalues(token));
+    return rgbvalues2hslvalues(...values);
 }
 function lch2hslvalues(token) {
+    const values = lch2rgbvalues(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return rgbvalues2hslvalues(...lch2rgbvalues(token));
+    return rgbvalues2hslvalues(...values);
 }
 function oklab2hslvalues(token) {
     const t = oklab2srgbvalues(token);

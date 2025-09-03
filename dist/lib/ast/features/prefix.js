@@ -13,6 +13,7 @@ import '../../renderer/sourcemap/lib/encode.js';
 import '../../validation/syntaxes/complex-selector.js';
 import { evaluateSyntax } from '../../validation/syntax.js';
 import { funcLike } from '../../syntax/color/utils/constants.js';
+import { FeatureWalkMode } from './type.js';
 
 const config = getSyntaxConfig();
 function replacePseudo(tokens) {
@@ -59,11 +60,8 @@ class ComputePrefixFeature {
     get ordering() {
         return 2;
     }
-    get preProcess() {
-        return true;
-    }
-    get postProcess() {
-        return false;
+    get processMode() {
+        return FeatureWalkMode.Pre;
     }
     static register(options) {
         if (options.removePrefix) {
@@ -128,7 +126,7 @@ class ComputePrefixFeature {
                 }
             }
         }
-        else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframeAtRuleNodeType) {
+        else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframesAtRuleNodeType) {
             if (node.nam.startsWith('-')) {
                 const match = node.nam.match(/^-([^-]+)-(.+)$/);
                 if (match != null && '@' + match[2] in config.atRules) {
@@ -136,14 +134,6 @@ class ComputePrefixFeature {
                 }
             }
             if (node.typ == EnumToken.AtRuleNodeType && node.val !== '') {
-                // if ((node as AstAtRule).tokens == null) {
-                //
-                //     Object.defineProperty(node, 'tokens', {
-                //         // @ts-ignore
-                //         ...definedPropertySettings,
-                //         value: parseAtRulePrelude(parseString((node as AstAtRule).val), node as AstAtRule),
-                //     })
-                // }
                 if (replaceAstNodes(node.tokens)) {
                     node.val = node.tokens.reduce((acc, curr) => acc + renderToken(curr), '');
                 }

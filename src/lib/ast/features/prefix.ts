@@ -9,16 +9,7 @@ import type {
     ParserOptions,
     Token
 } from "../../../@types/index.d.ts";
-import type {
-    ValidationAmpersandToken,
-    ValidationBracketToken,
-    ValidationColumnToken,
-    ValidationKeywordToken,
-    ValidationPipeToken,
-    ValidationPropertyToken,
-    ValidationToken
-} from '../../validation/index.ts';
-import {getSyntaxConfig, ValidationSyntaxGroupEnum, ValidationTokenEnum} from '../../validation/index.ts';
+import {getSyntaxConfig, ValidationSyntaxGroupEnum} from '../../validation/index.ts';
 import {walkValues} from "../walk.ts";
 import {pseudoAliasMap} from "../../syntax/index.ts";
 import {splitRule} from "../minify.ts";
@@ -26,6 +17,7 @@ import type {ValidationConfiguration} from "../../../@types/validation.d.ts";
 import {renderToken} from "../../renderer/index.ts";
 import {funcLike} from "../../syntax/color/utils/index.ts";
 import {evaluateSyntax} from "../../validation/syntax.ts";
+import {FeatureWalkMode} from "./type.ts";
 
 const config: ValidationConfiguration = getSyntaxConfig();
 
@@ -95,12 +87,8 @@ export class ComputePrefixFeature {
         return 2;
     }
 
-    get preProcess(): boolean {
-        return true;
-    }
-
-    get postProcess(): boolean {
-        return false;
+    get processMode(): FeatureWalkMode {
+        return FeatureWalkMode.Pre;
     }
 
     static register(options: ParserOptions) {
@@ -112,7 +100,7 @@ export class ComputePrefixFeature {
         }
     }
 
-    run(node: AstNode) {
+    run(node: AstNode): AstNode | null {
 
         if (node.typ == EnumToken.RuleNodeType) {
 
@@ -199,7 +187,7 @@ export class ComputePrefixFeature {
                 }
             }
 
-        } else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframeAtRuleNodeType) {
+        } else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframesAtRuleNodeType) {
 
             if ((node as AstAtRule).nam.startsWith('-')) {
 
@@ -213,15 +201,6 @@ export class ComputePrefixFeature {
 
             if (node.typ == EnumToken.AtRuleNodeType && (node as AstAtRule).val !== '') {
 
-                // if ((node as AstAtRule).tokens == null) {
-                //
-                //     Object.defineProperty(node, 'tokens', {
-                //         // @ts-ignore
-                //         ...definedPropertySettings,
-                //         value: parseAtRulePrelude(parseString((node as AstAtRule).val), node as AstAtRule),
-                //     })
-                // }
-
                 if (replaceAstNodes((node as AstAtRule).tokens as Token[])) {
                     (node as AstAtRule).val = ((node as AstAtRule).tokens as Token[]).reduce((acc, curr) => acc + renderToken(curr), '');
                 }
@@ -230,97 +209,4 @@ export class ComputePrefixFeature {
 
         return node;
     }
-}
-
-function matchToken(token: Token, matches: ValidationToken[]): null | Token {
-
-    let result: null | Token;
-    for (let i = 0; i < matches.length; i++) {
-
-        switch (matches[i].typ) {
-
-            case ValidationTokenEnum.Whitespace:
-            case ValidationTokenEnum.Comma:
-
-                break;
-
-            case ValidationTokenEnum.Keyword:
-
-                if (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val == (matches[i] as ValidationKeywordToken).val) {
-
-                    return token;
-                }
-
-                break;
-
-            case ValidationTokenEnum.PropertyType:
-
-                if (['ident', 'custom-ident'].includes((matches[i] as ValidationPropertyToken).val)) {
-
-                    if (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val == (matches[i] as ValidationPropertyToken).val) {
-
-                        return token;
-                    }
-                } else {
-
-                    const val: string = (matches[i] as ValidationPropertyToken).val as string;
-
-                    if (val in config.declarations || val in config.syntaxes) {
-
-                        // @ts-ignore
-                        result = matchToken(token, ((config.syntaxes[val] ?? config.declarations[val]) as ValidationToken[]).ast.slice());
-
-                        if (result != null) {
-
-                            return result;
-                        }
-                    }
-                }
-
-                break;
-
-            case ValidationTokenEnum.PipeToken:
-
-                for (let j = 0; j < (<ValidationPipeToken>matches[i]).chi.length; j++) {
-
-                    result = matchToken(token, (<ValidationPipeToken>matches[i]).chi[j]);
-
-                    if (result != null) {
-
-                        return result;
-                    }
-                }
-
-                break;
-            case ValidationTokenEnum.ColumnToken:
-            case ValidationTokenEnum.AmpersandToken:
-
-                result = matchToken(token, (<ValidationColumnToken | ValidationAmpersandToken>matches[i]).l);
-
-                if (result == null) {
-
-                    result = matchToken(token, (<ValidationColumnToken | ValidationAmpersandToken>matches[i]).r);
-                }
-
-                if (result != null) {
-
-                    return result;
-                }
-
-                break;
-
-            case ValidationTokenEnum.Bracket:
-
-                result = matchToken(token, (<ValidationBracketToken>matches[i]).chi);
-
-                if (result != null) {
-
-                    return result;
-                }
-
-                break;
-        }
-    }
-
-    return null;
 }

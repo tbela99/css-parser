@@ -332,6 +332,10 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
   .now {
     transform: scaleX(1.5)  scaleY(2);
 }
+
+  .now {
+    transform: scaleX(1.5)  scaleY(2);
+}
 `;
             return transform(nesting1, {
                 beautify: true,

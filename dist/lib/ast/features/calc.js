@@ -8,16 +8,14 @@ import '../minify.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
+import { FeatureWalkMode } from './type.js';
 
 class ComputeCalcExpressionFeature {
     get ordering() {
         return 1;
     }
-    get preProcess() {
-        return false;
-    }
-    get postProcess() {
-        return true;
+    get processMode() {
+        return FeatureWalkMode.Post;
     }
     static register(options) {
         if (options.computeCalcExpression) {
@@ -27,7 +25,7 @@ class ComputeCalcExpressionFeature {
     }
     run(ast) {
         if (!('chi' in ast)) {
-            return;
+            return null;
         }
         for (const node of ast.chi) {
             if (node.typ != EnumToken.DeclarationNodeType) {
@@ -106,6 +104,7 @@ class ComputeCalcExpressionFeature {
                 }
             }
         }
+        return null;
     }
 }
 

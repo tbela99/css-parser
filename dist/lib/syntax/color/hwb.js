@@ -1,7 +1,7 @@
 import { hsl2hsv } from './hsv.js';
 import './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { color2srgbvalues, toPrecisionAngle, getAngle, getNumber } from './color.js';
+import { color2srgbvalues, toPrecisionAngle, toPrecisionValue, getAngle, getNumber } from './color.js';
 import { cmyk2srgbvalues, lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues } from './srgb.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import '../../ast/minify.js';
@@ -71,8 +71,8 @@ function hwbToken(values) {
     values[0] = toPrecisionAngle(values[0] * 360);
     const chi = [
         { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.PercentageTokenType, val: values[1] * 100 },
-        { typ: EnumToken.PercentageTokenType, val: values[2] * 100 },
+        { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(values[1]) * 100 },
+        { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(values[2]) * 100 },
     ];
     if (values.length == 4) {
         chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, {

@@ -1,5 +1,5 @@
 import {EnumToken} from "../lib/index.ts";
-import {Token} from "./token.d.ts";
+import type {Token} from "./token.d.ts";
 
 /**
  * Position
@@ -41,19 +41,40 @@ export declare interface Location {
 
 export declare interface BaseToken {
 
+    /**
+     * token type
+     */
     typ: EnumToken;
+    /**
+     * location info
+     */
     loc?: Location;
-    tokens?: Token[];
-    parent?: AstRuleList;
+    /**
+     * prelude or selector tokens
+     */
+    tokens?: Token[] | null;
+    /**
+     * parent node
+     */
+    parent?: AstRuleList | null;
+    /**
+     * @private
+     */
     validSyntax?: boolean;
 }
 
+/**
+ * comment node
+ */
 export declare interface AstComment extends BaseToken {
 
     typ: EnumToken.CommentNodeType | EnumToken.CDOCOMMNodeType,
     val: string;
 }
 
+/**
+ * declaration node
+ */
 export declare interface AstDeclaration extends BaseToken {
 
     nam: string,
@@ -61,6 +82,9 @@ export declare interface AstDeclaration extends BaseToken {
     typ: EnumToken.DeclarationNodeType
 }
 
+/**
+ * rule node
+ */
 export declare interface AstRule extends BaseToken {
 
     typ: EnumToken.RuleNodeType;
@@ -70,6 +94,9 @@ export declare interface AstRule extends BaseToken {
     raw?: RawSelectorTokens | null;
 }
 
+/**
+ * invalid rule node
+ */
 export declare interface AstInvalidRule extends BaseToken {
 
     typ: EnumToken.InvalidRuleTokenType;
@@ -77,22 +104,32 @@ export declare interface AstInvalidRule extends BaseToken {
     chi: Array<AstNode>;
 }
 
+/**
+ * invalid declaration node
+ */
 export declare interface AstInvalidDeclaration extends BaseToken {
 
     typ: EnumToken.InvalidDeclarationNodeType;
     val: Array<AstNode>;
 }
 
+/**
+ * invalid at rule node
+ */
 export declare interface AstInvalidAtRule extends BaseToken {
 
     typ: EnumToken.InvalidAtRuleTokenType;
+    nam: string;
     val: string;
     chi?: Array<AstNode>;
 }
 
+/**
+ * keyframe rule node
+ */
 export declare interface AstKeyFrameRule extends BaseToken {
 
-    typ: EnumToken.KeyFrameRuleNodeType;
+    typ: EnumToken.KeyFramesRuleNodeType;
     sel: string;
     chi: Array<AstDeclaration | AstComment>;
     optimized?: OptimizedSelector;
@@ -100,8 +137,16 @@ export declare interface AstKeyFrameRule extends BaseToken {
     tokens?: Token[]
 }
 
+/**
+ * raw selector tokens
+ */
 export declare type RawSelectorTokens = string[][];
 
+/**
+ * optimized selector
+ *
+ * @private
+ */
 export declare interface OptimizedSelector {
     match: boolean;
     optimized: string[];
@@ -109,6 +154,11 @@ export declare interface OptimizedSelector {
     reducible: boolean;
 }
 
+/**
+ * optimized selector token
+ *
+ * @private
+ */
 export declare interface OptimizedSelectorToken {
     match: boolean;
     optimized: Token[];
@@ -116,6 +166,9 @@ export declare interface OptimizedSelectorToken {
     reducible: boolean;
 }
 
+/**
+ * at rule node
+ */
 export declare interface AstAtRule extends BaseToken {
 
     typ: EnumToken.AtRuleNodeType,
@@ -124,42 +177,58 @@ export declare interface AstAtRule extends BaseToken {
     chi?: Array<AstDeclaration | AstInvalidDeclaration | AstComment> | Array<AstRule | AstComment>
 }
 
-export declare interface AstKeyframeRule extends BaseToken {
+/**
+ * keyframe rule node
+ */
+export declare interface AstKeyframesRule extends BaseToken {
 
-    typ: EnumToken.KeyFrameRuleNodeType;
+    typ: EnumToken.KeyFramesRuleNodeType;
     sel: string;
     chi: Array<AstDeclaration | AstInvalidDeclaration | AstComment | AstRuleList>;
     optimized?: OptimizedSelector;
     raw?: RawSelectorTokens;
 }
 
-export declare interface AstKeyframAtRule extends BaseToken {
+/**
+ * keyframe at rule node
+ */
+export declare interface AstKeyframesAtRule extends BaseToken {
 
-    typ: EnumToken.KeyframeAtRuleNodeType,
+    typ: EnumToken.KeyframesAtRuleNodeType,
     nam: string;
     val: string;
-    chi: Array<AstKeyframeRule | AstComment>;
+    chi: Array<AstKeyframesRule | AstComment>;
 }
 
+/**
+ * rule list node
+ */
 export declare interface AstRuleList extends BaseToken {
 
-    typ: EnumToken.StyleSheetNodeType | EnumToken.RuleNodeType | EnumToken.AtRuleNodeType | EnumToken.KeyframeAtRuleNodeType | EnumToken.KeyFrameRuleNodeType | EnumToken.InvalidRuleTokenType | EnumToken.InvalidAtRuleTokenType,
+    typ: EnumToken.StyleSheetNodeType | EnumToken.RuleNodeType | EnumToken.AtRuleNodeType | EnumToken.KeyframesAtRuleNodeType | EnumToken.KeyFramesRuleNodeType | EnumToken.InvalidRuleTokenType | EnumToken.InvalidAtRuleTokenType,
     chi: Array<BaseToken | AstComment>;
 }
 
-export declare interface AstRuleStyleSheet extends AstRuleList {
+/**
+ * rule list node
+ */
+export declare interface AstStyleSheet extends AstRuleList {
     typ: EnumToken.StyleSheetNodeType,
-    chi: Array<AstRuleList | AstComment>
+    chi: Array<AstRuleList | AstComment>;
+    tokens?: null;
 }
 
+/**
+ * ast node
+ */
 export declare type AstNode =
-    AstRuleStyleSheet
+    AstStyleSheet
     | AstRuleList
     | AstComment
     | AstAtRule
     | AstRule
     | AstDeclaration
-    | AstKeyframAtRule
+    | AstKeyframesAtRule
     | AstKeyFrameRule
     | AstInvalidRule
     | AstInvalidDeclaration;
