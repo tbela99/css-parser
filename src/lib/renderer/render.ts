@@ -331,7 +331,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
                     str = `${(<AstDeclaration>node).nam}:${options.indent}${(options.minify ? filterValues((<AstDeclaration>node).val) : (<AstDeclaration>node).val).reduce(reducer, '').trimEnd()};`;
                 } else if (node.typ == EnumToken.AtRuleNodeType && !('chi' in node)) {
 
-                    str = `${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val};`;
+                    str = `${(<AstAtRule>node).val === '' ? '' : options.indent || ' '}${(<AstAtRule>node).val};`;
                 } else {
 
                     str = renderAstNode(node, options, sourcemap, {...position}, errors, reducer, cache, level + 1, indents);
