@@ -4190,7 +4190,27 @@ var atRules = {
 		}
 	},
 	"@nest": {
-		syntax: "<complex-selector-list>"
+	},
+	"@stylistic": {
+		syntax: " @stylistic { <feature-value-declaration-list> } "
+	},
+	"@historical-forms": {
+		syntax: " @historical-forms { <feature-value-declaration-list> } "
+	},
+	"@styleset": {
+		syntax: " @styleset { <feature-value-declaration-list> } "
+	},
+	"@character-variant": {
+		syntax: " @character-variant { <feature-value-declaration-list> } "
+	},
+	"@swash": {
+		syntax: " @swash { <feature-value-declaration-list> } "
+	},
+	"@ornaments": {
+		syntax: " @ornaments { <feature-value-declaration-list> } "
+	},
+	"@annotation": {
+		syntax: " @annotation { <feature-value-declaration-list> } "
 	}
 };
 var config = {

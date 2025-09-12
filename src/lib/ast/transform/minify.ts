@@ -188,11 +188,6 @@ export function minify(matrix: Matrix): Token[] | null {
 
     if (transforms.has('skew')) {
 
-        // if (round(decomposed.skew[0]) == 0) {
-        //
-        //     skew.delete('x');
-        // }
-
         if (round(decomposed.skew[1]) == 0) {
 
             skew.delete('y');
@@ -294,17 +289,10 @@ export function minify(matrix: Matrix): Token[] | null {
 
 export function eqMatrix(a: FunctionToken | Matrix, b: Token[]): boolean {
 
-    // console.error(JSON.stringify({a, b}, null, 1));
-
     let mat: Matrix = identity();
     let tmp: Matrix = identity();
 
-    // @ts-ignore
     const data = (Array.isArray(a) ? a : parseMatrix(a)) as Matrix;
-
-    // toZero(data);
-
-    // console.error({data});
 
     for (const transform of b) {
 
@@ -317,9 +305,6 @@ export function eqMatrix(a: FunctionToken | Matrix, b: Token[]): boolean {
 
         mat = multiply(mat, tmp);
     }
-
-    // toZero(mat);
-    // console.error({mat});
 
     if (mat == null) {
 

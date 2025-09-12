@@ -788,7 +788,7 @@ declare function walkValues(values: Token$1[], root?: AstNode$1 | Token$1 | null
  *
  * @private
  */
-declare function expand(ast: AstNode$1): AstNode$1;
+declare function expand(ast: AstStyleSheet | AstAtRule | AstRule): AstNode$1;
 
 /**
  *
@@ -3115,7 +3115,7 @@ interface ValidationOptions {
      *
      * @private
      */
-    occurence?: boolean | null;
+    occurrence?: boolean | null;
     /**
      * at least once
      *
@@ -3246,9 +3246,10 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
      * url and file loader
      * @param url
      * @param currentUrl
+     * @param asStream
      *
      */
-    load?: (url: string, currentUrl: string) => LoadResult;
+    load?: (url: string, currentUrl: string, asStream?: boolean) => LoadResult;
     /**
      * get directory name
      * @param path
@@ -3712,11 +3713,12 @@ declare function resolve(url: string, currentDirectory: string, cwd?: string): {
  * load file or url as stream
  * @param url
  * @param currentFile
+ * @param asStream
  * @throws Error file not found
  *
  * @private
  */
-declare function load(url: string, currentFile?: string): Promise<ReadableStream<Uint8Array> | string>;
+declare function load(url: string, currentFile?: string, asStream?: boolean): Promise<string | ReadableStream<Uint8Array<ArrayBufferLike>>>;
 /**
  * render the ast tree
  * @param data
@@ -3750,6 +3752,7 @@ declare function render(data: AstNode$1, options?: RenderOptions): RenderResult;
  * parse css file
  * @param file url or path
  * @param options
+ * @param asStream load file as stream
  *
  * @throws Error file not found
  *
@@ -3768,7 +3771,7 @@ declare function render(data: AstNode$1, options?: RenderOptions): RenderResult;
  * console.log(result.ast);
  * ```
  */
-declare function parseFile(file: string, options?: ParserOptions): Promise<ParseResult>;
+declare function parseFile(file: string, options?: ParserOptions, asStream?: boolean): Promise<ParseResult>;
 /**
  * parse css
  * @param stream
@@ -3817,6 +3820,7 @@ declare function parse(stream: string | ReadableStream<Uint8Array>, options?: Pa
  * transform css file
  * @param file url or path
  * @param options
+ * @param asStream load file as stream
  *
  * @throws Error file not found
  *
@@ -3835,7 +3839,7 @@ declare function parse(stream: string | ReadableStream<Uint8Array>, options?: Pa
  * console.log(result.code);
  * ```
  */
-declare function transformFile(file: string, options?: TransformOptions): Promise<TransformResult>;
+declare function transformFile(file: string, options?: TransformOptions, asStream?: boolean): Promise<TransformResult>;
 /**
  * transform css
  * @param css

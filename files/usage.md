@@ -179,7 +179,7 @@ import {transformFile} from '@tbela99/css-parser';
 
 const response = await fetch(`https://docs.deno.com/styles.css`);
 
-const result = await transform(response.body); // or parse(response.body)
+const result = await transformFile(response.body); // or parse(response.body)
 console.debug(result.code);
 
 ```

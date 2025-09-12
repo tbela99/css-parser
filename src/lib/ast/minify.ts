@@ -355,6 +355,7 @@ function doMinify(ast: AstNode, options: ParserOptions = {}, recursive: boolean 
                 }
 
                 if (previous?.typ == EnumToken.AtRuleNodeType &&
+                    (node as AstAtRule).nam != 'font-face' &&
                     (<AstAtRule>previous).nam == (<AstAtRule>node).nam &&
                     (<AstAtRule>previous).val == (<AstAtRule>node).val) {
 

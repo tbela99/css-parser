@@ -130,19 +130,19 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
 
             return transform(`
 
-@font-face { font-family: icons; src: url(icons-fallback.woff2);
+@font-face { font-family: icons; src: url(icons-fallback.woff2);}
 @supports font-tech(color-COLRv1) {
   @font-face { font-family: icons; src: url(icons-gradient-var.woff2); }
 }
 
 `, {beautify: true}).then((result) => expect(result.code).equals(`@font-face {
  font-family: icons;
- src: url(icons-fallback.woff2);
- @supports font-tech(color-COLRv1) {
-  @font-face {
-   font-family: icons;
-   src: url(icons-gradient-var.woff2)
-  }
+ src: url(icons-fallback.woff2)
+}
+@supports font-tech(color-COLRv1) {
+ @font-face {
+  font-family: icons;
+  src: url(icons-gradient-var.woff2)
  }
 }`));
         });
@@ -754,7 +754,6 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 }
 
 `, {beautify: true}).then((result) => expect(result.code).equals(`@font-feature-values Font Name {
- font-display: swap;
  @styleset {
   nice-style: 12
  }
@@ -930,6 +929,33 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
         }
 
 `, {beautify: true}).then((result) => expect(result.code).equals(``));
+        });
+
+        it('keyframes #45', function () {
+            return transform(`
+
+@font-feature-values Bongo {
+    @swash { ornate: 1; }
+    annotation { boxed: 4; } /* should be @annotation! */
+    @swash { double-loops: 1; flowing: -1; } /* negative value */
+    @ornaments ; /* incomplete definition */
+    @styleset { double-W: 14; sharp-terminals: 16 1 } /* missing ; */
+    redrum  /* random editing mistake */
+}
+
+`, {
+                beautify: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`@font-feature-values Bongo {
+ @swash {
+  ornate: 1;
+  double-loops: 1
+ }
+ @styleset {
+  double-W: 14;
+  sharp-terminals: 16 1
+ }
+}`));
         });
 
     });

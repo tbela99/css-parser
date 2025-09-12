@@ -231,6 +231,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     continue;
                 }
                 if (previous?.typ == EnumToken.AtRuleNodeType &&
+                    node.nam != 'font-face' &&
                     previous.nam == node.nam &&
                     previous.val == node.val) {
                     if ('chi' in node) {

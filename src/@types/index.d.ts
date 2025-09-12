@@ -98,7 +98,7 @@ export interface ValidationOptions {
      *
      * @private
      */
-    occurence?: boolean | null;
+    occurrence?: boolean | null;
     /**
      * at least once
      *
@@ -229,9 +229,10 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
      * url and file loader
      * @param url
      * @param currentUrl
+     * @param asStream
      *
      */
-    load?: (url: string, currentUrl: string) => LoadResult;
+    load?: (url: string, currentUrl: string, asStream?: boolean) => LoadResult;
     /**
      * get directory name
      * @param path

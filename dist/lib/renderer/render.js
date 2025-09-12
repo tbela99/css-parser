@@ -69,7 +69,7 @@ function doRender(data, options = {}) {
     const sourcemap = options.sourcemap ? new SourceMap : null;
     const cache = Object.create(null);
     const result = {
-        code: renderAstNode(options.expandNestingRules ? expand(data) : data, options, sourcemap, {
+        code: renderAstNode(options.expandNestingRules && [EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(data.typ) && 'chi' in data ? expand(data) : data, options, sourcemap, {
             ind: 0,
             lin: 1,
             col: 1

@@ -128,12 +128,12 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
     } = Object.create(null);
 
     const result: RenderResult = {
-        code: renderAstNode(options.expandNestingRules ? expand(data) : data, options, sourcemap, <Position>{
+        code: renderAstNode(options.expandNestingRules && [EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(data.typ) && 'chi' in data ? expand(data as AstStyleSheet | AstAtRule | AstRule) : data, options, sourcemap, {
 
             ind: 0,
             lin: 1,
             col: 1
-        }, errors, function reducer(acc: string, curr: Token): string {
+        } as Position, errors, function reducer(acc: string, curr: Token): string {
 
             if (curr.typ == EnumToken.CommentTokenType && options.removeComments) {
 
@@ -185,7 +185,6 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
 function updateSourceMap(node: AstRuleList | AstComment, options: RenderOptions, cache: {
     [p: string]: any
 }, sourcemap: SourceMap, position: Position, str: string) {
-
 
     if ([
         EnumToken.RuleNodeType, EnumToken.AtRuleNodeType,

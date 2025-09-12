@@ -1,10 +1,7 @@
-import {readFileSync} from "node:fs";
 import {dirname} from "node:path";
-import {transform} from '../dist/node/index.js';
+import {transformFile} from '../dist/node.js';
 
-const css = readFileSync(dirname(new URL(import.meta.url).pathname) + '/files/css/tailwind.css', {encoding: 'utf-8'});
-
-const {code, stats} = await transform(css);
+const {code, stats} = await transformFile(dirname(new URL(import.meta.url).pathname) + '/files/css/tailwind.css');
 
 console.debug(code);
 console.debug({stats});

@@ -156,10 +156,6 @@ function minify(matrix) {
         }
     }
     if (transforms.has('skew')) {
-        // if (round(decomposed.skew[0]) == 0) {
-        //
-        //     skew.delete('x');
-        // }
         if (round(decomposed.skew[1]) == 0) {
             skew.delete('y');
         }
@@ -242,13 +238,9 @@ function minify(matrix) {
     ] : result;
 }
 function eqMatrix(a, b) {
-    // console.error(JSON.stringify({a, b}, null, 1));
     let mat = identity();
     let tmp = identity();
-    // @ts-ignore
     const data = (Array.isArray(a) ? a : parseMatrix(a));
-    // toZero(data);
-    // console.error({data});
     for (const transform of b) {
         tmp = computeMatrix([transform], identity());
         if (tmp == null) {
@@ -256,8 +248,6 @@ function eqMatrix(a, b) {
         }
         mat = multiply(mat, tmp);
     }
-    // toZero(mat);
-    // console.error({mat});
     if (mat == null) {
         return false;
     }

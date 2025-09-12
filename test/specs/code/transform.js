@@ -659,5 +659,26 @@ transform: perspective(500px) translate3d(10px, 0, 20px) rotateY(30deg) scaleX(2
  transform: matrix3d(1.73205,0,-1,.002,0,2,0,0,2,0,3.4641,-.0069282,10,0,20,.96)
 }`));
         });
+
+        it('matrix #39', function () {
+            const nesting1 = `
+
+.foo {
+  transform: matrix3d(1, 0, 0, 0, 0, 0.707106, 0.707106, 0, 0, -0.707106, 0.707106, 0, 100, 100, 10, 1);
+}
+
+  .now {
+    transform: rotate3d(1, 1, 1, 180deg)
+}
+`;
+            return transform(nesting1, {
+                beautify: true
+            }).then((result) => expect(result.code).equals(`.foo {
+ transform: translate3d(100px,100px,10px)rotateX(45deg)
+}
+.now {
+ transform: rotate3d(1,1,1,180deg)
+}`));
+        });
     });
 }

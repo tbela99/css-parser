@@ -1,6 +1,6 @@
 import config from './config.json' with {type: 'json'};
 import type {ValidationConfiguration, ValidationSyntaxNode} from "../../@types/validation.d.ts";
-import type {ValidationToken} from "./parser/index.ts";
+import type {ValidationRootToken, ValidationToken} from "./parser/index.ts";
 import {parseSyntax, ValidationSyntaxGroupEnum} from "./parser/index.ts";
 
 const parsedSyntaxes = new Map<string, ValidationToken[]>();
@@ -47,7 +47,7 @@ export function getSyntax(group: ValidationSyntaxGroupEnum, key: string | string
 export function getParsedSyntax(group: ValidationSyntaxGroupEnum, key: string | string[]): null | ValidationToken[] {
 
     // @ts-ignore
-    let obj = config[group] as Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode>;
+    let obj: Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode> | ValidationSyntaxNode = config[group] as Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode>;
 
     const keys: string[] = Array.isArray(key) ? key : [key];
 
@@ -74,7 +74,7 @@ export function getParsedSyntax(group: ValidationSyntaxGroupEnum, key: string | 
         }
 
         // @ts-ignore
-        obj = obj[key];
+        obj = obj[key] as ValidationSyntaxNode | Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode>;
     }
 
     const index: string = group + '.' + keys.join('.');
@@ -82,8 +82,7 @@ export function getParsedSyntax(group: ValidationSyntaxGroupEnum, key: string | 
     // @ts-ignore
     if (!parsedSyntaxes.has(index)) {
 
-        // @ts-ignore
-        const syntax: ValidationRootToken = parseSyntax(obj.syntax);
+        const syntax: ValidationRootToken = parseSyntax((obj as ValidationSyntaxNode).syntax as string) as ValidationRootToken;
 
         // @ts-ignore
         parsedSyntaxes.set(index, syntax.chi);

@@ -67,8 +67,14 @@ function inverse(matrix: Matrix): Matrix | null {
 
     // Create augmented matrix [matrix | identity]
     let augmented: number[] = [
-        1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1,
-        1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1
+        ...matrix.slice(0, 4),
+        1, 0, 0, 0,
+        ...matrix.slice(4, 8),
+        0, 1, 0, 0,
+        ...matrix.slice(8, 12),
+        0, 0, 1, 0,
+        ...matrix.slice(12, 16),
+        0, 0, 0, 1
     ];
 
 
@@ -102,7 +108,7 @@ function inverse(matrix: Matrix): Matrix | null {
         }
 
         // Scale pivot row to make pivot element 1
-        let pivot = augmented[col * 4 + col];
+        let pivot: number = augmented[col * 4 + col];
 
         for (let j = 0; j < 8; j++) {
 
@@ -128,26 +134,10 @@ function inverse(matrix: Matrix): Matrix | null {
     return augmented.slice(0, 16) as Matrix;
 }
 
-// function transpose(matrix: Matrix): Matrix {
-//     // Crée une nouvelle matrice vide 4x4
-//     // @ts-ignore
-//     let transposed: Matrix = [[], [], [], []] as Matrix;
-//
-//     // Parcourt chaque ligne et colonne pour transposer
-//     for (let i = 0; i < 4; i++) {
-//
-//         for (let j = 0; j < 4; j++) {
-//
-//             transposed[j][i] = matrix[i][j];
-//         }
-//     }
-//
-//     return transposed;
-// }
-
 export function round(number: number): number {
 
-    return Math.abs(number) < epsilon ? 0 : +number.toPrecision(6);
+    const rounded: number = Math.round(number);
+    return Math.abs(rounded - number) <= epsilon ? rounded : +number.toPrecision(6);
 }
 
 // translate3d(25.9808px, 0, 15px ) rotateY(60deg) skewX(49.9999deg) scale(1, 1.2)
@@ -180,7 +170,7 @@ export function decompose(original: Matrix): DecomposedMatrix3D | null {
         // @ts-ignore
         const inverted = inverse(original.slice());
 
-        if (!inverted) {
+        if (inverted === null) {
 
             return null;
         }
@@ -335,14 +325,14 @@ export function toZero(v: number[] | Matrix): number[] | Matrix {
 export function is2DMatrix(matrix: Matrix): boolean {
 
     // m13,m14,  m23, m24, m31, m32, m34, m43 are all 0
-    return matrix[0 * 4 + 2] === 0 &&
-        matrix[0 * 4 + 3] === 0 &&
-        matrix[1 * 4 + 2] === 0 &&
-        matrix[1 * 4 + 3] === 0 &&
-        matrix[2 * 4 + 0] === 0 &&
-        matrix[2 * 4 + 1] === 0 &&
-        matrix[2 * 4 + 3] === 0 &&
-        matrix[3 * 4 + 2] === 0 &&
-        matrix[2 * 4 + 2] === 1 &&
-        matrix[3 * 4 + 3] === 1;
+    return matrix[2] === 0 &&
+        matrix[3] === 0 &&
+        matrix[6] === 0 &&
+        matrix[7] === 0 &&
+        matrix[8] === 0 &&
+        matrix[9] === 0 &&
+        matrix[11] === 0 &&
+        matrix[14] === 0 &&
+        matrix[10] === 1 &&
+        matrix[15] === 1;
 }
