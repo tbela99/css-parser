@@ -61,7 +61,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
             }
             replacement = parent;
             for (const feature of options.features) {
-                if ((feature.processMode & FeatureWalkMode.Pre) === 0) {
+                if ((feature.processMode & FeatureWalkMode.Pre) === 0 || (feature.accept != null && !feature.accept.has(parent.typ))) {
                     continue;
                 }
                 const result = feature.run(replacement, options, parent.parent ?? ast, context, FeatureWalkMode.Pre);
@@ -100,7 +100,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
         replacement = parent;
         if (postprocess) {
             for (const feature of options.features) {
-                if ((feature.processMode & FeatureWalkMode.Post) === 0) {
+                if ((feature.processMode & FeatureWalkMode.Post) === 0 || (feature.accept != null && !feature.accept.has(parent.typ))) {
                     continue;
                 }
                 const result = feature.run(replacement, options, parent.parent ?? ast, context, FeatureWalkMode.Post);

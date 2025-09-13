@@ -11,6 +11,7 @@ import '../../parser/utils/config.js';
 import { FeatureWalkMode } from './type.js';
 
 class ComputeCalcExpressionFeature {
+    accept = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
     get ordering() {
         return 1;
     }

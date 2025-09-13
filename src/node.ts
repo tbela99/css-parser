@@ -292,7 +292,6 @@ export async function transform(css: string | ReadableStream<Uint8Array>, option
     options = {minify: true, removeEmpty: true, removeCharset: true, ...options};
 
     const startTime: number = performance.now();
-
     return parse(css, options).then((parseResult: ParseResult) => {
 
         // ast already expanded by parse

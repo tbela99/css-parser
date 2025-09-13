@@ -753,7 +753,7 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
   }
 }
 
-`, {beautify: true}).then((result) => expect(result.code).equals(`@font-feature-values Font Name {
+`, {beautify: true, validation: true}).then((result) => expect(result.code).equals(`@font-feature-values Font Name {
  @styleset {
   nice-style: 12
  }

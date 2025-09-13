@@ -52,6 +52,7 @@ function replace(node, variableScope) {
     }
 }
 class InlineCssVariablesFeature {
+    accept = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
     get ordering() {
         return 0;
     }

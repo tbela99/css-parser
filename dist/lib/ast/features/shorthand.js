@@ -10,6 +10,7 @@ import '../../renderer/sourcemap/lib/encode.js';
 import { FeatureWalkMode } from './type.js';
 
 class ComputeShorthandFeature {
+    accept = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType, EnumToken.KeyFramesRuleNodeType]);
     get ordering() {
         return 3;
     }

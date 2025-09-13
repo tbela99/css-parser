@@ -39,14 +39,6 @@ const enumTokenHints = new Set([
 function reject(reason) {
     throw new Error(reason ?? 'Parsing aborted');
 }
-function removeNode(node, parent) {
-    // @ts-ignore
-    const index = parent.chi.indexOf(node);
-    if (index != -1) {
-        parent.chi.splice(index, 1);
-        node.parent = null;
-    }
-}
 function normalizeVisitorKeyName(keyName) {
     return keyName.replace(/-([a-z])/g, (all, one) => one.toUpperCase());
 }
@@ -126,6 +118,8 @@ async function doParse(iter, options = {}) {
     const stats = {
         src: options.src ?? '',
         bytesIn: 0,
+        nodesCount: 0,
+        tokensCount: 0,
         importedBytesIn: 0,
         parse: `0ms`,
         minify: `0ms`,
@@ -154,14 +148,75 @@ async function doParse(iter, options = {}) {
             src: ''
         };
     }
-    let item;
-    let node;
+    const valuesHandlers = new Map;
+    const preValuesHandlers = new Map;
+    const postValuesHandlers = new Map;
+    const preVisitorsHandlersMap = new Map;
+    const visitorsHandlersMap = new Map;
+    const postVisitorsHandlersMap = new Map;
+    const allValuesHandlers = [];
     const rawTokens = [];
     const imports = [];
+    let item;
+    let node;
     // @ts-ignore ignore error
     let isAsync = typeof iter[Symbol.asyncIterator] === 'function';
+    if (options.visitor != null) {
+        for (const [key, value] of Object.entries(options.visitor)) {
+            if (key in EnumToken) {
+                if (typeof value == 'function') {
+                    valuesHandlers.set(EnumToken[key], value);
+                }
+                else if (typeof value == 'object' && 'type' in value && 'handler' in value && value.type in WalkerValueEvent) {
+                    if (WalkerValueEvent[value.type] == WalkerValueEvent.Enter) {
+                        preValuesHandlers.set(EnumToken[key], value.handler);
+                    }
+                    else if (WalkerValueEvent[value.type] == WalkerValueEvent.Leave) {
+                        postValuesHandlers.set(EnumToken[key], value.handler);
+                    }
+                }
+                else {
+                    errors.push({ action: 'ignore', message: `doParse: visitor.${key} is not a valid key name` });
+                }
+            }
+            else if (['Declaration', 'Rule', 'AtRule', 'KeyframesRule', 'KeyframesAtRule'].includes(key)) {
+                if (typeof value == 'function') {
+                    visitorsHandlersMap.set(key, value);
+                }
+                else if (typeof value == 'object') {
+                    if ('type' in value && 'handler' in value && value.type in WalkerValueEvent) {
+                        if (WalkerValueEvent[value.type] == WalkerValueEvent.Enter) {
+                            preVisitorsHandlersMap.set(key, value.handler);
+                        }
+                        else if (WalkerValueEvent[value.type] == WalkerValueEvent.Leave) {
+                            postVisitorsHandlersMap.set(key, value.handler);
+                        }
+                    }
+                    else {
+                        visitorsHandlersMap.set(key, value);
+                    }
+                }
+                else {
+                    errors.push({ action: 'ignore', message: `doParse: visitor.${key} is not a valid key name` });
+                }
+            }
+            else {
+                errors.push({ action: 'ignore', message: `doParse: visitor.${key} is not a valid key name` });
+            }
+        }
+        if (preValuesHandlers.size > 0) {
+            allValuesHandlers.push(preValuesHandlers);
+        }
+        if (valuesHandlers.size > 0) {
+            allValuesHandlers.push(valuesHandlers);
+        }
+        if (postValuesHandlers.size > 0) {
+            allValuesHandlers.push(postValuesHandlers);
+        }
+    }
     while (item = isAsync ? (await iter.next()).value : iter.next().value) {
         stats.bytesIn = item.bytesIn;
+        stats.tokensCount++;
         rawTokens.push(item);
         if (item.hint != null && BadTokensTypes.includes(item.hint)) {
             const node = getTokenType(item.token, item.hint);
@@ -189,7 +244,7 @@ async function doParse(iter, options = {}) {
             ast.loc.end = item.end;
         }
         if (item.token == ';' || item.token == '{') {
-            node = parseNode(tokens, context, options, errors, src, map, rawTokens);
+            node = parseNode(tokens, context, options, errors, src, map, rawTokens, stats);
             rawTokens.length = 0;
             if (node != null) {
                 if ('chi' in node) {
@@ -233,7 +288,7 @@ async function doParse(iter, options = {}) {
             map = new Map;
         }
         else if (item.token == '}') {
-            parseNode(tokens, context, options, errors, src, map, rawTokens);
+            parseNode(tokens, context, options, errors, src, map, rawTokens, stats);
             rawTokens.length = 0;
             if (context.loc != null) {
                 context.loc.end = item.end;
@@ -254,7 +309,7 @@ async function doParse(iter, options = {}) {
         }
     }
     if (tokens.length > 0) {
-        node = parseNode(tokens, context, options, errors, src, map, rawTokens);
+        node = parseNode(tokens, context, options, errors, src, map, rawTokens, stats);
         rawTokens.length = 0;
         if (node != null) {
             if (node.typ == EnumToken.AtRuleNodeType && node.nam == 'import') {
@@ -317,78 +372,7 @@ async function doParse(iter, options = {}) {
     if (options.expandNestingRules) {
         ast = expand(ast);
     }
-    const valuesHandlers = new Map;
-    const preValuesHandlers = new Map;
-    const postValuesHandlers = new Map;
-    const preVisitorsHandlersMap = new Map;
-    const visitorsHandlersMap = new Map;
-    const postVisitorsHandlersMap = new Map;
-    const allValuesHandlers = [];
-    if (options.visitor != null) {
-        for (const [key, value] of Object.entries(options.visitor)) {
-            if (key in EnumToken) {
-                if (typeof value == 'function') {
-                    valuesHandlers.set(EnumToken[key], value);
-                }
-                else if (typeof value == 'object' && 'type' in value && 'handler' in value && value.type in WalkerValueEvent) {
-                    if (WalkerValueEvent[value.type] == WalkerValueEvent.Enter) {
-                        preValuesHandlers.set(EnumToken[key], value.handler);
-                    }
-                    else if (WalkerValueEvent[value.type] == WalkerValueEvent.Leave) {
-                        postValuesHandlers.set(EnumToken[key], value.handler);
-                    }
-                }
-                else {
-                    errors.push({ action: 'ignore', message: `doParse: visitor.${key} is not a valid key name` });
-                }
-            }
-            else if (['Declaration', 'Rule', 'AtRule', 'KeyframesRule', 'KeyframesAtRule'].includes(key)) {
-                if (typeof value == 'function') {
-                    visitorsHandlersMap.set(key, value);
-                }
-                else if (typeof value == 'object') {
-                    if ('type' in value && 'handler' in value && value.type in WalkerValueEvent) {
-                        if (WalkerValueEvent[value.type] == WalkerValueEvent.Enter) {
-                            preVisitorsHandlersMap.set(key, value.handler);
-                        }
-                        else if (WalkerValueEvent[value.type] == WalkerValueEvent.Leave) {
-                            postVisitorsHandlersMap.set(key, value.handler);
-                        }
-                    }
-                    else {
-                        visitorsHandlersMap.set(key, value);
-                    }
-                }
-                else {
-                    errors.push({ action: 'ignore', message: `doParse: visitor.${key} is not a valid key name` });
-                }
-            }
-            else {
-                errors.push({ action: 'ignore', message: `doParse: visitor.${key} is not a valid key name` });
-            }
-        }
-        if (preValuesHandlers.size > 0) {
-            allValuesHandlers.push(preValuesHandlers);
-        }
-        if (valuesHandlers.size > 0) {
-            allValuesHandlers.push(valuesHandlers);
-        }
-        if (postValuesHandlers.size > 0) {
-            allValuesHandlers.push(postValuesHandlers);
-        }
-    }
     for (const result of walk(ast)) {
-        if (result.parent != null && !isNodeAllowedInContext(result.node, result.parent)) {
-            errors.push({
-                action: 'drop',
-                message: `${EnumToken[result.parent.typ]}: child ${EnumToken[result.node.typ]}${result.node.typ == EnumToken.DeclarationNodeType ? ` '${result.node.nam}'` : result.node.typ == EnumToken.AtRuleNodeType || result.node.typ == EnumToken.KeyframesAtRuleNodeType ? ` '@${result.node.nam}'` : ''} not allowed in context${result.parent.typ == EnumToken.AtRuleNodeType ? ` '@${result.parent.nam}'` : result.parent.typ == EnumToken.StyleSheetNodeType ? ` 'stylesheet'` : ''}`,
-                // @ts-ignore
-                location: result.node.loc ?? map.get(result.node) ?? null
-            });
-            // @ts-ignore
-            removeNode(result.node, result.parent);
-            continue;
-        }
         if (allValuesHandlers.length > 0 || preVisitorsHandlersMap.size > 0 || visitorsHandlersMap.size > 0 || postVisitorsHandlersMap.size > 0) {
             if ((result.node.typ == EnumToken.DeclarationNodeType &&
                 (preVisitorsHandlersMap.has('Declaration') || visitorsHandlersMap.has('Declaration') || postVisitorsHandlersMap.has('Declaration'))) ||
@@ -573,7 +557,7 @@ function getLastNode(context) {
     }
     return null;
 }
-function parseNode(results, context, options, errors, src, map, rawTokens) {
+function parseNode(results, context, options, errors, src, map, rawTokens, stats) {
     let tokens = [];
     for (const t of results) {
         const node = getTokenType(t.token, t.hint);
@@ -596,6 +580,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
             }
             loc = location;
             context.chi.push(tokens[i]);
+            stats.nodesCount++;
             if (options.sourcemap) {
                 tokens[i].loc = loc;
             }
@@ -774,13 +759,18 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                 isValid = false;
             }
         }
+        const isAllowed = isNodeAllowedInContext(node, context);
         // @ts-ignore
         const valid = options.validation == ValidationLevel.None ? {
             valid: SyntaxValidationResult.Valid,
             error: '',
             node,
             syntax: '@' + node.nam
-        } : isValid ? (node.typ == EnumToken.KeyframesAtRuleNodeType ? validateAtRuleKeyframes(node) : validateAtRule(node, options, context)) : {
+        } : !isAllowed ? {
+            valid: SyntaxValidationResult.Drop,
+            node,
+            syntax: '@' + node.nam,
+            error: `${EnumToken[context.typ]}: child ${EnumToken[node.typ]} not allowed in context${context.typ == EnumToken.AtRuleNodeType ? ` '@${context.nam}'` : context.typ == EnumToken.StyleSheetNodeType ? ` 'stylesheet'` : ''}`} : isValid ? (node.typ == EnumToken.KeyframesAtRuleNodeType ? validateAtRuleKeyframes(node) : validateAtRule(node, options, context)) : {
             valid: SyntaxValidationResult.Drop,
             node,
             syntax: '@' + node.nam,
@@ -804,6 +794,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
             }), '');
         }
         context.chi.push(node);
+        stats.nodesCount++;
         Object.defineProperties(node, {
             parent: { ...definedPropertySettings, value: context },
             validSyntax: { ...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid }
@@ -907,10 +898,14 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
             // @ts-ignore
             context.chi.push(node);
             Object.defineProperty(node, 'parent', { ...definedPropertySettings, value: context });
+            const isAllowed = isNodeAllowedInContext(node, context);
             // @ts-ignore
             const valid = options.validation == ValidationLevel.None ? {
                 valid: SyntaxValidationResult.Valid,
                 error: null
+            } : !isAllowed ? {
+                valid: SyntaxValidationResult.Drop,
+                error: `${EnumToken[context.typ]}: child ${EnumToken[node.typ]} not allowed in context${context.typ == EnumToken.AtRuleNodeType ? ` '@${context.nam}'` : context.typ == EnumToken.StyleSheetNodeType ? ` 'stylesheet'` : ''}`
             } : ruleType == EnumToken.KeyFramesRuleNodeType ? validateKeyframeSelector(tokens) : validateSelector(tokens, options, context);
             if (valid.valid != SyntaxValidationResult.Valid) {
                 // @ts-ignore
@@ -1025,6 +1020,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                         node.loc.end = { ...map.get(delim).end };
                     }
                     context.chi.push(node);
+                    stats.nodesCount++;
                 }
                 return null;
             }
@@ -1056,13 +1052,21 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
             if (context.typ == EnumToken.StyleSheetNodeType && options.lenient) {
                 Object.assign(node, { typ: EnumToken.InvalidDeclarationNodeType });
                 context.chi.push(node);
+                stats.nodesCount++;
                 return null;
             }
             const result = parseDeclarationNode(node, errors, location);
             Object.defineProperty(result, 'parent', { ...definedPropertySettings, value: context });
             if (result != null) {
                 if (options.validation == ValidationLevel.All) {
-                    const valid = evaluateSyntax(result, context, options);
+                    const isAllowed = isNodeAllowedInContext(node, context);
+                    // @ts-ignore
+                    const valid = !isAllowed ? {
+                        valid: SyntaxValidationResult.Drop,
+                        error: `${EnumToken[node.typ]} not allowed in context${context.typ == EnumToken.AtRuleNodeType ? ` '@${context.nam}'` : context.typ == EnumToken.StyleSheetNodeType ? ` 'stylesheet'` : ''}`,
+                        node,
+                        syntax: null
+                    } : evaluateSyntax(result, context, options);
                     Object.defineProperty(result, 'validSyntax', {
                         ...definedPropertySettings,
                         value: valid.valid == SyntaxValidationResult.Valid
@@ -1082,6 +1086,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                     }
                 }
                 context.chi.push(result);
+                stats.nodesCount++;
             }
             return null;
         }

@@ -17479,14 +17479,6 @@
     function reject(reason) {
         throw new Error(reason ?? 'Parsing aborted');
     }
-    function removeNode(node, parent) {
-        // @ts-ignore
-        const index = parent.chi.indexOf(node);
-        if (index != -1) {
-            parent.chi.splice(index, 1);
-            node.parent = null;
-        }
-    }
     function normalizeVisitorKeyName(keyName) {
         return keyName.replace(/-([a-z])/g, (all, one) => one.toUpperCase());
     }
@@ -17566,6 +17558,8 @@
         const stats = {
             src: options.src ?? '',
             bytesIn: 0,
+            nodesCount: 0,
+            tokensCount: 0,
             importedBytesIn: 0,
             parse: `0ms`,
             minify: `0ms`,
@@ -17594,14 +17588,75 @@
                 src: ''
             };
         }
-        let item;
-        let node;
+        const valuesHandlers = new Map;
+        const preValuesHandlers = new Map;
+        const postValuesHandlers = new Map;
+        const preVisitorsHandlersMap = new Map;
+        const visitorsHandlersMap = new Map;
+        const postVisitorsHandlersMap = new Map;
+        const allValuesHandlers = [];
         const rawTokens = [];
         const imports = [];
+        let item;
+        let node;
         // @ts-ignore ignore error
         let isAsync = typeof iter[Symbol.asyncIterator] === 'function';
+        if (options.visitor != null) {
+            for (const [key, value] of Object.entries(options.visitor)) {
+                if (key in exports.EnumToken) {
+                    if (typeof value == 'function') {
+                        valuesHandlers.set(exports.EnumToken[key], value);
+                    }
+                    else if (typeof value == 'object' && 'type' in value && 'handler' in value && value.type in exports.WalkerValueEvent) {
+                        if (exports.WalkerValueEvent[value.type] == exports.WalkerValueEvent.Enter) {
+                            preValuesHandlers.set(exports.EnumToken[key], value.handler);
+                        }
+                        else if (exports.WalkerValueEvent[value.type] == exports.WalkerValueEvent.Leave) {
+                            postValuesHandlers.set(exports.EnumToken[key], value.handler);
+                        }
+                    }
+                    else {
+                        errors.push({ action: 'ignore', message: `doParse: visitor.${key} is not a valid key name` });
+                    }
+                }
+                else if (['Declaration', 'Rule', 'AtRule', 'KeyframesRule', 'KeyframesAtRule'].includes(key)) {
+                    if (typeof value == 'function') {
+                        visitorsHandlersMap.set(key, value);
+                    }
+                    else if (typeof value == 'object') {
+                        if ('type' in value && 'handler' in value && value.type in exports.WalkerValueEvent) {
+                            if (exports.WalkerValueEvent[value.type] == exports.WalkerValueEvent.Enter) {
+                                preVisitorsHandlersMap.set(key, value.handler);
+                            }
+                            else if (exports.WalkerValueEvent[value.type] == exports.WalkerValueEvent.Leave) {
+                                postVisitorsHandlersMap.set(key, value.handler);
+                            }
+                        }
+                        else {
+                            visitorsHandlersMap.set(key, value);
+                        }
+                    }
+                    else {
+                        errors.push({ action: 'ignore', message: `doParse: visitor.${key} is not a valid key name` });
+                    }
+                }
+                else {
+                    errors.push({ action: 'ignore', message: `doParse: visitor.${key} is not a valid key name` });
+                }
+            }
+            if (preValuesHandlers.size > 0) {
+                allValuesHandlers.push(preValuesHandlers);
+            }
+            if (valuesHandlers.size > 0) {
+                allValuesHandlers.push(valuesHandlers);
+            }
+            if (postValuesHandlers.size > 0) {
+                allValuesHandlers.push(postValuesHandlers);
+            }
+        }
         while (item = isAsync ? (await iter.next()).value : iter.next().value) {
             stats.bytesIn = item.bytesIn;
+            stats.tokensCount++;
             rawTokens.push(item);
             if (item.hint != null && BadTokensTypes.includes(item.hint)) {
                 const node = getTokenType(item.token, item.hint);
@@ -17629,7 +17684,7 @@
                 ast.loc.end = item.end;
             }
             if (item.token == ';' || item.token == '{') {
-                node = parseNode(tokens, context, options, errors, src, map, rawTokens);
+                node = parseNode(tokens, context, options, errors, src, map, rawTokens, stats);
                 rawTokens.length = 0;
                 if (node != null) {
                     if ('chi' in node) {
@@ -17673,7 +17728,7 @@
                 map = new Map;
             }
             else if (item.token == '}') {
-                parseNode(tokens, context, options, errors, src, map, rawTokens);
+                parseNode(tokens, context, options, errors, src, map, rawTokens, stats);
                 rawTokens.length = 0;
                 if (context.loc != null) {
                     context.loc.end = item.end;
@@ -17694,7 +17749,7 @@
             }
         }
         if (tokens.length > 0) {
-            node = parseNode(tokens, context, options, errors, src, map, rawTokens);
+            node = parseNode(tokens, context, options, errors, src, map, rawTokens, stats);
             rawTokens.length = 0;
             if (node != null) {
                 if (node.typ == exports.EnumToken.AtRuleNodeType && node.nam == 'import') {
@@ -17757,78 +17812,7 @@
         if (options.expandNestingRules) {
             ast = expand(ast);
         }
-        const valuesHandlers = new Map;
-        const preValuesHandlers = new Map;
-        const postValuesHandlers = new Map;
-        const preVisitorsHandlersMap = new Map;
-        const visitorsHandlersMap = new Map;
-        const postVisitorsHandlersMap = new Map;
-        const allValuesHandlers = [];
-        if (options.visitor != null) {
-            for (const [key, value] of Object.entries(options.visitor)) {
-                if (key in exports.EnumToken) {
-                    if (typeof value == 'function') {
-                        valuesHandlers.set(exports.EnumToken[key], value);
-                    }
-                    else if (typeof value == 'object' && 'type' in value && 'handler' in value && value.type in exports.WalkerValueEvent) {
-                        if (exports.WalkerValueEvent[value.type] == exports.WalkerValueEvent.Enter) {
-                            preValuesHandlers.set(exports.EnumToken[key], value.handler);
-                        }
-                        else if (exports.WalkerValueEvent[value.type] == exports.WalkerValueEvent.Leave) {
-                            postValuesHandlers.set(exports.EnumToken[key], value.handler);
-                        }
-                    }
-                    else {
-                        errors.push({ action: 'ignore', message: `doParse: visitor.${key} is not a valid key name` });
-                    }
-                }
-                else if (['Declaration', 'Rule', 'AtRule', 'KeyframesRule', 'KeyframesAtRule'].includes(key)) {
-                    if (typeof value == 'function') {
-                        visitorsHandlersMap.set(key, value);
-                    }
-                    else if (typeof value == 'object') {
-                        if ('type' in value && 'handler' in value && value.type in exports.WalkerValueEvent) {
-                            if (exports.WalkerValueEvent[value.type] == exports.WalkerValueEvent.Enter) {
-                                preVisitorsHandlersMap.set(key, value.handler);
-                            }
-                            else if (exports.WalkerValueEvent[value.type] == exports.WalkerValueEvent.Leave) {
-                                postVisitorsHandlersMap.set(key, value.handler);
-                            }
-                        }
-                        else {
-                            visitorsHandlersMap.set(key, value);
-                        }
-                    }
-                    else {
-                        errors.push({ action: 'ignore', message: `doParse: visitor.${key} is not a valid key name` });
-                    }
-                }
-                else {
-                    errors.push({ action: 'ignore', message: `doParse: visitor.${key} is not a valid key name` });
-                }
-            }
-            if (preValuesHandlers.size > 0) {
-                allValuesHandlers.push(preValuesHandlers);
-            }
-            if (valuesHandlers.size > 0) {
-                allValuesHandlers.push(valuesHandlers);
-            }
-            if (postValuesHandlers.size > 0) {
-                allValuesHandlers.push(postValuesHandlers);
-            }
-        }
         for (const result of walk(ast)) {
-            if (result.parent != null && !isNodeAllowedInContext(result.node, result.parent)) {
-                errors.push({
-                    action: 'drop',
-                    message: `${exports.EnumToken[result.parent.typ]}: child ${exports.EnumToken[result.node.typ]}${result.node.typ == exports.EnumToken.DeclarationNodeType ? ` '${result.node.nam}'` : result.node.typ == exports.EnumToken.AtRuleNodeType || result.node.typ == exports.EnumToken.KeyframesAtRuleNodeType ? ` '@${result.node.nam}'` : ''} not allowed in context${result.parent.typ == exports.EnumToken.AtRuleNodeType ? ` '@${result.parent.nam}'` : result.parent.typ == exports.EnumToken.StyleSheetNodeType ? ` 'stylesheet'` : ''}`,
-                    // @ts-ignore
-                    location: result.node.loc ?? map.get(result.node) ?? null
-                });
-                // @ts-ignore
-                removeNode(result.node, result.parent);
-                continue;
-            }
             if (allValuesHandlers.length > 0 || preVisitorsHandlersMap.size > 0 || visitorsHandlersMap.size > 0 || postVisitorsHandlersMap.size > 0) {
                 if ((result.node.typ == exports.EnumToken.DeclarationNodeType &&
                     (preVisitorsHandlersMap.has('Declaration') || visitorsHandlersMap.has('Declaration') || postVisitorsHandlersMap.has('Declaration'))) ||
@@ -18013,7 +17997,7 @@
         }
         return null;
     }
-    function parseNode(results, context, options, errors, src, map, rawTokens) {
+    function parseNode(results, context, options, errors, src, map, rawTokens, stats) {
         let tokens = [];
         for (const t of results) {
             const node = getTokenType(t.token, t.hint);
@@ -18036,6 +18020,7 @@
                 }
                 loc = location;
                 context.chi.push(tokens[i]);
+                stats.nodesCount++;
                 if (options.sourcemap) {
                     tokens[i].loc = loc;
                 }
@@ -18214,13 +18199,18 @@
                     isValid = false;
                 }
             }
+            const isAllowed = isNodeAllowedInContext(node, context);
             // @ts-ignore
             const valid = options.validation == exports.ValidationLevel.None ? {
                 valid: SyntaxValidationResult.Valid,
                 error: '',
                 node,
                 syntax: '@' + node.nam
-            } : isValid ? (node.typ == exports.EnumToken.KeyframesAtRuleNodeType ? validateAtRuleKeyframes(node) : validateAtRule(node, options, context)) : {
+            } : !isAllowed ? {
+                valid: SyntaxValidationResult.Drop,
+                node,
+                syntax: '@' + node.nam,
+                error: `${exports.EnumToken[context.typ]}: child ${exports.EnumToken[node.typ]} not allowed in context${context.typ == exports.EnumToken.AtRuleNodeType ? ` '@${context.nam}'` : context.typ == exports.EnumToken.StyleSheetNodeType ? ` 'stylesheet'` : ''}`} : isValid ? (node.typ == exports.EnumToken.KeyframesAtRuleNodeType ? validateAtRuleKeyframes(node) : validateAtRule(node, options, context)) : {
                 valid: SyntaxValidationResult.Drop,
                 node,
                 syntax: '@' + node.nam,
@@ -18244,6 +18234,7 @@
                 }), '');
             }
             context.chi.push(node);
+            stats.nodesCount++;
             Object.defineProperties(node, {
                 parent: { ...definedPropertySettings, value: context },
                 validSyntax: { ...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid }
@@ -18347,10 +18338,14 @@
                 // @ts-ignore
                 context.chi.push(node);
                 Object.defineProperty(node, 'parent', { ...definedPropertySettings, value: context });
+                const isAllowed = isNodeAllowedInContext(node, context);
                 // @ts-ignore
                 const valid = options.validation == exports.ValidationLevel.None ? {
                     valid: SyntaxValidationResult.Valid,
                     error: null
+                } : !isAllowed ? {
+                    valid: SyntaxValidationResult.Drop,
+                    error: `${exports.EnumToken[context.typ]}: child ${exports.EnumToken[node.typ]} not allowed in context${context.typ == exports.EnumToken.AtRuleNodeType ? ` '@${context.nam}'` : context.typ == exports.EnumToken.StyleSheetNodeType ? ` 'stylesheet'` : ''}`
                 } : ruleType == exports.EnumToken.KeyFramesRuleNodeType ? validateKeyframeSelector(tokens) : validateSelector(tokens, options, context);
                 if (valid.valid != SyntaxValidationResult.Valid) {
                     // @ts-ignore
@@ -18465,6 +18460,7 @@
                             node.loc.end = { ...map.get(delim).end };
                         }
                         context.chi.push(node);
+                        stats.nodesCount++;
                     }
                     return null;
                 }
@@ -18496,13 +18492,21 @@
                 if (context.typ == exports.EnumToken.StyleSheetNodeType && options.lenient) {
                     Object.assign(node, { typ: exports.EnumToken.InvalidDeclarationNodeType });
                     context.chi.push(node);
+                    stats.nodesCount++;
                     return null;
                 }
                 const result = parseDeclarationNode(node, errors, location);
                 Object.defineProperty(result, 'parent', { ...definedPropertySettings, value: context });
                 if (result != null) {
                     if (options.validation == exports.ValidationLevel.All) {
-                        const valid = evaluateSyntax(result, context, options);
+                        const isAllowed = isNodeAllowedInContext(node, context);
+                        // @ts-ignore
+                        const valid = !isAllowed ? {
+                            valid: SyntaxValidationResult.Drop,
+                            error: `${exports.EnumToken[node.typ]} not allowed in context${context.typ == exports.EnumToken.AtRuleNodeType ? ` '@${context.nam}'` : context.typ == exports.EnumToken.StyleSheetNodeType ? ` 'stylesheet'` : ''}`,
+                            node,
+                            syntax: null
+                        } : evaluateSyntax(result, context, options);
                         Object.defineProperty(result, 'validSyntax', {
                             ...definedPropertySettings,
                             value: valid.valid == SyntaxValidationResult.Valid
@@ -18522,6 +18526,7 @@
                         }
                     }
                     context.chi.push(result);
+                    stats.nodesCount++;
                 }
                 return null;
             }
@@ -19829,6 +19834,7 @@
         }
     }
     class InlineCssVariablesFeature {
+        accept = new Set([exports.EnumToken.RuleNodeType, exports.EnumToken.AtRuleNodeType]);
         get ordering() {
             return 0;
         }
@@ -20811,6 +20817,7 @@
     }
 
     class ComputeShorthandFeature {
+        accept = new Set([exports.EnumToken.RuleNodeType, exports.EnumToken.AtRuleNodeType, exports.EnumToken.KeyFramesRuleNodeType]);
         get ordering() {
             return 3;
         }
@@ -20863,6 +20870,7 @@
     }
 
     class ComputeCalcExpressionFeature {
+        accept = new Set([exports.EnumToken.RuleNodeType, exports.EnumToken.AtRuleNodeType]);
         get ordering() {
             return 1;
         }
@@ -21732,6 +21740,7 @@
     }
 
     class TransformCssFeature {
+        accept = new Set([exports.EnumToken.RuleNodeType, exports.EnumToken.AtRuleNodeType]);
         get ordering() {
             return 4;
         }
@@ -21858,7 +21867,7 @@
                 }
                 replacement = parent;
                 for (const feature of options.features) {
-                    if ((feature.processMode & exports.FeatureWalkMode.Pre) === 0) {
+                    if ((feature.processMode & exports.FeatureWalkMode.Pre) === 0 || (feature.accept != null && !feature.accept.has(parent.typ))) {
                         continue;
                     }
                     const result = feature.run(replacement, options, parent.parent ?? ast, context, exports.FeatureWalkMode.Pre);
@@ -21897,7 +21906,7 @@
             replacement = parent;
             if (postprocess) {
                 for (const feature of options.features) {
-                    if ((feature.processMode & exports.FeatureWalkMode.Post) === 0) {
+                    if ((feature.processMode & exports.FeatureWalkMode.Post) === 0 || (feature.accept != null && !feature.accept.has(parent.typ))) {
                         continue;
                     }
                     const result = feature.run(replacement, options, parent.parent ?? ast, context, exports.FeatureWalkMode.Post);

@@ -311,6 +311,11 @@ export declare interface MinifyFeatureOptions {
 export declare interface MinifyFeature {
 
     /**
+     * accepted tokens
+     */
+    accept?: Set<EnumToken>;
+
+    /**
      * ordering
      */
     ordering: number;
@@ -471,7 +476,17 @@ export declare interface ParseResultStats {
     /**
      * imported files stats
      */
-    imports: ParseResultStats[]
+    imports: ParseResultStats[],
+
+    /**
+     * nodes count
+     */
+    nodesCount: number;
+
+    /**
+     * tokens count
+     */
+    tokensCount: number;
 }
 
 /**

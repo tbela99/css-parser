@@ -147,25 +147,14 @@ function reject(reason?: any) {
 
     throw new Error(reason ?? 'Parsing aborted');
 }
-
-function removeNode(node: AstNode, parent: AstRule | AstAtRule | AstStyleSheet) {
-
-    // @ts-ignore
-    const index: number = parent.chi!.indexOf(node);
-
-    if (index != -1) {
-
-        parent.chi!.splice(index, 1);
-        node.parent = null;
-    }
-}
-
 function normalizeVisitorKeyName(keyName: string): string {
 
     return keyName.replace(/-([a-z])/g, (all: string, one: string): string => one.toUpperCase());
 }
 
-export function replaceToken(parent: BinaryExpressionToken | (AstNode & ({chi: Token[]} | {val: Token[]})), value: Token, replacement: Token | Token[]) {
+export function replaceToken(parent: BinaryExpressionToken | (AstNode & ({ chi: Token[] } | {
+    val: Token[]
+})), value: Token, replacement: Token | Token[]) {
 
     for (const node of (Array.isArray(replacement) ? replacement : [replacement])) {
 
@@ -260,6 +249,8 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
     const stats: ParseResultStats = {
         src: options.src ?? '',
         bytesIn: 0,
+        nodesCount: 0,
+        tokensCount: 0,
         importedBytesIn: 0,
         parse: `0ms`,
         minify: `0ms`,
@@ -293,23 +284,113 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
         };
     }
 
-    let item: TokenizeResult;
-    let node: AstAtRule | AstRule | AstKeyFrameRule | AstKeyframesAtRule | AstInvalidRule | AstDeclaration | AstComment | null;
+    const valuesHandlers: Map<EnumToken, GenericVisitorHandler<Token>> = new Map as Map<EnumToken, GenericVisitorHandler<Token>>;
+    const preValuesHandlers: Map<EnumToken, GenericVisitorHandler<Token>> = new Map as Map<EnumToken, GenericVisitorHandler<Token>>;
+    const postValuesHandlers: Map<EnumToken, GenericVisitorHandler<Token>> = new Map as Map<EnumToken, GenericVisitorHandler<Token>>;
+
+    const preVisitorsHandlersMap = new Map as Map<'Declaration' | 'Rule' | 'AtRule' | 'KeyframesRule' | 'KeyframesAtRule',
+        GenericVisitorAstNodeHandlerMap<T> |
+        Record<string, GenericVisitorAstNodeHandlerMap<T>>
+    >;
+    const visitorsHandlersMap = new Map as Map<'Declaration' | 'Rule' | 'AtRule' | 'KeyframesRule' | 'KeyframesAtRule',
+        GenericVisitorAstNodeHandlerMap<T> |
+        Record<string, GenericVisitorAstNodeHandlerMap<T>>
+    >;
+    const postVisitorsHandlersMap = new Map as Map<'Declaration' | 'Rule' | 'AtRule' | 'KeyframesRule' | 'KeyframesAtRule',
+        GenericVisitorAstNodeHandlerMap<T> |
+        Record<string, GenericVisitorAstNodeHandlerMap<T>>
+    >;
+
+    const allValuesHandlers = [] as Array<Map<EnumToken, GenericVisitorHandler<Token>>>;
     const rawTokens: TokenizeResult[] = [];
     const imports: AstAtRule[] = [];
 
+    let item: TokenizeResult;
+    let node: AstAtRule | AstRule | AstKeyFrameRule | AstKeyframesAtRule | AstInvalidRule | AstDeclaration | AstComment | null;
     // @ts-ignore ignore error
     let isAsync: boolean = typeof iter[Symbol.asyncIterator] === 'function';
+
+    if (options.visitor != null) {
+
+        for (const [key, value] of Object.entries(options.visitor)) {
+
+            if (key in EnumToken) {
+
+                if (typeof value == 'function') {
+
+                    valuesHandlers.set(EnumToken[key as keyof typeof EnumToken] as EnumToken, value);
+                } else if (typeof value == 'object' && 'type' in value && 'handler' in value && value.type in WalkerValueEvent) {
+
+                    if (WalkerValueEvent[value.type as keyof typeof WalkerValueEvent] == WalkerValueEvent.Enter) {
+
+                        preValuesHandlers.set(EnumToken[key as keyof typeof EnumToken] as EnumToken, value.handler);
+                    } else if (WalkerValueEvent[value.type as keyof typeof WalkerValueEvent] == WalkerValueEvent.Leave) {
+
+                        postValuesHandlers.set(EnumToken[key as keyof typeof EnumToken] as EnumToken, value.handler);
+                    }
+                } else {
+
+                    errors.push({action: 'ignore', message: `doParse: visitor.${key} is not a valid key name`});
+                }
+
+            } else if (['Declaration', 'Rule', 'AtRule', 'KeyframesRule', 'KeyframesAtRule'].includes(key)) {
+
+                if (typeof value == 'function') {
+
+                    visitorsHandlersMap.set(key as 'Declaration' | 'Rule' | 'AtRule' | 'KeyframesRule' | 'KeyframesAtRule', value);
+                } else if (typeof value == 'object') {
+
+                    if ('type' in value && 'handler' in value && value.type in WalkerValueEvent) {
+
+                        if (WalkerValueEvent[value.type as keyof typeof WalkerValueEvent] == WalkerValueEvent.Enter) {
+
+                            preVisitorsHandlersMap.set(key as 'Declaration' | 'Rule' | 'AtRule' | 'KeyframesRule' | 'KeyframesAtRule', value.handler);
+                        } else if (WalkerValueEvent[value.type as keyof typeof WalkerValueEvent] == WalkerValueEvent.Leave) {
+
+                            postVisitorsHandlersMap.set(key as 'Declaration' | 'Rule' | 'AtRule' | 'KeyframesRule' | 'KeyframesAtRule', value.handler);
+                        }
+                    } else {
+
+                        visitorsHandlersMap.set(key as 'Declaration' | 'Rule' | 'AtRule' | 'KeyframesRule' | 'KeyframesAtRule', value);
+                    }
+                } else {
+
+                    errors.push({action: 'ignore', message: `doParse: visitor.${key} is not a valid key name`});
+                }
+
+            } else {
+
+                errors.push({action: 'ignore', message: `doParse: visitor.${key} is not a valid key name`});
+            }
+        }
+
+        if (preValuesHandlers.size > 0) {
+
+            allValuesHandlers.push(preValuesHandlers);
+        }
+
+        if (valuesHandlers.size > 0) {
+
+            allValuesHandlers.push(valuesHandlers);
+        }
+
+        if (postValuesHandlers.size > 0) {
+
+            allValuesHandlers.push(postValuesHandlers);
+        }
+    }
 
     while (item = isAsync ? (await iter.next()).value as TokenizeResult : (iter as Iterator<TokenizeResult>).next().value as TokenizeResult) {
 
         stats.bytesIn = item.bytesIn;
+        stats.tokensCount++;
 
         rawTokens.push(item);
 
         if (item.hint != null && BadTokensTypes.includes(item.hint)) {
 
             const node: Token = getTokenType(item.token, item.hint);
+
 
             errors.push({
                 action: 'drop',
@@ -341,7 +422,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
         if (item.token == ';' || item.token == '{') {
 
-            node = parseNode(tokens, context, options, errors, src, map, rawTokens);
+            node = parseNode(tokens, context, options, errors, src, map, rawTokens, stats);
             rawTokens.length = 0;
 
             if (node != null) {
@@ -358,8 +439,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
             } else if (item.token == '{') {
 
-                let inBlock = 1;
-
+                let inBlock: number = 1;
                 tokens = [item];
 
                 do {
@@ -403,7 +483,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
             map = new Map;
         } else if (item.token == '}') {
 
-            parseNode(tokens, context, options, errors, src, map, rawTokens);
+            parseNode(tokens, context, options, errors, src, map, rawTokens, stats);
             rawTokens.length = 0;
 
             if (context.loc != null) {
@@ -412,7 +492,6 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
             }
 
             const previousNode = stack.pop() as AstRuleList;
-
             context = (stack[stack.length - 1] ?? ast) as AstRuleList;
 
             if (previousNode != null && previousNode.typ == EnumToken.InvalidRuleTokenType) {
@@ -437,7 +516,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
     if (tokens.length > 0) {
 
-        node = parseNode(tokens, context, options, errors, src, map, rawTokens);
+        node = parseNode(tokens, context, options, errors, src, map, rawTokens, stats);
         rawTokens.length = 0;
 
         if (node != null) {
@@ -506,7 +585,6 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
     while (stack.length > 0 && context != ast) {
 
         const previousNode: AstAtRule | AstRule = stack.pop() as AstAtRule | AstRule;
-
         context = (stack[stack.length - 1] ?? ast) as AstRuleList;
 
         // remove empty nodes
@@ -526,110 +604,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
         ast = <AstStyleSheet>expand(ast);
     }
 
-    const valuesHandlers: Map<EnumToken, GenericVisitorHandler<Token>> = new Map as Map<EnumToken, GenericVisitorHandler<Token>>;
-    const preValuesHandlers: Map<EnumToken, GenericVisitorHandler<Token>> = new Map as Map<EnumToken, GenericVisitorHandler<Token>>;
-    const postValuesHandlers: Map<EnumToken, GenericVisitorHandler<Token>> = new Map as Map<EnumToken, GenericVisitorHandler<Token>>;
-
-    const preVisitorsHandlersMap = new Map as Map<'Declaration' | 'Rule' | 'AtRule' | 'KeyframesRule' | 'KeyframesAtRule',
-        GenericVisitorAstNodeHandlerMap<T> |
-        Record<string, GenericVisitorAstNodeHandlerMap<T>>
-    >;
-    const visitorsHandlersMap = new Map as Map<'Declaration' | 'Rule' | 'AtRule' | 'KeyframesRule' | 'KeyframesAtRule',
-        GenericVisitorAstNodeHandlerMap<T> |
-        Record<string, GenericVisitorAstNodeHandlerMap<T>>
-    >;
-    const postVisitorsHandlersMap = new Map as Map<'Declaration' | 'Rule' | 'AtRule' | 'KeyframesRule' | 'KeyframesAtRule',
-        GenericVisitorAstNodeHandlerMap<T> |
-        Record<string, GenericVisitorAstNodeHandlerMap<T>>
-    >;
-
-    const allValuesHandlers = [] as Array<Map<EnumToken, GenericVisitorHandler<Token>>>;
-
-    if (options.visitor != null) {
-
-        for (const [key, value] of Object.entries(options.visitor)) {
-
-            if (key in EnumToken) {
-
-                if (typeof value == 'function') {
-
-                    valuesHandlers.set(EnumToken[key as keyof typeof EnumToken] as EnumToken, value);
-                } else if (typeof value == 'object' && 'type' in value && 'handler' in value && value.type in WalkerValueEvent) {
-
-                    if (WalkerValueEvent[value.type as keyof typeof WalkerValueEvent] == WalkerValueEvent.Enter) {
-
-                        preValuesHandlers.set(EnumToken[key as keyof typeof EnumToken] as EnumToken, value.handler);
-                    } else if (WalkerValueEvent[value.type as keyof typeof WalkerValueEvent] == WalkerValueEvent.Leave) {
-
-                        postValuesHandlers.set(EnumToken[key as keyof typeof EnumToken] as EnumToken, value.handler);
-                    }
-                } else {
-
-                    errors.push({action: 'ignore', message:`doParse: visitor.${key} is not a valid key name` });
-                }
-
-            } else if (['Declaration', 'Rule', 'AtRule', 'KeyframesRule', 'KeyframesAtRule'].includes(key)) {
-
-                if (typeof value == 'function') {
-
-                    visitorsHandlersMap.set(key as 'Declaration' | 'Rule' | 'AtRule' | 'KeyframesRule' | 'KeyframesAtRule', value);
-                } else if (typeof value == 'object') {
-
-                    if ('type' in value && 'handler' in value && value.type in WalkerValueEvent) {
-
-                        if (WalkerValueEvent[value.type as keyof typeof WalkerValueEvent] == WalkerValueEvent.Enter) {
-
-                            preVisitorsHandlersMap.set(key as 'Declaration' | 'Rule' | 'AtRule' | 'KeyframesRule' | 'KeyframesAtRule', value.handler);
-                        } else if (WalkerValueEvent[value.type as keyof typeof WalkerValueEvent] == WalkerValueEvent.Leave) {
-
-                            postVisitorsHandlersMap.set(key as 'Declaration' | 'Rule' | 'AtRule' | 'KeyframesRule' | 'KeyframesAtRule', value.handler);
-                        }
-                    } else {
-
-                        visitorsHandlersMap.set(key as 'Declaration' | 'Rule' | 'AtRule' | 'KeyframesRule' | 'KeyframesAtRule', value);
-                    }
-                } else {
-
-                    errors.push({action: 'ignore', message: `doParse: visitor.${key} is not a valid key name`});
-                }
-
-            } else {
-
-                errors.push({action: 'ignore', message: `doParse: visitor.${key} is not a valid key name`});
-            }
-        }
-
-        if (preValuesHandlers.size > 0) {
-
-            allValuesHandlers.push(preValuesHandlers);
-        }
-
-        if (valuesHandlers.size > 0) {
-
-            allValuesHandlers.push(valuesHandlers);
-        }
-
-        if (postValuesHandlers.size > 0) {
-
-            allValuesHandlers.push(postValuesHandlers);
-        }
-    }
-
     for (const result of walk(ast)) {
-
-        if (result.parent != null && !isNodeAllowedInContext(result.node, result.parent as AstNode)) {
-
-            errors.push({
-                action: 'drop',
-                message: `${EnumToken[result.parent.typ]}: child ${EnumToken[result.node.typ]}${result.node.typ == EnumToken.DeclarationNodeType ? ` '${(result.node as AstDeclaration).nam}'` :  result.node.typ == EnumToken.AtRuleNodeType || result.node.typ == EnumToken.KeyframesAtRuleNodeType ? ` '@${(result.node as AstAtRule).nam}'` : ''} not allowed in context${result.parent.typ == EnumToken.AtRuleNodeType ? ` '@${(result.parent as AstAtRule).nam}'` : result.parent.typ == EnumToken.StyleSheetNodeType ? ` 'stylesheet'` : ''}`,
-                // @ts-ignore
-                location: result.node.loc ?? map.get(result.node ) ?? null
-            });
-
-            // @ts-ignore
-            removeNode(result.node, result.parent as AstNode);
-            continue;
-        }
 
         if (allValuesHandlers.length > 0 || preVisitorsHandlersMap.size > 0 || visitorsHandlersMap.size > 0 || postVisitorsHandlersMap.size > 0) {
 
@@ -918,7 +893,7 @@ function getLastNode(context: AstRuleList | AstInvalidRule | AstInvalidAtRule): 
     return null;
 }
 
-function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidRule | AstInvalidAtRule, options: ParserOptions, errors: ErrorDescription[], src: string, map: Map<Token, Location>, rawTokens: TokenizeResult[]): AstRule | AstAtRule | AstKeyFrameRule | AstKeyframesAtRule | AstInvalidRule | AstDeclaration | AstComment | null {
+function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidRule | AstInvalidAtRule, options: ParserOptions, errors: ErrorDescription[], src: string, map: Map<Token, Location>, rawTokens: TokenizeResult[], stats: ParseResultStats): AstRule | AstAtRule | AstKeyFrameRule | AstKeyframesAtRule | AstInvalidRule | AstDeclaration | AstComment | null {
 
     let tokens: Token[] = [] as Token[];
 
@@ -951,8 +926,8 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
             }
 
             loc = location;
-
             context.chi!.push(tokens[i] as AstNode);
+            stats.nodesCount++;
 
             if (options.sourcemap) {
 
@@ -1153,7 +1128,6 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
         }
 
         const t: Token[] = parseAtRulePrelude(parseTokens(tokens, {minify: options.minify}), atRule) as Token[];
-
         const raw: string[] = t.reduce((acc: string[], curr: Token) => {
 
             acc.push(renderToken(curr, {removeComments: true, convertColor: false}));
@@ -1204,6 +1178,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
             }
         }
 
+        const isAllowed: boolean = isNodeAllowedInContext(node, context as AstNode);
         // @ts-ignore
         const valid: ValidationResult = options.validation == ValidationLevel.None ? {
             valid: SyntaxValidationResult.Valid,
@@ -1211,6 +1186,13 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
             matches: [],
             node,
             syntax: '@' + node.nam
+        } as ValidationResult : !isAllowed ? {
+            valid: SyntaxValidationResult.Drop,
+            node,
+            matches: [] as Token[],
+            syntax: '@' + node.nam,
+            error: `${EnumToken[context.typ]}: child ${EnumToken[node.typ]} not allowed in context${context.typ == EnumToken.AtRuleNodeType ? ` '@${(context as AstAtRule).nam}'` : context.typ == EnumToken.StyleSheetNodeType ? ` 'stylesheet'` : ''}`,
+            tokens
         } as ValidationResult : isValid ? (node.typ == EnumToken.KeyframesAtRuleNodeType ? validateAtRuleKeyframes(<AstKeyframesAtRule>node, options, context as AstNode) : validateAtRule(node, options, context as AstNode)) : {
             valid: SyntaxValidationResult.Drop,
             node,
@@ -1242,6 +1224,8 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
         }
 
         context.chi!.push(node);
+        stats.nodesCount++;
+
         Object.defineProperties(node, {
             parent: {...definedPropertySettings, value: context},
             validSyntax: {...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid}
@@ -1384,13 +1368,18 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
             context.chi.push(node);
             Object.defineProperty(node, 'parent', {...definedPropertySettings, value: context});
 
+            const isAllowed: boolean = isNodeAllowedInContext(node, context as AstNode);
             // @ts-ignore
             const valid: ValidationResult = options.validation == ValidationLevel.None ? {
                 valid: SyntaxValidationResult.Valid,
                 node,
-                matches: [], syntax: null,
                 error: null
-            } as ValidationResult : ruleType == EnumToken.KeyFramesRuleNodeType ? validateKeyframeSelector(tokens, options) : validateSelector(tokens, options, context as AstNode);
+            } as ValidationSyntaxResult : !isAllowed ? {
+                valid: SyntaxValidationResult.Drop,
+                node,
+                syntax: null,
+                error: `${EnumToken[context.typ]}: child ${EnumToken[node.typ]} not allowed in context${context.typ == EnumToken.AtRuleNodeType ? ` '@${(context as AstAtRule).nam}'` : context.typ == EnumToken.StyleSheetNodeType ? ` 'stylesheet'` : ''}`
+            } : ruleType == EnumToken.KeyFramesRuleNodeType ? validateKeyframeSelector(tokens, options) : validateSelector(tokens, options, context as AstNode);
 
             if (valid.valid != SyntaxValidationResult.Valid) {
 
@@ -1548,6 +1537,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                     }
 
                     context.chi!.push(node);
+                    stats.nodesCount++;
                 }
 
                 return null;
@@ -1592,18 +1582,25 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
 
                 Object.assign(node, {typ: EnumToken.InvalidDeclarationNodeType});
                 context.chi!.push(node);
+                stats.nodesCount++;
                 return null;
             }
 
             const result: AstDeclaration | null = parseDeclarationNode(node, errors, location);
-
             Object.defineProperty(result, 'parent', {...definedPropertySettings, value: context});
 
             if (result != null) {
 
                 if (options.validation == ValidationLevel.All) {
 
-                    const valid: ValidationSyntaxResult = evaluateSyntax(result, context, options);
+                    const isAllowed: boolean = isNodeAllowedInContext(node, context as AstNode);
+                    // @ts-ignore
+                    const valid: ValidationSyntaxResult = !isAllowed ? {
+                        valid: SyntaxValidationResult.Drop,
+                        error: `${EnumToken[node.typ]} not allowed in context${context.typ == EnumToken.AtRuleNodeType ? ` '@${(context as AstAtRule).nam}'` : context.typ == EnumToken.StyleSheetNodeType ? ` 'stylesheet'` : ''}`,
+                        node,
+                        syntax: null
+                    } : evaluateSyntax(result, context, options);
 
                     Object.defineProperty(result, 'validSyntax', {
                         ...definedPropertySettings,
@@ -1630,6 +1627,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                 }
 
                 context.chi!.push(result);
+                stats.nodesCount++;
             }
 
             return null;
