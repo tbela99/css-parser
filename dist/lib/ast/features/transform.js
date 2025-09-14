@@ -9,7 +9,7 @@ import '../../syntax/color/utils/constants.js';
 import { filterValues, renderToken } from '../../renderer/render.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import { compute } from '../transform/compute.js';
-import { eqMatrix } from '../transform/minify.js';
+import { minifyTransformFunctions, eqMatrix } from '../transform/minify.js';
 import { FeatureWalkMode } from './type.js';
 
 class TransformCssFeature {
@@ -40,28 +40,21 @@ class TransformCssFeature {
             if (node.typ != EnumToken.DeclarationNodeType || !node.nam.match(/^(-[a-z]+-)?transform$/)) {
                 continue;
             }
-            const children = node.val.reduce((acc, curr) => {
-                if (curr.typ == EnumToken.FunctionTokenType && 'skew' == curr.val.toLowerCase()) {
-                    if (curr.chi.length == 3) {
-                        if (curr.chi[2].val == 0) {
-                            curr.chi.length = 1;
-                            curr.val = 'skew';
-                        }
-                        else if (curr.chi[0].val == 0) {
-                            curr.chi = [curr.chi[2]];
-                            curr.val = 'skewY';
-                        }
-                    }
-                }
-                acc.push(curr);
-                return acc;
-            }, []);
+            const children = [];
+            for (const child of node.val) {
+                children.push(child.typ == EnumToken.FunctionTokenType ? minifyTransformFunctions(child) : child);
+            }
             consumeWhitespace(children);
-            let { matrix, cumulative, minified } = compute(children) ?? {};
+            let { matrix, cumulative, minified } = compute(children) ?? {
+                matrix: null,
+                cumulative: null,
+                minified: null
+            };
             if (matrix == null || cumulative == null || minified == null) {
+                node.val = children;
                 continue;
             }
-            let r = [filterValues(node.val.slice())];
+            let r = [filterValues(children)];
             if (eqMatrix(matrix, cumulative)) {
                 r.push(cumulative);
             }

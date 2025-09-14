@@ -680,5 +680,61 @@ transform: perspective(500px) translate3d(10px, 0, 20px) rotateY(30deg) scaleX(2
  transform: rotate3d(1,1,1,180deg)
 }`));
         });
+
+        it('matrix #40', function () {
+            const nesting1 = `
+
+.foo {
+  transform: scale(-50%, 100%);;
+}
+`;
+            return transform(nesting1, {
+                beautify: true
+            }).then((result) => expect(result.code).equals(`.foo {
+ transform: scaleX(-.5)
+}`));
+        });
+
+        it('matrix #41', function () {
+            const nesting1 = `
+
+    .scale {
+transform: scale(100%, -50%);;
+transform: scale(100%, -50%, 100%);;
+transform: scale3d(50%, 100%, 150%);
+transform: scale3d(100%, 100%, 100%);
+transform: scale3d(50%, 100%, 170%); 
+transform: scale3d(50%, 100%, 100%);  
+  transform: scale(-50%, 100%);;
+}
+  .translate {
+
+transform: translate3d(0, 0, 0);
+transform: translate3d(0, 0, 0);
+transform: translate3d(100%, 0, 0);
+transform: translate3d(0, 100%, 0);
+    transform: translate3d( 0, 0,100px);
+  }
+`;
+            return transform(nesting1, {
+                beautify: true,
+                validation: true,
+                removeDuplicateDeclarations: ['transform']
+            }).then((result) => expect(result.code).equals(`.scale {
+ transform: scaleY(-.5);
+ transform: scale3d(.5,1,1.5);
+ transform: none;
+ transform: scale3d(.5,1,1.7);
+ transform: scaleX(.5);
+ transform: scaleX(-.5)
+}
+.translate {
+ transform: none;
+ transform: none;
+ transform: translate(100%);
+ transform: translateY(100%);
+ transform: translateZ(100px)
+}`));
+        });
     });
 }

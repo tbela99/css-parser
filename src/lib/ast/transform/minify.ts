@@ -1,14 +1,20 @@
-import type {Matrix} from "./utils.ts";
-import {decompose, epsilon, identity, multiply, round, toZero} from "./utils.ts";
+import {decompose, DecomposedMatrix3D, epsilon, identity, Matrix, multiply, round, toZero} from "./utils.ts";
 import {EnumToken} from "../types.ts";
-import type {FunctionToken, Token} from "../../../@types/index.d.ts";
+import type {
+    AngleToken,
+    FunctionToken,
+    LengthToken,
+    NumberToken,
+    PercentageToken,
+    Token
+} from "../../../@types/index.d.ts";
 import {computeMatrix} from "./compute.ts";
 import {parseMatrix} from "./matrix.ts";
 
 // translate → rotate → skew → scale
 export function minify(matrix: Matrix): Token[] | null {
 
-    const decomposed = decompose(matrix);
+    const decomposed: DecomposedMatrix3D | null = decompose(matrix);
 
     if (decomposed == null) {
 
@@ -142,6 +148,7 @@ export function minify(matrix: Matrix): Token[] | null {
                     }
                 ]
             });
+
         } else if (x == 0 && y == 0) {
 
             result.push({
@@ -242,7 +249,7 @@ export function minify(matrix: Matrix): Token[] | null {
 
         if (scales.size == 1) {
 
-            let prefix: string = scales.has('x') ? '' : scales.has('y') ? 'Y' : 'Z';
+            let prefix: string = scales.has('x') ? 'X' : scales.has('y') ? 'Y' : 'Z';
 
             result.push({
                 typ: EnumToken.FunctionTokenType,
@@ -323,4 +330,148 @@ export function eqMatrix(a: FunctionToken | Matrix, b: Token[]): boolean {
     }
 
     return true;
+}
+
+export function minifyTransformFunctions(transform: FunctionToken): FunctionToken {
+
+    const name: string = transform.val.toLowerCase();
+
+    if ('skewx' == name) {
+
+        transform.val = 'skew';
+        return transform;
+    }
+
+    if (!['translate', 'translate3d', 'scale', 'scale3d'].includes(name)) {
+
+        return transform
+    }
+
+    const values: Array<NumberToken | LengthToken | AngleToken | PercentageToken> = [];
+
+    for (const token of transform.chi) {
+
+        if (token.typ == EnumToken.CommentTokenType || token.typ == EnumToken.WhitespaceTokenType || token.typ == EnumToken.CommaTokenType) {
+
+            continue;
+        }
+
+        if (![EnumToken.NumberTokenType, EnumToken.LengthTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType].includes(token.typ)) {
+
+            return transform;
+        }
+
+        if (token.typ == EnumToken.PercentageTokenType && typeof (token as PercentageToken).val == 'number' && name.startsWith('scale')) {
+
+            Object.assign(token, {typ: EnumToken.NumberTokenType, val: (token as PercentageToken).val as number / 100});
+        }
+
+        values.push(token as NumberToken | LengthToken | AngleToken | PercentageToken);
+    }
+
+    if ((name == 'translate' || name == 'scale') && values.length > 2) {
+
+        return transform;
+    }
+
+    const ignoredValue = name.startsWith('scale') ? 1 : 0;
+    const t = new Set(['x', 'y', 'z']);
+
+    let i: number = 3;
+
+    while (i--) {
+
+        if (values.length <= i || values[i].val == ignoredValue) {
+
+            t.delete(i == 0 ? 'x' : i == 1 ? 'y' : 'z');
+        }
+    }
+
+    if (name == 'translate3d' || name == 'translate') {
+
+        if (t.size == 0) {
+
+            return {
+                typ: EnumToken.FunctionTokenType,
+                val: 'translate',
+                chi: [
+                    {typ: EnumToken.NumberTokenType, val: 0}
+                ]
+            }
+        }
+
+        if (t.size == 1) {
+
+            return {
+                typ: EnumToken.FunctionTokenType,
+                val: 'translate' + (t.has('x') ? '' : t.has('y') ? 'Y' : 'Z'),
+                chi: [
+                    values[t.has('x') ? 0 : t.has('y') ? 1 : 2]
+                ]
+            };
+        }
+
+        if (t.size == 2) {
+
+            if (t.has('z')) {
+
+                return transform;
+            }
+
+            return {
+                typ: EnumToken.FunctionTokenType,
+                val: 'translate',
+                chi: [
+                    values[0],
+                    {typ: EnumToken.CommaTokenType},
+                    values[1]
+                ]
+            }
+        }
+    }
+
+    if (name == 'scale3d' || name == 'scale') {
+
+        if (t.size == 0) {
+
+            return {
+                typ: EnumToken.FunctionTokenType,
+                val: 'scale',
+                chi: [
+                    {typ: EnumToken.NumberTokenType, val: 1}
+                ]
+            }
+        }
+
+        if (t.size == 1) {
+
+            return {
+                typ: EnumToken.FunctionTokenType,
+                val: 'scale' + (t.has('x') ? 'X' : t.has('y') ? 'Y' : 'Z'),
+                chi: [
+                    values[t.has('x') ? 0 : t.has('y') ? 1 : 2]
+                ]
+            };
+        }
+
+        if (t.size == 2) {
+
+            if (t.has('z')) {
+
+                return transform;
+            }
+
+            return {
+                typ: EnumToken.FunctionTokenType,
+                val: 'scale',
+                chi: [
+                    values[0],
+                    {typ: EnumToken.CommaTokenType},
+                    values[1]
+                ]
+            }
+        }
+    }
+
+    return transform;
 }

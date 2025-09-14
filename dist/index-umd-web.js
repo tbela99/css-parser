@@ -4109,9 +4109,6 @@
     function identity() {
         return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
     }
-    function pLength(point) {
-        return Math.sqrt(point[0] * point[0] + point[1] * point[1] + point[2] * point[2]);
-    }
     function normalize(point) {
         const [x, y, z] = point;
         const norm = Math.sqrt(point[0] * point[0] + point[1] * point[1] + point[2] * point[2]);
@@ -4232,8 +4229,13 @@
         const row0 = [matrix[0], matrix[1], matrix[2]];
         const row1 = [matrix[4], matrix[5], matrix[6]];
         const row2 = [matrix[8], matrix[9], matrix[10]];
+        const cross = [
+            row1[1] * row2[2] - row1[2] * row2[1],
+            row1[2] * row2[0] - row1[0] * row2[2],
+            row1[0] * row2[1] - row1[1] * row2[0],
+        ];
         // Compute scale
-        const scaleX = pLength(row0);
+        const scaleX = Math.hypot(...row0);
         const row0Norm = normalize(row0);
         const skewXY = dot(row0Norm, row1);
         const row1Proj = [
@@ -4241,7 +4243,7 @@
             row1[1] - skewXY * row0Norm[1],
             row1[2] - skewXY * row0Norm[2]
         ];
-        const scaleY = pLength(row1Proj);
+        const scaleY = Math.hypot(...row1Proj);
         const row1Norm = normalize(row1Proj);
         const skewXZ = dot(row0Norm, row2);
         const skewYZ = dot(row1Norm, row2);
@@ -4250,8 +4252,9 @@
             row2[1] - skewXZ * row0Norm[1] - skewYZ * row1Norm[1],
             row2[2] - skewXZ * row0Norm[2] - skewYZ * row1Norm[2]
         ];
-        const scaleZ = pLength(row2Proj);
         const row2Norm = normalize(row2Proj);
+        const determinant = row0[0] * cross[0] + row0[1] * cross[1] + row0[2] * cross[2];
+        const scaleZ = Math.hypot(...row2Proj) * (determinant < 0 ? -1 : 1);
         // Build rotation matrix from orthonormalized vectors
         const r00 = row0Norm[0], r01 = row1Norm[0], r02 = row2Norm[0];
         const r10 = row0Norm[1], r11 = row1Norm[1], r12 = row2Norm[1];
@@ -4288,7 +4291,6 @@
             qz = 0.25 * s;
         }
         [qx, qy, qz] = toZero([qx, qy, qz]);
-        // const q = gcd(qx, gcd(qy, qz));
         let q = [Math.abs(qx), Math.abs(qy), Math.abs(qz)].reduce((acc, curr) => {
             if (acc == 0 || (curr > 0 && curr < acc)) {
                 acc = curr;
@@ -21354,7 +21356,7 @@
                 scales.delete('x');
             }
             if (scales.size == 1) {
-                let prefix = scales.has('x') ? '' : scales.has('y') ? 'Y' : 'Z';
+                let prefix = scales.has('x') ? 'X' : scales.has('y') ? 'Y' : 'Z';
                 result.push({
                     typ: exports.EnumToken.FunctionTokenType,
                     val: 'scale' + prefix,
@@ -21419,6 +21421,109 @@
         }
         return true;
     }
+    function minifyTransformFunctions(transform) {
+        const name = transform.val.toLowerCase();
+        if ('skewx' == name) {
+            transform.val = 'skew';
+            return transform;
+        }
+        if (!['translate', 'translate3d', 'scale', 'scale3d'].includes(name)) {
+            return transform;
+        }
+        const values = [];
+        for (const token of transform.chi) {
+            if (token.typ == exports.EnumToken.CommentTokenType || token.typ == exports.EnumToken.WhitespaceTokenType || token.typ == exports.EnumToken.CommaTokenType) {
+                continue;
+            }
+            if (![exports.EnumToken.NumberTokenType, exports.EnumToken.LengthTokenType, exports.EnumToken.AngleTokenType, exports.EnumToken.PercentageTokenType].includes(token.typ)) {
+                return transform;
+            }
+            if (token.typ == exports.EnumToken.PercentageTokenType && typeof token.val == 'number' && name.startsWith('scale')) {
+                Object.assign(token, { typ: exports.EnumToken.NumberTokenType, val: token.val / 100 });
+            }
+            values.push(token);
+        }
+        if ((name == 'translate' || name == 'scale') && values.length > 2) {
+            return transform;
+        }
+        const ignoredValue = name.startsWith('scale') ? 1 : 0;
+        const t = new Set(['x', 'y', 'z']);
+        let i = 3;
+        while (i--) {
+            if (values.length <= i || values[i].val == ignoredValue) {
+                t.delete(i == 0 ? 'x' : i == 1 ? 'y' : 'z');
+            }
+        }
+        if (name == 'translate3d' || name == 'translate') {
+            if (t.size == 0) {
+                return {
+                    typ: exports.EnumToken.FunctionTokenType,
+                    val: 'translate',
+                    chi: [
+                        { typ: exports.EnumToken.NumberTokenType, val: 0 }
+                    ]
+                };
+            }
+            if (t.size == 1) {
+                return {
+                    typ: exports.EnumToken.FunctionTokenType,
+                    val: 'translate' + (t.has('x') ? '' : t.has('y') ? 'Y' : 'Z'),
+                    chi: [
+                        values[t.has('x') ? 0 : t.has('y') ? 1 : 2]
+                    ]
+                };
+            }
+            if (t.size == 2) {
+                if (t.has('z')) {
+                    return transform;
+                }
+                return {
+                    typ: exports.EnumToken.FunctionTokenType,
+                    val: 'translate',
+                    chi: [
+                        values[0],
+                        { typ: exports.EnumToken.CommaTokenType },
+                        values[1]
+                    ]
+                };
+            }
+        }
+        if (name == 'scale3d' || name == 'scale') {
+            if (t.size == 0) {
+                return {
+                    typ: exports.EnumToken.FunctionTokenType,
+                    val: 'scale',
+                    chi: [
+                        { typ: exports.EnumToken.NumberTokenType, val: 1 }
+                    ]
+                };
+            }
+            if (t.size == 1) {
+                return {
+                    typ: exports.EnumToken.FunctionTokenType,
+                    val: 'scale' + (t.has('x') ? 'X' : t.has('y') ? 'Y' : 'Z'),
+                    chi: [
+                        values[t.has('x') ? 0 : t.has('y') ? 1 : 2]
+                    ]
+                };
+            }
+            if (t.size == 2) {
+                if (t.has('z')) {
+                    return transform;
+                }
+                return {
+                    typ: exports.EnumToken.FunctionTokenType,
+                    val: 'scale',
+                    chi: [
+                        values[0],
+                        { typ: exports.EnumToken.CommaTokenType },
+                        values[1]
+                    ]
+                };
+            }
+        }
+        return transform;
+    }
 
     function skewX(x, from) {
         const matrix = identity();
@@ -21474,8 +21579,6 @@
                 });
             }
         }
-        // console.error({matrix});
-        // matrix = toZero(matrix) as Matrix;
         return {
             matrix: serialize(toZero(matrix)),
             cumulative,
@@ -21499,7 +21602,7 @@
                     {
                         values.length = 0;
                         const children = stripCommaToken(transformList[i].chi.slice());
-                        const valCount = transformList[i].val == 'translate3d' || transformList[i].val == 'translate' ? 3 : 1;
+                        const valCount = transformList[i].val == 'translate3d' ? 3 : transformList[i].val == 'translate' ? 2 : 1;
                         for (let j = 0; j < children.length; j++) {
                             if (children[j].typ == exports.EnumToken.WhitespaceTokenType) {
                                 continue;
@@ -21586,7 +21689,7 @@
                         const children = stripCommaToken(transformList[i].chi.slice());
                         for (let k = 0; k < children.length; k++) {
                             child = children[k];
-                            if (child.typ != exports.EnumToken.NumberTokenType) {
+                            if (child.typ != exports.EnumToken.NumberTokenType && child.typ != exports.EnumToken.PercentageTokenType) {
                                 return null;
                             }
                             values.push(getNumber(child));
@@ -21767,28 +21870,21 @@
                 if (node.typ != exports.EnumToken.DeclarationNodeType || !node.nam.match(/^(-[a-z]+-)?transform$/)) {
                     continue;
                 }
-                const children = node.val.reduce((acc, curr) => {
-                    if (curr.typ == exports.EnumToken.FunctionTokenType && 'skew' == curr.val.toLowerCase()) {
-                        if (curr.chi.length == 3) {
-                            if (curr.chi[2].val == 0) {
-                                curr.chi.length = 1;
-                                curr.val = 'skew';
-                            }
-                            else if (curr.chi[0].val == 0) {
-                                curr.chi = [curr.chi[2]];
-                                curr.val = 'skewY';
-                            }
-                        }
-                    }
-                    acc.push(curr);
-                    return acc;
-                }, []);
+                const children = [];
+                for (const child of node.val) {
+                    children.push(child.typ == exports.EnumToken.FunctionTokenType ? minifyTransformFunctions(child) : child);
+                }
                 consumeWhitespace(children);
-                let { matrix, cumulative, minified } = compute(children) ?? {};
+                let { matrix, cumulative, minified } = compute(children) ?? {
+                    matrix: null,
+                    cumulative: null,
+                    minified: null
+                };
                 if (matrix == null || cumulative == null || minified == null) {
+                    node.val = children;
                     continue;
                 }
-                let r = [filterValues(node.val.slice())];
+                let r = [filterValues(children)];
                 if (eqMatrix(matrix, cumulative)) {
                     r.push(cumulative);
                 }
