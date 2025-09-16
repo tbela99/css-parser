@@ -1,6 +1,7 @@
 ---
 title: Ast traversal
 group: Documents
+slug: /traversal
 category: Guides
 ---
 

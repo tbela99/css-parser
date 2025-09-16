@@ -1,6 +1,7 @@
 ---
 title: Custom transform
 group: Documents
+slug: /transform
 category: Guides
 ---
 

@@ -57,6 +57,8 @@ the library can be imported as a module in the browser
 </script>
 ```
 
+### As umd module
+
 it can also be imported as umd module
 
 ```html

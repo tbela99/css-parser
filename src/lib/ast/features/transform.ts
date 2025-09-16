@@ -16,7 +16,7 @@ import {FeatureWalkMode} from "./type.ts";
 
 export class TransformCssFeature {
 
-    public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
+    public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.KeyFramesRuleNodeType]);
 
     get ordering(): number {
         return 4;

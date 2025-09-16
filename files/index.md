@@ -3,8 +3,10 @@ title: Guide
 group: Documents
 category: Guides
 children:
+    - ./about.md
     - ./install.md
     - ./usage.md
+    - ./features.md
     - ./minification.md
     - ./transform.md
     - ./traversal.md
@@ -13,6 +15,7 @@ children:
 
 ## Contents
 
+- [About](./about.md)
 - [Installation](./install.md)
 - [Usage](./usage.md)
 - [Minification](./minification.md)

@@ -528,7 +528,7 @@ function isColor(token) {
     }
     if (token.typ == EnumToken.IdenTokenType) {
         // named color
-        return token.val.toLowerCase() in COLORS_NAMES;
+        return token.val.toLowerCase() in COLORS_NAMES || 'currentcolor' === token.val.toLowerCase() || 'transparent' === token.val.toLowerCase();
     }
     let isLegacySyntax = false;
     if (token.typ == EnumToken.FunctionTokenType) {
@@ -581,8 +581,13 @@ function isColor(token) {
                             return false;
                         }
                     }
-                    if (children[i].typ == EnumToken.FunctionTokenType && !mathFuncs.includes(children[i].val)) {
-                        return false;
+                    if (children[i].typ == EnumToken.FunctionTokenType) {
+                        if ('var' == children[i].val.toLowerCase()) {
+                            continue;
+                        }
+                        if (!mathFuncs.includes(children[i].val)) {
+                            return false;
+                        }
                     }
                 }
                 if (children.length == 4 || (isRelative && children.length == 6)) {

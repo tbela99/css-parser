@@ -13,7 +13,7 @@ import { minifyTransformFunctions, eqMatrix } from '../transform/minify.js';
 import { FeatureWalkMode } from './type.js';
 
 class TransformCssFeature {
-    accept = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
+    accept = new Set([EnumToken.RuleNodeType, EnumToken.KeyFramesRuleNodeType]);
     get ordering() {
         return 4;
     }

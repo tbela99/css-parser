@@ -154,7 +154,6 @@ async function doParse(iter, options = {}) {
     const preVisitorsHandlersMap = new Map;
     const visitorsHandlersMap = new Map;
     const postVisitorsHandlersMap = new Map;
-    // const allValuesHandlers = new Map as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
     const rawTokens = [];
     const imports = [];
     let item;
@@ -240,42 +239,6 @@ async function doParse(iter, options = {}) {
                 errors.push({ action: 'ignore', message: `doParse: visitor.${key} is not a valid key name` });
             }
         }
-        // if (preValuesHandlers.size > 0) {
-        //
-        //     for (const [key, value] of preValuesHandlers) {
-        //
-        //         if (!allValuesHandlers.has(key)) {
-        //
-        //             allValuesHandlers.set(key, []);
-        //         }
-        //
-        //         allValuesHandlers.get(key)!.push(...value);
-        //     }
-        // }
-        // if (valuesHandlers.size > 0) {
-        //
-        //     for (const [key, value] of valuesHandlers) {
-        //
-        //         if (!allValuesHandlers.has(key)) {
-        //
-        //             allValuesHandlers.set(key, []);
-        //         }
-        //
-        //         allValuesHandlers.get(key)!.push(...value);
-        //     }
-        // }
-        // if (postValuesHandlers.size > 0) {
-        //
-        //     for (const [key, value] of postValuesHandlers) {
-        //
-        //         if (!postValuesHandlers.has(key)) {
-        //
-        //             allValuesHandlers.set(key, []);
-        //         }
-        //
-        //         allValuesHandlers.get(key)!.push(...value);
-        //     }
-        // }
     }
     while (item = isAsync ? (await iter.next()).value : iter.next().value) {
         stats.bytesIn = item.bytesIn;
@@ -435,6 +398,8 @@ async function doParse(iter, options = {}) {
     if (options.expandNestingRules) {
         ast = expand(ast);
     }
+    let replacement;
+    let callable;
     for (const result of walk(ast)) {
         if (valuesHandlers.size > 0 || preVisitorsHandlersMap.size > 0 || visitorsHandlersMap.size > 0 || postVisitorsHandlersMap.size > 0) {
             if ((result.node.typ == EnumToken.DeclarationNodeType &&
@@ -455,14 +420,13 @@ async function doParse(iter, options = {}) {
                     // @ts-ignore
                     handlers.push(...postVisitorsHandlersMap.get(key));
                 }
-                let callable;
                 let node = result.node;
                 for (const handler of handlers) {
                     callable = typeof handler == 'function' ? handler : handler[normalizeVisitorKeyName(node.typ == EnumToken.DeclarationNodeType || node.typ == EnumToken.AtRuleNodeType ? node.nam : node.val)];
                     if (callable == null) {
                         continue;
                     }
-                    let replacement = callable(node, result.parent);
+                    replacement = callable(node, result.parent);
                     if (replacement == null) {
                         continue;
                     }
@@ -500,8 +464,7 @@ async function doParse(iter, options = {}) {
                 }
                 let node = result.node;
                 for (const callable of handlers) {
-                    // @ts-ignore
-                    let replacement = callable(node, result.parent);
+                    replacement = callable(node, result.parent);
                     if (replacement == null) {
                         continue;
                     }
@@ -526,13 +489,12 @@ async function doParse(iter, options = {}) {
                 }
             }
             else if (valuesHandlers.size > 0) {
-                let callable;
                 let node = null;
                 node = result.node;
                 if (valuesHandlers.has(node.typ)) {
                     for (const valueHandler of valuesHandlers.get(node.typ)) {
                         callable = valueHandler;
-                        let replacement = callable(node, result.parent);
+                        replacement = callable(node, result.parent);
                         if (replacement == null) {
                             continue;
                         }
@@ -828,7 +790,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
         }
         const isAllowed = isNodeAllowedInContext(node, context);
         // @ts-ignore
-        const valid = options.validation == ValidationLevel.None ? {
+        const valid = (options.validation & ValidationLevel.AtRule) == 0 ? {
             valid: SyntaxValidationResult.Valid,
             error: '',
             node,
@@ -964,12 +926,11 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
                 value: loc,
                 enumerable: options.sourcemap !== false
             });
-            // @ts-ignore
             context.chi.push(node);
             Object.defineProperty(node, 'parent', { ...definedPropertySettings, value: context });
             const isAllowed = isNodeAllowedInContext(node, context);
             // @ts-ignore
-            const valid = options.validation == ValidationLevel.None ? {
+            const valid = (options.validation & ValidationLevel.Selector) == 0 ? {
                 valid: SyntaxValidationResult.Valid,
                 error: null
             } : !isAllowed ? {
@@ -1084,7 +1045,11 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
                         nam,
                         val: []
                     };
-                    Object.defineProperty(node, 'loc', { ...definedPropertySettings, value: location, enumerable: options.sourcemap !== false });
+                    Object.defineProperty(node, 'loc', {
+                        ...definedPropertySettings,
+                        value: location,
+                        enumerable: options.sourcemap !== false
+                    });
                     context.chi.push(node);
                     stats.nodesCount++;
                 }
@@ -1110,7 +1075,11 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
                 nam,
                 val: value
             };
-            Object.defineProperty(node, 'loc', { ...definedPropertySettings, value: location, enumerable: options.sourcemap !== false });
+            Object.defineProperty(node, 'loc', {
+                ...definedPropertySettings,
+                value: location,
+                enumerable: options.sourcemap !== false
+            });
             node.loc.end = { ...map.get(delim).end };
             // do not allow declarations in style sheets
             if (context.typ == EnumToken.StyleSheetNodeType && options.lenient) {
@@ -1122,7 +1091,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
             const result = parseDeclarationNode(node, errors, location);
             Object.defineProperty(result, 'parent', { ...definedPropertySettings, value: context });
             if (result != null) {
-                if (options.validation == ValidationLevel.All) {
+                if (options.validation & ValidationLevel.Declaration) {
                     const isAllowed = isNodeAllowedInContext(node, context);
                     // @ts-ignore
                     const valid = !isAllowed ? {
@@ -1471,7 +1440,11 @@ function parseString(src, options = { location: false }) {
             return acc;
         }
         const token = getTokenType(t.token, t.hint);
-        Object.defineProperty(token, 'loc', { ...definedPropertySettings, value: { sta: t.sta }, enumerable: options.location !== false });
+        Object.defineProperty(token, 'loc', {
+            ...definedPropertySettings,
+            value: { sta: t.sta },
+            enumerable: options.location !== false
+        });
         acc.push(token);
         return acc;
     }, []));

@@ -155,7 +155,7 @@ export interface MinifyOptions {
      *
      * ```
      */
-    removeDuplicateDeclarations?: boolean | string[];
+    removeDuplicateDeclarations?: boolean | string | string[];
     /**
      * compute shorthand properties
      */

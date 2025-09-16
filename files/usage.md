@@ -1,6 +1,7 @@
 ---
 title: Usage
 group: Documents
+slug: /usage
 category: Guides
 ---
 

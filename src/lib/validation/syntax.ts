@@ -38,12 +38,11 @@ import {ColorType, EnumToken, SyntaxValidationResult} from "../ast/index.ts";
 import {getParsedSyntax, getSyntax, getSyntaxConfig} from "./config.ts";
 import {renderToken} from "../../web.ts";
 import {colorsFunc, funcLike} from "../syntax/color/utils/index.ts";
-import {isIdentColor, mathFuncs, wildCardFuncs} from "../syntax/index.ts";
+import {isColor, isIdentColor, mathFuncs, wildCardFuncs} from "../syntax/index.ts";
 
 const config: ValidationConfiguration = getSyntaxConfig();
-
 // @ts-ignore
-const allValues: string[] = getSyntaxConfig()[ValidationSyntaxGroupEnum.Declarations].all.syntax.trim().split(/[\s|]+/g);
+const allValues: string[] = getSyntaxConfig()[ValidationSyntaxGroupEnum.Declarations].all.syntax.trim().split(/[\s|]+/g) as string[];
 
 /**
  * Check if a node is allowed as child in a given context
@@ -458,17 +457,6 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
     for (; i < syntaxes.length; i++) {
 
         syntax = syntaxes[i];
-
-        // if (Array.isArray(syntax)) {
-        //     result = doEvaluateSyntax(syntax, context.clone(), options);
-        //
-        //     if (result.valid == SyntaxValidationResult.Valid) {
-        //
-        //         continue;
-        //     }
-        //
-        //     return result;
-        // }
 
         if (context.done()) {
 
@@ -921,8 +909,9 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
 function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Token>, options: ValidationOptions): ValidationSyntaxResult {
 
     if (![
-        'bg-position',
+        'color',
         'integer',
+        'bg-position',
         'length-percentage', 'flex', 'calc-sum', 'color',
         'color-base', 'system-color', 'deprecated-system-color',
         'pseudo-class-selector', 'pseudo-element-selector', 'feature-value-declaration'
@@ -1145,7 +1134,11 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
         case 'color':
         case 'color-base':
 
-            success = token.typ == EnumToken.ColorTokenType || (token.typ == EnumToken.IdenTokenType && 'currentcolor' === (token as IdentToken).val.toLowerCase()) || (token.typ == EnumToken.IdenTokenType && 'transparent' === (token as IdentToken).val.toLowerCase()) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
+            success = token.typ == EnumToken.ColorTokenType ||
+                (token.typ == EnumToken.IdenTokenType && 'currentcolor' === (token as IdentToken).val.toLowerCase()) ||
+                (token.typ == EnumToken.IdenTokenType && 'transparent' === (token as IdentToken).val.toLowerCase()) ||
+                (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val) ||
+                    isColor(token));
 
             if (!success && token.typ == EnumToken.FunctionTokenType && colorsFunc.includes((token as FunctionToken).val)) {
 

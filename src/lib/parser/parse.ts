@@ -73,6 +73,7 @@ import type {
     FunctionURLToken,
     GenericVisitorAstNodeHandlerMap,
     GenericVisitorHandler,
+    GenericVisitorResult,
     GreaterThanToken,
     HashToken,
     IdentToken,
@@ -302,7 +303,6 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
             Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
     >;
 
-    // const allValuesHandlers = new Map as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
     const rawTokens: TokenizeResult[] = [];
     const imports: AstAtRule[] = [];
 
@@ -421,45 +421,6 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                 errors.push({action: 'ignore', message: `doParse: visitor.${key} is not a valid key name`});
             }
         }
-
-        // if (preValuesHandlers.size > 0) {
-        //
-        //     for (const [key, value] of preValuesHandlers) {
-        //
-        //         if (!allValuesHandlers.has(key)) {
-        //
-        //             allValuesHandlers.set(key, []);
-        //         }
-        //
-        //         allValuesHandlers.get(key)!.push(...value);
-        //     }
-        // }
-
-        // if (valuesHandlers.size > 0) {
-        //
-        //     for (const [key, value] of valuesHandlers) {
-        //
-        //         if (!allValuesHandlers.has(key)) {
-        //
-        //             allValuesHandlers.set(key, []);
-        //         }
-        //
-        //         allValuesHandlers.get(key)!.push(...value);
-        //     }
-        // }
-
-        // if (postValuesHandlers.size > 0) {
-        //
-        //     for (const [key, value] of postValuesHandlers) {
-        //
-        //         if (!postValuesHandlers.has(key)) {
-        //
-        //             allValuesHandlers.set(key, []);
-        //         }
-        //
-        //         allValuesHandlers.get(key)!.push(...value);
-        //     }
-        // }
     }
 
     while (item = isAsync ? (await iter.next()).value as TokenizeResult : (iter as Iterator<TokenizeResult>).next().value as TokenizeResult) {
@@ -686,6 +647,9 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
         ast = <AstStyleSheet>expand(ast);
     }
 
+    let replacement: GenericVisitorResult<T>;
+    let callable: GenericVisitorHandler<T>;
+
     for (const result of walk(ast)) {
 
         if (valuesHandlers.size > 0 || preVisitorsHandlersMap.size > 0 || visitorsHandlersMap.size > 0 || postVisitorsHandlersMap.size > 0) {
@@ -717,20 +681,18 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                     handlers.push(...postVisitorsHandlersMap.get(key));
                 }
 
-                let callable: GenericVisitorHandler<T> | Record<string, GenericVisitorHandler<T>>;
-
-                let node = result.node as AstDeclaration | AstAtRule | AstKeyframesAtRule;
+                let node: AstDeclaration | AstAtRule | AstKeyframesAtRule = result.node as AstDeclaration | AstAtRule | AstKeyframesAtRule;
 
                 for (const handler of handlers) {
 
-                    callable = typeof handler == 'function' ? handler : handler[normalizeVisitorKeyName(node.typ == EnumToken.DeclarationNodeType || node.typ == EnumToken.AtRuleNodeType ? node.nam : (node as AstKeyframesAtRule).val)];
+                    callable = typeof handler == 'function' ? handler : handler[normalizeVisitorKeyName(node.typ == EnumToken.DeclarationNodeType || node.typ == EnumToken.AtRuleNodeType ? node.nam : (node as AstKeyframesAtRule).val)] as GenericVisitorHandler<T>;
 
                     if (callable == null) {
 
                         continue;
                     }
 
-                    let replacement = callable(node, result.parent);
+                    replacement = callable(node, result.parent);
 
                     if (replacement == null) {
 
@@ -793,8 +755,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
                 for (const callable of handlers) {
 
-                    // @ts-ignore
-                    let replacement = callable(node, result.parent);
+                    replacement = (callable as GenericVisitorHandler<T>)(node as T, result.parent) as GenericVisitorResult<T>;
 
                     if (replacement == null) {
 
@@ -831,7 +792,6 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                 }
             } else if (valuesHandlers.size > 0) {
 
-                let callable: GenericVisitorHandler<Token> | GenericVisitorHandler<AstNode>;
                 let node: Token | AstNode | null = null;
 
                 node = result.node;
@@ -840,9 +800,8 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
                     for (const valueHandler of valuesHandlers.get(node.typ)!) {
 
-                        callable = valueHandler as GenericVisitorHandler<AstNode>;
-
-                        let replacement = callable(node, result.parent);
+                        callable = valueHandler as GenericVisitorHandler<T>;
+                        replacement = callable(node as T, result.parent);
 
                         if (replacement == null) {
 
@@ -888,9 +847,8 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
                         for (const valueHandler of valuesHandlers.get(node!.typ)!) {
 
-                            callable = valueHandler as GenericVisitorHandler<Token>;
-
-                            let result = callable(node as Token, parent, root);
+                            callable = valueHandler as GenericVisitorHandler<T>;
+                            let result: GenericVisitorResult<T> = callable(node as T, parent, root);
 
                             if (result == null) {
 
@@ -1268,7 +1226,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
 
         const isAllowed: boolean = isNodeAllowedInContext(node, context as AstNode);
         // @ts-ignore
-        const valid: ValidationResult = options.validation == ValidationLevel.None ? {
+        const valid: ValidationResult = (options.validation & ValidationLevel.AtRule) == 0 ? {
             valid: SyntaxValidationResult.Valid,
             error: '',
             matches: [],
@@ -1454,13 +1412,12 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                 enumerable: options.sourcemap !== false
             });
 
-            // @ts-ignore
-            context.chi.push(node);
+            context.chi!.push(node);
             Object.defineProperty(node, 'parent', {...definedPropertySettings, value: context});
 
             const isAllowed: boolean = isNodeAllowedInContext(node, context as AstNode);
             // @ts-ignore
-            const valid: ValidationResult = options.validation == ValidationLevel.None ? {
+            const valid: ValidationResult = ((options.validation as ValidationLevel) & ValidationLevel.Selector) == 0 ? {
                 valid: SyntaxValidationResult.Valid,
                 node,
                 error: null
@@ -1620,7 +1577,11 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                         val: []
                     }
 
-                        Object.defineProperty(node, 'loc', {...definedPropertySettings, value: location, enumerable: options.sourcemap !== false})
+                    Object.defineProperty(node, 'loc', {
+                        ...definedPropertySettings,
+                        value: location,
+                        enumerable: options.sourcemap !== false
+                    })
 
                     context.chi!.push(node);
                     stats.nodesCount++;
@@ -1657,8 +1618,12 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                 val: value
             }
 
-                Object.defineProperty(node, 'loc', {...definedPropertySettings, value: location, enumerable: options.sourcemap !== false});
-                node.loc!.end = {...map.get(delim)!.end};
+            Object.defineProperty(node, 'loc', {
+                ...definedPropertySettings,
+                value: location,
+                enumerable: options.sourcemap !== false
+            });
+            node.loc!.end = {...map.get(delim)!.end};
 
             // do not allow declarations in style sheets
             if (context.typ == EnumToken.StyleSheetNodeType && options.lenient) {
@@ -1674,7 +1639,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
 
             if (result != null) {
 
-                if (options.validation == ValidationLevel.All) {
+                if ((options.validation as ValidationLevel) & ValidationLevel.Declaration) {
 
                     const isAllowed: boolean = isNodeAllowedInContext(node, context as AstNode);
                     // @ts-ignore
@@ -2158,7 +2123,11 @@ export function parseString(src: string, options: { location: boolean } = {locat
 
         const token: Token = getTokenType(t.token, t.hint);
 
-        Object.defineProperty(token, 'loc', {...definedPropertySettings, value: {sta: t.sta}, enumerable: options.location !== false});
+        Object.defineProperty(token, 'loc', {
+            ...definedPropertySettings,
+            value: {sta: t.sta},
+            enumerable: options.location !== false
+        });
         acc.push(token);
 
         return acc;

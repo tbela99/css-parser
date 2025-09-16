@@ -6,7 +6,7 @@ import '../ast/walk.js';
 import '../parser/parse.js';
 import '../parser/tokenize.js';
 import '../parser/utils/config.js';
-import { wildCardFuncs, isIdentColor, mathFuncs } from '../syntax/syntax.js';
+import { wildCardFuncs, isIdentColor, mathFuncs, isColor } from '../syntax/syntax.js';
 import { renderToken } from '../renderer/render.js';
 import '../renderer/sourcemap/lib/encode.js';
 import { getSyntaxConfig, getParsedSyntax, getSyntax } from './config.js';
@@ -300,16 +300,6 @@ function doEvaluateSyntax(syntaxes, context, options) {
     }
     for (; i < syntaxes.length; i++) {
         syntax = syntaxes[i];
-        // if (Array.isArray(syntax)) {
-        //     result = doEvaluateSyntax(syntax, context.clone(), options);
-        //
-        //     if (result.valid == SyntaxValidationResult.Valid) {
-        //
-        //         continue;
-        //     }
-        //
-        //     return result;
-        // }
         if (context.done()) {
             if (syntax.typ == ValidationTokenEnum.Whitespace || syntax.isOptional || syntax.isRepeatable) {
                 continue;
@@ -623,8 +613,9 @@ function match(syntax, context, options) {
 }
 function matchPropertyType(syntax, context, options) {
     if (![
-        'bg-position',
+        'color',
         'integer',
+        'bg-position',
         'length-percentage', 'flex', 'calc-sum', 'color',
         'color-base', 'system-color', 'deprecated-system-color',
         'pseudo-class-selector', 'pseudo-element-selector', 'feature-value-declaration'
@@ -785,7 +776,11 @@ function matchPropertyType(syntax, context, options) {
             break;
         case 'color':
         case 'color-base':
-            success = token.typ == EnumToken.ColorTokenType || (token.typ == EnumToken.IdenTokenType && 'currentcolor' === token.val.toLowerCase()) || (token.typ == EnumToken.IdenTokenType && 'transparent' === token.val.toLowerCase()) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
+            success = token.typ == EnumToken.ColorTokenType ||
+                (token.typ == EnumToken.IdenTokenType && 'currentcolor' === token.val.toLowerCase()) ||
+                (token.typ == EnumToken.IdenTokenType && 'transparent' === token.val.toLowerCase()) ||
+                (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val) ||
+                    isColor(token));
             if (!success && token.typ == EnumToken.FunctionTokenType && colorsFunc.includes(token.val)) {
                 success = doEvaluateSyntax(getParsedSyntax("functions" /* ValidationSyntaxGroupEnum.Functions */, token.val)?.[0]?.chi, createContext(token.chi), {
                     ...options,

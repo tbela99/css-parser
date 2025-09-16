@@ -582,7 +582,7 @@ export function isColor(token: Token): boolean {
 
     if (token.typ == EnumToken.IdenTokenType) {
         // named color
-        return (token as IdentToken).val.toLowerCase() in COLORS_NAMES;
+        return (token as IdentToken).val.toLowerCase() in COLORS_NAMES || 'currentcolor' === (token as IdentToken).val.toLowerCase() || 'transparent' === (token as IdentToken).val.toLowerCase();
     }
 
     let isLegacySyntax: boolean = false;
@@ -635,9 +635,7 @@ export function isColor(token: Token): boolean {
                             return false;
                         }
                     }
-
                 }
-
             }
 
             // @ts-ignore
@@ -645,8 +643,8 @@ export function isColor(token: Token): boolean {
 
                 // @ts-ignore
                 const children: Token[] = (<Token[]>(token as ColorToken).chi).filter((t: Token) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.LiteralTokenType, EnumToken.ColorTokenType, EnumToken.FunctionTokenType, EnumToken.PercentageTokenType].includes(t.typ));
-
                 const isRelative: boolean = children[0].typ == EnumToken.IdenTokenType && (children[0] as IdentToken).val == 'from';
+
                 if (children.length < 4 || children.length > 8) {
 
                     return false;
@@ -668,9 +666,17 @@ export function isColor(token: Token): boolean {
                         }
                     }
 
-                    if (children[i].typ == EnumToken.FunctionTokenType && !mathFuncs.includes((<FunctionToken>children[i]).val)) {
+                    if (children[i].typ == EnumToken.FunctionTokenType) {
 
-                        return false;
+                        if ('var' == (children[i] as FunctionToken).val.toLowerCase()) {
+
+                            continue;
+                        }
+
+                        if (!mathFuncs.includes((<FunctionToken>children[i]).val)) {
+
+                            return false;
+                        }
                     }
                 }
 

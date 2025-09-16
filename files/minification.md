@@ -1,6 +1,7 @@
 ---
 title: Minification
 group: Documents
+slug: /minification
 category: Guides
 ---
 

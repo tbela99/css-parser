@@ -736,5 +736,70 @@ transform: translate3d(0, 100%, 0);
  transform: translateZ(100px)
 }`));
         });
+
+        it('matrix #42', function () {
+            const nesting1 = `
+
+@-webkit-keyframes slideOutUp {
+  from {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    visibility: hidden;
+    -webkit-transform: translate3d(0, -100%, 0);
+    transform: translate3d(0, -100%, 0);
+  }
+}
+@keyframes slideOutUp {
+  from {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    visibility: hidden;
+    -webkit-transform: translate3d(0, -100%, 0);
+    transform: translate3d(0, -100%, 0);
+  }
+}
+.animate__slideOutUp {
+  -webkit-animation-name: slideOutUp;
+  animation-name: slideOutUp;
+}
+
+`;
+            return transform(nesting1, {
+                beautify: true,
+                validation: true,
+                removeDuplicateDeclarations: ['transform']
+            }).then((result) => expect(result.code).equals(`@-webkit-keyframes slideOutUp {
+ 0% {
+  -webkit-transform: none;
+  transform: none
+ }
+ to {
+  visibility: hidden;
+  -webkit-transform: translateY(-100%);
+  transform: translateY(-100%)
+ }
+}
+@keyframes slideOutUp {
+ 0% {
+  -webkit-transform: none;
+  transform: none
+ }
+ to {
+  visibility: hidden;
+  -webkit-transform: translateY(-100%);
+  transform: translateY(-100%)
+ }
+}
+.animate__slideOutUp {
+ -webkit-animation-name: slideOutUp;
+ animation-name: slideOutUp
+}`));
+        });
     });
 }

@@ -23,6 +23,17 @@ function validateAtRuleSupports(atRule, options, root) {
             tokens: []
         };
     }
+    if (!Array.isArray(atRule.chi)) {
+        // @ts-ignore
+        return {
+            valid: SyntaxValidationResult.Drop,
+            matches: [],
+            node: atRule,
+            syntax: '@' + atRule.nam,
+            error: 'expected supports body',
+            tokens: []
+        };
+    }
     const result = validateAtRuleSupportsConditions(atRule, atRule.tokens);
     if (result) {
         if (result.node == null) {
