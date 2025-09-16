@@ -39,7 +39,7 @@ export enum WalkerOptionEnum {
 /**
  * event types for the walkValues function
  */
-export enum WalkerValueEvent {
+export enum WalkerEvent {
 
     /**
      * enter node
@@ -197,7 +197,7 @@ export function* walk(node: AstNode, filter?: WalkerFilter | null, reverse?: boo
  *
  */
 export function* walkValues(values: Token[], root: AstNode | Token | null = null, filter?: WalkerValueFilter | null | {
-    event?: WalkerValueEvent,
+    event?: WalkerEvent,
     fn?: WalkerValueFilter,
     type?: EnumToken | EnumToken[] | ((token: Token) => boolean)
 }, reverse?: boolean): Generator<WalkAttributesResult> {
@@ -211,26 +211,26 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
     if (filter != null && typeof filter == 'function') {
 
         filter = {
-            event: WalkerValueEvent.Enter,
+            event: WalkerEvent.Enter,
             fn: filter
         }
 
     } else if (filter == null) {
 
         filter = {
-            event: WalkerValueEvent.Enter
+            event: WalkerEvent.Enter
         }
     }
 
     let isNumeric: boolean = false;
-    const eventType = filter.event ?? WalkerValueEvent.Enter;
+    const eventType = filter.event ?? WalkerEvent.Enter;
 
     while (stack.length > 0) {
 
         let value: Token = reverse ? <Token>stack.pop() : <Token>stack.shift();
         let option: WalkerOption = null;
 
-        if (filter.fn != null && (eventType & WalkerValueEvent.Enter)) {
+        if (filter.fn != null && (eventType & WalkerEvent.Enter)) {
 
             const isValid: boolean = filter.type == null || value.typ == filter.type ||
                 (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
@@ -238,8 +238,7 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
 
             if (isValid) {
 
-                option = filter.fn(value, <FunctionToken | ParensToken>map.get(value) ?? root, WalkerValueEvent.Enter);
-
+                option = filter.fn(value, <FunctionToken | ParensToken>map.get(value) ?? root, WalkerEvent.Enter);
                 isNumeric = typeof option == 'number';
 
                 if (isNumeric && ((option as number) & WalkerOptionEnum.Stop)) {
@@ -328,7 +327,7 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
             }
         }
 
-        if ((eventType & WalkerValueEvent.Leave) && filter.fn != null) {
+        if ((eventType & WalkerEvent.Leave) && filter.fn != null) {
 
             const isValid: boolean = filter.type == null || value.typ == filter.type ||
                 (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
@@ -336,7 +335,7 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
 
             if (isValid) {
 
-                option = filter.fn(value, <FunctionToken | ParensToken>map.get(value), WalkerValueEvent.Leave);
+                option = filter.fn(value, <FunctionToken | ParensToken>map.get(value), WalkerEvent.Leave);
 
                 // @ts-ignore
                 if (option != null && 'typ' in option) {

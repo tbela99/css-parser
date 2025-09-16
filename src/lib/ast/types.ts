@@ -29,7 +29,6 @@ export enum ValidationLevel {
     All // selectors + at-rules + declarations
 }
 
-
 /**
  * enum of all token types
  */

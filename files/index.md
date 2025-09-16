@@ -6,8 +6,9 @@ children:
     - ./install.md
     - ./usage.md
     - ./minification.md
-#    - ./validation.md
     - ./transform.md
+    - ./traversal.md
+    - ./validation.md
 ---
 
 ## Contents
@@ -16,6 +17,8 @@ children:
 - [Usage](./usage.md)
 - [Minification](./minification.md)
 - [Transform](./transform.md)
+- [Ast traversal](./traversal.md)
+- [Validation](./validation.md)
 
 ## Modules
 

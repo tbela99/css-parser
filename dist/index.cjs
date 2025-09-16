@@ -14641,9 +14641,10 @@ function dirname(path) {
         if (chr == '/') {
             parts.push('');
         }
-        else if (chr == '?' || chr == '#') {
-            break;
-        }
+        // else if (chr == '?' || chr == '#') {
+        //
+        //     break;
+        // }
         else {
             parts[parts.length - 1] += chr;
         }
@@ -14698,6 +14699,8 @@ function resolve(url, currentDirectory, cwd) {
             relative: url
         };
     }
+    cwd ??= '';
+    currentDirectory ??= '';
     if (matchUrl.test(currentDirectory)) {
         const path = new URL(url, currentDirectory).href;
         return {
@@ -14749,6 +14752,11 @@ exports.FeatureWalkMode = void 0;
 const config$2 = getSyntaxConfig();
 // @ts-ignore
 const allValues = getSyntaxConfig()["declarations" /* ValidationSyntaxGroupEnum.Declarations */].all.syntax.trim().split(/[\s|]+/g);
+/**
+ * Check if a node is allowed as child in a given context
+ * @param node
+ * @param context
+ */
 function isNodeAllowedInContext(node, context) {
     if (node.typ == exports.EnumToken.CommentNodeType || context == null) {
         return true;
@@ -14850,6 +14858,10 @@ function isNodeAllowedInContext(node, context) {
     }
     return false;
 }
+/**
+ * Create a syntax validation context from a list of tokens
+ * @param input
+ */
 function createContext(input) {
     const values = input.slice();
     const result = values.filter(token => token.typ != exports.EnumToken.CommentTokenType).slice();
@@ -14910,6 +14922,12 @@ function createContext(input) {
         }
     };
 }
+/**
+ * Evaluate the validity of the syntax of a node
+ * @param node
+ * @param parent
+ * @param options
+ */
 function evaluateSyntax(node, parent, options) {
     if (node.validSyntax) {
         return {
@@ -17721,7 +17739,7 @@ async function doParse(iter, options = {}) {
     const preVisitorsHandlersMap = new Map;
     const visitorsHandlersMap = new Map;
     const postVisitorsHandlersMap = new Map;
-    const allValuesHandlers = [];
+    // const allValuesHandlers = new Map as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
     const rawTokens = [];
     const imports = [];
     let item;
@@ -17729,17 +17747,41 @@ async function doParse(iter, options = {}) {
     // @ts-ignore ignore error
     let isAsync = typeof iter[Symbol.asyncIterator] === 'function';
     if (options.visitor != null) {
-        for (const [key, value] of Object.entries(options.visitor)) {
+        const visitors = Object.entries(options.visitor);
+        let key;
+        let value;
+        let i;
+        for (i = 0; i < visitors.length; i++) {
+            key = visitors[i][0];
+            value = visitors[i][1];
+            if (Number.isInteger(+key)) {
+                visitors.splice(i + 1, 0, ...Object.entries(value));
+                continue;
+            }
+            if (Array.isArray(value)) {
+                // @ts-ignore
+                visitors.splice(i + 1, 0, ...value.map((item) => [key, item]));
+                continue;
+            }
             if (key in exports.EnumToken) {
                 if (typeof value == 'function') {
-                    valuesHandlers.set(exports.EnumToken[key], value);
-                }
-                else if (typeof value == 'object' && 'type' in value && 'handler' in value && value.type in exports.WalkerValueEvent) {
-                    if (exports.WalkerValueEvent[value.type] == exports.WalkerValueEvent.Enter) {
-                        preValuesHandlers.set(exports.EnumToken[key], value.handler);
+                    if (!valuesHandlers.has(exports.EnumToken[key])) {
+                        valuesHandlers.set(exports.EnumToken[key], []);
                     }
-                    else if (exports.WalkerValueEvent[value.type] == exports.WalkerValueEvent.Leave) {
-                        postValuesHandlers.set(exports.EnumToken[key], value.handler);
+                    valuesHandlers.get(exports.EnumToken[key]).push(value);
+                }
+                else if (typeof value == 'object' && 'type' in value && 'handler' in value && value.type in exports.WalkerEvent) {
+                    if (value.type == exports.WalkerEvent.Enter) {
+                        if (!preValuesHandlers.has(exports.EnumToken[key])) {
+                            preValuesHandlers.set(exports.EnumToken[key], []);
+                        }
+                        preValuesHandlers.get(exports.EnumToken[key]).push(value.handler);
+                    }
+                    else if (value.type == exports.WalkerEvent.Leave) {
+                        if (!postValuesHandlers.has(exports.EnumToken[key])) {
+                            postValuesHandlers.set(exports.EnumToken[key], []);
+                        }
+                        postValuesHandlers.get(exports.EnumToken[key]).push(value.handler);
                     }
                 }
                 else {
@@ -17748,19 +17790,31 @@ async function doParse(iter, options = {}) {
             }
             else if (['Declaration', 'Rule', 'AtRule', 'KeyframesRule', 'KeyframesAtRule'].includes(key)) {
                 if (typeof value == 'function') {
-                    visitorsHandlersMap.set(key, value);
+                    if (!visitorsHandlersMap.has(key)) {
+                        visitorsHandlersMap.set(key, []);
+                    }
+                    visitorsHandlersMap.get(key).push(value);
                 }
                 else if (typeof value == 'object') {
-                    if ('type' in value && 'handler' in value && value.type in exports.WalkerValueEvent) {
-                        if (exports.WalkerValueEvent[value.type] == exports.WalkerValueEvent.Enter) {
-                            preVisitorsHandlersMap.set(key, value.handler);
+                    if ('type' in value && 'handler' in value && value.type in exports.WalkerEvent) {
+                        if (value.type == exports.WalkerEvent.Enter) {
+                            if (!preVisitorsHandlersMap.has(key)) {
+                                preVisitorsHandlersMap.set(key, []);
+                            }
+                            preVisitorsHandlersMap.get(key).push(value.handler);
                         }
-                        else if (exports.WalkerValueEvent[value.type] == exports.WalkerValueEvent.Leave) {
-                            postVisitorsHandlersMap.set(key, value.handler);
+                        else if (value.type == exports.WalkerEvent.Leave) {
+                            if (!postVisitorsHandlersMap.has(key)) {
+                                postVisitorsHandlersMap.set(key, []);
+                            }
+                            postVisitorsHandlersMap.get(key).push(value.handler);
                         }
                     }
                     else {
-                        visitorsHandlersMap.set(key, value);
+                        if (!visitorsHandlersMap.has(key)) {
+                            visitorsHandlersMap.set(key, []);
+                        }
+                        visitorsHandlersMap.get(key).push(value);
                     }
                 }
                 else {
@@ -17771,15 +17825,42 @@ async function doParse(iter, options = {}) {
                 errors.push({ action: 'ignore', message: `doParse: visitor.${key} is not a valid key name` });
             }
         }
-        if (preValuesHandlers.size > 0) {
-            allValuesHandlers.push(preValuesHandlers);
-        }
-        if (valuesHandlers.size > 0) {
-            allValuesHandlers.push(valuesHandlers);
-        }
-        if (postValuesHandlers.size > 0) {
-            allValuesHandlers.push(postValuesHandlers);
-        }
+        // if (preValuesHandlers.size > 0) {
+        //
+        //     for (const [key, value] of preValuesHandlers) {
+        //
+        //         if (!allValuesHandlers.has(key)) {
+        //
+        //             allValuesHandlers.set(key, []);
+        //         }
+        //
+        //         allValuesHandlers.get(key)!.push(...value);
+        //     }
+        // }
+        // if (valuesHandlers.size > 0) {
+        //
+        //     for (const [key, value] of valuesHandlers) {
+        //
+        //         if (!allValuesHandlers.has(key)) {
+        //
+        //             allValuesHandlers.set(key, []);
+        //         }
+        //
+        //         allValuesHandlers.get(key)!.push(...value);
+        //     }
+        // }
+        // if (postValuesHandlers.size > 0) {
+        //
+        //     for (const [key, value] of postValuesHandlers) {
+        //
+        //         if (!postValuesHandlers.has(key)) {
+        //
+        //             allValuesHandlers.set(key, []);
+        //         }
+        //
+        //         allValuesHandlers.get(key)!.push(...value);
+        //     }
+        // }
     }
     while (item = isAsync ? (await iter.next()).value : iter.next().value) {
         stats.bytesIn = item.bytesIn;
@@ -17940,7 +18021,7 @@ async function doParse(iter, options = {}) {
         ast = expand(ast);
     }
     for (const result of walk(ast)) {
-        if (allValuesHandlers.length > 0 || preVisitorsHandlersMap.size > 0 || visitorsHandlersMap.size > 0 || postVisitorsHandlersMap.size > 0) {
+        if (valuesHandlers.size > 0 || preVisitorsHandlersMap.size > 0 || visitorsHandlersMap.size > 0 || postVisitorsHandlersMap.size > 0) {
             if ((result.node.typ == exports.EnumToken.DeclarationNodeType &&
                 (preVisitorsHandlersMap.has('Declaration') || visitorsHandlersMap.has('Declaration') || postVisitorsHandlersMap.has('Declaration'))) ||
                 (result.node.typ == exports.EnumToken.AtRuleNodeType && (preVisitorsHandlersMap.has('AtRule') || visitorsHandlersMap.has('AtRule') || postVisitorsHandlersMap.has('AtRule'))) ||
@@ -17949,15 +18030,15 @@ async function doParse(iter, options = {}) {
                 const key = result.node.typ == exports.EnumToken.DeclarationNodeType ? 'Declaration' : result.node.typ == exports.EnumToken.AtRuleNodeType ? 'AtRule' : 'KeyframesAtRule';
                 if (preVisitorsHandlersMap.has(key)) {
                     // @ts-ignore
-                    handlers.push(preVisitorsHandlersMap.get(key));
+                    handlers.push(...preVisitorsHandlersMap.get(key));
                 }
                 if (visitorsHandlersMap.has(key)) {
                     // @ts-ignore
-                    handlers.push(visitorsHandlersMap.get(key));
+                    handlers.push(...visitorsHandlersMap.get(key));
                 }
                 if (postVisitorsHandlersMap.has(key)) {
                     // @ts-ignore
-                    handlers.push(postVisitorsHandlersMap.get(key));
+                    handlers.push(...postVisitorsHandlersMap.get(key));
                 }
                 let callable;
                 let node = result.node;
@@ -17994,13 +18075,13 @@ async function doParse(iter, options = {}) {
                 const handlers = [];
                 const key = result.node.typ == exports.EnumToken.RuleNodeType ? 'Rule' : 'KeyframesRule';
                 if (preVisitorsHandlersMap.has(key)) {
-                    handlers.push(preVisitorsHandlersMap.get(key));
+                    handlers.push(...preVisitorsHandlersMap.get(key));
                 }
                 if (visitorsHandlersMap.has(key)) {
-                    handlers.push(visitorsHandlersMap.get(key));
+                    handlers.push(...visitorsHandlersMap.get(key));
                 }
                 if (postVisitorsHandlersMap.has(key)) {
-                    handlers.push(postVisitorsHandlersMap.get(key));
+                    handlers.push(...postVisitorsHandlersMap.get(key));
                 }
                 let node = result.node;
                 for (const callable of handlers) {
@@ -18029,13 +18110,13 @@ async function doParse(iter, options = {}) {
                     replaceToken(result.parent, result.node, node);
                 }
             }
-            else if (allValuesHandlers.length > 0) {
+            else if (valuesHandlers.size > 0) {
                 let callable;
                 let node = null;
                 node = result.node;
-                for (const valueHandler of allValuesHandlers) {
-                    if (valueHandler.has(node.typ)) {
-                        callable = valueHandler.get(node.typ);
+                if (valuesHandlers.has(node.typ)) {
+                    for (const valueHandler of valuesHandlers.get(node.typ)) {
+                        callable = valueHandler;
                         let replacement = callable(node, result.parent);
                         if (replacement == null) {
                             continue;
@@ -18062,9 +18143,9 @@ async function doParse(iter, options = {}) {
                 }
                 for (const { value, parent, root } of walkValues(tokens, result.node)) {
                     node = value;
-                    for (const valueHandler of allValuesHandlers) {
-                        if (valueHandler.has(node.typ)) {
-                            callable = valueHandler.get(node.typ);
+                    if (valuesHandlers.has(node.typ)) {
+                        for (const valueHandler of valuesHandlers.get(node.typ)) {
+                            callable = valueHandler;
                             let result = callable(node, parent, root);
                             if (result == null) {
                                 continue;
@@ -18148,9 +18229,11 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
             loc = location;
             context.chi.push(tokens[i]);
             stats.nodesCount++;
-            if (options.sourcemap) {
-                tokens[i].loc = loc;
-            }
+            Object.defineProperty(tokens[i], 'loc', {
+                ...definedPropertySettings,
+                value: loc,
+                enumerable: options.sourcemap !== false
+            });
         }
         else if (tokens[i].typ != exports.EnumToken.WhitespaceTokenType) {
             break;
@@ -18310,10 +18393,12 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
             node.chi = [];
         }
         loc = map.get(atRule);
-        if (options.sourcemap) {
-            node.loc = loc;
-            node.loc.end = { ...map.get(delim).end };
-        }
+        Object.defineProperty(node, 'loc', {
+            ...definedPropertySettings,
+            value: loc,
+            enumerable: options.sourcemap !== false
+        });
+        node.loc.end = { ...map.get(delim).end };
         let isValid = true;
         if (node.nam == 'else') {
             const prev = getLastNode(context);
@@ -18459,9 +18544,11 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
                 value: tokens.slice()
             });
             loc = location;
-            if (options.sourcemap) {
-                node.loc = loc;
-            }
+            Object.defineProperty(node, 'loc', {
+                ...definedPropertySettings,
+                value: loc,
+                enumerable: options.sourcemap !== false
+            });
             // @ts-ignore
             context.chi.push(node);
             Object.defineProperty(node, 'parent', { ...definedPropertySettings, value: context });
@@ -18582,10 +18669,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
                         nam,
                         val: []
                     };
-                    if (options.sourcemap) {
-                        node.loc = location;
-                        node.loc.end = { ...map.get(delim).end };
-                    }
+                    Object.defineProperty(node, 'loc', { ...definedPropertySettings, value: location, enumerable: options.sourcemap !== false });
                     context.chi.push(node);
                     stats.nodesCount++;
                 }
@@ -18611,10 +18695,8 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
                 nam,
                 val: value
             };
-            if (options.sourcemap) {
-                node.loc = location;
-                node.loc.end = { ...map.get(delim).end };
-            }
+            Object.defineProperty(node, 'loc', { ...definedPropertySettings, value: location, enumerable: options.sourcemap !== false });
+            node.loc.end = { ...map.get(delim).end };
             // do not allow declarations in style sheets
             if (context.typ == exports.EnumToken.StyleSheetNodeType && options.lenient) {
                 Object.assign(node, { typ: exports.EnumToken.InvalidDeclarationNodeType });
@@ -18974,9 +19056,7 @@ function parseString(src, options = { location: false }) {
             return acc;
         }
         const token = getTokenType(t.token, t.hint);
-        if (options.location) {
-            Object.assign(token, { loc: t.sta });
-        }
+        Object.defineProperty(token, 'loc', { ...definedPropertySettings, value: { sta: t.sta }, enumerable: options.location !== false });
         acc.push(token);
         return acc;
     }, []));
@@ -19517,17 +19597,17 @@ exports.WalkerOptionEnum = void 0;
 /**
  * event types for the walkValues function
  */
-exports.WalkerValueEvent = void 0;
-(function (WalkerValueEvent) {
+exports.WalkerEvent = void 0;
+(function (WalkerEvent) {
     /**
      * enter node
      */
-    WalkerValueEvent[WalkerValueEvent["Enter"] = 1] = "Enter";
+    WalkerEvent[WalkerEvent["Enter"] = 1] = "Enter";
     /**
      * leave node
      */
-    WalkerValueEvent[WalkerValueEvent["Leave"] = 2] = "Leave";
-})(exports.WalkerValueEvent || (exports.WalkerValueEvent = {}));
+    WalkerEvent[WalkerEvent["Leave"] = 2] = "Leave";
+})(exports.WalkerEvent || (exports.WalkerEvent = {}));
 /**
  * walk ast nodes
  * @param node initial node
@@ -19662,26 +19742,26 @@ function* walkValues(values, root = null, filter, reverse) {
     let previous = null;
     if (filter != null && typeof filter == 'function') {
         filter = {
-            event: exports.WalkerValueEvent.Enter,
+            event: exports.WalkerEvent.Enter,
             fn: filter
         };
     }
     else if (filter == null) {
         filter = {
-            event: exports.WalkerValueEvent.Enter
+            event: exports.WalkerEvent.Enter
         };
     }
     let isNumeric = false;
-    const eventType = filter.event ?? exports.WalkerValueEvent.Enter;
+    const eventType = filter.event ?? exports.WalkerEvent.Enter;
     while (stack.length > 0) {
         let value = reverse ? stack.pop() : stack.shift();
         let option = null;
-        if (filter.fn != null && (eventType & exports.WalkerValueEvent.Enter)) {
+        if (filter.fn != null && (eventType & exports.WalkerEvent.Enter)) {
             const isValid = filter.type == null || value.typ == filter.type ||
                 (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
                 (typeof filter.type == 'function' && filter.type(value));
             if (isValid) {
-                option = filter.fn(value, map.get(value) ?? root, exports.WalkerValueEvent.Enter);
+                option = filter.fn(value, map.get(value) ?? root, exports.WalkerEvent.Enter);
                 isNumeric = typeof option == 'number';
                 if (isNumeric && (option & exports.WalkerOptionEnum.Stop)) {
                     return;
@@ -19745,12 +19825,12 @@ function* walkValues(values, root = null, filter, reverse) {
                 stack[reverse ? 'push' : 'unshift'](...values);
             }
         }
-        if ((eventType & exports.WalkerValueEvent.Leave) && filter.fn != null) {
+        if ((eventType & exports.WalkerEvent.Leave) && filter.fn != null) {
             const isValid = filter.type == null || value.typ == filter.type ||
                 (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
                 (typeof filter.type == 'function' && filter.type(value));
             if (isValid) {
-                option = filter.fn(value, map.get(value), exports.WalkerValueEvent.Leave);
+                option = filter.fn(value, map.get(value), exports.WalkerEvent.Leave);
                 // @ts-ignore
                 if (option != null && 'typ' in option) {
                     map.set(option, map.get(value) ?? root);
@@ -19958,9 +20038,10 @@ class InlineCssVariablesFeature {
         }
     }
     run(ast, options = {}, parent, context) {
-        if (!('chi' in ast)) {
-            return null;
-        }
+        // if (!('chi' in ast)) {
+        //
+        //     return null;
+        // }
         if (!('variableScope' in context)) {
             context.variableScope = new Map;
         }
@@ -21003,7 +21084,7 @@ class ComputeCalcExpressionFeature {
             }
             const set = new Set;
             for (const { value, parent } of walkValues(node.val, node, {
-                event: exports.WalkerValueEvent.Enter,
+                event: exports.WalkerEvent.Enter,
                 // @ts-ignore
                 fn(node, parent) {
                     if (parent != null &&
@@ -21080,7 +21161,7 @@ class ComputeCalcExpressionFeature {
 
 function translateX(x, from) {
     const matrix = identity();
-    matrix[3 * 4 + 0] = x;
+    matrix[3 * 4] = x;
     return multiply(from, matrix);
 }
 function translateY(y, from) {
@@ -21095,13 +21176,13 @@ function translateZ(z, from) {
 }
 function translate(translate, from) {
     const matrix = identity();
-    matrix[3 * 4 + 0] = translate[0];
+    matrix[3 * 4] = translate[0];
     matrix[3 * 4 + 1] = translate[1] ?? 0;
     return multiply(from, matrix);
 }
 function translate3d(translate, from) {
     const matrix = identity();
-    matrix[3 * 4 + 0] = translate[0];
+    matrix[3 * 4] = translate[0];
     matrix[3 * 4 + 1] = translate[1];
     matrix[3 * 4 + 2] = translate[2];
     return multiply(from, matrix);
@@ -21124,34 +21205,34 @@ function rotate3D(angle, x, y, z, from) {
     x *= unit;
     y *= unit;
     z *= unit;
-    matrix[0 * 4 + 0] = 1 - 2 * (y * y + z * z) * sq;
-    matrix[0 * 4 + 1] = 2 * (x * y * sq + z * sc);
-    matrix[0 * 4 + 2] = 2 * (x * z * sq - y * sc);
-    matrix[1 * 4 + 0] = 2 * (x * y * sq - z * sc);
-    matrix[1 * 4 + 1] = 1 - 2 * (x * x + z * z) * sq;
-    matrix[1 * 4 + 2] = 2 * (y * z * sq + x * sc);
-    matrix[2 * 4 + 0] = 2 * (x * z * sq + y * sc);
+    matrix[0] = 1 - 2 * (y * y + z * z) * sq;
+    matrix[1] = 2 * (x * y * sq + z * sc);
+    matrix[2] = 2 * (x * z * sq - y * sc);
+    matrix[4] = 2 * (x * y * sq - z * sc);
+    matrix[4 + 1] = 1 - 2 * (x * x + z * z) * sq;
+    matrix[4 + 2] = 2 * (y * z * sq + x * sc);
+    matrix[2 * 4] = 2 * (x * z * sq + y * sc);
     matrix[2 * 4 + 1] = 2 * (y * z * sq - x * sc);
     matrix[2 * 4 + 2] = 1 - 2 * (x * x + y * y) * sq;
     return multiply(from, matrix);
 }
 function rotate(angle, from) {
     const matrix = identity();
-    matrix[0 * 4 + 0] = Math.cos(angle);
-    matrix[0 * 4 + 1] = Math.sin(angle);
-    matrix[1 * 4 + 0] = -Math.sin(angle);
-    matrix[1 * 4 + 1] = Math.cos(angle);
+    matrix[0] = Math.cos(angle);
+    matrix[1] = Math.sin(angle);
+    matrix[4] = -Math.sin(angle);
+    matrix[4 + 1] = Math.cos(angle);
     return multiply(from, matrix);
 }
 
 function scaleX(x, from) {
     const matrix = identity();
-    matrix[0 * 4 + 0] = x;
+    matrix[0] = x;
     return multiply(from, matrix);
 }
 function scaleY(y, from) {
     const matrix = identity();
-    matrix[1 * 4 + 1] = y;
+    matrix[4 + 1] = y;
     return multiply(from, matrix);
 }
 function scaleZ(z, from) {
@@ -21161,14 +21242,14 @@ function scaleZ(z, from) {
 }
 function scale(x, y, from) {
     const matrix = identity();
-    matrix[0 * 4 + 0] = x;
-    matrix[1 * 4 + 1] = y;
+    matrix[0] = x;
+    matrix[4 + 1] = y;
     return multiply(from, matrix);
 }
 function scale3d(x, y, z, from) {
     const matrix = identity();
-    matrix[0 * 4 + 0] = x;
-    matrix[1 * 4 + 1] = y;
+    matrix[0] = x;
+    matrix[4 + 1] = y;
     matrix[2 * 4 + 2] = z;
     return multiply(from, matrix);
 }
@@ -21193,27 +21274,27 @@ function parseMatrix(mat) {
 function matrix(values) {
     const matrix = identity();
     if (values.length === 6) {
-        matrix[0 * 4 + 0] = values[0];
-        matrix[0 * 4 + 1] = values[1];
-        matrix[1 * 4 + 0] = values[2];
-        matrix[1 * 4 + 1] = values[3];
-        matrix[3 * 4 + 0] = values[4];
+        matrix[0] = values[0];
+        matrix[1] = values[1];
+        matrix[4] = values[2];
+        matrix[4 + 1] = values[3];
+        matrix[3 * 4] = values[4];
         matrix[3 * 4 + 1] = values[5];
     }
     else if (values.length === 16) {
-        matrix[0 * 4 + 0] = values[0];
-        matrix[0 * 4 + 1] = values[1];
-        matrix[0 * 4 + 2] = values[2];
-        matrix[0 * 4 + 3] = values[3];
-        matrix[1 * 4 + 0] = values[4];
-        matrix[1 * 4 + 1] = values[5];
-        matrix[1 * 4 + 2] = values[6];
-        matrix[1 * 4 + 3] = values[7];
-        matrix[2 * 4 + 0] = values[8];
+        matrix[0] = values[0];
+        matrix[1] = values[1];
+        matrix[2] = values[2];
+        matrix[3] = values[3];
+        matrix[4] = values[4];
+        matrix[4 + 1] = values[5];
+        matrix[4 + 2] = values[6];
+        matrix[4 + 3] = values[7];
+        matrix[2 * 4] = values[8];
         matrix[2 * 4 + 1] = values[9];
         matrix[2 * 4 + 2] = values[10];
         matrix[2 * 4 + 3] = values[11];
-        matrix[3 * 4 + 0] = values[12];
+        matrix[3 * 4] = values[12];
         matrix[3 * 4 + 1] = values[13];
         matrix[3 * 4 + 2] = values[14];
         matrix[3 * 4 + 3] = values[15];
@@ -21238,11 +21319,11 @@ function serialize(matrix) {
             typ: exports.EnumToken.FunctionTokenType,
             val: 'matrix',
             chi: [
-                matrix[0 * 4 + 0],
-                matrix[0 * 4 + 1],
-                matrix[1 * 4 + 0],
-                matrix[1 * 4 + 1],
-                matrix[3 * 4 + 0],
+                matrix[0],
+                matrix[1],
+                matrix[4],
+                matrix[4 + 1],
+                matrix[3 * 4],
                 matrix[3 * 4 + 1]
             ].reduce((acc, t) => {
                 if (acc.length > 0) {
@@ -21635,20 +21716,20 @@ function minifyTransformFunctions(transform) {
 
 function skewX(x, from) {
     const matrix = identity();
-    matrix[1 * 4 + 0] = Math.tan(x);
+    matrix[4] = Math.tan(x);
     return multiply(from, matrix);
 }
 function skewY(y, from) {
     const matrix = identity();
-    matrix[0 * 4 + 1] = Math.tan(y);
+    matrix[1] = Math.tan(y);
     return multiply(from, matrix);
 }
 // convert angle to radian
 function skew(values, from) {
     const matrix = identity();
-    matrix[1 * 4 + 0] = Math.tan(values[0]);
+    matrix[4] = Math.tan(values[0]);
     if (values.length > 1) {
-        matrix[0 * 4 + 1] = Math.tan(values[1]);
+        matrix[1] = Math.tan(values[1]);
     }
     return multiply(from, matrix);
 }

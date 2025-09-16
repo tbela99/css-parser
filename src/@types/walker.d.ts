@@ -1,6 +1,6 @@
 import type {AstNode, AstRuleList} from "./ast.d.ts";
 import type {Token} from "./token.d.ts";
-import {WalkerOptionEnum, WalkerValueEvent} from '../lib/ast/walk.ts';
+import {WalkerEvent, WalkerOptionEnum} from '../lib/ast/walk.ts';
 
 /**
  * node walker option
@@ -18,7 +18,7 @@ export declare type WalkerFilter = (node: AstNode) => WalkerOption;
 /**
  * filter nod
  */
-export declare type WalkerValueFilter = (node: AstNode | Token, parent?: AstNode | Token | null, event?: WalkerValueEvent) => WalkerOption | null;
+export declare type WalkerValueFilter = (node: AstNode | Token, parent?: AstNode | Token | null, event?: WalkerEvent) => WalkerOption | null;
 
 export declare interface WalkResult {
     node: AstNode;

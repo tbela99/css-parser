@@ -4,7 +4,7 @@
 
 # css-parser
 
-CSS parser and minifier for node and the browser
+CSS parser, minifier and validator for node and the browser
 
 ## Installation
 
@@ -101,7 +101,7 @@ Javascript module from cdn
 
 <script type="module">
 
-    import {transform} from 'https://esm.sh/@tbela99/css-parser@1.3.3/web';
+    import {transform} from 'https://esm.sh/@tbela99/css-parser@1.3.4/web';
 
     const css = `
     .s {
@@ -126,7 +126,7 @@ Javascript umd module from cdn
 
 ```html
 
-<script src="https://unpkg.com/@tbela99/css-parser@1.3.2/dist/index-umd-web.js"></script>
+<script src="https://unpkg.com/@tbela99/css-parser@1.3.4/dist/index-umd-web.js"></script>
 <script>
 
     (async () => {

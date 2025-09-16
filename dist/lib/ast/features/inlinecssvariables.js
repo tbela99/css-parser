@@ -66,9 +66,10 @@ class InlineCssVariablesFeature {
         }
     }
     run(ast, options = {}, parent, context) {
-        if (!('chi' in ast)) {
-            return null;
-        }
+        // if (!('chi' in ast)) {
+        //
+        //     return null;
+        // }
         if (!('variableScope' in context)) {
             context.variableScope = new Map;
         }

@@ -23,17 +23,17 @@ var WalkerOptionEnum;
 /**
  * event types for the walkValues function
  */
-var WalkerValueEvent;
-(function (WalkerValueEvent) {
+var WalkerEvent;
+(function (WalkerEvent) {
     /**
      * enter node
      */
-    WalkerValueEvent[WalkerValueEvent["Enter"] = 1] = "Enter";
+    WalkerEvent[WalkerEvent["Enter"] = 1] = "Enter";
     /**
      * leave node
      */
-    WalkerValueEvent[WalkerValueEvent["Leave"] = 2] = "Leave";
-})(WalkerValueEvent || (WalkerValueEvent = {}));
+    WalkerEvent[WalkerEvent["Leave"] = 2] = "Leave";
+})(WalkerEvent || (WalkerEvent = {}));
 /**
  * walk ast nodes
  * @param node initial node
@@ -168,26 +168,26 @@ function* walkValues(values, root = null, filter, reverse) {
     let previous = null;
     if (filter != null && typeof filter == 'function') {
         filter = {
-            event: WalkerValueEvent.Enter,
+            event: WalkerEvent.Enter,
             fn: filter
         };
     }
     else if (filter == null) {
         filter = {
-            event: WalkerValueEvent.Enter
+            event: WalkerEvent.Enter
         };
     }
     let isNumeric = false;
-    const eventType = filter.event ?? WalkerValueEvent.Enter;
+    const eventType = filter.event ?? WalkerEvent.Enter;
     while (stack.length > 0) {
         let value = reverse ? stack.pop() : stack.shift();
         let option = null;
-        if (filter.fn != null && (eventType & WalkerValueEvent.Enter)) {
+        if (filter.fn != null && (eventType & WalkerEvent.Enter)) {
             const isValid = filter.type == null || value.typ == filter.type ||
                 (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
                 (typeof filter.type == 'function' && filter.type(value));
             if (isValid) {
-                option = filter.fn(value, map.get(value) ?? root, WalkerValueEvent.Enter);
+                option = filter.fn(value, map.get(value) ?? root, WalkerEvent.Enter);
                 isNumeric = typeof option == 'number';
                 if (isNumeric && (option & WalkerOptionEnum.Stop)) {
                     return;
@@ -251,12 +251,12 @@ function* walkValues(values, root = null, filter, reverse) {
                 stack[reverse ? 'push' : 'unshift'](...values);
             }
         }
-        if ((eventType & WalkerValueEvent.Leave) && filter.fn != null) {
+        if ((eventType & WalkerEvent.Leave) && filter.fn != null) {
             const isValid = filter.type == null || value.typ == filter.type ||
                 (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
                 (typeof filter.type == 'function' && filter.type(value));
             if (isValid) {
-                option = filter.fn(value, map.get(value), WalkerValueEvent.Leave);
+                option = filter.fn(value, map.get(value), WalkerEvent.Leave);
                 // @ts-ignore
                 if (option != null && 'typ' in option) {
                     map.set(option, map.get(value) ?? root);
@@ -278,4 +278,4 @@ function* walkValues(values, root = null, filter, reverse) {
     }
 }
 
-export { WalkerOptionEnum, WalkerValueEvent, walk, walkValues };
+export { WalkerEvent, WalkerOptionEnum, walk, walkValues };

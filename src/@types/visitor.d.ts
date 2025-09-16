@@ -1,12 +1,12 @@
 import type {AstAtRule, AstDeclaration, AstKeyframesAtRule, AstKeyframesRule, AstRule} from "./ast.d.ts";
+import {WalkerEvent} from "../lib/ast/walk.ts";
 
-export declare type VisitorEventType = 'Enter' | 'Leave' ;
 export declare type GenericVisitorResult<T> = T | T[] | Promise<T> | Promise<T[]> | null | Promise<null>;
 export declare type GenericVisitorHandler<T> = ((node: T, parent?: AstNode | Token, root?: AstNode | Token) => GenericVisitorResult<T>);
 export declare type GenericVisitorAstNodeHandlerMap<T> =
     Record<string, GenericVisitorHandler<T>>
     | GenericVisitorHandler<T>
-    | { type: VisitorEventType, handler: Record<string, GenericVisitorHandler<T>> | GenericVisitorHandler<T> };
+    | { type: WalkerEvent, handler: Record<string, GenericVisitorHandler<T>> };
 
 export declare type ValueVisitorHandler = GenericVisitorHandler<Token>;
 
@@ -72,7 +72,7 @@ export declare interface VisitorNodeMap {
      * // @media tv,screen{.foo{height:calc(40px/3)}}
      * ```
      */
-    AtRule?: GenericVisitorAstNodeHandlerMap<AstAtRule>;
+    AtRule?: GenericVisitorAstNodeHandlerMap<AstAtRule> | Array<GenericVisitorAstNodeHandlerMap<AstAtRule>>;
     /**
      * declaration visitor
      *
@@ -174,7 +174,7 @@ export declare interface VisitorNodeMap {
      * // .foo{width:calc(40px/3);padding:10px}.selector{padding:20px}
      * ```
      */
-    Declaration?: GenericVisitorAstNodeHandlerMap<AstDeclaration>;
+    Declaration?: GenericVisitorAstNodeHandlerMap<AstDeclaration> | Array<GenericVisitorAstNodeHandlerMap<AstDeclaration>>;
 
     /**
      * rule visitor
@@ -216,19 +216,22 @@ export declare interface VisitorNodeMap {
      * // .foo{width:3px;.foo{width:3px}}
      * ```
      */
-    Rule?: GenericVisitorAstNodeHandlerMap<AstRule>;
+    Rule?: GenericVisitorAstNodeHandlerMap<AstRule> | Array<GenericVisitorAstNodeHandlerMap<AstRule>>;
 
-    KeyframesRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesRule>;
+    KeyframesRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesRule> | Array<GenericVisitorAstNodeHandlerMap<AstKeyframesRule>>;
 
-    KeyframesAtRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule> | Record<string, GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule>>;
+    KeyframesAtRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule> | Record<string, GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule>> | Array<GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule> | Record<string, GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule>>>;
 
     /**
      * value visitor
      */
     Value?: GenericVisitorHandler<Token> | Record<keyof EnumToken, GenericVisitorHandler<Token>> | {
-        type: VisitorEventType,
+        type: WalkerEvent,
         handler: GenericVisitorHandler<Token> | Record<keyof EnumToken, GenericVisitorHandler<Token>>
-    };
+    } | Array<GenericVisitorHandler<Token> | Record<keyof EnumToken, GenericVisitorHandler<Token>> | {
+        type: WalkerEvent,
+        handler: GenericVisitorHandler<Token> | Record<keyof EnumToken, GenericVisitorHandler<Token>>
+    }>;
 
     /**
      * generic token visitor. the key name is of type keyof EnumToken.
@@ -278,7 +281,10 @@ export declare interface VisitorNodeMap {
      * ```
      */
     [key: keyof EnumToken]: GenericVisitorHandler<Token> | {
-        type: VisitorEventType,
+        type: WalkerEvent,
         handler: GenericVisitorHandler<Token>
-    };
+    } | Array<GenericVisitorHandler<Token> | {
+        type: WalkerEvent,
+        handler: GenericVisitorHandler<Token>
+    }>;
 }

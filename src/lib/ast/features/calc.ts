@@ -12,7 +12,7 @@ import type {
     WalkerOption
 } from "../../../@types/index.d.ts";
 import {EnumToken} from "../types.ts";
-import {WalkerOptionEnum, WalkerValueEvent, walkValues} from "../walk.ts";
+import {WalkerEvent, WalkerOptionEnum, walkValues} from "../walk.ts";
 import {evaluate} from "../math/index.ts";
 import {renderToken} from "../../renderer/index.ts";
 import {mathFuncs} from "../../syntax/index.ts";
@@ -57,7 +57,7 @@ export class ComputeCalcExpressionFeature {
 
             for (const {value, parent} of walkValues((<AstDeclaration>node).val, node, {
 
-                    event: WalkerValueEvent.Enter,
+                    event: WalkerEvent.Enter,
                     // @ts-ignore
                     fn(node: AstNode | Token, parent: FunctionToken | ParensToken | BinaryExpressionToken): WalkerOption | null {
 

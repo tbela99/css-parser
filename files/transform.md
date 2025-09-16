@@ -6,8 +6,84 @@ category: Guides
 
 ## Custom transform
 
-visitors are used to alter the ast. they should return null or nodes of the same type as the node they are called on.
-non null values will replace the current node.
+visitors are used to alter the ast tree produced by the parser. for more information about the visitor object see the [typescript definition](../docs/interfaces/node.VisitorNodeMap.html)
+
+## Visitors order
+
+visitors can be called when the node is entered, visited or left.
+
+```ts
+
+import {AstAtRule, ParserOptions, transform, VisitorNodeMap, WalkerEvent} from "@tbela99/css-parser";
+const options: ParserOptions = {
+
+    visitor: [
+        {
+
+            AtRule: [
+                (node: AstAtRule): AstAtRule => {
+
+                    console.error(`> visiting '@${node.nam}' node at position ${node.loc!.sta.lin}:${node.loc!.sta.col}`);
+                    return node
+                }, {
+
+                    media: (node: AstAtRule): AstAtRule => {
+
+                        console.error(`> visiting only '@${node.nam}' node at position ${node.loc!.sta.lin}:${node.loc!.sta.col}`);
+                        return node
+                    }
+                }, {
+
+                    type: WalkerEvent.Leave,
+                    handler: (node: AstAtRule): AstAtRule => {
+
+                        console.error(`> leaving '@${node.nam}' node at position ${node.loc!.sta.lin}:${node.loc!.sta.col}`)
+                        return node
+                    }
+                },
+                {
+                    type: WalkerEvent.Enter,
+                    handler: (node: AstAtRule): AstAtRule => {
+
+                        console.error(`> enter '@${node.nam}' node at position ${node.loc!.sta.lin}:${node.loc!.sta.col}`);
+                        return node
+                    }
+                }]
+        }] as VisitorNodeMap[]
+};
+
+const css = `
+
+@media screen {
+
+    .foo {
+
+            height: calc(100px * 2/ 15);
+    }
+}
+
+@supports (height: 30pt) {
+
+    .foo {
+
+            height: calc(100px * 2/ 15);
+    }
+}
+`;
+
+const result = await transform(css, options);
+
+console.debug(result.code);
+
+// > enter '@media' node at position 3:1
+// > visiting '@media' node at position 3:1
+// > visiting only '@media' node at position 3:1
+// > leaving '@media' node at position 3:1
+// > enter '@supports' node at position 11:1
+// > visiting '@supports' node at position 11:1
+// > leaving '@supports' node at position 11:1
+
+```
 
 ## At rule visitor
 
@@ -16,7 +92,6 @@ Example: change media at-rule prelude
 ```ts
 
 import {transform, AstAtRule, ParserOptions} from "@tbela99/css-parser";
-
 const options: ParserOptions = {
 
     visitor: {
@@ -52,13 +127,11 @@ console.debug(result.code);
 
 ### Declaration visitor
 
-
 Example: add 'width: 3px' everytime a declaration with the name 'height' is found
 
 ```ts
 
 import {transform, parseDeclarations} from "@tbela99/css-parser";
-
 const options: ParserOptions = {
 
     removeEmpty: false,
@@ -107,8 +180,8 @@ console.debug(await transform(css, options));
 Example: rename 'margin' to 'padding' and 'height' to 'width'
 
 ```ts
-import {AstDeclaration, ParserOptions, transform} from "../src/node.ts";
 
+import {AstDeclaration, ParserOptions, transform} from "../src/node.ts";
 const options: ParserOptions = {
 
     visitor: {
@@ -152,14 +225,11 @@ console.debug(result.code);
 
 ### Rule visitor
 
-rule visitor
-
 Example: add 'width: 3px' to every rule with the selector '.foo'
 
 ```ts
 
 import {transform, parseDeclarations} from "@tbela99/css-parser";
-
 const options: ParserOptions = {
 
     removeEmpty: false,
@@ -202,7 +272,6 @@ the keyframes at-rule visitor is called on each keyframes at-rule node. the visi
 ```ts
 
 import {transform} from "@tbela99/css-parser";
-
 const css = `
 @keyframes slide-in {
   from {
@@ -253,12 +322,11 @@ the value visitor is called on each token of the selector node, declaration valu
 
 ### Generic visitor
 
-generic token visitor is a function whose name is a keyof [EnumToken](../docs/enums/node.EnumToken.html). they are called for every token of the specified type.
+generic token visitor is a function whose name is a keyof [EnumToken](../docs/enums/node.EnumToken.html). it is called for every token of the specified type.
 
 ```ts
 
 import {transform, parse, parseDeclarations} from "@tbela99/css-parser";
-
 const options: ParserOptions = {
 
     inlineCssVariables: true,

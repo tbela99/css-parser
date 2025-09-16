@@ -109,10 +109,10 @@ export class InlineCssVariablesFeature {
         [key: string]: any
     }): AstNode | null {
 
-        if (!('chi' in ast)) {
-
-            return null;
-        }
+        // if (!('chi' in ast)) {
+        //
+        //     return null;
+        // }
 
         if (!('variableScope' in context)) {
 

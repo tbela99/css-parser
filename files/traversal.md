@@ -5,3 +5,5 @@ category: Guides
 ---
 
 ## Ast traversal
+
+validation is done using [walk function](../docs/functions/node.walk.html)

@@ -25,7 +25,7 @@ the library can be imported as a module in the browser
 ```html
 <script type="module">
 
-    import {transform, ColorType} from 'https://esm.sh/@tbela99/css-parser@1.3.2/web';
+    import {transform, ColorType} from 'https://esm.sh/@tbela99/css-parser@1.3.4/web';
 
     const css = `
 
@@ -61,7 +61,7 @@ it can also be imported as umd module
 
 ```html
 
-<script src="https://unpkg.com/@tbela99/css-parser@1.3.2/dist/index-umd-web.js"></script>
+<script src="https://unpkg.com/@tbela99/css-parser@1.3.4/dist/index-umd-web.js"></script>
 <script>
 
     (async () => {

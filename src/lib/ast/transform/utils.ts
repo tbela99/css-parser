@@ -20,12 +20,6 @@ export function identity(): Matrix {
 
     return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] as Matrix;
 }
-
-function pLength(point: Point): number {
-
-    return Math.sqrt(point[0] * point[0] + point[1] * point[1] + point[2] * point[2]);
-}
-
 function normalize(point: Point): Point {
 
     const [x, y, z] = point;

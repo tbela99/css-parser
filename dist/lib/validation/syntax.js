@@ -17,6 +17,11 @@ import '../ast/features/type.js';
 const config = getSyntaxConfig();
 // @ts-ignore
 const allValues = getSyntaxConfig()["declarations" /* ValidationSyntaxGroupEnum.Declarations */].all.syntax.trim().split(/[\s|]+/g);
+/**
+ * Check if a node is allowed as child in a given context
+ * @param node
+ * @param context
+ */
 function isNodeAllowedInContext(node, context) {
     if (node.typ == EnumToken.CommentNodeType || context == null) {
         return true;
@@ -118,6 +123,10 @@ function isNodeAllowedInContext(node, context) {
     }
     return false;
 }
+/**
+ * Create a syntax validation context from a list of tokens
+ * @param input
+ */
 function createContext(input) {
     const values = input.slice();
     const result = values.filter(token => token.typ != EnumToken.CommentTokenType).slice();
@@ -178,6 +187,12 @@ function createContext(input) {
         }
     };
 }
+/**
+ * Evaluate the validity of the syntax of a node
+ * @param node
+ * @param parent
+ * @param options
+ */
 function evaluateSyntax(node, parent, options) {
     if (node.validSyntax) {
         return {

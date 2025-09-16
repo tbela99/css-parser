@@ -1,7 +1,7 @@
 import { isIdentStart, isIdent, isIdentColor, mathFuncs, isColor, parseColor, isPseudo, pseudoElements, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isHexColor, isHash, mediaTypes } from '../syntax/syntax.js';
 import { EnumToken, ColorType, ValidationLevel, SyntaxValidationResult } from '../ast/types.js';
-import { minify, definedPropertySettings, combinators } from '../ast/minify.js';
-import { walkValues, WalkerValueEvent, walk, WalkerOptionEnum } from '../ast/walk.js';
+import { definedPropertySettings, minify, combinators } from '../ast/minify.js';
+import { walkValues, WalkerEvent, walk, WalkerOptionEnum } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
 import './utils/config.js';
 import { parseDeclarationNode } from './utils/declaration.js';
@@ -154,7 +154,7 @@ async function doParse(iter, options = {}) {
     const preVisitorsHandlersMap = new Map;
     const visitorsHandlersMap = new Map;
     const postVisitorsHandlersMap = new Map;
-    const allValuesHandlers = [];
+    // const allValuesHandlers = new Map as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
     const rawTokens = [];
     const imports = [];
     let item;
@@ -162,17 +162,41 @@ async function doParse(iter, options = {}) {
     // @ts-ignore ignore error
     let isAsync = typeof iter[Symbol.asyncIterator] === 'function';
     if (options.visitor != null) {
-        for (const [key, value] of Object.entries(options.visitor)) {
+        const visitors = Object.entries(options.visitor);
+        let key;
+        let value;
+        let i;
+        for (i = 0; i < visitors.length; i++) {
+            key = visitors[i][0];
+            value = visitors[i][1];
+            if (Number.isInteger(+key)) {
+                visitors.splice(i + 1, 0, ...Object.entries(value));
+                continue;
+            }
+            if (Array.isArray(value)) {
+                // @ts-ignore
+                visitors.splice(i + 1, 0, ...value.map((item) => [key, item]));
+                continue;
+            }
             if (key in EnumToken) {
                 if (typeof value == 'function') {
-                    valuesHandlers.set(EnumToken[key], value);
-                }
-                else if (typeof value == 'object' && 'type' in value && 'handler' in value && value.type in WalkerValueEvent) {
-                    if (WalkerValueEvent[value.type] == WalkerValueEvent.Enter) {
-                        preValuesHandlers.set(EnumToken[key], value.handler);
+                    if (!valuesHandlers.has(EnumToken[key])) {
+                        valuesHandlers.set(EnumToken[key], []);
                     }
-                    else if (WalkerValueEvent[value.type] == WalkerValueEvent.Leave) {
-                        postValuesHandlers.set(EnumToken[key], value.handler);
+                    valuesHandlers.get(EnumToken[key]).push(value);
+                }
+                else if (typeof value == 'object' && 'type' in value && 'handler' in value && value.type in WalkerEvent) {
+                    if (value.type == WalkerEvent.Enter) {
+                        if (!preValuesHandlers.has(EnumToken[key])) {
+                            preValuesHandlers.set(EnumToken[key], []);
+                        }
+                        preValuesHandlers.get(EnumToken[key]).push(value.handler);
+                    }
+                    else if (value.type == WalkerEvent.Leave) {
+                        if (!postValuesHandlers.has(EnumToken[key])) {
+                            postValuesHandlers.set(EnumToken[key], []);
+                        }
+                        postValuesHandlers.get(EnumToken[key]).push(value.handler);
                     }
                 }
                 else {
@@ -181,19 +205,31 @@ async function doParse(iter, options = {}) {
             }
             else if (['Declaration', 'Rule', 'AtRule', 'KeyframesRule', 'KeyframesAtRule'].includes(key)) {
                 if (typeof value == 'function') {
-                    visitorsHandlersMap.set(key, value);
+                    if (!visitorsHandlersMap.has(key)) {
+                        visitorsHandlersMap.set(key, []);
+                    }
+                    visitorsHandlersMap.get(key).push(value);
                 }
                 else if (typeof value == 'object') {
-                    if ('type' in value && 'handler' in value && value.type in WalkerValueEvent) {
-                        if (WalkerValueEvent[value.type] == WalkerValueEvent.Enter) {
-                            preVisitorsHandlersMap.set(key, value.handler);
+                    if ('type' in value && 'handler' in value && value.type in WalkerEvent) {
+                        if (value.type == WalkerEvent.Enter) {
+                            if (!preVisitorsHandlersMap.has(key)) {
+                                preVisitorsHandlersMap.set(key, []);
+                            }
+                            preVisitorsHandlersMap.get(key).push(value.handler);
                         }
-                        else if (WalkerValueEvent[value.type] == WalkerValueEvent.Leave) {
-                            postVisitorsHandlersMap.set(key, value.handler);
+                        else if (value.type == WalkerEvent.Leave) {
+                            if (!postVisitorsHandlersMap.has(key)) {
+                                postVisitorsHandlersMap.set(key, []);
+                            }
+                            postVisitorsHandlersMap.get(key).push(value.handler);
                         }
                     }
                     else {
-                        visitorsHandlersMap.set(key, value);
+                        if (!visitorsHandlersMap.has(key)) {
+                            visitorsHandlersMap.set(key, []);
+                        }
+                        visitorsHandlersMap.get(key).push(value);
                     }
                 }
                 else {
@@ -204,15 +240,42 @@ async function doParse(iter, options = {}) {
                 errors.push({ action: 'ignore', message: `doParse: visitor.${key} is not a valid key name` });
             }
         }
-        if (preValuesHandlers.size > 0) {
-            allValuesHandlers.push(preValuesHandlers);
-        }
-        if (valuesHandlers.size > 0) {
-            allValuesHandlers.push(valuesHandlers);
-        }
-        if (postValuesHandlers.size > 0) {
-            allValuesHandlers.push(postValuesHandlers);
-        }
+        // if (preValuesHandlers.size > 0) {
+        //
+        //     for (const [key, value] of preValuesHandlers) {
+        //
+        //         if (!allValuesHandlers.has(key)) {
+        //
+        //             allValuesHandlers.set(key, []);
+        //         }
+        //
+        //         allValuesHandlers.get(key)!.push(...value);
+        //     }
+        // }
+        // if (valuesHandlers.size > 0) {
+        //
+        //     for (const [key, value] of valuesHandlers) {
+        //
+        //         if (!allValuesHandlers.has(key)) {
+        //
+        //             allValuesHandlers.set(key, []);
+        //         }
+        //
+        //         allValuesHandlers.get(key)!.push(...value);
+        //     }
+        // }
+        // if (postValuesHandlers.size > 0) {
+        //
+        //     for (const [key, value] of postValuesHandlers) {
+        //
+        //         if (!postValuesHandlers.has(key)) {
+        //
+        //             allValuesHandlers.set(key, []);
+        //         }
+        //
+        //         allValuesHandlers.get(key)!.push(...value);
+        //     }
+        // }
     }
     while (item = isAsync ? (await iter.next()).value : iter.next().value) {
         stats.bytesIn = item.bytesIn;
@@ -373,7 +436,7 @@ async function doParse(iter, options = {}) {
         ast = expand(ast);
     }
     for (const result of walk(ast)) {
-        if (allValuesHandlers.length > 0 || preVisitorsHandlersMap.size > 0 || visitorsHandlersMap.size > 0 || postVisitorsHandlersMap.size > 0) {
+        if (valuesHandlers.size > 0 || preVisitorsHandlersMap.size > 0 || visitorsHandlersMap.size > 0 || postVisitorsHandlersMap.size > 0) {
             if ((result.node.typ == EnumToken.DeclarationNodeType &&
                 (preVisitorsHandlersMap.has('Declaration') || visitorsHandlersMap.has('Declaration') || postVisitorsHandlersMap.has('Declaration'))) ||
                 (result.node.typ == EnumToken.AtRuleNodeType && (preVisitorsHandlersMap.has('AtRule') || visitorsHandlersMap.has('AtRule') || postVisitorsHandlersMap.has('AtRule'))) ||
@@ -382,15 +445,15 @@ async function doParse(iter, options = {}) {
                 const key = result.node.typ == EnumToken.DeclarationNodeType ? 'Declaration' : result.node.typ == EnumToken.AtRuleNodeType ? 'AtRule' : 'KeyframesAtRule';
                 if (preVisitorsHandlersMap.has(key)) {
                     // @ts-ignore
-                    handlers.push(preVisitorsHandlersMap.get(key));
+                    handlers.push(...preVisitorsHandlersMap.get(key));
                 }
                 if (visitorsHandlersMap.has(key)) {
                     // @ts-ignore
-                    handlers.push(visitorsHandlersMap.get(key));
+                    handlers.push(...visitorsHandlersMap.get(key));
                 }
                 if (postVisitorsHandlersMap.has(key)) {
                     // @ts-ignore
-                    handlers.push(postVisitorsHandlersMap.get(key));
+                    handlers.push(...postVisitorsHandlersMap.get(key));
                 }
                 let callable;
                 let node = result.node;
@@ -427,13 +490,13 @@ async function doParse(iter, options = {}) {
                 const handlers = [];
                 const key = result.node.typ == EnumToken.RuleNodeType ? 'Rule' : 'KeyframesRule';
                 if (preVisitorsHandlersMap.has(key)) {
-                    handlers.push(preVisitorsHandlersMap.get(key));
+                    handlers.push(...preVisitorsHandlersMap.get(key));
                 }
                 if (visitorsHandlersMap.has(key)) {
-                    handlers.push(visitorsHandlersMap.get(key));
+                    handlers.push(...visitorsHandlersMap.get(key));
                 }
                 if (postVisitorsHandlersMap.has(key)) {
-                    handlers.push(postVisitorsHandlersMap.get(key));
+                    handlers.push(...postVisitorsHandlersMap.get(key));
                 }
                 let node = result.node;
                 for (const callable of handlers) {
@@ -462,13 +525,13 @@ async function doParse(iter, options = {}) {
                     replaceToken(result.parent, result.node, node);
                 }
             }
-            else if (allValuesHandlers.length > 0) {
+            else if (valuesHandlers.size > 0) {
                 let callable;
                 let node = null;
                 node = result.node;
-                for (const valueHandler of allValuesHandlers) {
-                    if (valueHandler.has(node.typ)) {
-                        callable = valueHandler.get(node.typ);
+                if (valuesHandlers.has(node.typ)) {
+                    for (const valueHandler of valuesHandlers.get(node.typ)) {
+                        callable = valueHandler;
                         let replacement = callable(node, result.parent);
                         if (replacement == null) {
                             continue;
@@ -495,9 +558,9 @@ async function doParse(iter, options = {}) {
                 }
                 for (const { value, parent, root } of walkValues(tokens, result.node)) {
                     node = value;
-                    for (const valueHandler of allValuesHandlers) {
-                        if (valueHandler.has(node.typ)) {
-                            callable = valueHandler.get(node.typ);
+                    if (valuesHandlers.has(node.typ)) {
+                        for (const valueHandler of valuesHandlers.get(node.typ)) {
+                            callable = valueHandler;
                             let result = callable(node, parent, root);
                             if (result == null) {
                                 continue;
@@ -581,9 +644,11 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
             loc = location;
             context.chi.push(tokens[i]);
             stats.nodesCount++;
-            if (options.sourcemap) {
-                tokens[i].loc = loc;
-            }
+            Object.defineProperty(tokens[i], 'loc', {
+                ...definedPropertySettings,
+                value: loc,
+                enumerable: options.sourcemap !== false
+            });
         }
         else if (tokens[i].typ != EnumToken.WhitespaceTokenType) {
             break;
@@ -743,10 +808,12 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
             node.chi = [];
         }
         loc = map.get(atRule);
-        if (options.sourcemap) {
-            node.loc = loc;
-            node.loc.end = { ...map.get(delim).end };
-        }
+        Object.defineProperty(node, 'loc', {
+            ...definedPropertySettings,
+            value: loc,
+            enumerable: options.sourcemap !== false
+        });
+        node.loc.end = { ...map.get(delim).end };
         let isValid = true;
         if (node.nam == 'else') {
             const prev = getLastNode(context);
@@ -892,9 +959,11 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
                 value: tokens.slice()
             });
             loc = location;
-            if (options.sourcemap) {
-                node.loc = loc;
-            }
+            Object.defineProperty(node, 'loc', {
+                ...definedPropertySettings,
+                value: loc,
+                enumerable: options.sourcemap !== false
+            });
             // @ts-ignore
             context.chi.push(node);
             Object.defineProperty(node, 'parent', { ...definedPropertySettings, value: context });
@@ -1015,10 +1084,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
                         nam,
                         val: []
                     };
-                    if (options.sourcemap) {
-                        node.loc = location;
-                        node.loc.end = { ...map.get(delim).end };
-                    }
+                    Object.defineProperty(node, 'loc', { ...definedPropertySettings, value: location, enumerable: options.sourcemap !== false });
                     context.chi.push(node);
                     stats.nodesCount++;
                 }
@@ -1044,10 +1110,8 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
                 nam,
                 val: value
             };
-            if (options.sourcemap) {
-                node.loc = location;
-                node.loc.end = { ...map.get(delim).end };
-            }
+            Object.defineProperty(node, 'loc', { ...definedPropertySettings, value: location, enumerable: options.sourcemap !== false });
+            node.loc.end = { ...map.get(delim).end };
             // do not allow declarations in style sheets
             if (context.typ == EnumToken.StyleSheetNodeType && options.lenient) {
                 Object.assign(node, { typ: EnumToken.InvalidDeclarationNodeType });
@@ -1407,9 +1471,7 @@ function parseString(src, options = { location: false }) {
             return acc;
         }
         const token = getTokenType(t.token, t.hint);
-        if (options.location) {
-            Object.assign(token, { loc: t.sta });
-        }
+        Object.defineProperty(token, 'loc', { ...definedPropertySettings, value: { sta: t.sta }, enumerable: options.location !== false });
         acc.push(token);
         return acc;
     }, []));

@@ -258,9 +258,9 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
 
     /**
      * node visitor
-     * {@link VisitorNodeMap}
+     * {@link VisitorNodeMap | VisitorNodeMap[]}
      */
-    visitor?: VisitorNodeMap;
+    visitor?: VisitorNodeMap | VisitorNodeMap[];
     /**
      * abort signal
      *

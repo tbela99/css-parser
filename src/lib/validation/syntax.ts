@@ -45,6 +45,11 @@ const config: ValidationConfiguration = getSyntaxConfig();
 // @ts-ignore
 const allValues: string[] = getSyntaxConfig()[ValidationSyntaxGroupEnum.Declarations].all.syntax.trim().split(/[\s|]+/g);
 
+/**
+ * Check if a node is allowed as child in a given context
+ * @param node
+ * @param context
+ */
 export function isNodeAllowedInContext(node: AstNode, context: AstNode): boolean {
 
     if (node.typ == EnumToken.CommentNodeType || context == null) {
@@ -198,6 +203,10 @@ export function isNodeAllowedInContext(node: AstNode, context: AstNode): boolean
     return false;
 }
 
+/**
+ * Create a syntax validation context from a list of tokens
+ * @param input
+ */
 export function createContext(input: Token[]): Context<Token> {
 
     const values: Token[] = input.slice();
@@ -287,6 +296,12 @@ export function createContext(input: Token[]): Context<Token> {
     }
 }
 
+/**
+ * Evaluate the validity of the syntax of a node
+ * @param node
+ * @param parent
+ * @param options
+ */
 export function evaluateSyntax(node: AstNode, parent: AstRuleList | AstInvalidRule | AstInvalidAtRule | null, options: ValidationOptions): ValidationSyntaxResult {
 
     if (node.validSyntax) {

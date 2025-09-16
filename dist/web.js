@@ -1,6 +1,6 @@
 export { ColorType, EnumToken, ValidationLevel } from './lib/ast/types.js';
 export { minify } from './lib/ast/minify.js';
-export { WalkerOptionEnum, WalkerValueEvent, walk, walkValues } from './lib/ast/walk.js';
+export { WalkerEvent, WalkerOptionEnum, walk, walkValues } from './lib/ast/walk.js';
 export { expand } from './lib/ast/expand.js';
 import { doRender } from './lib/renderer/render.js';
 export { renderToken } from './lib/renderer/render.js';

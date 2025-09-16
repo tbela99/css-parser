@@ -17,7 +17,7 @@ keyframes rules are minified.
 
 ```ts
 
-import {transform, TransformOptions} from "../src/node.ts";
+import {transform, TransformOptions} from "@tbela99/css-parser";
 
 const options: TransformOptions = {
 
@@ -214,11 +214,9 @@ output
 }
 ```
 
-
 ### Transform functions
 
 compute css transform functions and preserve the shortest possible value. this feature is enabled by default. it can be disabled using `{computeTransform: false}`.
-
 
 ```ts
 
@@ -274,8 +272,6 @@ output
 ### Redundant declarations
 
 by default, only the last declaration is preserved.
-
-
 to preserve all declarations, pass the option `{removeDuplicateDeclarations: false}`.
 
 ```ts

@@ -48,7 +48,7 @@ export {
     ValidationLevel,
     ColorType,
     SourceMap,
-    WalkerValueEvent,
+    WalkerEvent,
     WalkerOptionEnum
 } from './lib/index.ts';
 export {FeatureWalkMode} from './lib/ast/features/type.ts';
