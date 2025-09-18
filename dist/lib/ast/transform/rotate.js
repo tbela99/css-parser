@@ -17,23 +17,23 @@ function rotate3D(angle, x, y, z, from) {
     x *= unit;
     y *= unit;
     z *= unit;
-    matrix[0 * 4 + 0] = 1 - 2 * (y * y + z * z) * sq;
-    matrix[0 * 4 + 1] = 2 * (x * y * sq + z * sc);
-    matrix[0 * 4 + 2] = 2 * (x * z * sq - y * sc);
-    matrix[1 * 4 + 0] = 2 * (x * y * sq - z * sc);
-    matrix[1 * 4 + 1] = 1 - 2 * (x * x + z * z) * sq;
-    matrix[1 * 4 + 2] = 2 * (y * z * sq + x * sc);
-    matrix[2 * 4 + 0] = 2 * (x * z * sq + y * sc);
+    matrix[0] = 1 - 2 * (y * y + z * z) * sq;
+    matrix[1] = 2 * (x * y * sq + z * sc);
+    matrix[2] = 2 * (x * z * sq - y * sc);
+    matrix[4] = 2 * (x * y * sq - z * sc);
+    matrix[4 + 1] = 1 - 2 * (x * x + z * z) * sq;
+    matrix[4 + 2] = 2 * (y * z * sq + x * sc);
+    matrix[2 * 4] = 2 * (x * z * sq + y * sc);
     matrix[2 * 4 + 1] = 2 * (y * z * sq - x * sc);
     matrix[2 * 4 + 2] = 1 - 2 * (x * x + y * y) * sq;
     return multiply(from, matrix);
 }
 function rotate(angle, from) {
     const matrix = identity();
-    matrix[0 * 4 + 0] = Math.cos(angle);
-    matrix[0 * 4 + 1] = Math.sin(angle);
-    matrix[1 * 4 + 0] = -Math.sin(angle);
-    matrix[1 * 4 + 1] = Math.cos(angle);
+    matrix[0] = Math.cos(angle);
+    matrix[1] = Math.sin(angle);
+    matrix[4] = -Math.sin(angle);
+    matrix[4 + 1] = Math.cos(angle);
     return multiply(from, matrix);
 }
 

@@ -1,10 +1,9 @@
-import type {Matrix} from "./utils.ts";
 import {identity, is2DMatrix} from "./utils.ts";
 import {EnumToken} from "../types.ts";
 import type {FunctionToken, IdentToken, Token} from "../../../@types/index.d.ts";
 import {eq} from "../../parser/utils/eq.ts";
 import {getNumber} from "../../syntax/color/index.ts";
-import type {NumberToken} from "../../validation/index.ts";
+import type {Matrix} from "./type.d.ts";
 
 export function parseMatrix(mat: FunctionToken | IdentToken): Matrix | null {
 
@@ -38,30 +37,30 @@ export function matrix(values: [number, number, number, number, number, number] 
 
     if (values.length === 6) {
 
-        matrix[0* 4 +0] = values[0];
-        matrix[0* 4 +1] = values[1];
-        matrix[1* 4 +0] = values[2];
-        matrix[1* 4 +1] = values[3];
-        matrix[3* 4 +0] = values[4];
-        matrix[3* 4 +1] = values[5];
+        matrix[0] = values[0];
+        matrix[1] = values[1];
+        matrix[4] = values[2];
+        matrix[4 + 1] = values[3];
+        matrix[3 * 4] = values[4];
+        matrix[3 * 4 + 1] = values[5];
     } else if (values.length === 16) {
 
-        matrix[0* 4 +0] = values[0];
-        matrix[0* 4 +1] = values[1];
-        matrix[0* 4 +2] = values[2];
-        matrix[0* 4 +3] = values[3];
-        matrix[1* 4 +0] = values[4];
-        matrix[1* 4 +1] = values[5];
-        matrix[1* 4 +2] = values[6];
-        matrix[1* 4 +3] = values[7];
-        matrix[2* 4 +0] = values[8];
-        matrix[2* 4 +1] = values[9];
-        matrix[2* 4 +2] = values[10];
-        matrix[2* 4 +3] = values[11];
-        matrix[3* 4 +0] = values[12];
-        matrix[3* 4 +1] = values[13];
-        matrix[3* 4 +2] = values[14];
-        matrix[3* 4 +3] = values[15];
+        matrix[0] = values[0];
+        matrix[1] = values[1];
+        matrix[2] = values[2];
+        matrix[3] = values[3];
+        matrix[4] = values[4];
+        matrix[4 + 1] = values[5];
+        matrix[4 + 2] = values[6];
+        matrix[4 + 3] = values[7];
+        matrix[2 * 4] = values[8];
+        matrix[2 * 4 + 1] = values[9];
+        matrix[2 * 4 + 2] = values[10];
+        matrix[2 * 4 + 3] = values[11];
+        matrix[3 * 4] = values[12];
+        matrix[3 * 4 + 1] = values[13];
+        matrix[3 * 4 + 2] = values[14];
+        matrix[3 * 4 + 3] = values[15];
     } else {
 
         return null;
@@ -90,12 +89,12 @@ export function serialize(matrix: Matrix): Token {
             typ: EnumToken.FunctionTokenType,
             val: 'matrix',
             chi: [
-                matrix[0* 4 +0],
-                matrix[0* 4 +1],
-                matrix[1* 4 +0],
-                matrix[1* 4 +1],
-                matrix[3* 4 +0],
-                matrix[3* 4 +1]
+                matrix[0],
+                matrix[1],
+                matrix[4],
+                matrix[4 + 1],
+                matrix[3 * 4],
+                matrix[3 * 4 + 1]
             ].reduce((acc, t) => {
 
                 if (acc.length > 0) {

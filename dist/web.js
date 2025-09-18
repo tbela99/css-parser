@@ -1,6 +1,6 @@
 export { ColorType, EnumToken, ValidationLevel } from './lib/ast/types.js';
 export { minify } from './lib/ast/minify.js';
-export { WalkerOptionEnum, WalkerValueEvent, walk, walkValues } from './lib/ast/walk.js';
+export { WalkerEvent, WalkerOptionEnum, walk, walkValues } from './lib/ast/walk.js';
 export { expand } from './lib/ast/expand.js';
 import { doRender } from './lib/renderer/render.js';
 export { renderToken } from './lib/renderer/render.js';
@@ -13,7 +13,6 @@ export { convertColor } from './lib/syntax/color/color.js';
 import './lib/syntax/color/utils/constants.js';
 export { isOkLabClose, okLabDistance } from './lib/syntax/color/utils/distance.js';
 import './lib/validation/config.js';
-import './lib/validation/parser/types.js';
 import './lib/validation/parser/parse.js';
 import './lib/validation/syntaxes/complex-selector.js';
 import './lib/validation/syntax.js';
@@ -25,9 +24,10 @@ export { FeatureWalkMode } from './lib/ast/features/type.js';
  * @param url
  * @param currentFile
  *
+ * @param asStream
  * @private
  */
-async function load(url, currentFile = '.') {
+async function load(url, currentFile = '.', asStream = false) {
     let t;
     if (matchUrl.test(url)) {
         t = new URL(url);
@@ -37,15 +37,13 @@ async function load(url, currentFile = '.') {
     }
     else {
         const path = resolve(url, currentFile).absolute;
-        // @ts-ignore
         t = new URL(path, self.origin);
     }
-    // @ts-ignore
-    return fetch(t, t.origin != self.origin ? { mode: 'cors' } : {}).then((response) => {
+    return fetch(t, t.origin != self.origin ? { mode: 'cors' } : {}).then(async (response) => {
         if (!response.ok) {
             throw new Error(`${response.status} ${response.statusText} ${response.url}`);
         }
-        return response.body;
+        return asStream ? response.body : await response.text();
     });
 }
 /**
@@ -87,6 +85,7 @@ function render(data, options = {}) {
  * parse css file
  * @param file url or path
  * @param options
+ * @param asStream load file as stream
  *
  * @throws Error file not found
  *
@@ -105,8 +104,8 @@ function render(data, options = {}) {
  * console.log(result.ast);
  * ```
  */
-async function parseFile(file, options = {}) {
-    return load(file).then(stream => parse(stream, { src: file, ...options }));
+async function parseFile(file, options = {}, asStream = false) {
+    return Promise.resolve((options.load ?? load)(file, '.', asStream)).then(stream => parse(stream, { src: file, ...options }));
 }
 /**
  * parse css
@@ -153,6 +152,7 @@ async function parse(stream, options = {}) {
  * transform css file
  * @param file url or path
  * @param options
+ * @param asStream load file as stream
  *
  * Example:
  *
@@ -169,8 +169,8 @@ async function parse(stream, options = {}) {
  * console.log(result.code);
  * ```
  */
-async function transformFile(file, options = {}) {
-    return load(file).then(stream => transform(stream, { src: file, ...options }));
+async function transformFile(file, options = {}, asStream = false) {
+    return Promise.resolve((options.load ?? load)(file, '.', asStream)).then(stream => transform(stream, { src: file, ...options }));
 }
 /**
  * transform css

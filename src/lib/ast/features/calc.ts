@@ -12,7 +12,7 @@ import type {
     WalkerOption
 } from "../../../@types/index.d.ts";
 import {EnumToken} from "../types.ts";
-import {WalkerOptionEnum, WalkerValueEvent, walkValues} from "../walk.ts";
+import {WalkerEvent, WalkerOptionEnum, walkValues} from "../walk.ts";
 import {evaluate} from "../math/index.ts";
 import {renderToken} from "../../renderer/index.ts";
 import {mathFuncs} from "../../syntax/index.ts";
@@ -20,7 +20,9 @@ import {FeatureWalkMode} from "./type.ts";
 
 export class ComputeCalcExpressionFeature {
 
-     get ordering(): number {
+    public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
+
+    get ordering(): number {
         return 1;
     }
 
@@ -55,7 +57,7 @@ export class ComputeCalcExpressionFeature {
 
             for (const {value, parent} of walkValues((<AstDeclaration>node).val, node, {
 
-                    event: WalkerValueEvent.Enter,
+                    event: WalkerEvent.Enter,
                     // @ts-ignore
                     fn(node: AstNode | Token, parent: FunctionToken | ParensToken | BinaryExpressionToken): WalkerOption | null {
 
@@ -119,18 +121,18 @@ export class ComputeCalcExpressionFeature {
 
                             if (values.length == 1 && values[0].typ != EnumToken.BinaryExpressionTokenType) {
 
-                                    for (let i = 0; i < children.length; i++) {
+                                for (let i = 0; i < children.length; i++) {
 
-                                        if (children[i] == value) {
+                                    if (children[i] == value) {
 
-                                            children.splice(i, 1, !(parent.typ == EnumToken.FunctionTokenType && parent.val == 'calc') && (typeof (values[0] as NumberToken).val != 'number' && !(values[0].typ == EnumToken.FunctionTokenType && mathFuncs.includes((values[0] as FunctionToken).val))) ? {
-                                                typ: EnumToken.FunctionTokenType,
-                                                val: 'calc',
-                                                chi: values
-                                            } : values[0]);
-                                            break;
-                                        }
+                                        children.splice(i, 1, !(parent.typ == EnumToken.FunctionTokenType && parent.val == 'calc') && (typeof (values[0] as NumberToken).val != 'number' && !(values[0].typ == EnumToken.FunctionTokenType && mathFuncs.includes((values[0] as FunctionToken).val))) ? {
+                                            typ: EnumToken.FunctionTokenType,
+                                            val: 'calc',
+                                            chi: values
+                                        } : values[0]);
+                                        break;
                                     }
+                                }
 
                             } else {
 
@@ -138,11 +140,11 @@ export class ComputeCalcExpressionFeature {
 
                                     if (children[i] == value) {
 
-                                            children.splice(i, 1, {
-                                                typ: EnumToken.FunctionTokenType,
-                                                val: 'calc',
-                                                chi: values
-                                            });
+                                        children.splice(i, 1, {
+                                            typ: EnumToken.FunctionTokenType,
+                                            val: 'calc',
+                                            chi: values
+                                        });
 
                                         break;
                                     }

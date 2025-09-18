@@ -181,6 +181,7 @@ export class ComputePrefixFeature {
                     }
                 }
 
+                // @ts-ignore
                 if (SyntaxValidationResult.Valid == evaluateSyntax({...node, val: nodes}, {}).valid) {
 
                     (<AstDeclaration>node).val = nodes;

@@ -20,15 +20,27 @@ export enum ValidationLevel {
      */
     None,
     /**
+     * validate selectors
+     */
+    Selector = 0x1,
+    /**
+     * validate at-rules
+     */
+    AtRule = 0x2,
+
+    /**
+     * validate declarations
+     */
+    Declaration = 0x4,
+    /**
      * validate selectors and at-rules
      */
-    Default, // selectors + at-rules
+    Default = Selector | AtRule, // selectors + at-rules
     /**
      * validate selectors, at-rules and declarations
      */
-    All // selectors + at-rules + declarations
+    All = Selector | AtRule | Declaration // selectors + at-rules + declarations
 }
-
 
 /**
  * enum of all token types

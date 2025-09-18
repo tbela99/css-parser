@@ -7,7 +7,7 @@
     <meta content="@tbela99/css-parser demonstration" name="description"/>
     <meta content="@tbela99/css-parser Playground" name="title"/>
     <meta
-            content="css, parser, node, browser, compiler, ast, css-parser, css-compiler, nested, nesting, css-nesting"
+            content="parser,css,css-parser,node,ast,nesting,nested,compiler,browser,css-nesting,css-compiler,nested-css,walker,stream,streaming,streaming-parser"
             name="keywords"
     />
     <link
@@ -20,6 +20,7 @@
             href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
             rel="stylesheet"
     />
+    <title>@tbela99/css-parser Playground</title>
     <style>
         .github-corner {
             border-bottom: 0;
@@ -82,6 +83,33 @@
     </script>
 </head>
 <body>
+
+<nav class="navbar navbar-expand-lg bg-body-tertiary mb-2">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="https://github.com/tbela99/css-parser">@tbela99/css-parser</a>
+        <button aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler" data-bs-target="#navbarSupportedContent" data-bs-toggle="collapse" type="button">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a aria-current="page" class="nav-link" href="https://tbela99.github.io/css-parser/benchmark/index.html">Benchmark</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="https://tbela99.github.io/css-parser/playground/">Playground</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="https://tbela99.github.io/css-parser/docs/">Docs</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="https://github.com/tbela99/css-parser">GitHub</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+
 <a
         aria-label="View source on Github"
         class="github-corner"
@@ -103,12 +131,7 @@
         ></path>
     </svg>
 </a>
-<div class="container-fluid">
-    <div class="row">
-        <div class="col">
-            <h1>@tbela99/css-parser Playground</h1>
-        </div>
-    </div>
+<div class="container-fluid mt-15">
     <div class="row">
         <div class="col-md-2">
             <div class="row" id="optionsWrapper">
@@ -765,7 +788,7 @@
         render,
         EnumToken,
         ColorType,
-    } from "https://esm.sh/@tbela99/css-parser@1.3.3/web";
+    } from "https://esm.sh/@tbela99/css-parser@1.3.4/web";
     import {buildTree} from "./tree.js";
 
     const units = ["B", "KB", "MB", "GB", "TB", "PB"];
@@ -1063,7 +1086,7 @@ console.debug({parsed, rendered});`;
 }
 
     transform: scaleX(.5)scaleY(1)scaleZ(1.7)rotate3d(1,1,1,67deg);
-    color: color-mix(in oklch(currentcolor 35% #0000 ))
+    color: color-mix(in oklch, currentcolor 35%, #0000 )
 
 }
 `;

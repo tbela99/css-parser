@@ -12,6 +12,17 @@ import { validateMediaFeature, validateMediaCondition } from './media.js';
 import { validateSupportCondition } from './supports.js';
 
 function validateAtRuleWhen(atRule, options, root) {
+    if (!Array.isArray(atRule.chi)) {
+        // @ts-ignore
+        return {
+            valid: SyntaxValidationResult.Drop,
+            matches: [],
+            node: atRule,
+            syntax: '@' + atRule.nam,
+            error: 'expected supports body',
+            tokens: []
+        };
+    }
     const slice = Array.isArray(atRule.tokens) ? atRule.tokens.slice() : [];
     consumeWhitespace(slice);
     if (slice.length == 0) {

@@ -16,14 +16,11 @@ import '../syntax/color/utils/constants.js';
  */
 function expand(ast) {
     const result = { ...ast, chi: [] };
-    // @ts-ignore
     for (let i = 0; i < ast.chi.length; i++) {
-        // @ts-ignore
         const node = ast.chi[i];
         if (node.typ == EnumToken.RuleNodeType) {
             // @ts-ignore
             result.chi.push(...expandRule(node));
-            // i += expanded.length - 1;
         }
         else if (node.typ == EnumToken.AtRuleNodeType && 'chi' in node) {
             let hasRule = false;
@@ -37,6 +34,10 @@ function expand(ast) {
             }
             // @ts-ignore
             result.chi.push({ ...(hasRule ? expand(node) : node) });
+        }
+        else {
+            // @ts-ignore
+            result.chi.push(node);
         }
     }
     return result;
@@ -220,13 +221,7 @@ function replaceCompoundLiteral(selector, replace) {
             return 1;
         }
         return b == '&' ? -1 : 0;
-    }).reduce((acc, curr) => {
-        // if (acc.length > 0 && curr == '&' && (replace.charAt(0) != '.' || replace.includes(' '))) {
-        //
-        //     return acc + ':is(' + replace + ')';
-        // }
-        return acc + (curr == '&' ? replace : curr);
-    }, '');
+    }).reduce((acc, curr) => acc + (curr == '&' ? replace : curr), '');
 }
 
 export { expand, replaceCompound };

@@ -98,7 +98,7 @@ export interface ValidationOptions {
      *
      * @private
      */
-    occurence?: boolean | null;
+    occurrence?: boolean | null;
     /**
      * at least once
      *
@@ -155,7 +155,7 @@ export interface MinifyOptions {
      *
      * ```
      */
-    removeDuplicateDeclarations?: boolean | string[];
+    removeDuplicateDeclarations?: boolean | string | string[];
     /**
      * compute shorthand properties
      */
@@ -229,9 +229,10 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
      * url and file loader
      * @param url
      * @param currentUrl
+     * @param asStream
      *
      */
-    load?: (url: string, currentUrl: string) => LoadResult;
+    load?: (url: string, currentUrl: string, asStream?: boolean) => LoadResult;
     /**
      * get directory name
      * @param path
@@ -257,9 +258,9 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
 
     /**
      * node visitor
-     * {@link VisitorNodeMap}
+     * {@link VisitorNodeMap | VisitorNodeMap[]}
      */
-    visitor?: VisitorNodeMap;
+    visitor?: VisitorNodeMap | VisitorNodeMap[];
     /**
      * abort signal
      *
@@ -308,6 +309,11 @@ export declare interface MinifyFeatureOptions {
  * @internal
  */
 export declare interface MinifyFeature {
+
+    /**
+     * accepted tokens
+     */
+    accept?: Set<EnumToken>;
 
     /**
      * ordering
@@ -470,7 +476,17 @@ export declare interface ParseResultStats {
     /**
      * imported files stats
      */
-    imports: ParseResultStats[]
+    imports: ParseResultStats[],
+
+    /**
+     * nodes count
+     */
+    nodesCount: number;
+
+    /**
+     * tokens count
+     */
+    tokensCount: number;
 }
 
 /**

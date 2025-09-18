@@ -8,6 +8,17 @@ import '../../syntax/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
 function validateAtRuleCounterStyle(atRule, options, root) {
+    if (!Array.isArray(atRule.chi)) {
+        // @ts-ignore
+        return {
+            valid: SyntaxValidationResult.Drop,
+            matches: [],
+            node: atRule,
+            syntax: '@' + atRule.nam,
+            error: 'expected supports body',
+            tokens: []
+        };
+    }
     // media-query-list
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
         // @ts-ignore

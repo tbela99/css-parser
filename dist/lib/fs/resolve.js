@@ -17,9 +17,10 @@ function dirname(path) {
         if (chr == '/') {
             parts.push('');
         }
-        else if (chr == '?' || chr == '#') {
-            break;
-        }
+        // else if (chr == '?' || chr == '#') {
+        //
+        //     break;
+        // }
         else {
             parts[parts.length - 1] += chr;
         }
@@ -74,6 +75,8 @@ function resolve(url, currentDirectory, cwd) {
             relative: url
         };
     }
+    cwd ??= '';
+    currentDirectory ??= '';
     if (matchUrl.test(currentDirectory)) {
         const path = new URL(url, currentDirectory).href;
         return {

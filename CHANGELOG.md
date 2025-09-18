@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.3.4
+
+- [x] make streaming optional #109
+- [x] patch at-rule syntax for @font-feature-value #110
+- [x] support percentage in transform() and scale() #111
+- [x] allow arrays in visitor definition #112
+
 ## v1.3.3
 
 - [x] relative color computation bug #105

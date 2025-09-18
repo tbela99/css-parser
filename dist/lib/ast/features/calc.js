@@ -1,5 +1,5 @@
 import { EnumToken } from '../types.js';
-import { walkValues, WalkerValueEvent, WalkerOptionEnum } from '../walk.js';
+import { walkValues, WalkerEvent, WalkerOptionEnum } from '../walk.js';
 import { evaluate } from '../math/expression.js';
 import { renderToken } from '../../renderer/render.js';
 import '../../renderer/sourcemap/lib/encode.js';
@@ -11,6 +11,7 @@ import '../../parser/utils/config.js';
 import { FeatureWalkMode } from './type.js';
 
 class ComputeCalcExpressionFeature {
+    accept = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
     get ordering() {
         return 1;
     }
@@ -33,7 +34,7 @@ class ComputeCalcExpressionFeature {
             }
             const set = new Set;
             for (const { value, parent } of walkValues(node.val, node, {
-                event: WalkerValueEvent.Enter,
+                event: WalkerEvent.Enter,
                 // @ts-ignore
                 fn(node, parent) {
                     if (parent != null &&
