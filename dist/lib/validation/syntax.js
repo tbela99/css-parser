@@ -1,5 +1,4 @@
-import { ValidationTokenEnum } from './parser/types.js';
-import { renderSyntax } from './parser/parse.js';
+import { ValidationTokenEnum, renderSyntax } from './parser/parse.js';
 import { SyntaxValidationResult, EnumToken, ColorType } from '../ast/types.js';
 import '../ast/minify.js';
 import '../ast/walk.js';

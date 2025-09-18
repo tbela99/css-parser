@@ -14,7 +14,6 @@ export { convertColor } from './lib/syntax/color/color.js';
 import './lib/syntax/color/utils/constants.js';
 export { isOkLabClose, okLabDistance } from './lib/syntax/color/utils/distance.js';
 import './lib/validation/config.js';
-import './lib/validation/parser/types.js';
 import './lib/validation/parser/parse.js';
 import './lib/validation/syntaxes/complex-selector.js';
 import './lib/validation/syntax.js';

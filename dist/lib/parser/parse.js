@@ -1,4 +1,4 @@
-import { isIdentStart, isIdent, isIdentColor, mathFuncs, isColor, parseColor, isPseudo, pseudoElements, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isHexColor, isHash, mediaTypes } from '../syntax/syntax.js';
+import { isIdentStart, isIdent, isIdentColor, mathFuncs, isColor, parseColor, isPseudo, pseudoElements, isAtKeyword, isFunction, isNumber, isPercentage, parseDimension, isHexColor, isHash, mediaTypes } from '../syntax/syntax.js';
 import { EnumToken, ColorType, ValidationLevel, SyntaxValidationResult } from '../ast/types.js';
 import { definedPropertySettings, minify, combinators } from '../ast/minify.js';
 import { walkValues, WalkerEvent, walk, WalkerOptionEnum } from '../ast/walk.js';
@@ -11,7 +11,6 @@ import { funcLike, timingFunc, timelineFunc, COLORS_NAMES, systemColors, depreca
 import { buildExpression } from '../ast/math/expression.js';
 import { tokenize, tokenizeStream } from './tokenize.js';
 import '../validation/config.js';
-import '../validation/parser/types.js';
 import '../validation/parser/parse.js';
 import { validateSelector } from '../validation/selector.js';
 import { validateAtRule } from '../validation/atrule.js';
@@ -148,12 +147,12 @@ async function doParse(iter, options = {}) {
             src: ''
         };
     }
-    const valuesHandlers = new Map;
-    const preValuesHandlers = new Map;
-    const postValuesHandlers = new Map;
-    const preVisitorsHandlersMap = new Map;
-    const visitorsHandlersMap = new Map;
-    const postVisitorsHandlersMap = new Map;
+    let valuesHandlers;
+    let preValuesHandlers;
+    let postValuesHandlers;
+    let preVisitorsHandlersMap;
+    let visitorsHandlersMap;
+    let postVisitorsHandlersMap;
     const rawTokens = [];
     const imports = [];
     let item;
@@ -161,6 +160,12 @@ async function doParse(iter, options = {}) {
     // @ts-ignore ignore error
     let isAsync = typeof iter[Symbol.asyncIterator] === 'function';
     if (options.visitor != null) {
+        valuesHandlers = new Map;
+        preValuesHandlers = new Map;
+        postValuesHandlers = new Map;
+        preVisitorsHandlersMap = new Map;
+        visitorsHandlersMap = new Map;
+        postVisitorsHandlersMap = new Map;
         const visitors = Object.entries(options.visitor);
         let key;
         let value;
@@ -400,149 +405,151 @@ async function doParse(iter, options = {}) {
     }
     let replacement;
     let callable;
-    for (const result of walk(ast)) {
-        if (valuesHandlers.size > 0 || preVisitorsHandlersMap.size > 0 || visitorsHandlersMap.size > 0 || postVisitorsHandlersMap.size > 0) {
-            if ((result.node.typ == EnumToken.DeclarationNodeType &&
-                (preVisitorsHandlersMap.has('Declaration') || visitorsHandlersMap.has('Declaration') || postVisitorsHandlersMap.has('Declaration'))) ||
-                (result.node.typ == EnumToken.AtRuleNodeType && (preVisitorsHandlersMap.has('AtRule') || visitorsHandlersMap.has('AtRule') || postVisitorsHandlersMap.has('AtRule'))) ||
-                (result.node.typ == EnumToken.KeyframesAtRuleNodeType && (preVisitorsHandlersMap.has('KeyframesAtRule') || visitorsHandlersMap.has('KeyframesAtRule') || postVisitorsHandlersMap.has('KeyframesAtRule')))) {
-                const handlers = [];
-                const key = result.node.typ == EnumToken.DeclarationNodeType ? 'Declaration' : result.node.typ == EnumToken.AtRuleNodeType ? 'AtRule' : 'KeyframesAtRule';
-                if (preVisitorsHandlersMap.has(key)) {
-                    // @ts-ignore
-                    handlers.push(...preVisitorsHandlersMap.get(key));
-                }
-                if (visitorsHandlersMap.has(key)) {
-                    // @ts-ignore
-                    handlers.push(...visitorsHandlersMap.get(key));
-                }
-                if (postVisitorsHandlersMap.has(key)) {
-                    // @ts-ignore
-                    handlers.push(...postVisitorsHandlersMap.get(key));
-                }
-                let node = result.node;
-                for (const handler of handlers) {
-                    callable = typeof handler == 'function' ? handler : handler[normalizeVisitorKeyName(node.typ == EnumToken.DeclarationNodeType || node.typ == EnumToken.AtRuleNodeType ? node.nam : node.val)];
-                    if (callable == null) {
-                        continue;
+    if (options.visitor != null) {
+        for (const result of walk(ast)) {
+            if (valuesHandlers.size > 0 || preVisitorsHandlersMap.size > 0 || visitorsHandlersMap.size > 0 || postVisitorsHandlersMap.size > 0) {
+                if ((result.node.typ == EnumToken.DeclarationNodeType &&
+                    (preVisitorsHandlersMap.has('Declaration') || visitorsHandlersMap.has('Declaration') || postVisitorsHandlersMap.has('Declaration'))) ||
+                    (result.node.typ == EnumToken.AtRuleNodeType && (preVisitorsHandlersMap.has('AtRule') || visitorsHandlersMap.has('AtRule') || postVisitorsHandlersMap.has('AtRule'))) ||
+                    (result.node.typ == EnumToken.KeyframesAtRuleNodeType && (preVisitorsHandlersMap.has('KeyframesAtRule') || visitorsHandlersMap.has('KeyframesAtRule') || postVisitorsHandlersMap.has('KeyframesAtRule')))) {
+                    const handlers = [];
+                    const key = result.node.typ == EnumToken.DeclarationNodeType ? 'Declaration' : result.node.typ == EnumToken.AtRuleNodeType ? 'AtRule' : 'KeyframesAtRule';
+                    if (preVisitorsHandlersMap.has(key)) {
+                        // @ts-ignore
+                        handlers.push(...preVisitorsHandlersMap.get(key));
                     }
-                    replacement = callable(node, result.parent);
-                    if (replacement == null) {
-                        continue;
+                    if (visitorsHandlersMap.has(key)) {
+                        // @ts-ignore
+                        handlers.push(...visitorsHandlersMap.get(key));
                     }
-                    isAsync = replacement instanceof Promise || Object.getPrototypeOf(replacement).constructor.name == 'AsyncFunction';
-                    if (replacement) {
-                        replacement = await replacement;
+                    if (postVisitorsHandlersMap.has(key)) {
+                        // @ts-ignore
+                        handlers.push(...postVisitorsHandlersMap.get(key));
                     }
-                    if (replacement == null || replacement == node) {
-                        continue;
-                    }
-                    // @ts-ignore
-                    node = replacement;
-                    //
-                    if (Array.isArray(node)) {
-                        break;
-                    }
-                }
-                if (node != result.node) {
-                    // @ts-ignore
-                    replaceToken(result.parent, result.node, node);
-                }
-            }
-            else if ((result.node.typ == EnumToken.RuleNodeType && (preVisitorsHandlersMap.has('Rule') || visitorsHandlersMap.has('Rule') || postVisitorsHandlersMap.has('Rule'))) ||
-                (result.node.typ == EnumToken.KeyFramesRuleNodeType && (preVisitorsHandlersMap.has('KeyframesRule') || visitorsHandlersMap.has('KeyframesRule') || postVisitorsHandlersMap.has('KeyframesRule')))) {
-                const handlers = [];
-                const key = result.node.typ == EnumToken.RuleNodeType ? 'Rule' : 'KeyframesRule';
-                if (preVisitorsHandlersMap.has(key)) {
-                    handlers.push(...preVisitorsHandlersMap.get(key));
-                }
-                if (visitorsHandlersMap.has(key)) {
-                    handlers.push(...visitorsHandlersMap.get(key));
-                }
-                if (postVisitorsHandlersMap.has(key)) {
-                    handlers.push(...postVisitorsHandlersMap.get(key));
-                }
-                let node = result.node;
-                for (const callable of handlers) {
-                    replacement = callable(node, result.parent);
-                    if (replacement == null) {
-                        continue;
-                    }
-                    isAsync = replacement instanceof Promise || Object.getPrototypeOf(replacement).constructor.name == 'AsyncFunction';
-                    if (replacement) {
-                        replacement = await replacement;
-                    }
-                    if (replacement == null || replacement == node) {
-                        continue;
-                    }
-                    // @ts-ignore
-                    node = replacement;
-                    //
-                    if (Array.isArray(node)) {
-                        break;
-                    }
-                }
-                // @ts-ignore
-                if (node != result.node) {
-                    // @ts-ignore
-                    replaceToken(result.parent, result.node, node);
-                }
-            }
-            else if (valuesHandlers.size > 0) {
-                let node = null;
-                node = result.node;
-                if (valuesHandlers.has(node.typ)) {
-                    for (const valueHandler of valuesHandlers.get(node.typ)) {
-                        callable = valueHandler;
+                    let node = result.node;
+                    for (const handler of handlers) {
+                        callable = typeof handler == 'function' ? handler : handler[normalizeVisitorKeyName(node.typ == EnumToken.DeclarationNodeType || node.typ == EnumToken.AtRuleNodeType ? node.nam : node.val)];
+                        if (callable == null) {
+                            continue;
+                        }
                         replacement = callable(node, result.parent);
                         if (replacement == null) {
                             continue;
                         }
                         isAsync = replacement instanceof Promise || Object.getPrototypeOf(replacement).constructor.name == 'AsyncFunction';
-                        if (isAsync) {
+                        if (replacement) {
                             replacement = await replacement;
                         }
-                        if (replacement != null && replacement != node) {
-                            node = replacement;
+                        if (replacement == null || replacement == node) {
+                            continue;
+                        }
+                        // @ts-ignore
+                        node = replacement;
+                        //
+                        if (Array.isArray(node)) {
+                            break;
                         }
                     }
+                    if (node != result.node) {
+                        // @ts-ignore
+                        replaceToken(result.parent, result.node, node);
+                    }
                 }
-                if (node != result.node) {
+                else if ((result.node.typ == EnumToken.RuleNodeType && (preVisitorsHandlersMap.has('Rule') || visitorsHandlersMap.has('Rule') || postVisitorsHandlersMap.has('Rule'))) ||
+                    (result.node.typ == EnumToken.KeyFramesRuleNodeType && (preVisitorsHandlersMap.has('KeyframesRule') || visitorsHandlersMap.has('KeyframesRule') || postVisitorsHandlersMap.has('KeyframesRule')))) {
+                    const handlers = [];
+                    const key = result.node.typ == EnumToken.RuleNodeType ? 'Rule' : 'KeyframesRule';
+                    if (preVisitorsHandlersMap.has(key)) {
+                        handlers.push(...preVisitorsHandlersMap.get(key));
+                    }
+                    if (visitorsHandlersMap.has(key)) {
+                        handlers.push(...visitorsHandlersMap.get(key));
+                    }
+                    if (postVisitorsHandlersMap.has(key)) {
+                        handlers.push(...postVisitorsHandlersMap.get(key));
+                    }
+                    let node = result.node;
+                    for (const callable of handlers) {
+                        replacement = callable(node, result.parent);
+                        if (replacement == null) {
+                            continue;
+                        }
+                        isAsync = replacement instanceof Promise || Object.getPrototypeOf(replacement).constructor.name == 'AsyncFunction';
+                        if (replacement) {
+                            replacement = await replacement;
+                        }
+                        if (replacement == null || replacement == node) {
+                            continue;
+                        }
+                        // @ts-ignore
+                        node = replacement;
+                        //
+                        if (Array.isArray(node)) {
+                            break;
+                        }
+                    }
                     // @ts-ignore
-                    replaceToken(result.parent, value, node);
+                    if (node != result.node) {
+                        // @ts-ignore
+                        replaceToken(result.parent, result.node, node);
+                    }
                 }
-                const tokens = 'tokens' in result.node ? result.node.tokens : [];
-                if ('val' in result.node && Array.isArray(result.node.val)) {
-                    tokens.push(...result.node.val);
-                }
-                if (tokens.length == 0) {
-                    continue;
-                }
-                for (const { value, parent, root } of walkValues(tokens, result.node)) {
-                    node = value;
+                else if (valuesHandlers.size > 0) {
+                    let node = null;
+                    node = result.node;
                     if (valuesHandlers.has(node.typ)) {
                         for (const valueHandler of valuesHandlers.get(node.typ)) {
                             callable = valueHandler;
-                            let result = callable(node, parent, root);
-                            if (result == null) {
+                            replacement = callable(node, result.parent);
+                            if (replacement == null) {
                                 continue;
                             }
-                            isAsync = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == 'AsyncFunction';
+                            isAsync = replacement instanceof Promise || Object.getPrototypeOf(replacement).constructor.name == 'AsyncFunction';
                             if (isAsync) {
-                                result = await result;
+                                replacement = await replacement;
                             }
-                            if (result != null && result != node) {
-                                node = result;
-                            }
-                            //
-                            if (Array.isArray(node)) {
-                                break;
+                            if (replacement != null && replacement != node) {
+                                node = replacement;
                             }
                         }
                     }
-                    if (node != value) {
+                    if (node != result.node) {
                         // @ts-ignore
-                        replaceToken(parent, value, node);
+                        replaceToken(result.parent, value, node);
+                    }
+                    const tokens = 'tokens' in result.node ? result.node.tokens : [];
+                    if ('val' in result.node && Array.isArray(result.node.val)) {
+                        tokens.push(...result.node.val);
+                    }
+                    if (tokens.length == 0) {
+                        continue;
+                    }
+                    for (const { value, parent, root } of walkValues(tokens, result.node)) {
+                        node = value;
+                        if (valuesHandlers.has(node.typ)) {
+                            for (const valueHandler of valuesHandlers.get(node.typ)) {
+                                callable = valueHandler;
+                                let result = callable(node, parent, root);
+                                if (result == null) {
+                                    continue;
+                                }
+                                isAsync = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == 'AsyncFunction';
+                                if (isAsync) {
+                                    result = await result;
+                                }
+                                if (result != null && result != node) {
+                                    node = result;
+                                }
+                                //
+                                if (Array.isArray(node)) {
+                                    break;
+                                }
+                            }
+                        }
+                        if (node != value) {
+                            // @ts-ignore
+                            replaceToken(parent, value, node);
+                        }
                     }
                 }
             }
@@ -751,10 +758,10 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
             }
         }
         const t = parseAtRulePrelude(parseTokens(tokens, { minify: options.minify }), atRule);
-        const raw = t.reduce((acc, curr) => {
-            acc.push(renderToken(curr, { removeComments: true, convertColor: false }));
-            return acc;
-        }, []);
+        const raw = [];
+        for (const curr of t) {
+            raw.push(renderToken(curr, { removeComments: true, convertColor: false }));
+        }
         const nam = renderToken(atRule, { removeComments: true });
         // @ts-ignore
         const node = {
@@ -788,9 +795,11 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
                 isValid = false;
             }
         }
-        const isAllowed = isNodeAllowedInContext(node, context);
         // @ts-ignore
-        const valid = (options.validation & ValidationLevel.AtRule) == 0 ? {
+        const skipValidate = (options.validation & ValidationLevel.AtRule) == 0;
+        const isAllowed = skipValidate || isNodeAllowedInContext(node, context);
+        // @ts-ignore
+        const valid = skipValidate ? {
             valid: SyntaxValidationResult.Valid,
             error: '',
             node,
@@ -805,9 +814,13 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
             syntax: '@' + node.nam,
             error: '@' + node.nam + ' not allowed here'};
         if (valid.valid == SyntaxValidationResult.Drop) {
+            let message = '';
+            for (const token of tokens) {
+                message += renderToken(token, { minify: false });
+            }
             errors.push({
                 action: 'drop',
-                message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '') + '"',
+                message: valid.error + ' - "' + message + '"',
                 node,
                 // @ts-ignore
                 location: { src, ...(map.get(valid.node) ?? location) }
@@ -816,11 +829,14 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
             node.typ = EnumToken.InvalidAtRuleTokenType;
         }
         else {
-            node.val = node.tokens.reduce((acc, curr) => acc + renderToken(curr, {
-                minify: false,
-                convertColor: false,
-                removeComments: true
-            }), '');
+            node.val = '';
+            for (const token of node.tokens) {
+                node.val += renderToken(token, {
+                    minify: false,
+                    convertColor: false,
+                    removeComments: true
+                });
+            }
         }
         context.chi.push(node);
         stats.nodesCount++;
@@ -928,9 +944,11 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
             });
             context.chi.push(node);
             Object.defineProperty(node, 'parent', { ...definedPropertySettings, value: context });
-            const isAllowed = isNodeAllowedInContext(node, context);
             // @ts-ignore
-            const valid = (options.validation & ValidationLevel.Selector) == 0 ? {
+            const skipValidate = (options.validation & ValidationLevel.Selector) == 0;
+            const isAllowed = skipValidate || isNodeAllowedInContext(node, context);
+            // @ts-ignore
+            const valid = skipValidate ? {
                 valid: SyntaxValidationResult.Valid,
                 error: null
             } : !isAllowed ? {
@@ -1243,12 +1261,15 @@ function parseAtRulePrelude(tokens, atRule) {
                 if (value.chi[i].typ == EnumToken.CommentTokenType || value.chi[i].typ == EnumToken.WhitespaceTokenType) {
                     continue;
                 }
-                if (value.chi[i].typ == EnumToken.LiteralTokenType && value.chi[i].val.startsWith(':') && isDimension(value.chi[i].val.slice(1))) {
-                    value.chi.splice(i, 1, {
-                        typ: EnumToken.ColonTokenType,
-                    }, Object.assign(value.chi[i], parseDimension(value.chi[i].val.slice(1))));
-                    i--;
-                    continue;
+                if (value.chi[i].typ == EnumToken.LiteralTokenType && value.chi[i].val.startsWith(':')) {
+                    const dimension = parseDimension(value.chi[i].val.slice(1));
+                    if (dimension != null) {
+                        value.chi.splice(i, 1, {
+                            typ: EnumToken.ColonTokenType,
+                        }, Object.assign(value.chi[i], dimension));
+                        i--;
+                        continue;
+                    }
                 }
                 if (nameIndex != -1 && value.chi[i].typ == EnumToken.PseudoClassTokenType) {
                     value.chi.splice(i, 1, {
@@ -1486,7 +1507,7 @@ function getTokenType(val, hint) {
         case '>':
             return { typ: EnumToken.GtTokenType };
     }
-    if (isPseudo(val)) {
+    if (val.charAt(0) == ':' && isPseudo(val)) {
         return val.endsWith('(') ? {
             typ: EnumToken.PseudoClassFuncTokenType,
             val: val.slice(0, -1),
@@ -1503,13 +1524,13 @@ function getTokenType(val, hint) {
                     val
                 });
     }
-    if (isAtKeyword(val)) {
+    if (val.charAt(0) == '@' && isAtKeyword(val)) {
         return {
             typ: EnumToken.AtRuleTokenType,
             val: val.slice(1)
         };
     }
-    if (isFunction(val)) {
+    if (val.endsWith('(') && isFunction(val)) {
         val = val.slice(0, -1);
         if (val == 'url') {
             return {
@@ -1557,15 +1578,12 @@ function getTokenType(val, hint) {
             val: +val.slice(0, -1)
         };
     }
-    if (isFlex(val)) {
-        return {
-            typ: EnumToken.FlexTokenType,
-            val: +val.slice(0, -2)
-        };
+    // if (isDimension(val)) {
+    const dimension = parseDimension(val);
+    if (dimension != null) {
+        return dimension;
     }
-    if (isDimension(val)) {
-        return parseDimension(val);
-    }
+    // }
     const v = val.toLowerCase();
     if (v == 'currentcolor' || v == 'transparent' || v in COLORS_NAMES) {
         return {

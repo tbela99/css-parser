@@ -571,7 +571,9 @@ function doMinify(ast: AstNode, options: ParserOptions = {}, recursive: boolean 
 
                         if (shouldMerge) {
 
+                            // @ts-ignore
                             if (((node.typ == EnumToken.RuleNodeType || node.typ == EnumToken.KeyFramesRuleNodeType) && (node as AstRule).sel == (previous as AstRule).sel) ||
+                                // @ts-ignore
                                 (node.typ == EnumToken.AtRuleNodeType) && (node as AstAtRule).val != 'font-face' && (node as AstAtRule).val == (previous as AstAtRule).val) {
 
                                 // @ts-ignore

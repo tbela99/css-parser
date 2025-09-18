@@ -7,7 +7,7 @@ category: Guides
 
 ## Validation
 
-validation is performed using [mdn-data](https://github.com/mdn/data). the validation level can be configured using the `validation` option.
+validation is performed using [mdn-data](https://github.com/mdn/data). the validation level can be configured using the [validation](../docs/interfaces/node.ParserOptions.html#validation) option.
 possible values are _boolean_ or [ValidationLevel](../docs/enums/node.ValidationLevel.html):
 
 - _true_ or [ValidationLevel.All](../docs/media/node.ValidationLevel.html#all): validates all nodes
@@ -54,12 +54,12 @@ console.debug(result.code);
 
 ## Lenient validation
 
-by default, the parser is lenient. this means that invalid nodes are kept in the ast but they are not rendered.
+the parser is lenient. this means that invalid nodes are kept in the ast but they are not rendered.
 this behavior can be changed using the [lenient](../docs/interfaces/node.ParserOptions.html#lenient) option.
 
 ## Validation Errors
 
-validation errors are returned with parse or tranform result.
+validation errors are returned with [parse result](../docs/interfaces/node.ParseResult.html) or [transform result](../docs/interfaces/node.TransformResult.html).
 check the [typescript definition](../docs/interfaces/node.ErrorDescription.html) of ErrorDescription for more details.
 
 
@@ -70,7 +70,7 @@ console.debug(result.errors);
 
 ## Invalid tokens handling
 
-Bad tokens are thrown out during parsing. visitor functions can be used to catch invalid tokens.
+[bad tokens](../docs/enums/node.EnumToken.html#badcdotokentype) are thrown out during parsing. visitor functions can be used to catch and fix invalid tokens.
 
 ```ts
 

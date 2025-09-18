@@ -1,5 +1,5 @@
-import type {Matrix} from "./utils.ts";
 import {identity, multiply} from "./utils.ts";
+import type {Matrix} from "./type.d.ts";
 
 export function scaleX(x: number, from: Matrix): Matrix {
 

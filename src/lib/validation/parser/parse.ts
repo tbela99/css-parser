@@ -1,3 +1,7 @@
+import {isIdent, isPseudo} from '../../syntax/index.ts';
+import {getTokenType as getTokenType$1} from '../../parser/index.ts';
+import type {DimensionToken} from "../../../@types/token.d.ts";
+import {EnumToken} from "../../ast/index.ts";
 import type {
     AmpersandToken,
     AtLeastOneToken,
@@ -42,12 +46,7 @@ import type {
     ValidationStringToken,
     ValidationToken,
     ValidationWhitespaceToken
-} from "./index.ts";
-import {ValidationTokenEnum} from "./index.ts";
-import {isIdent, isPseudo} from '../../syntax/index.ts';
-import {getTokenType as getTokenType$1} from '../../parser/index.ts';
-import type {DimensionToken} from "../../../@types/token.d.ts";
-import {EnumToken} from "../../ast/index.ts";
+} from "./types.d.ts";
 
 declare type ValidationContext =
     ValidationRootToken
@@ -59,6 +58,60 @@ declare type ValidationContext =
 interface ValidationTokenIteratorValue {
     value: ValidationToken;
     done: boolean;
+}
+
+export enum ValidationTokenEnum {
+
+    Root,
+    Keyword,
+    PropertyType,
+    DeclarationType,
+    AtRule,
+    ValidationFunctionDefinition,
+    OpenBracket,
+    CloseBracket,
+    OpenParenthesis,
+    CloseParenthesis,
+    Comma,
+    Pipe,
+    Column,
+    Star,
+    OpenCurlyBrace,
+    CloseCurlyBrace,
+    HashMark,
+    QuestionMark,
+    Function,
+    Number,
+    Whitespace,
+    Parenthesis,
+    Bracket,
+    Block,
+    AtLeastOnce,
+    Separator,
+    Exclamation,
+    Ampersand,
+    PipeToken,
+    ColumnToken,
+    AmpersandToken,
+    Parens,
+    PseudoClassToken,
+    PseudoClassFunctionToken,
+    StringToken,
+    AtRuleDefinition,
+    DeclarationNameToken,
+    DeclarationDefinitionToken,
+    SemiColon,
+    Character,
+    InfinityToken,
+}
+
+export const enum ValidationSyntaxGroupEnum {
+
+    Declarations = 'declarations',
+    Functions = 'functions',
+    Syntaxes = 'syntaxes',
+    Selectors = 'selectors',
+    AtRules = 'atRules'
 }
 
 const skipped = [

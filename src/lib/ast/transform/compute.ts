@@ -7,7 +7,6 @@ import type {
     PercentageToken,
     Token
 } from "../../../@types/token.d.ts";
-import type {Matrix} from "./utils.ts";
 import {identity, multiply, toZero} from "./utils.ts";
 import {EnumToken} from "../types.ts";
 import {length2Px, transformFunctions} from "../../syntax/index.ts";
@@ -20,6 +19,7 @@ import {minify} from "./minify.ts";
 import {skew, skewX, skewY} from "./skew.ts";
 import {matrix, serialize} from "./matrix.ts";
 import {perspective} from "./perspective.ts";
+import type {Matrix} from "./type.d.ts";
 
 export function compute(transformLists: Token[]): {
     matrix: Token,

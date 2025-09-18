@@ -1,10 +1,9 @@
-import type {Matrix} from "./utils.ts";
 import {identity, is2DMatrix} from "./utils.ts";
 import {EnumToken} from "../types.ts";
 import type {FunctionToken, IdentToken, Token} from "../../../@types/index.d.ts";
 import {eq} from "../../parser/utils/eq.ts";
 import {getNumber} from "../../syntax/color/index.ts";
-import type {NumberToken} from "../../validation/index.ts";
+import type {Matrix} from "./type.d.ts";
 
 export function parseMatrix(mat: FunctionToken | IdentToken): Matrix | null {
 

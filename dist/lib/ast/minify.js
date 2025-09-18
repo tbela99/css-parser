@@ -380,7 +380,9 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                             break;
                         }
                         if (shouldMerge) {
+                            // @ts-ignore
                             if (((node.typ == EnumToken.RuleNodeType || node.typ == EnumToken.KeyFramesRuleNodeType) && node.sel == previous.sel) ||
+                                // @ts-ignore
                                 (node.typ == EnumToken.AtRuleNodeType) && node.val != 'font-face' && node.val == previous.val) {
                                 // @ts-ignore
                                 node.chi.unshift(...previous.chi);

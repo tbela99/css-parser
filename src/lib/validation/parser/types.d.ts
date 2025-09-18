@@ -1,58 +1,5 @@
 import {EnumToken} from "../../ast/index.ts";
-
-export enum ValidationTokenEnum {
-
-    Root,
-    Keyword,
-    PropertyType,
-    DeclarationType,
-    AtRule,
-    ValidationFunctionDefinition,
-    OpenBracket,
-    CloseBracket,
-    OpenParenthesis,
-    CloseParenthesis,
-    Comma,
-    Pipe,
-    Column,
-    Star,
-    OpenCurlyBrace,
-    CloseCurlyBrace,
-    HashMark,
-    QuestionMark,
-    Function,
-    Number,
-    Whitespace,
-    Parenthesis,
-    Bracket,
-    Block,
-    AtLeastOnce,
-    Separator,
-    Exclamation,
-    Ampersand,
-    PipeToken,
-    ColumnToken,
-    AmpersandToken,
-    Parens,
-    PseudoClassToken,
-    PseudoClassFunctionToken,
-    StringToken,
-    AtRuleDefinition,
-    DeclarationNameToken,
-    DeclarationDefinitionToken,
-    SemiColon,
-    Character,
-    InfinityToken,
-}
-
-export const enum ValidationSyntaxGroupEnum {
-
-    Declarations = 'declarations',
-    Functions = 'functions',
-    Syntaxes = 'syntaxes',
-    Selectors = 'selectors',
-    AtRules = 'atRules'
-}
+import {ValidationTokenEnum} from "./parse.ts";
 
 export interface Position {
 

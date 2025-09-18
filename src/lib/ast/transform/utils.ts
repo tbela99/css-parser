@@ -1,20 +1,6 @@
-export declare type Point = [number, number, number];
-export declare type Matrix = [
-    number, number, number, number,
-    number, number, number, number,
-    number, number, number, number,
-    number, number, number, number
-];
+import type {DecomposedMatrix3D, Matrix, Point} from "./type.d.ts";
 
 export const epsilon = 1e-5;
-
-export interface DecomposedMatrix3D {
-    skew: [number, number, number];
-    scale: [number, number, number];
-    rotate: [number, number, number, number];
-    translate: [number, number, number];
-    perspective: [number, number, number, number];
-}
 
 export function identity(): Matrix {
 

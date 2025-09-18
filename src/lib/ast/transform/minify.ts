@@ -1,4 +1,4 @@
-import {decompose, DecomposedMatrix3D, epsilon, identity, Matrix, multiply, round, toZero} from "./utils.ts";
+import {decompose, epsilon, identity, multiply, round, toZero} from "./utils.ts";
 import {EnumToken} from "../types.ts";
 import type {
     AngleToken,
@@ -10,6 +10,7 @@ import type {
 } from "../../../@types/index.d.ts";
 import {computeMatrix} from "./compute.ts";
 import {parseMatrix} from "./matrix.ts";
+import type {DecomposedMatrix3D, Matrix} from "./type.d.ts";
 
 // translate → rotate → skew → scale
 export function minify(matrix: Matrix): Token[] | null {

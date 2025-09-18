@@ -874,23 +874,29 @@ function isNumber(name) {
     }
     return true;
 }
-function isDimension(name) {
-    let index = name.length;
-    while (index--) {
-        if (isLetter(name.charCodeAt(index))) {
-            continue;
-        }
-        index++;
-        break;
-    }
-    const number = name.slice(0, index);
-    return number.length > 0 && isIdentStart(name.charCodeAt(index)) && isNumber(number);
-}
+// export function isDimension(name: string) {
+//
+//     let index: number = name.length;
+//
+//     while (index--) {
+//
+//         if (isLetter(<number>name.charCodeAt(index))) {
+//
+//             continue
+//         }
+//
+//         index++;
+//         break;
+//     }
+//
+//     const number: string = name.slice(0, index);
+//     return number.length > 0 && isIdentStart(name.charCodeAt(index)) && isNumber(number);
+// }
 function isPercentage(name) {
     return name.endsWith('%') && isNumber(name.slice(0, -1));
 }
-function isFlex(name) {
-    return name.endsWith('fr') && isNumber(name.slice(0, -2));
+function isFlex(dimension) {
+    return 'unit' in dimension && 'fr' == dimension.unit.toLowerCase();
 }
 function parseDimension(name) {
     let index = name.length;
@@ -906,6 +912,9 @@ function parseDimension(name) {
         val: +name.slice(0, index),
         unit: name.slice(index)
     };
+    if (index < 0 || Number.isNaN(dimension.val)) {
+        return null;
+    }
     if (isAngle(dimension)) {
         // @ts-ignore
         dimension.typ = EnumToken.AngleTokenType;
@@ -928,6 +937,10 @@ function parseDimension(name) {
     else if (isFrequency(dimension)) {
         // @ts-ignore
         dimension.typ = EnumToken.FrequencyTokenType;
+    }
+    else if (isFlex(dimension)) {
+        // @ts-ignore
+        dimension.typ = EnumToken.FlexTokenType;
     }
     return dimension;
 }
@@ -963,4 +976,4 @@ function isWhiteSpace(codepoint) {
         codepoint == 0xa || codepoint == 0xc || codepoint == 0xd;
 }
 
-export { colorFontTech, fontFeaturesTech, fontFormat, isAngle, isAtKeyword, isColor, isColorspace, isDigit, isDimension, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isNewLine, isNumber, isPercentage, isPercentageToken, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, mathFuncs, mediaTypes, mozExtensions, parseColor, parseDimension, pseudoAliasMap, pseudoElements, transformFunctions, webkitExtensions, wildCardFuncs };
+export { colorFontTech, fontFeaturesTech, fontFormat, isAngle, isAtKeyword, isColor, isColorspace, isDigit, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isNewLine, isNumber, isPercentage, isPercentageToken, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, mathFuncs, mediaTypes, mozExtensions, parseColor, parseDimension, pseudoAliasMap, pseudoElements, transformFunctions, webkitExtensions, wildCardFuncs };

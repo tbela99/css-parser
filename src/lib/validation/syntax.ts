@@ -1,26 +1,12 @@
-import {
-    renderSyntax,
-    ValidationAmpersandToken,
-    ValidationAtRuleDefinitionToken,
-    ValidationBracketToken,
-    ValidationColumnToken,
-    ValidationDeclarationDefinitionToken,
-    ValidationDeclarationToken,
-    ValidationFunctionDefinitionToken,
-    ValidationFunctionToken,
-    ValidationKeywordToken,
-    ValidationPipeToken,
-    ValidationPropertyToken,
-    ValidationSyntaxGroupEnum,
-    ValidationToken,
-    ValidationTokenEnum,
-} from "./parser/index.ts";
+import {renderSyntax, ValidationSyntaxGroupEnum, ValidationTokenEnum,} from "./parser/index.ts";
 import type {
     AstAtRule,
     AstDeclaration,
     AstInvalidAtRule,
     AstInvalidRule,
+    AstKeyframesRule,
     AstNode,
+    AstRule,
     AstRuleList,
     ColorToken,
     DimensionToken,
@@ -39,6 +25,20 @@ import {getParsedSyntax, getSyntax, getSyntaxConfig} from "./config.ts";
 import {renderToken} from "../../web.ts";
 import {colorsFunc, funcLike} from "../syntax/color/utils/index.ts";
 import {isColor, isIdentColor, mathFuncs, wildCardFuncs} from "../syntax/index.ts";
+import type {
+    ValidationAmpersandToken,
+    ValidationAtRuleDefinitionToken,
+    ValidationBracketToken,
+    ValidationColumnToken,
+    ValidationDeclarationDefinitionToken,
+    ValidationDeclarationToken,
+    ValidationFunctionDefinitionToken,
+    ValidationFunctionToken,
+    ValidationKeywordToken,
+    ValidationPipeToken,
+    ValidationPropertyToken,
+    ValidationToken
+} from "./parser/types.d.ts";
 
 const config: ValidationConfiguration = getSyntaxConfig();
 // @ts-ignore
@@ -303,7 +303,7 @@ export function createContext(input: Token[]): Context<Token> {
  */
 export function evaluateSyntax(node: AstNode, parent: AstRuleList | AstInvalidRule | AstInvalidAtRule | null, options: ValidationOptions): ValidationSyntaxResult {
 
-    if (node.validSyntax) {
+    if ((node as AstAtRule | AstRule | AstKeyframesRule).validSyntax) {
 
         return {
             valid: SyntaxValidationResult.Valid,

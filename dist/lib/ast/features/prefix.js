@@ -1,6 +1,5 @@
 import { EnumToken, SyntaxValidationResult } from '../types.js';
 import { getSyntaxConfig } from '../../validation/config.js';
-import '../../validation/parser/types.js';
 import '../../validation/parser/parse.js';
 import { splitRule } from '../minify.js';
 import { walkValues } from '../walk.js';

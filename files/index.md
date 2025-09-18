@@ -4,23 +4,24 @@ group: Documents
 category: Guides
 children:
     - ./about.md
+    - ./features.md
     - ./install.md
     - ./usage.md
-    - ./features.md
     - ./minification.md
     - ./transform.md
-    - ./traversal.md
+    - ./ast.md
     - ./validation.md
 ---
 
 ## Contents
 
 - [About](./about.md)
+- [Features](./features.md)
 - [Installation](./install.md)
 - [Usage](./usage.md)
 - [Minification](./minification.md)
 - [Transform](./transform.md)
-- [Ast traversal](./traversal.md)
+- [Ast traversal](ast.md)
 - [Validation](./validation.md)
 
 ## Modules
@@ -30,5 +31,5 @@ children:
 
 ## Misc
 
-- [Try it](https://tbela99.github.io/css-parser/playground/)
+- [Playground](https://tbela99.github.io/css-parser/playground/)
 - [Benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)

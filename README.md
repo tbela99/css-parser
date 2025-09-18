@@ -764,6 +764,7 @@ result
 # Node Walker
 
 ```javascript
+
 import {walk} from '@tbela99/css-parser';
 
 for (const {node, parent, root} of walk(ast)) {
@@ -923,7 +924,8 @@ const css = `
 }
 `;
 
-console.debug(await transform(css, options));
+const result = await transform(css, options);
+console.debug(result.code);
 
 // .foo{transform:scale(calc(40/3))}
 ```
@@ -934,9 +936,7 @@ the visitor is called only on 'height' declarations
 
 ```typescript
 
-import {AstDeclaration, LengthToken, ParserOptions} from "../src/@types";
-import {EnumToken} from "../src/lib";
-import {transform} from "../src/node";
+import {AstDeclaration, EnumToken, LengthToken, ParserOptions, transform} from '@tbela99/css-parser';
 
 const options: ParserOptions = {
 
@@ -978,7 +978,8 @@ color: lch(from peru calc(l * 0.8) calc(c * 0.7) calc(h + 180))
 }
 `;
 
-console.debug(await transform(css, options));
+const result = await transform(css, options);
+console.debug(result.code);
 
 // .foo{height:calc(40px/3);width:3px}.selector{color:#0880b0}
 
@@ -1019,7 +1020,8 @@ const css = `
 }
 `;
 
-console.debug(await transform(css, options));
+const result = await transform(css, options);
+console.debug(result.code);
 
 // .foo{height:calc(40px/3)}
 
@@ -1060,7 +1062,8 @@ const css = `
 }
 `;
 
-console.debug(await transform(css, options));
+const result = await transform(css, options);
+console.debug(result.code);
 
 // .foo{height:calc(40px/3)}
 
@@ -1079,10 +1082,10 @@ const options: ParserOptions = {
 
     visitor: {
 
-
         Rule(node: AstRule): AstRule {
 
-            return {...node, sel: '.foo,.bar,.fubar'};
+            node.sel = '.foo,.bar,.fubar'
+            return node;
         }
     }
 };
@@ -1095,7 +1098,8 @@ const css = `
     } 
 `;
 
-console.debug(await transform(css, options));
+const result = await transform(css, options);
+console.debug(result.code);
 
 // .foo,.bar,.fubar{height:calc(40px/3)}
 
@@ -1107,9 +1111,7 @@ Adding declarations to any rule
 
 ```typescript
 
-import {transform} from "../src/node";
-import {AstRule, ParserOptions} from "../src/@types";
-import {parseDeclarations} from "../src/lib";
+import {AstRule, parseDeclarations, ParserOptions, transform} from '@tbela99/css-parser';
 
 const options: ParserOptions = {
 
@@ -1135,7 +1137,8 @@ const css = `
 }
 `;
 
-console.debug(await transform(css, options));
+const result = await transform(css, options);
+console.debug(result.code);
 
 // .foo{width:3px}
 

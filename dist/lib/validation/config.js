@@ -1,5 +1,4 @@
 import config from './config.json.js';
-import './parser/types.js';
 import { parseSyntax } from './parser/parse.js';
 
 const parsedSyntaxes = new Map();

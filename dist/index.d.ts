@@ -670,11 +670,11 @@ declare enum WalkerOptionEnum {
      */
     Stop = 2,
     /**
-     * ignore node and process children
+     * ignore the current node and process its children
      */
     Children = 4,
     /**
-     * ignore children
+     * ignore the current node children
      */
     IgnoreChildren = 8
 }
@@ -721,11 +721,10 @@ declare enum WalkerEvent {
  * }
  * ```
  *
- * Using a filter to control the walk process:
+ * Using a {@link filter} function to control the ast traversal.  the filter function returns a value of type {@link WalkerOption}.
  *
  * ```ts
- *
- * import {walk} from '@tbela99/css-parser';
+ * import {EnumToken, transform, walk, WalkerOptionEnum} from '@tbela99/css-parser';
  *
  * const css = `
  * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
@@ -741,17 +740,28 @@ declare enum WalkerEvent {
  * }
  * `;
  *
- * for (const {node, parent, root} of walk(ast, (node) => {
+ * function filter(node) {
  *
  *     if (node.typ == EnumToken.AstRule && node.sel.includes('html')) {
  *
  *         // skip the children of the current node
  *         return WalkerOptionEnum.IgnoreChildren;
  *     }
- * })) {
- *
- *     // do something with node
  * }
+ *
+ * const result = await transform(css);
+ * for (const {node} of walk(result.ast, filter)) {
+ *
+ *     console.error([EnumToken[node.typ]]);
+ * }
+ *
+ * // [ "StyleSheetNodeType" ]
+ * // [ "RuleNodeType" ]
+ * // [ "DeclarationNodeType" ]
+ * // [ "RuleNodeType" ]
+ * // [ "DeclarationNodeType" ]
+ * // [ "RuleNodeType" ]
+ * // [ "DeclarationNodeType" ]
  * ```
  */
 declare function walk(node: AstNode$1, filter?: WalkerFilter | null, reverse?: boolean): Generator<WalkResult>;
@@ -766,27 +776,41 @@ declare function walk(node: AstNode$1, filter?: WalkerFilter | null, reverse?: b
  *
  * ```ts
  *
- * import {EnumToken, walk} from '@tbela99/css-parser';
+ * import {AstDeclaration, EnumToken, transform, walkValues} from '@tbela99/css-parser';
  *
  * const css = `
  * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
- *
- * html,
- * body {
- *     line-height: 1.474;
- * }
- *
- * .ruler {
- *
- *     height: 10px;
- * }
  * `;
  *
- * for (const {value} of walkValues(result.ast.chi[0].chi[0].val, null, null,true)) {
+ * const result = await transform(css);
+ * const declaration = result.ast.chi[0].chi[0] as AstDeclaration;
+ *
+ * // walk the node attribute's tokens in reverse order
+ * for (const {value} of walkValues(declaration.val, null, null,true)) {
  *
  *     console.error([EnumToken[value.typ], value.val]);
  * }
  *
+ * // [ "Color", "color" ]
+ * // [ "FunctionTokenType", "calc" ]
+ * // [ "Number", 0.15 ]
+ * // [ "Add", undefined ]
+ * // [ "Iden", "b" ]
+ * // [ "Whitespace", undefined ]
+ * // [ "FunctionTokenType", "calc" ]
+ * // [ "Number", 0.24 ]
+ * // [ "Add", undefined ]
+ * // [ "Iden", "g" ]
+ * // [ "Whitespace", undefined ]
+ * // [ "Iden", "r" ]
+ * // [ "Whitespace", undefined ]
+ * // [ "Iden", "display-p3" ]
+ * // [ "Whitespace", undefined ]
+ * // [ "FunctionTokenType", "var" ]
+ * // [ "DashedIden", "--base-color" ]
+ * // [ "Whitespace", undefined ]
+ * // [ "Iden", "from" ]
+ * ```
  */
 declare function walkValues(values: Token$1[], root?: AstNode$1 | Token$1 | null, filter?: WalkerValueFilter | null | {
     event?: WalkerEvent;
@@ -1840,12 +1864,16 @@ declare const enum ValidationSyntaxGroupEnum {
     Selectors = "selectors",
     AtRules = "atRules"
 }
+
 interface Position$1 {
+
     ind: number;
     lin: number;
     col: number;
 }
+
 interface ValidationToken$1 {
+
     typ: ValidationTokenEnum;
     pos: Position$1;
     isList?: boolean;
@@ -1857,7 +1885,7 @@ interface ValidationToken$1 {
     occurence?: {
         min: number;
         max: number | null;
-    };
+    }
 }
 
 export declare interface ValidationSyntaxNode {
@@ -2017,7 +2045,7 @@ export declare interface BaseToken {
     /**
      * parent node
      */
-    parent?: AstRuleList | null;
+    parent?: AstAtRule | astRule | AstKeyframesAtRule | AstKeyFrameRule | AstInvalidRule | AstInvalidAtRule | null;
     /**
      * @private
      */
@@ -2030,6 +2058,7 @@ export declare interface BaseToken {
 export declare interface AstComment extends BaseToken {
 
     typ: EnumToken.CommentNodeType | EnumToken.CDOCOMMNodeType,
+    tokens?: null;
     val: string;
 }
 
@@ -2039,6 +2068,7 @@ export declare interface AstComment extends BaseToken {
 export declare interface AstDeclaration extends BaseToken {
 
     nam: string,
+    tokens?: null;
     val: Token$1[];
     typ: EnumToken.DeclarationNodeType
 }
@@ -2050,7 +2080,7 @@ export declare interface AstRule extends BaseToken {
 
     typ: EnumToken.RuleNodeType;
     sel: string;
-    chi: Array<AstDeclaration | AstComment | AstRuleList>;
+    chi: Array<AstDeclaration | AstComment | AstRule | AstAtRule | AstInvalidRule | AstInvalidDeclaration | AstInvalidAtRule>;
     optimized?: OptimizedSelector | null;
     raw?: RawSelectorTokens | null;
 }
@@ -2071,7 +2101,8 @@ export declare interface AstInvalidRule extends BaseToken {
 export declare interface AstInvalidDeclaration extends BaseToken {
 
     typ: EnumToken.InvalidDeclarationNodeType;
-    val: Array<AstNode$1>;
+    tokens?: null;
+    val: Array<Token$1>;
 }
 
 /**
@@ -2092,7 +2123,7 @@ export declare interface AstKeyFrameRule extends BaseToken {
 
     typ: EnumToken.KeyFramesRuleNodeType;
     sel: string;
-    chi: Array<AstDeclaration | AstComment>;
+    chi: Array<AstDeclaration | AstComment | AstInvalidDeclaration>;
     optimized?: OptimizedSelector;
     raw?: RawSelectorTokens;
     tokens?: Token$1[]
@@ -2164,18 +2195,20 @@ export declare interface AstKeyframesAtRule extends BaseToken {
 /**
  * rule list node
  */
-export declare interface AstRuleList extends BaseToken {
-
-    typ: EnumToken.StyleSheetNodeType | EnumToken.RuleNodeType | EnumToken.AtRuleNodeType | EnumToken.KeyframesAtRuleNodeType | EnumToken.KeyFramesRuleNodeType | EnumToken.InvalidRuleTokenType | EnumToken.InvalidAtRuleTokenType,
-    chi: Array<BaseToken | AstComment>;
-}
+export declare type AstRuleList =
+    AstStyleSheet
+    | AstAtRule
+    | AstRule
+    | AstKeyframesAtRule
+    | AstKeyFrameRule
+    | AstInvalidRule;
 
 /**
- * rule list node
+ * stylesheet node
  */
-export declare interface AstStyleSheet extends AstRuleList {
+export declare interface AstStyleSheet extends BaseToken {
     typ: EnumToken.StyleSheetNodeType,
-    chi: Array<AstRuleList | AstComment>;
+    chi: Array<AstRule | AstAtRule | astKeyframesAtRule | AstComment | AstInvalidAtRule | AstInvalidRule>;
     tokens?: null;
 }
 
@@ -2192,6 +2225,7 @@ export declare type AstNode$1 =
     | AstKeyframesAtRule
     | AstKeyFrameRule
     | AstInvalidRule
+    | AstInvalidAtRule
     | AstInvalidDeclaration;
 
 export declare type GenericVisitorResult<T> = T | T[] | Promise<T> | Promise<T[]> | null | Promise<null>;
@@ -3027,13 +3061,15 @@ interface BorderRadius {
 /**
  * node walker option
  */
-export declare type WalkerOption = WalkerOptionEnum | Token$1 | null;
+export declare type WalkerOption = WalkerOptionEnum | AstNode$1 | Token$1 | null;
 /**
  * returned value:
  * - {@link WalkerOptionEnum.Ignore}: ignore this node and its children
  * - {@link WalkerOptionEnum.Stop}: stop walking the tree
  * - {@link WalkerOptionEnum.Children}: walk the children and ignore the current node
  * - {@link WalkerOptionEnum.IgnoreChildren}: walk the node and ignore children
+ * - {@link AstNode}:
+ * - {@link Token}:
  */
 export declare type WalkerFilter = (node: AstNode$1) => WalkerOption;
 
