@@ -372,54 +372,22 @@
                             </label>
                         </div>
                         <div class="form-check">
-                            <label class="form-check-label" for="parseoptionsValidation1">
+                            <label class="form-check-label" for="parseoptionsValidation">
                                 Validation
                             </label>
-                            <div class="form-check">
-                                <input
-                                        class="form-check-input"
-                                        id="parseoptionsValidation0"
-                                        name="parseoptions[validation]"
-                                        type="radio"
-                                        value="0"
-                                />
-                                <label
-                                        class="form-check-label"
-                                        for="parseoptionsValidation0"
-                                >
-                                    None
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input
-                                        class="form-check-input"
-                                        id="parseoptionsValidation1"
-                                        name="parseoptions[validation]"
-                                        type="radio"
-                                        value="1"
-                                />
-                                <label
-                                        class="form-check-label"
-                                        for="parseoptionsValidation1"
-                                >
-                                    Default
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input
-                                        class="form-check-input"
-                                        id="parseoptionsValidation2"
-                                        name="parseoptions[validation]"
-                                        type="radio"
-                                        value="2"
-                                />
-                                <label
-                                        class="form-check-label"
-                                        for="parseoptionsValidation2"
-                                >
-                                    All
-                                </label>
-                            </div>
+
+                            <select
+                                    class="form-select form-select-sm"
+                                    id="parseoptionsValidation"
+                                    name="parseoptions[validation]"
+                            >
+                                <option value="0">None</option>
+                                <option value="1">Selector</option>
+                                <option value="2">AtRule</option>
+                                <option value="4">Declaration</option>
+                                <option selected value="3">Default</option>
+                                <option value="7">All</option>
+                            </select>
                         </div>
                         <hr/>
                     </div>
