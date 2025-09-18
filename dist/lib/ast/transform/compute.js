@@ -46,8 +46,6 @@ function compute(transformLists) {
             });
         }
     }
-    // console.error({matrix});
-    // matrix = toZero(matrix) as Matrix;
     return {
         matrix: serialize(toZero(matrix)),
         cumulative,
@@ -71,7 +69,7 @@ function computeMatrix(transformList, matrixVar) {
                 {
                     values.length = 0;
                     const children = stripCommaToken(transformList[i].chi.slice());
-                    const valCount = transformList[i].val == 'translate3d' || transformList[i].val == 'translate' ? 3 : 1;
+                    const valCount = transformList[i].val == 'translate3d' ? 3 : transformList[i].val == 'translate' ? 2 : 1;
                     for (let j = 0; j < children.length; j++) {
                         if (children[j].typ == EnumToken.WhitespaceTokenType) {
                             continue;
@@ -158,7 +156,7 @@ function computeMatrix(transformList, matrixVar) {
                     const children = stripCommaToken(transformList[i].chi.slice());
                     for (let k = 0; k < children.length; k++) {
                         child = children[k];
-                        if (child.typ != EnumToken.NumberTokenType) {
+                        if (child.typ != EnumToken.NumberTokenType && child.typ != EnumToken.PercentageTokenType) {
                             return null;
                         }
                         values.push(getNumber(child));

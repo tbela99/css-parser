@@ -2,7 +2,7 @@ import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../@types/in
 import type {ValidationConfiguration, ValidationResult} from "../../@types/validation.d.ts";
 import {EnumToken, SyntaxValidationResult} from "../ast/index.ts";
 import {getParsedSyntax, getSyntaxConfig} from "./config.ts";
-import type {ValidationToken} from "./parser/index.ts";
+import type {ValidationToken} from "./parser/types.d.ts";
 import {ValidationSyntaxGroupEnum} from "./parser/index.ts";
 import {
     validateAtRuleContainer,

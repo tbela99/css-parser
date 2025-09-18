@@ -1,5 +1,4 @@
 import config from './config.json.js';
-import './parser/types.js';
 import { parseSyntax } from './parser/parse.js';
 
 const parsedSyntaxes = new Map();
@@ -51,7 +50,6 @@ function getParsedSyntax(group, key) {
     const index = group + '.' + keys.join('.');
     // @ts-ignore
     if (!parsedSyntaxes.has(index)) {
-        // @ts-ignore
         const syntax = parseSyntax(obj.syntax);
         // @ts-ignore
         parsedSyntaxes.set(index, syntax.chi);

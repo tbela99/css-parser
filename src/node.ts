@@ -1,5 +1,6 @@
 import type {
     AstNode,
+    LoadResult,
     ParseInfo,
     ParseResult,
     ParserOptions,
@@ -13,7 +14,7 @@ import {doParse, doRender, tokenize, tokenizeStream} from "./lib/index.ts";
 import {dirname, matchUrl, resolve} from "./lib/fs/index.ts";
 import {Readable} from "node:stream";
 import {createReadStream} from "node:fs";
-import {lstat} from "node:fs/promises";
+import {lstat, readFile} from "node:fs/promises";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -47,7 +48,7 @@ export {
     ValidationLevel,
     ColorType,
     SourceMap,
-    WalkerValueEvent,
+    WalkerEvent,
     WalkerOptionEnum
 } from './lib/index.ts';
 export {FeatureWalkMode} from './lib/ast/features/type.ts';
@@ -57,38 +58,45 @@ export {dirname, resolve};
  * load file or url as stream
  * @param url
  * @param currentFile
+ * @param asStream
  * @throws Error file not found
  *
  * @private
  */
-export async function load(url: string, currentFile: string = '.'): Promise<ReadableStream<Uint8Array> | string> {
+export async function load(url: string, currentFile: string = '.', asStream: boolean = false): Promise<string | ReadableStream<Uint8Array<ArrayBufferLike>>> {
 
     const resolved = resolve(url, currentFile);
 
-    // @ts-ignore
     if (matchUrl.test(resolved.absolute)) {
 
-        return fetch(resolved.absolute).then((response: Response) => {
+        return fetch(resolved.absolute).then(async (response: Response): Promise<string | ReadableStream<Uint8Array<ArrayBufferLike>>> => {
 
             if (!response.ok) {
 
                 throw new Error(`${response.status} ${response.statusText} ${response.url}`)
             }
 
-            return response.body as ReadableStream<Uint8Array<ArrayBuffer>>;
-        })
+            return asStream ? response.body as ReadableStream<Uint8Array<ArrayBuffer>> : await response.text();
+        });
     }
 
     try {
+
+        if (!asStream) {
+
+            return readFile(resolved.absolute, 'utf-8');
+        }
 
         const stats = await lstat(resolved.absolute);
 
         if (stats.isFile()) {
 
-            return Readable.toWeb(createReadStream(resolved.absolute)) as ReadableStream<Uint8Array>;
+            return Readable.toWeb(createReadStream(resolved.absolute, {encoding: 'utf-8', highWaterMark: 64 * 1024})) as ReadableStream<Uint8Array>;
         }
+
     } catch (error) {
 
+        console.warn(error);
     }
 
     throw new Error(`File not found: '${resolved.absolute || url}'`);
@@ -131,6 +139,7 @@ export function render(data: AstNode, options: RenderOptions = {}): RenderResult
  * parse css file
  * @param file url or path
  * @param options
+ * @param asStream load file as stream
  *
  * @throws Error file not found
  *
@@ -149,9 +158,9 @@ export function render(data: AstNode, options: RenderOptions = {}): RenderResult
  * console.log(result.ast);
  * ```
  */
-export async function parseFile(file: string, options: ParserOptions = {}): Promise<ParseResult> {
+export async function parseFile(file: string, options: ParserOptions = {}, asStream: boolean = false): Promise<ParseResult> {
 
-    return load(file).then(stream => parse(stream, {src: file, ...options}));
+    return Promise.resolve(((options.load ?? load) as (file: string, currentFile: string, asStream: boolean) => LoadResult)(file, '.', asStream)).then(stream => parse(stream, {src: file, ...options}));
 }
 
 /**
@@ -211,6 +220,7 @@ export async function parse(stream: string | ReadableStream<Uint8Array>, options
  * transform css file
  * @param file url or path
  * @param options
+ * @param asStream load file as stream
  *
  * @throws Error file not found
  *
@@ -229,9 +239,9 @@ export async function parse(stream: string | ReadableStream<Uint8Array>, options
  * console.log(result.code);
  * ```
  */
-export async function transformFile(file: string, options: TransformOptions = {}): Promise<TransformResult> {
+export async function transformFile(file: string, options: TransformOptions = {}, asStream: boolean = false): Promise<TransformResult> {
 
-    return load(file).then(stream => transform(stream, {src: file, ...options}));
+    return Promise.resolve(((options.load ?? load) as (file: string, currentFile: string, asStream: boolean) => LoadResult)(file,'.', asStream)).then(stream => transform(stream, {src: file, ...options}));
 }
 
 /**
@@ -282,7 +292,6 @@ export async function transform(css: string | ReadableStream<Uint8Array>, option
     options = {minify: true, removeEmpty: true, removeCharset: true, ...options};
 
     const startTime: number = performance.now();
-
     return parse(css, options).then((parseResult: ParseResult) => {
 
         // ast already expanded by parse

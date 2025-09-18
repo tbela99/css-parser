@@ -99,7 +99,7 @@ body {
             }
 
             return transform(css, options).then(result => expect(result.code).equals(`body {
- color: color(from var(--base-color) display-p3 r calc(g + .24) calc(b + .15))
+ color: red
 }
 html,body {
  line-height: 1.474

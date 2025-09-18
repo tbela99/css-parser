@@ -86,6 +86,8 @@ function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, vari
 
 export class InlineCssVariablesFeature {
 
+    public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
+
     get ordering() {
         return 0;
     }
@@ -107,10 +109,10 @@ export class InlineCssVariablesFeature {
         [key: string]: any
     }): AstNode | null {
 
-        if (!('chi' in ast)) {
-
-            return null;
-        }
+        // if (!('chi' in ast)) {
+        //
+        //     return null;
+        // }
 
         if (!('variableScope' in context)) {
 

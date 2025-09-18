@@ -38,7 +38,9 @@ export class PropertyList {
     add(...declarations: AstNode[]) {
 
         for (const declaration of declarations) {
-            if (declaration.typ != EnumToken.DeclarationNodeType || (Array.isArray(this.options.removeDuplicateDeclarations) ? this.options.removeDuplicateDeclarations.includes((<AstDeclaration>declaration).nam) : !this.options.removeDuplicateDeclarations)) {
+            if (declaration.typ != EnumToken.DeclarationNodeType ||
+                (typeof this.options.removeDuplicateDeclarations === 'string' && this.options.removeDuplicateDeclarations === (declaration as AstDeclaration).nam.toLowerCase()) ||
+                   (Array.isArray(this.options.removeDuplicateDeclarations) ? this.options.removeDuplicateDeclarations.includes((<AstDeclaration>declaration).nam) : !this.options.removeDuplicateDeclarations)) {
 
                 this.declarations.set(Number(Math.random().toString().slice(2)).toString(36), declaration);
                 continue;

@@ -20,13 +20,25 @@ var ValidationLevel;
      */
     ValidationLevel[ValidationLevel["None"] = 0] = "None";
     /**
+     * validate selectors
+     */
+    ValidationLevel[ValidationLevel["Selector"] = 1] = "Selector";
+    /**
+     * validate at-rules
+     */
+    ValidationLevel[ValidationLevel["AtRule"] = 2] = "AtRule";
+    /**
+     * validate declarations
+     */
+    ValidationLevel[ValidationLevel["Declaration"] = 4] = "Declaration";
+    /**
      * validate selectors and at-rules
      */
-    ValidationLevel[ValidationLevel["Default"] = 1] = "Default";
+    ValidationLevel[ValidationLevel["Default"] = 3] = "Default";
     /**
      * validate selectors, at-rules and declarations
      */
-    ValidationLevel[ValidationLevel["All"] = 2] = "All"; // selectors + at-rules + declarations
+    ValidationLevel[ValidationLevel["All"] = 7] = "All"; // selectors + at-rules + declarations
 })(ValidationLevel || (ValidationLevel = {}));
 /**
  * enum of all token types

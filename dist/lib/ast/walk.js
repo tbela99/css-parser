@@ -12,28 +12,28 @@ var WalkerOptionEnum;
      */
     WalkerOptionEnum[WalkerOptionEnum["Stop"] = 2] = "Stop";
     /**
-     * ignore node and process children
+     * ignore the current node and process its children
      */
     WalkerOptionEnum[WalkerOptionEnum["Children"] = 4] = "Children";
     /**
-     * ignore children
+     * ignore the current node children
      */
     WalkerOptionEnum[WalkerOptionEnum["IgnoreChildren"] = 8] = "IgnoreChildren";
 })(WalkerOptionEnum || (WalkerOptionEnum = {}));
 /**
  * event types for the walkValues function
  */
-var WalkerValueEvent;
-(function (WalkerValueEvent) {
+var WalkerEvent;
+(function (WalkerEvent) {
     /**
      * enter node
      */
-    WalkerValueEvent[WalkerValueEvent["Enter"] = 1] = "Enter";
+    WalkerEvent[WalkerEvent["Enter"] = 1] = "Enter";
     /**
      * leave node
      */
-    WalkerValueEvent[WalkerValueEvent["Leave"] = 2] = "Leave";
-})(WalkerValueEvent || (WalkerValueEvent = {}));
+    WalkerEvent[WalkerEvent["Leave"] = 2] = "Leave";
+})(WalkerEvent || (WalkerEvent = {}));
 /**
  * walk ast nodes
  * @param node initial node
@@ -64,11 +64,10 @@ var WalkerValueEvent;
  * }
  * ```
  *
- * Using a filter to control the walk process:
+ * Using a {@link filter} function to control the ast traversal.  the filter function returns a value of type {@link WalkerOption}.
  *
  * ```ts
- *
- * import {walk} from '@tbela99/css-parser';
+ * import {EnumToken, transform, walk, WalkerOptionEnum} from '@tbela99/css-parser';
  *
  * const css = `
  * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
@@ -84,17 +83,28 @@ var WalkerValueEvent;
  * }
  * `;
  *
- * for (const {node, parent, root} of walk(ast, (node) => {
+ * function filter(node) {
  *
  *     if (node.typ == EnumToken.AstRule && node.sel.includes('html')) {
  *
  *         // skip the children of the current node
  *         return WalkerOptionEnum.IgnoreChildren;
  *     }
- * })) {
- *
- *     // do something with node
  * }
+ *
+ * const result = await transform(css);
+ * for (const {node} of walk(result.ast, filter)) {
+ *
+ *     console.error([EnumToken[node.typ]]);
+ * }
+ *
+ * // [ "StyleSheetNodeType" ]
+ * // [ "RuleNodeType" ]
+ * // [ "DeclarationNodeType" ]
+ * // [ "RuleNodeType" ]
+ * // [ "DeclarationNodeType" ]
+ * // [ "RuleNodeType" ]
+ * // [ "DeclarationNodeType" ]
  * ```
  */
 function* walk(node, filter, reverse) {
@@ -102,7 +112,8 @@ function* walk(node, filter, reverse) {
     const root = node;
     const map = new Map;
     let isNumeric = false;
-    while ((node = parents.shift())) {
+    let i = 0;
+    while ((node = parents[i++])) {
         let option = null;
         if (filter != null) {
             option = filter(node);
@@ -121,8 +132,8 @@ function* walk(node, filter, reverse) {
             yield { node, parent: map.get(node), root };
         }
         if ('chi' in node && (!isNumeric || ((option & WalkerOptionEnum.IgnoreChildren) === 0))) {
-            parents.unshift(...node.chi[reverse ? 'reverse' : 'slice']());
-            for (const child of node.chi.slice()) {
+            parents.splice(i, 0, ...node.chi[reverse ? 'reverse' : 'slice']());
+            for (const child of node.chi) {
                 map.set(child, node);
             }
         }
@@ -139,27 +150,41 @@ function* walk(node, filter, reverse) {
  *
  * ```ts
  *
- * import {EnumToken, walk} from '@tbela99/css-parser';
+ * import {AstDeclaration, EnumToken, transform, walkValues} from '@tbela99/css-parser';
  *
  * const css = `
  * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
- *
- * html,
- * body {
- *     line-height: 1.474;
- * }
- *
- * .ruler {
- *
- *     height: 10px;
- * }
  * `;
  *
- * for (const {value} of walkValues(result.ast.chi[0].chi[0].val, null, null,true)) {
+ * const result = await transform(css);
+ * const declaration = result.ast.chi[0].chi[0] as AstDeclaration;
+ *
+ * // walk the node attribute's tokens in reverse order
+ * for (const {value} of walkValues(declaration.val, null, null,true)) {
  *
  *     console.error([EnumToken[value.typ], value.val]);
  * }
  *
+ * // [ "Color", "color" ]
+ * // [ "FunctionTokenType", "calc" ]
+ * // [ "Number", 0.15 ]
+ * // [ "Add", undefined ]
+ * // [ "Iden", "b" ]
+ * // [ "Whitespace", undefined ]
+ * // [ "FunctionTokenType", "calc" ]
+ * // [ "Number", 0.24 ]
+ * // [ "Add", undefined ]
+ * // [ "Iden", "g" ]
+ * // [ "Whitespace", undefined ]
+ * // [ "Iden", "r" ]
+ * // [ "Whitespace", undefined ]
+ * // [ "Iden", "display-p3" ]
+ * // [ "Whitespace", undefined ]
+ * // [ "FunctionTokenType", "var" ]
+ * // [ "DashedIden", "--base-color" ]
+ * // [ "Whitespace", undefined ]
+ * // [ "Iden", "from" ]
+ * ```
  */
 function* walkValues(values, root = null, filter, reverse) {
     // const set = new Set<Token>();
@@ -168,26 +193,26 @@ function* walkValues(values, root = null, filter, reverse) {
     let previous = null;
     if (filter != null && typeof filter == 'function') {
         filter = {
-            event: WalkerValueEvent.Enter,
+            event: WalkerEvent.Enter,
             fn: filter
         };
     }
     else if (filter == null) {
         filter = {
-            event: WalkerValueEvent.Enter
+            event: WalkerEvent.Enter
         };
     }
     let isNumeric = false;
-    const eventType = filter.event ?? WalkerValueEvent.Enter;
+    const eventType = filter.event ?? WalkerEvent.Enter;
     while (stack.length > 0) {
         let value = reverse ? stack.pop() : stack.shift();
         let option = null;
-        if (filter.fn != null && (eventType & WalkerValueEvent.Enter)) {
+        if (filter.fn != null && (eventType & WalkerEvent.Enter)) {
             const isValid = filter.type == null || value.typ == filter.type ||
                 (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
                 (typeof filter.type == 'function' && filter.type(value));
             if (isValid) {
-                option = filter.fn(value, map.get(value) ?? root, WalkerValueEvent.Enter);
+                option = filter.fn(value, map.get(value) ?? root, WalkerEvent.Enter);
                 isNumeric = typeof option == 'number';
                 if (isNumeric && (option & WalkerOptionEnum.Stop)) {
                     return;
@@ -201,7 +226,6 @@ function* walkValues(values, root = null, filter, reverse) {
                 }
             }
         }
-        // if ((eventType & WalkerValueEvent.Enter) && (!isNumeric || ((option as number) & WalkerOptionEnum.Children) === 0)) {
         yield {
             value,
             parent: map.get(value) ?? root,
@@ -210,7 +234,6 @@ function* walkValues(values, root = null, filter, reverse) {
             // @ts-ignore
             root: root ?? null
         };
-        // }
         if ('chi' in value && (!isNumeric || (option & WalkerOptionEnum.IgnoreChildren) === 0)) {
             const sliced = value.chi.slice();
             for (const child of sliced) {
@@ -251,31 +274,20 @@ function* walkValues(values, root = null, filter, reverse) {
                 stack[reverse ? 'push' : 'unshift'](...values);
             }
         }
-        if ((eventType & WalkerValueEvent.Leave) && filter.fn != null) {
+        if ((eventType & WalkerEvent.Leave) && filter.fn != null) {
             const isValid = filter.type == null || value.typ == filter.type ||
                 (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
                 (typeof filter.type == 'function' && filter.type(value));
             if (isValid) {
-                option = filter.fn(value, map.get(value), WalkerValueEvent.Leave);
+                option = filter.fn(value, map.get(value), WalkerEvent.Leave);
                 // @ts-ignore
                 if (option != null && 'typ' in option) {
                     map.set(option, map.get(value) ?? root);
                 }
             }
         }
-        // if ((eventType & WalkerValueEvent.Leave) && (!isNumeric && ((option as number) & WalkerOptionEnum.Children) === 0)) {
-        //
-        //     yield {
-        //         value,
-        //         parent: <FunctionToken | ParensToken>map.get(value) ?? root,
-        //         previousValue: previous,
-        //         nextValue: <Token>stack[0] ?? null,
-        //         // @ts-ignore
-        //         root: root ?? null
-        //     };
-        // }
         previous = value;
     }
 }
 
-export { WalkerOptionEnum, WalkerValueEvent, walk, walkValues };
+export { WalkerEvent, WalkerOptionEnum, walk, walkValues };

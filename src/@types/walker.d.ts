@@ -1,24 +1,26 @@
 import type {AstNode, AstRuleList} from "./ast.d.ts";
 import type {Token} from "./token.d.ts";
-import {WalkerOptionEnum, WalkerValueEvent} from '../lib/ast/walk.ts';
+import {WalkerEvent, WalkerOptionEnum} from '../lib/ast/walk.ts';
 
 /**
  * node walker option
  */
-export declare type WalkerOption = WalkerOptionEnum | Token | null;
+export declare type WalkerOption = WalkerOptionEnum | AstNode | Token | null;
 /**
  * returned value:
  * - {@link WalkerOptionEnum.Ignore}: ignore this node and its children
  * - {@link WalkerOptionEnum.Stop}: stop walking the tree
  * - {@link WalkerOptionEnum.Children}: walk the children and ignore the current node
  * - {@link WalkerOptionEnum.IgnoreChildren}: walk the node and ignore children
+ * - {@link AstNode}:
+ * - {@link Token}:
  */
 export declare type WalkerFilter = (node: AstNode) => WalkerOption;
 
 /**
  * filter nod
  */
-export declare type WalkerValueFilter = (node: AstNode | Token, parent?: AstNode | Token | null, event?: WalkerValueEvent) => WalkerOption | null;
+export declare type WalkerValueFilter = (node: AstNode | Token, parent?: AstNode | Token | null, event?: WalkerEvent) => WalkerOption | null;
 
 export declare interface WalkResult {
     node: AstNode;

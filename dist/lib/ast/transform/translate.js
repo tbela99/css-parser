@@ -2,7 +2,7 @@ import { identity, multiply } from './utils.js';
 
 function translateX(x, from) {
     const matrix = identity();
-    matrix[3 * 4 + 0] = x;
+    matrix[3 * 4] = x;
     return multiply(from, matrix);
 }
 function translateY(y, from) {
@@ -17,13 +17,13 @@ function translateZ(z, from) {
 }
 function translate(translate, from) {
     const matrix = identity();
-    matrix[3 * 4 + 0] = translate[0];
+    matrix[3 * 4] = translate[0];
     matrix[3 * 4 + 1] = translate[1] ?? 0;
     return multiply(from, matrix);
 }
 function translate3d(translate, from) {
     const matrix = identity();
-    matrix[3 * 4 + 0] = translate[0];
+    matrix[3 * 4] = translate[0];
     matrix[3 * 4 + 1] = translate[1];
     matrix[3 * 4 + 2] = translate[2];
     return multiply(from, matrix);

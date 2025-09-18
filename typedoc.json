@@ -3,6 +3,7 @@
   "entryPoints": [
     "./src"
   ],
+  "readme": "files/index.md",
   "entryPointStrategy": "resolve",
   "navigationLinks": {
     "Benchmark": "https://tbela99.github.io/css-parser/benchmark/index.html",

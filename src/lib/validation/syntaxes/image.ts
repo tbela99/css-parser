@@ -3,7 +3,7 @@ import type {FunctionImageToken, Token} from "../../../@types/index.d.ts";
 import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {createContext, doEvaluateSyntax} from "../syntax.ts";
 import {getParsedSyntax} from "../config.ts";
-import type {ValidationToken} from "../parser/index.ts";
+import type {ValidationToken} from "../parser/types.d.ts";
 import {ValidationSyntaxGroupEnum} from "../parser/index.ts";
 import {validateURL} from "./url.ts";
 

@@ -1,6 +1,7 @@
 ---
 title: Usage
 group: Documents
+slug: /usage
 category: Guides
 ---
 
@@ -31,11 +32,11 @@ const result = await transform(css, {
 console.debug(result.code);
 ```
 
-the library exposes two entrypoints
+the library exposes three entry points
 
-- `@tbela99/css-parser` or `@tbela99/css-parser/node` which relies on node fs package to read files
-- `@tbela99/css-parser/cjs` same as the previous except it exports a commonjs module
-- `@tbela99/css-parser/web` which relies on the fetch api to read files
+- `@tbela99/css-parser` or `@tbela99/css-parser/node` which relies on node fs and fs/promises to read files
+- `@tbela99/css-parser/cjs` same as the previous except it is exported as a commonjs module
+- `@tbela99/css-parser/web` which relies on the web fetch api to read files
 
 the default file loader can be overridden via the options [ParseOptions.load](../interfaces/node.ParserOptions.html#load) or [TransformOptions.load](../interfaces/node.TransformOptions.html#load) of parse() and transform() functions
 
@@ -150,9 +151,12 @@ import {transformFile} from '@tbela99/css-parser';
 
 const css = `https://docs.deno.com/styles.css`;
 
-const result = await transformFile(css);
+let result = await transformFile(css);
 console.debug(result.code);
 
+// load file as readable stream
+result = await transformFile(css, true);
+console.debug(result.code);
 ```
 
 ### Parsing from a Readable Stream
@@ -171,15 +175,14 @@ const result = await parse(readableStream, {beautify: true});
 console.log(result.ast);
 ```
 
-a response.body object can also be passed as well
-
+a response body object can also be passed to parseFile() or transformFile() functions
 
 ```ts
+
 import {transformFile} from '@tbela99/css-parser';
 
 const response = await fetch(`https://docs.deno.com/styles.css`);
-
-const result = await transform(response.body); // or parse(response.body)
+const result = await transformFile(response.body); // or parse(response.body)
 console.debug(result.code);
 
 ```

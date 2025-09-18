@@ -1,31 +1,11 @@
-export declare type Point = [number, number, number];
-export declare type Matrix = [
-    number, number, number, number,
-    number, number, number, number,
-    number, number, number, number,
-    number, number, number, number
-];
+import type {DecomposedMatrix3D, Matrix, Point} from "./type.d.ts";
 
 export const epsilon = 1e-5;
-
-interface DecomposedMatrix3D {
-    skew: [number, number, number];
-    scale: [number, number, number];
-    rotate: [number, number, number, number];
-    translate: [number, number, number];
-    perspective: [number, number, number, number];
-}
 
 export function identity(): Matrix {
 
     return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] as Matrix;
 }
-
-function pLength(point: Point): number {
-
-    return Math.sqrt(point[0] * point[0] + point[1] * point[1] + point[2] * point[2]);
-}
-
 function normalize(point: Point): Point {
 
     const [x, y, z] = point;
@@ -67,8 +47,14 @@ function inverse(matrix: Matrix): Matrix | null {
 
     // Create augmented matrix [matrix | identity]
     let augmented: number[] = [
-        1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1,
-        1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1
+        ...matrix.slice(0, 4),
+        1, 0, 0, 0,
+        ...matrix.slice(4, 8),
+        0, 1, 0, 0,
+        ...matrix.slice(8, 12),
+        0, 0, 1, 0,
+        ...matrix.slice(12, 16),
+        0, 0, 0, 1
     ];
 
 
@@ -102,7 +88,7 @@ function inverse(matrix: Matrix): Matrix | null {
         }
 
         // Scale pivot row to make pivot element 1
-        let pivot = augmented[col * 4 + col];
+        let pivot: number = augmented[col * 4 + col];
 
         for (let j = 0; j < 8; j++) {
 
@@ -128,26 +114,10 @@ function inverse(matrix: Matrix): Matrix | null {
     return augmented.slice(0, 16) as Matrix;
 }
 
-// function transpose(matrix: Matrix): Matrix {
-//     // Crée une nouvelle matrice vide 4x4
-//     // @ts-ignore
-//     let transposed: Matrix = [[], [], [], []] as Matrix;
-//
-//     // Parcourt chaque ligne et colonne pour transposer
-//     for (let i = 0; i < 4; i++) {
-//
-//         for (let j = 0; j < 4; j++) {
-//
-//             transposed[j][i] = matrix[i][j];
-//         }
-//     }
-//
-//     return transposed;
-// }
-
 export function round(number: number): number {
 
-    return Math.abs(number) < epsilon ? 0 : +number.toPrecision(6);
+    const rounded: number = Math.round(number);
+    return Math.abs(rounded - number) <= epsilon ? rounded : +number.toPrecision(6);
 }
 
 // translate3d(25.9808px, 0, 15px ) rotateY(60deg) skewX(49.9999deg) scale(1, 1.2)
@@ -180,7 +150,7 @@ export function decompose(original: Matrix): DecomposedMatrix3D | null {
         // @ts-ignore
         const inverted = inverse(original.slice());
 
-        if (!inverted) {
+        if (inverted === null) {
 
             return null;
         }
@@ -208,8 +178,14 @@ export function decompose(original: Matrix): DecomposedMatrix3D | null {
     const row1: [number, number, number] = [matrix[4], matrix[5], matrix[6]];
     const row2: [number, number, number] = [matrix[8], matrix[9], matrix[10]];
 
+    const cross = [
+        row1[1] * row2[2] - row1[2] * row2[1],
+        row1[2] * row2[0] - row1[0] * row2[2],
+        row1[0] * row2[1] - row1[1] * row2[0],
+    ];
+
     // Compute scale
-    const scaleX = pLength(row0);
+    const scaleX = Math.hypot(...row0);
     const row0Norm = normalize(row0);
 
     const skewXY = dot(row0Norm, row1);
@@ -219,7 +195,7 @@ export function decompose(original: Matrix): DecomposedMatrix3D | null {
         row1[2] - skewXY * row0Norm[2]
     ];
 
-    const scaleY = pLength(row1Proj as Point);
+    const scaleY = Math.hypot(...row1Proj as Point);
     const row1Norm = normalize(row1Proj as Point);
 
     const skewXZ = dot(row0Norm, row2);
@@ -231,8 +207,9 @@ export function decompose(original: Matrix): DecomposedMatrix3D | null {
         row2[2] - skewXZ * row0Norm[2] - skewYZ * row1Norm[2]
     ];
 
-    const scaleZ = pLength(row2Proj as Point);
     const row2Norm = normalize(row2Proj as Point);
+    const determinant: number = row0[0] * cross[0] + row0[1] * cross[1] + row0[2] * cross[2];
+    const scaleZ = Math.hypot(...row2Proj as Point) * (determinant < 0 ? -1 : 1);
 
     // Build rotation matrix from orthonormalized vectors
     const r00 = row0Norm[0], r01 = row1Norm[0], r02 = row2Norm[0];
@@ -270,8 +247,6 @@ export function decompose(original: Matrix): DecomposedMatrix3D | null {
     }
 
     [qx, qy, qz] = toZero([qx, qy, qz]);
-
-    // const q = gcd(qx, gcd(qy, qz));
 
     let q = [Math.abs(qx), Math.abs(qy), Math.abs(qz)].reduce((acc, curr) => {
 
@@ -335,14 +310,14 @@ export function toZero(v: number[] | Matrix): number[] | Matrix {
 export function is2DMatrix(matrix: Matrix): boolean {
 
     // m13,m14,  m23, m24, m31, m32, m34, m43 are all 0
-    return matrix[0 * 4 + 2] === 0 &&
-        matrix[0 * 4 + 3] === 0 &&
-        matrix[1 * 4 + 2] === 0 &&
-        matrix[1 * 4 + 3] === 0 &&
-        matrix[2 * 4 + 0] === 0 &&
-        matrix[2 * 4 + 1] === 0 &&
-        matrix[2 * 4 + 3] === 0 &&
-        matrix[3 * 4 + 2] === 0 &&
-        matrix[2 * 4 + 2] === 1 &&
-        matrix[3 * 4 + 3] === 1;
+    return matrix[2] === 0 &&
+        matrix[3] === 0 &&
+        matrix[6] === 0 &&
+        matrix[7] === 0 &&
+        matrix[8] === 0 &&
+        matrix[9] === 0 &&
+        matrix[11] === 0 &&
+        matrix[14] === 0 &&
+        matrix[10] === 1 &&
+        matrix[15] === 1;
 }

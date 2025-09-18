@@ -17,6 +17,7 @@ export interface PatchSyntax {
 
     atrules: Record<string, {
         prelude: string;
+        syntax: string;
     }>;
     properties: Record<string, {
         comment: string;
@@ -71,7 +72,7 @@ function applyPatches(...patches: PatchSyntax[]) {
             if (!(key in json.atRules)) {
 
                 console.error(`>> adding at-rule >> ${key}`);
-                json.atRules[key] = {syntax: value.prelude};
+                json.atRules[key] = {syntax: value.syntax};
             }
         }
 

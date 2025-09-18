@@ -241,16 +241,20 @@ export function* tokenize(parseInfo: ParseInfo, yieldEOFToken: boolean = true): 
                 buffer = '';
             }
 
+            buffer += value;
+
             while (value = next(parseInfo)) {
 
                 charCode = value.charCodeAt(0);
+
                 if (!isWhiteSpace(charCode)) {
                     break;
                 }
+
+                buffer += value;
             }
 
-            yield pushToken('', parseInfo, EnumToken.WhitespaceTokenType);
-
+            yield pushToken(buffer, parseInfo, EnumToken.WhitespaceTokenType);
             buffer = '';
         }
 
@@ -322,8 +326,7 @@ export function* tokenize(parseInfo: ParseInfo, yieldEOFToken: boolean = true): 
 
                 if (match(parseInfo, '=')) {
 
-                    yield pushToken('', parseInfo, EnumToken.LteTokenType);
-                    next(parseInfo);
+                    yield pushToken(value + next(parseInfo), parseInfo, EnumToken.LteTokenType);
                     break;
                 }
 
@@ -406,9 +409,7 @@ export function* tokenize(parseInfo: ParseInfo, yieldEOFToken: boolean = true): 
 
                     if (match(parseInfo, '|')) {
 
-                        next(parseInfo);
-
-                        yield pushToken('', parseInfo, EnumToken.ColumnCombinatorTokenType);
+                        yield pushToken(value + next(parseInfo), parseInfo, EnumToken.ColumnCombinatorTokenType);
                     } else if (match(parseInfo, '=')) {
 
                         buffer += next(parseInfo);
@@ -476,11 +477,10 @@ export function* tokenize(parseInfo: ParseInfo, yieldEOFToken: boolean = true): 
 
                 if (match(parseInfo, '=')) {
 
-                    yield pushToken('', parseInfo, EnumToken.GteTokenType);
-                    next(parseInfo);
+                    yield pushToken(value + next(parseInfo), parseInfo, EnumToken.GteTokenType);
                 } else {
 
-                    yield pushToken('', parseInfo, EnumToken.GtTokenType);
+                    yield pushToken(value, parseInfo, EnumToken.GtTokenType);
                 }
 
                 consumeWhiteSpace(parseInfo);
@@ -555,7 +555,7 @@ export function* tokenize(parseInfo: ParseInfo, yieldEOFToken: boolean = true): 
                     buffer = '';
                 }
 
-                yield pushToken('', parseInfo, EnumToken.EndParensTokenType);
+                yield pushToken(value, parseInfo, EnumToken.EndParensTokenType);
                 break;
             case TokenMap.OPEN_PAREN:
 
@@ -659,7 +659,7 @@ export function* tokenize(parseInfo: ParseInfo, yieldEOFToken: boolean = true): 
                                 if (charCode == 0x29) {
 
                                     yield pushToken(buffer, parseInfo, hasNewLine ? EnumToken.BadStringTokenType : EnumToken.StringTokenType);
-                                    yield pushToken('', parseInfo, EnumToken.EndParensTokenType);
+                                    yield pushToken(value, parseInfo, EnumToken.EndParensTokenType);
                                     buffer = '';
                                     break;
                                 }
@@ -694,7 +694,7 @@ export function* tokenize(parseInfo: ParseInfo, yieldEOFToken: boolean = true): 
                             if (charCode == 0x29) { // ')'
 
                                 yield pushToken(buffer, parseInfo, EnumToken.UrlTokenTokenType);
-                                yield pushToken('', parseInfo, EnumToken.EndParensTokenType);
+                                yield pushToken(value, parseInfo, EnumToken.EndParensTokenType);
                                 buffer = '';
                                 break;
                             }
@@ -753,8 +753,7 @@ export function* tokenize(parseInfo: ParseInfo, yieldEOFToken: boolean = true): 
 
                 if (match(parseInfo, 'important')) {
 
-                    yield pushToken('', parseInfo, EnumToken.ImportantTokenType);
-                    next(parseInfo, 9);
+                    yield pushToken(value + next(parseInfo, 9), parseInfo, EnumToken.ImportantTokenType);
                     buffer = '';
                     break;
                 }

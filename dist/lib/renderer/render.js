@@ -69,7 +69,7 @@ function doRender(data, options = {}) {
     const sourcemap = options.sourcemap ? new SourceMap : null;
     const cache = Object.create(null);
     const result = {
-        code: renderAstNode(options.expandNestingRules ? expand(data) : data, options, sourcemap, {
+        code: renderAstNode(options.expandNestingRules && [EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(data.typ) && 'chi' in data ? expand(data) : data, options, sourcemap, {
             ind: 0,
             lin: 1,
             col: 1
@@ -209,7 +209,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                     str = `${node.nam}:${options.indent}${(options.minify ? filterValues(node.val) : node.val).reduce(reducer, '').trimEnd()};`;
                 }
                 else if (node.typ == EnumToken.AtRuleNodeType && !('chi' in node)) {
-                    str = `${data.val === '' ? '' : options.indent || ' '}${data.val};`;
+                    str = `${node.val === '' ? '' : options.indent || ' '}${node.val};`;
                 }
                 else {
                     str = renderAstNode(node, options, sourcemap, { ...position }, errors, reducer, cache, level + 1, indents);

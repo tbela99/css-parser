@@ -12,6 +12,8 @@ import {FeatureWalkMode} from "./type.ts";
 
 export class ComputeShorthandFeature {
 
+    public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType, EnumToken.KeyFramesRuleNodeType]);
+
     get ordering() {
         return 3;
     }

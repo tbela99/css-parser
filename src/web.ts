@@ -1,5 +1,6 @@
 import type {
     AstNode,
+    LoadResult,
     ParseInfo,
     ParseResult,
     ParserOptions,
@@ -44,7 +45,7 @@ export {
     ValidationLevel,
     ColorType,
     SourceMap,
-    WalkerValueEvent,
+    WalkerEvent,
     WalkerOptionEnum,
 } from './lib/index.ts';
 export {FeatureWalkMode} from './lib/ast/features/type.ts';
@@ -55,9 +56,10 @@ export {dirname, resolve};
  * @param url
  * @param currentFile
  *
+ * @param asStream
  * @private
  */
-export async function load(url: string, currentFile: string = '.'): Promise<ReadableStream<Uint8Array>> {
+export async function load(url: string, currentFile: string = '.', asStream: boolean = false): Promise<string | ReadableStream<Uint8Array<ArrayBufferLike>>> {
 
     let t: URL;
 
@@ -70,20 +72,18 @@ export async function load(url: string, currentFile: string = '.'): Promise<Read
     } else {
 
         const path: string = resolve(url, currentFile).absolute;
-        // @ts-ignore
         t = new URL(path, self.origin);
     }
 
-    // @ts-ignore
-    return fetch(t, t.origin != self.origin ? {mode: 'cors'} : {}).then((response: Response) => {
+    return fetch(t, t.origin != self.origin ? {mode: 'cors'} : {}).then(async (response: Response) => {
 
         if (!response.ok) {
 
             throw new Error(`${response.status} ${response.statusText} ${response.url}`)
         }
 
-        return response.body;
-    });
+        return asStream ? response.body : await response.text();
+    }) as Promise<string | ReadableStream<Uint8Array<ArrayBufferLike>>>;
 }
 
 /**
@@ -128,6 +128,7 @@ export function render(data: AstNode, options: RenderOptions = {}): RenderResult
  * parse css file
  * @param file url or path
  * @param options
+ * @param asStream load file as stream
  *
  * @throws Error file not found
  *
@@ -146,9 +147,9 @@ export function render(data: AstNode, options: RenderOptions = {}): RenderResult
  * console.log(result.ast);
  * ```
  */
-export async function parseFile(file: string, options: ParserOptions = {}): Promise<ParseResult> {
+export async function parseFile(file: string, options: ParserOptions = {}, asStream: boolean = false): Promise<ParseResult> {
 
-    return load(file).then(stream => parse(stream, {src: file, ...options}));
+    return Promise.resolve(((options.load ?? load) as (file: string, currentFile: string, asStream: boolean) => LoadResult)(file, '.', asStream)).then(stream => parse(stream, {src: file, ...options}));
 }
 
 /**
@@ -198,6 +199,7 @@ export async function parse(stream: string | ReadableStream<Uint8Array>, options
  * transform css file
  * @param file url or path
  * @param options
+ * @param asStream load file as stream
  *
  * Example:
  *
@@ -214,9 +216,9 @@ export async function parse(stream: string | ReadableStream<Uint8Array>, options
  * console.log(result.code);
  * ```
  */
-export async function transformFile(file: string, options: TransformOptions = {}): Promise<TransformResult> {
+export async function transformFile(file: string, options: TransformOptions = {}, asStream: boolean = false): Promise<TransformResult> {
 
-    return load(file).then(stream => transform(stream, {src: file, ...options}));
+    return Promise.resolve(((options.load ?? load) as (file: string, currentFile: string, asStream: boolean) => LoadResult)(file, '.', asStream)).then(stream => transform(stream, {src: file, ...options}));
 }
 
 /**

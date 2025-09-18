@@ -30,6 +30,19 @@ export function validateAtRuleSupports(atRule: AstAtRule, options: ValidationOpt
         } as ValidationSyntaxResult;
     }
 
+    if (!Array.isArray(atRule.chi)) {
+
+        // @ts-ignore
+        return {
+            valid: SyntaxValidationResult.Drop,
+            matches: [],
+            node: atRule,
+            syntax: '@' + atRule.nam,
+            error: 'expected supports body',
+            tokens: []
+        } as ValidationSyntaxResult;
+    }
+
     const result = validateAtRuleSupportsConditions(atRule, atRule.tokens);
 
     if (result) {

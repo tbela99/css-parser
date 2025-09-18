@@ -1,5 +1,27 @@
 {
-  "atrules": {},
+  "atrules": {
+    "@stylistic": {
+      "syntax": " @stylistic { <feature-value-declaration-list> } "
+    },
+    "@historical-forms": {
+      "syntax": " @historical-forms { <feature-value-declaration-list> } "
+    },
+    "@styleset": {
+      "syntax": " @styleset { <feature-value-declaration-list> } "
+    },
+    "@character-variant": {
+      "syntax": " @character-variant { <feature-value-declaration-list> } "
+    },
+    "@swash": {
+      "syntax": " @swash { <feature-value-declaration-list> } "
+    },
+    "@ornaments": {
+      "syntax": " @ornaments { <feature-value-declaration-list> } "
+    },
+    "@annotation": {
+      "syntax": " @annotation { <feature-value-declaration-list> } "
+    }
+  },
   "properties": {
     "-ms-overflow-style": {
       "syntax": "auto | none | scrollbar | -ms-autohiding-scrollbar"
@@ -22,7 +44,6 @@
       "comment": "extend display syntax with -ms-flexbox",
       "syntax": "| -ms-flexbox"
     },
-
     "-non-standard-text-align": {
       "comment": "extend text-align",
       "syntax": "| -moz-center | -webkit-center | -webkit-match-parent"

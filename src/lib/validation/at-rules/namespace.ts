@@ -4,7 +4,6 @@ import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {consumeWhitespace} from "../utils/index.ts";
 import {validateURL} from "../syntaxes/url.ts";
 
-
 export function validateAtRuleNamespace(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {

@@ -1,23 +1,13 @@
-import {
-    renderSyntax,
-    ValidationAmpersandToken,
-    ValidationBracketToken,
-    ValidationColumnToken,
-    ValidationDeclarationDefinitionToken,
-    ValidationDeclarationToken,
-    ValidationFunctionDefinitionToken,
-    ValidationFunctionToken,
-    ValidationKeywordToken,
-    ValidationPipeToken,
-    ValidationPropertyToken,
-    ValidationSyntaxGroupEnum,
-    ValidationToken,
-    ValidationTokenEnum,
-} from "./parser/index.ts";
+import {renderSyntax, ValidationSyntaxGroupEnum, ValidationTokenEnum,} from "./parser/index.ts";
 import type {
     AstAtRule,
     AstDeclaration,
+    AstInvalidAtRule,
+    AstInvalidRule,
+    AstKeyframesRule,
     AstNode,
+    AstRule,
+    AstRuleList,
     ColorToken,
     DimensionToken,
     FunctionToken,
@@ -34,28 +24,48 @@ import {ColorType, EnumToken, SyntaxValidationResult} from "../ast/index.ts";
 import {getParsedSyntax, getSyntax, getSyntaxConfig} from "./config.ts";
 import {renderToken} from "../../web.ts";
 import {colorsFunc, funcLike} from "../syntax/color/utils/index.ts";
-import {isIdentColor, mathFuncs, wildCardFuncs} from "../syntax/index.ts";
+import {isColor, isIdentColor, mathFuncs, wildCardFuncs} from "../syntax/index.ts";
+import type {
+    ValidationAmpersandToken,
+    ValidationAtRuleDefinitionToken,
+    ValidationBracketToken,
+    ValidationColumnToken,
+    ValidationDeclarationDefinitionToken,
+    ValidationDeclarationToken,
+    ValidationFunctionDefinitionToken,
+    ValidationFunctionToken,
+    ValidationKeywordToken,
+    ValidationPipeToken,
+    ValidationPropertyToken,
+    ValidationToken
+} from "./parser/types.d.ts";
 
 const config: ValidationConfiguration = getSyntaxConfig();
-
 // @ts-ignore
-const allValues: string[] = getSyntaxConfig()[ValidationSyntaxGroupEnum.Declarations].all.syntax.trim().split(/[\s|]+/g);
+const allValues: string[] = getSyntaxConfig()[ValidationSyntaxGroupEnum.Declarations].all.syntax.trim().split(/[\s|]+/g) as string[];
 
+/**
+ * Check if a node is allowed as child in a given context
+ * @param node
+ * @param context
+ */
 export function isNodeAllowedInContext(node: AstNode, context: AstNode): boolean {
 
-    if (node.typ == EnumToken.CommentNodeType) {
+    if (node.typ == EnumToken.CommentNodeType || context == null) {
 
         return true;
     }
 
-    switch (context.typ) {
+    switch (context?.typ) {
 
         case EnumToken.StyleSheetNodeType:
         case EnumToken.RuleNodeType:
 
             return node.typ == EnumToken.RuleNodeType ||
                 node.typ == EnumToken.AtRuleNodeType ||
-                node.typ == EnumToken.KeyframesAtRuleNodeType;
+                node.typ == EnumToken.KeyframesAtRuleNodeType ||
+                (node.typ == EnumToken.DeclarationNodeType && context.typ == EnumToken.RuleNodeType) ||
+                (node.typ == EnumToken.CDOCOMMNodeType && context.typ == EnumToken.StyleSheetNodeType);
 
         case EnumToken.KeyframesAtRuleNodeType:
 
@@ -72,7 +82,8 @@ export function isNodeAllowedInContext(node: AstNode, context: AstNode): boolean
             //
             if (syntax == null) {
 
-                return false;
+                // console.error(`syntax: Not found ${ValidationSyntaxGroupEnum.AtRules}@${(context as AstAtRule).nam}`);
+                return true;
             }
 
             const stack: ValidationToken[] = syntax.slice();
@@ -120,14 +131,32 @@ export function isNodeAllowedInContext(node: AstNode, context: AstNode): boolean
 
                 if (child.typ == ValidationTokenEnum.PropertyType) {
 
-                    if (['group-rule-body', 'block-contents', 'rule-list', 'stylesheet'].includes((child as ValidationPropertyToken).val) && (node.typ == EnumToken.RuleNodeType ||
-                        node.typ == EnumToken.AtRuleNodeType ||
-                        node.typ == EnumToken.KeyframesAtRuleNodeType)) {
+                    if (['group-rule-body', 'block-contents', 'rule-list', 'stylesheet'].includes((child as ValidationPropertyToken).val)) {
 
-                        return true;
+                        if ((node.typ == EnumToken.RuleNodeType ||
+                            node.typ == EnumToken.AtRuleNodeType ||
+                            node.typ == EnumToken.KeyframesAtRuleNodeType)) {
+
+                            return true;
+                        }
+
+                        if (node.typ == EnumToken.DeclarationNodeType) {
+
+                            let parent = node.parent;
+
+                            while (parent != null) {
+
+                                if (parent.parent?.typ == EnumToken.RuleNodeType) {
+
+                                    return true;
+                                }
+
+                                parent = parent.parent;
+                            }
+                        }
                     }
 
-                    if (['declaration-list', 'feature-value-declaration'].includes((child as ValidationPropertyToken).val)  && node.typ == EnumToken.DeclarationNodeType) {
+                    if (['declaration-list', 'feature-value-declaration'].includes((child as ValidationPropertyToken).val) && node.typ == EnumToken.DeclarationNodeType) {
 
                         return true;
                     }
@@ -141,11 +170,6 @@ export function isNodeAllowedInContext(node: AstNode, context: AstNode): boolean
                         return true;
                     }
 
-                    // if ((child as ValidationPropertyToken).val == 'feature-value-block-list') {
-                    //
-                    //     console.error({node});
-                    // }
-
                     if ((child as ValidationPropertyToken).val == 'feature-value-block-list' &&
                         (node.typ == EnumToken.AtRuleNodeType && ['stylistic', 'historical-forms', 'styleset', 'character-variant', 'swash', 'ornaments', 'annotation'].includes((node as AstAtRule).nam))) {
 
@@ -156,14 +180,21 @@ export function isNodeAllowedInContext(node: AstNode, context: AstNode): boolean
 
                         return true;
                     }
+
+                    if ((child as ValidationPropertyToken).val == 'page-body') {
+
+                        if (node.typ == EnumToken.DeclarationNodeType) {
+
+                            return true;
+                        }
+                    }
+
+                    // console.error(`isNodeAllowedInContext: Not found ${(child as ValidationPropertyToken).val}`, {
+                    //     child,
+                    //     node
+                    // });
                 }
             }
-
-            // console.error(JSON.stringify({
-            //     syntax,
-            //     node: [EnumToken[node.typ], node.nam ?? node.sel],
-            //     context: [EnumToken[context.typ], context.nam ?? context.sel]
-            // }, null, 1));
 
             break;
     }
@@ -171,6 +202,10 @@ export function isNodeAllowedInContext(node: AstNode, context: AstNode): boolean
     return false;
 }
 
+/**
+ * Create a syntax validation context from a list of tokens
+ * @param input
+ */
 export function createContext(input: Token[]): Context<Token> {
 
     const values: Token[] = input.slice();
@@ -260,7 +295,24 @@ export function createContext(input: Token[]): Context<Token> {
     }
 }
 
-export function evaluateSyntax(node: AstNode, options: ValidationOptions): ValidationSyntaxResult {
+/**
+ * Evaluate the validity of the syntax of a node
+ * @param node
+ * @param parent
+ * @param options
+ */
+export function evaluateSyntax(node: AstNode, parent: AstRuleList | AstInvalidRule | AstInvalidAtRule | null, options: ValidationOptions): ValidationSyntaxResult {
+
+    if ((node as AstAtRule | AstRule | AstKeyframesRule).validSyntax) {
+
+        return {
+            valid: SyntaxValidationResult.Valid,
+            node,
+            syntax: null,
+            error: '',
+            context: []
+        }
+    }
 
     let ast: ValidationToken[] | null;
     let result;
@@ -274,36 +326,49 @@ export function evaluateSyntax(node: AstNode, options: ValidationOptions): Valid
                 break;
             }
 
+            let token: Token | null = null;
+            let values: Token[] = (node as AstDeclaration).val.slice();
             ast = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, (node as AstDeclaration).nam);
 
-            if (ast != null) {
+            while (values.length > 0) {
 
-                let token: Token | null = null;
-                const values: Token[] = (node as AstDeclaration).val.slice();
+                token = values.at(-1) as Token;
 
-                while (values.length > 0) {
+                if (token.typ == EnumToken.WhitespaceTokenType || token.typ == EnumToken.CommentTokenType) {
 
-                    token = values.at(-1) as Token;
+                    values.pop();
 
-                    if (token.typ == EnumToken.WhitespaceTokenType || token.typ == EnumToken.CommentTokenType) {
+                } else {
+
+                    if (token.typ == EnumToken.ImportantTokenType) {
 
                         values.pop();
 
-                    } else {
-
-                        if (token.typ == EnumToken.ImportantTokenType) {
+                        if (values.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
 
                             values.pop();
-
-                            if (values.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
-
-                                values.pop();
-                            }
                         }
+                    }
 
-                        break;
+                    break;
+                }
+            }
+
+            if (ast == null) {
+
+                if (parent?.typ == EnumToken.AtRuleNodeType) {
+
+                    ast = (getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, ['@' + (parent as AstAtRule).nam, 'descriptors', node.nam]));
+
+                    if (ast == null) {
+
+                        ast = ((getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, ['@' + (parent as AstAtRule).nam, 'descriptors', node.nam]) ?? getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, '@' + (parent as AstAtRule).nam))?.[0] as ValidationAtRuleDefinitionToken)?.chi as ValidationToken[];
+                        values = [{...node, val: values}];
                     }
                 }
+            }
+
+            if (ast != null) {
 
                 result = doEvaluateSyntax(ast, createContext(values), {...options, visited: new WeakMap()});
 
@@ -435,7 +500,7 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
                 continue;
             }
 
-        } else if (options.occurence !== false && syntax.occurence != null) {
+        } else if (options.occurrence !== false && syntax.occurence != null) {
 
             result = matchOccurence(syntax, context, options);
         } else if (options.atLeastOnce !== false && syntax.atLeastOnce) {
@@ -559,7 +624,7 @@ function matchList(syntax: ValidationToken, context: Context<Token>, options: Va
         result = doEvaluateSyntax([syntax], createContext(tokens), {
             ...options,
             isList: false,
-            occurence: false
+            occurrence: false
         } as ValidationOptions);
 
         if (result.valid == SyntaxValidationResult.Valid) {
@@ -610,7 +675,7 @@ function matchOccurence(syntax: ValidationToken, context: Context<Token>, option
 
     do {
 
-        result = match(syntax, context.clone(), {...options, occurence: false} as ValidationOptions);
+        result = match(syntax, context.clone(), {...options, occurrence: false} as ValidationOptions);
 
         if (result.valid == SyntaxValidationResult.Drop) {
 
@@ -687,7 +752,7 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
             ...options,
             isRepeatable: null,
             isList: null,
-            occurence: null,
+            occurrence: null,
             atLeastOnce: null
         } as ValidationOptions);
 
@@ -705,7 +770,7 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
 
             success = (token.typ == EnumToken.IdenTokenType || token.typ == EnumToken.DashedIdenTokenType || isIdentColor(token)) &&
                 ((token as IdentToken).val == (syntax as ValidationKeywordToken).val ||
-                    (syntax as ValidationKeywordToken).val === (token as IdentToken).val?.toLowerCase?.() ||
+                    (syntax as ValidationKeywordToken).val.toLowerCase() === (token as IdentToken).val?.toLowerCase?.() ||
                     // config.declarations.all
                     allValues.includes((token as IdentToken).val.toLowerCase()));
 
@@ -761,7 +826,7 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
                 ...options,
                 isRepeatable: null,
                 isList: null,
-                occurence: null,
+                occurrence: null,
                 atLeastOnce: null
             } as ValidationOptions);
 
@@ -814,7 +879,7 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
                     ...options,
                     isRepeatable: null,
                     isList: null,
-                    occurence: null,
+                    occurrence: null,
                     atLeastOnce: null
                 } as ValidationOptions).valid == SyntaxValidationResult.Valid;
 
@@ -844,11 +909,12 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
 function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Token>, options: ValidationOptions): ValidationSyntaxResult {
 
     if (![
-        'bg-position',
+        'color',
         'integer',
+        'bg-position',
         'length-percentage', 'flex', 'calc-sum', 'color',
         'color-base', 'system-color', 'deprecated-system-color',
-        'pseudo-class-selector', 'pseudo-element-selector'
+        'pseudo-class-selector', 'pseudo-element-selector', 'feature-value-declaration'
     ].includes(syntax.val)) {
 
         if (syntax.val in config[ValidationSyntaxGroupEnum.Syntaxes]) {
@@ -857,7 +923,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
                 ...options,
                 isRepeatable: null,
                 isList: null,
-                occurence: null,
+                occurrence: null,
                 atLeastOnce: null
             } as ValidationOptions);
         }
@@ -872,7 +938,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
             ...options,
             isRepeatable: null,
             isList: null,
-            occurence: null,
+            occurrence: null,
             atLeastOnce: null
         } as ValidationOptions);
 
@@ -1015,6 +1081,18 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
 
             break;
 
+        case 'declaration': {
+
+            success = token.typ == EnumToken.DeclarationNodeType;
+
+            if (success) {
+
+                success = evaluateSyntax(token as AstDeclaration, null, options).valid == SyntaxValidationResult.Valid;
+            }
+        }
+
+            break;
+
         case 'declaration-value':
 
             while (!context.done()) {
@@ -1056,7 +1134,11 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
         case 'color':
         case 'color-base':
 
-            success = token.typ == EnumToken.ColorTokenType || (token.typ == EnumToken.IdenTokenType && 'currentcolor' === (token as IdentToken).val.toLowerCase()) || (token.typ == EnumToken.IdenTokenType && 'transparent' === (token as IdentToken).val.toLowerCase()) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
+            success = token.typ == EnumToken.ColorTokenType ||
+                (token.typ == EnumToken.IdenTokenType && 'currentcolor' === (token as IdentToken).val.toLowerCase()) ||
+                (token.typ == EnumToken.IdenTokenType && 'transparent' === (token as IdentToken).val.toLowerCase()) ||
+                (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val) ||
+                    isColor(token));
 
             if (!success && token.typ == EnumToken.FunctionTokenType && colorsFunc.includes((token as FunctionToken).val)) {
 
@@ -1064,7 +1146,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
                     ...options,
                     isRepeatable: null,
                     isList: null,
-                    occurence: null,
+                    occurrence: null,
                     atLeastOnce: null
                 } as ValidationOptions).valid == SyntaxValidationResult.Valid
             }
@@ -1076,9 +1158,37 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
             success = (token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == ColorType.HEX) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
             break;
 
+        case 'feature-value-declaration': {
+
+            let hasNumber: boolean = false;
+            success = token.typ == EnumToken.DeclarationNodeType && (token as AstDeclaration).val.length > 0 && (token as AstDeclaration).val.every((val: Token) => {
+
+                if (val.typ == EnumToken.WhitespaceTokenType || val.typ == EnumToken.CommentTokenType) {
+
+                    return true;
+                }
+
+                const success: boolean = (val.typ == EnumToken.NumberTokenType && Number.isInteger(+(val as NumberToken).val) && (val as NumberToken).val as number > 0) || (val.typ == EnumToken.FunctionTokenType && mathFuncs.includes((val as FunctionToken).val.toLowerCase()) || (val.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((val as FunctionToken).val)));
+
+                if (success) {
+
+                    hasNumber = true;
+                }
+
+                if ('range' in syntax) {
+
+                    return success && +(val as NumberToken).val >= +((syntax as ValidationPropertyToken).range![0] as number) && +(val as NumberToken).val <= +((syntax as ValidationPropertyToken).range![1] as number);
+                }
+
+                return success;
+            }) && hasNumber;
+        }
+
+            break;
+
         case 'integer':
 
-            success = (token.typ == EnumToken.NumberTokenType && Number.isInteger(+((token as NumberToken).val))) || (token.typ == EnumToken.FunctionTokenType && mathFuncs.includes((token as FunctionToken).val.toLowerCase()) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val)));
+            success = (token.typ == EnumToken.NumberTokenType && Number.isInteger(+(token as NumberToken).val) && (token as NumberToken).val as number > 0) || (token.typ == EnumToken.FunctionTokenType && mathFuncs.includes((token as FunctionToken).val.toLowerCase()) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val)));
 
             if ('range' in syntax) {
 
@@ -1178,7 +1288,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
                         ...options,
                         isRepeatable: null,
                         isList: null,
-                        occurence: null,
+                        occurrence: null,
                         atLeastOnce: null
                     }).valid == SyntaxValidationResult.Valid;
                 }
@@ -1199,7 +1309,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
                     ...options,
                     isRepeatable: null,
                     isList: null,
-                    occurence: null,
+                    occurrence: null,
                     atLeastOnce: null
                 }).valid == SyntaxValidationResult.Valid;
         }
@@ -1413,7 +1523,6 @@ function allOf(syntax: ValidationToken[][], context: Context<Token>, options: Va
         }
     }
 
-    // console.error()
     const success = syntax.length == 0;
 
     return {

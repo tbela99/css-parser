@@ -24,10 +24,12 @@ export function dirname(path: string): string {
         if (chr == '/') {
 
             parts.push('')
-        } else if (chr == '?' || chr == '#') {
-
-            break;
-        } else {
+        }
+        // else if (chr == '?' || chr == '#') {
+        //
+        //     break;
+        // }
+        else {
 
             parts[parts.length - 1] += chr;
         }
@@ -96,6 +98,9 @@ export function resolve(url: string, currentDirectory: string, cwd?: string): { 
             relative: url
         };
     }
+
+    cwd ??= '';
+    currentDirectory ??= '';
 
     if (matchUrl.test(currentDirectory)) {
 

@@ -109,7 +109,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
 
             for (const feature of options.features as MinifyFeature[]) {
 
-                if ((feature.processMode & FeatureWalkMode.Pre) === 0) {
+                if ((feature.processMode & FeatureWalkMode.Pre) === 0 || (feature.accept != null && !feature.accept.has(parent.typ))) {
                     continue;
                 }
 
@@ -167,7 +167,8 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
 
             for (const feature of options.features as MinifyFeature[]) {
 
-                if ((feature.processMode & FeatureWalkMode.Post) === 0) {
+                if ((feature.processMode & FeatureWalkMode.Post) === 0 || (feature.accept != null && !feature.accept.has(parent.typ))) {
+
                     continue;
                 }
 
@@ -355,6 +356,7 @@ function doMinify(ast: AstNode, options: ParserOptions = {}, recursive: boolean 
                 }
 
                 if (previous?.typ == EnumToken.AtRuleNodeType &&
+                    (node as AstAtRule).nam != 'font-face' &&
                     (<AstAtRule>previous).nam == (<AstAtRule>node).nam &&
                     (<AstAtRule>previous).val == (<AstAtRule>node).val) {
 
@@ -569,7 +571,9 @@ function doMinify(ast: AstNode, options: ParserOptions = {}, recursive: boolean 
 
                         if (shouldMerge) {
 
+                            // @ts-ignore
                             if (((node.typ == EnumToken.RuleNodeType || node.typ == EnumToken.KeyFramesRuleNodeType) && (node as AstRule).sel == (previous as AstRule).sel) ||
+                                // @ts-ignore
                                 (node.typ == EnumToken.AtRuleNodeType) && (node as AstAtRule).val != 'font-face' && (node as AstAtRule).val == (previous as AstAtRule).val) {
 
                                 // @ts-ignore

@@ -8,6 +8,19 @@ import {generalEnclosedFunc} from "../../syntax/color/utils/index.ts";
 
 export function validateAtRuleWhen(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 
+    if (!Array.isArray(atRule.chi)) {
+
+        // @ts-ignore
+        return {
+            valid: SyntaxValidationResult.Drop,
+            matches: [],
+            node: atRule,
+            syntax: '@' + atRule.nam,
+            error: 'expected supports body',
+            tokens: []
+        } as ValidationSyntaxResult;
+    }
+
     const slice: Token[] = Array.isArray(atRule.tokens) ? atRule.tokens.slice() : [];
 
     consumeWhitespace(slice);

@@ -7,11 +7,15 @@ import type {
     BinaryExpressionToken,
     ColorToken,
     DimensionToken,
+    FlexToken,
+    FrequencyToken,
     FunctionToken,
     IdentToken,
     LengthToken,
     NumberToken,
     PercentageToken,
+    ResolutionToken,
+    TimeToken,
     Token
 } from "../../@types/index.d.ts";
 import {ColorType, EnumToken, WalkerOptionEnum, walkValues} from "../ast/index.ts";
@@ -582,7 +586,7 @@ export function isColor(token: Token): boolean {
 
     if (token.typ == EnumToken.IdenTokenType) {
         // named color
-        return (token as IdentToken).val.toLowerCase() in COLORS_NAMES;
+        return (token as IdentToken).val.toLowerCase() in COLORS_NAMES || 'currentcolor' === (token as IdentToken).val.toLowerCase() || 'transparent' === (token as IdentToken).val.toLowerCase();
     }
 
     let isLegacySyntax: boolean = false;
@@ -635,9 +639,7 @@ export function isColor(token: Token): boolean {
                             return false;
                         }
                     }
-
                 }
-
             }
 
             // @ts-ignore
@@ -645,8 +647,8 @@ export function isColor(token: Token): boolean {
 
                 // @ts-ignore
                 const children: Token[] = (<Token[]>(token as ColorToken).chi).filter((t: Token) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.LiteralTokenType, EnumToken.ColorTokenType, EnumToken.FunctionTokenType, EnumToken.PercentageTokenType].includes(t.typ));
-
                 const isRelative: boolean = children[0].typ == EnumToken.IdenTokenType && (children[0] as IdentToken).val == 'from';
+
                 if (children.length < 4 || children.length > 8) {
 
                     return false;
@@ -668,9 +670,17 @@ export function isColor(token: Token): boolean {
                         }
                     }
 
-                    if (children[i].typ == EnumToken.FunctionTokenType && !mathFuncs.includes((<FunctionToken>children[i]).val)) {
+                    if (children[i].typ == EnumToken.FunctionTokenType) {
 
-                        return false;
+                        if ('var' == (children[i] as FunctionToken).val.toLowerCase()) {
+
+                            continue;
+                        }
+
+                        if (!mathFuncs.includes((<FunctionToken>children[i]).val)) {
+
+                            return false;
+                        }
                     }
                 }
 
@@ -1110,36 +1120,36 @@ export function isNumber(name: string): boolean {
     return true;
 }
 
-export function isDimension(name: string) {
-
-    let index: number = name.length;
-
-    while (index--) {
-
-        if (isLetter(<number>name.charCodeAt(index))) {
-
-            continue
-        }
-
-        index++;
-        break;
-    }
-
-    const number: string = name.slice(0, index);
-    return number.length > 0 && isIdentStart(name.charCodeAt(index)) && isNumber(number);
-}
+// export function isDimension(name: string) {
+//
+//     let index: number = name.length;
+//
+//     while (index--) {
+//
+//         if (isLetter(<number>name.charCodeAt(index))) {
+//
+//             continue
+//         }
+//
+//         index++;
+//         break;
+//     }
+//
+//     const number: string = name.slice(0, index);
+//     return number.length > 0 && isIdentStart(name.charCodeAt(index)) && isNumber(number);
+// }
 
 export function isPercentage(name: string) {
 
     return name.endsWith('%') && isNumber(name.slice(0, -1));
 }
 
-export function isFlex(name: string) {
+export function isFlex(dimension: DimensionToken): boolean {
 
-    return name.endsWith('fr') && isNumber(name.slice(0, -2));
+    return 'unit' in dimension && 'fr' == dimension.unit.toLowerCase();
 }
 
-export function parseDimension(name: string): DimensionToken | LengthToken | AngleToken {
+export function parseDimension(name: string): DimensionToken | LengthToken | AngleToken | FlexToken | TimeToken | ResolutionToken | FrequencyToken | null {
 
     let index: number = name.length;
 
@@ -1159,6 +1169,10 @@ export function parseDimension(name: string): DimensionToken | LengthToken | Ang
         val: +name.slice(0, index),
         unit: name.slice(index)
     };
+
+    if (index < 0 || Number.isNaN(dimension.val)) {
+        return null;
+    }
 
     if (isAngle(dimension)) {
 
@@ -1185,6 +1199,9 @@ export function parseDimension(name: string): DimensionToken | LengthToken | Ang
 
         // @ts-ignore
         dimension.typ = EnumToken.FrequencyTokenType;
+    } else if (isFlex(dimension)) {
+        // @ts-ignore
+        dimension.typ = EnumToken.FlexTokenType;
     }
 
     return dimension;

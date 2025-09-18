@@ -1,5 +1,12 @@
-import type {AngleToken, FunctionToken, IdentToken, LengthToken, NumberToken, Token} from "../../../@types/token.d.ts";
-import type {Matrix} from "./utils.ts";
+import type {
+    AngleToken,
+    FunctionToken,
+    IdentToken,
+    LengthToken,
+    NumberToken,
+    PercentageToken,
+    Token
+} from "../../../@types/token.d.ts";
 import {identity, multiply, toZero} from "./utils.ts";
 import {EnumToken} from "../types.ts";
 import {length2Px, transformFunctions} from "../../syntax/index.ts";
@@ -12,6 +19,7 @@ import {minify} from "./minify.ts";
 import {skew, skewX, skewY} from "./skew.ts";
 import {matrix, serialize} from "./matrix.ts";
 import {perspective} from "./perspective.ts";
+import type {Matrix} from "./type.d.ts";
 
 export function compute(transformLists: Token[]): {
     matrix: Token,
@@ -59,10 +67,6 @@ export function compute(transformLists: Token[]): {
         }
     }
 
-    // console.error({matrix});
-
-    // matrix = toZero(matrix) as Matrix;
-
     return {
         matrix: serialize(toZero(matrix) as Matrix),
         cumulative,
@@ -94,7 +98,7 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
                 values.length = 0;
 
                 const children = stripCommaToken((transformList[i] as FunctionToken).chi.slice()) as Token[];
-                const valCount: number = (transformList[i] as FunctionToken).val == 'translate3d' || (transformList[i] as FunctionToken).val == 'translate' ? 3 : 1;
+                const valCount: number = (transformList[i] as FunctionToken).val == 'translate3d' ? 3 : (transformList[i] as FunctionToken).val == 'translate' ? 2 : 1;
 
                 for (let j = 0; j < children.length; j++) {
 
@@ -215,12 +219,12 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
 
                     child = children[k];
 
-                    if (child.typ != EnumToken.NumberTokenType) {
+                    if (child.typ != EnumToken.NumberTokenType && child.typ != EnumToken.PercentageTokenType) {
 
                         return null;
                     }
 
-                    values.push(getNumber(child as NumberToken));
+                    values.push(getNumber(child as NumberToken | PercentageToken));
                 }
 
                 if ((transformList[i] as FunctionToken).val == 'scale3d') {

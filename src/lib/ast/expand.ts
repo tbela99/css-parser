@@ -11,25 +11,22 @@ import {EnumToken} from "./types.ts";
  *
  * @private
  */
-export function expand(ast: AstNode): AstNode {
+export function expand(ast: AstStyleSheet | AstAtRule | AstRule): AstNode {
 
     const result = <AstStyleSheet | AstAtRule>{...ast, chi: []};
 
-    // @ts-ignore
-    for (let i = 0; i < ast.chi.length; i++) {
+    for (let i = 0; i < ast.chi!.length; i++) {
 
-        // @ts-ignore
-        const node = ast.chi[i];
+        const node = ast.chi![i];
 
         if (node.typ == EnumToken.RuleNodeType) {
 
             // @ts-ignore
             result.chi.push(...expandRule(<AstRule>node));
-            // i += expanded.length - 1;
         } else if (node.typ == EnumToken.AtRuleNodeType && 'chi' in node) {
 
-            let hasRule = false;
-            let j = node!.chi!.length;
+            let hasRule: boolean = false;
+            let j: number = node!.chi!.length;
 
             while (j--) {
 
@@ -43,6 +40,10 @@ export function expand(ast: AstNode): AstNode {
 
             // @ts-ignore
             result.chi.push(<AstAtRule>{...(hasRule ? expand(node) : node)});
+        } else {
+
+            // @ts-ignore
+            result.chi!.push(node);
         }
     }
 
@@ -314,13 +315,5 @@ function replaceCompoundLiteral(selector: string, replace: string) {
         }
 
         return b == '&' ? -1 : 0;
-    }).reduce((acc: string, curr: string) => {
-
-        // if (acc.length > 0 && curr == '&' && (replace.charAt(0) != '.' || replace.includes(' '))) {
-        //
-        //     return acc + ':is(' + replace + ')';
-        // }
-
-        return acc + (curr == '&' ? replace : curr)
-    }, '');
+    }).reduce((acc: string, curr: string): string => acc + (curr == '&' ? replace : curr), '');
 }

@@ -1,12 +1,14 @@
 import type {AstAtRule, AstDeclaration, AstKeyframesAtRule, AstKeyframesRule, AstRule} from "./ast.d.ts";
+import {WalkerEvent} from "../lib/ast/walk.ts";
+import {EnumToken} from '../lib/ast/types.ts';
 
-export declare type VisitorEventType = 'Enter' | 'Leave' ;
 export declare type GenericVisitorResult<T> = T | T[] | Promise<T> | Promise<T[]> | null | Promise<null>;
 export declare type GenericVisitorHandler<T> = ((node: T, parent?: AstNode | Token, root?: AstNode | Token) => GenericVisitorResult<T>);
 export declare type GenericVisitorAstNodeHandlerMap<T> =
     Record<string, GenericVisitorHandler<T>>
     | GenericVisitorHandler<T>
-    | { type: VisitorEventType, handler: Record<string, GenericVisitorHandler<T>> | GenericVisitorHandler<T> };
+    | { type: WalkerEvent, handler: GenericVisitorHandler<T> }
+    | { type: WalkerEvent, handler: Record<string, GenericVisitorHandler<T>> };
 
 export declare type ValueVisitorHandler = GenericVisitorHandler<Token>;
 
@@ -220,15 +222,12 @@ export declare interface VisitorNodeMap {
 
     KeyframesRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesRule>;
 
-    KeyframesAtRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule> | Record<string, GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule>>;
+    KeyframesAtRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule>;
 
     /**
      * value visitor
      */
-    Value?: GenericVisitorHandler<Token> | Record<keyof EnumToken, GenericVisitorHandler<Token>> | {
-        type: VisitorEventType,
-        handler: GenericVisitorHandler<Token> | Record<keyof EnumToken, GenericVisitorHandler<Token>>
-    };
+    Value?: GenericVisitorAstNodeHandlerMap<Token>;
 
     /**
      * generic token visitor. the key name is of type keyof EnumToken.
@@ -277,8 +276,5 @@ export declare interface VisitorNodeMap {
      * // body {color:#f3fff0}
      * ```
      */
-    [key: keyof EnumToken]: GenericVisitorHandler<Token> | {
-        type: VisitorEventType,
-        handler: GenericVisitorHandler<Token>
-    };
+    [key: keyof typeof EnumToken]: GenericVisitorAstNodeHandlerMap<Token> | GenericVisitorAstNodeHandlerMap<AstNode>;
 }
