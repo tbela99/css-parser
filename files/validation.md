@@ -1,7 +1,6 @@
 ---
 title: Validation
 group: Documents
-slug: /validation
 category: Guides
 ---
 
@@ -124,3 +123,5 @@ const result = await transform(css, options);
 //> found 'InvalidAtRuleTokenType' in '' at 13:1
 
 ```
+------
+[Previous](./ast.md)

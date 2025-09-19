@@ -1,7 +1,6 @@
 ---
 title: Ast
 group: Documents
-slug: /traversal
 category: Guides
 ---
 
@@ -266,3 +265,6 @@ for (const {value} of walkValues(declaration.val, null, null,true)) {
 // [ "Whitespace", undefined ]
 // [ "Iden", "from" ]
 ```
+
+------
+[Previous](./transform.md) | [Next](./validation.md) 

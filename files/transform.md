@@ -1,7 +1,6 @@
 ---
 title: Custom transform
 group: Documents
-slug: /transform
 category: Guides
 ---
 
@@ -366,3 +365,6 @@ console.debug(await transform(css, options));
 
 // body {color:#f3fff0}
 ```
+
+------
+[Previous](./minification.md) | [Next](./ast.md) 

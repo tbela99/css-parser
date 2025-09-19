@@ -1,7 +1,6 @@
 ---
 title: Minification
 group: Documents
-slug: /minification
 category: Guides
 ---
 
@@ -816,3 +815,6 @@ list of computed shorthands properties:
 - [x] text-decoration
 - [x] text-emphasis
 - [x] transition
+
+------
+[Previous](./usage.md) | [Next](./transform.md) 

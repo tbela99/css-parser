@@ -1,7 +1,6 @@
 ---
 title: Getting started
 group: Documents
-slug: /install
 category: Guides
 ---
 
@@ -98,3 +97,6 @@ it can also be imported as umd module
 
 </script>
 ```
+
+------
+[Previous](./features.md) | [Next](./usage.md) 
