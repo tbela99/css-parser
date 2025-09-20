@@ -342,7 +342,7 @@
                             />
                             <label
                                     class="form-check-label"
-                                    for="renderoptionsexpandNestingRules"
+                                    for="parseoptionsexpandNestingRules"
                             >
                                 Expand nesting rules
                             </label>
@@ -756,7 +756,7 @@
         render,
         EnumToken,
         ColorType,
-    } from "https://esm.sh/@tbela99/css-parser@1.3.4/web";
+    } from "https://esm.sh/@tbela99/css-parser@1.3.5/web";
     import {buildTree} from "./tree.js";
 
     const units = ["B", "KB", "MB", "GB", "TB", "PB"];
@@ -890,7 +890,7 @@
                                         acc +
                                         (acc.length > 0 ? "\n" : "") +
                                         `${key}: ${
-                                                typeof value === "number"
+                                                typeof value === "number" && !key.includes("Count")
                                                         ? toFileSize(value)
                                                         : typeof value === "object"
                                                                 ? JSON.stringify(value)
