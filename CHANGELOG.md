@@ -2,6 +2,10 @@
 
 ## v1.3.4
 
+- [x] fix \<integer\> syntax validation #115
+
+## v1.3.4
+
 - [x] make streaming optional #109
 - [x] patch at-rule syntax for @font-feature-value #110
 - [x] support percentage in transform() and scale() #111

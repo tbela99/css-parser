@@ -1,0 +1,32 @@
+import { identity, multiply } from './utils.js';
+
+function translateX(x, from) {
+    const matrix = identity();
+    matrix[3 * 4] = x;
+    return multiply(from, matrix);
+}
+function translateY(y, from) {
+    const matrix = identity();
+    matrix[3 * 4 + 1] = y;
+    return multiply(from, matrix);
+}
+function translateZ(z, from) {
+    const matrix = identity();
+    matrix[3 * 4 + 2] = z;
+    return multiply(from, matrix);
+}
+function translate(translate, from) {
+    const matrix = identity();
+    matrix[3 * 4] = translate[0];
+    matrix[3 * 4 + 1] = translate[1] ?? 0;
+    return multiply(from, matrix);
+}
+function translate3d(translate, from) {
+    const matrix = identity();
+    matrix[3 * 4] = translate[0];
+    matrix[3 * 4 + 1] = translate[1];
+    matrix[3 * 4 + 2] = translate[2];
+    return multiply(from, matrix);
+}
+
+export { translate, translate3d, translateX, translateY, translateZ };

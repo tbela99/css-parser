@@ -1188,7 +1188,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
 
         case 'integer':
 
-            success = (token.typ == EnumToken.NumberTokenType && Number.isInteger(+(token as NumberToken).val) && (token as NumberToken).val as number > 0) || (token.typ == EnumToken.FunctionTokenType && mathFuncs.includes((token as FunctionToken).val.toLowerCase()) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val)));
+            success = (token.typ == EnumToken.NumberTokenType && /^[+-]?\d+$/.test((token as NumberToken).val.toString())) || (token.typ == EnumToken.FunctionTokenType && mathFuncs.includes((token as FunctionToken).val.toLowerCase()) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val)));
 
             if ('range' in syntax) {
 
