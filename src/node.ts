@@ -91,7 +91,10 @@ export async function load(url: string, currentFile: string = '.', asStream: boo
 
         if (stats.isFile()) {
 
-            return Readable.toWeb(createReadStream(resolved.absolute, {encoding: 'utf-8', highWaterMark: 64 * 1024})) as ReadableStream<Uint8Array>;
+            return Readable.toWeb(createReadStream(resolved.absolute, {
+                encoding: 'utf-8',
+                highWaterMark: 64 * 1024
+            })) as ReadableStream<Uint8Array>;
         }
 
     } catch (error) {
@@ -206,6 +209,7 @@ export async function parseFile(file: string, options: ParserOptions = {}, asStr
  *  console.log(result.ast);
  * ```
  */
+
 export async function parse(stream: string | ReadableStream<Uint8Array>, options: ParserOptions = {}): Promise<ParseResult> {
 
     return doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
@@ -241,7 +245,7 @@ export async function parse(stream: string | ReadableStream<Uint8Array>, options
  */
 export async function transformFile(file: string, options: TransformOptions = {}, asStream: boolean = false): Promise<TransformResult> {
 
-    return Promise.resolve(((options.load ?? load) as (file: string, currentFile: string, asStream: boolean) => LoadResult)(file,'.', asStream)).then(stream => transform(stream, {src: file, ...options}));
+    return Promise.resolve(((options.load ?? load) as (file: string, currentFile: string, asStream: boolean) => LoadResult)(file, '.', asStream)).then(stream => transform(stream, {src: file, ...options}));
 }
 
 /**

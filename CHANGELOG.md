@@ -1,8 +1,31 @@
 # Changelog
 
-## v1.3.4
+## v1.3.5
 
 - [x] fix \<integer\> syntax validation #115
+
+### CSS Module 
+
+- [x] scoped name generation
+- [ ] @values
+- [ ] :import
+- [ ] composes: https://github.com/css-modules/css-modules/blob/master/docs/composition.md
+  - [ ] compose from local selector
+  - [ ] compose from other files
+  - [ ] compose from global selector
+- [x] :local
+- [x] :global
+- [x] :local()
+- [x] :global()
+- [x] selector
+- [ ] keyframe
+- [x] grid-template-areas
+- [x] dashed ident
+- [ ] animations
+- [ ] pure
+- [ ] default mode
+  - [ ] global
+  - [ ] local
 
 ## v1.3.4
 

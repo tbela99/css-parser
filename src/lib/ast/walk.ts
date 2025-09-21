@@ -277,9 +277,18 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
                 }
 
                 // @ts-ignore
-                if (option != null && typeof option == 'object' && 'typ' in option) {
+                if (option != null && typeof option == 'object' && ('typ' in option || Array.isArray(option))) {
 
-                    map.set(option as Token, map.get(value) ?? root as FunctionToken | ParensToken);
+                    const op = Array.isArray(option) ? option : [option];
+
+                    for (const o of op) {
+
+                        map.set(o as Token, map.get(value) ?? root as FunctionToken | ParensToken);
+                    }
+
+                    stack[reverse ? 'push' : 'unshift'](...op);
+                    console.error({op, s: stack[0]});
+
                 }
             }
         }
@@ -360,9 +369,16 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
                 option = filter.fn(value, <FunctionToken | ParensToken>map.get(value), WalkerEvent.Leave);
 
                 // @ts-ignore
-                if (option != null && 'typ' in option) {
+                if (option != null && ('typ' in option || Array.isArray(option))) {
 
-                    map.set(option as Token, map.get(value) ?? root as FunctionToken | ParensToken);
+                    const op = Array.isArray(option) ? option : [option];
+
+                    for (const o of op) {
+
+                        map.set(o as Token, map.get(value) ?? root as FunctionToken | ParensToken);
+                    }
+
+                    stack[reverse ? 'push' : 'unshift'](...op);
                 }
             }
         }

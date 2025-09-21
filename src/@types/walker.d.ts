@@ -20,7 +20,7 @@ export declare type WalkerFilter = (node: AstNode) => WalkerOption;
 /**
  * filter nod
  */
-export declare type WalkerValueFilter = (node: AstNode | Token, parent?: AstNode | Token | null, event?: WalkerEvent) => WalkerOption | null;
+export declare type WalkerValueFilter = (node: AstNode | Token, parent?: AstNode | Token | AstNode[] | Token[] | null, event?: WalkerEvent) => WalkerOption | null;
 
 export declare interface WalkResult {
     node: AstNode;
