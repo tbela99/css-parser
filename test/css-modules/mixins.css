@@ -1,0 +1,18 @@
+
+/* mixins.css */
+.title {
+    color: black;
+    font-size: 40px;
+}
+
+.title:hover {
+    color: red;
+}
+
+.button {
+    background: #fff;
+    border: 1px solid #000;
+}
+.cell {
+    margin: 10px;
+}
