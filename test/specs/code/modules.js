@@ -113,7 +113,7 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
                 expect(result.mapping).deep.equals({
                         goal: "RDHNV_goal",
                         "bg-indigo": "gosyG_bg-indigo",
-                        "indigo-white": "wyCIQ_indigo-white gosyG_bg-indigo mixins_jX17f_title mixins_NZ39h_cell mixins_pxBHP_button",
+                        "indigo-white": "wyCIQ_indigo-white gosyG_bg-indigo mixins_sCGMU_title mixins_Scgmu_cell mixins_eaeks_button",
                     }
                 );
 

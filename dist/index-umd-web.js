@@ -18418,8 +18418,11 @@
             const global = new Set;
             const processed = new Set;
             const pattern = typeof options.module == 'boolean' ? null : options.module.pattern;
-            const filePath = typeof options.module == 'boolean' ? options.src : (options.module.filePath ?? options.src);
             const revMapping = {};
+            let filePath = typeof options.module == 'boolean' ? options.src : (options.module.filePath ?? options.src);
+            if (filePath.startsWith(options.cwd + '/')) {
+                filePath = filePath.slice(options.cwd.length + 1);
+            }
             const moduleSettings = {
                 hashLength: 5, filePath,
                 scoped: true,
