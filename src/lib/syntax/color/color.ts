@@ -227,9 +227,9 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
 
             for (const chi of (token as ColorToken).chi as Token[]) {
 
-                if (chi.typ == EnumToken.NumberTokenType && typeof chi.val == 'number') {
+                if (chi.typ == EnumToken.NumberTokenType && typeof (chi as NumberToken).val == 'number') {
 
-                    chi.val = toPrecisionValue(getNumber(chi)) as number;
+                    (chi as NumberToken).val = toPrecisionValue(getNumber(chi as NumberToken)) as number;
                 }
             }
 

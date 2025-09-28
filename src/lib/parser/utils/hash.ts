@@ -6,6 +6,11 @@ const DIGITS = "0123456789";
 const FULL_ALPHABET: string[] = (LOWER + UPPER + DIGITS).split(""); // 64 chars
 const FIRST_ALPHABET: string[] = (LOWER + UPPER).split(""); // 54 chars (no digits)
 
+/**
+ * supported hash algorithms
+ */
+export const hashAlgorithms: string[] = ['hex', 'base64', 'base64url', 'sha1', 'sha256', 'sha384', 'sha512'];
+
 // simple deterministic hash → number
 function hashCode(str: string) {
     let hash: number = 0;
@@ -42,13 +47,17 @@ export function hashId(input: string, length: number = 6): string {
     return chars.join("");
 }
 
+/**
+ * convert input to hex
+ * @param input
+ */
 function toHex(input: ArrayBuffer | string) {
 
     let result = '';
 
     if (input instanceof ArrayBuffer || ArrayBuffer.isView(input)) {
 
-        for (const byte of Array.from(new Uint8Array(input))) {
+        for (const byte of Array.from(new Uint8Array(input as ArrayBuffer))) {
 
             result += byte.toString(16).padStart(2, '0');
         }
@@ -63,6 +72,12 @@ function toHex(input: ArrayBuffer | string) {
     return result;
 }
 
+/**
+ * generate a hash
+ * @param input
+ * @param length
+ * @param algo
+ */
 export async function hash(input: string, length: number = 6, algo?: string) {
 
     let result: string;

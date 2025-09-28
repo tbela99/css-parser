@@ -427,6 +427,10 @@ var EnumToken;
      * invalid declaration node type
      */
     EnumToken[EnumToken["InvalidDeclarationNodeType"] = 94] = "InvalidDeclarationNodeType";
+    /**
+     * composes token node type
+     */
+    EnumToken[EnumToken["ComposesSelectorNodeType"] = 95] = "ComposesSelectorNodeType";
     /* aliases */
     /**
      * alias for time token type

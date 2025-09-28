@@ -13,6 +13,7 @@ import type {
     ClassSelectorToken,
     ColorToken,
     CommentToken,
+    ComposesSelectorToken,
     DashedIdentToken,
     ErrorDescription,
     FractionToken,
@@ -526,7 +527,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
             if (options.convertColor !== false) {
 
-                const value: ColorToken | null = convertColor(token, typeof options.convertColor == 'boolean' ? ColorType.HEX : ColorType[(ColorType[options.convertColor ?? 'HEX'] as string)?.toUpperCase?.().replaceAll?.('-', '_') as keyof typeof ColorType] ?? ColorType.HEX);
+                const value: ColorToken | null = convertColor(token as ColorToken, typeof options.convertColor == 'boolean' ? ColorType.HEX : ColorType[(ColorType[options.convertColor ?? 'HEX'] as string)?.toUpperCase?.().replaceAll?.('-', '_') as keyof typeof ColorType] ?? ColorType.HEX);
 
                 //
                 if (value != null) {
@@ -608,6 +609,10 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
             return ((token as NameSpaceAttributeToken).l == null ? '' : renderToken((token as NameSpaceAttributeToken).l as Token, options, cache, reducer, errors)) + '|' +
                 renderToken((token as NameSpaceAttributeToken).r, options, cache, reducer, errors);
+
+        case EnumToken.ComposesSelectorNodeType:
+
+            return (token as ComposesSelectorToken).l.reduce((acc: string, curr: Token) => acc + renderToken(curr, options, cache), '') + ((token as ComposesSelectorToken).r == null ? '' : ' from ' + renderToken((token as ComposesSelectorToken).r as Token, options, cache, reducer, errors));
 
         case EnumToken.BlockStartTokenType:
             return '{';

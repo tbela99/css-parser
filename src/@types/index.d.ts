@@ -194,6 +194,61 @@ export declare type LoadResult =
     | string
     | Promise<string>;
 
+export declare interface ModuleOptions {
+
+
+    /**
+     * use local scope vs global scope
+     */
+    scoped?: boolean;
+
+    /**
+     * module output file path
+     */
+    filePath?: string;
+
+    /**
+     * module hash length
+     */
+    hashLength?: number;
+
+    /**
+     * scoped name pattern. the supported placeholders are:
+     * - name: the file base name without the extension
+     * - hash: the file path hash
+     * - local: the local name
+     * - path: the file path
+     * - folder: the file folder
+     * - ext: the file extension
+     *
+     * pattern can optionally have a maximum number of characters: `pattern: '[name:2]-[hash:5]'`.
+     * the hash pattern can take an algorithm, a maximum number of characters or both: `pattern: '[name]-[hash:base64:5]'` or `pattern: '[name]-[hash:5]'` or `pattern: '[name]-[hash:sha1]'`.
+     * supported hash algorithms are:
+     * - base64
+     * - hex
+     * - base64url
+     * - sha1
+     * - sha256
+     * - sha384
+     * - sha512
+     */
+    pattern?: string;
+
+    /**
+     * optional function to generate scoped name
+     * @param localName
+     * @param filePath
+     * @param hashLength
+     * @param pattern see {@link ParserOptions.module.pattern}
+     */
+    generateScopedName?: (
+        localName: string,
+        filePath: string,
+        pattern: string,
+        hashLength?: number
+    ) => string | Promise<string>;
+}
+
 /**
  * parser options
  */
@@ -232,7 +287,7 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
      * @param asStream
      *
      */
-    load?: (url: string, currentUrl: string, asStream?: boolean) => LoadResult;
+    load?: (url: string, currentUrl?: string, asStream?: boolean) => LoadResult;
     /**
      * get directory name
      * @param path
@@ -288,62 +343,9 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
     cache?: WeakMap<AstNode, string>;
 
     /**
-     * module options
+     * css modules options
      */
-    module?: {
-
-
-        /**
-         * use global scope
-         */
-        globalScope?: boolean;
-
-        /**
-         * module output file path
-         */
-        filePath?: string;
-
-        /**
-         * module hash length
-         */
-        hashLength?: number;
-
-        /**
-         * scoped name pattern. the supported placeholders are:
-         * - name: the file base name without the extension
-         * - hash: the file path hash
-         * - local: the local name
-         * - path: the file path
-         * - folder: the file folder
-         * - ext: the file extension
-         *
-         * pattern can optionally have a maximum number of characters: `pattern: '[name:2]-[hash:5]'`.
-         * the hash pattern can take an algorithm and a maximum number of characters: `pattern: 'name-[hash:base64:5]'` or `pattern: 'name-[hash:5]'`.
-         * supported hash algorithms are:
-         * - base64
-         * - hex
-         * - base64url
-         * - sha1
-         * - sha256
-         * - sha384
-         * - sha512
-         */
-        pattern?: string;
-
-        /**
-         * optional custom function to generate scoped name
-         * @param localName
-         * @param filePath
-         * @param hashLength
-         * @param pattern see {@link ParserOptions.module.pattern}
-         */
-        generateScopedName?: (
-            localName: string,
-            filePath: string,
-            hashLength?: number,
-            pattern?: string
-        ) => string;
-    }
+    module?: boolean | ModuleOptions
 }
 
 /**
@@ -569,35 +571,15 @@ export declare interface ParseResult {
     stats: ParseResultStats;
 
     /**
-     * module mapping
+     * css module mapping
      */
     mapping?: Record<string, string>;
 
-}
-
-export declare interface ParseModuleResult {
-
     /**
-     * module mapping
+     * css module reverse mapping
+     * @private
      */
-    mapping: Record<string, string>;
-    /**
-     * module code
-     */
-    code: string;
-
-    /**
-     * parsed ast tree
-     */
-    ast: AstStyleSheet;
-    /**
-     * parse errors
-     */
-    errors: ErrorDescription[];
-    /**
-     * parse stats
-     */
-    stats: ParseResultStats
+    revMapping?: Record<string, string>;
 }
 
 /**

@@ -192,7 +192,11 @@ export async function parse(stream: string | ReadableStream<Uint8Array>, options
         resolve,
         dirname,
         cwd: options.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
-    }));
+    })).then(result => {
+
+        const {revMapping, ...res} = result;
+        return res as ParseResult;
+    });;
 }
 
 /**

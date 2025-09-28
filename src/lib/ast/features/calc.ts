@@ -125,7 +125,7 @@ export class ComputeCalcExpressionFeature {
 
                                     if (children[i] == value) {
 
-                                        children.splice(i, 1, !(parent.typ == EnumToken.FunctionTokenType && parent.val == 'calc') && (typeof (values[0] as NumberToken).val != 'number' && !(values[0].typ == EnumToken.FunctionTokenType && mathFuncs.includes((values[0] as FunctionToken).val))) ? {
+                                        children.splice(i, 1, !(parent.typ == EnumToken.FunctionTokenType && (parent as FunctionToken).val == 'calc') && (typeof (values[0] as NumberToken).val != 'number' && !(values[0].typ == EnumToken.FunctionTokenType && mathFuncs.includes((values[0] as FunctionToken).val))) ? {
                                             typ: EnumToken.FunctionTokenType,
                                             val: 'calc',
                                             chi: values

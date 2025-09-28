@@ -25,9 +25,12 @@ class PropertyList {
         });
     }
     add(...declarations) {
+        let name;
         for (const declaration of declarations) {
+            name = declaration.typ != EnumToken.DeclarationNodeType ? null : declaration.nam.toLowerCase();
             if (declaration.typ != EnumToken.DeclarationNodeType ||
-                (typeof this.options.removeDuplicateDeclarations === 'string' && this.options.removeDuplicateDeclarations === declaration.nam.toLowerCase()) ||
+                'composes' === name ||
+                (typeof this.options.removeDuplicateDeclarations === 'string' && this.options.removeDuplicateDeclarations === name) ||
                 (Array.isArray(this.options.removeDuplicateDeclarations) ? this.options.removeDuplicateDeclarations.includes(declaration.nam) : !this.options.removeDuplicateDeclarations)) {
                 this.declarations.set(Number(Math.random().toString().slice(2)).toString(36), declaration);
                 continue;

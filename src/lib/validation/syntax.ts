@@ -912,6 +912,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
         'color',
         'integer',
         'bg-position',
+        'composes-selector',
         'length-percentage', 'flex', 'calc-sum', 'color',
         'color-base', 'system-color', 'deprecated-system-color',
         'pseudo-class-selector', 'pseudo-element-selector', 'feature-value-declaration'
@@ -951,6 +952,11 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
     }
 
     switch (syntax.val) {
+
+        case 'composes-selector':
+
+            success = token.typ == EnumToken.ComposesSelectorNodeType;
+            break;
 
         case 'bg-position': {
 

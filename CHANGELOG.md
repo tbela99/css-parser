@@ -7,20 +7,23 @@
 ### CSS Module 
 
 - [x] scoped name generation
-- [ ] @values
 - [ ] :import
-- [ ] composes: https://github.com/css-modules/css-modules/blob/master/docs/composition.md
-  - [ ] compose from local selector
-  - [ ] compose from other files
-  - [ ] compose from global selector
+- [ ] :export
+- [x] composes: https://github.com/css-modules/css-modules/blob/master/docs/composition.md
+  - [x] compose from local selector
+  - [x] compose from other files
+  - [x] compose from global selector
 - [x] :local
 - [x] :global
 - [x] :local()
 - [x] :global()
 - [x] selector
+- [x] css variables
+- [ ] css at-rule values
+- [ ] css at-rule property
 - [ ] keyframe
 - [x] grid-template-areas
-- [x] dashed ident
+- [x] dashed ident (custom properties)
 - [ ] animations
 - [ ] pure
 - [ ] default mode

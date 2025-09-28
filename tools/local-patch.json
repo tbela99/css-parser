@@ -33,7 +33,9 @@
     "text-align": {
       "comment": "extend with -non-standard-text-align",
       "syntax": "| <-non-standard-text-align>"
-    }
+    },
+    "composes": {
+      "syntax": "<composes-selector>"}
   },
   "types": {
     "track-breadth": {

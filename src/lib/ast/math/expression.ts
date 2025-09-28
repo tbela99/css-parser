@@ -461,7 +461,7 @@ export function inlineExpression(token: Token): Token[] {
             result.push(token);
         } else {
 
-            result.push(...inlineExpression((token as BinaryExpressionToken).l), {typ: (token as BinaryExpressionToken).op}, ...inlineExpression((token as BinaryExpressionToken).r));
+            result.push(...inlineExpression((token as BinaryExpressionToken).l), {typ: (token as BinaryExpressionToken).op} as Token, ...inlineExpression((token as BinaryExpressionToken).r));
         }
     } else {
 

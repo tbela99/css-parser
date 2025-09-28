@@ -221,8 +221,13 @@ function* walkValues(values, root = null, filter, reverse) {
                     continue;
                 }
                 // @ts-ignore
-                if (option != null && typeof option == 'object' && 'typ' in option) {
-                    map.set(option, map.get(value) ?? root);
+                if (option != null && typeof option == 'object' && ('typ' in option || Array.isArray(option))) {
+                    const op = Array.isArray(option) ? option : [option];
+                    for (const o of op) {
+                        map.set(o, map.get(value) ?? root);
+                    }
+                    stack[reverse ? 'push' : 'unshift'](...op);
+                    console.error({ op, s: stack[0] });
                 }
             }
         }
@@ -281,8 +286,12 @@ function* walkValues(values, root = null, filter, reverse) {
             if (isValid) {
                 option = filter.fn(value, map.get(value), WalkerEvent.Leave);
                 // @ts-ignore
-                if (option != null && 'typ' in option) {
-                    map.set(option, map.get(value) ?? root);
+                if (option != null && ('typ' in option || Array.isArray(option))) {
+                    const op = Array.isArray(option) ? option : [option];
+                    for (const o of op) {
+                        map.set(o, map.get(value) ?? root);
+                    }
+                    stack[reverse ? 'push' : 'unshift'](...op);
                 }
             }
         }

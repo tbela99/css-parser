@@ -775,6 +775,16 @@ export declare interface ListToken extends BaseToken {
 }
 
 /**
+ * Composes selector token
+ */
+export declare interface ComposesSelectorToken extends BaseToken {
+
+    typ: EnumToken.ComposesSelectorTokenType;
+    l: Token[];
+    r: Token | null;
+}
+
+/**
  * Unary expression node
  */
 export declare type UnaryExpressionNode =
@@ -865,6 +875,7 @@ export declare type Token =
     | ContainMatchToken
     | MatchExpressionToken
     | NameSpaceAttributeToken
+    | ComposesSelectorToken
     |
     DashMatchToken
     | EqualMatchToken

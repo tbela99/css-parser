@@ -1,7 +1,7 @@
 {
   "name": "@tbela99/css-parser",
   "description": "CSS parser, minifier and validator for node and the browser",
-  "version": "v1.3.5-alpha1",
+  "version": "v1.3.5-alpha2",
   "exports": {
     ".": "./dist/node.js",
     "./node": "./dist/node.js",
@@ -70,7 +70,7 @@
     "mocha": "^11.7.1",
     "playwright": "^1.55.0",
     "rollup": "^4.48.0",
-    "rollup-plugin-dts": "^6.2.1",
+    "rollup-plugin-dts": "^6.2.3",
     "tslib": "^2.8.1",
     "typedoc": "^0.28.13",
     "typedoc-material-theme": "^1.4.0"

@@ -386,6 +386,8 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.NameSpaceAttributeTokenType:
             return (token.l == null ? '' : renderToken(token.l, options, cache, reducer, errors)) + '|' +
                 renderToken(token.r, options, cache, reducer, errors);
+        case EnumToken.ComposesSelectorNodeType:
+            return token.l.reduce((acc, curr) => acc + renderToken(curr, options, cache), '') + (token.r == null ? '' : ' from ' + renderToken(token.r, options, cache, reducer, errors));
         case EnumToken.BlockStartTokenType:
             return '{';
         case EnumToken.BlockEndTokenType:

@@ -165,7 +165,10 @@ async function parse(stream, options = {}) {
         buffer: '',
         position: { ind: 0, lin: 1, col: 1 },
         currentPosition: { ind: -1, lin: 1, col: 0 }
-    }), Object.assign(options, { load, resolve, dirname, cwd: options.cwd ?? process.cwd() }));
+    }), Object.assign(options, { load, resolve, dirname, cwd: options.cwd ?? process.cwd() })).then(result => {
+        const { revMapping, ...res } = result;
+        return res;
+    });
 }
 /**
  * transform css file

@@ -428,7 +428,14 @@ export enum EnumToken {
      * invalid declaration node type
      */
     InvalidDeclarationNodeType,
+
+    /**
+     * composes token node type
+     */
+    ComposesSelectorNodeType,
+
     /* aliases */
+
     /**
      * alias for time token type
      */
