@@ -1073,12 +1073,15 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
         const parseModuleTime: number = performance.now();
         const mapping: Record<string, string> = {};
         const global = new Set<Token>;
-        const local = new Set<Token>;
         const processed = new Set<Token>;
         const pattern = typeof options.module == 'boolean' ? null : options.module.pattern;
-        const filePath = typeof options.module == 'boolean' ? options.src : (options.module.filePath ?? options.src);
-        const resolvedMappings = {} as Record<string, Record<string, string>>;
         const revMapping = {} as Record<string, string>;
+        let filePath = typeof options.module == 'boolean' ? options.src : (options.module.filePath ?? options.src);
+
+        if (filePath!.startsWith(options.cwd + '/')) {
+
+            filePath = filePath!.slice(options!.cwd!.length + 1);
+        }
 
         const moduleSettings = {
             hashLength: 5, filePath,
