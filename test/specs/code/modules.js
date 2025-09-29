@@ -125,5 +125,66 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
 }`)
             })
         });
+
+        it('module @keyframes and @property #5', function () {
+            return transform(`
+
+@property --progress {
+    syntax: "<percentage>";
+    inherits: false;
+    initial-value: 25%;
+}
+
+.bar {
+    display: inline-block;
+    --progress: 25%;
+    width: 100%;
+    height: 5px;
+    background: linear-gradient(
+            to right,
+            #00d230 var(--progress),
+            black var(--progress)
+    );
+    animation: progressAnimation 2.5s ease infinite;
+}
+
+@keyframes progressAnimation {
+    to {
+        --progress: 100%;
+    }
+}
+
+`, {
+                module: true,
+                beautify: true
+            }).then((result) => {
+
+                expect(result.mapping).deep.equals({
+                        "--progress": "--r59fn_progress",
+                        bar: "dDHNV_bar",
+                        progressAnimation: "NNRX5_progressAnimation",
+                    }
+                );
+
+                expect(result.code).equals(`@property --r59fn_progress {
+ syntax: "<percentage>";
+ inherits: false;
+ initial-value: 25%
+}
+.dDHNV_bar {
+ display: inline-block;
+ --r59fn_progress: 25%;
+ width: 100%;
+ height: 5px;
+ background: linear-gradient(to right,#00d230 var(--r59fn_progress),#000 var(--r59fn_progress));
+ animation: NNRX5_progressAnimation 2.5s infinite
+}
+@keyframes NNRX5_progressAnimation {
+ to {
+  --r59fn_progress: 100%
+ }
+}`)
+            })
+        });
     });
 }

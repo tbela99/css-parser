@@ -18,17 +18,15 @@
 - [x] :local()
 - [x] :global()
 - [x] selector
-- [x] css variables
-- [ ] css at-rule values
-- [ ] css at-rule property
-- [ ] keyframe
-- [x] grid-template-areas
 - [x] dashed ident (custom properties)
-- [ ] animations
+- [x] css at-rule property
+- [ ] css at-rule values
+- [x] keyframe animations
+- [x] grid-template-areas
 - [ ] pure
 - [ ] default mode
   - [ ] global
-  - [ ] local
+  - [x] local
 
 ## v1.3.4
 

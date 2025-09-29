@@ -1074,9 +1074,9 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
         const mapping: Record<string, string> = {};
         const global = new Set<Token>;
         const processed = new Set<Token>;
-        const pattern = typeof options.module == 'boolean' ? null : options.module.pattern;
+        const pattern: string | null = typeof options.module == 'boolean' ? null : options.module.pattern as string;
         const revMapping = {} as Record<string, string>;
-        let filePath = typeof options.module == 'boolean' ? options.src : (options.module.filePath ?? options.src);
+        let filePath: string = typeof options.module == 'boolean' ? options.src as string : (options.module.filePath ?? options.src) as string;
 
         if (filePath!.startsWith(options.cwd + '/')) {
 
@@ -1099,7 +1099,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
                     if (!(node.nam in mapping)) {
 
-                        let result = moduleSettings.generateScopedName!(node.nam, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+                        let result = moduleSettings.generateScopedName(node.nam, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
                         mapping[node.nam] = '--' + (result instanceof Promise ? await result : result);
                         revMapping[mapping[node.nam]] = node.nam;
                     }
@@ -1136,7 +1136,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
                             if (!((rule as IdentToken).val in mapping)) {
 
-                                let result = moduleSettings.generateScopedName!((rule as IdentToken).val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+                                let result = moduleSettings.generateScopedName((rule as IdentToken).val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
                                 mapping[(rule as DashedIdentToken).val] = (rule.typ == EnumToken.DashedIdenTokenType ? '--' : '') + (result instanceof Promise ? await result : result);
                                 revMapping[mapping[(rule as DashedIdentToken).val]] = (rule as DashedIdentToken).val;
                             }
@@ -1159,7 +1159,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                             }
                         }
                     }
-                    // composes: "a b c" from 'file.css;
+                    // composes: a b c from 'file.css';
                     else if (token.r.typ == EnumToken.String) {
 
                         const url: string = (token.r as StringToken).val.slice(1, -1);
@@ -1199,9 +1199,9 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
                                             if (!((iden as IdentToken | DashedIdentToken).val in root.mapping!)) {
 
-                                                const result = moduleSettings.generateScopedName!((iden as IdentToken | DashedIdentToken).val, url as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+                                                const result = moduleSettings.generateScopedName((iden as IdentToken | DashedIdentToken).val, url as string, moduleSettings.pattern as string, moduleSettings.hashLength);
                                                 root.mapping![(iden as IdentToken | DashedIdentToken).val] = result instanceof Promise ? await result : result;
-                                                root.revMapping![root.mapping![(iden as IdentToken | DashedIdentToken).val] ] = (iden as IdentToken | DashedIdentToken).val;
+                                                root.revMapping![root.mapping![(iden as IdentToken | DashedIdentToken).val]] = (iden as IdentToken | DashedIdentToken).val;
                                             }
 
                                             values.push(root.mapping![(iden as IdentToken | DashedIdentToken).val]);
@@ -1281,7 +1281,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                                         (value as IdentToken).val = mapping[(value as IdentToken).val];
                                     } else {
 
-                                        let result = moduleSettings.generateScopedName!((value as IdentToken).val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+                                        let result = moduleSettings.generateScopedName((value as IdentToken).val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
 
                                         if (result instanceof Promise) {
 
@@ -1298,15 +1298,38 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                             (node.val[i] as StringToken).val = (node.val[i] as StringToken).val.charAt(0) + tokens.reduce((acc, curr) => acc + renderToken(curr), '') + (node.val[i] as StringToken).val.charAt((node.val[i] as StringToken).val.length - 1);
                         }
                     }
+                } else if (node.nam == 'animation' || node.nam == 'animation-name') {
+
+                    for (const {value} of walkValues(node.val, node)) {
+
+                        if (value.typ == EnumToken.IdenTokenType && ![
+                            'none', 'infinite', 'normal', 'reverse', 'alternate',
+                            'alternate-reverse', 'forwards', 'backwards', 'both',
+                            'running', 'paused', 'linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out',
+                            'step-start', 'step-end', 'jump-start', 'jump-end',
+                            'jump-none', 'jump-both', 'start', 'end',
+                            'inherit', 'initial', 'unset'
+                        ].includes((value as IdentToken).val)) {
+
+                            if (!((value as IdentToken).val in mapping)) {
+
+                                const result = moduleSettings.generateScopedName((value as IdentToken).val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+                                mapping[(value as IdentToken).val] = result instanceof Promise ? await result : result;
+                                revMapping[mapping[(value as IdentToken).val]] = (value as IdentToken).val;
+                            }
+
+                            (value as IdentToken).val = mapping[(value as IdentToken).val];
+                        }
+                    }
                 }
 
-                for (const {value, parent} of walkValues(node.val, node)) {
+                for (const {value} of walkValues(node.val, node)) {
 
                     if (value.typ == EnumToken.DashedIdenTokenType) {
 
                         if (!((value as DashedIdentToken).val in mapping)) {
 
-                            const result = moduleSettings.generateScopedName!((value as DashedIdentToken).val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+                            const result = moduleSettings.generateScopedName((value as DashedIdentToken).val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
                             mapping[(value as DashedIdentToken).val] = '--' + (result instanceof Promise ? await result : result);
                             revMapping[mapping[(value as DashedIdentToken).val]] = (value as DashedIdentToken).val;
                         }
@@ -1325,10 +1348,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                     });
                 }
 
-                for (const {
-                    value,
-                    parent
-                } of walkValues((node as AstRule).tokens as Token[], node,
+                for (const {value} of walkValues((node as AstRule).tokens as Token[], node,
                     // @ts-ignore
                     (value: Token, parent: AstRule) => {
 
@@ -1412,7 +1432,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
                             if (!(val in mapping)) {
 
-                                const result = moduleSettings.generateScopedName!(val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+                                const result = moduleSettings.generateScopedName(val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
                                 mapping[val] = result instanceof Promise ? await result : result;
                                 revMapping[mapping[val]] = val;
                             }
@@ -1427,6 +1447,40 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                 for (const token of node.tokens! as Token[]) {
 
                     node.sel += renderToken(token);
+                }
+            } else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframesAtRuleNodeType) {
+
+                const val: string = node.nam.toLowerCase();
+
+                if (val == 'property' || val == 'keyframes') {
+
+                    if (node.tokens == null) {
+
+                        Object.defineProperty(node, 'tokens', {
+                            ...definedPropertySettings,
+                            // @ts-ignore
+                            value: parseAtRulePrelude(parseString(node.val), node)
+                        });
+                    }
+
+                    const prefix: string = val == 'property' ? '--' : '';
+
+                    for (const value of node.tokens as Token[]) {
+
+                        if ((prefix == '--' && value.typ == EnumToken.DashedIdenTokenType) || (prefix == '' && value.typ == EnumToken.IdenTokenType)) {
+
+                            if (!((value as DashedIdentToken | IdentToken).val in mapping)) {
+
+                                const result = moduleSettings.generateScopedName((value as DashedIdentToken).val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+                                mapping[(value as DashedIdentToken | IdentToken).val] = prefix + (result instanceof Promise ? await result : result);
+                                revMapping[mapping[(value as DashedIdentToken).val]] = (value as DashedIdentToken).val;
+                            }
+
+                            (value as DashedIdentToken).val = mapping[(value as DashedIdentToken).val];
+                        }
+                    }
+
+                    (node as AstAtRule).val = node.tokens!.reduce((a, b) => a + renderToken(b), '');
                 }
             }
         }

@@ -18474,7 +18474,7 @@
                                 }
                             }
                         }
-                        // composes: "a b c" from 'file.css;
+                        // composes: a b c from 'file.css';
                         else if (token.r.typ == exports.EnumToken.String) {
                             const url = token.r.val.slice(1, -1);
                             const result = options.load(url, options.src);
@@ -18576,7 +18576,26 @@
                             }
                         }
                     }
-                    for (const { value, parent } of walkValues(node.val, node)) {
+                    else if (node.nam == 'animation' || node.nam == 'animation-name') {
+                        for (const { value } of walkValues(node.val, node)) {
+                            if (value.typ == exports.EnumToken.IdenTokenType && ![
+                                'none', 'infinite', 'normal', 'reverse', 'alternate',
+                                'alternate-reverse', 'forwards', 'backwards', 'both',
+                                'running', 'paused', 'linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out',
+                                'step-start', 'step-end', 'jump-start', 'jump-end',
+                                'jump-none', 'jump-both', 'start', 'end',
+                                'inherit', 'initial', 'unset'
+                            ].includes(value.val)) {
+                                if (!(value.val in mapping)) {
+                                    const result = moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                    mapping[value.val] = result instanceof Promise ? await result : result;
+                                    revMapping[mapping[value.val]] = value.val;
+                                }
+                                value.val = mapping[value.val];
+                            }
+                        }
+                    }
+                    for (const { value } of walkValues(node.val, node)) {
                         if (value.typ == exports.EnumToken.DashedIdenTokenType) {
                             if (!(value.val in mapping)) {
                                 const result = moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
@@ -18594,7 +18613,7 @@
                             value: parseSelector(parseString(node.sel))
                         });
                     }
-                    for (const { value, parent } of walkValues(node.tokens, node, 
+                    for (const { value } of walkValues(node.tokens, node, 
                     // @ts-ignore
                     (value, parent) => {
                         if (value.typ == exports.EnumToken.PseudoClassTokenType) {
@@ -18654,6 +18673,30 @@
                     node.sel = '';
                     for (const token of node.tokens) {
                         node.sel += renderToken(token);
+                    }
+                }
+                else if (node.typ == exports.EnumToken.AtRuleNodeType || node.typ == exports.EnumToken.KeyframesAtRuleNodeType) {
+                    const val = node.nam.toLowerCase();
+                    if (val == 'property' || val == 'keyframes') {
+                        if (node.tokens == null) {
+                            Object.defineProperty(node, 'tokens', {
+                                ...definedPropertySettings,
+                                // @ts-ignore
+                                value: parseAtRulePrelude(parseString(node.val), node)
+                            });
+                        }
+                        const prefix = val == 'property' ? '--' : '';
+                        for (const value of node.tokens) {
+                            if ((prefix == '--' && value.typ == exports.EnumToken.DashedIdenTokenType) || (prefix == '' && value.typ == exports.EnumToken.IdenTokenType)) {
+                                if (!(value.val in mapping)) {
+                                    const result = moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                    mapping[value.val] = prefix + (result instanceof Promise ? await result : result);
+                                    revMapping[mapping[value.val]] = value.val;
+                                }
+                                value.val = mapping[value.val];
+                            }
+                        }
+                        node.val = node.tokens.reduce((a, b) => a + renderToken(b), '');
                     }
                 }
             }
