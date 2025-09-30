@@ -7,12 +7,11 @@
 ### CSS Module 
 
 - [x] scoped name generation
-- [ ] :import
-- [ ] :export
 - [x] composes: https://github.com/css-modules/css-modules/blob/master/docs/composition.md
   - [x] compose from local selector
   - [x] compose from other files
   - [x] compose from global selector
+  - [ ] comma separated compose list
 - [x] :local
 - [x] :global
 - [x] :local()
@@ -23,10 +22,13 @@
 - [ ] css at-rule values
 - [x] keyframe animations
 - [x] grid-template-areas
-- [ ] pure
 - [ ] default mode
   - [ ] global
   - [x] local
+  - [ ] pure(at least one class or id)
+  - [ ] icss
+    - [ ] :import
+    - [ ] :export
 
 ## v1.3.4
 

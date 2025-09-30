@@ -186,5 +186,161 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
 }`)
             })
         });
+
+        it('module @keyframes and @property #6', function () {
+            return transform(`
+:root {
+  overflow: hidden;
+  background-color: lightblue;
+  display: flex;
+  justify-content: center;
+}
+
+.sun {
+  background-color: yellow;
+  border-radius: 50%;
+  height: 100vh;
+  aspect-ratio: 1 / 1;
+  /*
+    animations declared later in the cascade will override the
+    properties of previously declared animations
+  */
+  /* bounce 'overwrites' the transform set by rise, hence the sun only moves horizontally */
+  animation:
+    4s linear 0s infinite alternate rise,
+    4s linear 0s infinite alternate bounce;
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(110vh);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounce {
+  from {
+    transform: translateX(-50vw);
+  }
+  to {
+    transform: translateX(50vw);
+  }
+}
+
+`, {
+                module: true,
+                beautify: true
+            }).then((result) => {
+
+                expect(result.mapping).deep.equals({
+                        sun: "C8ciq_sun",
+                        rise: "jDHNV_rise",
+                        bounce: "G8ciq_bounce",
+                    }
+                );
+
+                expect(result.code).equals(`:root {
+ overflow: hidden;
+ background-color: #add8e6;
+ display: flex;
+ justify-content: center
+}
+.C8ciq_sun {
+ background-color: #ff0;
+ border-radius: 50%;
+ height: 100vh;
+ aspect-ratio: 1 / 1;
+ animation: 4s linear infinite alternate jDHNV_rise,4s linear 0s infinite alternate G8ciq_bounce
+}
+@keyframes jDHNV_rise {
+ 0% {
+  transform: translateY(110vh)
+ }
+ to {
+  transform: none
+ }
+}
+@keyframes G8ciq_bounce {
+ 0% {
+  transform: translateX(-50vw)
+ }
+ to {
+  transform: translateX(50vw)
+ }
+}`)
+            })
+        });
+
+        it('module :local :global #7', function () {
+            return transform(`
+:local(.className) {
+  background: red;
+}
+:local .className {
+  color: green;
+}
+:local(.className .subClass) {
+  color: green;
+}
+:local .className .subClass :global(.global-class-name) {
+  color: blue;
+}
+
+`, {
+                module: true,
+                beautify: true
+            }).then((result) => {
+
+                expect(result.mapping).deep.equals({
+                        className: "VPTZ7_className",
+                        subClass: "SAEKS_subClass",
+                    }
+                );
+
+                expect(result.code).equals(`.VPTZ7_className {
+ background: red
+}
+.VPTZ7_className,.VPTZ7_className .SAEKS_subClass {
+ color: green
+}
+.VPTZ7_className .SAEKS_subClass .global-class-name {
+ color: blue
+}`)
+            })
+        });
+
+        it('module composes #78', function () {
+            return transform(`
+:local(.className) {
+  background: red;
+  color: yellow;
+}
+
+:local(.subClass) {
+  composes: className;
+  background: blue;
+}
+`, {
+                module: true,
+                beautify: true
+            }).then((result) => {
+
+                expect(result.mapping).deep.equals({
+                        className: "VPTZ7_className",
+                        subClass: "SAEKS_subClass VPTZ7_className",
+                    }
+                );
+
+                expect(result.code).equals(`.VPTZ7_className {
+ background: red;
+ color: #ff0
+}
+.SAEKS_subClass {
+ background: blue
+}`)
+            })
+        });
     });
 }

@@ -6531,6 +6531,9 @@
     	},
     	animation: {
     		shorthand: "animation",
+    		separator: {
+    			typ: "Comma"
+    		},
     		pattern: "animation-name animation-duration animation-timing-function animation-delay animation-iteration-count animation-direction animation-fill-mode animation-play-state animation-timeline",
     		"default": [
     			"1",
@@ -18617,20 +18620,26 @@
                     // @ts-ignore
                     (value, parent) => {
                         if (value.typ == exports.EnumToken.PseudoClassTokenType) {
-                            switch (value.val.toLowerCase()) {
+                            const val = value.val.toLowerCase();
+                            switch (val) {
+                                case ':local':
                                 case ':global':
-                                    let index = parent.tokens.indexOf(value);
-                                    parent.tokens.splice(index, 1);
-                                    if (parent.tokens[index]?.typ == exports.EnumToken.WhitespaceTokenType || parent.tokens[index]?.typ == exports.EnumToken.DescendantCombinatorTokenType) {
+                                    {
+                                        let index = parent.tokens.indexOf(value);
                                         parent.tokens.splice(index, 1);
-                                    }
-                                    for (; index < parent.tokens.length; index++) {
-                                        if (parent.tokens[index].typ == exports.EnumToken.CommaTokenType ||
-                                            ([exports.EnumToken.PseudoClassFuncTokenType, exports.EnumToken.PseudoClassTokenType].includes(parent.tokens[index].typ) &&
-                                                [':global', ':local'].includes(parent.tokens[index].val.toLowerCase()))) {
-                                            break;
+                                        if (parent.tokens[index]?.typ == exports.EnumToken.WhitespaceTokenType || parent.tokens[index]?.typ == exports.EnumToken.DescendantCombinatorTokenType) {
+                                            parent.tokens.splice(index, 1);
                                         }
-                                        global.add(parent.tokens[index]);
+                                        if (val == ':global') {
+                                            for (; index < parent.tokens.length; index++) {
+                                                if (parent.tokens[index].typ == exports.EnumToken.CommaTokenType ||
+                                                    ([exports.EnumToken.PseudoClassFuncTokenType, exports.EnumToken.PseudoClassTokenType].includes(parent.tokens[index].typ) &&
+                                                        [':global', ':local'].includes(parent.tokens[index].val.toLowerCase()))) {
+                                                    break;
+                                                }
+                                                global.add(parent.tokens[index]);
+                                            }
+                                        }
                                     }
                                     break;
                             }

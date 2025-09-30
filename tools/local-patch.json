@@ -35,7 +35,10 @@
       "syntax": "| <-non-standard-text-align>"
     },
     "composes": {
-      "syntax": "<composes-selector>"}
+      "syntax": "<composes-selector>#"},
+    "composes-selector": {
+      "syntax": "<ident>+ [from [global&&<string>]]?"
+    }
   },
   "types": {
     "track-breadth": {

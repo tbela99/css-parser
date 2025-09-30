@@ -1354,9 +1354,14 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
                         if (value.typ == EnumToken.PseudoClassTokenType) {
 
-                            switch ((value as PseudoClassToken).val.toLowerCase()) {
+                            const val: string = (value as PseudoClassToken).val.toLowerCase();
+                            switch (val) {
 
+                                case ':local':
                                 case ':global':
+
+                                {
+
 
                                     let index: number = (parent as AstRule).tokens!.indexOf(value);
 
@@ -1367,20 +1372,24 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                                         (parent as AstRule).tokens!.splice(index, 1);
                                     }
 
-                                    for (; index < (parent as AstRule).tokens!.length; index++) {
+                                    if (val == ':global') {
 
-                                        if ((parent as AstRule).tokens![index].typ == EnumToken.CommaTokenType ||
-                                            (
-                                                [EnumToken.PseudoClassFuncTokenType, EnumToken.PseudoClassTokenType].includes((parent as AstRule).tokens![index].typ) &&
-                                                [':global', ':local'].includes(((parent as AstRule).tokens![index] as PseudoClassToken).val.toLowerCase())
-                                            )
-                                        ) {
+                                        for (; index < (parent as AstRule).tokens!.length; index++) {
 
-                                            break;
+                                            if ((parent as AstRule).tokens![index].typ == EnumToken.CommaTokenType ||
+                                                (
+                                                    [EnumToken.PseudoClassFuncTokenType, EnumToken.PseudoClassTokenType].includes((parent as AstRule).tokens![index].typ) &&
+                                                    [':global', ':local'].includes(((parent as AstRule).tokens![index] as PseudoClassToken).val.toLowerCase())
+                                                )
+                                            ) {
+
+                                                break;
+                                            }
+
+                                            global.add((parent as AstRule).tokens![index]);
                                         }
-
-                                        global.add((parent as AstRule).tokens![index]);
                                     }
+                                }
 
                                     break;
                             }
