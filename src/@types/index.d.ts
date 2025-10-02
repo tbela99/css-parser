@@ -2,7 +2,7 @@ import type {VisitorNodeMap} from "./visitor.d.ts";
 import type {AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet, Location, Position} from "./ast.d.ts";
 import {SourceMap} from "../lib/renderer/sourcemap/index.ts";
 import type {PropertyListOptions} from "./parse.d.ts";
-import {ColorType, EnumToken, ValidationLevel} from "../lib/index.ts";
+import {ColorType, EnumToken, ModuleCaseTransform, ValidationLevel} from "../lib/index.ts";
 import type {Token} from "./token.d.ts";
 import {FeatureWalkMode} from "../lib/ast/features/type.ts";
 import {mathFuncs, transformFunctions} from "../lib/syntax/syntax.ts";
@@ -235,6 +235,16 @@ export declare interface ModuleOptions {
     pattern?: string;
 
     /**
+     * class name transform
+     * {@link ModuleCaseTransform.Ignore}: as is
+     * {@link ModuleCaseTransform.CamelCase}: camelCase {@link ParseResult.mapping} key name
+     * {@link ModuleCaseTransform.CamelCaseOnly}: camelCase {@link ParseResult.mapping} key name and css class name
+     * {@link ModuleCaseTransform.DashCase}: dashCase {@link ParseResult.mapping} key name
+     * {@link ModuleCaseTransform.DashCaseOnly}: dashCase {@link ParseResult.mapping} key name and css class name
+     */
+    naming?: ModuleCaseTransform,
+
+    /**
      * optional function to generate scoped name
      * @param localName
      * @param filePath
@@ -345,7 +355,7 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
     /**
      * css modules options
      */
-    module?: boolean | ModuleOptions
+    module?: boolean | ModuleCaseTransform | ModuleOptions
 }
 
 /**

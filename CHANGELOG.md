@@ -22,6 +22,12 @@
 - [ ] css at-rule values
 - [x] keyframe animations
 - [x] grid-template-areas
+- [x] naming
+  - [x] ignore
+  - [x] camelCase
+  - [x] camelCaseOnly
+  - [x] dashCase
+  - [x] dashCaseOnly
 - [ ] default mode
   - [ ] global
   - [x] local

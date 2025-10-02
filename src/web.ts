@@ -42,11 +42,12 @@ export {
     okLabDistance,
     parseDeclarations,
     EnumToken,
-    ValidationLevel,
     ColorType,
     SourceMap,
     WalkerEvent,
+    ValidationLevel,
     WalkerOptionEnum,
+    ModuleCaseTransform,
 } from './lib/index.ts';
 export {FeatureWalkMode} from './lib/ast/features/type.ts';
 export {dirname, resolve};

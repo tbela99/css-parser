@@ -1,10 +1,9 @@
 // Alphabet: a-z, A-Z, 0-9, _, -
 const LOWER = "abcdefghijklmnopqrstuvwxyz";
-const UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const DIGITS = "0123456789";
 
-const FULL_ALPHABET: string[] = (LOWER + UPPER + DIGITS).split(""); // 64 chars
-const FIRST_ALPHABET: string[] = (LOWER + UPPER).split(""); // 54 chars (no digits)
+const FULL_ALPHABET: string[] = (LOWER + DIGITS).split(""); // 64 chars
+const FIRST_ALPHABET: string[] = (LOWER).split(""); // 54 chars (no digits)
 
 /**
  * supported hash algorithms

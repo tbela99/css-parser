@@ -16,7 +16,7 @@ import {
     parseDimension,
     pseudoElements
 } from "../syntax/index.ts";
-import {parseDeclarationNode} from './utils/index.ts';
+import {camelize, dasherize, parseDeclarationNode} from './utils/index.ts';
 import {renderToken} from "../renderer/index.ts";
 import {COLORS_NAMES} from "../syntax/color/index.ts";
 import {
@@ -26,6 +26,7 @@ import {
     EnumToken,
     expand,
     minify,
+    ModuleCaseTransform,
     SyntaxValidationResult,
     ValidationLevel,
     walk,
@@ -84,6 +85,7 @@ import type {
     Location,
     MatchExpressionToken,
     MediaQueryConditionToken,
+    ModuleOptions,
     NameSpaceAttributeToken,
     NumberToken,
     ParensEndToken,
@@ -192,6 +194,23 @@ export function replaceToken(parent: BinaryExpressionToken | (AstNode & ({ chi: 
 
         target.splice(index, 1, ...(Array.isArray(replacement) ? replacement : [replacement]));
     }
+}
+
+export function getKeyName(key: string, how: ModuleCaseTransform) {
+
+    switch (how) {
+
+        case ModuleCaseTransform.CamelCase:
+        case ModuleCaseTransform.CamelCaseOnly:
+
+            return camelize(key);
+
+        case ModuleCaseTransform.DashCase:
+        case ModuleCaseTransform.DashCaseOnly:
+            return dasherize(key);
+    }
+
+    return key;
 }
 
 async function generateScopedName(
@@ -1070,26 +1089,33 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
     if (options.module) {
 
+        const moduleSettings = {
+            hashLength: 5,
+            filePath: '',
+            scoped: true,
+            naming: ModuleCaseTransform.Ignore,
+            pattern: '',
+            generateScopedName,
+            // @ts-ignore
+            ...( options.module in ModuleCaseTransform ? {naming: options.module as ModuleCaseTransform} : typeof options.module == 'boolean' ? {} : options.module)
+        };
+
         const parseModuleTime: number = performance.now();
-        const mapping: Record<string, string> = {};
+        const namesMapping: Record<string, string> = {};
         const global = new Set<Token>;
         const processed = new Set<Token>;
-        const pattern: string | null = typeof options.module == 'boolean' ? null : options.module.pattern as string;
-        const revMapping = {} as Record<string, string>;
-        let filePath: string = typeof options.module == 'boolean' ? options.src as string : (options.module.filePath ?? options.src) as string;
+        const pattern: string | null = typeof options.module == 'boolean' ? null : moduleSettings.pattern as string;
+        let mapping: Record<string, string> = {};
+        let revMapping = {} as Record<string, string>;
+        let filePath: string = typeof options.module == 'boolean' ? options.src as string : (moduleSettings.filePath ?? options.src) as string;
 
         if (filePath!.startsWith(options.cwd + '/')) {
 
             filePath = filePath!.slice(options!.cwd!.length + 1);
         }
 
-        const moduleSettings = {
-            hashLength: 5, filePath,
-            scoped: true,
-            pattern: pattern != null && pattern !== '' ? pattern : (filePath === '' ? `[hash]_[local]` : `[name]_[hash]_[local]`),
-            generateScopedName,
-            ...(typeof options.module == 'boolean' ? {} : options.module)
-        };
+        moduleSettings.filePath = filePath;
+        moduleSettings.pattern = pattern != null && pattern !== '' ? pattern : (filePath === '' ? `[hash]_[local]` : `[name]_[hash]_[local]`);
 
         for (const {node} of walk(ast)) {
 
@@ -1097,11 +1123,13 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
                 if (node.nam.startsWith('--')) {
 
-                    if (!(node.nam in mapping)) {
+                    if (!(node.nam in namesMapping)) {
 
                         let result = moduleSettings.generateScopedName(node.nam, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
-                        mapping[node.nam] = '--' + (result instanceof Promise ? await result : result);
-                        revMapping[mapping[node.nam]] = node.nam;
+                        let value: string = result instanceof Promise ? await result : result;
+
+                        mapping[node.nam] = '--' + (moduleSettings.naming == ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == ModuleCaseTransform.CamelCaseOnly ? getKeyName(value, moduleSettings.naming as ModuleCaseTransform) : value);
+                        revMapping[node.nam] = node.nam;
                     }
 
                     node.nam = mapping[node.nam];
@@ -1137,7 +1165,9 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                             if (!((rule as IdentToken).val in mapping)) {
 
                                 let result = moduleSettings.generateScopedName((rule as IdentToken).val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
-                                mapping[(rule as DashedIdentToken).val] = (rule.typ == EnumToken.DashedIdenTokenType ? '--' : '') + (result instanceof Promise ? await result : result);
+                                let value: string = result instanceof Promise ? await result : result;
+
+                                mapping[(rule as DashedIdentToken).val] = (rule.typ == EnumToken.DashedIdenTokenType ? '--' : '') + (moduleSettings.naming == ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == ModuleCaseTransform.CamelCaseOnly ? getKeyName(value, moduleSettings.naming as ModuleCaseTransform) : value);
                                 revMapping[mapping[(rule as DashedIdentToken).val]] = (rule as DashedIdentToken).val;
                             }
 
@@ -1174,7 +1204,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                             minify: false,
                             setParent: false,
                             src: options.resolve!(url, options.src as string).absolute,
-                            module: typeof options.module == 'boolean' ? options.module : {...options.module}
+                            module: typeof options.module == 'boolean' ? options.module : {...(options.module as ModuleOptions)}
                         }) as ParserOptions);
 
                         if (parentRule != null) {
@@ -1200,7 +1230,10 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                                             if (!((iden as IdentToken | DashedIdentToken).val in root.mapping!)) {
 
                                                 const result = moduleSettings.generateScopedName((iden as IdentToken | DashedIdentToken).val, url as string, moduleSettings.pattern as string, moduleSettings.hashLength);
-                                                root.mapping![(iden as IdentToken | DashedIdentToken).val] = result instanceof Promise ? await result : result;
+
+                                                let value: string = result instanceof Promise ? await result : result;
+
+                                                root.mapping![(iden as IdentToken | DashedIdentToken).val] = (moduleSettings.naming == ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == ModuleCaseTransform.CamelCaseOnly ? getKeyName(value, moduleSettings.naming as ModuleCaseTransform) : value);
                                                 root.revMapping![root.mapping![(iden as IdentToken | DashedIdentToken).val]] = (iden as IdentToken | DashedIdentToken).val;
                                             }
 
@@ -1330,7 +1363,9 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                         if (!((value as DashedIdentToken).val in mapping)) {
 
                             const result = moduleSettings.generateScopedName((value as DashedIdentToken).val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
-                            mapping[(value as DashedIdentToken).val] = '--' + (result instanceof Promise ? await result : result);
+                            let val: string = result instanceof Promise ? await result : result;
+
+                            mapping[(value as DashedIdentToken).val] = '--' + (moduleSettings.naming == ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == ModuleCaseTransform.CamelCaseOnly ? getKeyName(val, moduleSettings.naming as ModuleCaseTransform) : val);
                             revMapping[mapping[(value as DashedIdentToken).val]] = (value as DashedIdentToken).val;
                         }
 
@@ -1358,9 +1393,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                             switch (val) {
 
                                 case ':local':
-                                case ':global':
-
-                                {
+                                case ':global': {
 
 
                                     let index: number = (parent as AstRule).tokens!.indexOf(value);
@@ -1442,7 +1475,9 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                             if (!(val in mapping)) {
 
                                 const result = moduleSettings.generateScopedName(val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
-                                mapping[val] = result instanceof Promise ? await result : result;
+                                let value: string = result instanceof Promise ? await result : result;
+
+                                mapping[val] = (moduleSettings.naming == ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == ModuleCaseTransform.CamelCaseOnly ? getKeyName(value, moduleSettings.naming as ModuleCaseTransform) : value);
                                 revMapping[mapping[val]] = val;
                             }
 
@@ -1481,7 +1516,9 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                             if (!((value as DashedIdentToken | IdentToken).val in mapping)) {
 
                                 const result = moduleSettings.generateScopedName((value as DashedIdentToken).val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
-                                mapping[(value as DashedIdentToken | IdentToken).val] = prefix + (result instanceof Promise ? await result : result);
+                                let val: string = result instanceof Promise ? await result : result;
+
+                                mapping[(value as DashedIdentToken | IdentToken).val] = prefix + (moduleSettings.naming == ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == ModuleCaseTransform.CamelCaseOnly ? getKeyName(val, moduleSettings.naming as ModuleCaseTransform) : val);
                                 revMapping[mapping[(value as DashedIdentToken).val]] = (value as DashedIdentToken).val;
                             }
 
@@ -1492,6 +1529,22 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                     (node as AstAtRule).val = node.tokens!.reduce((a, b) => a + renderToken(b), '');
                 }
             }
+        }
+
+        // console.error({mapping, revMapping});
+
+        if (moduleSettings.naming != ModuleCaseTransform.Ignore) {
+
+            revMapping = {};
+            mapping = Object.entries(mapping).reduce((acc: Record<string, string>, [key, value]: [string, string]) => {
+
+                const keyName = getKeyName(key, moduleSettings.naming);
+
+                acc[keyName] = value;
+                revMapping[value] = keyName;
+
+                return acc;
+            }, {} as Record<string, string>)
         }
 
         result.mapping = mapping;

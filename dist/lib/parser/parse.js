@@ -1,10 +1,11 @@
 import { isIdentStart, isIdent, isIdentColor, mathFuncs, isColor, parseColor, isPseudo, pseudoElements, isAtKeyword, isFunction, isNumber, isPercentage, parseDimension, isHexColor, isHash, mediaTypes } from '../syntax/syntax.js';
-import { EnumToken, ColorType, ValidationLevel, SyntaxValidationResult } from '../ast/types.js';
+import { EnumToken, ColorType, ValidationLevel, ModuleCaseTransform, SyntaxValidationResult } from '../ast/types.js';
 import { definedPropertySettings, minify, combinators } from '../ast/minify.js';
 import { walkValues, WalkerEvent, walk, WalkerOptionEnum } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
 import './utils/config.js';
 import { parseDeclarationNode } from './utils/declaration.js';
+import { dasherize, camelize } from './utils/text.js';
 import { renderToken } from '../renderer/render.js';
 import '../renderer/sourcemap/lib/encode.js';
 import { funcLike, timingFunc, timelineFunc, COLORS_NAMES, systemColors, deprecatedSystemColors, colorsFunc } from '../syntax/color/utils/constants.js';
@@ -68,6 +69,17 @@ function replaceToken(parent, value, replacement) {
         }
         target.splice(index, 1, ...(Array.isArray(replacement) ? replacement : [replacement]));
     }
+}
+function getKeyName(key, how) {
+    switch (how) {
+        case ModuleCaseTransform.CamelCase:
+        case ModuleCaseTransform.CamelCaseOnly:
+            return camelize(key);
+        case ModuleCaseTransform.DashCase:
+        case ModuleCaseTransform.DashCaseOnly:
+            return dasherize(key);
+    }
+    return key;
 }
 async function generateScopedName(localName, filePath, pattern, hashLength = 5) {
     if (localName.startsWith('--')) {
@@ -671,30 +683,37 @@ async function doParse(iter, options = {}) {
         options.signal.removeEventListener('abort', reject);
     }
     if (options.module) {
+        const moduleSettings = {
+            hashLength: 5,
+            filePath: '',
+            scoped: true,
+            naming: ModuleCaseTransform.Ignore,
+            pattern: '',
+            generateScopedName,
+            // @ts-ignore
+            ...(options.module in ModuleCaseTransform ? { naming: options.module } : typeof options.module == 'boolean' ? {} : options.module)
+        };
         const parseModuleTime = performance.now();
-        const mapping = {};
+        const namesMapping = {};
         const global = new Set;
         const processed = new Set;
-        const pattern = typeof options.module == 'boolean' ? null : options.module.pattern;
-        const revMapping = {};
-        let filePath = typeof options.module == 'boolean' ? options.src : (options.module.filePath ?? options.src);
+        const pattern = typeof options.module == 'boolean' ? null : moduleSettings.pattern;
+        let mapping = {};
+        let revMapping = {};
+        let filePath = typeof options.module == 'boolean' ? options.src : (moduleSettings.filePath ?? options.src);
         if (filePath.startsWith(options.cwd + '/')) {
             filePath = filePath.slice(options.cwd.length + 1);
         }
-        const moduleSettings = {
-            hashLength: 5, filePath,
-            scoped: true,
-            pattern: pattern != null && pattern !== '' ? pattern : (filePath === '' ? `[hash]_[local]` : `[name]_[hash]_[local]`),
-            generateScopedName,
-            ...(typeof options.module == 'boolean' ? {} : options.module)
-        };
+        moduleSettings.filePath = filePath;
+        moduleSettings.pattern = pattern != null && pattern !== '' ? pattern : (filePath === '' ? `[hash]_[local]` : `[name]_[hash]_[local]`);
         for (const { node } of walk(ast)) {
             if (node.typ == EnumToken.DeclarationNodeType) {
                 if (node.nam.startsWith('--')) {
-                    if (!(node.nam in mapping)) {
+                    if (!(node.nam in namesMapping)) {
                         let result = moduleSettings.generateScopedName(node.nam, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                        mapping[node.nam] = '--' + (result instanceof Promise ? await result : result);
-                        revMapping[mapping[node.nam]] = node.nam;
+                        let value = result instanceof Promise ? await result : result;
+                        mapping[node.nam] = '--' + (moduleSettings.naming == ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == ModuleCaseTransform.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
+                        revMapping[node.nam] = node.nam;
                     }
                     node.nam = mapping[node.nam];
                 }
@@ -716,7 +735,8 @@ async function doParse(iter, options = {}) {
                             }
                             if (!(rule.val in mapping)) {
                                 let result = moduleSettings.generateScopedName(rule.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                                mapping[rule.val] = (rule.typ == EnumToken.DashedIdenTokenType ? '--' : '') + (result instanceof Promise ? await result : result);
+                                let value = result instanceof Promise ? await result : result;
+                                mapping[rule.val] = (rule.typ == EnumToken.DashedIdenTokenType ? '--' : '') + (moduleSettings.naming == ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == ModuleCaseTransform.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
                                 revMapping[mapping[rule.val]] = rule.val;
                             }
                             if (parentRule != null) {
@@ -761,7 +781,8 @@ async function doParse(iter, options = {}) {
                                             }
                                             if (!(iden.val in root.mapping)) {
                                                 const result = moduleSettings.generateScopedName(iden.val, url, moduleSettings.pattern, moduleSettings.hashLength);
-                                                root.mapping[iden.val] = result instanceof Promise ? await result : result;
+                                                let value = result instanceof Promise ? await result : result;
+                                                root.mapping[iden.val] = (moduleSettings.naming == ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == ModuleCaseTransform.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
                                                 root.revMapping[root.mapping[iden.val]] = iden.val;
                                             }
                                             values.push(root.mapping[iden.val]);
@@ -857,7 +878,8 @@ async function doParse(iter, options = {}) {
                     if (value.typ == EnumToken.DashedIdenTokenType) {
                         if (!(value.val in mapping)) {
                             const result = moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                            mapping[value.val] = '--' + (result instanceof Promise ? await result : result);
+                            let val = result instanceof Promise ? await result : result;
+                            mapping[value.val] = '--' + (moduleSettings.naming == ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == ModuleCaseTransform.CamelCaseOnly ? getKeyName(val, moduleSettings.naming) : val);
                             revMapping[mapping[value.val]] = value.val;
                         }
                         value.val = mapping[value.val];
@@ -927,7 +949,8 @@ async function doParse(iter, options = {}) {
                             const val = value.val.slice(1);
                             if (!(val in mapping)) {
                                 const result = moduleSettings.generateScopedName(val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                                mapping[val] = result instanceof Promise ? await result : result;
+                                let value = result instanceof Promise ? await result : result;
+                                mapping[val] = (moduleSettings.naming == ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == ModuleCaseTransform.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
                                 revMapping[mapping[val]] = val;
                             }
                             value.val = '.' + mapping[val];
@@ -954,7 +977,8 @@ async function doParse(iter, options = {}) {
                         if ((prefix == '--' && value.typ == EnumToken.DashedIdenTokenType) || (prefix == '' && value.typ == EnumToken.IdenTokenType)) {
                             if (!(value.val in mapping)) {
                                 const result = moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                                mapping[value.val] = prefix + (result instanceof Promise ? await result : result);
+                                let val = result instanceof Promise ? await result : result;
+                                mapping[value.val] = prefix + (moduleSettings.naming == ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == ModuleCaseTransform.CamelCaseOnly ? getKeyName(val, moduleSettings.naming) : val);
                                 revMapping[mapping[value.val]] = value.val;
                             }
                             value.val = mapping[value.val];
@@ -963,6 +987,16 @@ async function doParse(iter, options = {}) {
                     node.val = node.tokens.reduce((a, b) => a + renderToken(b), '');
                 }
             }
+        }
+        // console.error({mapping, revMapping});
+        if (moduleSettings.naming != ModuleCaseTransform.Ignore) {
+            revMapping = {};
+            mapping = Object.entries(mapping).reduce((acc, [key, value]) => {
+                const keyName = getKeyName(key, moduleSettings.naming);
+                acc[keyName] = value;
+                revMapping[value] = keyName;
+                return acc;
+            }, {});
         }
         result.mapping = mapping;
         result.revMapping = revMapping;
@@ -2388,4 +2422,4 @@ function parseTokens(tokens, options = {}) {
     return tokens;
 }
 
-export { doParse, getTokenType, parseAtRulePrelude, parseDeclarations, parseSelector, parseString, parseTokens, replaceToken, urlTokenMatcher };
+export { doParse, getKeyName, getTokenType, parseAtRulePrelude, parseDeclarations, parseSelector, parseString, parseTokens, replaceToken, urlTokenMatcher };

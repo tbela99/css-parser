@@ -655,5 +655,28 @@ var ColorType;
      */
     ColorType[ColorType["DEVICE_CMYK"] = 7] = "DEVICE_CMYK";
 })(ColorType || (ColorType = {}));
+var ModuleCaseTransform;
+(function (ModuleCaseTransform) {
+    /**
+     * export as-is
+     */
+    ModuleCaseTransform[ModuleCaseTransform["Ignore"] = 1] = "Ignore";
+    /**
+     * transform class names and mapping key name
+     */
+    ModuleCaseTransform[ModuleCaseTransform["CamelCase"] = 2] = "CamelCase";
+    /**
+     * transform class names and mapping key name
+     */
+    ModuleCaseTransform[ModuleCaseTransform["CamelCaseOnly"] = 4] = "CamelCaseOnly";
+    /**
+     * transform class names and mapping key name
+     */
+    ModuleCaseTransform[ModuleCaseTransform["DashCase"] = 8] = "DashCase";
+    /**
+     * transform class names and mapping key name
+     */
+    ModuleCaseTransform[ModuleCaseTransform["DashCaseOnly"] = 16] = "DashCaseOnly";
+})(ModuleCaseTransform || (ModuleCaseTransform = {}));
 
-export { ColorType, EnumToken, SyntaxValidationResult, ValidationLevel };
+export { ColorType, EnumToken, ModuleCaseTransform, SyntaxValidationResult, ValidationLevel };

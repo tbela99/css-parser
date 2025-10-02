@@ -1,5 +1,5 @@
 import process from 'node:process';
-export { ColorType, EnumToken, ValidationLevel } from './lib/ast/types.js';
+export { ColorType, EnumToken, ModuleCaseTransform, ValidationLevel } from './lib/ast/types.js';
 export { minify } from './lib/ast/minify.js';
 export { WalkerEvent, WalkerOptionEnum, walk, walkValues } from './lib/ast/walk.js';
 export { expand } from './lib/ast/expand.js';

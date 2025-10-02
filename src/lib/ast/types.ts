@@ -660,3 +660,27 @@ export enum ColorType {
      */
     DEVICE_CMYK = CMYK
 }
+
+export enum ModuleCaseTransform {
+
+    /**
+     * export as-is
+     */
+    Ignore = 0x1,
+    /**
+     * transform class names and mapping key name
+     */
+    CamelCase = 0x2,
+    /**
+     * transform class names and mapping key name
+     */
+    CamelCaseOnly = 0x4,
+    /**
+     * transform class names and mapping key name
+     */
+    DashCase = 0x8,
+    /**
+     * transform class names and mapping key name
+     */
+    DashCaseOnly = 0x10
+}

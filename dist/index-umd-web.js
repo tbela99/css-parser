@@ -661,6 +661,29 @@
          */
         ColorType[ColorType["DEVICE_CMYK"] = 7] = "DEVICE_CMYK";
     })(exports.ColorType || (exports.ColorType = {}));
+    exports.ModuleCaseTransform = void 0;
+    (function (ModuleCaseTransform) {
+        /**
+         * export as-is
+         */
+        ModuleCaseTransform[ModuleCaseTransform["Ignore"] = 1] = "Ignore";
+        /**
+         * transform class names and mapping key name
+         */
+        ModuleCaseTransform[ModuleCaseTransform["CamelCase"] = 2] = "CamelCase";
+        /**
+         * transform class names and mapping key name
+         */
+        ModuleCaseTransform[ModuleCaseTransform["CamelCaseOnly"] = 4] = "CamelCaseOnly";
+        /**
+         * transform class names and mapping key name
+         */
+        ModuleCaseTransform[ModuleCaseTransform["DashCase"] = 8] = "DashCase";
+        /**
+         * transform class names and mapping key name
+         */
+        ModuleCaseTransform[ModuleCaseTransform["DashCaseOnly"] = 16] = "DashCaseOnly";
+    })(exports.ModuleCaseTransform || (exports.ModuleCaseTransform = {}));
 
     // from https://www.w3.org/TR/css-color-4/multiply-matrices.js
     /**
@@ -7582,6 +7605,13 @@
             }
         }
         return buffer.length > 0 ? result + buffer : result;
+    }
+
+    function dasherize(value) {
+        return value.replace(/([A-Z])/g, (all, one) => `-${one.toLowerCase()}`);
+    }
+    function camelize(value) {
+        return value.replace(/-([a-z])/g, (all, one) => one.toUpperCase());
     }
 
     // from https://github.com/Rich-Harris/vlq/tree/master
@@ -17682,10 +17712,9 @@
 
     // Alphabet: a-z, A-Z, 0-9, _, -
     const LOWER = "abcdefghijklmnopqrstuvwxyz";
-    const UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const DIGITS = "0123456789";
-    const FULL_ALPHABET = (LOWER + UPPER + DIGITS).split(""); // 64 chars
-    const FIRST_ALPHABET = (LOWER + UPPER).split(""); // 54 chars (no digits)
+    const FULL_ALPHABET = (LOWER + DIGITS).split(""); // 64 chars
+    const FIRST_ALPHABET = (LOWER).split(""); // 54 chars (no digits)
     /**
      * supported hash algorithms
      */
@@ -17813,6 +17842,17 @@
             }
             target.splice(index, 1, ...(Array.isArray(replacement) ? replacement : [replacement]));
         }
+    }
+    function getKeyName(key, how) {
+        switch (how) {
+            case exports.ModuleCaseTransform.CamelCase:
+            case exports.ModuleCaseTransform.CamelCaseOnly:
+                return camelize(key);
+            case exports.ModuleCaseTransform.DashCase:
+            case exports.ModuleCaseTransform.DashCaseOnly:
+                return dasherize(key);
+        }
+        return key;
     }
     async function generateScopedName(localName, filePath, pattern, hashLength = 5) {
         if (localName.startsWith('--')) {
@@ -18416,30 +18456,37 @@
             options.signal.removeEventListener('abort', reject);
         }
         if (options.module) {
+            const moduleSettings = {
+                hashLength: 5,
+                filePath: '',
+                scoped: true,
+                naming: exports.ModuleCaseTransform.Ignore,
+                pattern: '',
+                generateScopedName,
+                // @ts-ignore
+                ...(options.module in exports.ModuleCaseTransform ? { naming: options.module } : typeof options.module == 'boolean' ? {} : options.module)
+            };
             const parseModuleTime = performance.now();
-            const mapping = {};
+            const namesMapping = {};
             const global = new Set;
             const processed = new Set;
-            const pattern = typeof options.module == 'boolean' ? null : options.module.pattern;
-            const revMapping = {};
-            let filePath = typeof options.module == 'boolean' ? options.src : (options.module.filePath ?? options.src);
+            const pattern = typeof options.module == 'boolean' ? null : moduleSettings.pattern;
+            let mapping = {};
+            let revMapping = {};
+            let filePath = typeof options.module == 'boolean' ? options.src : (moduleSettings.filePath ?? options.src);
             if (filePath.startsWith(options.cwd + '/')) {
                 filePath = filePath.slice(options.cwd.length + 1);
             }
-            const moduleSettings = {
-                hashLength: 5, filePath,
-                scoped: true,
-                pattern: pattern != null && pattern !== '' ? pattern : (filePath === '' ? `[hash]_[local]` : `[name]_[hash]_[local]`),
-                generateScopedName,
-                ...(typeof options.module == 'boolean' ? {} : options.module)
-            };
+            moduleSettings.filePath = filePath;
+            moduleSettings.pattern = pattern != null && pattern !== '' ? pattern : (filePath === '' ? `[hash]_[local]` : `[name]_[hash]_[local]`);
             for (const { node } of walk(ast)) {
                 if (node.typ == exports.EnumToken.DeclarationNodeType) {
                     if (node.nam.startsWith('--')) {
-                        if (!(node.nam in mapping)) {
+                        if (!(node.nam in namesMapping)) {
                             let result = moduleSettings.generateScopedName(node.nam, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                            mapping[node.nam] = '--' + (result instanceof Promise ? await result : result);
-                            revMapping[mapping[node.nam]] = node.nam;
+                            let value = result instanceof Promise ? await result : result;
+                            mapping[node.nam] = '--' + (moduleSettings.naming == exports.ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == exports.ModuleCaseTransform.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
+                            revMapping[node.nam] = node.nam;
                         }
                         node.nam = mapping[node.nam];
                     }
@@ -18461,7 +18508,8 @@
                                 }
                                 if (!(rule.val in mapping)) {
                                     let result = moduleSettings.generateScopedName(rule.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                                    mapping[rule.val] = (rule.typ == exports.EnumToken.DashedIdenTokenType ? '--' : '') + (result instanceof Promise ? await result : result);
+                                    let value = result instanceof Promise ? await result : result;
+                                    mapping[rule.val] = (rule.typ == exports.EnumToken.DashedIdenTokenType ? '--' : '') + (moduleSettings.naming == exports.ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == exports.ModuleCaseTransform.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
                                     revMapping[mapping[rule.val]] = rule.val;
                                 }
                                 if (parentRule != null) {
@@ -18506,7 +18554,8 @@
                                                 }
                                                 if (!(iden.val in root.mapping)) {
                                                     const result = moduleSettings.generateScopedName(iden.val, url, moduleSettings.pattern, moduleSettings.hashLength);
-                                                    root.mapping[iden.val] = result instanceof Promise ? await result : result;
+                                                    let value = result instanceof Promise ? await result : result;
+                                                    root.mapping[iden.val] = (moduleSettings.naming == exports.ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == exports.ModuleCaseTransform.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
                                                     root.revMapping[root.mapping[iden.val]] = iden.val;
                                                 }
                                                 values.push(root.mapping[iden.val]);
@@ -18602,7 +18651,8 @@
                         if (value.typ == exports.EnumToken.DashedIdenTokenType) {
                             if (!(value.val in mapping)) {
                                 const result = moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                                mapping[value.val] = '--' + (result instanceof Promise ? await result : result);
+                                let val = result instanceof Promise ? await result : result;
+                                mapping[value.val] = '--' + (moduleSettings.naming == exports.ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == exports.ModuleCaseTransform.CamelCaseOnly ? getKeyName(val, moduleSettings.naming) : val);
                                 revMapping[mapping[value.val]] = value.val;
                             }
                             value.val = mapping[value.val];
@@ -18672,7 +18722,8 @@
                                 const val = value.val.slice(1);
                                 if (!(val in mapping)) {
                                     const result = moduleSettings.generateScopedName(val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                                    mapping[val] = result instanceof Promise ? await result : result;
+                                    let value = result instanceof Promise ? await result : result;
+                                    mapping[val] = (moduleSettings.naming == exports.ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == exports.ModuleCaseTransform.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
                                     revMapping[mapping[val]] = val;
                                 }
                                 value.val = '.' + mapping[val];
@@ -18699,7 +18750,8 @@
                             if ((prefix == '--' && value.typ == exports.EnumToken.DashedIdenTokenType) || (prefix == '' && value.typ == exports.EnumToken.IdenTokenType)) {
                                 if (!(value.val in mapping)) {
                                     const result = moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                                    mapping[value.val] = prefix + (result instanceof Promise ? await result : result);
+                                    let val = result instanceof Promise ? await result : result;
+                                    mapping[value.val] = prefix + (moduleSettings.naming == exports.ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == exports.ModuleCaseTransform.CamelCaseOnly ? getKeyName(val, moduleSettings.naming) : val);
                                     revMapping[mapping[value.val]] = value.val;
                                 }
                                 value.val = mapping[value.val];
@@ -18708,6 +18760,16 @@
                         node.val = node.tokens.reduce((a, b) => a + renderToken(b), '');
                     }
                 }
+            }
+            // console.error({mapping, revMapping});
+            if (moduleSettings.naming != exports.ModuleCaseTransform.Ignore) {
+                revMapping = {};
+                mapping = Object.entries(mapping).reduce((acc, [key, value]) => {
+                    const keyName = getKeyName(key, moduleSettings.naming);
+                    acc[keyName] = value;
+                    revMapping[value] = keyName;
+                    return acc;
+                }, {});
             }
             result.mapping = mapping;
             result.revMapping = revMapping;
