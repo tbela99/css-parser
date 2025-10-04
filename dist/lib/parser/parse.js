@@ -1,5 +1,5 @@
 import { isIdentStart, isIdent, isIdentColor, mathFuncs, isColor, parseColor, isPseudo, pseudoElements, isAtKeyword, isFunction, isNumber, isPercentage, parseDimension, isHexColor, isHash, mediaTypes } from '../syntax/syntax.js';
-import { EnumToken, ColorType, ValidationLevel, ModuleCaseTransform, SyntaxValidationResult } from '../ast/types.js';
+import { EnumToken, ColorType, ValidationLevel, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SyntaxValidationResult } from '../ast/types.js';
 import { definedPropertySettings, minify, combinators } from '../ast/minify.js';
 import { walkValues, WalkerEvent, walk, WalkerOptionEnum } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
@@ -72,11 +72,11 @@ function replaceToken(parent, value, replacement) {
 }
 function getKeyName(key, how) {
     switch (how) {
-        case ModuleCaseTransform.CamelCase:
-        case ModuleCaseTransform.CamelCaseOnly:
+        case ModuleCaseTransformEnum.CamelCase:
+        case ModuleCaseTransformEnum.CamelCaseOnly:
             return camelize(key);
-        case ModuleCaseTransform.DashCase:
-        case ModuleCaseTransform.DashCaseOnly:
+        case ModuleCaseTransformEnum.DashCase:
+        case ModuleCaseTransformEnum.DashCaseOnly:
             return dasherize(key);
     }
     return key;
@@ -686,23 +686,51 @@ async function doParse(iter, options = {}) {
         const moduleSettings = {
             hashLength: 5,
             filePath: '',
-            scoped: true,
-            naming: ModuleCaseTransform.Ignore,
+            scoped: ModuleScopeEnumOptions.Local,
+            naming: ModuleCaseTransformEnum.Ignore,
             pattern: '',
             generateScopedName,
-            // @ts-ignore
-            ...(options.module in ModuleCaseTransform ? { naming: options.module } : typeof options.module == 'boolean' ? {} : options.module)
+            ...(typeof options.module != 'object' ? {} : options.module)
         };
         const parseModuleTime = performance.now();
         const namesMapping = {};
         const global = new Set;
         const processed = new Set;
         const pattern = typeof options.module == 'boolean' ? null : moduleSettings.pattern;
+        const importMapping = {};
         let mapping = {};
         let revMapping = {};
         let filePath = typeof options.module == 'boolean' ? options.src : (moduleSettings.filePath ?? options.src);
         if (filePath.startsWith(options.cwd + '/')) {
             filePath = filePath.slice(options.cwd.length + 1);
+        }
+        if (typeof options.module == 'number') {
+            if (options.module & ModuleCaseTransformEnum.CamelCase) {
+                moduleSettings.naming = ModuleCaseTransformEnum.CamelCase;
+            }
+            else if (options.module & ModuleCaseTransformEnum.CamelCaseOnly) {
+                moduleSettings.naming = ModuleCaseTransformEnum.CamelCaseOnly;
+            }
+            else if (options.module & ModuleCaseTransformEnum.DashCase) {
+                moduleSettings.naming = ModuleCaseTransformEnum.DashCase;
+            }
+            else if (options.module & ModuleCaseTransformEnum.DashCaseOnly) {
+                moduleSettings.naming = ModuleCaseTransformEnum.DashCaseOnly;
+            }
+            if (options.module & ModuleScopeEnumOptions.Global) {
+                moduleSettings.scoped = ModuleScopeEnumOptions.Global;
+            }
+            if (options.module & ModuleScopeEnumOptions.Pure) {
+                // @ts-ignore
+                moduleSettings.scoped |= ModuleScopeEnumOptions.Pure;
+            }
+            if (options.module & ModuleScopeEnumOptions.ICSS) {
+                // @ts-ignore
+                moduleSettings.scoped |= ModuleScopeEnumOptions.ICSS;
+            }
+        }
+        if (typeof moduleSettings.scoped == 'boolean') {
+            moduleSettings.scoped = moduleSettings.scoped ? ModuleScopeEnumOptions.Local : ModuleScopeEnumOptions.Global;
         }
         moduleSettings.filePath = filePath;
         moduleSettings.pattern = pattern != null && pattern !== '' ? pattern : (filePath === '' ? `[hash]_[local]` : `[name]_[hash]_[local]`);
@@ -710,9 +738,9 @@ async function doParse(iter, options = {}) {
             if (node.typ == EnumToken.DeclarationNodeType) {
                 if (node.nam.startsWith('--')) {
                     if (!(node.nam in namesMapping)) {
-                        let result = moduleSettings.generateScopedName(node.nam, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                        let result = (moduleSettings.scoped & ModuleScopeEnumOptions.Global) ? node.nam : moduleSettings.generateScopedName(node.nam, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
                         let value = result instanceof Promise ? await result : result;
-                        mapping[node.nam] = '--' + (moduleSettings.naming == ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == ModuleCaseTransform.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
+                        mapping[node.nam] = '--' + (moduleSettings.naming & ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming & ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
                         revMapping[node.nam] = node.nam;
                     }
                     node.nam = mapping[node.nam];
@@ -734,9 +762,9 @@ async function doParse(iter, options = {}) {
                                 continue;
                             }
                             if (!(rule.val in mapping)) {
-                                let result = moduleSettings.generateScopedName(rule.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                let result = (moduleSettings.scoped & ModuleScopeEnumOptions.Global) ? rule.val : moduleSettings.generateScopedName(rule.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
                                 let value = result instanceof Promise ? await result : result;
-                                mapping[rule.val] = (rule.typ == EnumToken.DashedIdenTokenType ? '--' : '') + (moduleSettings.naming == ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == ModuleCaseTransform.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
+                                mapping[rule.val] = (rule.typ == EnumToken.DashedIdenTokenType ? '--' : '') + (moduleSettings.naming & ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming & ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
                                 revMapping[mapping[rule.val]] = rule.val;
                             }
                             if (parentRule != null) {
@@ -755,6 +783,7 @@ async function doParse(iter, options = {}) {
                     // composes: a b c from 'file.css';
                     else if (token.r.typ == EnumToken.String) {
                         const url = token.r.val.slice(1, -1);
+                        const src = options.resolve(url, options.dirname(options.src), options.cwd);
                         const result = options.load(url, options.src);
                         const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == 'AsyncFunction' ? await result : result;
                         const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
@@ -765,9 +794,11 @@ async function doParse(iter, options = {}) {
                         }), Object.assign({}, options, {
                             minify: false,
                             setParent: false,
-                            src: options.resolve(url, options.src).absolute,
-                            module: typeof options.module == 'boolean' ? options.module : { ...options.module }
+                            src: src.absolute
                         }));
+                        if (Object.keys(root.mapping).length > 0) {
+                            importMapping[(src.relative.startsWith('/') ? '' : './') + src.relative] = root.mapping;
+                        }
                         if (parentRule != null) {
                             for (const tk of parentRule.tokens) {
                                 if (tk.typ == EnumToken.ClassSelectorTokenType) {
@@ -780,9 +811,9 @@ async function doParse(iter, options = {}) {
                                                 continue;
                                             }
                                             if (!(iden.val in root.mapping)) {
-                                                const result = moduleSettings.generateScopedName(iden.val, url, moduleSettings.pattern, moduleSettings.hashLength);
+                                                const result = (moduleSettings.scoped & ModuleScopeEnumOptions.Global) ? iden.val : moduleSettings.generateScopedName(iden.val, url, moduleSettings.pattern, moduleSettings.hashLength);
                                                 let value = result instanceof Promise ? await result : result;
-                                                root.mapping[iden.val] = (moduleSettings.naming == ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == ModuleCaseTransform.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
+                                                root.mapping[iden.val] = (moduleSettings.naming & ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming & ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
                                                 root.revMapping[root.mapping[iden.val]] = iden.val;
                                             }
                                             values.push(root.mapping[iden.val]);
@@ -841,7 +872,7 @@ async function doParse(iter, options = {}) {
                                         value.val = mapping[value.val];
                                     }
                                     else {
-                                        let result = moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                        let result = (moduleSettings.scoped & ModuleScopeEnumOptions.Global) ? value.val : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
                                         if (result instanceof Promise) {
                                             result = await result;
                                         }
@@ -866,7 +897,7 @@ async function doParse(iter, options = {}) {
                             'inherit', 'initial', 'unset'
                         ].includes(value.val)) {
                             if (!(value.val in mapping)) {
-                                const result = moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                const result = (moduleSettings.scoped & ModuleScopeEnumOptions.Global) ? value.val : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
                                 mapping[value.val] = result instanceof Promise ? await result : result;
                                 revMapping[mapping[value.val]] = value.val;
                             }
@@ -877,9 +908,9 @@ async function doParse(iter, options = {}) {
                 for (const { value } of walkValues(node.val, node)) {
                     if (value.typ == EnumToken.DashedIdenTokenType) {
                         if (!(value.val in mapping)) {
-                            const result = moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                            const result = (moduleSettings.scoped & ModuleScopeEnumOptions.Global) ? value.val : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
                             let val = result instanceof Promise ? await result : result;
-                            mapping[value.val] = '--' + (moduleSettings.naming == ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == ModuleCaseTransform.CamelCaseOnly ? getKeyName(val, moduleSettings.naming) : val);
+                            mapping[value.val] = '--' + (moduleSettings.naming & ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming & ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(val, moduleSettings.naming) : val);
                             revMapping[mapping[value.val]] = value.val;
                         }
                         value.val = mapping[value.val];
@@ -890,9 +921,10 @@ async function doParse(iter, options = {}) {
                 if (node.tokens == null) {
                     Object.defineProperty(node, 'tokens', {
                         ...definedPropertySettings,
-                        value: parseSelector(parseString(node.sel))
+                        value: parseSelector(parseString(node.sel, { location: true }))
                     });
                 }
+                let hasIdOrClass = false;
                 for (const { value } of walkValues(node.tokens, node, 
                 // @ts-ignore
                 (value, parent) => {
@@ -935,6 +967,9 @@ async function doParse(iter, options = {}) {
                         }
                     }
                 })) {
+                    if (value.typ == EnumToken.HashTokenType || value.typ == EnumToken.ClassSelectorTokenType) {
+                        hasIdOrClass = true;
+                    }
                     if (processed.has(value)) {
                         continue;
                     }
@@ -948,13 +983,18 @@ async function doParse(iter, options = {}) {
                         if (value.typ == EnumToken.ClassSelectorTokenType) {
                             const val = value.val.slice(1);
                             if (!(val in mapping)) {
-                                const result = moduleSettings.generateScopedName(val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                const result = (moduleSettings.scoped & ModuleScopeEnumOptions.Global) ? val : moduleSettings.generateScopedName(val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
                                 let value = result instanceof Promise ? await result : result;
-                                mapping[val] = (moduleSettings.naming == ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == ModuleCaseTransform.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
+                                mapping[val] = (moduleSettings.naming & ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming & ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
                                 revMapping[mapping[val]] = val;
                             }
                             value.val = '.' + mapping[val];
                         }
+                    }
+                }
+                if (moduleSettings.scoped & ModuleScopeEnumOptions.Pure) {
+                    if (!hasIdOrClass) {
+                        throw new Error(`pure module: No id or class found in selector '${node.sel}' at '${node.loc?.src ?? ''}':${node.loc?.sta?.lin ?? ''}:${node.loc?.sta?.col ?? ''}`);
                     }
                 }
                 node.sel = '';
@@ -976,9 +1016,9 @@ async function doParse(iter, options = {}) {
                     for (const value of node.tokens) {
                         if ((prefix == '--' && value.typ == EnumToken.DashedIdenTokenType) || (prefix == '' && value.typ == EnumToken.IdenTokenType)) {
                             if (!(value.val in mapping)) {
-                                const result = moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                const result = (moduleSettings.scoped & ModuleScopeEnumOptions.Global) ? value.val : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
                                 let val = result instanceof Promise ? await result : result;
-                                mapping[value.val] = prefix + (moduleSettings.naming == ModuleCaseTransform.DashCaseOnly || moduleSettings.naming == ModuleCaseTransform.CamelCaseOnly ? getKeyName(val, moduleSettings.naming) : val);
+                                mapping[value.val] = prefix + (moduleSettings.naming & ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming & ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(val, moduleSettings.naming) : val);
                                 revMapping[mapping[value.val]] = value.val;
                             }
                             value.val = mapping[value.val];
@@ -988,8 +1028,7 @@ async function doParse(iter, options = {}) {
                 }
             }
         }
-        // console.error({mapping, revMapping});
-        if (moduleSettings.naming != ModuleCaseTransform.Ignore) {
+        if (moduleSettings.naming != ModuleCaseTransformEnum.Ignore) {
             revMapping = {};
             mapping = Object.entries(mapping).reduce((acc, [key, value]) => {
                 const keyName = getKeyName(key, moduleSettings.naming);
@@ -1000,6 +1039,9 @@ async function doParse(iter, options = {}) {
         }
         result.mapping = mapping;
         result.revMapping = revMapping;
+        if ((moduleSettings.scoped & ModuleScopeEnumOptions.ICSS) && Object.keys(importMapping).length > 0) {
+            result.importMapping = importMapping;
+        }
         endTime = performance.now();
         result.stats.module = `${(endTime - parseModuleTime).toFixed(2)}ms`;
         result.stats.total = `${(endTime - startTime).toFixed(2)}ms`;

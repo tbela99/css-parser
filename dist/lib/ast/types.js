@@ -655,28 +655,35 @@ var ColorType;
      */
     ColorType[ColorType["DEVICE_CMYK"] = 7] = "DEVICE_CMYK";
 })(ColorType || (ColorType = {}));
-var ModuleCaseTransform;
-(function (ModuleCaseTransform) {
+var ModuleCaseTransformEnum;
+(function (ModuleCaseTransformEnum) {
     /**
      * export as-is
      */
-    ModuleCaseTransform[ModuleCaseTransform["Ignore"] = 1] = "Ignore";
+    ModuleCaseTransformEnum[ModuleCaseTransformEnum["Ignore"] = 1] = "Ignore";
     /**
      * transform class names and mapping key name
      */
-    ModuleCaseTransform[ModuleCaseTransform["CamelCase"] = 2] = "CamelCase";
+    ModuleCaseTransformEnum[ModuleCaseTransformEnum["CamelCase"] = 2] = "CamelCase";
     /**
      * transform class names and mapping key name
      */
-    ModuleCaseTransform[ModuleCaseTransform["CamelCaseOnly"] = 4] = "CamelCaseOnly";
+    ModuleCaseTransformEnum[ModuleCaseTransformEnum["CamelCaseOnly"] = 4] = "CamelCaseOnly";
     /**
      * transform class names and mapping key name
      */
-    ModuleCaseTransform[ModuleCaseTransform["DashCase"] = 8] = "DashCase";
+    ModuleCaseTransformEnum[ModuleCaseTransformEnum["DashCase"] = 8] = "DashCase";
     /**
      * transform class names and mapping key name
      */
-    ModuleCaseTransform[ModuleCaseTransform["DashCaseOnly"] = 16] = "DashCaseOnly";
-})(ModuleCaseTransform || (ModuleCaseTransform = {}));
+    ModuleCaseTransformEnum[ModuleCaseTransformEnum["DashCaseOnly"] = 16] = "DashCaseOnly";
+})(ModuleCaseTransformEnum || (ModuleCaseTransformEnum = {}));
+var ModuleScopeEnumOptions;
+(function (ModuleScopeEnumOptions) {
+    ModuleScopeEnumOptions[ModuleScopeEnumOptions["Global"] = 32] = "Global";
+    ModuleScopeEnumOptions[ModuleScopeEnumOptions["Local"] = 64] = "Local";
+    ModuleScopeEnumOptions[ModuleScopeEnumOptions["Pure"] = 128] = "Pure";
+    ModuleScopeEnumOptions[ModuleScopeEnumOptions["ICSS"] = 256] = "ICSS";
+})(ModuleScopeEnumOptions || (ModuleScopeEnumOptions = {}));
 
-export { ColorType, EnumToken, ModuleCaseTransform, SyntaxValidationResult, ValidationLevel };
+export { ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SyntaxValidationResult, ValidationLevel };

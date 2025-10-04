@@ -43,11 +43,11 @@ import type {
     StringToken,
     Token
 } from "../../@types/index.d.ts";
-import {convertColor, getAngle} from "../syntax/color/index.ts";
-import {ColorType, EnumToken, expand} from "../ast/index.ts";
-import {SourceMap} from "./sourcemap/index.ts";
-import {colorsFunc, funcLike} from "../syntax/color/utils/index.ts";
-import {isColor, isNewLine, mathFuncs, minifyNumber, pseudoElements} from "../syntax/index.ts";
+import { convertColor, getAngle } from "../syntax/color/index.ts";
+import { ColorType, EnumToken, expand } from "../ast/index.ts";
+import { SourceMap } from "./sourcemap/index.ts";
+import { colorsFunc, funcLike } from "../syntax/color/utils/index.ts";
+import { isColor, isNewLine, mathFuncs, minifyNumber, pseudoElements } from "../syntax/index.ts";
 
 /**
  * Update position
@@ -75,9 +75,13 @@ function update(position: Position, str: string) {
  * render ast
  * @param data
  * @param options
+ * @param mapping
  * @private
  */
-export function doRender(data: AstNode, options: RenderOptions = {}): RenderResult {
+export function doRender(data: AstNode, options: RenderOptions = {}, mapping?: {
+    mapping: Record<string, string>;
+    importMapping: Record<string, Record<string, string>> | null;
+} | null): RenderResult {
 
     const minify: boolean = options.minify ?? true;
     const beautify: boolean = options.beautify ?? !minify;
@@ -111,7 +115,7 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
         while (data.parent != null) {
 
             // @ts-ignore
-            parent = {...data.parent, chi: [{...data}]};
+            parent = { ...data.parent, chi: [{ ...data }] };
 
             // @ts-ignore
             parent.parent = data.parent.parent;
@@ -128,13 +132,31 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
         [key: string]: any
     } = Object.create(null);
 
-    const result: RenderResult = {
-        code: renderAstNode(options.expandNestingRules && [EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(data.typ) && 'chi' in data ? expand(data as AstStyleSheet | AstAtRule | AstRule) : data, options, sourcemap, {
+    const position = {
 
-            ind: 0,
-            lin: 1,
-            col: 1
-        } as Position, errors, function reducer(acc: string, curr: Token): string {
+        ind: 0,
+        lin: 1,
+        col: 1
+    } as Position;
+
+    let code: string = '';
+
+    if (mapping != null) {
+
+        if (mapping.importMapping != null) {
+
+            for (const [key, value] of Object.entries(mapping.importMapping)) {
+
+                code += `:import("${key}")${options.indent}{${options.newLine}${Object.entries(value).reduce((acc, [k, v]) => acc + (acc.length > 0 ? options.newLine : '') + `${options.indent}${v}:${options.indent}${k};`, '')}${options.newLine}}${options.newLine}`;
+            }
+        }
+
+        code += `:export${options.indent}{${options.newLine}${Object.entries(mapping.mapping).reduce((acc, [k, v]) => acc + (acc.length > 0 ? options.newLine : '') + `${options.indent}${k}:${options.indent}${v};`, '')}${options.newLine}}${options.newLine}`;
+        update(position, code);
+    }
+
+    const result: RenderResult = {
+        code: code + renderAstNode(options.expandNestingRules && [EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(data.typ) && 'chi' in data ? expand(data as AstStyleSheet | AstAtRule | AstRule) : data, options, sourcemap, position, errors, function reducer(acc: string, curr: Token): string {
 
             if (curr.typ == EnumToken.CommentTokenType && options.removeComments) {
 
@@ -208,7 +230,7 @@ function updateSourceMap(node: AstRuleList | AstComment, options: RenderOptions,
         }
 
         // @ts-ignore
-        sourcemap.add({src: cache[output], sta: {...position}}, {
+        sourcemap.add({ src: cache[output], sta: { ...position } }, {
             ...<Location>node.loc,
             // @ts-ignore
             src: options.resolve(cache[src], options.cwd).relative
@@ -270,7 +292,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
             return (<AstStyleSheet>data).chi.reduce((css: string, node: AstRuleList | AstComment) => {
 
-                const str: string = renderAstNode(node, options, sourcemap, {...position}, errors, reducer, cache, level, indents);
+                const str: string = renderAstNode(node, options, sourcemap, { ...position }, errors, reducer, cache, level, indents);
 
                 if (str === '') {
 
@@ -334,7 +356,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
                     str = `${(<AstAtRule>node).val === '' ? '' : options.indent || ' '}${(<AstAtRule>node).val};`;
                 } else {
 
-                    str = renderAstNode(node, options, sourcemap, {...position}, errors, reducer, cache, level + 1, indents);
+                    str = renderAstNode(node, options, sourcemap, { ...position }, errors, reducer, cache, level + 1, indents);
                 }
 
                 if (css === '') {
@@ -940,7 +962,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
             return 'or';
     }
 
-    errors?.push({action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}`});
+    errors?.push({ action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });
     return '';
 }
 

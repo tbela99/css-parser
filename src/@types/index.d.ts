@@ -2,7 +2,7 @@ import type {VisitorNodeMap} from "./visitor.d.ts";
 import type {AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet, Location, Position} from "./ast.d.ts";
 import {SourceMap} from "../lib/renderer/sourcemap/index.ts";
 import type {PropertyListOptions} from "./parse.d.ts";
-import {ColorType, EnumToken, ModuleCaseTransform, ValidationLevel} from "../lib/index.ts";
+import {ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ValidationLevel} from "../lib/index.ts";
 import type {Token} from "./token.d.ts";
 import {FeatureWalkMode} from "../lib/ast/features/type.ts";
 import {mathFuncs, transformFunctions} from "../lib/syntax/syntax.ts";
@@ -200,7 +200,7 @@ export declare interface ModuleOptions {
     /**
      * use local scope vs global scope
      */
-    scoped?: boolean;
+    scoped?: boolean | ModuleScopeEnumOptions;
 
     /**
      * module output file path
@@ -236,13 +236,13 @@ export declare interface ModuleOptions {
 
     /**
      * class name transform
-     * {@link ModuleCaseTransform.Ignore}: as is
-     * {@link ModuleCaseTransform.CamelCase}: camelCase {@link ParseResult.mapping} key name
-     * {@link ModuleCaseTransform.CamelCaseOnly}: camelCase {@link ParseResult.mapping} key name and css class name
-     * {@link ModuleCaseTransform.DashCase}: dashCase {@link ParseResult.mapping} key name
-     * {@link ModuleCaseTransform.DashCaseOnly}: dashCase {@link ParseResult.mapping} key name and css class name
+     * {@link ModuleCaseTransformEnum.Ignore}: as is
+     * {@link ModuleCaseTransformEnum.CamelCase}: camelCase {@link ParseResult.mapping} key name
+     * {@link ModuleCaseTransformEnum.CamelCaseOnly}: camelCase {@link ParseResult.mapping} key name and css class name
+     * {@link ModuleCaseTransformEnum.DashCase}: dashCase {@link ParseResult.mapping} key name
+     * {@link ModuleCaseTransformEnum.DashCaseOnly}: dashCase {@link ParseResult.mapping} key name and css class name
      */
-    naming?: ModuleCaseTransform,
+    naming?: ModuleCaseTransformEnum,
 
     /**
      * optional function to generate scoped name
@@ -355,7 +355,7 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
     /**
      * css modules options
      */
-    module?: boolean | ModuleCaseTransform | ModuleOptions
+    module?: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions
 }
 
 /**
@@ -584,6 +584,8 @@ export declare interface ParseResult {
      * css module mapping
      */
     mapping?: Record<string, string>;
+
+    importMapping?: Record<string, Record<string, string>>;
 
     /**
      * css module reverse mapping

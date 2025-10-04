@@ -1,4 +1,4 @@
-import {ModuleCaseTransform} from "../../../dist/node.js";
+import {ModuleCaseTransformEnum, ModuleScopeEnumOptions} from "../../../dist/node.js";
 
 export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
 
@@ -357,7 +357,7 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
   background: blue;
 }
 `, {
-                module: ModuleCaseTransform.DashCaseOnly,
+                module: ModuleCaseTransformEnum.DashCaseOnly,
                 beautify: true
             }).then((result) => {
 
@@ -389,7 +389,7 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
   background: blue;
 }
 `, {
-                module: ModuleCaseTransform.DashCase,
+                module: ModuleCaseTransformEnum.DashCase,
                 beautify: true
             }).then((result) => {
 
@@ -421,7 +421,7 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
   background: blue;
 }
 `, {
-                module: ModuleCaseTransform.CamelCaseOnly,
+                module: ModuleCaseTransformEnum.CamelCaseOnly,
                 beautify: true
             }).then((result) => {
 
@@ -453,7 +453,7 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
   background: blue;
 }
 `, {
-                module: ModuleCaseTransform.CamelCase,
+                module: ModuleCaseTransformEnum.CamelCase,
                 beautify: true
             }).then((result) => {
 
@@ -485,7 +485,7 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
   background: blue;
 }
 `, {
-                module: ModuleCaseTransform.Ignore,
+                module: ModuleCaseTransformEnum.Ignore,
                 beautify: true
             }).then((result) => {
 
@@ -517,7 +517,7 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
   background: blue;
 }
 `, {
-                module: ModuleCaseTransform.Ignore,
+                module: ModuleCaseTransformEnum.Ignore,
                 beautify: true
             }).then((result) => {
 
@@ -535,6 +535,105 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
  background: blue
 }`)
             })
+        });
+
+        it('module mode global #15', function () {
+            return transform(`
+:local(.class-name) {
+  background: red;
+  color: yellow;
+}
+
+:local(.sub-class) {
+  composes: class-name;
+  background: blue;
+}
+`, {
+                module: ModuleScopeEnumOptions.Global,
+                beautify: true
+            }).then((result) => {
+
+                expect(result.mapping).deep.equals({
+                        "class-name": "class-name",
+                        "sub-class": "sub-class class-name",
+                    }
+                );
+
+                expect(result.code).equals(`.class-name {
+ background: red;
+ color: #ff0
+}
+.sub-class {
+ background: blue
+}`)
+            })
+        });
+
+        it('module mode global #16', function () {
+
+            transform(`
+:local(.class-name) {
+  background: red;
+  color: yellow;
+}
+
+:local(.sub-class) {
+  composes: class-name;
+  background: blue;
+}
+a span {
+
+    text-transform: uppercase;
+}
+`, {
+                    module: ModuleScopeEnumOptions.Pure | ModuleScopeEnumOptions.Global,
+                    beautify: true
+                }).catch(error => error).then(error => expect(error).to.be.an('error'));
+
+        });
+
+        it('module mode ICSS #17', function () {
+
+            transform(`
+
+              .goal .bg-indigo {
+                background: indigo;
+              }
+              
+            
+            .indigo-white {
+              composes: bg-indigo;
+              composes: title block ruler from global;
+              color: white;
+            }
+              
+              .indigo-white {
+                composes: bg-indigo;
+              composes: button cell title from "${import.meta.dirname}/../../css-modules/mixins.css";  color: white;
+              }
+`, {
+                    module: ModuleScopeEnumOptions.ICSS,
+                    beautify: true
+                }).then(result => {
+                  
+                    expect(result.code).equals(`:import("./test/css-modules/mixins.css") {
+ qw06e_title: title;
+ oims0_button: button;
+ kmqw4_cell: cell;
+}
+:export {
+ goal: r7bhp_goal;
+ bg-indigo: gy28g_bg-indigo;
+ indigo-white: wims0_indigo-white gy28g_bg-indigo ruler block title qw06e_title kmqw4_cell oims0_button;
+}
+.r7bhp_goal .gy28g_bg-indigo {
+ background: indigo
+}
+.wims0_indigo-white {
+ color: #fff
+}`);
+                });
+
         });
     });
 }

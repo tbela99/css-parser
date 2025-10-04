@@ -661,7 +661,7 @@ export enum ColorType {
     DEVICE_CMYK = CMYK
 }
 
-export enum ModuleCaseTransform {
+export enum ModuleCaseTransformEnum {
 
     /**
      * export as-is
@@ -683,4 +683,11 @@ export enum ModuleCaseTransform {
      * transform class names and mapping key name
      */
     DashCaseOnly = 0x10
+}
+
+export enum ModuleScopeEnumOptions {
+    Global = 0x20,
+    Local = 0x40,
+    Pure = 0x80,
+    ICSS = 0x100
 }

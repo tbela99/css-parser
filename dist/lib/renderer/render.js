@@ -29,9 +29,10 @@ function update(position, str) {
  * render ast
  * @param data
  * @param options
+ * @param mapping
  * @private
  */
-function doRender(data, options = {}) {
+function doRender(data, options = {}, mapping) {
     const minify = options.minify ?? true;
     const beautify = options.beautify ?? !minify;
     options = {
@@ -68,12 +69,23 @@ function doRender(data, options = {}) {
     const errors = [];
     const sourcemap = options.sourcemap ? new SourceMap : null;
     const cache = Object.create(null);
+    const position = {
+        ind: 0,
+        lin: 1,
+        col: 1
+    };
+    let code = '';
+    if (mapping != null) {
+        if (mapping.importMapping != null) {
+            for (const [key, value] of Object.entries(mapping.importMapping)) {
+                code += `:import("${key}")${options.indent}{${options.newLine}${Object.entries(value).reduce((acc, [k, v]) => acc + (acc.length > 0 ? options.newLine : '') + `${options.indent}${v}:${options.indent}${k};`, '')}${options.newLine}}${options.newLine}`;
+            }
+        }
+        code += `:export${options.indent}{${options.newLine}${Object.entries(mapping.mapping).reduce((acc, [k, v]) => acc + (acc.length > 0 ? options.newLine : '') + `${options.indent}${k}:${options.indent}${v};`, '')}${options.newLine}}${options.newLine}`;
+        update(position, code);
+    }
     const result = {
-        code: renderAstNode(options.expandNestingRules && [EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(data.typ) && 'chi' in data ? expand(data) : data, options, sourcemap, {
-            ind: 0,
-            lin: 1,
-            col: 1
-        }, errors, function reducer(acc, curr) {
+        code: code + renderAstNode(options.expandNestingRules && [EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(data.typ) && 'chi' in data ? expand(data) : data, options, sourcemap, position, errors, function reducer(acc, curr) {
             if (curr.typ == EnumToken.CommentTokenType && options.removeComments) {
                 if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
                     return acc;

@@ -1,8 +1,6 @@
 # Changelog
 
-## v1.3.5
-
-- [x] fix \<integer\> syntax validation #115
+## v1.4.0
 
 ### CSS Module 
 
@@ -28,13 +26,16 @@
   - [x] camelCaseOnly
   - [x] dashCase
   - [x] dashCaseOnly
-- [ ] default mode
-  - [ ] global
+- [x] default mode
+  - [x] global
   - [x] local
-  - [ ] pure(at least one class or id)
-  - [ ] icss
-    - [ ] :import
-    - [ ] :export
+  - [x] pure(at least one class or id)
+  - [x] icss
+    - [x] :import
+    - [x] :export
+
+### Bug Fixes
+- [x] fix \<integer\> syntax validation #115
 
 ## v1.3.4
 
