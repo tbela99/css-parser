@@ -785,6 +785,16 @@ export declare interface ComposesSelectorToken extends BaseToken {
 }
 
 /**
+ * Css variable token
+ */
+export declare interface CssVariableToken extends BaseToken {
+
+    typ: EnumToken.CssVariableTokenType;
+    nam: string;
+    val: Token[];
+}
+
+/**
  * Unary expression node
  */
 export declare type UnaryExpressionNode =

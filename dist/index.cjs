@@ -18678,26 +18678,76 @@ async function doParse(iter, options = {}) {
                     node.nam = mapping[node.nam];
                 }
                 if ('composes' == node.nam.toLowerCase()) {
-                    const token = node.val.find(t => t.typ == exports.EnumToken.ComposesSelectorNodeType);
-                    if (token == null) {
-                        continue;
+                    const tokens = [];
+                    let isValid = true;
+                    for (const token of node.val) {
+                        if (token.typ == exports.EnumToken.ComposesSelectorNodeType) {
+                            if (!(token.r == null || token.r.typ == exports.EnumToken.StringTokenType || token.r.typ == exports.EnumToken.IdenTokenType)) {
+                                errors.push({
+                                    action: 'drop',
+                                    message: `composes '${exports.EnumToken[token.r.typ]}' is not supported`,
+                                    node
+                                });
+                                isValid = false;
+                                break;
+                            }
+                            tokens.push(token);
+                        }
                     }
                     // find parent rule
                     let parentRule = node.parent;
                     while (parentRule != null && parentRule.typ != exports.EnumToken.RuleNodeType) {
                         parentRule = parentRule.parent;
                     }
-                    // composes: a b c;
-                    if (token.r == null) {
-                        for (const rule of token.l) {
-                            if (rule.typ == exports.EnumToken.WhitespaceTokenType || rule.typ == exports.EnumToken.CommentTokenType) {
-                                continue;
+                    if (!isValid) {
+                        parentRule.chi.splice(parentRule.chi.indexOf(node), 1);
+                        continue;
+                    }
+                    for (const token of tokens) {
+                        // composes: a b c;
+                        if (token.r == null) {
+                            for (const rule of token.l) {
+                                if (rule.typ == exports.EnumToken.WhitespaceTokenType || rule.typ == exports.EnumToken.CommentTokenType) {
+                                    continue;
+                                }
+                                if (!(rule.val in mapping)) {
+                                    let result = (moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global) ? rule.val : moduleSettings.generateScopedName(rule.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                    let value = result instanceof Promise ? await result : result;
+                                    mapping[rule.val] = (rule.typ == exports.EnumToken.DashedIdenTokenType ? '--' : '') + (moduleSettings.naming & exports.ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming & exports.ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
+                                    revMapping[mapping[rule.val]] = rule.val;
+                                }
+                                if (parentRule != null) {
+                                    for (const tk of parentRule.tokens) {
+                                        if (tk.typ == exports.EnumToken.ClassSelectorTokenType) {
+                                            const val = tk.val.slice(1);
+                                            if (val in revMapping) {
+                                                const key = revMapping[val];
+                                                mapping[key] = [...new Set([...mapping[key].split(' '), mapping[rule.val]])].join(' ');
+                                            }
+                                        }
+                                    }
+                                }
                             }
-                            if (!(rule.val in mapping)) {
-                                let result = (moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global) ? rule.val : moduleSettings.generateScopedName(rule.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                                let value = result instanceof Promise ? await result : result;
-                                mapping[rule.val] = (rule.typ == exports.EnumToken.DashedIdenTokenType ? '--' : '') + (moduleSettings.naming & exports.ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming & exports.ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
-                                revMapping[mapping[rule.val]] = rule.val;
+                        }
+                        // composes: a b c from 'file.css';
+                        else if (token.r.typ == exports.EnumToken.String) {
+                            const url = token.r.val.slice(1, -1);
+                            const src = options.resolve(url, options.dirname(options.src), options.cwd);
+                            const result = options.load(url, options.src);
+                            const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == 'AsyncFunction' ? await result : result;
+                            const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize$1({
+                                stream,
+                                buffer: '',
+                                position: { ind: 0, lin: 1, col: 1 },
+                                currentPosition: { ind: -1, lin: 1, col: 0 }
+                            }), Object.assign({}, options, {
+                                minify: false,
+                                setParent: false,
+                                src: src.absolute
+                            }));
+                            const srcIndex = (src.relative.startsWith('/') ? '' : './') + src.relative;
+                            if (Object.keys(root.mapping).length > 0) {
+                                importMapping[srcIndex] = {};
                             }
                             if (parentRule != null) {
                                 for (const tk of parentRule.tokens) {
@@ -18705,92 +18755,55 @@ async function doParse(iter, options = {}) {
                                         const val = tk.val.slice(1);
                                         if (val in revMapping) {
                                             const key = revMapping[val];
-                                            mapping[key] = [...new Set([...mapping[key].split(' '), mapping[rule.val]])].join(' ');
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    // composes: a b c from 'file.css';
-                    else if (token.r.typ == exports.EnumToken.String) {
-                        const url = token.r.val.slice(1, -1);
-                        const src = options.resolve(url, options.dirname(options.src), options.cwd);
-                        const result = options.load(url, options.src);
-                        const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == 'AsyncFunction' ? await result : result;
-                        const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize$1({
-                            stream,
-                            buffer: '',
-                            position: { ind: 0, lin: 1, col: 1 },
-                            currentPosition: { ind: -1, lin: 1, col: 0 }
-                        }), Object.assign({}, options, {
-                            minify: false,
-                            setParent: false,
-                            src: src.absolute
-                        }));
-                        if (Object.keys(root.mapping).length > 0) {
-                            importMapping[(src.relative.startsWith('/') ? '' : './') + src.relative] = root.mapping;
-                        }
-                        if (parentRule != null) {
-                            for (const tk of parentRule.tokens) {
-                                if (tk.typ == exports.EnumToken.ClassSelectorTokenType) {
-                                    const val = tk.val.slice(1);
-                                    if (val in revMapping) {
-                                        const key = revMapping[val];
-                                        const values = [];
-                                        for (const iden of token.l) {
-                                            if (iden.typ != exports.EnumToken.IdenTokenType && iden.typ != exports.EnumToken.DashedIdenTokenType) {
-                                                continue;
+                                            const values = [];
+                                            for (const iden of token.l) {
+                                                if (iden.typ != exports.EnumToken.IdenTokenType && iden.typ != exports.EnumToken.DashedIdenTokenType) {
+                                                    continue;
+                                                }
+                                                if (!(iden.val in root.mapping)) {
+                                                    const result = (moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global) ? iden.val : moduleSettings.generateScopedName(iden.val, url, moduleSettings.pattern, moduleSettings.hashLength);
+                                                    let value = result instanceof Promise ? await result : result;
+                                                    root.mapping[iden.val] = (moduleSettings.naming & exports.ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming & exports.ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
+                                                    root.revMapping[root.mapping[iden.val]] = iden.val;
+                                                }
+                                                importMapping[srcIndex][iden.val] = root.mapping[iden.val];
+                                                values.push(root.mapping[iden.val]);
                                             }
-                                            if (!(iden.val in root.mapping)) {
-                                                const result = (moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global) ? iden.val : moduleSettings.generateScopedName(iden.val, url, moduleSettings.pattern, moduleSettings.hashLength);
-                                                let value = result instanceof Promise ? await result : result;
-                                                root.mapping[iden.val] = (moduleSettings.naming & exports.ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming & exports.ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
-                                                root.revMapping[root.mapping[iden.val]] = iden.val;
+                                            mapping[key] = [...new Set([...mapping[key].split(' '), ...values])].join(' ');
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // composes: a b c from global;
+                        else if (token.r.typ == exports.EnumToken.IdenTokenType) {
+                            // global
+                            if (parentRule != null) {
+                                if ('global' == token.r.val.toLowerCase()) {
+                                    for (const tk of parentRule.tokens) {
+                                        if (tk.typ == exports.EnumToken.ClassSelectorTokenType) {
+                                            const val = tk.val.slice(1);
+                                            if (val in revMapping) {
+                                                const key = revMapping[val];
+                                                mapping[key] = [...new Set([...mapping[key].split(' '), ...(token.l.reduce((acc, curr) => {
+                                                            if (curr.typ == exports.EnumToken.IdenTokenType) {
+                                                                acc.push(curr.val);
+                                                            }
+                                                            return acc;
+                                                        }, []))])].join(' ');
                                             }
-                                            values.push(root.mapping[iden.val]);
-                                        }
-                                        mapping[key] = [...new Set([...mapping[key].split(' '), ...values])].join(' ');
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    // composes: a b c from global;
-                    else if (token.r.typ == exports.EnumToken.IdenTokenType) {
-                        // global
-                        if (parentRule != null) {
-                            if ('global' == token.r.val.toLowerCase()) {
-                                for (const tk of parentRule.tokens) {
-                                    if (tk.typ == exports.EnumToken.ClassSelectorTokenType) {
-                                        const val = tk.val.slice(1);
-                                        if (val in revMapping) {
-                                            const key = revMapping[val];
-                                            mapping[key] = [...new Set([...mapping[key].split(' '), ...(token.l.reduce((acc, curr) => {
-                                                        if (curr.typ == exports.EnumToken.IdenTokenType) {
-                                                            acc.push(curr.val);
-                                                        }
-                                                        return acc;
-                                                    }, []))])].join(' ');
                                         }
                                     }
                                 }
-                            }
-                            else {
-                                errors.push({
-                                    action: 'drop',
-                                    message: `composes '${token.r.val}' is not supported`,
-                                    node
-                                });
+                                else {
+                                    errors.push({
+                                        action: 'drop',
+                                        message: `composes '${token.r.val}' is not supported`,
+                                        node
+                                    });
+                                }
                             }
                         }
-                    }
-                    else {
-                        errors.push({
-                            action: 'drop',
-                            message: `composes '${exports.EnumToken[token.r.typ]}' is not supported`,
-                            node
-                        });
                     }
                     parentRule.chi.splice(parentRule.chi.indexOf(node), 1);
                 }

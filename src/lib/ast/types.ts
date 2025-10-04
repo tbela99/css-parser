@@ -434,6 +434,11 @@ export enum EnumToken {
      */
     ComposesSelectorNodeType,
 
+    /**
+     * css variable token type
+     */
+    CssVariableTokenType,
+
     /* aliases */
 
     /**

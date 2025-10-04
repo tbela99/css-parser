@@ -1180,12 +1180,28 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
                 if ('composes' == node.nam.toLowerCase()) {
 
-                    const token = node.val.find(t => t.typ == EnumToken.ComposesSelectorNodeType) as ComposesSelectorToken;
+                    const tokens = [] as ComposesSelectorToken[];
+                    let isValid: boolean = true;
 
-                    if (token == null) {
+                    for (const token of node.val) {
 
-                        continue;
+                        if (token.typ == EnumToken.ComposesSelectorNodeType) {
+
+                            if (!((token as ComposesSelectorToken).r == null || (token as ComposesSelectorToken).r!.typ == EnumToken.StringTokenType || (token as ComposesSelectorToken).r!.typ == EnumToken.IdenTokenType)) {
+
+                                errors.push({
+                                    action: 'drop',
+                                    message: `composes '${EnumToken[(token.r! as IdentToken).typ]}' is not supported`,
+                                    node
+                                });
+
+                                isValid = false;
+                                break;
+                            }
+                            tokens.push(token as ComposesSelectorToken)
+                        }
                     }
+
 
                     // find parent rule
                     let parentRule = node.parent as AstRule;
@@ -1195,23 +1211,82 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                         parentRule = parentRule.parent as AstRule;
                     }
 
-                    // composes: a b c;
-                    if (token.r == null) {
+                    if (!isValid || tokens.length == 0) {
 
-                        for (const rule of token.l) {
+                        if (tokens.length == 0) {
 
-                            if (rule.typ == EnumToken.WhitespaceTokenType || rule.typ == EnumToken.CommentTokenType) {
+                            errors.push({
+                                action: 'drop',
+                                message: `composes is empty`,
+                                node
+                            });
+                        }
 
-                                continue;
+                        (parentRule as AstRule).chi.splice((parentRule as AstRule).chi.indexOf(node), 1);
+                        continue;
+                    }
+
+                    for (const token of tokens) {
+
+                        // composes: a b c;
+                        if (token.r == null) {
+
+                            for (const rule of token.l) {
+
+                                if (rule.typ == EnumToken.WhitespaceTokenType || rule.typ == EnumToken.CommentTokenType) {
+
+                                    continue;
+                                }
+
+                                if (!((rule as IdentToken).val in mapping)) {
+
+                                    let result = (moduleSettings.scoped! & ModuleScopeEnumOptions.Global) ? (rule as IdentToken).val : moduleSettings.generateScopedName!((rule as IdentToken).val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+                                    let value: string = result instanceof Promise ? await result : result;
+
+                                    mapping[(rule as DashedIdentToken).val] = (rule.typ == EnumToken.DashedIdenTokenType ? '--' : '') + (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(value, moduleSettings.naming as ModuleCaseTransformEnum) : value);
+                                    revMapping[mapping[(rule as DashedIdentToken).val]] = (rule as DashedIdentToken).val;
+                                }
+
+                                if (parentRule != null) {
+
+                                    for (const tk of (parentRule as AstRule).tokens!) {
+
+                                        if (tk.typ == EnumToken.ClassSelectorTokenType) {
+
+                                            const val: string = (tk as ClassSelectorToken).val.slice(1);
+
+                                            if (val in revMapping) {
+
+                                                const key = revMapping[val] as string;
+                                                mapping[key] = [...new Set([...mapping[key].split(' '), mapping[(rule as IdentToken).val]])].join(' ');
+                                            }
+                                        }
+                                    }
+                                }
                             }
+                        }
+                        // composes: a b c from 'file.css';
+                        else if (token.r.typ == EnumToken.String) {
 
-                            if (!((rule as IdentToken).val in mapping)) {
+                            const url: string = (token.r as StringToken).val.slice(1, -1);
+                            const src = options.resolve!(url, options.dirname!(options.src as string), options.cwd);
+                            const result = options.load!(url, <string>options.src) as LoadResult;
+                            const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == 'AsyncFunction' ? await result : result;
+                            const root: ParseResult = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
+                                stream,
+                                buffer: '',
+                                position: { ind: 0, lin: 1, col: 1 },
+                                currentPosition: { ind: -1, lin: 1, col: 0 }
+                            } as ParseInfo), Object.assign({}, options, {
+                                minify: false,
+                                setParent: false,
+                                src: src.absolute
+                            }) as ParserOptions);
 
-                                let result = (moduleSettings.scoped! & ModuleScopeEnumOptions.Global) ? (rule as IdentToken).val : moduleSettings.generateScopedName!((rule as IdentToken).val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
-                                let value: string = result instanceof Promise ? await result : result;
+                            const srcIndex = (src.relative.startsWith('/') ? '' : './') + src.relative;
 
-                                mapping[(rule as DashedIdentToken).val] = (rule.typ == EnumToken.DashedIdenTokenType ? '--' : '') + (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(value, moduleSettings.naming as ModuleCaseTransformEnum) : value);
-                                revMapping[mapping[(rule as DashedIdentToken).val]] = (rule as DashedIdentToken).val;
+                            if (Object.keys(root.mapping as Record<string, string>).length > 0) {
+                                importMapping[srcIndex] = {} as Record<string, string>;
                             }
 
                             if (parentRule != null) {
@@ -1225,120 +1300,76 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                                         if (val in revMapping) {
 
                                             const key = revMapping[val] as string;
-                                            mapping[key] = [...new Set([...mapping[key].split(' '), mapping[(rule as IdentToken).val]])].join(' ');
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    // composes: a b c from 'file.css';
-                    else if (token.r.typ == EnumToken.String) {
+                                            const values = [] as string[];
 
-                        const url: string = (token.r as StringToken).val.slice(1, -1);
-                        const src = options.resolve!(url, options.dirname!(options.src as string), options.cwd);
-                        const result = options.load!(url, <string>options.src) as LoadResult;
-                        const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == 'AsyncFunction' ? await result : result;
-                        const root: ParseResult = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
-                            stream,
-                            buffer: '',
-                            position: { ind: 0, lin: 1, col: 1 },
-                            currentPosition: { ind: -1, lin: 1, col: 0 }
-                        } as ParseInfo), Object.assign({}, options, {
-                            minify: false,
-                            setParent: false,
-                            src: src.absolute
-                        }) as ParserOptions);
+                                            for (const iden of token.l) {
 
-                        if (Object.keys(root.mapping as Record<string, string>).length > 0) {
-                            importMapping[(src.relative.startsWith('/') ? '' : './') + src.relative] = root.mapping as Record<string, string>;
-                        }
-                        
-                        if (parentRule != null) {
+                                                if (iden.typ != EnumToken.IdenTokenType && iden.typ != EnumToken.DashedIdenTokenType) {
 
-                            for (const tk of (parentRule as AstRule).tokens!) {
-
-                                if (tk.typ == EnumToken.ClassSelectorTokenType) {
-
-                                    const val: string = (tk as ClassSelectorToken).val.slice(1);
-
-                                    if (val in revMapping) {
-
-                                        const key = revMapping[val] as string;
-                                        const values = [] as string[];
-
-                                        for (const iden of token.l) {
-
-                                            if (iden.typ != EnumToken.IdenTokenType && iden.typ != EnumToken.DashedIdenTokenType) {
-
-                                                continue;
-                                            }
-
-                                            if (!((iden as IdentToken | DashedIdentToken).val in root.mapping!)) {
-
-                                                const result = (moduleSettings.scoped! & ModuleScopeEnumOptions.Global) ? (iden as IdentToken | DashedIdentToken).val : moduleSettings.generateScopedName!((iden as IdentToken | DashedIdentToken).val, url as string, moduleSettings.pattern as string, moduleSettings.hashLength);
-
-                                                let value: string = result instanceof Promise ? await result : result;
-
-                                                root.mapping![(iden as IdentToken | DashedIdentToken).val] = (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(value, moduleSettings.naming as ModuleCaseTransformEnum) : value);
-                                                root.revMapping![root.mapping![(iden as IdentToken | DashedIdentToken).val]] = (iden as IdentToken | DashedIdentToken).val;
-                                            }
-
-                                            values.push(root.mapping![(iden as IdentToken | DashedIdentToken).val]);
-                                        }
-
-                                        mapping[key] = [...new Set([...mapping[key].split(' '), ...values])].join(' ');
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // composes: a b c from global;
-                    else if (token.r.typ == EnumToken.IdenTokenType) {
-
-                        // global
-                        if (parentRule != null) {
-
-                            if ('global' == (token.r as IdentToken).val.toLowerCase()) {
-
-                                for (const tk of (parentRule as AstRule).tokens!) {
-
-                                    if (tk.typ == EnumToken.ClassSelectorTokenType) {
-
-                                        const val: string = (tk as ClassSelectorToken).val.slice(1);
-
-                                        if (val in revMapping) {
-
-                                            const key = revMapping[val] as string;
-                                            mapping[key] = [...new Set([...mapping[key].split(' '), ...((token as ComposesSelectorToken).l.reduce((acc, curr) => {
-
-                                                if (curr.typ == EnumToken.IdenTokenType) {
-
-                                                    acc.push((curr as IdentToken).val);
+                                                    continue;
                                                 }
 
-                                                return acc;
-                                            }, [] as string[]))])].join(' ');
+                                                if (!((iden as IdentToken | DashedIdentToken).val in root.mapping!)) {
+
+                                                    const result = (moduleSettings.scoped! & ModuleScopeEnumOptions.Global) ? (iden as IdentToken | DashedIdentToken).val : moduleSettings.generateScopedName!((iden as IdentToken | DashedIdentToken).val, url as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+
+                                                    let value: string = result instanceof Promise ? await result : result;
+
+                                                    root.mapping![(iden as IdentToken | DashedIdentToken).val] = (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(value, moduleSettings.naming as ModuleCaseTransformEnum) : value);
+                                                    root.revMapping![root.mapping![(iden as IdentToken | DashedIdentToken).val]] = (iden as IdentToken | DashedIdentToken).val;
+                                                }
+
+                                                importMapping[srcIndex][(iden as IdentToken | DashedIdentToken).val] = root.mapping![(iden as IdentToken | DashedIdentToken).val];
+                                                values.push(root.mapping![(iden as IdentToken | DashedIdentToken).val]);
+                                            }
+
+                                            mapping[key] = [...new Set([...mapping[key].split(' '), ...values])].join(' ');
                                         }
                                     }
                                 }
-                            } else {
-
-                                errors.push({
-                                    action: 'drop',
-                                    message: `composes '${(token.r as IdentToken).val}' is not supported`,
-                                    node
-                                });
                             }
                         }
-                    } else {
 
-                        errors.push({
-                            action: 'drop',
-                            message: `composes '${EnumToken[(token.r as IdentToken).typ]}' is not supported`,
-                            node
-                        });
+                        // composes: a b c from global;
+                        else if (token.r.typ == EnumToken.IdenTokenType) {
+
+                            // global
+                            if (parentRule != null) {
+
+                                if ('global' == (token.r as IdentToken).val.toLowerCase()) {
+
+                                    for (const tk of (parentRule as AstRule).tokens!) {
+
+                                        if (tk.typ == EnumToken.ClassSelectorTokenType) {
+
+                                            const val: string = (tk as ClassSelectorToken).val.slice(1);
+
+                                            if (val in revMapping) {
+
+                                                const key = revMapping[val] as string;
+                                                mapping[key] = [...new Set([...mapping[key].split(' '), ...((token as ComposesSelectorToken).l.reduce((acc, curr) => {
+
+                                                    if (curr.typ == EnumToken.IdenTokenType) {
+
+                                                        acc.push((curr as IdentToken).val);
+                                                    }
+
+                                                    return acc;
+                                                }, [] as string[]))])].join(' ');
+                                            }
+                                        }
+                                    }
+
+                                } else {
+
+                                    errors.push({
+                                        action: 'drop',
+                                        message: `composes '${(token.r as IdentToken).val}' is not supported`,
+                                        node
+                                    });
+                                }
+                            }
+                        }
                     }
 
                     (parentRule as AstRule).chi.splice((parentRule as AstRule).chi.indexOf(node), 1);

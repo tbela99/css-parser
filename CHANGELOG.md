@@ -9,7 +9,7 @@
   - [x] compose from local selector
   - [x] compose from other files
   - [x] compose from global selector
-  - [ ] comma separated compose list
+  - [x] comma separated compose list
 - [x] :local
 - [x] :global
 - [x] :local()
