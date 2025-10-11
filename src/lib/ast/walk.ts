@@ -227,7 +227,6 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
     type?: EnumToken | EnumToken[] | ((token: Token) => boolean)
 }, reverse?: boolean): Generator<WalkAttributesResult> {
 
-    // const set = new Set<Token>();
     const stack: Token[] = values.slice();
     const map: Map<Token, FunctionToken | ParensToken | BinaryExpressionToken> = new Map;
 
@@ -320,14 +319,14 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
             if ('l' in value && value.l != null) {
 
                 // @ts-ignore
-                values[reverse ? 'push' : 'unshift'](value.l);
+                values.push(value.l);
                 // @ts-ignore
                 map.set(value.l, value);
             }
 
             if ('op' in value && typeof value.op == 'object') {
 
-                values[reverse ? 'push' : 'unshift'](value.op);
+                values.push(value.op);
                 // @ts-ignore
                 map.set(value.op, value);
             }
@@ -339,14 +338,14 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
                     for (const r of value.r) {
 
                         // @ts-ignore
-                        values[reverse ? 'push' : 'unshift'](r);
+                        values.push(r);
                         // @ts-ignore
                         map.set(r, value);
                     }
                 } else {
 
                     // @ts-ignore
-                    values[reverse ? 'push' : 'unshift'](value.r);
+                    values.push(value.r);
                     // @ts-ignore
                     map.set(value.r, value);
                 }

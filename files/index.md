@@ -11,6 +11,7 @@ children:
     - ./transform.md
     - ./ast.md
     - ./validation.md
+    - ./css-module.md
 ---
 
 ## Contents
@@ -23,6 +24,7 @@ children:
 - [Transform](./transform.md)
 - [Ast traversal](ast.md)
 - [Validation](./validation.md)
+- [CSS module](./css-module.md)
 
 ## Modules
 

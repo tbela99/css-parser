@@ -427,10 +427,23 @@ var EnumToken;
      * invalid declaration node type
      */
     EnumToken[EnumToken["InvalidDeclarationNodeType"] = 94] = "InvalidDeclarationNodeType";
+    /* css module nodes */
     /**
      * composes token node type
      */
     EnumToken[EnumToken["ComposesSelectorNodeType"] = 95] = "ComposesSelectorNodeType";
+    /**
+     * css variable token type
+     */
+    EnumToken[EnumToken["CssVariableTokenType"] = 96] = "CssVariableTokenType";
+    /**
+     * css variable import token type
+     */
+    EnumToken[EnumToken["CssVariableImportTokenType"] = 97] = "CssVariableImportTokenType";
+    /**
+     * css variable declaration map token type
+     */
+    EnumToken[EnumToken["CssVariableDeclarationMapTokenType"] = 98] = "CssVariableDeclarationMapTokenType";
     /* aliases */
     /**
      * alias for time token type

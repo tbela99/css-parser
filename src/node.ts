@@ -308,10 +308,10 @@ export async function transform(css: string | ReadableStream<Uint8Array>, option
     const startTime: number = performance.now();
     return parse(css, options).then((parseResult: ParseResult) => {
 
-        let mapping : Record<string, string> | null= null;;
+        let mapping : Record<string, string> | null= null;
         let importMapping : Record<string, Record<string, string>> | null = null;
 
-        if (typeof options.module == 'number' && options.module & ModuleScopeEnumOptions.ICSS) {
+        if (typeof options.module == 'number' && (options.module & ModuleScopeEnumOptions.ICSS)) {
             mapping = parseResult.mapping as Record<string, string>;
             importMapping = parseResult.importMapping as Record<string, Record<string, string>>;
         }

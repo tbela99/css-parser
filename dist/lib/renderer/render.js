@@ -244,6 +244,11 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                 return `@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val}${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
             }
             return data.sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
+        case EnumToken.CssVariableTokenType:
+        case EnumToken.CssVariableImportTokenType:
+            return `@value ${data.nam}:${options.indent}${filterValues((options.minify ? data.val : data.val)).reduce(reducer, '').trim()};`;
+        case EnumToken.CssVariableDeclarationMapTokenType:
+            return `@value ${filterValues(data.vars).reduce((acc, curr) => acc + renderToken(curr), '').trim()} from ${filterValues(data.from).reduce((acc, curr) => acc + renderToken(curr), '').trim()};`;
         case EnumToken.InvalidDeclarationNodeType:
         case EnumToken.InvalidRuleTokenType:
         case EnumToken.InvalidAtRuleTokenType:

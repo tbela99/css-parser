@@ -247,7 +247,7 @@ async function transform(css, options = {}) {
     return parse(css, options).then((parseResult) => {
         let mapping = null;
         let importMapping = null;
-        if (typeof options.module == 'number' && options.module & ModuleScopeEnumOptions.ICSS) {
+        if (typeof options.module == 'number' && (options.module & ModuleScopeEnumOptions.ICSS)) {
             mapping = parseResult.mapping;
             importMapping = parseResult.importMapping;
         }

@@ -429,6 +429,8 @@ export enum EnumToken {
      */
     InvalidDeclarationNodeType,
 
+    /* css module nodes */
+
     /**
      * composes token node type
      */
@@ -438,6 +440,16 @@ export enum EnumToken {
      * css variable token type
      */
     CssVariableTokenType,
+
+    /**
+     * css variable import token type
+     */
+    CssVariableImportTokenType,
+
+    /**
+     * css variable declaration map token type
+     */
+    CssVariableDeclarationMapTokenType,
 
     /* aliases */
 

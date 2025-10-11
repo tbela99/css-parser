@@ -1,4 +1,4 @@
-import {ModuleCaseTransformEnum, ModuleScopeEnumOptions} from "../../../dist/node.js";
+import {ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions} from "../../../dist/node.js";
 
 export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
 
@@ -633,6 +633,101 @@ a span {
  color: #fff
 }`);
                 });
+
+        });
+
+        it('module export variables #18', function () {
+
+            transform(`
+
+              @value blue: #0c77f8;
+              @value red: #ff0000;
+              @value green: #aaf200;
+`, {
+                module: ModuleScopeEnumOptions.ICSS,
+                beautify: true
+            }).then(result => {
+
+                expect(result.cssModuleVariables).deep.equals({
+                    "blue": {
+                        "typ": EnumToken.CssVariableTokenType,
+                        "nam": "blue",
+                        "val": [
+                            {
+                                "typ": EnumToken.ColorTokenType,
+                                "val": "#0c77f8",
+                                "kin": ColorType.HEX
+                            }
+                        ]
+                    },
+                    "red": {
+                        "typ": EnumToken.CssVariableTokenType,
+                        "nam": "red",
+                        "val": [
+                            {
+                                "typ": EnumToken.ColorTokenType,
+                                "val": "red",
+                                "kin": ColorKind.LIT
+                            }
+                        ]
+                    },
+                    "green": {
+                        "typ": EnumToken.CssVariableTokenType,
+                        "nam": "green",
+                        "val": [
+                            {
+                                "typ": EnumToken.ColorTokenType,
+                                "val": "#aaf200",
+                                "kin": ColorType.HEX
+                            }
+                        ]
+                    }
+                });
+            });
+
+        });
+
+        it('module import variables #19', function () {
+
+            transform(`
+
+  /* import your colors... */
+  @value colors: "${import.meta.dirname}/../../css-modules/color.css";
+  @value blue, red, green from colors;
+  
+  .button {
+    color: light-dark(blue , red);
+    display: inline-block;
+  }
+  
+  @supports (border-color: green) or (color:color(from green  srgb r g b / 0.5)) {
+  
+  .green {
+  
+  .button {
+    color: green;
+  }
+  
+  }
+`, {
+                module: ModuleScopeEnumOptions.ICSS,
+                beautify: true
+            }).then(result => {
+
+                expect(result.code).equals(`:export {
+ button: oims0_button;
+ green: znrx5_green;
+}
+.oims0_button {
+ color: light-dark(#0c77f8,#ff0020);
+ display: inline-block
+}
+@supports (border-color:#aaf201) or (color:#00800080) {
+ .znrx5_green .oims0_button {
+  color: #aaf201
+ }
+}`);
+            });
 
         });
     });

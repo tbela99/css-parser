@@ -56,7 +56,7 @@ console.debug(result.code);
 the parser is lenient. this means that invalid nodes are kept in the ast but they are not rendered.
 this behavior can be changed using the [lenient](../docs/interfaces/node.ParserOptions.html#lenient) option.
 
-## Validation Errors
+## Validation errors
 
 validation errors are returned with [parse result](../docs/interfaces/node.ParseResult.html) or [transform result](../docs/interfaces/node.TransformResult.html).
 check the [typescript definition](../docs/interfaces/node.ErrorDescription.html) of ErrorDescription for more details.
@@ -124,4 +124,4 @@ const result = await transform(css, options);
 
 ```
 ------
-[Previous](./ast.md)
+[Previous](./ast.md) | [Next](./css-module.md) 

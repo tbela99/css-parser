@@ -433,10 +433,23 @@
          * invalid declaration node type
          */
         EnumToken[EnumToken["InvalidDeclarationNodeType"] = 94] = "InvalidDeclarationNodeType";
+        /* css module nodes */
         /**
          * composes token node type
          */
         EnumToken[EnumToken["ComposesSelectorNodeType"] = 95] = "ComposesSelectorNodeType";
+        /**
+         * css variable token type
+         */
+        EnumToken[EnumToken["CssVariableTokenType"] = 96] = "CssVariableTokenType";
+        /**
+         * css variable import token type
+         */
+        EnumToken[EnumToken["CssVariableImportTokenType"] = 97] = "CssVariableImportTokenType";
+        /**
+         * css variable declaration map token type
+         */
+        EnumToken[EnumToken["CssVariableDeclarationMapTokenType"] = 98] = "CssVariableDeclarationMapTokenType";
         /* aliases */
         /**
          * alias for time token type
@@ -7982,6 +7995,11 @@
                     return `@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val}${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
                 }
                 return data.sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
+            case exports.EnumToken.CssVariableTokenType:
+            case exports.EnumToken.CssVariableImportTokenType:
+                return `@value ${data.nam}:${options.indent}${filterValues((options.minify ? data.val : data.val)).reduce(reducer, '').trim()};`;
+            case exports.EnumToken.CssVariableDeclarationMapTokenType:
+                return `@value ${filterValues(data.vars).reduce((acc, curr) => acc + renderToken(curr), '').trim()} from ${filterValues(data.from).reduce((acc, curr) => acc + renderToken(curr), '').trim()};`;
             case exports.EnumToken.InvalidDeclarationNodeType:
             case exports.EnumToken.InvalidRuleTokenType:
             case exports.EnumToken.InvalidAtRuleTokenType:
@@ -17832,9 +17850,6 @@
     function reject(reason) {
         throw new Error(reason ?? 'Parsing aborted');
     }
-    function normalizeVisitorKeyName(keyName) {
-        return keyName.replace(/-([a-z])/g, (all, one) => one.toUpperCase());
-    }
     function replaceToken(parent, value, replacement) {
         for (const node of (Array.isArray(replacement) ? replacement : [replacement])) {
             if ('parent' in value && value.parent != node.parent) {
@@ -18324,7 +18339,7 @@
                         }
                         let node = result.node;
                         for (const handler of handlers) {
-                            callable = typeof handler == 'function' ? handler : handler[normalizeVisitorKeyName(node.typ == exports.EnumToken.DeclarationNodeType || node.typ == exports.EnumToken.AtRuleNodeType ? node.nam : node.val)];
+                            callable = typeof handler == 'function' ? handler : handler[camelize(node.typ == exports.EnumToken.DeclarationNodeType || node.typ == exports.EnumToken.AtRuleNodeType ? node.nam : node.val)];
                             if (callable == null) {
                                 continue;
                             }
@@ -18490,6 +18505,8 @@
             const processed = new Set;
             const pattern = typeof options.module == 'boolean' ? null : moduleSettings.pattern;
             const importMapping = {};
+            const cssVariablesMap = {};
+            const importedCssVariables = {};
             let mapping = {};
             let revMapping = {};
             let filePath = typeof options.module == 'boolean' ? options.src : (moduleSettings.filePath ?? options.src);
@@ -18526,7 +18543,64 @@
             }
             moduleSettings.filePath = filePath;
             moduleSettings.pattern = pattern != null && pattern !== '' ? pattern : (filePath === '' ? `[hash]_[local]` : `[name]_[hash]_[local]`);
-            for (const { node } of walk(ast)) {
+            for (const { node, parent } of walk(ast)) {
+                if (node.typ == exports.EnumToken.CssVariableImportTokenType) {
+                    const url = node.val.find(t => t.typ == exports.EnumToken.StringTokenType).val.slice(1, -1);
+                    const src = options.resolve(url, options.dirname(options.src), options.cwd);
+                    const result = options.load(url, options.src);
+                    const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == 'AsyncFunction' ? await result : result;
+                    const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize$1({
+                        stream,
+                        buffer: '',
+                        position: { ind: 0, lin: 1, col: 1 },
+                        currentPosition: { ind: -1, lin: 1, col: 0 }
+                    }), Object.assign({}, options, {
+                        minify: false,
+                        setParent: false,
+                        src: src.absolute
+                    }));
+                    cssVariablesMap[node.nam] = root.cssModuleVariables;
+                    parent.chi.splice(parent.chi.indexOf(node), 1);
+                    continue;
+                }
+                if (node.typ == exports.EnumToken.CssVariableDeclarationMapTokenType) {
+                    const from = node.from.find(t => t.typ == exports.EnumToken.IdenTokenType || isIdentColor(t));
+                    if (!(from.val in cssVariablesMap)) {
+                        errors.push({
+                            node,
+                            message: `could not resolve @value import from '${from.val}'`,
+                            action: 'drop'
+                        });
+                    }
+                    else {
+                        for (const token of node.vars) {
+                            if (token.typ == exports.EnumToken.IdenTokenType || isIdentColor(token)) {
+                                if (!(token.val in cssVariablesMap[from.val])) {
+                                    errors.push({
+                                        node,
+                                        message: `value '${token.val}' is not exported from '${from.val}'`,
+                                        action: 'drop'
+                                    });
+                                    continue;
+                                }
+                                result.cssModuleVariables ??= {};
+                                result.cssModuleVariables[token.val] = importedCssVariables[token.val] = cssVariablesMap[from.val][token.val];
+                            }
+                        }
+                    }
+                    parent.chi.splice(parent.chi.indexOf(node), 1);
+                    continue;
+                }
+                if (node.typ == exports.EnumToken.CssVariableTokenType) {
+                    if (parent?.typ == exports.EnumToken.StyleSheetNodeType) {
+                        if (result.cssModuleVariables == null) {
+                            result.cssModuleVariables = {};
+                        }
+                        result.cssModuleVariables[node.nam] = node;
+                    }
+                    parent.chi.splice(parent.chi.indexOf(node), 1);
+                    continue;
+                }
                 if (node.typ == exports.EnumToken.DeclarationNodeType) {
                     if (node.nam.startsWith('--')) {
                         if (!(node.nam in namesMapping)) {
@@ -18559,7 +18633,14 @@
                         while (parentRule != null && parentRule.typ != exports.EnumToken.RuleNodeType) {
                             parentRule = parentRule.parent;
                         }
-                        if (!isValid) {
+                        if (!isValid || tokens.length == 0) {
+                            if (tokens.length == 0) {
+                                errors.push({
+                                    action: 'drop',
+                                    message: `composes is empty`,
+                                    node
+                                });
+                            }
                             parentRule.chi.splice(parentRule.chi.indexOf(node), 1);
                             continue;
                         }
@@ -18710,7 +18791,7 @@
                             }
                         }
                     }
-                    for (const { value } of walkValues(node.val, node)) {
+                    for (const { value, parent } of walkValues(node.val, node)) {
                         if (value.typ == exports.EnumToken.DashedIdenTokenType) {
                             if (!(value.val in mapping)) {
                                 const result = (moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global) ? value.val : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
@@ -18719,6 +18800,9 @@
                                 revMapping[mapping[value.val]] = value.val;
                             }
                             value.val = mapping[value.val];
+                        }
+                        else if ((value.typ == exports.EnumToken.IdenTokenType || isIdentColor(value)) && value.val in importedCssVariables) {
+                            replaceToken(parent, value, importedCssVariables[value.val].val);
                         }
                     }
                 }
@@ -18809,14 +18893,14 @@
                 }
                 else if (node.typ == exports.EnumToken.AtRuleNodeType || node.typ == exports.EnumToken.KeyframesAtRuleNodeType) {
                     const val = node.nam.toLowerCase();
+                    if (node.tokens == null) {
+                        Object.defineProperty(node, 'tokens', {
+                            ...definedPropertySettings,
+                            // @ts-ignore
+                            value: parseAtRulePrelude(parseString(node.val), node)
+                        });
+                    }
                     if (val == 'property' || val == 'keyframes') {
-                        if (node.tokens == null) {
-                            Object.defineProperty(node, 'tokens', {
-                                ...definedPropertySettings,
-                                // @ts-ignore
-                                value: parseAtRulePrelude(parseString(node.val), node)
-                            });
-                        }
                         const prefix = val == 'property' ? '--' : '';
                         for (const value of node.tokens) {
                             if ((prefix == '--' && value.typ == exports.EnumToken.DashedIdenTokenType) || (prefix == '' && value.typ == exports.EnumToken.IdenTokenType)) {
@@ -18830,6 +18914,20 @@
                             }
                         }
                         node.val = node.tokens.reduce((a, b) => a + renderToken(b), '');
+                    }
+                    else {
+                        let isReplaced = false;
+                        for (const { value, parent } of walkValues(node.tokens, node)) {
+                            if ([exports.EnumToken.MediaFeatureTokenType, exports.EnumToken.MediaQueryConditionTokenType].includes(parent.typ) && value != parent.l) {
+                                if ((value.typ == exports.EnumToken.IdenTokenType || isIdentColor(value)) && value.val in importedCssVariables) {
+                                    isReplaced = true;
+                                    parent.r.splice(parent.r.indexOf(value), 1, ...importedCssVariables[value.val].val);
+                                }
+                            }
+                        }
+                        if (isReplaced) {
+                            node.val = node.tokens.reduce((a, b) => a + renderToken(b), '');
+                        }
                     }
                 }
             }
@@ -19067,6 +19165,139 @@
                 }
                 else {
                     isValid = false;
+                }
+            }
+            if (node.nam == 'value') {
+                let i = 0;
+                while (i < tokens.length) {
+                    if (tokens[i].typ == exports.EnumToken.WhitespaceTokenType || tokens[i].typ == exports.EnumToken.CommentTokenType) {
+                        i++;
+                        continue;
+                    }
+                    break;
+                }
+                if (i < tokens.length) {
+                    if (tokens[i].typ == exports.EnumToken.IdenTokenType || isIdentColor(tokens[i])) {
+                        let k = i + 1;
+                        while (k < tokens.length) {
+                            if (tokens[k].typ == exports.EnumToken.WhitespaceTokenType || tokens[k].typ == exports.EnumToken.CommentTokenType) {
+                                k++;
+                                continue;
+                            }
+                            // var or import
+                            if (tokens[k].typ == exports.EnumToken.ColonTokenType) {
+                                let j = k;
+                                while (++j < tokens.length) {
+                                    if (tokens[j].typ != exports.EnumToken.WhitespaceTokenType && tokens[j].typ != exports.EnumToken.CommentTokenType) {
+                                        break;
+                                    }
+                                }
+                                let offset = k + 1;
+                                while (offset < tokens.length && tokens[offset].typ == exports.EnumToken.WhitespaceTokenType) {
+                                    offset++;
+                                }
+                                if (tokens[j].typ == exports.EnumToken.StringTokenType) {
+                                    Object.assign(node, {
+                                        typ: exports.EnumToken.CssVariableImportTokenType,
+                                        nam: tokens[i].val,
+                                        val: tokens.slice(offset)
+                                    });
+                                    context.chi.push(node);
+                                    return null;
+                                }
+                                Object.assign(node, {
+                                    typ: exports.EnumToken.CssVariableTokenType,
+                                    nam: tokens[i].val,
+                                    val: tokens.slice(offset)
+                                });
+                                context.chi.push(node);
+                                return null;
+                            }
+                            if (tokens[k].typ == exports.EnumToken.PseudoClassTokenType) {
+                                Object.assign(tokens[k], {
+                                    typ: exports.EnumToken.IdenTokenType,
+                                    val: tokens[k].val.slice(1)
+                                });
+                                Object.assign(node, {
+                                    typ: exports.EnumToken.CssVariableTokenType,
+                                    nam: tokens[i].val,
+                                    val: tokens.slice(offset)
+                                });
+                                context.chi.push(node);
+                                return null;
+                            }
+                            if (tokens[k].typ == exports.EnumToken.CommaTokenType) {
+                                let j = i;
+                                while (++j < tokens.length) {
+                                    if (tokens[j].typ == exports.EnumToken.IdenTokenType && tokens[j].val.toLowerCase() == 'from') {
+                                        const vars = tokens.slice(i, j);
+                                        const from = tokens.slice(j + 1);
+                                        let l = 0;
+                                        let expect = exports.EnumToken.IdenTokenType;
+                                        for (; l < vars.length; l++) {
+                                            if (vars[l].typ == exports.EnumToken.WhitespaceTokenType || vars[l].typ == exports.EnumToken.CommentTokenType) {
+                                                continue;
+                                            }
+                                            if (expect == vars[l].typ || (expect == exports.EnumToken.IdenTokenType && isIdentColor(vars[l]))) {
+                                                expect = expect == exports.EnumToken.CommaTokenType ? exports.EnumToken.IdenTokenType : exports.EnumToken.CommaTokenType;
+                                                continue;
+                                            }
+                                            errors.push({
+                                                node: node,
+                                                location: map.get(vars[l]) ?? location,
+                                                message: `expecting '${exports.EnumToken[expect]}' but found ${renderToken(vars[l])}`
+                                            });
+                                            return null;
+                                        }
+                                        l = 0;
+                                        expect = exports.EnumToken.IdenTokenType;
+                                        for (; l < from.length; l++) {
+                                            if (from[l].typ == exports.EnumToken.WhitespaceTokenType || from[l].typ == exports.EnumToken.CommentTokenType) {
+                                                continue;
+                                            }
+                                            if (expect == from[l].typ || isIdentColor(from[l])) {
+                                                while (++l < from.length) {
+                                                    if (from[l].typ == exports.EnumToken.WhitespaceTokenType || from[l].typ == exports.EnumToken.CommentTokenType) {
+                                                        continue;
+                                                    }
+                                                    errors.push({
+                                                        node: node,
+                                                        location: map.get(from[l]) ?? location,
+                                                        message: `unexpected '${renderToken(from[l])}'`
+                                                    });
+                                                    return null;
+                                                }
+                                                break;
+                                            }
+                                            errors.push({
+                                                node: node,
+                                                location: map.get(from[l]) ?? location,
+                                                message: `expecting <string> but found ${renderToken(from[l])}`
+                                            });
+                                            return null;
+                                        }
+                                        delete node.nam;
+                                        delete node.val;
+                                        Object.assign(node, {
+                                            typ: exports.EnumToken.CssVariableDeclarationMapTokenType,
+                                            vars,
+                                            from
+                                        });
+                                        context.chi.push(node);
+                                        return null;
+                                    }
+                                }
+                            }
+                            k++;
+                        }
+                        Object.assign(node, {
+                            typ: exports.EnumToken.CssVariableTokenType,
+                            nam: tokens[i].val,
+                            val: tokens.slice(k)
+                        });
+                        context.chi.push(node);
+                        return null;
+                    }
                 }
             }
             // @ts-ignore
@@ -20494,7 +20725,6 @@
      * ```
      */
     function* walkValues(values, root = null, filter, reverse) {
-        // const set = new Set<Token>();
         const stack = values.slice();
         const map = new Map;
         let previous = null;
@@ -20557,12 +20787,12 @@
                 const values = [];
                 if ('l' in value && value.l != null) {
                     // @ts-ignore
-                    values[reverse ? 'push' : 'unshift'](value.l);
+                    values.push(value.l);
                     // @ts-ignore
                     map.set(value.l, value);
                 }
                 if ('op' in value && typeof value.op == 'object') {
-                    values[reverse ? 'push' : 'unshift'](value.op);
+                    values.push(value.op);
                     // @ts-ignore
                     map.set(value.op, value);
                 }
@@ -20570,14 +20800,14 @@
                     if (Array.isArray(value.r)) {
                         for (const r of value.r) {
                             // @ts-ignore
-                            values[reverse ? 'push' : 'unshift'](r);
+                            values.push(r);
                             // @ts-ignore
                             map.set(r, value);
                         }
                     }
                     else {
                         // @ts-ignore
-                        values[reverse ? 'push' : 'unshift'](value.r);
+                        values.push(value.r);
                         // @ts-ignore
                         map.set(value.r, value);
                     }

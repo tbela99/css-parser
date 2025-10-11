@@ -5,7 +5,7 @@
 ### CSS Module 
 
 - [x] scoped name generation
-- [x] composes: https://github.com/css-modules/css-modules/blob/master/docs/composition.md
+- composes:
   - [x] compose from local selector
   - [x] compose from other files
   - [x] compose from global selector
@@ -17,20 +17,20 @@
 - [x] selector
 - [x] dashed ident (custom properties)
 - [x] css at-rule property
-- [ ] css at-rule values
+- [x] css at-rule values
 - [x] keyframe animations
 - [x] grid-template-areas
-- [x] naming
+- naming
   - [x] ignore
   - [x] camelCase
   - [x] camelCaseOnly
   - [x] dashCase
   - [x] dashCaseOnly
-- [x] default mode
+- default mode
   - [x] global
   - [x] local
   - [x] pure(at least one class or id)
-  - [x] icss
+  - icss
     - [x] :import
     - [x] :export
 

@@ -14,6 +14,9 @@ import type {
     ColorToken,
     CommentToken,
     ComposesSelectorToken,
+    CssVariableImportTokenType,
+    CssVariableMapTokenType,
+    CssVariableToken,
     DashedIdentToken,
     ErrorDescription,
     FractionToken,
@@ -43,11 +46,11 @@ import type {
     StringToken,
     Token
 } from "../../@types/index.d.ts";
-import { convertColor, getAngle } from "../syntax/color/index.ts";
-import { ColorType, EnumToken, expand } from "../ast/index.ts";
-import { SourceMap } from "./sourcemap/index.ts";
-import { colorsFunc, funcLike } from "../syntax/color/utils/index.ts";
-import { isColor, isNewLine, mathFuncs, minifyNumber, pseudoElements } from "../syntax/index.ts";
+import {convertColor, getAngle} from "../syntax/color/index.ts";
+import {ColorType, EnumToken, expand} from "../ast/index.ts";
+import {SourceMap} from "./sourcemap/index.ts";
+import {colorsFunc, funcLike} from "../syntax/color/utils/index.ts";
+import {isColor, isNewLine, mathFuncs, minifyNumber, pseudoElements} from "../syntax/index.ts";
 
 /**
  * Update position
@@ -388,6 +391,16 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
             }
 
             return (<AstRule>data).sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
+
+
+        case EnumToken.CssVariableTokenType:
+        case EnumToken.CssVariableImportTokenType:
+
+            return `@value ${(<CssVariableToken | CssVariableImportTokenType>data).nam}:${options.indent}${filterValues((options.minify ? (<CssVariableToken | CssVariableImportTokenType>data).val : (<CssVariableToken>data).val)).reduce(reducer, '').trim()};`;
+
+        case EnumToken.CssVariableDeclarationMapTokenType:
+
+            return `@value ${filterValues((data as CssVariableMapTokenType).vars).reduce((acc, curr) => acc + renderToken(curr), '').trim()} from ${filterValues((data as CssVariableMapTokenType).from).reduce((acc, curr) => acc + renderToken(curr), '').trim()};`;
 
         case EnumToken.InvalidDeclarationNodeType:
         case EnumToken.InvalidRuleTokenType:

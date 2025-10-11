@@ -3,7 +3,7 @@ import type {AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet, Locatio
 import {SourceMap} from "../lib/renderer/sourcemap/index.ts";
 import type {PropertyListOptions} from "./parse.d.ts";
 import {ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ValidationLevel} from "../lib/index.ts";
-import type {Token} from "./token.d.ts";
+import type {CssVariableToken, Token} from "./token.d.ts";
 import {FeatureWalkMode} from "../lib/ast/features/type.ts";
 import {mathFuncs, transformFunctions} from "../lib/syntax/syntax.ts";
 
@@ -584,6 +584,8 @@ export declare interface ParseResult {
      * css module mapping
      */
     mapping?: Record<string, string>;
+
+    cssModuleVariables?: Record<string, CssVariableToken>;
 
     importMapping?: Record<string, Record<string, string>>;
 

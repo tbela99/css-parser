@@ -794,6 +794,20 @@ export declare interface CssVariableToken extends BaseToken {
     val: Token[];
 }
 
+export declare interface CssVariableImportTokenType extends BaseToken {
+
+    typ: EnumToken.CssVariableImportTokenType;
+    nam: string;
+    val: Token[];
+}
+
+export declare interface CssVariableMapTokenType extends BaseToken {
+
+    typ: EnumToken.CssVariableMapTokenType;
+    vars: Token[];
+    from: Token[];
+}
+
 /**
  * Unary expression node
  */
@@ -886,6 +900,7 @@ export declare type Token =
     | MatchExpressionToken
     | NameSpaceAttributeToken
     | ComposesSelectorToken
+    | CssVariableToken
     |
     DashMatchToken
     | EqualMatchToken
