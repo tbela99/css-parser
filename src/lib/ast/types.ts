@@ -681,11 +681,11 @@ export enum ColorType {
 export enum ModuleCaseTransformEnum {
 
     /**
-     * export as-is
+     * export class names as-is
      */
     IgnoreCase = 0x1,
     /**
-     * transform class names and mapping key name
+     * transform mapping key name
      */
     CamelCase = 0x2,
     /**
@@ -693,7 +693,7 @@ export enum ModuleCaseTransformEnum {
      */
     CamelCaseOnly = 0x4,
     /**
-     * transform class names and mapping key name
+     * transform mapping key name
      */
     DashCase = 0x8,
     /**

@@ -212,7 +212,7 @@ export declare interface ModuleOptions {
     hashLength?: number;
 
     /**
-     * the pattern use to generate scoped names. the supported placeholders are:
+     * the pattern used to generate scoped names. the supported placeholders are:
      * - name: the file base name without the extension
      * - hash: the file path hash
      * - local: the local name
@@ -303,8 +303,8 @@ export declare interface ModuleOptions {
      * optional function to generate scoped name
      * @param localName
      * @param filePath
-     * @param hashLength
      * @param pattern see {@link ModuleOptions.pattern}
+     * @param hashLength
      */
     generateScopedName?: (
         localName: string,

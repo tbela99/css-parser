@@ -206,12 +206,11 @@ console.log(result.mapping);
 generated css code
 
 ```css
-
-.r7bhp_goal .bg-indigo_gy28g {
-    background: indigo
+.goal_r7bhp .bg-indigo_gy28g {
+ background: indigo
 }
 .indigo-white_wims0 {
-    color: #fff
+ color: #fff
 }
 ```
 generated class mapping
@@ -219,10 +218,10 @@ generated class mapping
 ```json
 
 {
-    "goal": "r7bhp_goal",
+    "goal": "goal_r7bhp",
     "bg-indigo": "bg-indigo_gy28g",
-    "indigo-white": "indigo-white_wims0 bg-indigo_gy28g qw06e_title",
-    "title": "qw06e_title"
+    "indigo-white": "indigo-white_wims0 bg-indigo_gy28g title_qw06e",
+    "title": "title_qw06e"
 }
 ```
 
@@ -507,7 +506,7 @@ console.log(result.mapping);
 
 ## Pattern
 
-the `pattern` option is used to configure the pattern of the generated scoped names.
+the `pattern` option is used to configure the generated scoped names.
 
 ```typescript
 
