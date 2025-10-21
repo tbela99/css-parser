@@ -37,4 +37,4 @@ children:
 - [Benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
 
 ------
-[Next](./about.md)
+[About →](./about.md)

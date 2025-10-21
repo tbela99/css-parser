@@ -817,4 +817,4 @@ list of computed shorthands properties:
 - [x] transition
 
 ------
-[Previous](./usage.md) | [Next](./transform.md) 
+[← Usage](./usage.md) | [Custom transform →](./transform.md) 

@@ -683,7 +683,7 @@ export enum ModuleCaseTransformEnum {
     /**
      * export as-is
      */
-    Ignore = 0x1,
+    IgnoreCase = 0x1,
     /**
      * transform class names and mapping key name
      */
@@ -703,8 +703,20 @@ export enum ModuleCaseTransformEnum {
 }
 
 export enum ModuleScopeEnumOptions {
+    /**
+     * use the global scope
+     */
     Global = 0x20,
+    /**
+     * use the local scope
+     */
     Local = 0x40,
+    /**
+     * do not allow selector without an id or class
+     */
     Pure = 0x80,
+    /**
+     * export using ICSS module format
+     */
     ICSS = 0x100
 }

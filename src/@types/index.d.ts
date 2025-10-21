@@ -196,33 +196,47 @@ export declare type LoadResult =
 
 export declare interface ModuleOptions {
 
-
     /**
      * use local scope vs global scope
      */
     scoped?: boolean | ModuleScopeEnumOptions;
 
     /**
-     * module output file path
+     * module output file path. it is used to generate the scoped name. if not provided, [options.src](../docs/interfaces/node.ParserOptions.html#src) will be used
      */
     filePath?: string;
 
     /**
-     * module hash length
+     * generated scope hash length. the default is 5
      */
     hashLength?: number;
 
     /**
-     * scoped name pattern. the supported placeholders are:
+     * the pattern use to generate scoped names. the supported placeholders are:
      * - name: the file base name without the extension
      * - hash: the file path hash
      * - local: the local name
      * - path: the file path
-     * - folder: the file folder
+     * - folder: the folder name
      * - ext: the file extension
      *
-     * pattern can optionally have a maximum number of characters: `pattern: '[name:2]-[hash:5]'`.
-     * the hash pattern can take an algorithm, a maximum number of characters or both: `pattern: '[name]-[hash:base64:5]'` or `pattern: '[name]-[hash:5]'` or `pattern: '[name]-[hash:sha1]'`.
+     * the pattern can optionally have a maximum number of characters:
+     * ```
+     * pattern: '[local:2]-[hash:5]'
+     * ```
+     * the hash pattern can take an algorithm, a maximum number of characters or both:
+     * ```
+     * pattern: '[local]-[hash:base64:5]'
+     * ```
+     * or
+     * ```
+     * pattern: '[local]-[hash:5]'
+     * ```
+     * or
+     * ```
+     * pattern: '[local]-[hash:sha1]'
+     * ```
+     *
      * supported hash algorithms are:
      * - base64
      * - hex
@@ -231,16 +245,57 @@ export declare interface ModuleOptions {
      * - sha256
      * - sha384
      * - sha512
+     *
+     * ```typescript
+     *
+     * import {transform, ModuleCaseTransformEnum} from '@tbela99/css-parser';
+     * import type {TransformResult} from '@tbela99/css-parser';
+     * css = `
+     * :local(.className) {
+     *   background: red;
+     *   color: yellow;
+     * }
+     *
+     * :local(.subClass) {
+     *   composes: className;
+     *   background: blue;
+     * }
+     * `;
+     *
+     * let result: TransformResult = await transform(css, {
+     *
+     *     beautify:true,
+     *     module: {
+     *         pattern: '[local]-[hash:sha256]'
+     *     }
+     *
+     * });
+     *
+     * console.log(result.code);
+     * ```
+     * generated css
+     *
+     * ```css
+     * .className-b629f {
+     *  background: red;
+     *  color: #ff0
+     * }
+     * .subClass-a0c35 {
+     *  background: blue
+     * }
+     * ```
      */
     pattern?: string;
 
     /**
-     * class name transform
-     * {@link ModuleCaseTransformEnum.Ignore}: as is
-     * {@link ModuleCaseTransformEnum.CamelCase}: camelCase {@link ParseResult.mapping} key name
-     * {@link ModuleCaseTransformEnum.CamelCaseOnly}: camelCase {@link ParseResult.mapping} key name and css class name
-     * {@link ModuleCaseTransformEnum.DashCase}: dashCase {@link ParseResult.mapping} key name
-     * {@link ModuleCaseTransformEnum.DashCaseOnly}: dashCase {@link ParseResult.mapping} key name and css class name
+     * optional. function change the case of the scoped name and the class mapping
+     *
+     * - {@link ModuleCaseTransformEnum.IgnoreCase}: do not change case
+     * - {@link ModuleCaseTransformEnum.CamelCase}: camelCase {@link ParseResult.mapping} key name
+     * - {@link ModuleCaseTransformEnum.CamelCaseOnly}: camelCase {@link ParseResult.mapping} key name and the scoped class name
+     * - {@link ModuleCaseTransformEnum.DashCase}: dashCase {@link ParseResult.mapping} key name
+     * - {@link ModuleCaseTransformEnum.DashCaseOnly}: dashCase {@link ParseResult.mapping} key name and the scoped class name
+     *
      */
     naming?: ModuleCaseTransformEnum,
 
@@ -249,7 +304,7 @@ export declare interface ModuleOptions {
      * @param localName
      * @param filePath
      * @param hashLength
-     * @param pattern see {@link ParserOptions.module.pattern}
+     * @param pattern see {@link ModuleOptions.pattern}
      */
     generateScopedName?: (
         localName: string,

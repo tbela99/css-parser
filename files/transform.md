@@ -367,4 +367,4 @@ console.debug(await transform(css, options));
 ```
 
 ------
-[Previous](./minification.md) | [Next](./ast.md) 
+[← Minification](./minification.md) | [Ast →](./ast.md) 

@@ -99,4 +99,4 @@ it can also be imported as umd module
 ```
 
 ------
-[Previous](./features.md) | [Next](./usage.md) 
+[← Features](./features.md) | [Usage →](./usage.md) 

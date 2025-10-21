@@ -673,7 +673,7 @@ var ModuleCaseTransformEnum;
     /**
      * export as-is
      */
-    ModuleCaseTransformEnum[ModuleCaseTransformEnum["Ignore"] = 1] = "Ignore";
+    ModuleCaseTransformEnum[ModuleCaseTransformEnum["IgnoreCase"] = 1] = "IgnoreCase";
     /**
      * transform class names and mapping key name
      */
@@ -693,9 +693,21 @@ var ModuleCaseTransformEnum;
 })(ModuleCaseTransformEnum || (ModuleCaseTransformEnum = {}));
 var ModuleScopeEnumOptions;
 (function (ModuleScopeEnumOptions) {
+    /**
+     * use the global scope
+     */
     ModuleScopeEnumOptions[ModuleScopeEnumOptions["Global"] = 32] = "Global";
+    /**
+     * use the local scope
+     */
     ModuleScopeEnumOptions[ModuleScopeEnumOptions["Local"] = 64] = "Local";
+    /**
+     * do not allow selector without an id or class
+     */
     ModuleScopeEnumOptions[ModuleScopeEnumOptions["Pure"] = 128] = "Pure";
+    /**
+     * export using ICSS module format
+     */
     ModuleScopeEnumOptions[ModuleScopeEnumOptions["ICSS"] = 256] = "ICSS";
 })(ModuleScopeEnumOptions || (ModuleScopeEnumOptions = {}));
 

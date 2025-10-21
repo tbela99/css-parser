@@ -30,8 +30,7 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
             node: root,
             // @ts-ignore
             syntax: null,
-            error: 'expected selector',
-            tokens
+            error: 'expected selector'
         }
     }
 

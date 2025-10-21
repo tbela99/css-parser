@@ -271,5 +271,5 @@ console.log(result.code);
 .
 
 ------
-[Previous](../../docs/documents/Guide.Getting_started.html) | [Next]( ../../docs/documents/Guide.Minification.html )
+[← Getting started](../../docs/documents/Guide.Getting_started.html) | [Minification →]( ../../docs/documents/Guide.Minification.html )
 

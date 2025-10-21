@@ -23,7 +23,8 @@ $ deno add @tbela99/css-parser
 ## Features
 
 - no dependency
-- CSS validation based upon mdn-data
+- validate CSS based upon mdn-data
+- generate CSS module output
 - fault-tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
 - fast and efficient minification without unsafe transforms,
   see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)

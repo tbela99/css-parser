@@ -100,7 +100,7 @@ async function generateScopedName(localName, filePath, pattern, hashLength = 5) 
         if (char == '[') {
             inParens++;
             if (inParens != 1) {
-                throw new Error(`Unexpected character: '${char}:${position - 1}'`);
+                throw new Error(`Unexpected character: '${char} at position ${position - 1}' in pattern '${pattern}'`);
             }
             continue;
         }
@@ -470,6 +470,7 @@ async function doParse(iter, options = {}) {
                 const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
                     stream,
                     buffer: '',
+                    offset: 0,
                     position: { ind: 0, lin: 1, col: 1 },
                     currentPosition: { ind: -1, lin: 1, col: 0 }
                 }), Object.assign({}, options, {
@@ -684,7 +685,7 @@ async function doParse(iter, options = {}) {
             hashLength: 5,
             filePath: '',
             scoped: ModuleScopeEnumOptions.Local,
-            naming: ModuleCaseTransformEnum.Ignore,
+            naming: ModuleCaseTransformEnum.IgnoreCase,
             pattern: '',
             generateScopedName,
             ...(typeof options.module != 'object' ? {} : options.module)
@@ -732,7 +733,7 @@ async function doParse(iter, options = {}) {
             moduleSettings.scoped = moduleSettings.scoped ? ModuleScopeEnumOptions.Local : ModuleScopeEnumOptions.Global;
         }
         moduleSettings.filePath = filePath;
-        moduleSettings.pattern = pattern != null && pattern !== '' ? pattern : (filePath === '' ? `[hash]_[local]` : `[name]_[hash]_[local]`);
+        moduleSettings.pattern = pattern != null && pattern !== '' ? pattern : (filePath === '' ? `[local]_[hash]` : `[local]_[hash]_[name]`);
         for (const { node, parent } of walk(ast)) {
             if (node.typ == EnumToken.CssVariableImportTokenType) {
                 const url = node.val.find(t => t.typ == EnumToken.StringTokenType).val.slice(1, -1);
@@ -742,6 +743,7 @@ async function doParse(iter, options = {}) {
                 const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
                     stream,
                     buffer: '',
+                    offset: 0,
                     position: { ind: 0, lin: 1, col: 1 },
                     currentPosition: { ind: -1, lin: 1, col: 0 }
                 }), Object.assign({}, options, {
@@ -869,6 +871,7 @@ async function doParse(iter, options = {}) {
                             const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
                                 stream,
                                 buffer: '',
+                                offset: 0,
                                 position: { ind: 0, lin: 1, col: 1 },
                                 currentPosition: { ind: -1, lin: 1, col: 0 }
                             }), Object.assign({}, options, {
@@ -938,7 +941,40 @@ async function doParse(iter, options = {}) {
                     }
                     parentRule.chi.splice(parentRule.chi.indexOf(node), 1);
                 }
-                if (node.nam == 'grid-template-areas') {
+                if (node.typ == EnumToken.DeclarationNodeType && ['grid-column', 'grid-column-start', 'grid-column-end', 'grid-row', 'grid-row-start', 'grid-row-end', 'grid-template', 'grid-template-columns', 'grid-template-rows'].includes(node.nam)) {
+                    for (const { value } of walkValues(node.val, node)) {
+                        if (value.typ != EnumToken.IdenTokenType) {
+                            continue;
+                        }
+                        let idenToken = value.val;
+                        let suffix = '';
+                        if (idenToken.endsWith('-start')) {
+                            suffix = '-start';
+                            idenToken = idenToken.slice(0, -6);
+                        }
+                        else if (idenToken.endsWith('-end')) {
+                            suffix = '-end';
+                            idenToken = idenToken.slice(0, -4);
+                        }
+                        if (!(idenToken in mapping)) {
+                            let result = (moduleSettings.scoped & ModuleScopeEnumOptions.Global) ? idenToken : moduleSettings.generateScopedName(idenToken, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                            if (result instanceof Promise) {
+                                result = await result;
+                            }
+                            mapping[idenToken] = result;
+                            revMapping[result] = idenToken;
+                            if (suffix !== '') {
+                                idenToken += suffix;
+                                if (!(idenToken in mapping)) {
+                                    mapping[idenToken] = result + suffix;
+                                    revMapping[result + suffix] = idenToken;
+                                }
+                            }
+                        }
+                        value.val = mapping[idenToken];
+                    }
+                }
+                else if (node.nam == 'grid-template-areas' || node.nam == 'grid-template') {
                     for (let i = 0; i < node.val.length; i++) {
                         if (node.val[i].typ == EnumToken.String) {
                             const tokens = parseString(node.val[i].val.slice(1, -1), { location: true });
@@ -1108,7 +1144,7 @@ async function doParse(iter, options = {}) {
                 else {
                     let isReplaced = false;
                     for (const { value, parent } of walkValues(node.tokens, node)) {
-                        if ([EnumToken.MediaFeatureTokenType, EnumToken.MediaQueryConditionTokenType].includes(parent.typ) && value != parent.l) {
+                        if (EnumToken.MediaQueryConditionTokenType == parent.typ && value != parent.l) {
                             if ((value.typ == EnumToken.IdenTokenType || isIdentColor(value)) && value.val in importedCssVariables) {
                                 isReplaced = true;
                                 parent.r.splice(parent.r.indexOf(value), 1, ...importedCssVariables[value.val].val);
@@ -1121,7 +1157,7 @@ async function doParse(iter, options = {}) {
                 }
             }
         }
-        if (moduleSettings.naming != ModuleCaseTransformEnum.Ignore) {
+        if (moduleSettings.naming != ModuleCaseTransformEnum.IgnoreCase) {
             revMapping = {};
             mapping = Object.entries(mapping).reduce((acc, [key, value]) => {
                 const keyName = getKeyName(key, moduleSettings.naming);
@@ -1411,7 +1447,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
                             Object.assign(node, {
                                 typ: EnumToken.CssVariableTokenType,
                                 nam: tokens[i].val,
-                                val: tokens.slice(offset)
+                                val: tokens.slice(k)
                             });
                             context.chi.push(node);
                             return null;
@@ -1433,6 +1469,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
                                             continue;
                                         }
                                         errors.push({
+                                            action: 'drop',
                                             node: node,
                                             location: map.get(vars[l]) ?? location,
                                             message: `expecting '${EnumToken[expect]}' but found ${renderToken(vars[l])}`
@@ -1451,6 +1488,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
                                                     continue;
                                                 }
                                                 errors.push({
+                                                    action: 'drop',
                                                     node: node,
                                                     location: map.get(from[l]) ?? location,
                                                     message: `unexpected '${renderToken(from[l])}'`
@@ -1460,13 +1498,16 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
                                             break;
                                         }
                                         errors.push({
+                                            action: 'drop',
                                             node: node,
                                             location: map.get(from[l]) ?? location,
                                             message: `expecting <string> but found ${renderToken(from[l])}`
                                         });
                                         return null;
                                     }
+                                    // @ts-ignore
                                     delete node.nam;
+                                    // @ts-ignore
                                     delete node.val;
                                     Object.assign(node, {
                                         typ: EnumToken.CssVariableDeclarationMapTokenType,
@@ -2028,6 +2069,7 @@ async function parseDeclarations(declaration) {
     return doParse(tokenize({
         stream: `.x{${declaration}}`,
         buffer: '',
+        offset: 0,
         position: { ind: 0, lin: 1, col: 1 },
         currentPosition: { ind: -1, lin: 1, col: 0 }
     }), { setParent: false, minify: false, validation: false }).then(result => {
@@ -2148,6 +2190,7 @@ function parseString(src, options = { location: false }) {
     const parseInfo = {
         stream: src,
         buffer: '',
+        offset: 0,
         position: { ind: 0, lin: 1, col: 1 },
         currentPosition: { ind: -1, lin: 1, col: 0 }
     };

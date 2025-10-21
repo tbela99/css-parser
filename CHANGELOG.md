@@ -2,7 +2,7 @@
 
 ## v1.4.0
 
-### CSS Module 
+### CSS Module support
 
 - [x] scoped name generation
 - composes:

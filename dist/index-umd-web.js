@@ -679,7 +679,7 @@
         /**
          * export as-is
          */
-        ModuleCaseTransformEnum[ModuleCaseTransformEnum["Ignore"] = 1] = "Ignore";
+        ModuleCaseTransformEnum[ModuleCaseTransformEnum["IgnoreCase"] = 1] = "IgnoreCase";
         /**
          * transform class names and mapping key name
          */
@@ -699,9 +699,21 @@
     })(exports.ModuleCaseTransformEnum || (exports.ModuleCaseTransformEnum = {}));
     exports.ModuleScopeEnumOptions = void 0;
     (function (ModuleScopeEnumOptions) {
+        /**
+         * use the global scope
+         */
         ModuleScopeEnumOptions[ModuleScopeEnumOptions["Global"] = 32] = "Global";
+        /**
+         * use the local scope
+         */
         ModuleScopeEnumOptions[ModuleScopeEnumOptions["Local"] = 64] = "Local";
+        /**
+         * do not allow selector without an id or class
+         */
         ModuleScopeEnumOptions[ModuleScopeEnumOptions["Pure"] = 128] = "Pure";
+        /**
+         * export using ICSS module format
+         */
         ModuleScopeEnumOptions[ModuleScopeEnumOptions["ICSS"] = 256] = "ICSS";
     })(exports.ModuleScopeEnumOptions || (exports.ModuleScopeEnumOptions = {}));
 
@@ -8526,23 +8538,27 @@
         }
     }
     function match$1(parseInfo, input) {
-        return parseInfo.stream.slice(parseInfo.currentPosition.ind + 1, parseInfo.currentPosition.ind + input.length + 1) == input;
+        const position = parseInfo.currentPosition.ind - parseInfo.offset;
+        return parseInfo.stream.slice(position + 1, position + input.length + 1) == input;
     }
     function peek(parseInfo, count = 1) {
         if (count == 1) {
-            return parseInfo.stream.charAt(parseInfo.currentPosition.ind + 1);
+            return parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset + 1);
         }
-        return parseInfo.stream.slice(parseInfo.currentPosition.ind + 1, parseInfo.currentPosition.ind + count + 1);
+        const position = parseInfo.currentPosition.ind - parseInfo.offset;
+        return parseInfo.stream.slice(position + 1, position + count + 1);
     }
     function prev(parseInfo) {
-        return parseInfo.stream.charAt(parseInfo.currentPosition.ind - 1);
+        return parseInfo.offset == parseInfo.currentPosition.ind ? parseInfo.buffer.slice(-1) : parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset - 1);
     }
     function next(parseInfo, count = 1) {
         let char = '';
         let chr = '';
-        while (count-- && (chr = parseInfo.stream.charAt(parseInfo.currentPosition.ind + 1))) {
+        let position = parseInfo.currentPosition.ind - parseInfo.offset;
+        while (count-- && (chr = parseInfo.stream.charAt(position + 1))) {
             char += chr;
-            const codepoint = parseInfo.stream.charCodeAt(++parseInfo.currentPosition.ind);
+            const codepoint = parseInfo.stream.charCodeAt(++position);
+            ++parseInfo.currentPosition.ind;
             if (isNewLine(codepoint)) {
                 parseInfo.currentPosition.lin++;
                 parseInfo.currentPosition.col = 0;
@@ -8958,6 +8974,7 @@
         const parseInfo = {
             stream: '',
             buffer: '',
+            offset: 0,
             position: { ind: 0, lin: 1, col: 1 },
             currentPosition: { ind: -1, lin: 1, col: 0 }
         };
@@ -8965,7 +8982,17 @@
         const reader = input.getReader();
         while (true) {
             const { done, value } = await reader.read();
-            parseInfo.stream += ArrayBuffer.isView(value) ? decoder.decode(value, { stream: true }) : value;
+            const stream = ArrayBuffer.isView(value) ? decoder.decode(value, { stream: true }) : value;
+            if (!done) {
+                if (parseInfo.stream.length > 2) {
+                    parseInfo.stream = parseInfo.stream.slice(-2) + stream;
+                    parseInfo.offset = parseInfo.currentPosition.ind - 1;
+                }
+                else {
+                    parseInfo.stream = stream;
+                    parseInfo.offset = Math.max(0, parseInfo.currentPosition.ind);
+                }
+            }
             yield* tokenize$1(parseInfo, done);
             if (done) {
                 break;
@@ -14482,8 +14509,7 @@
                 node: root,
                 // @ts-ignore
                 syntax: null,
-                error: 'expected selector',
-                tokens
+                error: 'expected selector'
             };
         }
         tokens = tokens.slice();
@@ -14731,15 +14757,12 @@
                 return result;
             }
         }
+        // @ts-ignore
         return {
             valid: SyntaxValidationResult.Valid,
-            matches: [],
-            // @ts-ignore
             node: root,
-            // @ts-ignore
             syntax: null,
-            error: '',
-            tokens
+            error: ''
         };
     }
 
@@ -17910,7 +17933,7 @@
             if (char == '[') {
                 inParens++;
                 if (inParens != 1) {
-                    throw new Error(`Unexpected character: '${char}:${position - 1}'`);
+                    throw new Error(`Unexpected character: '${char} at position ${position - 1}' in pattern '${pattern}'`);
                 }
                 continue;
             }
@@ -18280,6 +18303,7 @@
                     const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize$1({
                         stream,
                         buffer: '',
+                        offset: 0,
                         position: { ind: 0, lin: 1, col: 1 },
                         currentPosition: { ind: -1, lin: 1, col: 0 }
                     }), Object.assign({}, options, {
@@ -18494,7 +18518,7 @@
                 hashLength: 5,
                 filePath: '',
                 scoped: exports.ModuleScopeEnumOptions.Local,
-                naming: exports.ModuleCaseTransformEnum.Ignore,
+                naming: exports.ModuleCaseTransformEnum.IgnoreCase,
                 pattern: '',
                 generateScopedName,
                 ...(typeof options.module != 'object' ? {} : options.module)
@@ -18542,7 +18566,7 @@
                 moduleSettings.scoped = moduleSettings.scoped ? exports.ModuleScopeEnumOptions.Local : exports.ModuleScopeEnumOptions.Global;
             }
             moduleSettings.filePath = filePath;
-            moduleSettings.pattern = pattern != null && pattern !== '' ? pattern : (filePath === '' ? `[hash]_[local]` : `[name]_[hash]_[local]`);
+            moduleSettings.pattern = pattern != null && pattern !== '' ? pattern : (filePath === '' ? `[local]_[hash]` : `[local]_[hash]_[name]`);
             for (const { node, parent } of walk(ast)) {
                 if (node.typ == exports.EnumToken.CssVariableImportTokenType) {
                     const url = node.val.find(t => t.typ == exports.EnumToken.StringTokenType).val.slice(1, -1);
@@ -18552,6 +18576,7 @@
                     const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize$1({
                         stream,
                         buffer: '',
+                        offset: 0,
                         position: { ind: 0, lin: 1, col: 1 },
                         currentPosition: { ind: -1, lin: 1, col: 0 }
                     }), Object.assign({}, options, {
@@ -18679,6 +18704,7 @@
                                 const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize$1({
                                     stream,
                                     buffer: '',
+                                    offset: 0,
                                     position: { ind: 0, lin: 1, col: 1 },
                                     currentPosition: { ind: -1, lin: 1, col: 0 }
                                 }), Object.assign({}, options, {
@@ -18748,7 +18774,40 @@
                         }
                         parentRule.chi.splice(parentRule.chi.indexOf(node), 1);
                     }
-                    if (node.nam == 'grid-template-areas') {
+                    if (node.typ == exports.EnumToken.DeclarationNodeType && ['grid-column', 'grid-column-start', 'grid-column-end', 'grid-row', 'grid-row-start', 'grid-row-end', 'grid-template', 'grid-template-columns', 'grid-template-rows'].includes(node.nam)) {
+                        for (const { value } of walkValues(node.val, node)) {
+                            if (value.typ != exports.EnumToken.IdenTokenType) {
+                                continue;
+                            }
+                            let idenToken = value.val;
+                            let suffix = '';
+                            if (idenToken.endsWith('-start')) {
+                                suffix = '-start';
+                                idenToken = idenToken.slice(0, -6);
+                            }
+                            else if (idenToken.endsWith('-end')) {
+                                suffix = '-end';
+                                idenToken = idenToken.slice(0, -4);
+                            }
+                            if (!(idenToken in mapping)) {
+                                let result = (moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global) ? idenToken : moduleSettings.generateScopedName(idenToken, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                if (result instanceof Promise) {
+                                    result = await result;
+                                }
+                                mapping[idenToken] = result;
+                                revMapping[result] = idenToken;
+                                if (suffix !== '') {
+                                    idenToken += suffix;
+                                    if (!(idenToken in mapping)) {
+                                        mapping[idenToken] = result + suffix;
+                                        revMapping[result + suffix] = idenToken;
+                                    }
+                                }
+                            }
+                            value.val = mapping[idenToken];
+                        }
+                    }
+                    else if (node.nam == 'grid-template-areas' || node.nam == 'grid-template') {
                         for (let i = 0; i < node.val.length; i++) {
                             if (node.val[i].typ == exports.EnumToken.String) {
                                 const tokens = parseString(node.val[i].val.slice(1, -1), { location: true });
@@ -18918,7 +18977,7 @@
                     else {
                         let isReplaced = false;
                         for (const { value, parent } of walkValues(node.tokens, node)) {
-                            if ([exports.EnumToken.MediaFeatureTokenType, exports.EnumToken.MediaQueryConditionTokenType].includes(parent.typ) && value != parent.l) {
+                            if (exports.EnumToken.MediaQueryConditionTokenType == parent.typ && value != parent.l) {
                                 if ((value.typ == exports.EnumToken.IdenTokenType || isIdentColor(value)) && value.val in importedCssVariables) {
                                     isReplaced = true;
                                     parent.r.splice(parent.r.indexOf(value), 1, ...importedCssVariables[value.val].val);
@@ -18931,7 +18990,7 @@
                     }
                 }
             }
-            if (moduleSettings.naming != exports.ModuleCaseTransformEnum.Ignore) {
+            if (moduleSettings.naming != exports.ModuleCaseTransformEnum.IgnoreCase) {
                 revMapping = {};
                 mapping = Object.entries(mapping).reduce((acc, [key, value]) => {
                     const keyName = getKeyName(key, moduleSettings.naming);
@@ -19221,7 +19280,7 @@
                                 Object.assign(node, {
                                     typ: exports.EnumToken.CssVariableTokenType,
                                     nam: tokens[i].val,
-                                    val: tokens.slice(offset)
+                                    val: tokens.slice(k)
                                 });
                                 context.chi.push(node);
                                 return null;
@@ -19243,6 +19302,7 @@
                                                 continue;
                                             }
                                             errors.push({
+                                                action: 'drop',
                                                 node: node,
                                                 location: map.get(vars[l]) ?? location,
                                                 message: `expecting '${exports.EnumToken[expect]}' but found ${renderToken(vars[l])}`
@@ -19261,6 +19321,7 @@
                                                         continue;
                                                     }
                                                     errors.push({
+                                                        action: 'drop',
                                                         node: node,
                                                         location: map.get(from[l]) ?? location,
                                                         message: `unexpected '${renderToken(from[l])}'`
@@ -19270,13 +19331,16 @@
                                                 break;
                                             }
                                             errors.push({
+                                                action: 'drop',
                                                 node: node,
                                                 location: map.get(from[l]) ?? location,
                                                 message: `expecting <string> but found ${renderToken(from[l])}`
                                             });
                                             return null;
                                         }
+                                        // @ts-ignore
                                         delete node.nam;
+                                        // @ts-ignore
                                         delete node.val;
                                         Object.assign(node, {
                                             typ: exports.EnumToken.CssVariableDeclarationMapTokenType,
@@ -19838,6 +19902,7 @@
         return doParse(tokenize$1({
             stream: `.x{${declaration}}`,
             buffer: '',
+            offset: 0,
             position: { ind: 0, lin: 1, col: 1 },
             currentPosition: { ind: -1, lin: 1, col: 0 }
         }), { setParent: false, minify: false, validation: false }).then(result => {
@@ -19958,6 +20023,7 @@
         const parseInfo = {
             stream: src,
             buffer: '',
+            offset: 0,
             position: { ind: 0, lin: 1, col: 1 },
             currentPosition: { ind: -1, lin: 1, col: 0 }
         };
@@ -23536,7 +23602,7 @@
                 nodeIndex = i;
             }
             if (recursive && node != null && ('chi' in node)) {
-                if (node.typ == exports.EnumToken.KeyframesAtRuleNodeType || !node.chi.some(n => n.typ == exports.EnumToken.DeclarationNodeType)) {
+                if (node.typ == exports.EnumToken.KeyframesAtRuleNodeType || !node.chi.some((n) => n.typ == exports.EnumToken.DeclarationNodeType)) {
                     if (!(node.typ == exports.EnumToken.AtRuleNodeType && node.nam != 'font-face')) {
                         doMinify(node, options, recursive, errors, nestingContent, context);
                     }
@@ -24598,6 +24664,7 @@
         return doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize$1({
             stream,
             buffer: '',
+            offset: 0,
             position: { ind: 0, lin: 1, col: 1 },
             currentPosition: { ind: -1, lin: 1, col: 0 }
         }), Object.assign(options, {

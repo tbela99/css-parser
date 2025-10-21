@@ -1,0 +1,350 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>CSS modules | @tbela99/css-parser</title><meta name="description" content="Documentation for @tbela99/css-parser"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script><style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --md-sys-color-primary: #f6be46;
+    --md-sys-color-on-primary: #412d00;
+    --md-sys-color-primary-container: #5d4200;
+    --md-sys-color-on-primary-container: #ffdea3;
+    --md-sys-color-secondary: #d9c4a0;
+    --md-sys-color-on-secondary: #3b2f15;
+    --md-sys-color-secondary-container: #53452a;
+    --md-sys-color-on-secondary-container: #f6e0bb;
+    --md-sys-color-tertiary: #b2cfa8;
+    --md-sys-color-on-tertiary: #1e361a;
+    --md-sys-color-tertiary-container: #344d2f;
+    --md-sys-color-on-tertiary-container: #cdebc2;
+    --md-sys-color-error: #ffb4ab;
+    --md-sys-color-on-error: #690005;
+    --md-sys-color-error-container: #93000a;
+    --md-sys-color-on-error-container: #ffb4ab;
+    --md-sys-color-background: #1e1b16;
+    --md-sys-color-on-background: #e9e1d9;
+    --md-sys-color-surface: #1e1b16;
+    --md-sys-color-on-surface: #e9e1d9;
+    --md-sys-color-surface-variant: #4e4639;
+    --md-sys-color-on-surface-variant: #d1c5b4;
+    --md-sys-color-outline: #9a8f80;
+    --md-sys-color-outline-variant: #4e4639;
+    --md-sys-color-shadow: #000000;
+    --md-sys-color-scrim: #000000;
+    --md-sys-color-inverse-surface: #e9e1d9;
+    --md-sys-color-inverse-on-surface: #34302a;
+    --md-sys-color-inverse-primary: #7a5900;
+    --md-sys-color-surface-dim: #16130e;
+    --md-sys-color-surface-bright: #3d3933;
+    --md-sys-color-surface-container-lowest: #110e09;
+    --md-sys-color-surface-container-low: #1e1b16;
+    --md-sys-color-surface-container: #221f1a;
+    --md-sys-color-surface-container-high: #2d2924;
+    --md-sys-color-surface-container-highest: #38342e
+  }
+}
+:root[data-theme="dark"] {
+  --md-sys-color-primary: #f6be46;
+  --md-sys-color-on-primary: #412d00;
+  --md-sys-color-primary-container: #5d4200;
+  --md-sys-color-on-primary-container: #ffdea3;
+  --md-sys-color-secondary: #d9c4a0;
+  --md-sys-color-on-secondary: #3b2f15;
+  --md-sys-color-secondary-container: #53452a;
+  --md-sys-color-on-secondary-container: #f6e0bb;
+  --md-sys-color-tertiary: #b2cfa8;
+  --md-sys-color-on-tertiary: #1e361a;
+  --md-sys-color-tertiary-container: #344d2f;
+  --md-sys-color-on-tertiary-container: #cdebc2;
+  --md-sys-color-error: #ffb4ab;
+  --md-sys-color-on-error: #690005;
+  --md-sys-color-error-container: #93000a;
+  --md-sys-color-on-error-container: #ffb4ab;
+  --md-sys-color-background: #1e1b16;
+  --md-sys-color-on-background: #e9e1d9;
+  --md-sys-color-surface: #1e1b16;
+  --md-sys-color-on-surface: #e9e1d9;
+  --md-sys-color-surface-variant: #4e4639;
+  --md-sys-color-on-surface-variant: #d1c5b4;
+  --md-sys-color-outline: #9a8f80;
+  --md-sys-color-outline-variant: #4e4639;
+  --md-sys-color-shadow: #000000;
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-inverse-surface: #e9e1d9;
+  --md-sys-color-inverse-on-surface: #34302a;
+  --md-sys-color-inverse-primary: #7a5900;
+  --md-sys-color-surface-dim: #16130e;
+  --md-sys-color-surface-bright: #3d3933;
+  --md-sys-color-surface-container-lowest: #110e09;
+  --md-sys-color-surface-container-low: #1e1b16;
+  --md-sys-color-surface-container: #221f1a;
+  --md-sys-color-surface-container-high: #2d2924;
+  --md-sys-color-surface-container-highest: #38342e
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --md-sys-color-primary: #7a5900;
+    --md-sys-color-on-primary: #ffffff;
+    --md-sys-color-primary-container: #ffdea3;
+    --md-sys-color-on-primary-container: #261900;
+    --md-sys-color-secondary: #6c5c3f;
+    --md-sys-color-on-secondary: #ffffff;
+    --md-sys-color-secondary-container: #f6e0bb;
+    --md-sys-color-on-secondary-container: #251a04;
+    --md-sys-color-tertiary: #4b6545;
+    --md-sys-color-on-tertiary: #ffffff;
+    --md-sys-color-tertiary-container: #cdebc2;
+    --md-sys-color-on-tertiary-container: #092007;
+    --md-sys-color-error: #ba1a1a;
+    --md-sys-color-on-error: #ffffff;
+    --md-sys-color-error-container: #ffdad6;
+    --md-sys-color-on-error-container: #410002;
+    --md-sys-color-background: #fffbff;
+    --md-sys-color-on-background: #1e1b16;
+    --md-sys-color-surface: #fffbff;
+    --md-sys-color-on-surface: #1e1b16;
+    --md-sys-color-surface-variant: #ede1cf;
+    --md-sys-color-on-surface-variant: #4e4639;
+    --md-sys-color-outline: #7f7667;
+    --md-sys-color-outline-variant: #d1c5b4;
+    --md-sys-color-shadow: #000000;
+    --md-sys-color-scrim: #000000;
+    --md-sys-color-inverse-surface: #34302a;
+    --md-sys-color-inverse-on-surface: #f8efe7;
+    --md-sys-color-inverse-primary: #f6be46;
+    --md-sys-color-surface-dim: #e1d9d0;
+    --md-sys-color-surface-bright: #fff8f2;
+    --md-sys-color-surface-container-lowest: #ffffff;
+    --md-sys-color-surface-container-low: #fbf2e9;
+    --md-sys-color-surface-container: #f5ede4;
+    --md-sys-color-surface-container-high: #efe7de;
+    --md-sys-color-surface-container-highest: #e9e1d9
+  }
+}
+:root[data-theme="light"] {
+  --md-sys-color-primary: #7a5900;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #ffdea3;
+  --md-sys-color-on-primary-container: #261900;
+  --md-sys-color-secondary: #6c5c3f;
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: #f6e0bb;
+  --md-sys-color-on-secondary-container: #251a04;
+  --md-sys-color-tertiary: #4b6545;
+  --md-sys-color-on-tertiary: #ffffff;
+  --md-sys-color-tertiary-container: #cdebc2;
+  --md-sys-color-on-tertiary-container: #092007;
+  --md-sys-color-error: #ba1a1a;
+  --md-sys-color-on-error: #ffffff;
+  --md-sys-color-error-container: #ffdad6;
+  --md-sys-color-on-error-container: #410002;
+  --md-sys-color-background: #fffbff;
+  --md-sys-color-on-background: #1e1b16;
+  --md-sys-color-surface: #fffbff;
+  --md-sys-color-on-surface: #1e1b16;
+  --md-sys-color-surface-variant: #ede1cf;
+  --md-sys-color-on-surface-variant: #4e4639;
+  --md-sys-color-outline: #7f7667;
+  --md-sys-color-outline-variant: #d1c5b4;
+  --md-sys-color-shadow: #000000;
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-inverse-surface: #34302a;
+  --md-sys-color-inverse-on-surface: #f8efe7;
+  --md-sys-color-inverse-primary: #f6be46;
+  --md-sys-color-surface-dim: #e1d9d0;
+  --md-sys-color-surface-bright: #fff8f2;
+  --md-sys-color-surface-container-lowest: #ffffff;
+  --md-sys-color-surface-container-low: #fbf2e9;
+  --md-sys-color-surface-container: #f5ede4;
+  --md-sys-color-surface-container-high: #efe7de;
+  --md-sys-color-surface-container-highest: #e9e1d9
+}
+</style><link rel="stylesheet" href="../assets/material-style.css"/></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index.html" class="title">@tbela99/css-parser</a><div id="tsd-toolbar-links"><a href="https://tbela99.github.io/css-parser/benchmark/index.html">Benchmark</a><a href="https://tbela99.github.io/css-parser/docs/">Docs</a><a href="https://tbela99.github.io/css-parser/playground/">Playground</a><a href="https://github.com/tbela99/css-parser">GitHub</a></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="Guide.html">Guide</a></li><li><a href="" aria-current="page">CSS modules</a></li></ul></div><div class="tsd-panel tsd-typography"><h1 id="css-modules" class="tsd-anchor-link">CSS Modules<a href="#css-modules" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1><p>CSS module is a feature that allows you to use CSS classes in a way that is safe from conflicts with other classes in the same project.
+to enable CSS module support, pass the <code>module</code> option to the parse() or transform() function.
+for a detailed explanation of the module options, see the <a href="../media/node.ParserOptions.html#module">module options</a> section.</p>
+<pre><code class="typescript"><br/><span class="hl-0">parse</span><span class="hl-1">(</span><span class="hl-9">css</span><span class="hl-1">, {</span><span class="hl-9">module:</span><span class="hl-1"> </span><span class="hl-9">boolean</span><span class="hl-1"> | </span><span class="hl-9">ModuleCaseTransformEnum</span><span class="hl-1"> | </span><span class="hl-9">ModuleScopeEnumOptions</span><span class="hl-1"> | </span><span class="hl-9">ModuleOptions</span><span class="hl-1">});</span><br/><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-9">css</span><span class="hl-1">, {</span><span class="hl-9">module:</span><span class="hl-1"> </span><span class="hl-9">boolean</span><span class="hl-1"> | </span><span class="hl-9">ModuleCaseTransformEnum</span><span class="hl-1"> | </span><span class="hl-9">ModuleScopeEnumOptions</span><span class="hl-1"> | </span><span class="hl-9">ModuleOptions</span><span class="hl-1">});</span><br/>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="scope" class="tsd-anchor-link">Scope<a href="#scope" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><p>the <code>scoped</code> option is used to configure the scope of the generated class names.</p>
+<h3 id="local-scope" class="tsd-anchor-link">Local scope<a href="#local-scope" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>this is the default scope.</p>
+<pre><code class="typescript"><br/><span class="hl-8">import</span><span class="hl-1"> {</span><span class="hl-9">transform</span><span class="hl-1">, </span><span class="hl-9">TransformOptions</span><span class="hl-1">} </span><span class="hl-8">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@tbela99/css-parser&quot;</span><span class="hl-1">;</span><br/><span class="hl-8">import</span><span class="hl-1"> </span><span class="hl-8">type</span><span class="hl-1"> {</span><span class="hl-9">TransformResult</span><span class="hl-1">} </span><span class="hl-8">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@tbela99/css-parser&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-10">const</span><span class="hl-1"> </span><span class="hl-11">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><span class="hl-2">.className {</span><br/><span class="hl-2">  background: red;</span><br/><span class="hl-2">  color: yellow;</span><br/><span class="hl-2">}</span><br/><br/><span class="hl-2">.subClass {</span><br/><span class="hl-2">  composes: className;</span><br/><span class="hl-2">  background: blue;</span><br/><span class="hl-2">}</span><br/><span class="hl-2">`</span><span class="hl-1">;</span><br/><br/><span class="hl-10">let</span><span class="hl-1"> </span><span class="hl-9">result</span><span class="hl-1">: </span><span class="hl-13">TransformResult</span><span class="hl-1"> = </span><span class="hl-8">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-9">css</span><span class="hl-1">, {</span><br/><br/><span class="hl-1">    </span><span class="hl-9">beautify:</span><span class="hl-1"> </span><span class="hl-10">true</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-9">module:</span><span class="hl-1"> {</span><span class="hl-9">scoped:</span><span class="hl-1"> </span><span class="hl-9">ModuleScopeEnumOptions</span><span class="hl-1">.</span><span class="hl-9">Local</span><br/><span class="hl-1">    }</span><br/><br/><span class="hl-1">});</span><br/><br/><span class="hl-9">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-9">result</span><span class="hl-1">.</span><span class="hl-9">code</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>output</p>
+<pre><code class="css"><span class="hl-15">.className_vjnt1</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-6">background</span><span class="hl-1">: </span><span class="hl-16">red</span><span class="hl-1">;</span><br/><span class="hl-1">    </span><span class="hl-6">color</span><span class="hl-1">: </span><span class="hl-16">#ff0</span><br/><span class="hl-1">}</span><br/><span class="hl-15">.subClass_sgkqy</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-6">background</span><span class="hl-1">: </span><span class="hl-16">blue</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="global-scope" class="tsd-anchor-link">Global scope<a href="#global-scope" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>the class names are not scoped unless they are scoped using :local or :local()</p>
+<pre><code class="typescript"><br/><span class="hl-9">result</span><span class="hl-1"> = </span><span class="hl-8">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-9">css</span><span class="hl-1">, {</span><br/><br/><span class="hl-1">    </span><span class="hl-9">beautify:</span><span class="hl-1"> </span><span class="hl-10">true</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-9">module:</span><span class="hl-1"> {</span><span class="hl-9">scoped:</span><span class="hl-1"> </span><span class="hl-9">ModuleScopeEnumOptions</span><span class="hl-1">.</span><span class="hl-9">Global</span><br/><span class="hl-1">    }</span><br/><br/><span class="hl-1">});</span><br/><br/><span class="hl-9">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-9">result</span><span class="hl-1">.</span><span class="hl-9">code</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>output</p>
+<pre><code class="css"><span class="hl-15">.className</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-6">background</span><span class="hl-1">: </span><span class="hl-16">red</span><span class="hl-1">;</span><br/><span class="hl-1">    </span><span class="hl-6">color</span><span class="hl-1">: </span><span class="hl-16">#ff0</span><br/><span class="hl-1">}</span><br/><span class="hl-15">.subClass</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-6">background</span><span class="hl-1">: </span><span class="hl-16">blue</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="icss-scope" class="tsd-anchor-link">ICSS scope<a href="#icss-scope" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>export css using ICSS format</p>
+<pre><code class="typescript"><br/><span class="hl-1"> </span><span class="hl-9">result</span><span class="hl-1"> = </span><span class="hl-8">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-9">css</span><span class="hl-1">, {</span><br/><br/><span class="hl-1">    </span><span class="hl-9">beautify:</span><span class="hl-1"> </span><span class="hl-10">true</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-9">module:</span><span class="hl-1"> {</span><span class="hl-9">scoped:</span><span class="hl-1"> </span><span class="hl-9">ModuleScopeEnumOptions</span><span class="hl-1">.</span><span class="hl-11">ICSS</span><br/><span class="hl-1">    }</span><br/><br/><span class="hl-1">});</span><br/><br/><span class="hl-9">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-9">result</span><span class="hl-1">.</span><span class="hl-9">code</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>output</p>
+<pre><code class="css"><span class="hl-1">:export {</span><br/><span class="hl-1">    className: className_vjnt1;</span><br/><span class="hl-1">    subClass: subClass_sgkqy className_vjnt1;</span><br/><span class="hl-1">}</span><br/><span class="hl-15">.className_vjnt1</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-6">background</span><span class="hl-1">: </span><span class="hl-16">red</span><span class="hl-1">;</span><br/><span class="hl-1">    </span><span class="hl-6">color</span><span class="hl-1">: </span><span class="hl-16">#ff0</span><br/><span class="hl-1">}</span><br/><span class="hl-15">.subClass_sgkqy</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-6">background</span><span class="hl-1">: </span><span class="hl-16">blue</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="pure-scope" class="tsd-anchor-link">Pure scope<a href="#pure-scope" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>require to use at least one id or class in selectors</p>
+<pre><code class="typescript"><br/><span class="hl-1"> </span><span class="hl-9">result</span><span class="hl-1"> = </span><span class="hl-8">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-9">css</span><span class="hl-1">, {</span><br/><br/><span class="hl-1">    </span><span class="hl-9">beautify:</span><span class="hl-1"> </span><span class="hl-10">true</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-9">module:</span><span class="hl-1"> {</span><span class="hl-9">scoped:</span><span class="hl-1"> </span><span class="hl-9">ModuleScopeEnumOptions</span><span class="hl-1">.</span><span class="hl-9">Pure</span><br/><span class="hl-1">    }</span><br/><br/><span class="hl-1">});</span><br/><br/><span class="hl-9">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-9">result</span><span class="hl-1">.</span><span class="hl-9">code</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>output</p>
+<pre><code class="css"><span class="hl-15">.className</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-6">background</span><span class="hl-1">: </span><span class="hl-16">red</span><span class="hl-1">;</span><br/><span class="hl-1">    </span><span class="hl-6">color</span><span class="hl-1">: </span><span class="hl-16">#ff0</span><br/><span class="hl-1">}</span><br/><span class="hl-15">.subClass</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-6">background</span><span class="hl-1">: </span><span class="hl-16">blue</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="mixing-scopes" class="tsd-anchor-link">Mixing scopes<a href="#mixing-scopes" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>scopes can be mixed together using the bitwise OR operator '|'</p>
+<pre><code class="typescript"><br/><span class="hl-1"> </span><span class="hl-9">result</span><span class="hl-1"> = </span><span class="hl-8">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-9">css</span><span class="hl-1">, {</span><br/><br/><span class="hl-1">    </span><span class="hl-9">beautify:</span><span class="hl-1"> </span><span class="hl-10">true</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-9">module:</span><span class="hl-1"> {</span><span class="hl-9">scoped:</span><span class="hl-1"> </span><span class="hl-9">ModuleScopeEnumOptions</span><span class="hl-1">.</span><span class="hl-9">Pure</span><span class="hl-1"> | </span><span class="hl-9">ModuleScopeEnumOptions</span><span class="hl-1">.</span><span class="hl-9">Global</span><span class="hl-1"> | </span><span class="hl-9">ModuleScopeEnumOptions</span><span class="hl-1">.</span><span class="hl-11">ICSS</span><br/><span class="hl-1">    }</span><br/><br/><span class="hl-1">});</span><br/><br/><span class="hl-9">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-9">result</span><span class="hl-1">.</span><span class="hl-9">code</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="class-composition" class="tsd-anchor-link">Class composition<a href="#class-composition" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><p>class composition is supported using the <code>composes</code> property.</p>
+<pre><code class="typescript"><br/><span class="hl-8">import</span><span class="hl-1"> {</span><span class="hl-9">transform</span><span class="hl-1">, </span><span class="hl-9">TransformOptions</span><span class="hl-1">} </span><span class="hl-8">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@tbela99/css-parser&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-10">const</span><span class="hl-1"> </span><span class="hl-11">options</span><span class="hl-1">: </span><span class="hl-13">TransformOptions</span><span class="hl-1"> = {</span><br/><br/><span class="hl-1">    </span><span class="hl-9">module:</span><span class="hl-1"> </span><span class="hl-10">true</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-9">beautify:</span><span class="hl-1"> </span><span class="hl-10">true</span><span class="hl-1">,</span><br/><span class="hl-1">};</span><br/><br/><span class="hl-10">const</span><span class="hl-1"> </span><span class="hl-11">result</span><span class="hl-1"> = </span><span class="hl-8">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-2">`</span><br/><span class="hl-2">.goal .bg-indigo {</span><br/><span class="hl-2">  background: indigo;</span><br/><span class="hl-2">}</span><br/><br/><span class="hl-2">.indigo-white {</span><br/><span class="hl-2">  composes: bg-indigo title;</span><br/><span class="hl-2">  color: white;</span><br/><span class="hl-2">}</span><br/><span class="hl-2">`</span><span class="hl-1">, </span><span class="hl-9">options</span><span class="hl-1">);</span><br/><br/><span class="hl-9">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-9">result</span><span class="hl-1">.</span><span class="hl-9">code</span><span class="hl-1">);</span><br/><span class="hl-9">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-9">result</span><span class="hl-1">.</span><span class="hl-9">mapping</span><span class="hl-1">);</span><br/><br/>
+</code><button type="button">Copy</button></pre>
+
+<p>generated css code</p>
+<pre><code class="css"><br/><span class="hl-15">.r7bhp_goal</span><span class="hl-1"> </span><span class="hl-15">.bg-indigo_gy28g</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-6">background</span><span class="hl-1">: </span><span class="hl-16">indigo</span><br/><span class="hl-1">}</span><br/><span class="hl-15">.indigo-white_wims0</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-6">color</span><span class="hl-1">: </span><span class="hl-16">#fff</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>generated class mapping</p>
+<pre><code class="json"><br/><span class="hl-1">{</span><br/><span class="hl-1">    </span><span class="hl-18">&quot;goal&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;r7bhp_goal&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-18">&quot;bg-indigo&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;bg-indigo_gy28g&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-18">&quot;indigo-white&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;indigo-white_wims0 bg-indigo_gy28g qw06e_title&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-18">&quot;title&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;qw06e_title&quot;</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>classes can be composed from other files as well as the global scope</p>
+<pre><code class="typescript"><br/><span class="hl-8">import</span><span class="hl-1"> {</span><span class="hl-9">transform</span><span class="hl-1">, </span><span class="hl-9">TransformOptions</span><span class="hl-1">} </span><span class="hl-8">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@tbela99/css-parser&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-10">const</span><span class="hl-1"> </span><span class="hl-11">options</span><span class="hl-1">: </span><span class="hl-13">TransformOptions</span><span class="hl-1"> = {</span><br/><br/><span class="hl-1">    </span><span class="hl-9">module:</span><span class="hl-1"> </span><span class="hl-10">true</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-9">beautify:</span><span class="hl-1"> </span><span class="hl-10">true</span><span class="hl-1">,</span><br/><span class="hl-1">};</span><br/><br/><span class="hl-10">const</span><span class="hl-1"> </span><span class="hl-11">result</span><span class="hl-1"> = </span><span class="hl-8">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-2">`</span><br/><span class="hl-2">.goal .bg-indigo {</span><br/><span class="hl-2">  background: indigo;</span><br/><span class="hl-2">}</span><br/><br/><span class="hl-2">.indigo-white {</span><br/><span class="hl-2">  composes: bg-indigo;</span><br/><span class="hl-2">  composes: title block ruler from global;</span><br/><span class="hl-2">  composes: bg-indigo title from &#39;./other-file.css&#39;;</span><br/><span class="hl-2">  color: white;</span><br/><span class="hl-2">}</span><br/><span class="hl-2">`</span><span class="hl-1">, </span><span class="hl-9">options</span><span class="hl-1">);</span><br/>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="naming" class="tsd-anchor-link">Naming<a href="#naming" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><p>the <code>naming</code> option is used to configure the case of the generated class names as well as the class mapping.</p>
+<h3 id="ignore-case" class="tsd-anchor-link">Ignore Case<a href="#ignore-case" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>no case transformation</p>
+<pre><code class="typescript"><br/><span class="hl-8">import</span><span class="hl-1"> {</span><span class="hl-9">transform</span><span class="hl-1">, </span><span class="hl-9">ModuleCaseTransformEnum</span><span class="hl-1">} </span><span class="hl-8">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><span class="hl-8">import</span><span class="hl-1"> </span><span class="hl-8">type</span><span class="hl-1"> {</span><span class="hl-9">TransformResult</span><span class="hl-1">} </span><span class="hl-8">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-10">let</span><span class="hl-1"> </span><span class="hl-9">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><br/><span class="hl-2">:local(.class-name) {</span><br/><span class="hl-2">  background: red;</span><br/><span class="hl-2">  color: yellow;</span><br/><span class="hl-2">}</span><br/><br/><span class="hl-2">:local(.sub-class) {</span><br/><span class="hl-2">  composes: class-name;</span><br/><span class="hl-2">  background: blue;</span><br/><span class="hl-2">`</span><span class="hl-1">;</span><br/><br/><span class="hl-10">let</span><span class="hl-1"> </span><span class="hl-9">result</span><span class="hl-1"> = </span><span class="hl-8">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-9">css</span><span class="hl-1">, {</span><br/><br/><span class="hl-1">    </span><span class="hl-9">module:</span><span class="hl-1"> {</span><br/><span class="hl-1">        </span><span class="hl-9">naming:</span><span class="hl-1"> </span><span class="hl-9">ModuleCaseTransformEnum</span><span class="hl-1">.</span><span class="hl-9">IgnoreCase</span><br/><span class="hl-1">    }</span><br/><br/><span class="hl-1">});</span><br/><br/><span class="hl-9">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-9">result</span><span class="hl-1">.</span><span class="hl-9">code</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="camel-case" class="tsd-anchor-link">Camel case<a href="#camel-case" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>use camel case for the mapping key names</p>
+<pre><code class="typescript"><br/><span class="hl-8">import</span><span class="hl-1"> {</span><span class="hl-9">transform</span><span class="hl-1">, </span><span class="hl-9">ModuleCaseTransformEnum</span><span class="hl-1">} </span><span class="hl-8">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><span class="hl-8">import</span><span class="hl-1"> </span><span class="hl-8">type</span><span class="hl-1"> {</span><span class="hl-9">TransformResult</span><span class="hl-1">} </span><span class="hl-8">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-10">let</span><span class="hl-1"> </span><span class="hl-9">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><br/><span class="hl-2">:local(.class-name) {</span><br/><span class="hl-2">  background: red;</span><br/><span class="hl-2">  color: yellow;</span><br/><span class="hl-2">}</span><br/><br/><span class="hl-2">:local(.sub-class) {</span><br/><span class="hl-2">  composes: class-name;</span><br/><span class="hl-2">  background: blue;</span><br/><span class="hl-2">`</span><span class="hl-1">;</span><br/><br/><span class="hl-10">let</span><span class="hl-1"> </span><span class="hl-9">result</span><span class="hl-1"> = </span><span class="hl-8">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-9">css</span><span class="hl-1">, {</span><br/><br/><span class="hl-1">    </span><span class="hl-9">module:</span><span class="hl-1"> {</span><br/><span class="hl-1">        </span><span class="hl-9">naming:</span><span class="hl-1"> </span><span class="hl-9">ModuleCaseTransformEnum</span><span class="hl-1">.</span><span class="hl-9">CamelCaseOnly</span><br/><span class="hl-1">    }</span><br/><br/><span class="hl-1">});</span><br/><br/><span class="hl-9">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-9">result</span><span class="hl-1">.</span><span class="hl-9">code</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>generated css</p>
+<pre><code class="css"><span class="hl-15">.class-name_agkqy</span><span class="hl-1"> {</span><br/><span class="hl-1"> </span><span class="hl-6">background</span><span class="hl-1">: </span><span class="hl-16">red</span><span class="hl-1">;</span><br/><span class="hl-1"> </span><span class="hl-6">color</span><span class="hl-1">: </span><span class="hl-16">#ff0</span><br/><span class="hl-1">}</span><br/><span class="hl-15">.sub-class_nfjpx</span><span class="hl-1"> {</span><br/><span class="hl-1"> </span><span class="hl-6">background</span><span class="hl-1">: </span><span class="hl-16">blue</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>generated mapping</p>
+<pre><code class="ts"><span class="hl-9">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-9">result</span><span class="hl-1">.</span><span class="hl-9">mapping</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<pre><code class="json"><span class="hl-1">{</span><br/><span class="hl-1"> </span><span class="hl-18">&quot;className&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;class-name_agkqy&quot;</span><span class="hl-1">,</span><br/><span class="hl-1"> </span><span class="hl-18">&quot;subClass&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;sub-class_nfjpx&quot;</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="camel-case-only" class="tsd-anchor-link">Camel case only<a href="#camel-case-only" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>use camel case key names and the scoped class names</p>
+<pre><code class="typescript"><br/><span class="hl-8">import</span><span class="hl-1"> {</span><span class="hl-9">transform</span><span class="hl-1">, </span><span class="hl-9">ModuleCaseTransformEnum</span><span class="hl-1">} </span><span class="hl-8">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><span class="hl-8">import</span><span class="hl-1"> </span><span class="hl-8">type</span><span class="hl-1"> {</span><span class="hl-9">TransformResult</span><span class="hl-1">} </span><span class="hl-8">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-10">let</span><span class="hl-1"> </span><span class="hl-9">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><br/><span class="hl-2">:local(.class-name) {</span><br/><span class="hl-2">  background: red;</span><br/><span class="hl-2">  color: yellow;</span><br/><span class="hl-2">}</span><br/><br/><span class="hl-2">:local(.sub-class) {</span><br/><span class="hl-2">  composes: class-name;</span><br/><span class="hl-2">  background: blue;</span><br/><span class="hl-2">`</span><span class="hl-1">;</span><br/><br/><span class="hl-10">let</span><span class="hl-1"> </span><span class="hl-9">result</span><span class="hl-1"> = </span><span class="hl-8">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-9">css</span><span class="hl-1">, {</span><br/><br/><span class="hl-1">    </span><span class="hl-9">module:</span><span class="hl-1"> {</span><br/><span class="hl-1">        </span><span class="hl-9">naming:</span><span class="hl-1"> </span><span class="hl-9">ModuleCaseTransformEnum</span><span class="hl-1">.</span><span class="hl-9">CamelCaseOnly</span><br/><span class="hl-1">    }</span><br/><br/><span class="hl-1">});</span><br/><br/><span class="hl-9">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-9">result</span><span class="hl-1">.</span><span class="hl-9">code</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>generated css</p>
+<pre><code class="css"><span class="hl-15">.className_agkqy</span><span class="hl-1"> {</span><br/><span class="hl-1"> </span><span class="hl-6">background</span><span class="hl-1">: </span><span class="hl-16">red</span><span class="hl-1">;</span><br/><span class="hl-1"> </span><span class="hl-6">color</span><span class="hl-1">: </span><span class="hl-16">#ff0</span><br/><span class="hl-1">}</span><br/><span class="hl-15">.subClass_nfjpx</span><span class="hl-1"> {</span><br/><span class="hl-1"> </span><span class="hl-6">background</span><span class="hl-1">: </span><span class="hl-16">blue</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>generated mapping</p>
+<pre><code class="ts"><span class="hl-9">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-9">result</span><span class="hl-1">.</span><span class="hl-9">mapping</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<pre><code class="json"><span class="hl-1">{</span><br/><span class="hl-1"> </span><span class="hl-18">&quot;className&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;className_agkqy&quot;</span><span class="hl-1">,</span><br/><span class="hl-1"> </span><span class="hl-18">&quot;subClass&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;subClass_nfjpx&quot;</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="dash-case" class="tsd-anchor-link">Dash case<a href="#dash-case" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>use dash case for the mapping key names</p>
+<pre><code class="typescript"><br/><span class="hl-8">import</span><span class="hl-1"> {</span><span class="hl-9">transform</span><span class="hl-1">, </span><span class="hl-9">ModuleCaseTransformEnum</span><span class="hl-1">} </span><span class="hl-8">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><span class="hl-8">import</span><span class="hl-1"> </span><span class="hl-8">type</span><span class="hl-1"> {</span><span class="hl-9">TransformResult</span><span class="hl-1">} </span><span class="hl-8">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-10">let</span><span class="hl-1"> </span><span class="hl-9">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><br/><span class="hl-2">:local(.className) {</span><br/><span class="hl-2">  background: red;</span><br/><span class="hl-2">  color: yellow;</span><br/><span class="hl-2">}</span><br/><br/><span class="hl-2">:local(.subClass) {</span><br/><span class="hl-2">  composes: className;</span><br/><span class="hl-2">  background: blue;</span><br/><span class="hl-2">}</span><br/><span class="hl-2">`</span><span class="hl-1">;</span><br/><br/><span class="hl-10">let</span><span class="hl-1"> </span><span class="hl-9">result</span><span class="hl-1"> = </span><span class="hl-8">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-9">css</span><span class="hl-1">, {</span><br/><br/><span class="hl-1">    </span><span class="hl-9">module:</span><span class="hl-1"> {</span><br/><span class="hl-1">        </span><span class="hl-9">naming:</span><span class="hl-1"> </span><span class="hl-9">ModuleCaseTransformEnum</span><span class="hl-1">.</span><span class="hl-9">DashCase</span><br/><span class="hl-1">    }</span><br/><br/><span class="hl-1">});</span><br/><br/><span class="hl-9">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-9">result</span><span class="hl-1">.</span><span class="hl-9">code</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>generated css</p>
+<pre><code class="css"><span class="hl-15">.className_vjnt1</span><span class="hl-1"> {</span><br/><span class="hl-1"> </span><span class="hl-6">background</span><span class="hl-1">: </span><span class="hl-16">red</span><span class="hl-1">;</span><br/><span class="hl-1"> </span><span class="hl-6">color</span><span class="hl-1">: </span><span class="hl-16">#ff0</span><br/><span class="hl-1">}</span><br/><span class="hl-15">.subClass_sgkqy</span><span class="hl-1"> {</span><br/><span class="hl-1"> </span><span class="hl-6">background</span><span class="hl-1">: </span><span class="hl-16">blue</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>generated mapping</p>
+<pre><code class="ts"><span class="hl-9">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-9">result</span><span class="hl-1">.</span><span class="hl-9">mapping</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<pre><code class="json"><span class="hl-1">{</span><br/><span class="hl-1">    </span><span class="hl-18">&quot;class-name&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;className_vjnt1&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-18">&quot;sub-class&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;subClass_sgkqy className_vjnt1&quot;</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="dash-case-only" class="tsd-anchor-link">Dash case only<a href="#dash-case-only" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>use dash case key names and the scoped class names</p>
+<pre><code class="typescript"><br/><span class="hl-8">import</span><span class="hl-1"> {</span><span class="hl-9">transform</span><span class="hl-1">, </span><span class="hl-9">ModuleCaseTransformEnum</span><span class="hl-1">} </span><span class="hl-8">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><span class="hl-8">import</span><span class="hl-1"> </span><span class="hl-8">type</span><span class="hl-1"> {</span><span class="hl-9">TransformResult</span><span class="hl-1">} </span><span class="hl-8">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-10">let</span><span class="hl-1"> </span><span class="hl-9">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><br/><span class="hl-2">:local(.className) {</span><br/><span class="hl-2">  background: red;</span><br/><span class="hl-2">  color: yellow;</span><br/><span class="hl-2">}</span><br/><br/><span class="hl-2">:local(.subClass) {</span><br/><span class="hl-2">  composes: className;</span><br/><span class="hl-2">  background: blue;</span><br/><span class="hl-2">}</span><br/><span class="hl-2">`</span><span class="hl-1">;</span><br/><br/><span class="hl-10">let</span><span class="hl-1"> </span><span class="hl-9">result</span><span class="hl-1"> = </span><span class="hl-8">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-9">css</span><span class="hl-1">, {</span><br/><br/><span class="hl-1">    </span><span class="hl-9">module:</span><span class="hl-1"> {</span><br/><span class="hl-1">        </span><span class="hl-9">naming:</span><span class="hl-1"> </span><span class="hl-9">ModuleCaseTransformEnum</span><span class="hl-1">.</span><span class="hl-9">DashCaseOnly</span><br/><span class="hl-1">    }</span><br/><br/><span class="hl-1">});</span><br/><br/><span class="hl-9">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-9">result</span><span class="hl-1">.</span><span class="hl-9">code</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>generated css</p>
+<pre><code class="css"><span class="hl-15">.class-name_vjnt1</span><span class="hl-1"> {</span><br/><span class="hl-1"> </span><span class="hl-6">background</span><span class="hl-1">: </span><span class="hl-16">red</span><span class="hl-1">;</span><br/><span class="hl-1"> </span><span class="hl-6">color</span><span class="hl-1">: </span><span class="hl-16">#ff0</span><br/><span class="hl-1">}</span><br/><span class="hl-15">.sub-class_sgkqy</span><span class="hl-1"> {</span><br/><span class="hl-1"> </span><span class="hl-6">background</span><span class="hl-1">: </span><span class="hl-16">blue</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>generated mapping</p>
+<pre><code class="ts"><span class="hl-9">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-9">result</span><span class="hl-1">.</span><span class="hl-9">mapping</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<pre><code class="json"><span class="hl-1">{</span><br/><span class="hl-1">    </span><span class="hl-18">&quot;class-name&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;class-name_vjnt1&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-18">&quot;sub-class&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;sub-class_sgkqy class-name_vjnt1&quot;</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="pattern" class="tsd-anchor-link">Pattern<a href="#pattern" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><p>the <code>pattern</code> option is used to configure the pattern of the generated scoped names.</p>
+<pre><code class="typescript"><br/><span class="hl-8">import</span><span class="hl-1"> {</span><span class="hl-9">transform</span><span class="hl-1">, </span><span class="hl-9">ModulePatternEnum</span><span class="hl-1">} </span><span class="hl-8">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><span class="hl-8">import</span><span class="hl-1"> </span><span class="hl-8">type</span><span class="hl-1"> {</span><span class="hl-9">TransformResult</span><span class="hl-1">} </span><span class="hl-8">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-10">const</span><span class="hl-1"> </span><span class="hl-11">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><span class="hl-2">.className {</span><br/><span class="hl-2">  background: red;</span><br/><span class="hl-2">  color: yellow;</span><br/><span class="hl-2">}</span><br/><br/><span class="hl-2">.subClass {</span><br/><span class="hl-2">  composes: className;</span><br/><span class="hl-2">  background: blue;</span><br/><span class="hl-2">}</span><br/><span class="hl-2">`</span><span class="hl-1">;</span><br/><br/><span class="hl-10">let</span><span class="hl-1"> </span><span class="hl-9">result</span><span class="hl-1">: </span><span class="hl-13">TransformResult</span><span class="hl-1"> = </span><span class="hl-8">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-9">css</span><span class="hl-1">, {</span><br/><br/><span class="hl-1">    </span><span class="hl-9">beautify:</span><span class="hl-1"> </span><span class="hl-10">true</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-9">module:</span><span class="hl-1"> {</span><br/><span class="hl-1">        </span><span class="hl-9">pattern:</span><span class="hl-1"> </span><span class="hl-2">&#39;[local]-[hash:sha256]&#39;</span><br/><span class="hl-1">    }</span><br/><br/><span class="hl-1">});</span><br/><br/><span class="hl-9">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-9">result</span><span class="hl-1">.</span><span class="hl-9">code</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>generated css</p>
+<pre><code class="css"><span class="hl-15">.className-b629f</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-6">background</span><span class="hl-1">: </span><span class="hl-16">red</span><span class="hl-1">;</span><br/><span class="hl-1">    </span><span class="hl-6">color</span><span class="hl-1">: </span><span class="hl-16">#ff0</span><br/><span class="hl-1">}</span><br/><span class="hl-15">.subClass-a0c35</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-6">background</span><span class="hl-1">: </span><span class="hl-16">blue</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>generated mapping</p>
+<pre><code class="ts"><span class="hl-9">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-9">result</span><span class="hl-1">.</span><span class="hl-9">mapping</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<pre><code class="json"><span class="hl-1">{</span><br/><span class="hl-1">    </span><span class="hl-18">&quot;className&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;className-b629f&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-18">&quot;subClass&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;subClass-a0c35 className-b629f&quot;</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>the supported placeholders are:</p>
+<ul>
+<li>name: the file base name without the extension</li>
+<li>hash: the file path hash</li>
+<li>local: the local name</li>
+<li>path: the file path</li>
+<li>folder: the folder name</li>
+<li>ext: the file extension</li>
+</ul>
+<p>the pattern can optionally have a maximum number of characters:</p>
+<pre><code><span class="hl-19">pattern</span><span class="hl-1">: </span><span class="hl-2">&#39;[local:2]-[hash:5]&#39;</span>
+</code><button>Copy</button></pre>
+
+<p>the hash pattern can take an algorithm, a maximum number of characters or both:</p>
+<pre><code><span class="hl-19">pattern</span><span class="hl-1">: </span><span class="hl-2">&#39;[local]-[hash:base64:5]&#39;</span>
+</code><button>Copy</button></pre>
+
+<p>or</p>
+<pre><code><span class="hl-19">pattern</span><span class="hl-1">: </span><span class="hl-2">&#39;[local]-[hash:5]&#39;</span>
+</code><button>Copy</button></pre>
+
+<p>or</p>
+<pre><code><span class="hl-19">pattern</span><span class="hl-1">: </span><span class="hl-2">&#39;[local]-[hash:sha1]&#39;</span>
+</code><button>Copy</button></pre>
+
+<p>supported hash algorithms are:</p>
+<ul>
+<li>base64</li>
+<li>hex</li>
+<li>base64url</li>
+<li>sha1</li>
+<li>sha256</li>
+<li>sha384</li>
+<li>sha512</li>
+</ul>
+<hr>
+<p><a href="Guide.Validation.html">← Validation</a></p>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#css-modules"><span>CSS <wbr/>Modules</span></a><ul><li><a href="#scope"><span>Scope</span></a></li><li><ul><li><a href="#local-scope"><span>Local scope</span></a></li><li><a href="#global-scope"><span>Global scope</span></a></li><li><a href="#icss-scope"><span>ICSS scope</span></a></li><li><a href="#pure-scope"><span>Pure scope</span></a></li><li><a href="#mixing-scopes"><span>Mixing scopes</span></a></li></ul></li><li><a href="#class-composition"><span>Class composition</span></a></li><li><a href="#naming"><span>Naming</span></a></li><li><ul><li><a href="#ignore-case"><span>Ignore <wbr/>Case</span></a></li><li><a href="#camel-case"><span>Camel case</span></a></li><li><a href="#camel-case-only"><span>Camel case only</span></a></li><li><a href="#dash-case"><span>Dash case</span></a></li><li><a href="#dash-case-only"><span>Dash case only</span></a></li></ul></li><li><a href="#pattern"><span>Pattern</span></a></li></ul></div></details></div><div class="site-menu"><nav id="tsd-sidebar-links" class="tsd-navigation"><a href="https://tbela99.github.io/css-parser/benchmark/index.html" class="tsd-nav-link">Benchmark</a><a href="https://tbela99.github.io/css-parser/docs/" class="tsd-nav-link">Docs</a><a href="https://tbela99.github.io/css-parser/playground/" class="tsd-nav-link">Playground</a><a href="https://github.com/tbela99/css-parser" class="tsd-nav-link">GitHub</a></nav><nav class="tsd-navigation"><a href="../modules.html">@tbela99/css-parser</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div><script>
+          try {
+            const generateLinkElement = document.querySelector(".tsd-generator a");
+            const link = document.createElement("a");
+            Object.assign(link, {
+              href: "https://github.com/dmnsgn/typedoc-material-theme",
+              target: "_blank",
+              rel: "noreferrer",
+              innerText: "typedoc-material-theme."
+            });
+            generateLinkElement.insertAdjacentElement("afterend", link);
+            generateLinkElement.insertAdjacentText("afterend", " with ");
+          } catch (error) {
+
+          }
+        </script></body></html>

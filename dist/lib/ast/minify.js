@@ -439,7 +439,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
             nodeIndex = i;
         }
         if (recursive && node != null && ('chi' in node)) {
-            if (node.typ == EnumToken.KeyframesAtRuleNodeType || !node.chi.some(n => n.typ == EnumToken.DeclarationNodeType)) {
+            if (node.typ == EnumToken.KeyframesAtRuleNodeType || !node.chi.some((n) => n.typ == EnumToken.DeclarationNodeType)) {
                 if (!(node.typ == EnumToken.AtRuleNodeType && node.nam != 'font-face')) {
                     doMinify(node, options, recursive, errors, nestingContent, context);
                 }

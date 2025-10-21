@@ -36,7 +36,7 @@ import {
     walkValues
 } from "../ast/index.ts";
 import {tokenize, tokenizeStream} from "./tokenize.ts";
-import {
+import type {
     AstAtRule,
     AstComment,
     AstDeclaration,
@@ -88,7 +88,6 @@ import {
     LoadResult,
     Location,
     MatchExpressionToken,
-    MediaFeatureToken,
     MediaQueryConditionToken,
     ModuleOptions,
     NameSpaceAttributeToken,
@@ -250,7 +249,7 @@ async function generateScopedName(
 
             if (inParens != 1) {
 
-                throw new Error(`Unexpected character: '${char}:${position - 1}'`);
+                throw new Error(`Unexpected character: '${char} at position ${position - 1}' in pattern '${pattern}'`);
             }
 
             continue;
@@ -767,6 +766,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                 const root: ParseResult = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
                     stream,
                     buffer: '',
+                    offset: 0,
                     position: {ind: 0, lin: 1, col: 1},
                     currentPosition: {ind: -1, lin: 1, col: 0}
                 } as ParseInfo), Object.assign({}, options, {
@@ -1093,7 +1093,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
             hashLength: 5,
             filePath: '',
             scoped: ModuleScopeEnumOptions.Local,
-            naming: ModuleCaseTransformEnum.Ignore,
+            naming: ModuleCaseTransformEnum.IgnoreCase,
             pattern: '',
             generateScopedName,
             ...(typeof options.module != 'object' ? {} : options.module)
@@ -1156,7 +1156,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
         }
 
         moduleSettings.filePath = filePath;
-        moduleSettings.pattern = pattern != null && pattern !== '' ? pattern : (filePath === '' ? `[hash]_[local]` : `[name]_[hash]_[local]`);
+        moduleSettings.pattern = pattern != null && pattern !== '' ? pattern : (filePath === '' ? `[local]_[hash]` : `[local]_[hash]_[name]`);
 
         for (const {node, parent} of walk(ast)) {
 
@@ -1169,6 +1169,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                 const root: ParseResult = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
                     stream,
                     buffer: '',
+                    offset: 0,
                     position: {ind: 0, lin: 1, col: 1},
                     currentPosition: {ind: -1, lin: 1, col: 0}
                 } as ParseInfo), Object.assign({}, options, {
@@ -1177,14 +1178,14 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                     src: src.absolute
                 }) as ParserOptions);
 
-                cssVariablesMap[(node as CssVariableImportTokenType).nam] = root.cssModuleVariables;
-                parent!.chi.splice(parent!.chi.indexOf(node), 1);
+                cssVariablesMap[(node as CssVariableImportTokenType).nam] = root.cssModuleVariables!;
+                parent!.chi!.splice(parent!.chi!.indexOf(node), 1);
                 continue;
             }
 
             if (node.typ == EnumToken.CssVariableDeclarationMapTokenType) {
 
-                const from = (node as CssVariableDeclarationMapTokenType).from.find(t => t.typ == EnumToken.IdenTokenType || isIdentColor(t)) as IdentToken;
+                const from = (node as CssVariableMapTokenType).from.find(t => t.typ == EnumToken.IdenTokenType || isIdentColor(t)) as IdentToken;
 
                 if (!(from.val in cssVariablesMap)) {
 
@@ -1199,11 +1200,11 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
                         if (token.typ == EnumToken.IdenTokenType || isIdentColor(token)) {
 
-                            if (!(token.val in cssVariablesMap[from.val])) {
+                            if (!((token as IdentToken).val in cssVariablesMap[from.val])) {
 
                                 errors.push({
                                     node,
-                                    message: `value '${token.val}' is not exported from '${from.val}'`,
+                                    message: `value '${(token as IdentToken).val}' is not exported from '${from.val}'`,
                                     action: 'drop'
                                 });
 
@@ -1211,12 +1212,12 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                             }
 
                             result.cssModuleVariables ??= {};
-                            result.cssModuleVariables[token.val] = importedCssVariables[token.val] = cssVariablesMap[from.val][token.val];
+                            result.cssModuleVariables[(token as IdentToken).val] = importedCssVariables[(token as IdentToken).val] = cssVariablesMap[from.val][(token as IdentToken).val];
                         }
                     }
                 }
 
-                parent!.chi!.splice(parent.chi.indexOf(node), 1);
+                parent!.chi!.splice(parent!.chi!.indexOf(node), 1);
                 continue;
             }
 
@@ -1231,7 +1232,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
                     result.cssModuleVariables[node.nam] = node;
                 }
-                parent!.chi.splice(parent!.chi!.indexOf(node), 1);
+                parent!.chi!.splice(parent!.chi!.indexOf(node), 1);
                 continue;
             }
 
@@ -1347,6 +1348,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                             const root: ParseResult = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
                                 stream,
                                 buffer: '',
+                                offset: 0,
                                 position: {ind: 0, lin: 1, col: 1},
                                 currentPosition: {ind: -1, lin: 1, col: 0}
                             } as ParseInfo), Object.assign({}, options, {
@@ -1355,7 +1357,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                                 src: src.absolute
                             }) as ParserOptions);
 
-                            const srcIndex = (src.relative.startsWith('/') ? '' : './') + src.relative;
+                            const srcIndex: string = (src.relative.startsWith('/') ? '' : './') + src.relative;
 
                             if (Object.keys(root.mapping as Record<string, string>).length > 0) {
                                 importMapping[srcIndex] = {} as Record<string, string>;
@@ -1447,7 +1449,56 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                     (parentRule as AstRule).chi.splice((parentRule as AstRule).chi.indexOf(node), 1);
                 }
 
-                if (node.nam == 'grid-template-areas') {
+                if (node.typ == EnumToken.DeclarationNodeType && ['grid-column', 'grid-column-start', 'grid-column-end', 'grid-row', 'grid-row-start', 'grid-row-end', 'grid-template', 'grid-template-columns', 'grid-template-rows'].includes(node.nam)) {
+
+                    for (const {value} of walkValues(node.val, node)) {
+
+                        if (value.typ != EnumToken.IdenTokenType) {
+
+                            continue;
+                        }
+
+                        let idenToken = (value as IdentToken).val;
+                        let suffix: string = '';
+
+                        if (idenToken.endsWith('-start')) {
+
+                            suffix = '-start';
+                            idenToken = idenToken.slice(0, -6);
+                        } else if (idenToken.endsWith('-end')) {
+
+                            suffix = '-end';
+                            idenToken = idenToken.slice(0, -4);
+                        }
+
+                        if (!(idenToken in mapping)) {
+
+                            let result = (moduleSettings.scoped! & ModuleScopeEnumOptions.Global) ? idenToken : moduleSettings.generateScopedName!(idenToken, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+
+                            if (result instanceof Promise) {
+
+                                result = await result;
+                            }
+
+                            mapping[idenToken] = result;
+                            revMapping[result] = idenToken;
+
+                            if (suffix !== '') {
+
+                                idenToken += suffix;
+
+                                if (!(idenToken in mapping)) {
+
+                                    mapping[idenToken] = result + suffix;
+                                    revMapping[result + suffix] = idenToken;
+                                }
+                            }
+                        }
+
+                        (value as IdentToken).val = mapping[idenToken];
+                    }
+
+                } else if (node.nam == 'grid-template-areas' || node.nam == 'grid-template') {
 
                     for (let i = 0; i < node.val.length; i++) {
 
@@ -1701,12 +1752,12 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
                     for (const {value, parent} of walkValues(node.tokens, node)) {
 
-                        if ([EnumToken.MediaFeatureTokenType, EnumToken.MediaQueryConditionTokenType].includes(parent.typ) && value != (parent as MediaQueryConditionToken | MediaFeatureToken).l) {
+                        if (EnumToken.MediaQueryConditionTokenType == parent.typ && value != (parent as MediaQueryConditionToken).l) {
 
                             if ((value.typ == EnumToken.IdenTokenType || isIdentColor(value)) && (value as IdentToken).val in importedCssVariables) {
 
                                 isReplaced = true;
-                                (parent as MediaQueryConditionToken | MediaFeatureToken).r.splice((parent as MediaQueryConditionToken | MediaFeatureToken).r.indexOf(value), 1, ...importedCssVariables[(value as IdentToken).val].val);
+                                (parent as MediaQueryConditionToken).r.splice((parent as MediaQueryConditionToken).r.indexOf(value), 1, ...importedCssVariables[(value as IdentToken).val].val);
                             }
                         }
                     }
@@ -1719,7 +1770,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
             }
         }
 
-        if (moduleSettings.naming != ModuleCaseTransformEnum.Ignore) {
+        if (moduleSettings.naming != ModuleCaseTransformEnum.IgnoreCase) {
 
             revMapping = {};
             mapping = Object.entries(mapping).reduce((acc: Record<string, string>, [key, value]: [string, string]) => {
@@ -2102,7 +2153,6 @@ function parseNode(results: TokenizeResult[], context: AstRuleList, options: Par
                                 offset++;
                             }
 
-
                             if (tokens[j].typ == EnumToken.StringTokenType) {
 
                                 Object.assign(node, {
@@ -2132,7 +2182,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList, options: Par
                             Object.assign(node, {
                                 typ: EnumToken.CssVariableTokenType,
                                 nam: (tokens[i] as IdentToken).val,
-                                val: tokens.slice(offset)
+                                val: tokens.slice(k) as Token[]
                             });
                             context.chi!.push(node);
                             return null;
@@ -2167,6 +2217,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList, options: Par
 
                                         errors.push({
 
+                                            action: 'drop',
                                             node: node,
                                             location: map.get(vars[l]) ?? location,
                                             message: `expecting '${EnumToken[expect]}' but found ${renderToken(vars[l])}`
@@ -2196,6 +2247,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList, options: Par
 
                                                 errors.push({
 
+                                                    action: 'drop',
                                                     node: node,
                                                     location: map.get(from[l]) ?? location,
                                                     message: `unexpected '${renderToken(from[l])}'`
@@ -2209,6 +2261,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList, options: Par
 
                                         errors.push({
 
+                                            action: 'drop',
                                             node: node,
                                             location: map.get(from[l]) ?? location,
                                             message: `expecting <string> but found ${renderToken(from[l])}`
@@ -2217,8 +2270,9 @@ function parseNode(results: TokenizeResult[], context: AstRuleList, options: Par
                                         return null;
                                     }
 
-
+                                    // @ts-ignore
                                     delete node.nam;
+                                    // @ts-ignore
                                     delete node.val;
 
                                     Object.assign(node, {
@@ -2997,6 +3051,7 @@ export async function parseDeclarations(declaration: string): Promise<Array<AstD
     return doParse(tokenize({
         stream: `.x{${declaration}}`,
         buffer: '',
+        offset: 0,
         position: {ind: 0, lin: 1, col: 1},
         currentPosition: {ind: -1, lin: 1, col: 0}
     } as ParseInfo), {setParent: false, minify: false, validation: false}).then(result => {
@@ -3151,6 +3206,7 @@ export function parseString(src: string, options: { location: boolean } = {locat
     const parseInfo: ParseInfo = {
         stream: src,
         buffer: '',
+        offset: 0,
         position: {ind: 0, lin: 1, col: 1},
         currentPosition: {ind: -1, lin: 1, col: 0}
     }

@@ -224,7 +224,7 @@ for (const {node} of walk(result.ast, filter)) {
 
 ```
 
-### Walking ast node attributes
+### Ast node attributes traversal
 
 the function [walkValues()](../docs/functions/node.walkValues.html) is used to walk the node attribute's tokens.
 
@@ -267,4 +267,4 @@ for (const {value} of walkValues(declaration.val, null, null,true)) {
 ```
 
 ------
-[Previous](./transform.md) | [Next](./validation.md) 
+[← Custom transform](./transform.md) | [Validation →](./validation.md) 

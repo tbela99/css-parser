@@ -1,4 +1,4 @@
-import {ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions} from "../../../dist/node.js";
+import {ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions} from "../../../dist/lib/ast/types.js";
 
 export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
 
@@ -20,15 +20,15 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
             }).then((result) => {
 
                 expect(result.mapping).deep.equals({
-                    goal: "r7bhp_goal",
-                    "bg-indigo": "gy28g_bg-indigo",
-                    "indigo-white": "wims0_indigo-white gy28g_bg-indigo qw06e_title",
-                    title: "qw06e_title",
+                    goal: "goal_r7bhp",
+                    "bg-indigo": "bg-indigo_gy28g",
+                    "indigo-white": "indigo-white_wims0 bg-indigo_gy28g title_qw06e",
+                    title: "title_qw06e",
                 });
-                expect(result.code).equals(`.r7bhp_goal .gy28g_bg-indigo {
+                expect(result.code).equals(`.goal_r7bhp .bg-indigo_gy28g {
  background: indigo
 }
-.wims0_indigo-white {
+.indigo-white_wims0 {
  color: #fff
 }`)
             })
@@ -50,16 +50,16 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
             }).then((result) => {
 
                 expect(result.mapping).deep.equals({
-                        "--accent-color": "--yosy6_accent-color",
-                        button: "oims0_button",
+                        "--accent-color": "--accent-color_yosy6",
+                        button: "button_oims0",
                     }
                 );
 
                 expect(result.code).equals(`:root {
- --yosy6_accent-color: hotpink
+ --accent-color_yosy6: hotpink
 }
-.oims0_button {
- background: var(--yosy6_accent-color)
+.button_oims0 {
+ background: var(--accent-color_yosy6)
 }`)
             })
         });
@@ -82,16 +82,16 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
             }).then((result) => {
 
                 expect(result.mapping).deep.equals({
-                        goal: "r7bhp_goal",
-                        "bg-indigo": "gy28g_bg-indigo",
-                        "indigo-white": "wims0_indigo-white gy28g_bg-indigo ruler block title",
+                        goal: "goal_r7bhp",
+                        "bg-indigo": "bg-indigo_gy28g",
+                        "indigo-white": "indigo-white_wims0 bg-indigo_gy28g ruler block title",
                     }
                 );
 
-                expect(result.code).equals(`.r7bhp_goal .gy28g_bg-indigo {
+                expect(result.code).equals(`.goal_r7bhp .bg-indigo_gy28g {
  background: indigo
 }
-.wims0_indigo-white {
+.indigo-white_wims0 {
  color: #fff
 }`)
             })
@@ -113,16 +113,16 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
             }).then((result) => {
 
                 expect(result.mapping).deep.equals({
-                        goal: "r7bhp_goal",
-                        "bg-indigo": "gy28g_bg-indigo",
-                        "indigo-white": "wims0_indigo-white gy28g_bg-indigo mixins_seiow_title mixins_s04ai_cell mixins_egkqy_button",
+                        goal: "goal_r7bhp",
+                        "bg-indigo": "bg-indigo_gy28g",
+                        "indigo-white": "indigo-white_wims0 bg-indigo_gy28g title_seiow_mixins cell_s04ai_mixins button_egkqy_mixins",
                     }
                 );
 
-                expect(result.code).equals(`.r7bhp_goal .gy28g_bg-indigo {
+                expect(result.code).equals(`.goal_r7bhp .bg-indigo_gy28g {
  background: indigo
 }
-.wims0_indigo-white {
+.indigo-white_wims0 {
  color: #fff
 }`)
             })
@@ -162,28 +162,28 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
             }).then((result) => {
 
                 expect(result.mapping).deep.equals({
-                        "--progress": "--rlpv3_progress",
-                        bar: "dnrx5_bar",
-                        progressAnimation: "nrv19_progressAnimation",
+                        "--progress": "--progress_rlpv3",
+                        bar: "bar_dnrx5",
+                        progressAnimation: "progressAnimation_nrv19",
                     }
                 );
 
-                expect(result.code).equals(`@property --rlpv3_progress {
+                expect(result.code).equals(`@property --progress_rlpv3 {
  syntax: "<percentage>";
  inherits: false;
  initial-value: 25%
 }
-.dnrx5_bar {
+.bar_dnrx5 {
  display: inline-block;
- --rlpv3_progress: 25%;
+ --progress_rlpv3: 25%;
  width: 100%;
  height: 5px;
- background: linear-gradient(to right,#00d230 var(--rlpv3_progress),#000 var(--rlpv3_progress));
- animation: nrv19_progressAnimation 2.5s infinite
+ background: linear-gradient(to right,#00d230 var(--progress_rlpv3),#000 var(--progress_rlpv3));
+ animation: progressAnimation_nrv19 2.5s infinite
 }
-@keyframes nrv19_progressAnimation {
+@keyframes progressAnimation_nrv19 {
  to {
-  --rlpv3_progress: 100%
+  --progress_rlpv3: 100%
  }
 }`)
             })
@@ -237,9 +237,9 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
             }).then((result) => {
 
                 expect(result.mapping).deep.equals({
-                        sun: "ckou2_sun",
-                        rise: "jtx3b_rise",
-                        bounce: "gw06e_bounce",
+                        sun: "sun_ckou2",
+                        rise: "rise_jtx3b",
+                        bounce: "bounce_gw06e",
                     }
                 );
 
@@ -249,14 +249,14 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
  display: flex;
  justify-content: center
 }
-.ckou2_sun {
+.sun_ckou2 {
  background-color: #ff0;
  border-radius: 50%;
  height: 100vh;
  aspect-ratio: 1 / 1;
- animation: 4s linear infinite alternate jtx3b_rise,4s linear 0s infinite alternate gw06e_bounce
+ animation: 4s linear infinite alternate rise_jtx3b,4s linear 0s infinite alternate bounce_gw06e
 }
-@keyframes jtx3b_rise {
+@keyframes rise_jtx3b {
  0% {
   transform: translateY(110vh)
  }
@@ -264,7 +264,7 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
   transform: none
  }
 }
-@keyframes gw06e_bounce {
+@keyframes bounce_gw06e {
  0% {
   transform: translateX(-50vw)
  }
@@ -296,18 +296,18 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
             }).then((result) => {
 
                 expect(result.mapping).deep.equals({
-                        className: "vjnt1_className",
-                        subClass: "sgkqy_subClass",
+                        className: "className_vjnt1",
+                        subClass: "subClass_sgkqy",
                     }
                 );
 
-                expect(result.code).equals(`.vjnt1_className {
+                expect(result.code).equals(`.className_vjnt1 {
  background: red
 }
-.vjnt1_className,.vjnt1_className .sgkqy_subClass {
+.className_vjnt1,.className_vjnt1 .subClass_sgkqy {
  color: green
 }
-.vjnt1_className .sgkqy_subClass .global-class-name {
+.className_vjnt1 .subClass_sgkqy .global-class-name {
  color: blue
 }`)
             })
@@ -330,22 +330,22 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
             }).then((result) => {
 
                 expect(result.mapping).deep.equals({
-                        className: "vjnt1_className",
-                        subClass: "sgkqy_subClass vjnt1_className",
+                        className: "className_vjnt1",
+                        subClass: "subClass_sgkqy className_vjnt1",
                     }
                 );
 
-                expect(result.code).equals(`.vjnt1_className {
+                expect(result.code).equals(`.className_vjnt1 {
  background: red;
  color: #ff0
 }
-.sgkqy_subClass {
+.subClass_sgkqy {
  background: blue
 }`)
             })
         });
 
-        it('module dash only #9', function () {
+        it('module dash case only #9', function () {
             return transform(`
 :local(.className) {
   background: red;
@@ -362,22 +362,22 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
             }).then((result) => {
 
                 expect(result.mapping).deep.equals({
-                        "class-name": "vjnt1_class-name",
-                        "sub-class": "sgkqy_sub-class vjnt1_class-name",
+                        "class-name": "class-name_vjnt1",
+                        "sub-class": "sub-class_sgkqy class-name_vjnt1",
                     }
                 );
 
-                expect(result.code).equals(`.vjnt1_class-name {
+                expect(result.code).equals(`.class-name_vjnt1 {
  background: red;
  color: #ff0
 }
-.sgkqy_sub-class {
+.sub-class_sgkqy {
  background: blue
 }`)
             })
         });
 
-        it('module dash #10', function () {
+        it('module dash case #10', function () {
             return transform(`
 :local(.className) {
   background: red;
@@ -394,16 +394,16 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
             }).then((result) => {
 
                 expect(result.mapping).deep.equals({
-                        "class-name": "vjnt1_className",
-                        "sub-class": "sgkqy_subClass vjnt1_className",
+                        "class-name": "className_vjnt1",
+                        "sub-class": "subClass_sgkqy className_vjnt1",
                     }
                 );
 
-                expect(result.code).equals(`.vjnt1_className {
+                expect(result.code).equals(`.className_vjnt1 {
  background: red;
  color: #ff0
 }
-.sgkqy_subClass {
+.subClass_sgkqy {
  background: blue
 }`)
             })
@@ -426,16 +426,16 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
             }).then((result) => {
 
                 expect(result.mapping).deep.equals({
-                        className: "agkqy_className",
-                        subClass: "nfjpx_subClass agkqy_className",
+                        className: "className_agkqy",
+                        subClass: "subClass_nfjpx className_agkqy",
                     }
                 );
 
-                expect(result.code).equals(`.agkqy_className {
+                expect(result.code).equals(`.className_agkqy {
  background: red;
  color: #ff0
 }
-.nfjpx_subClass {
+.subClass_nfjpx {
  background: blue
 }`)
             })
@@ -458,16 +458,16 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
             }).then((result) => {
 
                 expect(result.mapping).deep.equals({
-                        className: "agkqy_class-name",
-                        subClass: "nfjpx_sub-class agkqy_class-name",
+                        className: "class-name_agkqy",
+                        subClass: "sub-class_nfjpx class-name_agkqy",
                     }
                 );
 
-                expect(result.code).equals(`.agkqy_class-name {
+                expect(result.code).equals(`.class-name_agkqy {
  background: red;
  color: #ff0
 }
-.nfjpx_sub-class {
+.sub-class_nfjpx {
  background: blue
 }`)
             })
@@ -485,21 +485,21 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
   background: blue;
 }
 `, {
-                module: ModuleCaseTransformEnum.Ignore,
+                module: ModuleCaseTransformEnum.IgnoreCase,
                 beautify: true
             }).then((result) => {
 
                 expect(result.mapping).deep.equals({
-                        className: "vjnt1_className",
-                        subClass: "sgkqy_subClass vjnt1_className",
+                        className: "className_vjnt1",
+                        subClass: "subClass_sgkqy className_vjnt1",
                     }
                 );
 
-                expect(result.code).equals(`.vjnt1_className {
+                expect(result.code).equals(`.className_vjnt1 {
  background: red;
  color: #ff0
 }
-.sgkqy_subClass {
+.subClass_sgkqy {
  background: blue
 }`)
             })
@@ -517,21 +517,21 @@ composes: button cell title from "${import.meta.dirname}/../../css-modules/mixin
   background: blue;
 }
 `, {
-                module: ModuleCaseTransformEnum.Ignore,
+                module: ModuleCaseTransformEnum.IgnoreCase,
                 beautify: true
             }).then((result) => {
 
                 expect(result.mapping).deep.equals({
-                        "class-name": "agkqy_class-name",
-                        "sub-class": "nfjpx_sub-class agkqy_class-name",
+                        "class-name": "class-name_agkqy",
+                        "sub-class": "sub-class_nfjpx class-name_agkqy",
                     }
                 );
 
-                expect(result.code).equals(`.agkqy_class-name {
+                expect(result.code).equals(`.class-name_agkqy {
  background: red;
  color: #ff0
 }
-.nfjpx_sub-class {
+.sub-class_nfjpx {
  background: blue
 }`)
             })
@@ -617,19 +617,19 @@ a span {
                 }).then(result => {
                   
                     expect(result.code).equals(`:import("./test/css-modules/mixins.css") {
- qw06e_title: title;
- oims0_button: button;
+ title_qw06e: title;
+ button_oims0: button;
  kmqw4_cell: cell;
 }
 :export {
- goal: r7bhp_goal;
- bg-indigo: gy28g_bg-indigo;
- indigo-white: wims0_indigo-white gy28g_bg-indigo ruler block title qw06e_title kmqw4_cell oims0_button;
+ goal: goal_r7bhp;
+ bg-indigo: bg-indigo_gy28g;
+ indigo-white: indigo-white_wims0 bg-indigo_gy28g ruler block title title_qw06e kmqw4_cell button_oims0;
 }
-.r7bhp_goal .gy28g_bg-indigo {
+.goal_r7bhp .bg-indigo_gy28g {
  background: indigo
 }
-.wims0_indigo-white {
+.indigo-white_wims0 {
  color: #fff
 }`);
                 });
@@ -667,7 +667,7 @@ a span {
                             {
                                 "typ": EnumToken.ColorTokenType,
                                 "val": "red",
-                                "kin": ColorKind.LIT
+                                "kin": ColorType.LIT
                             }
                         ]
                     },
@@ -715,17 +715,48 @@ a span {
             }).then(result => {
 
                 expect(result.code).equals(`:export {
- button: oims0_button;
+ button: button_oims0;
  green: znrx5_green;
 }
-.oims0_button {
+.button_oims0 {
  color: light-dark(#0c77f8,#ff0020);
  display: inline-block
 }
 @supports (border-color:#aaf201) or (color:#00800080) {
- .znrx5_green .oims0_button {
+ .znrx5_green .button_oims0 {
   color: #aaf201
  }
+}`);
+            });
+
+        });
+
+        it('module grid #19', function () {
+
+            transform(`
+.grid {
+  grid-template-areas: 'nav main';
+  grid-template-columns: [line-name1] 100px [line-name2 line-name3];
+}
+
+.nav {
+  grid-column-start: nav-start;
+  grid-column-end: nav-end;
+}
+`, {
+                module: {
+                    pattern: '[local]-[hash:sha256]'
+                },
+                beautify: true
+            }).then(result => {
+
+                expect(result.code).equals(`.grid-8aab4 {
+ grid-template-areas: 'nav-7fb75 main-2d42c';
+ grid-template-columns: [line-name1-bd45b] 100px [line-name2-d3d89 line-name3-3258b]
+}
+.nav-7fb75 {
+ grid-column-start: nav-7fb75;
+ grid-column-end: nav-7fb75
 }`);
             });
 
