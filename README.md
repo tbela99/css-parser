@@ -221,6 +221,10 @@ Include ParseOptions and RenderOptions
   in the :root {} or html {} rule.
 - removeEmpty: boolean, optional. remove empty rule lists from the ast.
 
+> CSS modules Options
+
+- module: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions, optional. css modules options.
+
 > CSS Prefix Removal Options
 
 - removePrefix: boolean, optional. remove CSS prefixes.
