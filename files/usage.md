@@ -1,7 +1,6 @@
 ---
 title: Usage
 group: Documents
-slug: /usage
 category: Guides
 ---
 
@@ -269,5 +268,8 @@ console.log(result.code);
 //     background-color: rgb(0 226 226)
 // }
 ```
+.
 
+------
+[← Getting started](../../docs/documents/Guide.Getting_started.html) | [Minification →]( ../../docs/documents/Guide.Minification.html )
 

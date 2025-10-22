@@ -18,14 +18,11 @@ export function validateRelativeSelectorList(tokens: Token[], root?: AstAtRule |
         }
     }
 
+    // @ts-ignore
     return {
         valid: SyntaxValidationResult.Valid,
-        matches: [],
-        // @ts-ignore
         node: root,
-        // @ts-ignore
         syntax: null,
-        error: '',
-        tokens
+        error: ''
     }
 }

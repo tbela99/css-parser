@@ -775,6 +775,40 @@ export declare interface ListToken extends BaseToken {
 }
 
 /**
+ * Composes selector token
+ */
+export declare interface ComposesSelectorToken extends BaseToken {
+
+    typ: EnumToken.ComposesSelectorTokenType;
+    l: Token[];
+    r: Token | null;
+}
+
+/**
+ * Css variable token
+ */
+export declare interface CssVariableToken extends BaseToken {
+
+    typ: EnumToken.CssVariableTokenType;
+    nam: string;
+    val: Token[];
+}
+
+export declare interface CssVariableImportTokenType extends BaseToken {
+
+    typ: EnumToken.CssVariableImportTokenType;
+    nam: string;
+    val: Token[];
+}
+
+export declare interface CssVariableMapTokenType extends BaseToken {
+
+    typ: EnumToken.CssVariableMapTokenType;
+    vars: Token[];
+    from: Token[];
+}
+
+/**
  * Unary expression node
  */
 export declare type UnaryExpressionNode =
@@ -865,6 +899,8 @@ export declare type Token =
     | ContainMatchToken
     | MatchExpressionToken
     | NameSpaceAttributeToken
+    | ComposesSelectorToken
+    | CssVariableToken
     |
     DashMatchToken
     | EqualMatchToken

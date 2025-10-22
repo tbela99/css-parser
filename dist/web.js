@@ -1,4 +1,5 @@
-export { ColorType, EnumToken, ValidationLevel } from './lib/ast/types.js';
+import { ModuleScopeEnumOptions } from './lib/ast/types.js';
+export { ColorType, EnumToken, ModuleCaseTransformEnum, ValidationLevel } from './lib/ast/types.js';
 export { minify } from './lib/ast/minify.js';
 export { WalkerEvent, WalkerOptionEnum, walk, walkValues } from './lib/ast/walk.js';
 export { expand } from './lib/ast/expand.js';
@@ -50,6 +51,7 @@ async function load(url, currentFile = '.', asStream = false) {
  * render the ast tree
  * @param data
  * @param options
+ * @param mapping
  *
  * Example:
  *
@@ -74,12 +76,12 @@ async function load(url, currentFile = '.', asStream = false) {
  * // }
  * ```
  */
-function render(data, options = {}) {
+function render(data, options = {}, mapping) {
     return doRender(data, Object.assign(options, {
         resolve,
         dirname,
         cwd: options.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
-    }));
+    }), mapping);
 }
 /**
  * parse css file
@@ -139,6 +141,7 @@ async function parse(stream, options = {}) {
     return doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
         stream,
         buffer: '',
+        offset: 0,
         position: { ind: 0, lin: 1, col: 1 },
         currentPosition: { ind: -1, lin: 1, col: 0 }
     }), Object.assign(options, {
@@ -146,7 +149,10 @@ async function parse(stream, options = {}) {
         resolve,
         dirname,
         cwd: options.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
-    }));
+    })).then(result => {
+        const { revMapping, ...res } = result;
+        return res;
+    });
 }
 /**
  * transform css file
@@ -198,8 +204,18 @@ async function transform(css, options = {}) {
     options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
     const startTime = performance.now();
     return parse(css, options).then((parseResult) => {
+        let mapping = null;
+        let importMapping = null;
+        if (typeof options.module == 'number' && options.module & ModuleScopeEnumOptions.ICSS) {
+            mapping = parseResult.mapping;
+            importMapping = parseResult.importMapping;
+        }
+        else if (typeof options.module == 'object' && typeof options.module.scoped == 'number' && options.module.scoped & ModuleScopeEnumOptions.ICSS) {
+            mapping = parseResult.mapping;
+            importMapping = parseResult.importMapping;
+        }
         // ast already expanded by parse
-        const rendered = render(parseResult.ast, { ...options, expandNestingRules: false });
+        const rendered = render(parseResult.ast, { ...options, expandNestingRules: false }, mapping != null ? { mapping, importMapping } : null);
         return {
             ...parseResult,
             ...rendered,
@@ -214,4 +230,4 @@ async function transform(css, options = {}) {
     });
 }
 
-export { dirname, load, parse, parseFile, render, resolve, transform, transformFile };
+export { ModuleScopeEnumOptions, dirname, load, parse, parseFile, render, resolve, transform, transformFile };

@@ -16,7 +16,7 @@ import {
     parseDimension,
     pseudoElements
 } from "../syntax/index.ts";
-import {parseDeclarationNode} from './utils/index.ts';
+import {camelize, dasherize, parseDeclarationNode} from './utils/index.ts';
 import {renderToken} from "../renderer/index.ts";
 import {COLORS_NAMES} from "../syntax/color/index.ts";
 import {
@@ -26,6 +26,8 @@ import {
     EnumToken,
     expand,
     minify,
+    ModuleCaseTransformEnum,
+    ModuleScopeEnumOptions,
     SyntaxValidationResult,
     ValidationLevel,
     walk,
@@ -55,10 +57,16 @@ import type {
     BinaryExpressionToken,
     BlockEndToken,
     BlockStartToken,
+    ClassSelectorToken,
     ColonToken,
     ColorToken,
     CommaToken,
+    ComposesSelectorToken,
     ContainMatchToken,
+    CssVariableImportTokenType,
+    CssVariableMapTokenType,
+    CssVariableToken,
+    DashedIdentToken,
     DashMatchToken,
     DelimToken,
     DimensionToken,
@@ -81,6 +89,7 @@ import type {
     Location,
     MatchExpressionToken,
     MediaQueryConditionToken,
+    ModuleOptions,
     NameSpaceAttributeToken,
     NumberToken,
     ParensEndToken,
@@ -121,6 +130,7 @@ import {validateKeyframeSelector} from "../validation/syntaxes/index.ts";
 import {evaluateSyntax, isNodeAllowedInContext} from "../validation/syntax.ts";
 import {splitTokenList} from "../validation/utils/index.ts";
 import {buildExpression} from "../ast/math/index.ts";
+import {hash, hashAlgorithms} from "../parser/utils/hash.ts";
 
 declare type T = AstDeclaration | AstAtRule | AstRule | AstKeyframesRule | AstKeyframesAtRule;
 
@@ -144,11 +154,6 @@ const enumTokenHints: Set<EnumToken> = new Set([
 function reject(reason?: any) {
 
     throw new Error(reason ?? 'Parsing aborted');
-}
-
-function normalizeVisitorKeyName(keyName: string): string {
-
-    return keyName.replace(/-([a-z])/g, (all: string, one: string): string => one.toUpperCase());
 }
 
 export function replaceToken(parent: BinaryExpressionToken | (AstNode & ({ chi: Token[] } | {
@@ -176,7 +181,7 @@ export function replaceToken(parent: BinaryExpressionToken | (AstNode & ({ chi: 
         }
     } else {
 
-        const target = 'val' in parent! && Array.isArray(parent.val) ? parent.val : (parent as FunctionToken | ParensToken | AstAtRule | AstKeyframesAtRule | AstKeyFrameRule | AstRule | AstKeyframesRule).chi as Token[];
+        const target = 'val' in parent! && Array.isArray((parent as AstDeclaration).val) ? (parent as AstDeclaration).val : (parent as FunctionToken | ParensToken | AstAtRule | AstKeyframesAtRule | AstKeyFrameRule | AstRule | AstKeyframesRule).chi as Token[];
 
         // @ts-ignore
         const index: number = target.indexOf(value);
@@ -188,6 +193,160 @@ export function replaceToken(parent: BinaryExpressionToken | (AstNode & ({ chi: 
 
         target.splice(index, 1, ...(Array.isArray(replacement) ? replacement : [replacement]));
     }
+}
+
+export function getKeyName(key: string, how: ModuleCaseTransformEnum) {
+
+    switch (how) {
+
+        case ModuleCaseTransformEnum.CamelCase:
+        case ModuleCaseTransformEnum.CamelCaseOnly:
+
+            return camelize(key);
+
+        case ModuleCaseTransformEnum.DashCase:
+        case ModuleCaseTransformEnum.DashCaseOnly:
+            return dasherize(key);
+    }
+
+    return key;
+}
+
+async function generateScopedName(
+    localName: string,
+    filePath: string,
+    pattern: string,
+    hashLength = 5,
+): Promise<string> {
+
+    if (localName.startsWith('--')) {
+
+        localName = localName.slice(2);
+    }
+
+    const matches = /.*?(([^/]+)\/)?([^/\\]*?)(\.([^?]+))?([?].*)?$/.exec(filePath);
+    const folder = matches?.[2]?.replace?.(/[^A-Za-z0-9_-]/g, "_") ?? '';
+    const fileBase = matches?.[3] ?? '';
+    const ext = matches?.[5] ?? '';
+    const path = filePath.replace(/[^A-Za-z0-9_-]/g, "_");
+    // sanitize localName for safe char set (replace spaces/illegal chars)
+    const safeLocal: string = localName.replace(/[^A-Za-z0-9_-]/g, "_");
+    const hashString: string = `${localName}::${filePath}`;
+
+    let result: string = '';
+    let inParens: number = 0;
+    let key: string = '';
+    let position: number = 0;
+
+    // Compose final scoped name. Ensure the entire class doesn't start with digit:
+    for (const char of pattern) {
+
+        position += char.length;
+
+        if (char == '[') {
+
+            inParens++;
+
+            if (inParens != 1) {
+
+                throw new Error(`Unexpected character: '${char} at position ${position - 1}' in pattern '${pattern}'`);
+            }
+
+            continue;
+        }
+
+        if (char == ']') {
+
+            inParens--;
+
+            if (inParens != 0) {
+
+                throw new Error(`Unexpected character: '${char}:${position - 1}'`);
+            }
+
+            let hashAlgo: string | null = null;
+            let length: number | null = null;
+
+            if (key.includes(':')) {
+
+                const parts: string[] = key.split(':');
+
+                if (parts.length == 2) {
+
+                    // @ts-ignore
+                    [key, length] = parts;
+
+                    // @ts-ignore
+                    if (key == 'hash' && hashAlgorithms.includes(length as string)) {
+
+                        // @ts-ignore
+                        hashAlgo = length;
+                        length = null;
+                    }
+                }
+
+                if (parts.length == 3) {
+
+                    // @ts-ignore
+                    [key, hashAlgo, length] = parts;
+                }
+
+                if (length != null && !Number.isInteger(+length)) {
+
+                    throw new Error(`Unsupported hash length: '${length}'. expecting format [hash:length] or [hash:hash-algo:length]`);
+                }
+            }
+
+            switch (key) {
+
+                case 'hash':
+
+                    result += await hash(hashString, length ?? hashLength, hashAlgo as string);
+                    break;
+
+                case 'name':
+
+                    result += length != null ? fileBase.slice(0, +length) : fileBase;
+                    break;
+
+                case 'local':
+
+                    result += length != null ? safeLocal.slice(0, +length) : localName;
+                    break;
+
+                case 'ext':
+
+                    result += length != null ? ext.slice(0, +length) : ext;
+                    break;
+
+                case 'path':
+                    result += length != null ? path.slice(0, +length) : path;
+                    break;
+
+                case 'folder':
+                    result += length != null ? folder.slice(0, +length) : folder;
+                    break;
+
+                default:
+
+                    throw new Error(`Unsupported key: '${key}'`);
+            }
+
+            key = '';
+            continue;
+        }
+
+        if (inParens > 0) {
+
+            key += char;
+        } else {
+
+            result += char;
+        }
+    }
+
+    // if leading char is digit, prefix underscore (very rare)
+    return (/^[0-9]/.test(result) ? '_' : '') + result;
 }
 
 /**
@@ -230,6 +389,11 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
     if (typeof options.validation == 'boolean') {
 
         options.validation = options.validation ? ValidationLevel.All : ValidationLevel.None;
+    }
+
+    if (options.module) {
+
+        options.expandNestingRules = true;
     }
 
     if (options.expandNestingRules) {
@@ -308,13 +472,13 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
     if (options.visitor != null) {
 
-         valuesHandlers= new Map as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-         preValuesHandlers = new Map as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-         postValuesHandlers = new Map as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
+        valuesHandlers = new Map as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
+        preValuesHandlers = new Map as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
+        postValuesHandlers = new Map as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
 
-         preVisitorsHandlersMap = new Map ;
-         visitorsHandlersMap = new Map ;
-         postVisitorsHandlersMap = new Map;
+        preVisitorsHandlersMap = new Map;
+        visitorsHandlersMap = new Map;
+        postVisitorsHandlersMap = new Map;
 
         const visitors = Object.entries(options.visitor);
         let key: string;
@@ -467,7 +631,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
         if (item.token == ';' || item.token == '{') {
 
-            node = parseNode(tokens, context, options, errors, src, map, rawTokens, stats);
+            node = parseNode(tokens, context, options as ParserOptions, errors, src, map, rawTokens, stats);
             rawTokens.length = 0;
 
             if (node != null) {
@@ -528,7 +692,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
             map = new Map;
         } else if (item.token == '}') {
 
-            parseNode(tokens, context, options, errors, src, map, rawTokens, stats);
+            parseNode(tokens, context, options as ParserOptions, errors, src, map, rawTokens, stats);
             rawTokens.length = 0;
 
             if (context.loc != null) {
@@ -561,7 +725,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
     if (tokens.length > 0) {
 
-        node = parseNode(tokens, context, options, errors, src, map, rawTokens, stats);
+        node = parseNode(tokens, context, options as ParserOptions, errors, src, map, rawTokens, stats);
         rawTokens.length = 0;
 
         if (node != null) {
@@ -602,13 +766,14 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                 const root: ParseResult = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
                     stream,
                     buffer: '',
+                    offset: 0,
                     position: {ind: 0, lin: 1, col: 1},
                     currentPosition: {ind: -1, lin: 1, col: 0}
                 } as ParseInfo), Object.assign({}, options, {
                     minify: false,
                     setParent: false,
                     src: options.resolve!(url, options.src as string).absolute
-                }));
+                }) as ParserOptions);
 
                 stats.importedBytesIn += root.stats.bytesIn;
                 stats.imports.push(root.stats);
@@ -689,7 +854,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
                     for (const handler of handlers) {
 
-                        callable = typeof handler == 'function' ? handler : handler[normalizeVisitorKeyName(node.typ == EnumToken.DeclarationNodeType || node.typ == EnumToken.AtRuleNodeType ? node.nam : (node as AstKeyframesAtRule).val)] as GenericVisitorHandler<T>;
+                        callable = typeof handler == 'function' ? handler : handler[camelize(node.typ == EnumToken.DeclarationNodeType || node.typ == EnumToken.AtRuleNodeType ? node.nam : (node as AstKeyframesAtRule).val)] as GenericVisitorHandler<T>;
 
                         if (callable == null) {
 
@@ -903,16 +1068,10 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
         }
     }
 
-    const endTime: number = performance.now();
-
-    if (options.signal != null) {
-
-        options.signal.removeEventListener('abort', reject);
-    }
-
     stats.bytesIn += stats.importedBytesIn;
 
-    return <ParseResult>{
+    let endTime: number = performance.now();
+    const result = {
         ast,
         errors,
         stats: {
@@ -921,7 +1080,724 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
             minify: `${(endTime - endParseTime).toFixed(2)}ms`,
             total: `${(endTime - startTime).toFixed(2)}ms`
         }
+    } as ParseResult;
+
+    if (options.signal != null) {
+
+        options.signal.removeEventListener('abort', reject);
     }
+
+    if (options.module) {
+
+        const moduleSettings = {
+            hashLength: 5,
+            filePath: '',
+            scoped: ModuleScopeEnumOptions.Local,
+            naming: ModuleCaseTransformEnum.IgnoreCase,
+            pattern: '',
+            generateScopedName,
+            ...(typeof options.module != 'object' ? {} : options.module)
+        } as ModuleOptions;
+
+        const parseModuleTime: number = performance.now();
+        const namesMapping: Record<string, string> = {};
+        const global = new Set<Token>;
+        const processed = new Set<Token>;
+        const pattern: string | null = typeof options.module == 'boolean' ? null : moduleSettings.pattern as string;
+        const importMapping: Record<string, Record<string, string>> = {} as Record<string, Record<string, string>>;
+        const cssVariablesMap: Record<string, Record<string, CssVariableToken>> = {};
+        const importedCssVariables: Record<string, CssVariableToken> = {};
+        let mapping: Record<string, string> = {};
+        let revMapping = {} as Record<string, string>;
+        let filePath: string = typeof options.module == 'boolean' ? options.src as string : (moduleSettings.filePath ?? options.src) as string;
+
+        if (filePath!.startsWith(options.cwd + '/')) {
+
+            filePath = filePath!.slice(options!.cwd!.length + 1);
+        }
+
+        if (typeof options.module == 'number') {
+
+            if (options.module & ModuleCaseTransformEnum.CamelCase) {
+
+                moduleSettings.naming = ModuleCaseTransformEnum.CamelCase;
+            } else if (options.module & ModuleCaseTransformEnum.CamelCaseOnly) {
+
+                moduleSettings.naming = ModuleCaseTransformEnum.CamelCaseOnly;
+            } else if (options.module & ModuleCaseTransformEnum.DashCase) {
+
+                moduleSettings.naming = ModuleCaseTransformEnum.DashCase;
+            } else if (options.module & ModuleCaseTransformEnum.DashCaseOnly) {
+
+                moduleSettings.naming = ModuleCaseTransformEnum.DashCaseOnly;
+            }
+
+            if (options.module & ModuleScopeEnumOptions.Global) {
+
+                moduleSettings.scoped = ModuleScopeEnumOptions.Global;
+            }
+
+            if (options.module & ModuleScopeEnumOptions.Pure) {
+
+                // @ts-ignore
+                moduleSettings.scoped |= ModuleScopeEnumOptions.Pure;
+            }
+
+            if (options.module & ModuleScopeEnumOptions.ICSS) {
+
+                // @ts-ignore
+                moduleSettings.scoped |= ModuleScopeEnumOptions.ICSS;
+            }
+        }
+
+        if (typeof moduleSettings.scoped == 'boolean') {
+
+            moduleSettings.scoped = moduleSettings.scoped ? ModuleScopeEnumOptions.Local : ModuleScopeEnumOptions.Global;
+        }
+
+        moduleSettings.filePath = filePath;
+        moduleSettings.pattern = pattern != null && pattern !== '' ? pattern : (filePath === '' ? `[local]_[hash]` : `[local]_[hash]_[name]`);
+
+        for (const {node, parent} of walk(ast)) {
+
+            if (node.typ == EnumToken.CssVariableImportTokenType) {
+
+                const url: string = ((node as CssVariableImportTokenType).val.find(t => t.typ == EnumToken.StringTokenType) as StringToken).val.slice(1, -1);
+                const src = options.resolve!(url, options.dirname!(options.src as string), options.cwd);
+                const result = options.load!(url, <string>options.src) as LoadResult;
+                const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == 'AsyncFunction' ? await result : result;
+                const root: ParseResult = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
+                    stream,
+                    buffer: '',
+                    offset: 0,
+                    position: {ind: 0, lin: 1, col: 1},
+                    currentPosition: {ind: -1, lin: 1, col: 0}
+                } as ParseInfo), Object.assign({}, options, {
+                    minify: false,
+                    setParent: false,
+                    src: src.absolute
+                }) as ParserOptions);
+
+                cssVariablesMap[(node as CssVariableImportTokenType).nam] = root.cssModuleVariables!;
+                parent!.chi!.splice(parent!.chi!.indexOf(node), 1);
+                continue;
+            }
+
+            if (node.typ == EnumToken.CssVariableDeclarationMapTokenType) {
+
+                const from = (node as CssVariableMapTokenType).from.find(t => t.typ == EnumToken.IdenTokenType || isIdentColor(t)) as IdentToken;
+
+                if (!(from.val in cssVariablesMap)) {
+
+                    errors.push({
+                        node,
+                        message: `could not resolve @value import from '${from.val}'`,
+                        action: 'drop'
+                    });
+                } else {
+
+                    for (const token of (node as CssVariableMapTokenType).vars) {
+
+                        if (token.typ == EnumToken.IdenTokenType || isIdentColor(token)) {
+
+                            if (!((token as IdentToken).val in cssVariablesMap[from.val])) {
+
+                                errors.push({
+                                    node,
+                                    message: `value '${(token as IdentToken).val}' is not exported from '${from.val}'`,
+                                    action: 'drop'
+                                });
+
+                                continue;
+                            }
+
+                            result.cssModuleVariables ??= {};
+                            result.cssModuleVariables[(token as IdentToken).val] = importedCssVariables[(token as IdentToken).val] = cssVariablesMap[from.val][(token as IdentToken).val];
+                        }
+                    }
+                }
+
+                parent!.chi!.splice(parent!.chi!.indexOf(node), 1);
+                continue;
+            }
+
+            if (node.typ == EnumToken.CssVariableTokenType) {
+
+                if (parent?.typ == EnumToken.StyleSheetNodeType) {
+
+                    if (result.cssModuleVariables == null) {
+
+                        result.cssModuleVariables = {} as Record<string, CssVariableToken>;
+                    }
+
+                    result.cssModuleVariables[node.nam] = node;
+                }
+                parent!.chi!.splice(parent!.chi!.indexOf(node), 1);
+                continue;
+            }
+
+            if (node.typ == EnumToken.DeclarationNodeType) {
+
+                if (node.nam.startsWith('--')) {
+
+                    if (!(node.nam in namesMapping)) {
+
+                        let result = (moduleSettings.scoped! & ModuleScopeEnumOptions.Global) ? node.nam : moduleSettings.generateScopedName!(node.nam, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+                        let value: string = result instanceof Promise ? await result : result;
+
+                        mapping[node.nam] = '--' + (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(value, moduleSettings.naming as ModuleCaseTransformEnum) : value);
+                        revMapping[node.nam] = node.nam;
+                    }
+
+                    node.nam = mapping[node.nam];
+                }
+
+                if ('composes' == node.nam.toLowerCase()) {
+
+                    const tokens = [] as ComposesSelectorToken[];
+                    let isValid: boolean = true;
+
+                    for (const token of node.val) {
+
+                        if (token.typ == EnumToken.ComposesSelectorNodeType) {
+
+                            if (!((token as ComposesSelectorToken).r == null || (token as ComposesSelectorToken).r!.typ == EnumToken.StringTokenType || (token as ComposesSelectorToken).r!.typ == EnumToken.IdenTokenType)) {
+
+                                errors.push({
+                                    action: 'drop',
+                                    message: `composes '${EnumToken[(token.r! as IdentToken).typ]}' is not supported`,
+                                    node
+                                });
+
+                                isValid = false;
+                                break;
+                            }
+                            tokens.push(token as ComposesSelectorToken)
+                        }
+                    }
+
+                    // find parent rule
+                    let parentRule = node.parent as AstRule;
+
+                    while (parentRule != null && parentRule.typ != EnumToken.RuleNodeType) {
+
+                        parentRule = parentRule.parent as AstRule;
+                    }
+
+                    if (!isValid || tokens.length == 0) {
+
+                        if (tokens.length == 0) {
+
+                            errors.push({
+                                action: 'drop',
+                                message: `composes is empty`,
+                                node
+                            });
+                        }
+
+                        (parentRule as AstRule).chi.splice((parentRule as AstRule).chi.indexOf(node), 1);
+                        continue;
+                    }
+
+                    for (const token of tokens) {
+
+                        // composes: a b c;
+                        if (token.r == null) {
+
+                            for (const rule of token.l) {
+
+                                if (rule.typ == EnumToken.WhitespaceTokenType || rule.typ == EnumToken.CommentTokenType) {
+
+                                    continue;
+                                }
+
+                                if (!((rule as IdentToken).val in mapping)) {
+
+                                    let result = (moduleSettings.scoped! & ModuleScopeEnumOptions.Global) ? (rule as IdentToken).val : moduleSettings.generateScopedName!((rule as IdentToken).val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+                                    let value: string = result instanceof Promise ? await result : result;
+
+                                    mapping[(rule as DashedIdentToken).val] = (rule.typ == EnumToken.DashedIdenTokenType ? '--' : '') + (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(value, moduleSettings.naming as ModuleCaseTransformEnum) : value);
+                                    revMapping[mapping[(rule as DashedIdentToken).val]] = (rule as DashedIdentToken).val;
+                                }
+
+                                if (parentRule != null) {
+
+                                    for (const tk of (parentRule as AstRule).tokens!) {
+
+                                        if (tk.typ == EnumToken.ClassSelectorTokenType) {
+
+                                            const val: string = (tk as ClassSelectorToken).val.slice(1);
+
+                                            if (val in revMapping) {
+
+                                                const key = revMapping[val] as string;
+                                                mapping[key] = [...new Set([...mapping[key].split(' '), mapping[(rule as IdentToken).val]])].join(' ');
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // composes: a b c from 'file.css';
+                        else if (token.r.typ == EnumToken.String) {
+
+                            const url: string = (token.r as StringToken).val.slice(1, -1);
+                            const src = options.resolve!(url, options.dirname!(options.src as string), options.cwd);
+                            const result = options.load!(url, <string>options.src) as LoadResult;
+                            const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == 'AsyncFunction' ? await result : result;
+                            const root: ParseResult = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
+                                stream,
+                                buffer: '',
+                                offset: 0,
+                                position: {ind: 0, lin: 1, col: 1},
+                                currentPosition: {ind: -1, lin: 1, col: 0}
+                            } as ParseInfo), Object.assign({}, options, {
+                                minify: false,
+                                setParent: false,
+                                src: src.absolute
+                            }) as ParserOptions);
+
+                            const srcIndex: string = (src.relative.startsWith('/') ? '' : './') + src.relative;
+
+                            if (Object.keys(root.mapping as Record<string, string>).length > 0) {
+                                importMapping[srcIndex] = {} as Record<string, string>;
+                            }
+
+                            if (parentRule != null) {
+
+                                for (const tk of (parentRule as AstRule).tokens!) {
+
+                                    if (tk.typ == EnumToken.ClassSelectorTokenType) {
+
+                                        const val: string = (tk as ClassSelectorToken).val.slice(1);
+
+                                        if (val in revMapping) {
+
+                                            const key = revMapping[val] as string;
+                                            const values = [] as string[];
+
+                                            for (const iden of token.l) {
+
+                                                if (iden.typ != EnumToken.IdenTokenType && iden.typ != EnumToken.DashedIdenTokenType) {
+
+                                                    continue;
+                                                }
+
+                                                if (!((iden as IdentToken | DashedIdentToken).val in root.mapping!)) {
+
+                                                    const result = (moduleSettings.scoped! & ModuleScopeEnumOptions.Global) ? (iden as IdentToken | DashedIdentToken).val : moduleSettings.generateScopedName!((iden as IdentToken | DashedIdentToken).val, url as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+
+                                                    let value: string = result instanceof Promise ? await result : result;
+
+                                                    root.mapping![(iden as IdentToken | DashedIdentToken).val] = (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(value, moduleSettings.naming as ModuleCaseTransformEnum) : value);
+                                                    root.revMapping![root.mapping![(iden as IdentToken | DashedIdentToken).val]] = (iden as IdentToken | DashedIdentToken).val;
+                                                }
+
+                                                importMapping[srcIndex][(iden as IdentToken | DashedIdentToken).val] = root.mapping![(iden as IdentToken | DashedIdentToken).val];
+                                                values.push(root.mapping![(iden as IdentToken | DashedIdentToken).val]);
+                                            }
+
+                                            mapping[key] = [...new Set([...mapping[key].split(' '), ...values])].join(' ');
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // composes: a b c from global;
+                        else if (token.r.typ == EnumToken.IdenTokenType) {
+
+                            // global
+                            if (parentRule != null) {
+
+                                if ('global' == (token.r as IdentToken).val.toLowerCase()) {
+
+                                    for (const tk of (parentRule as AstRule).tokens!) {
+
+                                        if (tk.typ == EnumToken.ClassSelectorTokenType) {
+
+                                            const val: string = (tk as ClassSelectorToken).val.slice(1);
+
+                                            if (val in revMapping) {
+
+                                                const key = revMapping[val] as string;
+                                                mapping[key] = [...new Set([...mapping[key].split(' '), ...((token as ComposesSelectorToken).l.reduce((acc, curr) => {
+
+                                                    if (curr.typ == EnumToken.IdenTokenType) {
+
+                                                        acc.push((curr as IdentToken).val);
+                                                    }
+
+                                                    return acc;
+                                                }, [] as string[]))])].join(' ');
+                                            }
+                                        }
+                                    }
+
+                                } else {
+
+                                    errors.push({
+                                        action: 'drop',
+                                        message: `composes '${(token.r as IdentToken).val}' is not supported`,
+                                        node
+                                    });
+                                }
+                            }
+                        }
+                    }
+
+                    (parentRule as AstRule).chi.splice((parentRule as AstRule).chi.indexOf(node), 1);
+                }
+
+                if (node.typ == EnumToken.DeclarationNodeType && ['grid-column', 'grid-column-start', 'grid-column-end', 'grid-row', 'grid-row-start', 'grid-row-end', 'grid-template', 'grid-template-columns', 'grid-template-rows'].includes(node.nam)) {
+
+                    for (const {value} of walkValues(node.val, node)) {
+
+                        if (value.typ != EnumToken.IdenTokenType) {
+
+                            continue;
+                        }
+
+                        let idenToken = (value as IdentToken).val;
+                        let suffix: string = '';
+
+                        if (idenToken.endsWith('-start')) {
+
+                            suffix = '-start';
+                            idenToken = idenToken.slice(0, -6);
+                        } else if (idenToken.endsWith('-end')) {
+
+                            suffix = '-end';
+                            idenToken = idenToken.slice(0, -4);
+                        }
+
+                        if (!(idenToken in mapping)) {
+
+                            let result = (moduleSettings.scoped! & ModuleScopeEnumOptions.Global) ? idenToken : moduleSettings.generateScopedName!(idenToken, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+
+                            if (result instanceof Promise) {
+
+                                result = await result;
+                            }
+
+                            mapping[idenToken] = result;
+                            revMapping[result] = idenToken;
+
+                            if (suffix !== '') {
+
+                                idenToken += suffix;
+
+                                if (!(idenToken in mapping)) {
+
+                                    mapping[idenToken] = result + suffix;
+                                    revMapping[result + suffix] = idenToken;
+                                }
+                            }
+                        }
+
+                        (value as IdentToken).val = mapping[idenToken];
+                    }
+
+                } else if (node.nam == 'grid-template-areas' || node.nam == 'grid-template') {
+
+                    for (let i = 0; i < node.val.length; i++) {
+
+                        if (node.val[i].typ == EnumToken.String) {
+
+                            const tokens = parseString((node.val[i] as StringToken).val.slice(1, -1), {location: true});
+
+                            for (const {value} of walkValues(tokens)) {
+
+                                if (value.typ == EnumToken.IdenTokenType || value.typ == EnumToken.DashedIdenTokenType) {
+
+                                    if ((value as IdentToken).val in mapping) {
+
+                                        (value as IdentToken).val = mapping[(value as IdentToken).val];
+                                    } else {
+
+                                        let result = (moduleSettings.scoped! & ModuleScopeEnumOptions.Global) ? (value as IdentToken).val : moduleSettings.generateScopedName!((value as IdentToken).val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+
+                                        if (result instanceof Promise) {
+
+                                            result = await result;
+                                        }
+
+                                        mapping[(value as IdentToken).val] = result;
+                                        revMapping[result] = (value as IdentToken).val;
+                                        (value as IdentToken).val = result;
+                                    }
+                                }
+                            }
+
+                            (node.val[i] as StringToken).val = (node.val[i] as StringToken).val.charAt(0) + tokens.reduce((acc, curr) => acc + renderToken(curr), '') + (node.val[i] as StringToken).val.charAt((node.val[i] as StringToken).val.length - 1);
+                        }
+                    }
+                } else if (node.nam == 'animation' || node.nam == 'animation-name') {
+
+                    for (const {value} of walkValues(node.val, node)) {
+
+                        if (value.typ == EnumToken.IdenTokenType && ![
+                            'none', 'infinite', 'normal', 'reverse', 'alternate',
+                            'alternate-reverse', 'forwards', 'backwards', 'both',
+                            'running', 'paused', 'linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out',
+                            'step-start', 'step-end', 'jump-start', 'jump-end',
+                            'jump-none', 'jump-both', 'start', 'end',
+                            'inherit', 'initial', 'unset'
+                        ].includes((value as IdentToken).val)) {
+
+                            if (!((value as IdentToken).val in mapping)) {
+
+                                const result = (moduleSettings.scoped! & ModuleScopeEnumOptions.Global) ? (value as IdentToken).val : moduleSettings.generateScopedName!((value as IdentToken).val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+                                mapping[(value as IdentToken).val] = result instanceof Promise ? await result : result;
+                                revMapping[mapping[(value as IdentToken).val]] = (value as IdentToken).val;
+                            }
+
+                            (value as IdentToken).val = mapping[(value as IdentToken).val];
+                        }
+                    }
+                }
+
+                for (const {value, parent} of walkValues(node.val, node)) {
+
+                    if (value.typ == EnumToken.DashedIdenTokenType) {
+
+                        if (!((value as DashedIdentToken).val in mapping)) {
+
+                            const result = (moduleSettings.scoped! & ModuleScopeEnumOptions.Global) ? (value as DashedIdentToken).val : moduleSettings.generateScopedName!((value as DashedIdentToken).val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+                            let val: string = result instanceof Promise ? await result : result;
+
+                            mapping[(value as DashedIdentToken).val] = '--' + (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(val, moduleSettings.naming as ModuleCaseTransformEnum) : val);
+                            revMapping[mapping[(value as DashedIdentToken).val]] = (value as DashedIdentToken).val;
+                        }
+
+                        (value as DashedIdentToken).val = mapping[(value as DashedIdentToken).val];
+                    } else if ((value.typ == EnumToken.IdenTokenType || isIdentColor(value)) && (value as IdentToken).val in importedCssVariables) {
+
+                        replaceToken(parent, value, importedCssVariables[(value as IdentToken).val].val)
+                    }
+                }
+
+            } else if (node.typ == EnumToken.RuleNodeType) {
+
+                if (node.tokens == null) {
+
+                    Object.defineProperty(node, 'tokens', {
+                        ...definedPropertySettings,
+                        value: parseSelector(parseString(node.sel, {location: true}))
+                    });
+                }
+
+                let hasIdOrClass: boolean = false;
+
+                for (const {value} of walkValues((node as AstRule).tokens as Token[], node,
+                    // @ts-ignore
+                    (value: Token, parent: AstRule) => {
+
+                        if (value.typ == EnumToken.PseudoClassTokenType) {
+
+                            const val: string = (value as PseudoClassToken).val.toLowerCase();
+                            switch (val) {
+
+                                case ':local':
+                                case ':global': {
+
+
+                                    let index: number = (parent as AstRule).tokens!.indexOf(value);
+
+                                    (parent as AstRule).tokens!.splice(index, 1);
+
+                                    if ((parent as AstRule).tokens![index]?.typ == EnumToken.WhitespaceTokenType || (parent as AstRule).tokens![index]?.typ == EnumToken.DescendantCombinatorTokenType) {
+
+                                        (parent as AstRule).tokens!.splice(index, 1);
+                                    }
+
+                                    if (val == ':global') {
+
+                                        for (; index < (parent as AstRule).tokens!.length; index++) {
+
+                                            if ((parent as AstRule).tokens![index].typ == EnumToken.CommaTokenType ||
+                                                (
+                                                    [EnumToken.PseudoClassFuncTokenType, EnumToken.PseudoClassTokenType].includes((parent as AstRule).tokens![index].typ) &&
+                                                    [':global', ':local'].includes(((parent as AstRule).tokens![index] as PseudoClassToken).val.toLowerCase())
+                                                )
+                                            ) {
+
+                                                break;
+                                            }
+
+                                            global.add((parent as AstRule).tokens![index]);
+                                        }
+                                    }
+                                }
+
+                                    break;
+                            }
+
+                        } else if (value.typ == EnumToken.PseudoClassFuncTokenType) {
+
+                            switch ((value as FunctionToken).val.toLowerCase()) {
+
+                                case ':global':
+
+                                    for (const token of (value as FunctionToken).chi) {
+
+                                        global.add(token);
+                                    }
+
+                                    (parent as AstRule).tokens!.splice((parent as AstRule).tokens!.indexOf(value), 1, ...(value as FunctionToken).chi);
+                                    break;
+
+                                case ':local':
+
+                                    (parent as AstRule).tokens!.splice((parent as AstRule).tokens!.indexOf(value), 1, ...(value as FunctionToken).chi);
+                                    break;
+                            }
+                        }
+
+                    })) {
+
+                    if (value.typ == EnumToken.HashTokenType || value.typ == EnumToken.ClassSelectorTokenType) {
+
+                        hasIdOrClass = true;
+                    }
+
+                    if (processed.has(value)) {
+
+                        continue;
+                    }
+
+                    processed.add(value);
+
+                    if (value.typ == EnumToken.PseudoClassTokenType) {
+
+                    } else if (value.typ == EnumToken.PseudoClassFuncTokenType) {
+
+                    } else {
+
+                        if (global.has(value)) {
+
+                            continue;
+                        }
+
+                        if (value.typ == EnumToken.ClassSelectorTokenType) {
+
+                            const val: string = (value as ClassSelectorToken).val.slice(1);
+
+                            if (!(val in mapping)) {
+
+                                const result = (moduleSettings.scoped! & ModuleScopeEnumOptions.Global) ? val : moduleSettings.generateScopedName!(val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+                                let value: string = result instanceof Promise ? await result : result;
+
+                                mapping[val] = (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(value, moduleSettings.naming as ModuleCaseTransformEnum) : value);
+                                revMapping[mapping[val]] = val;
+                            }
+
+                            (value as ClassSelectorToken).val = '.' + mapping[val];
+                        }
+                    }
+                }
+
+                if (moduleSettings.scoped! & ModuleScopeEnumOptions.Pure) {
+
+                    if (!hasIdOrClass) {
+
+                        throw new Error(`pure module: No id or class found in selector '${node.sel}' at '${node.loc?.src ?? ''}':${node.loc?.sta?.lin ?? ''}:${node.loc?.sta?.col ?? ''}`);
+                    }
+                }
+
+                node.sel = '';
+
+                for (const token of node.tokens! as Token[]) {
+
+                    node.sel += renderToken(token);
+                }
+            } else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframesAtRuleNodeType) {
+
+                const val: string = node.nam.toLowerCase();
+
+                if (node.tokens == null) {
+
+                    Object.defineProperty(node, 'tokens', {
+                        ...definedPropertySettings,
+                        // @ts-ignore
+                        value: parseAtRulePrelude(parseString(node.val), node)
+                    });
+                }
+
+                if (val == 'property' || val == 'keyframes') {
+
+                    const prefix: string = val == 'property' ? '--' : '';
+
+                    for (const value of node.tokens as Token[]) {
+
+                        if ((prefix == '--' && value.typ == EnumToken.DashedIdenTokenType) || (prefix == '' && value.typ == EnumToken.IdenTokenType)) {
+
+                            if (!((value as DashedIdentToken | IdentToken).val in mapping)) {
+
+                                const result = (moduleSettings.scoped! & ModuleScopeEnumOptions.Global) ? (value as DashedIdentToken | IdentToken).val : moduleSettings.generateScopedName!((value as DashedIdentToken).val, moduleSettings.filePath as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+                                let val: string = result instanceof Promise ? await result : result;
+
+                                mapping[(value as DashedIdentToken | IdentToken).val] = prefix + (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(val, moduleSettings.naming as ModuleCaseTransformEnum) : val);
+                                revMapping[mapping[(value as DashedIdentToken).val]] = (value as DashedIdentToken).val;
+                            }
+
+                            (value as DashedIdentToken).val = mapping[(value as DashedIdentToken).val];
+                        }
+                    }
+
+                    (node as AstAtRule).val = node.tokens!.reduce((a: string, b: Token) => a + renderToken(b), '');
+                } else {
+
+                    let isReplaced: boolean = false;
+
+                    for (const {value, parent} of walkValues(node.tokens, node)) {
+
+                        if (EnumToken.MediaQueryConditionTokenType == parent.typ && value != (parent as MediaQueryConditionToken).l) {
+
+                            if ((value.typ == EnumToken.IdenTokenType || isIdentColor(value)) && (value as IdentToken).val in importedCssVariables) {
+
+                                isReplaced = true;
+                                (parent as MediaQueryConditionToken).r.splice((parent as MediaQueryConditionToken).r.indexOf(value), 1, ...importedCssVariables[(value as IdentToken).val].val);
+                            }
+                        }
+                    }
+
+                    if (isReplaced) {
+
+                        node.val = node.tokens!.reduce((a: string, b: Token) => a + renderToken(b), '');
+                    }
+                }
+            }
+        }
+
+        if (moduleSettings.naming != ModuleCaseTransformEnum.IgnoreCase) {
+
+            revMapping = {};
+            mapping = Object.entries(mapping).reduce((acc: Record<string, string>, [key, value]: [string, string]) => {
+
+                const keyName = getKeyName(key, moduleSettings.naming!);
+
+                acc[keyName] = value;
+                revMapping[value] = keyName;
+
+                return acc;
+            }, {} as Record<string, string>)
+        }
+
+        result.mapping = mapping;
+        result.revMapping = revMapping;
+
+        if ((moduleSettings.scoped! & ModuleScopeEnumOptions.ICSS) && Object.keys(importMapping).length > 0) {
+
+            result.importMapping = importMapping;
+        }
+
+        endTime = performance.now();
+        result.stats.module = `${(endTime - parseModuleTime).toFixed(2)}ms`;
+        result.stats.total = `${(endTime - startTime).toFixed(2)}ms`;
+    }
+
+    return result;
 }
 
 function getLastNode(context: AstRuleList | AstInvalidRule | AstInvalidAtRule): AstNode | null {
@@ -1230,6 +2106,200 @@ function parseNode(results: TokenizeResult[], context: AstRuleList, options: Par
             }
         }
 
+        if (node.nam == 'value') {
+
+            let i: number = 0;
+
+            while (i < tokens.length) {
+
+                if (tokens[i].typ == EnumToken.WhitespaceTokenType || tokens[i].typ == EnumToken.CommentTokenType) {
+
+                    i++;
+                    continue;
+                }
+
+                break;
+            }
+
+            if (i < tokens.length) {
+
+                if (tokens[i].typ == EnumToken.IdenTokenType || isIdentColor(tokens[i])) {
+
+                    let k: number = i + 1;
+
+                    while (k < tokens.length) {
+
+                        if (tokens[k].typ == EnumToken.WhitespaceTokenType || tokens[k].typ == EnumToken.CommentTokenType) {
+
+                            k++;
+                            continue;
+                        }
+
+                        // var or import
+                        if (tokens[k].typ == EnumToken.ColonTokenType) {
+
+                            let j: number = k;
+                            while (++j < tokens.length) {
+
+                                if (tokens[j].typ != EnumToken.WhitespaceTokenType && tokens[j].typ != EnumToken.CommentTokenType) {
+
+                                    break;
+                                }
+                            }
+
+                            let offset = k + 1;
+                            while (offset < tokens.length && tokens[offset].typ == EnumToken.WhitespaceTokenType) {
+
+                                offset++;
+                            }
+
+                            if (tokens[j].typ == EnumToken.StringTokenType) {
+
+                                Object.assign(node, {
+                                    typ: EnumToken.CssVariableImportTokenType,
+                                    nam: (tokens[i] as IdentToken).val,
+                                    val: tokens.slice(offset)
+                                });
+                                context.chi!.push(node);
+                                return null;
+                            }
+
+                            Object.assign(node, {
+                                typ: EnumToken.CssVariableTokenType,
+                                nam: (tokens[i] as IdentToken).val,
+                                val: tokens.slice(offset)
+                            });
+                            context.chi!.push(node);
+                            return null;
+                        }
+
+                        if (tokens[k].typ == EnumToken.PseudoClassTokenType) {
+
+                            Object.assign(tokens[k], {
+                                typ: EnumToken.IdenTokenType,
+                                val: (tokens[k] as IdentToken).val.slice(1)
+                            });
+                            Object.assign(node, {
+                                typ: EnumToken.CssVariableTokenType,
+                                nam: (tokens[i] as IdentToken).val,
+                                val: tokens.slice(k) as Token[]
+                            });
+                            context.chi!.push(node);
+                            return null;
+                        }
+
+                        if (tokens[k].typ == EnumToken.CommaTokenType) {
+
+                            let j: number = i;
+
+                            while (++j < tokens.length) {
+
+                                if (tokens[j].typ == EnumToken.IdenTokenType && (tokens[j] as IdentToken).val.toLowerCase() == 'from') {
+
+                                    const vars: Token[] = tokens.slice(i, j);
+                                    const from: Token[] = tokens.slice(j + 1);
+                                    let l: number = 0;
+
+                                    let expect: EnumToken = EnumToken.IdenTokenType;
+
+                                    for (; l < vars.length; l++) {
+
+                                        if (vars[l].typ == EnumToken.WhitespaceTokenType || vars[l].typ == EnumToken.CommentTokenType) {
+
+                                            continue;
+                                        }
+
+                                        if (expect == vars[l].typ || (expect == EnumToken.IdenTokenType && isIdentColor(vars[l]))) {
+
+                                            expect = expect == EnumToken.CommaTokenType ? EnumToken.IdenTokenType : EnumToken.CommaTokenType;
+                                            continue;
+                                        }
+
+                                        errors.push({
+
+                                            action: 'drop',
+                                            node: node,
+                                            location: map.get(vars[l]) ?? location,
+                                            message: `expecting '${EnumToken[expect]}' but found ${renderToken(vars[l])}`
+                                        });
+
+                                        return null;
+                                    }
+
+                                    l = 0;
+                                    expect = EnumToken.IdenTokenType;
+
+                                    for (; l < from.length; l++) {
+
+                                        if (from[l].typ == EnumToken.WhitespaceTokenType || from[l].typ == EnumToken.CommentTokenType) {
+
+                                            continue;
+                                        }
+
+                                        if (expect == from[l].typ || isIdentColor(from[l])) {
+
+                                            while (++l < from.length) {
+
+                                                if (from[l].typ == EnumToken.WhitespaceTokenType || from[l].typ == EnumToken.CommentTokenType) {
+
+                                                    continue;
+                                                }
+
+                                                errors.push({
+
+                                                    action: 'drop',
+                                                    node: node,
+                                                    location: map.get(from[l]) ?? location,
+                                                    message: `unexpected '${renderToken(from[l])}'`
+                                                });
+
+                                                return null
+                                            }
+
+                                            break;
+                                        }
+
+                                        errors.push({
+
+                                            action: 'drop',
+                                            node: node,
+                                            location: map.get(from[l]) ?? location,
+                                            message: `expecting <string> but found ${renderToken(from[l])}`
+                                        });
+
+                                        return null;
+                                    }
+
+                                    // @ts-ignore
+                                    delete node.nam;
+                                    // @ts-ignore
+                                    delete node.val;
+
+                                    Object.assign(node, {
+                                        typ: EnumToken.CssVariableDeclarationMapTokenType,
+                                        vars,
+                                        from
+                                    });
+                                    context.chi!.push(node);
+                                    return null;
+                                }
+                            }
+                        }
+
+                        k++;
+                    }
+
+                    Object.assign(node, {
+                        typ: EnumToken.CssVariableTokenType,
+                        nam: (tokens[i] as IdentToken).val,
+                        val: tokens.slice(k)
+                    });
+                    context.chi!.push(node);
+                    return null;
+                }
+            }
+        }
+
         // @ts-ignore
         const skipValidate: boolean = (options.validation & ValidationLevel.AtRule) == 0;
         const isAllowed: boolean = skipValidate || isNodeAllowedInContext(node, context as AstNode);
@@ -1325,7 +2395,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList, options: Par
 
                     if (options.minify) {
 
-                        if (curr.typ == EnumToken.PseudoClassFuncTokenType && curr.val == ':nth-child') {
+                        if (curr.typ == EnumToken.PseudoClassFuncTokenType && (curr as PseudoClassFunctionToken).val == ':nth-child') {
 
                             let i: number = 0;
 
@@ -1627,12 +2697,13 @@ function parseNode(results: TokenizeResult[], context: AstRuleList, options: Par
 
                             if ((node as LiteralToken).val[0] == '/' || (node as LiteralToken).val[0] == '*') {
 
-                                (parent as FunctionToken).chi.splice((parent as FunctionToken).chi.indexOf(node), 1, {typ: (node as LiteralToken).val[0] == '/' ? EnumToken.Div : EnumToken.Mul}, ...parseString((node as LiteralToken).val.slice(1)));
+                                (parent as FunctionToken).chi.splice((parent as FunctionToken).chi.indexOf(node), 1, {typ: (node as LiteralToken).val[0] == '/' ? EnumToken.Div : EnumToken.Mul} as Token, ...parseString((node as LiteralToken).val.slice(1)));
                             }
                         }
                     }
                 }
             }
+
 
             const node: AstDeclaration = {
                 typ: EnumToken.DeclarationNodeType,
@@ -1655,7 +2726,6 @@ function parseNode(results: TokenizeResult[], context: AstRuleList, options: Par
                 stats.nodesCount++;
                 return null;
             }
-
             const result: AstDeclaration | null = parseDeclarationNode(node, errors, location);
             Object.defineProperty(result, 'parent', {...definedPropertySettings, value: context});
 
@@ -1726,12 +2796,12 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken | AstAtR
 
             if (parent?.typ == EnumToken.ParensTokenType) {
 
-                const index: number = parent.chi.indexOf(value);
+                const index: number = (parent as ParensToken).chi.indexOf(value);
                 let i: number = index;
 
                 while (i--) {
 
-                    if (parent.chi[i].typ == EnumToken.IdenTokenType || parent.chi[i].typ == EnumToken.DashedIdenTokenType) {
+                    if ((parent as ParensToken).chi[i].typ == EnumToken.IdenTokenType || (parent as ParensToken).chi[i].typ == EnumToken.DashedIdenTokenType) {
 
                         break;
                     }
@@ -1739,20 +2809,20 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken | AstAtR
 
                 if (i >= 0) {
 
-                    const token: Token = getTokenType((parent.chi[index] as PseudoClassToken | PseudoClassFunctionToken).val.slice(1) + (funcLike.includes(parent.chi[index].typ) ? '(' : ''));
+                    const token: Token = getTokenType(((parent as ParensToken).chi[index] as PseudoClassToken | PseudoClassFunctionToken).val.slice(1) + (funcLike.includes((parent as ParensToken).chi[index].typ) ? '(' : ''));
 
-                    (parent.chi[index] as PseudoClassToken | PseudoClassFunctionToken).val = (token as PseudoClassToken | PseudoClassFunctionToken).val;
-                    (parent.chi[index] as PseudoClassToken | PseudoClassFunctionToken).typ = (token as PseudoClassToken | PseudoClassFunctionToken).typ;
+                    ((parent as ParensToken).chi[index] as PseudoClassToken | PseudoClassFunctionToken).val = (token as PseudoClassToken | PseudoClassFunctionToken).val;
+                    ((parent as ParensToken).chi[index] as PseudoClassToken | PseudoClassFunctionToken).typ = (token as PseudoClassToken | PseudoClassFunctionToken).typ;
 
-                    if (parent.chi[index].typ == EnumToken.FunctionTokenType && isColor(parent.chi[index])) {
+                    if ((parent as ParensToken).chi[index].typ == EnumToken.FunctionTokenType && isColor((parent as ParensToken).chi[index])) {
 
-                        parseColor(parent.chi[index]);
+                        parseColor((parent as ParensToken).chi[index]);
                     }
 
-                    parent.chi.splice(i, index - i + 1, {
+                    (parent as ParensToken).chi.splice(i, index - i + 1, {
                         typ: EnumToken.MediaQueryConditionTokenType,
-                        l: parent.chi[i],
-                        r: parent.chi.slice(index),
+                        l: (parent as ParensToken).chi[i],
+                        r: (parent as ParensToken).chi.slice(index),
                         op: {
                             typ: EnumToken.ColonTokenType
                         } as ColonToken
@@ -1845,9 +2915,9 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken | AstAtR
             }
         }
 
-        if (value.typ == EnumToken.FunctionTokenType && value.val == 'selector') {
+        if (value.typ == EnumToken.FunctionTokenType && (value as FunctionToken).val == 'selector') {
 
-            parseSelector(value.chi);
+            parseSelector((value as FunctionToken).chi);
         }
 
         if (value.typ == EnumToken.ParensTokenType || (value.typ == EnumToken.FunctionTokenType && ['media', 'supports', 'style', 'scroll-state'].includes((<FunctionToken>value).val))) {
@@ -1981,6 +3051,7 @@ export async function parseDeclarations(declaration: string): Promise<Array<AstD
     return doParse(tokenize({
         stream: `.x{${declaration}}`,
         buffer: '',
+        offset: 0,
         position: {ind: 0, lin: 1, col: 1},
         currentPosition: {ind: -1, lin: 1, col: 0}
     } as ParseInfo), {setParent: false, minify: false, validation: false}).then(result => {
@@ -2135,6 +3206,7 @@ export function parseString(src: string, options: { location: boolean } = {locat
     const parseInfo: ParseInfo = {
         stream: src,
         buffer: '',
+        offset: 0,
         position: {ind: 0, lin: 1, col: 1},
         currentPosition: {ind: -1, lin: 1, col: 0}
     }
@@ -2283,14 +3355,11 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
         }
     }
 
-    // if (isDimension(val)) {
+    const dimension = parseDimension(val);
 
-        const dimension = parseDimension(val);
-
-        if (dimension != null) {
-            return dimension;
-        }
-    // }
+    if (dimension != null) {
+        return dimension;
+    }
 
     const v: string = val.toLowerCase();
     if (v == 'currentcolor' || v == 'transparent' || v in COLORS_NAMES) {
@@ -2321,6 +3390,14 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
 
         return <IdentToken>{
             typ: val.startsWith('--') ? EnumToken.DashedIdenTokenType : EnumToken.IdenTokenType,
+            val
+        }
+    }
+
+    if (val.charAt(0) == '.' && isIdent(val.slice(1))) {
+
+        return {
+            typ: EnumToken.ClassSelectorTokenType,
             val
         }
     }
@@ -2379,6 +3456,79 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
     for (let i = 0; i < tokens.length; i++) {
 
         const t: Token = tokens[i];
+
+        if (t.typ == EnumToken.IdenTokenType && (t as IdentToken).val == 'from' && i > 0) {
+
+            const left: Token[] = [];
+            const right: Token[] = [];
+
+            let foundLeft: number = 0;
+            let foundRight: number = 0;
+            let k: number = i;
+            let l: number = i;
+
+            while (k > 0) {
+
+                if (tokens[k - 1].typ == EnumToken.CommentTokenType || tokens[k - 1].typ == EnumToken.WhitespaceTokenType) {
+
+                    left.push(tokens[--k]);
+                    continue;
+                }
+
+                if (tokens[k - 1].typ == EnumToken.IdenTokenType || tokens[k - 1].typ == EnumToken.DashedIdenTokenType) {
+
+                    foundLeft++;
+                    left.push(tokens[--k]);
+                    continue;
+                }
+
+                break;
+            }
+
+            while (++l < tokens.length) {
+
+                if (tokens[l].typ == EnumToken.CommentTokenType || tokens[l].typ == EnumToken.WhitespaceTokenType) {
+
+                    right.push(tokens[l]);
+                    continue;
+                }
+
+                if (tokens[l].typ == EnumToken.IdenTokenType || tokens[l].typ == EnumToken.StringTokenType) {
+
+                    foundRight++;
+                    right.push(tokens[l]);
+                    continue;
+                }
+
+                break;
+            }
+
+            if (foundLeft > 0 && foundRight == 1) {
+
+                while (left?.[0].typ == EnumToken.WhitespaceTokenType) {
+
+                    left.shift();
+                }
+
+                while (left.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
+
+                    left.pop();
+                }
+
+                tokens.splice(k, l - k + 1, {
+
+                    typ: EnumToken.ComposesSelectorNodeType,
+                    l: left,
+                    r: right.reduce((a: Token | null, b: Token) => {
+
+                        return a == null ? b : b.typ == EnumToken.IdenTokenType || b.typ == EnumToken.StringTokenType ? b : a;
+                    }, null)
+                });
+
+                i = k;
+                continue;
+            }
+        }
 
         if (t.typ == EnumToken.WhitespaceTokenType && ((i == 0 ||
                 i + 1 == tokens.length ||
@@ -2684,7 +3834,7 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                     }
                 }
 
-                t.chi = splitTokenList(t.chi).reduce((acc: Token[], t: Token[]): Token[] => {
+                (t as FunctionToken).chi = splitTokenList((t as FunctionToken).chi).reduce((acc: Token[], t: Token[]): Token[] => {
 
                     if (acc.length > 0) {
                         acc.push({typ: EnumToken.CommaTokenType});

@@ -5,14 +5,11 @@ import {SyntaxValidationResult} from "../../ast/index.ts";
 
 export function validateBGLayers(tokens: Token[], root?: AstAtRule | AstRule, options?: ValidationSelectorOptions): ValidationSyntaxResult {
 
+    // @ts-ignore
     return {
         valid: SyntaxValidationResult.Valid,
-        matches: [],
-        // @ts-ignore
         node: root,
-        // @ts-ignore
         syntax: null,
-        error: '',
-        tokens
+        error: ''
     }
 }

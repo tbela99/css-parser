@@ -77,10 +77,7 @@ function computeComponentValue(expr, converted, values) {
             // normalize hue
             for (const k of walkValues([object.h])) {
                 if (k.value.typ == EnumToken.AngleTokenType && k.value.unit == 'deg') {
-                    // @ts-ignore
                     k.value.typ = EnumToken.NumberTokenType;
-                    // @ts-ignore
-                    delete k.value.unit;
                 }
             }
         }

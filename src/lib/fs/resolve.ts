@@ -102,6 +102,22 @@ export function resolve(url: string, currentDirectory: string, cwd?: string): { 
     cwd ??= '';
     currentDirectory ??= '';
 
+    if (currentDirectory !== '' && url.startsWith(currentDirectory + '/')) {
+
+        return {
+            absolute: url,
+            relative: url.slice(currentDirectory.length + 1)
+        };
+    }
+
+    if (currentDirectory === '' && cwd !== '' && url.startsWith(cwd + '/')) {
+
+        return {
+            absolute: url,
+            relative: url.slice(cwd.length + 1)
+        };
+    }
+
     if (matchUrl.test(currentDirectory)) {
 
         const path = new URL(url, currentDirectory).href;

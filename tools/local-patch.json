@@ -33,6 +33,11 @@
     "text-align": {
       "comment": "extend with -non-standard-text-align",
       "syntax": "| <-non-standard-text-align>"
+    },
+    "composes": {
+      "syntax": "<composes-selector>#"},
+    "composes-selector": {
+      "syntax": "<ident>+ [from [global&&<string>]]?"
     }
   },
   "types": {

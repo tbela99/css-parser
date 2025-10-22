@@ -423,6 +423,22 @@ declare enum EnumToken {
      */
     InvalidDeclarationNodeType = 94,
     /**
+     * composes token node type
+     */
+    ComposesSelectorNodeType = 95,
+    /**
+     * css variable token type
+     */
+    CssVariableTokenType = 96,
+    /**
+     * css variable import token type
+     */
+    CssVariableImportTokenType = 97,
+    /**
+     * css variable declaration map token type
+     */
+    CssVariableDeclarationMapTokenType = 98,
+    /**
      * alias for time token type
      */
     Time = 25,
@@ -643,6 +659,46 @@ declare enum ColorType {
      * alias for cmyk
      */
     DEVICE_CMYK = 7
+}
+declare enum ModuleCaseTransformEnum {
+    /**
+     * export as-is
+     */
+    IgnoreCase = 1,
+    /**
+     * transform class names and mapping key name
+     */
+    CamelCase = 2,
+    /**
+     * transform class names and mapping key name
+     */
+    CamelCaseOnly = 4,
+    /**
+     * transform class names and mapping key name
+     */
+    DashCase = 8,
+    /**
+     * transform class names and mapping key name
+     */
+    DashCaseOnly = 16
+}
+declare enum ModuleScopeEnumOptions {
+    /**
+     * use the global scope
+     */
+    Global = 32,
+    /**
+     * use the local scope
+     */
+    Local = 64,
+    /**
+     * do not allow selector without an id or class
+     */
+    Pure = 128,
+    /**
+     * export using ICSS module format
+     */
+    ICSS = 256
 }
 
 /**
@@ -1694,6 +1750,40 @@ export declare interface ListToken extends BaseToken {
 }
 
 /**
+ * Composes selector token
+ */
+export declare interface ComposesSelectorToken extends BaseToken {
+
+    typ: EnumToken.ComposesSelectorTokenType;
+    l: Token$1[];
+    r: Token$1 | null;
+}
+
+/**
+ * Css variable token
+ */
+export declare interface CssVariableToken$1 extends BaseToken {
+
+    typ: EnumToken.CssVariableTokenType;
+    nam: string;
+    val: Token$1[];
+}
+
+export declare interface CssVariableImportTokenType$1 extends BaseToken {
+
+    typ: EnumToken.CssVariableImportTokenType;
+    nam: string;
+    val: Token$1[];
+}
+
+export declare interface CssVariableMapTokenType extends BaseToken {
+
+    typ: EnumToken.CssVariableMapTokenType;
+    vars: Token$1[];
+    from: Token$1[];
+}
+
+/**
  * Unary expression node
  */
 export declare type UnaryExpressionNode =
@@ -1784,6 +1874,8 @@ export declare type Token$1 =
     | ContainMatchToken
     | MatchExpressionToken
     | NameSpaceAttributeToken
+    | ComposesSelectorToken
+    | CssVariableToken$1
     |
     DashMatchToken
     | EqualMatchToken
@@ -2226,7 +2318,9 @@ export declare type AstNode$1 =
     | AstKeyFrameRule
     | AstInvalidRule
     | AstInvalidAtRule
-    | AstInvalidDeclaration;
+    | AstInvalidDeclaration
+    | CssVariableToken
+    | CssVariableImportTokenType;
 
 export declare type GenericVisitorResult<T> = T | T[] | Promise<T> | Promise<T[]> | null | Promise<null>;
 export declare type GenericVisitorHandler<T> = ((node: T, parent?: AstNode | Token, root?: AstNode | Token) => GenericVisitorResult<T>);
@@ -2502,7 +2596,7 @@ export declare interface VisitorNodeMap {
      * // body {color:#f3fff0}
      * ```
      */
-    [key: keyof typeof EnumToken]: GenericVisitorAstNodeHandlerMap<Token> | GenericVisitorAstNodeHandlerMap<AstNode>;
+    [key : keyof typeof EnumToken]: GenericVisitorAstNodeHandlerMap<Token> | GenericVisitorAstNodeHandlerMap<AstNode>;
 }
 
 export declare interface PropertyListOptions {
@@ -2532,6 +2626,11 @@ export declare interface ParseInfo {
      * current parsing position
      */
     currentPosition: Position;
+
+    /**
+     * offset
+     */
+    offset: number;
 }
 
 /**
@@ -3074,9 +3173,9 @@ export declare type WalkerOption = WalkerOptionEnum | AstNode$1 | Token$1 | null
 export declare type WalkerFilter = (node: AstNode$1) => WalkerOption;
 
 /**
- * filter nod
+ * filter nodes
  */
-export declare type WalkerValueFilter = (node: AstNode$1 | Token$1, parent?: AstNode$1 | Token$1 | null, event?: WalkerEvent) => WalkerOption | null;
+export declare type WalkerValueFilter = (node: AstNode$1 | Token$1, parent?: AstNode$1 | Token$1 | AstNode$1[] | Token$1[] | null, event?: WalkerEvent) => WalkerOption | null;
 
 export declare interface WalkResult {
     node: AstNode$1;
@@ -3268,6 +3367,126 @@ export declare type LoadResult =
     | string
     | Promise<string>;
 
+export declare interface ModuleOptions {
+
+    /**
+     * use local scope vs global scope
+     */
+    scoped?: boolean | ModuleScopeEnumOptions;
+
+    /**
+     * module output file path. it is used to generate the scoped name. if not provided, [options.src](../docs/interfaces/node.ParserOptions.html#src) will be used
+     */
+    filePath?: string;
+
+    /**
+     * generated scope hash length. the default is 5
+     */
+    hashLength?: number;
+
+    /**
+     * the pattern use to generate scoped names. the supported placeholders are:
+     * - name: the file base name without the extension
+     * - hash: the file path hash
+     * - local: the local name
+     * - path: the file path
+     * - folder: the folder name
+     * - ext: the file extension
+     *
+     * the pattern can optionally have a maximum number of characters:
+     * ```
+     * pattern: '[local:2]-[hash:5]'
+     * ```
+     * the hash pattern can take an algorithm, a maximum number of characters or both:
+     * ```
+     * pattern: '[local]-[hash:base64:5]'
+     * ```
+     * or
+     * ```
+     * pattern: '[local]-[hash:5]'
+     * ```
+     * or
+     * ```
+     * pattern: '[local]-[hash:sha1]'
+     * ```
+     *
+     * supported hash algorithms are:
+     * - base64
+     * - hex
+     * - base64url
+     * - sha1
+     * - sha256
+     * - sha384
+     * - sha512
+     *
+     * ```typescript
+     *
+     * import {transform, ModuleCaseTransformEnum} from '@tbela99/css-parser';
+     * import type {TransformResult} from '@tbela99/css-parser';
+     * css = `
+     * :local(.className) {
+     *   background: red;
+     *   color: yellow;
+     * }
+     *
+     * :local(.subClass) {
+     *   composes: className;
+     *   background: blue;
+     * }
+     * `;
+     *
+     * let result: TransformResult = await transform(css, {
+     *
+     *     beautify:true,
+     *     module: {
+     *         pattern: '[local]-[hash:sha256]'
+     *     }
+     *
+     * });
+     *
+     * console.log(result.code);
+     * ```
+     * generated css
+     *
+     * ```css
+     * .className-b629f {
+     *  background: red;
+     *  color: #ff0
+     * }
+     * .subClass-a0c35 {
+     *  background: blue
+     * }
+     * ```
+     */
+    pattern?: string;
+
+    /**
+     * optional. function change the case of the scoped name and the class mapping
+     *
+     * - {@link ModuleCaseTransformEnum.IgnoreCase}: do not change case
+     * - {@link ModuleCaseTransformEnum.CamelCase}: camelCase {@link ParseResult.mapping} key name
+     * - {@link ModuleCaseTransformEnum.CamelCaseOnly}: camelCase {@link ParseResult.mapping} key name and the scoped class name
+     * - {@link ModuleCaseTransformEnum.DashCase}: dashCase {@link ParseResult.mapping} key name
+     * - {@link ModuleCaseTransformEnum.DashCaseOnly}: dashCase {@link ParseResult.mapping} key name and the scoped class name
+     *
+     */
+    naming?: ModuleCaseTransformEnum,
+
+    /**
+     * optional function to generate scoped name
+     * @param localName
+     * @param filePath
+     * @param hashLength
+     * @param pattern see {@link ModuleOptions.pattern}
+     */
+    generateScopedName?: (
+        localName: string,
+        filePath: string,
+        pattern: string,
+        hashLength?: number
+    ) => string | Promise<string>;
+}
+
 /**
  * parser options
  */
@@ -3306,7 +3525,7 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
      * @param asStream
      *
      */
-    load?: (url: string, currentUrl: string, asStream?: boolean) => LoadResult;
+    load?: (url: string, currentUrl?: string, asStream?: boolean) => LoadResult;
     /**
      * get directory name
      * @param path
@@ -3360,6 +3579,11 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
      * @private
      */
     cache?: WeakMap<AstNode$1, string>;
+
+    /**
+     * css modules options
+     */
+    module?: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions
 }
 
 /**
@@ -3536,13 +3760,17 @@ export declare interface ParseResultStats {
      */
     importedBytesIn: number;
     /**
-     * parse time
+     * parse processing time
      */
     parse: string;
     /**
-     * minify time
+     * minify processing time
      */
     minify: string;
+    /**
+     * module processing time
+     */
+    module?: string;
     /**
      * total time
      */
@@ -3578,7 +3806,22 @@ export declare interface ParseResult {
     /**
      * parse stats
      */
-    stats: ParseResultStats
+    stats: ParseResultStats;
+
+    /**
+     * css module mapping
+     */
+    mapping?: Record<string, string>;
+
+    cssModuleVariables?: Record<string, CssVariableToken$1>;
+
+    importMapping?: Record<string, Record<string, string>>;
+
+    /**
+     * css module reverse mapping
+     * @private
+     */
+    revMapping?: Record<string, string>;
 }
 
 /**
@@ -3795,6 +4038,7 @@ declare function load(url: string, currentFile?: string, asStream?: boolean): Pr
  * render the ast tree
  * @param data
  * @param options
+ * @param mapping
  *
  * Example:
  *
@@ -3819,7 +4063,10 @@ declare function load(url: string, currentFile?: string, asStream?: boolean): Pr
  * // }
  * ```
  */
-declare function render(data: AstNode$1, options?: RenderOptions): RenderResult;
+declare function render(data: AstNode$1, options?: RenderOptions, mapping?: {
+    mapping: Record<string, string>;
+    importMapping: Record<string, Record<string, string>> | null;
+} | null): RenderResult;
 /**
  * parse css file
  * @param file url or path
@@ -3957,5 +4204,5 @@ declare function transformFile(file: string, options?: TransformOptions, asStrea
  */
 declare function transform(css: string | ReadableStream<Uint8Array>, options?: TransformOptions): Promise<TransformResult>;
 
-export { ColorType, EnumToken, FeatureWalkMode, SourceMap, ValidationLevel, WalkerEvent, WalkerOptionEnum, convertColor, dirname, expand, isOkLabClose, load, mathFuncs, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, parseTokens, render, renderToken, resolve, transform, transformFile, transformFunctions, walk, walkValues };
-export type { AddToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyFrameRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstRule, AstRuleList, AstStyleSheet, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ConstraintsMapping, ContainMatchToken, Context, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorHandler, GenericVisitorResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, ImportantToken, IncludeMatchToken, InvalidAttrToken, InvalidClassSelectorToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Location, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureAndToken, MediaFeatureNotToken, MediaFeatureOnlyToken, MediaFeatureOrToken, MediaFeatureToken, MediaQueryConditionToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, MulToken, NameSpaceAttributeToken, NestingSelectorToken, NextSiblingCombinatorToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo, ParseResult, ParseResultStats, ParseTokenOptions, ParserOptions, PercentageToken, Position, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenizeResult, TransformOptions, TransformResult, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, Value, ValueVisitorHandler, VariableScopeInfo, VisitorNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerValueFilter, WhitespaceToken };
+export { ColorType, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SourceMap, ValidationLevel, WalkerEvent, WalkerOptionEnum, convertColor, dirname, expand, isOkLabClose, load, mathFuncs, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, parseTokens, render, renderToken, resolve, transform, transformFile, transformFunctions, walk, walkValues };
+export type { AddToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyFrameRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstRule, AstRuleList, AstStyleSheet, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, Context, CssVariableImportTokenType$1 as CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken$1 as CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorHandler, GenericVisitorResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, ImportantToken, IncludeMatchToken, InvalidAttrToken, InvalidClassSelectorToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Location, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureAndToken, MediaFeatureNotToken, MediaFeatureOnlyToken, MediaFeatureOrToken, MediaFeatureToken, MediaQueryConditionToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleOptions, MulToken, NameSpaceAttributeToken, NestingSelectorToken, NextSiblingCombinatorToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo, ParseResult, ParseResultStats, ParseTokenOptions, ParserOptions, PercentageToken, Position, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenizeResult, TransformOptions, TransformResult, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, Value, ValueVisitorHandler, VariableScopeInfo, VisitorNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerValueFilter, WhitespaceToken };

@@ -427,6 +427,23 @@ var EnumToken;
      * invalid declaration node type
      */
     EnumToken[EnumToken["InvalidDeclarationNodeType"] = 94] = "InvalidDeclarationNodeType";
+    /* css module nodes */
+    /**
+     * composes token node type
+     */
+    EnumToken[EnumToken["ComposesSelectorNodeType"] = 95] = "ComposesSelectorNodeType";
+    /**
+     * css variable token type
+     */
+    EnumToken[EnumToken["CssVariableTokenType"] = 96] = "CssVariableTokenType";
+    /**
+     * css variable import token type
+     */
+    EnumToken[EnumToken["CssVariableImportTokenType"] = 97] = "CssVariableImportTokenType";
+    /**
+     * css variable declaration map token type
+     */
+    EnumToken[EnumToken["CssVariableDeclarationMapTokenType"] = 98] = "CssVariableDeclarationMapTokenType";
     /* aliases */
     /**
      * alias for time token type
@@ -651,5 +668,47 @@ var ColorType;
      */
     ColorType[ColorType["DEVICE_CMYK"] = 7] = "DEVICE_CMYK";
 })(ColorType || (ColorType = {}));
+var ModuleCaseTransformEnum;
+(function (ModuleCaseTransformEnum) {
+    /**
+     * export as-is
+     */
+    ModuleCaseTransformEnum[ModuleCaseTransformEnum["IgnoreCase"] = 1] = "IgnoreCase";
+    /**
+     * transform class names and mapping key name
+     */
+    ModuleCaseTransformEnum[ModuleCaseTransformEnum["CamelCase"] = 2] = "CamelCase";
+    /**
+     * transform class names and mapping key name
+     */
+    ModuleCaseTransformEnum[ModuleCaseTransformEnum["CamelCaseOnly"] = 4] = "CamelCaseOnly";
+    /**
+     * transform class names and mapping key name
+     */
+    ModuleCaseTransformEnum[ModuleCaseTransformEnum["DashCase"] = 8] = "DashCase";
+    /**
+     * transform class names and mapping key name
+     */
+    ModuleCaseTransformEnum[ModuleCaseTransformEnum["DashCaseOnly"] = 16] = "DashCaseOnly";
+})(ModuleCaseTransformEnum || (ModuleCaseTransformEnum = {}));
+var ModuleScopeEnumOptions;
+(function (ModuleScopeEnumOptions) {
+    /**
+     * use the global scope
+     */
+    ModuleScopeEnumOptions[ModuleScopeEnumOptions["Global"] = 32] = "Global";
+    /**
+     * use the local scope
+     */
+    ModuleScopeEnumOptions[ModuleScopeEnumOptions["Local"] = 64] = "Local";
+    /**
+     * do not allow selector without an id or class
+     */
+    ModuleScopeEnumOptions[ModuleScopeEnumOptions["Pure"] = 128] = "Pure";
+    /**
+     * export using ICSS module format
+     */
+    ModuleScopeEnumOptions[ModuleScopeEnumOptions["ICSS"] = 256] = "ICSS";
+})(ModuleScopeEnumOptions || (ModuleScopeEnumOptions = {}));
 
-export { ColorType, EnumToken, SyntaxValidationResult, ValidationLevel };
+export { ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SyntaxValidationResult, ValidationLevel };

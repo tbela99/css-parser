@@ -60,7 +60,7 @@ export class TransformCssFeature {
             const children: Token[] = [];
             for (const child of (node as AstDeclaration).val as Token[]) {
 
-                children.push(child.typ == EnumToken.FunctionTokenType ? minifyTransformFunctions(child) : child);
+                children.push(child.typ == EnumToken.FunctionTokenType ? minifyTransformFunctions(child as FunctionToken) : child);
             }
 
             consumeWhitespace(children);

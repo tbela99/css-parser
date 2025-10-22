@@ -10,6 +10,7 @@ import type {
     CommentToken,
     DashedIdentToken,
     FunctionToken,
+    ParensToken,
     ParserOptions,
     Token,
     VariableScopeInfo
@@ -30,7 +31,7 @@ function inlineExpression(token: Token): Token[] {
         result.push({
             typ: EnumToken.ParensTokenType,
             chi: [...inlineExpression((token as BinaryExpressionToken).l), {typ: (token as BinaryExpressionToken).op}, ...inlineExpression((token as BinaryExpressionToken).r)]
-        });
+        } as ParensToken);
 
     } else {
 

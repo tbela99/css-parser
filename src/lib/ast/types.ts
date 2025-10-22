@@ -428,7 +428,31 @@ export enum EnumToken {
      * invalid declaration node type
      */
     InvalidDeclarationNodeType,
+
+    /* css module nodes */
+
+    /**
+     * composes token node type
+     */
+    ComposesSelectorNodeType,
+
+    /**
+     * css variable token type
+     */
+    CssVariableTokenType,
+
+    /**
+     * css variable import token type
+     */
+    CssVariableImportTokenType,
+
+    /**
+     * css variable declaration map token type
+     */
+    CssVariableDeclarationMapTokenType,
+
     /* aliases */
+
     /**
      * alias for time token type
      */
@@ -652,4 +676,47 @@ export enum ColorType {
      * alias for cmyk
      */
     DEVICE_CMYK = CMYK
+}
+
+export enum ModuleCaseTransformEnum {
+
+    /**
+     * export class names as-is
+     */
+    IgnoreCase = 0x1,
+    /**
+     * transform mapping key name
+     */
+    CamelCase = 0x2,
+    /**
+     * transform class names and mapping key name
+     */
+    CamelCaseOnly = 0x4,
+    /**
+     * transform mapping key name
+     */
+    DashCase = 0x8,
+    /**
+     * transform class names and mapping key name
+     */
+    DashCaseOnly = 0x10
+}
+
+export enum ModuleScopeEnumOptions {
+    /**
+     * use the global scope
+     */
+    Global = 0x20,
+    /**
+     * use the local scope
+     */
+    Local = 0x40,
+    /**
+     * do not allow selector without an id or class
+     */
+    Pure = 0x80,
+    /**
+     * export using ICSS module format
+     */
+    ICSS = 0x100
 }

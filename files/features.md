@@ -1,7 +1,6 @@
 ---
 title: Features
 group: Documents
-slug: /features
 category: Guides
 ---
 
@@ -26,3 +25,6 @@ a non-exhaustive list of features is provided below:
 - remove duplicate properties
 - flatten @import rules
 - experimental CSS prefix removal
+
+------
+[← About](./about.md) | [Getting started →](./install.md) 

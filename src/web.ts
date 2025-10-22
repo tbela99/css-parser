@@ -10,7 +10,7 @@ import type {
     TransformResult
 } from "./@types/index.d.ts";
 
-import {doParse, doRender, tokenize, tokenizeStream} from "./lib/index.ts";
+import {doParse, doRender, ModuleScopeEnumOptions, tokenize, tokenizeStream} from "./lib/index.ts";
 import {dirname, matchUrl, resolve} from "./lib/fs/index.ts";
 
 export type * from "./@types/index.d.ts";
@@ -42,11 +42,13 @@ export {
     okLabDistance,
     parseDeclarations,
     EnumToken,
-    ValidationLevel,
     ColorType,
     SourceMap,
     WalkerEvent,
+    ValidationLevel,
     WalkerOptionEnum,
+    ModuleScopeEnumOptions,
+    ModuleCaseTransformEnum,
 } from './lib/index.ts';
 export {FeatureWalkMode} from './lib/ast/features/type.ts';
 export {dirname, resolve};
@@ -90,6 +92,7 @@ export async function load(url: string, currentFile: string = '.', asStream: boo
  * render the ast tree
  * @param data
  * @param options
+ * @param mapping
  *
  * Example:
  *
@@ -114,13 +117,16 @@ export async function load(url: string, currentFile: string = '.', asStream: boo
  * // }
  * ```
  */
-export function render(data: AstNode, options: RenderOptions = {}): RenderResult {
+export function render(data: AstNode, options: RenderOptions = {}, mapping?: {
+    mapping: Record<string, string>;
+    importMapping: Record<string, Record<string, string>> | null;
+} | null): RenderResult {
 
     return doRender(data, Object.assign(options, {
         resolve,
         dirname,
         cwd: options.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
-    }));
+    }), mapping);
 }
 
 
@@ -185,6 +191,7 @@ export async function parse(stream: string | ReadableStream<Uint8Array>, options
     return doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
         stream,
         buffer: '',
+        offset: 0,
         position: {ind: 0, lin: 1, col: 1},
         currentPosition: {ind: -1, lin: 1, col: 0}
     } as ParseInfo), Object.assign(options, {
@@ -192,7 +199,11 @@ export async function parse(stream: string | ReadableStream<Uint8Array>, options
         resolve,
         dirname,
         cwd: options.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
-    }));
+    })).then(result => {
+
+        const {revMapping, ...res} = result;
+        return res as ParseResult;
+    });
 }
 
 /**
@@ -250,8 +261,21 @@ export async function transform(css: string | ReadableStream<Uint8Array>, option
 
     return parse(css, options).then((parseResult: ParseResult) => {
 
+        let mapping : Record<string, string> | null= null;;
+        let importMapping : Record<string, Record<string, string>> | null = null;
+
+        if (typeof options.module == 'number' && options.module & ModuleScopeEnumOptions.ICSS) {
+            mapping = parseResult.mapping as Record<string, string>;
+            importMapping = parseResult.importMapping as Record<string, Record<string, string>>;
+        }
+
+        else if (typeof options.module == 'object' && typeof options.module.scoped == 'number' && options.module.scoped & ModuleScopeEnumOptions.ICSS) {
+            mapping = parseResult.mapping as Record<string, string>;
+            importMapping = parseResult.importMapping as Record<string, Record<string, string>>;
+        }
+        
         // ast already expanded by parse
-        const rendered: RenderResult = render(parseResult.ast, {...options, expandNestingRules: false});
+        const rendered: RenderResult = render(parseResult.ast, {...options, expandNestingRules: false}, mapping != null ? {mapping, importMapping} : null);
 
         return {
             ...parseResult,

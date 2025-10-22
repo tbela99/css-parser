@@ -13,6 +13,10 @@ import type {
     ClassSelectorToken,
     ColorToken,
     CommentToken,
+    ComposesSelectorToken,
+    CssVariableImportTokenType,
+    CssVariableMapTokenType,
+    CssVariableToken,
     DashedIdentToken,
     ErrorDescription,
     FractionToken,
@@ -74,9 +78,13 @@ function update(position: Position, str: string) {
  * render ast
  * @param data
  * @param options
+ * @param mapping
  * @private
  */
-export function doRender(data: AstNode, options: RenderOptions = {}): RenderResult {
+export function doRender(data: AstNode, options: RenderOptions = {}, mapping?: {
+    mapping: Record<string, string>;
+    importMapping: Record<string, Record<string, string>> | null;
+} | null): RenderResult {
 
     const minify: boolean = options.minify ?? true;
     const beautify: boolean = options.beautify ?? !minify;
@@ -110,7 +118,7 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
         while (data.parent != null) {
 
             // @ts-ignore
-            parent = {...data.parent, chi: [{...data}]};
+            parent = { ...data.parent, chi: [{ ...data }] };
 
             // @ts-ignore
             parent.parent = data.parent.parent;
@@ -127,13 +135,31 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
         [key: string]: any
     } = Object.create(null);
 
-    const result: RenderResult = {
-        code: renderAstNode(options.expandNestingRules && [EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(data.typ) && 'chi' in data ? expand(data as AstStyleSheet | AstAtRule | AstRule) : data, options, sourcemap, {
+    const position = {
 
-            ind: 0,
-            lin: 1,
-            col: 1
-        } as Position, errors, function reducer(acc: string, curr: Token): string {
+        ind: 0,
+        lin: 1,
+        col: 1
+    } as Position;
+
+    let code: string = '';
+
+    if (mapping != null) {
+
+        if (mapping.importMapping != null) {
+
+            for (const [key, value] of Object.entries(mapping.importMapping)) {
+
+                code += `:import("${key}")${options.indent}{${options.newLine}${Object.entries(value).reduce((acc, [k, v]) => acc + (acc.length > 0 ? options.newLine : '') + `${options.indent}${v}:${options.indent}${k};`, '')}${options.newLine}}${options.newLine}`;
+            }
+        }
+
+        code += `:export${options.indent}{${options.newLine}${Object.entries(mapping.mapping).reduce((acc, [k, v]) => acc + (acc.length > 0 ? options.newLine : '') + `${options.indent}${k}:${options.indent}${v};`, '')}${options.newLine}}${options.newLine}`;
+        update(position, code);
+    }
+
+    const result: RenderResult = {
+        code: code + renderAstNode(options.expandNestingRules && [EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(data.typ) && 'chi' in data ? expand(data as AstStyleSheet | AstAtRule | AstRule) : data, options, sourcemap, position, errors, function reducer(acc: string, curr: Token): string {
 
             if (curr.typ == EnumToken.CommentTokenType && options.removeComments) {
 
@@ -207,7 +233,7 @@ function updateSourceMap(node: AstRuleList | AstComment, options: RenderOptions,
         }
 
         // @ts-ignore
-        sourcemap.add({src: cache[output], sta: {...position}}, {
+        sourcemap.add({ src: cache[output], sta: { ...position } }, {
             ...<Location>node.loc,
             // @ts-ignore
             src: options.resolve(cache[src], options.cwd).relative
@@ -269,7 +295,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
             return (<AstStyleSheet>data).chi.reduce((css: string, node: AstRuleList | AstComment) => {
 
-                const str: string = renderAstNode(node, options, sourcemap, {...position}, errors, reducer, cache, level, indents);
+                const str: string = renderAstNode(node, options, sourcemap, { ...position }, errors, reducer, cache, level, indents);
 
                 if (str === '') {
 
@@ -333,7 +359,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
                     str = `${(<AstAtRule>node).val === '' ? '' : options.indent || ' '}${(<AstAtRule>node).val};`;
                 } else {
 
-                    str = renderAstNode(node, options, sourcemap, {...position}, errors, reducer, cache, level + 1, indents);
+                    str = renderAstNode(node, options, sourcemap, { ...position }, errors, reducer, cache, level + 1, indents);
                 }
 
                 if (css === '') {
@@ -365,6 +391,16 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
             }
 
             return (<AstRule>data).sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
+
+
+        case EnumToken.CssVariableTokenType:
+        case EnumToken.CssVariableImportTokenType:
+
+            return `@value ${(<CssVariableToken | CssVariableImportTokenType>data).nam}:${options.indent}${filterValues((options.minify ? (<CssVariableToken | CssVariableImportTokenType>data).val : (<CssVariableToken>data).val)).reduce(reducer, '').trim()};`;
+
+        case EnumToken.CssVariableDeclarationMapTokenType:
+
+            return `@value ${filterValues((data as CssVariableMapTokenType).vars).reduce((acc, curr) => acc + renderToken(curr), '').trim()} from ${filterValues((data as CssVariableMapTokenType).from).reduce((acc, curr) => acc + renderToken(curr), '').trim()};`;
 
         case EnumToken.InvalidDeclarationNodeType:
         case EnumToken.InvalidRuleTokenType:
@@ -526,7 +562,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
             if (options.convertColor !== false) {
 
-                const value: ColorToken | null = convertColor(token, typeof options.convertColor == 'boolean' ? ColorType.HEX : ColorType[(ColorType[options.convertColor ?? 'HEX'] as string)?.toUpperCase?.().replaceAll?.('-', '_') as keyof typeof ColorType] ?? ColorType.HEX);
+                const value: ColorToken | null = convertColor(token as ColorToken, typeof options.convertColor == 'boolean' ? ColorType.HEX : ColorType[(ColorType[options.convertColor ?? 'HEX'] as string)?.toUpperCase?.().replaceAll?.('-', '_') as keyof typeof ColorType] ?? ColorType.HEX);
 
                 //
                 if (value != null) {
@@ -608,6 +644,10 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
             return ((token as NameSpaceAttributeToken).l == null ? '' : renderToken((token as NameSpaceAttributeToken).l as Token, options, cache, reducer, errors)) + '|' +
                 renderToken((token as NameSpaceAttributeToken).r, options, cache, reducer, errors);
+
+        case EnumToken.ComposesSelectorNodeType:
+
+            return (token as ComposesSelectorToken).l.reduce((acc: string, curr: Token) => acc + renderToken(curr, options, cache), '') + ((token as ComposesSelectorToken).r == null ? '' : ' from ' + renderToken((token as ComposesSelectorToken).r as Token, options, cache, reducer, errors));
 
         case EnumToken.BlockStartTokenType:
             return '{';
@@ -935,7 +975,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
             return 'or';
     }
 
-    errors?.push({action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}`});
+    errors?.push({ action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });
     return '';
 }
 
