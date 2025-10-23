@@ -14,6 +14,47 @@ visitors can be called when the node is entered, visited or left.
 
 ```ts
 
+const options: ParserOptions = {
+    
+    visitor: [
+        {
+
+            AtRule: [
+                // called when entering a node
+                {
+                    type: WalkerEvent.Enter,
+                    handler: (node: AstAtRule): AstAtRule => {
+
+                        console.error(`> enter '@${node.nam}' node at position ${node.loc!.sta.lin}:${node.loc!.sta.col}`);
+                        return node
+                    }
+                },
+                // called when leaving a node
+                {
+
+                    type: WalkerEvent.Leave,
+                    handler: (node: AstAtRule): AstAtRule => {
+
+                        console.error(`> leaving '@${node.nam}' node at position ${node.loc!.sta.lin}:${node.loc!.sta.col}`)
+                        return node
+                    }
+                },
+                // called after node enter handlers but before node leave handlers
+                (node: AstAtRule): AstAtRule => {
+
+                    console.error(`> visiting '@${node.nam}' node at position ${node.loc!.sta.lin}:${node.loc!.sta.col}`);
+                    return node
+                }
+        }
+            ]
+        }
+    ]
+}
+```
+
+### Examples
+```ts
+
 import {AstAtRule, ParserOptions, transform, VisitorNodeMap, WalkerEvent} from "@tbela99/css-parser";
 const options: ParserOptions = {
 
@@ -320,6 +361,21 @@ const result = await transform(css, {
 
 the value visitor is called on each token of the selector node, declaration value and the at-rule prelude, etc.
 
+```ts
+
+import {AstAtRule, ParserOptions, transform, VisitorNodeMap, WalkerEvent} from "@tbela99/css-parser";
+const options: ParserOptions = {
+
+    visitor:  {
+
+        Value: (node: Token): Token => {
+
+            console.error(`> visiting token at position ${node.loc!.sta.lin}:${node.loc!.sta.col}`);
+            return node
+        }
+    } as VisitorNodeMap
+};
+```
 ### Generic visitor
 
 generic token visitor is a function whose name is a keyof [EnumToken](../docs/enums/node.EnumToken.html). it is called for every token of the specified type.

@@ -354,6 +354,7 @@ async function generateScopedName(
  * @param iter
  * @param options
  *
+ * @throws Error
  * @private
  */
 export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<TokenizeResult>, options: ParserOptions = {}): Promise<ParseResult> {
@@ -594,7 +595,6 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
         stats.bytesIn = item.bytesIn;
         stats.tokensCount++;
-
         rawTokens.push(item);
 
         if (item.hint != null && BadTokensTypes.includes(item.hint)) {

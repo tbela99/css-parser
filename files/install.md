@@ -58,7 +58,7 @@ the library can be imported as a module in the browser
 
 ### As umd module
 
-it can also be imported as umd module
+it can also be imported as an umd module
 
 ```html
 

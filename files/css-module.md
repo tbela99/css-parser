@@ -15,6 +15,9 @@ for a detailed explanation of the module options, see the [module options](../do
 parse(css, {module: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions});
 transform(css, {module: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions});
 
+parseFile(css, {module: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions});
+transformFile(css, {module: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions});
+
 ```
 
 ## Scope
@@ -47,7 +50,6 @@ let result: TransformResult = await transform(css, {
     beautify: true,
     module: {scoped: ModuleScopeEnumOptions.Local
     }
-
 });
 
 console.log(result.code);
@@ -128,7 +130,7 @@ output
 
 ### Pure scope
 
-require to use at least one id or class in selectors
+require to use at least one id or class in selectors. it will throw an error it there are no id or class name in the selector.
 
 ```typescript
 
@@ -157,7 +159,7 @@ output
 
 ### Mixing scopes
 
-scopes can be mixed together using the bitwise OR operator '|'
+scopes can be mixed using the bitwise OR operator '|'
 
 ```typescript
 
@@ -566,7 +568,7 @@ the supported placeholders are:
 - folder: the folder name
 - ext: the file extension
 
-the pattern can optionally have a maximum number of characters:
+the pattern placeholders can optionally have a maximum number of characters:
 ```
 pattern: '[local:2]-[hash:5]'
 ```

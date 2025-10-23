@@ -677,11 +677,11 @@
     exports.ModuleCaseTransformEnum = void 0;
     (function (ModuleCaseTransformEnum) {
         /**
-         * export as-is
+         * export class names as-is
          */
         ModuleCaseTransformEnum[ModuleCaseTransformEnum["IgnoreCase"] = 1] = "IgnoreCase";
         /**
-         * transform class names and mapping key name
+         * transform mapping key name
          */
         ModuleCaseTransformEnum[ModuleCaseTransformEnum["CamelCase"] = 2] = "CamelCase";
         /**
@@ -689,7 +689,7 @@
          */
         ModuleCaseTransformEnum[ModuleCaseTransformEnum["CamelCaseOnly"] = 4] = "CamelCaseOnly";
         /**
-         * transform class names and mapping key name
+         * transform mapping key name
          */
         ModuleCaseTransformEnum[ModuleCaseTransformEnum["DashCase"] = 8] = "DashCase";
         /**
@@ -10985,7 +10985,10 @@
     		syntax: "none | discard-before || discard-after || discard-inner"
     	},
     	composes: {
-    		syntax: "<composes-selector>"
+    		syntax: "<composes-selector>#"
+    	},
+    	"composes-selector": {
+    		syntax: "<ident>+ [from [global&&<string>]]?"
     	}
     };
     var functions = {
@@ -11011,7 +11014,7 @@
     		syntax: "atan2( <calc-sum>, <calc-sum> )"
     	},
     	attr: {
-    		syntax: "attr( <attr-name> <type-or-unit>? [, <attr-fallback> ]? )"
+    		syntax: "attr( <attr-name> <attr-type>? , <declaration-value>? )"
     	},
     	blur: {
     		syntax: "blur( <length>? )"
@@ -11364,13 +11367,16 @@
     		syntax: "scroll | fixed | local"
     	},
     	"attr()": {
-    		syntax: "attr( <attr-name> <type-or-unit>? [, <attr-fallback> ]? )"
+    		syntax: "attr( <attr-name> <attr-type>? , <declaration-value>? )"
     	},
     	"attr-matcher": {
     		syntax: "[ '~' | '|' | '^' | '$' | '*' ]? '='"
     	},
     	"attr-modifier": {
     		syntax: "i | s"
+    	},
+    	"attr-type": {
+    		syntax: "type( <syntax> ) | raw-string | number | <attr-unit>"
     	},
     	"attribute-selector": {
     		syntax: "'[' <wq-name> ']' | '[' <wq-name> <attr-matcher> [ <string-token> | <ident-token> ] <attr-modifier>? ']'"
@@ -18004,6 +18010,7 @@
      * @param iter
      * @param options
      *
+     * @throws Error
      * @private
      */
     async function doParse(iter, options = {}) {

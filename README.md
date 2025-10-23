@@ -23,23 +23,23 @@ $ deno add @tbela99/css-parser
 ## Features
 
 - no dependency
-- validate CSS based upon mdn-data
-- generate CSS module output
-- fault-tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
+- CSS validation based upon mdn-data
+- CSS modules support
+- fault-tolerant parser implementing the CSS syntax module 3 recommendations.
 - fast and efficient minification without unsafe transforms,
   see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
-- minify colors: color(), lab(), lch(), oklab(), oklch(), color-mix(), light-dark(), system colors and
+- colors minification: color(), lab(), lch(), oklab(), oklch(), color-mix(), light-dark(), system colors and
   relative color
-- generate nested css rules
-- convert nested css rules to legacy syntax
-- convert colors to any supported color format
-- generate sourcemap
-- compute css shorthands. see supported properties list below
-- minify css transform functions
-- evaluate math functions: calc(), clamp(), min(), max(), etc.
-- inline css variables
-- remove duplicate properties
-- flatten @import rules
+- color conversion to any supported color format
+- automatic nested css rules generation
+- nested css rules conversion to legacy syntax
+- sourcemap generation
+- css shorthands computation. see the supported properties list below
+- css transform functions minification
+- css math functions evaluation: calc(), clamp(), min(), max(), etc.
+- css variables inlining
+- duplicate properties removal
+- @import rules flattening
 - experimental CSS prefix removal
 
 ## Online documentation
@@ -54,7 +54,7 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 
 There are several ways to import the library into your application.
 
-### Node exports
+### Node
 
 import as a module
 
@@ -65,7 +65,7 @@ import {transform} from '@tbela99/css-parser';
 // ...
 ```
 
-### Deno exports
+### Deno
 
 import as a module
 
@@ -85,7 +85,7 @@ const {transform} = require('@tbela99/css-parser/cjs');
 // ...
 ```
 
-### Web export
+### Web 
 
 Programmatic import
 
@@ -163,18 +163,26 @@ Javascript umd module from cdn
 </script>
 ```
 
+## Exported functions
+
+```ts
+
+/* parse and render css */
+transform(css: string | ReadableStream<string>, options?: TransformOptions = {}): Promise<TransformResult>
+/* parse css */
+parse(css: string | ReadableStream<string>, options?: ParseOptions = {}): Promise<ParseResult>;
+/* render ast */
+render(ast: AstNode, options?: RenderOptions = {}): RenderResult;
+/* parse and render css file or url */
+transformFile(filePathOrUrl: string, options?: TransformOptions = {}, asStream?: boolean): Promise<TransformResult>;
+/* parse css file or url */
+parseFile(filePathOrUrl: string, options?: ParseOptions = {}, asStream?: boolean): Promise<ParseResult>;
+
+```
+
 ## Transform
 
 Parse and render css in a single pass.
-
-### Usage
-
-```typescript
-
-transform(css: string | ReadableStream<string>, transformOptions: TransformOptions = {}): TransformResult
-parse(css: string | ReadableStream<string>, parseOptions: ParseOptions = {}): ParseResult;
-render(ast: AstNode, renderOptions: RenderOptions = {}): RenderResult;
-```
 
 ### Example
 
@@ -209,7 +217,7 @@ Include ParseOptions and RenderOptions
 > Minify Options
 
 - minify: boolean, optional. default to _true_. optimize ast.
-- pass: number, optional. minification pass. default to 1
+- pass: number, optional. minification passes. default to 1
 - nestingRules: boolean, optional. automatically generated nested rules.
 - expandNestingRules: boolean, optional. convert nesting rules into separate rules. will automatically set nestingRules
   to false.
@@ -900,7 +908,7 @@ for (const {node, parent, root} of walk(ast)) {
 
 Ast can be transformed using node visitors
 
-### Exemple 1: Declaration
+### Example 1: Declaration
 
 the visitor is called for any declaration encountered
 
@@ -935,7 +943,7 @@ console.debug(result.code);
 // .foo{transform:scale(calc(40/3))}
 ```
 
-### Exemple 2: Declaration
+### Example 2: Declaration
 
 the visitor is called only on 'height' declarations
 
@@ -990,7 +998,7 @@ console.debug(result.code);
 
 ```
 
-### Exemple 3: At-Rule
+### Example 3: At-Rule
 
 the visitor is called on any at-rule
 
@@ -1032,7 +1040,7 @@ console.debug(result.code);
 
 ```
 
-### Exemple 4: At-Rule
+### Example 4: At-Rule
 
 the visitor is called only for at-rule media
 
@@ -1074,7 +1082,7 @@ console.debug(result.code);
 
 ```
 
-### Exemple 5: Rule
+### Example 5: Rule
 
 the visitor is called on any Rule
 
@@ -1110,7 +1118,7 @@ console.debug(result.code);
 
 ```
 
-### Exemple 6: Rule
+### Example 6: Rule
 
 Adding declarations to any rule
 

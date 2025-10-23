@@ -171,6 +171,7 @@ async function generateScopedName(localName, filePath, pattern, hashLength = 5) 
  * @param iter
  * @param options
  *
+ * @throws Error
  * @private
  */
 async function doParse(iter, options = {}) {

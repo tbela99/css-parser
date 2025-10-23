@@ -671,11 +671,11 @@ var ColorType;
 var ModuleCaseTransformEnum;
 (function (ModuleCaseTransformEnum) {
     /**
-     * export as-is
+     * export class names as-is
      */
     ModuleCaseTransformEnum[ModuleCaseTransformEnum["IgnoreCase"] = 1] = "IgnoreCase";
     /**
-     * transform class names and mapping key name
+     * transform mapping key name
      */
     ModuleCaseTransformEnum[ModuleCaseTransformEnum["CamelCase"] = 2] = "CamelCase";
     /**
@@ -683,7 +683,7 @@ var ModuleCaseTransformEnum;
      */
     ModuleCaseTransformEnum[ModuleCaseTransformEnum["CamelCaseOnly"] = 4] = "CamelCaseOnly";
     /**
-     * transform class names and mapping key name
+     * transform mapping key name
      */
     ModuleCaseTransformEnum[ModuleCaseTransformEnum["DashCase"] = 8] = "DashCase";
     /**
