@@ -14,6 +14,47 @@ visitors can be called when the node is entered, visited or left.
 
 ```ts
 
+const options: ParserOptions = {
+    
+    visitor: [
+        {
+
+            AtRule: [
+                // called when entering a node
+                {
+                    type: WalkerEvent.Enter,
+                    handler: (node: AstAtRule): AstAtRule => {
+
+                        console.error(`> enter '@${node.nam}' node at position ${node.loc!.sta.lin}:${node.loc!.sta.col}`);
+                        return node
+                    }
+                },
+                // called when leaving a node
+                {
+
+                    type: WalkerEvent.Leave,
+                    handler: (node: AstAtRule): AstAtRule => {
+
+                        console.error(`> leaving '@${node.nam}' node at position ${node.loc!.sta.lin}:${node.loc!.sta.col}`)
+                        return node
+                    }
+                },
+                // called after node enter handlers but before node leave handlers
+                (node: AstAtRule): AstAtRule => {
+
+                    console.error(`> visiting '@${node.nam}' node at position ${node.loc!.sta.lin}:${node.loc!.sta.col}`);
+                    return node
+                }
+        }
+            ]
+        }
+    ]
+}
+```
+
+### Examples
+```ts
+
 import {AstAtRule, ParserOptions, transform, VisitorNodeMap, WalkerEvent} from "@tbela99/css-parser";
 const options: ParserOptions = {
 
@@ -320,6 +361,21 @@ const result = await transform(css, {
 
 the value visitor is called on each token of the selector node, declaration value and the at-rule prelude, etc.
 
+```ts
+
+import {AstAtRule, ParserOptions, transform, VisitorNodeMap, WalkerEvent} from "@tbela99/css-parser";
+const options: ParserOptions = {
+
+    visitor:  {
+
+        Value: (node: Token): Token => {
+
+            console.error(`> visiting token at position ${node.loc!.sta.lin}:${node.loc!.sta.col}`);
+            return node
+        }
+    } as VisitorNodeMap
+};
+```
 ### Generic visitor
 
 generic token visitor is a function whose name is a keyof [EnumToken](../docs/enums/node.EnumToken.html). it is called for every token of the specified type.
@@ -364,6 +420,94 @@ body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b
 console.debug(await transform(css, options));
 
 // body {color:#f3fff0}
+```
+
+### Example of visitor
+
+a visitor that inlines all images under a specific size
+
+```ts
+import {
+    EnumToken,
+    FunctionURLToken,
+    load,
+    StringToken,
+    Token,
+    transform,
+    UrlToken,
+    ResponseType,
+    AstDeclaration,
+    AstNode
+} from "@tbela99/css-parser";
+const css = `
+.goal .bg-indigo {
+  background: url(/img/animatecss-opengraph.jpg);
+}
+`;
+
+// 35 kb or something
+const maxSize = 35 * 1024;
+// accepted images
+const extensions = ['jpg', 'gif', 'png', 'webp']
+const result = await transform(css, {
+    visitor: {
+        UrlFunctionTokenType: async (node: FunctionURLToken, parent : AstNode) => {
+
+            if (parent.typ == EnumToken.DeclarationNodeType) {
+
+                const t = node.chi.find(t => t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.CommaTokenType) as Token;
+                
+                if (t == null) {
+                    
+                    return;
+                }
+
+                const url = t.typ == EnumToken.StringTokenType ? (t as StringToken).val.slice(1, -1) : (t as UrlToken).val;
+
+                if (url.startsWith('data:')) {
+
+                    return;
+                }
+
+                const matches = /(.*?\/)?([^/.]+)\.([^?#]+)([?#].*)?$/.exec(url);
+
+                if (matches == null || !extensions.includes(matches[3].toLowerCase())) {
+
+                    return;
+                }
+
+                const buffer = await load(url, '.', ResponseType.ArrayBuffer) as ArrayBuffer  ;
+
+                if (buffer.byteLength > maxSize) {
+
+                    return
+                }
+
+                Object.assign(t, {typ: EnumToken.StringTokenType, val: `"data:image/${matches[3].toLowerCase()};base64,${toBase64(new Uint8Array(buffer))}"`})
+            }
+        }
+    }
+});
+
+function toBase64(arraybuffer: Uint8Array) {
+
+    // @ts-ignore
+    if (typeof Uint8Array.prototype.toBase64! == 'function') {
+
+        // @ts-ignore
+        return arraybuffer.toBase64();
+    }
+
+    let binary = '';
+    for (const byte of arraybuffer) {
+        binary += String.fromCharCode( byte);
+    }
+
+    return btoa( binary );
+}
+
+console.error(result.code);
+// .goal .bg-indigo{background:url("data:image/jpg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/4QugRXhpZgAA ...")}
 ```
 
 ------

@@ -11,6 +11,7 @@ import '../renderer/sourcemap/lib/encode.js';
 import { getSyntaxConfig, getParsedSyntax, getSyntax } from './config.js';
 import './syntaxes/complex-selector.js';
 import { funcLike, colorsFunc } from '../syntax/color/utils/constants.js';
+import '../../types.js';
 import '../ast/features/type.js';
 
 const config = getSyntaxConfig();

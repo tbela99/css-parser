@@ -560,7 +560,7 @@ var EnumToken;
 var ColorType;
 (function (ColorType) {
     /**
-     * system colors
+     * deprecated system colors
      */
     ColorType[ColorType["SYS"] = 0] = "SYS";
     /**
@@ -568,7 +568,7 @@ var ColorType;
      */
     ColorType[ColorType["DPSYS"] = 1] = "DPSYS";
     /**
-     * colors as literals
+     * named colors
      */
     ColorType[ColorType["LIT"] = 2] = "LIT";
     /**
@@ -671,23 +671,23 @@ var ColorType;
 var ModuleCaseTransformEnum;
 (function (ModuleCaseTransformEnum) {
     /**
-     * export as-is
+     * export class names as-is
      */
     ModuleCaseTransformEnum[ModuleCaseTransformEnum["IgnoreCase"] = 1] = "IgnoreCase";
     /**
-     * transform class names and mapping key name
+     * transform mapping key name to camel case
      */
     ModuleCaseTransformEnum[ModuleCaseTransformEnum["CamelCase"] = 2] = "CamelCase";
     /**
-     * transform class names and mapping key name
+     * transform class names and mapping key name to camel case
      */
     ModuleCaseTransformEnum[ModuleCaseTransformEnum["CamelCaseOnly"] = 4] = "CamelCaseOnly";
     /**
-     * transform class names and mapping key name
+     * transform mapping key name to dash case
      */
     ModuleCaseTransformEnum[ModuleCaseTransformEnum["DashCase"] = 8] = "DashCase";
     /**
-     * transform class names and mapping key name
+     * transform class names and mapping key name to dash case
      */
     ModuleCaseTransformEnum[ModuleCaseTransformEnum["DashCaseOnly"] = 16] = "DashCaseOnly";
 })(ModuleCaseTransformEnum || (ModuleCaseTransformEnum = {}));

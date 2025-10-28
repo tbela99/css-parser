@@ -17,9 +17,9 @@
 - [x] selector
 - [x] dashed ident (custom properties)
 - [x] css at-rule property
-- [x] css at-rule values
+- [x] css at-rule value
 - [x] keyframe animations
-- [x] grid-template-areas
+- [x] grid
 - naming
   - [x] ignore
   - [x] camelCase

@@ -10,6 +10,9 @@ function dirname(path) {
     //
     //     return path;
     // }
+    if (path === '') {
+        return '';
+    }
     let i = 0;
     let parts = [''];
     for (; i < path.length; i++) {
@@ -34,6 +37,12 @@ function dirname(path) {
  * @private
  */
 function splitPath(result) {
+    if (result.length == 0) {
+        return { parts: [], i: 0 };
+    }
+    if (result === '/') {
+        return { parts: ['/'], i: 0 };
+    }
     const parts = [''];
     let i = 0;
     for (; i < result.length; i++) {
@@ -83,10 +92,13 @@ function resolve(url, currentDirectory, cwd) {
             relative: url.slice(currentDirectory.length + 1)
         };
     }
-    if (currentDirectory === '' && cwd !== '' && url.startsWith(cwd + '/')) {
+    if (currentDirectory === '' && cwd !== '' && url.startsWith(cwd == '/' ? cwd : cwd + '/')) {
+        cwd = normalize(cwd);
+        const absolute = normalize(url);
+        const prefix = cwd == '/' ? cwd : cwd + '/';
         return {
-            absolute: url,
-            relative: url.slice(cwd.length + 1)
+            absolute,
+            relative: absolute.startsWith(prefix) ? absolute.slice(prefix.length) : diff(absolute, cwd)
         };
     }
     if (matchUrl.test(currentDirectory)) {
@@ -103,9 +115,15 @@ function resolve(url, currentDirectory, cwd) {
     else if (currentDirectory.charAt(0) == '/') {
         result = dirname(currentDirectory) + '/' + url;
     }
-    let { parts, i } = splitPath(result);
-    const absolute = parts.join('/');
-    const { parts: dirs } = splitPath(cwd ?? currentDirectory);
+    const absolute = normalize(result);
+    return {
+        absolute,
+        relative: absolute === '' ? '' : diff(absolute, cwd ?? currentDirectory),
+    };
+}
+function diff(path1, path2) {
+    let { parts } = splitPath(path1);
+    const { parts: dirs } = splitPath(path2);
     for (const p of dirs) {
         if (parts[0] == p) {
             parts.shift();
@@ -114,10 +132,36 @@ function resolve(url, currentDirectory, cwd) {
             parts.unshift('..');
         }
     }
-    return {
-        absolute,
-        relative: parts.join('/') + (i < result.length ? result.slice(i) : '')
-    };
+    return parts.join('/');
+}
+function normalize(path) {
+    let parts = [];
+    let i = 0;
+    for (; i < path.length; i++) {
+        const chr = path.charAt(i);
+        if (chr == '/') {
+            if (parts.length == 0 || parts[parts.length - 1] !== '') {
+                parts.push('');
+            }
+        }
+        else if (chr == '?' || chr == '#') {
+            break;
+        }
+        else {
+            parts[parts.length - 1] += chr;
+        }
+    }
+    let k = -1;
+    while (++k < parts.length) {
+        if (parts[k] == '.') {
+            parts.splice(k--, 1);
+        }
+        else if (parts[k] == '..') {
+            parts.splice(k - 1, 2);
+            k -= 2;
+        }
+    }
+    return (path.charAt(0) == '/' ? '/' : '') + parts.join('/');
 }
 
 export { dirname, matchUrl, resolve };

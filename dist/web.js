@@ -18,6 +18,7 @@ import './lib/validation/parser/parse.js';
 import './lib/validation/syntaxes/complex-selector.js';
 import './lib/validation/syntax.js';
 import { matchUrl, resolve, dirname } from './lib/fs/resolve.js';
+import { ResponseType } from './types.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 
 /**
@@ -25,10 +26,13 @@ export { FeatureWalkMode } from './lib/ast/features/type.js';
  * @param url
  * @param currentFile
  *
- * @param asStream
+ * @param responseType
  * @private
  */
-async function load(url, currentFile = '.', asStream = false) {
+async function load(url, currentFile = '.', responseType = false) {
+    if (typeof responseType == 'boolean') {
+        responseType = responseType ? ResponseType.ReadableStream : ResponseType.Text;
+    }
     let t;
     if (matchUrl.test(url)) {
         t = new URL(url);
@@ -44,7 +48,10 @@ async function load(url, currentFile = '.', asStream = false) {
         if (!response.ok) {
             throw new Error(`${response.status} ${response.statusText} ${response.url}`);
         }
-        return asStream ? response.body : await response.text();
+        if (responseType == ResponseType.ArrayBuffer) {
+            return response.arrayBuffer();
+        }
+        return responseType == ResponseType.ReadableStream ? response.body : await response.text();
     });
 }
 /**
@@ -206,16 +213,19 @@ async function transform(css, options = {}) {
     return parse(css, options).then((parseResult) => {
         let mapping = null;
         let importMapping = null;
-        if (typeof options.module == 'number' && options.module & ModuleScopeEnumOptions.ICSS) {
+        if (typeof options.module == 'number' && (options.module & ModuleScopeEnumOptions.ICSS)) {
             mapping = parseResult.mapping;
             importMapping = parseResult.importMapping;
         }
-        else if (typeof options.module == 'object' && typeof options.module.scoped == 'number' && options.module.scoped & ModuleScopeEnumOptions.ICSS) {
+        else if (typeof options.module == 'object' && typeof options.module.scoped == 'number' && (options.module.scoped & ModuleScopeEnumOptions.ICSS)) {
             mapping = parseResult.mapping;
             importMapping = parseResult.importMapping;
         }
         // ast already expanded by parse
-        const rendered = render(parseResult.ast, { ...options, expandNestingRules: false }, mapping != null ? { mapping, importMapping } : null);
+        const rendered = render(parseResult.ast, {
+            ...options,
+            expandNestingRules: false
+        }, mapping != null ? { mapping, importMapping } : null);
         return {
             ...parseResult,
             ...rendered,
@@ -230,4 +240,4 @@ async function transform(css, options = {}) {
     });
 }
 
-export { ModuleScopeEnumOptions, dirname, load, parse, parseFile, render, resolve, transform, transformFile };
+export { ModuleScopeEnumOptions, ResponseType, dirname, load, parse, parseFile, render, resolve, transform, transformFile };

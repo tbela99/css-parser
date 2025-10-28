@@ -286,8 +286,6 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
                     }
 
                     stack[reverse ? 'push' : 'unshift'](...op);
-                    console.error({op, s: stack[0]});
-
                 }
             }
         }

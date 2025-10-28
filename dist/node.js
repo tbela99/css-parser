@@ -22,30 +22,40 @@ import { resolve, matchUrl, dirname } from './lib/fs/resolve.js';
 import { Readable } from 'node:stream';
 import { createReadStream } from 'node:fs';
 import { readFile, lstat } from 'node:fs/promises';
+import { ResponseType } from './types.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 
 /**
  * load file or url as stream
  * @param url
  * @param currentFile
- * @param asStream
+ * @param responseType
  * @throws Error file not found
  *
  * @private
  */
-async function load(url, currentFile = '.', asStream = false) {
+async function load(url, currentFile = '.', responseType = false) {
     const resolved = resolve(url, currentFile);
+    if (typeof responseType == 'boolean') {
+        responseType = responseType ? ResponseType.ReadableStream : ResponseType.Text;
+    }
     if (matchUrl.test(resolved.absolute)) {
         return fetch(resolved.absolute).then(async (response) => {
             if (!response.ok) {
                 throw new Error(`${response.status} ${response.statusText} ${response.url}`);
             }
-            return asStream ? response.body : await response.text();
+            if (responseType == ResponseType.ArrayBuffer) {
+                return response.arrayBuffer();
+            }
+            return responseType == ResponseType.ReadableStream ? response.body : await response.text();
         });
     }
     try {
-        if (!asStream) {
+        if (responseType == ResponseType.Text) {
             return readFile(resolved.absolute, 'utf-8');
+        }
+        if (responseType == ResponseType.ArrayBuffer) {
+            return readFile(resolved.absolute).then(buffer => buffer.buffer);
         }
         const stats = await lstat(resolved.absolute);
         if (stats.isFile()) {
@@ -168,7 +178,12 @@ async function parse(stream, options = {}) {
         offset: 0,
         position: { ind: 0, lin: 1, col: 1 },
         currentPosition: { ind: -1, lin: 1, col: 0 }
-    }), Object.assign(options, { load, resolve, dirname, cwd: options.cwd ?? process.cwd() })).then(result => {
+    }), Object.assign(options, {
+        load,
+        resolve,
+        dirname,
+        cwd: options.cwd ?? process.cwd()
+    })).then(result => {
         const { revMapping, ...res } = result;
         return res;
     });
@@ -252,12 +267,15 @@ async function transform(css, options = {}) {
             mapping = parseResult.mapping;
             importMapping = parseResult.importMapping;
         }
-        else if (typeof options.module == 'object' && typeof options.module.scoped == 'number' && options.module.scoped & ModuleScopeEnumOptions.ICSS) {
+        else if (typeof options.module == 'object' && typeof options.module.scoped == 'number' && (options.module.scoped & ModuleScopeEnumOptions.ICSS)) {
             mapping = parseResult.mapping;
             importMapping = parseResult.importMapping;
         }
         // ast already expanded by parse
-        const rendered = render(parseResult.ast, { ...options, expandNestingRules: false }, mapping != null ? { mapping, importMapping } : null);
+        const rendered = render(parseResult.ast, {
+            ...options,
+            expandNestingRules: false
+        }, mapping != null ? { mapping, importMapping } : null);
         return {
             ...parseResult,
             ...rendered,
@@ -272,4 +290,4 @@ async function transform(css, options = {}) {
     });
 }
 
-export { ModuleScopeEnumOptions, dirname, load, parse, parseFile, render, resolve, transform, transformFile };
+export { ModuleScopeEnumOptions, ResponseType, dirname, load, parse, parseFile, render, resolve, transform, transformFile };

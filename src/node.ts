@@ -15,6 +15,7 @@ import {dirname, matchUrl, resolve} from "./lib/fs/index.ts";
 import {Readable} from "node:stream";
 import {createReadStream} from "node:fs";
 import {lstat, readFile} from "node:fs/promises";
+import {ResponseType} from "./types.ts";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -54,39 +55,54 @@ export {
     ModuleCaseTransformEnum
 } from './lib/index.ts';
 export {FeatureWalkMode} from './lib/ast/features/type.ts';
-export {dirname, resolve};
+export {dirname, resolve, ResponseType};
 
 /**
  * load file or url as stream
  * @param url
  * @param currentFile
- * @param asStream
+ * @param responseType
  * @throws Error file not found
  *
  * @private
  */
-export async function load(url: string, currentFile: string = '.', asStream: boolean = false): Promise<string | ReadableStream<Uint8Array<ArrayBufferLike>>> {
+export async function load(url: string, currentFile: string = '.', responseType: boolean | ResponseType = false): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>> {
 
     const resolved = resolve(url, currentFile);
 
+    if (typeof responseType == 'boolean') {
+
+       responseType =  responseType ? ResponseType.ReadableStream : ResponseType.Text;
+    }
+
     if (matchUrl.test(resolved.absolute)) {
 
-        return fetch(resolved.absolute).then(async (response: Response): Promise<string | ReadableStream<Uint8Array<ArrayBufferLike>>> => {
+        return fetch(resolved.absolute).then(async (response: Response): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>> => {
 
             if (!response.ok) {
 
                 throw new Error(`${response.status} ${response.statusText} ${response.url}`)
             }
 
-            return asStream ? response.body as ReadableStream<Uint8Array<ArrayBuffer>> : await response.text();
+            if (responseType == ResponseType.ArrayBuffer) {
+
+                return response.arrayBuffer();
+            }
+
+            return responseType == ResponseType.ReadableStream ? response.body as ReadableStream<Uint8Array<ArrayBuffer>> : await response.text();
         });
     }
 
     try {
 
-        if (!asStream) {
+        if (responseType == ResponseType.Text) {
 
             return readFile(resolved.absolute, 'utf-8');
+        }
+
+        if (responseType == ResponseType.ArrayBuffer) {
+
+            return readFile(resolved.absolute).then(buffer => buffer.buffer);
         }
 
         const stats = await lstat(resolved.absolute);
@@ -224,7 +240,12 @@ export async function parse(stream: string | ReadableStream<Uint8Array>, options
         offset: 0,
         position: {ind: 0, lin: 1, col: 1},
         currentPosition: {ind: -1, lin: 1, col: 0}
-    } as ParseInfo), Object.assign(options, {load, resolve, dirname, cwd: options.cwd ?? process.cwd()})).then(result => {
+    } as ParseInfo), Object.assign(options, {
+        load,
+        resolve,
+        dirname,
+        cwd: options.cwd ?? process.cwd()
+    })).then(result => {
 
         const {revMapping, ...res} = result;
         return res as ParseResult;
@@ -309,21 +330,22 @@ export async function transform(css: string | ReadableStream<Uint8Array>, option
     const startTime: number = performance.now();
     return parse(css, options).then((parseResult: ParseResult) => {
 
-        let mapping : Record<string, string> | null= null;
-        let importMapping : Record<string, Record<string, string>> | null = null;
+        let mapping: Record<string, string> | null = null;
+        let importMapping: Record<string, Record<string, string>> | null = null;
 
         if (typeof options.module == 'number' && (options.module & ModuleScopeEnumOptions.ICSS)) {
             mapping = parseResult.mapping as Record<string, string>;
             importMapping = parseResult.importMapping as Record<string, Record<string, string>>;
-        }
-
-        else if (typeof options.module == 'object' && typeof options.module.scoped == 'number' && options.module.scoped & ModuleScopeEnumOptions.ICSS) {
+        } else if (typeof options.module == 'object' && typeof options.module.scoped == 'number' && (options.module.scoped & ModuleScopeEnumOptions.ICSS)) {
             mapping = parseResult.mapping as Record<string, string>;
             importMapping = parseResult.importMapping as Record<string, Record<string, string>>;
         }
-        
+
         // ast already expanded by parse
-        const rendered: RenderResult = render(parseResult.ast, {...options, expandNestingRules: false}, mapping != null ? {mapping, importMapping} : null);
+        const rendered: RenderResult = render(parseResult.ast, {
+            ...options,
+            expandNestingRules: false
+        }, mapping != null ? {mapping, importMapping} : null);
 
         return {
             ...parseResult,

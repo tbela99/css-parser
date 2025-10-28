@@ -1983,7 +1983,10 @@ var declarations = {
 		syntax: "none | discard-before || discard-after || discard-inner"
 	},
 	composes: {
-		syntax: "<composes-selector>"
+		syntax: "<composes-selector>#"
+	},
+	"composes-selector": {
+		syntax: "<ident>+ [from [global&&<string>]]?"
 	}
 };
 var functions = {
@@ -2009,7 +2012,7 @@ var functions = {
 		syntax: "atan2( <calc-sum>, <calc-sum> )"
 	},
 	attr: {
-		syntax: "attr( <attr-name> <type-or-unit>? [, <attr-fallback> ]? )"
+		syntax: "attr( <attr-name> <attr-type>? , <declaration-value>? )"
 	},
 	blur: {
 		syntax: "blur( <length>? )"
@@ -2362,13 +2365,16 @@ var syntaxes = {
 		syntax: "scroll | fixed | local"
 	},
 	"attr()": {
-		syntax: "attr( <attr-name> <type-or-unit>? [, <attr-fallback> ]? )"
+		syntax: "attr( <attr-name> <attr-type>? , <declaration-value>? )"
 	},
 	"attr-matcher": {
 		syntax: "[ '~' | '|' | '^' | '$' | '*' ]? '='"
 	},
 	"attr-modifier": {
 		syntax: "i | s"
+	},
+	"attr-type": {
+		syntax: "type( <syntax> ) | raw-string | number | <attr-unit>"
 	},
 	"attribute-selector": {
 		syntax: "'[' <wq-name> ']' | '[' <wq-name> <attr-matcher> [ <string-token> | <ident-token> ] <attr-modifier>? ']'"
