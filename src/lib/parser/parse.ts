@@ -156,6 +156,12 @@ function reject(reason?: any) {
     throw new Error(reason ?? 'Parsing aborted');
 }
 
+/**
+ * replace token in its parent node
+ * @param parent
+ * @param value
+ * @param replacement
+ */
 export function replaceToken(parent: BinaryExpressionToken | (AstNode & ({ chi: Token[] } | {
     val: Token[]
 })), value: Token, replacement: Token | Token[]) {
@@ -195,6 +201,14 @@ export function replaceToken(parent: BinaryExpressionToken | (AstNode & ({ chi: 
     }
 }
 
+/**
+ * transform case of key name
+ * @param key
+ * @param how
+ *
+ * @throws Error
+ * @private
+ */
 export function getKeyName(key: string, how: ModuleCaseTransformEnum) {
 
     switch (how) {
@@ -212,7 +226,17 @@ export function getKeyName(key: string, how: ModuleCaseTransformEnum) {
     return key;
 }
 
-async function generateScopedName(
+/**
+ * generate scoped name
+ * @param localName
+ * @param filePath
+ * @param pattern
+ * @param hashLength
+ *
+ * @throws Error
+ * @private
+ */
+export async function generateScopedName(
     localName: string,
     filePath: string,
     pattern: string,
@@ -224,7 +248,7 @@ async function generateScopedName(
         localName = localName.slice(2);
     }
 
-    const matches = /.*?(([^/]+)\/)?([^/\\]*?)(\.([^?]+))?([?].*)?$/.exec(filePath);
+    const matches = /.*?(([^/]+)\/)?([^/\\]*?)(\.([^?/]+))?([?].*)?$/.exec(filePath);
     const folder = matches?.[2]?.replace?.(/[^A-Za-z0-9_-]/g, "_") ?? '';
     const fileBase = matches?.[3] ?? '';
     const ext = matches?.[5] ?? '';
@@ -1082,11 +1106,6 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
         }
     } as ParseResult;
 
-    if (options.signal != null) {
-
-        options.signal.removeEventListener('abort', reject);
-    }
-
     if (options.module) {
 
         const moduleSettings = {
@@ -1111,10 +1130,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
         let revMapping = {} as Record<string, string>;
         let filePath: string = typeof options.module == 'boolean' ? options.src as string : (moduleSettings.filePath ?? options.src) as string;
 
-        if (filePath!.startsWith(options.cwd + '/')) {
-
-            filePath = filePath!.slice(options!.cwd!.length + 1);
-        }
+        filePath = filePath === '' ? options.src as string : options.resolve!(filePath, options.dirname!(options.src as string), options.cwd).relative;
 
         if (typeof options.module == 'number') {
 
@@ -1175,7 +1191,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                 } as ParseInfo), Object.assign({}, options, {
                     minify: false,
                     setParent: false,
-                    src: src.absolute
+                    src: src.relative
                 }) as ParserOptions);
 
                 cssVariablesMap[(node as CssVariableImportTokenType).nam] = root.cssModuleVariables!;
@@ -1354,10 +1370,10 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
                             } as ParseInfo), Object.assign({}, options, {
                                 minify: false,
                                 setParent: false,
-                                src: src.absolute
+                                src: src.relative
                             }) as ParserOptions);
 
-                            const srcIndex: string = (src.relative.startsWith('/') ? '' : './') + src.relative;
+                            const srcIndex: string = (src.relative.startsWith('/') || src.relative.startsWith('../') ? '' : './') + src.relative;
 
                             if (Object.keys(root.mapping as Record<string, string>).length > 0) {
                                 importMapping[srcIndex] = {} as Record<string, string>;
@@ -1385,7 +1401,7 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
 
                                                 if (!((iden as IdentToken | DashedIdentToken).val in root.mapping!)) {
 
-                                                    const result = (moduleSettings.scoped! & ModuleScopeEnumOptions.Global) ? (iden as IdentToken | DashedIdentToken).val : moduleSettings.generateScopedName!((iden as IdentToken | DashedIdentToken).val, url as string, moduleSettings.pattern as string, moduleSettings.hashLength);
+                                                    const result = (moduleSettings.scoped! & ModuleScopeEnumOptions.Global) ? (iden as IdentToken | DashedIdentToken).val : moduleSettings.generateScopedName!((iden as IdentToken | DashedIdentToken).val, srcIndex, moduleSettings.pattern as string, moduleSettings.hashLength);
 
                                                     let value: string = result instanceof Promise ? await result : result;
 
@@ -1797,6 +1813,11 @@ export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<T
         result.stats.total = `${(endTime - startTime).toFixed(2)}ms`;
     }
 
+    if (options.signal != null) {
+
+        options.signal.removeEventListener('abort', reject);
+    }
+
     return result;
 }
 
@@ -2160,6 +2181,9 @@ function parseNode(results: TokenizeResult[], context: AstRuleList, options: Par
                                     nam: (tokens[i] as IdentToken).val,
                                     val: tokens.slice(offset)
                                 });
+                                delete node.tokens;
+                                // @ts-ignore
+                                delete node.raw!;
                                 context.chi!.push(node);
                                 return null;
                             }

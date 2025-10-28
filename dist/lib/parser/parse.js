@@ -40,6 +40,12 @@ const enumTokenHints = new Set([
 function reject(reason) {
     throw new Error(reason ?? 'Parsing aborted');
 }
+/**
+ * replace token in its parent node
+ * @param parent
+ * @param value
+ * @param replacement
+ */
 function replaceToken(parent, value, replacement) {
     for (const node of (Array.isArray(replacement) ? replacement : [replacement])) {
         if ('parent' in value && value.parent != node.parent) {
@@ -67,6 +73,14 @@ function replaceToken(parent, value, replacement) {
         target.splice(index, 1, ...(Array.isArray(replacement) ? replacement : [replacement]));
     }
 }
+/**
+ * transform case of key name
+ * @param key
+ * @param how
+ *
+ * @throws Error
+ * @private
+ */
 function getKeyName(key, how) {
     switch (how) {
         case ModuleCaseTransformEnum.CamelCase:
@@ -78,11 +92,21 @@ function getKeyName(key, how) {
     }
     return key;
 }
+/**
+ * generate scoped name
+ * @param localName
+ * @param filePath
+ * @param pattern
+ * @param hashLength
+ *
+ * @throws Error
+ * @private
+ */
 async function generateScopedName(localName, filePath, pattern, hashLength = 5) {
     if (localName.startsWith('--')) {
         localName = localName.slice(2);
     }
-    const matches = /.*?(([^/]+)\/)?([^/\\]*?)(\.([^?]+))?([?].*)?$/.exec(filePath);
+    const matches = /.*?(([^/]+)\/)?([^/\\]*?)(\.([^?/]+))?([?].*)?$/.exec(filePath);
     const folder = matches?.[2]?.replace?.(/[^A-Za-z0-9_-]/g, "_") ?? '';
     const fileBase = matches?.[3] ?? '';
     const ext = matches?.[5] ?? '';
@@ -678,9 +702,6 @@ async function doParse(iter, options = {}) {
             total: `${(endTime - startTime).toFixed(2)}ms`
         }
     };
-    if (options.signal != null) {
-        options.signal.removeEventListener('abort', reject);
-    }
     if (options.module) {
         const moduleSettings = {
             hashLength: 5,
@@ -702,9 +723,7 @@ async function doParse(iter, options = {}) {
         let mapping = {};
         let revMapping = {};
         let filePath = typeof options.module == 'boolean' ? options.src : (moduleSettings.filePath ?? options.src);
-        if (filePath.startsWith(options.cwd + '/')) {
-            filePath = filePath.slice(options.cwd.length + 1);
-        }
+        filePath = filePath === '' ? options.src : options.resolve(filePath, options.dirname(options.src), options.cwd).relative;
         if (typeof options.module == 'number') {
             if (options.module & ModuleCaseTransformEnum.CamelCase) {
                 moduleSettings.naming = ModuleCaseTransformEnum.CamelCase;
@@ -750,7 +769,7 @@ async function doParse(iter, options = {}) {
                 }), Object.assign({}, options, {
                     minify: false,
                     setParent: false,
-                    src: src.absolute
+                    src: src.relative
                 }));
                 cssVariablesMap[node.nam] = root.cssModuleVariables;
                 parent.chi.splice(parent.chi.indexOf(node), 1);
@@ -878,9 +897,9 @@ async function doParse(iter, options = {}) {
                             }), Object.assign({}, options, {
                                 minify: false,
                                 setParent: false,
-                                src: src.absolute
+                                src: src.relative
                             }));
-                            const srcIndex = (src.relative.startsWith('/') ? '' : './') + src.relative;
+                            const srcIndex = (src.relative.startsWith('/') || src.relative.startsWith('../') ? '' : './') + src.relative;
                             if (Object.keys(root.mapping).length > 0) {
                                 importMapping[srcIndex] = {};
                             }
@@ -896,7 +915,7 @@ async function doParse(iter, options = {}) {
                                                     continue;
                                                 }
                                                 if (!(iden.val in root.mapping)) {
-                                                    const result = (moduleSettings.scoped & ModuleScopeEnumOptions.Global) ? iden.val : moduleSettings.generateScopedName(iden.val, url, moduleSettings.pattern, moduleSettings.hashLength);
+                                                    const result = (moduleSettings.scoped & ModuleScopeEnumOptions.Global) ? iden.val : moduleSettings.generateScopedName(iden.val, srcIndex, moduleSettings.pattern, moduleSettings.hashLength);
                                                     let value = result instanceof Promise ? await result : result;
                                                     root.mapping[iden.val] = (moduleSettings.naming & ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming & ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
                                                     root.revMapping[root.mapping[iden.val]] = iden.val;
@@ -1176,6 +1195,9 @@ async function doParse(iter, options = {}) {
         result.stats.module = `${(endTime - parseModuleTime).toFixed(2)}ms`;
         result.stats.total = `${(endTime - startTime).toFixed(2)}ms`;
     }
+    if (options.signal != null) {
+        options.signal.removeEventListener('abort', reject);
+    }
     return result;
 }
 function getLastNode(context) {
@@ -1429,6 +1451,9 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
                                     nam: tokens[i].val,
                                     val: tokens.slice(offset)
                                 });
+                                delete node.tokens;
+                                // @ts-ignore
+                                delete node.raw;
                                 context.chi.push(node);
                                 return null;
                             }
@@ -2734,4 +2759,4 @@ function parseTokens(tokens, options = {}) {
     return tokens;
 }
 
-export { doParse, getKeyName, getTokenType, parseAtRulePrelude, parseDeclarations, parseSelector, parseString, parseTokens, replaceToken, urlTokenMatcher };
+export { doParse, generateScopedName, getKeyName, getTokenType, parseAtRulePrelude, parseDeclarations, parseSelector, parseString, parseTokens, replaceToken, urlTokenMatcher };

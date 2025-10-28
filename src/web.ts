@@ -12,6 +12,7 @@ import type {
 
 import {doParse, doRender, ModuleScopeEnumOptions, tokenize, tokenizeStream} from "./lib/index.ts";
 import {dirname, matchUrl, resolve} from "./lib/fs/index.ts";
+import {ResponseType} from "./types.ts";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -51,17 +52,22 @@ export {
     ModuleCaseTransformEnum,
 } from './lib/index.ts';
 export {FeatureWalkMode} from './lib/ast/features/type.ts';
-export {dirname, resolve};
+export {dirname, resolve, ResponseType};
 
 /**
  * default file or url loader
  * @param url
  * @param currentFile
  *
- * @param asStream
+ * @param responseType
  * @private
  */
-export async function load(url: string, currentFile: string = '.', asStream: boolean = false): Promise<string | ReadableStream<Uint8Array<ArrayBufferLike>>> {
+export async function load(url: string, currentFile: string = '.', responseType: boolean | ResponseType = false): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>> {
+
+    if (typeof responseType == 'boolean') {
+
+        responseType = responseType ? ResponseType.ReadableStream : ResponseType.Text;
+    }
 
     let t: URL;
 
@@ -84,8 +90,13 @@ export async function load(url: string, currentFile: string = '.', asStream: boo
             throw new Error(`${response.status} ${response.statusText} ${response.url}`)
         }
 
-        return asStream ? response.body : await response.text();
-    }) as Promise<string | ReadableStream<Uint8Array<ArrayBufferLike>>>;
+        if (responseType == ResponseType.ArrayBuffer) {
+
+            return response.arrayBuffer();
+        }
+
+        return responseType == ResponseType.ReadableStream ? response.body : await response.text();
+    }) as Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
 }
 
 /**
@@ -261,21 +272,23 @@ export async function transform(css: string | ReadableStream<Uint8Array>, option
 
     return parse(css, options).then((parseResult: ParseResult) => {
 
-        let mapping : Record<string, string> | null= null;;
-        let importMapping : Record<string, Record<string, string>> | null = null;
+        let mapping: Record<string, string> | null = null;
+        ;
+        let importMapping: Record<string, Record<string, string>> | null = null;
 
-        if (typeof options.module == 'number' && options.module & ModuleScopeEnumOptions.ICSS) {
+        if (typeof options.module == 'number' && (options.module & ModuleScopeEnumOptions.ICSS)) {
+            mapping = parseResult.mapping as Record<string, string>;
+            importMapping = parseResult.importMapping as Record<string, Record<string, string>>;
+        } else if (typeof options.module == 'object' && typeof options.module.scoped == 'number' && (options.module.scoped & ModuleScopeEnumOptions.ICSS)) {
             mapping = parseResult.mapping as Record<string, string>;
             importMapping = parseResult.importMapping as Record<string, Record<string, string>>;
         }
 
-        else if (typeof options.module == 'object' && typeof options.module.scoped == 'number' && options.module.scoped & ModuleScopeEnumOptions.ICSS) {
-            mapping = parseResult.mapping as Record<string, string>;
-            importMapping = parseResult.importMapping as Record<string, Record<string, string>>;
-        }
-        
         // ast already expanded by parse
-        const rendered: RenderResult = render(parseResult.ast, {...options, expandNestingRules: false}, mapping != null ? {mapping, importMapping} : null);
+        const rendered: RenderResult = render(parseResult.ast, {
+            ...options,
+            expandNestingRules: false
+        }, mapping != null ? {mapping, importMapping} : null);
 
         return {
             ...parseResult,

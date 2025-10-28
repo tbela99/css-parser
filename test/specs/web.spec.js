@@ -1,4 +1,5 @@
 import {dirname, parse, render, resolve, transform} from '../../dist/web.js';
+import {ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions} from '../../dist/lib/ast/types.js';
 import {expect} from "@esm-bundle/chai";
 import * as tests from './code/index.js';
 
@@ -16,5 +17,5 @@ for (const [name,test] of Object.entries(tests)) {
         continue;
     }
 
-    test.run(describe, expect, it, transform, parse, render, dirname, readFile, resolve);
+    test.run(describe, expect, it, transform, parse, render, dirname, readFile, resolve, ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions);
 }

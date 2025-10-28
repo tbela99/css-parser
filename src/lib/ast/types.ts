@@ -569,7 +569,7 @@ export enum EnumToken {
 export enum ColorType {
 
     /**
-     * system colors
+     * deprecated system colors
      */
     SYS,
     /**
@@ -577,7 +577,7 @@ export enum ColorType {
      */
     DPSYS,
     /**
-     * colors as literals
+     * named colors
      */
     LIT,
     /**
@@ -685,19 +685,19 @@ export enum ModuleCaseTransformEnum {
      */
     IgnoreCase = 0x1,
     /**
-     * transform mapping key name
+     * transform mapping key name to camel case
      */
     CamelCase = 0x2,
     /**
-     * transform class names and mapping key name
+     * transform class names and mapping key name to camel case
      */
     CamelCaseOnly = 0x4,
     /**
-     * transform mapping key name
+     * transform mapping key name to dash case
      */
     DashCase = 0x8,
     /**
-     * transform class names and mapping key name
+     * transform class names and mapping key name to dash case
      */
     DashCaseOnly = 0x10
 }

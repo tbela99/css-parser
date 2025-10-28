@@ -50,7 +50,7 @@ See the full documentation at the [CSS Parser](https://tbela99.github.io/css-par
 
 Try it [online](https://tbela99.github.io/css-parser/playground/)
 
-## Exports
+## Import
 
 There are several ways to import the library into your application.
 

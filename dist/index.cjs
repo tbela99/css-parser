@@ -567,7 +567,7 @@ exports.EnumToken = void 0;
 exports.ColorType = void 0;
 (function (ColorType) {
     /**
-     * system colors
+     * deprecated system colors
      */
     ColorType[ColorType["SYS"] = 0] = "SYS";
     /**
@@ -575,7 +575,7 @@ exports.ColorType = void 0;
      */
     ColorType[ColorType["DPSYS"] = 1] = "DPSYS";
     /**
-     * colors as literals
+     * named colors
      */
     ColorType[ColorType["LIT"] = 2] = "LIT";
     /**
@@ -682,19 +682,19 @@ exports.ModuleCaseTransformEnum = void 0;
      */
     ModuleCaseTransformEnum[ModuleCaseTransformEnum["IgnoreCase"] = 1] = "IgnoreCase";
     /**
-     * transform mapping key name
+     * transform mapping key name to camel case
      */
     ModuleCaseTransformEnum[ModuleCaseTransformEnum["CamelCase"] = 2] = "CamelCase";
     /**
-     * transform class names and mapping key name
+     * transform class names and mapping key name to camel case
      */
     ModuleCaseTransformEnum[ModuleCaseTransformEnum["CamelCaseOnly"] = 4] = "CamelCaseOnly";
     /**
-     * transform mapping key name
+     * transform mapping key name to dash case
      */
     ModuleCaseTransformEnum[ModuleCaseTransformEnum["DashCase"] = 8] = "DashCase";
     /**
-     * transform class names and mapping key name
+     * transform class names and mapping key name to dash case
      */
     ModuleCaseTransformEnum[ModuleCaseTransformEnum["DashCaseOnly"] = 16] = "DashCaseOnly";
 })(exports.ModuleCaseTransformEnum || (exports.ModuleCaseTransformEnum = {}));
@@ -4178,7 +4178,7 @@ const epsilon = 1e-5;
 function identity() {
     return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 }
-function normalize(point) {
+function normalize$1(point) {
     const [x, y, z] = point;
     const norm = Math.sqrt(point[0] * point[0] + point[1] * point[1] + point[2] * point[2]);
     return norm === 0 ? [0, 0, 0] : [x / norm, y / norm, z / norm];
@@ -4305,7 +4305,7 @@ function decompose(original) {
     ];
     // Compute scale
     const scaleX = Math.hypot(...row0);
-    const row0Norm = normalize(row0);
+    const row0Norm = normalize$1(row0);
     const skewXY = dot(row0Norm, row1);
     const row1Proj = [
         row1[0] - skewXY * row0Norm[0],
@@ -4313,7 +4313,7 @@ function decompose(original) {
         row1[2] - skewXY * row0Norm[2]
     ];
     const scaleY = Math.hypot(...row1Proj);
-    const row1Norm = normalize(row1Proj);
+    const row1Norm = normalize$1(row1Proj);
     const skewXZ = dot(row0Norm, row2);
     const skewYZ = dot(row1Norm, row2);
     const row2Proj = [
@@ -4321,7 +4321,7 @@ function decompose(original) {
         row2[1] - skewXZ * row0Norm[1] - skewYZ * row1Norm[1],
         row2[2] - skewXZ * row0Norm[2] - skewYZ * row1Norm[2]
     ];
-    const row2Norm = normalize(row2Proj);
+    const row2Norm = normalize$1(row2Proj);
     const determinant = row0[0] * cross[0] + row0[1] * cross[1] + row0[2] * cross[2];
     const scaleZ = Math.hypot(...row2Proj) * (determinant < 0 ? -1 : 1);
     // Build rotation matrix from orthonormalized vectors
@@ -14823,6 +14823,9 @@ function dirname(path) {
     //
     //     return path;
     // }
+    if (path === '') {
+        return '';
+    }
     let i = 0;
     let parts = [''];
     for (; i < path.length; i++) {
@@ -14847,6 +14850,12 @@ function dirname(path) {
  * @private
  */
 function splitPath(result) {
+    if (result.length == 0) {
+        return { parts: [], i: 0 };
+    }
+    if (result === '/') {
+        return { parts: ['/'], i: 0 };
+    }
     const parts = [''];
     let i = 0;
     for (; i < result.length; i++) {
@@ -14896,10 +14905,13 @@ function resolve(url, currentDirectory, cwd) {
             relative: url.slice(currentDirectory.length + 1)
         };
     }
-    if (currentDirectory === '' && cwd !== '' && url.startsWith(cwd + '/')) {
+    if (currentDirectory === '' && cwd !== '' && url.startsWith(cwd == '/' ? cwd : cwd + '/')) {
+        cwd = normalize(cwd);
+        const absolute = normalize(url);
+        const prefix = cwd == '/' ? cwd : cwd + '/';
         return {
-            absolute: url,
-            relative: url.slice(cwd.length + 1)
+            absolute,
+            relative: absolute.startsWith(prefix) ? absolute.slice(prefix.length) : diff$1(absolute, cwd)
         };
     }
     if (matchUrl.test(currentDirectory)) {
@@ -14916,9 +14928,15 @@ function resolve(url, currentDirectory, cwd) {
     else if (currentDirectory.charAt(0) == '/') {
         result = dirname(currentDirectory) + '/' + url;
     }
-    let { parts, i } = splitPath(result);
-    const absolute = parts.join('/');
-    const { parts: dirs } = splitPath(cwd ?? currentDirectory);
+    const absolute = normalize(result);
+    return {
+        absolute,
+        relative: absolute === '' ? '' : diff$1(absolute, cwd ?? currentDirectory),
+    };
+}
+function diff$1(path1, path2) {
+    let { parts } = splitPath(path1);
+    const { parts: dirs } = splitPath(path2);
     for (const p of dirs) {
         if (parts[0] == p) {
             parts.shift();
@@ -14927,16 +14945,61 @@ function resolve(url, currentDirectory, cwd) {
             parts.unshift('..');
         }
     }
-    return {
-        absolute,
-        relative: parts.join('/') + (i < result.length ? result.slice(i) : '')
-    };
+    return parts.join('/');
 }
+function normalize(path) {
+    let parts = [];
+    let i = 0;
+    for (; i < path.length; i++) {
+        const chr = path.charAt(i);
+        if (chr == '/') {
+            if (parts.length == 0 || parts[parts.length - 1] !== '') {
+                parts.push('');
+            }
+        }
+        else if (chr == '?' || chr == '#') {
+            break;
+        }
+        else {
+            parts[parts.length - 1] += chr;
+        }
+    }
+    let k = -1;
+    while (++k < parts.length) {
+        if (parts[k] == '.') {
+            parts.splice(k--, 1);
+        }
+        else if (parts[k] == '..') {
+            parts.splice(k - 1, 2);
+            k -= 2;
+        }
+    }
+    return (path.charAt(0) == '/' ? '/' : '') + parts.join('/');
+}
+
+/**
+ * response type
+ */
+exports.ResponseType = void 0;
+(function (ResponseType) {
+    /**
+     * return text
+     */
+    ResponseType[ResponseType["Text"] = 0] = "Text";
+    /**
+     * return a readable stream
+     */
+    ResponseType[ResponseType["ReadableStream"] = 1] = "ReadableStream";
+    /**
+     * return an arraybuffer
+     */
+    ResponseType[ResponseType["ArrayBuffer"] = 2] = "ArrayBuffer";
+})(exports.ResponseType || (exports.ResponseType = {}));
 
 /**
  * feature walk mode
  *
- * @internal
+ * @private
  */
 exports.FeatureWalkMode = void 0;
 (function (FeatureWalkMode) {
@@ -18019,6 +18082,12 @@ const enumTokenHints = new Set([
 function reject(reason) {
     throw new Error(reason ?? 'Parsing aborted');
 }
+/**
+ * replace token in its parent node
+ * @param parent
+ * @param value
+ * @param replacement
+ */
 function replaceToken(parent, value, replacement) {
     for (const node of (Array.isArray(replacement) ? replacement : [replacement])) {
         if ('parent' in value && value.parent != node.parent) {
@@ -18046,6 +18115,14 @@ function replaceToken(parent, value, replacement) {
         target.splice(index, 1, ...(Array.isArray(replacement) ? replacement : [replacement]));
     }
 }
+/**
+ * transform case of key name
+ * @param key
+ * @param how
+ *
+ * @throws Error
+ * @private
+ */
 function getKeyName(key, how) {
     switch (how) {
         case exports.ModuleCaseTransformEnum.CamelCase:
@@ -18057,11 +18134,21 @@ function getKeyName(key, how) {
     }
     return key;
 }
+/**
+ * generate scoped name
+ * @param localName
+ * @param filePath
+ * @param pattern
+ * @param hashLength
+ *
+ * @throws Error
+ * @private
+ */
 async function generateScopedName(localName, filePath, pattern, hashLength = 5) {
     if (localName.startsWith('--')) {
         localName = localName.slice(2);
     }
-    const matches = /.*?(([^/]+)\/)?([^/\\]*?)(\.([^?]+))?([?].*)?$/.exec(filePath);
+    const matches = /.*?(([^/]+)\/)?([^/\\]*?)(\.([^?/]+))?([?].*)?$/.exec(filePath);
     const folder = matches?.[2]?.replace?.(/[^A-Za-z0-9_-]/g, "_") ?? '';
     const fileBase = matches?.[3] ?? '';
     const ext = matches?.[5] ?? '';
@@ -18657,9 +18744,6 @@ async function doParse(iter, options = {}) {
             total: `${(endTime - startTime).toFixed(2)}ms`
         }
     };
-    if (options.signal != null) {
-        options.signal.removeEventListener('abort', reject);
-    }
     if (options.module) {
         const moduleSettings = {
             hashLength: 5,
@@ -18681,9 +18765,7 @@ async function doParse(iter, options = {}) {
         let mapping = {};
         let revMapping = {};
         let filePath = typeof options.module == 'boolean' ? options.src : (moduleSettings.filePath ?? options.src);
-        if (filePath.startsWith(options.cwd + '/')) {
-            filePath = filePath.slice(options.cwd.length + 1);
-        }
+        filePath = filePath === '' ? options.src : options.resolve(filePath, options.dirname(options.src), options.cwd).relative;
         if (typeof options.module == 'number') {
             if (options.module & exports.ModuleCaseTransformEnum.CamelCase) {
                 moduleSettings.naming = exports.ModuleCaseTransformEnum.CamelCase;
@@ -18729,7 +18811,7 @@ async function doParse(iter, options = {}) {
                 }), Object.assign({}, options, {
                     minify: false,
                     setParent: false,
-                    src: src.absolute
+                    src: src.relative
                 }));
                 cssVariablesMap[node.nam] = root.cssModuleVariables;
                 parent.chi.splice(parent.chi.indexOf(node), 1);
@@ -18857,9 +18939,9 @@ async function doParse(iter, options = {}) {
                             }), Object.assign({}, options, {
                                 minify: false,
                                 setParent: false,
-                                src: src.absolute
+                                src: src.relative
                             }));
-                            const srcIndex = (src.relative.startsWith('/') ? '' : './') + src.relative;
+                            const srcIndex = (src.relative.startsWith('/') || src.relative.startsWith('../') ? '' : './') + src.relative;
                             if (Object.keys(root.mapping).length > 0) {
                                 importMapping[srcIndex] = {};
                             }
@@ -18875,7 +18957,7 @@ async function doParse(iter, options = {}) {
                                                     continue;
                                                 }
                                                 if (!(iden.val in root.mapping)) {
-                                                    const result = (moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global) ? iden.val : moduleSettings.generateScopedName(iden.val, url, moduleSettings.pattern, moduleSettings.hashLength);
+                                                    const result = (moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global) ? iden.val : moduleSettings.generateScopedName(iden.val, srcIndex, moduleSettings.pattern, moduleSettings.hashLength);
                                                     let value = result instanceof Promise ? await result : result;
                                                     root.mapping[iden.val] = (moduleSettings.naming & exports.ModuleCaseTransformEnum.DashCaseOnly || moduleSettings.naming & exports.ModuleCaseTransformEnum.CamelCaseOnly ? getKeyName(value, moduleSettings.naming) : value);
                                                     root.revMapping[root.mapping[iden.val]] = iden.val;
@@ -19155,6 +19237,9 @@ async function doParse(iter, options = {}) {
         result.stats.module = `${(endTime - parseModuleTime).toFixed(2)}ms`;
         result.stats.total = `${(endTime - startTime).toFixed(2)}ms`;
     }
+    if (options.signal != null) {
+        options.signal.removeEventListener('abort', reject);
+    }
     return result;
 }
 function getLastNode(context) {
@@ -19408,6 +19493,9 @@ function parseNode(results, context, options, errors, src, map, rawTokens, stats
                                     nam: tokens[i].val,
                                     val: tokens.slice(offset)
                                 });
+                                delete node.tokens;
+                                // @ts-ignore
+                                delete node.raw;
                                 context.chi.push(node);
                                 return null;
                             }
@@ -20977,7 +21065,6 @@ function* walkValues(values, root = null, filter, reverse) {
                         map.set(o, map.get(value) ?? root);
                     }
                     stack[reverse ? 'push' : 'unshift'](...op);
-                    console.error({ op, s: stack[0] });
                 }
             }
         }
@@ -24555,24 +24642,33 @@ function replaceCompoundLiteral(selector, replace) {
  * load file or url as stream
  * @param url
  * @param currentFile
- * @param asStream
+ * @param responseType
  * @throws Error file not found
  *
  * @private
  */
-async function load(url, currentFile = '.', asStream = false) {
+async function load(url, currentFile = '.', responseType = false) {
     const resolved = resolve(url, currentFile);
+    if (typeof responseType == 'boolean') {
+        responseType = responseType ? exports.ResponseType.ReadableStream : exports.ResponseType.Text;
+    }
     if (matchUrl.test(resolved.absolute)) {
         return fetch(resolved.absolute).then(async (response) => {
             if (!response.ok) {
                 throw new Error(`${response.status} ${response.statusText} ${response.url}`);
             }
-            return asStream ? response.body : await response.text();
+            if (responseType == exports.ResponseType.ArrayBuffer) {
+                return response.arrayBuffer();
+            }
+            return responseType == exports.ResponseType.ReadableStream ? response.body : await response.text();
         });
     }
     try {
-        if (!asStream) {
+        if (responseType == exports.ResponseType.Text) {
             return promises.readFile(resolved.absolute, 'utf-8');
+        }
+        if (responseType == exports.ResponseType.ArrayBuffer) {
+            return promises.readFile(resolved.absolute).then(buffer => buffer.buffer);
         }
         const stats = await promises.lstat(resolved.absolute);
         if (stats.isFile()) {
@@ -24695,7 +24791,12 @@ async function parse(stream, options = {}) {
         offset: 0,
         position: { ind: 0, lin: 1, col: 1 },
         currentPosition: { ind: -1, lin: 1, col: 0 }
-    }), Object.assign(options, { load, resolve, dirname, cwd: options.cwd ?? process.cwd() })).then(result => {
+    }), Object.assign(options, {
+        load,
+        resolve,
+        dirname,
+        cwd: options.cwd ?? process.cwd()
+    })).then(result => {
         const { revMapping, ...res } = result;
         return res;
     });
@@ -24779,12 +24880,15 @@ async function transform(css, options = {}) {
             mapping = parseResult.mapping;
             importMapping = parseResult.importMapping;
         }
-        else if (typeof options.module == 'object' && typeof options.module.scoped == 'number' && options.module.scoped & exports.ModuleScopeEnumOptions.ICSS) {
+        else if (typeof options.module == 'object' && typeof options.module.scoped == 'number' && (options.module.scoped & exports.ModuleScopeEnumOptions.ICSS)) {
             mapping = parseResult.mapping;
             importMapping = parseResult.importMapping;
         }
         // ast already expanded by parse
-        const rendered = render(parseResult.ast, { ...options, expandNestingRules: false }, mapping != null ? { mapping, importMapping } : null);
+        const rendered = render(parseResult.ast, {
+            ...options,
+            expandNestingRules: false
+        }, mapping != null ? { mapping, importMapping } : null);
         return {
             ...parseResult,
             ...rendered,

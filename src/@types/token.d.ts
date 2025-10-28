@@ -159,7 +159,7 @@ export declare interface FunctionURLToken extends BaseToken {
 
     typ: EnumToken.UrlFunctionTokenType,
     val: 'url';
-    chi: Array<UrlToken | CommentToken>;
+    chi: Array<UrlToken | StringToken | CommentToken>;
 }
 
 /**

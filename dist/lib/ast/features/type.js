@@ -1,7 +1,7 @@
 /**
  * feature walk mode
  *
- * @internal
+ * @private
  */
 var FeatureWalkMode;
 (function (FeatureWalkMode) {

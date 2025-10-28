@@ -1,5 +1,7 @@
 /errors.txt
 /syntax.txt
+/deno.lock
+/.repl_history
 /ROADMAP.draft.md
 /.idea
 /.DS_Store

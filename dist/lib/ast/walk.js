@@ -226,7 +226,6 @@ function* walkValues(values, root = null, filter, reverse) {
                         map.set(o, map.get(value) ?? root);
                     }
                     stack[reverse ? 'push' : 'unshift'](...op);
-                    console.error({ op, s: stack[0] });
                 }
             }
         }
