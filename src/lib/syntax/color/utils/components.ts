@@ -1,4 +1,4 @@
-import type {ColorToken, NumberToken, Token} from "../../../../@types/index.d.ts";
+import type {ColorToken, FunctionToken, NumberToken, Token} from "../../../../@types/index.d.ts";
 import {ColorType, EnumToken, walkValues} from "../../../ast/index.ts";
 import {COLORS_NAMES} from "./constants.ts";
 import {expandHexValue} from "../hex.ts";
@@ -27,14 +27,14 @@ export function getComponents(token: ColorToken): Token[] | null {
 
         if (child.typ == EnumToken.FunctionTokenType) {
 
-            if ('var' == child.val.toLowerCase()) {
+            if ('var' == (child as FunctionToken).val.toLowerCase()) {
 
                 return null;
             } else {
 
-                for (const {value} of walkValues(child.chi)) {
+                for (const {value} of walkValues((child as FunctionToken).chi)) {
 
-                    if (value.typ == EnumToken.FunctionTokenType && 'var' === value.val.toLowerCase()) {
+                    if (value.typ == EnumToken.FunctionTokenType && 'var' === (value as FunctionToken).val.toLowerCase()) {
 
                         return null;
                     }

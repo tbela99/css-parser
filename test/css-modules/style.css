@@ -1,0 +1,29 @@
+.className {
+    color: green;
+}
+
+.className:hover {
+    color: red;
+}
+
+.otherClassName {
+    composes: className;
+    background: black;
+}
+
+:global {
+    .selector {
+        & :local {
+            animation: yourAnimation 1s ease;
+        }
+    }
+}
+
+@keyframes yourAnimation {
+    0% {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}

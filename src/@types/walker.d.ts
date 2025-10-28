@@ -18,9 +18,9 @@ export declare type WalkerOption = WalkerOptionEnum | AstNode | Token | null;
 export declare type WalkerFilter = (node: AstNode) => WalkerOption;
 
 /**
- * filter nod
+ * filter nodes
  */
-export declare type WalkerValueFilter = (node: AstNode | Token, parent?: AstNode | Token | null, event?: WalkerEvent) => WalkerOption | null;
+export declare type WalkerValueFilter = (node: AstNode | Token, parent?: AstNode | Token | AstNode[] | Token[] | null, event?: WalkerEvent) => WalkerOption | null;
 
 export declare interface WalkResult {
     node: AstNode;

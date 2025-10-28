@@ -753,7 +753,7 @@ var declarations = {
 		syntax: "[ <counter-name> <integer>? ]+ | none"
 	},
 	cursor: {
-		syntax: "[ [ <url> [ <x> <y> ]? , ]* [ auto | default | none | context-menu | help | pointer | progress | wait | cell | crosshair | text | vertical-text | alias | copy | move | no-drop | not-allowed | e-resize | n-resize | ne-resize | nw-resize | s-resize | se-resize | sw-resize | w-resize | ew-resize | ns-resize | nesw-resize | nwse-resize | col-resize | row-resize | all-scroll | zoom-in | zoom-out | grab | grabbing ] ] [ [ <url> [ <x> <y> ]? , ]* [ auto | default | none | context-menu | help | pointer | progress | wait | cell | crosshair | text | vertical-text | alias | copy | move | no-drop | not-allowed | e-resize | n-resize | ne-resize | nw-resize | s-resize | se-resize | sw-resize | w-resize | ew-resize | ns-resize | nesw-resize | nwse-resize | col-resize | row-resize | all-scroll | zoom-in | zoom-out | grab | grabbing | hand | -webkit-grab | -webkit-grabbing | -webkit-zoom-in | -webkit-zoom-out | -moz-grab | -moz-grabbing | -moz-zoom-in | -moz-zoom-out ] ]"
+		syntax: "[ [ <url> [ <x> <y> ]? , ]* <cursor-predefined> ] [ [ <url> [ <x> <y> ]? , ]* [ auto | default | none | context-menu | help | pointer | progress | wait | cell | crosshair | text | vertical-text | alias | copy | move | no-drop | not-allowed | e-resize | n-resize | ne-resize | nw-resize | s-resize | se-resize | sw-resize | w-resize | ew-resize | ns-resize | nesw-resize | nwse-resize | col-resize | row-resize | all-scroll | zoom-in | zoom-out | grab | grabbing | hand | -webkit-grab | -webkit-grabbing | -webkit-zoom-in | -webkit-zoom-out | -moz-grab | -moz-grabbing | -moz-zoom-in | -moz-zoom-out ] ]"
 	},
 	cx: {
 		syntax: "<length> | <percentage>"
@@ -1981,6 +1981,12 @@ var declarations = {
 	},
 	"white-space-trim": {
 		syntax: "none | discard-before || discard-after || discard-inner"
+	},
+	composes: {
+		syntax: "<composes-selector>#"
+	},
+	"composes-selector": {
+		syntax: "<ident>+ [from [global&&<string>]]?"
 	}
 };
 var functions = {
@@ -2006,7 +2012,7 @@ var functions = {
 		syntax: "atan2( <calc-sum>, <calc-sum> )"
 	},
 	attr: {
-		syntax: "attr( <attr-name> <type-or-unit>? [, <attr-fallback> ]? )"
+		syntax: "attr( <attr-name> <attr-type>? , <declaration-value>? )"
 	},
 	blur: {
 		syntax: "blur( <length>? )"
@@ -2359,13 +2365,16 @@ var syntaxes = {
 		syntax: "scroll | fixed | local"
 	},
 	"attr()": {
-		syntax: "attr( <attr-name> <type-or-unit>? [, <attr-fallback> ]? )"
+		syntax: "attr( <attr-name> <attr-type>? , <declaration-value>? )"
 	},
 	"attr-matcher": {
 		syntax: "[ '~' | '|' | '^' | '$' | '*' ]? '='"
 	},
 	"attr-modifier": {
 		syntax: "i | s"
+	},
+	"attr-type": {
+		syntax: "type( <syntax> ) | raw-string | number | <attr-unit>"
 	},
 	"attribute-selector": {
 		syntax: "'[' <wq-name> ']' | '[' <wq-name> <attr-matcher> [ <string-token> | <ident-token> ] <attr-modifier>? ']'"
@@ -2579,6 +2588,9 @@ var syntaxes = {
 	},
 	"cubic-bezier-easing-function": {
 		syntax: "ease | ease-in | ease-out | ease-in-out | cubic-bezier( <number [0,1]> , <number> , <number [0,1]> , <number> )"
+	},
+	"cursor-predefined": {
+		syntax: "auto | default | none | context-menu | help | pointer | progress | wait | cell | crosshair | text | vertical-text | alias | copy | move | no-drop | not-allowed | e-resize | n-resize | ne-resize | nw-resize | s-resize | se-resize | sw-resize | w-resize | ew-resize | ns-resize | nesw-resize | nwse-resize | col-resize | row-resize | all-scroll | zoom-in | zoom-out | grab | grabbing"
 	},
 	"custom-color-space": {
 		syntax: "<dashed-ident>"

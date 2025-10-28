@@ -175,33 +175,37 @@ function* consumeString(quoteStr: '"' | "'", buffer: string, parseInfo: ParseInf
 
 function match(parseInfo: ParseInfo, input: string): boolean {
 
-    return parseInfo.stream.slice(parseInfo.currentPosition.ind + 1, parseInfo.currentPosition.ind + input.length + 1) == input;
+    const position = parseInfo.currentPosition.ind - parseInfo.offset;
+    return parseInfo.stream.slice(position + 1, position + input.length + 1) == input;
 }
 
 function peek(parseInfo: ParseInfo, count: number = 1): string {
 
     if (count == 1) {
 
-        return parseInfo.stream.charAt(parseInfo.currentPosition.ind + 1);
+        return parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset + 1);
     }
 
-    return parseInfo.stream.slice(parseInfo.currentPosition.ind + 1, parseInfo.currentPosition.ind + count + 1);
+    const position = parseInfo.currentPosition.ind - parseInfo.offset;
+    return parseInfo.stream.slice(position + 1, position + count + 1);
 }
 
 function prev(parseInfo: ParseInfo): string {
 
-    return parseInfo.stream.charAt(parseInfo.currentPosition.ind - 1);
+    return parseInfo.offset == parseInfo.currentPosition.ind ? parseInfo.buffer.slice(-1) : parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset - 1);
 }
 
 function next(parseInfo: ParseInfo, count: number = 1): string {
 
     let char: string = '';
     let chr: string = '';
+    let position = parseInfo.currentPosition.ind - parseInfo.offset;
 
-    while (count-- && (chr = parseInfo.stream.charAt(parseInfo.currentPosition.ind + 1))) {
+    while (count-- && (chr = parseInfo.stream.charAt(position + 1))) {
 
         char += chr;
-        const codepoint: number = parseInfo.stream.charCodeAt(++parseInfo.currentPosition.ind);
+        const codepoint: number = parseInfo.stream.charCodeAt(++position);
+        ++parseInfo.currentPosition.ind;
 
         if (isNewLine(codepoint)) {
 
@@ -815,6 +819,7 @@ export async function* tokenizeStream(input: ReadableStream): AsyncGenerator<Tok
     const parseInfo: ParseInfo = {
         stream: '',
         buffer: '',
+        offset: 0,
         position: {ind: 0, lin: 1, col: 1},
         currentPosition: {ind: -1, lin: 1, col: 0}
     };
@@ -825,8 +830,23 @@ export async function* tokenizeStream(input: ReadableStream): AsyncGenerator<Tok
     while (true) {
 
         const {done, value} = await reader.read();
+        const stream = ArrayBuffer.isView(value) ? decoder.decode(value, {stream: true}) : value;
 
-        parseInfo.stream += ArrayBuffer.isView(value) ? decoder.decode(value, {stream: true}) : value;
+        if (!done) {
+
+            if (parseInfo.stream.length > 2) {
+
+                parseInfo.stream = parseInfo.stream.slice(-2) + stream;
+                parseInfo.offset = parseInfo.currentPosition.ind - 1;
+            }
+
+            else {
+
+                parseInfo.stream = stream;
+                parseInfo.offset = Math.max(0, parseInfo.currentPosition.ind);
+            }
+        }
+
         yield* tokenize(parseInfo, done);
 
         if (done) {

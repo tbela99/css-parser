@@ -1,7 +1,6 @@
 ---
 title: Features
 group: Documents
-slug: /features
 category: Guides
 ---
 
@@ -10,19 +9,24 @@ category: Guides
 a non-exhaustive list of features is provided below:
 
 - no dependency
-- fault-tolerant parser that tries to fix invalid tokens.
 - CSS validation based upon mdn-data
-- fast and efficient minification without unsafe transforms
-- minify colors: color(), lab(), lch(), oklab(), oklch(), color-mix(), light-dark(), system colors and
+- CSS modules support
+- fault-tolerant parser implementing the CSS syntax module 3 recommendations.
+- fast and efficient minification without unsafe transforms,
+  see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
+- colors minification: color(), lab(), lch(), oklab(), oklch(), color-mix(), light-dark(), system colors and
   relative color
-- convert colors to any supported color format
-- automatically generate nested css rules
-- convert nested css rules to legacy syntax
-- generate sourcemap
-- compute css shorthands.
-- minify css transform functions: translate(), scale(), etc.
-- evaluate math functions: calc(), clamp(), min(), max(), etc.
-- inline css variables
-- remove duplicate properties
-- flatten @import rules
+- color conversion to any supported color format
+- automatic nested css rules generation
+- nested css rules conversion to legacy syntax
+- sourcemap generation
+- css shorthands computation. see the supported properties list below
+- css transform functions minification
+- css math functions evaluation: calc(), clamp(), min(), max(), etc.
+- css variables inlining
+- duplicate properties removal
+- @import rules flattening
 - experimental CSS prefix removal
+
+------
+[← About](./about.md) | [Getting started →](./install.md) 

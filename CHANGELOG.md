@@ -1,5 +1,42 @@
 # Changelog
 
+## v1.4.0
+
+### CSS Module support
+
+- [x] scoped name generation
+- composes:
+  - [x] compose from local selector
+  - [x] compose from other files
+  - [x] compose from global selector
+  - [x] comma separated compose list
+- [x] :local
+- [x] :global
+- [x] :local()
+- [x] :global()
+- [x] selector
+- [x] dashed ident (custom properties)
+- [x] css at-rule property
+- [x] css at-rule value
+- [x] keyframe animations
+- [x] grid
+- naming
+  - [x] ignore
+  - [x] camelCase
+  - [x] camelCaseOnly
+  - [x] dashCase
+  - [x] dashCaseOnly
+- default mode
+  - [x] global
+  - [x] local
+  - [x] pure(at least one class or id)
+  - icss
+    - [x] :import
+    - [x] :export
+
+### Bug Fixes
+- [x] fix \<integer\> syntax validation #115
+
 ## v1.3.4
 
 - [x] make streaming optional #109

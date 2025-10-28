@@ -1,13 +1,12 @@
 ---
 title: Ast
 group: Documents
-slug: /traversal
 category: Guides
 ---
 
 ## Ast node types
 
-the ast tree returned by the parser is always a [AstStyleSheet](../docs/interfaces/node.AstStyleSheet.html) node.
+the ast root node returned by the parser is always a [AstStyleSheet](../docs/interfaces/node.AstStyleSheet.html) node.
 the other nodes
 are [AstRule](../docs/interfaces/node.AstRule.html), [AstAtRule](../docs/interfaces/node.AstAtRule.html), [AstDeclaration](../docs/interfaces/node.AstDeclaration.html), [AstComment](../docs/interfaces/node.AstComment.html), [AstInvalidRule](../docs/interfaces/node.AstInvalidRule.html), [AstInvalidAtRule](../docs/interfaces/node.AstInvalidAtRule.html), [AstInvalidDeclaration](../docs/interfaces/node.AstInvalidDeclaration.html)
 
@@ -181,6 +180,7 @@ for (const {node, parent, root} of walk(ast)) {
 ```
 
 ast traversal can be controlled using a [filter](../docs/media/node.walk.html#walk) function. the filter function returns a value of type [WalkerOption](../docs/types/node.WalkerOption.html).
+if the filter function returns new nodes, those will also be visited.
 
 ```ts
 
@@ -225,7 +225,7 @@ for (const {node} of walk(result.ast, filter)) {
 
 ```
 
-### Walking ast node attributes
+### Ast node attributes traversal
 
 the function [walkValues()](../docs/functions/node.walkValues.html) is used to walk the node attribute's tokens.
 
@@ -266,3 +266,6 @@ for (const {value} of walkValues(declaration.val, null, null,true)) {
 // [ "Whitespace", undefined ]
 // [ "Iden", "from" ]
 ```
+
+------
+[← Custom transform](./transform.md) | [Validation →](./validation.md) 

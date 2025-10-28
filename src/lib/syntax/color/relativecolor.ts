@@ -1,4 +1,5 @@
 import type {
+    AngleToken,
     BinaryExpressionToken,
     ColorToken,
     FunctionToken,
@@ -62,7 +63,7 @@ export function parseRelativeColor(relativeKeys: string, original: ColorToken, r
         alpha: alpha == null ? {
             typ: EnumToken.NumberTokenType,
             val: 1
-        } : (alpha.typ == EnumToken.IdenTokenType && alpha.val == 'none') ? {
+        } : (alpha.typ == EnumToken.IdenTokenType && (alpha as IdentToken).val == 'none') ? {
             typ: EnumToken.NumberTokenType,
             val: 0
         } : (alpha.typ == EnumToken.PercentageTokenType ? {
@@ -79,7 +80,7 @@ export function parseRelativeColor(relativeKeys: string, original: ColorToken, r
         alpha: getValue(aExp == null ? {
             typ: EnumToken.NumberTokenType,
             val: 1
-        } : (aExp.typ == EnumToken.IdenTokenType && aExp.val == 'none') ? {
+        } : (aExp.typ == EnumToken.IdenTokenType && (aExp as IdentToken).val == 'none') ? {
             typ: EnumToken.NumberTokenType,
             val: 0
         } : aExp)
@@ -119,12 +120,9 @@ function computeComponentValue(expr: Record<RelativeColorTypes, Token>, converte
             // normalize hue
             for (const k of walkValues([object.h as Token])) {
 
-                if (k.value.typ == EnumToken.AngleTokenType && k.value.unit == 'deg') {
+                if (k.value.typ == EnumToken.AngleTokenType && (k.value as AngleToken).unit == 'deg') {
 
-                    // @ts-ignore
                     k.value.typ = EnumToken.NumberTokenType;
-                    // @ts-ignore
-                    delete k.value.unit;
                 }
             }
         }
@@ -134,9 +132,9 @@ function computeComponentValue(expr: Record<RelativeColorTypes, Token>, converte
 
         if ([EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.LengthTokenType].includes(exp.typ)) {
 
-        } else if (exp.typ == EnumToken.IdenTokenType && exp.val in values) {
+        } else if (exp.typ == EnumToken.IdenTokenType && (exp as IdentToken).val in values) {
 
-            expr[<RelativeColorTypes>key] = <Token>values[<RelativeColorTypes>exp.val];
+            expr[<RelativeColorTypes>key] = <Token>values[<RelativeColorTypes>(exp as IdentToken).val];
 
         } else if (exp.typ == EnumToken.FunctionTokenType && mathFuncs.includes((exp as FunctionToken).val)) {
 

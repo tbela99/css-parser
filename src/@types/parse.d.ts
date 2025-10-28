@@ -27,4 +27,9 @@ export declare interface ParseInfo {
      * current parsing position
      */
     currentPosition: Position;
+
+    /**
+     * offset
+     */
+    offset: number;
 }

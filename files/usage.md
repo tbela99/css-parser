@@ -1,12 +1,10 @@
 ---
 title: Usage
 group: Documents
-slug: /usage
 category: Guides
 ---
 
 ## Usage
-
 ### From node, bun or deno
 
 ```ts
@@ -70,7 +68,7 @@ console.debug(result.code);
 </script>
 ```
 
-load as umd module
+load as an umd module
 
 ```html
 
@@ -112,7 +110,7 @@ load as umd module
 
 ### Parsing
 
-parsing is achieved using the parse() or transform() function. the transform() function will also provide the css code as a result which comes handing if you do not want an additional step of rendering the ast.
+parsing is achieved using the parse() or transform() or the corresponding parseFile() and transformFile() functions. the transform() function will also provide the css code as a result which comes handing if you do not want an additional step of rendering the ast.
 
 ```ts
 import {parse, render} from '@tbela99/css-parser';
@@ -269,5 +267,8 @@ console.log(result.code);
 //     background-color: rgb(0 226 226)
 // }
 ```
+.
 
+------
+[← Getting started](../../docs/documents/Guide.Getting_started.html) | [Minification →]( ../../docs/documents/Guide.Minification.html )
 

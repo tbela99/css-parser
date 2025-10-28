@@ -286,6 +286,9 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
     [
         {
             shorthand: 'animation',
+            separator: {
+                typ: 'Comma'
+            },
             pattern: 'animation-name animation-duration animation-timing-function animation-delay animation-iteration-count animation-direction animation-fill-mode animation-play-state animation-timeline',
             default: ['1', '0s', '0ms', 'none', 'ease', 'normal', 'running', 'auto']
         },

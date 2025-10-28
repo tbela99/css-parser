@@ -655,7 +655,7 @@ function doMinify(ast: AstNode, options: ParserOptions = {}, recursive: boolean 
 
         if (recursive && node != null && ('chi' in node)) {
 
-            if (node.typ == EnumToken.KeyframesAtRuleNodeType || !node.chi!.some(n => n.typ == EnumToken.DeclarationNodeType)) {
+            if (node.typ == EnumToken.KeyframesAtRuleNodeType || !(node as AstAtRule).chi!.some((n : AstNode) => n.typ == EnumToken.DeclarationNodeType)) {
 
                 if (!(node.typ == EnumToken.AtRuleNodeType && (<AstAtRule>node).nam != 'font-face')) {
 

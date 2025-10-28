@@ -237,4 +237,6 @@ export declare type AstNode =
     | AstKeyFrameRule
     | AstInvalidRule
     | AstInvalidAtRule
-    | AstInvalidDeclaration;
+    | AstInvalidDeclaration
+    | CssVariableToken
+    | CssVariableImportTokenType;

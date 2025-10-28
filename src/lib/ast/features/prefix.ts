@@ -6,7 +6,9 @@ import type {
     AstRule,
     FunctionToken,
     IdentToken,
+    MediaQueryConditionToken,
     ParserOptions,
+    PseudoClassToken,
     Token
 } from "../../../@types/index.d.ts";
 import {getSyntaxConfig, ValidationSyntaxGroupEnum} from '../../validation/index.ts';
@@ -49,19 +51,19 @@ function replaceAstNodes(tokens: Token[], root?: AstNode): boolean {
 
         if (value.typ == EnumToken.IdenTokenType || value.typ == EnumToken.PseudoClassFuncTokenType || value.typ == EnumToken.PseudoClassTokenType || value.typ == EnumToken.PseudoElementTokenType) {
 
-            let key: string = value.val + (value.typ == EnumToken.PseudoClassFuncTokenType ? '()' : '');
+            let key: string = (value as IdentToken | PseudoClassToken).val + (value.typ == EnumToken.PseudoClassFuncTokenType ? '()' : '');
 
             if (key in pseudoAliasMap) {
 
                 const isPseudClass: boolean = pseudoAliasMap[key].startsWith('::');
-                value.val = pseudoAliasMap[key];
+                (value as PseudoClassToken).val = pseudoAliasMap[key];
 
                 if (value.typ == EnumToken.IdenTokenType &&
-                    ['min-resolution', 'max-resolution'].includes(value.val) &&
+                    ['min-resolution', 'max-resolution'].includes((value as IdentToken).val) &&
                     parent?.typ == EnumToken.MediaQueryConditionTokenType &&
-                    parent.r?.[0]?.typ == EnumToken.NumberTokenType) {
+                    (parent as MediaQueryConditionToken).r?.[0]?.typ == EnumToken.NumberTokenType) {
 
-                    Object.assign(parent.r?.[0], {
+                    Object.assign((parent as MediaQueryConditionToken).r?.[0], {
 
                         typ: EnumToken.ResolutionTokenType,
                         unit: 'x',

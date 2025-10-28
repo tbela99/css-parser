@@ -20,6 +20,60 @@ function parseDeclarationNode(node, errors, location) {
         });
         return null;
     }
+    if ('composes' == node.nam.toLowerCase()) {
+        let left = [];
+        let right = [];
+        let current = 0;
+        let hasFrom = 0;
+        for (; current < node.val.length; current++) {
+            if (EnumToken.WhitespaceTokenType == node.val[current].typ || EnumToken.CommentTokenType == node.val[current].typ) {
+                if (!hasFrom) {
+                    left.push(node.val[current]);
+                }
+                else {
+                    right.push(node.val[current]);
+                }
+                continue;
+            }
+            if (EnumToken.IdenTokenType == node.val[current].typ || EnumToken.DashedIdenTokenType == node.val[current].typ || EnumToken.StringTokenType == node.val[current].typ) {
+                if (EnumToken.IdenTokenType == node.val[current].typ) {
+                    if ('from' == node.val[current].val) {
+                        if (hasFrom) {
+                            return null;
+                        }
+                        hasFrom++;
+                        continue;
+                    }
+                }
+                if (hasFrom) {
+                    right.push(node.val[current]);
+                }
+                else {
+                    left.push(node.val[current]);
+                }
+                continue;
+            }
+            break;
+        }
+        if (hasFrom <= 1 && current > 0) {
+            if (hasFrom == 0) {
+                node.val.splice(0, left.length, {
+                    typ: EnumToken.ComposesSelectorNodeType,
+                    l: left,
+                    r: null
+                });
+            }
+            else {
+                node.val.splice(0, current, {
+                    typ: EnumToken.ComposesSelectorNodeType,
+                    l: left,
+                    r: right.reduce((a, b) => {
+                        return a == null ? b : b.typ == EnumToken.WhitespaceTokenType || b.typ == EnumToken.CommentTokenType ? a : b;
+                    }, null)
+                });
+            }
+        }
+    }
     for (const { value: val, parent } of walkValues(node.val, node)) {
         if (val.typ == EnumToken.AttrTokenType && val.chi.every((t) => [EnumToken.IdenTokenType, EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ))) {
             // @ts-ignore

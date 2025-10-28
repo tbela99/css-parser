@@ -912,6 +912,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
         'color',
         'integer',
         'bg-position',
+        'composes-selector',
         'length-percentage', 'flex', 'calc-sum', 'color',
         'color-base', 'system-color', 'deprecated-system-color',
         'pseudo-class-selector', 'pseudo-element-selector', 'feature-value-declaration'
@@ -951,6 +952,11 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
     }
 
     switch (syntax.val) {
+
+        case 'composes-selector':
+
+            success = token.typ == EnumToken.ComposesSelectorNodeType;
+            break;
 
         case 'bg-position': {
 
@@ -1188,7 +1194,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
 
         case 'integer':
 
-            success = (token.typ == EnumToken.NumberTokenType && Number.isInteger(+(token as NumberToken).val) && (token as NumberToken).val as number > 0) || (token.typ == EnumToken.FunctionTokenType && mathFuncs.includes((token as FunctionToken).val.toLowerCase()) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val)));
+            success = (token.typ == EnumToken.NumberTokenType && /^[+-]?\d+$/.test((token as NumberToken).val.toString())) || (token.typ == EnumToken.FunctionTokenType && mathFuncs.includes((token as FunctionToken).val.toLowerCase()) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val)));
 
             if ('range' in syntax) {
 

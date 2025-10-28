@@ -11,6 +11,7 @@ import '../renderer/sourcemap/lib/encode.js';
 import { getSyntaxConfig, getParsedSyntax, getSyntax } from './config.js';
 import './syntaxes/complex-selector.js';
 import { funcLike, colorsFunc } from '../syntax/color/utils/constants.js';
+import '../../types.js';
 import '../ast/features/type.js';
 
 const config = getSyntaxConfig();
@@ -615,6 +616,7 @@ function matchPropertyType(syntax, context, options) {
         'color',
         'integer',
         'bg-position',
+        'composes-selector',
         'length-percentage', 'flex', 'calc-sum', 'color',
         'color-base', 'system-color', 'deprecated-system-color',
         'pseudo-class-selector', 'pseudo-element-selector', 'feature-value-declaration'
@@ -645,6 +647,9 @@ function matchPropertyType(syntax, context, options) {
         return { ...result, context };
     }
     switch (syntax.val) {
+        case 'composes-selector':
+            success = token.typ == EnumToken.ComposesSelectorNodeType;
+            break;
         case 'bg-position': {
             let val;
             let keyworkMatchCount = 0;
@@ -812,7 +817,7 @@ function matchPropertyType(syntax, context, options) {
             }
             break;
         case 'integer':
-            success = (token.typ == EnumToken.NumberTokenType && Number.isInteger(+token.val) && token.val > 0) || (token.typ == EnumToken.FunctionTokenType && mathFuncs.includes(token.val.toLowerCase()) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val)));
+            success = (token.typ == EnumToken.NumberTokenType && /^[+-]?\d+$/.test(token.val.toString())) || (token.typ == EnumToken.FunctionTokenType && mathFuncs.includes(token.val.toLowerCase()) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val)));
             if ('range' in syntax) {
                 success = success && +token.val >= +syntax.range[0] && +token.val <= +syntax.range[1];
             }

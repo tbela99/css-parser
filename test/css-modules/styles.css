@@ -1,0 +1,80 @@
+/* styles.css */
+:root {
+    --accent-color: hotpink;
+}
+
+.button {
+    background: var(--accent-color);
+}
+.button {
+    width: var(--progress from './button.css');
+}
+
+.button {
+    color: var(--color from global);
+}
+@property --box-color {
+    syntax: "<color>";
+    inherits: false;
+    initial-value: teal;
+}
+
+.parent {
+    --box-color: green;
+    background-color: var(--box-color);
+}
+
+.child {
+    width: 80%;
+    height: 40%;
+    background-color: var(--box-color);
+}
+
+.grid {
+    grid-template-areas: 'nav main';
+}
+
+.nav {
+    grid-column-start: nav-start;
+}
+
+:global .page :local(.page) {
+    padding: 20px;
+}
+
+:global(.external) { color: green; }
+
+.title {
+    composes: title button cell from "./mixins.css";
+    color: green;
+}
+
+.composed-title {
+
+    composes: title from "./mixins.css";
+}
+
+.composed-heading {
+
+    composes: nav;
+}
+
+.article {
+    font-size: 16px;
+}
+
+/* component/text.css */
+.text {
+    color: #777;
+    font-weight: 24px;
+}
+
+.text:hover {
+    color: #f60;
+}
+
+
+.border-wall {
+    color: #777;
+    font-weight: 24px;
+}

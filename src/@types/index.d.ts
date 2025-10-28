@@ -2,8 +2,8 @@ import type {VisitorNodeMap} from "./visitor.d.ts";
 import type {AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet, Location, Position} from "./ast.d.ts";
 import {SourceMap} from "../lib/renderer/sourcemap/index.ts";
 import type {PropertyListOptions} from "./parse.d.ts";
-import {ColorType, EnumToken, ValidationLevel} from "../lib/index.ts";
-import type {Token} from "./token.d.ts";
+import {ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ValidationLevel} from "../lib/index.ts";
+import type {CssVariableToken, Token} from "./token.d.ts";
 import {FeatureWalkMode} from "../lib/ast/features/type.ts";
 import {mathFuncs, transformFunctions} from "../lib/syntax/syntax.ts";
 
@@ -194,6 +194,126 @@ export declare type LoadResult =
     | string
     | Promise<string>;
 
+export declare interface ModuleOptions {
+
+    /**
+     * use local scope vs global scope
+     */
+    scoped?: boolean | ModuleScopeEnumOptions;
+
+    /**
+     * module output file path. it is used to generate the scoped name. if not provided, [options.src](../docs/interfaces/node.ParserOptions.html#src) will be used
+     */
+    filePath?: string;
+
+    /**
+     * generated scope hash length. the default is 5
+     */
+    hashLength?: number;
+
+    /**
+     * the pattern used to generate scoped names. the supported placeholders are:
+     * - name: the file base name without the extension
+     * - hash: the file path hash
+     * - local: the local name
+     * - path: the file path
+     * - folder: the folder name
+     * - ext: the file extension
+     *
+     * the pattern can optionally have a maximum number of characters:
+     * ```
+     * pattern: '[local:2]-[hash:5]'
+     * ```
+     * the hash pattern can take an algorithm, a maximum number of characters or both:
+     * ```
+     * pattern: '[local]-[hash:base64:5]'
+     * ```
+     * or
+     * ```
+     * pattern: '[local]-[hash:5]'
+     * ```
+     * or
+     * ```
+     * pattern: '[local]-[hash:sha1]'
+     * ```
+     *
+     * supported hash algorithms are:
+     * - base64
+     * - hex
+     * - base64url
+     * - sha1
+     * - sha256
+     * - sha384
+     * - sha512
+     *
+     * ```typescript
+     *
+     * import {transform, ModuleCaseTransformEnum} from '@tbela99/css-parser';
+     * import type {TransformResult} from '@tbela99/css-parser';
+     * css = `
+     * :local(.className) {
+     *   background: red;
+     *   color: yellow;
+     * }
+     *
+     * :local(.subClass) {
+     *   composes: className;
+     *   background: blue;
+     * }
+     * `;
+     *
+     * let result: TransformResult = await transform(css, {
+     *
+     *     beautify:true,
+     *     module: {
+     *         pattern: '[local]-[hash:sha256]'
+     *     }
+     *
+     * });
+     *
+     * console.log(result.code);
+     * ```
+     * generated css
+     *
+     * ```css
+     * .className-b629f {
+     *  background: red;
+     *  color: #ff0
+     * }
+     * .subClass-a0c35 {
+     *  background: blue
+     * }
+     * ```
+     */
+    pattern?: string;
+
+    /**
+     * optional. function change the case of the scoped name and the class mapping
+     *
+     * - {@link ModuleCaseTransformEnum.IgnoreCase}: do not change case
+     * - {@link ModuleCaseTransformEnum.CamelCase}: camelCase {@link ParseResult.mapping} key name
+     * - {@link ModuleCaseTransformEnum.CamelCaseOnly}: camelCase {@link ParseResult.mapping} key name and the scoped class name
+     * - {@link ModuleCaseTransformEnum.DashCase}: dashCase {@link ParseResult.mapping} key name
+     * - {@link ModuleCaseTransformEnum.DashCaseOnly}: dashCase {@link ParseResult.mapping} key name and the scoped class name
+     *
+     */
+    naming?: ModuleCaseTransformEnum,
+
+    /**
+     * optional function to generate scoped name
+     * @param localName
+     * @param filePath
+     * @param pattern see {@link ModuleOptions.pattern}
+     * @param hashLength
+     */
+    generateScopedName?: (
+        localName: string,
+        filePath: string,
+        pattern: string,
+        hashLength?: number
+    ) => string | Promise<string>;
+}
+
 /**
  * parser options
  */
@@ -232,7 +352,7 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
      * @param asStream
      *
      */
-    load?: (url: string, currentUrl: string, asStream?: boolean) => LoadResult;
+    load?: (url: string, currentUrl?: string, asStream?: boolean) => LoadResult;
     /**
      * get directory name
      * @param path
@@ -286,6 +406,11 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
      * @private
      */
     cache?: WeakMap<AstNode, string>;
+
+    /**
+     * css modules options
+     */
+    module?: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions
 }
 
 /**
@@ -462,13 +587,17 @@ export declare interface ParseResultStats {
      */
     importedBytesIn: number;
     /**
-     * parse time
+     * parse processing time
      */
     parse: string;
     /**
-     * minify time
+     * minify processing time
      */
     minify: string;
+    /**
+     * module processing time
+     */
+    module?: string;
     /**
      * total time
      */
@@ -504,7 +633,22 @@ export declare interface ParseResult {
     /**
      * parse stats
      */
-    stats: ParseResultStats
+    stats: ParseResultStats;
+
+    /**
+     * css module mapping
+     */
+    mapping?: Record<string, string>;
+
+    cssModuleVariables?: Record<string, CssVariableToken>;
+
+    importMapping?: Record<string, Record<string, string>>;
+
+    /**
+     * css module reverse mapping
+     * @private
+     */
+    revMapping?: Record<string, string>;
 }
 
 /**

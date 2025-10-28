@@ -20,8 +20,7 @@ function validateCompoundSelector(tokens, root, options) {
             node: root,
             // @ts-ignore
             syntax: null,
-            error: 'expected selector',
-            tokens
+            error: 'expected selector'
         };
     }
     tokens = tokens.slice();

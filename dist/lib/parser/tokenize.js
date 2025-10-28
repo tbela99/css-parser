@@ -138,23 +138,27 @@ function* consumeString(quoteStr, buffer, parseInfo) {
     }
 }
 function match(parseInfo, input) {
-    return parseInfo.stream.slice(parseInfo.currentPosition.ind + 1, parseInfo.currentPosition.ind + input.length + 1) == input;
+    const position = parseInfo.currentPosition.ind - parseInfo.offset;
+    return parseInfo.stream.slice(position + 1, position + input.length + 1) == input;
 }
 function peek(parseInfo, count = 1) {
     if (count == 1) {
-        return parseInfo.stream.charAt(parseInfo.currentPosition.ind + 1);
+        return parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset + 1);
     }
-    return parseInfo.stream.slice(parseInfo.currentPosition.ind + 1, parseInfo.currentPosition.ind + count + 1);
+    const position = parseInfo.currentPosition.ind - parseInfo.offset;
+    return parseInfo.stream.slice(position + 1, position + count + 1);
 }
 function prev(parseInfo) {
-    return parseInfo.stream.charAt(parseInfo.currentPosition.ind - 1);
+    return parseInfo.offset == parseInfo.currentPosition.ind ? parseInfo.buffer.slice(-1) : parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset - 1);
 }
 function next(parseInfo, count = 1) {
     let char = '';
     let chr = '';
-    while (count-- && (chr = parseInfo.stream.charAt(parseInfo.currentPosition.ind + 1))) {
+    let position = parseInfo.currentPosition.ind - parseInfo.offset;
+    while (count-- && (chr = parseInfo.stream.charAt(position + 1))) {
         char += chr;
-        const codepoint = parseInfo.stream.charCodeAt(++parseInfo.currentPosition.ind);
+        const codepoint = parseInfo.stream.charCodeAt(++position);
+        ++parseInfo.currentPosition.ind;
         if (isNewLine(codepoint)) {
             parseInfo.currentPosition.lin++;
             parseInfo.currentPosition.col = 0;
@@ -570,6 +574,7 @@ async function* tokenizeStream(input) {
     const parseInfo = {
         stream: '',
         buffer: '',
+        offset: 0,
         position: { ind: 0, lin: 1, col: 1 },
         currentPosition: { ind: -1, lin: 1, col: 0 }
     };
@@ -577,7 +582,17 @@ async function* tokenizeStream(input) {
     const reader = input.getReader();
     while (true) {
         const { done, value } = await reader.read();
-        parseInfo.stream += ArrayBuffer.isView(value) ? decoder.decode(value, { stream: true }) : value;
+        const stream = ArrayBuffer.isView(value) ? decoder.decode(value, { stream: true }) : value;
+        if (!done) {
+            if (parseInfo.stream.length > 2) {
+                parseInfo.stream = parseInfo.stream.slice(-2) + stream;
+                parseInfo.offset = parseInfo.currentPosition.ind - 1;
+            }
+            else {
+                parseInfo.stream = stream;
+                parseInfo.offset = Math.max(0, parseInfo.currentPosition.ind);
+            }
+        }
         yield* tokenize(parseInfo, done);
         if (done) {
             break;

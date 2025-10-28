@@ -1,7 +1,6 @@
 ---
 title: Getting started
 group: Documents
-slug: /install
 category: Guides
 ---
 
@@ -59,7 +58,7 @@ the library can be imported as a module in the browser
 
 ### As umd module
 
-it can also be imported as umd module
+it can also be imported as an umd module
 
 ```html
 
@@ -98,3 +97,6 @@ it can also be imported as umd module
 
 </script>
 ```
+
+------
+[← Features](./features.md) | [Usage →](./usage.md) 
