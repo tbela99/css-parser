@@ -19291,8 +19291,6 @@
                                         val: tokens.slice(offset)
                                     });
                                     delete node.tokens;
-                                    // @ts-ignore
-                                    delete node.raw;
                                     context.chi.push(node);
                                     return null;
                                 }
