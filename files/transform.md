@@ -1,5 +1,5 @@
 ---
-title: Custom transform
+title: Custom Transform
 group: Documents
 category: Guides
 ---
@@ -422,7 +422,7 @@ console.debug(await transform(css, options));
 // body {color:#f3fff0}
 ```
 
-### Example of visitor
+### Example of visitor that inlines images
 
 a visitor that inlines all images under a specific size
 

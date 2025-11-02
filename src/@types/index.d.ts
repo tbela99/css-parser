@@ -348,11 +348,11 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
     /**
      * url and file loader
      * @param url
-     * @param currentUrl
-     * @param asStream
+     * @param currentDirectory
+     * @param responseType
      *
      */
-    load?: (url: string, currentUrl?: string, asStream?: boolean) => LoadResult;
+    load?: (url: string, currentDirectory: string = '.', responseType?: boolean | ResponseType) => Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
     /**
      * get directory name
      * @param path

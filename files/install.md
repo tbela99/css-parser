@@ -1,5 +1,5 @@
 ---
-title: Getting started
+title: Getting Started
 group: Documents
 category: Guides
 ---
