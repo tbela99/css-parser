@@ -268,4 +268,4 @@ for (const {value} of walkValues(declaration.val, null, null,true)) {
 ```
 
 ------
-[← Custom transform](./transform.md) | [Validation →](./validation.md) 
+[← Custom Transform](./transform.md) | [Validation →](./validation.md) 

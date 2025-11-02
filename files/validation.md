@@ -124,4 +124,4 @@ const result = await transform(css, options);
 
 ```
 ------
-[← Ast](./ast.md) | [CSS Modules](./css-module.md) 
+[← Ast](./ast.md) | [Module Node →](../docs/modules/node.html)

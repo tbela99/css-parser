@@ -1,5 +1,5 @@
 ---
-title: CSS modules
+title: CSS Modules
 group: Documents
 category: Guides
 ---
@@ -595,4 +595,4 @@ supported hash algorithms are:
 - sha512
 ------
 
-[← Validation](./validation.md) 
+[← Usage](./usage.md) | [Minification →]( ../../docs/documents/Guide.Minification.html )  

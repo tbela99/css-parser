@@ -58,17 +58,20 @@ export {FeatureWalkMode} from './lib/ast/features/type.ts';
 export {dirname, resolve, ResponseType};
 
 /**
- * load file or url as stream
+ * load file or url
  * @param url
- * @param currentFile
+ * @param currentDirectory
  * @param responseType
  * @throws Error file not found
  *
- * @private
+ * ```ts
+ * import {load, ResponseType} from '@tbela99/css-parser';
+ * const result = await load(file, '.', ResponseType.ArrayBuffer) as ArrayBuffer;
+ * ```
  */
-export async function load(url: string, currentFile: string = '.', responseType: boolean | ResponseType = false): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>> {
+export async function load(url: string, currentDirectory: string = '.', responseType: boolean | ResponseType = false): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>> {
 
-    const resolved = resolve(url, currentFile);
+    const resolved = resolve(url, currentDirectory);
 
     if (typeof responseType == 'boolean') {
 
