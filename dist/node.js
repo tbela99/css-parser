@@ -26,16 +26,19 @@ import { ResponseType } from './types.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 
 /**
- * load file or url as stream
+ * load file or url
  * @param url
- * @param currentFile
+ * @param currentDirectory
  * @param responseType
  * @throws Error file not found
  *
- * @private
+ * ```ts
+ * import {load, ResponseType} from '@tbela99/css-parser';
+ * const result = await load(file, '.', ResponseType.ArrayBuffer) as ArrayBuffer;
+ * ```
  */
-async function load(url, currentFile = '.', responseType = false) {
-    const resolved = resolve(url, currentFile);
+async function load(url, currentDirectory = '.', responseType = false) {
+    const resolved = resolve(url, currentDirectory);
     if (typeof responseType == 'boolean') {
         responseType = responseType ? ResponseType.ReadableStream : ResponseType.Text;
     }

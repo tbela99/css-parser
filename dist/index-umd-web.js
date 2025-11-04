@@ -23205,6 +23205,7 @@
     const combinators = ['+', '>', '~', '||', '|'];
     const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
     const notEndingWith = ['(', '['].concat(combinators);
+    const rules = [exports.EnumToken.AtRuleNodeType, exports.EnumToken.RuleNodeType, exports.EnumToken.AtRuleTokenType, exports.EnumToken.KeyFramesRuleNodeType];
     // @ts-ignore
     const features = Object.values(allFeatures).sort((a, b) => a.ordering - b.ordering);
     /**
@@ -23255,6 +23256,9 @@
                 for (const feature of options.features) {
                     if ((feature.processMode & exports.FeatureWalkMode.Pre) === 0 || (feature.accept != null && !feature.accept.has(parent.typ))) {
                         continue;
+                    }
+                    if (rules.includes(replacement.typ) && !Array.isArray(replacement.tokens)) {
+                        Object.defineProperty(replacement, 'tokens', { ...definedPropertySettings, value: parseString(replacement.typ == exports.EnumToken.RuleNodeType || replacement.typ == exports.EnumToken.KeyFramesRuleNodeType ? replacement.sel : replacement.val) });
                     }
                     const result = feature.run(replacement, options, parent.parent ?? ast, context, exports.FeatureWalkMode.Pre);
                     if (result != null) {
@@ -24636,14 +24640,18 @@
     })(exports.ResponseType || (exports.ResponseType = {}));
 
     /**
-     * default file or url loader
+     * load file or url
      * @param url
-     * @param currentFile
-     *
+     * @param currentDirectory
      * @param responseType
-     * @private
+     * @throws Error file not found
+     *
+     * ```ts
+     * import {load, ResponseType} from '@tbela99/css-parser';
+     * const result = await load(file, '.', ResponseType.ArrayBuffer) as ArrayBuffer;
+     * ```
      */
-    async function load(url, currentFile = '.', responseType = false) {
+    async function load(url, currentDirectory = '.', responseType = false) {
         if (typeof responseType == 'boolean') {
             responseType = responseType ? exports.ResponseType.ReadableStream : exports.ResponseType.Text;
         }
@@ -24651,11 +24659,11 @@
         if (matchUrl.test(url)) {
             t = new URL(url);
         }
-        else if (currentFile != null && matchUrl.test(currentFile)) {
-            t = new URL(url, currentFile);
+        else if (currentDirectory != null && matchUrl.test(currentDirectory)) {
+            t = new URL(url, currentDirectory);
         }
         else {
-            const path = resolve(url, currentFile).absolute;
+            const path = resolve(url, currentDirectory).absolute;
             t = new URL(path, self.origin);
         }
         return fetch(t, t.origin != self.origin ? { mode: 'cors' } : {}).then(async (response) => {

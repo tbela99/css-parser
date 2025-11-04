@@ -1,4 +1,4 @@
-import { replaceToken, parseString } from '../parser/parse.js';
+import { parseString, replaceToken } from '../parser/parse.js';
 import '../parser/tokenize.js';
 import '../parser/utils/config.js';
 import { EnumToken } from './types.js';
@@ -13,6 +13,7 @@ import { FeatureWalkMode } from './features/type.js';
 const combinators = ['+', '>', '~', '||', '|'];
 const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
 const notEndingWith = ['(', '['].concat(combinators);
+const rules = [EnumToken.AtRuleNodeType, EnumToken.RuleNodeType, EnumToken.AtRuleTokenType, EnumToken.KeyFramesRuleNodeType];
 // @ts-ignore
 const features = Object.values(index).sort((a, b) => a.ordering - b.ordering);
 /**
@@ -63,6 +64,9 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
             for (const feature of options.features) {
                 if ((feature.processMode & FeatureWalkMode.Pre) === 0 || (feature.accept != null && !feature.accept.has(parent.typ))) {
                     continue;
+                }
+                if (rules.includes(replacement.typ) && !Array.isArray(replacement.tokens)) {
+                    Object.defineProperty(replacement, 'tokens', { ...definedPropertySettings, value: parseString(replacement.typ == EnumToken.RuleNodeType || replacement.typ == EnumToken.KeyFramesRuleNodeType ? replacement.sel : replacement.val) });
                 }
                 const result = feature.run(replacement, options, parent.parent ?? ast, context, FeatureWalkMode.Pre);
                 if (result != null) {

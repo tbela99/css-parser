@@ -23391,6 +23391,7 @@ var allFeatures = /*#__PURE__*/Object.freeze({
 const combinators = ['+', '>', '~', '||', '|'];
 const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
 const notEndingWith = ['(', '['].concat(combinators);
+const rules = [exports.EnumToken.AtRuleNodeType, exports.EnumToken.RuleNodeType, exports.EnumToken.AtRuleTokenType, exports.EnumToken.KeyFramesRuleNodeType];
 // @ts-ignore
 const features = Object.values(allFeatures).sort((a, b) => a.ordering - b.ordering);
 /**
@@ -23441,6 +23442,9 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
             for (const feature of options.features) {
                 if ((feature.processMode & exports.FeatureWalkMode.Pre) === 0 || (feature.accept != null && !feature.accept.has(parent.typ))) {
                     continue;
+                }
+                if (rules.includes(replacement.typ) && !Array.isArray(replacement.tokens)) {
+                    Object.defineProperty(replacement, 'tokens', { ...definedPropertySettings, value: parseString(replacement.typ == exports.EnumToken.RuleNodeType || replacement.typ == exports.EnumToken.KeyFramesRuleNodeType ? replacement.sel : replacement.val) });
                 }
                 const result = feature.run(replacement, options, parent.parent ?? ast, context, exports.FeatureWalkMode.Pre);
                 if (result != null) {
@@ -24637,16 +24641,19 @@ function replaceCompoundLiteral(selector, replace) {
 }
 
 /**
- * load file or url as stream
+ * load file or url
  * @param url
- * @param currentFile
+ * @param currentDirectory
  * @param responseType
  * @throws Error file not found
  *
- * @private
+ * ```ts
+ * import {load, ResponseType} from '@tbela99/css-parser';
+ * const result = await load(file, '.', ResponseType.ArrayBuffer) as ArrayBuffer;
+ * ```
  */
-async function load(url, currentFile = '.', responseType = false) {
-    const resolved = resolve(url, currentFile);
+async function load(url, currentDirectory = '.', responseType = false) {
+    const resolved = resolve(url, currentDirectory);
     if (typeof responseType == 'boolean') {
         responseType = responseType ? exports.ResponseType.ReadableStream : exports.ResponseType.Text;
     }

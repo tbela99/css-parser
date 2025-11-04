@@ -29,6 +29,7 @@ import {FeatureWalkMode} from "./features/type.ts";
 export const combinators: string[] = ['+', '>', '~', '||', '|'];
 export const definedPropertySettings = {configurable: true, enumerable: false, writable: true};
 const notEndingWith: string[] = ['(', '['].concat(combinators);
+const rules: EnumToken[] = [EnumToken.AtRuleNodeType, EnumToken.RuleNodeType, EnumToken.AtRuleTokenType, EnumToken.KeyFramesRuleNodeType];
 // @ts-ignore
 const features: MinifyFeature[] = Object.values(allFeatures as Record<string, MinifyFeature>).sort((a: MinifyFeature, b: MinifyFeature) => a.ordering - b.ordering) as MinifyFeature[];
 
@@ -111,6 +112,11 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
 
                 if ((feature.processMode & FeatureWalkMode.Pre) === 0 || (feature.accept != null && !feature.accept.has(parent.typ))) {
                     continue;
+                }
+
+                if (rules.includes(replacement.typ) && !Array.isArray(replacement.tokens)) {
+
+                    Object.defineProperty(replacement, 'tokens', {...definedPropertySettings, value: parseString(replacement.typ == EnumToken.RuleNodeType || replacement.typ == EnumToken.KeyFramesRuleNodeType ? replacement.sel : replacement.val)})
                 }
 
                 const result = feature.run(<AstRule | AstAtRule>replacement, options, <AstRule | AstAtRule | AstStyleSheet>parent.parent ?? ast, context, FeatureWalkMode.Pre);
