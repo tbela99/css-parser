@@ -1,6 +1,7 @@
 [![playground](https://img.shields.io/badge/playground-try%20it%20now-%230a7398
 )](https://tbela99.github.io/css-parser/playground/) [![npm](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftbela99%2Fcss-parser%2Fmaster%2Fpackage.json&query=version&logo=npm&label=npm&link=https%3A%2F%2Fwww.npmjs.com%2Fpackage%2F%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![npm](https://img.shields.io/jsr/v/%40tbela99/css-parser?link=https%3A%2F%2Fjsr.io%2F%40tbela99%2Fcss-parser
 )](https://jsr.io/@tbela99/css-parser) [![cov](https://tbela99.github.io/css-parser/badges/coverage.svg)](https://github.com/tbela99/css-parser/actions) [![Doc](https://img.shields.io/badge/online-documentation-blue)](https://tbela99.github.io/css-parser/docs) [![NPM Downloads](https://img.shields.io/npm/dm/%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![bundle size](https://img.shields.io/bundlejs/size/%40tbela99/css-parser%400.9.0?exports=cjs)](https://www.npmjs.com/package/@tbela99/css-parser)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Ftbela99%2Fcss-parser.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Ftbela99%2Fcss-parser?ref=badge_shield)
 
 # css-parser
 
@@ -1156,3 +1157,7 @@ console.debug(result.code);
 // .foo{width:3px}
 
 ```
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Ftbela99%2Fcss-parser.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Ftbela99%2Fcss-parser?ref=badge_large)
