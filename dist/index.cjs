@@ -24665,18 +24665,18 @@ async function load(url, currentDirectory = '.', responseType = false) {
             if (responseType == exports.ResponseType.ArrayBuffer) {
                 return response.arrayBuffer();
             }
-            return responseType == exports.ResponseType.ReadableStream ? response.body : await response.text();
+            return responseType == exports.ResponseType.ReadableStream ? response.body : response.text();
         });
     }
     try {
-        if (responseType == exports.ResponseType.Text) {
-            return promises.readFile(resolved.absolute, 'utf-8');
-        }
-        if (responseType == exports.ResponseType.ArrayBuffer) {
-            return promises.readFile(resolved.absolute).then(buffer => buffer.buffer);
-        }
         const stats = await promises.lstat(resolved.absolute);
         if (stats.isFile()) {
+            if (responseType == exports.ResponseType.Text) {
+                return promises.readFile(resolved.absolute, 'utf-8');
+            }
+            if (responseType == exports.ResponseType.ArrayBuffer) {
+                return promises.readFile(resolved.absolute).then(buffer => buffer.buffer);
+            }
             return node_stream.Readable.toWeb(node_fs.createReadStream(resolved.absolute, {
                 encoding: 'utf-8',
                 highWaterMark: 64 * 1024

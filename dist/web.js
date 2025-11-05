@@ -55,7 +55,7 @@ async function load(url, currentDirectory = '.', responseType = false) {
         if (responseType == ResponseType.ArrayBuffer) {
             return response.arrayBuffer();
         }
-        return responseType == ResponseType.ReadableStream ? response.body : await response.text();
+        return responseType == ResponseType.ReadableStream ? response.body : response.text();
     });
 }
 /**

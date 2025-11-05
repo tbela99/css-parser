@@ -24673,7 +24673,7 @@
             if (responseType == exports.ResponseType.ArrayBuffer) {
                 return response.arrayBuffer();
             }
-            return responseType == exports.ResponseType.ReadableStream ? response.body : await response.text();
+            return responseType == exports.ResponseType.ReadableStream ? response.body : response.text();
         });
     }
     /**

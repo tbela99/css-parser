@@ -21,7 +21,7 @@ import './lib/validation/syntax.js';
 import { resolve, matchUrl, dirname } from './lib/fs/resolve.js';
 import { Readable } from 'node:stream';
 import { createReadStream } from 'node:fs';
-import { readFile, lstat } from 'node:fs/promises';
+import { lstat, readFile } from 'node:fs/promises';
 import { ResponseType } from './types.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 
@@ -50,18 +50,18 @@ async function load(url, currentDirectory = '.', responseType = false) {
             if (responseType == ResponseType.ArrayBuffer) {
                 return response.arrayBuffer();
             }
-            return responseType == ResponseType.ReadableStream ? response.body : await response.text();
+            return responseType == ResponseType.ReadableStream ? response.body : response.text();
         });
     }
     try {
-        if (responseType == ResponseType.Text) {
-            return readFile(resolved.absolute, 'utf-8');
-        }
-        if (responseType == ResponseType.ArrayBuffer) {
-            return readFile(resolved.absolute).then(buffer => buffer.buffer);
-        }
         const stats = await lstat(resolved.absolute);
         if (stats.isFile()) {
+            if (responseType == ResponseType.Text) {
+                return readFile(resolved.absolute, 'utf-8');
+            }
+            if (responseType == ResponseType.ArrayBuffer) {
+                return readFile(resolved.absolute).then(buffer => buffer.buffer);
+            }
             return Readable.toWeb(createReadStream(resolved.absolute, {
                 encoding: 'utf-8',
                 highWaterMark: 64 * 1024

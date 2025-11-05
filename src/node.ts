@@ -75,7 +75,7 @@ export async function load(url: string, currentDirectory: string = '.', response
 
     if (typeof responseType == 'boolean') {
 
-       responseType =  responseType ? ResponseType.ReadableStream : ResponseType.Text;
+        responseType = responseType ? ResponseType.ReadableStream : ResponseType.Text;
     }
 
     if (matchUrl.test(resolved.absolute)) {
@@ -92,25 +92,25 @@ export async function load(url: string, currentDirectory: string = '.', response
                 return response.arrayBuffer();
             }
 
-            return responseType == ResponseType.ReadableStream ? response.body as ReadableStream<Uint8Array<ArrayBuffer>> : await response.text();
+            return responseType == ResponseType.ReadableStream ? response.body as ReadableStream<Uint8Array<ArrayBuffer>> : response.text();
         });
     }
 
     try {
 
-        if (responseType == ResponseType.Text) {
-
-            return readFile(resolved.absolute, 'utf-8');
-        }
-
-        if (responseType == ResponseType.ArrayBuffer) {
-
-            return readFile(resolved.absolute).then(buffer => buffer.buffer);
-        }
-
         const stats = await lstat(resolved.absolute);
 
         if (stats.isFile()) {
+
+            if (responseType == ResponseType.Text) {
+
+                return readFile(resolved.absolute, 'utf-8');
+            }
+
+            if (responseType == ResponseType.ArrayBuffer) {
+
+                return readFile(resolved.absolute).then(buffer => buffer.buffer);
+            }
 
             return Readable.toWeb(createReadStream(resolved.absolute, {
                 encoding: 'utf-8',

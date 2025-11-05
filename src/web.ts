@@ -100,7 +100,7 @@ export async function load(url: string, currentDirectory: string = '.', response
             return response.arrayBuffer();
         }
 
-        return responseType == ResponseType.ReadableStream ? response.body : await response.text();
+        return responseType == ResponseType.ReadableStream ? response.body : response.text();
     }) as Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
 }
 
