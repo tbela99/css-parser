@@ -559,7 +559,7 @@
                         <div class="col-sm-9">
                             <div class="input-group mb-3">
                                 <label class="input-group-text" for="result"
-                                >Result</label
+                                >CSS</label
                                 >
                                 <a
                                         class="btn btn-outline-secondary"
@@ -581,14 +581,14 @@
                                 </button>
                             </div>
                         </div>
-                            <textarea
-                                    class="form-control"
-                                    disabled
-                                    id="result"
-                                    name="result"
-                                    rows="10"
-                            ></textarea>
                         </div>
+                        <textarea
+                                class="form-control"
+                                disabled
+                                id="result"
+                                name="result"
+                                rows="10"
+                        ></textarea>
                     </div>
                 </div>
                 <div class="col-sm-12 col-md-6 css-parse-options-module-box">
@@ -597,7 +597,7 @@
                             <div class="col-sm-9">
                                 <div class="input-group mb-3">
                                     <label class="input-group-text" for="mapping"
-                                    >CSS Modules export</label
+                                    >CSS Modules Mapping</label
                                     >
                                     <a
                                             class="btn btn-outline-secondary"
@@ -980,11 +980,7 @@ console.debug({parsed, rendered});`;
         if (target != null) {
             const url = generateDownloadUrl(
                 target,
-                target.download === "result"
-                    ? result.value
-                    : target.download === "ast"
-                        ? ast.value
-                        : errors.value,
+                document.getElementById(target.getAttribute('download')).value,
                 target.download === "result" ? "text/css" : "application/json"
             );
 
