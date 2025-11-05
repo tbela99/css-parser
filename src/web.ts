@@ -55,14 +55,19 @@ export {FeatureWalkMode} from './lib/ast/features/type.ts';
 export {dirname, resolve, ResponseType};
 
 /**
- * default file or url loader
+ * load file or url
  * @param url
- * @param currentFile
- *
+ * @param currentDirectory
  * @param responseType
- * @private
+ * @throws Error file not found
+ *
+ * ```ts
+ * import {load, ResponseType} from '@tbela99/css-parser';
+ * const result = await load(file, '.', ResponseType.ArrayBuffer) as ArrayBuffer;
+ * ```
  */
-export async function load(url: string, currentFile: string = '.', responseType: boolean | ResponseType = false): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>> {
+
+export async function load(url: string, currentDirectory: string = '.', responseType: boolean | ResponseType = false): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>> {
 
     if (typeof responseType == 'boolean') {
 
@@ -74,12 +79,12 @@ export async function load(url: string, currentFile: string = '.', responseType:
     if (matchUrl.test(url)) {
 
         t = new URL(url);
-    } else if (currentFile != null && matchUrl.test(currentFile)) {
+    } else if (currentDirectory != null && matchUrl.test(currentDirectory)) {
 
-        t = new URL(url, currentFile);
+        t = new URL(url, currentDirectory);
     } else {
 
-        const path: string = resolve(url, currentFile).absolute;
+        const path: string = resolve(url, currentDirectory).absolute;
         t = new URL(path, self.origin);
     }
 
@@ -95,7 +100,7 @@ export async function load(url: string, currentFile: string = '.', responseType:
             return response.arrayBuffer();
         }
 
-        return responseType == ResponseType.ReadableStream ? response.body : await response.text();
+        return responseType == ResponseType.ReadableStream ? response.body : response.text();
     }) as Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
 }
 

@@ -270,5 +270,5 @@ console.log(result.code);
 .
 
 ------
-[← Getting started](../../docs/documents/Guide.Getting_started.html) | [Minification →]( ../../docs/documents/Guide.Minification.html )
+[← Getting started](../documents/Guide.Getting_started.html) | [CSS Modules →](../documents/Guide.CSS_modules.html) 
 

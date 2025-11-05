@@ -22,14 +22,18 @@ import { ResponseType } from './types.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 
 /**
- * default file or url loader
+ * load file or url
  * @param url
- * @param currentFile
- *
+ * @param currentDirectory
  * @param responseType
- * @private
+ * @throws Error file not found
+ *
+ * ```ts
+ * import {load, ResponseType} from '@tbela99/css-parser';
+ * const result = await load(file, '.', ResponseType.ArrayBuffer) as ArrayBuffer;
+ * ```
  */
-async function load(url, currentFile = '.', responseType = false) {
+async function load(url, currentDirectory = '.', responseType = false) {
     if (typeof responseType == 'boolean') {
         responseType = responseType ? ResponseType.ReadableStream : ResponseType.Text;
     }
@@ -37,11 +41,11 @@ async function load(url, currentFile = '.', responseType = false) {
     if (matchUrl.test(url)) {
         t = new URL(url);
     }
-    else if (currentFile != null && matchUrl.test(currentFile)) {
-        t = new URL(url, currentFile);
+    else if (currentDirectory != null && matchUrl.test(currentDirectory)) {
+        t = new URL(url, currentDirectory);
     }
     else {
-        const path = resolve(url, currentFile).absolute;
+        const path = resolve(url, currentDirectory).absolute;
         t = new URL(path, self.origin);
     }
     return fetch(t, t.origin != self.origin ? { mode: 'cors' } : {}).then(async (response) => {
@@ -51,7 +55,7 @@ async function load(url, currentFile = '.', responseType = false) {
         if (responseType == ResponseType.ArrayBuffer) {
             return response.arrayBuffer();
         }
-        return responseType == ResponseType.ReadableStream ? response.body : await response.text();
+        return responseType == ResponseType.ReadableStream ? response.body : response.text();
     });
 }
 /**

@@ -7,11 +7,11 @@ children:
     - ./features.md
     - ./install.md
     - ./usage.md
+    - ./css-module.md
     - ./minification.md
     - ./transform.md
     - ./ast.md
     - ./validation.md
-    - ./css-module.md
 ---
 
 ## Contents
@@ -20,11 +20,11 @@ children:
 - [Features](./features.md)
 - [Installation](./install.md)
 - [Usage](./usage.md)
+- [CSS module](./css-module.md)
 - [Minification](./minification.md)
 - [Transform](./transform.md)
 - [Ast traversal](ast.md)
 - [Validation](./validation.md)
-- [CSS module](./css-module.md)
 
 ## Modules
 
@@ -37,4 +37,4 @@ children:
 - [Benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
 
 ------
-[About →](./about.md)
+[About →](../documents/Guide.About.html)

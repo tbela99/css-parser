@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.4.2
+
+- [x] fix bug when using remove prefix #120
+
 ## v1.4.0
 
 ### CSS Module support

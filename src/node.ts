@@ -58,21 +58,24 @@ export {FeatureWalkMode} from './lib/ast/features/type.ts';
 export {dirname, resolve, ResponseType};
 
 /**
- * load file or url as stream
+ * load file or url
  * @param url
- * @param currentFile
+ * @param currentDirectory
  * @param responseType
  * @throws Error file not found
  *
- * @private
+ * ```ts
+ * import {load, ResponseType} from '@tbela99/css-parser';
+ * const result = await load(file, '.', ResponseType.ArrayBuffer) as ArrayBuffer;
+ * ```
  */
-export async function load(url: string, currentFile: string = '.', responseType: boolean | ResponseType = false): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>> {
+export async function load(url: string, currentDirectory: string = '.', responseType: boolean | ResponseType = false): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>> {
 
-    const resolved = resolve(url, currentFile);
+    const resolved = resolve(url, currentDirectory);
 
     if (typeof responseType == 'boolean') {
 
-       responseType =  responseType ? ResponseType.ReadableStream : ResponseType.Text;
+        responseType = responseType ? ResponseType.ReadableStream : ResponseType.Text;
     }
 
     if (matchUrl.test(resolved.absolute)) {
@@ -89,25 +92,25 @@ export async function load(url: string, currentFile: string = '.', responseType:
                 return response.arrayBuffer();
             }
 
-            return responseType == ResponseType.ReadableStream ? response.body as ReadableStream<Uint8Array<ArrayBuffer>> : await response.text();
+            return responseType == ResponseType.ReadableStream ? response.body as ReadableStream<Uint8Array<ArrayBuffer>> : response.text();
         });
     }
 
     try {
 
-        if (responseType == ResponseType.Text) {
-
-            return readFile(resolved.absolute, 'utf-8');
-        }
-
-        if (responseType == ResponseType.ArrayBuffer) {
-
-            return readFile(resolved.absolute).then(buffer => buffer.buffer);
-        }
-
         const stats = await lstat(resolved.absolute);
 
         if (stats.isFile()) {
+
+            if (responseType == ResponseType.Text) {
+
+                return readFile(resolved.absolute, 'utf-8');
+            }
+
+            if (responseType == ResponseType.ArrayBuffer) {
+
+                return readFile(resolved.absolute).then(buffer => buffer.buffer);
+            }
 
             return Readable.toWeb(createReadStream(resolved.absolute, {
                 encoding: 'utf-8',

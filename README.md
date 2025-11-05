@@ -365,6 +365,45 @@ console.debug(render(result.ast.chi[0].chi[1].chi[1], {withParents: true}));
 
 ```
 
+### CSS Modules
+
+CSS modules features are fully supported. refer to the [CSS modules](https://tbela99.github.io/css-parser/docs/documents/Guide.CSS_modules.html) documentation for more information.
+
+```javascript
+import {transform} from '@tbela99/css-parser';
+
+const css = `
+.table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.table td, .table th {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+.table tr:nth-child(even){background-color: #f2f2f2;}
+
+.table tr:hover {background-color: #ddd;}
+
+.table th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: #4CAF50;
+    color: white;
+}
+`;
+
+const result = await transform(css, {module: true});
+
+// css code
+console.log(result.code);
+// css mapping
+console.log(result.mapping);
+```
+
 ### Convert colors
 
 ```javascript
