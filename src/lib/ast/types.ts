@@ -718,5 +718,26 @@ export enum ModuleScopeEnumOptions {
     /**
      * export using ICSS module format
      */
-    ICSS = 0x100
+    ICSS = 0x100,
+
+    /**
+     * use the shortest name possible. pattern is ignored.
+     * it will produce names such as
+     *
+     * ```css
+     *  .a {
+     *      content: 'a';
+     *  }
+     *
+     *  .b {
+     *      content: 'b';
+     *  }
+     *
+     *  .c {
+     *      content: 'c';
+     *  }
+     *  ...
+     * ```
+     */
+    Shortest = 0x200
 }

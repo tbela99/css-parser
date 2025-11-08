@@ -92,6 +92,24 @@ function getKeyName(key, how) {
     }
     return key;
 }
+let keyNameCounter = 0;
+let keyNameCache = {};
+function getShortNameGenerator() {
+    const forbidden = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].map(c => c.charCodeAt(0));
+    return (localName, filePath, pattern, hashLength = 5) => {
+        const key = `${localName}_${filePath}_${pattern}_${hashLength}`;
+        if (key in keyNameCache) {
+            return keyNameCache[key];
+        }
+        let value = keyNameCounter.toString(36);
+        keyNameCounter++;
+        while (forbidden.includes(value.charCodeAt(0))) {
+            value = keyNameCounter.toString(36);
+            keyNameCounter++;
+        }
+        return keyNameCache[key] ?? (keyNameCache[key] = value);
+    };
+}
 /**
  * generate scoped name
  * @param localName
@@ -744,6 +762,10 @@ async function doParse(iter, options = {}) {
                 // @ts-ignore
                 moduleSettings.scoped |= ModuleScopeEnumOptions.Pure;
             }
+            if (options.module & ModuleScopeEnumOptions.Shortest) {
+                // @ts-ignore
+                moduleSettings.scoped |= ModuleScopeEnumOptions.Shortest;
+            }
             if (options.module & ModuleScopeEnumOptions.ICSS) {
                 // @ts-ignore
                 moduleSettings.scoped |= ModuleScopeEnumOptions.ICSS;
@@ -751,6 +773,9 @@ async function doParse(iter, options = {}) {
         }
         if (typeof moduleSettings.scoped == 'boolean') {
             moduleSettings.scoped = moduleSettings.scoped ? ModuleScopeEnumOptions.Local : ModuleScopeEnumOptions.Global;
+        }
+        if (moduleSettings.scoped & ModuleScopeEnumOptions.Shortest) {
+            moduleSettings.generateScopedName = getShortNameGenerator();
         }
         moduleSettings.filePath = filePath;
         moduleSettings.pattern = pattern != null && pattern !== '' ? pattern : (filePath === '' ? `[local]_[hash]` : `[local]_[hash]_[name]`);
@@ -2757,4 +2782,4 @@ function parseTokens(tokens, options = {}) {
     return tokens;
 }
 
-export { doParse, generateScopedName, getKeyName, getTokenType, parseAtRulePrelude, parseDeclarations, parseSelector, parseString, parseTokens, replaceToken, urlTokenMatcher };
+export { doParse, generateScopedName, getKeyName, getShortNameGenerator, getTokenType, parseAtRulePrelude, parseDeclarations, parseSelector, parseString, parseTokens, replaceToken, urlTokenMatcher };

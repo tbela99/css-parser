@@ -110,10 +110,10 @@ export class InlineCssVariablesFeature {
         [key: string]: any
     }): AstNode | null {
 
-        // if (!('chi' in ast)) {
-        //
-        //     return null;
-        // }
+        if (!('chi' in ast)) {
+
+            return null;
+        }
 
         if (!('variableScope' in context)) {
 
@@ -181,10 +181,10 @@ export class InlineCssVariablesFeature {
 
         const variableScope = <Map<string, VariableScopeInfo>>context.variableScope;
 
-        // if (variableScope == null) {
-        //
-        //     return;
-        // }
+        if (variableScope == null) {
+
+            return;
+        }
 
         for (const info of variableScope.values()) {
 

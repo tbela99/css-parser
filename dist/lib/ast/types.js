@@ -709,6 +709,26 @@ var ModuleScopeEnumOptions;
      * export using ICSS module format
      */
     ModuleScopeEnumOptions[ModuleScopeEnumOptions["ICSS"] = 256] = "ICSS";
+    /**
+     * use the shortest name possible. pattern is ignored.
+     * it will produce names such as
+     *
+     * ```css
+     *  .a {
+     *      content: 'a';
+     *  }
+     *
+     *  .b {
+     *      content: 'b';
+     *  }
+     *
+     *  .c {
+     *      content: 'c';
+     *  }
+     *  ...
+     * ```
+     */
+    ModuleScopeEnumOptions[ModuleScopeEnumOptions["Shortest"] = 512] = "Shortest";
 })(ModuleScopeEnumOptions || (ModuleScopeEnumOptions = {}));
 
 export { ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SyntaxValidationResult, ValidationLevel };

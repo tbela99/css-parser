@@ -716,6 +716,26 @@ exports.ModuleScopeEnumOptions = void 0;
      * export using ICSS module format
      */
     ModuleScopeEnumOptions[ModuleScopeEnumOptions["ICSS"] = 256] = "ICSS";
+    /**
+     * use the shortest name possible. pattern is ignored.
+     * it will produce names such as
+     *
+     * ```css
+     *  .a {
+     *      content: 'a';
+     *  }
+     *
+     *  .b {
+     *      content: 'b';
+     *  }
+     *
+     *  .c {
+     *      content: 'c';
+     *  }
+     *  ...
+     * ```
+     */
+    ModuleScopeEnumOptions[ModuleScopeEnumOptions["Shortest"] = 512] = "Shortest";
 })(exports.ModuleScopeEnumOptions || (exports.ModuleScopeEnumOptions = {}));
 
 // from https://www.w3.org/TR/css-color-4/multiply-matrices.js
@@ -18134,6 +18154,24 @@ function getKeyName(key, how) {
     }
     return key;
 }
+let keyNameCounter = 0;
+let keyNameCache = {};
+function getShortNameGenerator() {
+    const forbidden = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].map(c => c.charCodeAt(0));
+    return (localName, filePath, pattern, hashLength = 5) => {
+        const key = `${localName}_${filePath}_${pattern}_${hashLength}`;
+        if (key in keyNameCache) {
+            return keyNameCache[key];
+        }
+        let value = keyNameCounter.toString(36);
+        keyNameCounter++;
+        while (forbidden.includes(value.charCodeAt(0))) {
+            value = keyNameCounter.toString(36);
+            keyNameCounter++;
+        }
+        return keyNameCache[key] ?? (keyNameCache[key] = value);
+    };
+}
 /**
  * generate scoped name
  * @param localName
@@ -18786,6 +18824,10 @@ async function doParse(iter, options = {}) {
                 // @ts-ignore
                 moduleSettings.scoped |= exports.ModuleScopeEnumOptions.Pure;
             }
+            if (options.module & exports.ModuleScopeEnumOptions.Shortest) {
+                // @ts-ignore
+                moduleSettings.scoped |= exports.ModuleScopeEnumOptions.Shortest;
+            }
             if (options.module & exports.ModuleScopeEnumOptions.ICSS) {
                 // @ts-ignore
                 moduleSettings.scoped |= exports.ModuleScopeEnumOptions.ICSS;
@@ -18793,6 +18835,9 @@ async function doParse(iter, options = {}) {
         }
         if (typeof moduleSettings.scoped == 'boolean') {
             moduleSettings.scoped = moduleSettings.scoped ? exports.ModuleScopeEnumOptions.Local : exports.ModuleScopeEnumOptions.Global;
+        }
+        if (moduleSettings.scoped & exports.ModuleScopeEnumOptions.Shortest) {
+            moduleSettings.generateScopedName = getShortNameGenerator();
         }
         moduleSettings.filePath = filePath;
         moduleSettings.pattern = pattern != null && pattern !== '' ? pattern : (filePath === '' ? `[local]_[hash]` : `[local]_[hash]_[name]`);
@@ -21320,10 +21365,9 @@ class InlineCssVariablesFeature {
         }
     }
     run(ast, options = {}, parent, context) {
-        // if (!('chi' in ast)) {
-        //
-        //     return null;
-        // }
+        if (!('chi' in ast)) {
+            return null;
+        }
         if (!('variableScope' in context)) {
             context.variableScope = new Map;
         }
@@ -21369,10 +21413,9 @@ class InlineCssVariablesFeature {
     }
     cleanup(ast, options = {}, context) {
         const variableScope = context.variableScope;
-        // if (variableScope == null) {
-        //
-        //     return;
-        // }
+        if (variableScope == null) {
+            return;
+        }
         for (const info of variableScope.values()) {
             if (info.replaceable) {
                 let i;

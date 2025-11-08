@@ -66,10 +66,9 @@ class InlineCssVariablesFeature {
         }
     }
     run(ast, options = {}, parent, context) {
-        // if (!('chi' in ast)) {
-        //
-        //     return null;
-        // }
+        if (!('chi' in ast)) {
+            return null;
+        }
         if (!('variableScope' in context)) {
             context.variableScope = new Map;
         }
@@ -115,10 +114,9 @@ class InlineCssVariablesFeature {
     }
     cleanup(ast, options = {}, context) {
         const variableScope = context.variableScope;
-        // if (variableScope == null) {
-        //
-        //     return;
-        // }
+        if (variableScope == null) {
+            return;
+        }
         for (const info of variableScope.values()) {
             if (info.replaceable) {
                 let i;

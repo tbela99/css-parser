@@ -83,4 +83,4 @@ async function hash(input, length = 6, algo) {
     return hashId(input, length);
 }
 
-export { hash, hashAlgorithms, hashId };
+export { DIGITS, FIRST_ALPHABET, FULL_ALPHABET, LOWER, hash, hashAlgorithms, hashId };

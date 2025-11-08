@@ -157,6 +157,35 @@ output
 }
 ```
 
+### Shortest Scope
+
+produce short scope names.
+
+```typescript
+
+result = await transform(css, {
+
+    beautify: true,
+    module: {scoped: ModuleScopeEnumOptions.Shortest
+    }
+
+});
+
+console.log(result.code);
+```
+
+output
+
+```css
+.a {
+    background: red;
+    color: #ff0
+}
+.b {
+    background: blue
+}
+```
+
 ### Mixing scopes
 
 scopes can be mixed using the bitwise OR operator '|'
