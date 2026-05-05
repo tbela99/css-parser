@@ -1,12 +1,4 @@
-import { EnumToken } from '../types.js';
-import '../minify.js';
-import '../walk.js';
-import '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
-import '../../renderer/sourcemap/lib/encode.js';
-import '../../syntax/color/utils/constants.js';
-import { minifyNumber } from '../../syntax/utils.js';
+import { EnumToken, minifyNumber } from '../types.js';
 
 function gcd(x, y) {
     x = Math.abs(x);
@@ -58,14 +50,12 @@ function compute(a, b, op) {
         }
     }
     let l1 = typeof a == 'number' ? {
-        typ: EnumToken.FractionTokenType,
-        l: { typ: EnumToken.NumberTokenType, val: a },
-        r: { typ: EnumToken.NumberTokenType, val: 1 }
+        l: { val: a },
+        r: { val: 1 }
     } : a;
     let r1 = typeof b == 'number' ? {
-        typ: EnumToken.FractionTokenType,
-        l: { typ: EnumToken.NumberTokenType, val: b },
-        r: { typ: EnumToken.NumberTokenType, val: 1 }
+        l: { val: b },
+        r: { val: 1 }
     } : b;
     let l2;
     let r2;

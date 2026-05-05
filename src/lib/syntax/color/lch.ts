@@ -1,7 +1,7 @@
-import type {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
-import {getComponents} from "./utils/index.ts";
-import {color2srgbvalues, getAngle, getNumber, toPrecisionAngle, toPrecisionValue} from "./color.ts";
-import {ColorType, EnumToken} from "../../ast/index.ts";
+import type { ColorToken, NumberToken, PercentageToken, Token } from "../../../@types/index.d.ts";
+import { getComponents } from "./utils/components.ts";
+import { color2srgbvalues, getAngle, getNumber, toPrecisionAngle, toPrecisionValue } from "./color.ts";
+import { ColorType, EnumToken } from "../../ast/types.ts";
 import {
     getLABComponents,
     hex2labvalues,
@@ -11,12 +11,11 @@ import {
     oklch2labvalues,
     rgb2labvalues,
     srgb2labvalues,
-    xyz2lab
+    xyz2lab,
 } from "./lab.ts";
-import {cmyk2srgbvalues} from "./srgb.ts";
+import { cmyk2srgbvalues } from "./srgb.ts";
 
 export function hex2lchToken(token: ColorToken): ColorToken | null {
-
     const values: number[] | null = hex2lchvalues(token);
 
     if (values == null) {
@@ -27,7 +26,6 @@ export function hex2lchToken(token: ColorToken): ColorToken | null {
 }
 
 export function rgb2lchToken(token: ColorToken): ColorToken | null {
-
     const values: number[] | null = rgb2lchvalues(token);
 
     if (values == null) {
@@ -38,7 +36,6 @@ export function rgb2lchToken(token: ColorToken): ColorToken | null {
 }
 
 export function hsl2lchToken(token: ColorToken): ColorToken | null {
-
     const values: number[] | null = hsl2lchvalues(token);
 
     if (values == null) {
@@ -49,7 +46,6 @@ export function hsl2lchToken(token: ColorToken): ColorToken | null {
 }
 
 export function hwb2lchToken(token: ColorToken): ColorToken | null {
-
     const values: number[] | null = hwb2lchvalues(token);
 
     if (values == null) {
@@ -60,7 +56,6 @@ export function hwb2lchToken(token: ColorToken): ColorToken | null {
 }
 
 export function cmyk2lchToken(token: ColorToken): ColorToken | null {
-
     const values: number[] | null = cmyk2lchvalues(token);
 
     if (values == null) {
@@ -71,7 +66,6 @@ export function cmyk2lchToken(token: ColorToken): ColorToken | null {
 }
 
 export function lab2lchToken(token: ColorToken): ColorToken | null {
-
     const values: number[] | null = lab2lchvalues(token);
 
     if (values == null) {
@@ -82,7 +76,6 @@ export function lab2lchToken(token: ColorToken): ColorToken | null {
 }
 
 export function oklab2lchToken(token: ColorToken): ColorToken | null {
-
     const values: number[] | null = oklab2lchvalues(token);
 
     if (values == null) {
@@ -93,7 +86,6 @@ export function oklab2lchToken(token: ColorToken): ColorToken | null {
 }
 
 export function oklch2lchToken(token: ColorToken): ColorToken | null {
-
     const values: number[] | null = oklch2lchvalues(token);
 
     if (values == null) {
@@ -104,7 +96,6 @@ export function oklch2lchToken(token: ColorToken): ColorToken | null {
 }
 
 export function color2lchToken(token: ColorToken): ColorToken | null {
-
     const values: number[] | null = color2lchvalues(token);
 
     if (values == null) {
@@ -115,34 +106,33 @@ export function color2lchToken(token: ColorToken): ColorToken | null {
 }
 
 function lchToken(values: number[]): ColorToken | null {
-
     values[2] = toPrecisionAngle(values[2]);
 
     const chi: Token[] = <Token[]>[
-
-        {typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0])},
-        {typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[1])},
-        {typ: EnumToken.NumberTokenType, val: values[2]},
+        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[1]) },
+        { typ: EnumToken.NumberTokenType, val: values[2] },
     ];
 
     if (values.length == 4) {
-
-        chi.push({typ: EnumToken.LiteralTokenType, val: '/'}, {
-            typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100
-        });
+        chi.push(
+            { typ: EnumToken.LiteralTokenType, val: "/" },
+            {
+                typ: EnumToken.PercentageTokenType,
+                val: values[3] * 100,
+            },
+        );
     }
 
     return {
         typ: EnumToken.ColorTokenType,
-        val: 'lch',
+        val: "lch",
         chi,
-        kin: ColorType.LCH
-    }
+        kin: ColorType.LCH,
+    };
 }
 
 export function hex2lchvalues(token: ColorToken): number[] | null {
-
     const values: number[] | null = hex2labvalues(token);
 
     // @ts-ignore
@@ -150,28 +140,24 @@ export function hex2lchvalues(token: ColorToken): number[] | null {
 }
 
 export function rgb2lchvalues(token: ColorToken): number[] | null {
-
     const values: number[] | null = rgb2labvalues(token);
     // @ts-ignore
     return values == null ? null : labvalues2lchvalues(...values);
 }
 
 export function hsl2lchvalues(token: ColorToken): number[] | null {
-
     const values: number[] | null = hsl2labvalues(token);
     // @ts-ignore
     return values == null ? null : labvalues2lchvalues(...values);
 }
 
 export function hwb2lchvalues(token: ColorToken): number[] | null {
-
     const values: number[] | null = hwb2labvalues(token);
     // @ts-ignore
     return values == null ? null : labvalues2lchvalues(...values);
 }
 
 export function lab2lchvalues(token: ColorToken): number[] | null {
-
     const values: number[] | null = getLABComponents(token);
 
     // @ts-ignore
@@ -179,32 +165,26 @@ export function lab2lchvalues(token: ColorToken): number[] | null {
 }
 
 export function srgb2lch(r: number, g: number, blue: number, alpha: number | null): number[] {
-
     // @ts-ignore
     return labvalues2lchvalues(...srgb2labvalues(r, g, blue, alpha));
 }
 
 export function oklab2lchvalues(token: ColorToken): number[] | null {
-
-
     const values: number[] | null = oklab2labvalues(token);
     // @ts-ignore
     return values == null ? null : labvalues2lchvalues(...values);
 }
 
 export function cmyk2lchvalues(token: ColorToken): number[] | null {
-
     const values: number[] | null = cmyk2srgbvalues(token);
     // @ts-ignore
     return values == null ? null : srgb2lch(...values);
 }
 
 export function oklch2lchvalues(token: ColorToken): number[] | null {
-
     const values: number[] | null = oklch2labvalues(token);
 
     if (values == null) {
-
         return null;
     }
 
@@ -213,11 +193,9 @@ export function oklch2lchvalues(token: ColorToken): number[] | null {
 }
 
 export function color2lchvalues(token: ColorToken): number[] | null {
-
     const values = color2srgbvalues(token);
 
     if (values == null) {
-
         return null;
     }
 
@@ -226,15 +204,14 @@ export function color2lchvalues(token: ColorToken): number[] | null {
 }
 
 export function labvalues2lchvalues(l: number, a: number, b: number, alpha: number | null = null): number[] {
-
     let c: number = Math.sqrt(a * a + b * b);
-    let h: number = Math.atan2(b, a) * 180 / Math.PI;
+    let h: number = (Math.atan2(b, a) * 180) / Math.PI;
 
     if (h < 0) {
         h += 360;
     }
 
-    if (c < .0001) {
+    if (c < 0.0001) {
         c = h = 0;
     }
 
@@ -242,7 +219,6 @@ export function labvalues2lchvalues(l: number, a: number, b: number, alpha: numb
 }
 
 export function xyz2lchvalues(x: number, y: number, z: number, alpha?: number): number[] {
-
     // @ts-ignore(
     const lch = labvalues2lchvalues(...xyz2lab(x, y, z));
 
@@ -250,18 +226,21 @@ export function xyz2lchvalues(x: number, y: number, z: number, alpha?: number): 
 }
 
 export function getLCHComponents(token: ColorToken): number[] | null {
-
     const components: Token[] | null = getComponents(token);
 
     if (components == null) {
-
         return null;
     }
 
     for (let i = 0; i < components.length; i++) {
-
-        if (![EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.IdenTokenType].includes(components[i].typ)) {
-
+        if (
+            ![
+                EnumToken.NumberTokenType,
+                EnumToken.PercentageTokenType,
+                EnumToken.AngleTokenType,
+                EnumToken.IdenTokenType,
+            ].includes(components[i].typ)
+        ) {
             return null;
         }
     }

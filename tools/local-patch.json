@@ -1,25 +1,98 @@
 {
   "atrules": {
+    "@font-feature-values": {
+      "syntax": " @font-feature-values <family-name># { <declaration-rule-list> } ",
+      "comment": "replace @font-feature-values syntax",
+      "descriptors": {
+        "font-display": {
+          "syntax": "auto | block | swap | fallback | optional"
+        }
+      }
+    },
     "@stylistic": {
-      "syntax": " @stylistic { <feature-value-declaration-list> } "
+      "syntax": " @stylistic { <declaration-list> } ",
+      "comment": "replace @stylistic syntax"
     },
     "@historical-forms": {
-      "syntax": " @historical-forms { <feature-value-declaration-list> } "
+      "syntax": " @historical-forms { <declaration-list> }",
+      "comment": "replace @historical-forms syntax"
     },
     "@styleset": {
-      "syntax": " @styleset { <feature-value-declaration-list> } "
+      "syntax": "@styleset { <declaration-list> }",
+      "comment": "replace @styleset syntax"
     },
     "@character-variant": {
-      "syntax": " @character-variant { <feature-value-declaration-list> } "
+      "syntax": "@character-variant { <declaration-list> }",
+      "comment": "replace @character-variant syntax"
     },
     "@swash": {
-      "syntax": " @swash { <feature-value-declaration-list> } "
+      "syntax": "@swash { <declaration-list> }",
+      "comment": "replace @swash syntax"
     },
     "@ornaments": {
-      "syntax": " @ornaments { <feature-value-declaration-list> } "
+      "syntax": "@ornaments { <declaration-list> }",
+      "comment": "replace @ornaments syntax"
     },
     "@annotation": {
-      "syntax": " @annotation { <feature-value-declaration-list> } "
+      "syntax": "@annotation { <declaration-list> }",
+      "comment": "replace @annotation syntax"
+    },
+    "@when": {
+      "syntax": " @when <when-condition> {\n  <group-rule-body>\n}"
+    },
+    "@else": {
+      "syntax": " @else <when-condition>? {\n  <group-rule-body>\n}"
+    },
+    "@custom-media": {
+      "syntax": " @custom-media <extension-name> [<media-query-list> | true | false ];"
+    },
+    "@top-left-corner": {
+      "syntax": " @top-left-corner { <declaration-list> }"
+    },
+    "@top-left": {
+      "syntax": " @top-left { <declaration-list> }"
+    },
+    "@top-center": {
+      "syntax": " @top-center { <declaration-list> }"
+    },
+    "@top-right": {
+      "syntax": " @top-right { <declaration-list> }"
+    },
+    "@top-right-corner": {
+      "syntax": " @top-right-corner { <declaration-list> }"
+    },
+    "@bottom-left-corner": {
+      "syntax": " @bottom-left-corner { <declaration-list> }"
+    },
+    "@bottom-left": {
+      "syntax": " @bottom-left { <declaration-list> }"
+    },
+    "@bottom-right": {
+      "syntax": " @bottom-right { <declaration-list> }"
+    },
+    "@bottom-right-corner": {
+      "syntax": " @bottom-right-corner { <declaration-list> }"
+    },
+    "@left-top": {
+      "syntax": " @left-top { <declaration-list> }"
+    },
+    "@left-middle": {
+      "syntax": " @left-middle { <declaration-list> }"
+    },
+    "@left-bottom": {
+      "syntax": " @left-bottom { <declaration-list> }"
+    },
+    "@right-top": {
+      "syntax": " @right-top { <declaration-list> }"
+    },
+    "@right-middle": {
+      "syntax": " @right-middle { <declaration-list> }"
+    },
+    "@right-bottom": {
+      "syntax": " @right-bottom { <declaration-list> }"
+    },
+    "@value": {
+      "syntax": "@value [<declaration> && [ <ident># from <ident> ]]"
     }
   },
   "properties": {
@@ -30,17 +103,151 @@
       "comment": "extend with auto",
       "syntax": "| auto"
     },
+    "font": {
+      "comment": "extend font syntax",
+      "syntax": "| [ <'font-size'> [ / <'line-height'> ]? <'font-family'># ]"
+    },
     "text-align": {
       "comment": "extend with -non-standard-text-align",
       "syntax": "| <-non-standard-text-align>"
     },
     "composes": {
-      "syntax": "<composes-selector>#"},
-    "composes-selector": {
-      "syntax": "<ident>+ [from [global&&<string>]]?"
+      "syntax": "<composes-selector>#"
+    }
+  },
+  "selectors": {
+    ":global": {
+      "syntax": ":global"
+    },
+    ":global()": {
+      "syntax": ":global( <forgiving-selector-list> )"
+    },
+    ":local": {
+      "syntax": ":local"
+    },
+    ":local()": {
+      "syntax": ":local( <forgiving-selector-list> )"
     }
   },
   "types": {
+    "composes-selector": {
+      "syntax": "<ident>+ [from [global&&<string>]]?"
+    },
+    "gradient": {
+      "comment": "added legacy syntaxes support",
+      "syntax": "<-legacy-gradient>"
+    },
+    "font-feature-custom-ident": {
+      "syntax": "<integer>"
+    },
+    "font-feature-custom-ident-list": {
+      "syntax": "<integer>+"
+    },
+    "font-feature-custom-ident-character-variant": {
+      "syntax": "<integer> <integer>?"
+    },
+    "container-condition": {
+      "syntax": "[ <container-name>? <container-query>? ]!"
+    },
+    "container-query": {
+      "syntax": "not <query-in-parens> | <query-in-parens> [ [ and <query-in-parens> ]* | [ or <query-in-parens> ]* ]"
+    },
+    "query-in-parens": {
+      "syntax": "( <container-query> ) | ( <size-feature> )  | style( <style-query> ) | scroll-state( <scroll-state-query> ) | <general-enclosed>"
+    },
+    "style-query": {
+      "syntax": "not <style-in-parens> | <style-in-parens> [ [ and <style-in-parens> ]* | [ or <style-in-parens> ]* ] | <style-feature>"
+    },
+    "style-in-parens": {
+      "syntax": "( <style-query> ) | ( <style-feature> ) | <general-enclosed>"
+    },
+    "style-feature": {
+      "syntax": "<style-feature-plain> | <style-feature-boolean> | <style-range>"
+    },
+    "style-feature-name": {
+      "syntax": "<ident> |<custom-property-name>"
+    },
+    "style-feature-plain": {
+      "syntax": "<style-feature-name> : <style-feature-value>"
+    },
+    "style-feature-boolean": {
+      "syntax": "<style-feature-name>"
+    },
+    "style-range": {
+      "syntax": "<style-range-value> <mf-comparison> <style-range-value>   | <style-range-value> <mf-lt> <style-range-value> <mf-lt> <style-range-value>  | <style-range-value> <mf-gt> <style-range-value> <mf-gt> <style-range-value>"
+    },
+    "style-range-value": {
+      "syntax": "<custom-property-name> | <style-feature-value>"
+    },
+    "scroll-state-query": {
+      "syntax": " not <scroll-state-in-parens> | <scroll-state-in-parens> [ [ and <scroll-state-in-parens> ]* | [ or <scroll-state-in-parens> ]* ] | <scroll-state-feature>"
+    },
+    "scroll-state-in-parens": {
+      "syntax": "( <scroll-state-query> ) | ( <scroll-state-feature> ) | <general-enclosed>"
+    },
+    "scroll-state-feature": {
+      "syntax": "<scroll-state-feature-plain>   |  <scroll-state-feature-boolean>"
+    },
+    "scroll-state-feature-plain": {
+      "syntax": "<scroll-state-feature-stuck> | <scroll-state-feature-snapped> | <scroll-state-feature-scrollable> | <scroll-state-feature-scrolled>"
+    },
+    "scroll-state-feature-stuck": {
+      "syntax": "stuck : [ none | top | right | bottom | left | block-start | inline-start | block-end | inline-end ]"
+    },
+    "scroll-state-feature-snapped": {
+      "syntax": "snapped : [ none | x | y | block | inline | both ]"
+    },
+    "scroll-state-feature-scrollable": {
+      "syntax": "scrollable : [ none | top | right | bottom | left | block-start | inline-start | block-end | inline-end | x | y | block | inline ]"
+    },
+    "scroll-state-feature-scrolled": {
+      "syntax": "scrolled : [ none | top | right | bottom | left | block-start | inline-start | block-end | inline-end | x | y | block | inline ]"
+    },
+    "scroll-state-feature-boolean": {
+      "syntax": "stuck | snapped | scrollable | scrolled"
+    },
+    "oklch()": {
+      "syntax": "oklch( [ from <color> ]? [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ <hue> | none ] [ / [ <alpha-value> | none ] ]? )"
+    },
+    "color-font-tech": {
+      "syntax": "color-colrv0 | color-colrv1 | color-svg | color-sbix | color-cbdt"
+    },
+    "font-features-tech": {
+      "syntax": "features-opentype | features-aat | features-graphite"
+    },
+    "font-tech-patch-values": {
+      "syntax": "incremental-patch | incremental-range | incremental-auto | variations | palettes"
+    },
+    "font-tech()": {
+      "syntax": "font-tech( <color-font-tech> | <font-features-tech> | <font-tech-patch-values> )"
+    },
+    "font-format-values": {
+      "syntax": "collection | embedded-opentype | opentype | truetype | svg | woff | woff2"
+    },
+    "font-format()": {
+      "syntax": "font-format(<font-format-values>)"
+    },
+    "at-rule()": {
+      "syntax": "at-rule(<at-keyword-token>)"
+    },
+    "named-feature()": {
+      "syntax": "named-feature( <ident> )"
+    },
+    "media()": {
+      "syntax": "media( [ <mf-plain> | <mf-boolean> | <mf-range> ] )"
+    },
+    "selector()": {
+      "syntax": "selector( <complex-selector> )"
+    },
+    "scroll-state()": {
+      "syntax": "scroll-state( <scroll-state-query> )"
+    },
+    "supports()": {
+      "syntax": "supports( <declaration> )"
+    },
+    "keyframe-selectors": {
+      "syntax": "<keyframe-selector>#"
+    },
     "track-breadth": {
       "comment": "extend track-breadth syntax with -non-standard-size",
       "syntax": "| <-non-standard-size>"
@@ -53,5 +260,391 @@
       "comment": "extend text-align",
       "syntax": "| -moz-center | -webkit-center | -webkit-match-parent"
     }
-  }
+  },
+  "mediaFeatures": {
+    "standard": {
+      "viewport": {
+        "width": {
+          "type": "length"
+        },
+        "min-width": {
+          "type": "length"
+        },
+        "max-width": {
+          "type": "length"
+        },
+        "height": {
+          "type": "length"
+        },
+        "min-height": {
+          "type": "length"
+        },
+        "max-height": {
+          "type": "length"
+        },
+        "aspect-ratio": {
+          "type": "ratio"
+        },
+        "min-aspect-ratio": {
+          "type": "ratio"
+        },
+        "max-aspect-ratio": {
+          "type": "ratio"
+        },
+        "orientation": {
+          "type": "keyword",
+          "values": [
+            "portrait",
+            "landscape"
+          ]
+        }
+      },
+      "device-viewport": {
+        "device-width": {
+          "type": "length",
+          "status": "deprecated"
+        },
+        "device-height": {
+          "type": "length",
+          "status": "deprecated"
+        },
+        "device-aspect-ratio": {
+          "type": "ratio",
+          "status": "deprecated"
+        }
+      },
+      "display": {
+        "resolution": {
+          "type": "resolution",
+          "units": [
+            "dpi",
+            "dpcm",
+            "dppx"
+          ]
+        },
+        "min-resolution": {
+          "type": "resolution"
+        },
+        "max-resolution": {
+          "type": "resolution"
+        },
+        "scan": {
+          "type": "keyword",
+          "values": [
+            "interlace",
+            "progressive"
+          ],
+          "status": "deprecated"
+        },
+        "update": {
+          "type": "keyword",
+          "values": [
+            "none",
+            "slow",
+            "fast"
+          ]
+        },
+        "overflow-block": {
+          "type": "keyword",
+          "values": [
+            "none",
+            "scroll",
+            "paged"
+          ]
+        },
+        "overflow-inline": {
+          "type": "keyword",
+          "values": [
+            "none",
+            "scroll"
+          ]
+        },
+        "display-mode": {
+          "type": "keyword",
+          "values": [
+            "fullscreen",
+            "standalone",
+            "minimal-ui",
+            "browser"
+          ]
+        }
+      },
+      "color": {
+        "color": {
+          "type": "integer"
+        },
+        "min-color": {
+          "type": "integer"
+        },
+        "max-color": {
+          "type": "integer"
+        },
+        "color-index": {
+          "type": "integer"
+        },
+        "min-color-index": {
+          "type": "integer"
+        },
+        "max-color-index": {
+          "type": "integer"
+        },
+        "monochrome": {
+          "type": "integer"
+        },
+        "min-monochrome": {
+          "type": "integer"
+        },
+        "max-monochrome": {
+          "type": "integer"
+        },
+        "color-gamut": {
+          "type": "keyword",
+          "values": [
+            "srgb",
+            "p3",
+            "rec2020"
+          ]
+        },
+        "dynamic-range": {
+          "type": "keyword",
+          "values": [
+            "standard",
+            "high"
+          ]
+        },
+        "inverted-colors": {
+          "type": "keyword",
+          "values": [
+            "none",
+            "inverted"
+          ]
+        }
+      },
+      "input": {
+        "pointer": {
+          "type": "keyword",
+          "values": [
+            "none",
+            "coarse",
+            "fine"
+          ]
+        },
+        "any-pointer": {
+          "type": "keyword",
+          "values": [
+            "none",
+            "coarse",
+            "fine"
+          ]
+        },
+        "hover": {
+          "type": "keyword",
+          "values": [
+            "none",
+            "hover"
+          ]
+        },
+        "any-hover": {
+          "type": "keyword",
+          "values": [
+            "none",
+            "hover"
+          ]
+        }
+      },
+      "user-preferences": {
+        "prefers-reduced-motion": {
+          "type": "keyword",
+          "values": [
+            "no-preference",
+            "reduce"
+          ]
+        },
+        "prefers-reduced-transparency": {
+          "type": "keyword",
+          "values": [
+            "no-preference",
+            "reduce"
+          ]
+        },
+        "prefers-contrast": {
+          "type": "keyword",
+          "values": [
+            "no-preference",
+            "less",
+            "more",
+            "custom"
+          ]
+        },
+        "prefers-color-scheme": {
+          "type": "keyword",
+          "values": [
+            "light",
+            "dark"
+          ]
+        },
+        "prefers-reduced-data": {
+          "type": "keyword",
+          "values": [
+            "no-preference",
+            "reduce"
+          ]
+        }
+      },
+      "accessibility": {
+        "forced-colors": {
+          "type": "keyword",
+          "values": [
+            "none",
+            "active"
+          ]
+        },
+        "scripting": {
+          "type": "keyword",
+          "values": [
+            "none",
+            "initial-only",
+            "enabled"
+          ]
+        }
+      },
+      "legacy": {
+        "grid": {
+          "type": "boolean",
+          "values": [
+            0,
+            1
+          ]
+        },
+        "light-level": {
+          "type": "keyword",
+          "values": [
+            "dim",
+            "normal",
+            "washed"
+          ],
+          "status": "deprecated"
+        }
+      },
+      "environment": {
+        "environment-blending": {
+          "type": "keyword",
+          "values": [
+            "opaque",
+            "additive",
+            "subtractive"
+          ]
+        }
+      },
+      "navigation": {
+        "nav-controls": {
+          "type": "keyword",
+          "values": [
+            "none",
+            "back"
+          ]
+        }
+      },
+      "video": {
+        "video-color-gamut": {
+          "type": "keyword",
+          "values": [
+            "srgb",
+            "p3",
+            "rec2020"
+          ]
+        },
+        "video-dynamic-range": {
+          "type": "keyword",
+          "values": [
+            "standard",
+            "high"
+          ]
+        }
+      }
+    },
+    "vendor-prefixed": {
+      "-webkit-": {
+        "-webkit-device-pixel-ratio": {
+          "type": "number",
+          "status": "deprecated",
+          "equivalent": "resolution"
+        },
+        "-webkit-max-device-pixel-ratio": {
+          "type": "number",
+          "status": "deprecated"
+        },
+        "-webkit-transform-3d": {
+          "type": "boolean",
+          "values": [
+            0,
+            1
+          ],
+          "status": "non-standard"
+        },
+        "-webkit-touch-enabled": {
+          "type": "boolean",
+          "values": [
+            0,
+            1
+          ],
+          "status": "non-standard"
+        },
+        "-webkit-min-device-pixel-ratio": {
+          "type": "number",
+          "status": "deprecated"
+        }
+      },
+      "-moz-": {
+        "-moz-device-pixel-ratio": {
+          "type": "number",
+          "status": "deprecated"
+        },
+        "-moz-touch-enabled": {
+          "type": "boolean",
+          "values": [
+            0,
+            1
+          ],
+          "status": "non-standard"
+        },
+        "-moz-os-version": {
+          "type": "string",
+          "status": "internal"
+        }
+      },
+      "-ms-": {
+        "-ms-high-contrast": {
+          "type": "keyword",
+          "values": [
+            "none",
+            "active",
+            "black-on-white",
+            "white-on-black"
+          ],
+          "status": "deprecated",
+          "equivalent": "forced-colors"
+        },
+        "-ms-view-state": {
+          "type": "keyword",
+          "values": [
+            "snapped",
+            "fullscreen-portrait",
+            "fullscreen-landscape",
+            "filled"
+          ],
+          "status": "obsolete"
+        }
+      },
+      "-o-": {
+        "-o-device-pixel-ratio": {
+          "type": "number",
+          "status": "obsolete"
+        }
+      }
+    }
+  },
+  "skipped": [
+    "container"
+  ]
 }

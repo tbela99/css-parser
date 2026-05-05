@@ -1,3 +1,5 @@
+import type { LengthToken, NumberToken } from "../../@types";
+
 /**
  * syntax validation enum
  */
@@ -7,14 +9,13 @@ export enum SyntaxValidationResult {
     /** drop invalid syntax */
     Drop,
     /** preserve unknown at-rules, declarations and pseudo-classes */
-    Lenient
+    Lenient,
 }
 
 /**
  * enum of validation levels
  */
 export enum ValidationLevel {
-
     /**
      * disable validation
      */
@@ -39,7 +40,7 @@ export enum ValidationLevel {
     /**
      * validate selectors, at-rules and declarations
      */
-    All = Selector | AtRule | Declaration // selectors + at-rules + declarations
+    All = Selector | AtRule | Declaration, // selectors + at-rules + declarations
 }
 
 /**
@@ -375,7 +376,7 @@ export enum EnumToken {
     /**
      * invalid rule token type
      */
-    InvalidRuleTokenType,
+    InvalidRuleNodeType,
     /**
      * invalid class selector token type
      */
@@ -387,7 +388,7 @@ export enum EnumToken {
     /**
      * invalid at rule token type
      */
-    InvalidAtRuleTokenType,
+    InvalidAtRuleNodeType,
     /**
      * media query condition token type
      */
@@ -399,19 +400,20 @@ export enum EnumToken {
     /**
      * media feature only token type
      */
-    MediaFeatureOnlyTokenType,
+    OnlyTokenType,
     /**
      * media feature not token type
      */
-    MediaFeatureNotTokenType,
+    NotTokenType,
+
     /**
      * media feature and token type
      */
-    MediaFeatureAndTokenType,
+    AndTokenType,
     /**
      * media feature or token type
      */
-    MediaFeatureOrTokenType,
+    OrTokenType,
     /**
      * pseudo page token type
      */
@@ -450,6 +452,151 @@ export enum EnumToken {
      * css variable declaration map token type
      */
     CssVariableDeclarationMapTokenType,
+
+    MediaRangeQueryTokenType,
+
+    InvalidMediaQueryTokenType,
+
+    SupportsQueryConditionTokenType,
+
+    SupportsQueryUnaryConditionTokenType,
+
+    WhenElseQueryConditionTokenType,
+
+    WhenElseUnaryConditionTokenType,
+
+    ContainerStyleRangeTokenType,
+
+    /**
+     * '*'
+     */
+    Star,
+    /**
+     * '+'
+     */
+    Plus,
+    /**
+     * '~'
+     */
+    Tilda,
+    /**
+     * '|'
+     */
+    Pipe,
+    /**
+     * '::'
+     */
+    DoubleColonTokenType,
+
+    /**
+     * math function token type 'calc(' etc.
+     */
+    MathFunctionTokenType,
+
+    /**
+     * transform function token type 'translate(' etc.
+     */
+    TransformFunctionTokenType,
+
+    /**
+     * when function token type 'supports(' etc.
+     */
+
+    WhenElseFunctionTokenType,
+
+    /**
+     * general enclosed function token type 'font-tech(' etc.
+     */
+    GeneralEnclosedFunctionTokenType,
+
+    /**
+     * supports function token type 'at-rule('
+     */
+    SupportsFunctionTokenType,
+
+    /**
+     * container function token type 'style(' or 'scroll-state('
+     */
+    ContainerFunctionTokenType,
+
+    /**
+     * unrecognized node token type
+     */
+    RawNodeTokenType,
+    /**
+     * media query boolean token type
+     * @media not ()
+     * @media only ()
+     */
+    MediaQueryUnaryFeatureTokenType,
+
+    /**
+     * grid template function token type 'minmax('
+     */
+    GridTemplateFuncTokenDefType,
+    /**
+     * image function token type 'image(' etc.
+     */
+    ImageFunctionTokenDefType,
+    /**
+     * function token type 'view(' etc.
+     */
+    TimelineFunctionTokenDefType,
+    /**
+     * function token type 'var(' etc.
+     */
+    FunctionTokenDefType,
+    /**
+     * timing function token type 'linear(' etc.
+     */
+    TimingFunctionTokenDefType,
+    /**
+     * color function token type 'rgb(' etc.
+     */
+    ColorFunctionTokenDefType,
+    /**
+     * math function token type 'calc(' etc.
+     */
+    MathFunctionTokenDefType,
+    /**
+     * container function token type 'style(' or 'scroll-state('
+     */
+    ContainerFunctionTokenDefType,
+    /**
+     * url function token type 'url('
+     */
+    UrlFunctionTokenDefType,
+
+    /**
+     * pseudo-class function token type
+     */
+    PseudoClassFunctionTokenDefType,
+
+    /**
+     * transform function token type 'translate(' etc.
+     */
+    TransformFunctionTokenDefType,
+
+    /**
+     * when function token type 'supports(' or 'media('
+     */
+
+    WhenElseFunctionTokenDefType,
+
+    /**
+     * general enclosed function token type 'font-tech(' etc.
+     */
+    GeneralEnclosedFunctionTokenDefType,
+
+    /**
+     * supports function token type 'font-tech('
+     */
+    SupportsFunctionTokenDefType,
+
+    /**
+     *  CDOCOMMTokenType not allowed in this context
+     */
+    InvalidCommentTokenType,
 
     /* aliases */
 
@@ -567,7 +714,6 @@ export enum EnumToken {
  * supported color types enum
  */
 export enum ColorType {
-
     /**
      * deprecated system colors
      */
@@ -661,6 +807,10 @@ export enum ColorType {
      */
     COLOR_MIX,
     /**
+     * non-standard color
+     */
+    NON_STD,
+    /**
      * alias for rgba
      */
     RGB = RGBA,
@@ -675,11 +825,10 @@ export enum ColorType {
     /**
      * alias for cmyk
      */
-    DEVICE_CMYK = CMYK
+    DEVICE_CMYK = CMYK,
 }
 
 export enum ModuleCaseTransformEnum {
-
     /**
      * export class names as-is
      */
@@ -699,7 +848,7 @@ export enum ModuleCaseTransformEnum {
     /**
      * transform class names and mapping key name to dash case
      */
-    DashCaseOnly = 0x10
+    DashCaseOnly = 0x10,
 }
 
 export enum ModuleScopeEnumOptions {
@@ -739,5 +888,73 @@ export enum ModuleScopeEnumOptions {
      *  ...
      * ```
      */
-    Shortest = 0x200
+    Shortest = 0x200,
+}
+
+// https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Values_and_units#absolute_length_units
+export function length2Px(value: LengthToken | NumberToken): number | null {
+    let result: number | null = null;
+    if (value.typ == EnumToken.NumberTokenType) {
+        result = +value.val;
+    } else {
+        switch ((value as LengthToken).unit) {
+            case "cm":
+                // @ts-ignore
+                result = (value as LengthToken).val * 37.8;
+                break;
+            case "mm":
+                // @ts-ignore
+                result = (value as LengthToken).val * 3.78;
+                break;
+            case "Q":
+                // @ts-ignore
+                result = ((value as LengthToken).val * 37.8) / 40;
+                break;
+            case "in":
+                // @ts-ignore
+                result = (value as LengthToken).val / 96;
+                break;
+            case "pc":
+                // @ts-ignore
+                result = (value as LengthToken).val / 16;
+                break;
+            case "pt":
+                // @ts-ignore
+                result = ((value as LengthToken).val * 4) / 3;
+                break;
+            case "px":
+                result = +(value as LengthToken).val;
+                break;
+        }
+    }
+
+    return isNaN(result as number) ? null : result;
+}
+/**
+ * minify number
+ * @param val
+ */
+
+export function minifyNumber(val: string | number): string {
+    val = String(val);
+
+    if (val === "0") {
+        return "0";
+    }
+
+    const chr: string = val.charAt(0);
+
+    if (chr == "-") {
+        const slice: string = val.slice(0, 2);
+
+        if (slice == "-0") {
+            return val.length == 2 ? "0" : "-" + val.slice(2);
+        }
+    }
+
+    if (chr == "0") {
+        return val.slice(1);
+    }
+
+    return val;
 }

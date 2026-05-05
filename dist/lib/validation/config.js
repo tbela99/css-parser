@@ -1,40 +1,21 @@
 import config from './config.json.js';
-import { parseSyntax } from './parser/parse.js';
+import { trimSyntaxArray, parseSyntax } from './parser/parse.js';
+import { ValidationTokenEnum } from './parser/typedef.js';
 
 const parsedSyntaxes = new Map();
 Object.freeze(config);
 function getSyntaxConfig() {
-    // @ts-ignore
+    // @ts-expect-error
     return config;
 }
-function getSyntax(group, key) {
-    // @ts-ignore
+function findNode(group, key) {
+    // @ts-expect-error
     let obj = config[group];
     const keys = Array.isArray(key) ? key : [key];
     for (let i = 0; i < keys.length; i++) {
         key = keys[i];
         if (!(key in obj)) {
-            if ((i == 0 && key.charAt(0) == '@') || key.charAt(0) == '-') {
-                const matches = key.match(/^(@?)(-[a-zA-Z]+)-(.*?)$/);
-                if (matches != null) {
-                    key = matches[1] + matches[3];
-                }
-            }
-        }
-        // @ts-ignore
-        obj = obj[key];
-    }
-    // @ts-ignore
-    return obj?.syntax ?? null;
-}
-function getParsedSyntax(group, key) {
-    // @ts-ignore
-    let obj = config[group];
-    const keys = Array.isArray(key) ? key : [key];
-    for (let i = 0; i < keys.length; i++) {
-        key = keys[i];
-        if (!(key in obj)) {
-            if ((i == 0 && key.charAt(0) == '@') || key.charAt(0) == '-') {
+            if ((i == 0 && key.charAt(0) == "@") || key.charAt(0) == "-") {
                 const matches = key.match(/^(@?)(-[a-zA-Z]+)-(.*?)$/);
                 if (matches != null) {
                     key = matches[1] + matches[3];
@@ -44,17 +25,78 @@ function getParsedSyntax(group, key) {
                 return null;
             }
         }
-        // @ts-ignore
+        // @ts-expect-error
         obj = obj[key];
     }
-    const index = group + '.' + keys.join('.');
+    return obj;
+}
+function getParsedSyntax(group, key) {
+    // @ts-expect-error
+    const obj = findNode(group, key);
+    if (obj == null) {
+        return null;
+    }
+    // return parseSyntax((obj as ValidationSyntaxNode).syntax as string) as ValidationToken[];
+    const keys = Array.isArray(key) ? key : [key];
+    const index = group + "." + keys.join(".");
+    // console.debug('> syntax group', index)
     // @ts-ignore
+    // console.debug('getParsedSyntax', obj?.syntax);
     if (!parsedSyntaxes.has(index)) {
-        const syntax = parseSyntax(obj.syntax);
-        // @ts-ignore
-        parsedSyntaxes.set(index, syntax.chi);
+        const syntax = Object.freeze(trimSyntaxArray(parseSyntax(obj.syntax)));
+        parsedSyntaxes.set(index, syntax);
     }
     return parsedSyntaxes.get(index);
 }
+function getSyntaxRule(group, key) {
+    const node = findNode(group, key);
+    if (node == null) {
+        return null;
+    }
+    let syntaxRules = getParsedSyntax(group, key);
+    if (syntaxRules == null) {
+        return null;
+    }
+    let blockStart = -1;
+    let blockEnd = -1;
+    let i;
+    for (i = 0; i < syntaxRules.length; i++) {
+        if (syntaxRules[i].typ === ValidationTokenEnum.OpenCurlyBrace ||
+            syntaxRules[i].typ === ValidationTokenEnum.SemiColon) {
+            blockStart = i;
+            break;
+        }
+    }
+    if (blockStart != -1) {
+        i = syntaxRules.length;
+        while (i--) {
+            if (syntaxRules[i].typ === ValidationTokenEnum.CloseCurlyBrace) {
+                blockEnd = i;
+                break;
+            }
+        }
+    }
+    const block = blockStart == -1 ? null : trimSyntaxArray(syntaxRules.slice(blockStart + 1, blockEnd));
+    const prelude = trimSyntaxArray(blockStart == -1 ? syntaxRules.slice() : syntaxRules.slice(0, blockStart));
+    let propertyDescriptors = null;
+    // @ts-expect-error
+    if (node.descriptors != null) {
+        propertyDescriptors = {};
+        // @ts-expect-error
+        for (const [key, value] of Object.entries(node.descriptors)) {
+            // @ts-expect-error
+            propertyDescriptors[key] = parseSyntax(value.syntax);
+        }
+    }
+    return {
+        acceptAnyDeclarations: node.syntax.includes("<declaration-list>"),
+        acceptAnyRules: node.syntax.includes("<group-rule-body>>") ||
+            node.syntax.includes("<stylesheet>"),
+        getPreludeRules: () => prelude,
+        getBlockRules: () => (block == null || block.length === 0 ? null : block),
+        getRules: () => syntaxRules,
+        getPropertyDescriptors: () => propertyDescriptors,
+    };
+}
 
-export { getParsedSyntax, getSyntax, getSyntaxConfig };
+export { getParsedSyntax, getSyntaxConfig, getSyntaxRule };

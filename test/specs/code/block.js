@@ -470,6 +470,7 @@ overflow-y: hidden;
                 nestingRules: true
             }).then(result => expect(render(result.ast, {
                 minify: false,
+                removeEmpty: true,
                 removeComments: true,
                 preserveLicense: true
             }).code).equals(`a {
@@ -638,7 +639,7 @@ content: '\\21 now\\21';
 }
 
 `;
-        return parse(file, {nestingRules: false}).then(result => expect(render(result.ast).code).equals(`.invisible-scrollbar::-webkit-scrollbar{display:none}.invisible-scrollbar:is(::-moz-range-thumb,:has(::-moz-range-thumb)){display:none}`));
+        return parse(file, {nestingRules: false}).then(result => expect(render(result.ast).code).equals(`.invisible-scrollbar::-webkit-scrollbar{display:none}.invisible-scrollbar::-moz-range-thumb,.invisible-scrollbar:has(::-moz-range-thumb){display:none}`));
     });
 
     it('do not merge pseudo class selectors #31', function () {
@@ -656,7 +657,7 @@ content: '\\21 now\\21';
 }
 
 `;
-        return parse(file, {nestingRules: false}).then(result => expect(render(result.ast).code).equals(`.invisible-scrollbar:is(::-moz-range-thumb,:has(::-moz-range-thumb)){display:none}`));
+        return parse(file, {nestingRules: false}).then(result => expect(render(result.ast).code).equals(`.invisible-scrollbar::-moz-range-thumb,.invisible-scrollbar:has(::-moz-range-thumb){display:none}`));
     });
 
     it('do not merge pseudo class selectors #32', function () {
@@ -822,6 +823,61 @@ content: '\\21 now\\21';
         return transform(file, {
             beautify: true
         }).then(result => expect(result.code).equals(`.table tr:nth-child(odd) {
+ background-color: #f2f2f2
+}`));
+    });
+
+    it('an+b #40', function () {
+        const file = `
+.table tr:nth-child(-02n -0 of li.list-group-item){background-color: #f2f2f2;}
+`;
+        return transform(file, {
+            beautify: true
+        }).then(result => expect(result.code).equals(`.table tr:nth-child(2n of li.list-group-item) {
+ background-color: #f2f2f2
+}`));
+    });
+
+    it('an+b #41', function () {
+        const file = `
+.table tr:nth-child(-02n +0 of li.list-group-item){background-color: #f2f2f2;}
+`;
+        return transform(file, {
+            beautify: true
+        }).then(result => expect(result.code).equals(`.table tr:nth-child(2n of li.list-group-item) {
+ background-color: #f2f2f2
+}`));
+    });
+
+    it('an+b #42', function () {
+        const file = `
+.table tr:nth-child(-02n+0 of li.list-group-item){background-color: #f2f2f2;}
+`;
+        return transform(file, {
+            beautify: true
+        }).then(result => expect(result.code).equals(`.table tr:nth-child(2n of li.list-group-item) {
+ background-color: #f2f2f2
+}`));
+    });
+
+    it('an+b #43', function () {
+        const file = `
+.table tr:nth-child(-2n+0 of li.list-group-item){background-color: #f2f2f2;}
+`;
+        return transform(file, {
+            beautify: true
+        }).then(result => expect(result.code).equals(`.table tr:nth-child(2n of li.list-group-item) {
+ background-color: #f2f2f2
+}`));
+    });
+
+    it('an+b #44', function () {
+        const file = `
+.table tr:nth-child(-n+0 of li.list-group-item){background-color: #f2f2f2;}
+`;
+        return transform(file, {
+            beautify: true
+        }).then(result => expect(result.code).equals(`.table tr:nth-child(n of li.list-group-item) {
  background-color: #f2f2f2
 }`));
     });

@@ -1,13 +1,6 @@
+import { mathFuncs } from '../../syntax/constants.js';
 import { EnumToken } from '../types.js';
 import { rem, compute } from './math.js';
-import { mathFuncs } from '../../syntax/syntax.js';
-import '../minify.js';
-import '../walk.js';
-import '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
-import '../../syntax/color/utils/constants.js';
-import '../../renderer/sourcemap/lib/encode.js';
 
 /**
  * evaluate an array of tokens
@@ -15,7 +8,9 @@ import '../../renderer/sourcemap/lib/encode.js';
  */
 function evaluate(tokens) {
     let nodes;
-    if (tokens.length == 1 && tokens[0].typ == EnumToken.FunctionTokenType && tokens[0].val != 'calc' && mathFuncs.includes(tokens[0].val)) {
+    if (tokens.length == 1 &&
+        (tokens[0].typ == EnumToken.MathFunctionTokenType || tokens[0].typ == EnumToken.FunctionTokenType) &&
+        mathFuncs.includes(tokens[0].val)) {
         const chi = tokens[0].chi.reduce((acc, t) => {
             if (acc.length == 0 || t.typ == EnumToken.CommaTokenType) {
                 acc.push([]);
@@ -36,7 +31,13 @@ function evaluate(tokens) {
             acc.push(...t);
             return acc;
         });
-        return evaluateFunc(tokens[0]);
+        const result = evaluateFunc(tokens[0]);
+        if (result[0].typ === EnumToken.MathFunctionTokenType &&
+            result[0].val === "calc" &&
+            result[0].chi.length === 1) {
+            return result[0].chi.slice();
+        }
+        return result;
     }
     nodes = inlineExpression(evaluateExpression(buildExpression(tokens)));
     if (nodes.length <= 1) {
@@ -45,18 +46,22 @@ function evaluate(tokens) {
                 return inlineExpression(nodes[0]);
             }
             // @ts-ignore
-            if (nodes[0].typ == EnumToken.IdenTokenType && typeof Math[nodes[0].val.toUpperCase()] == 'number') {
-                return [{
+            if (nodes[0].typ == EnumToken.IdenTokenType &&
+                // @ts-expect-error
+                typeof Math[nodes[0].val.toUpperCase()] == "number") {
+                return [
+                    {
                         ...nodes[0],
                         // @ts-ignore
                         val: Math[nodes[0].val.toUpperCase()],
-                        typ: EnumToken.NumberTokenType
-                    }];
+                        typ: EnumToken.NumberTokenType,
+                    },
+                ];
             }
         }
         return nodes;
     }
-    const map = new Map;
+    const map = new Map();
     let token;
     let i;
     for (i = 0; i < nodes.length; i++) {
@@ -83,7 +88,7 @@ function evaluate(tokens) {
     return [...map].reduce((acc, curr) => {
         const token = curr[1].reduce((acc, curr) => doEvaluate(acc, curr, EnumToken.Add));
         if (token.typ != EnumToken.BinaryExpressionTokenType) {
-            if ('val' in token && +token.val < 0) {
+            if ("val" in token && +token.val < 0) {
                 acc.push({ typ: EnumToken.Sub }, { ...token, val: -token.val });
                 return acc;
             }
@@ -106,42 +111,49 @@ function doEvaluate(l, r, op) {
         typ: EnumToken.BinaryExpressionTokenType,
         op,
         l,
-        r
+        r,
     };
-    if (!isScalarToken(l) || !isScalarToken(r) || (l.typ == r.typ && 'unit' in l && 'unit' in r && l.unit != r.unit)) {
+    if (!isScalarToken(l) || !isScalarToken(r) || (l.typ == r.typ && "unit" in l && "unit" in r && l.unit != r.unit)) {
         return defaultReturn;
     }
-    if (r.typ == EnumToken.FunctionTokenType) {
+    if (r.typ == EnumToken.FunctionTokenType || r.typ == EnumToken.MathFunctionTokenType) {
         const val = evaluateFunc(r);
         if (val.length == 1) {
             r = val[0];
         }
     }
-    if ((op == EnumToken.Add || op == EnumToken.Sub)) {
+    if (op == EnumToken.Add || op == EnumToken.Sub) {
         // @ts-ignore
         if (l.typ != r.typ) {
             return defaultReturn;
         }
     }
-    let typ = l.typ == EnumToken.NumberTokenType ? r.typ : (r.typ == EnumToken.NumberTokenType ? l.typ : (l.typ == EnumToken.PercentageTokenType ? r.typ : l.typ));
-    // @ts-ignore
+    let typ = l.typ == EnumToken.NumberTokenType
+        ? r.typ
+        : r.typ == EnumToken.NumberTokenType
+            ? l.typ
+            : l.typ == EnumToken.PercentageTokenType
+                ? r.typ
+                : l.typ;
+    // @ts-expect-error
     let v1 = l.val?.typ == EnumToken.FractionTokenType ? l.val : getValue(l);
-    // @ts-ignore
-    let v2 = r.val?.typ == EnumToken.FractionTokenType ? r.val : getValue(r);
+    let v2 = 
+    // @ts-expect-error
+    r.val?.typ == EnumToken.FractionTokenType ? r.val : getValue(r);
     if (op == EnumToken.Mul) {
         if (l.typ != EnumToken.NumberTokenType && r.typ != EnumToken.NumberTokenType) {
-            if (typeof v1 == 'number' && l.typ == EnumToken.PercentageTokenType) {
+            if (typeof v1 == "number" && l.typ == EnumToken.PercentageTokenType) {
                 v1 = {
                     typ: EnumToken.FractionTokenType,
                     l: { typ: EnumToken.NumberTokenType, val: v1 },
-                    r: { typ: EnumToken.NumberTokenType, val: 100 }
+                    r: { typ: EnumToken.NumberTokenType, val: 100 },
                 };
             }
-            else if (typeof v2 == 'number' && r.typ == EnumToken.PercentageTokenType) {
+            else if (typeof v2 == "number" && r.typ == EnumToken.PercentageTokenType) {
                 v2 = {
                     typ: EnumToken.FractionTokenType,
                     l: { typ: EnumToken.NumberTokenType, val: v2 },
-                    r: { typ: EnumToken.NumberTokenType, val: 100 }
+                    r: { typ: EnumToken.NumberTokenType, val: 100 },
                 };
             }
         }
@@ -151,7 +163,7 @@ function doEvaluate(l, r, op) {
     const token = {
         ...(l.typ == EnumToken.NumberTokenType ? r : l),
         typ,
-        val /* : typeof val == 'number' ? minifyNumber(val) : val */
+        val /* : typeof val == 'number' ? minifyNumber(val) : val */,
     };
     if (token.typ == EnumToken.IdenTokenType) {
         // @ts-ignore
@@ -170,26 +182,31 @@ function getValue(t) {
 function evaluateFunc(token) {
     const values = token.chi.slice();
     switch (token.val) {
-        case 'abs':
-        case 'sin':
-        case 'cos':
-        case 'tan':
-        case 'asin':
-        case 'acos':
-        case 'atan':
-        case 'sign':
-        case 'sqrt':
-        case 'exp': {
+        case "abs":
+        case "sin":
+        case "cos":
+        case "tan":
+        case "asin":
+        case "acos":
+        case "atan":
+        case "sign":
+        case "sqrt":
+        case "exp": {
             const value = evaluate(values);
             // @ts-ignore
-            let val = value[0].typ == EnumToken.NumberTokenType ? +value[0].val : value[0].l.val / value[0].r.val;
-            return [{
+            let val = value[0].typ == EnumToken.NumberTokenType
+                ? +value[0].val
+                // @ts-expect-error
+                : value[0].l.val / value[0].r.val;
+            return [
+                {
                     typ: EnumToken.NumberTokenType,
-                    val: Math[token.val](val)
-                }];
+                    val: Math[token.val](val),
+                },
+            ];
         }
-        case 'hypot': {
-            const chi = values.filter(t => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType, EnumToken.CommaTokenType].includes(t.typ));
+        case "hypot": {
+            const chi = values.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType, EnumToken.CommaTokenType].includes(t.typ));
             let all = [];
             let ref = chi[0];
             let value = 0;
@@ -202,15 +219,15 @@ function evaluateFunc(token) {
             return [
                 {
                     ...ref,
-                    val: +(Math.sqrt(value).toFixed(rem(...all)))
-                }
+                    val: +Math.sqrt(value).toFixed(rem(...all)),
+                },
             ];
         }
-        case 'atan2':
-        case 'pow':
-        case 'rem':
-        case 'mod': {
-            const chi = values.filter(t => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
+        case "atan2":
+        case "pow":
+        case "rem":
+        case "mod": {
+            const chi = values.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
             // https://developer.mozilla.org/en-US/docs/Web/CSS/mod
             const v1 = evaluate([chi[0]]);
             const v2 = evaluate([chi[2]]);
@@ -218,52 +235,57 @@ function evaluateFunc(token) {
             const val1 = getValue(v1[0]);
             // @ts-ignore
             const val2 = getValue(v2[0]);
-            if (token.val == 'rem') {
+            if (token.val == "rem") {
                 return [
                     {
                         ...v1[0],
-                        val: +((val1 % val2).toFixed(rem(val1, val2)))
-                    }
+                        val: +(val1 % val2).toFixed(rem(val1, val2)),
+                    },
                 ];
             }
-            if (token.val == 'pow') {
+            if (token.val == "pow") {
                 return [
                     {
                         ...v1[0],
-                        val: Math.pow(val1, val2)
-                    }
+                        val: Math.pow(val1, val2),
+                    },
                 ];
             }
-            if (token.val == 'atan2') {
+            if (token.val == "atan2") {
                 return [
                     {
-                        ...{}, ...v1[0],
-                        val: Math.atan2(val1, val2)
-                    }
+                        ...{},
+                        ...v1[0],
+                        val: Math.atan2(val1, val2),
+                    },
                 ];
             }
             return [
                 {
                     ...v1[0],
-                    val: val2 == 0 ? val1 : val1 - (Math.floor(val1 / val2) * val2)
-                }
+                    val: val2 == 0 ? val1 : val1 - Math.floor(val1 / val2) * val2,
+                },
             ];
         }
-        case 'clamp':
+        case "clamp":
             token.chi = values;
             return [token];
-        case 'log':
-        case 'round':
-        case 'min':
-        case 'max': {
-            const strategy = token.val == 'round' && values[0]?.typ == EnumToken.IdenTokenType ? values.shift().val : null;
-            const valuesMap = new Map;
+        case "log":
+        case "round":
+        case "min":
+        case "max": {
+            const strategy = token.val == "round" && values[0]?.typ == EnumToken.IdenTokenType
+                ? values.shift().val
+                : null;
+            const valuesMap = new Map();
             for (const curr of values) {
-                if (curr.typ == EnumToken.CommaTokenType || curr.typ == EnumToken.WhitespaceTokenType || curr.typ == EnumToken.CommentTokenType) {
+                if (curr.typ == EnumToken.CommaTokenType ||
+                    curr.typ == EnumToken.WhitespaceTokenType ||
+                    curr.typ == EnumToken.CommentTokenType) {
                     continue;
                 }
                 const result = evaluate([curr]);
-                const key = result[0].typ + ('unit' in result[0] ? result[0].unit : '');
+                const key = result[0].typ + ("unit" in result[0] ? result[0].unit : "");
                 if (!valuesMap.has(key)) {
                     valuesMap.set(key, []);
                 }
@@ -271,41 +293,46 @@ function evaluateFunc(token) {
             }
             if (valuesMap.size == 1) {
                 const values = valuesMap.values().next().value;
-                if (token.val == 'log') {
+                if (token.val == "log") {
                     const val1 = getValue(values[0]);
                     const val2 = values.length == 2 ? getValue(values[1]) : null;
                     return [
                         {
                             ...values[0],
-                            val: Math.log(val1) / Math.log(val2)
-                        }
+                            val: Math.log(val1) / Math.log(val2),
+                        },
                     ];
                 }
-                if (token.val == 'min' || token.val == 'max') {
+                if (token.val == "min" || token.val == "max") {
                     let val = getValue(values[0]);
                     let val2 = val;
                     let ret = values[0];
                     for (const curr of values.slice(1)) {
                         val2 = getValue(curr);
-                        if (val2 < val && token.val == 'min') {
+                        if (val2 < val && token.val == "min") {
                             val = val2;
                             ret = curr;
                         }
-                        else if (val2 > val && token.val == 'max') {
+                        else if (val2 > val && token.val == "max") {
                             val = val2;
                             ret = curr;
                         }
                     }
                     return [ret];
                 }
-                if (token.val == 'round') {
+                if (token.val == "round") {
                     let val = getValue(values[0]);
                     let val2 = getValue(values[1]);
-                    if (strategy == null || strategy == 'down') {
+                    if (strategy == null || strategy == "down") {
                         val = val - (val % val2);
                     }
                     else {
-                        val = strategy == 'to-zero' ? Math.trunc(val / val2) * val2 : (strategy == 'nearest' ? Math.round(val / val2) * val2 : Math.ceil(val / val2) * val2);
+                        val =
+                            strategy == "to-zero"
+                                ? Math.trunc(val / val2) * val2
+                                : strategy == "nearest"
+                                    ? Math.round(val / val2) * val2
+                                    : Math.ceil(val / val2) * val2;
                     }
                     // @ts-ignore
                     return [{ ...values[0], val }];
@@ -343,19 +370,20 @@ function evaluateExpression(token) {
         return token;
     }
     if (token.r.typ == EnumToken.BinaryExpressionTokenType) {
-        token.r = evaluateExpression(token.r);
+        token.r = (evaluateExpression(token.r));
     }
     if (token.l.typ == EnumToken.BinaryExpressionTokenType) {
-        token.l = evaluateExpression(token.l);
+        token.l = (evaluateExpression(token.l));
     }
     return doEvaluate(token.l, token.r, token.op);
 }
 function isScalarToken(token) {
-    return 'unit' in token ||
+    return ("unit" in token ||
+        token.typ == EnumToken.MathFunctionTokenType ||
         (token.typ == EnumToken.FunctionTokenType && mathFuncs.includes(token.val)) ||
         // @ts-ignore
-        (token.typ == EnumToken.IdenTokenType && typeof Math[token.val.toUpperCase()] == 'number') ||
-        [EnumToken.NumberTokenType, EnumToken.FractionTokenType, EnumToken.PercentageTokenType].includes(token.typ);
+        (token.typ == EnumToken.IdenTokenType && typeof Math[token.val.toUpperCase()] == "number") ||
+        [EnumToken.NumberTokenType, EnumToken.FractionTokenType, EnumToken.PercentageTokenType].includes(token.typ));
 }
 /**
  *
@@ -363,16 +391,16 @@ function isScalarToken(token) {
  * @param tokens
  */
 function buildExpression(tokens) {
-    return factor(factor(tokens.filter(t => t.typ != EnumToken.WhitespaceTokenType), ['/', '*']), ['+', '-'])[0];
+    return factor(factor(tokens.filter((t) => t.typ != EnumToken.WhitespaceTokenType), ["/", "*"]), ["+", "-"])[0];
 }
 function getArithmeticOperation(op) {
-    if (op == '+') {
+    if (op == "+") {
         return EnumToken.Add;
     }
-    if (op == '-') {
+    if (op == "-") {
         return EnumToken.Sub;
     }
-    if (op == '/') {
+    if (op == "/") {
         return EnumToken.Div;
     }
     return EnumToken.Mul;
@@ -383,8 +411,11 @@ function getArithmeticOperation(op) {
  * @param token
  */
 function factorToken(token) {
-    if (token.typ == EnumToken.ParensTokenType || (token.typ == EnumToken.FunctionTokenType && token.val == 'calc')) {
-        if (token.typ == EnumToken.FunctionTokenType && token.val == 'calc') {
+    if (token.typ == EnumToken.ParensTokenType ||
+        ((token.typ == EnumToken.MathFunctionTokenType || token.typ == EnumToken.FunctionTokenType) &&
+            token.val == "calc")) {
+        if ((token.typ == EnumToken.MathFunctionTokenType || token.typ == EnumToken.FunctionTokenType) &&
+            token.val == "calc") {
             token = { ...token, typ: EnumToken.ParensTokenType };
             // @ts-ignore
             delete token.val;
@@ -400,7 +431,7 @@ function factorToken(token) {
  */
 function factor(tokens, ops) {
     let isOp;
-    const opList = ops.map(x => getArithmeticOperation(x));
+    const opList = ops.map((x) => getArithmeticOperation(x));
     if (tokens.length == 1) {
         return [factorToken(tokens[0])];
     }
@@ -415,9 +446,11 @@ function factor(tokens, ops) {
             (tokens[i].typ == EnumToken.LiteralTokenType && ops.includes(tokens[i].val))) {
             tokens.splice(i - 1, 3, {
                 typ: EnumToken.BinaryExpressionTokenType,
-                op: isOp ? tokens[i].typ : getArithmeticOperation(tokens[i].val),
+                op: isOp
+                    ? tokens[i].typ
+                    : getArithmeticOperation(tokens[i].val),
                 l: factorToken(tokens[i - 1]),
-                r: factorToken(tokens[i + 1])
+                r: factorToken(tokens[i + 1]),
             });
             i--;
         }

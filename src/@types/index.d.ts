@@ -1,33 +1,35 @@
-import type {VisitorNodeMap} from "./visitor.d.ts";
-import type {AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet, Location, Position} from "./ast.d.ts";
-import {SourceMap} from "../lib/renderer/sourcemap/index.ts";
-import type {PropertyListOptions} from "./parse.d.ts";
-import {ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ValidationLevel} from "../lib/index.ts";
-import type {CssVariableToken, Token} from "./token.d.ts";
-import {FeatureWalkMode} from "../lib/ast/features/type.ts";
-import {mathFuncs, transformFunctions} from "../lib/syntax/syntax.ts";
+import type { VisitorNodeMap } from "./visitor.d.ts";
+import type { AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet, Location } from "./ast.d.ts";
+import { SourceMap } from "../lib/renderer/sourcemap/sourcemap.ts";
+import type { PropertyListOptions } from "./parse.d.ts";
+import {
+    EnumToken,
+    ModuleCaseTransformEnum,
+    ModuleScopeEnumOptions,
+    ValidationLevel,
+} from "../lib/ast/types.ts";
+import type { CssVariableToken, Token } from "./token.d.ts";
+import { FeatureWalkMode } from "../lib/ast/features/type.ts";
+import { mathFuncs } from "../lib/syntax/constants.ts";
+import { ValidationToken } from "../lib/validation/parser/types";
 
-export {mathFuncs, transformFunctions} from '../lib/syntax/syntax.ts';
-
-export * from './ast.d.ts';
-export * from './token.d.ts';
-export * from './shorthand.d.ts';
-export * from './config.d.ts';
-export * from './visitor.d.ts';
-export * from './walker.d.ts';
-export * from './parse.d.ts';
-
+export * from "./ast.d.ts";
+export * from "./token.d.ts";
+export * from "./shorthand.d.ts";
+export * from "./config.d.ts";
+export * from "./visitor.d.ts";
+export * from "./walker.d.ts";
+export * from "./parse.d.ts";
 
 /**
  * error description
  */
 export declare interface ErrorDescription {
-
     /**
      *  drop rule or declaration
      */
 
-    action: 'drop' | 'ignore';
+    action: "drop" | "ignore";
     /**
      * error message
      */
@@ -35,7 +37,7 @@ export declare interface ErrorDescription {
     /**
      * syntax error description
      */
-    syntax?: string | null;
+    syntax?: string | ValidationToken | null;
     /**
      * error node
      */
@@ -58,6 +60,10 @@ export declare interface ErrorDescription {
  * css validation options
  */
 export interface ValidationOptions {
+    /**
+     * nested rule context
+     */
+    nestedRule?: boolean;
 
     /**
      * enable css validation
@@ -74,7 +80,7 @@ export interface ValidationOptions {
      *
      * @private
      */
-    visited?: WeakMap<Token, Map<string, Set<ValidationToken>>>;
+    visited?: Map<Token, Set<ValidationToken>>;
     /**
      * is optional
      *
@@ -111,7 +117,6 @@ export interface ValidationOptions {
  * minify options
  */
 export interface MinifyOptions {
-
     /**
      * enable minification
      */
@@ -189,13 +194,12 @@ export interface MinifyOptions {
 }
 
 export declare type LoadResult =
-    Promise<ReadableStream<Uint8Array>>
+    | Promise<ReadableStream<Uint8Array>>
     | ReadableStream<Uint8Array>
     | string
     | Promise<string>;
 
 export declare interface ModuleOptions {
-
     /**
      * use local scope vs global scope
      */
@@ -297,7 +301,7 @@ export declare interface ModuleOptions {
      * - {@link ModuleCaseTransformEnum.DashCaseOnly}: dashCase {@link ParseResult.mapping} key name and the scoped class name
      *
      */
-    naming?: ModuleCaseTransformEnum,
+    naming?: ModuleCaseTransformEnum;
 
     /**
      * optional function to generate scoped name
@@ -310,15 +314,15 @@ export declare interface ModuleOptions {
         localName: string,
         filePath: string,
         pattern: string,
-        hashLength?: number
+        hashLength?: number,
     ) => string | Promise<string>;
 }
 
 /**
  * parser options
  */
-export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptions, ValidationOptions, PropertyListOptions {
-
+export declare interface ParserOptions
+    extends MinifyOptions, MinifyFeatureOptions, ValidationOptions, PropertyListOptions {
     /**
      * source file to be used for sourcemap
      */
@@ -326,7 +330,7 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
     /**
      * include sourcemap in the ast. sourcemap info is always generated
      */
-    sourcemap?: boolean | 'inline';
+    sourcemap?: boolean | "inline";
     /**
      * remove at-rule charset
      */
@@ -352,7 +356,11 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
      * @param responseType
      *
      */
-    load?: (url: string, currentDirectory: string, responseType?: boolean | ResponseType) => Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
+    load?: (
+        url: string,
+        currentDirectory: string,
+        responseType?: boolean | ResponseType,
+    ) => Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
     /**
      * get directory name
      * @param path
@@ -371,7 +379,11 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
      * @param currentWorkingDirectory
      *
      */
-    resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => {
+    resolve?: (
+        url: string,
+        currentUrl: string,
+        currentWorkingDirectory?: string,
+    ) => {
         absolute: string;
         relative: string;
     };
@@ -410,7 +422,7 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
     /**
      * css modules options
      */
-    module?: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions
+    module?: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions;
 }
 
 /**
@@ -419,7 +431,6 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
  * @internal
  */
 export declare interface MinifyFeatureOptions {
-
     /**
      * minify features
      *
@@ -434,7 +445,6 @@ export declare interface MinifyFeatureOptions {
  * @internal
  */
 export declare interface MinifyFeature {
-
     /**
      * accepted tokens
      */
@@ -461,9 +471,15 @@ export declare interface MinifyFeature {
      * @param context
      * @param mode
      */
-    run: (ast: AstRule | AstAtRule, options: ParserOptions, parent: AstRule | AstAtRule | AstStyleSheet, context: {
-        [key: string]: any
-    }, mode: FeatureWalkMode) => AstNode | null;
+    run: (
+        ast: AstRule | AstAtRule,
+        options: ParserOptions,
+        parent: AstRule | AstAtRule | AstStyleSheet,
+        context: {
+            [key: string]: any;
+        },
+        mode: FeatureWalkMode,
+    ) => AstNode | null;
 }
 
 /**
@@ -485,7 +501,6 @@ export declare interface ResolvedPath {
  * ast node render options
  */
 export declare interface RenderOptions {
-
     /**
      * minify css values.
      */
@@ -525,7 +540,7 @@ export declare interface RenderOptions {
     /**
      * generate sourcemap object. 'inline' will embed it in the css
      */
-    sourcemap?: boolean | 'inline';
+    sourcemap?: boolean | "inline";
     /**
      * indent string
      */
@@ -566,9 +581,7 @@ export declare interface RenderOptions {
 /**
  * transform options
  */
-export declare interface TransformOptions extends ParserOptions, RenderOptions {
-
-}
+export declare interface TransformOptions extends ParserOptions, RenderOptions {}
 
 /**
  * parse result stats object
@@ -605,7 +618,7 @@ export declare interface ParseResultStats {
     /**
      * imported files stats
      */
-    imports: ParseResultStats[],
+    imports: ParseResultStats[];
 
     /**
      * nodes count
@@ -671,18 +684,17 @@ export declare interface RenderResult {
          * render time
          */
         total: string;
-    },
+    };
     /**
      * source map
      */
-    map?: SourceMap
+    map?: SourceMap;
 }
 
 /**
  * transform result object
  */
 export declare interface TransformResult extends ParseResult, RenderResult {
-
     /**
      * transform stats
      */
@@ -723,14 +735,13 @@ export declare interface TransformResult extends ParseResult, RenderResult {
          * imported files stats
          */
         imports: ParseResultStats[];
-    }
+    };
 }
 
 /**
  * parse token options
  */
-export declare interface ParseTokenOptions extends ParserOptions {
-}
+export declare interface ParseTokenOptions extends ParserOptions {}
 
 /**
  * tokenize result object
@@ -740,23 +751,7 @@ export declare interface TokenizeResult {
     /**
      * token
      */
-    token: string;
-    /**
-     * token length
-     */
-    len: number;
-    /**
-     * token type hint
-     */
-    hint?: EnumToken;
-    /**
-     * token start position
-     */
-    sta: Position;
-    /**
-     * token end position
-     */
-    end: Position;
+    token: Token;
     /**
      * bytes in
      */
@@ -783,7 +778,7 @@ export declare interface MatchedSelector {
     /**
      * selectors partially match
      */
-    eq: boolean
+    eq: boolean;
 }
 
 /**

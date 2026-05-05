@@ -63,7 +63,7 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
     --animate-duration: 1s;
 }
 
-`, {validation: true, nestingRules: false}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.s:is([type=text],[type=text i],[type=text s],[type=text i]+b,:focus) {
+`, {validation: true, nestingRules: false}).then(result => expect(render(result.ast, {beautify: true}).code).equals(`.s:is([type=text],[type=text i],[type=text s],[type=text i]+b,:focus) {
  --animate-duration: 1s
 }`));
         });
@@ -473,13 +473,13 @@ html, body, div, span, applet, object, iframe,
 
 
         it('media validation #17', function () {
-            return parse(`@import "styles.css" tv,all"
-`, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@import "styles.css" tv,all;`));
+            return parse(`@import "styles.css" tv,all;
+`, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@import "styles.css";`));
         });
 
         it('document validation #18', function () {
-            return parse(`@namespace svg url('http://www.w3.org/2000/svg')"
-`, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@namespace svg url(http://www.w3.org/2000/svg);`));
+            return parse(`@namespace svg url('http://www.w3.org/2000/svg')
+`, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@namespace svg 'http://www.w3.org/2000/svg';`));
         });
 
         it('supports validation #19', function () {

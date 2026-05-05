@@ -18,9 +18,15 @@ export declare type WalkerOption = WalkerOptionEnum | AstNode | Token | null;
 export declare type WalkerFilter = (node: AstNode) => WalkerOption;
 
 /**
- * filter nodes
+ * returned value:
+ * - {@link WalkerOptionEnum.Ignore}: ignore this node and its children
+ * - {@link WalkerOptionEnum.Stop}: stop walking the tree
+ * - {@link WalkerOptionEnum.Children}: walk the children and ignore the current node
+ * - {@link WalkerOptionEnum.IgnoreChildren}: walk the node and ignore children
+ * - {@link AstNode}:
+ * - {@link Token}:
  */
-export declare type WalkerValueFilter = (node: AstNode | Token, parent?: AstNode | Token | AstNode[] | Token[] | null, event?: WalkerEvent) => WalkerOption | null;
+export declare type WalkerValueFilter = (node: AstNode | Token, parent?: AstNode | Token | AstNode[] | Token[] | null, event?: WalkerEvent, parents?: AstNode[]) => WalkerOption | null;
 
 export declare interface WalkResult {
     node: AstNode;
@@ -34,4 +40,5 @@ export declare interface WalkAttributesResult {
     nextValue: Token | null;
     root?: AstNode | Token | null;
     parent: AstNode | Token | null;
+    parents: Token[];
 }

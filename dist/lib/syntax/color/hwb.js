@@ -1,15 +1,8 @@
 import { hsl2hsv } from './hsv.js';
-import './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { color2srgbvalues, toPrecisionAngle, toPrecisionValue, getAngle, getNumber } from './color.js';
-import { cmyk2srgbvalues, lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues } from './srgb.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
-import '../../ast/minify.js';
-import '../../ast/walk.js';
-import '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
-import '../../renderer/sourcemap/lib/encode.js';
+import { cmyk2srgbvalues, lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues } from './srgb.js';
 
 function rgb2hwbToken(token) {
     const values = rgb2hwbvalues(token);
@@ -75,16 +68,16 @@ function hwbToken(values) {
         { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(values[2]) * 100 },
     ];
     if (values.length == 4) {
-        chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, {
+        chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
             typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100
+            val: values[3] * 100,
         });
     }
     return {
         typ: EnumToken.ColorTokenType,
-        val: 'hwb',
+        val: "hwb",
         chi,
-        kin: ColorType.HWB
+        kin: ColorType.HWB,
     };
 }
 function rgb2hwbvalues(token) {
@@ -103,7 +96,7 @@ function cmyk2hwbvalues(token) {
 function hsl2hwbvalues(token) {
     // @ts-ignore
     return hslvalues2hwbvalues(...getComponents(token).map((t, index) => {
-        if (index == 3 && (t.typ == EnumToken.IdenTokenType && t.val == 'none')) {
+        if (index == 3 && t.typ == EnumToken.IdenTokenType && t.val == "none") {
             return 1;
         }
         if (index == 0) {
@@ -147,15 +140,9 @@ function rgb2hue(r, g, b, fallback = 0) {
     let delta = value - whiteness;
     if (delta > 0) {
         // calculate segment
-        let segment = value === r ? (g - b) / delta : (value === g
-            ? (b - r) / delta
-            : (r - g) / delta);
+        let segment = value === r ? (g - b) / delta : value === g ? (b - r) / delta : (r - g) / delta;
         // calculate shift
-        let shift = value === r ? segment < 0
-            ? 360 / 60
-            : 0 / 60 : (value === g
-            ? 120 / 60
-            : 240 / 60);
+        let shift = value === r ? (segment < 0 ? 360 / 60 : 0 / 60) : value === g ? 120 / 60 : 240 / 60;
         // calculate hue
         return (segment + shift) * 60;
     }

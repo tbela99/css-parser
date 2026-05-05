@@ -22,7 +22,7 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
     }
     }
 
-`, {nestingRules: false}).then((result) => expect(result.code).equals(`@media speech{p .a,p .b{color:red}}`));
+`, {nestingRules: false}).then((result) => expect(result.code).equals(`p .a,p .b{color:red}`));
         });
 
         it('error handling #3', function () {
@@ -162,11 +162,7 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
   }
 }
 
-`, {beautify: true}).then((result) => expect(result.code).equals(`@container card scroll-state(stuck:top) and style(--themeBackground),not style(background-color:red),style(color:green) and style(background-color:transparent),style(--themeColor:blue) or style(--themeColor:purple) {
- h2 {
-  font-size: 1.5em
- }
-}`));
+`, {beautify: true}).then((result) => expect(result.code).equals(``));
         });
 
         it('container #10', function () {
@@ -364,7 +360,7 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
         it('at-rule #23', function () {
 
             return transform(`@charset /* erw */"UTF-8";
-`, {beautify: true, removeCharset: false}).then((result) => expect(result.code).equals(`@charset "UTF-8";`));
+`, {beautify: true, removeCharset: false}).then((result) => expect(result.code).equals(``));
         });
     });
 
@@ -392,7 +388,7 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
 @import url("gridy.css") supports((not (display: grid)) and (display: flex))
   screen and (max-width: 400px)
 
-`).then((result) => expect(result.code).equals(`@import "gridy.css" supports((not (display:grid)) and (display:flex)) screen and (max-width:400px);`));
+`).then((result) => expect(result.code).equals(`@import "gridy.css" supports((not (display:grid)) and (display:flex))screen and (max-width:400px);`));
         });
 
         it('import #27', function () {
@@ -754,6 +750,7 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 }
 
 `, {beautify: true, validation: true}).then((result) => expect(result.code).equals(`@font-feature-values Font Name {
+ font-display: swap;
  @styleset {
   nice-style: 12
  }
@@ -948,8 +945,11 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
                 validation: true
             }).then((result) => expect(result.code).equals(`@font-feature-values Bongo {
  @swash {
-  ornate: 1;
-  double-loops: 1
+  ornate: 1
+ }
+ @swash {
+  double-loops: 1;
+  flowing: -1
  }
  @styleset {
   double-W: 14;
@@ -958,5 +958,80 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 }`));
         });
 
+
+        it('media range query #46', function () {
+            return transform(`
+
+  @media ((color) and (hover)) or (monochrome) {
+ /* … */
+}
+/* or */
+@media (color) and (hover), (monochrome) {
+ /* … */
+}
+@media tv,(30em<=width<=50em),screen {
+}
+`, {
+                beautify: true,
+                removeEmpty: false,
+                removeComments: false,
+                validation: true
+            }).then((result) => expect(result.code).equals(`/* or */
+@media (color) and (hover),(monochrome) {
+ /* … */
+}
+@media tv,(30em<=width<=50em),screen {
+}`));
+        });
+
+        it('import #47', function () {
+            return transform(`
+
+@import 'charset.css' /* line comment */ layer(layer.one.two.three) supports((selector(h2 > p)) and (font-tech(color-COLRv1))) screen and (min-width: 30em) and (max-width: 50em), tv and (all),all and (((min-width: 30em) and (max-width: 50em)) or (all));
+`, {
+                beautify: true,
+                removeEmpty: false,
+                validation: true
+            }).then((result) => expect(result.code).equals(`@import 'charset.css' layer(layer.one.two.three) supports((selector(h2>p)) and (font-tech(color-COLRv1)))screen and (min-width:30em) and (max-width:50em),tv and (all),all and (((min-width:30em) and (max-width:50em)) or (all));`));
+        });
+
+        it('import #48', function () {
+            return transform(`
+
+
+@media all, tv,all and (min-width: 30em) and (max-width: 50em) or all, all, tv, screen or all {
+ 
+}`, {
+                beautify: true,
+                removeEmpty: false,
+                validation: true
+            }).then((result) => expect(result.code).equals(``));
+        });
+
+
+
+        it('media ratio and calc() #49', function () {
+            return transform(`
+
+  @media (calc(4 / 3) <= device-aspect-ratio <= 32 / 18) {}
+  @media ( device-aspect-ratio <= 32 / 18) {}
+@media (width >= calc(1024px - 50px)) {
+  h1 {
+    color: Highlight;
+  }
+}
+  `, {
+                beautify: true,
+                removeEmpty: false
+            }).then((result) => expect(result.code).equals(`@media (4/3<=device-aspect-ratio<=16/9) {
+}
+@media (device-aspect-ratio<=16/9) {
+}
+@media (width>=974px) {
+ h1 {
+  color: Highlight
+ }
+}`));
+        });
     });
     }

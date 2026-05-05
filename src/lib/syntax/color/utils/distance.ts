@@ -1,7 +1,7 @@
-import type {ColorToken} from "../../../../@types/index.d.ts";
-import {convertColor} from "../color.ts";
-import {getOKLABComponents} from "../oklab.ts";
-import {ColorType} from "../../../ast/index.ts";
+import type { ColorToken } from "../../../../@types/index.d.ts";
+import { convertColor } from "../color.ts";
+import { getOKLABComponents } from "../oklab.ts";
+import { ColorType } from "../../../ast/types.ts";
 
 /**
  * Calculate the distance between two okLab colors.
@@ -11,8 +11,9 @@ import {ColorType} from "../../../ast/index.ts";
  * @private
  */
 export function okLabDistance(okLab1: [number, number, number], okLab2: [number, number, number]): number {
-
-    return Math.sqrt(Math.pow(okLab1[0] - okLab2[0], 2) + Math.pow(okLab1[1] - okLab2[1], 2) + Math.pow(okLab1[2] - okLab2[2], 2));
+    return Math.sqrt(
+        Math.pow(okLab1[0] - okLab2[0], 2) + Math.pow(okLab1[1] - okLab2[1], 2) + Math.pow(okLab1[2] - okLab2[2], 2),
+    );
 }
 
 /**
@@ -23,10 +24,9 @@ export function okLabDistance(okLab1: [number, number, number], okLab2: [number,
  *
  * @private
  */
-export function isOkLabClose(color1: ColorToken, color2: ColorToken, threshold: number = .01): boolean {
-
+export function isOkLabClose(color1: ColorToken, color2: ColorToken, threshold: number = 0.01): boolean {
     color1 = convertColor(color1, ColorType.OKLAB) as ColorToken;
-    color2 = convertColor(color2, ColorType.OKLAB ) as ColorToken;
+    color2 = convertColor(color2, ColorType.OKLAB) as ColorToken;
 
     if (color1 == null || color2 == null) {
         return false;

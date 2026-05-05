@@ -1,14 +1,6 @@
 import { xyz2srgb } from './srgb.js';
 import { multiplyMatrices } from './utils/matrix.js';
-import './utils/constants.js';
-import '../../ast/types.js';
-import '../../ast/minify.js';
-import '../../ast/walk.js';
-import '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
 import { srgb2xyz } from './xyz.js';
-import '../../renderer/sourcemap/lib/encode.js';
 
 function rec20202srgb(r, g, b, a) {
     // @ts-ignore
@@ -24,14 +16,16 @@ function rec20202lrec2020(r, g, b, a) {
     // ITU-R BT.2020-2 p.4
     const alpha = 1.09929682680944;
     const beta = 0.018053968510807;
-    return [r, g, b].map(function (val) {
+    return [r, g, b]
+        .map(function (val) {
         let sign = val < 0 ? -1 : 1;
         let abs = Math.abs(val);
         if (abs < beta * 4.5) {
             return val / 4.5;
         }
-        return sign * (Math.pow((abs + alpha - 1) / alpha, 1 / 0.45));
-    }).concat([] );
+        return sign * Math.pow((abs + alpha - 1) / alpha, 1 / 0.45);
+    })
+        .concat([] );
 }
 function lrec20202rec2020(r, g, b, a) {
     // convert an array of linear-light rec2020 RGB  in the range 0.0-1.0
@@ -39,14 +33,16 @@ function lrec20202rec2020(r, g, b, a) {
     // ITU-R BT.2020-2 p.4
     const alpha = 1.09929682680944;
     const beta = 0.018053968510807;
-    return [r, g, b].map(function (val) {
+    return [r, g, b]
+        .map(function (val) {
         let sign = val < 0 ? -1 : 1;
         let abs = Math.abs(val);
         if (abs > beta) {
             return sign * (alpha * Math.pow(abs, 0.45) - (alpha - 1));
         }
         return 4.5 * val;
-    }).concat(a == null || a == 1 ? [] : [a]);
+    })
+        .concat(a == null || a == 1 ? [] : [a]);
 }
 function lrec20202xyz(r, g, b, a) {
     // convert an array of linear-light rec2020 values to CIE XYZ

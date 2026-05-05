@@ -1,19 +1,25 @@
-import { parseString, replaceToken } from '../parser/parse.js';
-import '../parser/tokenize.js';
-import '../parser/utils/config.js';
-import { EnumToken } from './types.js';
-import { walkValues } from './walk.js';
-import { doRender, renderToken } from '../renderer/render.js';
-import '../renderer/sourcemap/lib/encode.js';
-import { isWhiteSpace, isIdent, isFunction, isIdentStart } from '../syntax/syntax.js';
 import { eq } from '../parser/utils/eq.js';
+import { renderToken, doRender } from '../renderer/render.js';
 import * as index from './features/index.js';
+import { walkValues } from './walk.js';
+import { EnumToken } from './types.js';
+import { isWhiteSpace, isIdent, isFunction, isIdentStart } from '../syntax/syntax.js';
 import { FeatureWalkMode } from './features/type.js';
+import { trimArray } from '../validation/match.js';
+import { definedPropertySettings, combinators } from '../syntax/constants.js';
+import { replaceToken } from '../parser/utils/token.js';
+import { parseString } from '../parser/parse.js';
+import { tokenize } from '../parser/tokenize.js';
+import { parseSelector } from '../parser/utils/selector.js';
+import { replaceCompound } from './expand.js';
 
-const combinators = ['+', '>', '~', '||', '|'];
-const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
-const notEndingWith = ['(', '['].concat(combinators);
-const rules = [EnumToken.AtRuleNodeType, EnumToken.RuleNodeType, EnumToken.AtRuleTokenType, EnumToken.KeyFramesRuleNodeType];
+const notEndingWith = ["(", "["].concat(combinators);
+const rules = [
+    EnumToken.AtRuleNodeType,
+    EnumToken.RuleNodeType,
+    EnumToken.AtRuleTokenType,
+    EnumToken.KeyFramesRuleNodeType,
+];
 // @ts-ignore
 const features = Object.values(index).sort((a, b) => a.ordering - b.ordering);
 /**
@@ -31,14 +37,15 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
     let postprocess = false;
     let parents;
     let replacement;
-    if (!('features' in options)) {
+    if (!("features" in options)) {
         // @ts-ignore
         options = {
             removeDuplicateDeclarations: true,
             computeShorthand: true,
             computeCalcExpression: true,
             removePrefix: false,
-            features: [], ...options
+            features: [],
+            ...options,
         };
         for (const feature of features) {
             feature.register(options);
@@ -56,17 +63,23 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
     if (preprocess) {
         parents = new Set([ast]);
         for (const parent of parents) {
-            if (parent.typ == EnumToken.CommentTokenType ||
-                parent.typ == EnumToken.CDOCOMMTokenType) {
+            if (parent.typ == EnumToken.CommentTokenType || parent.typ == EnumToken.CDOCOMMTokenType) {
                 continue;
             }
             replacement = parent;
             for (const feature of options.features) {
-                if ((feature.processMode & FeatureWalkMode.Pre) === 0 || (feature.accept != null && !feature.accept.has(parent.typ))) {
+                if ((feature.processMode & FeatureWalkMode.Pre) === 0 ||
+                    (feature.accept != null && !feature.accept.has(parent.typ))) {
                     continue;
                 }
                 if (rules.includes(replacement.typ) && !Array.isArray(replacement.tokens)) {
-                    Object.defineProperty(replacement, 'tokens', { ...definedPropertySettings, value: parseString(replacement.typ == EnumToken.RuleNodeType || replacement.typ == EnumToken.KeyFramesRuleNodeType ? replacement.sel : replacement.val) });
+                    Object.defineProperty(replacement, "tokens", {
+                        ...definedPropertySettings,
+                        value: parseString(replacement.typ == EnumToken.RuleNodeType ||
+                            replacement.typ === EnumToken.KeyFramesRuleNodeType
+                            ? replacement.sel
+                            : replacement.nam),
+                    });
                 }
                 const result = feature.run(replacement, options, parent.parent ?? ast, context, FeatureWalkMode.Pre);
                 if (result != null) {
@@ -77,18 +90,18 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                 // @ts-ignore
                 replaceToken(parent.parent, parent, replacement);
             }
-            if (('chi' in replacement)) {
+            if ("chi" in replacement) {
                 // @ts-ignore
                 for (const node of replacement.chi) {
-                    parents.add(Object.defineProperty(node, 'parent', {
+                    parents.add(Object.defineProperty(node, "parent", {
                         ...definedPropertySettings,
-                        value: replacement
+                        value: replacement,
                     }));
                 }
             }
         }
         for (const feature of options.features) {
-            if ((feature.processMode & FeatureWalkMode.Pre) && 'cleanup' in feature) {
+            if (feature.processMode & FeatureWalkMode.Pre && "cleanup" in feature) {
                 // @ts-ignore
                 feature.cleanup(ast, options, context, FeatureWalkMode.Pre);
             }
@@ -97,14 +110,14 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
     doMinify(ast, options, recursive, errors, nestingContent, context);
     parents = new Set([ast]);
     for (const parent of parents) {
-        if (parent.typ == EnumToken.CommentTokenType ||
-            parent.typ == EnumToken.CDOCOMMTokenType) {
+        if (parent.typ == EnumToken.CommentTokenType || parent.typ == EnumToken.CDOCOMMTokenType) {
             continue;
         }
         replacement = parent;
         if (postprocess) {
             for (const feature of options.features) {
-                if ((feature.processMode & FeatureWalkMode.Post) === 0 || (feature.accept != null && !feature.accept.has(parent.typ))) {
+                if ((feature.processMode & FeatureWalkMode.Post) === 0 ||
+                    (feature.accept != null && !feature.accept.has(parent.typ))) {
                     continue;
                 }
                 const result = feature.run(replacement, options, parent.parent ?? ast, context, FeatureWalkMode.Post);
@@ -117,24 +130,146 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
             // @ts-ignore
             replaceToken(parent.parent, parent, replacement);
         }
-        if (('chi' in replacement)) {
+        if ("chi" in replacement) {
             for (const node of replacement.chi) {
-                parents.add(Object.defineProperty(node, 'parent', {
+                parents.add(Object.defineProperty(node, "parent", {
                     ...definedPropertySettings,
-                    value: replacement
+                    value: replacement,
                 }));
             }
         }
     }
     if (postprocess) {
         for (const feature of options.features) {
-            if (feature.processMode & FeatureWalkMode.Post && 'cleanup' in feature) {
+            if (feature.processMode & FeatureWalkMode.Post && "cleanup" in feature) {
                 // @ts-ignore
                 feature.cleanup(ast, options, context, FeatureWalkMode.Post);
             }
         }
     }
     return ast;
+}
+function transformAtRuleMediaPrelude(values) {
+    let hasUpdates = false;
+    for (let { value, parent, parents } of walkValues(values)) {
+        if (value.typ === EnumToken.MediaQueryConditionTokenType) {
+            if (value.op.typ == EnumToken.AndTokenType &&
+                value.l.typ === EnumToken.IdenTokenType &&
+                value.l.val.toLowerCase() === "all") {
+                if (parent === null) {
+                    values[values.indexOf(value)] = value.l;
+                }
+                else {
+                    replaceToken(parent, value, value.l);
+                    value = value.l;
+                }
+                hasUpdates = true;
+            }
+        }
+        // range operator
+        if (parent != null &&
+            parent.typ === EnumToken.MediaQueryConditionTokenType &&
+            parent.op.typ == EnumToken.AndTokenType &&
+            parent.l.typ == EnumToken.ParensTokenType) {
+            let token = parent.r.find((t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType);
+            if (token?.typ === EnumToken.ParensTokenType) {
+                const node1 = parent.l.chi.find((t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType);
+                const node2 = token.chi.find((t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType);
+                if (node1?.typ === EnumToken.MediaQueryConditionTokenType &&
+                    node2?.typ === EnumToken.MediaQueryConditionTokenType &&
+                    node1.op.typ == EnumToken.ColonTokenType &&
+                    node2.op.typ == EnumToken.ColonTokenType &&
+                    node1.l.typ == EnumToken.IdenTokenType &&
+                    node2.l.typ == EnumToken.IdenTokenType &&
+                    node1.l.val.startsWith("min-") &&
+                    node2.l.val.startsWith("max-") &&
+                    node1.l.val.slice(4) ==
+                        node2.l.val.slice(4)) {
+                    const val1 = node1.r.find((t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType);
+                    const val2 = node2.r.find((t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType);
+                    const replacement = {
+                        typ: EnumToken.ParensTokenType,
+                        chi: [
+                            {
+                                typ: EnumToken.MediaRangeQueryTokenType,
+                                op: {
+                                    typ: EnumToken.IdenTokenType,
+                                    val: node1.l.val.slice(4),
+                                },
+                                l: val1,
+                                r: val2,
+                                loc: value.loc,
+                            },
+                        ],
+                    };
+                    const p = parents?.[parents?.indexOf?.(parent) + 1];
+                    if (p != null) {
+                        replaceToken(p, parent, replacement);
+                    }
+                    else {
+                        values.splice(values.indexOf(parent), 1, replacement);
+                    }
+                    hasUpdates = true;
+                    value = replacement;
+                }
+            }
+        }
+    }
+    return { hasUpdates, values: trimArray(values) };
+}
+/**
+ * minify at-rule media
+ * - remove redundant tokens
+ * - generate range queries
+ * @param ast
+ *
+ * @private
+ */
+function minifyAtRuleMedia(tokens) {
+    // if (Array.isArray(ast.tokens)) {
+    let hasUpdates = false;
+    const sections = tokens
+        .reduce((acc, t) => {
+        if (t.typ === EnumToken.CommaTokenType) {
+            acc.push([]);
+        }
+        else {
+            acc[acc.length - 1].push(t);
+        }
+        return acc;
+    }, [[]])
+        .reduce((acc, values) => {
+        if (acc.has("all")) {
+            return acc;
+        }
+        const result = transformAtRuleMediaPrelude(values);
+        if (result.values.length === 0) {
+            return acc;
+        }
+        if (result.hasUpdates) {
+            hasUpdates = true;
+        }
+        acc.set(values.reduce((acc, t) => acc + renderToken(t), ""), result.values);
+        return acc;
+    }, new Map());
+    if (sections.has("all")) {
+        tokens.length = 0;
+    }
+    else if (hasUpdates) {
+        tokens.length = 0;
+        tokens.push(...[...sections.values()].reduce((acc, t) => {
+            if (acc.length > 0) {
+                acc.push({
+                    typ: EnumToken.CommaTokenType,
+                });
+            }
+            acc.push(...t);
+            return acc;
+        }, []));
+    }
+    // }
+    // return ast;
+    return tokens;
 }
 /**
  * reduce selectors
@@ -149,12 +284,12 @@ function reduce(acc, curr) {
     //
     //     curr = curr.slice(1, -1);
     // }
-    if (curr[0] == '&') {
-        if (curr[1] == ' ' && !isIdent(curr[2]) && !isFunction(curr[2])) {
+    if (curr[0] == "&") {
+        if (curr[1] == " " && !isIdent(curr[2]) && !isFunction(curr[2])) {
             curr.splice(0, 2);
         }
     }
-    acc.push(curr.join(''));
+    acc.push(curr.join(""));
     return acc;
 }
 /**
@@ -169,15 +304,15 @@ function reduce(acc, curr) {
  * @private
  */
 function doMinify(ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
-    if (!('nodes' in context)) {
-        context.nodes = new Set;
+    if (!("nodes" in context)) {
+        context.nodes = new Set();
     }
     if (context.nodes.has(ast)) {
         return ast;
     }
     context.nodes.add(ast);
     // @ts-ignore
-    if ('chi' in ast && ast.chi.length > 0) {
+    if ("chi" in ast && ast.chi.length > 0) {
         const reducer = reduce.bind(ast);
         if (!nestingContent) {
             nestingContent = options.nestingRules && ast.typ == EnumToken.RuleNodeType;
@@ -187,28 +322,40 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
         let node = null;
         let nodeIndex = -1;
         for (; i < ast.chi.length; i++) {
-            if (ast.chi[i].typ == EnumToken.CommentNodeType) {
+            if (ast.chi[i].typ === EnumToken.CommentNodeType ||
+                ast.chi[i].typ === EnumToken.InvalidRuleNodeType ||
+                ast.chi[i].typ === EnumToken.InvalidRuleNodeType) {
+                continue;
+            }
+            while (previous?.typ === EnumToken.CommentNodeType ||
+                previous?.typ === EnumToken.InvalidRuleNodeType ||
+                previous?.typ === EnumToken.InvalidRuleNodeType) {
+                previous = ast.chi[--nodeIndex];
                 continue;
             }
             node = ast.chi[i];
-            if (node.typ == EnumToken.AtRuleNodeType && node.nam == 'font-face') {
+            if (node.typ === EnumToken.AtRuleNodeType && node.nam === "font-face") {
                 continue;
             }
-            if (node.typ == EnumToken.KeyframesAtRuleNodeType) {
-                if (previous?.typ == EnumToken.KeyframesAtRuleNodeType &&
-                    node.nam == previous.nam &&
-                    node.val == previous.val) {
+            if (node.typ === EnumToken.KeyframesAtRuleNodeType) {
+                if (previous?.typ === EnumToken.KeyframesAtRuleNodeType &&
+                    node.nam === previous.nam &&
+                    node.val === previous.val) {
                     ast.chi?.splice(nodeIndex--, 1);
                     previous = ast?.chi?.[nodeIndex] ?? null;
                     i = nodeIndex;
                     continue;
                 }
             }
-            else if (node.typ == EnumToken.KeyFramesRuleNodeType) {
-                if (previous?.typ == EnumToken.KeyFramesRuleNodeType &&
-                    node.sel == previous.sel) {
+            else if (node.typ === EnumToken.KeyFramesRuleNodeType) {
+                if (previous?.typ === EnumToken.KeyFramesRuleNodeType &&
+                    node.sel === previous.sel) {
+                    // do not merge keyframes
+                    // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@keyframes#resolving_duplicates
                     previous.chi.push(...node.chi);
-                    ast.chi.splice(i--, 1);
+                    ast.chi.splice(i, 1);
+                    previous = ast?.chi?.[nodeIndex] ?? null;
+                    i = nodeIndex;
                     continue;
                 }
                 let k;
@@ -216,7 +363,8 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     if (node.chi[k].typ == EnumToken.DeclarationNodeType) {
                         let l = node.chi[k].val.length;
                         while (l--) {
-                            if (node.chi[k].val[l].typ == EnumToken.ImportantTokenType) {
+                            if (node.chi[k].val[l].typ ==
+                                EnumToken.ImportantTokenType) {
                                 node.chi.splice(k--, 1);
                                 break;
                             }
@@ -229,16 +377,57 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                 }
             }
             else if (node.typ == EnumToken.AtRuleNodeType) {
-                if (node.nam == 'media' && ['all', '', null].includes(node.val)) {
-                    ast.chi?.splice(i, 1, ...node.chi);
-                    i--;
-                    continue;
+                if (node.nam == "media") {
+                    if (Array.isArray(node.tokens)) {
+                        const slice = node.tokens.slice();
+                        minifyAtRuleMedia(slice);
+                        if (slice.length !== node.tokens.length) {
+                            node.tokens.length = 0;
+                            node.tokens.push(...slice);
+                            node.val = slice.reduce((acc, curr, index, arr) => acc +
+                                (curr.typ === EnumToken.CommentTokenType ||
+                                    (curr.typ === EnumToken.WhitespaceTokenType &&
+                                        arr[index + 1]?.typ === EnumToken.CommentTokenType &&
+                                        (index + 3 < arr.length ||
+                                            arr[index + 2]?.typ === EnumToken.WhitespaceTokenType))
+                                    ? ""
+                                    : renderToken(curr)), "");
+                        }
+                    }
+                    if (["all", "", null].includes(node.val)) {
+                        ast.chi?.splice(i, 1, ...node.chi);
+                        i--;
+                        continue;
+                    }
+                }
+                else if (node.nam === "import" && Array.isArray(node.tokens)) {
+                    let l = 0;
+                    let token;
+                    for (; l < node.tokens.length; l++) {
+                        token = node.tokens[l];
+                        if (token.typ === EnumToken.ParensTokenType ||
+                            token.typ === EnumToken.MediaQueryConditionTokenType ||
+                            (token.typ === EnumToken.IdenTokenType && "layer" !== token.val)) {
+                            break;
+                        }
+                    }
+                    if (l < node.tokens.length) {
+                        const slice = node.tokens?.slice(l);
+                        node.tokens.splice(l, slice.length, ...minifyAtRuleMedia(slice));
+                        node.val = trimArray(node.tokens).reduce((acc, curr, index, arr) => acc +
+                            (curr.typ === EnumToken.CommentTokenType ||
+                                (curr.typ === EnumToken.WhitespaceTokenType &&
+                                    arr[index + 1]?.typ === EnumToken.CommentTokenType &&
+                                    (index + 3 < arr.length || arr[index + 2].typ === EnumToken.WhitespaceTokenType))
+                                ? ""
+                                : renderToken(curr)), "");
+                    }
                 }
                 if (previous?.typ == EnumToken.AtRuleNodeType &&
-                    node.nam != 'font-face' &&
-                    previous.nam == node.nam &&
-                    previous.val == node.val) {
-                    if ('chi' in node) {
+                    node.nam != "font-face" &&
+                    previous.nam === node.nam &&
+                    previous.val === node.val) {
+                    if ("chi" in node) {
                         // @ts-ignore
                         previous.chi.push(...node.chi);
                         if (!hasDeclaration(previous)) {
@@ -257,7 +446,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                 continue;
             }
             // @ts-ignore
-            else if (node.typ == EnumToken.RuleNodeType) {
+            else if (node.typ === EnumToken.RuleNodeType) {
                 reduceRuleSelector(node);
                 let wrapper = null;
                 let match;
@@ -265,13 +454,14 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     if (previous?.typ == EnumToken.RuleNodeType) {
                         reduceRuleSelector(previous);
                         // @ts-ignore
-                        match = matchSelectors(previous.raw, node.raw, ast.typ);
+                        match = matchSelectors(previous.raw, node.raw);
                         if (match != null) {
                             wrapper = wrapNodes(previous, node, match, ast, reducer, i, nodeIndex);
                             nodeIndex = i - 1;
                             previous = ast.chi[nodeIndex];
                         }
                     }
+                    // console.debug({wrapper, node, nestingContent, optimized: node.optimized});
                     if (wrapper != null) {
                         while (i < ast.chi.length) {
                             const nextNode = ast.chi[i];
@@ -299,13 +489,13 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                         // @ts-ignore
                         wrapper = { ...node, chi: [], sel: node.optimized.optimized[0] };
                         // @ts-ignore
-                        Object.defineProperty(wrapper, 'raw', {
+                        Object.defineProperty(wrapper, "raw", {
                             ...definedPropertySettings,
                             // @ts-ignore
-                            value: [[node.optimized.optimized[0]]]
+                            value: [[node.optimized.optimized[0]]],
                         });
                         // @ts-ignore
-                        node.sel = node.optimized.selector.reduce(reducer, []).join(',');
+                        node.sel = node.optimized.selector.reduce(reducer, []).join(",");
                         // @ts-ignore
                         node.raw = node.optimized.selector.slice();
                         // @ts-ignore
@@ -314,14 +504,30 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                         ast.chi.splice(i, 1, wrapper);
                         node = wrapper;
                     }
+                    else if (node.optimized?.reducible) {
+                        if (node.optimized.optimized.length === 1) {
+                            const sel1 = node.optimized.optimized[0] +
+                                ":is(" +
+                                node.optimized.selector.reduce(reducer, []).join(",") +
+                                ")";
+                            const sel2 = node.optimized.selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") + node.optimized.optimized[0] + curr.join(""), "");
+                            node.sel = sel1.length < sel2.length ? sel1 : sel2;
+                        }
+                        else if (node.optimized.optimized.length === 0) {
+                            const testIdent = /^[a-zA-Z]/;
+                            node.sel = node.optimized.selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") +
+                                (nestingContent && testIdent.test(curr[0]) ? "& " : "") +
+                                curr.join(""), "");
+                        }
+                    }
                 }
                 // @ts-ignore
                 else if (node.optimized?.match) {
                     let wrap = true;
                     // @ts-ignore
                     const selector = node.optimized.selector.reduce((acc, curr) => {
-                        if (curr[0] == '&' && curr.length > 1) {
-                            if (curr[1] == ' ') {
+                        if (curr[0] == "&" && curr.length > 1) {
+                            if (curr[1] == " ") {
                                 curr.splice(0, 2);
                             }
                             else {
@@ -329,14 +535,14 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                             }
                         }
                         else if (combinators.includes(curr[0])) {
-                            curr.unshift('&');
+                            curr.unshift("&");
                             wrap = false;
                         }
                         acc.push(curr);
                         return acc;
                     }, []);
                     if (!wrap) {
-                        wrap = selector.some((s) => s[0] != '&');
+                        wrap = selector.some((s) => s[0] != "&");
                     }
                     let rule = null;
                     const optimized = node.optimized.optimized.slice();
@@ -345,50 +551,82 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                         if (!combinators.includes(check)) {
                             let last = optimized.pop();
                             wrap = false;
-                            rule = optimized.join('') + `:is(${selector.map(s => {
-                                if (s[0] == '&') {
-                                    s.splice(0, 1, last);
-                                }
-                                else {
-                                    s.unshift(last);
-                                }
-                                return s.join('');
-                            }).join(',')})`;
+                            rule =
+                                optimized.join("") +
+                                    `:is(${selector
+                                        .map((s) => {
+                                        if (s[0] == "&") {
+                                            s.splice(0, 1, last);
+                                        }
+                                        else {
+                                            s.unshift(last);
+                                        }
+                                        return s.join("");
+                                    })
+                                        .join(",")})`;
                         }
                     }
                     if (rule == null) {
-                        rule = selector.map((s) => {
-                            if (s[0] == '&') {
+                        rule = selector
+                            .map((s) => {
+                            if (s[0] == "&") {
                                 s.splice(0, 1, ...node.optimized.optimized);
                             }
-                            return s.join('');
-                        }).join(',');
+                            return s.join("");
+                        })
+                            .join(",");
                     }
-                    let sel = wrap ? node.optimized.optimized.join('') + `:is(${rule})` : rule;
+                    let sel = wrap ? node.optimized.optimized.join("") + `:is(${rule})` : rule;
                     if (sel.length < node.sel.length) {
                         node.sel = sel;
+                    }
+                }
+                else if (node.optimized?.reducible) {
+                    if (node.optimized.optimized.length === 1) {
+                        const sel1 = node.optimized.optimized[0] +
+                            ":is(" +
+                            node.optimized.selector.reduce(reducer, []).join(",") +
+                            ")";
+                        const sel2 = node.optimized.selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") + node.optimized.optimized[0] + curr.join(""), "");
+                        node.sel = sel1.length < sel2.length ? sel1 : sel2;
+                    }
+                    else if (node.optimized.optimized.length === 0) {
+                        const testIdent = /^[a-zA-Z]/;
+                        node.sel = node.optimized.selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") +
+                            (nestingContent && testIdent.test(curr[0]) ? "& " : "") +
+                            curr.join(""), "");
+                    }
+                }
+                else if (node.optimized?.optimized.length > 0) {
+                    const sel = node.optimized.optimized.join("");
+                    if (sel.length < node.sel.length) {
+                        node.sel = sel;
+                        node.raw = node.optimized.optimized.slice();
                     }
                 }
                 doMinify(node, options, recursive, errors, nestingContent, context);
             }
             if (previous != null) {
-                if ('chi' in previous && ('chi' in node)) {
-                    if (previous.typ == node.typ) {
+                if ("chi" in previous && "chi" in node) {
+                    if (previous.typ === node.typ) {
                         let shouldMerge = true;
                         let k = previous.chi.length;
                         while (k-- > 0) {
-                            if (previous.chi[k].typ == EnumToken.CommentNodeType) {
+                            if (previous.chi[k].typ === EnumToken.CommentNodeType ||
+                                previous.chi[k].typ === EnumToken.InvalidRuleNodeType ||
+                                previous.chi[k].typ === EnumToken.InvalidRuleNodeType) {
                                 continue;
                             }
-                            shouldMerge = previous.chi[k].typ == EnumToken.DeclarationNodeType;
+                            shouldMerge = previous.chi[k].typ === EnumToken.DeclarationNodeType;
                             break;
                         }
                         if (shouldMerge) {
-                            // @ts-ignore
-                            if (((node.typ == EnumToken.RuleNodeType || node.typ == EnumToken.KeyFramesRuleNodeType) && node.sel == previous.sel) ||
-                                // @ts-ignore
-                                (node.typ == EnumToken.AtRuleNodeType) && node.val != 'font-face' && node.val == previous.val) {
-                                // @ts-ignore
+                            if (((node.typ === EnumToken.RuleNodeType ||
+                                node.typ === EnumToken.KeyFramesRuleNodeType) &&
+                                node.sel === previous.sel) ||
+                                (node.typ == EnumToken.AtRuleNodeType &&
+                                    node.nam !== "font-face" &&
+                                    node.nam === previous.nam)) {
                                 node.chi.unshift(...previous.chi);
                                 doMinify(node, options, recursive, errors, nestingContent, context);
                                 ast.chi.splice(nodeIndex, 1);
@@ -396,7 +634,8 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                 nodeIndex = i;
                                 continue;
                             }
-                            else if (node.typ == previous?.typ && [EnumToken.KeyFramesRuleNodeType, EnumToken.RuleNodeType].includes(node.typ)) {
+                            else if (node.typ == previous?.typ &&
+                                [EnumToken.KeyFramesRuleNodeType, EnumToken.RuleNodeType].includes(node.typ)) {
                                 const intersect = diff(previous, node, reducer, options);
                                 if (intersect != null) {
                                     if (intersect.node1.chi.length == 0) {
@@ -416,7 +655,6 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                         ast.chi.splice(nodeIndex, 1, intersect.result, intersect.node2);
                                         i = (nodeIndex ?? 0) + 1;
                                     }
-                                    reduceRuleSelector(intersect.result);
                                     if (node != ast.chi[i]) {
                                         node = ast.chi[i];
                                     }
@@ -436,15 +674,16 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
             if (!nestingContent &&
                 previous != null &&
                 previous.typ == EnumToken.RuleNodeType &&
-                previous.sel.includes('&')) {
+                previous.sel.includes("&")) {
                 fixSelector(previous);
             }
             previous = node;
             nodeIndex = i;
         }
-        if (recursive && node != null && ('chi' in node)) {
-            if (node.typ == EnumToken.KeyframesAtRuleNodeType || !node.chi.some((n) => n.typ == EnumToken.DeclarationNodeType)) {
-                if (!(node.typ == EnumToken.AtRuleNodeType && node.nam != 'font-face')) {
+        if (recursive && node != null && "chi" in node) {
+            if (node.typ == EnumToken.KeyframesAtRuleNodeType ||
+                !node.chi.some((n) => n.typ == EnumToken.DeclarationNodeType)) {
+                if (!(node.typ == EnumToken.AtRuleNodeType && node.nam != "font-face")) {
                     doMinify(node, options, recursive, errors, nestingContent, context);
                 }
             }
@@ -452,7 +691,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
         if (!nestingContent &&
             node != null &&
             node.typ == EnumToken.RuleNodeType &&
-            node.sel.includes('&')) {
+            node.sel.includes("&")) {
             fixSelector(node);
         }
     }
@@ -483,19 +722,55 @@ function hasDeclaration(node) {
  * @private
  */
 function optimizeSelector(selector) {
+    let hasPseudoClass;
     selector = selector.reduce((acc, curr) => {
-        // @ts-ignore
-        if (curr.length > 0 && curr.at(-1).startsWith(':is(')) {
+        for (let i = 0; i < curr.length; i++) {
             // @ts-ignore
-            const rules = splitRule(curr.at(-1).slice(4, -1)).map(x => {
-                if (x[0] == '&' && x.length > 1) {
-                    return x.slice(x[1] == ' ' ? 2 : 1);
+            if (curr[i].length > 0 && curr[i].startsWith(":is(")) {
+                // @ts-ignore
+                const rules = splitRule(curr[i].slice(4, -1)).map((x) => {
+                    if (x[0] == "&" && x.length > 1) {
+                        return x.slice(x[1] == " " ? 2 : 1);
+                    }
+                    return x;
+                });
+                hasPseudoClass = rules.some((x) => x.some((x) => x.startsWith("::")));
+                if (!hasPseudoClass) {
+                    const optimized = [];
+                    const k = rules.reduce((acc, curr) => acc == 0 ? curr.length : curr.length == 0 ? acc : Math.min(acc, curr.length), 0);
+                    let l = 0;
+                    let j;
+                    let match;
+                    for (; l < k; l++) {
+                        const item = rules[0][l];
+                        match = true;
+                        for (j = 1; j < rules.length; j++) {
+                            if (item != rules[j][l]) {
+                                match = false;
+                                break;
+                            }
+                        }
+                        if (!match) {
+                            break;
+                        }
+                        optimized.push(item);
+                    }
+                    if (optimized.length > 0) {
+                        let len = optimized.length;
+                        const val = [];
+                        if (optimized[optimized.length - 1] == " ") {
+                            optimized.pop();
+                        }
+                        if (optimized.length > 0) {
+                            val.push(...optimized, ...(rules.length == 1 && rules[0].length == 1 ? rules[0] :
+                                [":is(",
+                                    ...rules.reduce((acc, curr) => acc.concat(acc.length > 0 ? [","].concat(curr.slice(len)) : curr.slice(len)), []),
+                                    ")"]));
+                        }
+                        return acc.concat([val]);
+                    }
                 }
-                return x;
-            });
-            const part = curr.slice(0, -1);
-            for (const rule of rules) {
-                acc.push(part.concat(rule));
+                acc.push(curr);
             }
             return acc;
         }
@@ -503,7 +778,7 @@ function optimizeSelector(selector) {
         return acc;
     }, []);
     const optimized = [];
-    const k = selector.reduce((acc, curr) => acc == 0 ? curr.length : (curr.length == 0 ? acc : Math.min(acc, curr.length)), 0);
+    const k = selector.reduce((acc, curr) => acc == 0 ? curr.length : curr.length == 0 ? acc : Math.min(acc, curr.length), 0);
     let i = 0;
     let j;
     let match;
@@ -523,7 +798,7 @@ function optimizeSelector(selector) {
     }
     while (optimized.length > 0) {
         const last = optimized.at(-1);
-        if ((last == ' ' || combinators.includes(last))) {
+        if (last === " " || combinators.includes(last)) {
             optimized.pop();
             continue;
         }
@@ -531,47 +806,58 @@ function optimizeSelector(selector) {
     }
     selector.forEach((selector) => selector.splice(0, optimized.length));
     let reducible = optimized.length == 1;
-    if (optimized[0] == '&') {
-        if (optimized[1] == ' ') {
+    if (optimized[0] == "&") {
+        if (optimized[1] === " ") {
             optimized.splice(0, 2);
         }
     }
-    if (optimized.length == 0 ||
-        (optimized[0].charAt(0) == '&' ||
-            selector.length == 1)) {
+    if (optimized.length === 0 || optimized[0].charAt(0) === "&" || selector.length === 1) {
         return {
             match: false,
             optimized,
-            selector: selector.map((selector) => selector[0] == '&' && selector[1] == ' ' ? selector.slice(2) : (selector)),
-            reducible: selector.length > 1 && selector.every((selector) => !combinators.includes(selector[0]))
+            selector: [
+                ...selector
+                    .reduce((acc, selector) => {
+                    const values = selector[0] == "&" && selector[1] == " " ? selector.slice(2) : selector;
+                    acc.set(values.join(""), values);
+                    return acc;
+                }, new Map())
+                    .values(),
+            ],
+            reducible: selector.length > 1 && selector.every((selector) => !combinators.includes(selector[0])),
         };
     }
     return {
         match: true,
         optimized,
-        selector: selector.reduce((acc, curr) => {
-            let hasCompound = true;
-            if (hasCompound && curr.length > 0) {
-                hasCompound = !['&'].concat(combinators).includes(curr[0].charAt(0));
-            }
-            // @ts-ignore
-            if (hasCompound && curr[0] == ' ') {
-                hasCompound = false;
-                curr.unshift('&');
-            }
-            if (curr.length == 0) {
-                curr.push('&');
-                hasCompound = false;
-            }
-            if (reducible) {
-                const chr = curr[0].charAt(0);
+        selector: [
+            ...selector
+                .reduce((acc, curr) => {
+                let hasCompound = true;
+                if (hasCompound && curr.length > 0) {
+                    hasCompound = !["&"].concat(combinators).includes(curr[0].charAt(0));
+                }
                 // @ts-ignore
-                reducible = chr == '.' || chr == ':' || isIdentStart(chr.codePointAt(0));
-            }
-            acc.push(hasCompound ? ['&'].concat(curr) : curr);
-            return acc;
-        }, []),
-        reducible: selector.every((selector) => !['>', '+', '~', '&'].includes(selector[0]))
+                if (hasCompound && curr[0] == " ") {
+                    hasCompound = false;
+                    curr.unshift("&");
+                }
+                if (curr.length == 0) {
+                    curr.push("&");
+                    hasCompound = false;
+                }
+                if (reducible) {
+                    const chr = curr[0].charAt(0);
+                    // @ts-ignore
+                    reducible = chr == "." || chr == ":" || isIdentStart(chr.codePointAt(0));
+                }
+                const values = hasCompound ? ["&"].concat(curr) : curr;
+                acc.set(values.join(""), values);
+                return acc;
+            }, new Map())
+                .values(),
+        ],
+        reducible: selector.every((selector) => ![">", "+", "~", "&"].includes(selector[0])),
     };
 }
 /**
@@ -582,74 +868,74 @@ function optimizeSelector(selector) {
  */
 function splitRule(buffer) {
     const result = [[]];
-    let str = '';
+    let str = "";
     for (let i = 0; i < buffer.length; i++) {
         let chr = buffer.charAt(i);
         if (isWhiteSpace(chr.charCodeAt(0))) {
-            if (str !== '') {
+            if (str !== "") {
                 // @ts-ignore
                 result.at(-1).push(str);
-                str = '';
+                str = "";
             }
             // @ts-ignore
             if (result.at(-1).length > 0) {
                 // @ts-ignore
-                result.at(-1).push(' ');
+                result.at(-1).push(" ");
             }
             // i = k;
             continue;
         }
-        if (chr == ',') {
-            if (str !== '') {
+        if (chr == ",") {
+            if (str !== "") {
                 result.at(-1).push(str);
-                str = '';
+                str = "";
             }
             result.push([]);
             continue;
         }
-        if (chr == '.') {
-            if (str !== '') {
+        if (chr == ".") {
+            if (str !== "") {
                 result.at(-1).push(str);
-                str = '';
+                str = "";
             }
             str += chr;
             continue;
         }
         if (combinators.includes(chr)) {
-            if (str !== '') {
+            if (str !== "") {
                 result.at(-1).push(str);
-                str = '';
+                str = "";
             }
-            if (chr == '|' && buffer.charAt(i + 1) == '|') {
+            if (chr == "|" && buffer.charAt(i + 1) == "|") {
                 chr += buffer.charAt(++i);
             }
             result.at(-1).push(chr);
             continue;
         }
-        if (chr == ':') {
-            if (str !== '') {
+        if (chr == ":") {
+            if (str !== "") {
                 result.at(-1).push(str);
-                str = '';
+                str = "";
             }
-            if (buffer.charAt(i + 1) == ':') {
+            if (buffer.charAt(i + 1) == ":") {
                 chr += buffer.charAt(++i);
             }
             str += chr;
             continue;
         }
         str += chr;
-        if (chr == '\\') {
+        if (chr == "\\") {
             str += buffer.charAt(++i);
             continue;
         }
-        if (chr == '(' || chr == '[') {
+        if (chr == "(" || chr == "[") {
             const open = chr;
-            const close = chr == '(' ? ')' : ']';
+            const close = chr == "(" ? ")" : "]";
             let inParens = 1;
             let k = i;
             while (++k < buffer.length) {
                 chr = buffer.charAt(k);
-                if (chr == '\\') {
+                if (chr == "\\") {
                     str += buffer.slice(k, k + 2);
                     k++;
                     continue;
@@ -668,7 +954,7 @@ function splitRule(buffer) {
             i = k;
         }
     }
-    if (str !== '') {
+    if (str !== "") {
         result.at(-1).push(str);
     }
     return result;
@@ -685,26 +971,26 @@ function reduceSelector(acc, curr) {
     // @ts-ignore
     curr = curr.slice(this.match[0].length);
     while (curr.length > 0) {
-        if (curr[0] == ' ') {
+        if (curr[0] == " ") {
             hasCompoundSelector = false;
-            curr.unshift('&');
+            curr.unshift("&");
             continue;
         }
         break;
     }
     if (hasCompoundSelector && curr.length > 0) {
-        hasCompoundSelector = !['&'].concat(combinators).includes(curr[0].charAt(0));
+        hasCompoundSelector = !["&"].concat(combinators).includes(curr[0].charAt(0));
     }
-    if (curr[0] == ':is(') {
+    if (curr[0] == ":is(") {
         let canReduce = true;
         const isCompound = curr.reduce((acc, token, index) => {
             if (index == 0) {
-                canReduce = curr[1] == '&';
+                canReduce = curr[1] == "&";
             }
-            else if (token == ')') ;
-            else if (token == ',') {
+            else if (token == ")") ;
+            else if (token == ",") {
                 if (!canReduce) {
-                    canReduce = curr[index + 1] == '&';
+                    canReduce = curr[index + 1] == "&";
                 }
                 acc.push([]);
             }
@@ -715,15 +1001,20 @@ function reduceSelector(acc, curr) {
         if (canReduce) {
             curr = isCompound.reduce((acc, curr) => {
                 if (acc.length > 0) {
-                    acc.push(',');
+                    acc.push(",");
                 }
                 acc.push(...curr);
                 return acc;
             }, []);
         }
     }
+    acc.push(
     // @ts-ignore
-    acc.push(this.match.length == 0 ? ['&'] : (hasCompoundSelector && curr[0] != '&' && (curr.length == 0 || !combinators.includes(curr[0].charAt(0))) ? ['&'].concat(curr) : curr));
+    this.match.length == 0
+        ? ["&"]
+        : hasCompoundSelector && curr[0] != "&" && (curr.length == 0 || !combinators.includes(curr[0].charAt(0)))
+            ? ["&"].concat(curr)
+            : curr);
     return acc;
 }
 /**
@@ -743,6 +1034,35 @@ function matchSelectors(selector1, selector2) {
     let matching = true;
     let matchFunction = 0;
     let inAttr = 0;
+    const regEx = /^:is\(([:.][^\s,]+)\)$/;
+    for (const _1 of selector1) {
+        if (_1[0] !== "&") {
+            continue;
+        }
+        for (let i = 1; i < _1.length; i++) {
+            const token = _1[i];
+            if (token.startsWith(":is(")) {
+                const match = regEx.exec(token);
+                if (match != null) {
+                    _1[i] = match[1];
+                }
+            }
+        }
+    }
+    for (const _1 of selector2) {
+        if (_1[0] !== "&") {
+            continue;
+        }
+        for (let i = 1; i < _1.length; i++) {
+            const token = _1[i];
+            if (token.startsWith(":is(")) {
+                const match = regEx.exec(token);
+                if (match != null) {
+                    _1[i] = match[1];
+                }
+            }
+        }
+    }
     for (; i < j; i++) {
         k = 0;
         token = selector1[0][i];
@@ -764,7 +1084,7 @@ function matchSelectors(selector1, selector2) {
         if (!matching) {
             break;
         }
-        if (token.endsWith('(')) {
+        if (token.endsWith("(")) {
             matchFunction++;
         }
         match.at(-1).push(token);
@@ -776,17 +1096,17 @@ function matchSelectors(selector1, selector2) {
     for (const part of match) {
         while (part.length > 0) {
             const token = part.at(-1);
-            if (token == ' ' || combinators.includes(token) || notEndingWith.includes(token.at(-1))) {
+            if (token == " " || combinators.includes(token) || notEndingWith.includes(token.at(-1))) {
                 part.pop();
                 continue;
             }
             break;
         }
     }
-    if (match.every(t => t.length == 0)) {
+    if (match.every((t) => t.length == 0)) {
         return null;
     }
-    if (eq([['&']], match)) {
+    if (eq([["&"]], match)) {
         return null;
     }
     const reducer = reduceSelector.bind({ match });
@@ -794,12 +1114,14 @@ function matchSelectors(selector1, selector2) {
     selector1 = selector1.reduce(reducer, []);
     // @ts-ignore
     selector2 = selector2.reduce(reducer, []);
-    return selector1 == null || selector2 == null ? null : {
-        eq: eq(selector1, selector2),
-        match,
-        selector1,
-        selector2
-    };
+    return selector1 == null || selector2 == null
+        ? null
+        : {
+            eq: eq(selector1, selector2),
+            match,
+            selector1,
+            selector2,
+        };
 }
 /**
  * fix selector
@@ -808,19 +1130,21 @@ function matchSelectors(selector1, selector2) {
  * @private
  */
 function fixSelector(node) {
-    if (node.sel.includes('&')) {
-        const attributes = parseString(node.sel);
+    if (node.sel.includes("&")) {
+        const attributes = parseSelector([...tokenize(node.sel).map((t) => t.token)], null, {}, [])
+            .tokens; // parseString(node.sel);
         for (const attr of walkValues(attributes)) {
-            if (attr.value.typ == EnumToken.PseudoClassFuncTokenType && attr.value.val == ':is') {
+            if (attr.value.typ == EnumToken.PseudoClassFuncTokenType &&
+                attr.value.val == ":is") {
                 let i = attr.value.chi.length;
                 while (i--) {
-                    if (attr.value.chi[i].typ == EnumToken.LiteralTokenType && attr.value.chi[i].val == '&') {
+                    if (attr.value.chi[i].typ == EnumToken.NestingSelectorTokenType) {
                         attr.value.chi.splice(i, 1);
                     }
                 }
             }
         }
-        node.sel = attributes.reduce((acc, curr) => acc + renderToken(curr), '');
+        node.sel = attributes.reduce((acc, curr) => acc + renderToken(curr), "");
     }
 }
 /**
@@ -837,18 +1161,18 @@ function fixSelector(node) {
  */
 function wrapNodes(previous, node, match, ast, reducer, i, nodeIndex) {
     // @ts-ignore
-    let pSel = match.selector1.reduce(reducer, []).join(',');
+    let pSel = match.selector1.reduce(reducer, []).join(",");
     // @ts-ignore
-    let nSel = match.selector2.reduce(reducer, []).join(',');
+    let nSel = match.selector2.reduce(reducer, []).join(",");
     // @ts-ignore
-    const wrapper = { ...previous, chi: [], sel: match.match.reduce(reducer, []).join(',') };
-    Object.defineProperty(wrapper, 'raw', {
+    const wrapper = { ...previous, chi: [], sel: match.match.reduce(reducer, []).join(",") };
+    Object.defineProperty(wrapper, "raw", {
         ...definedPropertySettings,
-        value: match.match.map(t => t.slice())
+        value: match.match.map((t) => t.slice()),
     });
-    if (pSel == '&' || pSel === '') {
+    if (pSel == "&" || pSel === "") {
         wrapper.chi.push(...previous.chi);
-        if ((nSel == '&' || nSel === '')) {
+        if (nSel == "&" || nSel === "") {
             wrapper.chi.push(...node.chi);
         }
         else {
@@ -877,7 +1201,7 @@ function wrapNodes(previous, node, match, ast, reducer, i, nodeIndex) {
  * @private
  */
 function diff(n1, n2, reducer, options = {}) {
-    if (!('cache' in options)) {
+    if (!("cache" in options)) {
         options.cache = new WeakMap();
     }
     let node1 = n1;
@@ -894,11 +1218,11 @@ function diff(n1, n2, reducer, options = {}) {
     const raw1 = node1.raw;
     const raw2 = node2.raw;
     if (raw1 != null && raw2 != null) {
-        const prefixes1 = new Set;
-        const prefixes2 = new Set;
+        const prefixes1 = new Set();
+        const prefixes2 = new Set();
         for (const token1 of raw1) {
             for (const t of token1) {
-                if (t[0] == ':') {
+                if (t[0] == ":") {
                     const matches = t.match(/::?-([a-z]+)-/);
                     if (matches == null) {
                         continue;
@@ -915,7 +1239,7 @@ function diff(n1, n2, reducer, options = {}) {
         }
         for (const token2 of raw2) {
             for (const t of token2) {
-                if (t[0] == ':') {
+                if (t[0] == ":") {
                     const matches = t.match(/::?-([a-z]+)-/);
                     if (matches == null) {
                         continue;
@@ -950,10 +1274,10 @@ function diff(n1, n2, reducer, options = {}) {
         options.cache.set(node2, css2);
     }
     if (raw1 != null) {
-        Object.defineProperty(node1, 'raw', { ...definedPropertySettings, value: raw1 });
+        Object.defineProperty(node1, "raw", { ...definedPropertySettings, value: raw1 });
     }
     if (raw2 != null) {
-        Object.defineProperty(node2, 'raw', { ...definedPropertySettings, value: raw2 });
+        Object.defineProperty(node2, "raw", { ...definedPropertySettings, value: raw2 });
     }
     const intersect = [];
     while (i--) {
@@ -977,24 +1301,57 @@ function diff(n1, n2, reducer, options = {}) {
             }
         }
     }
-    const result = (intersect.length == 0 ? null : {
-        ...node1,
-        // @ts-ignore
-        sel: [...new Set([...(n1?.raw?.reduce(reducer, []) ?? splitRule(n1.sel)).concat(n2?.raw?.reduce(reducer, []) ?? splitRule(n2.sel))])].join(','),
-        chi: intersect.reverse()
-    });
-    if (result == null || [n1, n2].reduce((acc, curr) => {
-        let css = options.cache.get(curr);
-        if (css == null) {
-            css = doRender(curr, options).code;
-            options.cache.set(curr, css);
+    const result = intersect.length === 0 && (node1.chi.length > 0 || node2.chi.length > 0)
+        ? null
+        : {
+            ...node1,
+            // @ts-ignore
+            sel: [
+                ...new Set(splitRule(node1.sel)
+                    .concat(splitRule(node2.sel))
+                    .map((s) => s.join(""))),
+            ].join(","),
+            // @ts-ignore
+            chi: intersect.reverse(),
+        };
+    if (result == null ||
+        [n1, n2].reduce((acc, curr) => {
+            let css = options.cache.get(curr);
+            if (css == null) {
+                css = doRender(curr, options).code;
+                options.cache.set(curr, css);
+            }
+            return curr.chi.length == 0 ? acc : acc + css.length;
+        }, 0) <=
+            [node1, node2, result].reduce((acc, curr) => {
+                const css = doRender(curr, options).code;
+                return curr.chi.length == 0 ? acc : acc + css.length;
+            }, 0)) {
+        if (node1.chi.length != 0 && node2.chi.length != 0) {
+            return null;
         }
-        return curr.chi.length == 0 ? acc : acc + css.length;
-    }, 0) <= [node1, node2, result].reduce((acc, curr) => {
-        const css = doRender(curr, options).code;
-        return curr.chi.length == 0 ? acc : acc + css.length;
-    }, 0)) {
-        return null;
+    }
+    if (result != null) {
+        const optimized = optimizeSelector(splitRule(result.sel));
+        if (optimized?.match) {
+            const rule = optimized.selector.reduce((acc, curr) => {
+                if (acc.length > 0) {
+                    acc += ",";
+                }
+                if (curr.length > 2 && curr[0] === "&" && curr[1] === " ") {
+                    return acc + curr.slice(2).join("");
+                }
+                else if (curr.length > 1 && curr[0] === "&") {
+                    return acc + curr.slice(1).join("");
+                }
+                return acc + curr.join("");
+            }, "");
+            const match = optimized.optimized.join("");
+            const sel = match + ":is(" + replaceCompound(rule, match) + ")";
+            if (sel.length < result.sel.length) {
+                result.sel = sel;
+            }
+        }
     }
     return { result, node1: exchanged ? node2 : node1, node2: exchanged ? node1 : node2 };
 }
@@ -1006,44 +1363,44 @@ function diff(n1, n2, reducer, options = {}) {
  */
 function reduceRuleSelector(node) {
     if (node.raw == null) {
-        Object.defineProperty(node, 'raw', { ...definedPropertySettings, value: splitRule(node.sel) });
+        Object.defineProperty(node, "raw", { ...definedPropertySettings, value: splitRule(node.sel) });
     }
     let optimized = optimizeSelector(node.raw.reduce((acc, curr) => {
         acc.push(curr.slice());
         return acc;
     }, []));
     if (optimized != null) {
-        Object.defineProperty(node, 'optimized', { ...definedPropertySettings, value: optimized });
+        Object.defineProperty(node, "optimized", { ...definedPropertySettings, value: optimized });
     }
     if (optimized != null && optimized.match && optimized.reducible && optimized.selector.length > 1) {
         for (const selector of optimized.selector) {
-            if (selector.length > 1 && selector[0] == '&' &&
+            if (selector.length > 1 &&
+                selector[0] == "&" &&
                 (combinators.includes(selector[1]) || !/^[a-zA-Z:]/.test(selector[1]))) {
                 selector.shift();
             }
         }
-        const unique = new Set;
-        const raw = [
-            [
-                optimized.optimized[0], ':is('
-            ].concat(optimized.selector.reduce((acc, curr) => {
-                const sig = curr.join('');
-                if (!unique.has(sig)) {
-                    if (acc.length > 0) {
-                        acc.push(',');
-                    }
-                    unique.add(sig);
-                    acc.push(...curr);
+        const unique = new Set();
+        const reduced = optimized.selector.reduce((acc, curr) => {
+            const sig = curr.join("");
+            if (!unique.has(sig)) {
+                if (acc.length > 0) {
+                    acc.push(",");
                 }
-                return acc;
-            }, [])).concat(')')
+                unique.add(sig);
+                acc.push(...curr);
+            }
+            return acc;
+        }, []);
+        const raw = [
+            [optimized.optimized[0], reduced.length === 1 ? reduced.join("") : ":is("].concat(reduced).concat(")"),
         ];
-        const sel = raw[0].join('');
+        const sel = raw[0].join("");
         if (sel.length < node.sel.length) {
             node.sel = sel;
-            Object.defineProperty(node, 'raw', { ...definedPropertySettings, value: raw });
+            Object.defineProperty(node, "raw", { ...definedPropertySettings, value: raw });
         }
     }
 }
 
-export { combinators, definedPropertySettings, minify, splitRule };
+export { minify, splitRule };

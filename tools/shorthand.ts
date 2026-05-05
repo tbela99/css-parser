@@ -845,6 +845,21 @@ export const properties: PropertySetType = [
         // separator: null,
         default: ['currentcolor'],
         keywords: []
+    },
+    {
+        shorthand: 'grid-row',
+        properties: [
+            'grid-row-start',
+            'grid-row-end'
+        ],
+        types: ['Iden', 'Number'],
+        multiple: true,
+        valueSeparator: {
+            typ: 'Literal',
+            val: '/'
+        },
+        default: ['auto'],
+        keywords: ['auto', 'span']
     }
 ].reduce((acc: PropertySetType, data) => {
 

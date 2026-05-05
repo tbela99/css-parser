@@ -1,13 +1,6 @@
 import { eq } from '../utils/eq.js';
 import { EnumToken } from '../../ast/types.js';
-import '../../ast/minify.js';
-import '../../ast/walk.js';
-import '../parse.js';
-import '../tokenize.js';
-import '../utils/config.js';
 import { isLength } from '../../syntax/syntax.js';
-import '../../syntax/color/utils/constants.js';
-import '../../renderer/sourcemap/lib/encode.js';
 
 function dedup(values) {
     for (const value of values) {
@@ -18,7 +11,8 @@ function dedup(values) {
             if (t.val == k.val && t.val == 0) {
                 if ((t.typ == EnumToken.NumberTokenType && isLength(k)) ||
                     (k.typ == EnumToken.NumberTokenType && isLength(t)) ||
-                    (isLength(k) || isLength(t))) {
+                    isLength(k) ||
+                    isLength(t)) {
                     value.splice(i, 1);
                     continue;
                 }
@@ -37,11 +31,11 @@ class PropertySet {
     declarations;
     constructor(config) {
         this.config = config;
-        this.declarations = new Map;
+        this.declarations = new Map();
     }
     add(declaration) {
         if (declaration.nam == this.config.shorthand) {
-            this.declarations = new Map;
+            this.declarations = new Map();
         }
         else {
             // expand shorthand
@@ -52,10 +46,12 @@ class PropertySet {
                 // @ts-ignore
                 for (let token of this.declarations.get(this.config.shorthand).val) {
                     // @ts-ignore
-                    if (this.config.types.some(t => token.typ == EnumToken[t]) || (token.typ == EnumToken.NumberTokenType && token.val == 0 &&
-                        (this.config.types.includes('Length') ||
-                            this.config.types.includes('Angle') ||
-                            this.config.types.includes('Dimension')))) {
+                    if (this.config.types.some((t) => token.typ == EnumToken[t]) ||
+                        (token.typ == EnumToken.NumberTokenType &&
+                            token.val == 0 &&
+                            (this.config.types.includes("Length") ||
+                                this.config.types.includes("Angle") ||
+                                this.config.types.includes("Dimension")))) {
                         if (tokens.length == 0) {
                             tokens.push([]);
                             current++;
@@ -64,7 +60,8 @@ class PropertySet {
                         continue;
                     }
                     if (token.typ != EnumToken.WhitespaceTokenType && token.typ != EnumToken.CommentTokenType) {
-                        if (token.typ == EnumToken.IdenTokenType && this.config.keywords.includes(token.val)) {
+                        if (token.typ == EnumToken.IdenTokenType &&
+                            this.config.keywords.includes(token.val)) {
                             if (tokens.length == 0) {
                                 tokens.push([]);
                                 current++;
@@ -89,7 +86,7 @@ class PropertySet {
                                 this.declarations.set(property, {
                                     typ: EnumToken.DeclarationNodeType,
                                     nam: property,
-                                    val: []
+                                    val: [],
                                 });
                             }
                             while (index > 0 && index >= values.length) {
@@ -150,7 +147,10 @@ class PropertySet {
             this.config.properties.forEach((property) => {
                 let index = 0;
                 // @ts-ignore
-                for (const token of this.declarations.get(property).val) {
+                for (const token of this.declarations.get(property)?.val ?? []) {
+                    if (token == null) {
+                        return this.declarations.values()[Symbol.iterator]();
+                    }
                     if (token.typ == EnumToken.WhitespaceTokenType) {
                         continue;
                     }
@@ -161,8 +161,11 @@ class PropertySet {
                     index++;
                 }
             });
-            dedup(values);
-            iterator = [{
+            if (this.config.valueSeparator == null) {
+                dedup(values);
+            }
+            iterator = [
+                {
                     typ: EnumToken.DeclarationNodeType,
                     nam: this.config.shorthand,
                     val: values.reduce((acc, curr) => {
@@ -176,12 +179,13 @@ class PropertySet {
                         }
                         if (acc.length > 0) {
                             // @ts-ignore
-                            acc.push({ typ: EnumToken.LiteralTokenType, val: this.config.separator });
+                            acc.push({ ...this.config.separator, typ: EnumToken.LiteralTokenType });
                         }
                         acc.push(...curr);
                         return acc;
-                    }, [])
-                }][Symbol.iterator]();
+                    }, []),
+                },
+            ][Symbol.iterator]();
         }
         return iterator;
     }

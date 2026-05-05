@@ -1,14 +1,6 @@
 import { xyz2srgb } from './srgb.js';
 import { multiplyMatrices } from './utils/matrix.js';
-import './utils/constants.js';
-import '../../ast/types.js';
-import '../../ast/minify.js';
-import '../../ast/walk.js';
-import '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
 import { srgb2xyz } from './xyz.js';
-import '../../renderer/sourcemap/lib/encode.js';
 
 function a98rgb2srgbvalues(r, g, b, a = null) {
     //  @ts-ignore
@@ -23,21 +15,25 @@ function a98rgb2la98(r, g, b, a = null) {
     // convert an array of a98-rgb values in the range 0.0 - 1.0
     // to linear light (un-companded) form.
     // negative values are also now accepted
-    return [r, g, b].map(function (val) {
+    return [r, g, b]
+        .map(function (val) {
         let sign = val < 0 ? -1 : 1;
         let abs = Math.abs(val);
         return sign * Math.pow(abs, 563 / 256);
-    }).concat(a == null || a == 1 ? [] : [a]);
+    })
+        .concat(a == null || a == 1 ? [] : [a]);
 }
 function la98rgb2a98rgb(r, g, b, a = null) {
     // convert an array of linear-light a98-rgb  in the range 0.0-1.0
     // to gamma corrected form
     // negative values are also now accepted
-    return [r, b, g].map(function (val) {
+    return [r, b, g]
+        .map(function (val) {
         let sign = val < 0 ? -1 : 1;
         let abs = Math.abs(val);
         return sign * Math.pow(abs, 256 / 563);
-    }).concat(a == null || a == 1 ? [] : [a]);
+    })
+        .concat(a == null || a == 1 ? [] : [a]);
 }
 function la98rgb2xyz(r, g, b, a = null) {
     // convert an array of linear-light a98-rgb values to CIE XYZ

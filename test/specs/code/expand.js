@@ -115,11 +115,6 @@ Bar.foo {
  .foo {
   grid-auto-flow: column
  }
-}
-@media (orientation:landscape) and (min-width>1024px) {
- .foo {
-  max-inline-size: 1024px
- }
 }`));
         });
 
@@ -264,7 +259,7 @@ html {
 `, {beautify: true, expandNestingRules: true}).then((result) => expect(result.code).equals(`.parent {
  color: blue
 }
-@scope (.parent >.scope) to (.parent .limit) {
+@scope (.parent>.scope) to (.parent .limit) {
  .parent .content {
   color: red
  }
@@ -378,6 +373,39 @@ html {
 :hover:is(.foo,.foo:active) {
  color: blue
 }`))
+        });
+
+
+
+        it('flatten with at-rule #17', function () {
+            const nesting1 = `
+.foo {
+  display: grid;
+
+  @media (orientation: landscape) {
+    grid-auto-flow: column;
+
+    @media (min-width : 1024px) {
+      max-inline-size: 1024px;
+    }
+  }
+}
+`;
+            return parse(nesting1, {
+                minify: true, nestingRules: true
+            }).then((result) => expect(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo {
+ display: grid
+}
+@media (orientation:landscape) {
+ .foo {
+  grid-auto-flow: column
+ }
+}
+@media (orientation:landscape) and (min-width:1024px) {
+ .foo {
+  max-inline-size: 1024px
+ }
+}`));
         });
     });
 }

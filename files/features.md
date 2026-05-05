@@ -11,6 +11,11 @@ a non-exhaustive list of features is provided below:
 - no dependency
 - CSS validation based upon mdn-data
 - CSS modules support
+- CSS Media Queries Level 4
+- CSS Selectors Level 4
+- CSS Color Module Level 5
+- Media Queries Level 5
+- CSS Conditional Rules Module Level 5
 - fault-tolerant parser implementing the CSS syntax module 3 recommendations.
 - fast and efficient minification without unsafe transforms,
   see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)

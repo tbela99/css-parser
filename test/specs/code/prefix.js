@@ -252,7 +252,7 @@ a {
   height: 10px
  }
 }
-.example,.site {
+.site,.example {
  display: grid;
  display: grid
 }

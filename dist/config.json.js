@@ -121,7 +121,10 @@ var properties = {
 			"Perc"
 		],
 		multiple: true,
-		separator: "/",
+		separator: {
+			typ: "Literal",
+			val: "/"
+		},
 		keywords: [
 		]
 	},
@@ -251,6 +254,35 @@ var properties = {
 	"border-left-color": {
 		map: "border",
 		shorthand: "border-color"
+	},
+	"grid-row": {
+		shorthand: "grid-row",
+		properties: [
+			"grid-row-start",
+			"grid-row-end"
+		],
+		types: [
+			"Iden",
+			"Number"
+		],
+		multiple: true,
+		valueSeparator: {
+			typ: "Literal",
+			val: "/"
+		},
+		"default": [
+			"auto"
+		],
+		keywords: [
+			"auto",
+			"span"
+		]
+	},
+	"grid-row-start": {
+		shorthand: "grid-row"
+	},
+	"grid-row-end": {
+		shorthand: "grid-row"
 	}
 };
 var map = {

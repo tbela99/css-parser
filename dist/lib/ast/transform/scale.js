@@ -1,4 +1,4 @@
-import { identity, multiply } from './utils.js';
+import { multiply, identity } from './utils.js';
 
 function scaleX(x, from) {
     const matrix = identity();

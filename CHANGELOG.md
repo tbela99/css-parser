@@ -1,7 +1,21 @@
 # Changelog
 
+## v1.4.3
+
+- [x] Add a new css module scope 'shortest' to produce short scoped names
+- [ ] fix performance issues - prevent garbage collection
+- [ ] validate media queries
+- [ ] support if() css function
+- [ ] @function [Experimental](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@function)
+- [ ] validate media queries
+- [x] automatically generate range media query
+- [x] handle calc() in media features
+- [ ] add atrule() and named-feature() to support-condition syntax https://drafts.csswg.org/css-conditional-5/#changes-from-L4
+@supports-condition
+
 ## v1.4.2
 
+- [x] add css-conditional-5 @support at-rule(<at-keyword-token>) function
 - [x] fix bug when using remove prefix #120
 
 ## v1.4.0

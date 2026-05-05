@@ -1,10 +1,4 @@
-import { EnumToken, ColorType } from '../../ast/types.js';
-import '../../ast/minify.js';
-import '../../ast/walk.js';
-import '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
-import { isIdentColor } from '../syntax.js';
+import { ColorType, EnumToken } from '../../ast/types.js';
 import { color2RgbToken, lch2RgbToken, lab2RgbToken, oklch2RgbToken, oklab2RgbToken, cmyk2RgbToken, hwb2RgbToken, hsl2RgbToken, hex2RgbToken, cmyk2rgbvalues } from './rgb.js';
 import { color2HslToken, lch2HslToken, lab2HslToken, oklch2HslToken, oklab2HslToken, cmyk2HslToken, hwb2HslToken, hex2HslToken, rgb2HslToken } from './hsl.js';
 import { color2hwbToken, cmyk2hwbToken, lch2hwbToken, lab2hwbToken, oklch2hwbToken, oklab2hwbToken, hsl2hwbToken, rgb2hwbToken } from './hwb.js';
@@ -12,7 +6,6 @@ import { color2labToken, oklch2labToken, oklab2labToken, lch2labToken, cmyk2labT
 import { color2lchToken, oklch2lchToken, oklab2lchToken, lab2lchToken, cmyk2lchToken, hwb2lchToken, hsl2lchToken, rgb2lchToken, hex2lchToken } from './lch.js';
 import { color2oklabToken, oklch2oklabToken, lch2oklabToken, lab2oklabToken, cmyk2oklabToken, hwb2oklabToken, hsl2oklabToken, rgb2oklabToken, hex2oklabToken } from './oklab.js';
 import { color2oklchToken, lch2oklchToken, oklab2oklchToken, lab2oklchToken, cmyk2oklchToken, hwb2oklchToken, hsl2oklchToken, rgb2oklchToken, hex2oklchToken } from './oklch.js';
-import { colorFuncColorSpace, colorPrecision, anglePrecision } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { oklch2srgbvalues, lch2srgbvalues, oklab2srgbvalues, lab2srgbvalues, hwb2srgbvalues, hsl2srgb, rgb2srgb, hex2srgbvalues, xyz2srgb, lsrgb2srgbvalues, srgb2lsrgbvalues } from './srgb.js';
 import { prophotorgb2srgbvalues, srgb2prophotorgbvalues } from './prophotorgb.js';
@@ -23,10 +16,11 @@ import { xyzd502srgb } from './xyzd50.js';
 import { colorMix } from './color-mix.js';
 import { reduceHexValue, rgb2HexToken, color2HexToken, lch2HexToken, lab2HexToken, oklch2HexToken, oklab2HexToken, cmyk2HexToken, hwb2HexToken, hsl2HexToken } from './hex.js';
 import { parseRelativeColor } from './relativecolor.js';
+import { isIdentColor } from '../syntax.js';
 import { color2cmykToken, lch2cmykToken, lab2cmykToken, oklch2cmykToken, oklab2cmyk, hwb2cmykToken, hsl2cmykToken, rgb2cmykToken } from './cmyk.js';
 import { a98rgb2srgbvalues, srgb2a98values } from './a98rgb.js';
 import { epsilon } from '../../ast/transform/utils.js';
-import '../../renderer/sourcemap/lib/encode.js';
+import { definedPropertySettings, colorFuncColorSpace, colorPrecision, anglePrecision } from '../constants.js';
 
 /**
  * Converts a color to another color space
@@ -35,30 +29,34 @@ import '../../renderer/sourcemap/lib/encode.js';
  *
  * @private
  *
- * <code>
+ * ```ts
  *
  *     const token = {typ: EnumToken.ColorTokenType, kin: ColorType.HEX, val: '#F00'}
  *     const result = convertColor(token, ColorType.LCH);
  *
- * </code>
+ * ```
  */
 function convertColor(token, to) {
     if (token.kin == ColorType.SYS ||
         token.kin == ColorType.DPSYS ||
-        (isIdentColor(token) &&
-            'currentcolor' == token.val.toLowerCase())) {
+        (isIdentColor(token) && "currentcolor" == token.val.toLowerCase())) {
         return token;
     }
     if (token.kin == ColorType.COLOR_MIX && to != ColorType.COLOR_MIX) {
         const children = token.chi.reduce((acc, t) => {
-            if (t.typ == EnumToken.ColorTokenType) {
-                acc.push([t]);
+            if (t.typ === EnumToken.CommaTokenType) {
+                acc.push([]);
             }
-            else {
-                if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType, EnumToken.CommaTokenType].includes(t.typ)) {
-                    acc[acc.length - 1].push(t);
-                }
+            else if (t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType) {
+                acc[acc.length - 1].push(t);
             }
+            // if (t.typ == EnumToken.ColorTokenType) {
+            //     acc.push([t]);
+            // } else {
+            //     if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType, EnumToken.CommaTokenType].includes(t.typ)) {
+            //         acc[acc.length - 1].push(t);
+            //     }
+            // }
             return acc;
         }, [[]]);
         token = colorMix(children[0][1], children[0][2], children[1][0], children[1][1], children[2][0], children[2][1]);
@@ -66,35 +64,40 @@ function convertColor(token, to) {
             return null;
         }
     }
-    if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color'].includes(token.val.toLowerCase())) {
+    if (token.cal == "rel" &&
+        ["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch", "color"].includes(token.val.toLowerCase())) {
         const chi = getComponents(token);
-        const offset = token.val == 'color' ? 2 : 1;
+        const offset = token.val == "color" ? 2 : 1;
         if (chi != null) {
             // @ts-ignore
             const color = chi[1];
-            const components = parseRelativeColor(token.val.toLowerCase() == 'color' ? chi[offset].val : token.val, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
-            if (components != null) {
-                token = {
-                    ...token,
-                    chi: [...(token.val == 'color' ? [chi[offset]] : []), ...Object.values(components)],
-                    kin: ColorType[token.val.toUpperCase().replaceAll('-', '_')]
-                };
-                delete token.cal;
+            const components = parseRelativeColor(token.val.toLowerCase() == "color"
+                ? chi[offset].val
+                : token.val, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
+            if (components == null) {
+                return null;
             }
+            let { cal, ...tk } = {
+                ...token,
+                chi: [...(token.val == "color" ? [chi[offset]] : []), ...Object.values(components)],
+                kin: ColorType[token.val.toUpperCase().replaceAll("-", "_")],
+            };
+            Object.defineProperty(tk, "loc", { ...definedPropertySettings, value: token.loc });
+            token = tk;
         }
     }
     if (token.kin == to) {
         if (token.kin == ColorType.HEX || token.kin == ColorType.LIT) {
             token.val = reduceHexValue(token.val);
-            token.kin = token.val[0] == '#' ? ColorType.HEX : ColorType.LIT;
+            token.kin = token.val[0] == "#" ? ColorType.HEX : ColorType.LIT;
         }
         return token;
     }
     if (token.kin == ColorType.COLOR) {
-        const colorSpace = token.chi.find(t => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
-        if (colorSpace.val == ColorType[to].toLowerCase().replaceAll('_', '-')) {
+        const colorSpace = token.chi.find((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
+        if (colorSpace.val == ColorType[to].toLowerCase().replaceAll("_", "-")) {
             for (const chi of token.chi) {
-                if (chi.typ == EnumToken.NumberTokenType && typeof chi.val == 'number') {
+                if (chi.typ == EnumToken.NumberTokenType && typeof chi.val == "number") {
                     chi.val = toPrecisionValue(getNumber(chi));
                 }
             }
@@ -183,8 +186,8 @@ function convertColor(token, to) {
                 const val = reduceHexValue(token.val);
                 return {
                     typ: EnumToken.ColorTokenType,
-                    val,
-                    kin: val[0] == '#' ? ColorType.HEX : ColorType.LIT
+                    val: val,
+                    kin: val[0] == "#" ? ColorType.HEX : ColorType.LIT,
                 };
             }
             case ColorType.HSL:
@@ -331,7 +334,7 @@ function convertColor(token, to) {
                 return color2oklchToken(token);
         }
     }
-    else if (colorFuncColorSpace.includes(ColorType[to].toLowerCase().replaceAll('_', '-').toLowerCase().replaceAll('_', '-'))) {
+    else if (colorFuncColorSpace.includes(ColorType[to].toLowerCase().replaceAll("_", "-").toLowerCase().replaceAll("_", "-"))) {
         switch (token.kin) {
             case ColorType.HEX:
             case ColorType.LIT:
@@ -485,32 +488,32 @@ function color2srgbvalues(token) {
     const colorSpace = components.shift();
     let values = components.map((val) => getNumber(val));
     switch (colorSpace.val.toLowerCase()) {
-        case 'display-p3':
+        case "display-p3":
             // @ts-ignore
             values = p32srgbvalues(...values);
             break;
-        case 'srgb-linear':
+        case "srgb-linear":
             // @ts-ignore
             values = lsrgb2srgbvalues(...values);
             break;
-        case 'prophoto-rgb':
+        case "prophoto-rgb":
             // @ts-ignore
             values = prophotorgb2srgbvalues(...values);
             break;
-        case 'a98-rgb':
+        case "a98-rgb":
             // @ts-ignore
             values = a98rgb2srgbvalues(...values);
             break;
-        case 'rec2020':
+        case "rec2020":
             // @ts-ignore
             values = rec20202srgb(...values);
             break;
-        case 'xyz':
-        case 'xyz-d65':
+        case "xyz":
+        case "xyz-d65":
             // @ts-ignore
             values = xyz2srgb(...values);
             break;
-        case 'xyz-d50':
+        case "xyz-d50":
             // @ts-ignore
             values = xyzd502srgb(...values);
             break;
@@ -528,31 +531,34 @@ function values2colortoken(values, to) {
     if (values.length == 4) {
         chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
             typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100
+            val: values[3] * 100,
         });
     }
-    const colorSpace = ColorType[to].toLowerCase().replaceAll('_', '-');
-    return colorFuncColorSpace.includes(colorSpace) ? {
-        typ: EnumToken.ColorTokenType,
-        val: 'color',
-        chi: [{ typ: EnumToken.IdenTokenType, val: colorSpace }].concat(chi),
-        kin: ColorType.COLOR
-    } : {
-        typ: EnumToken.ColorTokenType,
-        val: colorSpace,
-        chi,
-        kin: to
-    };
+    const colorSpace = ColorType[to].toLowerCase().replaceAll("_", "-");
+    return colorFuncColorSpace.includes(colorSpace)
+        ? {
+            typ: EnumToken.ColorTokenType,
+            val: "color",
+            chi: [{ typ: EnumToken.IdenTokenType, val: colorSpace }].concat(chi),
+            kin: ColorType.COLOR,
+        }
+        : {
+            typ: EnumToken.ColorTokenType,
+            val: colorSpace,
+            chi,
+            kin: to,
+        };
 }
 function getNumber(token) {
-    if (token.typ == EnumToken.IdenTokenType && token.val == 'none') {
+    if (token.typ == EnumToken.IdenTokenType && token.val == "none") {
         return 0;
     }
     let val;
     // @ts-ignore
-    if (typeof token.val != 'number' && token.val?.typ == EnumToken.FractionTokenType) {
+    if (typeof token.val != "number" && token.val?.typ == EnumToken.FractionTokenType) {
         // @ts-ignore
-        val = token.val.l.val / token.val.r.val;
+        val = (token.val.l.val /
+            token.val.r.val);
     }
     else {
         val = token.val;
@@ -566,22 +572,22 @@ function getNumber(token) {
  */
 function getAngle(token) {
     if (token.typ == EnumToken.IdenTokenType) {
-        if (token.val == 'none') {
+        if (token.val == "none") {
             return 0;
         }
     }
     if (token.typ == EnumToken.AngleTokenType) {
         switch (token.unit) {
-            case 'deg':
+            case "deg":
                 // @ts-ignore
                 return token.val / 360;
-            case 'rad':
+            case "rad":
                 // @ts-ignore
                 return token.val / (2 * Math.PI);
-            case 'grad':
+            case "grad":
                 // @ts-ignore
                 return token.val / 400;
-            case 'turn':
+            case "turn":
                 // @ts-ignore
                 return +token.val;
         }

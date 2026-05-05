@@ -1,121 +1,207 @@
-import { isIdent, isPseudo } from '../../syntax/syntax.js';
 import { EnumToken } from '../../ast/types.js';
-import '../../ast/minify.js';
-import '../../ast/walk.js';
-import { getTokenType as getTokenType$1 } from '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
-import '../../syntax/color/utils/constants.js';
-import '../../renderer/sourcemap/lib/encode.js';
+import { isIdentStart, isIdent, parseDimension, isPseudo } from '../../syntax/syntax.js';
+import { ValidationTokenEnum } from './typedef.js';
 
-var ValidationTokenEnum;
-(function (ValidationTokenEnum) {
-    ValidationTokenEnum[ValidationTokenEnum["Root"] = 0] = "Root";
-    ValidationTokenEnum[ValidationTokenEnum["Keyword"] = 1] = "Keyword";
-    ValidationTokenEnum[ValidationTokenEnum["PropertyType"] = 2] = "PropertyType";
-    ValidationTokenEnum[ValidationTokenEnum["DeclarationType"] = 3] = "DeclarationType";
-    ValidationTokenEnum[ValidationTokenEnum["AtRule"] = 4] = "AtRule";
-    ValidationTokenEnum[ValidationTokenEnum["ValidationFunctionDefinition"] = 5] = "ValidationFunctionDefinition";
-    ValidationTokenEnum[ValidationTokenEnum["OpenBracket"] = 6] = "OpenBracket";
-    ValidationTokenEnum[ValidationTokenEnum["CloseBracket"] = 7] = "CloseBracket";
-    ValidationTokenEnum[ValidationTokenEnum["OpenParenthesis"] = 8] = "OpenParenthesis";
-    ValidationTokenEnum[ValidationTokenEnum["CloseParenthesis"] = 9] = "CloseParenthesis";
-    ValidationTokenEnum[ValidationTokenEnum["Comma"] = 10] = "Comma";
-    ValidationTokenEnum[ValidationTokenEnum["Pipe"] = 11] = "Pipe";
-    ValidationTokenEnum[ValidationTokenEnum["Column"] = 12] = "Column";
-    ValidationTokenEnum[ValidationTokenEnum["Star"] = 13] = "Star";
-    ValidationTokenEnum[ValidationTokenEnum["OpenCurlyBrace"] = 14] = "OpenCurlyBrace";
-    ValidationTokenEnum[ValidationTokenEnum["CloseCurlyBrace"] = 15] = "CloseCurlyBrace";
-    ValidationTokenEnum[ValidationTokenEnum["HashMark"] = 16] = "HashMark";
-    ValidationTokenEnum[ValidationTokenEnum["QuestionMark"] = 17] = "QuestionMark";
-    ValidationTokenEnum[ValidationTokenEnum["Function"] = 18] = "Function";
-    ValidationTokenEnum[ValidationTokenEnum["Number"] = 19] = "Number";
-    ValidationTokenEnum[ValidationTokenEnum["Whitespace"] = 20] = "Whitespace";
-    ValidationTokenEnum[ValidationTokenEnum["Parenthesis"] = 21] = "Parenthesis";
-    ValidationTokenEnum[ValidationTokenEnum["Bracket"] = 22] = "Bracket";
-    ValidationTokenEnum[ValidationTokenEnum["Block"] = 23] = "Block";
-    ValidationTokenEnum[ValidationTokenEnum["AtLeastOnce"] = 24] = "AtLeastOnce";
-    ValidationTokenEnum[ValidationTokenEnum["Separator"] = 25] = "Separator";
-    ValidationTokenEnum[ValidationTokenEnum["Exclamation"] = 26] = "Exclamation";
-    ValidationTokenEnum[ValidationTokenEnum["Ampersand"] = 27] = "Ampersand";
-    ValidationTokenEnum[ValidationTokenEnum["PipeToken"] = 28] = "PipeToken";
-    ValidationTokenEnum[ValidationTokenEnum["ColumnToken"] = 29] = "ColumnToken";
-    ValidationTokenEnum[ValidationTokenEnum["AmpersandToken"] = 30] = "AmpersandToken";
-    ValidationTokenEnum[ValidationTokenEnum["Parens"] = 31] = "Parens";
-    ValidationTokenEnum[ValidationTokenEnum["PseudoClassToken"] = 32] = "PseudoClassToken";
-    ValidationTokenEnum[ValidationTokenEnum["PseudoClassFunctionToken"] = 33] = "PseudoClassFunctionToken";
-    ValidationTokenEnum[ValidationTokenEnum["StringToken"] = 34] = "StringToken";
-    ValidationTokenEnum[ValidationTokenEnum["AtRuleDefinition"] = 35] = "AtRuleDefinition";
-    ValidationTokenEnum[ValidationTokenEnum["DeclarationNameToken"] = 36] = "DeclarationNameToken";
-    ValidationTokenEnum[ValidationTokenEnum["DeclarationDefinitionToken"] = 37] = "DeclarationDefinitionToken";
-    ValidationTokenEnum[ValidationTokenEnum["SemiColon"] = 38] = "SemiColon";
-    ValidationTokenEnum[ValidationTokenEnum["Character"] = 39] = "Character";
-    ValidationTokenEnum[ValidationTokenEnum["InfinityToken"] = 40] = "InfinityToken";
-})(ValidationTokenEnum || (ValidationTokenEnum = {}));
-var ValidationSyntaxGroupEnum;
-(function (ValidationSyntaxGroupEnum) {
-    ValidationSyntaxGroupEnum["Declarations"] = "declarations";
-    ValidationSyntaxGroupEnum["Functions"] = "functions";
-    ValidationSyntaxGroupEnum["Syntaxes"] = "syntaxes";
-    ValidationSyntaxGroupEnum["Selectors"] = "selectors";
-    ValidationSyntaxGroupEnum["AtRules"] = "atRules";
-})(ValidationSyntaxGroupEnum || (ValidationSyntaxGroupEnum = {}));
-const skipped = [
-    ValidationTokenEnum.Star,
-    ValidationTokenEnum.HashMark,
-    ValidationTokenEnum.AtLeastOnce,
-    ValidationTokenEnum.Exclamation,
-    ValidationTokenEnum.QuestionMark,
-    ValidationTokenEnum.OpenCurlyBrace
-];
 const objectProperties = {
     enumerable: false,
     writable: true,
-    configurable: true
+    configurable: true,
 };
-function* tokenize(syntax, position = { ind: 0, lin: 1, col: 0 }, currentPosition = {
+const SymbolsMapTokens = {
+    "&&": ValidationTokenEnum.Ampersand,
+    "|": ValidationTokenEnum.Pipe,
+    "† ": ValidationTokenEnum.DisallowWhitespace,
+    "||": ValidationTokenEnum.Column,
+    "*": ValidationTokenEnum.Star,
+    ",": ValidationTokenEnum.Comma,
+    "/": ValidationTokenEnum.Separator,
+    "+": ValidationTokenEnum.Plus,
+    ":": ValidationTokenEnum.Colon,
+    ";": ValidationTokenEnum.SemiColon,
+    "(": ValidationTokenEnum.OpenParenthesis,
+    ")": ValidationTokenEnum.CloseParenthesis,
+    "[": ValidationTokenEnum.OpenBracket,
+    "]": ValidationTokenEnum.CloseBracket,
+    "{": ValidationTokenEnum.OpenCurlyBrace,
+    "}": ValidationTokenEnum.CloseCurlyBrace,
+    "?": ValidationTokenEnum.QuestionMark,
+    "!": ValidationTokenEnum.Exclamation,
+    "#": ValidationTokenEnum.HashMark,
+    "<": ValidationTokenEnum.LessThan,
+    ">": ValidationTokenEnum.GreaterThan,
+    " ": ValidationTokenEnum.Whitespace,
+    "\t": ValidationTokenEnum.Whitespace,
+    "\r": ValidationTokenEnum.Whitespace,
+    "\n": ValidationTokenEnum.Whitespace,
+    "\f": ValidationTokenEnum.Whitespace,
+    // '∞'
+    "\u221e": ValidationTokenEnum.InfinityToken,
+};
+const makeBinaryOp = new Map([
+    [ValidationTokenEnum.Column, ValidationTokenEnum.ColumnToken],
+    [ValidationTokenEnum.Ampersand, ValidationTokenEnum.AmpersandToken],
+]);
+function move(position, chr) {
+    for (const c of chr) {
+        position.col++;
+        position.ind += c.length;
+    }
+    return position;
+}
+function getTokenType(token, position, currentPosition) {
+    const pos = { ...position };
+    Object.assign(position, currentPosition);
+    if (token === "<an+b>") {
+        return Object.defineProperty({
+            typ: ValidationTokenEnum.PropertyType,
+            val: token.slice(1, -1),
+        }, "pos", { ...objectProperties, value: pos });
+    }
+    if (token.charAt(0) == '"' || token.charAt(0) == "'") {
+        return Object.defineProperty({
+            typ: ValidationTokenEnum.StringToken,
+            val: token,
+        }, "pos", { ...objectProperties, value: pos });
+    }
+    if (token.match(/^\d+$/)) {
+        return Object.defineProperty({
+            typ: ValidationTokenEnum.Number,
+            val: Number(token),
+        }, "pos", { ...objectProperties, value: pos });
+    }
+    let dimension = parseDimension(token);
+    if (dimension) {
+        // @ts-expect-error
+        return Object.defineProperty({
+            typ: ValidationTokenEnum.Dimension,
+            unit: EnumToken[dimension.typ],
+            val: dimension.val,
+            unitText: dimension.unit,
+        }, "pos", { ...objectProperties, value: pos });
+    }
+    if (isPseudo(token)) {
+        return Object.defineProperty({
+            typ: ValidationTokenEnum.PseudoClassToken,
+            val: token,
+        }, "pos", { ...objectProperties, value: pos });
+    }
+    if (token.startsWith("@") && isIdent(token.slice(1))) {
+        return Object.defineProperty({
+            typ: ValidationTokenEnum.AtRule,
+            val: token.slice(1),
+        }, "pos", { ...objectProperties, value: pos });
+    }
+    return Object.defineProperty({
+        typ: ValidationTokenEnum.Keyword,
+        val: token,
+    }, "pos", { ...objectProperties, value: pos });
+}
+function trimSyntaxArray(tokens) {
+    while (tokens[0]?.typ === ValidationTokenEnum.Whitespace) {
+        tokens.shift();
+    }
+    while (tokens[tokens.length - 1]?.typ === ValidationTokenEnum.Whitespace) {
+        tokens.pop();
+    }
+    let i = 0;
+    for (; i < tokens.length; i++) {
+        if (tokens[i].typ === ValidationTokenEnum.Comma) {
+            if (i + 1 < tokens.length && tokens[i + 1].typ === ValidationTokenEnum.Whitespace) {
+                tokens.splice(i + 1, 1);
+            }
+            if (i > 0 && tokens[i - 1].typ === ValidationTokenEnum.Whitespace) {
+                tokens.splice(--i, 1);
+            }
+        }
+    }
+    return tokens;
+}
+function* tokenizeSyntax(syntax, position = {
+    ind: 0,
+    lin: 1,
+    col: 0,
+}, currentPosition = {
     ind: -1,
     lin: 1,
-    col: 0
+    col: 0,
 }) {
     let i = -1;
-    let buffer = '';
+    let buffer = "";
+    let pos;
     while (++i < syntax.length) {
         let chr = syntax.charAt(i);
         move(currentPosition, chr);
-        switch (chr) {
-            case '∞':
-                if (buffer.length > 0) {
-                    yield getTokenType(buffer, position, currentPosition);
+        if (chr === "<" && "an+b>" === syntax.slice(i + 1, i + 6)) {
+            if (buffer.length > 0) {
+                yield getTokenType(buffer, position, currentPosition);
+                buffer = "";
+            }
+            yield getTokenType("<an+b>", position, currentPosition);
+            move(currentPosition, "an+b>");
+            i += 5;
+            continue;
+        }
+        if (chr + syntax.charAt(i + 1) in SymbolsMapTokens) {
+            chr += syntax.charAt(++i);
+            move(currentPosition, syntax.charAt(i));
+            pos = { ...position };
+            Object.assign(position, currentPosition);
+            if (buffer.length > 0) {
+                yield getTokenType(buffer, position, currentPosition);
+                buffer = "";
+            }
+            yield Object.defineProperty({
+                typ: SymbolsMapTokens[chr],
+            }, "pos", { ...objectProperties, value: pos });
+            continue;
+        }
+        if (chr === ':' && (isIdentStart(syntax.charCodeAt(i + 1)) || (syntax.charAt(i + 1) === '-') && isIdentStart(syntax.charCodeAt(i + 2)))) {
+            buffer += chr;
+            continue;
+        }
+        if (chr in SymbolsMapTokens) {
+            if (SymbolsMapTokens[chr] === ValidationTokenEnum.Whitespace) {
+                let ch;
+                let k = i;
+                while ((ch = syntax.charAt(k + 1)) &&
+                    ch in SymbolsMapTokens &&
+                    SymbolsMapTokens[ch] === ValidationTokenEnum.Whitespace) {
+                    k++;
                 }
-                yield getTokenType(chr, position, currentPosition);
-                buffer = '';
-                break;
-            case '\\':
+                if (k != i) {
+                    move(currentPosition, syntax.slice(i + 1, k + 1));
+                    i = k;
+                }
+            }
+            pos = { ...position };
+            Object.assign(position, currentPosition);
+            if (buffer.length > 0) {
+                yield getTokenType(buffer, position, currentPosition);
+                buffer = "";
+            }
+            yield Object.defineProperty({
+                typ: SymbolsMapTokens[chr],
+            }, "pos", { ...objectProperties, value: pos });
+            continue;
+        }
+        switch (chr) {
+            case "\\":
                 if (buffer.length > 0) {
                     yield getTokenType(buffer, position, currentPosition);
-                    buffer = '';
+                    buffer = "";
                 }
                 buffer += chr;
                 chr = syntax.charAt(++i);
                 buffer += chr;
                 move(currentPosition, chr);
                 break;
-            case ';':
-                if (buffer.length > 0) {
-                    yield getTokenType(buffer, position, currentPosition);
-                    buffer = '';
-                }
-                yield getTokenType(chr, position, currentPosition);
-                buffer = '';
-                break;
-            case ':':
+            case ":":
                 if (isIdent(buffer)) {
                     yield Object.defineProperty({
                         typ: ValidationTokenEnum.DeclarationNameToken,
-                        val: buffer
-                    }, 'pos', { ...objectProperties, value: { ...position } });
-                    buffer = '';
+                        val: buffer,
+                    }, "pos", { ...objectProperties, value: { ...position } });
+                    buffer = "";
                     move(currentPosition, chr);
                     break;
                 }
@@ -125,92 +211,25 @@ function* tokenize(syntax, position = { ind: 0, lin: 1, col: 0 }, currentPositio
             case "'":
                 if (buffer.length > 0) {
                     yield getTokenType(buffer, position, currentPosition);
-                    buffer = '';
+                    buffer = "";
                 }
                 buffer += chr;
                 while (i + 1 < syntax.length) {
                     chr = syntax.charAt(++i);
                     buffer += chr;
-                    move(currentPosition, chr);
-                    if (chr == '\\') {
+                    if (chr == "\\") {
                         chr = syntax.charAt(++i);
                         buffer += chr;
-                        move(currentPosition, chr);
+                        // move(currentPosition, chr);
                         continue;
                     }
                     if (chr == buffer.charAt(0)) {
                         break;
                     }
                 }
-                // check for type "<property>" or "<'property'>"
-                if (buffer.at(1) == '<' && buffer.at(-2) == '>') {
-                    yield Object.defineProperty({
-                        typ: ValidationTokenEnum.Character,
-                        val: chr
-                    }, 'pos', { ...objectProperties, value: { ...position } });
-                    position = { ...currentPosition };
-                    move(currentPosition, chr);
-                    buffer = buffer.slice(1, -1);
-                    yield* tokenize(buffer, position, currentPosition);
-                    yield Object.defineProperty({
-                        typ: ValidationTokenEnum.Character,
-                        val: chr
-                    }, 'pos', { ...objectProperties, value: { ...position } });
-                    position = { ...currentPosition };
-                    move(currentPosition, chr);
-                    buffer = '';
-                    break;
-                }
                 yield getTokenType(buffer, position, currentPosition);
-                buffer = '';
-                break;
-            case '<':
-                buffer += chr;
-                while (i + 1 < syntax.length) {
-                    chr = syntax.charAt(++i);
-                    buffer += chr;
-                    move(currentPosition, chr);
-                    if (chr == '>') {
-                        break;
-                    }
-                }
-                yield getTokenType(buffer, position, currentPosition);
-                buffer = '';
-                break;
-            case ' ':
-            case '\t':
-            case '\n':
-            case '\r':
-            case '\f':
-            case '|':
-            case '#':
-            case '+':
-            case ',':
-            case '[':
-            case ']':
-            case '(':
-            case ')':
-            case '*':
-            case '{':
-            case '}':
-            case '?':
-            case '!':
-            case '&':
-                if (buffer.length > 0) {
-                    yield getTokenType(buffer, position, currentPosition);
-                }
-                if (chr == '|' || chr == '&') {
-                    if (syntax.charAt(i + 1) == chr) {
-                        move(currentPosition, chr);
-                        yield getTokenType(chr + chr, position, currentPosition);
-                        i++;
-                        buffer = '';
-                        continue;
-                    }
-                }
-                Object.assign(position, currentPosition);
-                yield getTokenType(chr, position, currentPosition);
-                buffer = '';
+                move(currentPosition, buffer);
+                buffer = "";
                 break;
             default:
                 buffer += chr;
@@ -220,875 +239,602 @@ function* tokenize(syntax, position = { ind: 0, lin: 1, col: 0 }, currentPositio
     if (buffer.length > 0) {
         yield getTokenType(buffer, position, currentPosition);
     }
+    yield Object.defineProperty({
+        typ: ValidationTokenEnum.EOF,
+    }, "pos", { ...objectProperties, value: { ...position } });
 }
 function parseSyntax(syntax) {
-    const root = Object.defineProperty({
-        typ: ValidationTokenEnum.Root,
-        chi: []
-    }, 'pos', { ...objectProperties, value: { ind: 0, lin: 1, col: 0 } });
-    return minify(doParseSyntax(syntax, tokenize(syntax), root));
-}
-function matchParens(syntax, iterator) {
-    let item;
-    let func = null;
-    let items = [];
-    let match = 0;
-    while ((item = iterator.next()) && !item.done) {
-        switch (item.value.typ) {
-            case ValidationTokenEnum.OpenParenthesis:
-                if (match > 0) {
-                    func.chi.push(item.value);
+    const stack = [];
+    let tokens = [];
+    let currentToken;
+    let startIndex;
+    let endIndex;
+    let iterator = tokenizeSyntax(syntax);
+    for (const token of iterator) {
+        tokens.push(token);
+        switch (token.typ) {
+            case ValidationTokenEnum.EOF:
+                if (stack.at(-1)?.typ == ValidationTokenEnum.PipeToken) {
+                    let index = tokens.lastIndexOf(stack.at(-1));
+                    stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
+                    stack.pop();
                 }
-                else if (match == 0) {
-                    func = items.at(-1);
-                    if (func == null || func.val == null || func.val === '') {
-                        func = Object.defineProperty({
-                            typ: ValidationTokenEnum.Parens,
-                            val: '',
-                            chi: []
-                        }, 'pos', { ...objectProperties, value: item.value.pos });
-                        items.push(func);
+                else if (stack.at(-1)?.typ == ValidationTokenEnum.AmpersandToken) {
+                    let index = tokens.lastIndexOf(stack.at(-1));
+                    stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
+                    stack.pop();
+                }
+                else if (stack.at(-1)?.typ == ValidationTokenEnum.ColumnToken) {
+                    let index = tokens.lastIndexOf(stack.at(-1));
+                    stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
+                    stack.pop();
+                }
+                tokens.pop();
+                break;
+            case ValidationTokenEnum.Pipe:
+                {
+                    while (stack.at(-1)?.typ == ValidationTokenEnum.AmpersandToken ||
+                        stack.at(-1)?.typ == ValidationTokenEnum.ColumnToken) {
+                        let index = tokens.lastIndexOf(stack.at(-1));
+                        if (stack.at(-1)?.typ == ValidationTokenEnum.AmpersandToken) {
+                            stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
+                        }
+                        else {
+                            stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
+                        }
+                        stack.pop();
+                    }
+                    let index = stack.length == 0 ? -1 : tokens.lastIndexOf(stack.at(-1));
+                    if (stack.at(-1)?.typ != ValidationTokenEnum.PipeToken) {
+                        stack.push(Object.assign(token, {
+                            typ: ValidationTokenEnum.PipeToken,
+                            chi: [trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2))],
+                        }));
+                        break;
+                    }
+                    tokens.pop();
+                    stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 1)));
+                }
+                break;
+            case ValidationTokenEnum.Ampersand:
+                {
+                    let index = stack.length == 0 ? -1 : tokens.lastIndexOf(stack.at(-1));
+                    if (stack.at(-1)?.typ === makeBinaryOp.get(token.typ)) {
+                        if (token.typ === ValidationTokenEnum.Ampersand) {
+                            stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
+                            stack.pop();
+                            stack.push(Object.assign(token, {
+                                typ: makeBinaryOp.get(token.typ),
+                                l: tokens.splice(index, 1),
+                                r: [],
+                            }));
+                        }
+                        else {
+                            stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
+                            stack.pop();
+                            stack.push(Object.assign(token, {
+                                typ: makeBinaryOp.get(token.typ),
+                                l: tokens.splice(index, 1),
+                                r: [],
+                            }));
+                        }
                     }
                     else {
-                        // @ts-ignore
-                        func.typ = func.typ == ValidationTokenEnum.PseudoClassToken ? ValidationTokenEnum.PseudoClassFunctionToken : ValidationTokenEnum.Function;
-                        func.chi = [];
+                        stack.push(Object.assign(token, {
+                            typ: makeBinaryOp.get(token.typ),
+                            l: trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)),
+                            r: [],
+                        }));
                     }
                 }
-                match++;
+                break;
+            case ValidationTokenEnum.Column:
+                {
+                    let index = stack.length == 0 ? -1 : tokens.lastIndexOf(stack.at(-1));
+                    if (stack.at(-1)?.typ === makeBinaryOp.get(token.typ)) {
+                        stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
+                        tokens.pop();
+                        // stack.pop();
+                        // stack.push(Object.assign(token, {
+                        //     typ: makeBinaryOp.get(token!.typ),
+                        //     l: tokens.splice(index, 1),
+                        //     r: []
+                        // }) as ValidationColumnToken | ValidationAmpersandToken);
+                    }
+                    else {
+                        if (index != -1) {
+                            stack.push(Object.assign(token, {
+                                typ: makeBinaryOp.get(token.typ),
+                                chi: [trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2))],
+                            }));
+                        }
+                        else {
+                            stack.push(Object.assign(token, {
+                                typ: makeBinaryOp.get(token.typ),
+                                chi: [trimSyntaxArray(tokens.splice(0, tokens.length - 2))],
+                            }));
+                        }
+                    }
+                }
+                break;
+            case ValidationTokenEnum.OpenParenthesis:
+                if (tokens.at(-2)?.typ == ValidationTokenEnum.Keyword) {
+                    stack.push(Object.assign(tokens.at(-2), {
+                        typ: ValidationTokenEnum.Function,
+                        chi: [],
+                    }));
+                    tokens.pop();
+                    break;
+                }
+                if (tokens.at(-2)?.typ == ValidationTokenEnum.PseudoClassToken) {
+                    stack.push(Object.assign(tokens.at(-2), {
+                        typ: ValidationTokenEnum.PseudoClassFunctionToken,
+                        chi: [],
+                    }));
+                    tokens.pop();
+                    break;
+                }
+                stack.push(token);
                 break;
             case ValidationTokenEnum.CloseParenthesis:
-                match--;
-                if (match > 0) {
-                    func.chi.push(item.value);
+                if (stack.at(-1)?.typ == ValidationTokenEnum.PipeToken) {
+                    let index = tokens.lastIndexOf(stack.at(-1));
+                    stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
+                    stack.pop();
+                }
+                if (stack.at(-1)?.typ == ValidationTokenEnum.OpenParenthesis ||
+                    (stack.at(-1)?.typ == ValidationTokenEnum.PropertyType &&
+                        stack.at(-1).val === "function-token")) {
+                    stack.pop();
+                }
+                else if (stack.at(-1).typ === ValidationTokenEnum.PipeToken) {
+                    let index = tokens.lastIndexOf(stack.at(-1));
+                    stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
+                    stack.pop();
+                }
+                else if (stack.at(-1).typ === ValidationTokenEnum.AmpersandToken) {
+                    let index = tokens.lastIndexOf(stack.at(-1));
+                    stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
+                    stack.pop();
+                }
+                // else if (stack.at(-1)?.typ === ValidationTokenEnum.OpenParenthesis) {
+                //     let currentToken = stack.at(-1);
+                //     let index: number = tokens.lastIndexOf(currentToken!);
+                //     if (tokens[index - 1]?.typ === ValidationTokenEnum.Keyword) {
+                //         Object.assign(tokens[index - 1], {
+                //             typ: ValidationTokenEnum.Function,
+                //             val: (<ValidationKeywordToken>tokens[index - 1]).val,
+                //             chi: tokens.slice(index + 1, tokens.length - 1)
+                //         });
+                //         tokens.splice(index, tokens.length - index);
+                //         stack.pop();
+                //     }
+                // }
+                if (stack.at(-1)?.typ === ValidationTokenEnum.Function ||
+                    stack.at(-1)?.typ === ValidationTokenEnum.PseudoClassFunctionToken) {
+                    let index = tokens.lastIndexOf(stack.at(-1));
+                    tokens.pop();
+                    stack.at(-1).chi =
+                        trimSyntaxArray(tokens.splice(index + 1, tokens.length));
+                    stack.pop();
+                    // break;
                 }
                 break;
-            default:
-                if (match > 0) {
-                    func.chi.push(item.value);
-                }
-                else {
-                    items.push(item.value);
+            case ValidationTokenEnum.GreaterThan:
+                if (tokens[tokens.length - 3]?.typ === ValidationTokenEnum.LessThan) {
+                    if (tokens[tokens.length - 2]?.typ === ValidationTokenEnum.Keyword) {
+                        Object.assign(tokens[tokens.length - 3], {
+                            typ: ValidationTokenEnum.PropertyType,
+                            val: tokens[tokens.length - 2].val,
+                        });
+                        if ("range" in tokens[tokens.length - 2]) {
+                            tokens[tokens.length - 3].range = tokens[tokens.length - 2].range;
+                        }
+                        tokens.splice(tokens.length - 2, 2);
+                        if (tokens.at(-1).val == "function-token") {
+                            // consume the closing ')'
+                            stack.push(tokens.at(-1));
+                        }
+                    }
+                    else if (tokens[tokens.length - 2]?.typ === ValidationTokenEnum.StringToken) {
+                        Object.assign(tokens[tokens.length - 3], {
+                            typ: ValidationTokenEnum.DeclarationType,
+                            val: tokens[tokens.length - 2].val.slice(1, -1),
+                        });
+                        tokens.splice(tokens.length - 2, 2);
+                    }
+                    else if (tokens[tokens.length - 2]?.typ === ValidationTokenEnum.Function) {
+                        Object.assign(tokens[tokens.length - 3], {
+                            typ: ValidationTokenEnum.FunctionDefinition,
+                            val: tokens[tokens.length - 2].val,
+                        });
+                        tokens.splice(tokens.length - 2, 2);
+                    }
                 }
                 break;
-        }
-    }
-    for (const item of items) {
-        if ('chi' in item) {
-            // @ts-ignore
-            item.chi = matchParens(syntax, item.chi[Symbol.iterator]());
-        }
-    }
-    return items;
-}
-function matchBrackets(syntax, iterator) {
-    let item;
-    let bracket = null;
-    let items = [];
-    let match = 0;
-    while ((item = iterator.next()) && !item.done) {
-        switch (item.value.typ) {
             case ValidationTokenEnum.OpenBracket:
-                if (match > 0) {
-                    bracket.chi.push(item.value);
-                }
-                else if (match == 0) {
-                    bracket = Object.defineProperty({
-                        typ: ValidationTokenEnum.Bracket,
-                        chi: []
-                    }, 'pos', { ...objectProperties, value: item.value.pos });
-                    items.push(bracket);
-                }
-                match++;
+                stack.push(token);
                 break;
             case ValidationTokenEnum.CloseBracket:
-                match--;
-                if (match > 0) {
-                    bracket.chi.push(item.value);
-                }
-                break;
-            default:
-                if (match > 0) {
-                    bracket.chi.push(item.value);
-                }
-                else {
-                    items.push(item.value);
-                }
-                break;
-        }
-    }
-    for (const item of items) {
-        if ('chi' in item) {
-            // @ts-ignore
-            item.chi = matchBrackets(syntax, item.chi[Symbol.iterator]());
-        }
-    }
-    return items;
-}
-function matchCurlBraces(syntax, iterator) {
-    let item;
-    let block = null;
-    let items = [];
-    let match = 0;
-    while ((item = iterator.next()) && !item.done) {
-        switch (item.value.typ) {
-            case ValidationTokenEnum.OpenCurlyBrace:
-                if (match > 0) {
-                    block.chi.push(item.value);
-                }
-                else if (match == 0) {
-                    block = Object.defineProperty({
-                        typ: ValidationTokenEnum.Block,
-                        chi: []
-                    }, 'pos', { ...objectProperties, value: item.value.pos });
-                    items.push(block);
-                }
-                match++;
-                break;
-            case ValidationTokenEnum.CloseCurlyBrace:
-                match--;
-                if (match > 0) {
-                    block.chi.push(item.value);
-                }
-                break;
-            default:
-                if (match > 0) {
-                    block.chi.push(item.value);
-                }
-                else {
-                    items.push(item.value);
-                }
-                if ('chi' in item.value) {
-                    // @ts-ignore
-                    item.value.chi = matchCurlBraces(syntax, item.value.chi[Symbol.iterator]());
-                }
-                break;
-        }
-    }
-    let it;
-    let i = 0;
-    for (; i < items.length; i++) {
-        it = items[i];
-        if (i > 0 && it.typ == ValidationTokenEnum.Block && it.chi[0]?.typ == ValidationTokenEnum.Number) {
-            items[i - 1].occurence = {
-                min: +it.chi[0].val,
-                max: it.chi[2]?.typ == ValidationTokenEnum.InfinityToken ? Number.POSITIVE_INFINITY : +(it.chi[2] ?? it.chi[0]).val
-            };
-            items.splice(i--, 1);
-            continue;
-        }
-        if ('chi' in it) {
-            // @ts-ignore
-            it.chi = matchBrackets(syntax, it.chi[Symbol.iterator]());
-        }
-    }
-    return items;
-}
-function matchAtRule(syntax, iterator) {
-    const children = [];
-    let item;
-    let token = null;
-    while ((item = iterator.next()) && !item.done) {
-        if (item.value.typ == ValidationTokenEnum.AtRule || item.value.typ == ValidationTokenEnum.AtRuleDefinition) {
-            token = Object.defineProperty({
-                ...item.value,
-                typ: ValidationTokenEnum.AtRuleDefinition
-            }, 'pos', { ...objectProperties, value: item.value.pos });
-            children.push(token);
-            item = iterator.next();
-            if (item.done) {
-                // @ts-ignore
-                token.typ = ValidationTokenEnum.AtRule;
-                break;
-            }
-            item = iterator.next();
-            if (item.done) {
-                break;
-            }
-            if (item.value.typ == ValidationTokenEnum.Pipe) {
-                // @ts-ignore
-                token.typ = ValidationTokenEnum.AtRule;
-                children.push(item.value);
-                continue;
-            }
-            if (item.value.typ != ValidationTokenEnum.OpenCurlyBrace) {
-                if (!('prelude' in token)) {
-                    token.prelude = [];
-                }
-                token.prelude.push(item.value);
-            }
-            let braces = 0;
-            let previousItem = item.value;
-            while ((item = iterator.next()) && !item.done) {
-                if (item.value.typ == ValidationTokenEnum.DeclarationNameToken) {
-                    iterator.next();
-                    const t = Object.defineProperty({
-                        typ: ValidationTokenEnum.DeclarationDefinitionToken,
-                        nam: item.value.val,
-                        val: iterator.next().value
-                    }, 'pos', {
-                        ...objectProperties,
-                        value: item.value.pos
-                    });
-                    if (braces > 0) {
-                        token.chi.push(t);
-                    }
-                    else {
-                        token.prelude.push(t);
-                    }
-                    previousItem = t;
-                    continue;
-                }
-                if (item.value.typ == ValidationTokenEnum.OpenCurlyBrace) {
-                    previousItem = item.value;
-                    continue;
-                }
-                if (item.value.typ == ValidationTokenEnum.Whitespace && previousItem?.typ == ValidationTokenEnum.OpenCurlyBrace) {
-                    braces++;
-                    if (braces == 1) {
-                        previousItem = item.value;
+                while (true) {
+                    if (stack.at(-1).typ == ValidationTokenEnum.AmpersandToken) {
+                        let index = tokens.lastIndexOf(stack.at(-1));
+                        stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
+                        stack.pop();
                         continue;
                     }
-                }
-                if (previousItem?.typ == ValidationTokenEnum.Whitespace && item.value.typ == ValidationTokenEnum.CloseCurlyBrace) {
-                    braces--;
-                    if (braces == 0) {
-                        break;
+                    else if (stack.at(-1).typ == ValidationTokenEnum.ColumnToken) {
+                        let index = tokens.lastIndexOf(stack.at(-1));
+                        stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
+                        stack.pop();
+                        continue;
                     }
-                }
-                if (braces == 0) {
-                    if (!('prelude' in token)) {
-                        token.prelude = [];
+                    if (stack.at(-1).typ == ValidationTokenEnum.PipeToken) {
+                        let index = tokens.lastIndexOf(stack.at(-1));
+                        stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
+                        stack.pop();
+                        continue;
                     }
-                    token.prelude.push(item.value);
+                    break;
                 }
-                else {
-                    if (!('chi' in token)) {
-                        token.chi = [];
-                    }
-                    token.chi.push(item.value);
+                currentToken = stack.at(-1);
+                if (currentToken?.typ !== ValidationTokenEnum.OpenBracket) {
+                    console.debug(JSON.stringify(tokens, null, 1));
+                    throw new SyntaxError(`Unexpected token: ']' at line ${token.pos.lin}:${token.pos.col} `);
                 }
-                previousItem = item.value;
-            }
-            if ('prelude' in token) {
-                if (token?.prelude?.length == 1 && token.prelude[0].typ == ValidationTokenEnum.Whitespace) {
-                    delete token.prelude;
-                }
-                else {
-                    const t = { typ: ValidationTokenEnum.Root, chi: token.prelude };
-                    doParseSyntax(syntax, t.chi[Symbol.iterator](), t);
-                    token.prelude = t.chi;
-                    minify(token.prelude);
-                }
-            }
-            // @ts-ignore
-            if (token?.chi?.length > 0) {
-                minify(doParseSyntax(syntax, token.chi[Symbol.iterator](), token));
-            }
-        }
-        else {
-            children.push(item.value);
-        }
-    }
-    return children;
-}
-function matchToken(syntax, iterator, validationToken) {
-    if (iterator.length == 0) {
-        return [];
-    }
-    if (Array.isArray(iterator[0])) {
-        const result = [];
-        for (let i = 0; i < iterator.length; i++) {
-            result.push(matchToken(syntax, iterator[i], validationToken));
-        }
-        return result;
-    }
-    let children = [];
-    let token = null;
-    let i;
-    if (validationToken == ValidationTokenEnum.Ampersand) {
-        // @ts-ignore
-        children = [...iterator];
-        let offsetL;
-        let offsetR;
-        for (i = 0; i < children.length; i++) {
-            if (children[i].typ == ValidationTokenEnum.Ampersand) {
-                offsetR = i + 1;
-                offsetL = i - 1;
-                while (offsetR < children.length - 1 && children[offsetR].typ == ValidationTokenEnum.Whitespace) {
-                    offsetR++;
-                }
-                while (offsetR + 1 < children.length && skipped.includes(children[offsetR + 1].typ)) {
-                    offsetR++;
-                }
-                while (offsetL > 0 && (children[offsetL].typ == ValidationTokenEnum.Whitespace || skipped.includes(children[offsetL].typ))) {
-                    offsetL--;
-                }
-                token = Object.defineProperty({
-                    typ: ValidationTokenEnum.AmpersandToken,
-                    l: children.slice(offsetL, i),
-                    r: children.slice(i + 1, offsetR + 1)
-                }, 'pos', { ...objectProperties, value: children[i].pos });
-                i = offsetL;
-                children.splice(offsetL, offsetR - offsetL + 1, token);
-            }
-            else if ('chi' in children[i]) {
-                // @ts-ignore
-                children[i].chi = matchToken(syntax, children[i].chi, validationToken);
-            }
-            else if ('l' in children[i]) {
-                // @ts-ignore
-                children[i].l = matchToken(syntax, children[i].l, validationToken);
-                // @ts-ignore
-                children[i].r = matchToken(syntax, children[i].r, validationToken);
-            }
-        }
-        return children;
-    }
-    let item;
-    for (i = 0; i < iterator.length; i++) {
-        item = iterator[i];
-        if (item.typ == validationToken) {
-            if (item.typ == ValidationTokenEnum.Pipe) {
-                token = Object.defineProperty({
-                    typ: ValidationTokenEnum.PipeToken,
-                    chi: [matchToken(syntax, children.slice(), validationToken)], //.concat(matchToken(syntaxes, children.slice()[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>, validationToken), matchToken(syntaxes, iterator, validationToken)),
-                    // @ts-ignore
-                    // l: matchToken(syntaxes, children.slice()[Symbol.iterator](), validationToken),
-                    // r: matchToken(syntaxes, iterator, validationToken)
-                }, 'pos', {
-                    ...objectProperties,
-                    value: item.pos
-                });
-                children.length = 0;
-                while ((item = iterator[++i]) != null) {
-                    if (item.typ == ValidationTokenEnum.Pipe) {
-                        token.chi.push(matchToken(syntax, children.slice(), validationToken));
-                        children.length = 0;
-                    }
-                    else {
-                        children.push(item);
-                    }
-                }
-                if (children.length > 0) {
-                    token.chi.push(matchToken(syntax, children.slice(), validationToken));
-                }
-                token.chi.sort((a, b) => {
-                    if (a.some((t) => t.isList)) {
-                        return -1;
-                    }
-                    if (b.some((t) => t.isList)) {
-                        return 1;
-                    }
-                    if (a.some((t) => t.occurence != null)) {
-                        return -1;
-                    }
-                    if (b.some((t) => t.occurence != null)) {
-                        return -1;
-                    }
-                    if (a.some((t) => t.isRepeatableGroup)) {
-                        return -1;
-                    }
-                    if (b.some((t) => t.isRepeatableGroup)) {
-                        return 1;
-                    }
-                    if (a.some((t) => t.isRepeatable)) {
-                        return -1;
-                    }
-                    if (b.some((t) => t.isRepeatable)) {
-                        return 1;
-                    }
-                    if (a.some((t) => t.isOptional)) {
-                        return 1;
-                    }
-                    if (b.some((t) => t.isOptional)) {
-                        return -1;
-                    }
-                    return 0;
-                });
-                children = [token];
-            }
-            else {
-                token = Object.defineProperty({
-                    typ: ValidationTokenEnum.ColumnToken,
-                    l: matchToken(syntax, children.slice(), validationToken),
-                    r: matchToken(syntax, iterator.slice(i + 1), validationToken)
-                }, 'pos', {
-                    ...objectProperties,
-                    value: item.pos
-                });
-                i = iterator.length;
-            }
-            children.length = 0;
-            children.push(token);
-            while ((item = iterator[++i]) != null) {
-                children.push(item);
-                if ('chi' in item) {
-                    // @ts-ignore
-                    item.chi = matchToken(syntax, item.chi, validationToken);
-                }
-                else if ('l' in item) {
-                    // @ts-ignore
-                    item.l = matchToken(syntax, item.l, validationToken);
-                    // @ts-ignore
-                    item.r = matchToken(syntax, item.r, validationToken);
-                }
-            }
-            // @ts-ignore
-            return children;
-        }
-        else {
-            // @ts-ignore
-            children.push(item);
-            if ('chi' in item) {
-                // @ts-ignore
-                item.chi = matchToken(syntax, item.chi, validationToken);
-            }
-            else if ('l' in item) {
-                item.l = matchToken(syntax, item.l, validationToken);
-                // @ts-ignore
-                item.r = matchToken(syntax, item.r, validationToken);
-            }
-        }
-    }
-    return children;
-}
-function parseSyntaxTokens(syntax, iterator) {
-    const items = [];
-    let item;
-    let i;
-    while ((item = iterator.next()) && !item.done) {
-        if (Array.isArray(item.value)) {
-            // @ts-ignore
-            item.value = parseSyntaxTokens(syntax, item.value[Symbol.iterator]());
-        }
-        switch (item.value.typ) {
-            case ValidationTokenEnum.Star:
-            case ValidationTokenEnum.HashMark:
-            case ValidationTokenEnum.AtLeastOnce:
-            case ValidationTokenEnum.Exclamation:
-            case ValidationTokenEnum.QuestionMark:
-            case ValidationTokenEnum.OpenCurlyBrace:
-                i = items.length;
-                while (i--) {
-                    if (items[i].typ != ValidationTokenEnum.Whitespace) {
-                        break;
-                    }
-                }
-                if (item.value.typ == ValidationTokenEnum.Exclamation) {
-                    items[i].isRepeatableGroup = true;
-                }
-                else if (item.value.typ == ValidationTokenEnum.QuestionMark) {
-                    items[i].isOptional = true;
-                }
-                else if (item.value.typ == ValidationTokenEnum.Star) {
-                    items[i].isRepeatable = true;
-                }
-                else if (item.value.typ == ValidationTokenEnum.AtLeastOnce) {
-                    items[i].atLeastOnce = true;
-                }
-                else if (item.value.typ == ValidationTokenEnum.HashMark) {
-                    items[i].isList = true;
-                }
-                else if (item.value.typ == ValidationTokenEnum.OpenCurlyBrace) {
-                    items[i].occurence = {
-                        min: 0,
-                        max: null
-                    };
-                    while ((item = iterator.next()) && !item.done) {
-                        if (item.value.typ == ValidationTokenEnum.Number) {
-                            // @ts-ignore
-                            if (items[i].occurence.min == 0) {
-                                // @ts-ignore
-                                items[i].occurence.min = items[i].occurence.max = +item.value.val;
-                            }
-                            else {
-                                // @ts-ignore
-                                items[i].occurence.max = +item.value.val;
-                            }
+                {
+                    let index = tokens.lastIndexOf(stack.at(-1));
+                    // "fit-content( <length-percentage [0,∞]> )"
+                    if ((tokens[index - 2]?.typ === ValidationTokenEnum.Keyword ||
+                        tokens[index - 2]?.typ === ValidationTokenEnum.StringToken) &&
+                        tokens[index - 1]?.typ === ValidationTokenEnum.Whitespace &&
+                        (tokens[index + 1]?.typ === ValidationTokenEnum.Number ||
+                            tokens[index + 1]?.typ === ValidationTokenEnum.Dimension)) {
+                        if (tokens[index + 2]?.typ === ValidationTokenEnum.CloseBracket) {
+                            stack.pop();
+                            Object.assign(tokens[index - 2], {
+                                range: {
+                                    min: tokens[index + 1],
+                                    max: tokens[index + 1],
+                                },
+                            });
+                            tokens.splice(index - 1, 5);
+                            break;
                         }
-                        if (item.value.typ == ValidationTokenEnum.CloseCurlyBrace) {
+                        if (tokens[index + 2]?.typ === ValidationTokenEnum.Comma &&
+                            (tokens[index + 3]?.typ === tokens[index + 1]?.typ ||
+                                tokens[index + 3]?.typ === ValidationTokenEnum.InfinityToken) &&
+                            tokens[index + 4]?.typ === ValidationTokenEnum.CloseBracket) {
+                            stack.pop();
+                            Object.assign(tokens[index - 2], {
+                                range: {
+                                    min: tokens[index + 1],
+                                    max: tokens[index + 3]?.typ === tokens[index + 1]?.typ
+                                        ? tokens[index + 3]
+                                        : null,
+                                },
+                            });
+                            tokens.splice(index - 1, 7);
                             break;
                         }
                     }
                 }
-                if ('occurence' in item.value) {
-                    // @ts-ignore
-                    items[i].occurence = { ...item.value.occurence };
-                }
+                stack.pop();
+                startIndex = tokens.lastIndexOf(currentToken);
+                endIndex = tokens.indexOf(token);
+                Object.assign(currentToken, {
+                    typ: ValidationTokenEnum.Bracket,
+                    chi: trimSyntaxArray(tokens.slice(startIndex + 1, endIndex)),
+                });
+                tokens.splice(startIndex + 1, tokens.length);
                 break;
-            case ValidationTokenEnum.Pipe:
-                item.value.chi = item.value.chi.map((t) => parseSyntaxTokens(syntax, t[Symbol.iterator]()));
-                items.push(item.value);
+            // {
+            case ValidationTokenEnum.OpenCurlyBrace:
+                stack.push(token);
                 break;
-            default:
-                items.push(item.value);
-                break;
-        }
-    }
-    for (i = 0; i < items.length; i++) {
-        if ('chi' in items[i]) {
-            // @ts-ignore
-            items[i].chi = parseSyntaxTokens(syntax, items[i].chi[Symbol.iterator]());
-        }
-        else if ('l' in items[i]) {
-            // @ts-ignore
-            items[i].l = parseSyntaxTokens(syntax, items[i].l[Symbol.iterator]());
-            // @ts-ignore
-            items[i].r = parseSyntaxTokens(syntax, items[i].r[Symbol.iterator]());
-        }
-        if (items[i].typ != ValidationTokenEnum.Bracket && (items[i].isOptional || items[i].isRepeatable)) {
-            let k = i;
-            while (--k > 0) {
-                if (items[k].typ == ValidationTokenEnum.Whitespace) {
-                    continue;
-                }
-                if (items[k].typ == ValidationTokenEnum.Comma) {
-                    const wrapper = Object.defineProperty({
-                        typ: ValidationTokenEnum.Bracket,
-                        chi: items.slice(k, i + 1)
-                    }, 'pos', { ...objectProperties, value: items[k].pos });
-                    if (items[i].isOptional) {
-                        wrapper.isOptional = true;
-                        delete items[i].isOptional;
-                    }
-                    if (items[i].isRepeatable) {
-                        wrapper.isRepeatable = true;
-                        delete items[i].isRepeatable;
-                    }
-                    items.splice(k, i - k + 1, wrapper);
-                    i = k - 1;
-                }
-                break;
-            }
             // }
+            case ValidationTokenEnum.CloseCurlyBrace:
+                while (true) {
+                    if (stack.at(-1).typ == ValidationTokenEnum.AmpersandToken) {
+                        let index = tokens.lastIndexOf(stack.at(-1));
+                        stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
+                        stack.pop();
+                        continue;
+                    }
+                    else if (stack.at(-1).typ == ValidationTokenEnum.ColumnToken) {
+                        let index = tokens.lastIndexOf(stack.at(-1));
+                        stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
+                        stack.pop();
+                        continue;
+                    }
+                    if (stack.at(-1)?.typ == ValidationTokenEnum.PipeToken) {
+                        let index = tokens.lastIndexOf(stack.at(-1));
+                        stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
+                        stack.pop();
+                        continue;
+                    }
+                    break;
+                }
+                if (stack.at(-1)?.typ != ValidationTokenEnum.OpenCurlyBrace) {
+                    throw new SyntaxError(`Unexpected token } as ${token.pos.lin}:${token.pos.col}`);
+                }
+                {
+                    let index = tokens.lastIndexOf(stack.at(-1));
+                    const slice = tokens.slice(index + 1, -1);
+                    if (slice.length === 1 || slice.length === 3) {
+                        if (slice[0].typ == ValidationTokenEnum.Number) {
+                            Object.assign(tokens[index - 1], {
+                                match: {
+                                    min: slice[0],
+                                    max: slice[0],
+                                },
+                            });
+                            if (slice.length === 3) {
+                                if (slice[1].typ != ValidationTokenEnum.Comma) {
+                                    throw new SyntaxError(`Expecting ',' at ${slice[1].pos.lin}:${slice[1].pos.col}`);
+                                }
+                                if (slice[2].typ != ValidationTokenEnum.Number &&
+                                    slice[2].typ != ValidationTokenEnum.InfinityToken) {
+                                    throw new SyntaxError(`Expecting number or infinity at ${slice[2].pos.lin}:${slice[2].pos.col}`);
+                                }
+                                Object.assign(tokens[index - 1], {
+                                    match: {
+                                        min: slice[0],
+                                        max: slice[2].typ == ValidationTokenEnum.InfinityToken
+                                            ? Number.POSITIVE_INFINITY
+                                            : slice[2],
+                                    },
+                                });
+                            }
+                            stack.pop();
+                            tokens.length = index;
+                            break;
+                        }
+                    }
+                }
+                stack.pop();
+                break;
+            case ValidationTokenEnum.Star:
+                tokens.pop();
+                tokens.at(-1).isRepeatable = true;
+                break;
+            case ValidationTokenEnum.QuestionMark:
+                tokens.pop();
+                // if the previous token is a comma, we wrap them in a virtual group and mark the group as optional
+                {
+                    let sliceIndex = -1;
+                    let isGroup = tokens.at(-2)?.typ == ValidationTokenEnum.Comma;
+                    if (isGroup) {
+                        sliceIndex = tokens.length - 2;
+                    }
+                    else {
+                        isGroup = tokens.at(-3)?.typ == ValidationTokenEnum.Comma;
+                        if (isGroup) {
+                            sliceIndex = tokens.length - 3;
+                        }
+                    }
+                    if (isGroup) {
+                        tokens.splice(sliceIndex, tokens.length - sliceIndex, {
+                            typ: ValidationTokenEnum.OptionalGroupToken,
+                            chi: trimSyntaxArray(tokens.slice(sliceIndex)),
+                            isOptional: true,
+                        });
+                    }
+                    else {
+                        tokens.at(-1).isOptional = true;
+                    }
+                }
+                break;
+            case ValidationTokenEnum.Comma:
+                {
+                    let sliceIndex = -1;
+                    if (tokens.at(-2)?.isOptional && tokens.at(-2).typ !== ValidationTokenEnum.OptionalGroupToken) {
+                        sliceIndex = tokens.length - 2;
+                    }
+                    else if (tokens.at(-2).typ == ValidationTokenEnum.Whitespace &&
+                        tokens.at(-3)?.isOptional &&
+                        tokens.at(-3).typ !== ValidationTokenEnum.OptionalGroupToken) {
+                        sliceIndex = tokens.length - 3;
+                    }
+                    if (sliceIndex != -1) {
+                        if (tokens[sliceIndex].isList) {
+                            tokens.pop();
+                        }
+                        tokens.splice(sliceIndex, tokens.length - sliceIndex, {
+                            typ: ValidationTokenEnum.OptionalGroupToken,
+                            chi: trimSyntaxArray(tokens.slice(sliceIndex).map((t) => {
+                                delete t.isOptional;
+                                return t;
+                            })),
+                            isOptional: true,
+                        });
+                    }
+                }
+                break;
+            case ValidationTokenEnum.HashMark:
+                tokens.pop();
+                tokens.at(-1).isList = true;
+                break;
+            case ValidationTokenEnum.Exclamation:
+                tokens.pop();
+                tokens.at(-1).isMandatatoryGroup = true;
+                break;
+            case ValidationTokenEnum.Plus:
+                tokens.pop();
+                tokens.at(-1).isRepeatableAtLeastOnce = true;
+                break;
         }
     }
-    return items;
-}
-function doParseSyntax(syntax, iterator, context) {
-    context.chi = matchParens(syntax, iterator);
-    // @ts-ignore
-    context.chi = matchAtRule(syntax, context.chi[Symbol.iterator]());
-    // @ts-ignore
-    context.chi = matchBrackets(syntax, context.chi[Symbol.iterator]());
-    // @ts-ignore
-    context.chi = matchCurlBraces(syntax, context.chi[Symbol.iterator]());
-    // @ts-ignore
-    context.chi = matchToken(syntax, context.chi, ValidationTokenEnum.Pipe);
-    // @ts-ignore
-    context.chi = matchToken(syntax, context.chi, ValidationTokenEnum.Column);
-    // @ts-ignore
-    context.chi = matchToken(syntax, context.chi, ValidationTokenEnum.Ampersand);
-    // @ts-ignore
-    context.chi = parseSyntaxTokens(syntax, context.chi[Symbol.iterator]());
-    return context;
-}
-function getTokenType(token, position, currentPosition) {
-    const pos = { ...position };
-    Object.assign(position, currentPosition);
-    // '∞'
-    if (token == '\u221e') {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.InfinityToken,
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token.charAt(0) == '"' || token.charAt(0) == "'") {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.StringToken,
-            val: token
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token == ';') {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.SemiColon
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token.match(/^\s+$/)) {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.Whitespace,
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token.match(/^\d+$/)) {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.Number,
-            val: Number(token)
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (isPseudo(token)) {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.PseudoClassToken,
-            val: token
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token == '!') {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.Exclamation
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token == '#') {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.HashMark
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token == '/') {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.Separator
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token == '+') {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.AtLeastOnce
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token == '|') {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.Pipe
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token == '&&') {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.Ampersand
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token == '||') {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.Column
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token == ',') {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.Comma
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token == '[') {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.OpenBracket
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token == ']') {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.CloseBracket
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token == '(') {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.OpenParenthesis
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token == ')') {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.CloseParenthesis
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token == '{') {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.OpenCurlyBrace
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token == '}') {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.CloseCurlyBrace
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token == '*') {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.Star
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token == '?') {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.QuestionMark
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token.startsWith("<'")) {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.DeclarationType,
-            val: token.slice(2, -2)
-        }, 'pos', { ...objectProperties, value: pos });
-    }
-    if (token.startsWith('<')) {
-        // <number [1,1000]>
-        // <length [0,∞]>
-        let match = token.match(/<([a-z0-9-]+)(\s+\[([0-9]+[a-zA-Z]*),(([0-9]+[a-zA-Z]*)|∞)\])?>/);
-        if (match == null) {
-            let match = token.match(/<([a-zA-Z0-9-]+)\(\)>/);
-            if (match != null) {
-                return Object.defineProperty({
-                    typ: ValidationTokenEnum.ValidationFunctionDefinition,
-                    val: match[1]
-                }, 'pos', { ...objectProperties, value: pos });
-            }
-            throw new Error('invalid token at position: ' + position.lin + ':' + position.col + ' ' + token);
+    if (stack.length > 0) {
+        if (stack.at(-1)?.typ == ValidationTokenEnum.PipeToken) {
+            let index = tokens.lastIndexOf(stack.at(-1));
+            stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 1)));
+            stack.pop();
         }
-        if (match[2] != null) {
-            const type = getTokenType$1(match[3]);
-            return Object.defineProperty({
-                typ: ValidationTokenEnum.PropertyType,
-                val: match[1],
-                unit: EnumToken[type.typ],
-                range: [+type.val, match[4] == '\u221e' ? null : +match[4]]
-            }, 'pos', { ...objectProperties, value: pos });
-        }
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.PropertyType,
-            val: token.slice(1, -1)
-        }, 'pos', { ...objectProperties, value: pos });
     }
-    if (token.startsWith('@') && isIdent(token.slice(1))) {
-        return Object.defineProperty({
-            typ: ValidationTokenEnum.AtRule,
-            val: token.slice(1)
-        }, 'pos', { ...objectProperties, value: pos });
+    // console.debug(JSON.stringify({tokens}, null, 1));
+    if (stack.length > 0) {
+        throw new SyntaxError(`Unexpected token ${ValidationTokenEnum[stack.at(-1)?.typ]} at ${stack.at(-1)?.pos.lin}:${stack.at(-1)?.pos.col}`);
     }
-    return Object.defineProperty({
-        typ: ValidationTokenEnum.Keyword,
-        val: token
-    }, 'pos', { ...objectProperties, value: pos });
+    return trimSyntaxArray(tokens);
 }
-function move(position, chr) {
-    for (const c of chr) {
-        position.col++;
-        position.ind += c.length;
-    }
-    return position;
-}
-function renderSyntax(token, parent) {
-    let glue;
+function renderSyntax(token, options = { minify: true, indent: 1 }) {
+    options.indent ??= 1;
+    let glue = options.minify ? "" : " ".repeat(options.indent);
     switch (token.typ) {
         case ValidationTokenEnum.InfinityToken:
             // '∞'
-            return '\u221e';
+            return "\u221e";
         case ValidationTokenEnum.Root:
-            return token.chi.reduce((acc, curr) => acc + renderSyntax(curr), '');
+            return token.chi.reduce((acc, curr) => acc + renderSyntax(curr, options), "");
         case ValidationTokenEnum.Whitespace:
-            return ' ';
-        case ValidationTokenEnum.ValidationFunctionDefinition:
-            return '<' + token.val + '()>';
+            return " ";
+        case ValidationTokenEnum.FunctionDefinition:
+            return "<" + token.val + "()>";
         case ValidationTokenEnum.HashMark:
-            return '#';
+            return "#";
+        case ValidationTokenEnum.Colon:
+            return ":";
         case ValidationTokenEnum.Pipe:
-            return '|';
+            return `${glue}|${glue}`;
         case ValidationTokenEnum.Column:
-            return '||';
+            return `${glue}||${glue}`;
         case ValidationTokenEnum.PipeToken:
-            return token.chi.reduce((acc, curr) => acc + (acc.trim().length > 0 ? '|' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), ''), '');
+            return token.chi.reduce((acc, curr) => acc +
+                (acc.trim().length > 0 ? `${glue}|${glue}` : "") +
+                curr.reduce((acc, curr) => acc + renderSyntax(curr, options), ""), "");
         case ValidationTokenEnum.ColumnToken:
+            glue = `${glue}||${glue}`;
+            return token.chi.reduce((acc, curr) => acc +
+                (acc.length > 0 ? glue : "") +
+                curr.reduce((acc, curr) => acc + renderSyntax(curr, options), ""), "");
         case ValidationTokenEnum.AmpersandToken:
-            glue = token.typ == ValidationTokenEnum.ColumnToken ? '||' : '&&';
-            return token.l.reduce((acc, curr) => acc + renderSyntax(curr), '') +
+            glue = `${glue}&&${glue}`;
+            return (token.l.reduce((acc, curr) => acc + renderSyntax(curr, options), "") +
                 glue +
-                token.r.reduce((acc, curr) => acc + renderSyntax(curr), '');
+                token.r.reduce((acc, curr) => acc + renderSyntax(curr, options), ""));
         case ValidationTokenEnum.Function:
         case ValidationTokenEnum.PseudoClassFunctionToken:
         case ValidationTokenEnum.Parens:
-            return token.val + '(' + token.chi.reduce((acc, curr) => acc + renderSyntax(curr), '') + ')' + renderAttributes(token);
+            return (token.val +
+                "(" +
+                token.chi.reduce((acc, curr) => acc + renderSyntax(curr, options), "") +
+                ")" +
+                renderAttributes(token));
         case ValidationTokenEnum.Comma:
-            return ',';
+            return `,${glue}`;
         case ValidationTokenEnum.Keyword:
             return token.val + renderAttributes(token);
         case ValidationTokenEnum.OpenBracket:
-            return '[';
+            return `[${glue}`;
         case ValidationTokenEnum.Ampersand:
-            return '&&';
+            return `${glue}&&${glue}`;
+        case ValidationTokenEnum.Plus:
+            return "+";
         case ValidationTokenEnum.QuestionMark:
-            return '?';
+            return "?";
         case ValidationTokenEnum.Separator:
-            return '/';
+            return "/";
         case ValidationTokenEnum.Bracket:
-            return '[' + token.chi.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']' + renderAttributes(token);
+            return (`[${glue}` +
+                token.chi.reduce((acc, curr) => acc + renderSyntax(curr, options), "") +
+                `${glue}]` +
+                renderAttributes(token));
         case ValidationTokenEnum.PropertyType:
-            return '<' + token.val + (Array.isArray(token.range) ? `[${token?.range?.[0]}, ${token?.range?.[1] ?? '\u221e'}]` : '') + '>' + renderAttributes(token);
         case ValidationTokenEnum.DeclarationType:
-            return "<'" + token.val + "'>" + renderAttributes(token);
+            {
+                const q = token.typ === ValidationTokenEnum.DeclarationType ? "'" : '';
+                return ("<" + q +
+                    token.val + q +
+                    (token.range == null
+                        ? ""
+                        : ` [${renderSyntax(token?.range.min)},${token?.range?.max == null
+                            ? "\u221e"
+                            : renderSyntax(token?.range.max)}]`) +
+                    ">" +
+                    renderAttributes(token));
+            }
         case ValidationTokenEnum.Number:
         case ValidationTokenEnum.PseudoClassToken:
         case ValidationTokenEnum.StringToken:
-            return token.val + '';
+            return token.val + "";
         case ValidationTokenEnum.SemiColon:
-            return ';';
+            return ";";
         case ValidationTokenEnum.AtRule:
-            return '@' + token.val;
+            return "@" + token.val;
         case ValidationTokenEnum.AtRuleDefinition:
-            return '@' + token.val +
-                (token.prelude == null ? '' : ' ' + token.prelude.reduce((acc, curr) => acc + renderSyntax(curr), '')) +
-                (token.chi == null ? '' : ' {\n' + token.chi.reduce((acc, curr) => acc + renderSyntax(curr), '')).slice(1, -1) + '\n}';
+            return ("@" +
+                token.val +
+                (token.prelude == null
+                    ? ""
+                    : " " +
+                        token.prelude.reduce((acc, curr) => acc + renderSyntax(curr, options), "")) +
+                (token.chi == null
+                    ? ""
+                    : " {\n" +
+                        token.chi.reduce((acc, curr) => acc + renderSyntax(curr, options), "")).slice(1, -1) +
+                "\n}");
         case ValidationTokenEnum.Block:
-            return '{' + token.chi.reduce((acc, t) => acc + renderSyntax(t), '') + '}';
+            return (`{${options.minify ? "" : "\n"}` +
+                token.chi.reduce((acc, t) => acc + renderSyntax(t, options), "") +
+                `${options.minify ? "" : "\n"}}`);
         case ValidationTokenEnum.DeclarationDefinitionToken:
-            return token.nam + ': ' + renderSyntax(token.val);
+            return (token.nam +
+                ": " +
+                renderSyntax(token.val, options));
+        case ValidationTokenEnum.LessThan:
+            return "<";
+        case ValidationTokenEnum.GreaterThan:
+            return ">";
+        case ValidationTokenEnum.CloseParenthesis:
+            return ")";
+        case ValidationTokenEnum.OpenParenthesis:
+            return "(";
+        case ValidationTokenEnum.DisallowWhitespace:
+            return "† ";
+        case ValidationTokenEnum.Dimension:
+            return token.val + token.unitText;
+        case ValidationTokenEnum.OpenCurlyBrace:
+            options.indent++;
+            return `{${options.minify ? "" : "\n"}}`;
+        case ValidationTokenEnum.CloseCurlyBrace:
+            options.indent--;
+            return `${options.minify ? "" : "\n"}}`;
+        case ValidationTokenEnum.DeclarationNameToken:
+            return token.val + ":";
+        case ValidationTokenEnum.OptionalGroupToken:
+            return token.chi.reduce((acc, curr, index) => acc + renderSyntax(curr, options) + (index === 0 && curr.isList ? "," : ""), ""); // + renderAttributes(token);
         default:
-            throw new Error('Unhandled token: ' + JSON.stringify({ token }, null, 1));
+            throw new Error("Unhandled token: " + JSON.stringify({ token }, null, 1));
     }
 }
 function renderAttributes(token) {
-    let result = '';
+    let result = "";
     if (token.isList) {
-        result += '#';
+        result += "#";
     }
     if (token.isOptional) {
-        result += '?';
+        result += "?";
     }
-    if (token.isRepeatableGroup) {
-        result += '!';
+    if (token.isMandatatoryGroup) {
+        result += "!";
     }
     if (token.isRepeatable) {
-        result += '*';
+        result += "*";
     }
-    if (token.atLeastOnce) {
-        result += '+';
+    if (token.isRepeatableAtLeastOnce) {
+        result += "+";
     }
-    if (token.occurence != null) {
-        if (token.occurence.max == null || token.occurence.max == token.occurence.min || Number.isNaN(token.occurence.max)) {
-            result += '{' + token.occurence.min + '}';
+    if (token.match != null) {
+        if (token.match.max == null || token.match.max.val === token.match.min.val || Number.isNaN(token.match.max.val)) {
+            result += "{" + renderSyntax(token.match.min) + "}";
         }
         else {
-            result += '{' + token.occurence.min + ',' + (Number.isFinite(token.occurence.max) ? token.occurence.max : '\u221e') + '}';
+            result +=
+                "{" + renderSyntax(token.match.min) + "," + (Number.isFinite(token.match.max.val) ? renderSyntax(token.match.max) : "\u221e") + "}";
         }
     }
     return result;
 }
-function minify(ast) {
-    if (Array.isArray(ast)) {
-        // @ts-ignore
-        while (ast.length > 0 && ast[0].typ == ValidationTokenEnum.Whitespace) {
-            // @ts-ignore
-            ast.shift();
-        }
-        while (ast.length > 0 && ast.at(-1).typ == ValidationTokenEnum.Whitespace) {
-            ast.pop();
-        }
-        for (let i = 0; i < ast.length; i++) {
-            minify(ast[i]);
-            if (ast[i].typ == ValidationTokenEnum.Whitespace && ast[i + 1]?.typ == ValidationTokenEnum.Whitespace) {
-                ast.splice(i + 1, 1);
-                i--;
-                continue;
-            }
-            if (ast[i].typ == ValidationTokenEnum.Separator) {
-                if (ast[i + 1]?.typ == ValidationTokenEnum.Whitespace) {
-                    ast.splice(i + 1, 1);
-                }
-                if (ast[i - 1]?.typ == ValidationTokenEnum.Whitespace) {
-                    ast.splice(--i, 1);
-                }
-            }
-        }
-        return ast;
-    }
-    if ('l' in ast) {
-        minify(ast.l);
-    }
-    if ('r' in ast) {
-        minify(ast.r);
-    }
-    if ('chi' in ast) {
-        minify(ast.chi);
-    }
-    if ('prelude' in ast) {
-        minify(ast.prelude);
-    }
-    return ast;
-}
 
-export { ValidationSyntaxGroupEnum, ValidationTokenEnum, parseSyntax, renderSyntax };
+export { parseSyntax, renderSyntax, tokenizeSyntax, trimSyntaxArray };

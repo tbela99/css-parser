@@ -502,8 +502,10 @@ Bar:is(span,a *,*~a) {
 `;
             return parse(file, {
                 minify: true, nestingRules: true, validation: true
-            }).then(result => expect(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.s:is([type=text],[type=text i],[type=text s],[type=text i]+b,:focus) {
- --animate-duration: 1s
+            }).then(result => expect(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.s {
+ [type=text],[type=text i],[type=text s],[type=text i]+b,&:focus {
+  --animate-duration: 1s
+ }
 }`));
         });
 
