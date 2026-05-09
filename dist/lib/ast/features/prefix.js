@@ -7,6 +7,7 @@ import { funcLike } from '../../syntax/constants.js';
 import { FeatureWalkMode } from './type.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { getSyntaxConfig } from '../../validation/config.js';
+import { splitTokenList } from '../../validation/utils/list.js';
 
 const config = getSyntaxConfig();
 function replacePseudo(tokens) {
@@ -27,7 +28,23 @@ function replacePseudo(tokens) {
 function replaceAstNodes(tokens, root) {
     let result = false;
     for (const { value, parent } of walkValues(tokens, root)) {
-        if (value.typ == EnumToken.IdenTokenType ||
+        if (value.typ == EnumToken.MediaQueryConditionTokenType) {
+            const token = value.l.find((t) => t.typ == EnumToken.IdenTokenType);
+            if (token != null) {
+                if (token.val in pseudoAliasMap) {
+                    token.val = pseudoAliasMap[token.val];
+                    if (["min-resolution", "max-resolution"].includes(token.val) &&
+                        value.r?.[0]?.typ == EnumToken.NumberTokenType) {
+                        Object.assign(value.r?.[0], {
+                            typ: EnumToken.ResolutionTokenType,
+                            unit: "x",
+                        });
+                        result = true;
+                    }
+                }
+            }
+        }
+        else if (value.typ == EnumToken.IdenTokenType ||
             value.typ == EnumToken.PseudoClassFuncTokenType ||
             value.typ == EnumToken.PseudoClassTokenType ||
             value.typ == EnumToken.PseudoElementTokenType) {
@@ -53,6 +70,24 @@ function replaceAstNodes(tokens, root) {
             }
         }
     }
+    if (tokens.find((t) => t.typ == EnumToken.CommaTokenType) != null) {
+        const set = new Set();
+        const split = splitTokenList(tokens, [EnumToken.CommaTokenType]);
+        tokens.length = 0;
+        tokens.push(...split.reduce((acc, curr) => {
+            const str = curr.reduce((acc, curr) => acc + renderToken(curr), "");
+            if (set.has(str)) {
+                return acc;
+            }
+            set.add(str);
+            if (acc.length > 0) {
+                tokens.push({
+                    typ: EnumToken.CommaTokenType,
+                });
+            }
+            return acc.concat(curr);
+        }, []));
+    }
     return result;
 }
 class ComputePrefixFeature {
@@ -71,15 +106,6 @@ class ComputePrefixFeature {
     run(node) {
         if (node.typ == EnumToken.RuleNodeType) {
             node.sel = replacePseudo(splitRule(node.sel)).reduce((acc, curr, index) => acc + (index > 0 ? "," : "") + curr.join(""), "");
-            // if ((node as AstRule).raw != null) {
-            //
-            //     (node as AstRule).raw = replacePseudo((node as AstRule).raw as string[][]);
-            // }
-            //
-            // if ((node as AstRule).optimized != null) {
-            //
-            //     (node as AstRule).optimized!.selector = replacePseudo((node as AstRule).optimized!.selector as string[][]);
-            // }
             if (node.tokens != null) {
                 replaceAstNodes(node.tokens);
             }
@@ -126,10 +152,10 @@ class ComputePrefixFeature {
             }
         }
         else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframesAtRuleNodeType) {
-            if (node.val.startsWith("-")) {
-                const match = node.val.match(/^-([^-]+)-(.+)$/);
+            if (node.nam.startsWith("-")) {
+                const match = node.nam.match(/^-([^-]+)-(.+)$/);
                 if (match != null && "@" + match[2] in config.atRules) {
-                    node.val = match[2];
+                    node.nam = match[2];
                 }
             }
             if (node.typ == EnumToken.AtRuleNodeType && node.val !== "") {

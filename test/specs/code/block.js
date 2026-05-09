@@ -639,7 +639,16 @@ content: '\\21 now\\21';
 }
 
 `;
-        return parse(file, {nestingRules: false}).then(result => expect(render(result.ast).code).equals(`.invisible-scrollbar::-webkit-scrollbar{display:none}.invisible-scrollbar::-moz-range-thumb,.invisible-scrollbar:has(::-moz-range-thumb){display:none}`));
+        return transform(file, {
+                beautify: true,    
+                minify: true, 
+                nestingRules: false
+            }).then(result => expect(result.code).equals(`.invisible-scrollbar::-webkit-scrollbar {
+ display: none
+}
+.invisible-scrollbar:is(::-moz-range-thumb,:has(::-moz-range-thumb)) {
+ display: none
+}`));
     });
 
     it('do not merge pseudo class selectors #31', function () {
@@ -657,7 +666,7 @@ content: '\\21 now\\21';
 }
 
 `;
-        return parse(file, {nestingRules: false}).then(result => expect(render(result.ast).code).equals(`.invisible-scrollbar::-moz-range-thumb,.invisible-scrollbar:has(::-moz-range-thumb){display:none}`));
+        return transform(file, {nestingRules: false}).then(result => expect(result.code).equals(`.invisible-scrollbar:is(::-moz-range-thumb,:has(::-moz-range-thumb)){display:none}`));
     });
 
     it('do not merge pseudo class selectors #32', function () {

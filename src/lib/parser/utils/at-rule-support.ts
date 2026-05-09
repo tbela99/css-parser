@@ -1,5 +1,16 @@
-import type { Token, AstAtRule, ParserOptions, ErrorDescription, IdentToken, FunctionToken, SupportsQueryUnaryConditionToken, SupportsQueryConditionToken, AtRuleToken } from "../../../@types/index.d.ts";
-import {  EnumToken, ValidationLevel } from "../../ast/types.ts";
+import type {
+    Token,
+    AstAtRule,
+    ParserOptions,
+    ErrorDescription,
+    IdentToken,
+    FunctionToken,
+    SupportsQueryUnaryConditionToken,
+    SupportsQueryConditionToken,
+    AtRuleToken,
+    DashedIdentToken,
+} from "../../../@types/index.d.ts";
+import { EnumToken, ValidationLevel } from "../../ast/types.ts";
 import { renderToken } from "../../renderer/render.ts";
 import { definedPropertySettings, trimTokenSpace } from "../../syntax/constants.ts";
 import { getParsedSyntax } from "../../validation/config.ts";
@@ -129,6 +140,55 @@ export function parseAtRuleSupportSyntax(
                     }
 
                     if (stack[stack.length - 1].typ === EnumToken.ColonTokenType) {
+                        if (tokensfuncDefMap.has(stack[stack.length - 2]?.typ)) {
+                            const index: number = tokens.indexOf(stack[stack.length - 1]);
+
+                            // expecting ident or dashed ident
+                            if (
+                                tokens[index + 1]?.typ == EnumToken.IdenTokenType ||
+                                tokens[index + 1]?.typ == EnumToken.DashedIdenTokenType
+                            ) {
+                                Object.assign(tokens[index], {
+                                    typ: EnumToken.PseudoElementTokenType,
+                                    val: ":" + (tokens[index + 1] as IdentToken | DashedIdentToken).val,
+                                });
+
+                                tokens[index].loc!.end = tokens[index + 1].loc!.end;
+                                tokens.splice(index + 1, 1);
+                                stack.pop();
+
+                                const index2: number = tokens.indexOf(stack[stack.length - 1]);
+                                const result = matchAllSyntax(
+                                    (
+                                        getParsedSyntax(
+                                            ValidationSyntaxGroupEnum.Syntaxes,
+                                            (tokens[index2] as FunctionToken).val + "()",
+                                        ) as ValidationFunctionToken[]
+                                    )[0]?.chi as ValidationToken[],
+                                    createValidationContext(tokens.slice(index2 + 1, -1)),
+                                    options,
+                                );
+
+                                if (!result.success) {
+                                    return {
+                                        success: false,
+                                        errors: result.errors,
+                                    };
+                                }
+
+                                tokens.pop();
+                                Object.assign(tokens[index2], {
+                                    typ: tokensfuncDefMap.get(tokens[index2].typ)!,
+                                    chi: tokens.splice(index2 + 1, tokens.length - index2 - 1),
+                                });
+
+                                tokens[index2].loc!.end = stream[i].loc!.end;
+
+                                stack.pop();
+                                break;
+                            }
+                        }
+
                         if (stack[stack.length - 2]?.typ !== EnumToken.StartParensTokenType) {
                             return {
                                 success: false,
@@ -146,6 +206,7 @@ export function parseAtRuleSupportSyntax(
                         const index: number = tokens.indexOf(stack[stack.length - 2]);
 
                         const slice: Token[] = trimArray(tokens.splice(index + 1, tokens.length - index - 2));
+
                         const declaration = parseDeclaration(
                             slice,
                             context,

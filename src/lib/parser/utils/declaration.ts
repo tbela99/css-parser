@@ -43,6 +43,7 @@ import { tokensfuncDefMap } from "../../syntax/constants.ts";
 import { walkValues } from "../../ast/walk.ts";
 import type { ValidationPropertyToken } from "../../validation/parser/types.d.ts";
 import { equalsIgnoreCase } from "./text.ts";
+import { buildExpression } from "../../ast/math/expression.ts";
 
 export function parseDeclarationNode(
     node: AstDeclaration,
@@ -520,7 +521,6 @@ export function parseDeclaration(
 
                     tokens.splice(i, 1);
 
-                    const type = tokens[index].typ;
 
                     Object.assign(tokens[index], {
                         typ:
@@ -574,7 +574,13 @@ export function parseDeclaration(
 
                     i = index;
 
-                    if (tokens[index].typ === EnumToken.ColorTokenType) {
+                    if (tokens[index].typ === EnumToken.MathFunctionTokenType && equalsIgnoreCase('calc',(tokens[index] as FunctionToken).val)) {
+
+                        (tokens[index] as FunctionToken).chi = [buildExpression((tokens[index] as FunctionToken).chi)];
+                    }
+
+                    else if (tokens[index].typ === EnumToken.ColorTokenType) {
+
                         if (isColor(tokens[index])) {
                             parseColor(tokens[index]);
                         } else {

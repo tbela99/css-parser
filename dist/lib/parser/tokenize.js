@@ -89,10 +89,11 @@ const SymbolsMapTokens = {
         return acc;
     }, Object.create(null)),
 };
+// do not capture the value
 const hintsEnum = new Set([
     EnumToken.CommaTokenType,
     EnumToken.ImportantTokenType,
-    EnumToken.WhitespaceTokenType,
+    // EnumToken.WhitespaceTokenType,
     EnumToken.SemiColonTokenType,
 ]);
 var TokenMap;
@@ -181,11 +182,13 @@ function getTokenType(val, hint) {
     let token = null;
     let dimension;
     if (hint != null) {
-        token = Object.defineProperty({ typ: hint }, "val", {
-            ...definedPropertySettings,
-            value: val,
-            enumerable: !hintsEnum.has(hint),
-        });
+        token = hintsEnum.has(hint)
+            ? { typ: hint }
+            : Object.defineProperty({ typ: hint }, "val", {
+                ...definedPropertySettings,
+                value: val,
+                enumerable: true,
+            });
     }
     else {
         // if (v == 'currentcolor' || v == 'transparent' /* || v in COLORS_NAMES */) {

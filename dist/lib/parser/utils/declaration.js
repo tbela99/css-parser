@@ -6,6 +6,7 @@ import { trimArray, matchAllSyntax, createValidationContext } from '../../valida
 import { ValidationTokenEnum, ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { walkValues } from '../../ast/walk.js';
 import { equalsIgnoreCase } from './text.js';
+import { buildExpression } from '../../ast/math/expression.js';
 
 function parseGridTemplate(template) {
     let result = "";
@@ -309,7 +310,10 @@ function parseDeclaration(tokens, parent, options, errors) {
                         }
                     }
                     i = index;
-                    if (tokens[index].typ === EnumToken.ColorTokenType) {
+                    if (tokens[index].typ === EnumToken.MathFunctionTokenType && equalsIgnoreCase('calc', tokens[index].val)) {
+                        tokens[index].chi = [buildExpression(tokens[index].chi)];
+                    }
+                    else if (tokens[index].typ === EnumToken.ColorTokenType) {
                         if (isColor(tokens[index])) {
                             parseColor(tokens[index]);
                         }

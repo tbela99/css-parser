@@ -10,7 +10,6 @@ import { definedPropertySettings, combinators } from '../syntax/constants.js';
 import { replaceToken } from '../parser/utils/token.js';
 import { parseString } from '../parser/parse.js';
 import { tokenize } from '../parser/tokenize.js';
-import { parseSelector } from '../parser/utils/selector.js';
 import { replaceCompound } from './expand.js';
 
 const notEndingWith = ["(", "["].concat(combinators);
@@ -461,7 +460,6 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                             previous = ast.chi[nodeIndex];
                         }
                     }
-                    // console.debug({wrapper, node, nestingContent, optimized: node.optimized});
                     if (wrapper != null) {
                         while (i < ast.chi.length) {
                             const nextNode = ast.chi[i];
@@ -601,7 +599,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     const sel = node.optimized.optimized.join("");
                     if (sel.length < node.sel.length) {
                         node.sel = sel;
-                        node.raw = node.optimized.optimized.slice();
+                        node.raw = [node.optimized.optimized.slice()];
                     }
                 }
                 doMinify(node, options, recursive, errors, nestingContent, context);
@@ -722,63 +720,35 @@ function hasDeclaration(node) {
  * @private
  */
 function optimizeSelector(selector) {
-    let hasPseudoClass;
+    const map = new Set();
     selector = selector.reduce((acc, curr) => {
-        for (let i = 0; i < curr.length; i++) {
+        // @ts-ignore
+        if (curr.length > 0 && curr.at(-1).startsWith(':is(')) {
             // @ts-ignore
-            if (curr[i].length > 0 && curr[i].startsWith(":is(")) {
-                // @ts-ignore
-                const rules = splitRule(curr[i].slice(4, -1)).map((x) => {
-                    if (x[0] == "&" && x.length > 1) {
-                        return x.slice(x[1] == " " ? 2 : 1);
-                    }
-                    return x;
-                });
-                hasPseudoClass = rules.some((x) => x.some((x) => x.startsWith("::")));
-                if (!hasPseudoClass) {
-                    const optimized = [];
-                    const k = rules.reduce((acc, curr) => acc == 0 ? curr.length : curr.length == 0 ? acc : Math.min(acc, curr.length), 0);
-                    let l = 0;
-                    let j;
-                    let match;
-                    for (; l < k; l++) {
-                        const item = rules[0][l];
-                        match = true;
-                        for (j = 1; j < rules.length; j++) {
-                            if (item != rules[j][l]) {
-                                match = false;
-                                break;
-                            }
-                        }
-                        if (!match) {
-                            break;
-                        }
-                        optimized.push(item);
-                    }
-                    if (optimized.length > 0) {
-                        let len = optimized.length;
-                        const val = [];
-                        if (optimized[optimized.length - 1] == " ") {
-                            optimized.pop();
-                        }
-                        if (optimized.length > 0) {
-                            val.push(...optimized, ...(rules.length == 1 && rules[0].length == 1 ? rules[0] :
-                                [":is(",
-                                    ...rules.reduce((acc, curr) => acc.concat(acc.length > 0 ? [","].concat(curr.slice(len)) : curr.slice(len)), []),
-                                    ")"]));
-                        }
-                        return acc.concat([val]);
-                    }
+            const rules = splitRule(curr.at(-1).slice(4, -1)).map(x => {
+                if (x[0] == '&' && x.length > 1) {
+                    return x.slice(x[1] == ' ' ? 2 : 1);
                 }
-                acc.push(curr);
+                return x;
+            });
+            const part = curr.slice(0, -1);
+            for (const rule of rules) {
+                acc.push(part.concat(rule));
             }
             return acc;
         }
         acc.push(curr);
         return acc;
-    }, []);
+    }, []).filter(x => {
+        const str = x.join('');
+        if (map.has(str)) {
+            return false;
+        }
+        map.add(str);
+        return true;
+    });
     const optimized = [];
-    const k = selector.reduce((acc, curr) => acc == 0 ? curr.length : curr.length == 0 ? acc : Math.min(acc, curr.length), 0);
+    const k = selector.reduce((acc, curr) => acc == 0 ? curr.length : (curr.length == 0 ? acc : Math.min(acc, curr.length)), 0);
     let i = 0;
     let j;
     let match;
@@ -798,7 +768,7 @@ function optimizeSelector(selector) {
     }
     while (optimized.length > 0) {
         const last = optimized.at(-1);
-        if (last === " " || combinators.includes(last)) {
+        if ((last == ' ' || combinators.includes(last))) {
             optimized.pop();
             continue;
         }
@@ -806,58 +776,47 @@ function optimizeSelector(selector) {
     }
     selector.forEach((selector) => selector.splice(0, optimized.length));
     let reducible = optimized.length == 1;
-    if (optimized[0] == "&") {
-        if (optimized[1] === " ") {
+    if (optimized[0] == '&') {
+        if (optimized[1] == ' ') {
             optimized.splice(0, 2);
         }
     }
-    if (optimized.length === 0 || optimized[0].charAt(0) === "&" || selector.length === 1) {
+    if (optimized.length == 0 ||
+        (optimized[0].charAt(0) == '&' ||
+            selector.length == 1)) {
         return {
             match: false,
             optimized,
-            selector: [
-                ...selector
-                    .reduce((acc, selector) => {
-                    const values = selector[0] == "&" && selector[1] == " " ? selector.slice(2) : selector;
-                    acc.set(values.join(""), values);
-                    return acc;
-                }, new Map())
-                    .values(),
-            ],
-            reducible: selector.length > 1 && selector.every((selector) => !combinators.includes(selector[0])),
+            selector: selector.map((selector) => selector[0] == '&' && selector[1] == ' ' ? selector.slice(2) : (selector)),
+            reducible: selector.length > 1 && selector.every((selector) => !combinators.includes(selector[0]))
         };
     }
     return {
         match: true,
         optimized,
-        selector: [
-            ...selector
-                .reduce((acc, curr) => {
-                let hasCompound = true;
-                if (hasCompound && curr.length > 0) {
-                    hasCompound = !["&"].concat(combinators).includes(curr[0].charAt(0));
-                }
+        selector: selector.reduce((acc, curr) => {
+            let hasCompound = true;
+            if (hasCompound && curr.length > 0) {
+                hasCompound = !['&'].concat(combinators).includes(curr[0].charAt(0));
+            }
+            // @ts-ignore
+            if (hasCompound && curr[0] == ' ') {
+                hasCompound = false;
+                curr.unshift('&');
+            }
+            if (curr.length == 0) {
+                curr.push('&');
+                hasCompound = false;
+            }
+            if (reducible) {
+                const chr = curr[0].charAt(0);
                 // @ts-ignore
-                if (hasCompound && curr[0] == " ") {
-                    hasCompound = false;
-                    curr.unshift("&");
-                }
-                if (curr.length == 0) {
-                    curr.push("&");
-                    hasCompound = false;
-                }
-                if (reducible) {
-                    const chr = curr[0].charAt(0);
-                    // @ts-ignore
-                    reducible = chr == "." || chr == ":" || isIdentStart(chr.codePointAt(0));
-                }
-                const values = hasCompound ? ["&"].concat(curr) : curr;
-                acc.set(values.join(""), values);
-                return acc;
-            }, new Map())
-                .values(),
-        ],
-        reducible: selector.every((selector) => ![">", "+", "~", "&"].includes(selector[0])),
+                reducible = chr == '.' || chr == ':' || isIdentStart(chr.codePointAt(0));
+            }
+            acc.push(hasCompound ? ['&'].concat(curr) : curr);
+            return acc;
+        }, []),
+        reducible: selector.every((selector) => !['>', '+', '~', '&'].includes(selector[0]))
     };
 }
 /**
@@ -1131,8 +1090,7 @@ function matchSelectors(selector1, selector2) {
  */
 function fixSelector(node) {
     if (node.sel.includes("&")) {
-        const attributes = parseSelector([...tokenize(node.sel).map((t) => t.token)], null, {}, [])
-            .tokens; // parseString(node.sel);
+        const attributes = [...tokenize(node.sel).map((t) => t.token)]; // parseString(node.sel);
         for (const attr of walkValues(attributes)) {
             if (attr.value.typ == EnumToken.PseudoClassFuncTokenType &&
                 attr.value.val == ":is") {
@@ -1222,7 +1180,7 @@ function diff(n1, n2, reducer, options = {}) {
         const prefixes2 = new Set();
         for (const token1 of raw1) {
             for (const t of token1) {
-                if (t[0] == ":") {
+                if (t.includes(":")) {
                     const matches = t.match(/::?-([a-z]+)-/);
                     if (matches == null) {
                         continue;
@@ -1239,7 +1197,7 @@ function diff(n1, n2, reducer, options = {}) {
         }
         for (const token2 of raw2) {
             for (const t of token2) {
-                if (t[0] == ":") {
+                if (t.includes(":")) {
                     const matches = t.match(/::?-([a-z]+)-/);
                     if (matches == null) {
                         continue;

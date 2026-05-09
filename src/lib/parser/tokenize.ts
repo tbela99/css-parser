@@ -136,10 +136,11 @@ const SymbolsMapTokens: Record<string, EnumToken> = {
     }, Object.create(null)),
 };
 
+// do not capture the value
 export const hintsEnum = new Set([
     EnumToken.CommaTokenType,
     EnumToken.ImportantTokenType,
-    EnumToken.WhitespaceTokenType,
+    // EnumToken.WhitespaceTokenType,
     EnumToken.SemiColonTokenType,
 ]) as Set<EnumToken>;
 
@@ -261,11 +262,13 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
         | null;
 
     if (hint != null) {
-        token = Object.defineProperty({ typ: hint }, "val", {
-            ...definedPropertySettings,
-            value: val,
-            enumerable: !hintsEnum.has(hint),
-        }) as Token;
+        token = hintsEnum.has(hint)
+            ? ({ typ: hint } as Token)
+            : (Object.defineProperty({ typ: hint }, "val", {
+                  ...definedPropertySettings,
+                  value: val,
+                  enumerable: true,
+              }) as Token);
     } else {
         // if (v == 'currentcolor' || v == 'transparent' /* || v in COLORS_NAMES */) {
         //     token = <ColorToken>{

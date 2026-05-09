@@ -362,6 +362,9 @@ function matchSelectorSyntax(stream, errors, options, nested) {
         }
         tokens.push(token);
         if (tokensfuncDefMap.has(token.typ)) {
+            if (stack.at(-1)?.typ === EnumToken.CommaTokenType) {
+                stack.pop();
+            }
             stack.push(token);
             continue;
         }
@@ -373,7 +376,7 @@ function matchSelectorSyntax(stream, errors, options, nested) {
             token.typ !== EnumToken.CDOCOMMTokenType) {
             stack.pop();
         }
-        if (token.typ === EnumToken.LiteralTokenType && '+' === token.val) {
+        if (token.typ === EnumToken.LiteralTokenType && "+" === token.val) {
             Object.assign(token, { typ: EnumToken.NextSiblingCombinatorTokenType });
             continue;
         }
@@ -530,12 +533,14 @@ function matchSelectorSyntax(stream, errors, options, nested) {
             case EnumToken.PseudoElementTokenType:
             case EnumToken.PseudoClassTokenType:
             case EnumToken.ClassSelectorTokenType:
-                // if (stack.length > 0 && nodes.includes(stack.at(-1)?.typ)) {
-                //
-                //     stack.pop();
-                // }
+                if (stack.at(-1)?.typ === EnumToken.CommaTokenType) {
+                    stack.pop();
+                }
                 break;
             case EnumToken.AttrStartTokenType:
+                if (stack.at(-1)?.typ === EnumToken.CommaTokenType) {
+                    stack.pop();
+                }
                 stack.push(token);
                 break;
             case EnumToken.AttrEndTokenType:
@@ -873,6 +878,9 @@ function matchSelectorSyntax(stream, errors, options, nested) {
             case EnumToken.NumberTokenType:
             case EnumToken.LiteralTokenType:
             case EnumToken.DimensionTokenType:
+                if (stack.at(-1)?.typ === EnumToken.CommaTokenType) {
+                    stack.pop();
+                }
                 if (stack.at(-1)?.typ === EnumToken.PseudoClassFunctionTokenDefType) {
                     break;
                 }

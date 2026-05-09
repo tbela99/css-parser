@@ -20,6 +20,7 @@ import { funcLike } from "../../syntax/constants.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import { getSyntaxConfig } from "../../validation/config.ts";
+import { splitTokenList } from "../../validation/utils/list.ts";
 
 const config: ValidationConfiguration = getSyntaxConfig();
 
@@ -47,7 +48,28 @@ function replacePseudo(tokens: string[][]): string[][] {
 function replaceAstNodes(tokens: Token[], root?: AstNode): boolean {
     let result: boolean = false;
     for (const { value, parent } of walkValues(tokens, root)) {
-        if (
+        if (value.typ == EnumToken.MediaQueryConditionTokenType) {
+            const token = (value as MediaQueryConditionToken).l.find(
+                (t) => t.typ == EnumToken.IdenTokenType,
+            ) as IdentToken;
+
+            if (token != null) {
+                if (token.val in pseudoAliasMap) {
+                    token.val = pseudoAliasMap[token.val];
+
+                    if (
+                        ["min-resolution", "max-resolution"].includes((token as IdentToken).val) &&
+                        (value as MediaQueryConditionToken).r?.[0]?.typ == EnumToken.NumberTokenType
+                    ) {
+                        Object.assign((value as MediaQueryConditionToken).r?.[0], {
+                            typ: EnumToken.ResolutionTokenType,
+                            unit: "x",
+                        });
+                        result = true;
+                    }
+                }
+            }
+        } else if (
             value.typ == EnumToken.IdenTokenType ||
             value.typ == EnumToken.PseudoClassFuncTokenType ||
             value.typ == EnumToken.PseudoClassTokenType ||
@@ -81,6 +103,31 @@ function replaceAstNodes(tokens: Token[], root?: AstNode): boolean {
         }
     }
 
+    if (tokens.find((t) => t.typ == EnumToken.CommaTokenType) != null) {
+        const set = new Set<string>();
+
+        const split = splitTokenList(tokens, [EnumToken.CommaTokenType]);
+
+        tokens.length = 0;
+        tokens.push(
+            ...split.reduce((acc, curr) => {
+                const str = curr.reduce((acc, curr) => acc + renderToken(curr), "");
+                if (set.has(str)) {
+                    return acc;
+                }
+                set.add(str);
+
+                if (acc.length > 0) {
+                    tokens.push({
+                        typ: EnumToken.CommaTokenType,
+                    });
+                }
+
+                return acc.concat(curr);
+            }, [] as Token[]),
+        );
+    }
+
     return result;
 }
 
@@ -106,16 +153,6 @@ export class ComputePrefixFeature {
                 (acc, curr, index) => acc + (index > 0 ? "," : "") + curr.join(""),
                 "",
             );
-
-            // if ((node as AstRule).raw != null) {
-            //
-            //     (node as AstRule).raw = replacePseudo((node as AstRule).raw as string[][]);
-            // }
-            //
-            // if ((node as AstRule).optimized != null) {
-            //
-            //     (node as AstRule).optimized!.selector = replacePseudo((node as AstRule).optimized!.selector as string[][]);
-            // }
 
             if ((node as AstRule).tokens != null) {
                 replaceAstNodes((node as AstRule).tokens as Token[]);
@@ -173,11 +210,11 @@ export class ComputePrefixFeature {
                 (<AstDeclaration>node).val = nodes;
             }
         } else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframesAtRuleNodeType) {
-            if ((node as AstAtRule).val.startsWith("-")) {
-                const match = (node as AstAtRule).val.match(/^-([^-]+)-(.+)$/);
+            if ((node as AstAtRule).nam.startsWith("-")) {
+                const match = (node as AstAtRule).nam.match(/^-([^-]+)-(.+)$/);
 
                 if (match != null && "@" + match[2] in config.atRules) {
-                    (node as AstAtRule).val = match[2];
+                    (node as AstAtRule).nam = match[2];
                 }
             }
 

@@ -1,0 +1,38 @@
+import { EnumToken } from '../../ast/types.js';
+import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
+import { getSyntaxRule } from '../../validation/config.js';
+import { trimArray, matchAllSyntax, createValidationContext } from '../../validation/match.js';
+
+// export const mediaQueryConditionEnum: Set<EnumToken> = new Set([
+//     EnumToken.ParensTokenType,
+//     EnumToken.IdenTokenType,
+//     EnumToken.MediaQueryConditionTokenType,
+//     EnumToken.MediaQueryUnaryFeatureTokenType,
+// ]);
+function matchAtRuleSyntax(atRule, stream, options) {
+    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + atRule.nam);
+    const syntax = syntaxRules?.getPreludeRules()?.slice?.(1);
+    trimArray(stream);
+    if (syntax.length === 0) {
+        const filtered = stream.filter((token) => token.typ !== EnumToken.WhitespaceTokenType && token.typ !== EnumToken.CommentTokenType);
+        if (filtered.length > 0) {
+            return {
+                success: false,
+                errors: [
+                    {
+                        action: "drop",
+                        message: `unexpected token ${EnumToken[filtered[0].typ]} at ${filtered[0].loc.src}:${filtered[0].loc.sta.lin}:${filtered[0].loc.sta.col}`,
+                        node: filtered[0],
+                        location: filtered[0].loc,
+                    },
+                ],
+            };
+        }
+        return { success: true, errors: [] };
+    }
+    // console.debug(stream,syntax.reduce((acc, b) => acc + renderSyntax(b), ""));
+    const { success, errors} = matchAllSyntax(syntax, createValidationContext(stream), options);
+    return { success, errors };
+}
+
+export { matchAtRuleSyntax };

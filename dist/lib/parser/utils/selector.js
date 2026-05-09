@@ -1,8 +1,8 @@
 import { EnumToken } from '../../ast/types.js';
 import { renderToken } from '../../renderer/render.js';
 import { definedPropertySettings, combinators } from '../../syntax/constants.js';
-import { isIdent, isHash } from '../../syntax/syntax.js';
-import { getParsedSyntax } from '../../validation/config.js';
+import { pseudoElements, isIdent, isHash } from '../../syntax/syntax.js';
+import { getParsedSyntax, getSyntaxConfig } from '../../validation/config.js';
 import { matchAllSyntax, createValidationContext, trimArray, matchSelectorSyntax } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { splitTokenList } from '../../validation/utils/list.js';
@@ -53,11 +53,12 @@ function parseSelector(tokens, context, options, errors) {
         }, []));
         return Object.defineProperties({
             typ: result.success ? EnumToken.KeyFramesRuleNodeType : EnumToken.InvalidRuleNodeType,
-            sel: [...splitTokenList(trimArray(tokens))
-                    .reduce((acc, curr) => {
-                    acc.add(curr.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), ''));
+            sel: [
+                ...splitTokenList(trimArray(tokens)).reduce((acc, curr) => {
+                    acc.add(curr.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), ""));
                     return acc;
-                }, new Set())].join(),
+                }, new Set()),
+            ].join(),
             chi: [],
         }, {
             tokens: { ...definedPropertySettings, value: tokens.length === 0 ? null : tokens },
@@ -72,34 +73,81 @@ function parseSelector(tokens, context, options, errors) {
     }
     const stack = [];
     const uniq = new Map();
+    let i = 0;
     let index;
     let parent = context;
     let nested = false;
+    let val;
     do {
-        if (parent?.typ === EnumToken.AtRuleNodeType && 'media' === parent.nam) {
+        if (parent?.typ === EnumToken.AtRuleNodeType && "media" === parent.nam) {
             parent = parent.parent;
             continue;
         }
         nested = parent?.typ == EnumToken.RuleNodeType;
         parent = parent?.parent;
     } while (!nested && parent != null);
-    for (const token of tokens) {
-        if (token.typ == EnumToken.ColorTokenType) {
-            if (isIdent(token.val)) {
-                Object.assign(token, {
+    for (; i < tokens.length; i++) {
+        if (tokens[i].typ == EnumToken.ColonTokenType) {
+            if (tokens[i + 1]?.typ == EnumToken.IdenTokenType) {
+                Object.assign(tokens[i], {
+                    typ: EnumToken.PseudoElementTokenType,
+                    val: ":" + tokens[i + 1].val,
+                });
+                tokens[i].loc.end = tokens[i + 1].loc.end;
+                tokens.splice(i + 1, 1);
+                continue;
+            }
+            if (tokens[i + 1]?.typ == EnumToken.FunctionTokenDefType) {
+                val = ":" + tokens[i + 1].val;
+                Object.assign(tokens[i], {
+                    typ: val + "()" in getSyntaxConfig().selectors
+                        ? EnumToken.PseudoClassFunctionTokenDefType
+                        : tokens[i + 1].typ,
+                    val,
+                });
+                tokens[i].loc.end = tokens[i + 1].loc.end;
+                tokens.splice(i + 1, 1);
+                continue;
+            }
+        }
+        if (tokens[i].typ == EnumToken.DoubleColonTokenType) {
+            val = ":" + tokens[i + 1].val;
+            if (tokens[i + 1]?.typ == EnumToken.IdenTokenType) {
+                Object.assign(tokens[i], {
+                    typ: EnumToken.PseudoClassTokenType,
+                    val: (pseudoElements.includes(val) ? "" : ":") + val,
+                });
+                tokens[i].loc.end = tokens[i + 1].loc.end;
+                tokens.splice(i + 1, 1);
+                continue;
+            }
+            if (tokens[i + 1]?.typ == EnumToken.FunctionTokenDefType) {
+                val = "::" + tokens[i + 1].val;
+                Object.assign(tokens[i], {
+                    typ: val + "()" in getSyntaxConfig().selectors
+                        ? EnumToken.PseudoClassFunctionTokenDefType
+                        : EnumToken.FunctionTokenDefType,
+                    val,
+                });
+                tokens[i].loc.end = tokens[i + 1].loc.end;
+                tokens.splice(i + 1, 1);
+                continue;
+            }
+        }
+        if (tokens[i].typ == EnumToken.ColorTokenType) {
+            if (isIdent(tokens[i].val)) {
+                Object.assign(tokens[i], {
                     typ: EnumToken.IdenTokenType,
                 });
             }
-            else if (isHash(token.val)) {
-                Object.assign(token, {
+            else if (isHash(tokens[i].val)) {
+                Object.assign(tokens[i], {
                     typ: EnumToken.HashTokenType,
                 });
             }
         }
     }
     const result = matchSelectorSyntax(tokens, errors, options, nested === true);
-    // console.debug(tokens, {nested});
-    // console.debug(result);
     trimArray(tokens);
     if (result.success) {
         for (let i = 0; i < tokens.length; i++) {
@@ -379,6 +427,9 @@ function parseSelector(tokens, context, options, errors) {
             }
         }
     }
+    // else {
+    //     console.error(JSON.stringify({tokens,result}, null, 1));
+    // }
     return Object.defineProperties({
         typ: result.success ? EnumToken.RuleNodeType : EnumToken.InvalidRuleNodeType,
         sel: [

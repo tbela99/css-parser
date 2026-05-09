@@ -58,7 +58,7 @@ export class PropertySet {
             this.declarations = new Map<string, AstDeclaration>();
         } else {
             // expand shorthand
-            if (declaration.nam != this.config.shorthand && this.declarations.has(this.config.shorthand)) {
+            if (this.declarations.has(this.config.shorthand)) {
                 let isValid: boolean = true;
                 let current: number = -1;
                 const tokens: Token[][] = [];
@@ -97,7 +97,7 @@ export class PropertySet {
                         }
 
                         // @ts-ignore
-                        if (token.typ == EnumToken.LiteralTokenType && token.val == this.config.separator) {
+                        if (token.typ == EnumToken.LiteralTokenType && token.val == this.config.separator?.val) {
                             tokens.push([]);
                             current++;
                             continue;
@@ -167,7 +167,6 @@ export class PropertySet {
             const values = [...declarations.values()];
 
             if (this.isShortHand()) {
-
                 const val: Token[] = values[0].val.reduce(
                     (acc, curr) => {
                         if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(curr.typ)) {
@@ -194,7 +193,6 @@ export class PropertySet {
 
             return values[Symbol.iterator]();
         } else {
-
             const values: Token[][] = [];
             this.config.properties.forEach((property: string) => {
                 let index: number = 0;

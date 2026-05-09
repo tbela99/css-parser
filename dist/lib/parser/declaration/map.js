@@ -36,7 +36,7 @@ class PropertyMap {
                 }
                 : null;
             // expand shorthand
-            if (declaration.nam != this.config.shorthand && this.declarations.has(this.config.shorthand)) {
+            if (this.declarations.has(this.config.shorthand)) {
                 const tokens = {};
                 const values = [];
                 // @ts-ignore

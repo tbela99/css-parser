@@ -1,8 +1,4 @@
 import type {
-    AstAtRule,
-    AstRule,
-    AstStyleSheet,
-    AtRuleToken,
     BinaryExpressionToken,
     ColorToken,
     DimensionToken,
@@ -20,8 +16,8 @@ import type {
     Token,
     ValidationOptions,
 } from "../../@types/index.d.ts";
-import { getParsedSyntax, getSyntaxConfig, getSyntaxRule } from "./config.ts";
-import { ColorType, EnumToken, ValidationLevel } from "../ast/types.ts";
+import { getParsedSyntax, getSyntaxConfig } from "./config.ts";
+import { ColorType, EnumToken } from "../ast/types.ts";
 import type {
     ValidationAmpersandToken,
     ValidationBracketToken,
@@ -43,7 +39,7 @@ import type {
 import { MediaFeatureType, ValidationSyntaxGroupEnum, ValidationTokenEnum } from "./parser/typedef.ts";
 import type { ValidationContext, ValidationMatch } from "./types.d.ts";
 import type { ValidationConfiguration, ValidationMediaFeature } from "../../@types/validation.d.ts";
-import { funcLike, mFGT, mFLT, tokensfuncDefMap, tokensfuncSet, tokensMap } from "../syntax/constants.ts";
+import { funcLike, mFGT, mFLT, tokensfuncDefMap, tokensfuncSet } from "../syntax/constants.ts";
 import { isColor, isValue, pseudoElements } from "../syntax/syntax.ts";
 import { isDeclarationValue } from "../parser/utils/declaration.ts";
 import { renderSyntax } from "./parser/parse.ts";
@@ -534,6 +530,10 @@ export function matchSelectorSyntax(
         tokens.push(token);
 
         if (tokensfuncDefMap.has(token.typ)) {
+            if (stack.at(-1)?.typ === EnumToken.CommaTokenType) {
+                stack.pop();
+            }
+
             stack.push(token);
             continue;
         }
@@ -549,8 +549,7 @@ export function matchSelectorSyntax(
             stack.pop();
         }
 
-        if (token.typ === EnumToken.LiteralTokenType && '+' === (token as LiteralToken).val) {
-            
+        if (token.typ === EnumToken.LiteralTokenType && "+" === (token as LiteralToken).val) {
             Object.assign(token, { typ: EnumToken.NextSiblingCombinatorTokenType });
             continue;
         }
@@ -746,14 +745,17 @@ export function matchSelectorSyntax(
             case EnumToken.PseudoElementTokenType:
             case EnumToken.PseudoClassTokenType:
             case EnumToken.ClassSelectorTokenType:
-                // if (stack.length > 0 && nodes.includes(stack.at(-1)?.typ)) {
-                //
-                //     stack.pop();
-                // }
+                if (stack.at(-1)?.typ === EnumToken.CommaTokenType) {
+                    stack.pop();
+                }
 
                 break;
 
             case EnumToken.AttrStartTokenType:
+                if (stack.at(-1)?.typ === EnumToken.CommaTokenType) {
+                    stack.pop();
+                }
+
                 stack.push(token);
                 break;
 
@@ -1007,7 +1009,6 @@ export function matchSelectorSyntax(
                 }
 
             case EnumToken.ColonTokenType:
-
                 if (stream[i + 1]?.typ === EnumToken.IdenTokenType) {
                     // if (
                     //     nodes.includes(stack.at(-1)?.typ)
@@ -1122,7 +1123,6 @@ export function matchSelectorSyntax(
                 break;
 
             case EnumToken.EndParensTokenType:
-
                 if (
                     stack.at(-1)?.typ === EnumToken.PseudoClassFunctionTokenDefType ||
                     stack.at(-1)?.typ === EnumToken.PseudoElementTokenType
@@ -1141,30 +1141,29 @@ export function matchSelectorSyntax(
                             ],
                             success: false,
                         };
-                    } 
+                    }
                     // else {
 
-                        const index: number = tokens.indexOf(token);
-                        const result = matchAllSyntax(
-                            ((
-                                getParsedSyntax(
-                                    ValidationSyntaxGroupEnum.Selectors,
-                                    (token as PseudoClassFunctionToken).val + "()",
-                                ) as ValidationFunctionToken[]
-                            )?.[0]?.chi as ValidationToken[]) ?? [],
-                            createValidationContext(tokens.slice(index + 1, tokens.length - 1)),
-                            options,
-                        );
+                    const index: number = tokens.indexOf(token);
+                    const result = matchAllSyntax(
+                        ((
+                            getParsedSyntax(
+                                ValidationSyntaxGroupEnum.Selectors,
+                                (token as PseudoClassFunctionToken).val + "()",
+                            ) as ValidationFunctionToken[]
+                        )?.[0]?.chi as ValidationToken[]) ?? [],
+                        createValidationContext(tokens.slice(index + 1, tokens.length - 1)),
+                        options,
+                    );
 
-                        if (!result.success) {
-                            success = false;
+                    if (!result.success) {
+                        success = false;
 
-                            if (result.errors.length > 0) {
-                                errors.push(...result.errors);
-                            }
+                        if (result.errors.length > 0) {
+                            errors.push(...result.errors);
                         }
+                    }
                     // }
-
 
                     // const func = stack.at(-1) as PseudoClassFunctionToken;
 
@@ -1196,6 +1195,10 @@ export function matchSelectorSyntax(
             case EnumToken.NumberTokenType:
             case EnumToken.LiteralTokenType:
             case EnumToken.DimensionTokenType:
+                if (stack.at(-1)?.typ === EnumToken.CommaTokenType) {
+                    stack.pop();
+                }
+
                 if (stack.at(-1)?.typ === EnumToken.PseudoClassFunctionTokenDefType) {
                     break;
                 }

@@ -39,7 +39,7 @@ class PropertySet {
         }
         else {
             // expand shorthand
-            if (declaration.nam != this.config.shorthand && this.declarations.has(this.config.shorthand)) {
+            if (this.declarations.has(this.config.shorthand)) {
                 let isValid = true;
                 let current = -1;
                 const tokens = [];
@@ -69,7 +69,7 @@ class PropertySet {
                             tokens[current].push(token);
                         }
                         // @ts-ignore
-                        if (token.typ == EnumToken.LiteralTokenType && token.val == this.config.separator) {
+                        if (token.typ == EnumToken.LiteralTokenType && token.val == this.config.separator?.val) {
                             tokens.push([]);
                             current++;
                             continue;
