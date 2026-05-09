@@ -1494,7 +1494,7 @@ function fixSelector(node: AstRule) {
 
     if (node.sel.includes("&")) {
 
-        const attributes: Token[] = [...tokenize(node.sel as string).map((t) => t.token)] as Token[]; // parseString(node.sel);
+        const attributes: Token[] = [...tokenize(node.sel as string)].map((t) => t.token) as Token[]; // parseString(node.sel);
 
         for (const attr of walkValues(attributes)) {
 

@@ -22213,7 +22213,7 @@
      */
     function fixSelector(node) {
         if (node.sel.includes("&")) {
-            const attributes = [...tokenize(node.sel).map((t) => t.token)]; // parseString(node.sel);
+            const attributes = [...tokenize(node.sel)].map((t) => t.token); // parseString(node.sel);
             for (const attr of walkValues(attributes)) {
                 if (attr.value.typ == exports.EnumToken.PseudoClassFuncTokenType &&
                     attr.value.val == ":is") {
