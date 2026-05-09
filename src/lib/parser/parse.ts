@@ -358,7 +358,7 @@ export async function doParse(
 
     const startTime: number = performance.now();
     const errors: ErrorDescription[] = [];
-    const src: string = <string>options.src;
+    const src: string = options.src as string;
     const stack: Array<AstNode | AstComment> = [];
     const stats: ParseResultStats = {
         src: options.src ?? "",
@@ -606,7 +606,7 @@ export async function doParse(
 
             if (node != null) {
                 if ("chi" in node) {
-                    stack.push(<AstAtRule | AstRule | AstKeyFrameRule | AstInvalidRule>node);
+                    stack.push(node as AstAtRule | AstRule | AstKeyFrameRule | AstInvalidRule);
                     context = node as AstRuleList;
                 } else if (node.typ == EnumToken.AtRuleNodeType && (node as AstAtRule).nam === "import") {
                     imports.push(node);
@@ -769,7 +769,7 @@ export async function doParse(
         if (
             !options.lenient &&
             previousNode?.parent != null &&
-        // @ts-expect-error
+            // @ts-expect-error
             (previousNode!.typ == EnumToken.InvalidRuleNodeType || previousNode!.typ == EnumToken.InvalidAtRuleNodeType)
         ) {
             for (let i = context.chi!.length - 1; i >= 0; i--) {
@@ -2916,7 +2916,10 @@ export function parseAtRule(
                 } else if (stream[index].typ == EnumToken.ColonTokenType) {
                     isVarDeclaration = true;
                     break;
-                } else if (stream[index].typ == EnumToken.IdenTokenType && equalsIgnoreCase('from', (stream[index] as IdentToken).val)) {
+                } else if (
+                    stream[index].typ == EnumToken.IdenTokenType &&
+                    equalsIgnoreCase("from", (stream[index] as IdentToken).val)
+                ) {
                     break;
                 }
             }
@@ -2932,21 +2935,22 @@ export function parseAtRule(
             );
 
             if (!result.success) {
-                
                 errors.push(...result.errors);
 
-                return Object.defineProperty({
-                    typ: EnumToken.InvalidAtRuleNodeType,
-                    val: stream.reduce((acc, t) => acc + renderToken(t, options), ""),
-                },
-                'loc', {
-                    ...definedPropertySettings,
-                    value: { ...atRule.loc, end: { ...(stream.at(-1)?.loc?.end ?? atRule.loc!.end) } },
-                }) as AstInvalidAtRule;
+                return Object.defineProperty(
+                    {
+                        typ: EnumToken.InvalidAtRuleNodeType,
+                        val: stream.reduce((acc, t) => acc + renderToken(t, options), ""),
+                    },
+                    "loc",
+                    {
+                        ...definedPropertySettings,
+                        value: { ...atRule.loc, end: { ...(stream.at(-1)?.loc?.end ?? atRule.loc!.end) } },
+                    },
+                ) as AstInvalidAtRule;
             }
 
             if (isVarDeclaration) {
-
                 const nam: Token = stream.find((t) => t.typ == EnumToken.IdenTokenType) as Token;
                 const value: Token[] = trimArray(
                     stream.slice(index + 1).filter((t) => t.typ != EnumToken.CommentTokenType),
@@ -2974,7 +2978,7 @@ export function parseAtRule(
                 Object.assign(atRule, {
                     typ: EnumToken.CssVariableDeclarationMapTokenType,
                     vars: trimArray(stream.slice(0, index)),
-                    from: stream.slice(index + 1)
+                    from: stream.slice(index + 1),
                 }),
                 {
                     tokens: { ...definedPropertySettings, value: stream.slice() },

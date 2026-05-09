@@ -769,6 +769,10 @@ declare enum ColorType$1 {
      */
     NON_STD = 23,
     /**
+     * custom color
+     */
+    CUSTOM_COLOR = 24,
+    /**
      * alias for rgba
      */
     RGB = 4,

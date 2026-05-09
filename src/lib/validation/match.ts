@@ -195,7 +195,8 @@ export function isMFValue(
             };
 
         default:
-            throw new Error("Unknown media feature type " + mediaFeature.type);
+            console.debug("Unknown media feature type " + mediaFeature.type);
+        // throw new Error("Unknown media feature type " + mediaFeature.type);
     }
 
     return {

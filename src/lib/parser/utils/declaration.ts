@@ -582,7 +582,9 @@ export function parseDeclaration(
                     else if (tokens[index].typ === EnumToken.ColorTokenType) {
 
                         if (isColor(tokens[index])) {
+                            
                             parseColor(tokens[index]);
+
                         } else {
                             success = false;
                             tokens[index].typ = EnumToken.FunctionTokenType;

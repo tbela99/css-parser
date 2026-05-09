@@ -1033,5 +1033,27 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
  }
 }`));
         });
+
+
+
+        it('color-profile and color() #50', function () {
+            return transform(`
+
+@color-profile --swop5c {
+  src: url("https://example.org/SWOP2006_Coated5v2.icc");
+}
+.header {
+  background-color: color(--swop5c 0% 70% 20% 0%);
+}
+  `, {
+                beautify: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`@color-profile --swop5c {
+ src: url(https://example.org/SWOP2006_Coated5v2.icc)
+}
+.header {
+ background-color: color(--swop5c 0 70% 20% 0)
+}`));
+        });
     });
     }

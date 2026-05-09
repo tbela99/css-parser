@@ -721,13 +721,14 @@ function hasDeclaration(node) {
  */
 function optimizeSelector(selector) {
     const map = new Set();
-    selector = selector.reduce((acc, curr) => {
+    selector = selector
+        .reduce((acc, curr) => {
         // @ts-ignore
-        if (curr.length > 0 && curr.at(-1).startsWith(':is(')) {
+        if (curr.length > 0 && curr.at(-1).startsWith(":is(")) {
             // @ts-ignore
-            const rules = splitRule(curr.at(-1).slice(4, -1)).map(x => {
-                if (x[0] == '&' && x.length > 1) {
-                    return x.slice(x[1] == ' ' ? 2 : 1);
+            const rules = splitRule(curr.at(-1).slice(4, -1)).map((x) => {
+                if (x[0] == "&" && x.length > 1) {
+                    return x.slice(x[1] == " " ? 2 : 1);
                 }
                 return x;
             });
@@ -739,8 +740,9 @@ function optimizeSelector(selector) {
         }
         acc.push(curr);
         return acc;
-    }, []).filter(x => {
-        const str = x.join('');
+    }, [])
+        .filter((x) => {
+        const str = x.join("");
         if (map.has(str)) {
             return false;
         }
@@ -748,7 +750,7 @@ function optimizeSelector(selector) {
         return true;
     });
     const optimized = [];
-    const k = selector.reduce((acc, curr) => acc == 0 ? curr.length : (curr.length == 0 ? acc : Math.min(acc, curr.length)), 0);
+    const k = selector.reduce((acc, curr) => acc == 0 ? curr.length : curr.length == 0 ? acc : Math.min(acc, curr.length), 0);
     let i = 0;
     let j;
     let match;
@@ -768,7 +770,7 @@ function optimizeSelector(selector) {
     }
     while (optimized.length > 0) {
         const last = optimized.at(-1);
-        if ((last == ' ' || combinators.includes(last))) {
+        if (last == " " || combinators.includes(last)) {
             optimized.pop();
             continue;
         }
@@ -776,19 +778,17 @@ function optimizeSelector(selector) {
     }
     selector.forEach((selector) => selector.splice(0, optimized.length));
     let reducible = optimized.length == 1;
-    if (optimized[0] == '&') {
-        if (optimized[1] == ' ') {
+    if (optimized[0] == "&") {
+        if (optimized[1] == " ") {
             optimized.splice(0, 2);
         }
     }
-    if (optimized.length == 0 ||
-        (optimized[0].charAt(0) == '&' ||
-            selector.length == 1)) {
+    if (optimized.length == 0 || optimized[0].charAt(0) == "&" || selector.length == 1) {
         return {
             match: false,
             optimized,
-            selector: selector.map((selector) => selector[0] == '&' && selector[1] == ' ' ? selector.slice(2) : (selector)),
-            reducible: selector.length > 1 && selector.every((selector) => !combinators.includes(selector[0]))
+            selector: selector.map((selector) => selector[0] == "&" && selector[1] == " " ? selector.slice(2) : selector),
+            reducible: selector.length > 1 && selector.every((selector) => !combinators.includes(selector[0])),
         };
     }
     return {
@@ -797,26 +797,26 @@ function optimizeSelector(selector) {
         selector: selector.reduce((acc, curr) => {
             let hasCompound = true;
             if (hasCompound && curr.length > 0) {
-                hasCompound = !['&'].concat(combinators).includes(curr[0].charAt(0));
+                hasCompound = !["&"].concat(combinators).includes(curr[0].charAt(0));
             }
             // @ts-ignore
-            if (hasCompound && curr[0] == ' ') {
+            if (hasCompound && curr[0] == " ") {
                 hasCompound = false;
-                curr.unshift('&');
+                curr.unshift("&");
             }
             if (curr.length == 0) {
-                curr.push('&');
+                curr.push("&");
                 hasCompound = false;
             }
             if (reducible) {
                 const chr = curr[0].charAt(0);
                 // @ts-ignore
-                reducible = chr == '.' || chr == ':' || isIdentStart(chr.codePointAt(0));
+                reducible = chr == "." || chr == ":" || isIdentStart(chr.codePointAt(0));
             }
-            acc.push(hasCompound ? ['&'].concat(curr) : curr);
+            acc.push(hasCompound ? ["&"].concat(curr) : curr);
             return acc;
         }, []),
-        reducible: selector.every((selector) => !['>', '+', '~', '&'].includes(selector[0]))
+        reducible: selector.every((selector) => ![">", "+", "~", "&"].includes(selector[0])),
     };
 }
 /**

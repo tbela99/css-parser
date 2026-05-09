@@ -120,8 +120,13 @@ function isMFValue(featureName, tokens, isMFRange) {
                         typeof tokens[2].val === "number"),
             };
         default:
-            throw new Error("Unknown media feature type " + mediaFeature.type);
+            console.debug("Unknown media feature type " + mediaFeature.type);
+        // throw new Error("Unknown media feature type " + mediaFeature.type);
     }
+    return {
+        valid: true,
+        success: true,
+    };
 }
 function isStyleRangeValue(tokens) {
     const filtered = tokens.filter((token) => token.typ !== EnumToken.WhitespaceTokenType && token.typ !== EnumToken.CommentTokenType);

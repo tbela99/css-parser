@@ -1,5 +1,6 @@
 import { EnumToken, ColorType } from '../ast/types.js';
 import { walkValues, WalkerOptionEnum } from '../ast/walk.js';
+import { equalsIgnoreCase } from '../parser/utils/text.js';
 import { colorsFunc, systemColors, deprecatedSystemColors, nonStandardColors, COLORS_NAMES, mathFuncs } from './constants.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
@@ -374,6 +375,7 @@ function isColor(token, errors) {
             if (token.val == "color") {
                 // @ts-ignore
                 const children = token.chi.filter((t) => [
+                    EnumToken.DashedIdenTokenType,
                     EnumToken.IdenTokenType,
                     EnumToken.NumberTokenType,
                     EnumToken.LiteralTokenType,
@@ -383,6 +385,30 @@ function isColor(token, errors) {
                     EnumToken.PercentageTokenType,
                 ].includes(t.typ));
                 const isRelative = children[0].typ == EnumToken.IdenTokenType && children[0].val == "from";
+                let offset = 0;
+                if (isRelative) {
+                    offset = 2;
+                }
+                if (children[offset]?.typ == EnumToken.DashedIdenTokenType) {
+                    if (children.length < offset + 1) {
+                        return false;
+                    }
+                    for (let i = offset + 1; i < children.length; i++) {
+                        if (children[i].typ == EnumToken.NumberTokenType ||
+                            children[i].typ == EnumToken.LiteralTokenType ||
+                            children[i].typ == EnumToken.ColorTokenType ||
+                            children[i].typ == EnumToken.FunctionTokenType ||
+                            children[i].typ == EnumToken.MathFunctionTokenType ||
+                            children[i].typ == EnumToken.PercentageTokenType ||
+                            isColor(children[i]) ||
+                            (children[i].typ == EnumToken.IdenTokenType &&
+                                equalsIgnoreCase("none", children[i].val))) {
+                            continue;
+                        }
+                        return false;
+                    }
+                    return true;
+                }
                 if (children.length < 4 || children.length > 8) {
                     return false;
                 }
@@ -586,8 +612,19 @@ function parseColor(token) {
             else if (token.val == "color-mix" && tk.val == "in") {
                 token.cal = "mix";
             }
-            else if (token.val == "color" && tk.val == "in") {
-                token.cal = "col";
+            if (token.val == "color") {
+                let index = token.chi.indexOf(tk);
+                if (token.cal == "rel") {
+                    for (let k = 0; k < token.chi.length; k++) {
+                        if (EnumToken.DashedIdenTokenType == token.chi[k].typ) {
+                            index = k;
+                            break;
+                        }
+                    }
+                }
+                if (EnumToken.DashedIdenTokenType == token?.chi[index]?.typ) {
+                    token.kin = ColorType.CUSTOM_COLOR;
+                }
             }
         }
         return token;

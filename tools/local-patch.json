@@ -1,5 +1,14 @@
 {
   "atrules": {
+    "@color-profile": {
+      "syntax": "@color-profile [ <dashed-ident> | device-cmyk ] { <declaration-list> }",
+      "comment": "replace @color-profile syntax",
+      "descriptors": {
+        "src": {
+          "syntax": "<url>"
+        }
+      }
+    },
     "@font-feature-values": {
       "syntax": " @font-feature-values <family-name># { <declaration-rule-list> } ",
       "comment": "replace @font-feature-values syntax",
@@ -132,6 +141,18 @@
   "types": {
     "composes-selector": {
       "syntax": "<ident>+ [from [global&&<string>]]?"
+    },
+    "color()": {
+      "syntax": "color( [from <color>]? <colorspace-params> [ / [ <alpha-value> | none ] ]? )"
+    },
+    "colorspace-params": {
+      "syntax": "[<custom-params> | <predefined-rgb-params> | <xyz-params>]"
+    },
+    "predefined-rgb-params": {
+      "syntax": "<predefined-rgb> [ <number> | <percentage> | none ]{3}"
+    },
+    "custom-params": {
+      "syntax": "<dashed-ident> [ <number> | <percentage> | none ]+"
     },
     "gradient": {
       "comment": "added legacy syntaxes support",

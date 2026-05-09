@@ -783,6 +783,10 @@
          */
         ColorType[ColorType["NON_STD"] = 23] = "NON_STD";
         /**
+         * custom color
+         */
+        ColorType[ColorType["CUSTOM_COLOR"] = 24] = "CUSTOM_COLOR";
+        /**
          * alias for rgba
          */
         ColorType[ColorType["RGB"] = 4] = "RGB";
@@ -1236,6 +1240,29 @@
             }
             previous = value;
         }
+    }
+
+    function dasherize(value) {
+        return value.replace(/([A-Z])/g, (all, one) => `-${one.toLowerCase()}`);
+    }
+    function camelize(value) {
+        return value.replace(/-([a-z])/g, (all, one) => one.toUpperCase());
+    }
+    function equalsIgnoreCase(a, b) {
+        if (a.length !== b.length)
+            return false;
+        for (let i = 0; i < a.length; i++) {
+            let ca = a.charCodeAt(i);
+            let cb = b.charCodeAt(i);
+            // Normalize A-Z to a-z
+            if (ca >= 65 && ca <= 90)
+                ca += 32;
+            if (cb >= 65 && cb <= 90)
+                cb += 32;
+            if (ca !== cb)
+                return false;
+        }
+        return true;
     }
 
     var declarations = {
@@ -1705,13 +1732,13 @@
     		syntax: "<line-width> || <line-style> || <color>"
     	},
     	"border-block": {
-    		syntax: "<'border-block-start'>"
+    		syntax: "<'border-top'>"
     	},
     	"border-block-color": {
     		syntax: "<'border-top-color'>{1,2}"
     	},
     	"border-block-end": {
-    		syntax: "<'border-top-width'> || <'border-top-style'> || <color>"
+    		syntax: "<'border-top'>"
     	},
     	"border-block-end-color": {
     		syntax: "<'border-top-color'>"
@@ -1723,7 +1750,7 @@
     		syntax: "<'border-top-width'>"
     	},
     	"border-block-start": {
-    		syntax: "<'border-top-width'> || <'border-top-style'> || <color>"
+    		syntax: "<'border-top'>"
     	},
     	"border-block-start-color": {
     		syntax: "<'border-top-color'>"
@@ -1789,13 +1816,13 @@
     		syntax: "[ <length-percentage [0,∞]> | <number [0,∞]> | auto ]{1,4}"
     	},
     	"border-inline": {
-    		syntax: "<'border-block-start'>"
+    		syntax: "<'border-top'>"
     	},
     	"border-inline-color": {
     		syntax: "<'border-top-color'>{1,2}"
     	},
     	"border-inline-end": {
-    		syntax: "<'border-top-width'> || <'border-top-style'> || <color>"
+    		syntax: "<'border-top'>"
     	},
     	"border-inline-end-color": {
     		syntax: "<'border-top-color'>"
@@ -1807,7 +1834,7 @@
     		syntax: "<'border-top-width'>"
     	},
     	"border-inline-start": {
-    		syntax: "<'border-top-width'> || <'border-top-style'> || <color>"
+    		syntax: "<'border-top'>"
     	},
     	"border-inline-start-color": {
     		syntax: "<'border-top-color'>"
@@ -1984,10 +2011,10 @@
     		syntax: "<color>"
     	},
     	"column-rule-style": {
-    		syntax: "<'border-style'>"
+    		syntax: "<line-style>"
     	},
     	"column-rule-width": {
-    		syntax: "<'border-width'>"
+    		syntax: "<line-width>"
     	},
     	"column-span": {
     		syntax: "none | all"
@@ -2737,7 +2764,7 @@
     		syntax: "static | relative | absolute | sticky | fixed | -webkit-sticky"
     	},
     	"position-anchor": {
-    		syntax: "auto | none | <anchor-name>"
+    		syntax: "normal | auto | none | <anchor-name> | match-parent"
     	},
     	"position-area": {
     		syntax: "none | <position-area>"
@@ -3866,7 +3893,7 @@
     		syntax: "<color-base> | currentColor | <system-color> | <device-cmyk()>  | <light-dark()> | <-non-standard-color>"
     	},
     	"color()": {
-    		syntax: "color( <colorspace-params> [ / [ <alpha-value> | none ] ]? )"
+    		syntax: "color( [from <color>]? <colorspace-params> [ / [ <alpha-value> | none ] ]? )"
     	},
     	"color-base": {
     		syntax: "<hex-color> | <color-function> | <named-color> | <color-mix()> | transparent"
@@ -3893,7 +3920,7 @@
     		syntax: "<linear-color-stop> , [ <linear-color-hint>? , <linear-color-stop> ]#?"
     	},
     	"colorspace-params": {
-    		syntax: "[ <predefined-rgb-params> | <xyz-params>]"
+    		syntax: "[<custom-params> | <predefined-rgb-params> | <xyz-params>]"
     	},
     	combinator: {
     		syntax: "'>' | '+' | '~' | [ '|' '|' ]"
@@ -5779,6 +5806,14 @@
     			"font-display": "auto | block | swap | fallback | optional"
     		}
     	},
+    	"@color-profile": {
+    		syntax: "@color-profile [ <dashed-ident> | device-cmyk ] { <declaration-list> }",
+    		descriptors: {
+    			src: {
+    				syntax: "<url>"
+    			}
+    		}
+    	},
     	"@stylistic": {
     		syntax: " @stylistic { <declaration-list> } "
     	},
@@ -7295,6 +7330,7 @@
                 if (token.val == "color") {
                     // @ts-ignore
                     const children = token.chi.filter((t) => [
+                        exports.EnumToken.DashedIdenTokenType,
                         exports.EnumToken.IdenTokenType,
                         exports.EnumToken.NumberTokenType,
                         exports.EnumToken.LiteralTokenType,
@@ -7304,6 +7340,30 @@
                         exports.EnumToken.PercentageTokenType,
                     ].includes(t.typ));
                     const isRelative = children[0].typ == exports.EnumToken.IdenTokenType && children[0].val == "from";
+                    let offset = 0;
+                    if (isRelative) {
+                        offset = 2;
+                    }
+                    if (children[offset]?.typ == exports.EnumToken.DashedIdenTokenType) {
+                        if (children.length < offset + 1) {
+                            return false;
+                        }
+                        for (let i = offset + 1; i < children.length; i++) {
+                            if (children[i].typ == exports.EnumToken.NumberTokenType ||
+                                children[i].typ == exports.EnumToken.LiteralTokenType ||
+                                children[i].typ == exports.EnumToken.ColorTokenType ||
+                                children[i].typ == exports.EnumToken.FunctionTokenType ||
+                                children[i].typ == exports.EnumToken.MathFunctionTokenType ||
+                                children[i].typ == exports.EnumToken.PercentageTokenType ||
+                                isColor(children[i]) ||
+                                (children[i].typ == exports.EnumToken.IdenTokenType &&
+                                    equalsIgnoreCase("none", children[i].val))) {
+                                continue;
+                            }
+                            return false;
+                        }
+                        return true;
+                    }
                     if (children.length < 4 || children.length > 8) {
                         return false;
                     }
@@ -7507,8 +7567,19 @@
                 else if (token.val == "color-mix" && tk.val == "in") {
                     token.cal = "mix";
                 }
-                else if (token.val == "color" && tk.val == "in") {
-                    token.cal = "col";
+                if (token.val == "color") {
+                    let index = token.chi.indexOf(tk);
+                    if (token.cal == "rel") {
+                        for (let k = 0; k < token.chi.length; k++) {
+                            if (exports.EnumToken.DashedIdenTokenType == token.chi[k].typ) {
+                                index = k;
+                                break;
+                            }
+                        }
+                    }
+                    if (exports.EnumToken.DashedIdenTokenType == token?.chi[index]?.typ) {
+                        token.kin = exports.ColorType.CUSTOM_COLOR;
+                    }
                 }
             }
             return token;
@@ -7823,29 +7894,6 @@
             token.typ === exports.EnumToken.TimingFunctionTokenType ||
             token.typ === exports.EnumToken.MathFunctionTokenType ||
             token.typ === exports.EnumToken.TransformFunctionTokenType);
-    }
-
-    function dasherize(value) {
-        return value.replace(/([A-Z])/g, (all, one) => `-${one.toLowerCase()}`);
-    }
-    function camelize(value) {
-        return value.replace(/-([a-z])/g, (all, one) => one.toUpperCase());
-    }
-    function equalsIgnoreCase(a, b) {
-        if (a.length !== b.length)
-            return false;
-        for (let i = 0; i < a.length; i++) {
-            let ca = a.charCodeAt(i);
-            let cb = b.charCodeAt(i);
-            // Normalize A-Z to a-z
-            if (ca >= 65 && ca <= 90)
-                ca += 32;
-            if (cb >= 65 && cb <= 90)
-                cb += 32;
-            if (ca !== cb)
-                return false;
-        }
-        return true;
     }
 
     function getComponents(token) {
@@ -17689,8 +17737,13 @@
                             typeof tokens[2].val === "number"),
                 };
             default:
-                throw new Error("Unknown media feature type " + mediaFeature.type);
+                console.debug("Unknown media feature type " + mediaFeature.type);
+            // throw new Error("Unknown media feature type " + mediaFeature.type);
         }
+        return {
+            valid: true,
+            success: true,
+        };
     }
     function isStyleRangeValue(tokens) {
         const filtered = tokens.filter((token) => token.typ !== exports.EnumToken.WhitespaceTokenType && token.typ !== exports.EnumToken.CommentTokenType);
@@ -21844,13 +21897,14 @@
      */
     function optimizeSelector(selector) {
         const map = new Set();
-        selector = selector.reduce((acc, curr) => {
+        selector = selector
+            .reduce((acc, curr) => {
             // @ts-ignore
-            if (curr.length > 0 && curr.at(-1).startsWith(':is(')) {
+            if (curr.length > 0 && curr.at(-1).startsWith(":is(")) {
                 // @ts-ignore
-                const rules = splitRule(curr.at(-1).slice(4, -1)).map(x => {
-                    if (x[0] == '&' && x.length > 1) {
-                        return x.slice(x[1] == ' ' ? 2 : 1);
+                const rules = splitRule(curr.at(-1).slice(4, -1)).map((x) => {
+                    if (x[0] == "&" && x.length > 1) {
+                        return x.slice(x[1] == " " ? 2 : 1);
                     }
                     return x;
                 });
@@ -21862,8 +21916,9 @@
             }
             acc.push(curr);
             return acc;
-        }, []).filter(x => {
-            const str = x.join('');
+        }, [])
+            .filter((x) => {
+            const str = x.join("");
             if (map.has(str)) {
                 return false;
             }
@@ -21871,7 +21926,7 @@
             return true;
         });
         const optimized = [];
-        const k = selector.reduce((acc, curr) => acc == 0 ? curr.length : (curr.length == 0 ? acc : Math.min(acc, curr.length)), 0);
+        const k = selector.reduce((acc, curr) => acc == 0 ? curr.length : curr.length == 0 ? acc : Math.min(acc, curr.length), 0);
         let i = 0;
         let j;
         let match;
@@ -21891,7 +21946,7 @@
         }
         while (optimized.length > 0) {
             const last = optimized.at(-1);
-            if ((last == ' ' || combinators.includes(last))) {
+            if (last == " " || combinators.includes(last)) {
                 optimized.pop();
                 continue;
             }
@@ -21899,19 +21954,17 @@
         }
         selector.forEach((selector) => selector.splice(0, optimized.length));
         let reducible = optimized.length == 1;
-        if (optimized[0] == '&') {
-            if (optimized[1] == ' ') {
+        if (optimized[0] == "&") {
+            if (optimized[1] == " ") {
                 optimized.splice(0, 2);
             }
         }
-        if (optimized.length == 0 ||
-            (optimized[0].charAt(0) == '&' ||
-                selector.length == 1)) {
+        if (optimized.length == 0 || optimized[0].charAt(0) == "&" || selector.length == 1) {
             return {
                 match: false,
                 optimized,
-                selector: selector.map((selector) => selector[0] == '&' && selector[1] == ' ' ? selector.slice(2) : (selector)),
-                reducible: selector.length > 1 && selector.every((selector) => !combinators.includes(selector[0]))
+                selector: selector.map((selector) => selector[0] == "&" && selector[1] == " " ? selector.slice(2) : selector),
+                reducible: selector.length > 1 && selector.every((selector) => !combinators.includes(selector[0])),
             };
         }
         return {
@@ -21920,26 +21973,26 @@
             selector: selector.reduce((acc, curr) => {
                 let hasCompound = true;
                 if (hasCompound && curr.length > 0) {
-                    hasCompound = !['&'].concat(combinators).includes(curr[0].charAt(0));
+                    hasCompound = !["&"].concat(combinators).includes(curr[0].charAt(0));
                 }
                 // @ts-ignore
-                if (hasCompound && curr[0] == ' ') {
+                if (hasCompound && curr[0] == " ") {
                     hasCompound = false;
-                    curr.unshift('&');
+                    curr.unshift("&");
                 }
                 if (curr.length == 0) {
-                    curr.push('&');
+                    curr.push("&");
                     hasCompound = false;
                 }
                 if (reducible) {
                     const chr = curr[0].charAt(0);
                     // @ts-ignore
-                    reducible = chr == '.' || chr == ':' || isIdentStart(chr.codePointAt(0));
+                    reducible = chr == "." || chr == ":" || isIdentStart(chr.codePointAt(0));
                 }
-                acc.push(hasCompound ? ['&'].concat(curr) : curr);
+                acc.push(hasCompound ? ["&"].concat(curr) : curr);
                 return acc;
             }, []),
-            reducible: selector.every((selector) => !['>', '+', '~', '&'].includes(selector[0]))
+            reducible: selector.every((selector) => ![">", "+", "~", "&"].includes(selector[0])),
         };
     }
     /**
@@ -28772,7 +28825,8 @@
                         isVarDeclaration = true;
                         break;
                     }
-                    else if (stream[index].typ == exports.EnumToken.IdenTokenType && equalsIgnoreCase('from', stream[index].val)) {
+                    else if (stream[index].typ == exports.EnumToken.IdenTokenType &&
+                        equalsIgnoreCase("from", stream[index].val)) {
                         break;
                     }
                 }
@@ -28786,7 +28840,7 @@
                     return Object.defineProperty({
                         typ: exports.EnumToken.InvalidAtRuleNodeType,
                         val: stream.reduce((acc, t) => acc + renderToken(t, options), ""),
-                    }, 'loc', {
+                    }, "loc", {
                         ...definedPropertySettings,
                         value: { ...atRule.loc, end: { ...(stream.at(-1)?.loc?.end ?? atRule.loc.end) } },
                     });
@@ -28813,7 +28867,7 @@
                 return Object.defineProperties(Object.assign(atRule, {
                     typ: exports.EnumToken.CssVariableDeclarationMapTokenType,
                     vars: trimArray(stream.slice(0, index)),
-                    from: stream.slice(index + 1)
+                    from: stream.slice(index + 1),
                 }), {
                     tokens: { ...definedPropertySettings, value: stream.slice() },
                     loc: {

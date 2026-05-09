@@ -465,13 +465,13 @@ var declarations = {
 		syntax: "<line-width> || <line-style> || <color>"
 	},
 	"border-block": {
-		syntax: "<'border-block-start'>"
+		syntax: "<'border-top'>"
 	},
 	"border-block-color": {
 		syntax: "<'border-top-color'>{1,2}"
 	},
 	"border-block-end": {
-		syntax: "<'border-top-width'> || <'border-top-style'> || <color>"
+		syntax: "<'border-top'>"
 	},
 	"border-block-end-color": {
 		syntax: "<'border-top-color'>"
@@ -483,7 +483,7 @@ var declarations = {
 		syntax: "<'border-top-width'>"
 	},
 	"border-block-start": {
-		syntax: "<'border-top-width'> || <'border-top-style'> || <color>"
+		syntax: "<'border-top'>"
 	},
 	"border-block-start-color": {
 		syntax: "<'border-top-color'>"
@@ -549,13 +549,13 @@ var declarations = {
 		syntax: "[ <length-percentage [0,∞]> | <number [0,∞]> | auto ]{1,4}"
 	},
 	"border-inline": {
-		syntax: "<'border-block-start'>"
+		syntax: "<'border-top'>"
 	},
 	"border-inline-color": {
 		syntax: "<'border-top-color'>{1,2}"
 	},
 	"border-inline-end": {
-		syntax: "<'border-top-width'> || <'border-top-style'> || <color>"
+		syntax: "<'border-top'>"
 	},
 	"border-inline-end-color": {
 		syntax: "<'border-top-color'>"
@@ -567,7 +567,7 @@ var declarations = {
 		syntax: "<'border-top-width'>"
 	},
 	"border-inline-start": {
-		syntax: "<'border-top-width'> || <'border-top-style'> || <color>"
+		syntax: "<'border-top'>"
 	},
 	"border-inline-start-color": {
 		syntax: "<'border-top-color'>"
@@ -744,10 +744,10 @@ var declarations = {
 		syntax: "<color>"
 	},
 	"column-rule-style": {
-		syntax: "<'border-style'>"
+		syntax: "<line-style>"
 	},
 	"column-rule-width": {
-		syntax: "<'border-width'>"
+		syntax: "<line-width>"
 	},
 	"column-span": {
 		syntax: "none | all"
@@ -1497,7 +1497,7 @@ var declarations = {
 		syntax: "static | relative | absolute | sticky | fixed | -webkit-sticky"
 	},
 	"position-anchor": {
-		syntax: "auto | none | <anchor-name>"
+		syntax: "normal | auto | none | <anchor-name> | match-parent"
 	},
 	"position-area": {
 		syntax: "none | <position-area>"
@@ -2626,7 +2626,7 @@ var syntaxes = {
 		syntax: "<color-base> | currentColor | <system-color> | <device-cmyk()>  | <light-dark()> | <-non-standard-color>"
 	},
 	"color()": {
-		syntax: "color( <colorspace-params> [ / [ <alpha-value> | none ] ]? )"
+		syntax: "color( [from <color>]? <colorspace-params> [ / [ <alpha-value> | none ] ]? )"
 	},
 	"color-base": {
 		syntax: "<hex-color> | <color-function> | <named-color> | <color-mix()> | transparent"
@@ -2653,7 +2653,7 @@ var syntaxes = {
 		syntax: "<linear-color-stop> , [ <linear-color-hint>? , <linear-color-stop> ]#?"
 	},
 	"colorspace-params": {
-		syntax: "[ <predefined-rgb-params> | <xyz-params>]"
+		syntax: "[<custom-params> | <predefined-rgb-params> | <xyz-params>]"
 	},
 	combinator: {
 		syntax: "'>' | '+' | '~' | [ '|' '|' ]"
@@ -4537,6 +4537,14 @@ var atRules = {
 	"@font-features-values": {
 		descriptors: {
 			"font-display": "auto | block | swap | fallback | optional"
+		}
+	},
+	"@color-profile": {
+		syntax: "@color-profile [ <dashed-ident> | device-cmyk ] { <declaration-list> }",
+		descriptors: {
+			src: {
+				syntax: "<url>"
+			}
 		}
 	},
 	"@stylistic": {

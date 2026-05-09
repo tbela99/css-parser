@@ -811,6 +811,10 @@ export enum ColorType {
      */
     NON_STD,
     /**
+     * custom color
+     */
+    CUSTOM_COLOR,
+    /**
      * alias for rgba
      */
     RGB = RGBA,

@@ -2179,7 +2179,8 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                     isVarDeclaration = true;
                     break;
                 }
-                else if (stream[index].typ == EnumToken.IdenTokenType && equalsIgnoreCase('from', stream[index].val)) {
+                else if (stream[index].typ == EnumToken.IdenTokenType &&
+                    equalsIgnoreCase("from", stream[index].val)) {
                     break;
                 }
             }
@@ -2193,7 +2194,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                 return Object.defineProperty({
                     typ: EnumToken.InvalidAtRuleNodeType,
                     val: stream.reduce((acc, t) => acc + renderToken(t, options), ""),
-                }, 'loc', {
+                }, "loc", {
                     ...definedPropertySettings,
                     value: { ...atRule.loc, end: { ...(stream.at(-1)?.loc?.end ?? atRule.loc.end) } },
                 });
@@ -2220,7 +2221,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             return Object.defineProperties(Object.assign(atRule, {
                 typ: EnumToken.CssVariableDeclarationMapTokenType,
                 vars: trimArray(stream.slice(0, index)),
-                from: stream.slice(index + 1)
+                from: stream.slice(index + 1),
             }), {
                 tokens: { ...definedPropertySettings, value: stream.slice() },
                 loc: {

@@ -21,6 +21,7 @@ import type {
 } from "../../@types/index.d.ts";
 import { ColorType, EnumToken } from "../ast/types.ts";
 import { WalkerOptionEnum, walkValues } from "../ast/walk.ts";
+import { equalsIgnoreCase } from "../parser/utils/text.ts";
 import {
     colorsFunc,
     systemColors,
@@ -753,6 +754,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                 // @ts-ignore
                 const children: Token[] = (<Token[]>(token as ColorToken).chi).filter((t: Token) =>
                     [
+                        EnumToken.DashedIdenTokenType,
                         EnumToken.IdenTokenType,
                         EnumToken.NumberTokenType,
                         EnumToken.LiteralTokenType,
@@ -764,6 +766,37 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                 );
                 const isRelative: boolean =
                     children[0].typ == EnumToken.IdenTokenType && (children[0] as IdentToken).val == "from";
+
+                let offset = 0;
+                if (isRelative) {
+                    offset = 2;
+                }
+
+                if (children[offset]?.typ == EnumToken.DashedIdenTokenType) {
+                    if (children.length < offset + 1) {
+                        return false;
+                    }
+
+                    for (let i = offset + 1; i < children.length; i++) {
+                        if (
+                            children[i].typ == EnumToken.NumberTokenType ||
+                            children[i].typ == EnumToken.LiteralTokenType ||
+                            children[i].typ == EnumToken.ColorTokenType ||
+                            children[i].typ == EnumToken.FunctionTokenType ||
+                            children[i].typ == EnumToken.MathFunctionTokenType ||
+                            children[i].typ == EnumToken.PercentageTokenType ||
+                            isColor(children[i]) ||
+                            (children[i].typ == EnumToken.IdenTokenType &&
+                                equalsIgnoreCase("none", (<IdentToken>children[i]).val))
+                        ) {
+                            continue;
+                        }
+
+                        return false;
+                    }
+
+                    return true;
+                }
 
                 if (children.length < 4 || children.length > 8) {
                     return false;
@@ -1025,8 +1058,23 @@ export function parseColor(token: Token) {
                 (token as ColorToken).cal = "rel";
             } else if ((token as ColorToken).val == "color-mix" && (tk as IdentToken).val == "in") {
                 (token as ColorToken).cal = "mix";
-            } else if ((token as ColorToken).val == "color" && (tk as IdentToken).val == "in") {
-                (token as ColorToken).cal = "col";
+            }
+
+            if ((token as ColorToken).val == "color") {
+                let index: number = (token as ColorToken).chi!.indexOf(tk) as number;
+
+                if ((token as ColorToken).cal == "rel") {
+                    for (let k = 0; k < (token as ColorToken).chi!.length; k++) {
+                        if (EnumToken.DashedIdenTokenType == (token as ColorToken).chi![k].typ) {
+                            index = k;
+                            break;
+                        }
+                    }
+                }
+
+                if (EnumToken.DashedIdenTokenType == (token as ColorToken)?.chi[index]?.typ) {
+                    (token as ColorToken).kin = ColorType.CUSTOM_COLOR;
+                }
             }
         }
 

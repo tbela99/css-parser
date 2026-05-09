@@ -685,7 +685,6 @@ function doMinify(
                         }
                     }
 
-
                     if (wrapper != null) {
                         while (i < ast.chi!.length) {
                             const nextNode: AstRule = ast.chi![i] as AstRule;
@@ -895,7 +894,6 @@ function doMinify(
                                     (node as AstAtRule).nam !== "font-face" &&
                                     (node as AstAtRule).nam === (previous as AstAtRule).nam)
                             ) {
-                        
                                 node.chi.unshift(...previous.chi);
 
                                 doMinify(node, options, recursive, errors, nestingContent, context);
@@ -913,7 +911,6 @@ function doMinify(
                                 const intersect = diff(previous as AstRule, node as AstRule, reducer, options);
 
                                 if (intersect != null) {
-
                                     if (intersect.node1.chi.length == 0) {
                                         ast.chi!.splice(i--, 1);
                                     } else {
@@ -1015,52 +1012,49 @@ function hasDeclaration(node: AstRule | AstAtRule): boolean {
  * @private
  */
 function optimizeSelector(selector: string[][]): OptimizedSelector | null {
-
     const map = new Set<string>();
-    selector = selector.reduce((acc: string[][], curr: string[]) => {
-
-        // @ts-ignore
-        if (curr.length > 0 && curr.at(-1).startsWith(':is(')) {
-
+    selector = selector
+        .reduce((acc: string[][], curr: string[]) => {
             // @ts-ignore
-            const rules = splitRule(curr.at(-1).slice(4, -1)).map(x => {
+            if (curr.length > 0 && curr.at(-1).startsWith(":is(")) {
+                // @ts-ignore
+                const rules = splitRule(curr.at(-1).slice(4, -1)).map((x) => {
+                    if (x[0] == "&" && x.length > 1) {
+                        return x.slice(x[1] == " " ? 2 : 1);
+                    }
 
-                if (x[0] == '&' && x.length > 1) {
+                    return x;
+                });
 
-                    return x.slice(x[1] == ' ' ? 2 : 1);
+                const part = curr.slice(0, -1);
+
+                for (const rule of rules) {
+                    acc.push(part.concat(rule));
                 }
 
-                return x;
-            });
-
-            const part = curr.slice(0, -1);
-
-            for (const rule of rules) {
-
-                acc.push(part.concat(rule));
+                return acc;
             }
 
+            acc.push(curr);
             return acc;
-        }
+        }, [] as string[][])
+        .filter((x) => {
+            const str = x.join("");
 
-        acc.push(curr);
-        return acc;
+            if (map.has(str)) {
+                return false;
+            }
 
-
-    }, [] as string[][]).filter(x => {
-        
-        const str = x.join('');
-
-        if (map.has(str)) {
-            return false;
-        }
-
-        map.add(str);
-        return true;
-    });
+            map.add(str);
+            return true;
+        });
 
     const optimized: string[] = [];
-    const k: number = selector.reduce((acc: number, curr: string[]): number => acc == 0 ? curr.length : (curr.length == 0 ? acc : Math.min(acc, curr.length)), 0);
+    const k: number = selector.reduce(
+        (acc: number, curr: string[]): number =>
+            acc == 0 ? curr.length : curr.length == 0 ? acc : Math.min(acc, curr.length),
+        0,
+    );
     let i: number = 0;
     let j;
     let match;
@@ -1081,11 +1075,9 @@ function optimizeSelector(selector: string[][]): OptimizedSelector | null {
     }
 
     while (optimized.length > 0) {
-
         const last: string = <string>optimized.at(-1);
 
-        if ((last == ' ' || combinators.includes(<string>last))) {
-
+        if (last == " " || combinators.includes(<string>last)) {
             optimized.pop();
             continue;
         }
@@ -1097,60 +1089,58 @@ function optimizeSelector(selector: string[][]): OptimizedSelector | null {
 
     let reducible: boolean = optimized.length == 1;
 
-    if (optimized[0] == '&') {
-
-        if (optimized[1] == ' ') {
-
+    if (optimized[0] == "&") {
+        if (optimized[1] == " ") {
             optimized.splice(0, 2);
         }
     }
 
-    if (optimized.length == 0 ||
-        (optimized[0].charAt(0) == '&' ||
-            selector.length == 1)) {
-
+    if (optimized.length == 0 || optimized[0].charAt(0) == "&" || selector.length == 1) {
         return {
             match: false,
             optimized,
-            selector: selector.map((selector: string[]): string[] => selector[0] == '&' && selector[1] == ' ' ? selector.slice(2) : (selector)),
-            reducible: selector.length > 1 && selector.every((selector: string[]) => !combinators.includes(selector[0]))
+            selector: selector.map((selector: string[]): string[] =>
+                selector[0] == "&" && selector[1] == " " ? selector.slice(2) : selector,
+            ),
+            reducible:
+                selector.length > 1 && selector.every((selector: string[]) => !combinators.includes(selector[0])),
         };
     }
 
     return {
         match: true,
         optimized,
-        selector: selector.reduce((acc: string[][], curr: string[]) => {
+        selector: selector.reduce(
+            (acc: string[][], curr: string[]) => {
+                let hasCompound: boolean = true;
 
-            let hasCompound: boolean = true;
+                if (hasCompound && curr.length > 0) {
+                    hasCompound = !["&"].concat(combinators).includes(curr[0].charAt(0));
+                }
 
-            if (hasCompound && curr.length > 0) {
-
-                hasCompound = !['&'].concat(combinators).includes(curr[0].charAt(0));
-            }
-
-            // @ts-ignore
-            if (hasCompound && curr[0] == ' ') {
-
-                hasCompound = false;
-                curr.unshift('&');
-            }
-
-            if (curr.length == 0) {
-                curr.push('&');
-                hasCompound = false;
-            }
-
-            if (reducible) {
-                const chr = curr[0].charAt(0);
                 // @ts-ignore
-                reducible = chr == '.' || chr == ':' || isIdentStart(chr.codePointAt(0));
-            }
+                if (hasCompound && curr[0] == " ") {
+                    hasCompound = false;
+                    curr.unshift("&");
+                }
 
-            acc.push(hasCompound ? ['&'].concat(curr) : curr);
-            return acc;
-        }, <string[][]>[]),
-        reducible: selector.every((selector: string[]) => !['>', '+', '~', '&'].includes(selector[0]))
+                if (curr.length == 0) {
+                    curr.push("&");
+                    hasCompound = false;
+                }
+
+                if (reducible) {
+                    const chr = curr[0].charAt(0);
+                    // @ts-ignore
+                    reducible = chr == "." || chr == ":" || isIdentStart(chr.codePointAt(0));
+                }
+
+                acc.push(hasCompound ? ["&"].concat(curr) : curr);
+                return acc;
+            },
+            <string[][]>[],
+        ),
+        reducible: selector.every((selector: string[]) => ![">", "+", "~", "&"].includes(selector[0])),
     };
 }
 
@@ -1490,14 +1480,10 @@ function matchSelectors(selector1: string[][], selector2: string[][]): null | Ma
  * @private
  */
 function fixSelector(node: AstRule) {
-    
-
     if (node.sel.includes("&")) {
-
         const attributes: Token[] = [...tokenize(node.sel as string)].map((t) => t.token) as Token[]; // parseString(node.sel);
 
         for (const attr of walkValues(attributes)) {
-
             if (
                 attr.value.typ == EnumToken.PseudoClassFuncTokenType &&
                 (attr.value as PseudoClassFunctionToken).val == ":is"
@@ -1634,7 +1620,6 @@ function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOption
 
         for (const token2 of raw2) {
             for (const t of token2) {
-
                 if (t.includes(":")) {
                     const matches = t.match(/::?-([a-z]+)-/);
 

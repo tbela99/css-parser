@@ -777,6 +777,10 @@ var ColorType;
      */
     ColorType[ColorType["NON_STD"] = 23] = "NON_STD";
     /**
+     * custom color
+     */
+    ColorType[ColorType["CUSTOM_COLOR"] = 24] = "CUSTOM_COLOR";
+    /**
      * alias for rgba
      */
     ColorType[ColorType["RGB"] = 4] = "RGB";
