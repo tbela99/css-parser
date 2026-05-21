@@ -86,13 +86,24 @@ class ComputeCalcExpressionFeature {
                         if (parent != null) {
                             // @ts-ignore
                             const cp = (value.typ === EnumToken.MathFunctionTokenType ||
-                                (value.typ == EnumToken.FunctionTokenType && mathFuncs.includes(value.val))) &&
+                                (value.typ == EnumToken.FunctionTokenType &&
+                                    mathFuncs.includes(value.val))) &&
                                 value.val != "calc"
                                 ? [value]
                                 : value.typ == EnumToken.DeclarationNodeType
                                     ? value.val
                                     : value.chi;
                             const values = evaluate(cp);
+                            // fix a + -b to a - b
+                            for (const { value } of walkValues(values)) {
+                                if (value.typ === EnumToken.BinaryExpressionTokenType &&
+                                    value.op === EnumToken.Add &&
+                                    Math.sign(value.r.val) == -1) {
+                                    value.op = EnumToken.Sub;
+                                    // @ts-expect-error
+                                    value.r.val *= -1;
+                                }
+                            }
                             // @ts-ignore
                             const children = parent.typ == EnumToken.DeclarationNodeType ? parent.val : parent.chi;
                             if (values.length == 1 && values[0].typ != EnumToken.BinaryExpressionTokenType) {

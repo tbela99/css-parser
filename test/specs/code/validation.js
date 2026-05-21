@@ -561,6 +561,25 @@ html, body, div, span, applet, object, iframe,
                 resolveImport: true
             }).then(result => expect(result.errors.length).equals(1)).then(() => done(), () => done());
         });
+
+        it('selector validation #28', function (done) {
+
+            transform(`
+  .markdown-body .highlight pre:has(
+  >.zeroclipboard-container,
+  ~.zeroclipboard-container,
+
+    +.zeroclipboard-container
+   ) {
+  min-height: 52px;
+}
+`, {
+    beautify: true,
+                validation: true
+            }).then(result => expect(result.code).equals(`.markdown-body .highlight pre:has(>.zeroclipboard-container,~.zeroclipboard-container,+.zeroclipboard-container ) {
+ min-height: 52px
+}`)).then(() => done(), () => done());
+        });
     });
 
 }

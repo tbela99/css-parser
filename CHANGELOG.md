@@ -2,16 +2,49 @@
 
 ## v1.4.3
 
+- [x] fix parsing bugs
+- [ ] support alpha() color function https://drafts.csswg.org/css-color-5/#funcdef-alpha
+- [ ] support contrast-color() https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/contrast-color
+- [x] custom color space in color()
+    - [x] relative color syntax
+    - [x] color syntax
+- [ ] support if() css function
+- [x] validate media queries
+- [x] automatically generate media query range
+- [x] rewrite parsing and validation
+    - [x] selector
+    - [x] declaration
+    - [ ] at-rules
+        - [x] @charset
+        - [x] @color-profile
+        - [x] @container
+        - [ ] @counter-style
+        - [x] @custom-media
+        - [x] @document
+        - [x] @font-face
+        - [x] @font-feature-values
+        - [ ] @font-palette-values
+        - [ ] @function [Experimental](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@function)
+        - [x] @import
+        - [x] @keyframes
+        - [x] @layer
+        - [x] @media 
+        - [x] @namespace
+        - [x] @page
+        - [ ] @position-try
+        - [ ] @property
+        - [x] @scope
+        - [ ] @starting-style
+        - [x] @supports
+        - [ ] @view-transition
+
+- [x] introduce rawToken type to capture unparseable tokens
 - [x] Add a new css module scope 'shortest' to produce short scoped names
 - [ ] fix performance issues - prevent garbage collection
 - [ ] validate media queries
-- [ ] support if() css function
-- [ ] @function [Experimental](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@function)
-- [ ] validate media queries
 - [x] automatically generate range media query
 - [x] handle calc() in media features
-- [ ] add atrule() and named-feature() to support-condition syntax https://drafts.csswg.org/css-conditional-5/#changes-from-L4
-@supports-condition
+- [ ] add at-rule() and named-feature() to @support-condition syntax https://drafts.csswg.org/css-conditional-5/#changes-from-L4
 
 ## v1.4.2
 

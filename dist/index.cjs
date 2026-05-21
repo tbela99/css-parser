@@ -1328,7 +1328,7 @@ var declarations = {
 		syntax: "auto | after"
 	},
 	"-ms-overflow-style": {
-		syntax: "auto | none | scrollbar | -ms-autohiding-scrollbar auto | none | scrollbar | -ms-autohiding-scrollbar"
+		syntax: " auto | none | scrollbar | -ms-autohiding-scrollbar"
 	},
 	"-ms-scroll-chaining": {
 		syntax: "chained | none"
@@ -1478,7 +1478,7 @@ var declarations = {
 		syntax: "default | menu | tooltip | sheet | none"
 	},
 	"-webkit-appearance": {
-		syntax: "none | button | button-bevel | caret | checkbox | default-button | inner-spin-button | listbox | listitem | media-controls-background | media-controls-fullscreen-background | media-current-time-display | media-enter-fullscreen-button | media-exit-fullscreen-button | media-fullscreen-button | media-mute-button | media-overlay-play-button | media-play-button | media-seek-back-button | media-seek-forward-button | media-slider | media-sliderthumb | media-time-remaining-display | media-toggle-closed-captions-button | media-volume-slider | media-volume-slider-container | media-volume-sliderthumb | menulist | menulist-button | menulist-text | menulist-textfield | meter | progress-bar | progress-bar-value | push-button | radio | searchfield | searchfield-cancel-button | searchfield-decoration | searchfield-results-button | searchfield-results-decoration | slider-horizontal | slider-vertical | sliderthumb-horizontal | sliderthumb-vertical | square-button | textarea | textfield | -apple-pay-button none | button | button-bevel | caps-lock-indicator | caret | checkbox | default-button | inner-spin-button | listbox | listitem | media-controls-background | media-controls-fullscreen-background | media-current-time-display | media-enter-fullscreen-button | media-exit-fullscreen-button | media-fullscreen-button | media-mute-button | media-overlay-play-button | media-play-button | media-seek-back-button | media-seek-forward-button | media-slider | media-sliderthumb | media-time-remaining-display | media-toggle-closed-captions-button | media-volume-slider | media-volume-slider-container | media-volume-sliderthumb | menulist | menulist-button | menulist-text | menulist-textfield | meter | progress-bar | progress-bar-value | push-button | radio | scrollbarbutton-down | scrollbarbutton-left | scrollbarbutton-right | scrollbarbutton-up | scrollbargripper-horizontal | scrollbargripper-vertical | scrollbarthumb-horizontal | scrollbarthumb-vertical | scrollbartrack-horizontal | scrollbartrack-vertical | searchfield | searchfield-cancel-button | searchfield-decoration | searchfield-results-button | searchfield-results-decoration | slider-horizontal | slider-vertical | sliderthumb-horizontal | sliderthumb-vertical | square-button | textarea | textfield | -apple-pay-button"
+		syntax: " none | button | button-bevel | caps-lock-indicator | caret | checkbox | default-button | inner-spin-button | listbox | listitem | media-controls-background | media-controls-fullscreen-background | media-current-time-display | media-enter-fullscreen-button | media-exit-fullscreen-button | media-fullscreen-button | media-mute-button | media-overlay-play-button | media-play-button | media-seek-back-button | media-seek-forward-button | media-slider | media-sliderthumb | media-time-remaining-display | media-toggle-closed-captions-button | media-volume-slider | media-volume-slider-container | media-volume-sliderthumb | menulist | menulist-button | menulist-text | menulist-textfield | meter | progress-bar | progress-bar-value | push-button | radio | scrollbarbutton-down | scrollbarbutton-left | scrollbarbutton-right | scrollbarbutton-up | scrollbargripper-horizontal | scrollbargripper-vertical | scrollbarthumb-horizontal | scrollbarthumb-vertical | scrollbartrack-horizontal | scrollbartrack-vertical | searchfield | searchfield-cancel-button | searchfield-decoration | searchfield-results-button | searchfield-results-decoration | slider-horizontal | slider-vertical | sliderthumb-horizontal | sliderthumb-vertical | square-button | textarea | textfield | -apple-pay-button"
 	},
 	"-webkit-border-after": {
 		syntax: "<'border-top'>"
@@ -1598,7 +1598,7 @@ var declarations = {
 		syntax: "read-only | read-write | read-write-plaintext-only"
 	},
 	"-webkit-user-select": {
-		syntax: "auto | text | none | all auto | none | text | all"
+		syntax: " auto | none | text | all"
 	},
 	"accent-color": {
 		syntax: "auto | <color>"
@@ -1616,7 +1616,7 @@ var declarations = {
 		syntax: "[ normal | <baseline-position> | <content-distribution> | <overflow-position>? <content-position> ]#"
 	},
 	"alignment-baseline": {
-		syntax: "baseline | alphabetic | ideographic | middle | central | mathematical | text-before-edge | text-after-edge auto | baseline | before-edge | text-before-edge | middle | central | after-edge | text-after-edge | ideographic | alphabetic | hanging | mathematical"
+		syntax: " auto | baseline | before-edge | text-before-edge | middle | central | after-edge | text-after-edge | ideographic | alphabetic | hanging | mathematical"
 	},
 	all: {
 		syntax: "initial | inherit | unset | revert | revert-layer"
@@ -1721,7 +1721,7 @@ var declarations = {
 		syntax: "<bg-size>#"
 	},
 	"baseline-shift": {
-		syntax: "<length-percentage> | sub | super | baseline baseline | sub | super | <svg-length>"
+		syntax: " baseline | sub | super | <svg-length>"
 	},
 	"baseline-source": {
 		syntax: "auto | first | last"
@@ -1878,6 +1878,9 @@ var declarations = {
 	},
 	"border-right-width": {
 		syntax: "<line-width>"
+	},
+	"border-shape": {
+		syntax: "none | [ <basic-shape> <geometry-box>?]{1,2}"
 	},
 	"border-spacing": {
 		syntax: "<length>{1,2}"
@@ -2123,7 +2126,7 @@ var declarations = {
 		syntax: "[ <counter-name> <integer>? ]+ | none"
 	},
 	cursor: {
-		syntax: "<cursor-predefined> | [ [ <url> [ <x> <y> ]? , ]* <cursor-predefined> ] [ [ <url> [ <x> <y> ]? , ]* [ auto | default | none | context-menu | help | pointer | progress | wait | cell | crosshair | text | vertical-text | alias | copy | move | no-drop | not-allowed | e-resize | n-resize | ne-resize | nw-resize | s-resize | se-resize | sw-resize | w-resize | ew-resize | ns-resize | nesw-resize | nwse-resize | col-resize | row-resize | all-scroll | zoom-in | zoom-out | grab | grabbing | hand | -webkit-grab | -webkit-grabbing | -webkit-zoom-in | -webkit-zoom-out | -moz-grab | -moz-grabbing | -moz-zoom-in | -moz-zoom-out ] ]"
+		syntax: "<cursor-predefined> |  [ [ <url> [ <x> <y> ]? , ]* [ auto | default | none | context-menu | help | pointer | progress | wait | cell | crosshair | text | vertical-text | alias | copy | move | no-drop | not-allowed | e-resize | n-resize | ne-resize | nw-resize | s-resize | se-resize | sw-resize | w-resize | ew-resize | ns-resize | nesw-resize | nwse-resize | col-resize | row-resize | all-scroll | zoom-in | zoom-out | grab | grabbing | hand | -webkit-grab | -webkit-grabbing | -webkit-zoom-in | -webkit-zoom-out | -moz-grab | -moz-grabbing | -moz-zoom-in | -moz-zoom-out ] ]"
 	},
 	cx: {
 		syntax: "<length> | <percentage>"
@@ -2141,7 +2144,7 @@ var declarations = {
 		syntax: "[ <display-outside> || <display-inside> ] | <display-listitem> | <display-internal> | <display-box> | <display-legacy> | <-non-standard-display>"
 	},
 	"dominant-baseline": {
-		syntax: "auto | text-bottom | alphabetic | ideographic | middle | central | mathematical | hanging | text-top auto | use-script | no-change | reset-size | ideographic | alphabetic | hanging | mathematical | central | middle | text-after-edge | text-before-edge"
+		syntax: " auto | use-script | no-change | reset-size | ideographic | alphabetic | hanging | mathematical | central | middle | text-after-edge | text-before-edge"
 	},
 	"dynamic-range-limit": {
 		syntax: "standard | no-limit | constrained | <dynamic-range-limit-mix()>"
@@ -2156,7 +2159,7 @@ var declarations = {
 		syntax: "<paint>"
 	},
 	"fill-opacity": {
-		syntax: "<'opacity'> <number-zero-one> | <percentage>"
+		syntax: " <number-zero-one> | <percentage>"
 	},
 	"fill-rule": {
 		syntax: "nonzero | evenodd"
@@ -2195,7 +2198,7 @@ var declarations = {
 		syntax: "<'opacity'>"
 	},
 	font: {
-		syntax: "[ [ <'font-style'> || <font-variant-css2> || <'font-weight'> || <font-width-css3> ]? <'font-size'> [ / <'line-height'> ]? <'font-family'># ] | <system-family-name> [ [ <'font-style'> || <font-variant-css2> || <'font-weight'> || <font-width-css3> ]? <'font-size'> [ / <'line-height'> ]? <'font-family'># ] | <system-family-name> | <-non-standard-font> | [ <'font-size'> [ / <'line-height'> ]? <'font-family'># ]"
+		syntax: " [ [ <'font-style'> || <font-variant-css2> || <'font-weight'> || <font-width-css3> ]? <'font-size'> [ / <'line-height'> ]? <'font-family'># ] | <system-family-name> | <-non-standard-font> | [ <'font-size'> [ / <'line-height'> ]? <'font-family'># ]"
 	},
 	"font-family": {
 		syntax: "[ <family-name> | <generic-family> ]#"
@@ -2429,7 +2432,7 @@ var declarations = {
 		syntax: "auto | <length-percentage> | <anchor()> | <anchor-size()>"
 	},
 	"letter-spacing": {
-		syntax: "normal | <length> normal | <length-percentage>"
+		syntax: " normal | <length-percentage>"
 	},
 	"lighting-color": {
 		syntax: "<color>"
@@ -2981,25 +2984,25 @@ var declarations = {
 		syntax: "<color>"
 	},
 	"stroke-dasharray": {
-		syntax: "none | <dasharray> none | [ <svg-length>+ ]#"
+		syntax: " none | [ <svg-length>+ ]#"
 	},
 	"stroke-dashoffset": {
-		syntax: "<length-percentage> | <number> <svg-length>"
+		syntax: " <svg-length>"
 	},
 	"stroke-linecap": {
 		syntax: "butt | round | square"
 	},
 	"stroke-linejoin": {
-		syntax: "miter | miter-clip | round | bevel | arcs miter | round | bevel"
+		syntax: " miter | round | bevel"
 	},
 	"stroke-miterlimit": {
-		syntax: "<number> <number-one-or-greater>"
+		syntax: " <number-one-or-greater>"
 	},
 	"stroke-opacity": {
 		syntax: "<'opacity'>"
 	},
 	"stroke-width": {
-		syntax: "<length-percentage> | <number> <svg-length>"
+		syntax: " <svg-length>"
 	},
 	"tab-size": {
 		syntax: "<integer> | <length>"
@@ -3152,7 +3155,7 @@ var declarations = {
 		syntax: "content-box | border-box | fill-box | stroke-box | view-box"
 	},
 	"transform-origin": {
-		syntax: "[ <length-percentage> | left | center | right | top | bottom ] | [ [ <length-percentage> | left | center | right ] && [ <length-percentage> | top | center | bottom ] ] <length>?"
+		syntax: " [ left | center | right | top | bottom | <length-percentage> ]  |  [ left | center | right | <length-percentage> ] [ top | center | bottom | <length-percentage> ] <length>?  |  [ [ center | left | right ] && [ center | top | bottom ] ] <length>?"
 	},
 	"transform-style": {
 		syntax: "flat | preserve-3d"
@@ -3411,6 +3414,12 @@ var declarations = {
 	},
 	"white-space-trim": {
 		syntax: "none | discard-before || discard-after || discard-inner"
+	},
+	"-moz-padding-start": {
+		syntax: "<'padding-top'>"
+	},
+	"-webkit-margin-end": {
+		syntax: "<'margin-block-end'>"
 	},
 	composes: {
 		syntax: "<composes-selector>#"
@@ -3822,7 +3831,7 @@ var syntaxes = {
 		syntax: "[ first | last ]? baseline"
 	},
 	"basic-shape": {
-		syntax: "<inset()> | <xywh()> | <rect()> | <circle()> | <ellipse()> | <polygon()> | <path()>"
+		syntax: "<inset()> | <xywh()> | <rect()> | <circle()> | <ellipse()> | <polygon()> | <path()> | shape()"
 	},
 	"basic-shape-rect": {
 		syntax: "<inset()> | <rect()> | <xywh()>"
@@ -4083,7 +4092,7 @@ var syntaxes = {
 		syntax: "ellipse( <radial-size>? [ at <position> ]? )"
 	},
 	"env()": {
-		syntax: "env( <custom-ident> , <declaration-value>? )"
+		syntax: "env( <custom-ident> <integer [0,∞]>* , <declaration-value>? )"
 	},
 	"exp()": {
 		syntax: "exp( <calc-sum> )"
@@ -4170,7 +4179,7 @@ var syntaxes = {
 		syntax: "<shape-box> | fill-box | stroke-box | view-box"
 	},
 	gradient: {
-		syntax: "<-legacy-gradient>"
+		syntax: "<linear-gradient()> | <repeating-linear-gradient()> | <radial-gradient()> | <repeating-radial-gradient()> | <conic-gradient()> | <repeating-conic-gradient()> | <-legacy-gradient>"
 	},
 	"grayscale()": {
 		syntax: "grayscale( [ <number> | <percentage> ]? )"
@@ -4749,7 +4758,7 @@ var syntaxes = {
 		syntax: "( <declaration> )"
 	},
 	"supports-feature": {
-		syntax: "<supports-decl> | <supports-selector-fn>"
+		syntax: "<supports-selector-fn> | <supports-font-tech-fn> | <supports-font-format-fn> | <supports-at-rule-fn> | <supports-named-feature-fn> | <supports-env-fn> | <supports-decl>"
 	},
 	"supports-in-parens": {
 		syntax: "( <supports-condition> ) | <supports-feature> | <general-enclosed>"
@@ -5089,6 +5098,9 @@ var syntaxes = {
 	},
 	"syntax-string": {
 		syntax: "<string>"
+	},
+	"alpha()": {
+		syntax: " alpha([from <color>] [ / [<alpha-value> | none] ]? )"
 	},
 	"composes-selector": {
 		syntax: "<ident>+ [from [global&&<string>]]?"
@@ -7143,6 +7155,10 @@ const pseudoAliasMap = {
     ":-moz-ui-valid": ":user-valid",
     "::-moz-selection": "::selection",
 };
+// renamed standard properties
+const renamedStandardProperties = new Map([
+    ['color-adjust', 'print-color-adjust'],
+]);
 function isLength(dimension) {
     return "unit" in dimension && dimensionUnits.has(dimension.unit.toLowerCase());
 }
@@ -16131,13 +16147,24 @@ class ComputeCalcExpressionFeature {
                         if (parent != null) {
                             // @ts-ignore
                             const cp = (value.typ === exports.EnumToken.MathFunctionTokenType ||
-                                (value.typ == exports.EnumToken.FunctionTokenType && mathFuncs.includes(value.val))) &&
+                                (value.typ == exports.EnumToken.FunctionTokenType &&
+                                    mathFuncs.includes(value.val))) &&
                                 value.val != "calc"
                                 ? [value]
                                 : value.typ == exports.EnumToken.DeclarationNodeType
                                     ? value.val
                                     : value.chi;
                             const values = evaluate(cp);
+                            // fix a + -b to a - b
+                            for (const { value } of walkValues(values)) {
+                                if (value.typ === exports.EnumToken.BinaryExpressionTokenType &&
+                                    value.op === exports.EnumToken.Add &&
+                                    Math.sign(value.r.val) == -1) {
+                                    value.op = exports.EnumToken.Sub;
+                                    // @ts-expect-error
+                                    value.r.val *= -1;
+                                }
+                            }
                             // @ts-ignore
                             const children = parent.typ == exports.EnumToken.DeclarationNodeType ? parent.val : parent.chi;
                             if (values.length == 1 && values[0].typ != exports.EnumToken.BinaryExpressionTokenType) {
@@ -17235,6 +17262,9 @@ function parseDeclaration(tokens, parent, options, errors) {
     let validate = typeof options.validation === "boolean"
         ? options.validation
         : options.validation & exports.ValidationLevel.Declaration;
+    if (renamedStandardProperties.has(name.val)) {
+        name.val = renamedStandardProperties.get(name.val);
+    }
     for (i = 0; i < tokens.length; i++) {
         const token = tokens[i];
         if (token.typ == exports.EnumToken.WhitespaceTokenType ||
@@ -17258,6 +17288,51 @@ function parseDeclaration(tokens, parent, options, errors) {
         });
     }
     tokens = trimArray(tokens.slice(i + 1));
+    for (i = 0; i < tokens.length; i++) {
+        const token = tokens[i];
+        if (token.typ == exports.EnumToken.WhitespaceTokenType ||
+            token.typ == exports.EnumToken.CommentTokenType ||
+            token.typ == exports.EnumToken.InvalidCommentTokenType) {
+            continue;
+        }
+        if (tokens[i].typ === exports.EnumToken.UrlFunctionTokenDefType) {
+            let k = i;
+            while (k < tokens.length) {
+                if (tokens[++k]?.typ === exports.EnumToken.WhitespaceTokenType || tokens[k]?.typ === exports.EnumToken.CommentTokenType) {
+                    continue;
+                }
+                if (tokens[k]?.typ !== exports.EnumToken.EndParensTokenType) {
+                    break;
+                }
+            }
+            if (tokens[k].typ === exports.EnumToken.LiteralTokenType ||
+                tokens[k].typ === exports.EnumToken.IdenTokenType ||
+                tokens[k].typ === exports.EnumToken.DashedIdenTokenType ||
+                tokens[k].typ === exports.EnumToken.HashTokenType ||
+                tokens[k].typ === exports.EnumToken.ClassSelectorTokenType) {
+                let j = k;
+                let val = tokens[k].val;
+                while (j + 1 < tokens.length) {
+                    if (tokens[++j].typ !== exports.EnumToken.LiteralTokenType &&
+                        tokens[j].typ !== exports.EnumToken.IdenTokenType &&
+                        tokens[j].typ !== exports.EnumToken.DashedIdenTokenType &&
+                        tokens[j].typ !== exports.EnumToken.HashTokenType &&
+                        tokens[j].typ !== exports.EnumToken.ClassSelectorTokenType) {
+                        break;
+                    }
+                    val += tokens[j].val;
+                }
+                Object.assign(tokens[k], {
+                    typ: exports.EnumToken.UrlTokenTokenType,
+                    val,
+                });
+                tokens[k].loc.end = tokens[j].loc.end;
+                tokens.splice(k + 1, j - k - 1);
+                // console.debug(tokens[k]);
+            }
+        }
+    }
+    // console.debug({ tokens });
     if (validate && name.typ === exports.EnumToken.IdenTokenType) {
         if (parent != null &&
             (parent.typ == exports.EnumToken.AtRuleNodeType || parent.typ === exports.EnumToken.InvalidAtRuleNodeType) &&
@@ -17456,7 +17531,8 @@ function parseDeclaration(tokens, parent, options, errors) {
                         }
                     }
                     i = index;
-                    if (tokens[index].typ === exports.EnumToken.MathFunctionTokenType && equalsIgnoreCase('calc', tokens[index].val)) {
+                    if (tokens[index].typ === exports.EnumToken.MathFunctionTokenType &&
+                        equalsIgnoreCase("calc", tokens[index].val)) {
                         tokens[index].chi = [buildExpression(tokens[index].chi)];
                     }
                     else if (tokens[index].typ === exports.EnumToken.ColorTokenType) {
@@ -17755,7 +17831,7 @@ function isStyleRangeValue(tokens) {
     return result;
 }
 function createValidationContext(tokens) {
-    tokens = trimArray(tokens.slice());
+    tokens = trimArray(tokens.filter(t => t.typ !== exports.EnumToken.CommentTokenType));
     if (tokens.at(-1)?.typ === exports.EnumToken.ImportantTokenType) {
         tokens.pop();
         trimArray(tokens);
@@ -17816,6 +17892,9 @@ function createValidationContext(tokens) {
             // track balanced parens
             let matchCount = 0;
             const tokens = [];
+            while (index + 1 < this.tokens.length && this.tokens[index + 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
+                index++;
+            }
             while (index + 1 < this.tokens.length) {
                 token = this.tokens[++index];
                 if (token?.typ === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(token?.typ)) {
@@ -17837,8 +17916,12 @@ function createValidationContext(tokens) {
                     break;
                 }
             }
+            if (tokens[0]?.typ === exports.EnumToken.WhitespaceTokenType) {
+                tokens.shift();
+            }
             return tokens;
         },
+        // 2
         split(split = exports.EnumToken.CommaTokenType) {
             let index = this.index;
             let token = this.tokens[index];
@@ -18096,7 +18179,8 @@ function matchSelectorSyntax(stream, errors, options, nested) {
                             stream[k].typ === exports.EnumToken.CommentTokenType)) {
                         k++;
                     }
-                    if (k < stream.length) {
+                    // :has(> a, ~b, +c)
+                    if (!tokensfuncDefMap.has(stack.at(-2)?.typ) && k < stream.length) {
                         switch (stream[k].typ) {
                             case exports.EnumToken.Plus:
                             case exports.EnumToken.Tilda:
@@ -18477,13 +18561,6 @@ function matchSelectorSyntax(stream, errors, options, nested) {
                             errors.push(...result.errors);
                         }
                     }
-                    // }
-                    // const func = stack.at(-1) as PseudoClassFunctionToken;
-                    // tokens.pop();
-                    // // @ts-expect-error
-                    // func.typ = tokensfuncDefMap.get(func.typ)!;
-                    // func.chi = tokens.splice(tokens.indexOf(func) + 1, tokens.length - 1);
-                    // console.debug(JSON.stringify({func}, null, 1));
                     stack.pop();
                     break;
                 }
@@ -18618,7 +18695,7 @@ function matchAllSyntax(syntaxes, context, options) {
     };
 }
 function matchListSyntax(syntax, context, options) {
-    const { isList, isOptional, match, ...rest } = syntax;
+    const { isList, match, isOptional, ...rest } = syntax;
     let success = true;
     let result = null;
     let tmpResult;
@@ -18672,6 +18749,7 @@ function matchOccurenceSyntax(syntax, context, options) {
     let count = 0;
     do {
         tmpResult = matchSyntax([rest], context.slice(), options);
+        // console.debug({syntax,tmpResult});
         if (tmpResult.success) {
             count++;
             result = tmpResult;
@@ -18680,7 +18758,8 @@ function matchOccurenceSyntax(syntax, context, options) {
                 break;
             }
             context.update(tmpResult.context.current());
-            if (Number.isFinite(match?.max?.val) && count === match.max.val) {
+            // console.debug(['match?.max?.val != null && Number.isFinite(match?.max?.val) && count === (match!.max!.val as number)', match?.max?.val != null , Number.isFinite(match?.max?.val) , count === (match!.max!.val as number)])
+            if (match?.max?.val != null && Number.isFinite(match?.max?.val) && count === match.max.val) {
                 break;
             }
         }
@@ -18694,7 +18773,7 @@ function matchOccurenceSyntax(syntax, context, options) {
                     action: "drop",
                     message: "could not match syntax",
                     node: context.peek(),
-                    location: context.peek().loc,
+                    location: context.peek()?.loc,
                 },
             ],
             syntaxToken: null,
@@ -18703,6 +18782,7 @@ function matchOccurenceSyntax(syntax, context, options) {
             token: null,
         };
     }
+    // console.debug({result3: result, match, count});
     return (result ?? {
         success: false,
         errors: [
@@ -18736,16 +18816,35 @@ function matchSyntax(syntaxes, context, options) {
     let token = null;
     let result = null;
     let isOptional;
+    // console.debug('> ' + syntaxes.reduce((acc, b) => acc + renderSyntax(b), ""));
+    // console.debug('> ' + context.getRemainingTokens().reduce((acc, b) => acc + renderToken(b), ""));
+    // console.debug(JSON.stringify(syntaxes, null, 1));
+    // console.debug(new Error('debug'));
+    // console.debug(JSON.stringify({tokens: context.getRemainingTokens(), syntaxes: syntaxes}, null, 1));
+    if (context.tokens.length == 1 && context.tokens[0].typ == exports.EnumToken.IdenTokenType && allValues.some(v => equalsIgnoreCase(v, context.tokens[0].val))) {
+        context.end();
+        return {
+            syntaxToken: null,
+            token: context.peek(),
+            success: true,
+            valid: true,
+            context,
+            errors: [],
+        };
+    }
     while (++i < syntaxes.length) {
         if (syntaxes[i].typ == ValidationTokenEnum.Whitespace) {
             continue;
         }
+        // console.debug([syntaxes[i], context.peek()]);
         isOptional =
             (syntaxes[i].isOptional === true ||
                 syntaxes[i].isRepeatable === true ||
                 syntaxes[i].isRepeatable === true) &&
                 !syntaxes[i].isMandatatoryGroup;
         token = context.peek();
+        // console.debug({token, syntax: syntaxes[i]});
+        // console.debug(new Error("123"));
         if (token == null) {
             if (!isOptional) {
                 return {
@@ -18814,7 +18913,7 @@ function matchSyntax(syntaxes, context, options) {
             }
             return result;
         }
-        if (syntaxes[i].isRepeatableAtLeastOnce) {
+        if (syntaxes[i].isRepeatableAtLeastOnce || syntaxes[i].isRepeatable) {
             result = matchRepeatableSyntax(syntaxes[i], context.slice(), options);
             if (result.success) {
                 if (result.context.done()) {
@@ -18877,8 +18976,10 @@ function matchSyntax(syntaxes, context, options) {
         }
         if (syntaxes[i].match != null) {
             result = matchOccurenceSyntax(syntaxes[i], context.slice(), options);
+            // console.debug(result);
             if (result.success) {
                 options.visited.get(token).delete(syntaxes[i]);
+                // console.debug({tokens: context.slice().tokens, remaining: result.context.getRemainingTokens(),result2: result, done: result.context.done(), index: result.context.index});
                 if (result.context.done()) {
                     context.end();
                     return {
@@ -18887,6 +18988,7 @@ function matchSyntax(syntaxes, context, options) {
                         syntaxToken: syntaxes[++i],
                     };
                 }
+                // console.debug([result.context.current(), result.context.peek(), syntaxes[i] ]);
                 context.update(result.context.current());
                 continue;
             }
@@ -19000,16 +19102,18 @@ function matchSyntax(syntaxes, context, options) {
                 //
                 const tokens = context.split();
                 let j = 0;
-                // const tokens = splitTokenList(context.getRemainingTokens());
-                for (; j < tokens.length - 1; j++) {
+                for (; j < tokens.length - 1; j += 2) {
                     if (tokens[j].at(-1)?.typ !== exports.EnumToken.CommaTokenType) {
                         break;
                     }
-                    result = matchSyntax(syntaxes[i].chi, createValidationContext(tokens[j]), options);
+                    result = matchSyntax(syntaxes[i].chi, context.slice(), options);
                     if (!result.success) {
                         break;
                     }
-                    context.update(tokens[j].at(-1));
+                    context.update(result.context.current());
+                }
+                if (result != null && !result.success) {
+                    return result;
                 }
                 break;
             }
@@ -19095,7 +19199,7 @@ function matchSyntax(syntaxes, context, options) {
                     return {
                         success: false,
                         valid: true,
-                        token,
+                        token: context.current() ?? token,
                         context,
                         syntaxToken: syntaxes[i],
                         errors: [],
@@ -19115,9 +19219,9 @@ function matchSyntax(syntaxes, context, options) {
                     };
                 }
                 else {
-                    // console.debug("current", result.context.current());
                     context.update(result.context.current());
                 }
+                // console.debug({result6: result, done: context.done(), s: syntaxes[i], i, l: syntaxes.length, token});
                 // console.debug(
                 //         JSON.stringify({
                 //             op: ValidationTokenEnum[syntaxes[i].typ],
@@ -19134,8 +19238,10 @@ function matchSyntax(syntaxes, context, options) {
             case ValidationTokenEnum.PipeToken:
                 {
                     result = null;
+                    const results = [];
+                    let tmp = null;
                     for (const syntax of syntaxes[i].chi) {
-                        result = matchSyntax(syntax, context.slice(), options);
+                        tmp = matchSyntax(syntax, context.slice(), options);
                         // console.debug(
                         //         {
                         //             op: ValidationTokenEnum[syntaxes[i].typ],
@@ -19149,29 +19255,23 @@ function matchSyntax(syntaxes, context, options) {
                         //         }
                         // );
                         // console.debug(new Error('123'));
-                        if (result.success) {
-                            break;
-                        }
-                        // if (tmp.success) {
-                        //     results.push(tmp);
-                        //     if (tmp.context.done()) {
-                        //         context.end();
-                        //         return { ...tmp, context, syntaxToken: syntaxes[i + 1] };
-                        //         // break;
-                        //     }
+                        // if (result.success) {
+                        //     break;
                         // }
+                        // console.debug([token, syntax, tmp]);
+                        if (tmp.success) {
+                            results.push(tmp);
+                            // console.debug({tmp,  syntax, rem: context.getRemainingTokens()});
+                            if (tmp.context.done()) {
+                                context.end();
+                                return { ...tmp, context, syntaxToken: syntaxes[i + 1] };
+                                // break;
+                            }
+                        }
                     }
-                    // if (results.length > 0) {
-                    //     result = results.reduce((a, b) =>
-                    //         a.context.done()
-                    //             ? a
-                    //             : b.context.done()
-                    //               ? b
-                    //               : a.context.getRemainingTokens().length > b.context.getRemainingTokens().length
-                    //                 ? b
-                    //                 : a,
-                    //     );
-                    // }
+                    if (results.length > 0) {
+                        result = results.reduce((a, b) => a.context.index > b.context.index ? a : b);
+                    }
                     if (result?.success) {
                         success = true;
                         options.visited.get(token).delete(syntaxes[i]);
@@ -19335,8 +19435,7 @@ function matchSyntax(syntaxes, context, options) {
                 if ((!tokensfuncDefMap.has(token.typ) &&
                     !funcLike.includes(token.typ) &&
                     !funcTypes.includes(token.typ)) ||
-                    syntaxes[i].val.toLocaleLowerCase() !==
-                        token.val.toLocaleLowerCase()) {
+                    !equalsIgnoreCase(syntaxes[i].val, token.val.toLocaleLowerCase())) {
                     return {
                         success: false,
                         valid: true,
@@ -19353,11 +19452,31 @@ function matchSyntax(syntaxes, context, options) {
                     };
                 }
                 if (tokensfuncDefMap.has(token.typ)) {
-                    context.next();
-                    result = matchSyntax(syntaxes[i].chi, context, options);
-                    success = context.peek()?.typ === exports.EnumToken.EndParensTokenType;
-                    if (success) {
-                        context.next();
+                    const range = context.peekRange();
+                    if (range.at(-1)?.typ !== exports.EnumToken.EndParensTokenType) {
+                        const tk = range.at(-1);
+                        return {
+                            success: false,
+                            valid: true,
+                            token,
+                            context,
+                            syntaxToken: syntaxes[i],
+                            errors: [
+                                {
+                                    action: "drop",
+                                    message: `Expecting ')' at ${tk.loc?.src}:${tk.loc?.sta?.lin}:${tk.loc?.sta?.col}`,
+                                    node: token,
+                                },
+                            ],
+                        };
+                    }
+                    result = matchSyntax(syntaxes[i].chi, 
+                    // (getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntaxes[i] as ValidationFunctionToken).val + '()') as ValidationFunctionToken[])[0].chi as ValidationToken[],
+                    createValidationContext(range.slice(1, -1)), options);
+                    // console.debug(ValidationSyntaxGroupEnum.Syntaxes + '.' + (syntaxes[i] as ValidationFunctionToken).val + '()')
+                    // console.debug({range, result});
+                    if (result.success) {
+                        context.update(range.at(-1));
                         options.visited.get(token).delete(syntaxes[i]);
                     }
                     break;
@@ -19430,11 +19549,33 @@ function matchSyntax(syntaxes, context, options) {
                     errors: [],
                 };
             case ValidationTokenEnum.FunctionDefinition:
-                if (!(tokensfuncDefMap.has(token.typ) || tokensfuncSet.has(token.typ)) ||
-                    token.val.toLowerCase() ===
-                        syntaxes[i].val.toLowerCase()) {
+                if (tokensfuncDefMap.has(token.typ) &&
+                    equalsIgnoreCase(token.val, syntaxes[i].val)) {
                     const children = trimArray(context.peekRange());
+                    // console.debug(JSON.stringify({token, syntax: syntaxes[i], children, s: (
+                    //             (
+                    //                 getParsedSyntax(
+                    //                     ValidationSyntaxGroupEnum.Syntaxes,
+                    //                     (syntaxes[i] as ValidationFunctionDefinitionToken).val + "()",
+                    //                 ) as ValidationFunctionToken[] as ValidationToken[]
+                    //             )?.[0] as ValidationFunctionToken
+                    //         ).chi}, null, 1));
                     result = matchSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, syntaxes[i].val + "()")?.[0]).chi ?? [], createValidationContext(children.slice(1, -1)), options);
+                    // console.debug(
+                    //     // JSON.stringify(
+                    //         [
+                    //     // (
+                    //     //     (
+                    //     //         getParsedSyntax(
+                    //     //             ValidationSyntaxGroupEnum.Syntaxes,
+                    //     //             (syntaxes[i] as ValidationFunctionDefinitionToken).val + "()",
+                    //     //         ) as ValidationFunctionToken[] as ValidationToken[]
+                    //     //     )?.[0] as ValidationFunctionToken
+                    //     // ).chi, 
+                    //     // children.slice(1, -1), 
+                    //     {result, children, tk: result.token, syn: result.syntaxToken}]
+                    //     // , null, 1)
+                    // );
                     if (result.success) {
                         success = true;
                         options.visited.get(token).delete(syntaxes[i]);
@@ -19447,14 +19588,15 @@ function matchSyntax(syntaxes, context, options) {
                     //     (options.visited!.get(token) as Set<ValidationToken>)!.delete(syntaxes[i]);
                     // }
                 }
-                else {
+                else if (tokensfuncSet.has(token.typ) &&
+                    equalsIgnoreCase(token.val, syntaxes[i].val)) {
                     result = matchSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, syntaxes[i].val + "()") ?? [], createValidationContext([token]), options);
-                }
-                if (result.success) {
-                    success = true;
-                    options.visited.get(token).delete(syntaxes[i]);
-                    context.next();
-                    break;
+                    if (result.success) {
+                        success = true;
+                        options.visited.get(token).delete(syntaxes[i]);
+                        context.next();
+                        break;
+                    }
                 }
                 return {
                     success: false,
@@ -19462,7 +19604,7 @@ function matchSyntax(syntaxes, context, options) {
                     token,
                     context,
                     syntaxToken: syntaxes[i],
-                    errors: result.errors,
+                    errors: []
                 };
             case ValidationTokenEnum.OpenParenthesis:
                 if (token.typ === exports.EnumToken.StartParensTokenType) {
@@ -19546,6 +19688,7 @@ function matchSyntax(syntaxes, context, options) {
         if (success &&
             "range" in syntaxes[i] &&
             !(token?.typ === exports.EnumToken.MathFunctionTokenType ||
+                token?.typ === exports.EnumToken.MathFunctionTokenDefType ||
                 (token?.typ === exports.EnumToken.FunctionTokenDefType && token.val === "var") ||
                 (token?.typ === exports.EnumToken.FunctionTokenDefType && token.val === "env"))) {
             let success = false;
@@ -19567,6 +19710,7 @@ function matchSyntax(syntaxes, context, options) {
                     token.val <=
                         syntaxes[i].range.max.val;
             }
+            // console.debug({token, success});
             if (!success) {
                 return {
                     success: false,
@@ -19579,6 +19723,7 @@ function matchSyntax(syntaxes, context, options) {
             }
         }
     }
+    // console.debug({result7: result});
     return result?.success
         ? result
         : {
@@ -19699,15 +19844,31 @@ function matchProperty(property, context, options) {
     if (checkCalc && !["number", "zero", "integer", "percentage", "length-percentage"].includes(property.val)) {
         checkCalc = context.peek().val === "calc";
     }
+    // console.debug({checkCalc, property, tk: context.peek()});
+    // console.debug(JSON.stringify({property,checkCalc, peek: context.peek()}, null, 1));
     if (checkCalc) {
         const range = context.peekRange();
+        // console.debug([
+        // (getParsedSyntax(
+        //         ValidationSyntaxGroupEnum.Syntaxes,
+        //         (context.peek() as FunctionToken).val + "()",
+        //     ) as ValidationFunctionToken[]
+        // )?.[0]?.chi,
+        // range.slice(1, -1),
+        // range,
+        // context.getRemainingTokens(),
+        // ]);
         const result = matchSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, context.peek().val + "()")?.[0]?.chi, createValidationContext(range.slice(1, -1)), options);
+        // console.debug(new Error('d'));
+        // console.debug(new Error('d'));
         if (result.success) {
             context.update(range.at(-1));
+            // console.debug({calcR: result, done: context.done(), pk: context.peek()});
+            // console.debug(context.getRemainingTokens());
             return {
                 success: true,
                 valid: true,
-                token: null,
+                token: range.at(-1),
                 context,
                 syntaxToken: null,
                 errors: [],
@@ -19723,15 +19884,110 @@ function matchProperty(property, context, options) {
         };
     }
     switch (property.val) {
-        case "declaration-value":
+        case 'combinator':
             {
                 const token = context.peek();
-                success =
-                    token != null &&
-                        token?.typ !== exports.EnumToken.EndParensTokenType &&
-                        token?.typ !== exports.EnumToken.AttrEndTokenType &&
-                        token?.typ !== exports.EnumToken.SemiColonTokenType &&
-                        token?.typ !== exports.EnumToken.BlockEndTokenType;
+                success = token != null && (token.typ == exports.EnumToken.NextSiblingCombinatorTokenType || token.typ == exports.EnumToken.ChildCombinatorTokenType || token.typ == exports.EnumToken.SubsequentSiblingCombinatorTokenType || token.typ == exports.EnumToken.ColumnCombinatorTokenType);
+            }
+            break;
+        case "declaration-value":
+            {
+                // consume a declaration value
+                // consume a token,
+                // if the next token is a comma consume it and expect a token
+                // check the parenthises are balanced
+                // if semicolon or end curly brace is encountered, stop
+                let expectToken = true;
+                let token;
+                const stack = [];
+                token = context.peek();
+                if (token?.typ == exports.EnumToken.WhitespaceTokenType) {
+                    context.next();
+                    token = context.peek();
+                }
+                if (token?.typ == exports.EnumToken.CommentTokenType) {
+                    context.next();
+                    token = context.peek();
+                }
+                if (token?.typ == exports.EnumToken.CommaTokenType) {
+                    context.next();
+                    // token = context.peek();
+                    expectToken = true;
+                }
+                while ((token = context.peek()) != null) {
+                    if (token.typ == exports.EnumToken.WhitespaceTokenType || token.typ == exports.EnumToken.CommentTokenType) {
+                        context.next();
+                    }
+                    if (expectToken) {
+                        if ((token?.typ == exports.EnumToken.CommaTokenType || token.typ == exports.EnumToken.EndParensTokenType)) {
+                            return {
+                                success: false,
+                                valid: true,
+                                token,
+                                context,
+                                syntaxToken: property,
+                                errors: [{
+                                        action: "drop",
+                                        message: `Unexpected token ${exports.EnumToken[token?.typ]} at ${token.loc?.src}:${token.loc?.sta?.lin}:${token.loc?.sta?.col}`,
+                                        node: token,
+                                        location: token.loc,
+                                    }],
+                            };
+                        }
+                        expectToken = false;
+                    }
+                    if (token.typ == exports.EnumToken.CommaTokenType) {
+                        expectToken = true;
+                    }
+                    if (token.typ == exports.EnumToken.EndParensTokenType) {
+                        if (stack.length > 0) {
+                            stack.pop();
+                        }
+                        else {
+                            return {
+                                success: false,
+                                valid: true,
+                                token,
+                                context,
+                                syntaxToken: property,
+                                errors: [{
+                                        action: "drop",
+                                        message: `Unexpected token ${exports.EnumToken[token?.typ]} at ${token.loc?.src}:${token.loc?.sta?.lin}:${token.loc?.sta?.col}`,
+                                        node: token,
+                                        location: token.loc,
+                                    }],
+                            };
+                        }
+                    }
+                    context.next();
+                }
+                if (stack.length > 0) {
+                    token = stack.at(-1);
+                    return {
+                        success: false,
+                        valid: true,
+                        token,
+                        context,
+                        syntaxToken: property,
+                        errors: [{
+                                action: "drop",
+                                message: `unbalanced parentheses ${exports.EnumToken[token?.typ]} at ${token.loc?.src}:${token.loc?.sta?.lin}:${token.loc?.sta?.col}`,
+                                node: token,
+                                location: token.loc,
+                            }],
+                    };
+                }
+                success = !expectToken;
+                if (!success) {
+                    return {
+                        success: false,
+                        valid: true,
+                        token: token ?? context.current(),
+                        context,
+                        syntaxToken: property,
+                        errors: [],
+                    };
+                }
             }
             break;
         case "calc-sum": {
@@ -19756,6 +20012,7 @@ function matchProperty(property, context, options) {
                 break;
             }
             const result = matchSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "calc-sum"), context.slice(), options);
+            // console.debug({result4: result, property, done: result.context.done(), rem: result.context.getRemainingTokens(), tk: context.getRemainingTokens()});
             success = result.success;
             if (success) {
                 if (result.context.done()) {
@@ -20504,10 +20761,10 @@ function matchProperty(property, context, options) {
     //     throw new Error(`Unexpected validation property ${property.val}`);
 }
 function matchRepeatableSyntax(syntax, context, options) {
+    const { isRepeatable, isOptional, isMandatatoryGroup, isRepeatableAtLeastOnce, ...rest } = syntax;
     let result = null;
     let tmpResult;
-    let success = false;
-    const { isRepeatable, isOptional, isMandatatoryGroup, isRepeatableAtLeastOnce, ...rest } = syntax;
+    let success = !!isRepeatable;
     do {
         tmpResult = matchSyntax([rest], context.slice(), options);
         if (tmpResult.success) {
@@ -20900,10 +21157,7 @@ function yieldResult(val, parseInfo, hint) {
     });
     parseInfo.position.ind = parseInfo.currentPosition.ind;
     parseInfo.position.lin = parseInfo.currentPosition.lin;
-    parseInfo.position.col = Math.max(parseInfo.currentPosition.col, 1);
-    if (token.loc.end.col == 0) {
-        token.loc.end.col = 1;
-    }
+    parseInfo.position.col = parseInfo.currentPosition.col;
     return { token, bytesIn: parseInfo.currentPosition.ind + 1 };
 }
 function match(parseInfo, input) {
@@ -20953,7 +21207,7 @@ function* tokenize(parseInfo, yieldEOFToken = true) {
             acc: "",
             src: "",
             offset: 0,
-            position: { ind: 0, lin: 1, col: 1 },
+            position: { ind: 0, lin: 1, col: 0 },
             currentPosition: { ind: -1, lin: 1, col: 0 },
         };
     }
@@ -21147,7 +21401,7 @@ async function* tokenizeStream(input) {
         acc: "",
         src: "",
         offset: 0,
-        position: { ind: 0, lin: 1, col: 1 },
+        position: { ind: 0, lin: 1, col: 0 },
         currentPosition: { ind: -1, lin: 1, col: 0 },
     };
     const decoder = new TextDecoder("utf-8");
@@ -23269,7 +23523,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case exports.EnumToken.ListToken:
             return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), "");
         case exports.EnumToken.BinaryExpressionTokenType:
-            if ([exports.EnumToken.Mul, exports.EnumToken.Div].includes(token.op)) {
+            if (exports.EnumToken.Mul === token.op || exports.EnumToken.Div === token.op) {
                 let result = "";
                 if (token.l.typ == exports.EnumToken.BinaryExpressionTokenType &&
                     [exports.EnumToken.Add, exports.EnumToken.Sub].includes(token.l.op)) {
@@ -23289,13 +23543,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 return result;
             }
             return (renderToken(token.l, options, cache) +
-                (token.op == exports.EnumToken.Add
-                    ? " + "
-                    : token.op == exports.EnumToken.Sub
-                        ? " - "
-                        : token.op == exports.EnumToken.Mul
-                            ? "*"
-                            : "/") +
+                (token.op == exports.EnumToken.Add ? " + " : " - ") +
                 renderToken(token.r, options, cache));
         case exports.EnumToken.FractionTokenType:
             const fraction = renderToken(token.l) + "/" + renderToken(token.r);
@@ -23601,7 +23849,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 ? renderToken(token.val, options, cache)
                 : minifyNumber(token.val);
         case exports.EnumToken.AtRuleTokenType:
-            return token.nam;
+            return "@" + token.nam;
         case exports.EnumToken.CommentTokenType:
         case exports.EnumToken.CDOCOMMNodeType:
             if (options.removeComments &&
@@ -25118,11 +25366,11 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                             k--;
                         }
                         if (stack[k]?.typ !== exports.EnumToken.ColonTokenType) {
-                            if (tokens[index].typ !== exports.EnumToken.SupportsFunctionTokenType) {
+                            if (tokens[index].typ !== exports.EnumToken.SupportsFunctionTokenType && !equalsIgnoreCase('env', tokens[index].val)) {
                                 errors.push({
                                     action: "ignore",
                                     node: tokens[index],
-                                    message: `expecting <supports-selector-fn>, <font-tech()>, <font-format()>, <at-rule()> or <named-feature()> at ${tokens[index]?.loc?.src}:${tokens[index]?.loc?.sta.lin}:${tokens[index]?.loc?.sta.col}`,
+                                    message: `expecting <supports-selector-fn>, <supports-env-fn>, <font-tech()>, <font-format()>, <at-rule()> or <named-feature()> at ${tokens[index]?.loc?.src}:${tokens[index]?.loc?.sta.lin}:${tokens[index]?.loc?.sta.col}`,
                                 });
                             }
                             else {
@@ -27153,6 +27401,7 @@ async function doParse(iter, options = {}) {
                     ? tokenizeStream(stream)
                     : tokenize({
                         stream,
+                        src: options.resolve(url, options.src).relative,
                         buffer: "",
                         offset: 0,
                         position: { ind: 0, lin: 1, col: 1 },
@@ -27160,7 +27409,7 @@ async function doParse(iter, options = {}) {
                     }), Object.assign({}, options, {
                     minify: false,
                     setParent: false,
-                    src: options.resolve(url, options.src).absolute,
+                    src: options.resolve(url, options.src).relative,
                 }));
                 stats.importedBytesIn += root.stats.bytesIn;
                 stats.imports.push(root.stats);
@@ -27578,7 +27827,6 @@ async function doParse(iter, options = {}) {
                     // find parent rule
                     let parentRule = node.parent;
                     while (parentRule != null && parentRule.typ != exports.EnumToken.RuleNodeType) {
-                        console.debug("parent rule", parentRule);
                         parentRule = parentRule.parent;
                     }
                     if ( /* !isValid || */tokens.length == 0) {
@@ -29756,7 +30004,7 @@ async function parse(stream, options = {}) {
             acc: "",
             src: options.src ?? "",
             offset: 0,
-            position: { ind: 0, lin: 1, col: 1 },
+            position: { ind: 0, lin: 1, col: 0 },
             currentPosition: { ind: -1, lin: 1, col: 0 },
         }), Object.assign(options, {
         load,

@@ -513,6 +513,11 @@ export const mozExtensions = new Set([
     "-moz-alt-content",
 ]);
 
+// renamed standard properties
+export const renamedStandardProperties = new Map([
+    ['color-adjust', 'print-color-adjust'],
+])
+
 export function isLength(dimension: DimensionToken): boolean {
     return "unit" in dimension && dimensionUnits.has(dimension.unit.toLowerCase());
 }

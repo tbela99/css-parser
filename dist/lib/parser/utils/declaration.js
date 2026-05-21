@@ -1,6 +1,6 @@
 import { EnumToken, ColorType, ValidationLevel } from '../../ast/types.js';
 import { definedPropertySettings, tokensfuncDefMap, COLORS_NAMES, nonStandardColors, systemColors, deprecatedSystemColors, tokensMap, trimTokenSpace } from '../../syntax/constants.js';
-import { isColor, parseColor, isWhiteSpace, isValue } from '../../syntax/syntax.js';
+import { renamedStandardProperties, isColor, parseColor, isWhiteSpace, isValue } from '../../syntax/syntax.js';
 import { getSyntaxRule, getParsedSyntax } from '../../validation/config.js';
 import { trimArray, matchAllSyntax, createValidationContext } from '../../validation/match.js';
 import { ValidationTokenEnum, ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
@@ -89,6 +89,9 @@ function parseDeclaration(tokens, parent, options, errors) {
     let validate = typeof options.validation === "boolean"
         ? options.validation
         : options.validation & ValidationLevel.Declaration;
+    if (renamedStandardProperties.has(name.val)) {
+        name.val = renamedStandardProperties.get(name.val);
+    }
     for (i = 0; i < tokens.length; i++) {
         const token = tokens[i];
         if (token.typ == EnumToken.WhitespaceTokenType ||
@@ -112,6 +115,51 @@ function parseDeclaration(tokens, parent, options, errors) {
         });
     }
     tokens = trimArray(tokens.slice(i + 1));
+    for (i = 0; i < tokens.length; i++) {
+        const token = tokens[i];
+        if (token.typ == EnumToken.WhitespaceTokenType ||
+            token.typ == EnumToken.CommentTokenType ||
+            token.typ == EnumToken.InvalidCommentTokenType) {
+            continue;
+        }
+        if (tokens[i].typ === EnumToken.UrlFunctionTokenDefType) {
+            let k = i;
+            while (k < tokens.length) {
+                if (tokens[++k]?.typ === EnumToken.WhitespaceTokenType || tokens[k]?.typ === EnumToken.CommentTokenType) {
+                    continue;
+                }
+                if (tokens[k]?.typ !== EnumToken.EndParensTokenType) {
+                    break;
+                }
+            }
+            if (tokens[k].typ === EnumToken.LiteralTokenType ||
+                tokens[k].typ === EnumToken.IdenTokenType ||
+                tokens[k].typ === EnumToken.DashedIdenTokenType ||
+                tokens[k].typ === EnumToken.HashTokenType ||
+                tokens[k].typ === EnumToken.ClassSelectorTokenType) {
+                let j = k;
+                let val = tokens[k].val;
+                while (j + 1 < tokens.length) {
+                    if (tokens[++j].typ !== EnumToken.LiteralTokenType &&
+                        tokens[j].typ !== EnumToken.IdenTokenType &&
+                        tokens[j].typ !== EnumToken.DashedIdenTokenType &&
+                        tokens[j].typ !== EnumToken.HashTokenType &&
+                        tokens[j].typ !== EnumToken.ClassSelectorTokenType) {
+                        break;
+                    }
+                    val += tokens[j].val;
+                }
+                Object.assign(tokens[k], {
+                    typ: EnumToken.UrlTokenTokenType,
+                    val,
+                });
+                tokens[k].loc.end = tokens[j].loc.end;
+                tokens.splice(k + 1, j - k - 1);
+                // console.debug(tokens[k]);
+            }
+        }
+    }
+    // console.debug({ tokens });
     if (validate && name.typ === EnumToken.IdenTokenType) {
         if (parent != null &&
             (parent.typ == EnumToken.AtRuleNodeType || parent.typ === EnumToken.InvalidAtRuleNodeType) &&
@@ -310,7 +358,8 @@ function parseDeclaration(tokens, parent, options, errors) {
                         }
                     }
                     i = index;
-                    if (tokens[index].typ === EnumToken.MathFunctionTokenType && equalsIgnoreCase('calc', tokens[index].val)) {
+                    if (tokens[index].typ === EnumToken.MathFunctionTokenType &&
+                        equalsIgnoreCase("calc", tokens[index].val)) {
                         tokens[index].chi = [buildExpression(tokens[index].chi)];
                     }
                     else if (tokens[index].typ === EnumToken.ColorTokenType) {

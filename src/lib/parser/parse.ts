@@ -723,6 +723,7 @@ export async function doParse(
                             ? tokenizeStream(stream)
                             : tokenize({
                                   stream,
+                                  src: options.resolve!(url, options.src as string).relative,
                                   buffer: "",
                                   offset: 0,
                                   position: { ind: 0, lin: 1, col: 1 },
@@ -731,7 +732,7 @@ export async function doParse(
                         Object.assign({}, options, {
                             minify: false,
                             setParent: false,
-                            src: options.resolve!(url, options.src as string).absolute,
+                            src: options.resolve!(url, options.src as string).relative,
                         }) as ParserOptions,
                     );
 
@@ -1284,7 +1285,7 @@ export async function doParse(
                     let parentRule = node.parent as AstRule;
 
                     while (parentRule != null && parentRule.typ != EnumToken.RuleNodeType) {
-                        console.debug("parent rule", parentRule);
+
                         parentRule = parentRule.parent as AstRule;
                     }
 

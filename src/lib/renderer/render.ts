@@ -569,7 +569,7 @@ export function renderToken(
             );
 
         case EnumToken.BinaryExpressionTokenType:
-            if ([EnumToken.Mul, EnumToken.Div].includes((token as BinaryExpressionToken).op)) {
+            if (EnumToken.Mul === (token as BinaryExpressionToken).op || EnumToken.Div === (token as BinaryExpressionToken).op) {
                 let result: string = "";
 
                 if (
@@ -601,13 +601,7 @@ export function renderToken(
 
             return (
                 renderToken((token as BinaryExpressionToken).l, options, cache) +
-                ((token as BinaryExpressionToken).op == EnumToken.Add
-                    ? " + "
-                    : (token as BinaryExpressionToken).op == EnumToken.Sub
-                      ? " - "
-                      : (token as BinaryExpressionToken).op == EnumToken.Mul
-                        ? "*"
-                        : "/") +
+                ((token as BinaryExpressionToken).op == EnumToken.Add ? " + " : " - ") +
                 renderToken((token as BinaryExpressionToken).r, options, cache)
             );
 
@@ -1052,7 +1046,7 @@ export function renderToken(
                 : minifyNumber((token as NumberToken).val as number);
 
         case EnumToken.AtRuleTokenType:
-            return (token as AtRuleToken).nam;
+            return "@" + (token as AtRuleToken).nam;
 
         case EnumToken.CommentTokenType:
         case EnumToken.CDOCOMMNodeType:

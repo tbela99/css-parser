@@ -60,7 +60,7 @@ var declarations = {
 		syntax: "auto | after"
 	},
 	"-ms-overflow-style": {
-		syntax: "auto | none | scrollbar | -ms-autohiding-scrollbar auto | none | scrollbar | -ms-autohiding-scrollbar"
+		syntax: " auto | none | scrollbar | -ms-autohiding-scrollbar"
 	},
 	"-ms-scroll-chaining": {
 		syntax: "chained | none"
@@ -210,7 +210,7 @@ var declarations = {
 		syntax: "default | menu | tooltip | sheet | none"
 	},
 	"-webkit-appearance": {
-		syntax: "none | button | button-bevel | caret | checkbox | default-button | inner-spin-button | listbox | listitem | media-controls-background | media-controls-fullscreen-background | media-current-time-display | media-enter-fullscreen-button | media-exit-fullscreen-button | media-fullscreen-button | media-mute-button | media-overlay-play-button | media-play-button | media-seek-back-button | media-seek-forward-button | media-slider | media-sliderthumb | media-time-remaining-display | media-toggle-closed-captions-button | media-volume-slider | media-volume-slider-container | media-volume-sliderthumb | menulist | menulist-button | menulist-text | menulist-textfield | meter | progress-bar | progress-bar-value | push-button | radio | searchfield | searchfield-cancel-button | searchfield-decoration | searchfield-results-button | searchfield-results-decoration | slider-horizontal | slider-vertical | sliderthumb-horizontal | sliderthumb-vertical | square-button | textarea | textfield | -apple-pay-button none | button | button-bevel | caps-lock-indicator | caret | checkbox | default-button | inner-spin-button | listbox | listitem | media-controls-background | media-controls-fullscreen-background | media-current-time-display | media-enter-fullscreen-button | media-exit-fullscreen-button | media-fullscreen-button | media-mute-button | media-overlay-play-button | media-play-button | media-seek-back-button | media-seek-forward-button | media-slider | media-sliderthumb | media-time-remaining-display | media-toggle-closed-captions-button | media-volume-slider | media-volume-slider-container | media-volume-sliderthumb | menulist | menulist-button | menulist-text | menulist-textfield | meter | progress-bar | progress-bar-value | push-button | radio | scrollbarbutton-down | scrollbarbutton-left | scrollbarbutton-right | scrollbarbutton-up | scrollbargripper-horizontal | scrollbargripper-vertical | scrollbarthumb-horizontal | scrollbarthumb-vertical | scrollbartrack-horizontal | scrollbartrack-vertical | searchfield | searchfield-cancel-button | searchfield-decoration | searchfield-results-button | searchfield-results-decoration | slider-horizontal | slider-vertical | sliderthumb-horizontal | sliderthumb-vertical | square-button | textarea | textfield | -apple-pay-button"
+		syntax: " none | button | button-bevel | caps-lock-indicator | caret | checkbox | default-button | inner-spin-button | listbox | listitem | media-controls-background | media-controls-fullscreen-background | media-current-time-display | media-enter-fullscreen-button | media-exit-fullscreen-button | media-fullscreen-button | media-mute-button | media-overlay-play-button | media-play-button | media-seek-back-button | media-seek-forward-button | media-slider | media-sliderthumb | media-time-remaining-display | media-toggle-closed-captions-button | media-volume-slider | media-volume-slider-container | media-volume-sliderthumb | menulist | menulist-button | menulist-text | menulist-textfield | meter | progress-bar | progress-bar-value | push-button | radio | scrollbarbutton-down | scrollbarbutton-left | scrollbarbutton-right | scrollbarbutton-up | scrollbargripper-horizontal | scrollbargripper-vertical | scrollbarthumb-horizontal | scrollbarthumb-vertical | scrollbartrack-horizontal | scrollbartrack-vertical | searchfield | searchfield-cancel-button | searchfield-decoration | searchfield-results-button | searchfield-results-decoration | slider-horizontal | slider-vertical | sliderthumb-horizontal | sliderthumb-vertical | square-button | textarea | textfield | -apple-pay-button"
 	},
 	"-webkit-border-after": {
 		syntax: "<'border-top'>"
@@ -330,7 +330,7 @@ var declarations = {
 		syntax: "read-only | read-write | read-write-plaintext-only"
 	},
 	"-webkit-user-select": {
-		syntax: "auto | text | none | all auto | none | text | all"
+		syntax: " auto | none | text | all"
 	},
 	"accent-color": {
 		syntax: "auto | <color>"
@@ -348,7 +348,7 @@ var declarations = {
 		syntax: "[ normal | <baseline-position> | <content-distribution> | <overflow-position>? <content-position> ]#"
 	},
 	"alignment-baseline": {
-		syntax: "baseline | alphabetic | ideographic | middle | central | mathematical | text-before-edge | text-after-edge auto | baseline | before-edge | text-before-edge | middle | central | after-edge | text-after-edge | ideographic | alphabetic | hanging | mathematical"
+		syntax: " auto | baseline | before-edge | text-before-edge | middle | central | after-edge | text-after-edge | ideographic | alphabetic | hanging | mathematical"
 	},
 	all: {
 		syntax: "initial | inherit | unset | revert | revert-layer"
@@ -453,7 +453,7 @@ var declarations = {
 		syntax: "<bg-size>#"
 	},
 	"baseline-shift": {
-		syntax: "<length-percentage> | sub | super | baseline baseline | sub | super | <svg-length>"
+		syntax: " baseline | sub | super | <svg-length>"
 	},
 	"baseline-source": {
 		syntax: "auto | first | last"
@@ -610,6 +610,9 @@ var declarations = {
 	},
 	"border-right-width": {
 		syntax: "<line-width>"
+	},
+	"border-shape": {
+		syntax: "none | [ <basic-shape> <geometry-box>?]{1,2}"
 	},
 	"border-spacing": {
 		syntax: "<length>{1,2}"
@@ -855,7 +858,7 @@ var declarations = {
 		syntax: "[ <counter-name> <integer>? ]+ | none"
 	},
 	cursor: {
-		syntax: "<cursor-predefined> | [ [ <url> [ <x> <y> ]? , ]* <cursor-predefined> ] [ [ <url> [ <x> <y> ]? , ]* [ auto | default | none | context-menu | help | pointer | progress | wait | cell | crosshair | text | vertical-text | alias | copy | move | no-drop | not-allowed | e-resize | n-resize | ne-resize | nw-resize | s-resize | se-resize | sw-resize | w-resize | ew-resize | ns-resize | nesw-resize | nwse-resize | col-resize | row-resize | all-scroll | zoom-in | zoom-out | grab | grabbing | hand | -webkit-grab | -webkit-grabbing | -webkit-zoom-in | -webkit-zoom-out | -moz-grab | -moz-grabbing | -moz-zoom-in | -moz-zoom-out ] ]"
+		syntax: "<cursor-predefined> |  [ [ <url> [ <x> <y> ]? , ]* [ auto | default | none | context-menu | help | pointer | progress | wait | cell | crosshair | text | vertical-text | alias | copy | move | no-drop | not-allowed | e-resize | n-resize | ne-resize | nw-resize | s-resize | se-resize | sw-resize | w-resize | ew-resize | ns-resize | nesw-resize | nwse-resize | col-resize | row-resize | all-scroll | zoom-in | zoom-out | grab | grabbing | hand | -webkit-grab | -webkit-grabbing | -webkit-zoom-in | -webkit-zoom-out | -moz-grab | -moz-grabbing | -moz-zoom-in | -moz-zoom-out ] ]"
 	},
 	cx: {
 		syntax: "<length> | <percentage>"
@@ -873,7 +876,7 @@ var declarations = {
 		syntax: "[ <display-outside> || <display-inside> ] | <display-listitem> | <display-internal> | <display-box> | <display-legacy> | <-non-standard-display>"
 	},
 	"dominant-baseline": {
-		syntax: "auto | text-bottom | alphabetic | ideographic | middle | central | mathematical | hanging | text-top auto | use-script | no-change | reset-size | ideographic | alphabetic | hanging | mathematical | central | middle | text-after-edge | text-before-edge"
+		syntax: " auto | use-script | no-change | reset-size | ideographic | alphabetic | hanging | mathematical | central | middle | text-after-edge | text-before-edge"
 	},
 	"dynamic-range-limit": {
 		syntax: "standard | no-limit | constrained | <dynamic-range-limit-mix()>"
@@ -888,7 +891,7 @@ var declarations = {
 		syntax: "<paint>"
 	},
 	"fill-opacity": {
-		syntax: "<'opacity'> <number-zero-one> | <percentage>"
+		syntax: " <number-zero-one> | <percentage>"
 	},
 	"fill-rule": {
 		syntax: "nonzero | evenodd"
@@ -927,7 +930,7 @@ var declarations = {
 		syntax: "<'opacity'>"
 	},
 	font: {
-		syntax: "[ [ <'font-style'> || <font-variant-css2> || <'font-weight'> || <font-width-css3> ]? <'font-size'> [ / <'line-height'> ]? <'font-family'># ] | <system-family-name> [ [ <'font-style'> || <font-variant-css2> || <'font-weight'> || <font-width-css3> ]? <'font-size'> [ / <'line-height'> ]? <'font-family'># ] | <system-family-name> | <-non-standard-font> | [ <'font-size'> [ / <'line-height'> ]? <'font-family'># ]"
+		syntax: " [ [ <'font-style'> || <font-variant-css2> || <'font-weight'> || <font-width-css3> ]? <'font-size'> [ / <'line-height'> ]? <'font-family'># ] | <system-family-name> | <-non-standard-font> | [ <'font-size'> [ / <'line-height'> ]? <'font-family'># ]"
 	},
 	"font-family": {
 		syntax: "[ <family-name> | <generic-family> ]#"
@@ -1161,7 +1164,7 @@ var declarations = {
 		syntax: "auto | <length-percentage> | <anchor()> | <anchor-size()>"
 	},
 	"letter-spacing": {
-		syntax: "normal | <length> normal | <length-percentage>"
+		syntax: " normal | <length-percentage>"
 	},
 	"lighting-color": {
 		syntax: "<color>"
@@ -1713,25 +1716,25 @@ var declarations = {
 		syntax: "<color>"
 	},
 	"stroke-dasharray": {
-		syntax: "none | <dasharray> none | [ <svg-length>+ ]#"
+		syntax: " none | [ <svg-length>+ ]#"
 	},
 	"stroke-dashoffset": {
-		syntax: "<length-percentage> | <number> <svg-length>"
+		syntax: " <svg-length>"
 	},
 	"stroke-linecap": {
 		syntax: "butt | round | square"
 	},
 	"stroke-linejoin": {
-		syntax: "miter | miter-clip | round | bevel | arcs miter | round | bevel"
+		syntax: " miter | round | bevel"
 	},
 	"stroke-miterlimit": {
-		syntax: "<number> <number-one-or-greater>"
+		syntax: " <number-one-or-greater>"
 	},
 	"stroke-opacity": {
 		syntax: "<'opacity'>"
 	},
 	"stroke-width": {
-		syntax: "<length-percentage> | <number> <svg-length>"
+		syntax: " <svg-length>"
 	},
 	"tab-size": {
 		syntax: "<integer> | <length>"
@@ -1884,7 +1887,7 @@ var declarations = {
 		syntax: "content-box | border-box | fill-box | stroke-box | view-box"
 	},
 	"transform-origin": {
-		syntax: "[ <length-percentage> | left | center | right | top | bottom ] | [ [ <length-percentage> | left | center | right ] && [ <length-percentage> | top | center | bottom ] ] <length>?"
+		syntax: " [ left | center | right | top | bottom | <length-percentage> ]  |  [ left | center | right | <length-percentage> ] [ top | center | bottom | <length-percentage> ] <length>?  |  [ [ center | left | right ] && [ center | top | bottom ] ] <length>?"
 	},
 	"transform-style": {
 		syntax: "flat | preserve-3d"
@@ -2143,6 +2146,12 @@ var declarations = {
 	},
 	"white-space-trim": {
 		syntax: "none | discard-before || discard-after || discard-inner"
+	},
+	"-moz-padding-start": {
+		syntax: "<'padding-top'>"
+	},
+	"-webkit-margin-end": {
+		syntax: "<'margin-block-end'>"
 	},
 	composes: {
 		syntax: "<composes-selector>#"
@@ -2554,7 +2563,7 @@ var syntaxes = {
 		syntax: "[ first | last ]? baseline"
 	},
 	"basic-shape": {
-		syntax: "<inset()> | <xywh()> | <rect()> | <circle()> | <ellipse()> | <polygon()> | <path()>"
+		syntax: "<inset()> | <xywh()> | <rect()> | <circle()> | <ellipse()> | <polygon()> | <path()> | shape()"
 	},
 	"basic-shape-rect": {
 		syntax: "<inset()> | <rect()> | <xywh()>"
@@ -2815,7 +2824,7 @@ var syntaxes = {
 		syntax: "ellipse( <radial-size>? [ at <position> ]? )"
 	},
 	"env()": {
-		syntax: "env( <custom-ident> , <declaration-value>? )"
+		syntax: "env( <custom-ident> <integer [0,∞]>* , <declaration-value>? )"
 	},
 	"exp()": {
 		syntax: "exp( <calc-sum> )"
@@ -2902,7 +2911,7 @@ var syntaxes = {
 		syntax: "<shape-box> | fill-box | stroke-box | view-box"
 	},
 	gradient: {
-		syntax: "<-legacy-gradient>"
+		syntax: "<linear-gradient()> | <repeating-linear-gradient()> | <radial-gradient()> | <repeating-radial-gradient()> | <conic-gradient()> | <repeating-conic-gradient()> | <-legacy-gradient>"
 	},
 	"grayscale()": {
 		syntax: "grayscale( [ <number> | <percentage> ]? )"
@@ -3481,7 +3490,7 @@ var syntaxes = {
 		syntax: "( <declaration> )"
 	},
 	"supports-feature": {
-		syntax: "<supports-decl> | <supports-selector-fn>"
+		syntax: "<supports-selector-fn> | <supports-font-tech-fn> | <supports-font-format-fn> | <supports-at-rule-fn> | <supports-named-feature-fn> | <supports-env-fn> | <supports-decl>"
 	},
 	"supports-in-parens": {
 		syntax: "( <supports-condition> ) | <supports-feature> | <general-enclosed>"
@@ -3821,6 +3830,9 @@ var syntaxes = {
 	},
 	"syntax-string": {
 		syntax: "<string>"
+	},
+	"alpha()": {
+		syntax: " alpha([from <color>] [ / [<alpha-value> | none] ]? )"
 	},
 	"composes-selector": {
 		syntax: "<ident>+ [from [global&&<string>]]?"

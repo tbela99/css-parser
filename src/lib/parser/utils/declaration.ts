@@ -14,6 +14,7 @@ import type {
     DashedIdentToken,
     ErrorDescription,
     FunctionToken,
+    HashToken,
     IdentToken,
     LiteralToken,
     Location,
@@ -34,7 +35,7 @@ import {
     definedPropertySettings,
     trimTokenSpace,
 } from "../../syntax/constants.ts";
-import { isColor, isValue, isWhiteSpace, parseColor } from "../../syntax/syntax.ts";
+import { isColor, isValue, isWhiteSpace, parseColor, renamedStandardProperties } from "../../syntax/syntax.ts";
 import { getSyntaxRule, getParsedSyntax } from "../../validation/config.ts";
 import { matchAllSyntax, createValidationContext, trimArray } from "../../validation/match.ts";
 import type { ValidationMatch } from "../../validation/types.d.ts";
@@ -277,6 +278,10 @@ export function parseDeclaration(
             ? options.validation
             : (options.validation as ValidationLevel) & ValidationLevel.Declaration;
 
+    if (renamedStandardProperties.has(name.val)) {
+        name.val = renamedStandardProperties.get(name.val) as string;
+    }
+
     for (i = 0; i < tokens.length; i++) {
         const token = tokens[i];
 
@@ -312,6 +317,71 @@ export function parseDeclaration(
     }
 
     tokens = trimArray(tokens.slice(i + 1));
+
+    for (i = 0; i < tokens.length; i++) {
+        const token = tokens[i];
+
+        if (
+            token.typ == EnumToken.WhitespaceTokenType ||
+            token.typ == EnumToken.CommentTokenType ||
+            token.typ == EnumToken.InvalidCommentTokenType
+        ) {
+            continue;
+        }
+
+        if (tokens[i].typ === EnumToken.UrlFunctionTokenDefType) {
+            let k: number = i;
+
+            while (k < tokens.length) {
+
+                if (tokens[++k]?.typ === EnumToken.WhitespaceTokenType || tokens[k]?.typ === EnumToken.CommentTokenType) {
+                   
+                    continue;
+                }
+
+                if (tokens[k]?.typ !== EnumToken.EndParensTokenType) {
+                    break;
+                }
+            }
+
+            if (
+                tokens[k].typ === EnumToken.LiteralTokenType ||
+                tokens[k].typ === EnumToken.IdenTokenType ||
+                tokens[k].typ === EnumToken.DashedIdenTokenType ||
+                tokens[k].typ === EnumToken.HashTokenType ||
+                tokens[k].typ === EnumToken.ClassSelectorTokenType
+            ) {
+                let j: number = k;
+                let val: string = (tokens[k] as LiteralToken | IdentToken | DashedIdentToken | HashToken).val;
+
+                while (j + 1 < tokens.length) {
+                    if (
+                        tokens[++j].typ !== EnumToken.LiteralTokenType &&
+                        tokens[j].typ !== EnumToken.IdenTokenType &&
+                        tokens[j].typ !== EnumToken.DashedIdenTokenType &&
+                        tokens[j].typ !== EnumToken.HashTokenType &&
+                        tokens[j].typ !== EnumToken.ClassSelectorTokenType
+                    ) {
+                        break;
+                    }
+
+                    val += (tokens[j] as LiteralToken | IdentToken | DashedIdentToken | HashToken).val;
+                }
+
+                Object.assign(tokens[k] as LiteralToken | IdentToken | DashedIdentToken | HashToken, {
+                    typ: EnumToken.UrlTokenTokenType,
+                    val,
+                });
+
+                tokens[k].loc!.end = tokens[j].loc!.end;
+                tokens.splice(k + 1, j - k - 1);
+
+                // console.debug(tokens[k]);
+            }
+        }
+    }
+
+    // console.debug({ tokens });
 
     if (validate && name.typ === EnumToken.IdenTokenType) {
         if (
@@ -521,7 +591,6 @@ export function parseDeclaration(
 
                     tokens.splice(i, 1);
 
-
                     Object.assign(tokens[index], {
                         typ:
                             stack.at(-1)?.typ === EnumToken.StartParensTokenType
@@ -574,17 +643,14 @@ export function parseDeclaration(
 
                     i = index;
 
-                    if (tokens[index].typ === EnumToken.MathFunctionTokenType && equalsIgnoreCase('calc',(tokens[index] as FunctionToken).val)) {
-
+                    if (
+                        tokens[index].typ === EnumToken.MathFunctionTokenType &&
+                        equalsIgnoreCase("calc", (tokens[index] as FunctionToken).val)
+                    ) {
                         (tokens[index] as FunctionToken).chi = [buildExpression((tokens[index] as FunctionToken).chi)];
-                    }
-
-                    else if (tokens[index].typ === EnumToken.ColorTokenType) {
-
+                    } else if (tokens[index].typ === EnumToken.ColorTokenType) {
                         if (isColor(tokens[index])) {
-                            
                             parseColor(tokens[index]);
-
                         } else {
                             success = false;
                             tokens[index].typ = EnumToken.FunctionTokenType;

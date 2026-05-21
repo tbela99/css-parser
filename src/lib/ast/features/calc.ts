@@ -4,6 +4,7 @@ import type {
     AstNode,
     AstRule,
     BinaryExpressionToken,
+    DimensionToken,
     FunctionToken,
     NumberToken,
     ParensToken,
@@ -128,13 +129,27 @@ export class ComputeCalcExpressionFeature {
                             // @ts-ignore
                             const cp: Token[] =
                                 (value.typ === EnumToken.MathFunctionTokenType ||
-                                    (value.typ == EnumToken.FunctionTokenType && mathFuncs.includes(value.val))) &&
-                                value.val != "calc"
+                                    (value.typ == EnumToken.FunctionTokenType &&
+                                        mathFuncs.includes((value as FunctionToken).val))) &&
+                                (value as FunctionToken).val != "calc"
                                     ? [value]
                                     : value.typ == EnumToken.DeclarationNodeType
                                       ? (<AstDeclaration>value).val
-                                      : value.chi;
+                                      : (value as FunctionToken).chi;
                             const values: Token[] = evaluate(cp);
+
+                            // fix a + -b to a - b
+                            for (const { value } of walkValues(values)) {
+                                if (
+                                    value.typ === EnumToken.BinaryExpressionTokenType &&
+                                    (value as BinaryExpressionToken).op === EnumToken.Add &&
+                                    Math.sign(((value as BinaryExpressionToken).r as NumberToken).val as number) == -1
+                                ) {
+                                    (value as BinaryExpressionToken).op = EnumToken.Sub;
+                                    // @ts-expect-error
+                                    ((value as BinaryExpressionToken).r as NumberToken | DimensionToken).val *= -1;
+                                }
+                            }
 
                             // @ts-ignore
                             const children: Token[] =

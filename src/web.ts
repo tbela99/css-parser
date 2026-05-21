@@ -229,7 +229,7 @@ export async function parse(
                   offset: 0,
                   src: options.src ?? "",
                   acc: "",
-                  position: { ind: 0, lin: 1, col: 1 },
+                  position: { ind: 0, lin: 1, col: 0 },
                   currentPosition: { ind: -1, lin: 1, col: 0 },
               } as ParseInfo),
         Object.assign(options, {

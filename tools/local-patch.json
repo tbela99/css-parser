@@ -112,6 +112,12 @@
       "comment": "extend with auto",
       "syntax": "| auto"
     },
+    "-moz-padding-start": {
+      "syntax": "<'padding-top'>"
+    },
+    "-webkit-margin-end": {
+      "syntax": "<'margin-block-end'>"
+    },
     "font": {
       "comment": "extend font syntax",
       "syntax": "| [ <'font-size'> [ / <'line-height'> ]? <'font-family'># ]"
@@ -122,6 +128,9 @@
     },
     "composes": {
       "syntax": "<composes-selector>#"
+    },
+    "transform-origin": {
+      "syntax": "[ left | center | right | top | bottom | <length-percentage> ]  |  [ left | center | right | <length-percentage> ] [ top | center | bottom | <length-percentage> ] <length>?  |  [ [ center | left | right ] && [ center | top | bottom ] ] <length>?"
     }
   },
   "selectors": {
@@ -139,11 +148,20 @@
     }
   },
   "types": {
+    "alpha()": {
+      "syntax": " alpha([from <color>] [ / [<alpha-value> | none] ]? )"
+    },
     "composes-selector": {
       "syntax": "<ident>+ [from [global&&<string>]]?"
     },
     "color()": {
       "syntax": "color( [from <color>]? <colorspace-params> [ / [ <alpha-value> | none ] ]? )"
+    },
+    "env()": {
+      "syntax": "env( <custom-ident> <integer [0,∞]>* , <declaration-value>? )"
+    },
+    "supports-feature": {
+      "syntax": "<supports-selector-fn> | <supports-font-tech-fn> | <supports-font-format-fn> | <supports-at-rule-fn> | <supports-named-feature-fn> | <supports-env-fn> | <supports-decl>"
     },
     "colorspace-params": {
       "syntax": "[<custom-params> | <predefined-rgb-params> | <xyz-params>]"
@@ -153,10 +171,6 @@
     },
     "custom-params": {
       "syntax": "<dashed-ident> [ <number> | <percentage> | none ]+"
-    },
-    "gradient": {
-      "comment": "added legacy syntaxes support",
-      "syntax": "<-legacy-gradient>"
     },
     "font-feature-custom-ident": {
       "syntax": "<integer>"

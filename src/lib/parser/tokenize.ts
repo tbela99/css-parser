@@ -356,11 +356,7 @@ export function yieldResult(val: string, parseInfo: ParseInfo, hint?: EnumToken)
     });
     parseInfo.position.ind = parseInfo.currentPosition.ind;
     parseInfo.position.lin = parseInfo.currentPosition.lin;
-    parseInfo.position.col = Math.max(parseInfo.currentPosition.col, 1);
-
-    if (token.loc!.end.col == 0) {
-        token.loc!.end.col = 1;
-    }
+    parseInfo.position.col = parseInfo.currentPosition.col;
 
     return { token, bytesIn: parseInfo.currentPosition.ind + 1 };
 }
@@ -419,7 +415,7 @@ export function* tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean 
             acc: "",
             src: "",
             offset: 0,
-            position: { ind: 0, lin: 1, col: 1 },
+            position: { ind: 0, lin: 1, col: 0 },
             currentPosition: { ind: -1, lin: 1, col: 0 },
         };
     }
@@ -475,6 +471,7 @@ export function* tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean 
         }
 
         if (buffer + value in SymbolsMapTokens) {
+
             yield yieldResult(buffer + (value === "(" ? "" : value), parseInfo, SymbolsMapTokens[buffer + value]);
             buffer = "";
             continue;
@@ -656,7 +653,7 @@ export async function* tokenizeStream(input: ReadableStream<Uint8Array>): AsyncG
         acc: "",
         src: "",
         offset: 0,
-        position: { ind: 0, lin: 1, col: 1 },
+        position: { ind: 0, lin: 1, col: 0 },
         currentPosition: { ind: -1, lin: 1, col: 0 },
     };
 

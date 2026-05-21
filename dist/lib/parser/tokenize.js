@@ -280,10 +280,7 @@ function yieldResult(val, parseInfo, hint) {
     });
     parseInfo.position.ind = parseInfo.currentPosition.ind;
     parseInfo.position.lin = parseInfo.currentPosition.lin;
-    parseInfo.position.col = Math.max(parseInfo.currentPosition.col, 1);
-    if (token.loc.end.col == 0) {
-        token.loc.end.col = 1;
-    }
+    parseInfo.position.col = parseInfo.currentPosition.col;
     return { token, bytesIn: parseInfo.currentPosition.ind + 1 };
 }
 function match(parseInfo, input) {
@@ -333,7 +330,7 @@ function* tokenize(parseInfo, yieldEOFToken = true) {
             acc: "",
             src: "",
             offset: 0,
-            position: { ind: 0, lin: 1, col: 1 },
+            position: { ind: 0, lin: 1, col: 0 },
             currentPosition: { ind: -1, lin: 1, col: 0 },
         };
     }
@@ -527,7 +524,7 @@ async function* tokenizeStream(input) {
         acc: "",
         src: "",
         offset: 0,
-        position: { ind: 0, lin: 1, col: 1 },
+        position: { ind: 0, lin: 1, col: 0 },
         currentPosition: { ind: -1, lin: 1, col: 0 },
     };
     const decoder = new TextDecoder("utf-8");

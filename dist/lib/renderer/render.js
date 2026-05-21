@@ -357,7 +357,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.ListToken:
             return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), "");
         case EnumToken.BinaryExpressionTokenType:
-            if ([EnumToken.Mul, EnumToken.Div].includes(token.op)) {
+            if (EnumToken.Mul === token.op || EnumToken.Div === token.op) {
                 let result = "";
                 if (token.l.typ == EnumToken.BinaryExpressionTokenType &&
                     [EnumToken.Add, EnumToken.Sub].includes(token.l.op)) {
@@ -377,13 +377,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 return result;
             }
             return (renderToken(token.l, options, cache) +
-                (token.op == EnumToken.Add
-                    ? " + "
-                    : token.op == EnumToken.Sub
-                        ? " - "
-                        : token.op == EnumToken.Mul
-                            ? "*"
-                            : "/") +
+                (token.op == EnumToken.Add ? " + " : " - ") +
                 renderToken(token.r, options, cache));
         case EnumToken.FractionTokenType:
             const fraction = renderToken(token.l) + "/" + renderToken(token.r);
@@ -689,7 +683,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 ? renderToken(token.val, options, cache)
                 : minifyNumber(token.val);
         case EnumToken.AtRuleTokenType:
-            return token.nam;
+            return "@" + token.nam;
         case EnumToken.CommentTokenType:
         case EnumToken.CDOCOMMNodeType:
             if (options.removeComments &&

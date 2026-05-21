@@ -5,6 +5,7 @@ import { getParsedSyntax } from '../../validation/config.js';
 import { matchAllSyntax, createValidationContext, trimArray } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { parseDeclaration } from './declaration.js';
+import { equalsIgnoreCase } from './text.js';
 
 function parseAtRuleSupportSyntax(stream, context, options = {}) {
     const tokens = [];
@@ -214,11 +215,11 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                             k--;
                         }
                         if (stack[k]?.typ !== EnumToken.ColonTokenType) {
-                            if (tokens[index].typ !== EnumToken.SupportsFunctionTokenType) {
+                            if (tokens[index].typ !== EnumToken.SupportsFunctionTokenType && !equalsIgnoreCase('env', tokens[index].val)) {
                                 errors.push({
                                     action: "ignore",
                                     node: tokens[index],
-                                    message: `expecting <supports-selector-fn>, <font-tech()>, <font-format()>, <at-rule()> or <named-feature()> at ${tokens[index]?.loc?.src}:${tokens[index]?.loc?.sta.lin}:${tokens[index]?.loc?.sta.col}`,
+                                    message: `expecting <supports-selector-fn>, <supports-env-fn>, <font-tech()>, <font-format()>, <at-rule()> or <named-feature()> at ${tokens[index]?.loc?.src}:${tokens[index]?.loc?.sta.lin}:${tokens[index]?.loc?.sta.col}`,
                                 });
                             }
                             else {

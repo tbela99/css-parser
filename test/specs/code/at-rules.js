@@ -1055,5 +1055,25 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
  background-color: color(--swop5c 0 70% 20% 0)
 }`));
         });
+
+        it('supports and env() #51', function () {
+            return transform(`
+
+  @supports env(color-profile 1 2) {
+    
+.header {
+  background-color: color(--swop5c 0% 70% 20% 0%);
+}
+  `, {
+                beautify: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`@supports env(color-profile 1 2) {
+ .header {
+  background-color: color(--swop5c 0 70% 20% 0)
+ }
+}`));
+        });
+
+
     });
     }

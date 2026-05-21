@@ -490,6 +490,20 @@ width: calc(2px *abs(-1));}
  width: 2px
 }`));
         });
+
+
+        it('translate() #36', function () {
+
+            return parse(`
+
+a {
+
+     transform: translate(0, -50px);
+}
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ transform: translateY(-50px)
+}`));
+        });
     });
 
 }

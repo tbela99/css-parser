@@ -118,12 +118,12 @@ function applyPatches(...patches: PatchSyntax[]) {
             if (!(key in json.declarations)) {
                 console.error(`>> adding declarations >> ${key}`);
                 json.declarations[key] = { syntax: value.syntax };
-            } else if (value.comment?.startsWith?.("extend")) {
-                console.error(`>> extending declarations >> ${key}`);
+            } else if (value.comment?.startsWith?.("extend") || value.syntax.startsWith("|")) {
+                console.error(`>> extending declaration syntax >> ${key}`);
                 json.declarations[key].syntax += " " + value.syntax;
             } else {
-                console.error(`>> replacing declarations >> ${key}`);
-                json.declarations[key].syntax += " " + value.syntax;
+                console.error(`>> replacing declaration syntax >> ${key}`);
+                json.declarations[key].syntax = " " + value.syntax;
             }
         }
 
@@ -134,13 +134,13 @@ function applyPatches(...patches: PatchSyntax[]) {
             }
 
             if (!(key in json.syntaxes)) {
-                console.error(`>> adding syntax >> ${key}`);
+                console.error(`>> adding type syntax >> ${key}`);
                 json.syntaxes[key] = { syntax: value.syntax };
-            } else if (value.comment?.startsWith?.("extend")) {
-                console.error(`>> extending syntax >> ${key}`);
+            } else if (value.comment?.startsWith?.("extend") || value.syntax.startsWith("|")) {
+                console.error(`>> extending type syntax >> ${key} >> ${JSON.stringify(value)}`);
                 json.syntaxes[key].syntax += " " + value.syntax;
             } else {
-                console.error(`>> replacing syntax >> ${key}`);
+                console.error(`>> replacing type syntax >> ${key} >> ${JSON.stringify(value)}`);
                 json.syntaxes[key] = { syntax: value.syntax };
             }
         }
@@ -148,7 +148,7 @@ function applyPatches(...patches: PatchSyntax[]) {
         if ("selectors" in patch) {
             for (const [key, value] of Object.entries(patch.selectors)) {
                 if (!(key in json.selectors)) {
-                    console.error(`>> adding syntax >> ${key}`);
+                    console.error(`>> adding selector syntax >> ${key}`);
                     json.selectors[key] = { syntax: value.syntax };
                 }
                 // else if (value.comment?.startsWith?.("extend")) {

@@ -187,6 +187,10 @@ const pseudoAliasMap = {
     ":-moz-ui-valid": ":user-valid",
     "::-moz-selection": "::selection",
 };
+// renamed standard properties
+const renamedStandardProperties = new Map([
+    ['color-adjust', 'print-color-adjust'],
+]);
 function isLength(dimension) {
     return "unit" in dimension && dimensionUnits.has(dimension.unit.toLowerCase());
 }
@@ -941,4 +945,4 @@ function isValue(token) {
         token.typ === EnumToken.TransformFunctionTokenType);
 }
 
-export { isAngle, isColor, isColorspace, isDigit, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isNewLine, isNumber, isPercentage, isPercentageToken, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isValue, isWhiteSpace, parseColor, parseDimension, pseudoAliasMap, pseudoElements };
+export { isAngle, isColor, isColorspace, isDigit, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isNewLine, isNumber, isPercentage, isPercentageToken, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isValue, isWhiteSpace, parseColor, parseDimension, pseudoAliasMap, pseudoElements, renamedStandardProperties };

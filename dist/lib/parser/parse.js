@@ -506,6 +506,7 @@ async function doParse(iter, options = {}) {
                     ? tokenizeStream(stream)
                     : tokenize({
                         stream,
+                        src: options.resolve(url, options.src).relative,
                         buffer: "",
                         offset: 0,
                         position: { ind: 0, lin: 1, col: 1 },
@@ -513,7 +514,7 @@ async function doParse(iter, options = {}) {
                     }), Object.assign({}, options, {
                     minify: false,
                     setParent: false,
-                    src: options.resolve(url, options.src).absolute,
+                    src: options.resolve(url, options.src).relative,
                 }));
                 stats.importedBytesIn += root.stats.bytesIn;
                 stats.imports.push(root.stats);
@@ -931,7 +932,6 @@ async function doParse(iter, options = {}) {
                     // find parent rule
                     let parentRule = node.parent;
                     while (parentRule != null && parentRule.typ != EnumToken.RuleNodeType) {
-                        console.debug("parent rule", parentRule);
                         parentRule = parentRule.parent;
                     }
                     if ( /* !isValid || */tokens.length == 0) {
