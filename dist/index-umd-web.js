@@ -2992,7 +2992,7 @@
     		syntax: "butt | round | square"
     	},
     	"stroke-linejoin": {
-    		syntax: " miter | round | bevel"
+    		syntax: " miter | round | bevel | arcs | crop | fallback | miter-clip"
     	},
     	"stroke-miterlimit": {
     		syntax: " <number-one-or-greater>"
@@ -3001,7 +3001,7 @@
     		syntax: "<'opacity'>"
     	},
     	"stroke-width": {
-    		syntax: " <svg-length>"
+    		syntax: " [ <length-percentage> | <line-width> | <number> ]# "
     	},
     	"tab-size": {
     		syntax: "<integer> | <length>"
@@ -17830,7 +17830,7 @@
         return result;
     }
     function createValidationContext(tokens) {
-        tokens = trimArray(tokens.filter(t => t.typ !== exports.EnumToken.CommentTokenType));
+        tokens = trimArray(tokens.filter((t) => t.typ !== exports.EnumToken.CommentTokenType));
         if (tokens.at(-1)?.typ === exports.EnumToken.ImportantTokenType) {
             tokens.pop();
             trimArray(tokens);
@@ -17905,11 +17905,13 @@
                     if (matchCount >= 0) {
                         tokens.push(token);
                     }
-                    if (close !== exports.EnumToken.EndParensTokenType && token?.typ === close) {
-                        counter--;
-                    }
-                    else if (open !== exports.EnumToken.StartParensTokenType && token?.typ === open) {
-                        counter++;
+                    if (matchCount === 0) {
+                        if (close !== exports.EnumToken.EndParensTokenType && token?.typ === close) {
+                            counter--;
+                        }
+                        else if (open !== exports.EnumToken.StartParensTokenType && token?.typ === open) {
+                            counter++;
+                        }
                     }
                     if (matchCount <= 0 && counter <= 0) {
                         break;
@@ -18820,7 +18822,9 @@
         // console.debug(JSON.stringify(syntaxes, null, 1));
         // console.debug(new Error('debug'));
         // console.debug(JSON.stringify({tokens: context.getRemainingTokens(), syntaxes: syntaxes}, null, 1));
-        if (context.tokens.length == 1 && context.tokens[0].typ == exports.EnumToken.IdenTokenType && allValues.some(v => equalsIgnoreCase(v, context.tokens[0].val))) {
+        if (context.tokens.length == 1 &&
+            context.tokens[0].typ == exports.EnumToken.IdenTokenType &&
+            allValues.some((v) => equalsIgnoreCase(v, context.tokens[0].val))) {
             context.end();
             return {
                 syntaxToken: null,
@@ -19269,7 +19273,7 @@
                             }
                         }
                         if (results.length > 0) {
-                            result = results.reduce((a, b) => a.context.index > b.context.index ? a : b);
+                            result = results.reduce((a, b) => (a.context.index > b.context.index ? a : b));
                         }
                         if (result?.success) {
                             success = true;
@@ -19570,8 +19574,8 @@
                         //     //             (syntaxes[i] as ValidationFunctionDefinitionToken).val + "()",
                         //     //         ) as ValidationFunctionToken[] as ValidationToken[]
                         //     //     )?.[0] as ValidationFunctionToken
-                        //     // ).chi, 
-                        //     // children.slice(1, -1), 
+                        //     // ).chi,
+                        //     // children.slice(1, -1),
                         //     {result, children, tk: result.token, syn: result.syntaxToken}]
                         //     // , null, 1)
                         // );
@@ -19603,7 +19607,7 @@
                         token,
                         context,
                         syntaxToken: syntaxes[i],
-                        errors: []
+                        errors: [],
                     };
                 case ValidationTokenEnum.OpenParenthesis:
                     if (token.typ === exports.EnumToken.StartParensTokenType) {
@@ -19883,10 +19887,15 @@
             };
         }
         switch (property.val) {
-            case 'combinator':
+            case "combinator":
                 {
                     const token = context.peek();
-                    success = token != null && (token.typ == exports.EnumToken.NextSiblingCombinatorTokenType || token.typ == exports.EnumToken.ChildCombinatorTokenType || token.typ == exports.EnumToken.SubsequentSiblingCombinatorTokenType || token.typ == exports.EnumToken.ColumnCombinatorTokenType);
+                    success =
+                        token != null &&
+                            (token.typ == exports.EnumToken.NextSiblingCombinatorTokenType ||
+                                token.typ == exports.EnumToken.ChildCombinatorTokenType ||
+                                token.typ == exports.EnumToken.SubsequentSiblingCombinatorTokenType ||
+                                token.typ == exports.EnumToken.ColumnCombinatorTokenType);
                 }
                 break;
             case "declaration-value":
@@ -19918,19 +19927,21 @@
                             context.next();
                         }
                         if (expectToken) {
-                            if ((token?.typ == exports.EnumToken.CommaTokenType || token.typ == exports.EnumToken.EndParensTokenType)) {
+                            if (token?.typ == exports.EnumToken.CommaTokenType || token.typ == exports.EnumToken.EndParensTokenType) {
                                 return {
                                     success: false,
                                     valid: true,
                                     token,
                                     context,
                                     syntaxToken: property,
-                                    errors: [{
+                                    errors: [
+                                        {
                                             action: "drop",
                                             message: `Unexpected token ${exports.EnumToken[token?.typ]} at ${token.loc?.src}:${token.loc?.sta?.lin}:${token.loc?.sta?.col}`,
                                             node: token,
                                             location: token.loc,
-                                        }],
+                                        },
+                                    ],
                                 };
                             }
                             expectToken = false;
@@ -19949,12 +19960,14 @@
                                     token,
                                     context,
                                     syntaxToken: property,
-                                    errors: [{
+                                    errors: [
+                                        {
                                             action: "drop",
                                             message: `Unexpected token ${exports.EnumToken[token?.typ]} at ${token.loc?.src}:${token.loc?.sta?.lin}:${token.loc?.sta?.col}`,
                                             node: token,
                                             location: token.loc,
-                                        }],
+                                        },
+                                    ],
                                 };
                             }
                         }
@@ -19968,12 +19981,14 @@
                             token,
                             context,
                             syntaxToken: property,
-                            errors: [{
+                            errors: [
+                                {
                                     action: "drop",
                                     message: `unbalanced parentheses ${exports.EnumToken[token?.typ]} at ${token.loc?.src}:${token.loc?.sta?.lin}:${token.loc?.sta?.col}`,
                                     node: token,
                                     location: token.loc,
-                                }],
+                                },
+                            ],
                         };
                     }
                     success = !expectToken;
@@ -20486,9 +20501,10 @@
             case "complex-selector-unit":
             case "pseudo-compound-selector":
             case "complex-selector-list": {
-                const result = matchSelectorSyntax(context.getRemainingTokens(), [], options);
+                const tokens = context.getRemainingTokens();
+                const result = matchSelectorSyntax(tokens, [], options);
                 if (result.success) {
-                    context.update(context.getRemainingTokens().at(-1));
+                    context.update(tokens.at(-1));
                 }
                 return {
                     success: result.success,

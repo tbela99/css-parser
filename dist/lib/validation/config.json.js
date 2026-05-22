@@ -1725,7 +1725,7 @@ var declarations = {
 		syntax: "butt | round | square"
 	},
 	"stroke-linejoin": {
-		syntax: " miter | round | bevel"
+		syntax: " miter | round | bevel | arcs | crop | fallback | miter-clip"
 	},
 	"stroke-miterlimit": {
 		syntax: " <number-one-or-greater>"
@@ -1734,7 +1734,7 @@ var declarations = {
 		syntax: "<'opacity'>"
 	},
 	"stroke-width": {
-		syntax: " <svg-length>"
+		syntax: " [ <length-percentage> | <line-width> | <number> ]# "
 	},
 	"tab-size": {
 		syntax: "<integer> | <length>"

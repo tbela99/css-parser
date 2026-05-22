@@ -2,6 +2,7 @@
 
 ## v1.4.3
 
+- [x] rename standard declaration names : color-adjust => print-color-adjust
 - [x] fix parsing bugs
 - [ ] support alpha() color function https://drafts.csswg.org/css-color-5/#funcdef-alpha
 - [ ] support contrast-color() https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/contrast-color
@@ -41,7 +42,7 @@
 - [x] introduce rawToken type to capture unparseable tokens
 - [x] Add a new css module scope 'shortest' to produce short scoped names
 - [ ] fix performance issues - prevent garbage collection
-- [ ] validate media queries
+- [x] validate media queries
 - [x] automatically generate range media query
 - [x] handle calc() in media features
 - [ ] add at-rule() and named-feature() to @support-condition syntax https://drafts.csswg.org/css-conditional-5/#changes-from-L4

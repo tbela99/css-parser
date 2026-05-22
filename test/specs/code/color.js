@@ -1404,4 +1404,19 @@ color: lch(from slateblue calc(l * sin(pi / 4)) c h);
  transform: scale(1.5,2)
 }`));
     });
+
+    it('color mix #135', function () {
+        return transform(`
+
+  a {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+
+`, {
+                beautify: true,  
+                validation: true,
+        }).then(result => expect(result.code).equals(`a {
+ box-shadow: 0 20px 25px -5px #0000001a,0 10px 10px -5px #0000000a
+}`));
+    });
 }

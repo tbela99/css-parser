@@ -91,7 +91,7 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
                 val: token.slice(1, -1),
             },
             "pos",
-            { ...objectProperties, value: pos }
+            { ...objectProperties, value: pos },
         ) as ValidationPropertyToken;
     }
 
@@ -102,7 +102,7 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
                 val: token,
             },
             "pos",
-            { ...objectProperties, value: pos }
+            { ...objectProperties, value: pos },
         );
     }
 
@@ -113,7 +113,7 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
                 val: Number(token),
             },
             "pos",
-            { ...objectProperties, value: pos }
+            { ...objectProperties, value: pos },
         ) as ValidationNumberToken;
     }
 
@@ -129,7 +129,7 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
                 unitText: (dimension as DimensionToken).unit,
             },
             "pos",
-            { ...objectProperties, value: pos }
+            { ...objectProperties, value: pos },
         ) as ValidationDeclarationNameToken;
     }
 
@@ -140,7 +140,7 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
                 val: token,
             },
             "pos",
-            { ...objectProperties, value: pos }
+            { ...objectProperties, value: pos },
         );
     }
 
@@ -151,7 +151,7 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
                 val: token.slice(1),
             },
             "pos",
-            { ...objectProperties, value: pos }
+            { ...objectProperties, value: pos },
         );
     }
 
@@ -161,7 +161,7 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
             val: token,
         },
         "pos",
-        { ...objectProperties, value: pos }
+        { ...objectProperties, value: pos },
     );
 }
 
@@ -202,7 +202,7 @@ export function* tokenizeSyntax(
         ind: -1,
         lin: 1,
         col: 0,
-    }
+    },
 ): Generator<ValidationToken> {
     let i: number = -1;
     let buffer: string = "";
@@ -243,13 +243,16 @@ export function* tokenizeSyntax(
                     typ: SymbolsMapTokens[chr] as ValidationTokenEnum,
                 },
                 "pos",
-                { ...objectProperties, value: pos }
+                { ...objectProperties, value: pos },
             ) as ValidationToken;
             continue;
         }
 
-        if (chr === ':' && (isIdentStart(syntax.charCodeAt(i + 1)) || (syntax.charAt(i + 1) === '-') && isIdentStart(syntax.charCodeAt(i + 2)))) {
-            
+        if (
+            chr === ":" &&
+            (isIdentStart(syntax.charCodeAt(i + 1)) ||
+                (syntax.charAt(i + 1) === "-" && isIdentStart(syntax.charCodeAt(i + 2))))
+        ) {
             buffer += chr;
             continue;
         }
@@ -286,7 +289,7 @@ export function* tokenizeSyntax(
                     typ: SymbolsMapTokens[chr] as ValidationTokenEnum,
                 },
                 "pos",
-                { ...objectProperties, value: pos }
+                { ...objectProperties, value: pos },
             ) as ValidationToken;
             continue;
         }
@@ -312,7 +315,7 @@ export function* tokenizeSyntax(
                             val: buffer,
                         },
                         "pos",
-                        { ...objectProperties, value: { ...position } }
+                        { ...objectProperties, value: { ...position } },
                     ) as ValidationDeclarationNameToken;
 
                     buffer = "";
@@ -367,7 +370,7 @@ export function* tokenizeSyntax(
             typ: ValidationTokenEnum.EOF,
         },
         "pos",
-        { ...objectProperties, value: { ...position } }
+        { ...objectProperties, value: { ...position } },
     ) as ValidationToken;
 }
 
@@ -390,21 +393,21 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                     let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                     (stack.at(-1) as ValidationPipeToken).chi.push(
-                        trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2))
+                        trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)),
                     );
                     stack.pop();
                 } else if ((stack.at(-1) as ValidationToken)?.typ == ValidationTokenEnum.AmpersandToken) {
                     let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                     (stack.at(-1) as ValidationAmpersandToken).r = trimSyntaxArray(
-                        tokens.splice(index + 1, tokens.length - index - 2)
+                        tokens.splice(index + 1, tokens.length - index - 2),
                     );
                     stack.pop();
                 } else if ((stack.at(-1) as ValidationToken)?.typ == ValidationTokenEnum.ColumnToken) {
                     let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                     (stack.at(-1) as ValidationColumnToken).chi.push(
-                        trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2))
+                        trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)),
                     );
                     stack.pop();
                 }
@@ -422,11 +425,11 @@ export function parseSyntax(syntax: string): ValidationToken[] {
 
                         if ((stack.at(-1) as ValidationToken)?.typ == ValidationTokenEnum.AmpersandToken) {
                             (stack.at(-1) as ValidationAmpersandToken).r = trimSyntaxArray(
-                                tokens.splice(index + 1, tokens.length - index - 2)
+                                tokens.splice(index + 1, tokens.length - index - 2),
                             );
                         } else {
                             (stack.at(-1) as ValidationColumnToken).chi.push(
-                                trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2))
+                                trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)),
                             );
                         }
 
@@ -440,14 +443,14 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                             Object.assign(token, {
                                 typ: ValidationTokenEnum.PipeToken,
                                 chi: [trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2))],
-                            }) as ValidationPipeToken
+                            }) as ValidationPipeToken,
                         );
                         break;
                     }
 
                     tokens.pop();
                     (stack.at(-1) as ValidationPipeToken).chi.push(
-                        trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 1))
+                        trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 1)),
                     );
                 }
 
@@ -459,7 +462,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                     if (stack.at(-1)?.typ === makeBinaryOp.get(token!.typ)) {
                         if (token.typ === ValidationTokenEnum.Ampersand) {
                             (stack.at(-1) as ValidationAmpersandToken).r = trimSyntaxArray(
-                                tokens.splice(index + 1, tokens.length - index - 2)
+                                tokens.splice(index + 1, tokens.length - index - 2),
                             );
 
                             stack.pop();
@@ -469,11 +472,11 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                                     typ: makeBinaryOp.get(token!.typ),
                                     l: tokens.splice(index, 1),
                                     r: [],
-                                }) as ValidationAmpersandToken
+                                }) as ValidationAmpersandToken,
                             );
                         } else {
                             (stack.at(-1) as ValidationAmpersandToken).r = trimSyntaxArray(
-                                tokens.splice(index + 1, tokens.length - index - 2)
+                                tokens.splice(index + 1, tokens.length - index - 2),
                             );
 
                             stack.pop();
@@ -483,7 +486,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                                     typ: makeBinaryOp.get(token!.typ),
                                     l: tokens.splice(index, 1),
                                     r: [],
-                                }) as ValidationAmpersandToken
+                                }) as ValidationAmpersandToken,
                             );
                         }
                     } else {
@@ -492,7 +495,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                                 typ: makeBinaryOp.get(token!.typ),
                                 l: trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)),
                                 r: [],
-                            })
+                            }),
                         );
                     }
                 }
@@ -505,7 +508,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
 
                     if (stack.at(-1)?.typ === makeBinaryOp.get(token!.typ)) {
                         (stack.at(-1) as ValidationColumnToken).chi.push(
-                            trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2))
+                            trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)),
                         );
 
                         tokens.pop();
@@ -522,14 +525,14 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                                 Object.assign(token, {
                                     typ: makeBinaryOp.get(token!.typ),
                                     chi: [trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2))],
-                                })
+                                }),
                             );
                         } else {
                             stack.push(
                                 Object.assign(token, {
                                     typ: makeBinaryOp.get(token!.typ),
                                     chi: [trimSyntaxArray(tokens.splice(0, tokens.length - 2))],
-                                })
+                                }),
                             );
                         }
                     }
@@ -545,8 +548,8 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                             {
                                 typ: ValidationTokenEnum.Function,
                                 chi: [] as ValidationToken[],
-                            } as ValidationFunctionToken
-                        )
+                            } as ValidationFunctionToken,
+                        ),
                     );
                     tokens.pop();
                     break;
@@ -559,8 +562,8 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                             {
                                 typ: ValidationTokenEnum.PseudoClassFunctionToken,
                                 chi: [] as ValidationToken[],
-                            } as ValidationPseudoClassFunctionToken
-                        )
+                            } as ValidationPseudoClassFunctionToken,
+                        ),
                     );
                     tokens.pop();
                     break;
@@ -574,7 +577,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                     let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                     (stack.at(-1) as ValidationPipeToken).chi.push(
-                        trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2))
+                        trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)),
                     );
                     stack.pop();
                 }
@@ -589,14 +592,14 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                     let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                     (stack.at(-1) as ValidationPipeToken).chi.push(
-                        trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2))
+                        trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)),
                     );
                     stack.pop();
                 } else if ((stack.at(-1) as ValidationToken).typ === ValidationTokenEnum.AmpersandToken) {
                     let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                     (stack.at(-1) as ValidationAmpersandToken).r = trimSyntaxArray(
-                        tokens.splice(index + 1, tokens.length - index - 2)
+                        tokens.splice(index + 1, tokens.length - index - 2),
                     );
                     stack.pop();
                 }
@@ -679,7 +682,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                         let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                         (stack.at(-1) as ValidationAmpersandToken).r = trimSyntaxArray(
-                            tokens.splice(index + 1, tokens.length - index - 2)
+                            tokens.splice(index + 1, tokens.length - index - 2),
                         );
                         stack.pop();
                         continue;
@@ -687,7 +690,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                         let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                         (stack.at(-1) as ValidationColumnToken).chi.push(
-                            trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2))
+                            trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)),
                         );
                         stack.pop();
                         continue;
@@ -697,7 +700,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                         let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                         (stack.at(-1) as ValidationPipeToken).chi.push(
-                            trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2))
+                            trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)),
                         );
                         stack.pop();
                         continue;
@@ -787,7 +790,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                         let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                         (stack.at(-1) as ValidationAmpersandToken).r = trimSyntaxArray(
-                            tokens.splice(index + 1, tokens.length - index - 2)
+                            tokens.splice(index + 1, tokens.length - index - 2),
                         );
                         stack.pop();
                         continue;
@@ -795,7 +798,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                         let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                         (stack.at(-1) as ValidationColumnToken).chi.push(
-                            trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2))
+                            trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)),
                         );
                         stack.pop();
                         continue;
@@ -805,7 +808,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                         let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                         (stack.at(-1) as ValidationPipeToken).chi.push(
-                            trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2))
+                            trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)),
                         );
                         stack.pop();
                         continue;
@@ -841,7 +844,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                                     slice[2].typ != ValidationTokenEnum.InfinityToken
                                 ) {
                                     throw new SyntaxError(
-                                        `Expecting number or infinity at ${slice[2].pos.lin}:${slice[2].pos.col}`
+                                        `Expecting number or infinity at ${slice[2].pos.lin}:${slice[2].pos.col}`,
                                     );
                                 }
 
@@ -920,14 +923,14 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                             tokens.pop();
                         }
 
-
                         tokens.splice(sliceIndex, tokens.length - sliceIndex, {
                             typ: ValidationTokenEnum.OptionalGroupToken,
-                            chi: trimSyntaxArray(tokens.slice(sliceIndex).map((t) => {
-
-                                delete t.isOptional;
-                                return t;
-                            })),
+                            chi: trimSyntaxArray(
+                                tokens.slice(sliceIndex).map((t) => {
+                                    delete t.isOptional;
+                                    return t;
+                                }),
+                            ),
                             isOptional: true,
                         } as ValidationOptionalGroupToken);
                     }
@@ -956,7 +959,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
         if (stack.at(-1)?.typ == ValidationTokenEnum.PipeToken) {
             let index = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
             (stack.at(-1) as ValidationPipeToken).chi.push(
-                trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 1))
+                trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 1)),
             );
 
             stack.pop();
@@ -969,7 +972,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
         throw new SyntaxError(
             `Unexpected token ${ValidationTokenEnum[stack.at(-1)?.typ as ValidationTokenEnum]} at ${
                 stack.at(-1)?.pos.lin
-            }:${stack.at(-1)?.pos.col}`
+            }:${stack.at(-1)?.pos.col}`,
         );
     }
 
@@ -978,7 +981,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
 
 export function renderSyntax(
     token: ValidationToken,
-    options: { minify?: boolean; indent?: number } = { minify: true, indent: 1 }
+    options: { minify?: boolean; indent?: number } = { minify: true, indent: 1 },
 ): string {
     options.indent ??= 1;
     let glue: string = options.minify ? "" : " ".repeat(options.indent);
@@ -991,7 +994,7 @@ export function renderSyntax(
         case ValidationTokenEnum.Root:
             return (token as ValidationRootToken).chi.reduce(
                 (acc: string, curr: ValidationToken) => acc + renderSyntax(curr, options),
-                ""
+                "",
             );
 
         case ValidationTokenEnum.Whitespace:
@@ -1018,7 +1021,7 @@ export function renderSyntax(
                     acc +
                     (acc.trim().length > 0 ? `${glue}|${glue}` : "") +
                     curr.reduce((acc, curr) => acc + renderSyntax(curr, options), ""),
-                ""
+                "",
             );
 
         case ValidationTokenEnum.ColumnToken:
@@ -1028,7 +1031,7 @@ export function renderSyntax(
                     acc +
                     (acc.length > 0 ? glue : "") +
                     curr.reduce((acc: string, curr: ValidationToken) => acc + renderSyntax(curr, options), ""),
-                ""
+                "",
             );
 
         case ValidationTokenEnum.AmpersandToken:
@@ -1037,12 +1040,12 @@ export function renderSyntax(
             return (
                 (token as ValidationAmpersandToken).l.reduce(
                     (acc: string, curr: ValidationToken) => acc + renderSyntax(curr, options),
-                    ""
+                    "",
                 ) +
                 glue +
                 (token as ValidationAmpersandToken).r.reduce(
                     (acc: string, curr: ValidationToken) => acc + renderSyntax(curr, options),
-                    ""
+                    "",
                 )
             );
 
@@ -1054,7 +1057,7 @@ export function renderSyntax(
                 "(" +
                 (token as ValidationFunctionToken).chi.reduce(
                     (acc: string, curr: ValidationToken) => acc + renderSyntax(curr, options),
-                    ""
+                    "",
                 ) +
                 ")" +
                 renderAttributes(token)
@@ -1086,20 +1089,24 @@ export function renderSyntax(
                 `[${glue}` +
                 (token as ValidationBracketToken).chi.reduce(
                     (acc: string, curr: ValidationToken) => acc + renderSyntax(curr, options),
-                    ""
+                    "",
                 ) +
                 `${glue}]` +
                 renderAttributes(token)
             );
 
         case ValidationTokenEnum.PropertyType:
-        case ValidationTokenEnum.DeclarationType:
-
-        {
-            const q = (token as ValidationPropertyToken | ValidationDeclarationToken).typ === ValidationTokenEnum.DeclarationType ? "'" : '';
+        case ValidationTokenEnum.DeclarationType: {
+            const q =
+                (token as ValidationPropertyToken | ValidationDeclarationToken).typ ===
+                ValidationTokenEnum.DeclarationType
+                    ? "'"
+                    : "";
             return (
-                "<" + q +
-                (token as ValidationPropertyToken).val + q +
+                "<" +
+                q +
+                (token as ValidationPropertyToken).val +
+                q +
                 ((token as ValidationPropertyToken).range == null
                     ? ""
                     : ` [${renderSyntax((token as ValidationPropertyToken)?.range!.min as ValidationToken)},${
@@ -1132,14 +1139,14 @@ export function renderSyntax(
                     : " " +
                       ((token as ValidationAtRuleDefinitionToken).prelude as ValidationToken[]).reduce(
                           (acc: string, curr: ValidationToken) => acc + renderSyntax(curr, options),
-                          ""
+                          "",
                       )) +
                 ((token as ValidationAtRuleDefinitionToken).chi == null
                     ? ""
                     : " {\n" +
                       ((token as ValidationAtRuleDefinitionToken).chi as ValidationToken[]).reduce(
                           (acc: string, curr: ValidationToken) => acc + renderSyntax(curr, options),
-                          ""
+                          "",
                       )
                 ).slice(1, -1) +
                 "\n}"
@@ -1150,7 +1157,7 @@ export function renderSyntax(
                 `{${options.minify ? "" : "\n"}` +
                 (token as ValidationBlockToken).chi.reduce(
                     (acc: string, t: ValidationToken): string => acc + renderSyntax(t, options),
-                    ""
+                    "",
                 ) +
                 `${options.minify ? "" : "\n"}}`
             );
@@ -1193,9 +1200,11 @@ export function renderSyntax(
 
         case ValidationTokenEnum.OptionalGroupToken:
             return (token as ValidationOptionalGroupToken).chi.reduce(
-                (acc: string, curr: ValidationToken, index: number) =>
-                    acc + renderSyntax(curr, options) + (index === 0 && curr.isList ? "," : ""),
-                ""
+                (acc: string, curr: ValidationToken, index: number, array: ValidationToken[]) =>
+                    acc +
+                    renderSyntax(curr, options) + (index === array.length - 2 ? "?" : "") +
+                    ((index === 0 && curr.isList) ? "," : ""),
+                "",
             ); // + renderAttributes(token);
 
         default:
@@ -1227,11 +1236,19 @@ function renderAttributes(token: ValidationToken): string {
     }
 
     if (token.match != null) {
-        if (token.match.max == null || token.match.max.val === token.match.min.val || Number.isNaN(token.match.max.val)) {
+        if (
+            token.match.max == null ||
+            token.match.max.val === token.match.min.val ||
+            Number.isNaN(token.match.max.val)
+        ) {
             result += "{" + renderSyntax(token.match.min) + "}";
         } else {
             result +=
-                "{" + renderSyntax(token.match.min) + "," + (Number.isFinite(token.match.max.val) ? renderSyntax(token.match.max) : "\u221e") + "}";
+                "{" +
+                renderSyntax(token.match.min) +
+                "," +
+                (Number.isFinite(token.match.max.val) ? renderSyntax(token.match.max) : "\u221e") +
+                "}";
         }
     }
 

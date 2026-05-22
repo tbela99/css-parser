@@ -129,6 +129,13 @@
     "composes": {
       "syntax": "<composes-selector>#"
     },
+    "stroke-linejoin": {
+      "syntax": "| arcs | crop | fallback | miter-clip"
+    },
+    "stroke-width": {
+      "comment": "replace stroke-width syntax",
+      "syntax": "[ <length-percentage> | <line-width> | <number> ]# "
+    },
     "transform-origin": {
       "syntax": "[ left | center | right | top | bottom | <length-percentage> ]  |  [ left | center | right | <length-percentage> ] [ top | center | bottom | <length-percentage> ] <length>?  |  [ [ center | left | right ] && [ center | top | bottom ] ] <length>?"
     }
