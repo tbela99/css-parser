@@ -1713,10 +1713,7 @@ function matchSyntax(
 
             if (isOptional) {
                 // eat the next ','
-                if (syntaxes[i + 1]?.typ === ValidationTokenEnum.Whitespace) {
-                    i++;
-                }
-                if (syntaxes[i + 1]?.typ === ValidationTokenEnum.Comma) {
+                if (syntaxes[i + 1]?.typ === ValidationTokenEnum.Whitespace || syntaxes[i + 1]?.typ === ValidationTokenEnum.Comma) {
                     i++;
                 }
 
@@ -1895,10 +1892,9 @@ function matchSyntax(
                 const tokens = context.split();
                 let j: number = 0;
 
-                for (; j < tokens.length - 1; j += 2) {
-                    if (tokens[j].at(-1)?.typ !== EnumToken.CommaTokenType) {
-                        break;
-                    }
+                // console.debug(JSON.stringify({tokens, s: (syntaxes[i] as ValidationOptionalGroupToken).chi}, null, 1));
+
+                for (; j < tokens.length - 1; j ++) {
 
                     result = matchSyntax((syntaxes[i] as ValidationOptionalGroupToken).chi, context.slice(), options);
 
@@ -1906,12 +1902,13 @@ function matchSyntax(
                         break;
                     }
 
-                    context.update(result.context.current() as Token);
+                    context.update(tokens[j].at(-1) as Token);
+                    break;
                 }
 
-                if (result != null && !result.success) {
-                    return result;
-                }
+                // if (result != null && !result.success) {
+                //     return result;
+                // }
 
                 break;
             }
@@ -2336,6 +2333,8 @@ function matchSyntax(
                             ],
                         };
                     }
+
+                    // console.debug("Function token", (syntaxes[i] as ValidationFunctionToken));
 
                     result = matchSyntax(
                         (syntaxes[i] as ValidationFunctionToken).chi as ValidationToken[],

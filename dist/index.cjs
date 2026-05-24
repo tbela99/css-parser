@@ -12399,7 +12399,9 @@ function* tokenizeSyntax(syntax, position = {
             }, "pos", { ...objectProperties, value: pos });
             continue;
         }
-        if (chr === ':' && (isIdentStart(syntax.charCodeAt(i + 1)) || (syntax.charAt(i + 1) === '-') && isIdentStart(syntax.charCodeAt(i + 2)))) {
+        if (chr === ":" &&
+            (isIdentStart(syntax.charCodeAt(i + 1)) ||
+                (syntax.charAt(i + 1) === "-" && isIdentStart(syntax.charCodeAt(i + 2))))) {
             buffer += chr;
             continue;
         }
@@ -12985,19 +12987,23 @@ function renderSyntax(token, options = { minify: true, indent: 1 }) {
                 `${glue}]` +
                 renderAttributes(token));
         case ValidationTokenEnum.PropertyType:
-        case ValidationTokenEnum.DeclarationType:
-            {
-                const q = token.typ === ValidationTokenEnum.DeclarationType ? "'" : '';
-                return ("<" + q +
-                    token.val + q +
-                    (token.range == null
-                        ? ""
-                        : ` [${renderSyntax(token?.range.min)},${token?.range?.max == null
-                            ? "\u221e"
-                            : renderSyntax(token?.range.max)}]`) +
-                    ">" +
-                    renderAttributes(token));
-            }
+        case ValidationTokenEnum.DeclarationType: {
+            const q = token.typ ===
+                ValidationTokenEnum.DeclarationType
+                ? "'"
+                : "";
+            return ("<" +
+                q +
+                token.val +
+                q +
+                (token.range == null
+                    ? ""
+                    : ` [${renderSyntax(token?.range.min)},${token?.range?.max == null
+                        ? "\u221e"
+                        : renderSyntax(token?.range.max)}]`) +
+                ">" +
+                renderAttributes(token));
+        }
         case ValidationTokenEnum.Number:
         case ValidationTokenEnum.PseudoClassToken:
         case ValidationTokenEnum.StringToken:
@@ -13047,7 +13053,9 @@ function renderSyntax(token, options = { minify: true, indent: 1 }) {
         case ValidationTokenEnum.DeclarationNameToken:
             return token.val + ":";
         case ValidationTokenEnum.OptionalGroupToken:
-            return token.chi.reduce((acc, curr, index) => acc + renderSyntax(curr, options) + (index === 0 && curr.isList ? "," : ""), ""); // + renderAttributes(token);
+            return token.chi.reduce((acc, curr, index, array) => acc +
+                renderSyntax(curr, options) + (index === array.length - 2 ? "?" : "") +
+                ((index === 0 && curr.isList) ? "," : ""), ""); // + renderAttributes(token);
         default:
             throw new Error("Unhandled token: " + JSON.stringify({ token }, null, 1));
     }
@@ -13070,12 +13078,18 @@ function renderAttributes(token) {
         result += "+";
     }
     if (token.match != null) {
-        if (token.match.max == null || token.match.max.val === token.match.min.val || Number.isNaN(token.match.max.val)) {
+        if (token.match.max == null ||
+            token.match.max.val === token.match.min.val ||
+            Number.isNaN(token.match.max.val)) {
             result += "{" + renderSyntax(token.match.min) + "}";
         }
         else {
             result +=
-                "{" + renderSyntax(token.match.min) + "," + (Number.isFinite(token.match.max.val) ? renderSyntax(token.match.max) : "\u221e") + "}";
+                "{" +
+                    renderSyntax(token.match.min) +
+                    "," +
+                    (Number.isFinite(token.match.max.val) ? renderSyntax(token.match.max) : "\u221e") +
+                    "}";
         }
     }
     return result;
@@ -18961,10 +18975,7 @@ function matchSyntax(syntaxes, context, options) {
             }
             if (isOptional) {
                 // eat the next ','
-                if (syntaxes[i + 1]?.typ === ValidationTokenEnum.Whitespace) {
-                    i++;
-                }
-                if (syntaxes[i + 1]?.typ === ValidationTokenEnum.Comma) {
+                if (syntaxes[i + 1]?.typ === ValidationTokenEnum.Whitespace || syntaxes[i + 1]?.typ === ValidationTokenEnum.Comma) {
                     i++;
                 }
                 continue;
@@ -19106,19 +19117,18 @@ function matchSyntax(syntaxes, context, options) {
                 //
                 const tokens = context.split();
                 let j = 0;
-                for (; j < tokens.length - 1; j += 2) {
-                    if (tokens[j].at(-1)?.typ !== exports.EnumToken.CommaTokenType) {
-                        break;
-                    }
+                // console.debug(JSON.stringify({tokens, s: (syntaxes[i] as ValidationOptionalGroupToken).chi}, null, 1));
+                for (; j < tokens.length - 1; j++) {
                     result = matchSyntax(syntaxes[i].chi, context.slice(), options);
                     if (!result.success) {
                         break;
                     }
-                    context.update(result.context.current());
+                    context.update(tokens[j].at(-1));
+                    break;
                 }
-                if (result != null && !result.success) {
-                    return result;
-                }
+                // if (result != null && !result.success) {
+                //     return result;
+                // }
                 break;
             }
             case ValidationTokenEnum.AtRule:
@@ -19474,6 +19484,7 @@ function matchSyntax(syntaxes, context, options) {
                             ],
                         };
                     }
+                    // console.debug("Function token", (syntaxes[i] as ValidationFunctionToken));
                     result = matchSyntax(syntaxes[i].chi, 
                     // (getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntaxes[i] as ValidationFunctionToken).val + '()') as ValidationFunctionToken[])[0].chi as ValidationToken[],
                     createValidationContext(range.slice(1, -1)), options);
@@ -19832,6 +19843,7 @@ function matchAmpersandSyntax(syntax, context, options) {
 }
 function matchProperty(property, context, options) {
     let success = false;
+    // console.debug({rem: context.getRemainingTokens(), property});
     let checkCalc = context.peek()?.typ == exports.EnumToken.MathFunctionTokenDefType &&
         [
             "number",

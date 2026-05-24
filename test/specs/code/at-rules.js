@@ -1074,6 +1074,51 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 }`));
         });
 
+        it('supports and env() #52', function () {
+            return transform(`
+ 
+  a {
+    background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+
+  b {
+
+background: -webkit-linear-gradient(aqua, white) ;
+&.c {
+background-image: -webkit-radial-gradient(circle, white, black);}
+
+&.d {
+background-image: -webkit-linear-gradient(135deg, white, black)}
+
+
+&.e {
+background-image:-webkit-radial-gradient(center, ellipse cover, white, black); }
+
+&.f {
+background-image:-webkit-radial-gradient(center, 5em 40px, white, black); }
+
+  `, {
+                beautify: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`a {
+ background-image: linear-gradient(45deg,#ffffff26 25%,#0000 25%,#0000 50%,#ffffff26 50%,#ffffff26 75%,#0000 75%,#0000);
+ b {
+  background: -webkit-linear-gradient(cyan,#fff);
+  &.c {
+   background-image: -webkit-radial-gradient(circle,#fff,#000)
+  }
+  &.d {
+   background-image: -webkit-linear-gradient(135deg,#fff,#000)
+  }
+  &.e {
+   background-image: -webkit-radial-gradient(center,ellipse cover,#fff,#000)
+  }
+  &.f {
+   background-image: -webkit-radial-gradient(center,5em 40px,#fff,#000)
+  }
+ }
+}`));
+        });
+
 
     });
     }
