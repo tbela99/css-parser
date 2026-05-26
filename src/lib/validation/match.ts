@@ -1512,12 +1512,12 @@ function matchSyntax(
     let result: ValidationMatch | null = null;
     let isOptional: boolean;
 
-    // console.debug('> ' + syntaxes.reduce((acc, b) => acc + renderSyntax(b), ""));
-    // console.debug('> ' + context.getRemainingTokens().reduce((acc, b) => acc + renderToken(b), ""));
+    console.debug('> ' + syntaxes.reduce((acc, b) => acc + renderSyntax(b), ""));
+    console.debug('> ' + context.getRemainingTokens().reduce((acc, b) => acc + renderToken(b), ""));
 
     // console.debug(JSON.stringify(syntaxes, null, 1));
     // console.debug(new Error('debug'));
-
+// 
     // console.debug(JSON.stringify({tokens: context.getRemainingTokens(), syntaxes: syntaxes}, null, 1));
 
     if (
@@ -1644,6 +1644,16 @@ function matchSyntax(
 
             if (result.success) {
                 context.update(range.at(-1) as Token);
+
+                if (context.done()) {
+                    
+                    return {
+                        ...result,
+                        context,
+                        syntaxToken: syntaxes[i + 1],
+                    }
+                }
+
                 continue;
             }
 
@@ -1713,7 +1723,10 @@ function matchSyntax(
 
             if (isOptional) {
                 // eat the next ','
-                if (syntaxes[i + 1]?.typ === ValidationTokenEnum.Whitespace || syntaxes[i + 1]?.typ === ValidationTokenEnum.Comma) {
+                if (
+                    syntaxes[i + 1]?.typ === ValidationTokenEnum.Whitespace ||
+                    syntaxes[i + 1]?.typ === ValidationTokenEnum.Comma
+                ) {
                     i++;
                 }
 
@@ -1894,22 +1907,19 @@ function matchSyntax(
 
                 // console.debug(JSON.stringify({tokens, s: (syntaxes[i] as ValidationOptionalGroupToken).chi}, null, 1));
 
-                for (; j < tokens.length - 1; j ++) {
-
+                for (; j < tokens.length - 1; j++) {
                     result = matchSyntax((syntaxes[i] as ValidationOptionalGroupToken).chi, context.slice(), options);
 
-                    if (!result.success) {
-                        break;
+                    if (result.success) {
+                        context.update(tokens[j].at(-1) as Token);
                     }
 
-                    context.update(tokens[j].at(-1) as Token);
                     break;
                 }
 
                 // if (result != null && !result.success) {
                 //     return result;
                 // }
-
                 break;
             }
 
@@ -2185,6 +2195,7 @@ function matchSyntax(
                             errors: [],
                         };
                     } else {
+
                         context.update(result.context.current() as Token);
                     }
 
@@ -2713,7 +2724,9 @@ function matchColumnSyntax(
         //     s1: syntaxes[i].reduce((acc, b) => acc + renderSyntax(b), ""),
         // });
 
-        result = matchSyntax(syntaxes[i], context, options);
+        result = matchSyntax(syntaxes[i], context.slice(), options);
+
+        // console.debug([result.success,result.context.current()]);
 
         if (result.success) {
             const curr = result.context.current() as Token;

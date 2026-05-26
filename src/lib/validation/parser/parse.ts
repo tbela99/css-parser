@@ -1199,13 +1199,13 @@ export function renderSyntax(
             return (token as ValidationDeclarationNameToken).val + ":";
 
         case ValidationTokenEnum.OptionalGroupToken:
-            return (token as ValidationOptionalGroupToken).chi.reduce(
-                (acc: string, curr: ValidationToken, index: number, array: ValidationToken[]) =>
-                    acc +
-                    renderSyntax(curr, options) + (index === array.length - 2 ? "?" : "") +
-                    ((index === 0 && curr.isList) ? "," : ""),
-                "",
-            ); // + renderAttributes(token);
+            return (
+                (token as ValidationOptionalGroupToken).chi.reduce(
+                    (acc: string, curr: ValidationToken, index: number, array: ValidationToken[]) =>
+                        acc + renderSyntax(curr, options) + (index === 0 && curr.isList ? "," : ""),
+                    "",
+                ) + "?"
+            );
 
         default:
             throw new Error("Unhandled token: " + JSON.stringify({ token }, null, 1));

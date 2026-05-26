@@ -381,8 +381,6 @@ export function parseDeclaration(
         }
     }
 
-    // console.debug({ tokens });
-
     if (validate && name.typ === EnumToken.IdenTokenType) {
         if (
             parent != null &&

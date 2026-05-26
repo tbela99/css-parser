@@ -159,7 +159,6 @@ function parseDeclaration(tokens, parent, options, errors) {
             }
         }
     }
-    // console.debug({ tokens });
     if (validate && name.typ === EnumToken.IdenTokenType) {
         if (parent != null &&
             (parent.typ == EnumToken.AtRuleNodeType || parent.typ === EnumToken.InvalidAtRuleNodeType) &&

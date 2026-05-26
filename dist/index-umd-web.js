@@ -13052,9 +13052,7 @@
             case ValidationTokenEnum.DeclarationNameToken:
                 return token.val + ":";
             case ValidationTokenEnum.OptionalGroupToken:
-                return token.chi.reduce((acc, curr, index, array) => acc +
-                    renderSyntax(curr, options) + (index === array.length - 2 ? "?" : "") +
-                    ((index === 0 && curr.isList) ? "," : ""), ""); // + renderAttributes(token);
+                return (token.chi.reduce((acc, curr, index, array) => acc + renderSyntax(curr, options) + (index === 0 && curr.isList ? "," : ""), "") + "?");
             default:
                 throw new Error("Unhandled token: " + JSON.stringify({ token }, null, 1));
         }
@@ -17345,7 +17343,6 @@
                 }
             }
         }
-        // console.debug({ tokens });
         if (validate && name.typ === exports.EnumToken.IdenTokenType) {
             if (parent != null &&
                 (parent.typ == exports.EnumToken.AtRuleNodeType || parent.typ === exports.EnumToken.InvalidAtRuleNodeType) &&
@@ -18835,6 +18832,7 @@
         // console.debug('> ' + context.getRemainingTokens().reduce((acc, b) => acc + renderToken(b), ""));
         // console.debug(JSON.stringify(syntaxes, null, 1));
         // console.debug(new Error('debug'));
+        // 
         // console.debug(JSON.stringify({tokens: context.getRemainingTokens(), syntaxes: syntaxes}, null, 1));
         if (context.tokens.length == 1 &&
             context.tokens[0].typ == exports.EnumToken.IdenTokenType &&
@@ -18923,6 +18921,13 @@
                 result = matchSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, token.val + "()")?.[0]?.chi, createValidationContext(range.slice(1, -1)), options);
                 if (result.success) {
                     context.update(range.at(-1));
+                    if (context.done()) {
+                        return {
+                            ...result,
+                            context,
+                            syntaxToken: syntaxes[i + 1],
+                        };
+                    }
                     continue;
                 }
                 if (isOptional) {
@@ -18974,7 +18979,8 @@
                 }
                 if (isOptional) {
                     // eat the next ','
-                    if (syntaxes[i + 1]?.typ === ValidationTokenEnum.Whitespace || syntaxes[i + 1]?.typ === ValidationTokenEnum.Comma) {
+                    if (syntaxes[i + 1]?.typ === ValidationTokenEnum.Whitespace ||
+                        syntaxes[i + 1]?.typ === ValidationTokenEnum.Comma) {
                         i++;
                     }
                     continue;
@@ -19119,10 +19125,9 @@
                     // console.debug(JSON.stringify({tokens, s: (syntaxes[i] as ValidationOptionalGroupToken).chi}, null, 1));
                     for (; j < tokens.length - 1; j++) {
                         result = matchSyntax(syntaxes[i].chi, context.slice(), options);
-                        if (!result.success) {
-                            break;
+                        if (result.success) {
+                            context.update(tokens[j].at(-1));
                         }
-                        context.update(tokens[j].at(-1));
                         break;
                     }
                     // if (result != null && !result.success) {
@@ -19763,7 +19768,8 @@
             //     peek1: context.peek(),
             //     s1: syntaxes[i].reduce((acc, b) => acc + renderSyntax(b), ""),
             // });
-            result = matchSyntax(syntaxes[i], context, options);
+            result = matchSyntax(syntaxes[i], context.slice(), options);
+            // console.debug([result.success,result.context.current()]);
             if (result.success) {
                 const curr = result.context.current();
                 if (curr == null && !result.context.done()) {
