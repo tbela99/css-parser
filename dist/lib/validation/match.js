@@ -945,6 +945,7 @@ function matchAllSyntax(syntaxes, context, options) {
         ...options,
         visited: new Map(),
     });
+    // console.debug(result);
     if (result.success && !result.context.done()) {
         const node = result.context.peek();
         return {
@@ -1420,16 +1421,16 @@ function matchSyntax(syntaxes, context, options) {
                 const tokens = context.split();
                 let j = 0;
                 // console.debug(JSON.stringify({tokens, s: (syntaxes[i] as ValidationOptionalGroupToken).chi}, null, 1));
-                for (; j < tokens.length - 1; j++) {
+                for (; j < tokens.length; j++) {
                     result = matchSyntax(syntaxes[i].chi, context.slice(), options);
                     if (result.success) {
                         context.update(tokens[j].at(-1));
                     }
                     break;
                 }
-                // if (result != null && !result.success) {
-                //     return result;
-                // }
+                if (result?.context?.done?.()) {
+                    return result;
+                }
                 break;
             }
             case ValidationTokenEnum.AtRule:

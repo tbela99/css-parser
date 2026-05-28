@@ -809,7 +809,12 @@ function renderSyntax(token, options = { minify: true, indent: 1 }) {
         case ValidationTokenEnum.DeclarationNameToken:
             return token.val + ":";
         case ValidationTokenEnum.OptionalGroupToken:
-            return (token.chi.reduce((acc, curr, index, array) => acc + renderSyntax(curr, options) + (index === 0 && curr.isList ? "," : ""), "") + "?");
+            return token.chi.reduce((acc, curr, index, array) => acc +
+                (index == array.length - 1
+                    ? curr.typ === ValidationTokenEnum.Comma
+                        ? "?,"
+                        : renderSyntax(curr, options) + "?"
+                    : renderSyntax(curr, options)), "");
         default:
             throw new Error("Unhandled token: " + JSON.stringify({ token }, null, 1));
     }

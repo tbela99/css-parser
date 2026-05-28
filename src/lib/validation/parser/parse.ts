@@ -1199,12 +1199,15 @@ export function renderSyntax(
             return (token as ValidationDeclarationNameToken).val + ":";
 
         case ValidationTokenEnum.OptionalGroupToken:
-            return (
-                (token as ValidationOptionalGroupToken).chi.reduce(
-                    (acc: string, curr: ValidationToken, index: number, array: ValidationToken[]) =>
-                        acc + renderSyntax(curr, options) + (index === 0 && curr.isList ? "," : ""),
-                    "",
-                ) + "?"
+            return (token as ValidationOptionalGroupToken).chi.reduce(
+                (acc: string, curr: ValidationToken, index: number, array: ValidationToken[]) =>
+                    acc +
+                    (index == array.length - 1
+                        ? curr.typ === ValidationTokenEnum.Comma
+                            ? "?,"
+                            : renderSyntax(curr, options) + "?"
+                        : renderSyntax(curr, options)),
+                "",
             );
 
         default:

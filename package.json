@@ -1,7 +1,7 @@
 {
   "name": "@tbela99/css-parser",
   "description": "CSS parser, minifier and validator for node and the browser",
-  "version": "v1.4.3-alpha6",
+  "version": "v1.4.3-alpha7",
   "exports": {
     ".": "./dist/node.js",
     "./node": "./dist/node.js",
@@ -71,7 +71,7 @@
     "@web/test-runner-playwright": "^0.11.1",
     "c8": "^11.0.0",
     "esno": "^4.8.0",
-    "mocha": "^11.7.5",
+    "mocha": "^11.7.6",
     "playwright": "^1.60.0",
     "rollup": "^4.60.4",
     "rollup-plugin-dts": "^6.4.1",

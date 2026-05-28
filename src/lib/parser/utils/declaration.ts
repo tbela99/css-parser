@@ -381,6 +381,8 @@ export function parseDeclaration(
         }
     }
 
+    // console.debug(JSON.stringify(tokens, null, 1));
+
     if (validate && name.typ === EnumToken.IdenTokenType) {
         if (
             parent != null &&

@@ -3155,7 +3155,7 @@ var declarations = {
 		syntax: "content-box | border-box | fill-box | stroke-box | view-box"
 	},
 	"transform-origin": {
-		syntax: " [ left | center | right | top | bottom | <length-percentage> ]  |  [ left | center | right | <length-percentage> ] [ top | center | bottom | <length-percentage> ] <length>?  |  [ [ center | left | right ] && [ center | top | bottom ] ] <length>?"
+		syntax: " [ left | center | right | top | bottom | <length-percentage> ] | [ left | center | right | <length-percentage> ] [ top | center | bottom | <length-percentage> ] <length>? | [ [ center | left | right ] && [ center | top | bottom ] ] <length>?"
 	},
 	"transform-style": {
 		syntax: "flat | preserve-3d"
@@ -3213,6 +3213,9 @@ var declarations = {
 	},
 	"view-transition-name": {
 		syntax: "none | <custom-ident> | match-element"
+	},
+	"view-transition-scope": {
+		syntax: "none | all"
 	},
 	visibility: {
 		syntax: "visible | hidden | collapse"
@@ -3846,7 +3849,7 @@ var syntaxes = {
 		syntax: "<bg-image> || <bg-position> [ / <bg-size> ]? || <repeat-style> || <attachment> || <visual-box> || <visual-box>"
 	},
 	"bg-position": {
-		syntax: "[ [ left | center | right | top | bottom | <length-percentage> ] | [ left | center | right | <length-percentage> ] [ top | center | bottom | <length-percentage> ] | [ center | [ left | right ] <length-percentage>? ] && [ center | [ top | bottom ] <length-percentage>? ] ]"
+		syntax: "<position> | <position-three>"
 	},
 	"bg-size": {
 		syntax: "[ <length-percentage [0,∞]> | auto ]{1,2} | cover | contain"
@@ -4494,7 +4497,7 @@ var syntaxes = {
 		syntax: "polygon( <'fill-rule'>? , [ <length-percentage> <length-percentage> ]# )"
 	},
 	position: {
-		syntax: "[ [ left | center | right ] || [ top | center | bottom ] | [ left | center | right | <length-percentage> ] [ top | center | bottom | <length-percentage> ]? | [ [ left | right ] <length-percentage> ] && [ [ top | bottom ] <length-percentage> ] ]"
+		syntax: "<position-one> | <position-two> | <position-four>"
 	},
 	"position-area": {
 		syntax: "[ [ left | center | right | span-left | span-right | x-start | x-end | span-x-start | span-x-end | x-self-start | x-self-end | span-x-self-start | span-x-self-end | span-all ] || [ top | center | bottom | span-top | span-bottom | y-start | y-end | span-y-start | span-y-end | y-self-start | y-self-end | span-y-self-start | span-y-self-end | span-all ] | [ block-start | center | block-end | span-block-start | span-block-end | span-all ] || [ inline-start | center | inline-end | span-inline-start | span-inline-end | span-all ] | [ self-block-start | center | self-block-end | span-self-block-start | span-self-block-end | span-all ] || [ self-inline-start | center | self-inline-end | span-self-inline-start | span-self-inline-end | span-all ] | [ start | center | end | span-start | span-end | span-all ]{1,2} | [ self-start | center | self-end | span-self-start | span-self-end | span-all ]{1,2} ]"
@@ -4518,7 +4521,7 @@ var syntaxes = {
 		syntax: ": [ left | right | first | blank ]"
 	},
 	"query-in-parens": {
-		syntax: "( <container-query> ) | ( <size-feature> )  | style( <style-query> ) | scroll-state( <scroll-state-query> ) | <general-enclosed>"
+		syntax: "( <container-query> ) | ( <size-feature> ) | style( <style-query> ) | scroll-state( <scroll-state-query> ) | <general-enclosed>"
 	},
 	quote: {
 		syntax: "open-quote | close-quote | no-open-quote | no-close-quote"
@@ -4638,7 +4641,7 @@ var syntaxes = {
 		syntax: "root | nearest | self"
 	},
 	"scroll-state-feature": {
-		syntax: "<scroll-state-feature-plain>   |  <scroll-state-feature-boolean>"
+		syntax: "<scroll-state-feature-plain> | <scroll-state-feature-boolean>"
 	},
 	"scroll-state-in-parens": {
 		syntax: "( <scroll-state-query> ) | ( <scroll-state-feature> ) | <general-enclosed>"
@@ -5102,6 +5105,18 @@ var syntaxes = {
 	"alpha()": {
 		syntax: " alpha([from <color>] [ / [<alpha-value> | none] ]? )"
 	},
+	"position-three": {
+		syntax: "[ left | center | right ] && [ [ top | bottom ] <length-percentage> ] | [ [ left | right ] <length-percentage> ] && [ top | center | bottom ] "
+	},
+	"position-one": {
+		syntax: "left | center | right | top | bottom | x-start | x-end | y-start | y-end | block-start | block-end | inline-start | inline-end | <length-percentage> "
+	},
+	"position-two": {
+		syntax: "[ left | center | right | x-start | x-end ] && [ top | center | bottom | y-start | y-end ] | [ left | center | right | x-start | x-end | <length-percentage> ] [ top | center | bottom | y-start | y-end | <length-percentage> ] | [ block-start | center | block-end ] && [ inline-start | center | inline-end ] | [ start | center | end ]{2} "
+	},
+	"position-four": {
+		syntax: "[ [ left | right | x-start | x-end ] <length-percentage> ] && [ [ top | bottom | y-start | y-end ] <length-percentage> ] | [ [ block-start | block-end ] <length-percentage> ] && [ [ inline-start | inline-end ] <length-percentage> ] | [ [ start | end ] <length-percentage> ]{2} "
+	},
 	"composes-selector": {
 		syntax: "<ident>+ [from [global&&<string>]]?"
 	},
@@ -5124,7 +5139,7 @@ var syntaxes = {
 		syntax: "<style-feature-name>"
 	},
 	"style-range": {
-		syntax: "<style-range-value> <mf-comparison> <style-range-value>   | <style-range-value> <mf-lt> <style-range-value> <mf-lt> <style-range-value>  | <style-range-value> <mf-gt> <style-range-value> <mf-gt> <style-range-value>"
+		syntax: "<style-range-value> <mf-comparison> <style-range-value> | <style-range-value> <mf-lt> <style-range-value> <mf-lt> <style-range-value> | <style-range-value> <mf-gt> <style-range-value> <mf-gt> <style-range-value>"
 	},
 	"style-range-value": {
 		syntax: "<custom-property-name> | <style-feature-value>"
@@ -5849,10 +5864,10 @@ var atRules = {
 		syntax: "@annotation { <declaration-list> }"
 	},
 	"@when": {
-		syntax: " @when <when-condition> {\n  <group-rule-body>\n}"
+		syntax: " @when <when-condition> {\n <group-rule-body>\n}"
 	},
 	"@else": {
-		syntax: " @else <when-condition>? {\n  <group-rule-body>\n}"
+		syntax: " @else <when-condition>? {\n <group-rule-body>\n}"
 	},
 	"@custom-media": {
 		syntax: " @custom-media <extension-name> [<media-query-list> | true | false ];"
@@ -13053,7 +13068,12 @@ function renderSyntax(token, options = { minify: true, indent: 1 }) {
         case ValidationTokenEnum.DeclarationNameToken:
             return token.val + ":";
         case ValidationTokenEnum.OptionalGroupToken:
-            return (token.chi.reduce((acc, curr, index, array) => acc + renderSyntax(curr, options) + (index === 0 && curr.isList ? "," : ""), "") + "?");
+            return token.chi.reduce((acc, curr, index, array) => acc +
+                (index == array.length - 1
+                    ? curr.typ === ValidationTokenEnum.Comma
+                        ? "?,"
+                        : renderSyntax(curr, options) + "?"
+                    : renderSyntax(curr, options)), "");
         default:
             throw new Error("Unhandled token: " + JSON.stringify({ token }, null, 1));
     }
@@ -17344,6 +17364,7 @@ function parseDeclaration(tokens, parent, options, errors) {
             }
         }
     }
+    // console.debug(JSON.stringify(tokens, null, 1));
     if (validate && name.typ === exports.EnumToken.IdenTokenType) {
         if (parent != null &&
             (parent.typ == exports.EnumToken.AtRuleNodeType || parent.typ === exports.EnumToken.InvalidAtRuleNodeType) &&
@@ -18649,6 +18670,7 @@ function matchAllSyntax(syntaxes, context, options) {
         ...options,
         visited: new Map(),
     });
+    // console.debug(result);
     if (result.success && !result.context.done()) {
         const node = result.context.peek();
         return {
@@ -19124,16 +19146,16 @@ function matchSyntax(syntaxes, context, options) {
                 const tokens = context.split();
                 let j = 0;
                 // console.debug(JSON.stringify({tokens, s: (syntaxes[i] as ValidationOptionalGroupToken).chi}, null, 1));
-                for (; j < tokens.length - 1; j++) {
+                for (; j < tokens.length; j++) {
                     result = matchSyntax(syntaxes[i].chi, context.slice(), options);
                     if (result.success) {
                         context.update(tokens[j].at(-1));
                     }
                     break;
                 }
-                // if (result != null && !result.success) {
-                //     return result;
-                // }
+                if (result?.context?.done?.()) {
+                    return result;
+                }
                 break;
             }
             case ValidationTokenEnum.AtRule:

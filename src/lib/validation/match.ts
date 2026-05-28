@@ -1276,6 +1276,8 @@ export function matchAllSyntax(
         visited: new Map<Token, Set<ValidationToken>>(),
     }) as ValidationMatch;
 
+    // console.debug(result);
+
     if (result.success && !result.context.done()) {
         const node = result.context.peek() as Token;
 
@@ -1512,8 +1514,8 @@ function matchSyntax(
     let result: ValidationMatch | null = null;
     let isOptional: boolean;
 
-    console.debug('> ' + syntaxes.reduce((acc, b) => acc + renderSyntax(b), ""));
-    console.debug('> ' + context.getRemainingTokens().reduce((acc, b) => acc + renderToken(b), ""));
+    // console.debug('> ' + syntaxes.reduce((acc, b) => acc + renderSyntax(b), ""));
+    // console.debug('> ' + context.getRemainingTokens().reduce((acc, b) => acc + renderToken(b), ""));
 
     // console.debug(JSON.stringify(syntaxes, null, 1));
     // console.debug(new Error('debug'));
@@ -1907,7 +1909,7 @@ function matchSyntax(
 
                 // console.debug(JSON.stringify({tokens, s: (syntaxes[i] as ValidationOptionalGroupToken).chi}, null, 1));
 
-                for (; j < tokens.length - 1; j++) {
+                for (; j < tokens.length; j++) {
                     result = matchSyntax((syntaxes[i] as ValidationOptionalGroupToken).chi, context.slice(), options);
 
                     if (result.success) {
@@ -1917,9 +1919,11 @@ function matchSyntax(
                     break;
                 }
 
-                // if (result != null && !result.success) {
-                //     return result;
-                // }
+                if (result?.context?.done?.()) {
+
+                    return result;
+                }
+
                 break;
             }
 
