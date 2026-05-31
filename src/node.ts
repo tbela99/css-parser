@@ -249,18 +249,22 @@ export async function parse(
     stream: string | ReadableStream<Uint8Array>,
     options: ParserOptions = {},
 ): Promise<ParseResult> {
-    return doParse(
-        stream instanceof ReadableStream
-            ? tokenizeStream(stream)
-            : tokenize({
+
+    options.parseInfo = {
                   stream,
                   buffer: "",
-                  acc: "",
+                //   acc: "",
                   src: options.src ?? "",
                   offset: 0,
+                  time: 0,
                   position: { ind: 0, lin: 1, col: 0 },
                   currentPosition: { ind: -1, lin: 1, col: 0 },
-              } as ParseInfo),
+              } as ParseInfo;
+
+    return doParse(
+        stream instanceof ReadableStream
+            ? tokenizeStream(stream, options.parseInfo)
+            : tokenize(options.parseInfo),
         Object.assign(options, {
             load,
             resolve,

@@ -95,6 +95,10 @@ const hintsEnum = new Set([
     EnumToken.ImportantTokenType,
     // EnumToken.WhitespaceTokenType,
     EnumToken.SemiColonTokenType,
+    EnumToken.BlockStartTokenType,
+    EnumToken.BlockEndTokenType,
+    EnumToken.ColonTokenType,
+    EnumToken.EOFTokenType,
 ]);
 var TokenMap;
 (function (TokenMap) {
@@ -108,12 +112,13 @@ var TokenMap;
     TokenMap[TokenMap["DOT"] = 46] = "DOT";
     TokenMap[TokenMap["AT"] = 64] = "AT";
 })(TokenMap || (TokenMap = {}));
-function* consumeString(quoteStr, buffer, parseInfo) {
+function consumeString(quoteStr, buffer, parseInfo) {
     const quote = quoteStr;
     let value;
     // let hasNewLine: boolean = false;
+    const result = [];
     if (buffer.length > 0) {
-        yield yieldResult(buffer, parseInfo);
+        result.push(yieldResult(buffer, parseInfo));
         buffer = "";
     }
     buffer += quoteStr;
@@ -157,16 +162,16 @@ function* consumeString(quoteStr, buffer, parseInfo) {
         }
         if (value == quote) {
             buffer += value;
-            yield yieldResult(buffer, parseInfo, 
-            /* hasNewLine ? EnumToken.BadStringTokenType : */ EnumToken.StringTokenType);
+            result.push(yieldResult(buffer, parseInfo, 
+            /* hasNewLine ? EnumToken.BadStringTokenType : */ EnumToken.StringTokenType));
             next(parseInfo);
             buffer = "";
-            return;
+            return result;
         }
         if (isNewLine(value.charCodeAt(0))) {
-            yield yieldResult(buffer + next(parseInfo), parseInfo, EnumToken.BadStringTokenType);
+            result.push(yieldResult(buffer + next(parseInfo), parseInfo, EnumToken.BadStringTokenType));
             // buffer = "";
-            return;
+            return result;
         }
         buffer += value;
         next(parseInfo);
@@ -175,8 +180,9 @@ function* consumeString(quoteStr, buffer, parseInfo) {
     //     yield yieldResult(buffer, parseInfo, EnumToken.BadStringTokenType);
     // } else {
     // EOF - 'Unclosed-string' fixed
-    yield yieldResult(buffer + quote, parseInfo, EnumToken.StringTokenType);
+    result.push(yieldResult(buffer + quote, parseInfo, EnumToken.StringTokenType));
     // }
+    return result;
 }
 function getTokenType(val, hint) {
     let token = null;
@@ -184,11 +190,7 @@ function getTokenType(val, hint) {
     if (hint != null) {
         token = hintsEnum.has(hint)
             ? { typ: hint }
-            : Object.defineProperty({ typ: hint }, "val", {
-                ...definedPropertySettings,
-                value: val,
-                enumerable: true,
-            });
+            : { typ: hint, val };
     }
     else {
         // if (v == 'currentcolor' || v == 'transparent' /* || v in COLORS_NAMES */) {
@@ -198,13 +200,14 @@ function getTokenType(val, hint) {
         //         kin: ColorType.LIT
         //     };
         // }
-        if (val.charAt(0) == "@" && isIdent(val.slice(1))) {
+        let slice = val.slice(1);
+        if (val.charAt(0) == "@" && isIdent(slice)) {
             token = {
                 typ: EnumToken.AtRuleTokenType,
-                nam: val.slice(1),
+                nam: slice,
             };
         }
-        else if (val.charAt(0) == "." && isIdent(val.slice(1))) {
+        else if (val.charAt(0) == "." && isIdent(slice)) {
             token = {
                 typ: EnumToken.ClassSelectorTokenType,
                 val,
@@ -272,6 +275,7 @@ function yieldResult(val, parseInfo, hint) {
     const token = getTokenType(val, hint);
     Object.defineProperty(token, "loc", {
         ...definedPropertySettings,
+        enumerable: false,
         value: {
             src: parseInfo.src,
             sta: { ...parseInfo.position },
@@ -284,8 +288,15 @@ function yieldResult(val, parseInfo, hint) {
     return { token, bytesIn: parseInfo.currentPosition.ind + 1 };
 }
 function match(parseInfo, input) {
-    const position = parseInfo.currentPosition.ind - parseInfo.offset;
-    return parseInfo.stream.slice(position + 1, position + input.length + 1) == input;
+    let position = parseInfo.currentPosition.ind - parseInfo.offset;
+    // let endPosition: number = position + input.length;
+    for (let i = 0; i < input.length; i++) {
+        if (parseInfo.stream[position + i + 1] != input.charAt(i)) {
+            return false;
+        }
+    }
+    return true;
+    // return parseInfo.stream.slice(position + 1, position + input.length + 1) == input;
 }
 function peek(parseInfo, count = 1) {
     if (count == 1) {
@@ -300,13 +311,14 @@ function prev(parseInfo) {
         : parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset - 1);
 }
 function next(parseInfo, count = 1) {
-    let char = "";
-    let chr = "";
+    // let char: string = "";
     let position = parseInfo.currentPosition.ind - parseInfo.offset;
-    while (count-- && (chr = parseInfo.stream.charAt(position + 1))) {
-        char += chr;
-        const codepoint = parseInfo.stream.charCodeAt(++position);
-        ++parseInfo.currentPosition.ind;
+    let char = parseInfo.stream.slice(position + 1, position + 1 + count);
+    let i = 0;
+    parseInfo.currentPosition.ind += char.length;
+    for (; i < char.length; i++) {
+        const codepoint = char[i].charCodeAt(++position);
+        // ++parseInfo.currentPosition.ind;
         if (isNewLine(codepoint)) {
             parseInfo.currentPosition.lin++;
             parseInfo.currentPosition.col = 0;
@@ -322,33 +334,37 @@ function next(parseInfo, count = 1) {
  * @param parseInfo
  * @param yieldEOFToken
  */
-function* tokenize(parseInfo, yieldEOFToken = true) {
+function tokenize(parseInfo, yieldEOFToken = true) {
     if (typeof parseInfo == "string") {
         parseInfo = {
             stream: parseInfo,
             buffer: "",
-            acc: "",
+            // acc: "",
             src: "",
             offset: 0,
+            time: 0,
             position: { ind: 0, lin: 1, col: 0 },
             currentPosition: { ind: -1, lin: 1, col: 0 },
         };
     }
     let value;
+    let tmpValue;
     let nextValue;
     let buffer = parseInfo.buffer;
     let charCode;
     parseInfo.buffer = "";
-    parseInfo.acc += parseInfo.stream;
+    // parseInfo.acc += parseInfo.stream;
+    const startTime = performance.now();
+    const result = [];
     while ((value = next(parseInfo))) {
         nextValue = peek(parseInfo);
         if ((value === "-" || value === "+") && !isNumber(nextValue.charAt(0))) {
             if (value === "+") {
                 if (buffer.length > 0) {
-                    yield yieldResult(buffer, parseInfo);
+                    result.push(yieldResult(buffer, parseInfo));
                     buffer = "";
                 }
-                yield yieldResult(value, parseInfo);
+                result.push(yieldResult(value, parseInfo));
                 continue;
             }
             buffer += value;
@@ -356,67 +372,70 @@ function* tokenize(parseInfo, yieldEOFToken = true) {
         }
         if (SymbolsMapTokens[value] === EnumToken.WhitespaceTokenType) {
             if (buffer.length > 0) {
-                yield yieldResult(buffer, parseInfo);
+                result.push(yieldResult(buffer, parseInfo));
                 buffer = "";
             }
-            while (SymbolsMapTokens[peek(parseInfo)] == EnumToken.WhitespaceTokenType) {
+            while (SymbolsMapTokens[nextValue] == EnumToken.WhitespaceTokenType) {
                 value += next(parseInfo);
+                nextValue = peek(parseInfo);
             }
-            yield yieldResult(value, parseInfo, EnumToken.WhitespaceTokenType);
+            result.push(yieldResult(value, parseInfo, EnumToken.WhitespaceTokenType));
             continue;
         }
-        if (value + nextValue in SymbolsMapTokens) {
+        tmpValue = SymbolsMapTokens[value + nextValue];
+        if (tmpValue != null) {
             if (buffer.length > 0) {
-                yield yieldResult(buffer, parseInfo);
+                result.push(yieldResult(buffer, parseInfo));
                 buffer = "";
             }
-            yield yieldResult(value + next(parseInfo), parseInfo, SymbolsMapTokens[value + nextValue]);
+            result.push(yieldResult(value + next(parseInfo), parseInfo, tmpValue));
             continue;
         }
-        if (buffer + value in SymbolsMapTokens) {
-            yield yieldResult(buffer + (value === "(" ? "" : value), parseInfo, SymbolsMapTokens[buffer + value]);
+        tmpValue = SymbolsMapTokens[buffer + value];
+        if (tmpValue != null) {
+            result.push(yieldResult(buffer + (value === "(" ? "" : value), parseInfo, tmpValue));
             buffer = "";
             continue;
         }
         if (value === "(") {
             if (buffer[0] === ":" && isPseudo(buffer)) {
-                yield yieldResult(buffer, parseInfo, EnumToken.PseudoClassFunctionTokenDefType);
+                result.push(yieldResult(buffer, parseInfo, EnumToken.PseudoClassFunctionTokenDefType));
                 buffer = "";
                 continue;
             }
             else if (isIdent(buffer)) {
-                yield yieldResult(buffer, parseInfo, EnumToken.FunctionTokenDefType);
+                result.push(yieldResult(buffer, parseInfo, EnumToken.FunctionTokenDefType));
                 buffer = "";
                 continue;
             }
         }
-        if (value in SymbolsMapTokens) {
+        if (SymbolsMapTokens[value] != null) {
             if (buffer.length > 0) {
-                yield yieldResult(buffer, parseInfo);
+                result.push(yieldResult(buffer, parseInfo));
                 buffer = "";
             }
-            yield yieldResult(value, parseInfo, SymbolsMapTokens[value]);
+            result.push(yieldResult(value, parseInfo, SymbolsMapTokens[value]));
             continue;
         }
         charCode = value.charCodeAt(0);
         switch (charCode) {
             case 33 /* TokenMap.EXCLAMATION */:
                 if (buffer.length > 0) {
-                    yield yieldResult(buffer, parseInfo);
+                    result.push(yieldResult(buffer, parseInfo));
                     buffer = "";
                 }
                 if (match(parseInfo, "important")) {
-                    yield yieldResult(value + next(parseInfo, 9), parseInfo, EnumToken.ImportantTokenType);
+                    result.push(yieldResult(value + next(parseInfo, 9), parseInfo, EnumToken.ImportantTokenType));
                     buffer = "";
                 }
                 break;
             case 47 /* TokenMap.SLASH */:
                 if (buffer.length > 0) {
-                    yield yieldResult(buffer, parseInfo);
+                    result.push(yieldResult(buffer, parseInfo));
                     buffer = "";
                 }
                 if (!match(parseInfo, "*")) {
-                    yield yieldResult(value, parseInfo, SymbolsMapTokens[value]);
+                    result.push(yieldResult(value, parseInfo, SymbolsMapTokens[value]));
                     break;
                 }
                 buffer += value + next(parseInfo);
@@ -424,7 +443,7 @@ function* tokenize(parseInfo, yieldEOFToken = true) {
                     if (value == "*") {
                         buffer += value;
                         if (match(parseInfo, "/")) {
-                            yield yieldResult(buffer + next(parseInfo), parseInfo, EnumToken.CommentTokenType);
+                            result.push(yieldResult(buffer + next(parseInfo), parseInfo, EnumToken.CommentTokenType));
                             buffer = "";
                             break;
                         }
@@ -434,17 +453,17 @@ function* tokenize(parseInfo, yieldEOFToken = true) {
                     }
                 }
                 if (buffer.length > 0) {
-                    yield yieldResult(buffer, parseInfo, EnumToken.BadCommentTokenType);
+                    result.push(yieldResult(buffer, parseInfo, EnumToken.BadCommentTokenType));
                     buffer = "";
                 }
                 break;
             case 60 /* TokenMap.LOWERTHAN */:
                 if (buffer.length > 0) {
-                    yield yieldResult(buffer, parseInfo);
+                    result.push(yieldResult(buffer, parseInfo));
                     buffer = "";
                 }
                 if (match(parseInfo, "=")) {
-                    yield yieldResult(value + next(parseInfo), parseInfo, EnumToken.LteTokenType);
+                    result.push(yieldResult(value + next(parseInfo), parseInfo, EnumToken.LteTokenType));
                     break;
                 }
                 buffer += value;
@@ -457,17 +476,17 @@ function* tokenize(parseInfo, yieldEOFToken = true) {
                         }
                     }
                     if (value === "") {
-                        yield yieldResult(buffer, parseInfo, EnumToken.BadCdoTokenType);
+                        result.push(yieldResult(buffer, parseInfo, EnumToken.BadCdoTokenType));
                     }
                     else {
-                        yield yieldResult(buffer + next(parseInfo, 2), parseInfo, EnumToken.CDOCOMMTokenType);
+                        result.push(yieldResult(buffer + next(parseInfo, 2), parseInfo, EnumToken.CDOCOMMTokenType));
                     }
                     buffer = "";
                 }
                 break;
             case 35 /* TokenMap.HASH */:
                 if (buffer.length > 0) {
-                    yield yieldResult(buffer, parseInfo);
+                    result.push(yieldResult(buffer, parseInfo));
                     buffer = "";
                 }
                 buffer += value;
@@ -477,7 +496,7 @@ function* tokenize(parseInfo, yieldEOFToken = true) {
                 if (!(value = next(parseInfo))) {
                     // end of stream ignore \\
                     if (buffer.length > 0) {
-                        yield yieldResult(buffer, parseInfo);
+                        result.push(yieldResult(buffer, parseInfo));
                         buffer = "";
                     }
                     break;
@@ -486,13 +505,13 @@ function* tokenize(parseInfo, yieldEOFToken = true) {
                 break;
             case 39 /* TokenMap.SINGLE_QUOTE */:
             case 34 /* TokenMap.DOUBLE_QUOTE */:
-                yield* consumeString(value, buffer, parseInfo);
+                result.push(...consumeString(value, buffer, parseInfo));
                 buffer = "";
                 break;
             case 46 /* TokenMap.DOT */:
                 const codepoint = peek(parseInfo).charCodeAt(0);
                 if (!isDigit(codepoint) && buffer !== "") {
-                    yield yieldResult(buffer, parseInfo);
+                    result.push(yieldResult(buffer, parseInfo));
                     buffer = value;
                     break;
                 }
@@ -505,25 +524,28 @@ function* tokenize(parseInfo, yieldEOFToken = true) {
     }
     if (yieldEOFToken) {
         if (buffer.length > 0) {
-            yield yieldResult(buffer, parseInfo);
+            result.push(yieldResult(buffer, parseInfo));
         }
-        yield yieldResult("", parseInfo, EnumToken.EOFTokenType);
+        result.push(yieldResult("", parseInfo, EnumToken.EOFTokenType));
     }
     else {
         parseInfo.buffer = buffer;
     }
+    parseInfo.time += performance.now() - startTime;
+    return result;
 }
 /**
  * tokenize readable stream
  * @param input
  */
-async function* tokenizeStream(input) {
-    const parseInfo = {
+async function* tokenizeStream(input, parseInfo) {
+    parseInfo ??= {
         stream: "",
         buffer: "",
-        acc: "",
+        // acc: "",
         src: "",
         offset: 0,
+        time: 0,
         position: { ind: 0, lin: 1, col: 0 },
         currentPosition: { ind: -1, lin: 1, col: 0 },
     };
@@ -547,6 +569,7 @@ async function* tokenizeStream(input) {
             break;
         }
     }
+    return parseInfo;
 }
 /**
  * Update position
@@ -566,4 +589,4 @@ function move(position, str) {
     }
 }
 
-export { TokenMap, consumeString, getTokenType, hintsEnum, match, move, next, peek, prev, tokenize, tokenizeStream, yieldResult };
+export { SymbolsMapTokens, TokenMap, consumeString, getTokenType, hintsEnum, match, move, next, peek, prev, tokenize, tokenizeStream, yieldResult };

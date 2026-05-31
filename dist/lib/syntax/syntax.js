@@ -726,13 +726,13 @@ function isIdent(name) {
         return false;
     }
     if (codepoint == REVERSE_SOLIDUS) {
-        codepoint = name.codePointAt(i + 1);
+        codepoint = name.charCodeAt(i + 1);
         if (!isIdentCodepoint(codepoint)) {
             return false;
         }
         i += String.fromCodePoint(codepoint).length;
         if (i < j) {
-            codepoint = name.codePointAt(i);
+            codepoint = name.charCodeAt(i);
             if (!isIdentCodepoint(codepoint)) {
                 return false;
             }
@@ -945,4 +945,4 @@ function isValue(token) {
         token.typ === EnumToken.TransformFunctionTokenType);
 }
 
-export { isAngle, isColor, isColorspace, isDigit, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isNewLine, isNumber, isPercentage, isPercentageToken, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isValue, isWhiteSpace, parseColor, parseDimension, pseudoAliasMap, pseudoElements, renamedStandardProperties };
+export { dimensionUnits, isAngle, isColor, isColorspace, isDigit, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isLetter, isNewLine, isNumber, isPercentage, isPercentageToken, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isValue, isWhiteSpace, parseColor, parseDimension, pseudoAliasMap, pseudoElements, renamedStandardProperties };

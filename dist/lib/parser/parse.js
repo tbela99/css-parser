@@ -25,7 +25,15 @@ import { matchAtRuleSyntax } from './utils/at-rule.js';
 import { parseAtRulePage } from './utils/at-rule-page.js';
 import { parseAtRuleFontFeatureValues } from './utils/at-rule-font-feature-values.js';
 import { matchGenericSyntax } from './utils/at-rule-generic.js';
+import { memoize } from './utils/cache.js';
 
+function renderTokens(tokens, options) {
+    if (tokens == null || tokens.length === 0)
+        return "";
+    if (options != null)
+        return tokens.map((t) => renderToken(t, options)).join("");
+    return tokens.map((t) => renderToken(t)).join("");
+}
 const trimWhiteSpace = [
     EnumToken.CommentTokenType,
     EnumToken.GtTokenType,
@@ -53,7 +61,7 @@ const forbiddenStartCharacters = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "
  *
  * @returns string
  */
-function getShortNameGenerator(localName, filePath, pattern, hashLength = 5) {
+const getShortNameGenerator = memoize((localName, filePath, pattern, hashLength = 5) => {
     const key = `${localName}_${filePath}_${pattern}_${hashLength}`;
     if (key in keyNameCache) {
         return keyNameCache[key];
@@ -65,7 +73,7 @@ function getShortNameGenerator(localName, filePath, pattern, hashLength = 5) {
         keyNameCounter++;
     }
     return (keyNameCache[key] = value);
-}
+});
 function reject(reason) {
     throw new Error(reason ?? "Parsing aborted");
 }
@@ -77,7 +85,7 @@ function reject(reason) {
  * @throws Error
  * @private
  */
-function getKeyName(key, how) {
+const getKeyName = memoize((key, how) => {
     switch (how) {
         case ModuleCaseTransformEnum.CamelCase:
         case ModuleCaseTransformEnum.CamelCaseOnly:
@@ -87,7 +95,7 @@ function getKeyName(key, how) {
             return dasherize(key);
     }
     return key;
-}
+});
 /**
  * generate scoped name
  * @param localName
@@ -98,7 +106,7 @@ function getKeyName(key, how) {
  * @throws Error
  * @private
  */
-async function generateScopedName(localName, filePath, pattern, hashLength = 5) {
+const generateScopedName = memoize(async (localName, filePath, pattern, hashLength = 5) => {
     if (localName.startsWith("--")) {
         localName = localName.slice(2);
     }
@@ -151,24 +159,30 @@ async function generateScopedName(localName, filePath, pattern, hashLength = 5) 
                     throw new Error(`Unsupported hash length: '${length}'. expecting format [hash:length] or [hash:hash-algo:length]`);
                 }
             }
+            const slice = length != null && length != fileBase.length;
             switch (key) {
                 case "hash":
                     result += await hash(hashString, length ?? hashLength, hashAlgo);
                     break;
                 case "name":
-                    result += length != null ? fileBase.slice(0, +length) : fileBase;
+                    // @ts-expect-error
+                    result += slice ? fileBase.slice(0, +length) : fileBase;
                     break;
                 case "local":
-                    result += length != null ? safeLocal.slice(0, +length) : localName;
+                    // @ts-expect-error
+                    result += slice ? safeLocal.slice(0, +length) : localName;
                     break;
                 case "ext":
-                    result += length != null ? ext.slice(0, +length) : ext;
+                    // @ts-expect-error
+                    result += slice ? ext.slice(0, +length) : ext;
                     break;
                 case "path":
-                    result += length != null ? path.slice(0, +length) : path;
+                    // @ts-expect-error
+                    result += slice ? path.slice(0, +length) : path;
                     break;
                 case "folder":
-                    result += length != null ? folder.slice(0, +length) : folder;
+                    // @ts-expect-error
+                    result += slice ? folder.slice(0, +length) : folder;
                     break;
                 default:
                     throw new Error(`Unsupported key: '${key}'`);
@@ -185,7 +199,7 @@ async function generateScopedName(localName, filePath, pattern, hashLength = 5) 
     }
     // if leading char is digit, prefix underscore (very rare)
     return (/^[0-9]/.test(result) ? "_" : "") + result;
-}
+});
 /**
  * parse css string
  * @param iter
@@ -242,6 +256,7 @@ async function doParse(iter, options = {}) {
         nodesCount: 0,
         tokensCount: 0,
         importedBytesIn: 0,
+        tokenize: `0ms`,
         parse: `0ms`,
         minify: `0ms`,
         total: `0ms`,
@@ -380,9 +395,13 @@ async function doParse(iter, options = {}) {
             }
         }
     }
-    while ((item = isAsync
-        ? (await iter.next()).value
-        : iter.next().value)) {
+    if (Array.isArray(iter)) {
+        // @ts-expect-error
+        iter = iter[Symbol.iterator]();
+    }
+    // @ts-expect-error
+    while (item = isAsync ? (await iter.next()).value : iter.next().value) {
+        // item = isAsync ? await value : value;
         stats.bytesIn = item.bytesIn;
         stats.tokensCount++;
         if (options.sourcemap !== false) {
@@ -425,7 +444,9 @@ async function doParse(iter, options = {}) {
                 tokens = [item.token];
                 do {
                     item = isAsync
+                        // @ts-expect-error
                         ? (await iter.next()).value
+                        // @ts-expect-error
                         : iter.next().value;
                     if (item == null) {
                         break;
@@ -762,6 +783,7 @@ async function doParse(iter, options = {}) {
             ...stats,
             parse: `${(endParseTime - startTime).toFixed(2)}ms`,
             minify: `${(endTime - endParseTime).toFixed(2)}ms`,
+            tokenize: `${(options?.parseInfo?.time ?? 0).toFixed(2)}ms`,
             total: `${(endTime - startTime).toFixed(2)}ms`,
         },
     };
@@ -840,19 +862,22 @@ async function doParse(iter, options = {}) {
                 const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                     ? await result
                     : result;
+                const parseInfo = {
+                    stream,
+                    buffer: "",
+                    offset: 0,
+                    time: 0,
+                    position: { ind: 0, lin: 1, col: 1 },
+                    currentPosition: { ind: -1, lin: 1, col: 0 },
+                };
                 const root = await doParse(stream instanceof ReadableStream
-                    ? tokenizeStream(stream)
-                    : tokenize({
-                        stream,
-                        buffer: "",
-                        offset: 0,
-                        position: { ind: 0, lin: 1, col: 1 },
-                        currentPosition: { ind: -1, lin: 1, col: 0 },
-                    }), Object.assign({}, options, {
+                    ? tokenizeStream(stream, parseInfo)
+                    : tokenize(parseInfo), Object.assign({}, options, {
                     minify: false,
                     setParent: false,
                     src: src.relative,
                 }));
+                options.parseInfo.time += parseInfo.time;
                 cssVariablesMap[node.nam] = root.cssModuleVariables;
                 parent.chi.splice(parent.chi.indexOf(node), 1);
                 continue;
@@ -1155,7 +1180,7 @@ async function doParse(iter, options = {}) {
                             }
                             node.val[i].val =
                                 node.val[i].val.charAt(0) +
-                                    tokens.reduce((acc, curr) => acc + renderToken(curr), "") +
+                                    renderTokens(tokens) +
                                     node.val[i].val.charAt(node.val[i].val.length - 1);
                         }
                     }
@@ -1372,7 +1397,7 @@ async function doParse(iter, options = {}) {
                             value.val = mapping[value.val];
                         }
                     }
-                    node.val = node.tokens.reduce((a, b) => a + renderToken(b), "");
+                    node.val = renderTokens(node.tokens);
                 }
                 else {
                     let isReplaced = false;
@@ -1387,7 +1412,7 @@ async function doParse(iter, options = {}) {
                         }
                     }
                     if (isReplaced) {
-                        node.val = node.tokens.reduce((a, b) => a + renderToken(b), "");
+                        node.val = renderTokens(node.tokens);
                     }
                 }
             }
@@ -1457,7 +1482,7 @@ function parseNode(tokens, context, options, errors, stats) {
                 node: tokens[i],
                 location: tokens[i].loc,
             });
-            Object.assign(tokens[i], { typ: EnumToken.InvalidCommentTokenType });
+            tokens[i].typ = EnumToken.InvalidCommentTokenType;
             continue;
         }
         if (tokens[i].typ === EnumToken.CommentTokenType ||
@@ -1480,7 +1505,7 @@ function parseNode(tokens, context, options, errors, stats) {
                     node: tokens[i],
                     location,
                 });
-                Object.assign(tokens[i], { typ: EnumToken.InvalidCommentTokenType });
+                tokens[i].typ = EnumToken.InvalidCommentTokenType;
                 continue;
             }
             context.chi.push(tokens[i]);
@@ -1518,6 +1543,7 @@ function parseNode(tokens, context, options, errors, stats) {
         if (node == null) {
             return null;
         }
+        stats.nodesCount++;
         context.chi.push(node);
         // @ts-expect-error
         return Object.defineProperty(node, "parent", { ...definedPropertySettings, value: context });
@@ -1525,6 +1551,7 @@ function parseNode(tokens, context, options, errors, stats) {
         // return node;
     }
     else {
+        stats.nodesCount++;
         // rule
         if (delim.typ == EnumToken.BlockStartTokenType) {
             const node = parseSelector(tokens, context, options, errors);
@@ -1536,7 +1563,8 @@ function parseNode(tokens, context, options, errors, stats) {
             const node = parseDeclaration(tokens, context, options, errors);
             Object.defineProperty(node, "parent", { ...definedPropertySettings, value: context });
             if (context.typ === EnumToken.StyleSheetNodeType && node.typ === EnumToken.DeclarationNodeType) {
-                Object.assign(node, { typ: EnumToken.InvalidDeclarationNodeType });
+                // @ts-expect-error
+                node.typ = EnumToken.InvalidDeclarationNodeType;
                 errors.push({
                     message: "<declaration> not allowed in <stylesheet>",
                     action: "drop",
@@ -1579,7 +1607,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             return {
                 ...atRule,
                 typ: EnumToken.InvalidRuleNodeType,
-                val: trimArray(stream).reduce((acc, curr) => acc + renderToken(curr, options), ""),
+                val: renderTokens(trimArray(stream), options),
                 ...(parseAsBlock ? { chi: [] } : {}),
             };
         }
@@ -1598,7 +1626,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             return {
                 ...atRule,
                 typ: EnumToken.InvalidRuleNodeType,
-                val: trimArray(stream).reduce((acc, curr) => acc + renderToken(curr, options), ""),
+                val: renderTokens(trimArray(stream), options),
                 ...(parseAsBlock ? { chi: [] } : {}),
             };
         }
@@ -1614,7 +1642,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             return {
                 ...atRule,
                 typ: EnumToken.InvalidRuleNodeType,
-                val: trimArray(stream).reduce((acc, curr) => acc + renderToken(curr, options), ""),
+                val: renderTokens(trimArray(stream), options),
                 ...(parseAsBlock ? { chi: [] } : {}),
             };
         }
@@ -1634,7 +1662,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
         return {
             ...atRule,
             typ: EnumToken.InvalidRuleNodeType,
-            val: trimArray(stream).reduce((acc, curr) => acc + renderToken(curr, options), ""),
+            val: renderTokens(trimArray(stream), options),
             ...(parseAsBlock ? { chi: [] } : {}),
         };
     }
@@ -1676,7 +1704,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             // @ts-expect-error
             return Object.defineProperties(Object.assign(atRule, {
                 typ: success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                val: trimArray(stream).reduce((acc, curr) => acc + renderToken(curr, options), ""),
+                val: renderTokens(trimArray(stream), options),
             }), {
                 loc: {
                     ...definedPropertySettings,
@@ -1693,7 +1721,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             // @ts-expect-error
             return Object.defineProperties(Object.assign(atRule, {
                 typ: result.success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                val: trimWhiteSpaceTokens(stream).reduce((acc, curr) => acc + renderToken(curr, options), ""),
+                val: renderTokens(trimWhiteSpaceTokens(stream), options),
                 chi: [],
             }), {
                 loc: {
@@ -1734,7 +1762,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             // @ts-expect-error
             return Object.defineProperties(Object.assign(atRule, {
                 typ: success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                val: trimWhiteSpaceTokens(stream).reduce((acc, curr) => acc + renderToken(curr, options), ""),
+                val: renderTokens(trimWhiteSpaceTokens(stream), options),
                 chi: [],
             }), {
                 loc: {
@@ -1752,7 +1780,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             // @ts-expect-error
             return Object.defineProperties(Object.assign(atRule, {
                 typ: result.success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                val: trimWhiteSpaceTokens(stream).reduce((acc, curr) => acc + renderToken(curr, options), ""),
+                val: renderTokens(trimWhiteSpaceTokens(stream), options),
                 chi: [],
             }), {
                 loc: {
@@ -1773,7 +1801,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             // @ts-expect-error
             return Object.defineProperties(Object.assign(atRule, {
                 typ: result.success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                val: trimWhiteSpaceTokens(tokens).reduce((acc, curr) => acc + renderToken(curr, options), ""),
+                val: renderTokens(trimWhiteSpaceTokens(tokens), options),
             }), {
                 loc: {
                     ...definedPropertySettings,
@@ -1803,7 +1831,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             // @ts-expect-error
             return Object.defineProperties(Object.assign(atRule, {
                 typ: success ? EnumToken.KeyframesAtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                val: tokens.reduce((acc, curr) => acc + renderToken(curr, options), ""),
+                val: renderTokens(tokens, options),
                 chi: [],
             }), {
                 loc: {
@@ -1953,7 +1981,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             // @ts-expect-error
             return Object.defineProperties(Object.assign(atRule, {
                 typ: success && result.success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                val: stream.reduce((acc, t) => acc + renderToken(t, options), ""),
+                val: renderTokens(stream, options),
                 chi: [],
             }), {
                 tokens: { ...definedPropertySettings, value: stream.slice() },
@@ -1972,7 +2000,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             // @ts-expect-error
             return Object.defineProperties(Object.assign(atRule, {
                 typ: result.success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                val: stream.reduce((acc, t) => acc + renderToken(t, options), ""),
+                val: renderTokens(stream, options),
                 chi: [],
             }), {
                 tokens: { ...definedPropertySettings, value: stream.slice() },
@@ -2077,7 +2105,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             // @ts-expect-error
             return Object.defineProperties(Object.assign(atRule, {
                 typ: success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                val: stream.reduce((acc, t) => acc + renderToken(t, options), ""),
+                val: renderTokens(stream, options),
                 chi: [],
             }), {
                 tokens: { ...definedPropertySettings, value: stream.slice() },
@@ -2093,7 +2121,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             // @ts-expect-error
             return Object.defineProperties(Object.assign(atRule, {
                 typ: success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                val: stream.reduce((acc, t) => acc + renderToken(t, options), ""),
+                val: renderTokens(stream, options),
                 chi: [],
             }), {
                 tokens: { ...definedPropertySettings, value: stream.slice() },
@@ -2146,7 +2174,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             // @ts-expect-error
             return Object.defineProperties(Object.assign(atRule, {
                 typ: success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                val: stream.reduce((acc, t) => acc + renderToken(t, options), ""),
+                val: renderTokens(stream, options),
                 chi: [],
             }), {
                 tokens: { ...definedPropertySettings, value: stream.slice() },
@@ -2193,7 +2221,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                 errors.push(...result.errors);
                 return Object.defineProperty({
                     typ: EnumToken.InvalidAtRuleNodeType,
-                    val: stream.reduce((acc, t) => acc + renderToken(t, options), ""),
+                    val: renderTokens(stream, options),
                 }, "loc", {
                     ...definedPropertySettings,
                     value: { ...atRule.loc, end: { ...(stream.at(-1)?.loc?.end ?? atRule.loc.end) } },
@@ -2271,7 +2299,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             // @ts-expect-error
             return Object.defineProperties(Object.assign(atRule, {
                 typ: result.success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                val: trimWhiteSpaceTokens(stream).reduce((acc, t) => acc + renderToken(t, options), ""),
+                val: renderTokens(trimWhiteSpaceTokens(stream), options),
                 ...(parseAsBlock ? { chi: [] } : {}),
             }), {
                 tokens: { ...definedPropertySettings, value: stream.slice() },

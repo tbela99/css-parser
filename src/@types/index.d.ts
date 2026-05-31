@@ -423,6 +423,12 @@ export declare interface ParserOptions
      * css modules options
      */
     module?: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions;
+
+    /**
+     * tokenizing info
+     * @private
+     */
+    parseInfo?: ParseInfo;
 }
 
 /**
@@ -599,12 +605,18 @@ export declare interface ParseResultStats {
      * bytes read from imported files
      */
     importedBytesIn: number;
+
     /**
-     * parse processing time
+     * tokenizing processing time
+     */
+
+    tokenize: string;
+    /**
+     * parsing processing time
      */
     parse: string;
     /**
-     * minify processing time
+     * minification processing time
      */
     minify: string;
     /**

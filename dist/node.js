@@ -171,17 +171,19 @@ async function parseFile(file, options = {}, asStream = false) {
  * ```
  */
 async function parse(stream, options = {}) {
+    options.parseInfo = {
+        stream,
+        buffer: "",
+        //   acc: "",
+        src: options.src ?? "",
+        offset: 0,
+        time: 0,
+        position: { ind: 0, lin: 1, col: 0 },
+        currentPosition: { ind: -1, lin: 1, col: 0 },
+    };
     return doParse(stream instanceof ReadableStream
-        ? tokenizeStream(stream)
-        : tokenize({
-            stream,
-            buffer: "",
-            acc: "",
-            src: options.src ?? "",
-            offset: 0,
-            position: { ind: 0, lin: 1, col: 0 },
-            currentPosition: { ind: -1, lin: 1, col: 0 },
-        }), Object.assign(options, {
+        ? tokenizeStream(stream, options.parseInfo)
+        : tokenize(options.parseInfo), Object.assign(options, {
         load,
         resolve,
         dirname,

@@ -28,7 +28,7 @@ export declare interface ParseInfo {
     /**
      * the accumulated css string
      */
-    acc: string;
+    // acc: string;
     
     /**
      * last token position
@@ -43,4 +43,9 @@ export declare interface ParseInfo {
      * offset
      */
     offset: number;
+
+    /**
+     * tokenizing time
+     */
+    time: number;
 }

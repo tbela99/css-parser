@@ -33,7 +33,7 @@ import {
 
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
-const dimensionUnits: Set<string> = new Set([
+export const dimensionUnits: Set<string> = new Set([
     "q",
     "cap",
     "ch",
@@ -1140,7 +1140,7 @@ export function parseColor(token: Token) {
     return token;
 }
 
-function isLetter(codepoint: number): boolean {
+export function isLetter(codepoint: number): boolean {
     // lowercase
     return (
         (codepoint >= 0x61 && codepoint <= 0x7a) ||
@@ -1202,7 +1202,7 @@ export function isIdent(name: string): boolean {
     }
 
     if (codepoint == REVERSE_SOLIDUS) {
-        codepoint = name.codePointAt(i + 1) as number;
+        codepoint = name.charCodeAt(i + 1) as number;
 
         if (!isIdentCodepoint(codepoint)) {
             return false;
@@ -1210,7 +1210,7 @@ export function isIdent(name: string): boolean {
         i += String.fromCodePoint(codepoint).length;
 
         if (i < j) {
-            codepoint = name.codePointAt(i) as number;
+            codepoint = name.charCodeAt(i) as number;
 
             if (!isIdentCodepoint(codepoint)) {
                 return false;

@@ -811,7 +811,7 @@ function optimizeSelector(selector) {
             if (reducible) {
                 const chr = curr[0].charAt(0);
                 // @ts-ignore
-                reducible = chr == "." || chr == ":" || isIdentStart(chr.codePointAt(0));
+                reducible = chr == "." || chr == ":" || isIdentStart(chr.charCodeAt(0));
             }
             acc.push(hasCompound ? ["&"].concat(curr) : curr);
             return acc;

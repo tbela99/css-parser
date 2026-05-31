@@ -182,8 +182,8 @@ function parseGridTemplate(template: string): string {
     for (let i = 0; i < template.length; i++) {
         const char: string = template[i];
 
-        if (isWhiteSpace(<number>char.codePointAt(0))) {
-            while (i + 1 < template.length && isWhiteSpace(<number>template[i + 1].codePointAt(0))) {
+        if (isWhiteSpace(<number>char.charCodeAt(0))) {
+            while (i + 1 < template.length && isWhiteSpace(<number>template[i + 1].charCodeAt(0))) {
                 i++;
             }
 
@@ -194,7 +194,7 @@ function parseGridTemplate(template: string): string {
                 i++;
             }
 
-            if (isWhiteSpace(<number>result.at(-1)?.codePointAt(0))) {
+            if (isWhiteSpace(<number>result.at(-1)?.charCodeAt(0))) {
                 result = result.slice(0, -1);
             }
 

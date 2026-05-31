@@ -91,6 +91,13 @@ import { parseAtRulePage } from "./utils/at-rule-page.ts";
 import { parseAtRuleFontFeatureValues } from "./utils/at-rule-font-feature-values.ts";
 import { matchGenericSyntax } from "./utils/at-rule-generic.ts";
 import { eqMatrix } from "../ast/transform/minify.ts";
+import { memoize } from "./utils/cache.ts";
+
+function renderTokens(tokens: Token[] | null | undefined, options?: any): string {
+    if (tokens == null || tokens.length === 0) return "";
+    if (options != null) return tokens.map((t) => renderToken(t, options)).join("");
+    return tokens.map((t) => renderToken(t)).join("");
+}
 
 declare type T = AstDeclaration | AstAtRule | AstRule | AstKeyframesRule | AstKeyframesAtRule;
 
@@ -128,23 +135,25 @@ const forbiddenStartCharacters: number[] = ["0", "1", "2", "3", "4", "5", "6", "
  *
  * @returns string
  */
-export function getShortNameGenerator(localName: string, filePath: string, pattern: string, hashLength = 5): string {
-    const key = `${localName}_${filePath}_${pattern}_${hashLength}`;
+export const getShortNameGenerator = memoize(
+    (localName: string, filePath: string, pattern: string, hashLength = 5): string => {
+        const key = `${localName}_${filePath}_${pattern}_${hashLength}`;
 
-    if (key in keyNameCache!) {
-        return keyNameCache![key];
-    }
+        if (key in keyNameCache!) {
+            return keyNameCache![key];
+        }
 
-    let value: string = keyNameCounter!.toString(36);
-    keyNameCounter!++;
-
-    while (forbiddenStartCharacters.includes(value.charCodeAt(0))) {
-        value = keyNameCounter!.toString(36);
+        let value: string = keyNameCounter!.toString(36);
         keyNameCounter!++;
-    }
 
-    return (keyNameCache![key] = value);
-}
+        while (forbiddenStartCharacters.includes(value.charCodeAt(0))) {
+            value = keyNameCounter!.toString(36);
+            keyNameCounter!++;
+        }
+
+        return (keyNameCache![key] = value);
+    },
+);
 
 function reject(reason?: any) {
     throw new Error(reason ?? "Parsing aborted");
@@ -158,7 +167,7 @@ function reject(reason?: any) {
  * @throws Error
  * @private
  */
-export function getKeyName(key: string, how: ModuleCaseTransformEnum) {
+export const getKeyName = memoize((key: string, how: ModuleCaseTransformEnum): string => {
     switch (how) {
         case ModuleCaseTransformEnum.CamelCase:
         case ModuleCaseTransformEnum.CamelCaseOnly:
@@ -170,7 +179,7 @@ export function getKeyName(key: string, how: ModuleCaseTransformEnum) {
     }
 
     return key;
-}
+});
 
 /**
  * generate scoped name
@@ -182,124 +191,130 @@ export function getKeyName(key: string, how: ModuleCaseTransformEnum) {
  * @throws Error
  * @private
  */
-export async function generateScopedName(
-    localName: string,
-    filePath: string,
-    pattern: string,
-    hashLength = 5,
-): Promise<string> {
-    if (localName.startsWith("--")) {
-        localName = localName.slice(2);
-    }
-
-    const matches = /.*?(([^/]+)\/)?([^/\\]*?)(\.([^?/]+))?([?].*)?$/.exec(filePath);
-    const folder = matches?.[2]?.replace?.(/[^A-Za-z0-9_-]/g, "_") ?? "";
-    const fileBase = matches?.[3] ?? "";
-    const ext = matches?.[5] ?? "";
-    const path = filePath.replace(/[^A-Za-z0-9_-]/g, "_");
-    // sanitize localName for safe char set (replace spaces/illegal chars)
-    const safeLocal: string = localName.replace(/[^A-Za-z0-9_-]/g, "_");
-    const hashString: string = `${localName}::${filePath}`;
-
-    let result: string = "";
-    let inParens: number = 0;
-    let key: string = "";
-    let position: number = 0;
-
-    // Compose final scoped name. Ensure the entire class doesn't start with a digit:
-    for (const char of pattern) {
-        position += char.length;
-
-        if (char == "[") {
-            inParens++;
-
-            if (inParens != 1) {
-                throw new Error(`Unexpected character: '${char} at position ${position - 1}' in pattern '${pattern}'`);
-            }
-
-            continue;
+export const generateScopedName = memoize(
+    async (localName: string, filePath: string, pattern: string, hashLength = 5): Promise<string> => {
+        if (localName.startsWith("--")) {
+            localName = localName.slice(2);
         }
 
-        if (char == "]") {
-            inParens--;
+        const matches = /.*?(([^/]+)\/)?([^/\\]*?)(\.([^?/]+))?([?].*)?$/.exec(filePath);
+        const folder = matches?.[2]?.replace?.(/[^A-Za-z0-9_-]/g, "_") ?? "";
+        const fileBase = matches?.[3] ?? "";
+        const ext = matches?.[5] ?? "";
+        const path = filePath.replace(/[^A-Za-z0-9_-]/g, "_");
+        // sanitize localName for safe char set (replace spaces/illegal chars)
+        const safeLocal: string = localName.replace(/[^A-Za-z0-9_-]/g, "_");
+        const hashString: string = `${localName}::${filePath}`;
 
-            if (inParens != 0) {
-                throw new Error(`Unexpected character: '${char}:${position - 1}'`);
+        let result: string = "";
+        let inParens: number = 0;
+        let key: string = "";
+        let position: number = 0;
+
+        // Compose final scoped name. Ensure the entire class doesn't start with a digit:
+        for (const char of pattern) {
+            position += char.length;
+
+            if (char == "[") {
+                inParens++;
+
+                if (inParens != 1) {
+                    throw new Error(
+                        `Unexpected character: '${char} at position ${position - 1}' in pattern '${pattern}'`,
+                    );
+                }
+
+                continue;
             }
 
-            let hashAlgo: string | null = null;
-            let length: number | null = null;
+            if (char == "]") {
+                inParens--;
 
-            if (key.includes(":")) {
-                const parts: string[] = key.split(":");
+                if (inParens != 0) {
+                    throw new Error(`Unexpected character: '${char}:${position - 1}'`);
+                }
 
-                if (parts.length == 2) {
-                    // @ts-ignore
-                    [key, length] = parts;
+                let hashAlgo: string | null = null;
+                let length: number | null = null;
 
-                    // @ts-ignore
-                    if (key == "hash" && hashAlgorithms.includes(length as string)) {
+                if (key.includes(":")) {
+                    const parts: string[] = key.split(":");
+
+                    if (parts.length == 2) {
                         // @ts-ignore
-                        hashAlgo = length;
-                        length = null;
+                        [key, length] = parts;
+
+                        // @ts-ignore
+                        if (key == "hash" && hashAlgorithms.includes(length as string)) {
+                            // @ts-ignore
+                            hashAlgo = length;
+                            length = null;
+                        }
+                    }
+
+                    if (parts.length == 3) {
+                        // @ts-ignore
+                        [key, hashAlgo, length] = parts;
+                    }
+
+                    if (length != null && !Number.isInteger(+length)) {
+                        throw new Error(
+                            `Unsupported hash length: '${length}'. expecting format [hash:length] or [hash:hash-algo:length]`,
+                        );
                     }
                 }
 
-                if (parts.length == 3) {
-                    // @ts-ignore
-                    [key, hashAlgo, length] = parts;
+                const slice = length != null && length != fileBase.length;
+
+                switch (key) {
+                    case "hash":
+                        result += await hash(hashString, length ?? hashLength, hashAlgo as string);
+                        break;
+
+                    case "name":
+                        // @ts-expect-error
+                        result += slice ? fileBase.slice(0, +length) : fileBase;
+                        break;
+
+                    case "local":
+                        // @ts-expect-error
+                        result += slice ? safeLocal.slice(0, +length) : localName;
+                        break;
+
+                    case "ext":
+                        // @ts-expect-error
+                        result += slice ? ext.slice(0, +length) : ext;
+                        break;
+
+                    case "path":
+                        // @ts-expect-error
+                        result += slice ? path.slice(0, +length) : path;
+                        break;
+
+                    case "folder":
+                        // @ts-expect-error
+                        result += slice ? folder.slice(0, +length) : folder;
+                        break;
+
+                    default:
+                        throw new Error(`Unsupported key: '${key}'`);
                 }
 
-                if (length != null && !Number.isInteger(+length)) {
-                    throw new Error(
-                        `Unsupported hash length: '${length}'. expecting format [hash:length] or [hash:hash-algo:length]`,
-                    );
-                }
+                key = "";
+                continue;
             }
 
-            switch (key) {
-                case "hash":
-                    result += await hash(hashString, length ?? hashLength, hashAlgo as string);
-                    break;
-
-                case "name":
-                    result += length != null ? fileBase.slice(0, +length) : fileBase;
-                    break;
-
-                case "local":
-                    result += length != null ? safeLocal.slice(0, +length) : localName;
-                    break;
-
-                case "ext":
-                    result += length != null ? ext.slice(0, +length) : ext;
-                    break;
-
-                case "path":
-                    result += length != null ? path.slice(0, +length) : path;
-                    break;
-
-                case "folder":
-                    result += length != null ? folder.slice(0, +length) : folder;
-                    break;
-
-                default:
-                    throw new Error(`Unsupported key: '${key}'`);
+            if (inParens > 0) {
+                key += char;
+            } else {
+                result += char;
             }
-
-            key = "";
-            continue;
         }
 
-        if (inParens > 0) {
-            key += char;
-        } else {
-            result += char;
-        }
-    }
-
-    // if leading char is digit, prefix underscore (very rare)
-    return (/^[0-9]/.test(result) ? "_" : "") + result;
-}
+        // if leading char is digit, prefix underscore (very rare)
+        return (/^[0-9]/.test(result) ? "_" : "") + result;
+    },
+);
 
 /**
  * parse css string
@@ -310,7 +325,7 @@ export async function generateScopedName(
  * @private
  */
 export async function doParse(
-    iter: Generator<TokenizeResult> | AsyncGenerator<TokenizeResult>,
+    iter: Array<TokenizeResult> | Iterable<TokenizeResult> | AsyncGenerator<TokenizeResult>,
     options: ParserOptions = {},
 ): Promise<ParseResult> {
     if (options.signal != null) {
@@ -366,6 +381,7 @@ export async function doParse(
         nodesCount: 0,
         tokensCount: 0,
         importedBytesIn: 0,
+        tokenize: `0ms`,
         parse: `0ms`,
         minify: `0ms`,
         total: `0ms`,
@@ -563,11 +579,16 @@ export async function doParse(
         }
     }
 
-    while (
-        (item = isAsync
-            ? ((await iter.next()).value as TokenizeResult)
-            : ((iter as Iterator<TokenizeResult>).next().value as TokenizeResult))
-    ) {
+    if (Array.isArray(iter)) {
+
+        // @ts-expect-error
+        iter = iter[Symbol.iterator]() as Iterator<TokenizeResult>;
+    }
+
+    // @ts-expect-error
+    while   (item = isAsync ? (await iter.next()).value as TokenizeResult : (iter as Iterator<TokenizeResult>).next().value as TokenizeResult)
+    {
+        // item = isAsync ? await value : value;
         stats.bytesIn = item.bytesIn;
         stats.tokensCount++;
 
@@ -616,8 +637,11 @@ export async function doParse(
                 tokens = [item.token];
 
                 do {
+
                     item = isAsync
+                    // @ts-expect-error
                         ? ((await iter.next()).value as TokenizeResult)
+                        // @ts-expect-error
                         : ((iter as Iterator<TokenizeResult>).next().value as TokenizeResult);
 
                     if (item == null) {
@@ -1071,6 +1095,7 @@ export async function doParse(
             ...stats,
             parse: `${(endParseTime - startTime).toFixed(2)}ms`,
             minify: `${(endTime - endParseTime).toFixed(2)}ms`,
+            tokenize: `${(options?.parseInfo?.time ?? 0).toFixed(2)}ms`,
             total: `${(endTime - startTime).toFixed(2)}ms`,
         },
     } as ParseResult;
@@ -1164,22 +1189,28 @@ export async function doParse(
                     result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                         ? await result
                         : result;
-                const root: ParseResult = await doParse(
-                    stream instanceof ReadableStream
-                        ? tokenizeStream(stream)
-                        : tokenize({
+
+                        const parseInfo: ParseInfo = {
                               stream,
                               buffer: "",
                               offset: 0,
+                              time: 0,
                               position: { ind: 0, lin: 1, col: 1 },
                               currentPosition: { ind: -1, lin: 1, col: 0 },
-                          } as ParseInfo),
+                          } as ParseInfo;
+
+                const root: ParseResult = await doParse(
+                    stream instanceof ReadableStream
+                        ? tokenizeStream(stream, parseInfo)
+                        : tokenize(parseInfo),
                     Object.assign({}, options, {
                         minify: false,
                         setParent: false,
                         src: src.relative,
                     }) as ParserOptions,
                 );
+
+                options.parseInfo!.time += parseInfo.time;
 
                 cssVariablesMap[(node as CssVariableImportTokenType).nam] = root.cssModuleVariables!;
                 parent!.chi!.splice(parent!.chi!.indexOf(node), 1);
@@ -1285,7 +1316,6 @@ export async function doParse(
                     let parentRule = node.parent as AstRule;
 
                     while (parentRule != null && parentRule.typ != EnumToken.RuleNodeType) {
-
                         parentRule = parentRule.parent as AstRule;
                     }
 
@@ -1588,7 +1618,7 @@ export async function doParse(
 
                             (node.val[i] as StringToken).val =
                                 (node.val[i] as StringToken).val.charAt(0) +
-                                tokens.reduce((acc, curr) => acc + renderToken(curr), "") +
+                                renderTokens(tokens) +
                                 (node.val[i] as StringToken).val.charAt((node.val[i] as StringToken).val.length - 1);
                         }
                     }
@@ -1885,7 +1915,7 @@ export async function doParse(
                         }
                     }
 
-                    (node as AstAtRule).val = node.tokens!.reduce((a: string, b: Token) => a + renderToken(b), "");
+                    (node as AstAtRule).val = renderTokens(node.tokens!);
                 } else {
                     let isReplaced: boolean = false;
 
@@ -1909,7 +1939,7 @@ export async function doParse(
                     }
 
                     if (isReplaced) {
-                        node.val = node.tokens!.reduce((a: string, b: Token) => a + renderToken(b), "");
+                        node.val = renderTokens(node.tokens!);
                     }
                 }
             }
@@ -2009,7 +2039,7 @@ function parseNode(
                 location: tokens[i].loc,
             });
 
-            Object.assign(tokens[i], { typ: EnumToken.InvalidCommentTokenType });
+            tokens[i].typ = EnumToken.InvalidCommentTokenType;
             continue;
         }
 
@@ -2040,7 +2070,7 @@ function parseNode(
                     location,
                 });
 
-                Object.assign(tokens[i], { typ: EnumToken.InvalidCommentTokenType });
+                tokens[i].typ = EnumToken.InvalidCommentTokenType ;
                 continue;
             }
 
@@ -2098,6 +2128,7 @@ function parseNode(
             return null;
         }
 
+        stats.nodesCount++;
         context.chi!.push(node);
         // @ts-expect-error
         return Object.defineProperty(node, "parent", { ...definedPropertySettings, value: context });
@@ -2105,6 +2136,8 @@ function parseNode(
         // return "chi" in node ? node : null;
         // return node;
     } else {
+        stats.nodesCount++;
+
         // rule
         if (delim.typ == EnumToken.BlockStartTokenType) {
             const node = parseSelector(tokens, context as AstRule | AstAtRule, options, errors);
@@ -2118,7 +2151,9 @@ function parseNode(
             Object.defineProperty(node, "parent", { ...definedPropertySettings, value: context });
 
             if (context.typ === EnumToken.StyleSheetNodeType && node.typ === EnumToken.DeclarationNodeType) {
-                Object.assign(node, { typ: EnumToken.InvalidDeclarationNodeType });
+                
+                // @ts-expect-error
+                node.typ = EnumToken.InvalidDeclarationNodeType ;
 
                 errors.push({
                     message: "<declaration> not allowed in <stylesheet>",
@@ -2175,7 +2210,7 @@ export function parseAtRule(
             return {
                 ...atRule,
                 typ: EnumToken.InvalidRuleNodeType,
-                val: trimArray(stream).reduce((acc, curr) => acc + renderToken(curr, options), ""),
+                val: renderTokens(trimArray(stream), options),
                 ...(parseAsBlock ? { chi: [] } : {}),
             } as AstInvalidAtRule;
         }
@@ -2196,7 +2231,7 @@ export function parseAtRule(
             return {
                 ...atRule,
                 typ: EnumToken.InvalidRuleNodeType,
-                val: trimArray(stream).reduce((acc, curr) => acc + renderToken(curr, options), ""),
+                val: renderTokens(trimArray(stream), options),
                 ...(parseAsBlock ? { chi: [] } : {}),
             } as AstInvalidAtRule;
         }
@@ -2214,7 +2249,7 @@ export function parseAtRule(
             return {
                 ...atRule,
                 typ: EnumToken.InvalidRuleNodeType,
-                val: trimArray(stream).reduce((acc, curr) => acc + renderToken(curr, options), ""),
+                val: renderTokens(trimArray(stream), options),
                 ...(parseAsBlock ? { chi: [] } : {}),
             } as AstInvalidAtRule;
         }
@@ -2237,7 +2272,7 @@ export function parseAtRule(
         return {
             ...atRule,
             typ: EnumToken.InvalidRuleNodeType,
-            val: trimArray(stream).reduce((acc, curr) => acc + renderToken(curr, options), ""),
+            val: renderTokens(trimArray(stream), options),
             ...(parseAsBlock ? { chi: [] } : {}),
         } as AstInvalidAtRule;
     }
@@ -2286,7 +2321,7 @@ export function parseAtRule(
             return Object.defineProperties(
                 Object.assign(atRule, {
                     typ: success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                    val: trimArray(stream).reduce((acc, curr) => acc + renderToken(curr, options), ""),
+                    val: renderTokens(trimArray(stream), options),
                 }),
                 {
                     loc: {
@@ -2309,7 +2344,7 @@ export function parseAtRule(
             return Object.defineProperties(
                 Object.assign(atRule, {
                     typ: result.success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                    val: trimWhiteSpaceTokens(stream).reduce((acc, curr) => acc + renderToken(curr, options), ""),
+                    val: renderTokens(trimWhiteSpaceTokens(stream), options),
                     chi: [] as Token[],
                 }),
                 {
@@ -2358,7 +2393,7 @@ export function parseAtRule(
             return Object.defineProperties(
                 Object.assign(atRule, {
                     typ: success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                    val: trimWhiteSpaceTokens(stream).reduce((acc, curr) => acc + renderToken(curr, options), ""),
+                    val: renderTokens(trimWhiteSpaceTokens(stream), options),
                     chi: [] as Token[],
                 }),
                 {
@@ -2382,7 +2417,7 @@ export function parseAtRule(
             return Object.defineProperties(
                 Object.assign(atRule, {
                     typ: result.success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                    val: trimWhiteSpaceTokens(stream).reduce((acc, curr) => acc + renderToken(curr, options), ""),
+                    val: renderTokens(trimWhiteSpaceTokens(stream), options),
                     chi: [] as Token[],
                 }),
                 {
@@ -2409,7 +2444,7 @@ export function parseAtRule(
             return Object.defineProperties(
                 Object.assign(atRule, {
                     typ: result.success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                    val: trimWhiteSpaceTokens(tokens).reduce((acc, curr) => acc + renderToken(curr, options), ""),
+                    val: renderTokens(trimWhiteSpaceTokens(tokens), options),
                 }),
                 {
                     loc: {
@@ -2450,7 +2485,7 @@ export function parseAtRule(
             return Object.defineProperties(
                 Object.assign(atRule, {
                     typ: success ? EnumToken.KeyframesAtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                    val: tokens.reduce((acc, curr) => acc + renderToken(curr, options), ""),
+                    val: renderTokens(tokens, options),
                     chi: [] as Array<AstKeyframesRule | AstComment>,
                 }),
                 {
@@ -2646,7 +2681,7 @@ export function parseAtRule(
             return Object.defineProperties(
                 Object.assign(atRule, {
                     typ: success && result.success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                    val: stream.reduce((acc, t) => acc + renderToken(t, options), ""),
+                    val: renderTokens(stream, options),
                     chi: [],
                 }),
                 {
@@ -2671,7 +2706,7 @@ export function parseAtRule(
             return Object.defineProperties(
                 Object.assign(atRule, {
                     typ: result.success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                    val: stream.reduce((acc, t) => acc + renderToken(t, options), ""),
+                    val: renderTokens(stream, options),
                     chi: [],
                 }),
                 {
@@ -2792,7 +2827,7 @@ export function parseAtRule(
             return Object.defineProperties(
                 Object.assign(atRule, {
                     typ: success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                    val: stream.reduce((acc, t) => acc + renderToken(t, options), ""),
+                    val: renderTokens(stream, options),
                     chi: [],
                 }),
                 {
@@ -2813,7 +2848,7 @@ export function parseAtRule(
             return Object.defineProperties(
                 Object.assign(atRule, {
                     typ: success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                    val: stream.reduce((acc, t) => acc + renderToken(t, options), ""),
+                    val: renderTokens(stream, options),
                     chi: [],
                 }),
                 {
@@ -2872,7 +2907,7 @@ export function parseAtRule(
             return Object.defineProperties(
                 Object.assign(atRule, {
                     typ: success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                    val: stream.reduce((acc, t) => acc + renderToken(t, options), ""),
+                    val: renderTokens(stream, options),
                     chi: [],
                 }),
                 {
@@ -2941,7 +2976,7 @@ export function parseAtRule(
                 return Object.defineProperty(
                     {
                         typ: EnumToken.InvalidAtRuleNodeType,
-                        val: stream.reduce((acc, t) => acc + renderToken(t, options), ""),
+                        val: renderTokens(stream, options),
                     },
                     "loc",
                     {
@@ -3040,7 +3075,7 @@ export function parseAtRule(
             return Object.defineProperties(
                 Object.assign(atRule, {
                     typ: result.success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
-                    val: trimWhiteSpaceTokens(stream).reduce((acc, t) => acc + renderToken(t, options), ""),
+                    val: renderTokens(trimWhiteSpaceTokens(stream), options),
                     ...(parseAsBlock ? { chi: [] } : {}),
                 }),
                 {

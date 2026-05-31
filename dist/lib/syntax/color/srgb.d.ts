@@ -1,0 +1,23 @@
+import type { ColorToken, IdentToken } from "../../../@types/index.d.ts";
+export declare function srgbvalues(token: ColorToken | IdentToken): number[] | null;
+export declare function rgb2srgb(token: ColorToken): number[] | null;
+export declare function rgb2srgbvalues(token: ColorToken): number[] | null;
+export declare function rgbvalues2srgbvalues(r: number, g: number, b: number, a?: number | null): number[] | null;
+export declare function hex2srgbvalues(token: ColorToken): number[];
+export declare function xyz2srgb(x: number, y: number, z: number, alpha?: number | null): number[];
+export declare function hwb2srgbvalues(token: ColorToken): number[] | null;
+export declare function hsl2srgb(token: ColorToken): number[] | null;
+export declare function cmyk2srgbvalues(token: ColorToken): number[] | null;
+export declare function oklab2srgbvalues(token: ColorToken): number[] | null;
+export declare function oklch2srgbvalues(token: ColorToken): number[] | null;
+export declare function hslvalues(token: ColorToken): {
+    h: number;
+    s: number;
+    l: number;
+    a?: number | null;
+} | null;
+export declare function hslvalues2srgbvalues(h: number, s: number, l: number, a?: number | null): number[];
+export declare function lab2srgbvalues(token: ColorToken): number[] | null;
+export declare function lch2srgbvalues(token: ColorToken): number[] | null;
+export declare function srgb2lsrgbvalues(r: number, g: number, b: number, a?: number | null): number[];
+export declare function lsrgb2srgbvalues(r: number, g: number, b: number, alpha?: number | null): number[];
