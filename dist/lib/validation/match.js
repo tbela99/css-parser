@@ -1748,10 +1748,12 @@ function matchSyntax(syntaxes, context, options) {
                     errors: result.errors,
                 };
             case ValidationTokenEnum.Function:
+                // console.debug(JSON.stringify({token, syntax: syntaxes[i]}));
                 if ((!tokensfuncDefMap.has(token.typ) &&
                     !funcLike.includes(token.typ) &&
                     !funcTypes.includes(token.typ)) ||
-                    !equalsIgnoreCase(syntaxes[i].val, token.val.toLocaleLowerCase())) {
+                    !('val' in token) ||
+                    !equalsIgnoreCase(syntaxes[i].val, token.val.toLowerCase())) {
                     return {
                         success: false,
                         valid: true,

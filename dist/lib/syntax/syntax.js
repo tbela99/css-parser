@@ -907,9 +907,9 @@ function isFunction(name) {
 function isNewLine(codepoint) {
     // \n \r \f \v
     return (codepoint == 0xa ||
+        codepoint == 0xb ||
         codepoint == 0xc ||
         codepoint == 0xd ||
-        codepoint == 0xb ||
         codepoint == 0x2028 ||
         codepoint == 0x2029);
 }
@@ -918,8 +918,11 @@ function isWhiteSpace(codepoint) {
         codepoint == 0x20 ||
         // isNewLine
         codepoint == 0xa ||
+        codepoint == 0xb ||
         codepoint == 0xc ||
-        codepoint == 0xd);
+        codepoint == 0xd ||
+        codepoint == 0x2028 ||
+        codepoint == 0x2029);
 }
 function isValue(token) {
     if (token == null) {

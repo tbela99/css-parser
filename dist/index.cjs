@@ -7890,9 +7890,9 @@ function isFunction(name) {
 function isNewLine(codepoint) {
     // \n \r \f \v
     return (codepoint == 0xa ||
+        codepoint == 0xb ||
         codepoint == 0xc ||
         codepoint == 0xd ||
-        codepoint == 0xb ||
         codepoint == 0x2028 ||
         codepoint == 0x2029);
 }
@@ -7901,8 +7901,11 @@ function isWhiteSpace(codepoint) {
         codepoint == 0x20 ||
         // isNewLine
         codepoint == 0xa ||
+        codepoint == 0xb ||
         codepoint == 0xc ||
-        codepoint == 0xd);
+        codepoint == 0xd ||
+        codepoint == 0x2028 ||
+        codepoint == 0x2029);
 }
 function isValue(token) {
     if (token == null) {
@@ -17585,7 +17588,7 @@ function parseDeclaration(tokens, parent, options, errors) {
                 break;
             case exports.EnumToken.IdenTokenType:
                 {
-                    const val = token.val.toLocaleLowerCase();
+                    const val = token.val.toLowerCase();
                     if (val in COLORS_NAMES || val === "currentcolor") {
                         Object.assign(token, {
                             val,
@@ -19473,10 +19476,12 @@ function matchSyntax(syntaxes, context, options) {
                     errors: result.errors,
                 };
             case ValidationTokenEnum.Function:
+                // console.debug(JSON.stringify({token, syntax: syntaxes[i]}));
                 if ((!tokensfuncDefMap.has(token.typ) &&
                     !funcLike.includes(token.typ) &&
                     !funcTypes.includes(token.typ)) ||
-                    !equalsIgnoreCase(syntaxes[i].val, token.val.toLocaleLowerCase())) {
+                    !('val' in token) ||
+                    !equalsIgnoreCase(syntaxes[i].val, token.val.toLowerCase())) {
                     return {
                         success: false,
                         valid: true,
@@ -20942,18 +20947,18 @@ const SymbolsMapTokens = {
     // 'and': EnumToken.AndTokenType,
     // 'not': EnumToken.NotTokenType,
     // 'only': EnumToken.OnlyTokenType,
-    "|": exports.EnumToken.Pipe,
-    "&": exports.EnumToken.NestingSelectorTokenType,
-    "||": exports.EnumToken.ColumnCombinatorTokenType,
-    "*": exports.EnumToken.Star,
     "+": exports.EnumToken.Plus,
-    "~": exports.EnumToken.Tilda,
     "=": exports.EnumToken.DelimTokenType,
+    "|": exports.EnumToken.Pipe,
+    "||": exports.EnumToken.ColumnCombinatorTokenType,
+    "|=": exports.EnumToken.DashMatchTokenType,
+    "&": exports.EnumToken.NestingSelectorTokenType,
+    "*": exports.EnumToken.Star,
+    "*=": exports.EnumToken.ContainMatchTokenType,
+    "~": exports.EnumToken.Tilda,
     "~=": exports.EnumToken.IncludeMatchTokenType,
     "^=": exports.EnumToken.StartMatchTokenType,
     "$=": exports.EnumToken.EndMatchTokenType,
-    "|=": exports.EnumToken.DashMatchTokenType,
-    "*=": exports.EnumToken.ContainMatchTokenType,
     ",": exports.EnumToken.Comma,
     ":": exports.EnumToken.ColonTokenType,
     "::": exports.EnumToken.DoubleColonTokenType,
@@ -21014,7 +21019,7 @@ const SymbolsMapTokens = {
         return acc;
     }, Object.create(null)),
     ...transformFunctions.reduce((acc, curr) => {
-        acc[curr + "("] = exports.EnumToken.TransformFunctionTokenDefType;
+        acc[curr.toLowerCase() + "("] = exports.EnumToken.TransformFunctionTokenDefType;
         return acc;
     }, Object.create(null)),
     ...whenElseFunc.reduce((acc, curr) => {
@@ -21030,6 +21035,8 @@ const hintsEnum = new Set([
     exports.EnumToken.SemiColonTokenType,
     exports.EnumToken.BlockStartTokenType,
     exports.EnumToken.BlockEndTokenType,
+    exports.EnumToken.StartParensTokenType,
+    exports.EnumToken.EndParensTokenType,
     exports.EnumToken.ColonTokenType,
     exports.EnumToken.EOFTokenType,
 ]);
@@ -21044,6 +21051,25 @@ var TokenMap;
     TokenMap[TokenMap["SINGLE_QUOTE"] = 39] = "SINGLE_QUOTE";
     TokenMap[TokenMap["DOT"] = 46] = "DOT";
     TokenMap[TokenMap["AT"] = 64] = "AT";
+    TokenMap[TokenMap["PIPE"] = 124] = "PIPE";
+    TokenMap[TokenMap["EQUALS"] = 61] = "EQUALS";
+    TokenMap[TokenMap["AMPERSAND"] = 38] = "AMPERSAND";
+    TokenMap[TokenMap["STAR"] = 42] = "STAR";
+    TokenMap[TokenMap["TILDA"] = 126] = "TILDA";
+    TokenMap[TokenMap["CARET"] = 94] = "CARET";
+    TokenMap[TokenMap["DOLLAR"] = 36] = "DOLLAR";
+    TokenMap[TokenMap["COMMA"] = 44] = "COMMA";
+    TokenMap[TokenMap["COLON"] = 58] = "COLON";
+    TokenMap[TokenMap["SEMICOLON"] = 59] = "SEMICOLON";
+    TokenMap[TokenMap["LEFT_PARENTHESIS"] = 40] = "LEFT_PARENTHESIS";
+    TokenMap[TokenMap["RIGHT_PARENTHESIS"] = 41] = "RIGHT_PARENTHESIS";
+    TokenMap[TokenMap["LEFT_BRACKETS"] = 91] = "LEFT_BRACKETS";
+    TokenMap[TokenMap["RIGHT_BRACKETS"] = 93] = "RIGHT_BRACKETS";
+    TokenMap[TokenMap["LEFT_BRACE"] = 123] = "LEFT_BRACE";
+    TokenMap[TokenMap["RIGHT_BRACE"] = 125] = "RIGHT_BRACE";
+    TokenMap[TokenMap["PLUS"] = 43] = "PLUS";
+    TokenMap[TokenMap["MINUS"] = 45] = "MINUS";
+    TokenMap[TokenMap["GREATERTHAN"] = 62] = "GREATERTHAN";
 })(TokenMap || (TokenMap = {}));
 function consumeString(quoteStr, buffer, parseInfo) {
     const quote = quoteStr;
@@ -21055,7 +21081,7 @@ function consumeString(quoteStr, buffer, parseInfo) {
         buffer = "";
     }
     buffer += quoteStr;
-    while ((value = peek(parseInfo))) {
+    while ((value = parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset + 1))) {
         if (value == "\\") {
             const sequence = peek(parseInfo, 6);
             let escapeSequence = "";
@@ -21087,7 +21113,13 @@ function consumeString(quoteStr, buffer, parseInfo) {
                 else {
                     buffer += String.fromCodePoint(codepoint);
                 }
-                next(parseInfo, escapeSequence.length + 1 + (isWhiteSpace(peek(parseInfo)?.charCodeAt(0)) ? 1 : 0));
+                next(parseInfo, escapeSequence.length +
+                    1 +
+                    (isWhiteSpace(parseInfo.stream
+                        .charAt(parseInfo.currentPosition.ind - parseInfo.offset + 1)
+                        ?.charCodeAt(0))
+                        ? 1
+                        : 0));
                 continue;
             }
             buffer += next(parseInfo, 2);
@@ -21121,9 +21153,7 @@ function getTokenType(val, hint) {
     let token = null;
     let dimension;
     if (hint != null) {
-        token = hintsEnum.has(hint)
-            ? { typ: hint }
-            : { typ: hint, val };
+        token = hintsEnum.has(hint) ? { typ: hint } : { typ: hint, val };
     }
     else {
         // if (v == 'currentcolor' || v == 'transparent' /* || v in COLORS_NAMES */) {
@@ -21238,28 +21268,32 @@ function peek(parseInfo, count = 1) {
     const position = parseInfo.currentPosition.ind - parseInfo.offset;
     return parseInfo.stream.slice(position + 1, position + count + 1);
 }
-function prev(parseInfo) {
-    return parseInfo.offset == parseInfo.currentPosition.ind
-        ? parseInfo.buffer.slice(-1)
-        : parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset - 1);
-}
+// export function prev(parseInfo: ParseInfo): string {
+//     return parseInfo.offset == parseInfo.currentPosition.ind
+//         ? parseInfo.buffer.slice(-1)
+//         : parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset - 1);
+// }
 function next(parseInfo, count = 1) {
     // let char: string = "";
     let position = parseInfo.currentPosition.ind - parseInfo.offset;
-    let char = parseInfo.stream.slice(position + 1, position + 1 + count);
+    let char = count == 1 ? parseInfo.stream.charAt(position + 1) : parseInfo.stream.slice(position + 1, position + 1 + count);
     let i = 0;
-    parseInfo.currentPosition.ind += char.length;
     for (; i < char.length; i++) {
-        const codepoint = char[i].charCodeAt(++position);
-        // ++parseInfo.currentPosition.ind;
-        if (isNewLine(codepoint)) {
+        const codepoint = char[i].charCodeAt(0);
+        if (codepoint == 0xa ||
+            codepoint == 0xb ||
+            codepoint == 0xc ||
+            codepoint == 0xd ||
+            codepoint == 0x2028 ||
+            codepoint == 0x2029) {
             parseInfo.currentPosition.lin++;
-            parseInfo.currentPosition.col = 0;
+            parseInfo.currentPosition.col = 1;
         }
         else {
             parseInfo.currentPosition.col++;
         }
     }
+    parseInfo.currentPosition.ind += char.length;
     return char;
 }
 /**
@@ -21281,77 +21315,280 @@ function tokenize(parseInfo, yieldEOFToken = true) {
         };
     }
     let value;
-    let tmpValue;
     let nextValue;
     let buffer = parseInfo.buffer;
     let charCode;
+    let nextCharCode;
     parseInfo.buffer = "";
     // parseInfo.acc += parseInfo.stream;
     const startTime = performance.now();
     const result = [];
     while ((value = next(parseInfo))) {
-        nextValue = peek(parseInfo);
-        if ((value === "-" || value === "+") && !isNumber(nextValue.charAt(0))) {
-            if (value === "+") {
+        nextValue = parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset + 1);
+        // if ((value === "-" || value === "+") && !isNumber(nextValue.charAt(0))) {
+        //     if (value === "+") {
+        //         if (buffer.length > 0) {
+        //             result.push(yieldResult(buffer, parseInfo));
+        //             buffer = "";
+        //         }
+        //         result.push( yieldResult(value, parseInfo));
+        //         continue;
+        //     }
+        //     buffer += value;
+        //     continue;
+        // }
+        // if (SymbolsMapTokens[value] === EnumToken.WhitespaceTokenType) {
+        //     if (buffer.length > 0) {
+        //         result.push( yieldResult(buffer, parseInfo));
+        //         buffer = "";
+        //     }
+        //     while (SymbolsMapTokens[nextValue] == EnumToken.WhitespaceTokenType) {
+        //         value += next(parseInfo);
+        //         nextValue = parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset + 1);
+        //     }
+        //     result.push( yieldResult(value, parseInfo, EnumToken.WhitespaceTokenType));
+        //     continue;
+        // }
+        // tmpValue = SymbolsMapTokens[value + nextValue];
+        // if (tmpValue  != null) {
+        //     if (buffer.length > 0) {
+        //         result.push( yieldResult(buffer, parseInfo));
+        //         buffer = "";
+        //     }
+        //     result.push( yieldResult(value + next(parseInfo), parseInfo, tmpValue));
+        //     continue;
+        // }
+        // tmpValue = SymbolsMapTokens[buffer + value];
+        // if (tmpValue != null) {
+        //     result.push( yieldResult(buffer + (value === "(" ? "" : value), parseInfo, tmpValue));
+        //     buffer = "";
+        //     continue;
+        // }
+        // if (value === "(") {
+        //     if (buffer[0] === ":" && isPseudo(buffer)) {
+        //         result.push( yieldResult(buffer, parseInfo, EnumToken.PseudoClassFunctionTokenDefType));
+        //         buffer = "";
+        //         continue;
+        //     } else if (isIdent(buffer)) {
+        //         result.push( yieldResult(buffer, parseInfo, EnumToken.FunctionTokenDefType));
+        //         buffer = "";
+        //         continue;
+        //     }
+        // }
+        // if ( SymbolsMapTokens[value] != null) {
+        //     if (buffer.length > 0) {
+        //         result.push( yieldResult(buffer, parseInfo));
+        //         buffer = "";
+        //     }
+        //     result.push( yieldResult(value, parseInfo, SymbolsMapTokens[value]));
+        //     continue;
+        // }
+        charCode = value.charCodeAt(0);
+        nextCharCode = nextValue.charCodeAt(0);
+        switch (charCode) {
+            case 61 /* TokenMap.EQUALS */:
                 if (buffer.length > 0) {
                     result.push(yieldResult(buffer, parseInfo));
                     buffer = "";
                 }
-                result.push(yieldResult(value, parseInfo));
-                continue;
-            }
-            buffer += value;
-            continue;
-        }
-        if (SymbolsMapTokens[value] === exports.EnumToken.WhitespaceTokenType) {
-            if (buffer.length > 0) {
-                result.push(yieldResult(buffer, parseInfo));
+                result.push(yieldResult(value, parseInfo, exports.EnumToken.DelimTokenType));
+                break;
+            // '+' or '-'
+            case 43 /* TokenMap.PLUS */:
+            case 45 /* TokenMap.MINUS */:
+                if (charCode === 43 /* TokenMap.PLUS */ && !isNumber(nextValue)) {
+                    if (buffer.length > 0) {
+                        result.push(yieldResult(buffer, parseInfo));
+                        buffer = "";
+                    }
+                    result.push(yieldResult(value, parseInfo, SymbolsMapTokens[value]));
+                    break;
+                }
+                buffer += value;
+                break;
+            // '{'
+            case 123 /* TokenMap.LEFT_BRACE */:
+                if (buffer.length > 0) {
+                    result.push(yieldResult(buffer, parseInfo));
+                    buffer = "";
+                }
+                result.push(yieldResult(value, parseInfo, exports.EnumToken.BlockStartTokenType));
+                break;
+            // '}'
+            case 125 /* TokenMap.RIGHT_BRACE */:
+                if (buffer.length > 0) {
+                    result.push(yieldResult(buffer, parseInfo));
+                    buffer = "";
+                }
+                result.push(yieldResult(value, parseInfo, exports.EnumToken.BlockEndTokenType));
+                break;
+            // '('
+            case 40 /* TokenMap.LEFT_PARENTHESIS */:
+                if (buffer.length > 0) {
+                    if (buffer[0] === ":" && isPseudo(buffer)) {
+                        result.push(yieldResult(buffer, parseInfo, exports.EnumToken.PseudoClassFunctionTokenDefType));
+                        buffer = "";
+                        break;
+                    }
+                    else if (isIdent(buffer)) {
+                        result.push(yieldResult(buffer, parseInfo, SymbolsMapTokens[buffer.toLowerCase() + "("] ?? exports.EnumToken.FunctionTokenDefType));
+                        buffer = "";
+                        break;
+                    }
+                }
+                result.push(yieldResult(value, parseInfo, exports.EnumToken.StartParensTokenType));
                 buffer = "";
-            }
-            while (SymbolsMapTokens[nextValue] == exports.EnumToken.WhitespaceTokenType) {
-                value += next(parseInfo);
-                nextValue = peek(parseInfo);
-            }
-            result.push(yieldResult(value, parseInfo, exports.EnumToken.WhitespaceTokenType));
-            continue;
-        }
-        tmpValue = SymbolsMapTokens[value + nextValue];
-        if (tmpValue != null) {
-            if (buffer.length > 0) {
-                result.push(yieldResult(buffer, parseInfo));
+                break;
+            // ')'
+            case 41 /* TokenMap.RIGHT_PARENTHESIS */:
+                if (buffer.length > 0) {
+                    result.push(yieldResult(buffer, parseInfo));
+                    buffer = "";
+                }
+                result.push(yieldResult(value, parseInfo, exports.EnumToken.EndParensTokenType));
+                break;
+            // '['
+            case 91 /* TokenMap.LEFT_BRACKETS */:
+                if (buffer.length > 0) {
+                    result.push(yieldResult(buffer, parseInfo));
+                    buffer = "";
+                }
+                result.push(yieldResult(value, parseInfo, exports.EnumToken.AttrStartTokenType));
+                break;
+            // ']'
+            case 93 /* TokenMap.RIGHT_BRACKETS */:
+                if (buffer.length > 0) {
+                    result.push(yieldResult(buffer, parseInfo));
+                    buffer = "";
+                }
+                result.push(yieldResult(value, parseInfo, exports.EnumToken.AttrEndTokenType));
+                break;
+            case 59 /* TokenMap.SEMICOLON */:
+                if (buffer.length > 0) {
+                    result.push(yieldResult(buffer, parseInfo));
+                    buffer = "";
+                }
+                result.push(yieldResult(value, parseInfo, exports.EnumToken.SemiColonTokenType));
+                break;
+            case 58 /* TokenMap.COLON */:
+                if (buffer.length > 0) {
+                    result.push(yieldResult(buffer, parseInfo));
+                    buffer = "";
+                }
+                if (nextCharCode == 58 /* TokenMap.COLON */) {
+                    result.push(yieldResult(value + next(parseInfo), parseInfo, exports.EnumToken.DoubleColonTokenType));
+                    break;
+                }
+                result.push(yieldResult(value, parseInfo, exports.EnumToken.ColonTokenType));
+                break;
+            // \n \r \f \v \t space
+            case 0x9:
+            case 0x20:
+            case 0xa:
+            case 0xb:
+            case 0xc:
+            case 0xd:
+            case 0x2028:
+            case 0x2029:
+                if (buffer.length > 0) {
+                    result.push(yieldResult(buffer, parseInfo));
+                    buffer = "";
+                }
+                buffer += value;
+                nextCharCode = parseInfo.stream
+                    .charAt(parseInfo.currentPosition.ind - parseInfo.offset + 1)
+                    .charCodeAt(0);
+                while (nextCharCode == 0x20 ||
+                    (nextCharCode >= 0x9 && nextCharCode <= 0xd) ||
+                    nextCharCode == 0x2028 ||
+                    nextCharCode == 0x2029) {
+                    value += next(parseInfo);
+                    nextCharCode = parseInfo.stream
+                        .charAt(parseInfo.currentPosition.ind - parseInfo.offset + 1)
+                        .charCodeAt(0);
+                }
+                result.push(yieldResult(value, parseInfo, exports.EnumToken.WhitespaceTokenType));
                 buffer = "";
-            }
-            result.push(yieldResult(value + next(parseInfo), parseInfo, tmpValue));
-            continue;
-        }
-        tmpValue = SymbolsMapTokens[buffer + value];
-        if (tmpValue != null) {
-            result.push(yieldResult(buffer + (value === "(" ? "" : value), parseInfo, tmpValue));
-            buffer = "";
-            continue;
-        }
-        if (value === "(") {
-            if (buffer[0] === ":" && isPseudo(buffer)) {
-                result.push(yieldResult(buffer, parseInfo, exports.EnumToken.PseudoClassFunctionTokenDefType));
+                break;
+            case 44 /* TokenMap.COMMA */:
+                if (buffer.length > 0) {
+                    result.push(yieldResult(buffer, parseInfo));
+                    buffer = "";
+                }
+                result.push(yieldResult(value, parseInfo, exports.EnumToken.CommaTokenType));
+                break;
+            case 36 /* TokenMap.DOLLAR */:
+                if (buffer.length > 0) {
+                    result.push(yieldResult(buffer, parseInfo));
+                    buffer = "";
+                }
+                if (nextCharCode == 61 /* TokenMap.EQUALS */) {
+                    result.push(yieldResult(value + next(parseInfo), parseInfo, exports.EnumToken.EndMatchTokenType));
+                    break;
+                }
+                buffer += value;
+                break;
+            case 126 /* TokenMap.TILDA */:
+                if (buffer.length > 0) {
+                    result.push(yieldResult(buffer, parseInfo));
+                    buffer = "";
+                }
+                if (nextCharCode == 61 /* TokenMap.EQUALS */) {
+                    result.push(yieldResult(value + next(parseInfo), parseInfo, exports.EnumToken.IncludeMatchTokenType));
+                    break;
+                }
+                result.push(yieldResult(value, parseInfo, exports.EnumToken.Tilda));
                 buffer = "";
-                continue;
-            }
-            else if (isIdent(buffer)) {
-                result.push(yieldResult(buffer, parseInfo, exports.EnumToken.FunctionTokenDefType));
+                break;
+            // case '^':
+            case 94 /* TokenMap.CARET */:
+                if (buffer.length > 0) {
+                    result.push(yieldResult(buffer, parseInfo));
+                    buffer = "";
+                }
+                if (nextCharCode == 61 /* TokenMap.EQUALS */) {
+                    result.push(yieldResult(value + next(parseInfo), parseInfo, exports.EnumToken.StartMatchTokenType));
+                    break;
+                }
+                buffer += value;
+                break;
+            case 42 /* TokenMap.STAR */:
+                if (buffer.length > 0) {
+                    result.push(yieldResult(buffer, parseInfo));
+                    buffer = "";
+                }
+                if (nextCharCode == 61 /* TokenMap.EQUALS */) {
+                    result.push(yieldResult(value + next(parseInfo), parseInfo, exports.EnumToken.ContainMatchTokenType));
+                    break;
+                }
+                result.push(yieldResult(value, parseInfo, exports.EnumToken.Star));
                 buffer = "";
-                continue;
-            }
-        }
-        if (SymbolsMapTokens[value] != null) {
-            if (buffer.length > 0) {
-                result.push(yieldResult(buffer, parseInfo));
+                break;
+            case 38 /* TokenMap.AMPERSAND */:
+                if (buffer.length > 0) {
+                    result.push(yieldResult(buffer, parseInfo));
+                    buffer = "";
+                }
+                result.push(yieldResult(value, parseInfo, exports.EnumToken.NestingSelectorTokenType));
                 buffer = "";
-            }
-            result.push(yieldResult(value, parseInfo, SymbolsMapTokens[value]));
-            continue;
-        }
-        charCode = value.charCodeAt(0);
-        switch (charCode) {
+                break;
+            case 124 /* TokenMap.PIPE */:
+                if (buffer.length > 0) {
+                    result.push(yieldResult(buffer, parseInfo));
+                    buffer = "";
+                }
+                // '||'
+                if (nextCharCode == 124 /* TokenMap.PIPE */) {
+                    result.push(yieldResult(value + next(parseInfo), parseInfo, exports.EnumToken.ColumnCombinatorTokenType));
+                    break;
+                }
+                else if (nextCharCode == 61 /* TokenMap.EQUALS */) {
+                    result.push(yieldResult(value + next(parseInfo), parseInfo, exports.EnumToken.DashMatchTokenType));
+                    break;
+                }
+                result.push(yieldResult(value, parseInfo, exports.EnumToken.Pipe));
+                buffer = "";
+                break;
             case 33 /* TokenMap.EXCLAMATION */:
                 if (buffer.length > 0) {
                     result.push(yieldResult(buffer, parseInfo));
@@ -21389,6 +21626,18 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                     result.push(yieldResult(buffer, parseInfo, exports.EnumToken.BadCommentTokenType));
                     buffer = "";
                 }
+                break;
+            case 62 /* TokenMap.GREATERTHAN */:
+                if (buffer.length > 0) {
+                    result.push(yieldResult(buffer, parseInfo));
+                    buffer = "";
+                }
+                if (match(parseInfo, "=")) {
+                    result.push(yieldResult(value + next(parseInfo), parseInfo, exports.EnumToken.GteTokenType));
+                    break;
+                }
+                result.push(yieldResult(value, parseInfo, exports.EnumToken.GtTokenType));
+                buffer = "";
                 break;
             case 60 /* TokenMap.LOWERTHAN */:
                 if (buffer.length > 0) {
@@ -21434,7 +21683,11 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                     }
                     break;
                 }
-                buffer += prev(parseInfo) + value;
+                // buffer += prev(parseInfo) + value;
+                buffer +=
+                    (parseInfo.offset == parseInfo.currentPosition.ind
+                        ? parseInfo.buffer.slice(-1)
+                        : parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset - 1)) + value;
                 break;
             case 39 /* TokenMap.SINGLE_QUOTE */:
             case 34 /* TokenMap.DOUBLE_QUOTE */:
@@ -21442,7 +21695,9 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                 buffer = "";
                 break;
             case 46 /* TokenMap.DOT */:
-                const codepoint = peek(parseInfo).charCodeAt(0);
+                const codepoint = parseInfo.stream
+                    .charAt(parseInfo.currentPosition.ind - parseInfo.offset + 1)
+                    .charCodeAt(0);
                 if (!isDigit(codepoint) && buffer !== "") {
                     result.push(yieldResult(buffer, parseInfo));
                     buffer = value;
@@ -21502,7 +21757,6 @@ async function* tokenizeStream(input, parseInfo) {
             break;
         }
     }
-    return parseInfo;
 }
 /**
  * Update position
@@ -24464,11 +24718,11 @@ function parseSelector(tokens, context, options, errors) {
                                                 Object.assign(token, Math.abs(a1) === 1
                                                     ? {
                                                         typ: exports.EnumToken.IdenTokenType,
-                                                        val: (a1 < 0 ? "-" : "") + "n",
+                                                        val: "n",
                                                     }
                                                     : {
                                                         typ: exports.EnumToken.DimensionTokenType,
-                                                        val: a1,
+                                                        val: a1 * Math.sign(a1),
                                                         unit: "n",
                                                     });
                                             }
@@ -25261,7 +25515,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
     }
     if (!tokensfuncDefMap.has(stream[i]?.typ) &&
         stream[i]?.typ !== exports.EnumToken.StartParensTokenType &&
-        !(stream[i]?.typ === exports.EnumToken.IdenTokenType && "not" === stream[i]?.val.toLocaleLowerCase())) {
+        !(stream[i]?.typ === exports.EnumToken.IdenTokenType && "not" === stream[i]?.val.toLowerCase())) {
         return {
             success,
             errors: [
@@ -25294,8 +25548,8 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
             if (k < stream.length) {
                 if (stream[k].typ !== exports.EnumToken.EndParensTokenType &&
                     !(stream[k].typ === exports.EnumToken.IdenTokenType &&
-                        ("and" === stream[k]?.val.toLocaleLowerCase() ||
-                            "or" === stream[k]?.val.toLocaleLowerCase()))) {
+                        ("and" === stream[k]?.val.toLowerCase() ||
+                            "or" === stream[k]?.val.toLowerCase()))) {
                     return {
                         success: false,
                         errors: [
@@ -25537,7 +25791,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                 break;
             case exports.EnumToken.IdenTokenType:
                 {
-                    const val = stream[i].val.toLocaleLowerCase();
+                    const val = stream[i].val.toLowerCase();
                     if ("not" === val) {
                         stack.push(stream[i]);
                         Object.assign(stream[i], { typ: exports.EnumToken.NotTokenType });
@@ -26023,8 +26277,9 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
     if (stream[i]?.typ !== exports.EnumToken.WhenElseFunctionTokenDefType &&
         stream[i]?.typ !== exports.EnumToken.SupportsFunctionTokenDefType &&
         stream[i]?.typ !== exports.EnumToken.StartParensTokenType &&
+        'val' in stream[i] &&
         !(stream[i]?.typ === exports.EnumToken.IdenTokenType &&
-            ["not", "only"].includes(stream[i]?.val.toLocaleLowerCase()))) {
+            (equalsIgnoreCase(stream[i].val, "not") || equalsIgnoreCase(stream[i].val, "only")))) {
         return {
             success: false,
             errors: [
@@ -26054,8 +26309,7 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
             if (k < stream.length) {
                 if (stream[k].typ !== exports.EnumToken.EndParensTokenType &&
                     !(stream[k].typ === exports.EnumToken.IdenTokenType &&
-                        ("and" === stream[k].val.toLocaleLowerCase() ||
-                            "or" === stream[k].val.toLocaleLowerCase()))) {
+                        (equalsIgnoreCase(stream[k].val, "and") || equalsIgnoreCase(stream[k].val, "or")))) {
                     return {
                         success: false,
                         errors: [
@@ -26181,7 +26435,7 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
                 break;
             case exports.EnumToken.IdenTokenType:
                 {
-                    const val = stream[i].val.toLocaleLowerCase();
+                    const val = stream[i].val.toLowerCase();
                     if ("not" === val || "only" === val) {
                         stack.push(stream[i]);
                         Object.assign(stream[i], {
@@ -27395,6 +27649,7 @@ async function doParse(iter, options = {}) {
         // item = isAsync ? await value : value;
         stats.bytesIn = item.bytesIn;
         stats.tokensCount++;
+        // console.debug(JSON.stringify({item}, null, 1));
         if (options.sourcemap !== false) {
             Object.defineProperty(item.token, "loc", {
                 ...definedPropertySettings,

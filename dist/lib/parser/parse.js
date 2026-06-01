@@ -404,6 +404,7 @@ async function doParse(iter, options = {}) {
         // item = isAsync ? await value : value;
         stats.bytesIn = item.bytesIn;
         stats.tokensCount++;
+        // console.debug(JSON.stringify({item}, null, 1));
         if (options.sourcemap !== false) {
             Object.defineProperty(item.token, "loc", {
                 ...definedPropertySettings,

@@ -2303,13 +2303,18 @@ function matchSyntax(
                 };
 
             case ValidationTokenEnum.Function:
+
+            // console.debug(JSON.stringify({token, syntax: syntaxes[i]}));
+
                 if (
                     (!tokensfuncDefMap.has(token.typ) &&
                         !funcLike.includes(token.typ) &&
                         !funcTypes.includes(token.typ)) ||
+
+                    !('val' in token) ||
                     !equalsIgnoreCase(
                         (syntaxes[i] as ValidationFunctionToken).val,
-                        (token as FunctionToken).val.toLocaleLowerCase(),
+                        (token as FunctionToken).val.toLowerCase(),
                     )
                 ) {
                     return {

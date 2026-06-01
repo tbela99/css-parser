@@ -306,11 +306,11 @@ function parseSelector(tokens, context, options, errors) {
                                                 Object.assign(token, Math.abs(a1) === 1
                                                     ? {
                                                         typ: EnumToken.IdenTokenType,
-                                                        val: (a1 < 0 ? "-" : "") + "n",
+                                                        val: "n",
                                                     }
                                                     : {
                                                         typ: EnumToken.DimensionTokenType,
-                                                        val: a1,
+                                                        val: a1 * Math.sign(a1),
                                                         unit: "n",
                                                     });
                                             }

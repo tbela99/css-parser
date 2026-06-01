@@ -55,7 +55,7 @@ export function parseAtRuleSupportSyntax(
     if (
         !tokensfuncDefMap.has(stream[i]?.typ) &&
         stream[i]?.typ !== EnumToken.StartParensTokenType &&
-        !(stream[i]?.typ === EnumToken.IdenTokenType && "not" === (stream[i] as IdentToken)?.val.toLocaleLowerCase())
+        !(stream[i]?.typ === EnumToken.IdenTokenType && "not" === (stream[i] as IdentToken)?.val.toLowerCase())
     ) {
         return {
             success,
@@ -98,8 +98,8 @@ export function parseAtRuleSupportSyntax(
                     stream[k].typ !== EnumToken.EndParensTokenType &&
                     !(
                         stream[k].typ === EnumToken.IdenTokenType &&
-                        ("and" === (stream[k] as IdentToken)?.val.toLocaleLowerCase() ||
-                            "or" === (stream[k] as IdentToken)?.val.toLocaleLowerCase())
+                        ("and" === (stream[k] as IdentToken)?.val.toLowerCase() ||
+                            "or" === (stream[k] as IdentToken)?.val.toLowerCase())
                     )
                 ) {
                     return {
@@ -431,7 +431,7 @@ export function parseAtRuleSupportSyntax(
 
             case EnumToken.IdenTokenType:
                 {
-                    const val = (stream[i] as IdentToken).val.toLocaleLowerCase();
+                    const val = (stream[i] as IdentToken).val.toLowerCase();
                     if ("not" === val) {
                         stack.push(stream[i]);
                         Object.assign(stream[i], { typ: EnumToken.NotTokenType });

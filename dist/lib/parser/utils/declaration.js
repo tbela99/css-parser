@@ -380,7 +380,7 @@ function parseDeclaration(tokens, parent, options, errors) {
                 break;
             case EnumToken.IdenTokenType:
                 {
-                    const val = token.val.toLocaleLowerCase();
+                    const val = token.val.toLowerCase();
                     if (val in COLORS_NAMES || val === "currentcolor") {
                         Object.assign(token, {
                             val,

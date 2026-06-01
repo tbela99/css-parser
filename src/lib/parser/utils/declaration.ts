@@ -668,7 +668,7 @@ export function parseDeclaration(
 
             case EnumToken.IdenTokenType:
                 {
-                    const val: string = (token as IdentToken).val.toLocaleLowerCase();
+                    const val: string = (token as IdentToken).val.toLowerCase();
 
                     if (val in COLORS_NAMES || val === "currentcolor") {
                         Object.assign(token, {

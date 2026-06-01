@@ -4,6 +4,7 @@ import { trimArray } from '../../validation/match.js';
 import { tokensfuncDefMap, definedPropertySettings, tokensfuncSet } from '../../syntax/constants.js';
 import { parseMediaqueryList } from './at-rule-media.js';
 import { parseAtRuleSupportSyntax } from './at-rule-support.js';
+import { equalsIgnoreCase } from './text.js';
 
 const validChildTypes = new Set([
     EnumToken.WhenElseFunctionTokenDefType,
@@ -44,8 +45,9 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
     if (stream[i]?.typ !== EnumToken.WhenElseFunctionTokenDefType &&
         stream[i]?.typ !== EnumToken.SupportsFunctionTokenDefType &&
         stream[i]?.typ !== EnumToken.StartParensTokenType &&
+        'val' in stream[i] &&
         !(stream[i]?.typ === EnumToken.IdenTokenType &&
-            ["not", "only"].includes(stream[i]?.val.toLocaleLowerCase()))) {
+            (equalsIgnoreCase(stream[i].val, "not") || equalsIgnoreCase(stream[i].val, "only")))) {
         return {
             success: false,
             errors: [
@@ -75,8 +77,7 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
             if (k < stream.length) {
                 if (stream[k].typ !== EnumToken.EndParensTokenType &&
                     !(stream[k].typ === EnumToken.IdenTokenType &&
-                        ("and" === stream[k].val.toLocaleLowerCase() ||
-                            "or" === stream[k].val.toLocaleLowerCase()))) {
+                        (equalsIgnoreCase(stream[k].val, "and") || equalsIgnoreCase(stream[k].val, "or")))) {
                     return {
                         success: false,
                         errors: [
@@ -202,7 +203,7 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
                 break;
             case EnumToken.IdenTokenType:
                 {
-                    const val = stream[i].val.toLocaleLowerCase();
+                    const val = stream[i].val.toLowerCase();
                     if ("not" === val || "only" === val) {
                         stack.push(stream[i]);
                         Object.assign(stream[i], {
