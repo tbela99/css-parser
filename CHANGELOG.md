@@ -19,12 +19,12 @@
         - [x] @charset
         - [x] @color-profile
         - [x] @container
-        - [ ] @counter-style
+        - [x] @counter-style
         - [x] @custom-media
         - [x] @document
         - [x] @font-face
         - [x] @font-feature-values
-        - [ ] @font-palette-values
+        - [x] @font-palette-values
         - [ ] @function [Experimental](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@function)
         - [x] @import
         - [x] @keyframes
@@ -37,7 +37,7 @@
         - [x] @scope
         - [ ] @starting-style
         - [x] @supports
-        - [ ] @view-transition
+        - [x] @view-transition
 
 - [x] introduce rawToken type to capture unparseable tokens
 - [x] Add a new css module scope 'shortest' to produce short scoped names

@@ -1138,6 +1138,7 @@ export function matchSelectorSyntax(
                 break;
 
             case EnumToken.EndParensTokenType:
+
                 if (
                     stack.at(-1)?.typ === EnumToken.PseudoClassFunctionTokenDefType ||
                     stack.at(-1)?.typ === EnumToken.PseudoElementTokenType

@@ -1074,5 +1074,74 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 }`));
         });
         
+
+        it('@view-transition #52', function () {
+            return transform(`
+
+/* Create a custom animation */
+@keyframes move-out {
+  from {
+    transform: translateY(0%);
+  }
+
+  to {
+    transform: translateY(-100%);
+  }
+}
+
+@keyframes move-in {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0%);
+  }
+}
+
+/* Apply the custom animation to the old and new page states */
+::view-transition-old(root) {
+  animation: 0.4s ease-in both move-out;
+}
+
+::view-transition-new(root) {
+  animation: 0.4s ease-in both move-in;
+}
+  @view-transition {
+  navigation: auto;
+  types: slide;
+}
+
+  `, {
+                beautify: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`@keyframes move-out {
+ 0% {
+  transform: translateY(0)
+ }
+ to {
+  transform: translateY(-100%)
+ }
+}
+@keyframes move-in {
+ 0% {
+  transform: translateY(100%)
+ }
+ to {
+  transform: translateY(0)
+ }
+}
+::view-transition-old(root) {
+ animation: .4s ease-in both move-out
+}
+::view-transition-new(root) {
+ animation: .4s ease-in both move-in
+}
+@view-transition {
+ navigation: auto;
+ types: slide
+}`));
+        });
+        
     });
     }

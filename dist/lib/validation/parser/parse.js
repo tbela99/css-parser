@@ -16,7 +16,8 @@ const SymbolsMapTokens = {
     ",": ValidationTokenEnum.Comma,
     "/": ValidationTokenEnum.Separator,
     "+": ValidationTokenEnum.Plus,
-    ":": ValidationTokenEnum.Colon,
+    // ":": ValidationTokenEnum.Colon,
+    // "::": ValidationTokenEnum.Colon,
     ";": ValidationTokenEnum.SemiColon,
     "(": ValidationTokenEnum.OpenParenthesis,
     ")": ValidationTokenEnum.CloseParenthesis,
@@ -141,7 +142,7 @@ function* tokenizeSyntax(syntax, position = {
             i += 5;
             continue;
         }
-        if (chr + syntax.charAt(i + 1) in SymbolsMapTokens) {
+        if (SymbolsMapTokens[chr + syntax.charAt(i + 1)] != null) {
             chr += syntax.charAt(++i);
             move(currentPosition, syntax.charAt(i));
             pos = { ...position };
@@ -155,13 +156,22 @@ function* tokenizeSyntax(syntax, position = {
             }, "pos", { ...objectProperties, value: pos });
             continue;
         }
-        if (chr === ":" &&
-            (isIdentStart(syntax.charCodeAt(i + 1)) ||
-                (syntax.charAt(i + 1) === "-" && isIdentStart(syntax.charCodeAt(i + 2))))) {
-            buffer += chr;
-            continue;
+        if (chr === ":") {
+            if (syntax.charAt(i + 1) === ":") {
+                if (isIdentStart(syntax.charCodeAt(i + 2)) ||
+                    (syntax.charAt(i + 2) === "-" && isIdentStart(syntax.charCodeAt(i + 3)))) {
+                    buffer += chr + ":";
+                    i++;
+                    continue;
+                }
+            }
+            if (isIdentStart(syntax.charCodeAt(i + 1)) ||
+                (syntax.charAt(i + 1) === "-" && isIdentStart(syntax.charCodeAt(i + 2)))) {
+                buffer += chr;
+                continue;
+            }
         }
-        if (chr in SymbolsMapTokens) {
+        if (SymbolsMapTokens[chr] != null) {
             if (SymbolsMapTokens[chr] === ValidationTokenEnum.Whitespace) {
                 let ch;
                 let k = i;

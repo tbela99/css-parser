@@ -12296,7 +12296,8 @@ const SymbolsMapTokens$1 = {
     ",": ValidationTokenEnum.Comma,
     "/": ValidationTokenEnum.Separator,
     "+": ValidationTokenEnum.Plus,
-    ":": ValidationTokenEnum.Colon,
+    // ":": ValidationTokenEnum.Colon,
+    // "::": ValidationTokenEnum.Colon,
     ";": ValidationTokenEnum.SemiColon,
     "(": ValidationTokenEnum.OpenParenthesis,
     ")": ValidationTokenEnum.CloseParenthesis,
@@ -12421,7 +12422,7 @@ function* tokenizeSyntax(syntax, position = {
             i += 5;
             continue;
         }
-        if (chr + syntax.charAt(i + 1) in SymbolsMapTokens$1) {
+        if (SymbolsMapTokens$1[chr + syntax.charAt(i + 1)] != null) {
             chr += syntax.charAt(++i);
             move$1(currentPosition, syntax.charAt(i));
             pos = { ...position };
@@ -12435,13 +12436,22 @@ function* tokenizeSyntax(syntax, position = {
             }, "pos", { ...objectProperties, value: pos });
             continue;
         }
-        if (chr === ":" &&
-            (isIdentStart(syntax.charCodeAt(i + 1)) ||
-                (syntax.charAt(i + 1) === "-" && isIdentStart(syntax.charCodeAt(i + 2))))) {
-            buffer += chr;
-            continue;
+        if (chr === ":") {
+            if (syntax.charAt(i + 1) === ":") {
+                if (isIdentStart(syntax.charCodeAt(i + 2)) ||
+                    (syntax.charAt(i + 2) === "-" && isIdentStart(syntax.charCodeAt(i + 3)))) {
+                    buffer += chr + ":";
+                    i++;
+                    continue;
+                }
+            }
+            if (isIdentStart(syntax.charCodeAt(i + 1)) ||
+                (syntax.charAt(i + 1) === "-" && isIdentStart(syntax.charCodeAt(i + 2)))) {
+                buffer += chr;
+                continue;
+            }
         }
-        if (chr in SymbolsMapTokens$1) {
+        if (SymbolsMapTokens$1[chr] != null) {
             if (SymbolsMapTokens$1[chr] === ValidationTokenEnum.Whitespace) {
                 let ch;
                 let k = i;
@@ -24612,6 +24622,7 @@ function parseSelector(tokens, context, options, errors) {
         }
     }
     const result = matchSelectorSyntax(tokens, errors, options, nested === true);
+    // console.debug(JSON.stringify({tokens, result}, null, 1));
     trimArray(tokens);
     if (result.success) {
         for (let i = 0; i < tokens.length; i++) {
@@ -24651,10 +24662,11 @@ function parseSelector(tokens, context, options, errors) {
                         index = tokens.indexOf(func);
                         stack.at(-1).loc.end = token.loc.end;
                         tokens.splice(i, 1);
-                        Object.assign(func, {
-                            typ: exports.EnumToken.PseudoClassFuncTokenType,
-                            chi: tokens.splice(index + 1, i - index - 1),
-                        });
+                        if (tokensfuncDefMap.has(func.typ)) {
+                            // @ts-expect-error
+                            func.typ = tokensfuncDefMap.get(func.typ);
+                            func.chi = tokens.splice(index + 1, i - index - 1);
+                        }
                         if (result.success && options.minify) {
                             // parse an+b
                             // an+b produces an ident such as 'n-0', a literal such as '+2n-0' or a list of tokens such as[2n\s?[+-]\s?3]

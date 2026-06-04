@@ -1,6 +1,6 @@
 import { EnumToken } from '../../ast/types.js';
 import { renderToken } from '../../renderer/render.js';
-import { definedPropertySettings, combinators } from '../../syntax/constants.js';
+import { definedPropertySettings, tokensfuncDefMap, combinators } from '../../syntax/constants.js';
 import { pseudoElements, isIdent, isHash } from '../../syntax/syntax.js';
 import { getParsedSyntax, getSyntaxConfig } from '../../validation/config.js';
 import { matchAllSyntax, createValidationContext, trimArray, matchSelectorSyntax } from '../../validation/match.js';
@@ -148,6 +148,7 @@ function parseSelector(tokens, context, options, errors) {
         }
     }
     const result = matchSelectorSyntax(tokens, errors, options, nested === true);
+    // console.debug(JSON.stringify({tokens, result}, null, 1));
     trimArray(tokens);
     if (result.success) {
         for (let i = 0; i < tokens.length; i++) {
@@ -187,10 +188,11 @@ function parseSelector(tokens, context, options, errors) {
                         index = tokens.indexOf(func);
                         stack.at(-1).loc.end = token.loc.end;
                         tokens.splice(i, 1);
-                        Object.assign(func, {
-                            typ: EnumToken.PseudoClassFuncTokenType,
-                            chi: tokens.splice(index + 1, i - index - 1),
-                        });
+                        if (tokensfuncDefMap.has(func.typ)) {
+                            // @ts-expect-error
+                            func.typ = tokensfuncDefMap.get(func.typ);
+                            func.chi = tokens.splice(index + 1, i - index - 1);
+                        }
                         if (result.success && options.minify) {
                             // parse an+b
                             // an+b produces an ident such as 'n-0', a literal such as '+2n-0' or a list of tokens such as[2n\s?[+-]\s?3]

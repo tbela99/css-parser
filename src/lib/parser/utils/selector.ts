@@ -225,6 +225,8 @@ export function parseSelector(
 
     const result = matchSelectorSyntax(tokens, errors, options, nested === true);
 
+    // console.debug(JSON.stringify({tokens, result}, null, 1));
+
     trimArray(tokens);
 
     if (result.success) {
@@ -273,10 +275,12 @@ export function parseSelector(
                         index = tokens.indexOf(func);
                         (stack.at(-1) as AttrStartToken).loc!.end = token.loc!.end;
                         tokens.splice(i, 1);
-                        Object.assign(func, {
-                            typ: EnumToken.PseudoClassFuncTokenType,
-                            chi: tokens.splice(index + 1, i - index - 1),
-                        });
+
+                        if (tokensfuncDefMap.has(func.typ)) {
+                            // @ts-expect-error
+                            func.typ = tokensfuncDefMap.get(func.typ) as EnumToken;
+                            func.chi = tokens.splice(index + 1, i - index - 1);
+                        }
 
                         if (result.success && options.minify) {
                             // parse an+b
