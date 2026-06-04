@@ -561,6 +561,14 @@ export declare enum EnumToken {
      */
     InvalidCommentTokenType = 133,
     /**
+     * custom function token type '--function-name('
+     */
+    CustomFunctionTokenDefType = 134,
+    /**
+     * custom function token type
+     */
+    CustomFunctionTokenType = 135,
+    /**
      * alias for time token type
      */
     Time = 25,

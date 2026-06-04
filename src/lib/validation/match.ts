@@ -1624,6 +1624,51 @@ function matchSyntax(
             };
         }
 
+        // custom function token
+        if (token.typ === EnumToken.CustomFunctionTokenDefType) {
+
+            if (syntaxes[i].typ != ValidationTokenEnum.PropertyType || syntaxes[i + 1].typ != ValidationTokenEnum.OpenParenthesis || syntaxes[i + 2].typ == null) {
+
+            if (!isOptional) {
+                return {
+                    success: false,
+                    errors: [
+                        {
+                            action: "drop",
+                            message: "could not match syntax",
+                            node: token,
+                            syntax: syntaxes[i],
+                        },
+                    ],
+                    syntaxToken: syntaxes[i],
+                    valid: true,
+                    context,
+                    token: null,
+                };
+            }
+
+            break;
+            }
+
+            const range = trimArray(context.peekRange());
+
+            context.next();
+            i++;
+
+            result = matchSyntax(
+                [syntaxes[i + 1]],
+                createValidationContext(range.slice(1, -1)),
+                options,
+            );
+
+            if (result.success) {
+                context.update(range.at(-1) as Token);
+                i+=2;
+            }
+
+            return result;
+        }
+
         if (
             tokensfuncDefMap.has(token.typ) &&
             ((token as FunctionToken).val === "var" || (token as FunctionToken).val === "env")

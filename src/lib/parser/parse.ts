@@ -3044,6 +3044,8 @@ export function parseAtRule(
             } else {
                 result = matchAtRuleSyntax(atRule, stream, options);
 
+            // console.debug("syntax", syntax, JSON.stringify({result}, null, 1));
+
                 if (result.success) {
                     let i: number = 0;
                     const stack: Token[] = [];

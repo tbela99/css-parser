@@ -3834,6 +3834,12 @@ var syntaxes = {
 	"syntax-string": {
 		syntax: "<string>"
 	},
+	"function-name": {
+		syntax: "<dashed-ident>("
+	},
+	"function-parameter": {
+		syntax: "<dashed-ident> <css-type>? [ : <default-value> ]?"
+	},
 	"alpha()": {
 		syntax: " alpha([from <color>] [ / [<alpha-value> | none] ]? )"
 	},
@@ -4630,6 +4636,9 @@ var atRules = {
 	},
 	"@bottom-right-corner": {
 		syntax: " @bottom-right-corner { <declaration-list> }"
+	},
+	"@function": {
+		syntax: " @function <dashed-ident>(<function-parameter>#?) [returns <css-type>]? {  <declaration-rule-list> }"
 	},
 	"@left-top": {
 		syntax: " @left-top { <declaration-list> }"

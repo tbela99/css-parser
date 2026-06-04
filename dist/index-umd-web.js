@@ -571,6 +571,14 @@
          *  CDOCOMMTokenType not allowed in this context
          */
         EnumToken[EnumToken["InvalidCommentTokenType"] = 133] = "InvalidCommentTokenType";
+        /**
+         * custom function token type '--function-name('
+         */
+        EnumToken[EnumToken["CustomFunctionTokenDefType"] = 134] = "CustomFunctionTokenDefType";
+        /**
+         * custom function token type
+         */
+        EnumToken[EnumToken["CustomFunctionTokenType"] = 135] = "CustomFunctionTokenType";
         /* aliases */
         /**
          * alias for time token type
@@ -5101,6 +5109,12 @@
     	"syntax-string": {
     		syntax: "<string>"
     	},
+    	"function-name": {
+    		syntax: "<dashed-ident>("
+    	},
+    	"function-parameter": {
+    		syntax: "<dashed-ident> <css-type>? [ : <default-value> ]?"
+    	},
     	"alpha()": {
     		syntax: " alpha([from <color>] [ / [<alpha-value> | none] ]? )"
     	},
@@ -5898,6 +5912,9 @@
     	"@bottom-right-corner": {
     		syntax: " @bottom-right-corner { <declaration-list> }"
     	},
+    	"@function": {
+    		syntax: " @function <dashed-ident>(<function-parameter>#?) [returns <css-type>]? {  <declaration-rule-list> }"
+    	},
     	"@left-top": {
     		syntax: " @left-top { <declaration-list> }"
     	},
@@ -6582,6 +6599,7 @@
         [exports.EnumToken.TransformFunctionTokenDefType, exports.EnumToken.TransformFunctionTokenType],
         [exports.EnumToken.GeneralEnclosedFunctionTokenDefType, exports.EnumToken.GeneralEnclosedFunctionTokenType],
         [exports.EnumToken.WhenElseFunctionTokenDefType, exports.EnumToken.WhenElseFunctionTokenType],
+        [exports.EnumToken.CustomFunctionTokenDefType, exports.EnumToken.CustomFunctionTokenType],
     ]);
     const tokensfuncSet = new Set(tokensfuncDefMap.values());
     const colorPrecision = 6;
@@ -12650,12 +12668,12 @@
                             stack.at(-1).val === "function-token")) {
                         stack.pop();
                     }
-                    else if (stack.at(-1).typ === ValidationTokenEnum.PipeToken) {
+                    else if (stack.at(-1)?.typ === ValidationTokenEnum.PipeToken) {
                         let index = tokens.lastIndexOf(stack.at(-1));
                         stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
                         stack.pop();
                     }
-                    else if (stack.at(-1).typ === ValidationTokenEnum.AmpersandToken) {
+                    else if (stack.at(-1)?.typ === ValidationTokenEnum.AmpersandToken) {
                         let index = tokens.lastIndexOf(stack.at(-1));
                         stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
                         stack.pop();
@@ -18937,6 +18955,38 @@
                     ],
                 };
             }
+            // custom function token
+            if (token.typ === exports.EnumToken.CustomFunctionTokenDefType) {
+                if (syntaxes[i].typ != ValidationTokenEnum.PropertyType || syntaxes[i + 1].typ != ValidationTokenEnum.OpenParenthesis || syntaxes[i + 2].typ == null) {
+                    if (!isOptional) {
+                        return {
+                            success: false,
+                            errors: [
+                                {
+                                    action: "drop",
+                                    message: "could not match syntax",
+                                    node: token,
+                                    syntax: syntaxes[i],
+                                },
+                            ],
+                            syntaxToken: syntaxes[i],
+                            valid: true,
+                            context,
+                            token: null,
+                        };
+                    }
+                    break;
+                }
+                const range = trimArray(context.peekRange());
+                context.next();
+                i++;
+                result = matchSyntax([syntaxes[i + 1]], createValidationContext(range.slice(1, -1)), options);
+                if (result.success) {
+                    context.update(range.at(-1));
+                    i += 2;
+                }
+                return result;
+            }
             if (tokensfuncDefMap.has(token.typ) &&
                 (token.val === "var" || token.val === "env")
             // ||                (token as FunctionToken).val.toLowerCase() ===
@@ -23851,6 +23901,7 @@
             case exports.EnumToken.ContainerFunctionTokenDefType:
             case exports.EnumToken.PseudoClassFunctionTokenDefType:
             case exports.EnumToken.GeneralEnclosedFunctionTokenDefType:
+            case exports.EnumToken.CustomFunctionTokenDefType:
                 return token.val + "(";
             case exports.EnumToken.ListToken:
                 return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), "");
@@ -23993,6 +24044,7 @@
             case exports.EnumToken.ContainerFunctionTokenType:
             case exports.EnumToken.TransformFunctionTokenType:
             case exports.EnumToken.GeneralEnclosedFunctionTokenType:
+            case exports.EnumToken.CustomFunctionTokenType:
                 if (token.typ == exports.EnumToken.MathFunctionTokenType &&
                     token.chi.length == 1 &&
                     ![exports.EnumToken.BinaryExpressionTokenType, exports.EnumToken.FractionTokenType, exports.EnumToken.IdenTokenType].includes(token.chi[0].typ) &&
@@ -27648,7 +27700,6 @@
             // item = isAsync ? await value : value;
             stats.bytesIn = item.bytesIn;
             stats.tokensCount++;
-            // console.debug(JSON.stringify({item}, null, 1));
             if (options.sourcemap !== false) {
                 Object.defineProperty(item.token, "loc", {
                     ...definedPropertySettings,
@@ -29518,6 +29569,7 @@
                 }
                 else {
                     result = matchAtRuleSyntax(atRule, stream, options);
+                    // console.debug("syntax", syntax, JSON.stringify({result}, null, 1));
                     if (result.success) {
                         let i = 0;
                         const stack = [];

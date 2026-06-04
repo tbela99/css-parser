@@ -598,6 +598,16 @@ export enum EnumToken {
      */
     InvalidCommentTokenType,
 
+    /**
+     * custom function token type '--function-name('
+     */
+    CustomFunctionTokenDefType,
+    
+    /**
+     * custom function token type
+     */
+    CustomFunctionTokenType,
+
     /* aliases */
 
     /**

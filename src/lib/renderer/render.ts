@@ -560,6 +560,7 @@ export function renderToken(
         case EnumToken.ContainerFunctionTokenDefType:
         case EnumToken.PseudoClassFunctionTokenDefType:
         case EnumToken.GeneralEnclosedFunctionTokenDefType:
+        case EnumToken.CustomFunctionTokenDefType:
             return (token as FunctionDefToken).val + "(";
 
         case EnumToken.ListToken:
@@ -769,6 +770,7 @@ export function renderToken(
         case EnumToken.ContainerFunctionTokenType:
         case EnumToken.TransformFunctionTokenType:
         case EnumToken.GeneralEnclosedFunctionTokenType:
+        case EnumToken.CustomFunctionTokenType:
             if (
                 token.typ == EnumToken.MathFunctionTokenType &&
                 (token as FunctionToken).chi.length == 1 &&

@@ -389,12 +389,12 @@ function parseSyntax(syntax) {
                         stack.at(-1).val === "function-token")) {
                     stack.pop();
                 }
-                else if (stack.at(-1).typ === ValidationTokenEnum.PipeToken) {
+                else if (stack.at(-1)?.typ === ValidationTokenEnum.PipeToken) {
                     let index = tokens.lastIndexOf(stack.at(-1));
                     stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
                     stack.pop();
                 }
-                else if (stack.at(-1).typ === ValidationTokenEnum.AmpersandToken) {
+                else if (stack.at(-1)?.typ === ValidationTokenEnum.AmpersandToken) {
                     let index = tokens.lastIndexOf(stack.at(-1));
                     stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
                     stack.pop();

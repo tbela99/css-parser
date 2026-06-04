@@ -565,6 +565,14 @@ var EnumToken;
      *  CDOCOMMTokenType not allowed in this context
      */
     EnumToken[EnumToken["InvalidCommentTokenType"] = 133] = "InvalidCommentTokenType";
+    /**
+     * custom function token type '--function-name('
+     */
+    EnumToken[EnumToken["CustomFunctionTokenDefType"] = 134] = "CustomFunctionTokenDefType";
+    /**
+     * custom function token type
+     */
+    EnumToken[EnumToken["CustomFunctionTokenType"] = 135] = "CustomFunctionTokenType";
     /* aliases */
     /**
      * alias for time token type

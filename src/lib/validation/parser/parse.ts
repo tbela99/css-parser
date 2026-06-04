@@ -588,14 +588,14 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                         (stack.at(-1) as ValidationPropertyToken).val === "function-token")
                 ) {
                     stack.pop();
-                } else if ((stack.at(-1) as ValidationToken).typ === ValidationTokenEnum.PipeToken) {
+                } else if ((stack.at(-1) as ValidationToken)?.typ === ValidationTokenEnum.PipeToken) {
                     let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                     (stack.at(-1) as ValidationPipeToken).chi.push(
                         trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)),
                     );
                     stack.pop();
-                } else if ((stack.at(-1) as ValidationToken).typ === ValidationTokenEnum.AmpersandToken) {
+                } else if ((stack.at(-1) as ValidationToken)?.typ === ValidationTokenEnum.AmpersandToken) {
                     let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                     (stack.at(-1) as ValidationAmpersandToken).r = trimSyntaxArray(

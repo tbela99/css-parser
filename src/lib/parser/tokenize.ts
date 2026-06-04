@@ -627,6 +627,9 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
                             yieldResult(
                                 buffer,
                                 parseInfo,
+                                buffer.startsWith("--")
+                                    ? EnumToken.CustomFunctionTokenDefType
+                                    :
                                 SymbolsMapTokens[buffer.toLowerCase() + "("] ?? EnumToken.FunctionTokenDefType,
                             ),
                         );

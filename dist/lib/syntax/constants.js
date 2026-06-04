@@ -23,6 +23,7 @@ const tokensfuncDefMap = new Map([
     [EnumToken.TransformFunctionTokenDefType, EnumToken.TransformFunctionTokenType],
     [EnumToken.GeneralEnclosedFunctionTokenDefType, EnumToken.GeneralEnclosedFunctionTokenType],
     [EnumToken.WhenElseFunctionTokenDefType, EnumToken.WhenElseFunctionTokenType],
+    [EnumToken.CustomFunctionTokenDefType, EnumToken.CustomFunctionTokenType],
 ]);
 const tokensfuncSet = new Set(tokensfuncDefMap.values());
 const colorPrecision = 6;

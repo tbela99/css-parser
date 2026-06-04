@@ -24,6 +24,7 @@ export const tokensfuncDefMap = new Map([
     [EnumToken.TransformFunctionTokenDefType, EnumToken.TransformFunctionTokenType],
     [EnumToken.GeneralEnclosedFunctionTokenDefType, EnumToken.GeneralEnclosedFunctionTokenType],
     [EnumToken.WhenElseFunctionTokenDefType, EnumToken.WhenElseFunctionTokenType],
+    [EnumToken.CustomFunctionTokenDefType, EnumToken.CustomFunctionTokenType],
 ]) as Map<EnumToken, EnumToken>;
 
 export const tokensfuncSet: Set<EnumToken> = new Set(tokensfuncDefMap.values());

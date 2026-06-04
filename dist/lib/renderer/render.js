@@ -353,6 +353,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.ContainerFunctionTokenDefType:
         case EnumToken.PseudoClassFunctionTokenDefType:
         case EnumToken.GeneralEnclosedFunctionTokenDefType:
+        case EnumToken.CustomFunctionTokenDefType:
             return token.val + "(";
         case EnumToken.ListToken:
             return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), "");
@@ -495,6 +496,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.ContainerFunctionTokenType:
         case EnumToken.TransformFunctionTokenType:
         case EnumToken.GeneralEnclosedFunctionTokenType:
+        case EnumToken.CustomFunctionTokenType:
             if (token.typ == EnumToken.MathFunctionTokenType &&
                 token.chi.length == 1 &&
                 ![EnumToken.BinaryExpressionTokenType, EnumToken.FractionTokenType, EnumToken.IdenTokenType].includes(token.chi[0].typ) &&
