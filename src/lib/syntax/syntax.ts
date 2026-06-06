@@ -539,7 +539,7 @@ export function isFrequency(dimension: DimensionToken): boolean {
 }
 
 export function isColorspace(token: Token): boolean {
-    if (token.typ === EnumToken.FunctionTokenType && (token as FunctionToken).val === "var") {
+    if (token.typ === EnumToken.WildCardFunctionTokenType && (token as FunctionToken).val === "var") {
         return true;
     }
 
@@ -626,11 +626,13 @@ export function isPercentageToken(token: Token): boolean {
 }
 
 export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
-    if (token.typ == EnumToken.FunctionTokenType) {
-        if ((token as FunctionToken).val === "var") {
+    
+    if (token.typ == EnumToken.WildCardFunctionTokenType) {
             return true;
-        }
+    }
 
+    if (token.typ == EnumToken.FunctionTokenType) {
+        
         if (!colorsFunc.includes((token as FunctionToken).val.toLowerCase())) {
             return false;
         }
@@ -672,6 +674,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                         EnumToken.ColorTokenType,
                         EnumToken.FunctionTokenType,
                         EnumToken.PercentageTokenType,
+                        EnumToken.WildCardFunctionTokenType,
                     ].includes(t.typ),
                 );
 
@@ -694,7 +697,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
 
             // @ts-ignore
             for (const { value, parent } of walkValues(token.chi, token, (value) =>
-                value.typ === EnumToken.FunctionTokenType && value.val === "var"
+                value.typ === EnumToken.WildCardFunctionTokenType
                     ? WalkerOptionEnum.Ignore | WalkerOptionEnum.IgnoreChildren
                     : null,
             )) {
@@ -832,12 +835,15 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                     }
 
                     if (
+                        children[i].typ === EnumToken.WildCardFunctionTokenType
+                    ) {
+                            continue;
+                    }
+
+                    if (
                         children[i].typ === EnumToken.FunctionTokenType ||
                         children[i].typ === EnumToken.MathFunctionTokenType
                     ) {
-                        if ("var" == (children[i] as FunctionToken).val.toLowerCase()) {
-                            continue;
-                        }
 
                         if (!mathFuncs.includes((<FunctionToken>children[i]).val)) {
                             return false;
@@ -981,7 +987,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
 
                     if (
                         v.typ === EnumToken.MathFunctionTokenType ||
-                        (v.typ === EnumToken.FunctionTokenType && (v.val == "var" || colorsFunc.includes(v.val)))
+                        (v.typ === EnumToken.WildCardFunctionTokenType  || colorsFunc.includes(v.val))
                     ) {
                         continue;
                     }

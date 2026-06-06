@@ -43,7 +43,7 @@ class ComputeCalcExpressionFeature {
                         node.chi[0].typ == EnumToken.IdenTokenType) {
                         return WalkerOptionEnum.Ignore;
                     }
-                    if ((node.typ === EnumToken.FunctionTokenType && node.val == "var") ||
+                    if ((node.typ === EnumToken.WildCardFunctionTokenType && node.val == "var") ||
                         (!mathFuncs.includes(parent.val) &&
                             [
                                 EnumToken.MathFunctionTokenType,
@@ -94,6 +94,7 @@ class ComputeCalcExpressionFeature {
                                     ? value.val
                                     : value.chi;
                             const values = evaluate(cp);
+                            // console.debug({value, values});
                             // fix a + -b to a - b
                             for (const { value } of walkValues(values)) {
                                 if (value.typ === EnumToken.BinaryExpressionTokenType &&

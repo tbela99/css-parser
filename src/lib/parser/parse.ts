@@ -440,8 +440,10 @@ export async function doParse(
         | AstDeclaration
         | AstComment
         | null;
+
     // @ts-ignore ignore error
     let isAsync: boolean = typeof iter[Symbol.asyncIterator] === "function";
+    let parensMatch: number = 0; 
 
     if (options.visitor != null) {
         valuesHandlers = new Map() as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
@@ -614,13 +616,24 @@ export async function doParse(
             continue;
         }
 
+        if( item.token.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(item.token.typ)) {
+            
+            parensMatch++;
+        }
+
+        else if (item.token.typ === EnumToken.EndParensTokenType && parensMatch > 0) {
+            
+            parensMatch--;
+        }
+
         // if (item.token.typ != EnumToken.EOFTokenType) {
         tokens.push(item.token);
         // }
 
         if (
-            item.token.typ === EnumToken.SemiColonTokenType ||
-            item.token.typ === EnumToken.BlockStartTokenType ||
+            (parensMatch === 0 &&
+            (item.token.typ === EnumToken.SemiColonTokenType ||
+            item.token.typ === EnumToken.BlockStartTokenType)) ||
             item.token.typ === EnumToken.EOFTokenType
         ) {
             node = parseNode(tokens, context, options as ParserOptions, errors, stats);
@@ -2183,6 +2196,7 @@ export function parseAtRule(
     errors: ErrorDescription[],
     parseAsBlock: boolean | null = null,
 ): AstAtRule | AstInvalidAtRule | CssVariableImportTokenType | CssVariableToken | null {
+
     const rules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + (stream[0] as AtRuleToken).nam);
 
     let success: boolean = true;

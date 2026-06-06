@@ -608,6 +608,16 @@ export enum EnumToken {
      */
     CustomFunctionTokenType,
 
+    /**
+     * function tokens such as 'var(', 'env(', 'if(')
+     */
+    WildCardFunctionTokenDefType,
+
+    /**
+     * function such as 'var()', 'env()', 'if()'
+     */
+    WildCardFunctionTokenType,
+
     /* aliases */
 
     /**

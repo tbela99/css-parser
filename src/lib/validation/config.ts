@@ -3,6 +3,7 @@ import type { ValidationConfiguration, ValidationSyntaxNode } from "../../@types
 import type { ValidationToken } from "./parser/types.d.ts";
 import { parseSyntax, trimSyntaxArray } from "./parser/parse.ts";
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from "./parser/typedef.ts";
+import { memoize } from "../parser/utils/cache.ts";
 
 export interface ValidationSyntaxRule {
     acceptAnyDeclarations: boolean;
@@ -22,7 +23,7 @@ export function getSyntaxConfig(): ValidationConfiguration {
     return config as ValidationConfiguration;
 }
 
-export function getSyntax(group: ValidationSyntaxGroupEnum, key: string | string[]): null | string {
+export const getSyntax = memoize((group: ValidationSyntaxGroupEnum, key: string | string[]): null | string => {
     // @ts-expect-error
     let obj = config[group] as Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode>;
 
@@ -47,7 +48,7 @@ export function getSyntax(group: ValidationSyntaxGroupEnum, key: string | string
 
     // @ts-expect-error
     return obj?.syntax ?? null;
-}
+});
 
 function findNode(
     group: ValidationSyntaxGroupEnum,
@@ -85,96 +86,98 @@ function findNode(
     return obj;
 }
 
-export function getParsedSyntax(group: ValidationSyntaxGroupEnum, key: string | string[]): null | ValidationToken[] {
-    // @ts-expect-error
-    const obj: Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode> | ValidationSyntaxNode = findNode(group, key);
+export const getParsedSyntax = memoize(
+    (group: ValidationSyntaxGroupEnum, key: string | string[]): null | ValidationToken[] => {
+        // @ts-expect-error
+        const obj: Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode> | ValidationSyntaxNode = findNode(
+            group,
+            key,
+        );
 
-    if (obj == null) {
-        return null;
-    }
-
-    // return parseSyntax((obj as ValidationSyntaxNode).syntax as string) as ValidationToken[];
-
-    const keys: string[] = Array.isArray(key) ? key : [key];
-    const index: string = group + "." + keys.join(".");
-
-    // console.debug('> syntax group', index)
-
-    // @ts-ignore
-    // console.debug('getParsedSyntax', obj?.syntax);
-
-    if (!parsedSyntaxes.has(index)) {
-        const syntax: ValidationToken[] = Object.freeze(
-            trimSyntaxArray(parseSyntax((obj as ValidationSyntaxNode).syntax as string)),
-        ) as ValidationToken[];
-        parsedSyntaxes.set(index, syntax);
-    }
-
-    return parsedSyntaxes.get(index) as ValidationToken[];
-}
-
-export function getSyntaxRule(group: ValidationSyntaxGroupEnum, key: string | string[]): ValidationSyntaxRule | null {
-    const node = findNode(group, key);
-
-    if (node == null) {
-        return null;
-    }
-
-    let syntaxRules = getParsedSyntax(group, key) as ValidationToken[];
-
-    if (syntaxRules == null) {
-        return null;
-    }
-
-    let blockStart: number = -1;
-    let blockEnd: number = -1;
-    let i: number;
-
-    for (i = 0; i < syntaxRules.length; i++) {
-        if (
-            syntaxRules[i].typ === ValidationTokenEnum.OpenCurlyBrace ||
-            syntaxRules[i].typ === ValidationTokenEnum.SemiColon
-        ) {
-            blockStart = i;
-            break;
+        if (obj == null) {
+            return null;
         }
-    }
 
-    if (blockStart != -1) {
-        i = syntaxRules.length;
+        // return parseSyntax((obj as ValidationSyntaxNode).syntax as string) as ValidationToken[];
 
-        while (i--) {
-            if (syntaxRules[i].typ === ValidationTokenEnum.CloseCurlyBrace) {
-                blockEnd = i;
+        const keys: string[] = Array.isArray(key) ? key : [key];
+        const index: string = group + "." + keys.join(".");
+
+        if (!parsedSyntaxes.has(index)) {
+            const syntax: ValidationToken[] = Object.freeze(
+                trimSyntaxArray(parseSyntax((obj as ValidationSyntaxNode).syntax as string)),
+            ) as ValidationToken[];
+            parsedSyntaxes.set(index, syntax);
+        }
+
+        return parsedSyntaxes.get(index) as ValidationToken[];
+    },
+);
+
+export const getSyntaxRule = memoize(
+    (group: ValidationSyntaxGroupEnum, key: string | string[]): ValidationSyntaxRule | null => {
+        const node = findNode(group, key);
+
+        if (node == null) {
+            return null;
+        }
+
+        let syntaxRules = getParsedSyntax(group, key) as ValidationToken[];
+
+        if (syntaxRules == null) {
+            return null;
+        }
+
+        let blockStart: number = -1;
+        let blockEnd: number = -1;
+        let i: number;
+
+        for (i = 0; i < syntaxRules.length; i++) {
+            if (
+                syntaxRules[i].typ === ValidationTokenEnum.OpenCurlyBrace ||
+                syntaxRules[i].typ === ValidationTokenEnum.SemiColon
+            ) {
+                blockStart = i;
                 break;
             }
         }
-    }
 
-    const block = blockStart == -1 ? null : trimSyntaxArray(syntaxRules.slice(blockStart + 1, blockEnd));
-    const prelude = trimSyntaxArray(blockStart == -1 ? syntaxRules.slice() : syntaxRules.slice(0, blockStart));
+        if (blockStart != -1) {
+            i = syntaxRules.length;
 
-    let propertyDescriptors: Record<string, ValidationToken[]> | null = null;
+            while (i--) {
+                if (syntaxRules[i].typ === ValidationTokenEnum.CloseCurlyBrace) {
+                    blockEnd = i;
+                    break;
+                }
+            }
+        }
 
-    // @ts-expect-error
-    if (node.descriptors != null) {
-        propertyDescriptors = {};
+        const block = blockStart == -1 ? null : trimSyntaxArray(syntaxRules.slice(blockStart + 1, blockEnd));
+        const prelude = trimSyntaxArray(blockStart == -1 ? syntaxRules.slice() : syntaxRules.slice(0, blockStart));
+
+        let propertyDescriptors: Record<string, ValidationToken[]> | null = null;
 
         // @ts-expect-error
-        for (const [key, value] of Object.entries(node.descriptors)) {
-            // @ts-expect-error
-            propertyDescriptors[key] = parseSyntax(value.syntax);
-        }
-    }
+        if (node.descriptors != null) {
+            propertyDescriptors = {};
 
-    return {
-        acceptAnyDeclarations: (node as ValidationSyntaxNode).syntax.includes("<declaration-list>"),
-        acceptAnyRules:
-            (node as ValidationSyntaxNode).syntax.includes("<group-rule-body>>") ||
-            (node as ValidationSyntaxNode).syntax.includes("<stylesheet>"),
-        getPreludeRules: () => prelude,
-        getBlockRules: () => (block == null || block.length === 0 ? null : block),
-        getRules: () => syntaxRules,
-        getPropertyDescriptors: () => propertyDescriptors,
-    };
-}
+            // @ts-expect-error
+            for (const [key, value] of Object.entries(node.descriptors)) {
+                // @ts-expect-error
+                propertyDescriptors[key] = parseSyntax(typeof value === "string" ? value : value.syntax);
+            }
+        }
+
+        return {
+            acceptAnyDeclarations: (node as ValidationSyntaxNode).syntax.includes("<declaration-list>"),
+            acceptAnyRules:
+                (node as ValidationSyntaxNode).syntax.includes("<group-rule-body>") ||
+                (node as ValidationSyntaxNode).syntax.includes("<stylesheet>"),
+            getPreludeRules: () => prelude,
+            getBlockRules: () => (block == null || block.length === 0 ? null : block),
+            getRules: () => syntaxRules,
+            getPropertyDescriptors: () => propertyDescriptors,
+        };
+    },
+);

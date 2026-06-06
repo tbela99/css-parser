@@ -569,6 +569,14 @@ export declare enum EnumToken {
      */
     CustomFunctionTokenType = 135,
     /**
+     * function tokens such as 'var(', 'env(', 'if(')
+     */
+    WildCardFunctionTokenDefType = 136,
+    /**
+     * function such as 'var()', 'env()', 'if()'
+     */
+    WildCardFunctionTokenType = 137,
+    /**
      * alias for time token type
      */
     Time = 25,

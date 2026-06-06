@@ -31,7 +31,11 @@ function evaluate(tokens) {
             acc.push(...t);
             return acc;
         });
+        // console.debug({'tokens[0]': tokens[0]});
         const result = evaluateFunc(tokens[0]);
+        if (result == null) {
+            return tokens;
+        }
         if (result[0].typ === EnumToken.MathFunctionTokenType &&
             result[0].val === "calc" &&
             result[0].chi.length === 1) {
@@ -118,6 +122,9 @@ function doEvaluate(l, r, op) {
     }
     if (r.typ == EnumToken.FunctionTokenType || r.typ == EnumToken.MathFunctionTokenType) {
         const val = evaluateFunc(r);
+        if (val == null) {
+            return defaultReturn;
+        }
         if (val.length == 1) {
             r = val[0];
         }
@@ -213,6 +220,9 @@ function evaluateFunc(token) {
             for (let i = 0; i < chi.length; i++) {
                 // @ts-ignore
                 const val = getValue(chi[i]);
+                if (Number.isNaN(val)) {
+                    return null;
+                }
                 all.push(val);
                 value += val * val;
             }

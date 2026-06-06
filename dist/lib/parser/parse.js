@@ -294,6 +294,7 @@ async function doParse(iter, options = {}) {
     let node;
     // @ts-ignore ignore error
     let isAsync = typeof iter[Symbol.asyncIterator] === "function";
+    let parensMatch = 0;
     if (options.visitor != null) {
         valuesHandlers = new Map();
         preValuesHandlers = new Map();
@@ -423,11 +424,18 @@ async function doParse(iter, options = {}) {
             // bad token
             continue;
         }
+        if (item.token.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(item.token.typ)) {
+            parensMatch++;
+        }
+        else if (item.token.typ === EnumToken.EndParensTokenType && parensMatch > 0) {
+            parensMatch--;
+        }
         // if (item.token.typ != EnumToken.EOFTokenType) {
         tokens.push(item.token);
         // }
-        if (item.token.typ === EnumToken.SemiColonTokenType ||
-            item.token.typ === EnumToken.BlockStartTokenType ||
+        if ((parensMatch === 0 &&
+            (item.token.typ === EnumToken.SemiColonTokenType ||
+                item.token.typ === EnumToken.BlockStartTokenType)) ||
             item.token.typ === EnumToken.EOFTokenType) {
             node = parseNode(tokens, context, options, errors, stats);
             if (node != null) {

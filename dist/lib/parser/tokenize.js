@@ -1,9 +1,7 @@
 import { EnumToken, ColorType } from '../ast/types.js';
-import { definedPropertySettings, whenElseFunc, transformFunctions, mathFuncs, colorsFunc, timingFunc, supportFunc, generalEnclosedFunc, timelineFunc, imageFunc, gridTemplateFunc, urlFunc, containerFunc } from '../syntax/constants.js';
+import { definedPropertySettings, wildCardFuncs, whenElseFunc, transformFunctions, mathFuncs, colorsFunc, timingFunc, supportFunc, generalEnclosedFunc, timelineFunc, imageFunc, gridTemplateFunc, urlFunc, containerFunc } from '../syntax/constants.js';
 import { isDigit, isPseudo, isIdent, isNumber, isWhiteSpace, isNewLine, isHexColor, isHash, isPercentage, parseDimension } from '../syntax/syntax.js';
-import { getSyntaxConfig } from '../validation/config.js';
 
-const syntaxDefinitions = getSyntaxConfig();
 const SymbolsMapTokens = {
     // 'or': EnumToken.OrTokenType,
     // 'and': EnumToken.AndTokenType,
@@ -39,7 +37,10 @@ const SymbolsMapTokens = {
     "\r": EnumToken.Whitespace,
     "\n": EnumToken.Whitespace,
     "\f": EnumToken.Whitespace,
-    ...Object.keys(syntaxDefinitions.syntaxes).reduce((acc, curr) => (curr.endsWith("()") ? ((acc[curr.slice(0, -1)] = EnumToken.FunctionTokenDefType), acc) : acc), Object.create(null)),
+    // ...Object.keys(syntaxDefinitions.syntaxes).reduce(
+    //     (acc, curr) => (curr.endsWith("()") ? ((acc[curr.slice(0, -1)] = EnumToken.FunctionTokenDefType), acc) : acc),
+    //     Object.create(null),
+    // ),
     ...containerFunc.reduce((acc, curr) => {
         acc[curr + "("] = EnumToken.ContainerFunctionTokenDefType;
         return acc;
@@ -86,6 +87,10 @@ const SymbolsMapTokens = {
     }, Object.create(null)),
     ...whenElseFunc.reduce((acc, curr) => {
         acc[curr + "("] = EnumToken.WhenElseFunctionTokenDefType;
+        return acc;
+    }, Object.create(null)),
+    ...wildCardFuncs.reduce((acc, curr) => {
+        acc[curr + "("] = EnumToken.WildCardFunctionTokenDefType;
         return acc;
     }, Object.create(null)),
 };
@@ -387,64 +392,6 @@ function tokenize(parseInfo, yieldEOFToken = true) {
     const result = [];
     while ((value = next(parseInfo))) {
         nextValue = parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset + 1);
-        // if ((value === "-" || value === "+") && !isNumber(nextValue.charAt(0))) {
-        //     if (value === "+") {
-        //         if (buffer.length > 0) {
-        //             result.push(yieldResult(buffer, parseInfo));
-        //             buffer = "";
-        //         }
-        //         result.push( yieldResult(value, parseInfo));
-        //         continue;
-        //     }
-        //     buffer += value;
-        //     continue;
-        // }
-        // if (SymbolsMapTokens[value] === EnumToken.WhitespaceTokenType) {
-        //     if (buffer.length > 0) {
-        //         result.push( yieldResult(buffer, parseInfo));
-        //         buffer = "";
-        //     }
-        //     while (SymbolsMapTokens[nextValue] == EnumToken.WhitespaceTokenType) {
-        //         value += next(parseInfo);
-        //         nextValue = parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset + 1);
-        //     }
-        //     result.push( yieldResult(value, parseInfo, EnumToken.WhitespaceTokenType));
-        //     continue;
-        // }
-        // tmpValue = SymbolsMapTokens[value + nextValue];
-        // if (tmpValue  != null) {
-        //     if (buffer.length > 0) {
-        //         result.push( yieldResult(buffer, parseInfo));
-        //         buffer = "";
-        //     }
-        //     result.push( yieldResult(value + next(parseInfo), parseInfo, tmpValue));
-        //     continue;
-        // }
-        // tmpValue = SymbolsMapTokens[buffer + value];
-        // if (tmpValue != null) {
-        //     result.push( yieldResult(buffer + (value === "(" ? "" : value), parseInfo, tmpValue));
-        //     buffer = "";
-        //     continue;
-        // }
-        // if (value === "(") {
-        //     if (buffer[0] === ":" && isPseudo(buffer)) {
-        //         result.push( yieldResult(buffer, parseInfo, EnumToken.PseudoClassFunctionTokenDefType));
-        //         buffer = "";
-        //         continue;
-        //     } else if (isIdent(buffer)) {
-        //         result.push( yieldResult(buffer, parseInfo, EnumToken.FunctionTokenDefType));
-        //         buffer = "";
-        //         continue;
-        //     }
-        // }
-        // if ( SymbolsMapTokens[value] != null) {
-        //     if (buffer.length > 0) {
-        //         result.push( yieldResult(buffer, parseInfo));
-        //         buffer = "";
-        //     }
-        //     result.push( yieldResult(value, parseInfo, SymbolsMapTokens[value]));
-        //     continue;
-        // }
         charCode = value.charCodeAt(0);
         nextCharCode = nextValue.charCodeAt(0);
         switch (charCode) {
@@ -493,7 +440,10 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                         break;
                     }
                     else if (isIdent(buffer)) {
-                        result.push(yieldResult(buffer, parseInfo, SymbolsMapTokens[buffer.toLowerCase() + "("] ?? EnumToken.FunctionTokenDefType));
+                        result.push(yieldResult(buffer, parseInfo, buffer.startsWith("--")
+                            ? EnumToken.CustomFunctionTokenDefType
+                            :
+                                SymbolsMapTokens[buffer.toLowerCase() + "("] ?? EnumToken.FunctionTokenDefType));
                         buffer = "";
                         break;
                     }

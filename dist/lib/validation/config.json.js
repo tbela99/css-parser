@@ -3843,6 +3843,18 @@ var syntaxes = {
 	"alpha()": {
 		syntax: " alpha([from <color>] [ / [<alpha-value> | none] ]? )"
 	},
+	"if()": {
+		syntax: "if( [ <if-args-branch> ; ]* <if-args-branch> ;? )"
+	},
+	"if-args-branch": {
+		syntax: " <declaration-value> : <declaration-value>?"
+	},
+	"if-condition": {
+		syntax: "<boolean-expr[ <if-test> ]> | else"
+	},
+	"if-test": {
+		syntax: "supports( [ <ident> : <declaration-value> ] | <supports-condition> ) | media( <media-feature> | <media-condition> ) | style( <style-query> )"
+	},
 	"position-three": {
 		syntax: "[ left | center | right ] && [ [ top | bottom ] <length-percentage> ] | [ [ left | right ] <length-percentage> ] && [ top | center | bottom ] "
 	},
@@ -4494,6 +4506,7 @@ var atRules = {
 		}
 	},
 	"@position-try": {
+		syntax: " @position-try <dashed-ident> { <declaration-list> } ",
 		descriptors: {
 			top: "<'top'>",
 			left: "<'left'>",
@@ -4638,7 +4651,7 @@ var atRules = {
 		syntax: " @bottom-right-corner { <declaration-list> }"
 	},
 	"@function": {
-		syntax: " @function <dashed-ident>(<function-parameter>#?) [returns <css-type>]? {  <declaration-rule-list> }"
+		syntax: " @function <dashed-ident>(<function-parameter>#?) [returns <css-type>]? { <declaration-rule-list> }"
 	},
 	"@left-top": {
 		syntax: " @left-top { <declaration-list> }"

@@ -573,6 +573,14 @@ var EnumToken;
      * custom function token type
      */
     EnumToken[EnumToken["CustomFunctionTokenType"] = 135] = "CustomFunctionTokenType";
+    /**
+     * function tokens such as 'var(', 'env(', 'if(')
+     */
+    EnumToken[EnumToken["WildCardFunctionTokenDefType"] = 136] = "WildCardFunctionTokenDefType";
+    /**
+     * function such as 'var()', 'env()', 'if()'
+     */
+    EnumToken[EnumToken["WildCardFunctionTokenType"] = 137] = "WildCardFunctionTokenType";
     /* aliases */
     /**
      * alias for time token type

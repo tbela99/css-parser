@@ -83,7 +83,7 @@
       "syntax": " @bottom-right-corner { <declaration-list> }"
     },
     "@function": {
-      "syntax": " @function <dashed-ident>(<function-parameter>#?) [returns <css-type>]? {  <declaration-rule-list> }"
+      "syntax": " @function <dashed-ident>(<function-parameter>#?) [returns <css-type>]? { <declaration-rule-list> }"
     },
     "@left-top": {
       "syntax": " @left-top { <declaration-list> }"
@@ -93,6 +93,48 @@
     },
     "@left-bottom": {
       "syntax": " @left-bottom { <declaration-list> }"
+    },
+    "@position-try": {
+      "syntax": " @position-try <dashed-ident> { <declaration-list> } ",
+      "comment": "replace @position-try syntax",
+      "descriptors": {
+        "top": "<'top'>",
+        "left": "<'left'>",
+        "bottom": "<'bottom'>",
+        "right": "<'right'>",
+        "inset-block-start": "<'inset-block-start'>",
+        "inset-block-end": "<'inset-block-end'>",
+        "inset-inline-start": "<'inset-inline-start'>",
+        "inset-inline-end": "<'inset-inline-end'>",
+        "inset-block": "<'inset-block'>",
+        "inset-inline": "<'inset-inline'>",
+        "inset": "<'inset'>",
+        "margin-top": "<'margin-top'>",
+        "margin-left": "<'margin-left'>",
+        "margin-bottom": "<'margin-bottom'>",
+        "margin-right": "<'margin-right'>",
+        "margin-block-start": "<'margin-block-start'>",
+        "margin-block-end": "<'margin-block-end'>",
+        "margin-inline-start": "<'margin-inline-start'>",
+        "margin-inline-end": "<'margin-inline-end'>",
+        "margin": "<'margin'>",
+        "margin-block": "<'margin-block'>",
+        "margin-inline": "<'margin-inline'>",
+        "width": "<'width'>",
+        "height": "<'height'>",
+        "min-width": "<'min-width'>",
+        "min-height": "<'min-height'>",
+        "max-width": "<'max-width'>",
+        "max-height": "<'max-height'>",
+        "block-size": "<'block-size'>",
+        "inline-size": "<'inline-size'>",
+        "min-block-size": "<'min-block-size'>",
+        "min-inline-size": "<'min-inline-size'>",
+        "max-block-size": "<'max-block-size'>",
+        "max-inline-size": "<'max-inline-size'>",
+        "align-self": "<'align-self'> | anchor-center",
+        "justify-self": "<'justify-self'> | anchor-center"
+      }
     },
     "@right-top": {
       "syntax": " @right-top { <declaration-list> }"
@@ -169,6 +211,18 @@
     },
     "bg-position": {
       "syntax": "<position> | <position-three>"
+    },
+    "if()": {
+      "syntax": "if( [ <if-args-branch> ; ]* <if-args-branch> ;? )"
+    },
+    "if-args-branch": {
+      "syntax": " <declaration-value> : <declaration-value>?"
+    },
+    "if-condition": {
+      "syntax": "<boolean-expr[ <if-test> ]> | else"
+    },
+    "if-test": {
+      "syntax": "supports( [ <ident> : <declaration-value> ] | <supports-condition> ) | media( <media-feature> | <media-condition> ) | style( <style-query> )"
     },
     "position": {
       "syntax": "<position-one> | <position-two> | <position-four>"

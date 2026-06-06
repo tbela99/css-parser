@@ -9,7 +9,7 @@
 - [x] custom color space in color()
     - [x] relative color syntax
     - [x] color syntax
-- [ ] support if() css function
+- [ ] support if() css function https://drafts.csswg.org/css-values-5/#if-notation
 - [x] validate media queries
 - [x] automatically generate media query range
 - [x] rewrite parsing and validation
@@ -32,10 +32,10 @@
         - [x] @media 
         - [x] @namespace
         - [x] @page
-        - [ ] @position-try
-        - [ ] @property
+        - [x] @position-try
+        - [x] @property
         - [x] @scope
-        - [ ] @starting-style
+        - [x] @starting-style
         - [x] @supports
         - [x] @view-transition
 

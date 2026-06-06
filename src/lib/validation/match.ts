@@ -1138,7 +1138,6 @@ export function matchSelectorSyntax(
                 break;
 
             case EnumToken.EndParensTokenType:
-
                 if (
                     stack.at(-1)?.typ === EnumToken.PseudoClassFunctionTokenDefType ||
                     stack.at(-1)?.typ === EnumToken.PseudoElementTokenType
@@ -1520,7 +1519,7 @@ function matchSyntax(
 
     // console.debug(JSON.stringify(syntaxes, null, 1));
     // console.debug(new Error('debug'));
-// 
+    //
     // console.debug(JSON.stringify({tokens: context.getRemainingTokens(), syntaxes: syntaxes}, null, 1));
 
     if (
@@ -1592,7 +1591,9 @@ function matchSyntax(
 
         // console.debug(new Error("123"));
 
-        if (token.typ === EnumToken.FunctionTokenType && (token as FunctionToken).val === "var") {
+        // console.debug({token});
+
+        if (token.typ === EnumToken.WildCardFunctionTokenType && (token as FunctionToken).val === "var") {
             result = matchSyntax(
                 (
                     getParsedSyntax(
@@ -1627,28 +1628,30 @@ function matchSyntax(
 
         // custom function token
         if (token.typ === EnumToken.CustomFunctionTokenDefType) {
+            if (
+                syntaxes[i].typ != ValidationTokenEnum.PropertyType ||
+                syntaxes[i + 1].typ != ValidationTokenEnum.OpenParenthesis ||
+                syntaxes[i + 2].typ == null
+            ) {
+                if (!isOptional) {
+                    return {
+                        success: false,
+                        errors: [
+                            {
+                                action: "drop",
+                                message: "could not match syntax",
+                                node: token,
+                                syntax: syntaxes[i],
+                            },
+                        ],
+                        syntaxToken: syntaxes[i],
+                        valid: true,
+                        context,
+                        token: null,
+                    };
+                }
 
-            if (syntaxes[i].typ != ValidationTokenEnum.PropertyType || syntaxes[i + 1].typ != ValidationTokenEnum.OpenParenthesis || syntaxes[i + 2].typ == null) {
-
-            if (!isOptional) {
-                return {
-                    success: false,
-                    errors: [
-                        {
-                            action: "drop",
-                            message: "could not match syntax",
-                            node: token,
-                            syntax: syntaxes[i],
-                        },
-                    ],
-                    syntaxToken: syntaxes[i],
-                    valid: true,
-                    context,
-                    token: null,
-                };
-            }
-
-            break;
+                break;
             }
 
             const range = trimArray(context.peekRange());
@@ -1656,15 +1659,11 @@ function matchSyntax(
             context.next();
             i++;
 
-            result = matchSyntax(
-                [syntaxes[i + 1]],
-                createValidationContext(range.slice(1, -1)),
-                options,
-            );
+            result = matchSyntax([syntaxes[i + 1]], createValidationContext(range.slice(1, -1)), options);
 
             if (result.success) {
                 context.update(range.at(-1) as Token);
-                i+=2;
+                i += 2;
             }
 
             return result;
@@ -1672,7 +1671,7 @@ function matchSyntax(
 
         if (
             tokensfuncDefMap.has(token.typ) &&
-            ((token as FunctionToken).val === "var" || (token as FunctionToken).val === "env")
+            ((token as FunctionToken).typ === EnumToken.WildCardFunctionTokenDefType)
             // ||                (token as FunctionToken).val.toLowerCase() ===
             //     (syntaxes[i] as ValidationFunctionToken).val?.toLowerCase?.()
         ) {
@@ -1694,12 +1693,11 @@ function matchSyntax(
                 context.update(range.at(-1) as Token);
 
                 if (context.done()) {
-                    
                     return {
                         ...result,
                         context,
                         syntaxToken: syntaxes[i + 1],
-                    }
+                    };
                 }
 
                 continue;
@@ -1966,7 +1964,6 @@ function matchSyntax(
                 }
 
                 if (result?.context?.done?.()) {
-
                     return result;
                 }
 
@@ -2245,7 +2242,6 @@ function matchSyntax(
                             errors: [],
                         };
                     } else {
-
                         context.update(result.context.current() as Token);
                     }
 
@@ -2349,15 +2345,13 @@ function matchSyntax(
                 };
 
             case ValidationTokenEnum.Function:
-
-            // console.debug(JSON.stringify({token, syntax: syntaxes[i]}));
+                // console.debug(JSON.stringify({token, syntax: syntaxes[i]}));
 
                 if (
                     (!tokensfuncDefMap.has(token.typ) &&
                         !funcLike.includes(token.typ) &&
                         !funcTypes.includes(token.typ)) ||
-
-                    !('val' in token) ||
+                    !("val" in token) ||
                     !equalsIgnoreCase(
                         (syntaxes[i] as ValidationFunctionToken).val,
                         (token as FunctionToken).val.toLowerCase(),
@@ -2700,8 +2694,7 @@ function matchSyntax(
             !(
                 token?.typ === EnumToken.MathFunctionTokenType ||
                 token?.typ === EnumToken.MathFunctionTokenDefType ||
-                (token?.typ === EnumToken.FunctionTokenDefType && (token as FunctionToken).val === "var") ||
-                (token?.typ === EnumToken.FunctionTokenDefType && (token as FunctionToken).val === "env")
+                (token?.typ === EnumToken.WildCardFunctionTokenDefType)
             )
         ) {
             let success = false;
@@ -4048,6 +4041,8 @@ function matchProperty(
                     errors: [],
                 };
             }
+
+            break;
         }
 
         default:

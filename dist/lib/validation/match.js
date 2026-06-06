@@ -1,6 +1,6 @@
 import { getParsedSyntax, getSyntaxConfig } from './config.js';
 import { EnumToken, ColorType } from '../ast/types.js';
-import { ValidationTokenEnum, ValidationSyntaxGroupEnum, MediaFeatureType } from './parser/typedef.js';
+import { ValidationSyntaxGroupEnum, ValidationTokenEnum, MediaFeatureType } from './parser/typedef.js';
 import { tokensfuncDefMap, tokensfuncSet, funcLike, mFLT, mFGT } from '../syntax/constants.js';
 import { pseudoElements, isValue, isColor } from '../syntax/syntax.js';
 import { isDeclarationValue } from '../parser/utils/declaration.js';
@@ -1130,7 +1130,7 @@ function matchSyntax(syntaxes, context, options) {
     // console.debug('> ' + context.getRemainingTokens().reduce((acc, b) => acc + renderToken(b), ""));
     // console.debug(JSON.stringify(syntaxes, null, 1));
     // console.debug(new Error('debug'));
-    // 
+    //
     // console.debug(JSON.stringify({tokens: context.getRemainingTokens(), syntaxes: syntaxes}, null, 1));
     if (context.tokens.length == 1 &&
         context.tokens[0].typ == EnumToken.IdenTokenType &&
@@ -1189,7 +1189,8 @@ function matchSyntax(syntaxes, context, options) {
         //         }
         // );
         // console.debug(new Error("123"));
-        if (token.typ === EnumToken.FunctionTokenType && token.val === "var") {
+        // console.debug({token});
+        if (token.typ === EnumToken.WildCardFunctionTokenType && token.val === "var") {
             result = matchSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, token.val + "()")?.[0]?.chi, createValidationContext(token.chi), options);
             if (result.success || isOptional) {
                 context.next();
@@ -1212,7 +1213,9 @@ function matchSyntax(syntaxes, context, options) {
         }
         // custom function token
         if (token.typ === EnumToken.CustomFunctionTokenDefType) {
-            if (syntaxes[i].typ != ValidationTokenEnum.PropertyType || syntaxes[i + 1].typ != ValidationTokenEnum.OpenParenthesis || syntaxes[i + 2].typ == null) {
+            if (syntaxes[i].typ != ValidationTokenEnum.PropertyType ||
+                syntaxes[i + 1].typ != ValidationTokenEnum.OpenParenthesis ||
+                syntaxes[i + 2].typ == null) {
                 if (!isOptional) {
                     return {
                         success: false,
@@ -1243,7 +1246,7 @@ function matchSyntax(syntaxes, context, options) {
             return result;
         }
         if (tokensfuncDefMap.has(token.typ) &&
-            (token.val === "var" || token.val === "env")
+            (token.typ === EnumToken.WildCardFunctionTokenDefType)
         // ||                (token as FunctionToken).val.toLowerCase() ===
         //     (syntaxes[i] as ValidationFunctionToken).val?.toLowerCase?.()
         ) {
@@ -1784,7 +1787,7 @@ function matchSyntax(syntaxes, context, options) {
                 if ((!tokensfuncDefMap.has(token.typ) &&
                     !funcLike.includes(token.typ) &&
                     !funcTypes.includes(token.typ)) ||
-                    !('val' in token) ||
+                    !("val" in token) ||
                     !equalsIgnoreCase(syntaxes[i].val, token.val.toLowerCase())) {
                     return {
                         success: false,
@@ -2040,8 +2043,7 @@ function matchSyntax(syntaxes, context, options) {
             "range" in syntaxes[i] &&
             !(token?.typ === EnumToken.MathFunctionTokenType ||
                 token?.typ === EnumToken.MathFunctionTokenDefType ||
-                (token?.typ === EnumToken.FunctionTokenDefType && token.val === "var") ||
-                (token?.typ === EnumToken.FunctionTokenDefType && token.val === "env"))) {
+                (token?.typ === EnumToken.WildCardFunctionTokenDefType))) {
             let success = false;
             success =
                 typeof token.val === "number" &&
@@ -3088,6 +3090,7 @@ function matchProperty(property, context, options) {
                     errors: [],
                 };
             }
+            break;
         }
         default:
             if (!(property.val in config.syntaxes)) {

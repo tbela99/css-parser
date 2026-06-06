@@ -55,7 +55,7 @@ function replace(
     for (const { value, parent: parentValue } of walkValues((<AstDeclaration>node).val)) {
         if (
             value.typ == EnumToken.MathFunctionTokenDefType ||
-            (value.typ == EnumToken.FunctionTokenType && (value as FunctionToken).val == "var")
+            (value.typ == EnumToken.WildCardFunctionTokenType && (value as FunctionToken).val == "var")
         ) {
             if (
                 (value as FunctionToken).chi.length == 1 &&
@@ -155,7 +155,7 @@ export class InlineCssVariablesFeature {
                     for (const { value } of walkValues((<AstDeclaration>node).val)) {
                         if (
                             value?.typ == EnumToken.MathFunctionTokenDefType ||
-                            (value?.typ == EnumToken.FunctionTokenType &&
+                            (value?.typ == EnumToken.WildCardFunctionTokenType &&
                                 (mathFuncs.includes((<FunctionToken>value).val) ||
                                     (<FunctionToken>value).val === "var"))
                         ) {

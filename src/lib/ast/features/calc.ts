@@ -71,7 +71,7 @@ export class ComputeCalcExpressionFeature {
                     }
 
                     if (
-                        (node.typ === EnumToken.FunctionTokenType && (node as FunctionToken).val == "var") ||
+                        (node.typ === EnumToken.WildCardFunctionTokenType && (node as FunctionToken).val == "var") ||
                         (!mathFuncs.includes((parent as FunctionToken).val) &&
                             [
                                 EnumToken.MathFunctionTokenType,
@@ -137,6 +137,8 @@ export class ComputeCalcExpressionFeature {
                                       ? (<AstDeclaration>value).val
                                       : (value as FunctionToken).chi;
                             const values: Token[] = evaluate(cp);
+
+                            // console.debug({value, values});
 
                             // fix a + -b to a - b
                             for (const { value } of walkValues(values)) {

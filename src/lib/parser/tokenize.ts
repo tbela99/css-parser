@@ -31,6 +31,7 @@ import {
     transformFunctions,
     urlFunc,
     whenElseFunc,
+    wildCardFuncs,
 } from "../syntax/constants.ts";
 import {
     isDigit,
@@ -82,10 +83,10 @@ export const SymbolsMapTokens: Record<string, EnumToken> = {
     "\r": EnumToken.Whitespace,
     "\n": EnumToken.Whitespace,
     "\f": EnumToken.Whitespace,
-    ...Object.keys(syntaxDefinitions.syntaxes).reduce(
-        (acc, curr) => (curr.endsWith("()") ? ((acc[curr.slice(0, -1)] = EnumToken.FunctionTokenDefType), acc) : acc),
-        Object.create(null),
-    ),
+    // ...Object.keys(syntaxDefinitions.syntaxes).reduce(
+    //     (acc, curr) => (curr.endsWith("()") ? ((acc[curr.slice(0, -1)] = EnumToken.FunctionTokenDefType), acc) : acc),
+    //     Object.create(null),
+    // ),
     ...containerFunc.reduce((acc, curr: string) => {
         acc[curr + "("] = EnumToken.ContainerFunctionTokenDefType;
         return acc;
@@ -132,6 +133,10 @@ export const SymbolsMapTokens: Record<string, EnumToken> = {
     }, Object.create(null)),
     ...whenElseFunc.reduce((acc, curr: string) => {
         acc[curr + "("] = EnumToken.WhenElseFunctionTokenDefType;
+        return acc;
+    }, Object.create(null)),
+    ...wildCardFuncs.reduce((acc, curr: string) => {
+        acc[curr + "("] = EnumToken.WildCardFunctionTokenDefType;
         return acc;
     }, Object.create(null)),
 };
@@ -494,78 +499,6 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
     while ((value = next(parseInfo))) {
         nextValue = parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset + 1);
 
-        // if ((value === "-" || value === "+") && !isNumber(nextValue.charAt(0))) {
-        //     if (value === "+") {
-        //         if (buffer.length > 0) {
-        //             result.push(yieldResult(buffer, parseInfo));
-        //             buffer = "";
-        //         }
-
-        //         result.push( yieldResult(value, parseInfo));
-        //         continue;
-        //     }
-
-        //     buffer += value;
-        //     continue;
-        // }
-
-        // if (SymbolsMapTokens[value] === EnumToken.WhitespaceTokenType) {
-        //     if (buffer.length > 0) {
-        //         result.push( yieldResult(buffer, parseInfo));
-        //         buffer = "";
-        //     }
-
-        //     while (SymbolsMapTokens[nextValue] == EnumToken.WhitespaceTokenType) {
-        //         value += next(parseInfo);
-        //         nextValue = parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset + 1);
-        //     }
-
-        //     result.push( yieldResult(value, parseInfo, EnumToken.WhitespaceTokenType));
-        //     continue;
-        // }
-
-        // tmpValue = SymbolsMapTokens[value + nextValue];
-
-        // if (tmpValue  != null) {
-        //     if (buffer.length > 0) {
-        //         result.push( yieldResult(buffer, parseInfo));
-        //         buffer = "";
-        //     }
-
-        //     result.push( yieldResult(value + next(parseInfo), parseInfo, tmpValue));
-        //     continue;
-        // }
-
-        // tmpValue = SymbolsMapTokens[buffer + value];
-
-        // if (tmpValue != null) {
-
-        //     result.push( yieldResult(buffer + (value === "(" ? "" : value), parseInfo, tmpValue));
-        //     buffer = "";
-        //     continue;
-        // }
-
-        // if (value === "(") {
-        //     if (buffer[0] === ":" && isPseudo(buffer)) {
-        //         result.push( yieldResult(buffer, parseInfo, EnumToken.PseudoClassFunctionTokenDefType));
-        //         buffer = "";
-        //         continue;
-        //     } else if (isIdent(buffer)) {
-        //         result.push( yieldResult(buffer, parseInfo, EnumToken.FunctionTokenDefType));
-        //         buffer = "";
-        //         continue;
-        //     }
-        // }
-
-        // if ( SymbolsMapTokens[value] != null) {
-        //     if (buffer.length > 0) {
-        //         result.push( yieldResult(buffer, parseInfo));
-        //         buffer = "";
-        //     }
-
-        //     result.push( yieldResult(value, parseInfo, SymbolsMapTokens[value]));
-        //     continue;
-        // }
 
         charCode = value.charCodeAt(0);
         nextCharCode = nextValue.charCodeAt(0);

@@ -31,7 +31,7 @@ function replace(node, variableScope) {
     }
     for (const { value, parent: parentValue } of walkValues(node.val)) {
         if (value.typ == EnumToken.MathFunctionTokenDefType ||
-            (value.typ == EnumToken.FunctionTokenType && value.val == "var")) {
+            (value.typ == EnumToken.WildCardFunctionTokenType && value.val == "var")) {
             if (value.chi.length == 1 &&
                 value.chi[0].typ == EnumToken.DashedIdenTokenType) {
                 const info = (variableScope.get(value.chi[0].val));
@@ -101,7 +101,7 @@ class InlineCssVariablesFeature {
                     let recursive = false;
                     for (const { value } of walkValues(node.val)) {
                         if (value?.typ == EnumToken.MathFunctionTokenDefType ||
-                            (value?.typ == EnumToken.FunctionTokenType &&
+                            (value?.typ == EnumToken.WildCardFunctionTokenType &&
                                 (mathFuncs.includes(value.val) ||
                                     value.val === "var"))) {
                             recursive = true;

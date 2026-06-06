@@ -216,10 +216,10 @@ scale: rem(10 * 2, 1.7);
   --size-0: 100px;
   --size-1: hypot(var(--size-0));
   --size-2: hypot(var(--size-0), var(--size-0));
-  );
   --size-3: hypot(
     calc(var(--size-0) * 1.5),
     calc(var(--size-0) * 2)
+  );
 }
 .one {
   width: var(--size-1);
@@ -238,6 +238,7 @@ scale: rem(10 * 2, 1.7);
  /* --size-0: 100px */
  /* --size-1: hypot(var(--size-0)) */
  /* --size-2: hypot(var(--size-0),var(--size-0)) */
+ /* --size-3: hypot(calc(var(--size-0)*1.5),calc(var(--size-0)*2)) */
 }
 .one {
  width: 100px;
@@ -248,8 +249,8 @@ scale: rem(10 * 2, 1.7);
  height: 141px
 }
 .three {
- width: var(--size-3);
- height: var(--size-3)
+ width: 250px;
+ height: 250px
 }`));
         });
 
@@ -438,10 +439,10 @@ width: calc(-2px *sign(-1);}
   --size-0: 100px;
   --size-1: hypot(var(--size-0));
   --size-2: hypot(var(--size-0), var(--size-0));
-  );
   --size-3: hypot(
     calc(var(--size-0) * 1.5),
-    calc(var(--size-0) * 2))
+    calc(var(--size-0) * 2)
+  );
 }
 .one {
   width: var(--size-1);
@@ -502,6 +503,21 @@ a {
 }
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
  transform: translateY(-50px)
+}`));
+        });
+
+
+        it('hypth() #37', function () {
+
+            return parse(`
+
+:root {
+  --size-0: 100px;
+  --size-1: hypot(var(--size-0));
+
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`:root {
+ --size-0: 100px;
+ --size-1: hypot(var(--size-0))
 }`));
         });
     });

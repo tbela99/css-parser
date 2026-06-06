@@ -408,8 +408,8 @@ background-image: url("logo.png");
   border-radius: 0 0 calc(0.25rem - 1px) calc(0.25rem - 10px);
 }
   
-`, {beautify: true, validation: true}).then(result => expect(result.code).equals(`.scale {
- border-radius: 0 0 calc(.25rem - 1px) calc(.25rem - 10px)
+`, {beautify: true, validation: true}).then(result => expect(result.code). equals(`.scale {
+ border-radius: 0 0 calc(.25rem - 1px)calc(.25rem - 10px)
 }`));
     });
 

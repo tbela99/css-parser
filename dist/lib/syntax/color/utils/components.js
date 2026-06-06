@@ -36,13 +36,15 @@ function getComponents(token) {
         if (child.typ === EnumToken.IdenTokenType && isColor(child)) {
             parseColor(child);
         }
-        if (child.typ === EnumToken.FunctionTokenType || child.typ === EnumToken.MathFunctionTokenType) {
+        if (child.typ === EnumToken.FunctionTokenType ||
+            child.typ === EnumToken.WildCardFunctionTokenType ||
+            child.typ === EnumToken.MathFunctionTokenType) {
             if ("var" == child.val.toLowerCase()) {
                 return null;
             }
             else {
                 for (const { value } of walkValues(child.chi)) {
-                    if (value.typ == EnumToken.FunctionTokenType &&
+                    if (value.typ == EnumToken.WildCardFunctionTokenDefType &&
                         "var" === value.val.toLowerCase()) {
                         return null;
                     }

@@ -16,15 +16,16 @@ export const tokensfuncDefMap = new Map([
     [EnumToken.MathFunctionTokenDefType, EnumToken.MathFunctionTokenType],
     [EnumToken.ImageFunctionTokenDefType, EnumToken.ImageFunctionTokenType],
     [EnumToken.TimingFunctionTokenDefType, EnumToken.TimingFunctionTokenType],
+    [EnumToken.CustomFunctionTokenDefType, EnumToken.CustomFunctionTokenType],
+    [EnumToken.WildCardFunctionTokenDefType, EnumToken.WildCardFunctionTokenType],
     [EnumToken.TimelineFunctionTokenDefType, EnumToken.TimelineFunctionTokenType],
     [EnumToken.GridTemplateFuncTokenDefType, EnumToken.GridTemplateFuncTokenType],
     [EnumToken.SupportsFunctionTokenDefType, EnumToken.SupportsFunctionTokenType],
+    [EnumToken.WhenElseFunctionTokenDefType, EnumToken.WhenElseFunctionTokenType],
     [EnumToken.ContainerFunctionTokenDefType, EnumToken.ContainerFunctionTokenType],
     [EnumToken.PseudoClassFunctionTokenDefType, EnumToken.PseudoClassFuncTokenType],
     [EnumToken.TransformFunctionTokenDefType, EnumToken.TransformFunctionTokenType],
     [EnumToken.GeneralEnclosedFunctionTokenDefType, EnumToken.GeneralEnclosedFunctionTokenType],
-    [EnumToken.WhenElseFunctionTokenDefType, EnumToken.WhenElseFunctionTokenType],
-    [EnumToken.CustomFunctionTokenDefType, EnumToken.CustomFunctionTokenType],
 ]) as Map<EnumToken, EnumToken>;
 
 export const tokensfuncSet: Set<EnumToken> = new Set(tokensfuncDefMap.values());
@@ -54,7 +55,7 @@ export const colorRange = {
     },
 };
 
-export const wildCardFuncs = ["var", "env"];
+export const wildCardFuncs = ["var", "env", "if"];
 export const mathFuncs = [
     "minmax",
     "repeat",
@@ -80,6 +81,7 @@ export const mathFuncs = [
     "exp",
     "abs",
     "sign",
+    "anchor",
 ];
 
 // export const fontFormat: string[] = ['collection', 'embedded-opentype', 'opentype', 'svg', 'truetype', 'woff', 'woff2'];

@@ -58,7 +58,13 @@ export function evaluate(tokens: Token[]): Token[] {
             return acc;
         });
 
+        // console.debug({'tokens[0]': tokens[0]});
+
         const result = evaluateFunc(tokens[0] as FunctionToken);
+
+        if (result == null) {
+            return tokens;
+        }
 
         if (
             result[0].typ === EnumToken.MathFunctionTokenType &&
@@ -171,6 +177,10 @@ function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Sub | Enum
     if (r.typ == EnumToken.FunctionTokenType || r.typ == EnumToken.MathFunctionTokenType) {
         const val = evaluateFunc(r as FunctionToken);
 
+        if (val == null) {
+            return defaultReturn;
+        }
+
         if (val.length == 1) {
             r = val[0];
         }
@@ -243,7 +253,7 @@ function getValue(t: NumberToken | IdentToken | FunctionToken): number | null {
     return t.typ == EnumToken.FractionTokenType ? (t as FractionToken).l.val / (t as FractionToken).r.val : +t.val;
 }
 
-export function evaluateFunc(token: FunctionToken): Token[] {
+export function evaluateFunc(token: FunctionToken): Token[] | null{
 
     const values: Token[] = token.chi.slice();
 
@@ -290,6 +300,11 @@ export function evaluateFunc(token: FunctionToken): Token[] {
             for (let i = 0; i < chi.length; i++) {
                 // @ts-ignore
                 const val = getValue(chi[i] as DimensionToken | NumberToken) as number;
+
+                if (Number.isNaN(val)) {
+                    
+                    return null;
+                }
 
                 all.push(val);
                 value += val * val;

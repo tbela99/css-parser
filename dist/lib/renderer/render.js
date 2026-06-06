@@ -354,11 +354,13 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.PseudoClassFunctionTokenDefType:
         case EnumToken.GeneralEnclosedFunctionTokenDefType:
         case EnumToken.CustomFunctionTokenDefType:
+        case EnumToken.WildCardFunctionTokenDefType:
             return token.val + "(";
         case EnumToken.ListToken:
             return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), "");
         case EnumToken.BinaryExpressionTokenType:
-            if (EnumToken.Mul === token.op || EnumToken.Div === token.op) {
+            if (EnumToken.Mul === token.op ||
+                EnumToken.Div === token.op) {
                 let result = "";
                 if (token.l.typ == EnumToken.BinaryExpressionTokenType &&
                     [EnumToken.Add, EnumToken.Sub].includes(token.l.op)) {
@@ -497,6 +499,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.TransformFunctionTokenType:
         case EnumToken.GeneralEnclosedFunctionTokenType:
         case EnumToken.CustomFunctionTokenType:
+        case EnumToken.WildCardFunctionTokenType:
             if (token.typ == EnumToken.MathFunctionTokenType &&
                 token.chi.length == 1 &&
                 ![EnumToken.BinaryExpressionTokenType, EnumToken.FractionTokenType, EnumToken.IdenTokenType].includes(token.chi[0].typ) &&
@@ -830,7 +833,7 @@ function filterValues(values) {
         }
         else if (tokensfuncSet.has(values[i].typ) &&
             "chi" in values[i] &&
-            !["var", "calc"].includes(values[i].val) &&
+            values[i].typ != EnumToken.WildCardFunctionTokenType &&
             values[i + 1]?.typ == EnumToken.WhitespaceTokenType) {
             values.splice(i + 1, 1);
         }

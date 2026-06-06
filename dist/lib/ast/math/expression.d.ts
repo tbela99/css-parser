@@ -4,7 +4,7 @@ import type { BinaryExpressionToken, FunctionToken, Token } from "../../../@type
  * @param tokens
  */
 export declare function evaluate(tokens: Token[]): Token[];
-export declare function evaluateFunc(token: FunctionToken): Token[];
+export declare function evaluateFunc(token: FunctionToken): Token[] | null;
 /**
  * convert BinaryExpression into an array
  * @param token

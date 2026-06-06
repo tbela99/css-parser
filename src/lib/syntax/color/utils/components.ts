@@ -45,13 +45,15 @@ export function getComponents(token: ColorToken | IdentToken): Token[] | null {
             parseColor(child);
         }
 
-        if (child.typ === EnumToken.FunctionTokenType || child.typ === EnumToken.MathFunctionTokenType) {
+        if (child.typ === EnumToken.FunctionTokenType || 
+            child.typ === EnumToken.WildCardFunctionTokenType ||
+            child.typ === EnumToken.MathFunctionTokenType) {
             if ("var" == (child as FunctionToken).val.toLowerCase()) {
                 return null;
             } else {
                 for (const { value } of walkValues((child as FunctionToken).chi)) {
                     if (
-                        value.typ == EnumToken.FunctionTokenType &&
+                        value.typ == EnumToken.WildCardFunctionTokenDefType &&
                         "var" === (value as FunctionToken).val.toLowerCase()
                     ) {
                         return null;

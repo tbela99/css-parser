@@ -15,15 +15,16 @@ const tokensfuncDefMap = new Map([
     [EnumToken.MathFunctionTokenDefType, EnumToken.MathFunctionTokenType],
     [EnumToken.ImageFunctionTokenDefType, EnumToken.ImageFunctionTokenType],
     [EnumToken.TimingFunctionTokenDefType, EnumToken.TimingFunctionTokenType],
+    [EnumToken.CustomFunctionTokenDefType, EnumToken.CustomFunctionTokenType],
+    [EnumToken.WildCardFunctionTokenDefType, EnumToken.WildCardFunctionTokenType],
     [EnumToken.TimelineFunctionTokenDefType, EnumToken.TimelineFunctionTokenType],
     [EnumToken.GridTemplateFuncTokenDefType, EnumToken.GridTemplateFuncTokenType],
     [EnumToken.SupportsFunctionTokenDefType, EnumToken.SupportsFunctionTokenType],
+    [EnumToken.WhenElseFunctionTokenDefType, EnumToken.WhenElseFunctionTokenType],
     [EnumToken.ContainerFunctionTokenDefType, EnumToken.ContainerFunctionTokenType],
     [EnumToken.PseudoClassFunctionTokenDefType, EnumToken.PseudoClassFuncTokenType],
     [EnumToken.TransformFunctionTokenDefType, EnumToken.TransformFunctionTokenType],
     [EnumToken.GeneralEnclosedFunctionTokenDefType, EnumToken.GeneralEnclosedFunctionTokenType],
-    [EnumToken.WhenElseFunctionTokenDefType, EnumToken.WhenElseFunctionTokenType],
-    [EnumToken.CustomFunctionTokenDefType, EnumToken.CustomFunctionTokenType],
 ]);
 const tokensfuncSet = new Set(tokensfuncDefMap.values());
 const colorPrecision = 6;
@@ -50,6 +51,7 @@ const colorRange = {
         b: [0, 0.4],
     },
 };
+const wildCardFuncs = ["var", "env", "if"];
 const mathFuncs = [
     "minmax",
     "repeat",
@@ -75,6 +77,7 @@ const mathFuncs = [
     "exp",
     "abs",
     "sign",
+    "anchor",
 ];
 // export const fontFormat: string[] = ['collection', 'embedded-opentype', 'opentype', 'svg', 'truetype', 'woff', 'woff2'];
 // export const colorFontTech: string[] = ['color-colrv0', 'color-colrv1', 'color-svg', 'color-sbix', 'color-cbdt'];
@@ -427,4 +430,4 @@ const trimTokenSpace = new Set([
 const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
 const combinators = ["+", ">", "~", "||", "|"];
 
-export { COLORS_NAMES, D50, NAMES_COLORS, anglePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, definedPropertySettings, deprecatedSystemColors, e, funcLike, generalEnclosedFunc, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc };
+export { COLORS_NAMES, D50, NAMES_COLORS, anglePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, definedPropertySettings, deprecatedSystemColors, e, funcLike, generalEnclosedFunc, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };

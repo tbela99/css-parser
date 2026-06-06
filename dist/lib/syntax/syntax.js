@@ -207,7 +207,7 @@ function isFrequency(dimension) {
     return "unit" in dimension && ["hz", "khz"].includes(dimension.unit.toLowerCase());
 }
 function isColorspace(token) {
-    if (token.typ === EnumToken.FunctionTokenType && token.val === "var") {
+    if (token.typ === EnumToken.WildCardFunctionTokenType && token.val === "var") {
         return true;
     }
     if (token.typ != EnumToken.IdenTokenType) {
@@ -276,10 +276,10 @@ function isPercentageToken(token) {
         (token.typ == EnumToken.NumberTokenType && token.val == 0));
 }
 function isColor(token, errors) {
+    if (token.typ == EnumToken.WildCardFunctionTokenType) {
+        return true;
+    }
     if (token.typ == EnumToken.FunctionTokenType) {
-        if (token.val === "var") {
-            return true;
-        }
         if (!colorsFunc.includes(token.val.toLowerCase())) {
             return false;
         }
@@ -313,6 +313,7 @@ function isColor(token, errors) {
                     EnumToken.ColorTokenType,
                     EnumToken.FunctionTokenType,
                     EnumToken.PercentageTokenType,
+                    EnumToken.WildCardFunctionTokenType,
                 ].includes(t.typ));
                 if (children.length != 2) {
                     errors?.push({
@@ -329,7 +330,7 @@ function isColor(token, errors) {
             // adding numbers and percentages is disallowed
             // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/lch#defining_relative_color_output_channel_components:~:text=Adding%20a%20%3Cpercentage%3E%20to%20a%20%3Cnumber%3E%2C%20for%20example%2C%20doesn%27t%20work
             // @ts-ignore
-            for (const { value, parent } of walkValues(token.chi, token, (value) => value.typ === EnumToken.FunctionTokenType && value.val === "var"
+            for (const { value, parent } of walkValues(token.chi, token, (value) => value.typ === EnumToken.WildCardFunctionTokenType
                 ? WalkerOptionEnum.Ignore | WalkerOptionEnum.IgnoreChildren
                 : null)) {
                 let k = 0;
@@ -431,11 +432,11 @@ function isColor(token, errors) {
                             return false;
                         }
                     }
+                    if (children[i].typ === EnumToken.WildCardFunctionTokenType) {
+                        continue;
+                    }
                     if (children[i].typ === EnumToken.FunctionTokenType ||
                         children[i].typ === EnumToken.MathFunctionTokenType) {
-                        if ("var" == children[i].val.toLowerCase()) {
-                            continue;
-                        }
                         if (!mathFuncs.includes(children[i].val)) {
                             return false;
                         }
@@ -548,7 +549,7 @@ function isColor(token, errors) {
                         continue;
                     }
                     if (v.typ === EnumToken.MathFunctionTokenType ||
-                        (v.typ === EnumToken.FunctionTokenType && (v.val == "var" || colorsFunc.includes(v.val)))) {
+                        (v.typ === EnumToken.WildCardFunctionTokenType || colorsFunc.includes(v.val))) {
                         continue;
                     }
                     if (![

@@ -568,6 +568,14 @@ declare enum EnumToken {
      */
     CustomFunctionTokenType = 135,
     /**
+     * function tokens such as 'var(', 'env(', 'if(')
+     */
+    WildCardFunctionTokenDefType = 136,
+    /**
+     * function such as 'var()', 'env()', 'if()'
+     */
+    WildCardFunctionTokenType = 137,
+    /**
      * alias for time token type
      */
     Time = 25,
@@ -3302,6 +3310,7 @@ declare interface ErrorDescription {
  * css validation options
  */
 interface ValidationOptions {
+
     /**
      * nested rule context
      */
@@ -3313,40 +3322,47 @@ interface ValidationOptions {
      * see {@link ValidationLevel}
      */
     validation?: boolean | ValidationLevel;
+
     /**
      * lenient validation. retain nodes that failed validation
      */
     lenient?: boolean;
+
     /**
      * visited tokens
      *
      * @private
      */
     visited?: Map<Token$1, Set<ValidationToken$1>>;
+    
     /**
      * is optional
      *
      * @private
      */
     isOptional?: boolean | null;
+
     /**
      * is repeatable
      *
      * @private
      */
     isRepeatable?: boolean | null;
+
     /**
      * is list
      *
      * @private
      */
     isList?: boolean | null;
+
     /**
      * occurence
      *
      * @private
      */
     occurrence?: boolean | null;
+
     /**
      * at least once
      *

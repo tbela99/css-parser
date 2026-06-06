@@ -60,6 +60,7 @@ export declare interface ErrorDescription {
  * css validation options
  */
 export interface ValidationOptions {
+
     /**
      * nested rule context
      */
@@ -71,40 +72,47 @@ export interface ValidationOptions {
      * see {@link ValidationLevel}
      */
     validation?: boolean | ValidationLevel;
+
     /**
      * lenient validation. retain nodes that failed validation
      */
     lenient?: boolean;
+
     /**
      * visited tokens
      *
      * @private
      */
     visited?: Map<Token, Set<ValidationToken>>;
+    
     /**
      * is optional
      *
      * @private
      */
     isOptional?: boolean | null;
+
     /**
      * is repeatable
      *
      * @private
      */
     isRepeatable?: boolean | null;
+
     /**
      * is list
      *
      * @private
      */
     isList?: boolean | null;
+
     /**
      * occurence
      *
      * @private
      */
     occurrence?: boolean | null;
+
     /**
      * at least once
      *

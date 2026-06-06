@@ -3,7 +3,7 @@ import { definedPropertySettings, tokensfuncDefMap, COLORS_NAMES, nonStandardCol
 import { renamedStandardProperties, isColor, parseColor, isWhiteSpace, isValue } from '../../syntax/syntax.js';
 import { getSyntaxRule, getParsedSyntax } from '../../validation/config.js';
 import { trimArray, matchAllSyntax, createValidationContext } from '../../validation/match.js';
-import { ValidationTokenEnum, ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
+import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from '../../validation/parser/typedef.js';
 import { walkValues } from '../../ast/walk.js';
 import { equalsIgnoreCase } from './text.js';
 import { buildExpression } from '../../ast/math/expression.js';
@@ -84,6 +84,7 @@ function isDeclarationValue(tokens) {
 function parseDeclaration(tokens, parent, options, errors) {
     const name = tokens.shift();
     let i;
+    let rules = null;
     let syntaxRules = null;
     let success = true;
     let validate = typeof options.validation === "boolean"
@@ -115,6 +116,7 @@ function parseDeclaration(tokens, parent, options, errors) {
         });
     }
     tokens = trimArray(tokens.slice(i + 1));
+    // console.debug(tokens.reduce((acc, b) => acc + renderToken(b), ""));
     for (i = 0; i < tokens.length; i++) {
         const token = tokens[i];
         if (token.typ == EnumToken.WhitespaceTokenType ||
@@ -125,7 +127,8 @@ function parseDeclaration(tokens, parent, options, errors) {
         if (tokens[i].typ === EnumToken.UrlFunctionTokenDefType) {
             let k = i;
             while (k < tokens.length) {
-                if (tokens[++k]?.typ === EnumToken.WhitespaceTokenType || tokens[k]?.typ === EnumToken.CommentTokenType) {
+                if (tokens[++k]?.typ === EnumToken.WhitespaceTokenType ||
+                    tokens[k]?.typ === EnumToken.CommentTokenType) {
                     continue;
                 }
                 if (tokens[k]?.typ !== EnumToken.EndParensTokenType) {
@@ -159,7 +162,6 @@ function parseDeclaration(tokens, parent, options, errors) {
             }
         }
     }
-    // console.debug(JSON.stringify(tokens, null, 1));
     if (validate && name.typ === EnumToken.IdenTokenType) {
         if (parent != null &&
             (parent.typ == EnumToken.AtRuleNodeType || parent.typ === EnumToken.InvalidAtRuleNodeType) &&
@@ -169,14 +171,17 @@ function parseDeclaration(tokens, parent, options, errors) {
             // check @at-rule description
             // pick up the syntax or reject immediately
             // else do this
-            const rules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + parent.nam);
+            rules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + parent.nam);
             if (rules != null) {
                 const propertyDescriptors = rules.getPropertyDescriptors();
                 if (propertyDescriptors != null) {
                     syntaxRules = propertyDescriptors[name.val.toLowerCase()];
                 }
                 else {
-                    syntaxRules = rules.getBlockRules();
+                    syntaxRules =
+                        rules.acceptAnyDeclarations && rules.acceptAnyRules
+                            ? getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, name.val.toLowerCase())
+                            : rules.getBlockRules();
                     if (syntaxRules == null) {
                         errors.push({
                             action: "drop",
@@ -200,6 +205,7 @@ function parseDeclaration(tokens, parent, options, errors) {
             }
         }
         // <declaration-list> or <declaration-rule-list>
+        // else
         if (syntaxRules == null ||
             (syntaxRules.length === 1 &&
                 syntaxRules[0].typ === ValidationTokenEnum.PropertyType &&
@@ -243,8 +249,8 @@ function parseDeclaration(tokens, parent, options, errors) {
             },
         });
     }
-    let result = null;
     const stack = [];
+    let result = null;
     let token;
     let index;
     if (syntaxRules != null) {
@@ -320,6 +326,25 @@ function parseDeclaration(tokens, parent, options, errors) {
                 });
                 break;
             case EnumToken.EndParensTokenType:
+                if (stack.length == 0) {
+                    errors.push({
+                        action: "drop",
+                        message: "unbalanced parentheses",
+                        node: token,
+                        location: token.loc,
+                    });
+                    return Object.defineProperty(Object.assign(name, {
+                        typ: EnumToken.InvalidDeclarationNodeType,
+                        nam: name.val,
+                        val: tokens,
+                    }), "loc", {
+                        ...definedPropertySettings,
+                        value: {
+                            ...name.loc,
+                            end: tokens[tokens.length - 1]?.loc.end ?? name.loc.end,
+                        },
+                    });
+                }
                 if (stack.at(-1)?.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(stack.at(-1)?.typ)) {
                     index = tokens.indexOf(stack.at(-1));
                     tokens.splice(i, 1);

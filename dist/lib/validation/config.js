@@ -1,6 +1,7 @@
 import config from './config.json.js';
 import { trimSyntaxArray, parseSyntax } from './parser/parse.js';
 import { ValidationTokenEnum } from './parser/typedef.js';
+import { memoize } from '../parser/utils/cache.js';
 
 const parsedSyntaxes = new Map();
 Object.freeze(config);
@@ -30,7 +31,7 @@ function findNode(group, key) {
     }
     return obj;
 }
-function getParsedSyntax(group, key) {
+const getParsedSyntax = memoize((group, key) => {
     // @ts-expect-error
     const obj = findNode(group, key);
     if (obj == null) {
@@ -39,16 +40,13 @@ function getParsedSyntax(group, key) {
     // return parseSyntax((obj as ValidationSyntaxNode).syntax as string) as ValidationToken[];
     const keys = Array.isArray(key) ? key : [key];
     const index = group + "." + keys.join(".");
-    // console.debug('> syntax group', index)
-    // @ts-ignore
-    // console.debug('getParsedSyntax', obj?.syntax);
     if (!parsedSyntaxes.has(index)) {
         const syntax = Object.freeze(trimSyntaxArray(parseSyntax(obj.syntax)));
         parsedSyntaxes.set(index, syntax);
     }
     return parsedSyntaxes.get(index);
-}
-function getSyntaxRule(group, key) {
+});
+const getSyntaxRule = memoize((group, key) => {
     const node = findNode(group, key);
     if (node == null) {
         return null;
@@ -85,18 +83,18 @@ function getSyntaxRule(group, key) {
         // @ts-expect-error
         for (const [key, value] of Object.entries(node.descriptors)) {
             // @ts-expect-error
-            propertyDescriptors[key] = parseSyntax(value.syntax);
+            propertyDescriptors[key] = parseSyntax(typeof value === "string" ? value : value.syntax);
         }
     }
     return {
         acceptAnyDeclarations: node.syntax.includes("<declaration-list>"),
-        acceptAnyRules: node.syntax.includes("<group-rule-body>>") ||
+        acceptAnyRules: node.syntax.includes("<group-rule-body>") ||
             node.syntax.includes("<stylesheet>"),
         getPreludeRules: () => prelude,
         getBlockRules: () => (block == null || block.length === 0 ? null : block),
         getRules: () => syntaxRules,
         getPropertyDescriptors: () => propertyDescriptors,
     };
-}
+});
 
 export { getParsedSyntax, getSyntaxConfig, getSyntaxRule };
