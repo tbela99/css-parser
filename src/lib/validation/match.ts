@@ -563,7 +563,7 @@ export function matchSelectorSyntax(
             stack.pop();
         }
 
-        if (token.typ === EnumToken.LiteralTokenType && "+" === (token as LiteralToken).val) {
+        if ((token.typ === EnumToken.LiteralTokenType && "+" === (token as LiteralToken).val)) {
             Object.assign(token, { typ: EnumToken.NextSiblingCombinatorTokenType });
             continue;
         }
@@ -1514,8 +1514,10 @@ function matchSyntax(
     let result: ValidationMatch | null = null;
     let isOptional: boolean;
 
-    // console.debug('> ' + syntaxes.reduce((acc, b) => acc + renderSyntax(b), ""));
-    // console.debug('> ' + context.getRemainingTokens().reduce((acc, b) => acc + renderToken(b), ""));
+    // console.debug('[ ');
+    // console.debug(' > ' + syntaxes.reduce((acc, b) => acc + renderSyntax(b), ""));
+    // console.debug(' > ' + context.getRemainingTokens().reduce((acc, b) => acc + renderToken(b), ""));
+    // console.debug('] ');
 
     // console.debug(JSON.stringify(syntaxes, null, 1));
     // console.debug(new Error('debug'));
@@ -2006,6 +2008,11 @@ function matchSyntax(
                     success = (syntaxes[i] as ValidationStringToken).val.slice(1, -1) === "-";
                 } else if (token.typ === EnumToken.LiteralTokenType) {
                     success = (token as LiteralToken).val === (syntaxes[i] as ValidationStringToken).val.slice(1, -1);
+                }
+
+                else if (token.typ == EnumToken.Plus) {
+
+                    success = true;
                 }
 
                 if (success) {
@@ -3145,8 +3152,6 @@ function matchProperty(
                 context.slice(),
                 options,
             );
-
-            // console.debug({result4: result, property, done: result.context.done(), rem: result.context.getRemainingTokens(), tk: context.getRemainingTokens()});
 
             success = result.success;
 

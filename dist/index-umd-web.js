@@ -5127,7 +5127,7 @@
     		syntax: " alpha([from <color>] [ / [<alpha-value> | none] ]? )"
     	},
     	"if()": {
-    		syntax: "if( [ <if-args-branch> ; ]* <if-args-branch> ;? )"
+    		syntax: "if( [ <if-args-branch> ;? ]*  )"
     	},
     	"if-args-branch": {
     		syntax: " <declaration-value> : <declaration-value>?"
@@ -5152,6 +5152,9 @@
     	},
     	"composes-selector": {
     		syntax: "<ident>+ [from [global&&<string>]]?"
+    	},
+    	"contrast-color()": {
+    		syntax: "contrast-color(<color> )"
     	},
     	"font-feature-custom-ident": {
     		syntax: "<integer>"
@@ -6744,6 +6747,7 @@
         "oklch",
         "lch",
         "light-dark",
+        "contrast-color"
     ];
     const imageFunc = [
         "linear-gradient",
@@ -7018,7 +7022,9 @@
         exports.EnumToken.Mul,
         exports.EnumToken.Div,
         exports.EnumToken.Sub,
+        exports.EnumToken.ColonTokenType,
         exports.EnumToken.CommaTokenType,
+        exports.EnumToken.SemiColonTokenType,
         exports.EnumToken.DashedIdenTokenType,
         exports.EnumToken.DeclarationNodeType,
         exports.EnumToken.SupportsQueryConditionTokenType,
@@ -10623,7 +10629,7 @@
         let i;
         for (i = 0; i < nodes.length; i++) {
             token = nodes[i];
-            if (token.typ == exports.EnumToken.Add) {
+            if (token.typ == exports.EnumToken.Add || token.typ == exports.EnumToken.Plus) {
                 continue;
             }
             if (token.typ == exports.EnumToken.Sub) {
@@ -10682,7 +10688,7 @@
                 r = val[0];
             }
         }
-        if (op == exports.EnumToken.Add || op == exports.EnumToken.Sub) {
+        if (op == exports.EnumToken.Add || op == exports.EnumToken.Plus || op == exports.EnumToken.Sub) {
             // @ts-ignore
             if (l.typ != r.typ) {
                 return defaultReturn;
@@ -11003,14 +11009,14 @@
                 // @ts-ignore
                 tokens.splice(i, 1, ...tokens[i].chi);
             }
-            isOp = opList.includes(tokens[i].typ);
+            isOp = opList.includes(tokens[i].typ === exports.EnumToken.Plus ? exports.EnumToken.Add : tokens[i].typ);
             if (isOp ||
                 // @ts-ignore
                 (tokens[i].typ == exports.EnumToken.LiteralTokenType && ops.includes(tokens[i].val))) {
                 tokens.splice(i - 1, 3, {
                     typ: exports.EnumToken.BinaryExpressionTokenType,
                     op: isOp
-                        ? tokens[i].typ
+                        ? (tokens[i].typ === exports.EnumToken.Plus ? exports.EnumToken.Add : tokens[i].typ)
                         : getArithmeticOperation(tokens[i].val),
                     l: factorToken(tokens[i - 1]),
                     r: factorToken(tokens[i + 1]),
@@ -17404,7 +17410,6 @@
             });
         }
         tokens = trimArray(tokens.slice(i + 1));
-        // console.debug(tokens.reduce((acc, b) => acc + renderToken(b), ""));
         for (i = 0; i < tokens.length; i++) {
             const token = tokens[i];
             if (token.typ == exports.EnumToken.WhitespaceTokenType ||
@@ -17642,7 +17647,12 @@
                                 : tokensfuncDefMap.get(stack.at(-1)?.typ),
                             chi: trimArray(tokens.splice(index + 1, i - index - 1)),
                         });
-                        if (tokens[index].typ === exports.EnumToken.UrlFunctionTokenType) {
+                        if (tokens[index].typ === exports.EnumToken.WildCardFunctionTokenType && equalsIgnoreCase(tokens[index].val, "if")) {
+                            if (tokens[index].chi.at(-1)?.typ === exports.EnumToken.SemiColonTokenType) {
+                                tokens[index].chi.pop();
+                            }
+                        }
+                        else if (tokens[index].typ === exports.EnumToken.UrlFunctionTokenType) {
                             let l = -1;
                             while (++l < tokens[index].chi.length) {
                                 if (tokens[index].chi[l].typ === exports.EnumToken.StringTokenType) {
@@ -18224,7 +18234,7 @@
                 token.typ !== exports.EnumToken.CDOCOMMTokenType) {
                 stack.pop();
             }
-            if (token.typ === exports.EnumToken.LiteralTokenType && "+" === token.val) {
+            if ((token.typ === exports.EnumToken.LiteralTokenType && "+" === token.val)) {
                 Object.assign(token, { typ: exports.EnumToken.NextSiblingCombinatorTokenType });
                 continue;
             }
@@ -18959,8 +18969,10 @@
         let token = null;
         let result = null;
         let isOptional;
-        // console.debug('> ' + syntaxes.reduce((acc, b) => acc + renderSyntax(b), ""));
-        // console.debug('> ' + context.getRemainingTokens().reduce((acc, b) => acc + renderToken(b), ""));
+        // console.debug('[ ');
+        // console.debug(' > ' + syntaxes.reduce((acc, b) => acc + renderSyntax(b), ""));
+        // console.debug(' > ' + context.getRemainingTokens().reduce((acc, b) => acc + renderToken(b), ""));
+        // console.debug('] ');
         // console.debug(JSON.stringify(syntaxes, null, 1));
         // console.debug(new Error('debug'));
         //
@@ -19340,6 +19352,9 @@
                     }
                     else if (token.typ === exports.EnumToken.LiteralTokenType) {
                         success = token.val === syntaxes[i].val.slice(1, -1);
+                    }
+                    else if (token.typ == exports.EnumToken.Plus) {
+                        success = true;
                     }
                     if (success) {
                         context.next();
@@ -20211,7 +20226,6 @@
                     break;
                 }
                 const result = matchSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "calc-sum"), context.slice(), options);
-                // console.debug({result4: result, property, done: result.context.done(), rem: result.context.getRemainingTokens(), tk: context.getRemainingTokens()});
                 success = result.success;
                 if (success) {
                     if (result.context.done()) {
@@ -21082,10 +21096,6 @@
     }
 
     const SymbolsMapTokens = {
-        // 'or': EnumToken.OrTokenType,
-        // 'and': EnumToken.AndTokenType,
-        // 'not': EnumToken.NotTokenType,
-        // 'only': EnumToken.OnlyTokenType,
         "+": exports.EnumToken.Plus,
         "=": exports.EnumToken.DelimTokenType,
         "|": exports.EnumToken.Pipe,
@@ -21177,7 +21187,6 @@
     const hintsEnum = new Set([
         exports.EnumToken.CommaTokenType,
         exports.EnumToken.ImportantTokenType,
-        // EnumToken.WhitespaceTokenType,
         exports.EnumToken.SemiColonTokenType,
         exports.EnumToken.BlockStartTokenType,
         exports.EnumToken.BlockEndTokenType,
@@ -21302,13 +21311,6 @@
             token = hintsEnum.has(hint) ? { typ: hint } : { typ: hint, val };
         }
         else {
-            // if (v == 'currentcolor' || v == 'transparent' /* || v in COLORS_NAMES */) {
-            //     token = <ColorToken>{
-            //         typ: EnumToken.ColorTokenType,
-            //         val: v,
-            //         kin: ColorType.LIT
-            //     };
-            // }
             let slice = val.slice(1);
             if (val.charAt(0) == "@" && isIdent(slice)) {
                 token = {
@@ -21868,7 +21870,7 @@
     }
 
     const notEndingWith = ["(", "["].concat(combinators);
-    const rules$1 = [
+    const rules = [
         exports.EnumToken.AtRuleNodeType,
         exports.EnumToken.RuleNodeType,
         exports.EnumToken.AtRuleTokenType,
@@ -21926,7 +21928,7 @@
                         (feature.accept != null && !feature.accept.has(parent.typ))) {
                         continue;
                     }
-                    if (rules$1.includes(replacement.typ) && !Array.isArray(replacement.tokens)) {
+                    if (rules.includes(replacement.typ) && !Array.isArray(replacement.tokens)) {
                         Object.defineProperty(replacement, "tokens", {
                             ...definedPropertySettings,
                             value: parseString(replacement.typ == exports.EnumToken.RuleNodeType ||
@@ -24656,7 +24658,6 @@
             }
         }
         const result = matchSelectorSyntax(tokens, errors, options, nested === true);
-        // console.debug(JSON.stringify({tokens, result}, null, 1));
         trimArray(tokens);
         if (result.success) {
             for (let i = 0; i < tokens.length; i++) {

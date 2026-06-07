@@ -155,6 +155,7 @@ export const colorsFunc: string[] = [
     "oklch",
     "lch",
     "light-dark",
+    "contrast-color"
 ];
 export const imageFunc: string[] = [
     "linear-gradient",
@@ -451,7 +452,9 @@ export const trimTokenSpace: Set<EnumToken> = new Set([
     EnumToken.Mul,
     EnumToken.Div,
     EnumToken.Sub,
+    EnumToken.ColonTokenType,
     EnumToken.CommaTokenType,
+    EnumToken.SemiColonTokenType,
     EnumToken.DashedIdenTokenType,
     EnumToken.DeclarationNodeType,
     EnumToken.SupportsQueryConditionTokenType,

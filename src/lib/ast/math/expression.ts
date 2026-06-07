@@ -112,7 +112,7 @@ export function evaluate(tokens: Token[]): Token[] {
     for (i = 0; i < nodes.length; i++) {
         token = nodes[i];
 
-        if (token.typ == EnumToken.Add) {
+        if (token.typ == EnumToken.Add || token.typ == EnumToken.Plus) {
             continue;
         }
 
@@ -162,7 +162,7 @@ export function evaluate(tokens: Token[]): Token[] {
  * @param r
  * @param op
  */
-function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Sub | EnumToken.Div | EnumToken.Mul): Token {
+function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Plus | EnumToken.Sub | EnumToken.Div | EnumToken.Mul): Token {
     const defaultReturn: BinaryExpressionToken = <BinaryExpressionToken>{
         typ: EnumToken.BinaryExpressionTokenType,
         op,
@@ -186,7 +186,7 @@ function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Sub | Enum
         }
     }
 
-    if (op == EnumToken.Add || op == EnumToken.Sub) {
+    if (op == EnumToken.Add  ||  op == EnumToken.Plus|| op == EnumToken.Sub) {
         // @ts-ignore
         if (l.typ != r.typ) {
             return defaultReturn;
@@ -587,7 +587,7 @@ export function buildExpression(tokens: Token[]): BinaryExpressionToken {
 
 function getArithmeticOperation(
     op: "+" | "-" | "/" | "*",
-): EnumToken.Mul | EnumToken.Div | EnumToken.Add | EnumToken.Sub {
+): EnumToken.Mul | EnumToken.Div | EnumToken.Add |  EnumToken.Sub {
     if (op == "+") {
         return EnumToken.Add;
     }
@@ -649,7 +649,7 @@ function factor(tokens: Array<Token | BinaryExpressionToken>, ops: Array<"+" | "
             tokens.splice(i, 1, ...tokens[i].chi);
         }
 
-        isOp = opList.includes((tokens[i] as Token).typ);
+        isOp = opList.includes((tokens[i] as Token).typ === EnumToken.Plus ? EnumToken.Add : (tokens[i] as Token).typ);
 
         if (
             isOp ||
@@ -659,7 +659,7 @@ function factor(tokens: Array<Token | BinaryExpressionToken>, ops: Array<"+" | "
             tokens.splice(i - 1, 3, <BinaryExpressionToken>{
                 typ: EnumToken.BinaryExpressionTokenType,
                 op: isOp
-                    ? (tokens[i] as Token).typ
+                    ? ((tokens[i] as Token).typ === EnumToken.Plus ? EnumToken.Add : (tokens[i] as Token).typ)
                     : getArithmeticOperation(<"-" | "+" | "/" | "*">(tokens[i] as LiteralToken).val),
                 l: factorToken(tokens[i - 1]),
                 r: factorToken(tokens[i + 1]),

@@ -1314,5 +1314,24 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 }`));
         });
         
+
+        it('@starting-style  #57', function () {
+            return transform(`
+
+@media (width >= calc(1024px + 50px)) {
+  h1 {
+    color: Highlight;
+  }
+}
+  `, {
+                beautify: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`@media (width>=1074px) {
+ h1 {
+  color: Highlight
+ }
+}`));
+        });
+        
     });
     }

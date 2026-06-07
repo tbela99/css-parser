@@ -391,7 +391,7 @@ function matchSelectorSyntax(stream, errors, options, nested) {
             token.typ !== EnumToken.CDOCOMMTokenType) {
             stack.pop();
         }
-        if (token.typ === EnumToken.LiteralTokenType && "+" === token.val) {
+        if ((token.typ === EnumToken.LiteralTokenType && "+" === token.val)) {
             Object.assign(token, { typ: EnumToken.NextSiblingCombinatorTokenType });
             continue;
         }
@@ -1126,8 +1126,10 @@ function matchSyntax(syntaxes, context, options) {
     let token = null;
     let result = null;
     let isOptional;
-    // console.debug('> ' + syntaxes.reduce((acc, b) => acc + renderSyntax(b), ""));
-    // console.debug('> ' + context.getRemainingTokens().reduce((acc, b) => acc + renderToken(b), ""));
+    // console.debug('[ ');
+    // console.debug(' > ' + syntaxes.reduce((acc, b) => acc + renderSyntax(b), ""));
+    // console.debug(' > ' + context.getRemainingTokens().reduce((acc, b) => acc + renderToken(b), ""));
+    // console.debug('] ');
     // console.debug(JSON.stringify(syntaxes, null, 1));
     // console.debug(new Error('debug'));
     //
@@ -1507,6 +1509,9 @@ function matchSyntax(syntaxes, context, options) {
                 }
                 else if (token.typ === EnumToken.LiteralTokenType) {
                     success = token.val === syntaxes[i].val.slice(1, -1);
+                }
+                else if (token.typ == EnumToken.Plus) {
+                    success = true;
                 }
                 if (success) {
                     context.next();
@@ -2378,7 +2383,6 @@ function matchProperty(property, context, options) {
                 break;
             }
             const result = matchSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "calc-sum"), context.slice(), options);
-            // console.debug({result4: result, property, done: result.context.done(), rem: result.context.getRemainingTokens(), tk: context.getRemainingTokens()});
             success = result.success;
             if (success) {
                 if (result.context.done()) {

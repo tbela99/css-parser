@@ -116,7 +116,6 @@ function parseDeclaration(tokens, parent, options, errors) {
         });
     }
     tokens = trimArray(tokens.slice(i + 1));
-    // console.debug(tokens.reduce((acc, b) => acc + renderToken(b), ""));
     for (i = 0; i < tokens.length; i++) {
         const token = tokens[i];
         if (token.typ == EnumToken.WhitespaceTokenType ||
@@ -354,7 +353,12 @@ function parseDeclaration(tokens, parent, options, errors) {
                             : tokensfuncDefMap.get(stack.at(-1)?.typ),
                         chi: trimArray(tokens.splice(index + 1, i - index - 1)),
                     });
-                    if (tokens[index].typ === EnumToken.UrlFunctionTokenType) {
+                    if (tokens[index].typ === EnumToken.WildCardFunctionTokenType && equalsIgnoreCase(tokens[index].val, "if")) {
+                        if (tokens[index].chi.at(-1)?.typ === EnumToken.SemiColonTokenType) {
+                            tokens[index].chi.pop();
+                        }
+                    }
+                    else if (tokens[index].typ === EnumToken.UrlFunctionTokenType) {
                         let l = -1;
                         while (++l < tokens[index].chi.length) {
                             if (tokens[index].chi[l].typ === EnumToken.StringTokenType) {

@@ -148,7 +148,6 @@ function parseSelector(tokens, context, options, errors) {
         }
     }
     const result = matchSelectorSyntax(tokens, errors, options, nested === true);
-    // console.debug(JSON.stringify({tokens, result}, null, 1));
     trimArray(tokens);
     if (result.success) {
         for (let i = 0; i < tokens.length; i++) {

@@ -3,10 +3,6 @@ import { definedPropertySettings, wildCardFuncs, whenElseFunc, transformFunction
 import { isDigit, isPseudo, isIdent, isNumber, isWhiteSpace, isNewLine, isHexColor, isHash, isPercentage, parseDimension } from '../syntax/syntax.js';
 
 const SymbolsMapTokens = {
-    // 'or': EnumToken.OrTokenType,
-    // 'and': EnumToken.AndTokenType,
-    // 'not': EnumToken.NotTokenType,
-    // 'only': EnumToken.OnlyTokenType,
     "+": EnumToken.Plus,
     "=": EnumToken.DelimTokenType,
     "|": EnumToken.Pipe,
@@ -98,7 +94,6 @@ const SymbolsMapTokens = {
 const hintsEnum = new Set([
     EnumToken.CommaTokenType,
     EnumToken.ImportantTokenType,
-    // EnumToken.WhitespaceTokenType,
     EnumToken.SemiColonTokenType,
     EnumToken.BlockStartTokenType,
     EnumToken.BlockEndTokenType,
@@ -223,13 +218,6 @@ function getTokenType(val, hint) {
         token = hintsEnum.has(hint) ? { typ: hint } : { typ: hint, val };
     }
     else {
-        // if (v == 'currentcolor' || v == 'transparent' /* || v in COLORS_NAMES */) {
-        //     token = <ColorToken>{
-        //         typ: EnumToken.ColorTokenType,
-        //         val: v,
-        //         kin: ColorType.LIT
-        //     };
-        // }
         let slice = val.slice(1);
         if (val.charAt(0) == "@" && isIdent(slice)) {
             token = {

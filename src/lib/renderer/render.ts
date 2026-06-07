@@ -1292,13 +1292,11 @@ export function filterValues(values: Token[]): Token[] {
         if (values[i].typ == EnumToken.ImportantTokenType && values[i - 1]?.typ === EnumToken.WhitespaceTokenType) {
             values.splice(i - 1, 1);
         } else if (
-
             tokensfuncSet.has(values[i].typ) &&
             "chi" in values[i] &&
             (values[i] as FunctionToken).typ != EnumToken.WildCardFunctionTokenType &&
             values[i + 1]?.typ == EnumToken.WhitespaceTokenType
         ) {
-            
             values.splice(i + 1, 1);
         }
     }

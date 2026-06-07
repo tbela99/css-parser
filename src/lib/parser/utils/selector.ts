@@ -225,8 +225,6 @@ export function parseSelector(
 
     const result = matchSelectorSyntax(tokens, errors, options, nested === true);
 
-    // console.debug(JSON.stringify({tokens, result}, null, 1));
-
     trimArray(tokens);
 
     if (result.success) {

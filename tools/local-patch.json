@@ -213,7 +213,7 @@
       "syntax": "<position> | <position-three>"
     },
     "if()": {
-      "syntax": "if( [ <if-args-branch> ; ]* <if-args-branch> ;? )"
+      "syntax": "if( [ <if-args-branch> ;? ]*  )"
     },
     "if-args-branch": {
       "syntax": " <declaration-value> : <declaration-value>?"
@@ -244,6 +244,9 @@
     },
     "color()": {
       "syntax": "color( [from <color>]? <colorspace-params> [ / [ <alpha-value> | none ] ]? )"
+    },
+    "contrast-color()": {
+      "syntax": "contrast-color(<color> )"
     },
     "env()": {
       "syntax": "env( <custom-ident> <integer [0,∞]>* , <declaration-value>? )"

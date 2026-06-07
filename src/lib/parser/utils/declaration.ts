@@ -320,7 +320,6 @@ export function parseDeclaration(
 
     tokens = trimArray(tokens.slice(i + 1));
 
-            // console.debug(tokens.reduce((acc, b) => acc + renderToken(b), ""));
 
     for (i = 0; i < tokens.length; i++) {
         const token = tokens[i];
@@ -593,32 +592,30 @@ export function parseDeclaration(
                 break;
 
             case EnumToken.EndParensTokenType:
+                if (stack.length == 0) {
+                    errors.push({
+                        action: "drop",
+                        message: "unbalanced parentheses",
+                        node: token,
+                        location: token.loc,
+                    });
 
-            if (stack.length == 0) {
-                errors.push({
-                    action: "drop",
-                    message: "unbalanced parentheses",
-                    node: token,
-                    location: token.loc,
-                });
-
-                return Object.defineProperty(
-                    Object.assign(name, {
-                        typ: EnumToken.InvalidDeclarationNodeType,
-                        nam: name.val,
-                        val: tokens,
-                    }),
-                    "loc",
-                    {
-                        ...definedPropertySettings,
-                        value: {
-                            ...name.loc,
-                            end: tokens[tokens.length - 1]?.loc!.end ?? name.loc!.end,
+                    return Object.defineProperty(
+                        Object.assign(name, {
+                            typ: EnumToken.InvalidDeclarationNodeType,
+                            nam: name.val,
+                            val: tokens,
+                        }),
+                        "loc",
+                        {
+                            ...definedPropertySettings,
+                            value: {
+                                ...name.loc,
+                                end: tokens[tokens.length - 1]?.loc!.end ?? name.loc!.end,
+                            },
                         },
-                    },
-                ) as AstInvalidDeclaration;
-            }
-
+                    ) as AstInvalidDeclaration;
+                }
 
                 if (stack.at(-1)?.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(stack.at(-1)?.typ)) {
                     index = tokens.indexOf(stack.at(-1)!);
@@ -633,7 +630,14 @@ export function parseDeclaration(
                         chi: trimArray(tokens.splice(index + 1, i - index - 1)),
                     });
 
-                    if (tokens[index].typ === EnumToken.UrlFunctionTokenType) {
+                    if (tokens[index].typ === EnumToken.WildCardFunctionTokenType && equalsIgnoreCase((tokens[index] as FunctionToken).val, "if")) {
+
+                        if ((tokens[index] as FunctionToken).chi.at(-1)?.typ === EnumToken.SemiColonTokenType   ) {
+                            
+                            (tokens[index] as FunctionToken).chi.pop();
+                        }
+                    }
+                    else if (tokens[index].typ === EnumToken.UrlFunctionTokenType) {
                         let l: number = -1;
 
                         while (++l < (tokens[index] as FunctionToken).chi.length) {

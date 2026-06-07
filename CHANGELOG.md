@@ -5,11 +5,11 @@
 - [x] rename standard declaration names : color-adjust => print-color-adjust
 - [x] fix parsing bugs
 - [ ] support alpha() color function https://drafts.csswg.org/css-color-5/#funcdef-alpha
-- [ ] support contrast-color() https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/contrast-color
+- [x] support contrast-color() https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/contrast-color
 - [x] custom color space in color()
     - [x] relative color syntax
     - [x] color syntax
-- [ ] support if() css function https://drafts.csswg.org/css-values-5/#if-notation
+- [x] support if() css function https://drafts.csswg.org/css-values-5/#if-notation
 - [x] validate media queries
 - [x] automatically generate media query range
 - [x] rewrite parsing and validation
@@ -45,7 +45,7 @@
 - [x] validate media queries
 - [x] automatically generate range media query
 - [x] handle calc() in media features
-- [ ] add at-rule() and named-feature() to @support-condition syntax https://drafts.csswg.org/css-conditional-5/#changes-from-L4
+- [x] add at-rule() and named-feature() to @support-condition syntax https://drafts.csswg.org/css-conditional-5/#changes-from-L4
 
 ## v1.4.2
 

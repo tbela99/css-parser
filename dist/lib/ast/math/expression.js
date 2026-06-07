@@ -70,7 +70,7 @@ function evaluate(tokens) {
     let i;
     for (i = 0; i < nodes.length; i++) {
         token = nodes[i];
-        if (token.typ == EnumToken.Add) {
+        if (token.typ == EnumToken.Add || token.typ == EnumToken.Plus) {
             continue;
         }
         if (token.typ == EnumToken.Sub) {
@@ -129,7 +129,7 @@ function doEvaluate(l, r, op) {
             r = val[0];
         }
     }
-    if (op == EnumToken.Add || op == EnumToken.Sub) {
+    if (op == EnumToken.Add || op == EnumToken.Plus || op == EnumToken.Sub) {
         // @ts-ignore
         if (l.typ != r.typ) {
             return defaultReturn;
@@ -450,14 +450,14 @@ function factor(tokens, ops) {
             // @ts-ignore
             tokens.splice(i, 1, ...tokens[i].chi);
         }
-        isOp = opList.includes(tokens[i].typ);
+        isOp = opList.includes(tokens[i].typ === EnumToken.Plus ? EnumToken.Add : tokens[i].typ);
         if (isOp ||
             // @ts-ignore
             (tokens[i].typ == EnumToken.LiteralTokenType && ops.includes(tokens[i].val))) {
             tokens.splice(i - 1, 3, {
                 typ: EnumToken.BinaryExpressionTokenType,
                 op: isOp
-                    ? tokens[i].typ
+                    ? (tokens[i].typ === EnumToken.Plus ? EnumToken.Add : tokens[i].typ)
                     : getArithmeticOperation(tokens[i].val),
                 l: factorToken(tokens[i - 1]),
                 r: factorToken(tokens[i + 1]),

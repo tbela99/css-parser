@@ -3844,7 +3844,7 @@ var syntaxes = {
 		syntax: " alpha([from <color>] [ / [<alpha-value> | none] ]? )"
 	},
 	"if()": {
-		syntax: "if( [ <if-args-branch> ; ]* <if-args-branch> ;? )"
+		syntax: "if( [ <if-args-branch> ;? ]*  )"
 	},
 	"if-args-branch": {
 		syntax: " <declaration-value> : <declaration-value>?"
@@ -3869,6 +3869,9 @@ var syntaxes = {
 	},
 	"composes-selector": {
 		syntax: "<ident>+ [from [global&&<string>]]?"
+	},
+	"contrast-color()": {
+		syntax: "contrast-color(<color> )"
 	},
 	"font-feature-custom-ident": {
 		syntax: "<integer>"

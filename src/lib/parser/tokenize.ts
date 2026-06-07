@@ -45,14 +45,8 @@ import {
     isWhiteSpace,
     parseDimension,
 } from "../syntax/syntax.ts";
-import { getSyntaxConfig } from "../validation/config.ts";
 
-const syntaxDefinitions = getSyntaxConfig();
 export const SymbolsMapTokens: Record<string, EnumToken> = {
-    // 'or': EnumToken.OrTokenType,
-    // 'and': EnumToken.AndTokenType,
-    // 'not': EnumToken.NotTokenType,
-    // 'only': EnumToken.OnlyTokenType,
     "+": EnumToken.Plus,
     "=": EnumToken.DelimTokenType,
     "|": EnumToken.Pipe,
@@ -145,7 +139,6 @@ export const SymbolsMapTokens: Record<string, EnumToken> = {
 export const hintsEnum = new Set([
     EnumToken.CommaTokenType,
     EnumToken.ImportantTokenType,
-    // EnumToken.WhitespaceTokenType,
     EnumToken.SemiColonTokenType,
     EnumToken.BlockStartTokenType,
     EnumToken.BlockEndTokenType,
@@ -310,13 +303,6 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
     if (hint != null) {
         token = hintsEnum.has(hint) ? ({ typ: hint } as Token) : ({ typ: hint, val } as Token);
     } else {
-        // if (v == 'currentcolor' || v == 'transparent' /* || v in COLORS_NAMES */) {
-        //     token = <ColorToken>{
-        //         typ: EnumToken.ColorTokenType,
-        //         val: v,
-        //         kin: ColorType.LIT
-        //     };
-        // }
 
         let slice: string = val.slice(1);
 
