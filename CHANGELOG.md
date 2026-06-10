@@ -7,38 +7,38 @@
 - [ ] support alpha() color function https://drafts.csswg.org/css-color-5/#funcdef-alpha
 - [x] support contrast-color() https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/contrast-color
 - [x] custom color space in color()
-    - [x] relative color syntax
-    - [x] color syntax
+  - [x] relative color syntax
+  - [x] color syntax
 - [x] support if() css function https://drafts.csswg.org/css-values-5/#if-notation
+    - [ ] legacy syntax for if() function
 - [x] validate media queries
 - [x] automatically generate media query range
 - [x] rewrite parsing and validation
-    - [x] selector
-    - [x] declaration
-    - [ ] at-rules
-        - [x] @charset
-        - [x] @color-profile
-        - [x] @container
-        - [x] @counter-style
-        - [x] @custom-media
-        - [x] @document
-        - [x] @font-face
-        - [x] @font-feature-values
-        - [x] @font-palette-values
-        - [ ] @function [Experimental](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@function)
-        - [x] @import
-        - [x] @keyframes
-        - [x] @layer
-        - [x] @media 
-        - [x] @namespace
-        - [x] @page
-        - [x] @position-try
-        - [x] @property
-        - [x] @scope
-        - [x] @starting-style
-        - [x] @supports
-        - [x] @view-transition
-
+  - [x] selector
+  - [x] declaration
+  - [ ] at-rules
+    - [x] @charset
+    - [x] @color-profile
+    - [x] @container
+    - [x] @counter-style
+    - [x] @custom-media
+    - [x] @document
+    - [x] @font-face
+    - [x] @font-feature-values
+    - [x] @font-palette-values
+    - [ ] @function [Experimental](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@function)
+    - [x] @import
+    - [x] @keyframes
+    - [x] @layer
+    - [x] @media 
+    - [x] @namespace
+    - [x] @page
+    - [x] @position-try
+    - [x] @property
+    - [x] @scope
+    - [x] @starting-style
+    - [x] @supports
+    - [x] @view-transition
 - [x] introduce rawToken type to capture unparseable tokens
 - [x] Add a new css module scope 'shortest' to produce short scoped names
 - [ ] fix performance issues - prevent garbage collection

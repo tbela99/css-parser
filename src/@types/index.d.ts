@@ -357,6 +357,12 @@ export declare interface ParserOptions
      * expand nested rules
      */
     expandNestingRules?: boolean;
+
+    /**
+     * experimental, expand if() function
+     */
+    expandIfSyntax?: boolean;
+
     /**
      * url and file loader
      * @param url

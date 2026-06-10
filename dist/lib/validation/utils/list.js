@@ -10,9 +10,12 @@ function stripCommaToken(tokenList) {
     }
     return result;
 }
-function splitTokenList(tokenList, split = [EnumToken.CommaTokenType]) {
+function splitTokenList(tokenList, split = [EnumToken.CommaTokenType], includeSplitToken = false) {
     return tokenList.reduce((acc, curr) => {
         if (split.includes(curr.typ)) {
+            if (includeSplitToken && Array.isArray(acc[acc.length - 1])) {
+                acc[acc.length - 1].push(curr);
+            }
             acc.push([]);
         }
         else {

@@ -644,6 +644,18 @@ export declare interface MediaQueryConditionToken extends BaseToken {
     r: Token[];
 }
 
+export declare interface IfConditionToken extends BaseToken {
+    typ: EnumToken.IfConditionTokenType;
+    l: Token[];
+    r: Token[];
+}
+
+export declare interface IfElseConditionToken extends BaseToken {
+    typ: EnumToken.IfElseConditionTokenType;
+    l: IfConditionToken;
+    r: IfConditionToken;
+}
+
 export declare interface ContainerStyleRangeToken extends BaseToken {
     typ: EnumToken.ContainerStyleRangeTokenType;
     l: Token[];
@@ -877,6 +889,8 @@ export declare type Token =
     | MediaQueryConditionToken
     | MediaFeatureToken
     | MediaQueryUnaryFeatureToken
+    | IfConditionToken
+    | IfElseConditionToken
     | NotToken
     | MediaFeatureOnlyToken
     | AndToken

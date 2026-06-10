@@ -602,7 +602,7 @@ export enum EnumToken {
      * custom function token type '--function-name('
      */
     CustomFunctionTokenDefType,
-    
+
     /**
      * custom function token type
      */
@@ -617,6 +617,16 @@ export enum EnumToken {
      * function such as 'var()', 'env()', 'if()'
      */
     WildCardFunctionTokenType,
+
+    /**
+     * if condition token
+     */
+    IfConditionTokenType,
+
+    /**
+     * if-Else condition token
+     */
+    IfElseConditionTokenType,
 
     /* aliases */
 

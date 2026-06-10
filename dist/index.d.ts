@@ -576,6 +576,14 @@ declare enum EnumToken {
      */
     WildCardFunctionTokenType = 137,
     /**
+     * if condition token
+     */
+    IfConditionTokenType = 138,
+    /**
+     * if-Else condition token
+     */
+    IfElseConditionTokenType = 139,
+    /**
      * alias for time token type
      */
     Time = 25,
@@ -1509,6 +1517,18 @@ export declare interface MediaQueryConditionToken extends BaseToken {
     r: Token$1[];
 }
 
+export declare interface IfConditionToken extends BaseToken {
+    typ: EnumToken.IfConditionTokenType;
+    l: Token$1[];
+    r: Token$1[];
+}
+
+export declare interface IfElseConditionToken extends BaseToken {
+    typ: EnumToken.IfElseConditionTokenType;
+    l: IfConditionToken;
+    r: IfConditionToken;
+}
+
 export declare interface ContainerStyleRangeToken extends BaseToken {
     typ: EnumToken.ContainerStyleRangeTokenType;
     l: Token$1[];
@@ -1742,6 +1762,8 @@ export declare type Token$1 =
     | MediaQueryConditionToken
     | MediaFeatureToken
     | MediaQueryUnaryFeatureToken
+    | IfConditionToken
+    | IfElseConditionToken
     | NotToken
     | MediaFeatureOnlyToken
     | AndToken
@@ -1985,7 +2007,7 @@ export declare interface AstAtRule extends BaseToken {
     typ: EnumToken.AtRuleNodeType;
     nam: string;
     val: string;
-    chi?: Array<AstDeclaration | AstInvalidDeclaration | AstComment> | Array<AstRule | AstComment>;
+    chi?: Array<AstNode$1>;
 }
 
 /**
@@ -2209,7 +2231,7 @@ declare function walkValues(values: Token$1[], root?: AstNode$1 | Token$1 | null
 }, reverse?: boolean): Generator<WalkAttributesResult>;
 
 export declare type GenericVisitorResult<T> = T | T[] | Promise<T> | Promise<T[]> | null | Promise<null>;
-export declare type GenericVisitorHandler<T> = ((node: T, parent?: AstNode | Token, root?: AstNode | Token) => GenericVisitorResult<T>);
+export declare type GenericVisitorHandler<T> = ((node: T, parent?: AstNode | Token, root?: AstNode | Token, parents?: Generator<AstNode | Token>) => GenericVisitorResult<T>);
 export declare type GenericVisitorAstNodeHandlerMap<T> =
     Record<string, GenericVisitorHandler<T>>
     | GenericVisitorHandler<T>
@@ -3254,12 +3276,18 @@ export declare type WalkerFilter = (node: AstNode$1) => WalkerOption;
  * - {@link AstNode}:
  * - {@link Token}:
  */
-export declare type WalkerValueFilter = (node: AstNode$1 | Token$1, parent?: AstNode$1 | Token$1 | AstNode$1[] | Token$1[] | null, event?: WalkerEvent, parents?: AstNode$1[]) => WalkerOption | null;
+export declare type WalkerValueFilter = (
+    node: AstNode$1 | Token$1,
+    parent?: AstNode$1 | Token$1 | AstNode$1[] | Token$1[] | null,
+    event?: WalkerEvent,
+    parents?: Generator<Token$1>,
+) => WalkerOption | null;
 
 export declare interface WalkResult {
     node: AstNode$1;
     parent?: AstRuleList;
     root?: AstNode$1;
+    parents: Generator<AstNode$1>;
 }
 
 export declare interface WalkAttributesResult {
@@ -3268,7 +3296,7 @@ export declare interface WalkAttributesResult {
     nextValue: Token$1 | null;
     root?: AstNode$1 | Token$1 | null;
     parent: AstNode$1 | Token$1 | null;
-    parents: Token$1[];
+    parents: Generator<Token$1>;
 }
 
 /**
@@ -3607,6 +3635,12 @@ export declare interface ParserOptions
      * expand nested rules
      */
     expandNestingRules?: boolean;
+
+    /**
+     * experimental, expand if() function
+     */
+    expandIfSyntax?: boolean;
+
     /**
      * url and file loader
      * @param url
@@ -4484,4 +4518,4 @@ declare function transformFile(file: string, options?: TransformOptions, asStrea
 declare function transform(css: string | ReadableStream<Uint8Array>, options?: TransformOptions): Promise<TransformResult>;
 
 export { ColorType$1 as ColorType, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType$1 as ResponseType, SourceMap, ValidationLevel, WalkerEvent, WalkerOptionEnum, convertColor, dirname, expand, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, render, renderToken, resolve, transform, transformFile, walk, walkValues };
-export type { AddToken, AndToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyFrameRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstRule, AstRuleList, AstStyleSheet, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, Context, CssVariableImportTokenType$1 as CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken$1 as CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorHandler, GenericVisitorResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, ImportantToken, IncludeMatchToken, InvalidAttrToken, InvalidClassSelectorToken, InvalidMediaQueryToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Location, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleOptions, MulToken, NameSpaceAttributeToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseResult, ParseResultStats, ParseTokenOptions, ParserOptions, PercentageToken, Position$1 as Position, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenizeResult, TransformOptions, TransformResult, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, VariableScopeInfo, VisitorNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerValueFilter, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken };
+export type { AddToken, AndToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyFrameRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstRule, AstRuleList, AstStyleSheet, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, Context, CssVariableImportTokenType$1 as CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken$1 as CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorHandler, GenericVisitorResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InvalidAttrToken, InvalidClassSelectorToken, InvalidMediaQueryToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Location, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleOptions, MulToken, NameSpaceAttributeToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseResult, ParseResultStats, ParseTokenOptions, ParserOptions, PercentageToken, Position$1 as Position, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenizeResult, TransformOptions, TransformResult, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, VariableScopeInfo, VisitorNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerValueFilter, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken };

@@ -581,6 +581,14 @@ var EnumToken;
      * function such as 'var()', 'env()', 'if()'
      */
     EnumToken[EnumToken["WildCardFunctionTokenType"] = 137] = "WildCardFunctionTokenType";
+    /**
+     * if condition token
+     */
+    EnumToken[EnumToken["IfConditionTokenType"] = 138] = "IfConditionTokenType";
+    /**
+     * if-Else condition token
+     */
+    EnumToken[EnumToken["IfElseConditionTokenType"] = 139] = "IfElseConditionTokenType";
     /* aliases */
     /**
      * alias for time token type

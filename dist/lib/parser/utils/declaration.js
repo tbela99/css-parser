@@ -7,6 +7,7 @@ import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from '../../validation
 import { walkValues } from '../../ast/walk.js';
 import { equalsIgnoreCase } from './text.js';
 import { buildExpression } from '../../ast/math/expression.js';
+import { splitTokenList } from '../../validation/utils/list.js';
 
 function parseGridTemplate(template) {
     let result = "";
@@ -157,7 +158,6 @@ function parseDeclaration(tokens, parent, options, errors) {
                 });
                 tokens[k].loc.end = tokens[j].loc.end;
                 tokens.splice(k + 1, j - k - 1);
-                // console.debug(tokens[k]);
             }
         }
     }
@@ -353,10 +353,49 @@ function parseDeclaration(tokens, parent, options, errors) {
                             : tokensfuncDefMap.get(stack.at(-1)?.typ),
                         chi: trimArray(tokens.splice(index + 1, i - index - 1)),
                     });
-                    if (tokens[index].typ === EnumToken.WildCardFunctionTokenType && equalsIgnoreCase(tokens[index].val, "if")) {
+                    if (tokens[index].typ === EnumToken.WildCardFunctionTokenType &&
+                        equalsIgnoreCase(tokens[index].val, "if")) {
                         if (tokens[index].chi.at(-1)?.typ === EnumToken.SemiColonTokenType) {
                             tokens[index].chi.pop();
                         }
+                        let foundElse = false;
+                        tokens[index].chi = splitTokenList(tokens[index].chi, [EnumToken.SemiColonTokenType], true).reduce((acc, curr) => {
+                            if (foundElse) {
+                                // else already found
+                                // ignore everything after else
+                                // if(media(any-pointer: fine): 30px; else: 44px; else 50px); -> if(media(any-pointer: fine): 30px; else: 44px;);
+                                return acc;
+                            }
+                            let index = -1;
+                            while (++index < curr.length) {
+                                if (curr[index].typ == EnumToken.IdenTokenType &&
+                                    equalsIgnoreCase("else", curr[index].val)) {
+                                    foundElse = true;
+                                }
+                                if (curr[index].typ === EnumToken.ColonTokenType) {
+                                    break;
+                                }
+                            }
+                            if (foundElse && acc.length > 0) {
+                                acc[acc.length - 1] = {
+                                    typ: EnumToken.IfElseConditionTokenType,
+                                    l: acc[acc.length - 1],
+                                    r: {
+                                        typ: EnumToken.IfConditionTokenType,
+                                        l: trimArray(curr.slice(0, index)),
+                                        r: trimArray(curr.slice(index + 1)),
+                                    },
+                                };
+                            }
+                            else {
+                                acc.push({
+                                    typ: EnumToken.IfConditionTokenType,
+                                    l: trimArray(curr.slice(0, index)),
+                                    r: trimArray(curr.slice(index + 1)),
+                                });
+                            }
+                            return acc;
+                        }, []);
                     }
                     else if (tokens[index].typ === EnumToken.UrlFunctionTokenType) {
                         let l = -1;

@@ -20,10 +20,16 @@ export function stripCommaToken(tokenList: Token[]): Token[] | null {
     return result;
 }
 
-export function splitTokenList(tokenList: Token[], split: EnumToken[] = [EnumToken.CommaTokenType]): Token[][] {
+export function splitTokenList(tokenList: Token[], split: EnumToken[] = [EnumToken.CommaTokenType], includeSplitToken: boolean = false): Token[][] {
     return tokenList.reduce(
         (acc: Token[][], curr: Token): Token[][] => {
             if (split.includes(curr.typ)) {
+
+                if (includeSplitToken && Array.isArray(acc[acc.length - 1])) {
+
+                    acc[acc.length - 1].push(curr);
+                }
+
                 acc.push([]);
             } else {
                 acc[acc.length - 1].push(curr);

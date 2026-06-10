@@ -51,6 +51,11 @@ export function replaceToken(
     value: Token,
     replacement: Token | Token[],
 ) {
+    if (replacement == null) {
+
+        throw new TypeError(`replacement is null`);;
+    }
+
     for (const node of Array.isArray(replacement) ? replacement : [replacement]) {
         if ("parent" in value && value.parent != node.parent) {
             Object.defineProperty(node, "parent", {

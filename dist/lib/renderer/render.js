@@ -765,6 +765,13 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 renderToken(token.op, options, cache, reducer, errors) +
                 " " +
                 token.r.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer, errors), ""));
+        case EnumToken.IfConditionTokenType:
+            return token.l.length == 0 ? '' : (token.l.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer, errors), "") +
+                ':' +
+                token.r.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer, errors), ""));
+        case EnumToken.IfElseConditionTokenType:
+            return (renderToken(token.l) +
+                renderToken(token.r));
         case EnumToken.DeclarationNodeType:
             return (token.nam +
                 ":" +

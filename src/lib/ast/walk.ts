@@ -150,7 +150,19 @@ export function* walk(node: AstNode, filter?: WalkerFilter | null, reverse?: boo
 
         if (!isNumeric || ((option as number) & WalkerOptionEnum.Children) === 0) {
             // @ts-ignore
-            yield { node, parent: <AstRuleList>map.get(node), root };
+            yield {
+                node,
+                parent: <AstRuleList>map.get(node),
+                root,
+                parents: function* () {
+                    let parent = map.get(node);
+
+                    while (parent != null) {
+                        yield parent;
+                        parent = map.get(parent);
+                    }
+                },
+            };
         }
 
         if ("chi" in node && (!isNumeric || ((option as number) & WalkerOptionEnum.IgnoreChildren) === 0)) {
@@ -221,7 +233,7 @@ export function* walkValues(
               fn?: WalkerValueFilter;
               type?: EnumToken | EnumToken[] | ((token: Token) => boolean);
           },
-    reverse?: boolean
+    reverse?: boolean,
 ): Generator<WalkAttributesResult> {
     const stack: Token[] = values.slice();
     const map: Map<Token, FunctionToken | ParensToken | BinaryExpressionToken> = new Map();
@@ -237,30 +249,32 @@ export function* walkValues(
     } else if (filter == null) {
         filter = {
             event: WalkerEvent.Enter,
-        };
+        }
     }
 
     let isNumeric: boolean = false;
-    const parents: Token[] = [];
+    let value: Token;
+    let option: WalkerOption;
+    let node: Token | null;
+    // const parents: Token[] = [];
     const eventType = filter.event ?? WalkerEvent.Enter;
 
     while (stack.length > 0) {
-        let value: Token = reverse ? <Token>stack.pop() : <Token>stack.shift();
-        let option: WalkerOption = null;
-        let node: Token | null = map.get(value) ?? null;
+        value = reverse ? <Token>stack.pop() : <Token>stack.shift();
+        option = null;
+        node = map.get(value) ?? null;
 
         if (used.has(value)) {
             continue;
         }
 
         used.add(value);
+        // parents.length = 0;
 
-        parents.length = 0;
-
-        while (node != null) {
-            parents.push(node);
-            node = map.get(node) ?? null;
-        }
+        // while (node != null) {
+        //     parents.push(node);
+        //     node = map.get(node) ?? null;
+        // }
 
         if (filter.fn != null && eventType & WalkerEvent.Enter) {
             const isValid: boolean =
@@ -274,8 +288,20 @@ export function* walkValues(
                     value,
                     <FunctionToken | ParensToken>map.get(value) ?? root,
                     WalkerEvent.Enter,
-                    parents
+                    // @ts-expect-error
+                    function* () {
+                        // @ts-expect-error
+                        let parent = map.get(node);
+
+                        console.debug({ parent });
+
+                        while (parent != null) {
+                            yield parent;
+                            parent = map.get(parent);
+                        }
+                    },
                 );
+
                 isNumeric = typeof option == "number";
 
                 if (isNumeric && (option as number) & WalkerOptionEnum.Stop) {
@@ -306,7 +332,23 @@ export function* walkValues(
             nextValue: <Token>stack[0] ?? null,
             // @ts-ignore
             root: root ?? null,
-            parents,
+            // @ts-expect-error
+            parents: function* () {
+                // @ts-expect-error
+                let result = map.get(node) ?? root;
+                let next;
+
+                do {
+                    yield result;
+                    next = map.get(result) ?? root;
+
+                    if (next == result) {
+                        break;
+                    }
+
+                    result = next;
+                } while (result != null);
+            },
         };
 
         if (!isNumeric || ((option as number) & WalkerOptionEnum.IgnoreChildren) === 0) {
@@ -329,6 +371,7 @@ export function* walkValues(
                 }
 
                 if ("op" in value && typeof value.op == "object") {
+                    // @ts-expect-error
                     values.push(value.op);
                     // @ts-ignore
                     map.set(value.op, value);
@@ -364,7 +407,7 @@ export function* walkValues(
                 (typeof filter.type == "function" && filter.type(value));
 
             if (isValid) {
-                option = filter.fn(value, <FunctionToken | ParensToken>map.get(value), WalkerEvent.Leave, parents);
+                option = filter.fn(value, <FunctionToken | ParensToken>map.get(value), WalkerEvent.Leave);
 
                 // @ts-ignore
                 if (option != null && ("typ" in option || Array.isArray(option))) {

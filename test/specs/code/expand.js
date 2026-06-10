@@ -375,8 +375,6 @@ html {
 }`))
         });
 
-
-
         it('flatten with at-rule #17', function () {
             const nesting1 = `
 .foo {
@@ -407,5 +405,75 @@ html {
  }
 }`));
         });
+
+        it('if(media()) #18', function () {
+            const nesting1 = `
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+`;
+            return transform(nesting1, {
+                beautify: true, expandIfSyntax: true
+            }).then((result) => expect(result.code).equals(`button {
+ aspect-ratio: 1;
+ width: 44px;
+ @media (any-pointer:fine) {
+  width: 30px
+ }
+}`));
+        });
+        
+        it('if(media()) #19', function () {
+            const nesting1 = `
+
+div-1 {
+  background-image: if(
+    else: none;
+  );
+}
+div-2 {
+  background-image: if(
+  style(--scheme: ice): linear-gradient(#caf0f8, white, #caf0f8) ;
+  else: none ;
+);
+
+div-3 {
+  background-image: if(
+    style(--scheme: ice): linear-gradient(#caf0f8, white, #caf0f8);
+    style(--scheme: fire): linear-gradient(#ffc971, white, #ffc971);
+    else: none;
+  );
+}
+div-4 {
+  background-image: if(
+    
+  );
+}
+`;
+            return transform(nesting1, {
+                beautify: true, expandIfSyntax: true
+            }).then((result) => expect(result.code).equals(`div-1,div-2 {
+ background-image: none
+}
+div-2 {
+ @container style(--scheme:ice) {
+  background-image: linear-gradient(#caf0f8,#fff,#caf0f8)
+ }
+ div-3 {
+  background-image: none;
+  @container style(--scheme:ice) {
+   background-image: linear-gradient(#caf0f8,#fff,#caf0f8)
+  }
+  @container style(--scheme:fire) {
+   background-image: linear-gradient(#ffc971,#fff,#ffc971)
+  }
+ }
+ div-4 {
+  background-image: if()
+ }
+}`));
+        });
+        
     });
 }

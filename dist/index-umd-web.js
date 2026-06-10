@@ -587,6 +587,14 @@
          * function such as 'var()', 'env()', 'if()'
          */
         EnumToken[EnumToken["WildCardFunctionTokenType"] = 137] = "WildCardFunctionTokenType";
+        /**
+         * if condition token
+         */
+        EnumToken[EnumToken["IfConditionTokenType"] = 138] = "IfConditionTokenType";
+        /**
+         * if-Else condition token
+         */
+        EnumToken[EnumToken["IfElseConditionTokenType"] = 139] = "IfElseConditionTokenType";
         /* aliases */
         /**
          * alias for time token type
@@ -1073,7 +1081,18 @@
             }
             if (!isNumeric || (option & exports.WalkerOptionEnum.Children) === 0) {
                 // @ts-ignore
-                yield { node, parent: map.get(node), root };
+                yield {
+                    node,
+                    parent: map.get(node),
+                    root,
+                    parents: function* () {
+                        let parent = map.get(node);
+                        while (parent != null) {
+                            yield parent;
+                            parent = map.get(parent);
+                        }
+                    },
+                };
             }
             if ("chi" in node && (!isNumeric || (option & exports.WalkerOptionEnum.IgnoreChildren) === 0)) {
                 parents.splice(i, 0, ...node.chi[reverse ? "reverse" : "slice"]());
@@ -1147,28 +1166,41 @@
             };
         }
         let isNumeric = false;
-        const parents = [];
+        let value;
+        let option;
+        let node;
+        // const parents: Token[] = [];
         const eventType = filter.event ?? exports.WalkerEvent.Enter;
         while (stack.length > 0) {
-            let value = reverse ? stack.pop() : stack.shift();
-            let option = null;
-            let node = map.get(value) ?? null;
+            value = reverse ? stack.pop() : stack.shift();
+            option = null;
+            node = map.get(value) ?? null;
             if (used.has(value)) {
                 continue;
             }
             used.add(value);
-            parents.length = 0;
-            while (node != null) {
-                parents.push(node);
-                node = map.get(node) ?? null;
-            }
+            // parents.length = 0;
+            // while (node != null) {
+            //     parents.push(node);
+            //     node = map.get(node) ?? null;
+            // }
             if (filter.fn != null && eventType & exports.WalkerEvent.Enter) {
                 const isValid = filter.type == null ||
                     value.typ == filter.type ||
                     (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
                     (typeof filter.type == "function" && filter.type(value));
                 if (isValid) {
-                    option = filter.fn(value, map.get(value) ?? root, exports.WalkerEvent.Enter, parents);
+                    option = filter.fn(value, map.get(value) ?? root, exports.WalkerEvent.Enter, 
+                    // @ts-expect-error
+                    function* () {
+                        // @ts-expect-error
+                        let parent = map.get(node);
+                        console.debug({ parent });
+                        while (parent != null) {
+                            yield parent;
+                            parent = map.get(parent);
+                        }
+                    });
                     isNumeric = typeof option == "number";
                     if (isNumeric && option & exports.WalkerOptionEnum.Stop) {
                         return;
@@ -1193,7 +1225,20 @@
                 nextValue: stack[0] ?? null,
                 // @ts-ignore
                 root: root ?? null,
-                parents,
+                // @ts-expect-error
+                parents: function* () {
+                    // @ts-expect-error
+                    let result = map.get(node) ?? root;
+                    let next;
+                    do {
+                        yield result;
+                        next = map.get(result) ?? root;
+                        if (next == result) {
+                            break;
+                        }
+                        result = next;
+                    } while (result != null);
+                },
             };
             if (!isNumeric || (option & exports.WalkerOptionEnum.IgnoreChildren) === 0) {
                 if ("chi" in value) {
@@ -1212,6 +1257,7 @@
                         map.set(value.l, value);
                     }
                     if ("op" in value && typeof value.op == "object") {
+                        // @ts-expect-error
                         values.push(value.op);
                         // @ts-ignore
                         map.set(value.op, value);
@@ -1243,7 +1289,7 @@
                     (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
                     (typeof filter.type == "function" && filter.type(value));
                 if (isValid) {
-                    option = filter.fn(value, map.get(value), exports.WalkerEvent.Leave, parents);
+                    option = filter.fn(value, map.get(value), exports.WalkerEvent.Leave);
                     // @ts-ignore
                     if (option != null && ("typ" in option || Array.isArray(option))) {
                         const op = Array.isArray(option) ? option : [option];
@@ -5127,13 +5173,13 @@
     		syntax: " alpha([from <color>] [ / [<alpha-value> | none] ]? )"
     	},
     	"if()": {
-    		syntax: "if( [ <if-args-branch> ;? ]*  )"
+    		syntax: "if( [ <if-args-branch> ; ]* )"
     	},
-    	"if-args-branch": {
-    		syntax: " <declaration-value> : <declaration-value>?"
+    	"if-branch": {
+    		syntax: "<if-condition> : <declaration-value>?"
     	},
-    	"if-condition": {
-    		syntax: "<boolean-expr[ <if-test> ]> | else"
+    	"<if-condition>": {
+    		syntax: "<if-test> | else"
     	},
     	"if-test": {
     		syntax: "supports( [ <ident> : <declaration-value> ] | <supports-condition> ) | media( <media-feature> | <media-condition> ) | style( <style-query> )"
@@ -13308,9 +13354,12 @@
         }
         return result;
     }
-    function splitTokenList(tokenList, split = [exports.EnumToken.CommaTokenType]) {
+    function splitTokenList(tokenList, split = [exports.EnumToken.CommaTokenType], includeSplitToken = false) {
         return tokenList.reduce((acc, curr) => {
             if (split.includes(curr.typ)) {
+                if (includeSplitToken && Array.isArray(acc[acc.length - 1])) {
+                    acc[acc.length - 1].push(curr);
+                }
                 acc.push([]);
             }
             else {
@@ -17293,14 +17342,131 @@
         }
     }
 
-    var allFeatures = /*#__PURE__*/Object.freeze({
-        __proto__: null,
-        ComputeCalcExpressionFeature: ComputeCalcExpressionFeature,
-        ComputePrefixFeature: ComputePrefixFeature,
-        ComputeShorthandFeature: ComputeShorthandFeature,
-        InlineCssVariablesFeature: InlineCssVariablesFeature,
-        TransformCssFeature: TransformCssFeature
-    });
+    const trimTokenSpace = new Set([
+        exports.EnumToken.CommaTokenType,
+        exports.EnumToken.DelimTokenType,
+        exports.EnumToken.GtTokenType,
+        exports.EnumToken.GteTokenType,
+        exports.EnumToken.LtTokenType,
+        exports.EnumToken.LteTokenType,
+        exports.EnumToken.ChildCombinatorTokenType,
+    ]);
+    const trimSpaceAfter = new Set([
+        ...tokensfuncSet.values(),
+        exports.EnumToken.ChildCombinatorTokenType,
+        exports.EnumToken.SupportsQueryConditionTokenType,
+        exports.EnumToken.SupportsQueryUnaryConditionTokenType,
+    ]);
+    /**
+     * replace token in its parent node
+     * @param parent
+     * @param value
+     * @param replacement
+     */
+    function replaceToken(parent, value, replacement) {
+        if (replacement == null) {
+            throw new TypeError(`replacement is null`);
+        }
+        for (const node of Array.isArray(replacement) ? replacement : [replacement]) {
+            if ("parent" in value && value.parent != node.parent) {
+                Object.defineProperty(node, "parent", {
+                    ...definedPropertySettings,
+                    value: value.parent,
+                });
+            }
+        }
+        if (parent.typ == exports.EnumToken.BinaryExpressionTokenType) {
+            if (parent.l == value) {
+                parent.l = replacement;
+            }
+            else {
+                parent.r = replacement;
+            }
+        }
+        else {
+            const target = "val" in parent && Array.isArray(parent.val)
+                ? parent.val
+                : (parent.chi ?? parent);
+            if (Array.isArray(target)) {
+                // @ts-ignore
+                const index = target.indexOf(value);
+                if (index == -1) {
+                    return;
+                }
+                target.splice(index, 1, ...(Array.isArray(replacement) ? replacement : [replacement]));
+            }
+            else if ("l" in target && target.l == value) {
+                target.l = replacement;
+            }
+            else if ("r" in target && target.r == value) {
+                target.r = replacement;
+            }
+        }
+    }
+    function trimWhiteSpaceTokens(tokens) {
+        let i = 0;
+        if (tokens[0]?.typ === exports.EnumToken.WhitespaceTokenType) {
+            tokens.shift();
+        }
+        if (tokens[tokens.length - 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
+            tokens.pop();
+        }
+        if (tokens.length === 1) {
+            if (tokens[0].typ === exports.EnumToken.WhitespaceTokenType) {
+                tokens.length = 0;
+            }
+            return tokens;
+        }
+        for (; i < tokens.length; i++) {
+            if (trimSpaceAfter.has(tokens[i].typ) && tokens[i + 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
+                tokens.splice(i + 1, 1);
+            }
+            else if (trimTokenSpace.has(tokens[i].typ)) {
+                if (tokens[i + 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
+                    tokens.splice(i + 1, 1);
+                }
+                if (i > 0 && tokens[i - 1].typ === exports.EnumToken.Whitespace) {
+                    tokens.splice(--i, 1);
+                }
+            }
+        }
+        return tokens;
+    }
+
+    function cloneNode(node, cloneChildren = false, cloneMap = null) {
+        const checkNode = node.typ == exports.EnumToken.DeclarationNodeType ? "val" : "chi";
+        const clone = {};
+        const properties = {};
+        cloneMap?.set?.(node, clone);
+        for (const [name, value] of Object.entries(Object.getOwnPropertyDescriptors(node))) {
+            // @ts-expect-error
+            if (value.value == null || typeof value.value != "object" || name == "parent") {
+                // @ts-expect-error
+                properties[name] = { ...value };
+                // @ts-expect-error
+            }
+            else if (Array.isArray(value.value)) {
+                // @ts-expect-error
+                properties[name] = {
+                    // @ts-expect-error
+                    ...value,
+                    value: !cloneChildren && name == checkNode
+                        ? []
+                        : // @ts-expect-error
+                            value.value.map((c) => {
+                                const newObj = cloneNode(c, cloneChildren, cloneMap);
+                                cloneMap?.set?.(c, newObj);
+                                return newObj;
+                            }),
+                };
+            }
+            else {
+                // @ts-expect-error
+                properties[name] = { ...value, value: cloneNode(value.value, clone) };
+            }
+        }
+        return Object.defineProperties(clone, properties);
+    }
 
     function parseGridTemplate(template) {
         let result = "";
@@ -17451,7 +17617,6 @@
                     });
                     tokens[k].loc.end = tokens[j].loc.end;
                     tokens.splice(k + 1, j - k - 1);
-                    // console.debug(tokens[k]);
                 }
             }
         }
@@ -17647,10 +17812,49 @@
                                 : tokensfuncDefMap.get(stack.at(-1)?.typ),
                             chi: trimArray(tokens.splice(index + 1, i - index - 1)),
                         });
-                        if (tokens[index].typ === exports.EnumToken.WildCardFunctionTokenType && equalsIgnoreCase(tokens[index].val, "if")) {
+                        if (tokens[index].typ === exports.EnumToken.WildCardFunctionTokenType &&
+                            equalsIgnoreCase(tokens[index].val, "if")) {
                             if (tokens[index].chi.at(-1)?.typ === exports.EnumToken.SemiColonTokenType) {
                                 tokens[index].chi.pop();
                             }
+                            let foundElse = false;
+                            tokens[index].chi = splitTokenList(tokens[index].chi, [exports.EnumToken.SemiColonTokenType], true).reduce((acc, curr) => {
+                                if (foundElse) {
+                                    // else already found
+                                    // ignore everything after else
+                                    // if(media(any-pointer: fine): 30px; else: 44px; else 50px); -> if(media(any-pointer: fine): 30px; else: 44px;);
+                                    return acc;
+                                }
+                                let index = -1;
+                                while (++index < curr.length) {
+                                    if (curr[index].typ == exports.EnumToken.IdenTokenType &&
+                                        equalsIgnoreCase("else", curr[index].val)) {
+                                        foundElse = true;
+                                    }
+                                    if (curr[index].typ === exports.EnumToken.ColonTokenType) {
+                                        break;
+                                    }
+                                }
+                                if (foundElse && acc.length > 0) {
+                                    acc[acc.length - 1] = {
+                                        typ: exports.EnumToken.IfElseConditionTokenType,
+                                        l: acc[acc.length - 1],
+                                        r: {
+                                            typ: exports.EnumToken.IfConditionTokenType,
+                                            l: trimArray(curr.slice(0, index)),
+                                            r: trimArray(curr.slice(index + 1)),
+                                        },
+                                    };
+                                }
+                                else {
+                                    acc.push({
+                                        typ: exports.EnumToken.IfConditionTokenType,
+                                        l: trimArray(curr.slice(0, index)),
+                                        r: trimArray(curr.slice(index + 1)),
+                                    });
+                                }
+                                return acc;
+                            }, []);
                         }
                         else if (tokens[index].typ === exports.EnumToken.UrlFunctionTokenType) {
                             let l = -1;
@@ -21007,93 +21211,128 @@
         };
     }
 
-    const trimTokenSpace = new Set([
-        exports.EnumToken.CommaTokenType,
-        exports.EnumToken.DelimTokenType,
-        exports.EnumToken.GtTokenType,
-        exports.EnumToken.GteTokenType,
-        exports.EnumToken.LtTokenType,
-        exports.EnumToken.LteTokenType,
-        exports.EnumToken.ChildCombinatorTokenType,
-    ]);
-    const trimSpaceAfter = new Set([
-        ...tokensfuncSet.values(),
-        exports.EnumToken.ChildCombinatorTokenType,
-        exports.EnumToken.SupportsQueryConditionTokenType,
-        exports.EnumToken.SupportsQueryUnaryConditionTokenType,
-    ]);
     /**
-     * replace token in its parent node
+     * recursively creates two branches
      * @param parent
-     * @param value
-     * @param replacement
+     * @param declaration
+     * @param parentWrapper
+     * @param wrapper
+     * @param node
+     * @param mediaQuery
+     * @returns
      */
-    function replaceToken(parent, value, replacement) {
-        for (const node of Array.isArray(replacement) ? replacement : [replacement]) {
-            if ("parent" in value && value.parent != node.parent) {
-                Object.defineProperty(node, "parent", {
+    function createTree(declaration, parentWrapper, wrapper, node) {
+        const result = [];
+        if (node.typ === exports.EnumToken.IfElseConditionTokenType) {
+            result.push(...createTree(declaration, parentWrapper, wrapper, node.r));
+            result.push(...createTree(declaration, parentWrapper, wrapper, node.l));
+            return result;
+        }
+        const leftNode = node.l.find((t) => t.typ != exports.EnumToken.CommentNodeType);
+        const rightNode = node.r.find((t) => t.typ != exports.EnumToken.CommentNodeType);
+        if (leftNode == null) {
+            return result;
+        }
+        const cloneMap = new Map();
+        if (leftNode?.typ == exports.EnumToken.IdenTokenType && equalsIgnoreCase("else", leftNode.val)) {
+            const clonedParentWrapper = cloneNode(parentWrapper, true, cloneMap);
+            const clonedWrapper = cloneMap.get(wrapper);
+            replaceToken(clonedParentWrapper, clonedWrapper, node.r.slice());
+            result.push(clonedParentWrapper);
+            return result;
+        }
+        if (leftNode.typ == exports.EnumToken.WhenElseFunctionTokenType ||
+            leftNode.typ == exports.EnumToken.ContainerFunctionTokenType ||
+            leftNode.typ == exports.EnumToken.SupportsFunctionTokenType) {
+            // create at-rule
+            let atRule = Object.assign(cloneNode(declaration), {
+                typ: exports.EnumToken.AtRuleNodeType,
+                nam: leftNode.val,
+                chi: [],
+            });
+            if (leftNode.typ == exports.EnumToken.ContainerFunctionTokenType) {
+                atRule.nam = "container";
+                Object.defineProperty(atRule, "tokens", {
                     ...definedPropertySettings,
-                    value: value.parent,
+                    value: [leftNode],
                 });
+                atRule.val = atRule.tokens.reduce((acc, curr) => acc + renderToken(curr), "");
+                const clonedDeclaration = cloneNode(declaration, true, cloneMap);
+                replaceToken(cloneMap.get(parentWrapper), cloneMap.get(wrapper), rightNode);
+                replaceToken(declaration.parent, declaration, clonedDeclaration);
+                atRule.chi.push(clonedDeclaration);
+                result.push(atRule);
+                return result;
             }
+            Object.defineProperty(atRule, "tokens", {
+                ...definedPropertySettings,
+                value: [{ typ: exports.EnumToken.ParensTokenType, chi: leftNode.chi }],
+            });
+            atRule.val = atRule.tokens.reduce((acc, curr) => acc + renderToken(curr), "");
+            // clone declaration
+            const clonedDeclaration = cloneNode(declaration, true, cloneMap);
+            // update declaration with right side content
+            // clonedDeclaration.val.push(...node.r);
+            // inject declaration into the cloned rule
+            atRule.chi.push(clonedDeclaration);
+            replaceToken(clonedDeclaration, cloneMap.get(wrapper), node.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
+            replaceToken(cloneMap.get(parentWrapper), cloneMap.get(wrapper), rightNode);
+            result.push(atRule);
         }
-        if (parent.typ == exports.EnumToken.BinaryExpressionTokenType) {
-            if (parent.l == value) {
-                parent.l = replacement;
-            }
-            else {
-                parent.r = replacement;
-            }
+        return result;
+    }
+    class ExpandIfFeature {
+        accept = new Set([exports.EnumToken.DeclarationNodeType]);
+        get ordering() {
+            return 5;
         }
-        else {
-            const target = "val" in parent && Array.isArray(parent.val)
-                ? parent.val
-                : (parent.chi ?? parent);
-            if (Array.isArray(target)) {
+        get processMode() {
+            return exports.FeatureWalkMode.Pre;
+        }
+        static register(options) {
+            if (options.expandIfSyntax) {
                 // @ts-ignore
-                const index = target.indexOf(value);
-                if (index == -1) {
-                    return;
+                options.features.push(new ExpandIfFeature());
+            }
+        }
+        run(declaration) {
+            let i;
+            const result = [];
+            const clonedDeclaration = cloneNode(declaration, true);
+            for (const { value, parent: wrapper } of walkValues(clonedDeclaration.val, clonedDeclaration, {
+                event: exports.WalkerEvent.Enter,
+                fn: (node) => {
+                    if (node.typ == exports.EnumToken.WildCardFunctionTokenType &&
+                        equalsIgnoreCase("if", node.val)) {
+                        return exports.WalkerOptionEnum.IgnoreChildren;
+                    }
+                },
+            })) {
+                if (value.typ == exports.EnumToken.WildCardFunctionTokenType &&
+                    equalsIgnoreCase("if", value.val)) {
+                    for (i = 0; i < value.chi.length; i++) {
+                        if (exports.EnumToken.IfElseConditionTokenType == value.chi[i].typ ||
+                            exports.EnumToken.IfConditionTokenType == value.chi[i].typ) {
+                            result.push(...createTree(clonedDeclaration, wrapper, value, value.chi[i]));
+                        }
+                    }
                 }
-                target.splice(index, 1, ...(Array.isArray(replacement) ? replacement : [replacement]));
             }
-            else if ("l" in target && target.l == value) {
-                target.l = replacement;
-            }
-            else if ("r" in target && target.r == value) {
-                target.r = replacement;
+            if (result.length > 0) {
+                replaceToken(declaration.parent, declaration, result);
             }
         }
     }
-    function trimWhiteSpaceTokens(tokens) {
-        let i = 0;
-        if (tokens[0]?.typ === exports.EnumToken.WhitespaceTokenType) {
-            tokens.shift();
-        }
-        if (tokens[tokens.length - 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
-            tokens.pop();
-        }
-        if (tokens.length === 1) {
-            if (tokens[0].typ === exports.EnumToken.WhitespaceTokenType) {
-                tokens.length = 0;
-            }
-            return tokens;
-        }
-        for (; i < tokens.length; i++) {
-            if (trimSpaceAfter.has(tokens[i].typ) && tokens[i + 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
-                tokens.splice(i + 1, 1);
-            }
-            else if (trimTokenSpace.has(tokens[i].typ)) {
-                if (tokens[i + 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
-                    tokens.splice(i + 1, 1);
-                }
-                if (i > 0 && tokens[i - 1].typ === exports.EnumToken.Whitespace) {
-                    tokens.splice(--i, 1);
-                }
-            }
-        }
-        return tokens;
-    }
+
+    var allFeatures = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        ComputeCalcExpressionFeature: ComputeCalcExpressionFeature,
+        ComputePrefixFeature: ComputePrefixFeature,
+        ComputeShorthandFeature: ComputeShorthandFeature,
+        ExpandIfFeature: ExpandIfFeature,
+        InlineCssVariablesFeature: InlineCssVariablesFeature,
+        TransformCssFeature: TransformCssFeature
+    });
 
     const SymbolsMapTokens = {
         "+": exports.EnumToken.Plus,
@@ -24357,6 +24596,13 @@
                     renderToken(token.op, options, cache, reducer, errors) +
                     " " +
                     token.r.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer, errors), ""));
+            case exports.EnumToken.IfConditionTokenType:
+                return token.l.length == 0 ? '' : (token.l.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer, errors), "") +
+                    ':' +
+                    token.r.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer, errors), ""));
+            case exports.EnumToken.IfElseConditionTokenType:
+                return (renderToken(token.l) +
+                    renderToken(token.r));
             case exports.EnumToken.DeclarationNodeType:
                 return (token.nam +
                     ":" +
@@ -27543,6 +27789,7 @@
             sourcemap: false,
             minify: true,
             pass: 1,
+            expandIfSyntax: false,
             parseColor: true,
             nestingRules: true,
             resolveImport: false,
@@ -27727,7 +27974,9 @@
             iter = iter[Symbol.iterator]();
         }
         // @ts-expect-error
-        while (item = isAsync ? (await iter.next()).value : iter.next().value) {
+        while ((item = isAsync
+            ? (await iter.next()).value
+            : iter.next().value)) {
             // item = isAsync ? await value : value;
             stats.bytesIn = item.bytesIn;
             stats.tokensCount++;
@@ -27778,10 +28027,10 @@
                     tokens = [item.token];
                     do {
                         item = isAsync
-                            // @ts-expect-error
-                            ? (await iter.next()).value
-                            // @ts-expect-error
-                            : iter.next().value;
+                            ? // @ts-expect-error
+                                (await iter.next()).value
+                            : // @ts-expect-error
+                                iter.next().value;
                         if (item == null) {
                             break;
                         }
@@ -27916,7 +28165,9 @@
         let replacement;
         let callable;
         if (options.visitor != null) {
+            let parens;
             for (const result of walk(ast)) {
+                parens = null;
                 if (valuesHandlers.size > 0 ||
                     preVisitorsHandlersMap.size > 0 ||
                     visitorsHandlersMap.size > 0 ||
@@ -27964,7 +28215,14 @@
                             if (callable == null) {
                                 continue;
                             }
-                            replacement = callable(node, result.parent);
+                            // @ts-expect-error
+                            replacement = callable(node, result.parent, ast, function* () {
+                                if (parens == null) {
+                                    // @ts-expect-error
+                                    parens = [...result.parents()];
+                                }
+                                yield* parens[Symbol.iterator]();
+                            });
                             if (replacement == null) {
                                 continue;
                             }
@@ -28009,7 +28267,15 @@
                         }
                         let node = result.node;
                         for (const callable of handlers) {
-                            replacement = callable(node, result.parent);
+                            replacement = callable(node, result.parent, result.root, 
+                            // @ts-expect-error
+                            function* () {
+                                if (parens == null) {
+                                    // @ts-expect-error
+                                    parens = [...result.parents()];
+                                }
+                                yield* parens[Symbol.iterator]();
+                            });
                             if (replacement == null) {
                                 continue;
                             }
@@ -28041,7 +28307,15 @@
                         if (valuesHandlers.has(node.typ)) {
                             for (const valueHandler of valuesHandlers.get(node.typ)) {
                                 callable = valueHandler;
-                                replacement = callable(node, result.parent);
+                                replacement = callable(node, result.parent, ast, 
+                                // @ts-expect-error
+                                function* () {
+                                    if (parens == null) {
+                                        // @ts-expect-error
+                                        parens = [...result.parents()];
+                                    }
+                                    yield* parens[Symbol.iterator]();
+                                });
                                 if (replacement == null) {
                                     continue;
                                 }
@@ -28060,19 +28334,27 @@
                             // @ts-ignore
                             replaceToken(result.parent, value, node);
                         }
-                        const tokens = "tokens" in result.node ? result.node.tokens : [];
-                        if ("val" in result.node && Array.isArray(result.node.val)) {
+                        const tokens = Array.isArray(result.node.tokens) ? result.node.tokens : [];
+                        if (Array.isArray(result.node.val)) {
                             tokens.push(...result.node.val);
                         }
                         if (tokens.length == 0) {
                             continue;
                         }
-                        for (const { value, parent, root } of walkValues(tokens, result.node)) {
+                        for (const { value, parent, root, parents } of walkValues(tokens, result.node)) {
                             node = value;
                             if (valuesHandlers.has(node.typ)) {
+                                let parens = null;
                                 for (const valueHandler of valuesHandlers.get(node.typ)) {
                                     callable = valueHandler;
-                                    let result = callable(node, parent, root);
+                                    // @ts-expect-error
+                                    let result = callable(node, parent, root, function* () {
+                                        if (parens == null) {
+                                            // @ts-expect-error
+                                            parens = [...parents()];
+                                        }
+                                        yield* parens[Symbol.iterator]();
+                                    });
                                     if (result == null) {
                                         continue;
                                     }
@@ -28204,9 +28486,7 @@
                         position: { ind: 0, lin: 1, col: 1 },
                         currentPosition: { ind: -1, lin: 1, col: 0 },
                     };
-                    const root = await doParse(stream instanceof ReadableStream
-                        ? tokenizeStream(stream, parseInfo)
-                        : tokenize(parseInfo), Object.assign({}, options, {
+                    const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream, parseInfo) : tokenize(parseInfo), Object.assign({}, options, {
                         minify: false,
                         setParent: false,
                         src: src.relative,
@@ -28609,7 +28889,6 @@
                                 stack.pop();
                             }
                         }
-                        // console.debug({tokens});
                     }
                     let hasIdOrClass = false;
                     for (const { value } of walkValues(node.tokens, node, 
@@ -28872,7 +29151,6 @@
                 }
                 parent = parent.parent;
             }
-            // console.debug({tokens, context})
             node = parseAtRule(tokens, context, { ...options, nestedRule }, errors, delim.typ == exports.EnumToken.BlockStartTokenType);
             if (node == null) {
                 return null;
@@ -28919,7 +29197,7 @@
      * @param parseAsBlock
      */
     function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
-        getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + stream[0].nam);
+        // const rules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + (stream[0] as AtRuleToken).nam);
         let success = true;
         let atRuleName = stream[0].nam;
         if (atRuleName.startsWith("-")) {
@@ -29607,7 +29885,6 @@
                 }
                 else {
                     result = matchAtRuleSyntax(atRule, stream, options);
-                    // console.debug("syntax", syntax, JSON.stringify({result}, null, 1));
                     if (result.success) {
                         let i = 0;
                         const stack = [];

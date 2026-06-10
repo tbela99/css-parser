@@ -3844,13 +3844,13 @@ var syntaxes = {
 		syntax: " alpha([from <color>] [ / [<alpha-value> | none] ]? )"
 	},
 	"if()": {
-		syntax: "if( [ <if-args-branch> ;? ]*  )"
+		syntax: "if( [ <if-args-branch> ; ]* )"
 	},
-	"if-args-branch": {
-		syntax: " <declaration-value> : <declaration-value>?"
+	"if-branch": {
+		syntax: "<if-condition> : <declaration-value>?"
 	},
-	"if-condition": {
-		syntax: "<boolean-expr[ <if-test> ]> | else"
+	"<if-condition>": {
+		syntax: "<if-test> | else"
 	},
 	"if-test": {
 		syntax: "supports( [ <ident> : <declaration-value> ] | <supports-condition> ) | media( <media-feature> | <media-condition> ) | style( <style-query> )"

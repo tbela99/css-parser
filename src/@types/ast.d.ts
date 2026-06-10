@@ -168,7 +168,7 @@ export declare interface AstAtRule extends BaseToken {
     typ: EnumToken.AtRuleNodeType;
     nam: string;
     val: string;
-    chi?: Array<AstDeclaration | AstInvalidDeclaration | AstComment> | Array<AstRule | AstComment>;
+    chi?: Array<AstNode>;
 }
 
 /**

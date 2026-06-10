@@ -90,7 +90,6 @@ import { matchAtRuleSyntax } from "./utils/at-rule.ts";
 import { parseAtRulePage } from "./utils/at-rule-page.ts";
 import { parseAtRuleFontFeatureValues } from "./utils/at-rule-font-feature-values.ts";
 import { matchGenericSyntax } from "./utils/at-rule-generic.ts";
-import { eqMatrix } from "../ast/transform/minify.ts";
 import { memoize } from "./utils/cache.ts";
 
 function renderTokens(tokens: Token[] | null | undefined, options?: any): string {
@@ -337,6 +336,7 @@ export async function doParse(
         sourcemap: false,
         minify: true,
         pass: 1,
+        expandIfSyntax: false,
         parseColor: true,
         nestingRules: true,
         resolveImport: false,
@@ -443,7 +443,7 @@ export async function doParse(
 
     // @ts-ignore ignore error
     let isAsync: boolean = typeof iter[Symbol.asyncIterator] === "function";
-    let parensMatch: number = 0; 
+    let parensMatch: number = 0;
 
     if (options.visitor != null) {
         valuesHandlers = new Map() as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
@@ -582,14 +582,16 @@ export async function doParse(
     }
 
     if (Array.isArray(iter)) {
-
         // @ts-expect-error
         iter = iter[Symbol.iterator]() as Iterator<TokenizeResult>;
     }
 
     // @ts-expect-error
-    while   (item = isAsync ? (await iter.next()).value as TokenizeResult : (iter as Iterator<TokenizeResult>).next().value as TokenizeResult)
-    {
+    while (
+        (item = isAsync
+            ? ((await iter.next()).value as TokenizeResult)
+            : ((iter as Iterator<TokenizeResult>).next().value as TokenizeResult))
+    ) {
         // item = isAsync ? await value : value;
         stats.bytesIn = item.bytesIn;
         stats.tokensCount++;
@@ -616,13 +618,9 @@ export async function doParse(
             continue;
         }
 
-        if( item.token.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(item.token.typ)) {
-            
+        if (item.token.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(item.token.typ)) {
             parensMatch++;
-        }
-
-        else if (item.token.typ === EnumToken.EndParensTokenType && parensMatch > 0) {
-            
+        } else if (item.token.typ === EnumToken.EndParensTokenType && parensMatch > 0) {
             parensMatch--;
         }
 
@@ -632,8 +630,8 @@ export async function doParse(
 
         if (
             (parensMatch === 0 &&
-            (item.token.typ === EnumToken.SemiColonTokenType ||
-            item.token.typ === EnumToken.BlockStartTokenType)) ||
+                (item.token.typ === EnumToken.SemiColonTokenType ||
+                    item.token.typ === EnumToken.BlockStartTokenType)) ||
             item.token.typ === EnumToken.EOFTokenType
         ) {
             node = parseNode(tokens, context, options as ParserOptions, errors, stats);
@@ -650,12 +648,11 @@ export async function doParse(
                 tokens = [item.token];
 
                 do {
-
                     item = isAsync
-                    // @ts-expect-error
-                        ? ((await iter.next()).value as TokenizeResult)
-                        // @ts-expect-error
-                        : ((iter as Iterator<TokenizeResult>).next().value as TokenizeResult);
+                        ? // @ts-expect-error
+                          ((await iter.next()).value as TokenizeResult)
+                        : // @ts-expect-error
+                          ((iter as Iterator<TokenizeResult>).next().value as TokenizeResult);
 
                     if (item == null) {
                         break;
@@ -831,7 +828,10 @@ export async function doParse(
     let callable: GenericVisitorHandler<T>;
 
     if (options.visitor != null) {
+        let parens: Token[] | null;
         for (const result of walk(ast)) {
+            parens = null;
+
             if (
                 valuesHandlers!.size > 0 ||
                 preVisitorsHandlersMap!.size > 0 ||
@@ -901,7 +901,15 @@ export async function doParse(
                             continue;
                         }
 
-                        replacement = callable(node, result.parent);
+                        // @ts-expect-error
+                        replacement = callable(node, result.parent, ast, function* () {
+                            if (parens == null) {
+                                // @ts-expect-error
+                                parens = [...result.parents()];
+                            }
+
+                            yield* parens[Symbol.iterator]();
+                        });
 
                         if (replacement == null) {
                             continue;
@@ -972,6 +980,16 @@ export async function doParse(
                         replacement = (callable as GenericVisitorHandler<T>)(
                             node as T,
                             result.parent,
+                            result.root,
+                            // @ts-expect-error
+                            function* () {
+                                if (parens == null) {
+                                    // @ts-expect-error
+                                    parens = [...result.parents()];
+                                }
+
+                                yield* parens[Symbol.iterator]();
+                            },
                         ) as GenericVisitorResult<T>;
 
                         if (replacement == null) {
@@ -1012,7 +1030,20 @@ export async function doParse(
                     if (valuesHandlers!.has(node.typ)) {
                         for (const valueHandler of valuesHandlers!.get(node.typ)!) {
                             callable = valueHandler as GenericVisitorHandler<T>;
-                            replacement = callable(node as T, result.parent);
+                            replacement = callable(
+                                node as T,
+                                result.parent,
+                                ast,
+                                // @ts-expect-error
+                                function* () {
+                                    if (parens == null) {
+                                        // @ts-expect-error
+                                        parens = [...result.parents()];
+                                    }
+
+                                    yield* parens[Symbol.iterator]();
+                                },
+                            );
 
                             if (replacement == null) {
                                 continue;
@@ -1037,9 +1068,9 @@ export async function doParse(
                         replaceToken(result.parent, value, node);
                     }
 
-                    const tokens: Token[] = "tokens" in result.node ? (result.node.tokens as Token[]) : [];
+                    const tokens: Token[] = Array.isArray(result.node.tokens) ? (result.node.tokens as Token[]) : [];
 
-                    if ("val" in result.node && Array.isArray(result.node.val)) {
+                    if (Array.isArray(result.node.val)) {
                         tokens.push(...(result.node.val as Token[]));
                     }
 
@@ -1047,13 +1078,22 @@ export async function doParse(
                         continue;
                     }
 
-                    for (const { value, parent, root } of walkValues(tokens, result.node)) {
+                    for (const { value, parent, root, parents } of walkValues(tokens, result.node)) {
                         node = value;
 
                         if (valuesHandlers!.has(node!.typ)) {
+                            let parens: Token[] | null = null;
                             for (const valueHandler of valuesHandlers!.get(node!.typ)!) {
                                 callable = valueHandler as GenericVisitorHandler<T>;
-                                let result: GenericVisitorResult<T> = callable(node as T, parent, root);
+                                // @ts-expect-error
+                                let result: GenericVisitorResult<T> = callable(node as T, parent, root, function* () {
+                                    if (parens == null) {
+                                        // @ts-expect-error
+                                        parens = [...parents()];
+                                    }
+
+                                    yield* parens[Symbol.iterator]();
+                                });
 
                                 if (result == null) {
                                     continue;
@@ -1203,19 +1243,17 @@ export async function doParse(
                         ? await result
                         : result;
 
-                        const parseInfo: ParseInfo = {
-                              stream,
-                              buffer: "",
-                              offset: 0,
-                              time: 0,
-                              position: { ind: 0, lin: 1, col: 1 },
-                              currentPosition: { ind: -1, lin: 1, col: 0 },
-                          } as ParseInfo;
+                const parseInfo: ParseInfo = {
+                    stream,
+                    buffer: "",
+                    offset: 0,
+                    time: 0,
+                    position: { ind: 0, lin: 1, col: 1 },
+                    currentPosition: { ind: -1, lin: 1, col: 0 },
+                } as ParseInfo;
 
                 const root: ParseResult = await doParse(
-                    stream instanceof ReadableStream
-                        ? tokenizeStream(stream, parseInfo)
-                        : tokenize(parseInfo),
+                    stream instanceof ReadableStream ? tokenizeStream(stream, parseInfo) : tokenize(parseInfo),
                     Object.assign({}, options, {
                         minify: false,
                         setParent: false,
@@ -1747,8 +1785,6 @@ export async function doParse(
                             stack.pop();
                         }
                     }
-
-                    // console.debug({tokens});
                 }
 
                 let hasIdOrClass: boolean = false;
@@ -2083,7 +2119,7 @@ function parseNode(
                     location,
                 });
 
-                tokens[i].typ = EnumToken.InvalidCommentTokenType ;
+                tokens[i].typ = EnumToken.InvalidCommentTokenType;
                 continue;
             }
 
@@ -2127,8 +2163,6 @@ function parseNode(
             parent = parent.parent;
         }
 
-        // console.debug({tokens, context})
-
         node = parseAtRule(
             tokens,
             context as AstStyleSheet | AstAtRule | AstRule,
@@ -2164,9 +2198,8 @@ function parseNode(
             Object.defineProperty(node, "parent", { ...definedPropertySettings, value: context });
 
             if (context.typ === EnumToken.StyleSheetNodeType && node.typ === EnumToken.DeclarationNodeType) {
-                
                 // @ts-expect-error
-                node.typ = EnumToken.InvalidDeclarationNodeType ;
+                node.typ = EnumToken.InvalidDeclarationNodeType;
 
                 errors.push({
                     message: "<declaration> not allowed in <stylesheet>",
@@ -2196,8 +2229,7 @@ export function parseAtRule(
     errors: ErrorDescription[],
     parseAsBlock: boolean | null = null,
 ): AstAtRule | AstInvalidAtRule | CssVariableImportTokenType | CssVariableToken | null {
-
-    const rules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + (stream[0] as AtRuleToken).nam);
+    // const rules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + (stream[0] as AtRuleToken).nam);
 
     let success: boolean = true;
     let atRuleName = (stream[0] as AtRuleToken).nam;
@@ -3057,8 +3089,6 @@ export function parseAtRule(
                 }
             } else {
                 result = matchAtRuleSyntax(atRule, stream, options);
-
-            // console.debug("syntax", syntax, JSON.stringify({result}, null, 1));
 
                 if (result.success) {
                     let i: number = 0;

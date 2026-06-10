@@ -213,13 +213,13 @@
       "syntax": "<position> | <position-three>"
     },
     "if()": {
-      "syntax": "if( [ <if-args-branch> ;? ]*  )"
+      "syntax": "if( [ <if-args-branch> ; ]* )"
     },
-    "if-args-branch": {
-      "syntax": " <declaration-value> : <declaration-value>?"
+    "if-branch": {
+      "syntax": "<if-condition> : <declaration-value>?"
     },
-    "if-condition": {
-      "syntax": "<boolean-expr[ <if-test> ]> | else"
+    "<if-condition>": {
+      "syntax": "<if-test> | else"
     },
     "if-test": {
       "syntax": "supports( [ <ident> : <declaration-value> ] | <supports-condition> ) | media( <media-feature> | <media-condition> ) | style( <style-query> )"
@@ -419,10 +419,7 @@
         },
         "orientation": {
           "type": "keyword",
-          "values": [
-            "portrait",
-            "landscape"
-          ]
+          "values": ["portrait", "landscape"]
         }
       },
       "device-viewport": {
@@ -442,11 +439,7 @@
       "display": {
         "resolution": {
           "type": "resolution",
-          "units": [
-            "dpi",
-            "dpcm",
-            "dppx"
-          ]
+          "units": ["dpi", "dpcm", "dppx"]
         },
         "min-resolution": {
           "type": "resolution"
@@ -456,43 +449,24 @@
         },
         "scan": {
           "type": "keyword",
-          "values": [
-            "interlace",
-            "progressive"
-          ],
+          "values": ["interlace", "progressive"],
           "status": "deprecated"
         },
         "update": {
           "type": "keyword",
-          "values": [
-            "none",
-            "slow",
-            "fast"
-          ]
+          "values": ["none", "slow", "fast"]
         },
         "overflow-block": {
           "type": "keyword",
-          "values": [
-            "none",
-            "scroll",
-            "paged"
-          ]
+          "values": ["none", "scroll", "paged"]
         },
         "overflow-inline": {
           "type": "keyword",
-          "values": [
-            "none",
-            "scroll"
-          ]
+          "values": ["none", "scroll"]
         },
         "display-mode": {
           "type": "keyword",
-          "values": [
-            "fullscreen",
-            "standalone",
-            "minimal-ui",
-            "browser"
-          ]
+          "values": ["fullscreen", "standalone", "minimal-ui", "browser"]
         }
       },
       "color": {
@@ -525,167 +499,98 @@
         },
         "color-gamut": {
           "type": "keyword",
-          "values": [
-            "srgb",
-            "p3",
-            "rec2020"
-          ]
+          "values": ["srgb", "p3", "rec2020"]
         },
         "dynamic-range": {
           "type": "keyword",
-          "values": [
-            "standard",
-            "high"
-          ]
+          "values": ["standard", "high"]
         },
         "inverted-colors": {
           "type": "keyword",
-          "values": [
-            "none",
-            "inverted"
-          ]
+          "values": ["none", "inverted"]
         }
       },
       "input": {
         "pointer": {
           "type": "keyword",
-          "values": [
-            "none",
-            "coarse",
-            "fine"
-          ]
+          "values": ["none", "coarse", "fine"]
         },
         "any-pointer": {
           "type": "keyword",
-          "values": [
-            "none",
-            "coarse",
-            "fine"
-          ]
+          "values": ["none", "coarse", "fine"]
         },
         "hover": {
           "type": "keyword",
-          "values": [
-            "none",
-            "hover"
-          ]
+          "values": ["none", "hover"]
         },
         "any-hover": {
           "type": "keyword",
-          "values": [
-            "none",
-            "hover"
-          ]
+          "values": ["none", "hover"]
         }
       },
       "user-preferences": {
         "prefers-reduced-motion": {
           "type": "keyword",
-          "values": [
-            "no-preference",
-            "reduce"
-          ]
+          "values": ["no-preference", "reduce"]
         },
         "prefers-reduced-transparency": {
           "type": "keyword",
-          "values": [
-            "no-preference",
-            "reduce"
-          ]
+          "values": ["no-preference", "reduce"]
         },
         "prefers-contrast": {
           "type": "keyword",
-          "values": [
-            "no-preference",
-            "less",
-            "more",
-            "custom"
-          ]
+          "values": ["no-preference", "less", "more", "custom"]
         },
         "prefers-color-scheme": {
           "type": "keyword",
-          "values": [
-            "light",
-            "dark"
-          ]
+          "values": ["light", "dark"]
         },
         "prefers-reduced-data": {
           "type": "keyword",
-          "values": [
-            "no-preference",
-            "reduce"
-          ]
+          "values": ["no-preference", "reduce"]
         }
       },
       "accessibility": {
         "forced-colors": {
           "type": "keyword",
-          "values": [
-            "none",
-            "active"
-          ]
+          "values": ["none", "active"]
         },
         "scripting": {
           "type": "keyword",
-          "values": [
-            "none",
-            "initial-only",
-            "enabled"
-          ]
+          "values": ["none", "initial-only", "enabled"]
         }
       },
       "legacy": {
         "grid": {
           "type": "boolean",
-          "values": [
-            0,
-            1
-          ]
+          "values": [0, 1]
         },
         "light-level": {
           "type": "keyword",
-          "values": [
-            "dim",
-            "normal",
-            "washed"
-          ],
+          "values": ["dim", "normal", "washed"],
           "status": "deprecated"
         }
       },
       "environment": {
         "environment-blending": {
           "type": "keyword",
-          "values": [
-            "opaque",
-            "additive",
-            "subtractive"
-          ]
+          "values": ["opaque", "additive", "subtractive"]
         }
       },
       "navigation": {
         "nav-controls": {
           "type": "keyword",
-          "values": [
-            "none",
-            "back"
-          ]
+          "values": ["none", "back"]
         }
       },
       "video": {
         "video-color-gamut": {
           "type": "keyword",
-          "values": [
-            "srgb",
-            "p3",
-            "rec2020"
-          ]
+          "values": ["srgb", "p3", "rec2020"]
         },
         "video-dynamic-range": {
           "type": "keyword",
-          "values": [
-            "standard",
-            "high"
-          ]
+          "values": ["standard", "high"]
         }
       }
     },
@@ -702,18 +607,12 @@
         },
         "-webkit-transform-3d": {
           "type": "boolean",
-          "values": [
-            0,
-            1
-          ],
+          "values": [0, 1],
           "status": "non-standard"
         },
         "-webkit-touch-enabled": {
           "type": "boolean",
-          "values": [
-            0,
-            1
-          ],
+          "values": [0, 1],
           "status": "non-standard"
         },
         "-webkit-min-device-pixel-ratio": {
@@ -728,10 +627,7 @@
         },
         "-moz-touch-enabled": {
           "type": "boolean",
-          "values": [
-            0,
-            1
-          ],
+          "values": [0, 1],
           "status": "non-standard"
         },
         "-moz-os-version": {
@@ -742,23 +638,13 @@
       "-ms-": {
         "-ms-high-contrast": {
           "type": "keyword",
-          "values": [
-            "none",
-            "active",
-            "black-on-white",
-            "white-on-black"
-          ],
+          "values": ["none", "active", "black-on-white", "white-on-black"],
           "status": "deprecated",
           "equivalent": "forced-colors"
         },
         "-ms-view-state": {
           "type": "keyword",
-          "values": [
-            "snapped",
-            "fullscreen-portrait",
-            "fullscreen-landscape",
-            "filled"
-          ],
+          "values": ["snapped", "fullscreen-portrait", "fullscreen-landscape", "filled"],
           "status": "obsolete"
         }
       },
@@ -770,7 +656,5 @@
       }
     }
   },
-  "skipped": [
-    "container"
-  ]
+  "skipped": ["container"]
 }

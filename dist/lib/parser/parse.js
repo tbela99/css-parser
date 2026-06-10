@@ -217,6 +217,7 @@ async function doParse(iter, options = {}) {
         sourcemap: false,
         minify: true,
         pass: 1,
+        expandIfSyntax: false,
         parseColor: true,
         nestingRules: true,
         resolveImport: false,
@@ -401,7 +402,9 @@ async function doParse(iter, options = {}) {
         iter = iter[Symbol.iterator]();
     }
     // @ts-expect-error
-    while (item = isAsync ? (await iter.next()).value : iter.next().value) {
+    while ((item = isAsync
+        ? (await iter.next()).value
+        : iter.next().value)) {
         // item = isAsync ? await value : value;
         stats.bytesIn = item.bytesIn;
         stats.tokensCount++;
@@ -452,10 +455,10 @@ async function doParse(iter, options = {}) {
                 tokens = [item.token];
                 do {
                     item = isAsync
-                        // @ts-expect-error
-                        ? (await iter.next()).value
-                        // @ts-expect-error
-                        : iter.next().value;
+                        ? // @ts-expect-error
+                            (await iter.next()).value
+                        : // @ts-expect-error
+                            iter.next().value;
                     if (item == null) {
                         break;
                     }
@@ -590,7 +593,9 @@ async function doParse(iter, options = {}) {
     let replacement;
     let callable;
     if (options.visitor != null) {
+        let parens;
         for (const result of walk(ast)) {
+            parens = null;
             if (valuesHandlers.size > 0 ||
                 preVisitorsHandlersMap.size > 0 ||
                 visitorsHandlersMap.size > 0 ||
@@ -638,7 +643,14 @@ async function doParse(iter, options = {}) {
                         if (callable == null) {
                             continue;
                         }
-                        replacement = callable(node, result.parent);
+                        // @ts-expect-error
+                        replacement = callable(node, result.parent, ast, function* () {
+                            if (parens == null) {
+                                // @ts-expect-error
+                                parens = [...result.parents()];
+                            }
+                            yield* parens[Symbol.iterator]();
+                        });
                         if (replacement == null) {
                             continue;
                         }
@@ -683,7 +695,15 @@ async function doParse(iter, options = {}) {
                     }
                     let node = result.node;
                     for (const callable of handlers) {
-                        replacement = callable(node, result.parent);
+                        replacement = callable(node, result.parent, result.root, 
+                        // @ts-expect-error
+                        function* () {
+                            if (parens == null) {
+                                // @ts-expect-error
+                                parens = [...result.parents()];
+                            }
+                            yield* parens[Symbol.iterator]();
+                        });
                         if (replacement == null) {
                             continue;
                         }
@@ -715,7 +735,15 @@ async function doParse(iter, options = {}) {
                     if (valuesHandlers.has(node.typ)) {
                         for (const valueHandler of valuesHandlers.get(node.typ)) {
                             callable = valueHandler;
-                            replacement = callable(node, result.parent);
+                            replacement = callable(node, result.parent, ast, 
+                            // @ts-expect-error
+                            function* () {
+                                if (parens == null) {
+                                    // @ts-expect-error
+                                    parens = [...result.parents()];
+                                }
+                                yield* parens[Symbol.iterator]();
+                            });
                             if (replacement == null) {
                                 continue;
                             }
@@ -734,19 +762,27 @@ async function doParse(iter, options = {}) {
                         // @ts-ignore
                         replaceToken(result.parent, value, node);
                     }
-                    const tokens = "tokens" in result.node ? result.node.tokens : [];
-                    if ("val" in result.node && Array.isArray(result.node.val)) {
+                    const tokens = Array.isArray(result.node.tokens) ? result.node.tokens : [];
+                    if (Array.isArray(result.node.val)) {
                         tokens.push(...result.node.val);
                     }
                     if (tokens.length == 0) {
                         continue;
                     }
-                    for (const { value, parent, root } of walkValues(tokens, result.node)) {
+                    for (const { value, parent, root, parents } of walkValues(tokens, result.node)) {
                         node = value;
                         if (valuesHandlers.has(node.typ)) {
+                            let parens = null;
                             for (const valueHandler of valuesHandlers.get(node.typ)) {
                                 callable = valueHandler;
-                                let result = callable(node, parent, root);
+                                // @ts-expect-error
+                                let result = callable(node, parent, root, function* () {
+                                    if (parens == null) {
+                                        // @ts-expect-error
+                                        parens = [...parents()];
+                                    }
+                                    yield* parens[Symbol.iterator]();
+                                });
                                 if (result == null) {
                                     continue;
                                 }
@@ -878,9 +914,7 @@ async function doParse(iter, options = {}) {
                     position: { ind: 0, lin: 1, col: 1 },
                     currentPosition: { ind: -1, lin: 1, col: 0 },
                 };
-                const root = await doParse(stream instanceof ReadableStream
-                    ? tokenizeStream(stream, parseInfo)
-                    : tokenize(parseInfo), Object.assign({}, options, {
+                const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream, parseInfo) : tokenize(parseInfo), Object.assign({}, options, {
                     minify: false,
                     setParent: false,
                     src: src.relative,
@@ -1283,7 +1317,6 @@ async function doParse(iter, options = {}) {
                             stack.pop();
                         }
                     }
-                    // console.debug({tokens});
                 }
                 let hasIdOrClass = false;
                 for (const { value } of walkValues(node.tokens, node, 
@@ -1546,7 +1579,6 @@ function parseNode(tokens, context, options, errors, stats) {
             }
             parent = parent.parent;
         }
-        // console.debug({tokens, context})
         node = parseAtRule(tokens, context, { ...options, nestedRule }, errors, delim.typ == EnumToken.BlockStartTokenType);
         if (node == null) {
             return null;
@@ -1593,7 +1625,7 @@ vbbnkit;;;jmjhyg77 * @param options
  * @param parseAsBlock
  */
 function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
-    getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + stream[0].nam);
+    // const rules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + (stream[0] as AtRuleToken).nam);
     let success = true;
     let atRuleName = stream[0].nam;
     if (atRuleName.startsWith("-")) {
@@ -2281,7 +2313,6 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             }
             else {
                 result = matchAtRuleSyntax(atRule, stream, options);
-                // console.debug("syntax", syntax, JSON.stringify({result}, null, 1));
                 if (result.success) {
                     let i = 0;
                     const stack = [];

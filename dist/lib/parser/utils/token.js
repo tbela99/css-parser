@@ -23,6 +23,9 @@ const trimSpaceAfter = new Set([
  * @param replacement
  */
 function replaceToken(parent, value, replacement) {
+    if (replacement == null) {
+        throw new TypeError(`replacement is null`);
+    }
     for (const node of Array.isArray(replacement) ? replacement : [replacement]) {
         if ("parent" in value && value.parent != node.parent) {
             Object.defineProperty(node, "parent", {

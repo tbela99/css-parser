@@ -25,6 +25,8 @@ import type {
     HashToken,
     IdentListToken,
     IdentToken,
+    IfConditionToken,
+    IfElseConditionToken,
     InvalidAttrToken,
     InvalidClassSelectorToken,
     LengthToken,
@@ -1182,6 +1184,27 @@ export function renderToken(
                     (acc, curr) => acc + renderToken(curr, options, cache, reducer, errors),
                     "",
                 )
+            );
+
+        case EnumToken.IfConditionTokenType:
+            
+            return (token as IfConditionToken).l.length == 0 ? '' : (
+                (token as SupportsQueryConditionToken | WhenElseQueryConditionToken).l.reduce(
+                    (acc, curr) => acc + renderToken(curr, options, cache, reducer, errors),
+                    "",
+                ) +
+                ':' +
+                (token as SupportsQueryConditionToken).r.reduce(
+                    (acc, curr) => acc + renderToken(curr, options, cache, reducer, errors),
+                    "",
+                )
+            );
+
+        case EnumToken.IfElseConditionTokenType:
+            
+            return (
+                renderToken((token as IfElseConditionToken).l) +
+                renderToken((token as IfElseConditionToken).r)
             );
 
         case EnumToken.DeclarationNodeType:

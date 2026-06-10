@@ -221,6 +221,7 @@ Include ParseOptions and RenderOptions
 - nestingRules: boolean, optional. automatically generated nested rules.
 - expandNestingRules: boolean, optional. convert nesting rules into separate rules. will automatically set nestingRules
   to false.
+- expandIfSyntax: experimental, expand css if() function.
 - removeDuplicateDeclarations: boolean, optional. remove duplicate declarations.
 - computeTransform: boolean, optional. compute css transform functions.
 - computeShorthand: boolean, optional. compute shorthand properties.

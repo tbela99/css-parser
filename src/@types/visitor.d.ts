@@ -3,7 +3,7 @@ import {WalkerEvent} from "../lib/ast/walk.ts";
 import {EnumToken} from '../lib/ast/types.ts';
 
 export declare type GenericVisitorResult<T> = T | T[] | Promise<T> | Promise<T[]> | null | Promise<null>;
-export declare type GenericVisitorHandler<T> = ((node: T, parent?: AstNode | Token, root?: AstNode | Token) => GenericVisitorResult<T>);
+export declare type GenericVisitorHandler<T> = ((node: T, parent?: AstNode | Token, root?: AstNode | Token, parents?: Generator<AstNode | Token>) => GenericVisitorResult<T>);
 export declare type GenericVisitorAstNodeHandlerMap<T> =
     Record<string, GenericVisitorHandler<T>>
     | GenericVisitorHandler<T>
