@@ -1,18 +1,8 @@
 import { EnumToken } from '../../ast/types.js';
-import '../../ast/minify.js';
-import '../../ast/walk.js';
-import '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
-import '../../syntax/color/utils/constants.js';
-import '../../renderer/sourcemap/lib/encode.js';
 
 function stripCommaToken(tokenList) {
     let result = [];
     for (let i = 0; i < tokenList.length; i++) {
-        if (tokenList[i].typ != EnumToken.WhitespaceTokenType) {
-            tokenList[i];
-        }
         if (tokenList[i].typ == EnumToken.CommentTokenType || tokenList[i].typ == EnumToken.CommaTokenType) {
             continue;
         }
@@ -20,9 +10,12 @@ function stripCommaToken(tokenList) {
     }
     return result;
 }
-function splitTokenList(tokenList, split = [EnumToken.CommaTokenType]) {
+function splitTokenList(tokenList, split = [EnumToken.CommaTokenType], includeSplitToken = false) {
     return tokenList.reduce((acc, curr) => {
         if (split.includes(curr.typ)) {
+            if (includeSplitToken && Array.isArray(acc[acc.length - 1])) {
+                acc[acc.length - 1].push(curr);
+            }
             acc.push([]);
         }
         else {

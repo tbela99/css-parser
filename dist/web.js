@@ -1,24 +1,20 @@
-import { ModuleScopeEnumOptions } from './lib/ast/types.js';
-export { ColorType, EnumToken, ModuleCaseTransformEnum, ValidationLevel } from './lib/ast/types.js';
-export { minify } from './lib/ast/minify.js';
-export { WalkerEvent, WalkerOptionEnum, walk, walkValues } from './lib/ast/walk.js';
-export { expand } from './lib/ast/expand.js';
+import { doParse } from './lib/parser/parse.js';
+export { parseDeclarations, parseString } from './lib/parser/parse.js';
 import { doRender } from './lib/renderer/render.js';
 export { renderToken } from './lib/renderer/render.js';
-export { SourceMap } from './lib/renderer/sourcemap/sourcemap.js';
-import { doParse } from './lib/parser/parse.js';
-export { parseDeclarations, parseString, parseTokens } from './lib/parser/parse.js';
+import { ModuleScopeEnumOptions } from './lib/ast/types.js';
+export { ColorType, EnumToken, ModuleCaseTransformEnum, ValidationLevel } from './lib/ast/types.js';
 import { tokenizeStream, tokenize } from './lib/parser/tokenize.js';
-import './lib/parser/utils/config.js';
-export { convertColor } from './lib/syntax/color/color.js';
-import './lib/syntax/color/utils/constants.js';
-export { isOkLabClose, okLabDistance } from './lib/syntax/color/utils/distance.js';
-import './lib/validation/config.js';
-import './lib/validation/parser/parse.js';
-import './lib/validation/syntaxes/complex-selector.js';
-import './lib/validation/syntax.js';
 import { matchUrl, resolve, dirname } from './lib/fs/resolve.js';
 import { ResponseType } from './types.js';
+export { minify } from './lib/ast/minify.js';
+export { expand } from './lib/ast/expand.js';
+export { WalkerEvent, WalkerOptionEnum, walk, walkValues } from './lib/ast/walk.js';
+export { convertColor } from './lib/syntax/color/color.js';
+export { isOkLabClose, okLabDistance } from './lib/syntax/color/utils/distance.js';
+export { find, findAll, findByValue, findLast } from './lib/ast/find.js';
+export { cloneNode } from './lib/ast/clone.js';
+export { SourceMap } from './lib/renderer/sourcemap/sourcemap.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 
 /**
@@ -33,8 +29,8 @@ export { FeatureWalkMode } from './lib/ast/features/type.js';
  * const result = await load(file, '.', ResponseType.ArrayBuffer) as ArrayBuffer;
  * ```
  */
-async function load(url, currentDirectory = '.', responseType = false) {
-    if (typeof responseType == 'boolean') {
+async function load(url, currentDirectory = ".", responseType = false) {
+    if (typeof responseType == "boolean") {
         responseType = responseType ? ResponseType.ReadableStream : ResponseType.Text;
     }
     let t;
@@ -48,7 +44,7 @@ async function load(url, currentDirectory = '.', responseType = false) {
         const path = resolve(url, currentDirectory).absolute;
         t = new URL(path, self.origin);
     }
-    return fetch(t, t.origin != self.origin ? { mode: 'cors' } : {}).then(async (response) => {
+    return fetch(t, t.origin != self.origin ? { mode: "cors" } : {}).then(async (response) => {
         if (!response.ok) {
             throw new Error(`${response.status} ${response.statusText} ${response.url}`);
         }
@@ -91,7 +87,9 @@ function render(data, options = {}, mapping) {
     return doRender(data, Object.assign(options, {
         resolve,
         dirname,
-        cwd: options.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
+        cwd: (options.cwd ?? self.location.pathname.endsWith("/"))
+            ? self.location.pathname
+            : dirname(self.location.pathname),
     }), mapping);
 }
 /**
@@ -118,7 +116,7 @@ function render(data, options = {}, mapping) {
  * ```
  */
 async function parseFile(file, options = {}, asStream = false) {
-    return Promise.resolve((options.load ?? load)(file, '.', asStream)).then(stream => parse(stream, { src: file, ...options }));
+    return Promise.resolve((options.load ?? load)(file, ".", asStream)).then((stream) => parse(stream, { src: file, ...options }));
 }
 /**
  * parse css
@@ -149,18 +147,23 @@ async function parseFile(file, options = {}, asStream = false) {
  * ```
  */
 async function parse(stream, options = {}) {
-    return doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
+    options.parseInfo = {
         stream,
-        buffer: '',
+        buffer: "",
         offset: 0,
-        position: { ind: 0, lin: 1, col: 1 },
-        currentPosition: { ind: -1, lin: 1, col: 0 }
-    }), Object.assign(options, {
+        time: 0,
+        src: options.src ?? "",
+        position: { ind: 0, lin: 1, col: 0 },
+        currentPosition: { ind: -1, lin: 1, col: 0 },
+    };
+    return doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize(options.parseInfo), Object.assign(options, {
         load,
         resolve,
         dirname,
-        cwd: options.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
-    })).then(result => {
+        cwd: (options.cwd ?? self.location.pathname.endsWith("/"))
+            ? self.location.pathname
+            : dirname(self.location.pathname),
+    })).then((result) => {
         const { revMapping, ...res } = result;
         return res;
     });
@@ -187,7 +190,7 @@ async function parse(stream, options = {}) {
  * ```
  */
 async function transformFile(file, options = {}, asStream = false) {
-    return Promise.resolve((options.load ?? load)(file, '.', asStream)).then(stream => transform(stream, { src: file, ...options }));
+    return Promise.resolve((options.load ?? load)(file, ".", asStream)).then((stream) => transform(stream, { src: file, ...options }));
 }
 /**
  * transform css
@@ -217,18 +220,20 @@ async function transform(css, options = {}) {
     return parse(css, options).then((parseResult) => {
         let mapping = null;
         let importMapping = null;
-        if (typeof options.module == 'number' && (options.module & ModuleScopeEnumOptions.ICSS)) {
+        if (typeof options.module == "number" && options.module & ModuleScopeEnumOptions.ICSS) {
             mapping = parseResult.mapping;
             importMapping = parseResult.importMapping;
         }
-        else if (typeof options.module == 'object' && typeof options.module.scoped == 'number' && (options.module.scoped & ModuleScopeEnumOptions.ICSS)) {
+        else if (typeof options.module == "object" &&
+            typeof options.module.scoped == "number" &&
+            options.module.scoped & ModuleScopeEnumOptions.ICSS) {
             mapping = parseResult.mapping;
             importMapping = parseResult.importMapping;
         }
         // ast already expanded by parse
         const rendered = render(parseResult.ast, {
             ...options,
-            expandNestingRules: false
+            expandNestingRules: false,
         }, mapping != null ? { mapping, importMapping } : null);
         return {
             ...parseResult,
@@ -238,8 +243,8 @@ async function transform(css, options = {}) {
                 bytesOut: rendered.code.length,
                 ...parseResult.stats,
                 render: rendered.stats.total,
-                total: `${(performance.now() - startTime).toFixed(2)}ms`
-            }
+                total: `${(performance.now() - startTime).toFixed(2)}ms`,
+            },
         };
     });
 }

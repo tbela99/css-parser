@@ -12,6 +12,11 @@ export declare interface PropertyListOptions {
 export declare interface ParseInfo {
 
     /**
+     * source file or url
+     */
+    src: string;
+
+    /**
      * read buffer
      */
     buffer: string;
@@ -19,6 +24,12 @@ export declare interface ParseInfo {
      * stream
      */
     stream: string;
+
+    /**
+     * the accumulated css string
+     */
+    // acc: string;
+    
     /**
      * last token position
      */
@@ -32,4 +43,9 @@ export declare interface ParseInfo {
      * offset
      */
     offset: number;
+
+    /**
+     * tokenizing time
+     */
+    time: number;
 }

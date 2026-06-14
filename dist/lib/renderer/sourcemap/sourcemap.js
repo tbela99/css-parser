@@ -23,7 +23,7 @@ class SourceMap {
      * Map
      * @private
      */
-    #map = new Map;
+    #map = new Map();
     /**
      * Line
      * @private
@@ -35,7 +35,7 @@ class SourceMap {
      * @param original
      */
     add(source, original) {
-        if (original.src !== '') {
+        if (original.src !== "") {
             if (!this.#sources.includes(original.src)) {
                 this.#sources.push(original.src);
             }
@@ -45,12 +45,22 @@ class SourceMap {
                 this.#line = line;
             }
             if (!this.#map.has(line)) {
-                record = [Math.max(0, source.sta.col - 1), this.#sources.indexOf(original.src), original.sta.lin - 1, original.sta.col - 1];
+                record = [
+                    Math.max(0, source.sta.col - 1),
+                    this.#sources.indexOf(original.src),
+                    original.sta.lin - 1,
+                    original.sta.col - 1,
+                ];
                 this.#map.set(line, [record]);
             }
             else {
                 const arr = this.#map.get(line);
-                record = [Math.max(0, source.sta.col - 1 - arr[0][0]), this.#sources.indexOf(original.src) - arr[0][1], original.sta.lin - 1, original.sta.col - 1];
+                record = [
+                    Math.max(0, source.sta.col - 1 - arr[0][0]),
+                    this.#sources.indexOf(original.src) - arr[0][1],
+                    original.sta.lin - 1,
+                    original.sta.col - 1,
+                ];
                 arr.push(record);
             }
             if (this.lastLocation != null) {
@@ -75,16 +85,16 @@ class SourceMap {
         let i = 0;
         for (; i <= this.#line; i++) {
             if (!this.#map.has(i)) {
-                mappings.push('');
+                mappings.push("");
             }
             else {
-                mappings.push(this.#map.get(i).reduce((acc, curr) => acc + (acc === '' ? '' : ',') + encode(curr), ''));
+                mappings.push(this.#map.get(i).reduce((acc, curr) => acc + (acc === "" ? "" : ",") + encode(curr), ""));
             }
         }
         return {
             version: this.#version,
             sources: this.#sources.slice(),
-            mappings: mappings.join(';')
+            mappings: mappings.join(";"),
         };
     }
 }

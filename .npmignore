@@ -24,3 +24,11 @@
 /typedoc-tsconfig.jsonc
 /typedoc.json
 /docs
+/isolate-*
+/bun.lock
+/git
+/est/.DS_Store
+/test/css-modules/demo.css
+/test/img/
+/test/main.mjs
+/test/modules/

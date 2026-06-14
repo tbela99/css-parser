@@ -79,7 +79,7 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
                 expect(result.mapping).deep.equals({
                     goal: "goal_r7bhp",
                     "bg-indigo": "bg-indigo_gy28g",
-                    "indigo-white": "indigo-white_wims0 bg-indigo_gy28g ruler block title",
+                    "indigo-white": "indigo-white_wims0 bg-indigo_gy28g title block ruler",
                 });
 
                 expect(result.code).equals(`.goal_r7bhp .bg-indigo_gy28g {
@@ -108,7 +108,7 @@ composes: button cell title from "${dirname(new URL(import.meta.url).pathname)}/
                 expect(result.mapping).deep.equals({
                     goal: "goal_r7bhp",
                     "bg-indigo": "bg-indigo_gy28g",
-                    "indigo-white": "indigo-white_wims0 bg-indigo_gy28g title_fnrx5_mixins cell_dptz7_mixins button_rptz7_mixins",
+                    "indigo-white": "indigo-white_wims0 bg-indigo_gy28g button_rptz7_mixins cell_dptz7_mixins title_fnrx5_mixins",
                 });
 
                 expect(result.code).equals(`.goal_r7bhp .bg-indigo_gy28g {

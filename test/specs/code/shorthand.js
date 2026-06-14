@@ -400,4 +400,17 @@ background-image: url("logo.png");
 `).then(result => expect(result.code).equals(`.pure-table-bordered tbody>tr:last-child>td{border:#34edc7 0}`));
     });
 
+
+    it('shorthand parsing #28', function () {
+        return transform(`
+
+    .scale {
+  border-radius: 0 0 calc(0.25rem - 1px) calc(0.25rem - 10px);
+}
+  
+`, {beautify: true, validation: true}).then(result => expect(result.code). equals(`.scale {
+ border-radius: 0 0 calc(.25rem - 1px)calc(.25rem - 10px)
+}`));
+    });
+
 }

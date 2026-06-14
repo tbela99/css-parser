@@ -1,15 +1,8 @@
-import './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { color2srgbvalues, toPrecisionAngle, toPrecisionValue, getNumber, getAngle } from './color.js';
-import { cmyk2srgbvalues } from './srgb.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
-import '../../ast/minify.js';
-import '../../ast/walk.js';
-import '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
 import { srgb2labvalues, xyz2lab, oklch2labvalues, oklab2labvalues, getLABComponents, hwb2labvalues, hsl2labvalues, rgb2labvalues, hex2labvalues } from './lab.js';
-import '../../renderer/sourcemap/lib/encode.js';
+import { cmyk2srgbvalues } from './srgb.js';
 
 function hex2lchToken(token) {
     const values = hex2lchvalues(token);
@@ -82,16 +75,16 @@ function lchToken(values) {
         { typ: EnumToken.NumberTokenType, val: values[2] },
     ];
     if (values.length == 4) {
-        chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, {
+        chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
             typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100
+            val: values[3] * 100,
         });
     }
     return {
         typ: EnumToken.ColorTokenType,
-        val: 'lch',
+        val: "lch",
         chi,
-        kin: ColorType.LCH
+        kin: ColorType.LCH,
     };
 }
 function hex2lchvalues(token) {
@@ -151,11 +144,11 @@ function color2lchvalues(token) {
 }
 function labvalues2lchvalues(l, a, b, alpha = null) {
     let c = Math.sqrt(a * a + b * b);
-    let h = Math.atan2(b, a) * 180 / Math.PI;
+    let h = (Math.atan2(b, a) * 180) / Math.PI;
     if (h < 0) {
         h += 360;
     }
-    if (c < .0001) {
+    if (c < 0.0001) {
         c = h = 0;
     }
     return alpha == null ? [l, c, h] : [l, c, h, alpha];
@@ -171,7 +164,12 @@ function getLCHComponents(token) {
         return null;
     }
     for (let i = 0; i < components.length; i++) {
-        if (![EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.IdenTokenType].includes(components[i].typ)) {
+        if (![
+            EnumToken.NumberTokenType,
+            EnumToken.PercentageTokenType,
+            EnumToken.AngleTokenType,
+            EnumToken.IdenTokenType,
+        ].includes(components[i].typ)) {
             return null;
         }
     }

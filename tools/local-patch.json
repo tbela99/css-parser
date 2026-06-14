@@ -1,25 +1,152 @@
 {
   "atrules": {
+    "@color-profile": {
+      "syntax": "@color-profile [ <dashed-ident> | device-cmyk ] { <declaration-list> }",
+      "comment": "replace @color-profile syntax",
+      "descriptors": {
+        "src": {
+          "syntax": "<url>"
+        }
+      }
+    },
+    "@font-feature-values": {
+      "syntax": " @font-feature-values <family-name># { <declaration-rule-list> } ",
+      "comment": "replace @font-feature-values syntax",
+      "descriptors": {
+        "font-display": {
+          "syntax": "auto | block | swap | fallback | optional"
+        }
+      }
+    },
     "@stylistic": {
-      "syntax": " @stylistic { <feature-value-declaration-list> } "
+      "syntax": " @stylistic { <declaration-list> } ",
+      "comment": "replace @stylistic syntax"
     },
     "@historical-forms": {
-      "syntax": " @historical-forms { <feature-value-declaration-list> } "
+      "syntax": " @historical-forms { <declaration-list> }",
+      "comment": "replace @historical-forms syntax"
     },
     "@styleset": {
-      "syntax": " @styleset { <feature-value-declaration-list> } "
+      "syntax": "@styleset { <declaration-list> }",
+      "comment": "replace @styleset syntax"
     },
     "@character-variant": {
-      "syntax": " @character-variant { <feature-value-declaration-list> } "
+      "syntax": "@character-variant { <declaration-list> }",
+      "comment": "replace @character-variant syntax"
     },
     "@swash": {
-      "syntax": " @swash { <feature-value-declaration-list> } "
+      "syntax": "@swash { <declaration-list> }",
+      "comment": "replace @swash syntax"
     },
     "@ornaments": {
-      "syntax": " @ornaments { <feature-value-declaration-list> } "
+      "syntax": "@ornaments { <declaration-list> }",
+      "comment": "replace @ornaments syntax"
     },
     "@annotation": {
-      "syntax": " @annotation { <feature-value-declaration-list> } "
+      "syntax": "@annotation { <declaration-list> }",
+      "comment": "replace @annotation syntax"
+    },
+    "@when": {
+      "syntax": " @when <when-condition> {\n <group-rule-body>\n}"
+    },
+    "@else": {
+      "syntax": " @else <when-condition>? {\n <group-rule-body>\n}"
+    },
+    "@custom-media": {
+      "syntax": " @custom-media <extension-name> [<media-query-list> | true | false ];"
+    },
+    "@top-left-corner": {
+      "syntax": " @top-left-corner { <declaration-list> }"
+    },
+    "@top-left": {
+      "syntax": " @top-left { <declaration-list> }"
+    },
+    "@top-center": {
+      "syntax": " @top-center { <declaration-list> }"
+    },
+    "@top-right": {
+      "syntax": " @top-right { <declaration-list> }"
+    },
+    "@top-right-corner": {
+      "syntax": " @top-right-corner { <declaration-list> }"
+    },
+    "@bottom-left-corner": {
+      "syntax": " @bottom-left-corner { <declaration-list> }"
+    },
+    "@bottom-left": {
+      "syntax": " @bottom-left { <declaration-list> }"
+    },
+    "@bottom-right": {
+      "syntax": " @bottom-right { <declaration-list> }"
+    },
+    "@bottom-right-corner": {
+      "syntax": " @bottom-right-corner { <declaration-list> }"
+    },
+    "@function": {
+      "syntax": " @function <dashed-ident>(<function-parameter>#?) [returns <css-type>]? { <declaration-rule-list> }"
+    },
+    "@left-top": {
+      "syntax": " @left-top { <declaration-list> }"
+    },
+    "@left-middle": {
+      "syntax": " @left-middle { <declaration-list> }"
+    },
+    "@left-bottom": {
+      "syntax": " @left-bottom { <declaration-list> }"
+    },
+    "@position-try": {
+      "syntax": " @position-try <dashed-ident> { <declaration-list> } ",
+      "comment": "replace @position-try syntax",
+      "descriptors": {
+        "top": "<'top'>",
+        "left": "<'left'>",
+        "bottom": "<'bottom'>",
+        "right": "<'right'>",
+        "inset-block-start": "<'inset-block-start'>",
+        "inset-block-end": "<'inset-block-end'>",
+        "inset-inline-start": "<'inset-inline-start'>",
+        "inset-inline-end": "<'inset-inline-end'>",
+        "inset-block": "<'inset-block'>",
+        "inset-inline": "<'inset-inline'>",
+        "inset": "<'inset'>",
+        "margin-top": "<'margin-top'>",
+        "margin-left": "<'margin-left'>",
+        "margin-bottom": "<'margin-bottom'>",
+        "margin-right": "<'margin-right'>",
+        "margin-block-start": "<'margin-block-start'>",
+        "margin-block-end": "<'margin-block-end'>",
+        "margin-inline-start": "<'margin-inline-start'>",
+        "margin-inline-end": "<'margin-inline-end'>",
+        "margin": "<'margin'>",
+        "margin-block": "<'margin-block'>",
+        "margin-inline": "<'margin-inline'>",
+        "width": "<'width'>",
+        "height": "<'height'>",
+        "min-width": "<'min-width'>",
+        "min-height": "<'min-height'>",
+        "max-width": "<'max-width'>",
+        "max-height": "<'max-height'>",
+        "block-size": "<'block-size'>",
+        "inline-size": "<'inline-size'>",
+        "min-block-size": "<'min-block-size'>",
+        "min-inline-size": "<'min-inline-size'>",
+        "max-block-size": "<'max-block-size'>",
+        "max-inline-size": "<'max-inline-size'>",
+        "align-self": "<'align-self'> | anchor-center",
+        "justify-self": "<'justify-self'> | anchor-center"
+      }
+    },
+    "@right-top": {
+      "syntax": " @right-top { <declaration-list> }"
+    },
+    "@right-middle": {
+      "syntax": " @right-middle { <declaration-list> }"
+    },
+    "@right-bottom": {
+      "syntax": " @right-bottom { <declaration-list> }"
+    },
+    "@value": {
+      "syntax": "@value [<declaration> && [ <ident># from <ident> ]]"
     }
   },
   "properties": {
@@ -30,17 +157,223 @@
       "comment": "extend with auto",
       "syntax": "| auto"
     },
+    "-moz-padding-start": {
+      "syntax": "<'padding-top'>"
+    },
+    "-webkit-margin-end": {
+      "syntax": "<'margin-block-end'>"
+    },
+    "font": {
+      "comment": "extend font syntax",
+      "syntax": "| [ <'font-size'> [ / <'line-height'> ]? <'font-family'># ]"
+    },
     "text-align": {
       "comment": "extend with -non-standard-text-align",
       "syntax": "| <-non-standard-text-align>"
     },
     "composes": {
-      "syntax": "<composes-selector>#"},
-    "composes-selector": {
-      "syntax": "<ident>+ [from [global&&<string>]]?"
+      "syntax": "<composes-selector>#"
+    },
+    "stroke-linejoin": {
+      "syntax": "| arcs | crop | fallback | miter-clip"
+    },
+    "stroke-width": {
+      "comment": "replace stroke-width syntax",
+      "syntax": "[ <length-percentage> | <line-width> | <number> ]# "
+    },
+    "transform-origin": {
+      "syntax": "[ left | center | right | top | bottom | <length-percentage> ] | [ left | center | right | <length-percentage> ] [ top | center | bottom | <length-percentage> ] <length>? | [ [ center | left | right ] && [ center | top | bottom ] ] <length>?"
+    }
+  },
+  "selectors": {
+    ":global": {
+      "syntax": ":global"
+    },
+    ":global()": {
+      "syntax": ":global( <forgiving-selector-list> )"
+    },
+    ":local": {
+      "syntax": ":local"
+    },
+    ":local()": {
+      "syntax": ":local( <forgiving-selector-list> )"
     }
   },
   "types": {
+    "function-name": {
+      "syntax": "<dashed-ident>("
+    },
+    "function-parameter": {
+      "syntax": "<dashed-ident> <css-type>? [ : <default-value> ]?"
+    },
+    "alpha()": {
+      "syntax": " alpha([from <color>] [ / [<alpha-value> | none] ]? )"
+    },
+    "bg-position": {
+      "syntax": "<position> | <position-three>"
+    },
+    "if()": {
+      "syntax": "if( [ <if-branch> ; ]* )"
+    },
+    "if-branch": {
+      "syntax": "<if-condition> : <declaration-value>?"
+    },
+    "if-condition": {
+      "syntax": "<if-test> | else"
+    },
+    "if-test": {
+      "syntax": "supports( [ <ident> : <declaration-value> ] | <supports-condition> ) | media( <media-feature> | <media-condition> ) | style( <style-query> )"
+    },
+    "position": {
+      "syntax": "<position-one> | <position-two> | <position-four>"
+    },
+    "position-three": {
+      "syntax": "[ left | center | right ] && [ [ top | bottom ] <length-percentage> ] | [ [ left | right ] <length-percentage> ] && [ top | center | bottom ] "
+    },
+    "position-one": {
+      "syntax": "left | center | right | top | bottom | x-start | x-end | y-start | y-end | block-start | block-end | inline-start | inline-end | <length-percentage> "
+    },
+    "position-two": {
+      "syntax": "[ left | center | right | x-start | x-end ] && [ top | center | bottom | y-start | y-end ] | [ left | center | right | x-start | x-end | <length-percentage> ] [ top | center | bottom | y-start | y-end | <length-percentage> ] | [ block-start | center | block-end ] && [ inline-start | center | inline-end ] | [ start | center | end ]{2} "
+    },
+    "position-four": {
+      "syntax": "[ [ left | right | x-start | x-end ] <length-percentage> ] && [ [ top | bottom | y-start | y-end ] <length-percentage> ] | [ [ block-start | block-end ] <length-percentage> ] && [ [ inline-start | inline-end ] <length-percentage> ] | [ [ start | end ] <length-percentage> ]{2} "
+    },
+    "composes-selector": {
+      "syntax": "<ident>+ [from [global&&<string>]]?"
+    },
+    "color()": {
+      "syntax": "color( [from <color>]? <colorspace-params> [ / [ <alpha-value> | none ] ]? )"
+    },
+    "contrast-color()": {
+      "syntax": "contrast-color(<color> )"
+    },
+    "env()": {
+      "syntax": "env( <custom-ident> <integer [0,∞]>* , <declaration-value>? )"
+    },
+    "supports-feature": {
+      "syntax": "<supports-selector-fn> | <supports-font-tech-fn> | <supports-font-format-fn> | <supports-at-rule-fn> | <supports-named-feature-fn> | <supports-env-fn> | <supports-decl>"
+    },
+    "colorspace-params": {
+      "syntax": "[<custom-params> | <predefined-rgb-params> | <xyz-params>]"
+    },
+    "predefined-rgb-params": {
+      "syntax": "<predefined-rgb> [ <number> | <percentage> | none ]{3}"
+    },
+    "custom-params": {
+      "syntax": "<dashed-ident> [ <number> | <percentage> | none ]+"
+    },
+    "font-feature-custom-ident": {
+      "syntax": "<integer>"
+    },
+    "font-feature-custom-ident-list": {
+      "syntax": "<integer>+"
+    },
+    "font-feature-custom-ident-character-variant": {
+      "syntax": "<integer> <integer>?"
+    },
+    "container-condition": {
+      "syntax": "[ <container-name>? <container-query>? ]!"
+    },
+    "container-query": {
+      "syntax": "not <query-in-parens> | <query-in-parens> [ [ and <query-in-parens> ]* | [ or <query-in-parens> ]* ]"
+    },
+    "query-in-parens": {
+      "syntax": "( <container-query> ) | ( <size-feature> ) | style( <style-query> ) | scroll-state( <scroll-state-query> ) | <general-enclosed>"
+    },
+    "style-query": {
+      "syntax": "not <style-in-parens> | <style-in-parens> [ [ and <style-in-parens> ]* | [ or <style-in-parens> ]* ] | <style-feature>"
+    },
+    "style-in-parens": {
+      "syntax": "( <style-query> ) | ( <style-feature> ) | <general-enclosed>"
+    },
+    "style-feature": {
+      "syntax": "<style-feature-plain> | <style-feature-boolean> | <style-range>"
+    },
+    "style-feature-name": {
+      "syntax": "<ident> |<custom-property-name>"
+    },
+    "style-feature-plain": {
+      "syntax": "<style-feature-name> : <style-feature-value>"
+    },
+    "style-feature-boolean": {
+      "syntax": "<style-feature-name>"
+    },
+    "style-range": {
+      "syntax": "<style-range-value> <mf-comparison> <style-range-value> | <style-range-value> <mf-lt> <style-range-value> <mf-lt> <style-range-value> | <style-range-value> <mf-gt> <style-range-value> <mf-gt> <style-range-value>"
+    },
+    "style-range-value": {
+      "syntax": "<custom-property-name> | <style-feature-value>"
+    },
+    "scroll-state-query": {
+      "syntax": " not <scroll-state-in-parens> | <scroll-state-in-parens> [ [ and <scroll-state-in-parens> ]* | [ or <scroll-state-in-parens> ]* ] | <scroll-state-feature>"
+    },
+    "scroll-state-in-parens": {
+      "syntax": "( <scroll-state-query> ) | ( <scroll-state-feature> ) | <general-enclosed>"
+    },
+    "scroll-state-feature": {
+      "syntax": "<scroll-state-feature-plain> | <scroll-state-feature-boolean>"
+    },
+    "scroll-state-feature-plain": {
+      "syntax": "<scroll-state-feature-stuck> | <scroll-state-feature-snapped> | <scroll-state-feature-scrollable> | <scroll-state-feature-scrolled>"
+    },
+    "scroll-state-feature-stuck": {
+      "syntax": "stuck : [ none | top | right | bottom | left | block-start | inline-start | block-end | inline-end ]"
+    },
+    "scroll-state-feature-snapped": {
+      "syntax": "snapped : [ none | x | y | block | inline | both ]"
+    },
+    "scroll-state-feature-scrollable": {
+      "syntax": "scrollable : [ none | top | right | bottom | left | block-start | inline-start | block-end | inline-end | x | y | block | inline ]"
+    },
+    "scroll-state-feature-scrolled": {
+      "syntax": "scrolled : [ none | top | right | bottom | left | block-start | inline-start | block-end | inline-end | x | y | block | inline ]"
+    },
+    "scroll-state-feature-boolean": {
+      "syntax": "stuck | snapped | scrollable | scrolled"
+    },
+    "oklch()": {
+      "syntax": "oklch( [ from <color> ]? [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ <hue> | none ] [ / [ <alpha-value> | none ] ]? )"
+    },
+    "color-font-tech": {
+      "syntax": "color-colrv0 | color-colrv1 | color-svg | color-sbix | color-cbdt"
+    },
+    "font-features-tech": {
+      "syntax": "features-opentype | features-aat | features-graphite"
+    },
+    "font-tech-patch-values": {
+      "syntax": "incremental-patch | incremental-range | incremental-auto | variations | palettes"
+    },
+    "font-tech()": {
+      "syntax": "font-tech( <color-font-tech> | <font-features-tech> | <font-tech-patch-values> )"
+    },
+    "font-format-values": {
+      "syntax": "collection | embedded-opentype | opentype | truetype | svg | woff | woff2"
+    },
+    "font-format()": {
+      "syntax": "font-format(<font-format-values>)"
+    },
+    "at-rule()": {
+      "syntax": "at-rule(<at-keyword-token>)"
+    },
+    "named-feature()": {
+      "syntax": "named-feature( <ident> )"
+    },
+    "media()": {
+      "syntax": "media( [ <mf-plain> | <mf-boolean> | <mf-range> ] )"
+    },
+    "selector()": {
+      "syntax": "selector( <complex-selector> )"
+    },
+    "scroll-state()": {
+      "syntax": "scroll-state( <scroll-state-query> )"
+    },
+    "supports()": {
+      "syntax": "supports( <declaration> )"
+    },
+    "keyframe-selectors": {
+      "syntax": "<keyframe-selector>#"
+    },
     "track-breadth": {
       "comment": "extend track-breadth syntax with -non-standard-size",
       "syntax": "| <-non-standard-size>"
@@ -53,5 +386,275 @@
       "comment": "extend text-align",
       "syntax": "| -moz-center | -webkit-center | -webkit-match-parent"
     }
-  }
+  },
+  "mediaFeatures": {
+    "standard": {
+      "viewport": {
+        "width": {
+          "type": "length"
+        },
+        "min-width": {
+          "type": "length"
+        },
+        "max-width": {
+          "type": "length"
+        },
+        "height": {
+          "type": "length"
+        },
+        "min-height": {
+          "type": "length"
+        },
+        "max-height": {
+          "type": "length"
+        },
+        "aspect-ratio": {
+          "type": "ratio"
+        },
+        "min-aspect-ratio": {
+          "type": "ratio"
+        },
+        "max-aspect-ratio": {
+          "type": "ratio"
+        },
+        "orientation": {
+          "type": "keyword",
+          "values": ["portrait", "landscape"]
+        }
+      },
+      "device-viewport": {
+        "device-width": {
+          "type": "length",
+          "status": "deprecated"
+        },
+        "device-height": {
+          "type": "length",
+          "status": "deprecated"
+        },
+        "device-aspect-ratio": {
+          "type": "ratio",
+          "status": "deprecated"
+        }
+      },
+      "display": {
+        "resolution": {
+          "type": "resolution",
+          "units": ["dpi", "dpcm", "dppx"]
+        },
+        "min-resolution": {
+          "type": "resolution"
+        },
+        "max-resolution": {
+          "type": "resolution"
+        },
+        "scan": {
+          "type": "keyword",
+          "values": ["interlace", "progressive"],
+          "status": "deprecated"
+        },
+        "update": {
+          "type": "keyword",
+          "values": ["none", "slow", "fast"]
+        },
+        "overflow-block": {
+          "type": "keyword",
+          "values": ["none", "scroll", "paged"]
+        },
+        "overflow-inline": {
+          "type": "keyword",
+          "values": ["none", "scroll"]
+        },
+        "display-mode": {
+          "type": "keyword",
+          "values": ["fullscreen", "standalone", "minimal-ui", "browser"]
+        }
+      },
+      "color": {
+        "color": {
+          "type": "integer"
+        },
+        "min-color": {
+          "type": "integer"
+        },
+        "max-color": {
+          "type": "integer"
+        },
+        "color-index": {
+          "type": "integer"
+        },
+        "min-color-index": {
+          "type": "integer"
+        },
+        "max-color-index": {
+          "type": "integer"
+        },
+        "monochrome": {
+          "type": "integer"
+        },
+        "min-monochrome": {
+          "type": "integer"
+        },
+        "max-monochrome": {
+          "type": "integer"
+        },
+        "color-gamut": {
+          "type": "keyword",
+          "values": ["srgb", "p3", "rec2020"]
+        },
+        "dynamic-range": {
+          "type": "keyword",
+          "values": ["standard", "high"]
+        },
+        "inverted-colors": {
+          "type": "keyword",
+          "values": ["none", "inverted"]
+        }
+      },
+      "input": {
+        "pointer": {
+          "type": "keyword",
+          "values": ["none", "coarse", "fine"]
+        },
+        "any-pointer": {
+          "type": "keyword",
+          "values": ["none", "coarse", "fine"]
+        },
+        "hover": {
+          "type": "keyword",
+          "values": ["none", "hover"]
+        },
+        "any-hover": {
+          "type": "keyword",
+          "values": ["none", "hover"]
+        }
+      },
+      "user-preferences": {
+        "prefers-reduced-motion": {
+          "type": "keyword",
+          "values": ["no-preference", "reduce"]
+        },
+        "prefers-reduced-transparency": {
+          "type": "keyword",
+          "values": ["no-preference", "reduce"]
+        },
+        "prefers-contrast": {
+          "type": "keyword",
+          "values": ["no-preference", "less", "more", "custom"]
+        },
+        "prefers-color-scheme": {
+          "type": "keyword",
+          "values": ["light", "dark"]
+        },
+        "prefers-reduced-data": {
+          "type": "keyword",
+          "values": ["no-preference", "reduce"]
+        }
+      },
+      "accessibility": {
+        "forced-colors": {
+          "type": "keyword",
+          "values": ["none", "active"]
+        },
+        "scripting": {
+          "type": "keyword",
+          "values": ["none", "initial-only", "enabled"]
+        }
+      },
+      "legacy": {
+        "grid": {
+          "type": "boolean",
+          "values": [0, 1]
+        },
+        "light-level": {
+          "type": "keyword",
+          "values": ["dim", "normal", "washed"],
+          "status": "deprecated"
+        }
+      },
+      "environment": {
+        "environment-blending": {
+          "type": "keyword",
+          "values": ["opaque", "additive", "subtractive"]
+        }
+      },
+      "navigation": {
+        "nav-controls": {
+          "type": "keyword",
+          "values": ["none", "back"]
+        }
+      },
+      "video": {
+        "video-color-gamut": {
+          "type": "keyword",
+          "values": ["srgb", "p3", "rec2020"]
+        },
+        "video-dynamic-range": {
+          "type": "keyword",
+          "values": ["standard", "high"]
+        }
+      }
+    },
+    "vendor-prefixed": {
+      "-webkit-": {
+        "-webkit-device-pixel-ratio": {
+          "type": "number",
+          "status": "deprecated",
+          "equivalent": "resolution"
+        },
+        "-webkit-max-device-pixel-ratio": {
+          "type": "number",
+          "status": "deprecated"
+        },
+        "-webkit-transform-3d": {
+          "type": "boolean",
+          "values": [0, 1],
+          "status": "non-standard"
+        },
+        "-webkit-touch-enabled": {
+          "type": "boolean",
+          "values": [0, 1],
+          "status": "non-standard"
+        },
+        "-webkit-min-device-pixel-ratio": {
+          "type": "number",
+          "status": "deprecated"
+        }
+      },
+      "-moz-": {
+        "-moz-device-pixel-ratio": {
+          "type": "number",
+          "status": "deprecated"
+        },
+        "-moz-touch-enabled": {
+          "type": "boolean",
+          "values": [0, 1],
+          "status": "non-standard"
+        },
+        "-moz-os-version": {
+          "type": "string",
+          "status": "internal"
+        }
+      },
+      "-ms-": {
+        "-ms-high-contrast": {
+          "type": "keyword",
+          "values": ["none", "active", "black-on-white", "white-on-black"],
+          "status": "deprecated",
+          "equivalent": "forced-colors"
+        },
+        "-ms-view-state": {
+          "type": "keyword",
+          "values": ["snapped", "fullscreen-portrait", "fullscreen-landscape", "filled"],
+          "status": "obsolete"
+        }
+      },
+      "-o-": {
+        "-o-device-pixel-ratio": {
+          "type": "number",
+          "status": "obsolete"
+        }
+      }
+    }
+  },
+  "skipped": ["container"]
 }
