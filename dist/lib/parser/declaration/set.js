@@ -45,8 +45,9 @@ class PropertySet {
                 const tokens = [];
                 // @ts-ignore
                 for (let token of this.declarations.get(this.config.shorthand).val) {
-                    // @ts-ignore
-                    if (this.config.types.some((t) => token.typ == EnumToken[t]) ||
+                    if (
+                    // @ts-expect-error
+                    this.config.types.some((t) => token.typ == EnumToken[t]) ||
                         (token.typ == EnumToken.NumberTokenType &&
                             token.val == 0 &&
                             (this.config.types.includes("Length") ||

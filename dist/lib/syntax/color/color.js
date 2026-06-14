@@ -50,13 +50,6 @@ function convertColor(token, to) {
             else if (t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType) {
                 acc[acc.length - 1].push(t);
             }
-            // if (t.typ == EnumToken.ColorTokenType) {
-            //     acc.push([t]);
-            // } else {
-            //     if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType, EnumToken.CommaTokenType].includes(t.typ)) {
-            //         acc[acc.length - 1].push(t);
-            //     }
-            // }
             return acc;
         }, [[]]);
         token = colorMix(children[0][1], children[0][2], children[1][0], children[1][1], children[2][0], children[2][1]);
@@ -172,7 +165,6 @@ function convertColor(token, to) {
                 return oklch2cmykToken(token);
             case ColorType.LAB:
                 return lab2cmykToken(token);
-            //
             case ColorType.LCH:
                 return lch2cmykToken(token);
             case ColorType.COLOR:
@@ -517,7 +509,6 @@ function color2srgbvalues(token) {
             // @ts-ignore
             values = xyzd502srgb(...values);
             break;
-        // case srgb:
     }
     return values;
 }
@@ -556,8 +547,8 @@ function getNumber(token) {
     let val;
     // @ts-ignore
     if (typeof token.val != "number" && token.val?.typ == EnumToken.FractionTokenType) {
-        // @ts-ignore
         val = (token.val.l.val /
+            // @ts-expect-error
             token.val.r.val);
     }
     else {

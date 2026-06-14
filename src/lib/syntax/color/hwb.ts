@@ -122,13 +122,13 @@ export function hwbToken(values: number[]): ColorToken {
 export function rgb2hwbvalues(token: ColorToken): number[] {
     // @ts-ignore
     return srgb2hwb(
-        ...getComponents(token).map((t: Token, index: number): number => {
+        ...(getComponents(token)!.map((t: Token, index: number): number => {
             if (index == 3) {
                 return getNumber(<IdentToken | NumberToken | PercentageToken>t);
             }
 
             return getNumber(<IdentToken | NumberToken | PercentageToken>t) / 255;
-        }),
+        }) as [number, number, number, number]),
     );
 }
 
@@ -140,7 +140,7 @@ export function cmyk2hwbvalues(token: ColorToken): number[] {
 export function hsl2hwbvalues(token: ColorToken): number[] {
     // @ts-ignore
     return hslvalues2hwbvalues(
-        ...getComponents(token).map((t: Token, index: number) => {
+        ...(getComponents(token)!.map((t: Token, index: number) => {
             if (index == 3 && t.typ == EnumToken.IdenTokenType && (t as IdentToken).val == "none") {
                 return 1;
             }
@@ -150,7 +150,7 @@ export function hsl2hwbvalues(token: ColorToken): number[] {
             }
 
             return getNumber(<IdentToken | NumberToken | PercentageToken>t);
-        }),
+        }) as [number, number, number, number]),
     );
 }
 

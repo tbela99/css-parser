@@ -514,9 +514,7 @@ export const mozExtensions = new Set([
 ]);
 
 // renamed standard properties
-export const renamedStandardProperties = new Map([
-    ['color-adjust', 'print-color-adjust'],
-])
+export const renamedStandardProperties = new Map([["color-adjust", "print-color-adjust"]]);
 
 export function isLength(dimension: DimensionToken): boolean {
     return "unit" in dimension && dimensionUnits.has(dimension.unit.toLowerCase());
@@ -626,13 +624,11 @@ export function isPercentageToken(token: Token): boolean {
 }
 
 export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
-    
     if (token.typ == EnumToken.WildCardFunctionTokenType) {
-            return true;
+        return true;
     }
 
     if (token.typ == EnumToken.FunctionTokenType) {
-        
         if (!colorsFunc.includes((token as FunctionToken).val.toLowerCase())) {
             return false;
         }
@@ -752,9 +748,6 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                         return false;
                     }
                 }
-                // }
-                // }
-                // }
             }
 
             // @ts-ignore
@@ -834,17 +827,14 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                         }
                     }
 
-                    if (
-                        children[i].typ === EnumToken.WildCardFunctionTokenType
-                    ) {
-                            continue;
+                    if (children[i].typ === EnumToken.WildCardFunctionTokenType) {
+                        continue;
                     }
 
                     if (
                         children[i].typ === EnumToken.FunctionTokenType ||
                         children[i].typ === EnumToken.MathFunctionTokenType
                     ) {
-
                         if (!mathFuncs.includes((<FunctionToken>children[i]).val)) {
                             return false;
                         }
@@ -987,7 +977,8 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
 
                     if (
                         v.typ === EnumToken.MathFunctionTokenType ||
-                        (v.typ === EnumToken.WildCardFunctionTokenType  || colorsFunc.includes(v.val))
+                        v.typ === EnumToken.WildCardFunctionTokenType ||
+                        colorsFunc.includes(v.val)
                     ) {
                         continue;
                     }
@@ -1063,7 +1054,7 @@ export function parseColor(token: Token) {
         if ("chi" in token) {
             const tk = (token as ColorToken).chi?.find(
                 (t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType,
-            );
+            ) as Token;
 
             if (tk?.typ === EnumToken.IdenTokenType && (tk as IdentToken).val === "from") {
                 (token as ColorToken).cal = "rel";
@@ -1083,7 +1074,7 @@ export function parseColor(token: Token) {
                     }
                 }
 
-                if (EnumToken.DashedIdenTokenType == (token as ColorToken)?.chi[index]?.typ) {
+                if (EnumToken.DashedIdenTokenType == (token as ColorToken)?.chi?.[index]?.typ) {
                     (token as ColorToken).kin = ColorType.CUSTOM_COLOR;
                 }
             }
@@ -1185,11 +1176,6 @@ export function isIdent(name: string): boolean {
         if (Number.isNaN(nextCodepoint)) {
             return false;
         }
-
-        // -
-        // if (nextCodepoint == 0x2d) {
-        //     return false;
-        // }
 
         if (nextCodepoint == REVERSE_SOLIDUS) {
             return name.length > 2 && !isNewLine(<number>name.charCodeAt(2));

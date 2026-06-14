@@ -98,8 +98,6 @@ export const getParsedSyntax = memoize(
             return null;
         }
 
-        // return parseSyntax((obj as ValidationSyntaxNode).syntax as string) as ValidationToken[];
-
         const keys: string[] = Array.isArray(key) ? key : [key];
         const index: string = group + "." + keys.join(".");
 

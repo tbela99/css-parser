@@ -123,15 +123,6 @@ function cmyk2srgbvalues(token) {
     if (components.length == 5) {
         rgb.push(getNumber(components[4]));
     }
-    // @ts-ignore
-    // if (token.chi.length >= 9) {
-    //
-    //     // @ts-ignore
-    //     t = <NumberToken | PercentageToken>token.chi[8];
-    //
-    //     // @ts-ignore
-    //     rgb.push(getNumber(t));
-    // }
     return rgb;
 }
 function oklab2srgbvalues(token) {

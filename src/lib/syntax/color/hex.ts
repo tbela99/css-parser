@@ -160,11 +160,11 @@ export function rgb2hexvalues(token: ColorToken): string | null {
     // @ts-ignore
     for (let i = 0; i < 3; i++) {
         // @ts-ignore
-        t = components[i];
+        t = components[i] as IdenToken | NumberToken | PercentageToken;
 
-        value += // @ts-ignore
-        (
-            t.typ == EnumToken.Iden && t.val == "none"
+        value += 
+        ( // @ts-expect-error
+            t.typ == EnumToken.Iden && (t as IdenToken).val == "none"
                 ? "0"
                 : Math.round(getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 255 : 1))
         )

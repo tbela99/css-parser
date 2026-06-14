@@ -57,7 +57,6 @@ function expandRule(node) {
                         ast.chi.splice(i--, 1);
                         continue;
                     }
-                    //
                     selRule.forEach((arr) => combinators.includes(arr[0].charAt(0)) ? arr.unshift(arSelf) : arr.unshift(arSelf, " "));
                     rule.sel = selRule
                         .reduce((acc, curr) => {
@@ -65,7 +64,6 @@ function expandRule(node) {
                         return acc;
                     }, [])
                         .join(",");
-                    // }
                 }
                 else {
                     let childSelectorCompound = [];

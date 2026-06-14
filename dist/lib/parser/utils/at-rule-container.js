@@ -28,8 +28,6 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
         return acc;
     }, [[]]);
     const result = matchAllSyntax(syntax, createValidationContext(stream), options);
-    // console.debug('result', result, stream
-    // );
     if (!result.success) {
         errors.push(...result.errors);
         return {
@@ -70,11 +68,6 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
             while (stream[i]?.typ === EnumToken.WhitespaceTokenType || stream[i]?.typ === EnumToken.CommentTokenType) {
                 tokens.push(stream[i++]);
             }
-            // console.debug([
-            //     stream.length < i,
-            //     stream[i]?.typ !== EnumToken.StartParensTokenType,
-            //     stream[i]?.typ !== EnumToken.ContainerFunctionTokenDefType,
-            // ]);
             if (i < stream.length &&
                 stream[i]?.typ !== EnumToken.StartParensTokenType &&
                 stream[i]?.typ !== EnumToken.ContainerFunctionTokenDefType) {
@@ -391,7 +384,6 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                             currentScope = scopes.at(-1);
                             stack.pop();
                         }
-                        // {
                         if (stack.at(-1)?.typ === EnumToken.NotTokenType) {
                             let j = tokens.indexOf(stack.at(-1));
                             let k = j;

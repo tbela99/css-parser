@@ -70,19 +70,20 @@ class PropertyList {
                 }
                 // @ts-ignore
                 this.declarations.get(shorthand).add(declaration);
-                // return this;
             }
             // @ts-ignore
             else if (shortHandType == "set") {
                 // @ts-ignore
-                // const shorthand: string = <string>config.properties[propertyName].shorthand;
                 if (!this.declarations.has(shorthand)) {
                     // @ts-ignore
-                    this.declarations.set(shorthand, new PropertySet(config.properties[shorthand]));
+                    this.declarations.set(
+                    // @ts-ignore
+                    shorthand, 
+                    // @ts-ignore
+                    new PropertySet(config.properties[shorthand]));
                 }
                 // @ts-ignore
                 this.declarations.get(shorthand).add(declaration);
-                // return this;
             }
             else {
                 this.declarations.set(propertyName, declaration);

@@ -30,7 +30,6 @@ function matchAtRuleSyntax(atRule, stream, options) {
         }
         return { success: true, errors: [] };
     }
-    // console.debug(stream,syntax.reduce((acc, b) => acc + renderSyntax(b), ""));
     const { success, errors} = matchAllSyntax(syntax, createValidationContext(stream), options);
     return { success, errors };
 }

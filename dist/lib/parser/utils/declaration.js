@@ -271,7 +271,6 @@ function parseDeclaration(tokens, parent, options, errors) {
                 for (const { value } of walkValues(tokens)) {
                     if (value.typ === EnumToken.IdenTokenType && isColor(value)) {
                         parseColor(value);
-                        // continue;
                     }
                     else if (value.typ === EnumToken.ColorTokenType) {
                         if (isColor(value)) {
@@ -518,13 +517,7 @@ function parseDeclaration(tokens, parent, options, errors) {
     for (const { value } of walkValues(tokens)) {
         if (value.typ === EnumToken.IdenTokenType && isColor(value)) {
             parseColor(value);
-            // continue;
         }
-        // else if (value.typ === EnumToken.ColorTokenType) {
-        //     if (isColor(value)) {
-        //         parseColor(value);
-        //     }
-        // }
     }
     if (name.val === "grid" ||
         name.val === "grid-template-areas" ||

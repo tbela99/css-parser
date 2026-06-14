@@ -165,16 +165,6 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
                 } else if (t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType) {
                     acc[acc.length - 1].push(t);
                 }
-                // if (t.typ == EnumToken.ColorTokenType) {
-
-                //     acc.push([t]);
-                // } else {
-
-                //     if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType, EnumToken.CommaTokenType].includes(t.typ)) {
-
-                //         acc[acc.length - 1].push(t);
-                //     }
-                // }
 
                 return acc;
             },
@@ -344,7 +334,7 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
 
             case ColorType.LAB:
                 return lab2cmykToken(token);
-            //
+
             case ColorType.LCH:
                 return lch2cmykToken(token);
 
@@ -791,8 +781,6 @@ export function color2srgbvalues(token: ColorToken): number[] | null {
             // @ts-ignore
             values = xyzd502srgb(...values);
             break;
-
-        // case srgb:
     }
 
     return values;
@@ -876,8 +864,8 @@ export function getNumber(token: NumberToken | PercentageToken | IdentToken | Fr
 
     // @ts-ignore
     if (typeof token.val != "number" && (token.val as FractionToken)?.typ == EnumToken.FractionTokenType) {
-        // @ts-ignore
         val = ((((token as NumberToken | PercentageToken).val as FractionToken).l.val as number) /
+            // @ts-expect-error
             ((token as NumberToken | PercentageToken).val as FractionToken).r.val) as number;
     } else {
         val = (token as PercentageToken | NumberToken).val as number;

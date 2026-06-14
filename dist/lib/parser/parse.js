@@ -401,11 +401,11 @@ async function doParse(iter, options = {}) {
         // @ts-expect-error
         iter = iter[Symbol.iterator]();
     }
-    // @ts-expect-error
     while ((item = isAsync
-        ? (await iter.next()).value
-        : iter.next().value)) {
-        // item = isAsync ? await value : value;
+        ? // @ts-expect-error
+            (await iter.next()).value
+        : // @ts-expect-error
+            iter.next().value)) {
         stats.bytesIn = item.bytesIn;
         stats.tokensCount++;
         if (options.sourcemap !== false) {
@@ -433,9 +433,7 @@ async function doParse(iter, options = {}) {
         else if (item.token.typ === EnumToken.EndParensTokenType && parensMatch > 0) {
             parensMatch--;
         }
-        // if (item.token.typ != EnumToken.EOFTokenType) {
         tokens.push(item.token);
-        // }
         if ((parensMatch === 0 &&
             (item.token.typ === EnumToken.SemiColonTokenType ||
                 item.token.typ === EnumToken.BlockStartTokenType)) ||
@@ -491,12 +489,6 @@ async function doParse(iter, options = {}) {
             }
             const previousNode = stack.pop();
             context = (stack[stack.length - 1] ?? ast);
-            // if (previousNode != null && previousNode.typ == EnumToken.InvalidRuleNodeType) {
-            //     const index: number = context.chi!.findIndex(node => node == previousNode);
-            //     if (index > -1) {
-            //         context.chi!.splice(index, 1);
-            //     }
-            // }
             if (options.removeEmpty &&
                 previousNode != null &&
                 previousNode.chi.length == 0 &&
@@ -517,13 +509,6 @@ async function doParse(iter, options = {}) {
                 context = node;
             }
         }
-        // if (context != null && context.typ == EnumToken.InvalidRuleNodeType) {
-        //     // @ts-ignore ignore error
-        //     const index: number = context.chi.findIndex((node: AstNode): boolean => node === context);
-        //     if (index > -1) {
-        //         (context as AstInvalidRule).chi.splice(index, 1);
-        //     }
-        // }
     }
     if (imports.length > 0 && options.resolveImport) {
         await Promise.all(imports.map(async (node) => {
@@ -538,7 +523,7 @@ async function doParse(iter, options = {}) {
                     ? tokenizeStream(stream)
                     : tokenize({
                         stream,
-                        src: options.resolve(url, options.src).relative,
+                        src: options.resolve(url, options.src || options.cwd).relative,
                         buffer: "",
                         offset: 0,
                         position: { ind: 0, lin: 1, col: 1 },
@@ -546,7 +531,7 @@ async function doParse(iter, options = {}) {
                     }), Object.assign({}, options, {
                     minify: false,
                     setParent: false,
-                    src: options.resolve(url, options.src).relative,
+                    src: options.resolve(url, options.src || options.cwd).relative,
                 }));
                 stats.importedBytesIn += root.stats.bytesIn;
                 stats.imports.push(root.stats);
@@ -665,7 +650,6 @@ async function doParse(iter, options = {}) {
                         }
                         // @ts-ignore
                         node = replacement;
-                        //
                         if (Array.isArray(node)) {
                             break;
                         }
@@ -795,7 +779,6 @@ async function doParse(iter, options = {}) {
                                 if (result != null && result != node) {
                                     node = result;
                                 }
-                                //
                                 if (Array.isArray(node)) {
                                     break;
                                 }
@@ -984,15 +967,6 @@ async function doParse(iter, options = {}) {
                     // let isValid: boolean = true;
                     for (const token of node.val) {
                         if (token.typ == EnumToken.ComposesSelectorNodeType) {
-                            // if (!((token as ComposesSelectorToken).r == null || (token as ComposesSelectorToken).r!.typ == EnumToken.StringTokenType || (token as ComposesSelectorToken).r!.typ == EnumToken.IdenTokenType)) {
-                            //     errors.push({
-                            //         action: 'drop',
-                            //         message: `composes '${EnumToken[(token.r! as IdentToken).typ]}' is not supported`,
-                            //         node
-                            //     });
-                            //     isValid = false;
-                            //     break;
-                            // }
                             tokens.push(token);
                         }
                     }
@@ -1002,13 +976,11 @@ async function doParse(iter, options = {}) {
                         parentRule = parentRule.parent;
                     }
                     if ( /* !isValid || */tokens.length == 0) {
-                        // if (tokens.length == 0) {
                         errors.push({
                             action: "drop",
                             message: `composes is empty`,
                             node,
                         });
-                        // }
                         parentRule.chi.splice(parentRule.chi.indexOf(node), 1);
                         continue;
                     }
@@ -1444,6 +1416,7 @@ async function doParse(iter, options = {}) {
                     let isReplaced = false;
                     for (const { value, parent } of walkValues(node.tokens, node)) {
                         if (EnumToken.MediaQueryConditionTokenType == parent.typ &&
+                            // @ts-expect-error
                             value != parent.l) {
                             if ((value.typ == EnumToken.IdenTokenType || isIdentColor(value)) &&
                                 value.val in importedCssVariables) {
@@ -1587,8 +1560,6 @@ function parseNode(tokens, context, options, errors, stats) {
         context.chi.push(node);
         // @ts-expect-error
         return Object.defineProperty(node, "parent", { ...definedPropertySettings, value: context });
-        // return "chi" in node ? node : null;
-        // return node;
     }
     else {
         stats.nodesCount++;
@@ -1851,7 +1822,6 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             });
         }
         case "keyframes": {
-            // const result = matchAtRuleKeyframesSyntax(stream, context, options);
             const tokens = trimArray(stream.slice(1));
             const filtered = stream.filter((t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType);
             if (filtered.length != 1 ||
@@ -2051,13 +2021,9 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             });
         }
         case "scope": {
-            // options = { ...options, parseColor: false };
-            // const result = parseMediaqueryList(stream, options);
-            // if (result.errors.length > 0) {
-            //     errors.push(...result.errors);
-            // }
             let context = createValidationContext(trimArray(stream));
             let success = true;
+            // @ts-ignore
             let range = context.peekRange((t) => t.typ === EnumToken.EndParensTokenType);
             if (range[0]?.typ !== EnumToken.StartParensTokenType) {
                 errors.push({
@@ -2118,6 +2084,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                         }
                         else {
                             context = createValidationContext(stream.slice(index));
+                            // @ts-ignore
                             range = context.peekRange((t) => t.typ === EnumToken.EndParensTokenType);
                             if (range.at(-1)?.typ !== EnumToken.EndParensTokenType) {
                                 errors.push({
@@ -2228,7 +2195,6 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             let index = 0;
             let isVarDeclaration = false;
             for (; index < stream.length; index++) {
-                // tokens[k].typ == EnumToken.PseudoClassTokenType
                 if (stream[index].typ == EnumToken.PseudoClassTokenType) {
                     Object.assign(stream[index], {
                         typ: EnumToken.IdenTokenType,
@@ -2400,8 +2366,8 @@ function parseString(src, options = { location: false }) {
         stream: src,
         src: options.src ?? "",
         buffer: "",
-        acc: "",
         offset: 0,
+        time: 0,
         position: { ind: 0, lin: 1, col: 1 },
         currentPosition: { ind: -1, lin: 1, col: 0 },
     };

@@ -306,7 +306,7 @@ function* walkValues(values, root = null, filter, reverse) {
                     map.set(value.l, value);
                 }
                 if ("op" in value && typeof value.op == "object") {
-                    // @ts-expect-error
+                    // @ts-ignore
                     values.push(value.op);
                     // @ts-ignore
                     map.set(value.op, value);

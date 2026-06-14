@@ -34,7 +34,7 @@ export function XYZ_D50_to_D65(x: number, y: number, z: number): number[] {
     ];
     const XYZ: number[] = [x, y, z];
 
-    return multiplyMatrices(M, XYZ); //.map((v: number) => v);
+    return multiplyMatrices(M, XYZ);
 }
 
 // xyz d65

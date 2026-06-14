@@ -13,7 +13,7 @@ import type {
     MediaQueryConditionToken,
     ParensToken,
     Token,
-} from "../../../@types/token.ts";
+} from "../../../@types/token.d.ts";
 import { EnumToken } from "../../ast/types.ts";
 import { definedPropertySettings, tokensfuncSet } from "../../syntax/constants.ts";
 

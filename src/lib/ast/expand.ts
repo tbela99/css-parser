@@ -70,7 +70,6 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                         continue;
                     }
 
-                    //
                     selRule.forEach((arr) =>
                         combinators.includes(arr[0].charAt(0)) ? arr.unshift(arSelf) : arr.unshift(arSelf, " "),
                     );
@@ -85,8 +84,8 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                             <string[]>[],
                         )
                         .join(",");
-                    // }
-                } else {
+
+                    } else {
                     let childSelectorCompound: string[] = [];
                     let withCompound: string[] = [];
                     let withoutCompound: string[] = [];

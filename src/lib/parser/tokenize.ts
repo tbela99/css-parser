@@ -77,10 +77,6 @@ export const SymbolsMapTokens: Record<string, EnumToken> = {
     "\r": EnumToken.Whitespace,
     "\n": EnumToken.Whitespace,
     "\f": EnumToken.Whitespace,
-    // ...Object.keys(syntaxDefinitions.syntaxes).reduce(
-    //     (acc, curr) => (curr.endsWith("()") ? ((acc[curr.slice(0, -1)] = EnumToken.FunctionTokenDefType), acc) : acc),
-    //     Object.create(null),
-    // ),
     ...containerFunc.reduce((acc, curr: string) => {
         acc[curr + "("] = EnumToken.ContainerFunctionTokenDefType;
         return acc;
@@ -181,7 +177,7 @@ export const enum TokenMap {
 export function consumeString(quoteStr: '"' | "'", buffer: string, parseInfo: ParseInfo): Array<TokenizeResult> {
     const quote = quoteStr;
     let value;
-    // let hasNewLine: boolean = false;
+
     const result: Array<TokenizeResult> = [];
 
     if (buffer.length > 0) {
@@ -270,7 +266,7 @@ export function consumeString(quoteStr: '"' | "'", buffer: string, parseInfo: Pa
 
         if (isNewLine(value.charCodeAt(0))) {
             result.push(yieldResult(buffer + next(parseInfo), parseInfo, EnumToken.BadStringTokenType));
-            // buffer = "";
+
             return result;
         }
 
@@ -278,12 +274,8 @@ export function consumeString(quoteStr: '"' | "'", buffer: string, parseInfo: Pa
         next(parseInfo);
     }
 
-    // if (hasNewLine) {
-    //     yield yieldResult(buffer, parseInfo, EnumToken.BadStringTokenType);
-    // } else {
     // EOF - 'Unclosed-string' fixed
     result.push(yieldResult(buffer + quote, parseInfo, EnumToken.StringTokenType));
-    // }
 
     return result;
 }
@@ -303,7 +295,6 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
     if (hint != null) {
         token = hintsEnum.has(hint) ? ({ typ: hint } as Token) : ({ typ: hint, val } as Token);
     } else {
-
         let slice: string = val.slice(1);
 
         if (val.charAt(0) == "@" && isIdent(slice)) {
@@ -392,7 +383,6 @@ export function yieldResult(val: string, parseInfo: ParseInfo, hint?: EnumToken)
 
 export function match(parseInfo: ParseInfo, input: string): boolean {
     let position: number = parseInfo.currentPosition.ind - parseInfo.offset;
-    // let endPosition: number = position + input.length;
 
     for (let i: number = 0; i < input.length; i++) {
         if (parseInfo.stream[position + i + 1] != input.charAt(i)) {
@@ -402,7 +392,6 @@ export function match(parseInfo: ParseInfo, input: string): boolean {
 
     return true;
 
-    // return parseInfo.stream.slice(position + 1, position + input.length + 1) == input;
 }
 
 export function peek(parseInfo: ParseInfo, count: number = 1): string {
@@ -414,17 +403,11 @@ export function peek(parseInfo: ParseInfo, count: number = 1): string {
     return parseInfo.stream.slice(position + 1, position + count + 1);
 }
 
-// export function prev(parseInfo: ParseInfo): string {
-//     return parseInfo.offset == parseInfo.currentPosition.ind
-//         ? parseInfo.buffer.slice(-1)
-//         : parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset - 1);
-// }
-
 export function next(parseInfo: ParseInfo, count: number = 1): string {
-    // let char: string = "";
     let position = parseInfo.currentPosition.ind - parseInfo.offset;
 
-    let char: string = count == 1 ? parseInfo.stream.charAt(position + 1) : parseInfo.stream.slice(position + 1, position + 1 + count);
+    let char: string =
+        count == 1 ? parseInfo.stream.charAt(position + 1) : parseInfo.stream.slice(position + 1, position + 1 + count);
     let i: number = 0;
 
     for (; i < char.length; i++) {
@@ -440,8 +423,7 @@ export function next(parseInfo: ParseInfo, count: number = 1): string {
         ) {
             parseInfo.currentPosition.lin++;
             parseInfo.currentPosition.col = 1;
-        } 
-        else {
+        } else {
             parseInfo.currentPosition.col++;
         }
     }
@@ -460,7 +442,6 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
         parseInfo = {
             stream: parseInfo,
             buffer: "",
-            // acc: "",
             src: "",
             offset: 0,
             time: 0,
@@ -475,16 +456,13 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
     let charCode: number;
     let nextCharCode: number;
 
-    parseInfo.buffer = "";
-    // parseInfo.acc += parseInfo.stream;
-
     const startTime = performance.now();
-
     const result: TokenizeResult[] = [];
+
+    parseInfo.buffer = "";
 
     while ((value = next(parseInfo))) {
         nextValue = parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset + 1);
-
 
         charCode = value.charCodeAt(0);
         nextCharCode = nextValue.charCodeAt(0);
@@ -548,8 +526,7 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
                                 parseInfo,
                                 buffer.startsWith("--")
                                     ? EnumToken.CustomFunctionTokenDefType
-                                    :
-                                SymbolsMapTokens[buffer.toLowerCase() + "("] ?? EnumToken.FunctionTokenDefType,
+                                    : (SymbolsMapTokens[buffer.toLowerCase() + "("] ?? EnumToken.FunctionTokenDefType),
                             ),
                         );
                         buffer = "";
@@ -865,7 +842,6 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
                     break;
                 }
 
-                // buffer += prev(parseInfo) + value;
                 buffer +=
                     (parseInfo.offset == parseInfo.currentPosition.ind
                         ? parseInfo.buffer.slice(-1)
@@ -923,7 +899,6 @@ export async function* tokenizeStream(
     parseInfo ??= {
         stream: "",
         buffer: "",
-        // acc: "",
         src: "",
         offset: 0,
         time: 0,

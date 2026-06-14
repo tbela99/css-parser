@@ -258,7 +258,6 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                         stack.pop();
                     }
                     if (stack.at(-1)?.typ === EnumToken.AndTokenType || stack.at(-1)?.typ === EnumToken.OrTokenType) {
-                        //
                         if (stack.length > 1 && stack.at(-2)?.typ !== EnumToken.StartParensTokenType) {
                             return {
                                 success: false,

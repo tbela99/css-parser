@@ -138,8 +138,6 @@ export class ComputeCalcExpressionFeature {
                                       : (value as FunctionToken).chi;
                             const values: Token[] = evaluate(cp);
 
-                            // console.debug({value, values});
-
                             // fix a + -b to a - b
                             for (const { value } of walkValues(values)) {
                                 if (

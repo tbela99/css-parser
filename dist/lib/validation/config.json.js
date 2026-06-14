@@ -3844,12 +3844,12 @@ var syntaxes = {
 		syntax: " alpha([from <color>] [ / [<alpha-value> | none] ]? )"
 	},
 	"if()": {
-		syntax: "if( [ <if-args-branch> ; ]* )"
+		syntax: "if( [ <if-branch> ; ]* )"
 	},
 	"if-branch": {
 		syntax: "<if-condition> : <declaration-value>?"
 	},
-	"<if-condition>": {
+	"if-condition": {
 		syntax: "<if-test> | else"
 	},
 	"if-test": {

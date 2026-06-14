@@ -690,6 +690,47 @@ table.colortable th {
 }
 ```
 
+### CSS if() function expansion
+
+```typescript
+
+const css = `
+button {
+	background: linear-gradient(
+		if(media(min-width: 768px): to right; else: to bottom),
+		if(style(--dark-mode): #333; else: #fff),
+		if(style(--dark-mode): #000; else: #ccc)
+	);
+}`;
+
+result = await transform(css, {
+
+    beautify: true,
+    expandIfSyntax: true
+    }
+
+});
+
+console.log(result.code);
+```
+
+output
+
+```css
+button {
+ background: linear-gradient(to bottom,#fff,#ccc);
+ @media (min-width:768px) {
+  background: linear-gradient(to right,#fff,#ccc);
+  @container style(--dark-mode) {
+   background: linear-gradient(to right,#333,#000)
+  }
+ }
+ @container style(--dark-mode) {
+  background: linear-gradient(to bottom,#333,#000)
+ }
+}
+```
+
 ### Calc() resolution
 
 ```javascript

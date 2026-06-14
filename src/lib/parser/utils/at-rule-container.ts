@@ -67,9 +67,6 @@ export function parseAtRuleContainerQueryList(
         options,
     );
 
-    // console.debug('result', result, stream
-    // );
-
     if (!result.success) {
         errors.push(...result.errors);
 
@@ -119,12 +116,6 @@ export function parseAtRuleContainerQueryList(
             while (stream[i]?.typ === EnumToken.WhitespaceTokenType || stream[i]?.typ === EnumToken.CommentTokenType) {
                 tokens.push(stream[i++]);
             }
-
-            // console.debug([
-            //     stream.length < i,
-            //     stream[i]?.typ !== EnumToken.StartParensTokenType,
-            //     stream[i]?.typ !== EnumToken.ContainerFunctionTokenDefType,
-            // ]);
 
             if (
                 i < stream.length &&
@@ -544,7 +535,6 @@ export function parseAtRuleContainerQueryList(
                             stack.pop();
                         }
 
-                        // {
                         if (stack.at(-1)?.typ === EnumToken.NotTokenType) {
                             let j: number = tokens.indexOf(stack.at(-1)!);
                             let k: number = j;

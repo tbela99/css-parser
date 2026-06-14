@@ -444,12 +444,33 @@ var EnumToken;
      * css variable declaration map token type
      */
     EnumToken[EnumToken["CssVariableDeclarationMapTokenType"] = 98] = "CssVariableDeclarationMapTokenType";
+    /**
+     * media range query token type
+     */
     EnumToken[EnumToken["MediaRangeQueryTokenType"] = 99] = "MediaRangeQueryTokenType";
+    /**
+     * invalid media query token type
+     */
     EnumToken[EnumToken["InvalidMediaQueryTokenType"] = 100] = "InvalidMediaQueryTokenType";
+    /**
+     * supports query condition token type
+     */
     EnumToken[EnumToken["SupportsQueryConditionTokenType"] = 101] = "SupportsQueryConditionTokenType";
+    /**
+     * supports query unary condition token type
+     */
     EnumToken[EnumToken["SupportsQueryUnaryConditionTokenType"] = 102] = "SupportsQueryUnaryConditionTokenType";
+    /**
+     * when else query condition token type
+     */
     EnumToken[EnumToken["WhenElseQueryConditionTokenType"] = 103] = "WhenElseQueryConditionTokenType";
+    /**
+     * when else query unary condition token type
+     */
     EnumToken[EnumToken["WhenElseUnaryConditionTokenType"] = 104] = "WhenElseUnaryConditionTokenType";
+    /**
+     * container style range token type
+     */
     EnumToken[EnumToken["ContainerStyleRangeTokenType"] = 105] = "ContainerStyleRangeTokenType";
     /**
      * '*'
@@ -472,15 +493,15 @@ var EnumToken;
      */
     EnumToken[EnumToken["DoubleColonTokenType"] = 110] = "DoubleColonTokenType";
     /**
-     * math function token type 'calc(' etc.
+     * math function token type  such as'calc(' etc.
      */
     EnumToken[EnumToken["MathFunctionTokenType"] = 111] = "MathFunctionTokenType";
     /**
-     * transform function token type 'translate(' etc.
+     * transform function token type such as 'translate(' etc.
      */
     EnumToken[EnumToken["TransformFunctionTokenType"] = 112] = "TransformFunctionTokenType";
     /**
-     * when function token type 'supports(' etc.
+     * when function token type such as 'supports(' etc.
      */
     EnumToken[EnumToken["WhenElseFunctionTokenType"] = 113] = "WhenElseFunctionTokenType";
     /**
@@ -488,11 +509,11 @@ var EnumToken;
      */
     EnumToken[EnumToken["GeneralEnclosedFunctionTokenType"] = 114] = "GeneralEnclosedFunctionTokenType";
     /**
-     * supports function token type 'at-rule('
+     * supports function token type such as 'at-rule('
      */
     EnumToken[EnumToken["SupportsFunctionTokenType"] = 115] = "SupportsFunctionTokenType";
     /**
-     * container function token type 'style(' or 'scroll-state('
+     * container function token type such as 'style(' or 'scroll-state('
      */
     EnumToken[EnumToken["ContainerFunctionTokenType"] = 116] = "ContainerFunctionTokenType";
     /**
@@ -506,35 +527,35 @@ var EnumToken;
      */
     EnumToken[EnumToken["MediaQueryUnaryFeatureTokenType"] = 118] = "MediaQueryUnaryFeatureTokenType";
     /**
-     * grid template function token type 'minmax('
+     * grid template function token type such as 'minmax('
      */
     EnumToken[EnumToken["GridTemplateFuncTokenDefType"] = 119] = "GridTemplateFuncTokenDefType";
     /**
-     * image function token type 'image(' etc.
+     * image function token type such as 'image(' etc.
      */
     EnumToken[EnumToken["ImageFunctionTokenDefType"] = 120] = "ImageFunctionTokenDefType";
     /**
-     * function token type 'view(' etc.
+     * function token type such as 'view(' etc.
      */
     EnumToken[EnumToken["TimelineFunctionTokenDefType"] = 121] = "TimelineFunctionTokenDefType";
     /**
-     * function token type 'var(' etc.
+     * function token type
      */
     EnumToken[EnumToken["FunctionTokenDefType"] = 122] = "FunctionTokenDefType";
     /**
-     * timing function token type 'linear(' etc.
+     * timing function token type such as 'linear(' etc.
      */
     EnumToken[EnumToken["TimingFunctionTokenDefType"] = 123] = "TimingFunctionTokenDefType";
     /**
-     * color function token type 'rgb(' etc.
+     * color function token type such as 'rgb(' etc.
      */
     EnumToken[EnumToken["ColorFunctionTokenDefType"] = 124] = "ColorFunctionTokenDefType";
     /**
-     * math function token type 'calc(' etc.
+     * math function token type such as 'calc(' etc.
      */
     EnumToken[EnumToken["MathFunctionTokenDefType"] = 125] = "MathFunctionTokenDefType";
     /**
-     * container function token type 'style(' or 'scroll-state('
+     * container function token type such as 'style(' or 'scroll-state('
      */
     EnumToken[EnumToken["ContainerFunctionTokenDefType"] = 126] = "ContainerFunctionTokenDefType";
     /**
@@ -546,11 +567,11 @@ var EnumToken;
      */
     EnumToken[EnumToken["PseudoClassFunctionTokenDefType"] = 128] = "PseudoClassFunctionTokenDefType";
     /**
-     * transform function token type 'translate(' etc.
+     * transform function token type such as 'translate(' etc.
      */
     EnumToken[EnumToken["TransformFunctionTokenDefType"] = 129] = "TransformFunctionTokenDefType";
     /**
-     * when function token type 'supports(' or 'media('
+     * when function token type such as 'supports(' or 'media('
      */
     EnumToken[EnumToken["WhenElseFunctionTokenDefType"] = 130] = "WhenElseFunctionTokenDefType";
     /**
@@ -725,31 +746,31 @@ var ColorType;
      */
     ColorType[ColorType["RGBA"] = 4] = "RGBA";
     /**
-     * colors as hsl values
+     * colors using rgb
      */
     ColorType[ColorType["HSLA"] = 5] = "HSLA";
     /**
-     * colors as hwb values
+     * colors using hwb
      */
     ColorType[ColorType["HWB"] = 6] = "HWB";
     /**
-     * colors as cmyk values
+     * colors using cmyk
      */
     ColorType[ColorType["CMYK"] = 7] = "CMYK";
     /**
-     * colors as oklab values
+     * colors using oklab
      * */
     ColorType[ColorType["OKLAB"] = 8] = "OKLAB";
     /**
-     * colors as oklch values
+     * colors using oklch
      * */
     ColorType[ColorType["OKLCH"] = 9] = "OKLCH";
     /**
-     * colors as lab values
+     * colors using lab
      */
     ColorType[ColorType["LAB"] = 10] = "LAB";
     /**
-     * colors as lch values
+     * colors using lch
      */
     ColorType[ColorType["LCH"] = 11] = "LCH";
     /**
@@ -757,35 +778,35 @@ var ColorType;
      */
     ColorType[ColorType["COLOR"] = 12] = "COLOR";
     /**
-     * color using srgb values
+     * color using srgb
      */
     ColorType[ColorType["SRGB"] = 13] = "SRGB";
     /**
-     * color using prophoto-rgb values
+     * color using prophoto-rgb
      */
     ColorType[ColorType["PROPHOTO_RGB"] = 14] = "PROPHOTO_RGB";
     /**
-     * color using a98-rgb values
+     * color using a98-rgb
      */
     ColorType[ColorType["A98_RGB"] = 15] = "A98_RGB";
     /**
-     * color using rec2020 values
+     * color using rec2020
      */
     ColorType[ColorType["REC2020"] = 16] = "REC2020";
     /**
-     * color using display-p3 values
+     * color using display-p3
      */
     ColorType[ColorType["DISPLAY_P3"] = 17] = "DISPLAY_P3";
     /**
-     * color using srgb-linear values
+     * color using srgb-linear
      */
     ColorType[ColorType["SRGB_LINEAR"] = 18] = "SRGB_LINEAR";
     /**
-     * color using xyz-d50 values
+     * color using xyz-d50
      */
     ColorType[ColorType["XYZ_D50"] = 19] = "XYZ_D50";
     /**
-     * color using xyz-d65 values
+     * color using xyz-d65
      */
     ColorType[ColorType["XYZ_D65"] = 20] = "XYZ_D65";
     /**

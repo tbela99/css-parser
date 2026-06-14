@@ -7,15 +7,6 @@ function gcd(x, y) {
         return x;
     }
     let t;
-    // if (x == 0) {
-    //
-    //     return y;
-    // }
-    //
-    // if (y == 0) {
-    //
-    //     return x;
-    // }
     if (y > x) {
         [x, y] = [y, x];
     }
@@ -27,7 +18,7 @@ function gcd(x, y) {
     return x;
 }
 function compute(a, b, op) {
-    if (typeof a == 'number' && typeof b == 'number') {
+    if (typeof a == "number" && typeof b == "number") {
         switch (op) {
             case EnumToken.Add:
                 return a + b;
@@ -41,22 +32,28 @@ function compute(a, b, op) {
                     return r[0];
                 }
                 const result = a / b;
-                const r2 = minifyNumber(r[0]) + '/' + minifyNumber(r[1]);
-                return minifyNumber(result).length < r2.length ? result : {
-                    typ: EnumToken.FractionTokenType,
-                    l: { typ: EnumToken.NumberTokenType, val: r[0] },
-                    r: { typ: EnumToken.NumberTokenType, val: r[1] }
-                };
+                const r2 = minifyNumber(r[0]) + "/" + minifyNumber(r[1]);
+                return minifyNumber(result).length < r2.length
+                    ? result
+                    : {
+                        typ: EnumToken.FractionTokenType,
+                        l: { typ: EnumToken.NumberTokenType, val: r[0] },
+                        r: { typ: EnumToken.NumberTokenType, val: r[1] },
+                    };
         }
     }
-    let l1 = typeof a == 'number' ? {
-        l: { val: a },
-        r: { val: 1 }
-    } : a;
-    let r1 = typeof b == 'number' ? {
-        l: { val: b },
-        r: { val: 1 }
-    } : b;
+    let l1 = typeof a == "number"
+        ? {
+            l: { val: a },
+            r: { val: 1 },
+        }
+        : a;
+    let r1 = typeof b == "number"
+        ? {
+            l: { val: b },
+            r: { val: 1 },
+        }
+        : b;
     let l2;
     let r2;
     switch (op) {
@@ -91,15 +88,17 @@ function compute(a, b, op) {
         return a2[0];
     }
     const result = a2[0] / a2[1];
-    return minifyNumber(result).length <= minifyNumber(a2[0]).length + 1 + minifyNumber(a2[1]).length ? result : {
-        typ: EnumToken.FractionTokenType,
-        l: { typ: EnumToken.NumberTokenType, val: a2[0] },
-        r: { typ: EnumToken.NumberTokenType, val: a2[1] }
-    };
+    return minifyNumber(result).length <= minifyNumber(a2[0]).length + 1 + minifyNumber(a2[1]).length
+        ? result
+        : {
+            typ: EnumToken.FractionTokenType,
+            l: { typ: EnumToken.NumberTokenType, val: a2[0] },
+            r: { typ: EnumToken.NumberTokenType, val: a2[1] },
+        };
 }
 function rem(...a) {
     if (a.some((i) => !Number.isInteger(i))) {
-        return a.reduce((a, b) => Math.max(a, String(b).split('.')[1]?.length ?? 0), 0);
+        return a.reduce((a, b) => Math.max(a, String(b).split(".")[1]?.length ?? 0), 0);
     }
     return 0;
 }

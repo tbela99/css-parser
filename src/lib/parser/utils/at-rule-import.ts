@@ -41,8 +41,8 @@ export function matchAtRuleImportSyntax(
         .getPreludeRules()!
         .slice(1) as ValidationToken[];
 
-        trimArray(stream);
-        
+    trimArray(stream);
+
     // <string> | <url>
     if (stream[index]?.typ === EnumToken.StringTokenType) {
         tokens.push(stream[index++] as Token);
@@ -66,8 +66,6 @@ export function matchAtRuleImportSyntax(
             } else if (
                 !(stream[k]?.typ === EnumToken.WhitespaceTokenType || stream[k]?.typ === EnumToken.CommentTokenType)
             ) {
-                // console.debug('stream[k]', k, stream[k]);
-
                 return {
                     success: false,
                     errors: [
@@ -169,11 +167,6 @@ export function matchAtRuleImportSyntax(
             i = tokens.indexOf(stack.at(-1) as Token);
             tokens.splice(index, 1);
 
-            // Object.assign(stack.at(-1) as Token, {
-            //     typ: EnumToken.FunctionTokenType,
-            //     chi: trimArray(tokens.splice(i + 1, index - i - 1)),
-            // });
-
             return {
                 success: false,
                 errors: [
@@ -243,7 +236,7 @@ export function matchAtRuleImportSyntax(
     while (stream[index]?.typ === EnumToken.WhitespaceTokenType || stream[index]?.typ === EnumToken.CommentTokenType) {
         tokens.push(stream[index++] as Token);
     }
-    
+
     // supports([ <supports-condition> | <declaration> ] )
     if (
         index < stream.length &&
@@ -366,7 +359,7 @@ export function matchAtRuleImportSyntax(
             while (index < stream.length && matchCount > 0) {
                 if (stream[index]?.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(stream[index]?.typ)) {
                     matchCount++;
-                    // stack.push(stream[index] as Token);
+
                 } else if (stream[index]?.typ === EnumToken.EndParensTokenType) {
                     matchCount--;
                     if (matchCount === 0) {
@@ -461,7 +454,11 @@ export function matchAtRuleImportSyntax(
                 }
             }
         } else {
-            const result = parseAtRuleSupportSyntax((tokens[tokens.length - 1] as FunctionToken).chi, context, options);
+            const result = parseAtRuleSupportSyntax(
+                (tokens[tokens.length - 1] as FunctionToken).chi,
+                context as AstAtRule,
+                options,
+            );
             if (!result.success && result.errors.length > 0) {
                 errors.push(...result.errors);
 
@@ -473,7 +470,6 @@ export function matchAtRuleImportSyntax(
         }
     }
 
-    // console.debug('matchAtRuleImportSyntax', stream.slice(-11));
     const splice = stream.splice(index, stream.length - index);
     const sliced = parseMediaqueryList(splice, options);
 

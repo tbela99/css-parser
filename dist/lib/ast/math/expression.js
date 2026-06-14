@@ -31,7 +31,6 @@ function evaluate(tokens) {
             acc.push(...t);
             return acc;
         });
-        // console.debug({'tokens[0]': tokens[0]});
         const result = evaluateFunc(tokens[0]);
         if (result == null) {
             return tokens;

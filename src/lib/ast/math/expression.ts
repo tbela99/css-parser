@@ -58,8 +58,6 @@ export function evaluate(tokens: Token[]): Token[] {
             return acc;
         });
 
-        // console.debug({'tokens[0]': tokens[0]});
-
         const result = evaluateFunc(tokens[0] as FunctionToken);
 
         if (result == null) {

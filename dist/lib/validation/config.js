@@ -37,7 +37,6 @@ const getParsedSyntax = memoize((group, key) => {
     if (obj == null) {
         return null;
     }
-    // return parseSyntax((obj as ValidationSyntaxNode).syntax as string) as ValidationToken[];
     const keys = Array.isArray(key) ? key : [key];
     const index = group + "." + keys.join(".");
     if (!parsedSyntaxes.has(index)) {

@@ -388,7 +388,6 @@ export function parseDeclaration(
                 for (const { value } of walkValues(tokens)) {
                     if (value.typ === EnumToken.IdenTokenType && isColor(value)) {
                         parseColor(value);
-                        // continue;
                     } else if (value.typ === EnumToken.ColorTokenType) {
                         if (isColor(value)) {
                             parseColor(value);
@@ -703,13 +702,7 @@ export function parseDeclaration(
     for (const { value } of walkValues(tokens)) {
         if (value.typ === EnumToken.IdenTokenType && isColor(value)) {
             parseColor(value);
-            // continue;
         }
-        // else if (value.typ === EnumToken.ColorTokenType) {
-        //     if (isColor(value)) {
-        //         parseColor(value);
-        //     }
-        // }
     }
 
     if (

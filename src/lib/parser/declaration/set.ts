@@ -65,8 +65,8 @@ export class PropertySet {
 
                 // @ts-ignore
                 for (let token of this.declarations.get(this.config.shorthand).val) {
-                    // @ts-ignore
                     if (
+                    // @ts-expect-error
                         this.config.types.some((t) => token.typ == EnumToken[t]) ||
                         (token.typ == EnumToken.NumberTokenType &&
                             (token as NumberToken).val == 0 &&

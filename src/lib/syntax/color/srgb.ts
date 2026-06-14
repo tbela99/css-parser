@@ -190,16 +190,6 @@ export function cmyk2srgbvalues(token: ColorToken): number[] | null {
         rgb.push(getNumber(components[4] as NumberToken | PercentageToken));
     }
 
-    // @ts-ignore
-    // if (token.chi.length >= 9) {
-    //
-    //     // @ts-ignore
-    //     t = <NumberToken | PercentageToken>token.chi[8];
-    //
-    //     // @ts-ignore
-    //     rgb.push(getNumber(t));
-    // }
-
     return rgb;
 }
 

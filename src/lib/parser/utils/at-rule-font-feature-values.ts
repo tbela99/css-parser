@@ -13,7 +13,6 @@ const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + conte
 
     trimArray(stream);
 
-    // console.debug(stream,syntax.reduce((acc, b) => acc + renderSyntax(b), ""));
     const { success, errors, ...all } = matchAllSyntax(syntax, createValidationContext(stream), options);
 
     return { success, errors };

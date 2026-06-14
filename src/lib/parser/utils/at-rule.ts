@@ -1,9 +1,4 @@
-import type {
-    AtRuleToken,
-    Token,
-    ParserOptions,
-    ValidationOptions,
-} from "../../../@types/index.d.ts";
+import type { AtRuleToken, Token, ParserOptions, ValidationOptions } from "../../../@types/index.d.ts";
 import { EnumToken } from "../../ast/types.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";
@@ -47,7 +42,6 @@ export function matchAtRuleSyntax(atRule: AtRuleToken, stream: Token[], options:
         return { success: true, errors: [] };
     }
 
-    // console.debug(stream,syntax.reduce((acc, b) => acc + renderSyntax(b), ""));
     const { success, errors, ...all } = matchAllSyntax(syntax, createValidationContext(stream), options);
 
     return { success, errors };

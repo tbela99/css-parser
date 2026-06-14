@@ -16,6 +16,8 @@ export { expand } from './lib/ast/expand.js';
 export { WalkerEvent, WalkerOptionEnum, walk, walkValues } from './lib/ast/walk.js';
 export { convertColor } from './lib/syntax/color/color.js';
 export { isOkLabClose, okLabDistance } from './lib/syntax/color/utils/distance.js';
+export { find, findAll, findByValue, findLast } from './lib/ast/find.js';
+export { cloneNode } from './lib/ast/clone.js';
 export { SourceMap } from './lib/renderer/sourcemap/sourcemap.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 
@@ -174,16 +176,13 @@ async function parse(stream, options = {}) {
     options.parseInfo = {
         stream,
         buffer: "",
-        //   acc: "",
         src: options.src ?? "",
         offset: 0,
         time: 0,
         position: { ind: 0, lin: 1, col: 0 },
         currentPosition: { ind: -1, lin: 1, col: 0 },
     };
-    return doParse(stream instanceof ReadableStream
-        ? tokenizeStream(stream, options.parseInfo)
-        : tokenize(options.parseInfo), Object.assign(options, {
+    return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), Object.assign(options, {
         load,
         resolve,
         dirname,

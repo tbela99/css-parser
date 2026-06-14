@@ -42,6 +42,7 @@ class PropertyMap {
                 // @ts-ignore
                 this.declarations
                     .get(this.config.shorthand)
+                    // @ts-ignore
                     .val.slice()
                     .reduce((acc, curr) => {
                     // @ts-ignore
@@ -65,8 +66,9 @@ class PropertyMap {
                                 i--;
                                 continue;
                             }
+                            if (
                             // @ts-ignore
-                            if (("propertyName" in acc[i] && acc[i].propertyName == property) ||
+                            ("propertyName" in acc[i] && acc[i].propertyName == property) ||
                                 matchType(acc[i], props)) {
                                 if ("prefix" in props &&
                                     props.previous != null &&
@@ -88,8 +90,10 @@ class PropertyMap {
                                 i--;
                                 // @ts-ignore
                                 if ("prefix" in props && acc[i]?.typ == EnumToken[props.prefix.typ]) {
+                                    if (
                                     // @ts-ignore
-                                    if (acc[i].typ == EnumToken[props.prefix.typ] &&
+                                    acc[i].typ == EnumToken[props.prefix.typ] &&
+                                        // @ts-ignore
                                         acc[i].val == this.config.properties[property].prefix.val) {
                                         acc.splice(i, 1);
                                         i--;
@@ -404,7 +408,9 @@ class PropertyMap {
                     return entry[1].required && !(entry[0] in tokens);
                 }) ||
                 // @ts-ignore
-                !Object.values(tokens).every((v) => v.filter((t) => t.typ != EnumToken.CommentTokenType).length === count)) {
+                !Object.values(tokens).every((v) => 
+                // @ts-expect-error
+                v.filter((t) => t.typ != EnumToken.CommentTokenType).length === count)) {
                 // @ts-ignore
                 iterable = this.declarations.values();
             }
@@ -462,14 +468,14 @@ class PropertyMap {
                         }
                         if (values.length > 0) {
                             if ("mapping" in props) {
-                                // @ts-ignore
                                 if (!("constraints" in props) ||
+                                    // @ts-ignore
                                     !("max" in props.constraints) ||
                                     values.length <= props.constraints.mapping.max) {
                                     let i = values.length;
                                     while (i--) {
-                                        // @ts-ignore
                                         if (values[i].typ == EnumToken.IdenTokenType &&
+                                            // @ts-expect-error
                                             values[i].val in props.mapping) {
                                             // @ts-ignore
                                             values.splice(i, 1, ...parseString(props.mapping[values[i].val]));
@@ -648,8 +654,9 @@ class PropertyMap {
                                 if (value[index].typ == EnumToken.WhitespaceTokenType) {
                                     continue;
                                 }
-                                // @ts-ignore@
-                                if (value[index].typ == EnumToken[config.prefix.typ] &&
+                                if (
+                                // @ts-expect-error
+                                value[index].typ == EnumToken[config.prefix.typ] &&
                                     // @ts-ignore
                                     value[index].val == config.prefix.val) {
                                     value.splice(index, 1);

@@ -22,7 +22,7 @@ function XYZ_D50_to_D65(x, y, z) {
         [0.012314001688319899, -0.020507696433477912, 1.3303659366080753],
     ];
     const XYZ = [x, y, z];
-    return multiplyMatrices(M, XYZ); //.map((v: number) => v);
+    return multiplyMatrices(M, XYZ);
 }
 // xyz d65
 function srgb2xyz(r, g, b, alpha) {

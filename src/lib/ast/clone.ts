@@ -3,13 +3,17 @@ import type { Token } from "../../@types/token.d.ts";
 import { EnumToken } from "../ast/types.ts";
 
 /**
- * 
+ *
  * @param node he nod to clone
  * @param cloneChildren deep clone
  * @param cloneMap a map of existing children as keys and their clones as values
- * @returns 
+ * @returns
  */
-export function cloneNode(node: AstNode, cloneChildren: boolean = false, cloneMap: Map<Token | AstNode, Token | AstNode> | null = null) {
+export function cloneNode(
+    node: AstNode,
+    cloneChildren: boolean = false,
+    cloneMap: Map<Token | AstNode, Token | AstNode> | null = null,
+): AstNode {
     const checkNode = node.typ == EnumToken.DeclarationNodeType ? "val" : "chi";
 
     const clone = {} as Token;

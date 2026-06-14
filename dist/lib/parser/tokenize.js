@@ -33,10 +33,6 @@ const SymbolsMapTokens = {
     "\r": EnumToken.Whitespace,
     "\n": EnumToken.Whitespace,
     "\f": EnumToken.Whitespace,
-    // ...Object.keys(syntaxDefinitions.syntaxes).reduce(
-    //     (acc, curr) => (curr.endsWith("()") ? ((acc[curr.slice(0, -1)] = EnumToken.FunctionTokenDefType), acc) : acc),
-    //     Object.create(null),
-    // ),
     ...containerFunc.reduce((acc, curr) => {
         acc[curr + "("] = EnumToken.ContainerFunctionTokenDefType;
         return acc;
@@ -136,7 +132,6 @@ var TokenMap;
 function consumeString(quoteStr, buffer, parseInfo) {
     const quote = quoteStr;
     let value;
-    // let hasNewLine: boolean = false;
     const result = [];
     if (buffer.length > 0) {
         result.push(yieldResult(buffer, parseInfo));
@@ -197,18 +192,13 @@ function consumeString(quoteStr, buffer, parseInfo) {
         }
         if (isNewLine(value.charCodeAt(0))) {
             result.push(yieldResult(buffer + next(parseInfo), parseInfo, EnumToken.BadStringTokenType));
-            // buffer = "";
             return result;
         }
         buffer += value;
         next(parseInfo);
     }
-    // if (hasNewLine) {
-    //     yield yieldResult(buffer, parseInfo, EnumToken.BadStringTokenType);
-    // } else {
     // EOF - 'Unclosed-string' fixed
     result.push(yieldResult(buffer + quote, parseInfo, EnumToken.StringTokenType));
-    // }
     return result;
 }
 function getTokenType(val, hint) {
@@ -307,14 +297,12 @@ function yieldResult(val, parseInfo, hint) {
 }
 function match(parseInfo, input) {
     let position = parseInfo.currentPosition.ind - parseInfo.offset;
-    // let endPosition: number = position + input.length;
     for (let i = 0; i < input.length; i++) {
         if (parseInfo.stream[position + i + 1] != input.charAt(i)) {
             return false;
         }
     }
     return true;
-    // return parseInfo.stream.slice(position + 1, position + input.length + 1) == input;
 }
 function peek(parseInfo, count = 1) {
     if (count == 1) {
@@ -323,13 +311,7 @@ function peek(parseInfo, count = 1) {
     const position = parseInfo.currentPosition.ind - parseInfo.offset;
     return parseInfo.stream.slice(position + 1, position + count + 1);
 }
-// export function prev(parseInfo: ParseInfo): string {
-//     return parseInfo.offset == parseInfo.currentPosition.ind
-//         ? parseInfo.buffer.slice(-1)
-//         : parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset - 1);
-// }
 function next(parseInfo, count = 1) {
-    // let char: string = "";
     let position = parseInfo.currentPosition.ind - parseInfo.offset;
     let char = count == 1 ? parseInfo.stream.charAt(position + 1) : parseInfo.stream.slice(position + 1, position + 1 + count);
     let i = 0;
@@ -361,7 +343,6 @@ function tokenize(parseInfo, yieldEOFToken = true) {
         parseInfo = {
             stream: parseInfo,
             buffer: "",
-            // acc: "",
             src: "",
             offset: 0,
             time: 0,
@@ -374,10 +355,9 @@ function tokenize(parseInfo, yieldEOFToken = true) {
     let buffer = parseInfo.buffer;
     let charCode;
     let nextCharCode;
-    parseInfo.buffer = "";
-    // parseInfo.acc += parseInfo.stream;
     const startTime = performance.now();
     const result = [];
+    parseInfo.buffer = "";
     while ((value = next(parseInfo))) {
         nextValue = parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset + 1);
         charCode = value.charCodeAt(0);
@@ -430,8 +410,7 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                     else if (isIdent(buffer)) {
                         result.push(yieldResult(buffer, parseInfo, buffer.startsWith("--")
                             ? EnumToken.CustomFunctionTokenDefType
-                            :
-                                SymbolsMapTokens[buffer.toLowerCase() + "("] ?? EnumToken.FunctionTokenDefType));
+                            : (SymbolsMapTokens[buffer.toLowerCase() + "("] ?? EnumToken.FunctionTokenDefType)));
                         buffer = "";
                         break;
                     }
@@ -683,7 +662,6 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                     }
                     break;
                 }
-                // buffer += prev(parseInfo) + value;
                 buffer +=
                     (parseInfo.offset == parseInfo.currentPosition.ind
                         ? parseInfo.buffer.slice(-1)
@@ -730,7 +708,6 @@ async function* tokenizeStream(input, parseInfo) {
     parseInfo ??= {
         stream: "",
         buffer: "",
-        // acc: "",
         src: "",
         offset: 0,
         time: 0,

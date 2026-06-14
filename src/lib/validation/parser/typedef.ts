@@ -1,6 +1,4 @@
-
 export enum ValidationTokenEnum {
-
     Root,
     Keyword,
     PropertyType,
@@ -50,7 +48,7 @@ export enum ValidationTokenEnum {
     EOF,
     /**
      * optional group or tokens, used to group validation tokens
-     * 
+     *
      * ```ts
      * // <bg-layer>#? , <final-bg-layer> -> [<bg-layer>#? ,]? <final-bg-layer>
      * // , <angular-color-stop> ]#? -> [, <angular-color-stop> ]#?]?
@@ -59,7 +57,7 @@ export enum ValidationTokenEnum {
     OptionalGroupToken,
     /**
      * dimension token
-     * 
+     *
      * ```ts
      * // <time [0s,∞]> -> {
      * //     typ: ValidationTokenEnum.PropertyType
@@ -73,28 +71,27 @@ export enum ValidationTokenEnum {
      */
     Dimension,
     DisallowWhitespace,
-    Colon
+    Colon,
 }
 
 export enum ValidationSyntaxGroupEnum {
-
-    Declarations = 'declarations',
-    Functions = 'functions',
-    Syntaxes = 'syntaxes',
-    Selectors = 'selectors',
-    AtRules = 'atRules',
-    Units = 'units',
-    Languages = 'languages',
-    mediaFeatures = 'mediaFeatures'
+    Declarations = "declarations",
+    Functions = "functions",
+    Syntaxes = "syntaxes",
+    Selectors = "selectors",
+    AtRules = "atRules",
+    Units = "units",
+    Languages = "languages",
+    mediaFeatures = "mediaFeatures",
 }
 
 export enum MediaFeatureType {
-    BooleanType = 'boolean',
-    IntergerType = 'integer',
-    KeywordType = 'keyword',
-    LengthType = 'length',
-    NumberType = 'number',
-    RatioType = 'ratio',
-    ResolutionType = 'resolution',
-    StringType = 'string'
+    BooleanType = "boolean",
+    IntergerType = "integer",
+    KeywordType = "keyword",
+    LengthType = "length",
+    NumberType = "number",
+    RatioType = "ratio",
+    ResolutionType = "resolution",
+    StringType = "string",
 }

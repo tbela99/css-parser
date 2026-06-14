@@ -80,12 +80,9 @@ const options: TransformOptions = {
     beautify: true,
     removeDuplicateDeclarations: 'height',
     visitor: {
-        InvalidRuleTokenType(node) {
+        InvalidRuleNodeType(node) {
 
             console.debug(`> found '${EnumToken[node.typ]}'`);
-        },
-        InvalidAtRuleTokenType(node) {
-            console.debug(`> found '${EnumToken[node.typ]}' in '${node.loc.src}' at ${node.loc.sta.lin}:${node.loc.sta.col}`);
         },
         InvalidDeclarationNodeType(node) {
             console.debug(`> found '${EnumToken[node.typ]}' in '${node.loc.src}' at ${node.loc.sta.lin}:${node.loc.sta.col}`);
@@ -119,8 +116,8 @@ const css = `
 
 const result = await transform(css, options);
 
-//> found 'InvalidDeclarationNodeType' in '' at 8:13
-//> found 'InvalidAtRuleTokenType' in '' at 13:1
+// > found 'InvalidRuleNodeType' in '' at 3:1
+// > found 'InvalidDeclarationNodeType' in '' at 8:13
 
 ```
 ------

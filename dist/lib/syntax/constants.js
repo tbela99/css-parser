@@ -147,7 +147,7 @@ const colorsFunc = [
     "oklch",
     "lch",
     "light-dark",
-    "contrast-color"
+    "contrast-color",
 ];
 const imageFunc = [
     "linear-gradient",

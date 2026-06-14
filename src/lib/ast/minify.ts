@@ -257,13 +257,17 @@ function transformAtRuleMediaPrelude(values: Token[]) {
         if (value.typ === EnumToken.MediaQueryConditionTokenType) {
             if (
                 (value as MediaQueryConditionToken).op.typ == EnumToken.AndTokenType &&
+                // @ts-ignore
                 (value as MediaQueryConditionToken).l.typ === EnumToken.IdenTokenType &&
+                // @ts-ignore
                 ((value as MediaQueryConditionToken).l as IdentToken).val.toLowerCase() === "all"
             ) {
                 if (parent === null) {
+                    // @ts-ignore
                     values[values.indexOf(value)] = (value as MediaQueryConditionToken).l;
                 } else {
                     replaceToken(parent, value, (value as MediaQueryConditionToken).l);
+                    // @ts-ignore
                     value = (value as MediaQueryConditionToken).l;
                 }
                 hasUpdates = true;
@@ -275,6 +279,7 @@ function transformAtRuleMediaPrelude(values: Token[]) {
             parent != null &&
             parent.typ === EnumToken.MediaQueryConditionTokenType &&
             (parent as MediaQueryConditionToken).op.typ == EnumToken.AndTokenType &&
+            // @ts-ignore
             (parent as MediaQueryConditionToken).l.typ == EnumToken.ParensTokenType
         ) {
             let token: Token = (parent as MediaQueryConditionToken).r.find(
@@ -282,6 +287,7 @@ function transformAtRuleMediaPrelude(values: Token[]) {
             ) as Token;
 
             if (token?.typ === EnumToken.ParensTokenType) {
+                // @ts-ignore
                 const node1 = ((parent as MediaQueryConditionToken).l as ParensToken).chi.find(
                     (t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType,
                 ) as MediaQueryConditionToken;
@@ -294,11 +300,17 @@ function transformAtRuleMediaPrelude(values: Token[]) {
                     node2?.typ === EnumToken.MediaQueryConditionTokenType &&
                     (node1 as MediaQueryConditionToken).op.typ == EnumToken.ColonTokenType &&
                     (node2 as MediaQueryConditionToken).op.typ == EnumToken.ColonTokenType &&
+                    // @ts-ignore
                     (node1 as MediaQueryConditionToken).l.typ == EnumToken.IdenTokenType &&
+                    // @ts-ignore
                     (node2 as MediaQueryConditionToken).l.typ == EnumToken.IdenTokenType &&
+                    // @ts-ignore
                     ((node1 as MediaQueryConditionToken).l as IdentToken).val.startsWith("min-") &&
+                    // @ts-ignore
                     ((node2 as MediaQueryConditionToken).l as IdentToken).val.startsWith("max-") &&
+                    // @ts-ignore
                     ((node1 as MediaQueryConditionToken).l as IdentToken).val.slice(4) ==
+                        // @ts-ignore
                         ((node2 as MediaQueryConditionToken).l as IdentToken).val.slice(4)
                 ) {
                     const val1 = (node1 as MediaQueryConditionToken).r.find(
@@ -311,10 +323,12 @@ function transformAtRuleMediaPrelude(values: Token[]) {
                     const replacement = {
                         typ: EnumToken.ParensTokenType,
                         chi: [
+                            // @ts-ignore
                             {
                                 typ: EnumToken.MediaRangeQueryTokenType,
                                 op: {
                                     typ: EnumToken.IdenTokenType,
+                                    // @ts-ignore
                                     val: ((node1 as MediaQueryConditionToken).l as IdentToken).val.slice(4),
                                 },
                                 l: val1,
@@ -324,6 +338,7 @@ function transformAtRuleMediaPrelude(values: Token[]) {
                         ],
                     } as ParensToken;
 
+                    // @ts-expect-error
                     const p = parents?.[parents?.indexOf?.(parent) + 1];
 
                     if (p != null) {
@@ -351,7 +366,6 @@ function transformAtRuleMediaPrelude(values: Token[]) {
  * @private
  */
 function minifyAtRuleMedia(tokens: Token[]): Token[] {
-    // if (Array.isArray(ast.tokens)) {
     let hasUpdates: boolean = false;
 
     const sections = tokens
@@ -410,7 +424,6 @@ function minifyAtRuleMedia(tokens: Token[]): Token[] {
             }, [] as Token[]),
         );
     }
-    // }
 
     // return ast;
     return tokens;
@@ -425,10 +438,6 @@ function minifyAtRuleMedia(tokens: Token[]): Token[] {
  */
 function reduce(acc: string[], curr: string[]): string[] {
     // trim :is()
-    // if (array.length == 1 && array[0][0] == ':is(' && array[0].at(-1) == ')') {
-    //
-    //     curr = curr.slice(1, -1);
-    // }
 
     if (curr[0] == "&") {
         if (curr[1] == " " && !isIdent(curr[2]) && !isFunction(curr[2])) {

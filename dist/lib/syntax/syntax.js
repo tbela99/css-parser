@@ -188,9 +188,7 @@ const pseudoAliasMap = {
     "::-moz-selection": "::selection",
 };
 // renamed standard properties
-const renamedStandardProperties = new Map([
-    ['color-adjust', 'print-color-adjust'],
-]);
+const renamedStandardProperties = new Map([["color-adjust", "print-color-adjust"]]);
 function isLength(dimension) {
     return "unit" in dimension && dimensionUnits.has(dimension.unit.toLowerCase());
 }
@@ -372,9 +370,6 @@ function isColor(token, errors) {
                         return false;
                     }
                 }
-                // }
-                // }
-                // }
             }
             // @ts-ignore
             if (token.val == "color") {
@@ -549,7 +544,8 @@ function isColor(token, errors) {
                         continue;
                     }
                     if (v.typ === EnumToken.MathFunctionTokenType ||
-                        (v.typ === EnumToken.WildCardFunctionTokenType || colorsFunc.includes(v.val))) {
+                        v.typ === EnumToken.WildCardFunctionTokenType ||
+                        colorsFunc.includes(v.val)) {
                         continue;
                     }
                     if (![
@@ -627,7 +623,7 @@ function parseColor(token) {
                         }
                     }
                 }
-                if (EnumToken.DashedIdenTokenType == token?.chi[index]?.typ) {
+                if (EnumToken.DashedIdenTokenType == token?.chi?.[index]?.typ) {
                     token.kin = ColorType.CUSTOM_COLOR;
                 }
             }
@@ -710,10 +706,6 @@ function isIdent(name) {
         if (Number.isNaN(nextCodepoint)) {
             return false;
         }
-        // -
-        // if (nextCodepoint == 0x2d) {
-        //     return false;
-        // }
         if (nextCodepoint == REVERSE_SOLIDUS) {
             return name.length > 2 && !isNewLine(name.charCodeAt(2));
         }

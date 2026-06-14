@@ -44,6 +44,8 @@ export { renderToken } from "./lib/renderer/render.ts";
 export { convertColor } from "./lib/syntax/color/color.ts";
 export { isOkLabClose, okLabDistance } from "./lib/syntax/color/utils/distance.ts";
 export { parseDeclarations } from "./lib/parser/parse.ts";
+export { find, findLast, findByValue, findAll } from "./lib/ast/find.ts";
+export { cloneNode } from "./lib/ast/clone.ts";
 export {
     EnumToken,
     ColorType,
@@ -249,22 +251,18 @@ export async function parse(
     stream: string | ReadableStream<Uint8Array>,
     options: ParserOptions = {},
 ): Promise<ParseResult> {
-
     options.parseInfo = {
-                  stream,
-                  buffer: "",
-                //   acc: "",
-                  src: options.src ?? "",
-                  offset: 0,
-                  time: 0,
-                  position: { ind: 0, lin: 1, col: 0 },
-                  currentPosition: { ind: -1, lin: 1, col: 0 },
-              } as ParseInfo;
+        stream,
+        buffer: "",
+        src: options.src ?? "",
+        offset: 0,
+        time: 0,
+        position: { ind: 0, lin: 1, col: 0 },
+        currentPosition: { ind: -1, lin: 1, col: 0 },
+    } as ParseInfo;
 
     return doParse(
-        stream instanceof ReadableStream
-            ? tokenizeStream(stream, options.parseInfo)
-            : tokenize(options.parseInfo),
+        stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo),
         Object.assign(options, {
             load,
             resolve,

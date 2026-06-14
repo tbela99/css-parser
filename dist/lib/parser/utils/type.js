@@ -4,8 +4,12 @@ import { isColor } from '../../syntax/syntax.js';
 
 function matchType(val, properties) {
     if ((val.typ === EnumToken.IdenTokenType && properties.keywords.includes(val.val)) ||
-        // @ts-ignore
-        properties.types.some((t) => (val.typ === EnumToken.IdenTokenType && EnumToken[t] === EnumToken.ColorTokenType && isColor(val)) ||
+        properties.types.some(
+        // @ts-expect-error
+        (t) => 
+        // @ts-expect-error
+        (val.typ === EnumToken.IdenTokenType && EnumToken[t] === EnumToken.ColorTokenType && isColor(val)) ||
+            // @ts-expect-error
             EnumToken[t] === val.typ)) {
         return true;
     }

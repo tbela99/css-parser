@@ -155,7 +155,7 @@ export const colorsFunc: string[] = [
     "oklch",
     "lch",
     "light-dark",
-    "contrast-color"
+    "contrast-color",
 ];
 export const imageFunc: string[] = [
     "linear-gradient",

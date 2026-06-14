@@ -1,7 +1,7 @@
 {
   "name": "@tbela99/css-parser",
   "description": "CSS parser, minifier and validator for node and the browser",
-  "version": "v1.4.3-alpha11",
+  "version": "v1.4.3",
   "exports": {
     ".": "./dist/node.js",
     "./node": "./dist/node.js",
@@ -66,7 +66,7 @@
     "@types/chai": "^5.2.3",
     "@types/mocha": "^10.0.10",
     "@types/node": "^25.9.3",
-    "@types/web": "^0.0.349",
+    "@types/web": "^0.0.350",
     "@web/test-runner": "^0.20.2",
     "@web/test-runner-playwright": "^0.11.1",
     "c8": "^11.0.0",

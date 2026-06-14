@@ -120,8 +120,9 @@ function rgb2hexvalues(token) {
     for (let i = 0; i < 3; i++) {
         // @ts-ignore
         t = components[i];
-        value += // @ts-ignore
-            (t.typ == EnumToken.Iden && t.val == "none"
+        value +=
+            ( // @ts-expect-error
+            t.typ == EnumToken.Iden && t.val == "none"
                 ? "0"
                 : Math.round(getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 255 : 1)))
                 .toString(16)

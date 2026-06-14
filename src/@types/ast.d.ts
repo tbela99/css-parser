@@ -229,3 +229,13 @@ export declare type AstNode =
     | AstInvalidDeclaration
     | CssVariableToken
     | CssVariableImportTokenType;
+
+    
+export interface TokenSearchResult {
+    node: Token | null;
+    parent: AstNode | Token | null;
+    root: AstNode | Token | null;
+    parents: Generator<Token> | null;
+}
+
+export type AstValueMatcher = ((value: Token) => boolean) | ((token: Token, node: AstNode) => boolean);

@@ -1,14 +1,18 @@
-import type {AstAtRule, AstDeclaration, AstKeyframesAtRule, AstKeyframesRule, AstRule} from "./ast.d.ts";
-import {WalkerEvent} from "../lib/ast/walk.ts";
-import {EnumToken} from '../lib/ast/types.ts';
+import type { AstAtRule, AstDeclaration, AstKeyframesAtRule, AstKeyframesRule, AstRule } from "./ast.d.ts";
+import { WalkerEvent } from "../lib/ast/walk.ts";
+import { EnumToken } from "../lib/ast/types.ts";
 
 export declare type GenericVisitorResult<T> = T | T[] | Promise<T> | Promise<T[]> | null | Promise<null>;
-export declare type GenericVisitorHandler<T> = ((node: T, parent?: AstNode | Token, root?: AstNode | Token, parents?: Generator<AstNode | Token>) => GenericVisitorResult<T>);
+export declare type GenericVisitorHandler<T> = (
+    node: T,
+    parent?: AstNode | Token,
+    root?: AstNode | Token,
+) => GenericVisitorResult<T>;
 export declare type GenericVisitorAstNodeHandlerMap<T> =
-    Record<string, GenericVisitorHandler<T>>
+    | Record<string, GenericVisitorHandler<T>>
     | GenericVisitorHandler<T>
-    | { type: WalkerEvent, handler: GenericVisitorHandler<T> }
-    | { type: WalkerEvent, handler: Record<string, GenericVisitorHandler<T>> };
+    | { type: WalkerEvent; handler: GenericVisitorHandler<T> }
+    | { type: WalkerEvent; handler: Record<string, GenericVisitorHandler<T>> };
 
 export declare type ValueVisitorHandler = GenericVisitorHandler<Token>;
 
@@ -31,7 +35,6 @@ export declare type AtRuleVisitorHandler = GenericVisitorHandler<AstAtRule>;
  *
  */
 export declare interface VisitorNodeMap {
-
     /**
      * at rule visitor
      *
@@ -276,5 +279,5 @@ export declare interface VisitorNodeMap {
      * // body {color:#f3fff0}
      * ```
      */
-    [key : keyof typeof EnumToken]: GenericVisitorAstNodeHandlerMap<Token> | GenericVisitorAstNodeHandlerMap<AstNode>;
+    [key: keyof typeof EnumToken]: GenericVisitorAstNodeHandlerMap<Token> | GenericVisitorAstNodeHandlerMap<AstNode>;
 }

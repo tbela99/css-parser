@@ -238,16 +238,6 @@ function parseSelector(tokens, context, options, errors) {
                                                     }
                                                     break;
                                                 }
-                                                // else if ((token as DimensionToken).val === 0) {
-                                                //         func.chi.splice(0, i);
-                                                //         break;
-                                                // }
-                                                // else if (Math.abs((token as DimensionToken).val as number) === 1) {
-                                                //     Object.assign(token, {
-                                                //         typ: EnumToken.IdenTokenType,
-                                                //         val: (token as DimensionToken).val === 1 ? "n" : "-n",
-                                                //     })
-                                                // }
                                                 if (sign == null) {
                                                     func.chi.splice(index + 1, i - index - 1);
                                                     if (Math.sign(num.val) === 1) {
@@ -428,9 +418,6 @@ function parseSelector(tokens, context, options, errors) {
             }
         }
     }
-    // else {
-    //     console.error(JSON.stringify({tokens,result}, null, 1));
-    // }
     return Object.defineProperties({
         typ: result.success ? EnumToken.RuleNodeType : EnumToken.InvalidRuleNodeType,
         sel: [

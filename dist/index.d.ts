@@ -438,12 +438,33 @@ declare enum EnumToken {
      * css variable declaration map token type
      */
     CssVariableDeclarationMapTokenType = 98,
+    /**
+     * media range query token type
+     */
     MediaRangeQueryTokenType = 99,
+    /**
+     * invalid media query token type
+     */
     InvalidMediaQueryTokenType = 100,
+    /**
+     * supports query condition token type
+     */
     SupportsQueryConditionTokenType = 101,
+    /**
+     * supports query unary condition token type
+     */
     SupportsQueryUnaryConditionTokenType = 102,
+    /**
+     * when else query condition token type
+     */
     WhenElseQueryConditionTokenType = 103,
+    /**
+     * when else query unary condition token type
+     */
     WhenElseUnaryConditionTokenType = 104,
+    /**
+     * container style range token type
+     */
     ContainerStyleRangeTokenType = 105,
     /**
      * '*'
@@ -466,15 +487,15 @@ declare enum EnumToken {
      */
     DoubleColonTokenType = 110,
     /**
-     * math function token type 'calc(' etc.
+     * math function token type  such as'calc(' etc.
      */
     MathFunctionTokenType = 111,
     /**
-     * transform function token type 'translate(' etc.
+     * transform function token type such as 'translate(' etc.
      */
     TransformFunctionTokenType = 112,
     /**
-     * when function token type 'supports(' etc.
+     * when function token type such as 'supports(' etc.
      */
     WhenElseFunctionTokenType = 113,
     /**
@@ -482,11 +503,11 @@ declare enum EnumToken {
      */
     GeneralEnclosedFunctionTokenType = 114,
     /**
-     * supports function token type 'at-rule('
+     * supports function token type such as 'at-rule('
      */
     SupportsFunctionTokenType = 115,
     /**
-     * container function token type 'style(' or 'scroll-state('
+     * container function token type such as 'style(' or 'scroll-state('
      */
     ContainerFunctionTokenType = 116,
     /**
@@ -500,35 +521,35 @@ declare enum EnumToken {
      */
     MediaQueryUnaryFeatureTokenType = 118,
     /**
-     * grid template function token type 'minmax('
+     * grid template function token type such as 'minmax('
      */
     GridTemplateFuncTokenDefType = 119,
     /**
-     * image function token type 'image(' etc.
+     * image function token type such as 'image(' etc.
      */
     ImageFunctionTokenDefType = 120,
     /**
-     * function token type 'view(' etc.
+     * function token type such as 'view(' etc.
      */
     TimelineFunctionTokenDefType = 121,
     /**
-     * function token type 'var(' etc.
+     * function token type
      */
     FunctionTokenDefType = 122,
     /**
-     * timing function token type 'linear(' etc.
+     * timing function token type such as 'linear(' etc.
      */
     TimingFunctionTokenDefType = 123,
     /**
-     * color function token type 'rgb(' etc.
+     * color function token type such as 'rgb(' etc.
      */
     ColorFunctionTokenDefType = 124,
     /**
-     * math function token type 'calc(' etc.
+     * math function token type such as 'calc(' etc.
      */
     MathFunctionTokenDefType = 125,
     /**
-     * container function token type 'style(' or 'scroll-state('
+     * container function token type such as 'style(' or 'scroll-state('
      */
     ContainerFunctionTokenDefType = 126,
     /**
@@ -540,11 +561,11 @@ declare enum EnumToken {
      */
     PseudoClassFunctionTokenDefType = 128,
     /**
-     * transform function token type 'translate(' etc.
+     * transform function token type such as 'translate(' etc.
      */
     TransformFunctionTokenDefType = 129,
     /**
-     * when function token type 'supports(' or 'media('
+     * when function token type such as 'supports(' or 'media('
      */
     WhenElseFunctionTokenDefType = 130,
     /**
@@ -717,31 +738,31 @@ declare enum ColorType$1 {
      */
     RGBA = 4,
     /**
-     * colors as hsl values
+     * colors using rgb
      */
     HSLA = 5,
     /**
-     * colors as hwb values
+     * colors using hwb
      */
     HWB = 6,
     /**
-     * colors as cmyk values
+     * colors using cmyk
      */
     CMYK = 7,
     /**
-     * colors as oklab values
+     * colors using oklab
      * */
     OKLAB = 8,
     /**
-     * colors as oklch values
+     * colors using oklch
      * */
     OKLCH = 9,
     /**
-     * colors as lab values
+     * colors using lab
      */
     LAB = 10,
     /**
-     * colors as lch values
+     * colors using lch
      */
     LCH = 11,
     /**
@@ -749,35 +770,35 @@ declare enum ColorType$1 {
      */
     COLOR = 12,
     /**
-     * color using srgb values
+     * color using srgb
      */
     SRGB = 13,
     /**
-     * color using prophoto-rgb values
+     * color using prophoto-rgb
      */
     PROPHOTO_RGB = 14,
     /**
-     * color using a98-rgb values
+     * color using a98-rgb
      */
     A98_RGB = 15,
     /**
-     * color using rec2020 values
+     * color using rec2020
      */
     REC2020 = 16,
     /**
-     * color using display-p3 values
+     * color using display-p3
      */
     DISPLAY_P3 = 17,
     /**
-     * color using srgb-linear values
+     * color using srgb-linear
      */
     SRGB_LINEAR = 18,
     /**
-     * color using xyz-d50 values
+     * color using xyz-d50
      */
     XYZ_D50 = 19,
     /**
-     * color using xyz-d65 values
+     * color using xyz-d65
      */
     XYZ_D65 = 20,
     /**
@@ -2069,6 +2090,16 @@ export declare type AstNode$1 =
     | CssVariableToken
     | CssVariableImportTokenType;
 
+    
+interface TokenSearchResult {
+    node: Token$1 | null;
+    parent: AstNode$1 | Token$1 | null;
+    root: AstNode$1 | Token$1 | null;
+    parents: Generator<Token$1> | null;
+}
+
+type AstValueMatcher = ((value: Token$1) => boolean) | ((token: Token$1, node: AstNode$1) => boolean);
+
 /**
  * options for the walk function
  */
@@ -2231,12 +2262,16 @@ declare function walkValues(values: Token$1[], root?: AstNode$1 | Token$1 | null
 }, reverse?: boolean): Generator<WalkAttributesResult>;
 
 export declare type GenericVisitorResult<T> = T | T[] | Promise<T> | Promise<T[]> | null | Promise<null>;
-export declare type GenericVisitorHandler<T> = ((node: T, parent?: AstNode | Token, root?: AstNode | Token, parents?: Generator<AstNode | Token>) => GenericVisitorResult<T>);
+export declare type GenericVisitorHandler<T> = (
+    node: T,
+    parent?: AstNode | Token,
+    root?: AstNode | Token,
+) => GenericVisitorResult<T>;
 export declare type GenericVisitorAstNodeHandlerMap<T> =
-    Record<string, GenericVisitorHandler<T>>
+    | Record<string, GenericVisitorHandler<T>>
     | GenericVisitorHandler<T>
-    | { type: WalkerEvent, handler: GenericVisitorHandler<T> }
-    | { type: WalkerEvent, handler: Record<string, GenericVisitorHandler<T>> };
+    | { type: WalkerEvent; handler: GenericVisitorHandler<T> }
+    | { type: WalkerEvent; handler: Record<string, GenericVisitorHandler<T>> };
 
 export declare type ValueVisitorHandler = GenericVisitorHandler<Token>;
 
@@ -2259,7 +2294,6 @@ export declare type AtRuleVisitorHandler = GenericVisitorHandler<AstAtRule>;
  *
  */
 export declare interface VisitorNodeMap {
-
     /**
      * at rule visitor
      *
@@ -2504,7 +2538,7 @@ export declare interface VisitorNodeMap {
      * // body {color:#f3fff0}
      * ```
      */
-    [key : keyof typeof EnumToken]: GenericVisitorAstNodeHandlerMap<Token> | GenericVisitorAstNodeHandlerMap<AstNode>;
+    [key: keyof typeof EnumToken]: GenericVisitorAstNodeHandlerMap<Token> | GenericVisitorAstNodeHandlerMap<AstNode>;
 }
 
 /**
@@ -4335,6 +4369,147 @@ declare function okLabDistance(okLab1: [number, number, number], okLab2: [number
 declare function isOkLabClose(color1: ColorToken, color2: ColorToken, threshold?: number): boolean;
 
 /**
+ * search the ast tree and return the first match
+ *
+ * ```ts
+ *  // find the first ast declaration node which name is 'aspect-ratio'
+import { find, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+ * const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+ // find declaration which contain a '30px'
+  const nodeMatcher = (node: AstNode) =>
+      return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio';
+
+     const result  = await transform(css);
+     const node = find(result.ast, nodeMatcher);
+
+     console.log({node});
+ 
+    ```
+ *
+ * @param ast
+ * @param matcher
+ * @returns
+ */
+declare function find(ast: AstNode$1, matcher: (node: AstNode$1) => boolean): AstNode$1 | null;
+/**
+ * search the ast tree by checking each node's value and return the first match
+ *
+ * ```ts
+ *  // find the first ast node which contains the length token '30px'
+import { findByValue, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+ * const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+ // find declaration which contain a '30px'
+  const nodeMatcher = (value: Token) =>
+      return value.typ == EnumToken.LengthTokenType && (value as LengthToken).val == 30 && (value as LengthToken).unit == 'px' ;
+
+     const result  = await transform(css);
+     const { node, value } = findByValue(result.ast, nodeMatcher) ?? {};
+
+     console.log({node, value});
+ 
+    ```
+ *
+ * @param ast
+ * @param matcher
+ * @returns
+ */
+declare function findByValue(ast: AstNode$1, matcher: AstValueMatcher): {
+    node: AstNode$1;
+    value: TokenSearchResult;
+} | null;
+/**
+ * search the ast tree and return all matches
+ *
+ * ```ts
+ *  // find the first ast declaration node which name is 'aspect-ratio'
+import { findAll, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+ * const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+ // find declaration which contain a '30px'
+  const nodeMatcher = (node: AstNode) =>
+      return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio';
+
+     const result  = await transform(css);
+     const nodes = findAll(result.ast, nodeMatcher);
+
+     console.log({nodes});
+ 
+    ```
+ *
+ * @param ast
+ * @param matcher
+ * @returns
+ */
+declare function findAll(ast: AstNode$1, matcher: (node: AstNode$1) => boolean): AstNode$1[];
+/**
+ * search the ast tree and return the last match
+ *
+ * ```ts
+ *  // find the first ast declaration node which name is 'aspect-ratio'
+import { findLast, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+ * const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+ // find declaration which contain a '30px'
+  const nodeMatcher = (node: AstNode) =>
+      return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio';
+
+     const result  = await transform(css);
+     const node = findLast(result.ast, nodeMatcher);
+
+     console.log({node});
+ 
+    ```
+ *
+ * @param ast
+ * @param matcher
+ * @returns
+ */
+declare function findLast(ast: AstNode$1, matcher: (node: AstNode$1) => boolean): AstNode$1 | null;
+
+/**
+ *
+ * @param node he nod to clone
+ * @param cloneChildren deep clone
+ * @param cloneMap a map of existing children as keys and their clones as values
+ * @returns
+ */
+declare function cloneNode(node: AstNode$1, cloneChildren?: boolean, cloneMap?: Map<Token$1 | AstNode$1, Token$1 | AstNode$1> | null): AstNode$1;
+
+/**
  * load file or url
  * @param url
  * @param currentDirectory
@@ -4517,5 +4692,5 @@ declare function transformFile(file: string, options?: TransformOptions, asStrea
  */
 declare function transform(css: string | ReadableStream<Uint8Array>, options?: TransformOptions): Promise<TransformResult>;
 
-export { ColorType$1 as ColorType, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType$1 as ResponseType, SourceMap, ValidationLevel, WalkerEvent, WalkerOptionEnum, convertColor, dirname, expand, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, render, renderToken, resolve, transform, transformFile, walk, walkValues };
-export type { AddToken, AndToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyFrameRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstRule, AstRuleList, AstStyleSheet, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, Context, CssVariableImportTokenType$1 as CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken$1 as CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorHandler, GenericVisitorResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InvalidAttrToken, InvalidClassSelectorToken, InvalidMediaQueryToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Location, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleOptions, MulToken, NameSpaceAttributeToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseResult, ParseResultStats, ParseTokenOptions, ParserOptions, PercentageToken, Position$1 as Position, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenizeResult, TransformOptions, TransformResult, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, VariableScopeInfo, VisitorNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerValueFilter, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken };
+export { ColorType$1 as ColorType, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType$1 as ResponseType, SourceMap, ValidationLevel, WalkerEvent, WalkerOptionEnum, cloneNode, convertColor, dirname, expand, find, findAll, findByValue, findLast, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, render, renderToken, resolve, transform, transformFile, walk, walkValues };
+export type { AddToken, AndToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyFrameRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, Context, CssVariableImportTokenType$1 as CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken$1 as CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorHandler, GenericVisitorResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InvalidAttrToken, InvalidClassSelectorToken, InvalidMediaQueryToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Location, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleOptions, MulToken, NameSpaceAttributeToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseResult, ParseResultStats, ParseTokenOptions, ParserOptions, PercentageToken, Position$1 as Position, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenSearchResult, TokenizeResult, TransformOptions, TransformResult, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, VariableScopeInfo, VisitorNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerValueFilter, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken };

@@ -221,12 +221,6 @@ export interface ValidationOptionalGroupToken extends ValidationToken {
     chi: ValidationToken[];
 }
 
-// export interface ValidationColumnArrayToken extends ValidationToken {
-//
-//     typ: ValidationTokenEnum.ColumnArrayToken,
-//     chi: ValidationToken[];
-// }
-
 export interface ValidationDeclarationToken extends ValidationToken {
 
     typ: ValidationTokenEnum.DeclarationType,

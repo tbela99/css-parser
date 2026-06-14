@@ -453,17 +453,38 @@ export enum EnumToken {
      */
     CssVariableDeclarationMapTokenType,
 
+    /**
+     * media range query token type
+     */
     MediaRangeQueryTokenType,
 
+    /**
+     * invalid media query token type
+     */
     InvalidMediaQueryTokenType,
 
+    /**
+     * supports query condition token type
+     */
     SupportsQueryConditionTokenType,
 
+    /**
+     * supports query unary condition token type
+     */
     SupportsQueryUnaryConditionTokenType,
 
+    /**
+     * when else query condition token type
+     */
     WhenElseQueryConditionTokenType,
 
+    /**
+     * when else query unary condition token type
+     */
     WhenElseUnaryConditionTokenType,
+    /**
+     * container style range token type
+     */
 
     ContainerStyleRangeTokenType,
 
@@ -489,17 +510,17 @@ export enum EnumToken {
     DoubleColonTokenType,
 
     /**
-     * math function token type 'calc(' etc.
+     * math function token type  such as'calc(' etc.
      */
     MathFunctionTokenType,
 
     /**
-     * transform function token type 'translate(' etc.
+     * transform function token type such as 'translate(' etc.
      */
     TransformFunctionTokenType,
 
     /**
-     * when function token type 'supports(' etc.
+     * when function token type such as 'supports(' etc.
      */
 
     WhenElseFunctionTokenType,
@@ -510,12 +531,12 @@ export enum EnumToken {
     GeneralEnclosedFunctionTokenType,
 
     /**
-     * supports function token type 'at-rule('
+     * supports function token type such as 'at-rule('
      */
     SupportsFunctionTokenType,
 
     /**
-     * container function token type 'style(' or 'scroll-state('
+     * container function token type such as 'style(' or 'scroll-state('
      */
     ContainerFunctionTokenType,
 
@@ -531,35 +552,35 @@ export enum EnumToken {
     MediaQueryUnaryFeatureTokenType,
 
     /**
-     * grid template function token type 'minmax('
+     * grid template function token type such as 'minmax('
      */
     GridTemplateFuncTokenDefType,
     /**
-     * image function token type 'image(' etc.
+     * image function token type such as 'image(' etc.
      */
     ImageFunctionTokenDefType,
     /**
-     * function token type 'view(' etc.
+     * function token type such as 'view(' etc.
      */
     TimelineFunctionTokenDefType,
     /**
-     * function token type 'var(' etc.
+     * function token type
      */
     FunctionTokenDefType,
     /**
-     * timing function token type 'linear(' etc.
+     * timing function token type such as 'linear(' etc.
      */
     TimingFunctionTokenDefType,
     /**
-     * color function token type 'rgb(' etc.
+     * color function token type such as 'rgb(' etc.
      */
     ColorFunctionTokenDefType,
     /**
-     * math function token type 'calc(' etc.
+     * math function token type such as 'calc(' etc.
      */
     MathFunctionTokenDefType,
     /**
-     * container function token type 'style(' or 'scroll-state('
+     * container function token type such as 'style(' or 'scroll-state('
      */
     ContainerFunctionTokenDefType,
     /**
@@ -573,12 +594,12 @@ export enum EnumToken {
     PseudoClassFunctionTokenDefType,
 
     /**
-     * transform function token type 'translate(' etc.
+     * transform function token type such as 'translate(' etc.
      */
     TransformFunctionTokenDefType,
 
     /**
-     * when function token type 'supports(' or 'media('
+     * when function token type such as 'supports(' or 'media('
      */
 
     WhenElseFunctionTokenDefType,
@@ -765,31 +786,31 @@ export enum ColorType {
      */
     RGBA,
     /**
-     * colors as hsl values
+     * colors using rgb
      */
     HSLA,
     /**
-     * colors as hwb values
+     * colors using hwb
      */
     HWB,
     /**
-     * colors as cmyk values
+     * colors using cmyk
      */
     CMYK,
     /**
-     * colors as oklab values
+     * colors using oklab 
      * */
     OKLAB,
     /**
-     * colors as oklch values
+     * colors using oklch
      * */
     OKLCH,
     /**
-     * colors as lab values
+     * colors using lab
      */
     LAB,
     /**
-     * colors as lch values
+     * colors using lch
      */
     LCH,
     /**
@@ -797,35 +818,35 @@ export enum ColorType {
      */
     COLOR,
     /**
-     * color using srgb values
+     * color using srgb
      */
     SRGB,
     /**
-     * color using prophoto-rgb values
+     * color using prophoto-rgb
      */
     PROPHOTO_RGB,
     /**
-     * color using a98-rgb values
+     * color using a98-rgb 
      */
     A98_RGB,
     /**
-     * color using rec2020 values
+     * color using rec2020 
      */
     REC2020,
     /**
-     * color using display-p3 values
+     * color using display-p3 
      */
     DISPLAY_P3,
     /**
-     * color using srgb-linear values
+     * color using srgb-linear 
      */
     SRGB_LINEAR,
     /**
-     * color using xyz-d50 values
+     * color using xyz-d50 
      */
     XYZ_D50,
     /**
-     * color using xyz-d65 values
+     * color using xyz-d65 
      */
     XYZ_D65,
     /**

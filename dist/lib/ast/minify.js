@@ -153,13 +153,17 @@ function transformAtRuleMediaPrelude(values) {
     for (let { value, parent, parents } of walkValues(values)) {
         if (value.typ === EnumToken.MediaQueryConditionTokenType) {
             if (value.op.typ == EnumToken.AndTokenType &&
+                // @ts-ignore
                 value.l.typ === EnumToken.IdenTokenType &&
+                // @ts-ignore
                 value.l.val.toLowerCase() === "all") {
                 if (parent === null) {
+                    // @ts-ignore
                     values[values.indexOf(value)] = value.l;
                 }
                 else {
                     replaceToken(parent, value, value.l);
+                    // @ts-ignore
                     value = value.l;
                 }
                 hasUpdates = true;
@@ -169,30 +173,40 @@ function transformAtRuleMediaPrelude(values) {
         if (parent != null &&
             parent.typ === EnumToken.MediaQueryConditionTokenType &&
             parent.op.typ == EnumToken.AndTokenType &&
+            // @ts-ignore
             parent.l.typ == EnumToken.ParensTokenType) {
             let token = parent.r.find((t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType);
             if (token?.typ === EnumToken.ParensTokenType) {
+                // @ts-ignore
                 const node1 = parent.l.chi.find((t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType);
                 const node2 = token.chi.find((t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType);
                 if (node1?.typ === EnumToken.MediaQueryConditionTokenType &&
                     node2?.typ === EnumToken.MediaQueryConditionTokenType &&
                     node1.op.typ == EnumToken.ColonTokenType &&
                     node2.op.typ == EnumToken.ColonTokenType &&
+                    // @ts-ignore
                     node1.l.typ == EnumToken.IdenTokenType &&
+                    // @ts-ignore
                     node2.l.typ == EnumToken.IdenTokenType &&
+                    // @ts-ignore
                     node1.l.val.startsWith("min-") &&
+                    // @ts-ignore
                     node2.l.val.startsWith("max-") &&
+                    // @ts-ignore
                     node1.l.val.slice(4) ==
+                        // @ts-ignore
                         node2.l.val.slice(4)) {
                     const val1 = node1.r.find((t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType);
                     const val2 = node2.r.find((t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType);
                     const replacement = {
                         typ: EnumToken.ParensTokenType,
                         chi: [
+                            // @ts-ignore
                             {
                                 typ: EnumToken.MediaRangeQueryTokenType,
                                 op: {
                                     typ: EnumToken.IdenTokenType,
+                                    // @ts-ignore
                                     val: node1.l.val.slice(4),
                                 },
                                 l: val1,
@@ -201,6 +215,7 @@ function transformAtRuleMediaPrelude(values) {
                             },
                         ],
                     };
+                    // @ts-expect-error
                     const p = parents?.[parents?.indexOf?.(parent) + 1];
                     if (p != null) {
                         replaceToken(p, parent, replacement);
@@ -225,7 +240,6 @@ function transformAtRuleMediaPrelude(values) {
  * @private
  */
 function minifyAtRuleMedia(tokens) {
-    // if (Array.isArray(ast.tokens)) {
     let hasUpdates = false;
     const sections = tokens
         .reduce((acc, t) => {
@@ -266,7 +280,6 @@ function minifyAtRuleMedia(tokens) {
             return acc;
         }, []));
     }
-    // }
     // return ast;
     return tokens;
 }
@@ -279,10 +292,6 @@ function minifyAtRuleMedia(tokens) {
  */
 function reduce(acc, curr) {
     // trim :is()
-    // if (array.length == 1 && array[0][0] == ':is(' && array[0].at(-1) == ')') {
-    //
-    //     curr = curr.slice(1, -1);
-    // }
     if (curr[0] == "&") {
         if (curr[1] == " " && !isIdent(curr[2]) && !isFunction(curr[2])) {
             curr.splice(0, 2);

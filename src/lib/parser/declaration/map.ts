@@ -64,6 +64,7 @@ export class PropertyMap {
                 // @ts-ignore
                 this.declarations
                     .get(this.config.shorthand)
+                    // @ts-ignore
                     .val.slice()
                     .reduce(
                         (acc: Token[][], curr: Token) => {
@@ -97,8 +98,8 @@ export class PropertyMap {
                                         continue;
                                     }
 
-                                    // @ts-ignore
                                     if (
+                                        // @ts-ignore
                                         ("propertyName" in acc[i] && acc[i].propertyName == property) ||
                                         matchType(acc[i], props)
                                     ) {
@@ -128,9 +129,10 @@ export class PropertyMap {
 
                                         // @ts-ignore
                                         if ("prefix" in props && acc[i]?.typ == EnumToken[props.prefix.typ]) {
-                                            // @ts-ignore
                                             if (
+                                                // @ts-ignore
                                                 acc[i].typ == EnumToken[props.prefix.typ] &&
+                                                // @ts-ignore
                                                 acc[i].val == this.config.properties[property].prefix.val
                                             ) {
                                                 acc.splice(i, 1);
@@ -543,6 +545,7 @@ export class PropertyMap {
                 // @ts-ignore
                 !Object.values(tokens).every(
                     (v: Token[][]): boolean =>
+                        // @ts-expect-error
                         v.filter((t: Token): boolean => t.typ != EnumToken.CommentTokenType).length === count,
                 )
             ) {
@@ -636,17 +639,17 @@ export class PropertyMap {
 
                                 if (values.length > 0) {
                                     if ("mapping" in props) {
-                                        // @ts-ignore
                                         if (
                                             !("constraints" in props) ||
+                                            // @ts-ignore
                                             !("max" in props.constraints) ||
                                             values.length <= props.constraints.mapping.max
                                         ) {
                                             let i: number = values.length;
                                             while (i--) {
-                                                // @ts-ignore
                                                 if (
                                                     values[i].typ == EnumToken.IdenTokenType &&
+                                                    // @ts-expect-error
                                                     values[i].val in props.mapping
                                                 ) {
                                                     // @ts-ignore
@@ -878,8 +881,8 @@ export class PropertyMap {
                                     continue;
                                 }
 
-                                // @ts-ignore@
                                 if (
+                                    // @ts-expect-error
                                     value[index].typ == EnumToken[config.prefix.typ] &&
                                     // @ts-ignore
                                     value[index].val == config.prefix.val

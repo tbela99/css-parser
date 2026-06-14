@@ -111,7 +111,9 @@ function computeComponentValue(expr, converted, values) {
             for (let { value, parent } of walkValues(exp.chi, exp)) {
                 if (value.typ == EnumToken.IdenTokenType) {
                     // @ts-ignore
-                    replaceValue(parent, value, values[value.val] ??
+                    replaceValue(parent, value, 
+                    // @ts-expect-error
+                    values[value.val] ??
                         {
                             typ: EnumToken.NumberTokenType,
                             // @ts-ignore
@@ -120,13 +122,11 @@ function computeComponentValue(expr, converted, values) {
                         });
                 }
             }
-            // console.debug({exp});
             const result = (exp.typ === EnumToken.MathFunctionTokenType ||
                 (exp.typ == EnumToken.FunctionTokenType && mathFuncs.includes(exp.val))) &&
                 exp.val !== "calc"
                 ? evaluateFunc(exp)
                 : evaluate(exp.chi);
-            // console.debug({result2: result});
             if (result.length == 1 && result[0].typ != EnumToken.BinaryExpressionTokenType) {
                 expr[key] = result[0];
             }

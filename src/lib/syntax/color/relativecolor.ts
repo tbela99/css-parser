@@ -185,6 +185,7 @@ function computeComponentValue(
                     replaceValue(
                         parent as BinaryExpressionToken | FunctionToken | ParensToken,
                         value,
+                        // @ts-expect-error
                         values[value.val] ??
                             ({
                                 typ: EnumToken.NumberTokenType,
@@ -196,16 +197,12 @@ function computeComponentValue(
                 }
             }
 
-            // console.debug({exp});
-
             const result: Token[] =
                 (exp.typ === EnumToken.MathFunctionTokenType ||
                     (exp.typ == EnumToken.FunctionTokenType && mathFuncs.includes((exp as FunctionToken).val))) &&
                 (exp as FunctionToken).val !== "calc"
-                    ? evaluateFunc(exp as FunctionToken)
-                    : evaluate((exp as FunctionToken).chi);
-
-            // console.debug({result2: result});
+                    ? evaluateFunc(exp as FunctionToken) as Token[]
+                    : evaluate((exp as FunctionToken).chi) as Token[];
 
             if (result.length == 1 && result[0].typ != EnumToken.BinaryExpressionTokenType) {
                 expr[<RelativeColorTypes>key] = result[0];

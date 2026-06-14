@@ -43,7 +43,6 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                 urlTokenCount++;
             }
             else if (!(stream[k]?.typ === EnumToken.WhitespaceTokenType || stream[k]?.typ === EnumToken.CommentTokenType)) {
-                // console.debug('stream[k]', k, stream[k]);
                 return {
                     success: false,
                     errors: [
@@ -125,10 +124,6 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
         if (stream[index]?.typ === EnumToken.EndParensTokenType) {
             i = tokens.indexOf(stack.at(-1));
             tokens.splice(index, 1);
-            // Object.assign(stack.at(-1) as Token, {
-            //     typ: EnumToken.FunctionTokenType,
-            //     chi: trimArray(tokens.splice(i + 1, index - i - 1)),
-            // });
             return {
                 success: false,
                 errors: [
@@ -289,7 +284,6 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
             while (index < stream.length && matchCount > 0) {
                 if (stream[index]?.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(stream[index]?.typ)) {
                     matchCount++;
-                    // stack.push(stream[index] as Token);
                 }
                 else if (stream[index]?.typ === EnumToken.EndParensTokenType) {
                     matchCount--;
@@ -379,7 +373,6 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
             }
         }
     }
-    // console.debug('matchAtRuleImportSyntax', stream.slice(-11));
     const splice = stream.splice(index, stream.length - index);
     const sliced = parseMediaqueryList(splice, options);
     tokens.push(...splice);

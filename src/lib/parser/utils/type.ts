@@ -6,11 +6,13 @@ import { isColor } from "../../syntax/syntax.ts";
 export function matchType(val: Token, properties: PropertyMapType): boolean {
     if (
         (val.typ === EnumToken.IdenTokenType && properties.keywords.includes((<IdentToken>val).val)) ||
-        // @ts-ignore
         properties.types.some(
+        // @ts-expect-error
             (t: keyof EnumToken) =>
+        // @ts-expect-error
                 (val.typ === EnumToken.IdenTokenType && EnumToken[t] === EnumToken.ColorTokenType && isColor(val)) ||
-                EnumToken[t] === val.typ,
+                // @ts-expect-error
+            EnumToken[t] === val.typ,
         )
     ) {
         return true;
