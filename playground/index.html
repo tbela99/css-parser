@@ -531,7 +531,8 @@
                                     </label>
                                     <select class="form-select form-control" name="preset">
                                         <option value="">None</option>
-                                        <option selected value="calc">Calc</option>
+                                        <option selected value="calc">Calc()</option>
+                                        <option value="if">If()</option>
                                         <option value="validation">Validation</option>
                                         <option value="prefix">Remove Prefixes</option>
                                         <option value="bootstrap">Import Bootstrap</option>
@@ -1100,6 +1101,17 @@ console.debug({parsed, rendered});`;
 
 }
 `;
+            }else if (event.target.value === "if") {
+
+                css.value = `button {
+	background: linear-gradient(
+		if(media(min-width: 768px): to right; else: to bottom),
+		if(style(--dark-mode): #333; else: #fff),
+		if(style(--dark-mode): #000; else: #ccc)
+	);
+}
+`;
+
             } else if (event.target.value === "validation") {
                 parseoptionsValidation.checked = true;
                 css.value = `
