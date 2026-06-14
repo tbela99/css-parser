@@ -50,10 +50,9 @@ export function replaceToken(
               )),
     value: Token,
     replacement: Token | Token[],
-) {
-    if (replacement == null) {
-
-        throw new TypeError(`replacement is null`);;
+): boolean {
+    if (replacement == null || (Array.isArray(replacement) && replacement.length === 0)) {
+        throw new TypeError(`replacement is null`);
     }
 
     for (const node of Array.isArray(replacement) ? replacement : [replacement]) {
@@ -68,8 +67,10 @@ export function replaceToken(
     if (parent.typ == EnumToken.BinaryExpressionTokenType) {
         if ((parent as BinaryExpressionToken).l == value) {
             (parent as BinaryExpressionToken).l = replacement as Token;
-        } else {
+        } else if ((parent as BinaryExpressionToken).r == value) {
             (parent as BinaryExpressionToken).r = replacement as Token;
+        } else {
+            throw new ReferenceError("Node not found");
         }
     } else {
         const target =
@@ -91,7 +92,7 @@ export function replaceToken(
             const index: number = target.indexOf(value);
 
             if (index == -1) {
-                return;
+                throw new ReferenceError("Node not found");
             }
 
             target.splice(index, 1, ...(Array.isArray(replacement) ? replacement : [replacement]));
@@ -99,8 +100,12 @@ export function replaceToken(
             (target as BinaryExpressionToken | MediaQueryConditionToken).l = replacement as Token;
         } else if ("r" in target && (target as BinaryExpressionToken | MediaQueryConditionToken).r == value) {
             (target as BinaryExpressionToken | MediaQueryConditionToken).r = replacement as Token;
+        } else {
+            throw new ReferenceError("Node not found");
         }
     }
+
+    return true;
 }
 
 export function trimWhiteSpaceTokens(tokens: Token[]): Token[] {

@@ -1085,6 +1085,7 @@
                     node,
                     parent: map.get(node),
                     root,
+                    // @ts-expect-error
                     parents: function* () {
                         let parent = map.get(node);
                         while (parent != null) {
@@ -17364,7 +17365,7 @@
      * @param replacement
      */
     function replaceToken(parent, value, replacement) {
-        if (replacement == null) {
+        if (replacement == null || (Array.isArray(replacement) && replacement.length === 0)) {
             throw new TypeError(`replacement is null`);
         }
         for (const node of Array.isArray(replacement) ? replacement : [replacement]) {
@@ -17379,8 +17380,11 @@
             if (parent.l == value) {
                 parent.l = replacement;
             }
-            else {
+            else if (parent.r == value) {
                 parent.r = replacement;
+            }
+            else {
+                throw new ReferenceError("Node not found");
             }
         }
         else {
@@ -17391,7 +17395,7 @@
                 // @ts-ignore
                 const index = target.indexOf(value);
                 if (index == -1) {
-                    return;
+                    throw new ReferenceError("Node not found");
                 }
                 target.splice(index, 1, ...(Array.isArray(replacement) ? replacement : [replacement]));
             }
@@ -17401,7 +17405,11 @@
             else if ("r" in target && target.r == value) {
                 target.r = replacement;
             }
+            else {
+                throw new ReferenceError("Node not found");
+            }
         }
+        return true;
     }
     function trimWhiteSpaceTokens(tokens) {
         let i = 0;
@@ -17433,6 +17441,13 @@
         return tokens;
     }
 
+    /**
+     *
+     * @param node he nod to clone
+     * @param cloneChildren deep clone
+     * @param cloneMap a map of existing children as keys and their clones as values
+     * @returns
+     */
     function cloneNode(node, cloneChildren = false, cloneMap = null) {
         const checkNode = node.typ == exports.EnumToken.DeclarationNodeType ? "val" : "chi";
         const clone = {};
@@ -17468,6 +17483,11 @@
         return Object.defineProperties(clone, properties);
     }
 
+    /**
+     *
+     * @param template
+     * @returns
+     */
     function parseGridTemplate(template) {
         let result = "";
         let buffer = "";
@@ -17496,6 +17516,11 @@
         }
         return buffer.length > 0 ? result + buffer : result;
     }
+    /**
+     *
+     * @param tokens
+     * @returns
+     */
     function isDeclarationValue(tokens) {
         const stack = [];
         let i = 0;
@@ -17822,7 +17847,7 @@
                                 if (foundElse) {
                                     // else already found
                                     // ignore everything after else
-                                    // if(media(any-pointer: fine): 30px; else: 44px; else 50px); -> if(media(any-pointer: fine): 30px; else: 44px;);
+                                    // if(media(any-pointer: fine): 30px; else: 44px; media(any-pointer: fine): 23px); -> if(media(any-pointer: fine): 30px; else: 44px;);
                                     return acc;
                                 }
                                 let index = -1;
@@ -21212,73 +21237,202 @@
     }
 
     /**
-     * recursively creates two branches
-     * @param parent
-     * @param declaration
-     * @param parentWrapper
-     * @param wrapper
-     * @param node
-     * @param mediaQuery
+     * find not by checking its value
+     *
+     * ```ts
+     *
+     * // find declaration which contain a color
+      const nodeMatcher = (value: Token, node: AstNode) =>
+        node.typ === EnumToken.DeclarationNodeType &&
+         value.typ === EnumToken.ColorTokenType;
+
+         const { node, attribute } = findByAttribute(astNode, nodeMatcher) ?? {};
+     
+        ```
+     *
+     * @param root
+     * @param matcher
      * @returns
      */
-    function createTree(declaration, parentWrapper, wrapper, node) {
+    function findByAttribute(root, matcher) {
+        let source;
+        for (const { node } of walk(root)) {
+            source = null;
+            if (node.typ === exports.EnumToken.DeclarationNodeType) {
+                source = node.val;
+            }
+            else if (Array.isArray(node.tokens)) {
+                source = node.tokens;
+            }
+            if (source == null) {
+                continue;
+            }
+            for (const { value, parent, root: rootNode, parents } of walkValues(source, node)) {
+                if (matcher(value, node)) {
+                    return { node, value: { node: value, parent, root: rootNode, parents } };
+                }
+            }
+        }
+        return null;
+    }
+
+    const nodeMatcher = (value) => value.typ === exports.EnumToken.IfConditionTokenType ||
+        (value.typ === exports.EnumToken.WildCardFunctionTokenType && equalsIgnoreCase("if", value.val));
+    function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) {
         const result = [];
+        let nodeMap = new Map();
+        let clonedDeclaration;
+        let targetParentWrapper = parentWrapper;
+        let targetWrapper = wrapper;
         if (node.typ === exports.EnumToken.IfElseConditionTokenType) {
-            result.push(...createTree(declaration, parentWrapper, wrapper, node.r));
-            result.push(...createTree(declaration, parentWrapper, wrapper, node.l));
-            return result;
+            //
+            clonedDeclaration = cloneNode(declaration, true, nodeMap);
+            let replaceRight = true;
+            // replace else: ... with the actual value
+            if (node.r.typ === exports.EnumToken.IfConditionTokenType) {
+                const target = node.r.l.find((t) => t.typ != exports.EnumToken.CommentTokenType && t.typ != exports.EnumToken.WhitespaceTokenType);
+                if (target == null) {
+                    return result;
+                }
+                //
+                if (target.typ === exports.EnumToken.IdenTokenType && equalsIgnoreCase("else", target.val)) {
+                    replaceToken(nodeMap.get(targetParentWrapper), nodeMap.get(targetWrapper), node.r.r.at(-1)?.typ ===
+                        exports.EnumToken.SemiColonTokenType
+                        ? trimArray(node.r.r.slice(0, -1))
+                        : node.r.r);
+                    if (targetParentWrapper.typ != exports.EnumToken.DeclarationNodeType) {
+                        let index = targetParentWrapper.chi.indexOf(targetWrapper);
+                        if (index != -1) {
+                            let i;
+                            let k;
+                            let siblingWrapper;
+                            let left = node.l.l.find((t) => t.typ != exports.EnumToken.CommentTokenType && t.typ != exports.EnumToken.WhitespaceTokenType);
+                            for (i = index + 1; i < targetParentWrapper.chi.length; i++) {
+                                if (targetParentWrapper.chi[i].typ === targetWrapper.typ) {
+                                    siblingWrapper = targetParentWrapper.chi[i];
+                                    for (k = 0; k < siblingWrapper.chi.length; k++) {
+                                        if (siblingWrapper.chi[k].typ === exports.EnumToken.IfElseConditionTokenType) {
+                                            let leftSide = siblingWrapper.chi[k].l.l.find((t) => t.typ != exports.EnumToken.CommentTokenType &&
+                                                t.typ != exports.EnumToken.WhitespaceTokenType);
+                                            if (eq(left, leftSide)) {
+                                                replaceToken(nodeMap.get(targetParentWrapper), nodeMap.get(targetParentWrapper.chi[i]), siblingWrapper.chi[k]
+                                                    .r.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType
+                                                    ? trimArray(siblingWrapper.chi[k]
+                                                        .r.r.slice(0, -1))
+                                                    : siblingWrapper.chi[k]
+                                                        .r.r);
+                                                cache.add(siblingWrapper.chi[k].l);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    replaceRight = false;
+                }
+            }
+            if (replaceRight) {
+                replaceToken(nodeMap.get(targetParentWrapper), nodeMap.get(targetWrapper), node.r);
+            }
+            result.push(clonedDeclaration);
+            nodeMap.clear();
+            clonedDeclaration = cloneNode(declaration, true, nodeMap);
+            replaceToken(nodeMap.get(targetParentWrapper), nodeMap.get(targetWrapper), node.l);
+            result.push(clonedDeclaration);
         }
-        const leftNode = node.l.find((t) => t.typ != exports.EnumToken.CommentNodeType);
-        const rightNode = node.r.find((t) => t.typ != exports.EnumToken.CommentNodeType);
-        if (leftNode == null) {
-            return result;
-        }
-        const cloneMap = new Map();
-        if (leftNode?.typ == exports.EnumToken.IdenTokenType && equalsIgnoreCase("else", leftNode.val)) {
-            const clonedParentWrapper = cloneNode(parentWrapper, true, cloneMap);
-            const clonedWrapper = cloneMap.get(wrapper);
-            replaceToken(clonedParentWrapper, clonedWrapper, node.r.slice());
-            result.push(clonedParentWrapper);
-            return result;
-        }
-        if (leftNode.typ == exports.EnumToken.WhenElseFunctionTokenType ||
-            leftNode.typ == exports.EnumToken.ContainerFunctionTokenType ||
-            leftNode.typ == exports.EnumToken.SupportsFunctionTokenType) {
-            // create at-rule
-            let atRule = Object.assign(cloneNode(declaration), {
-                typ: exports.EnumToken.AtRuleNodeType,
-                nam: leftNode.val,
-                chi: [],
-            });
-            if (leftNode.typ == exports.EnumToken.ContainerFunctionTokenType) {
-                atRule.nam = "container";
-                Object.defineProperty(atRule, "tokens", {
-                    ...definedPropertySettings,
-                    value: [leftNode],
-                });
-                atRule.val = atRule.tokens.reduce((acc, curr) => acc + renderToken(curr), "");
-                const clonedDeclaration = cloneNode(declaration, true, cloneMap);
-                replaceToken(cloneMap.get(parentWrapper), cloneMap.get(wrapper), rightNode);
-                replaceToken(declaration.parent, declaration, clonedDeclaration);
-                atRule.chi.push(clonedDeclaration);
-                result.push(atRule);
+        else if (node.typ === exports.EnumToken.IfConditionTokenType) {
+            const left = node.l.find((t) => t.typ != exports.EnumToken.CommentTokenType && t.typ != exports.EnumToken.WhitespaceTokenType);
+            if (left == null) {
                 return result;
             }
-            Object.defineProperty(atRule, "tokens", {
-                ...definedPropertySettings,
-                value: [{ typ: exports.EnumToken.ParensTokenType, chi: leftNode.chi }],
-            });
-            atRule.val = atRule.tokens.reduce((acc, curr) => acc + renderToken(curr), "");
-            // clone declaration
-            const clonedDeclaration = cloneNode(declaration, true, cloneMap);
-            // update declaration with right side content
-            // clonedDeclaration.val.push(...node.r);
-            // inject declaration into the cloned rule
-            atRule.chi.push(clonedDeclaration);
-            replaceToken(clonedDeclaration, cloneMap.get(wrapper), node.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
-            replaceToken(cloneMap.get(parentWrapper), cloneMap.get(wrapper), rightNode);
-            result.push(atRule);
+            if (left.typ === exports.EnumToken.IdenTokenType && equalsIgnoreCase("else", left.val)) {
+                clonedDeclaration = cloneNode(declaration, true, nodeMap);
+                replaceToken(nodeMap.get(parentWrapper), nodeMap.get(targetWrapper.typ === exports.EnumToken.DeclarationNodeType ? node : targetWrapper), node.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
+                result.push(clonedDeclaration);
+            }
+            else if (left?.typ === exports.EnumToken.WhenElseFunctionTokenType) {
+                const atRule = Object.assign(cloneNode(declaration), {
+                    typ: exports.EnumToken.AtRuleNodeType,
+                    nam: left.val,
+                    chi: [],
+                });
+                Object.defineProperty(atRule, "tokens", {
+                    ...definedPropertySettings,
+                    value: [{ typ: exports.EnumToken.ParensTokenType, chi: left.chi.slice() }],
+                });
+                atRule.val = atRule.tokens.reduce((acc, curr) => acc + renderToken(curr), "");
+                clonedDeclaration = cloneNode(declaration, true, nodeMap);
+                replaceToken(nodeMap.get(targetWrapper), nodeMap.get(node), node.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
+                clonedDeclaration.parent = atRule;
+                atRule.chi.push(clonedDeclaration);
+                result.push(atRule);
+                processNode(clonedDeclaration, cache);
+                // nodeMap.clear();
+            }
+            else if (left.typ === exports.EnumToken.ContainerFunctionTokenType) {
+                const atRule = Object.assign(cloneNode(declaration), {
+                    typ: exports.EnumToken.AtRuleNodeType,
+                    nam: "container",
+                    chi: [],
+                });
+                Object.defineProperty(atRule, "tokens", { ...definedPropertySettings, value: [left] });
+                atRule.val = atRule.tokens.reduce((acc, curr) => acc + renderToken(curr), "");
+                clonedDeclaration = cloneNode(declaration, true, nodeMap);
+                replaceToken(nodeMap.get(targetWrapper.typ === exports.EnumToken.WildCardFunctionTokenType ? targetParentWrapper : targetWrapper), nodeMap.get(targetWrapper.typ === exports.EnumToken.WildCardFunctionTokenType ? targetWrapper : node), node.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType
+                    ? trimArray(node.r.slice(0, -1))
+                    : node.r);
+                clonedDeclaration.parent = atRule;
+                atRule.chi.push(clonedDeclaration);
+                result.push(atRule);
+                processNode(clonedDeclaration, cache);
+            }
         }
+        else if (wrapper.typ === exports.EnumToken.WildCardFunctionTokenType) {
+            clonedDeclaration = cloneNode(declaration, true, nodeMap);
+            replaceToken(nodeMap.get(parentWrapper), nodeMap.get(wrapper), node);
+            result.push(clonedDeclaration);
+        }
+        return result;
+    }
+    function processNode(declarationNode, cache) {
+        let i;
+        let k = -1;
+        let astNode;
+        const result = [];
+        const stack = [declarationNode];
+        while (++k < stack.length) {
+            astNode = stack[k];
+            const { node: declaration, value: node } = findByAttribute(astNode, nodeMatcher) ?? {};
+            if (node != null && cache.has(node.node)) {
+                continue;
+            }
+            if (declaration == null || node == null) {
+                while (astNode.parent != null && astNode.parent != declarationNode.parent) {
+                    astNode = astNode.parent;
+                }
+                result.push(astNode);
+                continue;
+            }
+            // @ts-expect-error
+            const parents = [...node.parents?.()];
+            const parentWrapper = node.parent ?? parents.find((node) => !nodeMatcher(node));
+            if (node.node.typ === exports.EnumToken.WildCardFunctionTokenType) {
+                for (i = 0; i < node.node.chi.length; i++) {
+                    if (cache.has(node.node.chi[i])) {
+                        continue;
+                    }
+                    stack.push(...substituteIfElseNode(declaration, node.node.chi[i], node.node, parentWrapper, cache));
+                }
+            }
+            else {
+                stack.push(...substituteIfElseNode(declaration, node.node, parentWrapper, parents[parents.indexOf(parentWrapper) + 1] ?? declaration, cache));
+            }
+        }
+        if (result.length > 0) {
+            replaceToken(declarationNode.parent, declarationNode, result);
+        }
+        // else remove node?
         return result;
     }
     class ExpandIfFeature {
@@ -21296,30 +21450,30 @@
             }
         }
         run(declaration) {
+            const cache = new Set();
+            const result = processNode(declaration, cache);
             let i;
-            const result = [];
-            const clonedDeclaration = cloneNode(declaration, true);
-            for (const { value, parent: wrapper } of walkValues(clonedDeclaration.val, clonedDeclaration, {
-                event: exports.WalkerEvent.Enter,
-                fn: (node) => {
-                    if (node.typ == exports.EnumToken.WildCardFunctionTokenType &&
-                        equalsIgnoreCase("if", node.val)) {
-                        return exports.WalkerOptionEnum.IgnoreChildren;
-                    }
-                },
-            })) {
-                if (value.typ == exports.EnumToken.WildCardFunctionTokenType &&
-                    equalsIgnoreCase("if", value.val)) {
-                    for (i = 0; i < value.chi.length; i++) {
-                        if (exports.EnumToken.IfElseConditionTokenType == value.chi[i].typ ||
-                            exports.EnumToken.IfConditionTokenType == value.chi[i].typ) {
-                            result.push(...createTree(clonedDeclaration, wrapper, value, value.chi[i]));
+            for (const n of result) {
+                for (const { node } of walk(n)) {
+                    if (node.typ === exports.EnumToken.AtRuleNodeType && Array.isArray(node.chi)) {
+                        for (i = 0; i < node.chi.length; i++) {
+                            if (node.chi[i].typ === exports.EnumToken.AtRuleNodeType &&
+                                node.chi[i + 1]?.typ === exports.EnumToken.AtRuleNodeType &&
+                                node.chi[i].nam === node.chi[i + 1].nam &&
+                                node.chi[i].val === node.chi[i + 1].val) {
+                                node.chi[i].chi.push(...node.chi[i + 1].chi);
+                                node.chi.splice(i + 1, 1);
+                            }
+                        }
+                        for (i = 0; i < node.chi.length; i++) {
+                            if (node.chi[i].typ === exports.EnumToken.AtRuleNodeType &&
+                                node.chi[i].nam === node.nam &&
+                                node.chi[i].val === node.val) {
+                                node.chi.splice(i, 1, ...node.chi[i].chi);
+                            }
                         }
                     }
                 }
-            }
-            if (result.length > 0) {
-                replaceToken(declaration.parent, declaration, result);
             }
         }
     }

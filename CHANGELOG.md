@@ -2,21 +2,20 @@
 
 ## v1.4.3
 
-- [x] rename standard declaration names : color-adjust => print-color-adjust
+- [x] automatically rename standard declaration names : color-adjust => print-color-adjust
 - [x] fix parsing bugs
-- [ ] support alpha() color function https://drafts.csswg.org/css-color-5/#funcdef-alpha
 - [x] support contrast-color() https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/contrast-color
 - [x] custom color space in color()
   - [x] relative color syntax
   - [x] color syntax
 - [x] support if() css function https://drafts.csswg.org/css-values-5/#if-notation
-    - [ ] legacy syntax for if() function
+    - [x] convert css if() function into legacy syntax
 - [x] validate media queries
 - [x] automatically generate media query range
 - [x] rewrite parsing and validation
   - [x] selector
   - [x] declaration
-  - [ ] at-rules
+  - [x] at-rules
     - [x] @charset
     - [x] @color-profile
     - [x] @container
@@ -26,7 +25,6 @@
     - [x] @font-face
     - [x] @font-feature-values
     - [x] @font-palette-values
-    - [ ] @function [Experimental](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@function)
     - [x] @import
     - [x] @keyframes
     - [x] @layer
@@ -40,9 +38,7 @@
     - [x] @supports
     - [x] @view-transition
 - [x] introduce rawToken type to capture unparseable tokens
-- [x] Add a new css module scope 'shortest' to produce short scoped names
-- [ ] fix performance issues - prevent garbage collection
-- [x] validate media queries
+- [x] Add css module scope 'shortest' to produce short scoped names
 - [x] automatically generate range media query
 - [x] handle calc() in media features
 - [x] add at-rule() and named-feature() to @support-condition syntax https://drafts.csswg.org/css-conditional-5/#changes-from-L4
@@ -57,7 +53,7 @@
 ### CSS Module support
 
 - [x] scoped name generation
-- composes:
+- [x] composes:
   - [x] compose from local selector
   - [x] compose from other files
   - [x] compose from global selector
@@ -72,13 +68,13 @@
 - [x] css at-rule value
 - [x] keyframe animations
 - [x] grid
-- naming
+- [x] naming
   - [x] ignore
   - [x] camelCase
   - [x] camelCaseOnly
   - [x] dashCase
   - [x] dashCaseOnly
-- default mode
+- [x] default mode
   - [x] global
   - [x] local
   - [x] pure(at least one class or id)

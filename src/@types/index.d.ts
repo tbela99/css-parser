@@ -359,7 +359,7 @@ export declare interface ParserOptions
     expandNestingRules?: boolean;
 
     /**
-     * experimental, expand if() function
+     * experimental, convert css if() function into legacy syntax.
      */
     expandIfSyntax?: boolean;
 

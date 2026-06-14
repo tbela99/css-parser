@@ -133,6 +133,7 @@ function* walk(node, filter, reverse) {
                 node,
                 parent: map.get(node),
                 root,
+                // @ts-expect-error
                 parents: function* () {
                     let parent = map.get(node);
                     while (parent != null) {

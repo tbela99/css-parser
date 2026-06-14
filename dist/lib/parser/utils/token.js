@@ -23,7 +23,7 @@ const trimSpaceAfter = new Set([
  * @param replacement
  */
 function replaceToken(parent, value, replacement) {
-    if (replacement == null) {
+    if (replacement == null || (Array.isArray(replacement) && replacement.length === 0)) {
         throw new TypeError(`replacement is null`);
     }
     for (const node of Array.isArray(replacement) ? replacement : [replacement]) {
@@ -38,8 +38,11 @@ function replaceToken(parent, value, replacement) {
         if (parent.l == value) {
             parent.l = replacement;
         }
-        else {
+        else if (parent.r == value) {
             parent.r = replacement;
+        }
+        else {
+            throw new ReferenceError("Node not found");
         }
     }
     else {
@@ -50,7 +53,7 @@ function replaceToken(parent, value, replacement) {
             // @ts-ignore
             const index = target.indexOf(value);
             if (index == -1) {
-                return;
+                throw new ReferenceError("Node not found");
             }
             target.splice(index, 1, ...(Array.isArray(replacement) ? replacement : [replacement]));
         }
@@ -60,7 +63,11 @@ function replaceToken(parent, value, replacement) {
         else if ("r" in target && target.r == value) {
             target.r = replacement;
         }
+        else {
+            throw new ReferenceError("Node not found");
+        }
     }
+    return true;
 }
 function trimWhiteSpaceTokens(tokens) {
     let i = 0;

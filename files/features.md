@@ -24,6 +24,7 @@ a non-exhaustive list of features is provided below:
 - color conversion to any supported color format
 - automatic nested css rules generation
 - nested css rules conversion to legacy syntax
+- experimental, convert css if() function into legacy syntax.
 - sourcemap generation
 - css shorthands computation. see the supported properties list below
 - css transform functions minification

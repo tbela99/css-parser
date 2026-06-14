@@ -475,5 +475,62 @@ div-2 {
 }`));
         });
         
+        it('if(media(), style()) #20', function () {
+            const nesting1 = `
+
+button {
+	background: linear-gradient(
+		if(media(min-width: 768px): to right; else: to bottom),
+		if(style(--dark-mode): #333; else: #fff),
+		if(style(--dark-mode): #000; else: #ccc)
+	);
+}
+`;
+            return transform(nesting1, {
+                beautify: true, expandIfSyntax: true
+            }).then((result) => expect(result.code).equals(`button {
+ background: linear-gradient(to bottom,#fff,#ccc);
+ @media (min-width:768px) {
+  background: linear-gradient(to right,#fff,#ccc);
+  @container style(--dark-mode) {
+   background: linear-gradient(to right,#333,#000)
+  }
+ }
+ @container style(--dark-mode) {
+  background: linear-gradient(to bottom,#333,#000)
+ }
+}`));
+        });
+        
+        
+        it('if(media(), style()) #21', function () {
+            const nesting1 = `
+
+div-4 {
+  color: if(
+    
+  );
+	background: 
+		light-dark(if(style(--dark-mode): #333; else: #fff), if(media(min-width: 768px): white; else: black)
+	);
+}
+`;
+            return transform(nesting1, {
+                beautify: true, expandIfSyntax: true
+            }).then((result) => expect(result.code).equals(`div-4 {
+ color: if();
+ background: light-dark(#fff,#000);
+ @container style(--dark-mode) {
+  background: light-dark(#333,#000);
+  @media (min-width:768px) {
+   background: light-dark(#333,#fff)
+  }
+ }
+ @media (min-width:768px) {
+  background: light-dark(#fff,#fff)
+ }
+}`));
+        });
+        
     });
 }

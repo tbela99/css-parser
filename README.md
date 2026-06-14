@@ -33,6 +33,7 @@ $ deno add @tbela99/css-parser
 - color conversion to any supported color format
 - automatic nested css rules generation
 - nested css rules conversion to legacy syntax
+- convert css if() function to legacy syntax
 - sourcemap generation
 - css shorthands computation. see the supported properties list below
 - css transform functions minification
@@ -221,7 +222,7 @@ Include ParseOptions and RenderOptions
 - nestingRules: boolean, optional. automatically generated nested rules.
 - expandNestingRules: boolean, optional. convert nesting rules into separate rules. will automatically set nestingRules
   to false.
-- expandIfSyntax: experimental, expand css if() function.
+- expandIfSyntax: experimental, convert css if() function into legacy syntax.
 - removeDuplicateDeclarations: boolean, optional. remove duplicate declarations.
 - computeTransform: boolean, optional. compute css transform functions.
 - computeShorthand: boolean, optional. compute shorthand properties.

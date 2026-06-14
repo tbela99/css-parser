@@ -8,7 +8,6 @@ import type {
     AstRule,
     AstStyleSheet,
     AtRuleToken,
-    AttrToken,
     ClassSelectorToken,
     ComposesSelectorToken,
     DashedIdentToken,
@@ -19,8 +18,6 @@ import type {
     IfConditionToken,
     IfElseConditionToken,
     LiteralToken,
-    Location,
-    ParensToken,
     ParserOptions,
     RawNodeToken,
     StringToken,
@@ -47,138 +44,13 @@ import { walkValues } from "../../ast/walk.ts";
 import type { ValidationPropertyToken } from "../../validation/parser/types.d.ts";
 import { equalsIgnoreCase } from "./text.ts";
 import { buildExpression } from "../../ast/math/expression.ts";
-import { renderToken } from "../../renderer/render.ts";
 import { splitTokenList } from "../../validation/utils/list.ts";
 
-export function parseDeclarationNode(
-    node: AstDeclaration,
-    errors: ErrorDescription[],
-    location: Location,
-): AstDeclaration | null {
-    while (node.val[0]?.typ == EnumToken.WhitespaceTokenType) {
-        node.val.shift();
-    }
-
-    if (
-        !node.nam.startsWith("--") &&
-        node.val.filter((t: Token) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ))
-            .length == 0
-    ) {
-        errors.push(<ErrorDescription>{
-            action: "drop",
-            message: "doParse: invalid declaration",
-            location,
-        });
-
-        return null;
-    }
-
-    if ("composes" === node.nam.toLowerCase()) {
-        let left: Token[] = [];
-        let right: Token[] = [];
-        let current: number = 0;
-        let hasFrom: number = 0;
-
-        for (; current < node.val.length; current++) {
-            if (
-                EnumToken.WhitespaceTokenType == node.val[current].typ ||
-                EnumToken.CommentTokenType == node.val[current].typ
-            ) {
-                if (!hasFrom) {
-                    left.push(node.val[current]);
-                } else {
-                    right.push(node.val[current]);
-                }
-
-                continue;
-            }
-
-            if (
-                EnumToken.IdenTokenType == node.val[current].typ ||
-                EnumToken.DashedIdenTokenType == node.val[current].typ ||
-                EnumToken.StringTokenType == node.val[current].typ
-            ) {
-                if (EnumToken.IdenTokenType == node.val[current].typ) {
-                    if ("from" == (node.val[current] as IdentToken).val) {
-                        if (hasFrom) {
-                            return null;
-                        }
-
-                        hasFrom++;
-                        continue;
-                    }
-                }
-
-                if (hasFrom) {
-                    right.push(node.val[current]);
-                } else {
-                    left.push(node.val[current]);
-                }
-
-                continue;
-            }
-
-            break;
-        }
-
-        if (hasFrom <= 1 && current > 0) {
-            if (hasFrom == 0) {
-                node.val.splice(0, left.length, {
-                    typ: EnumToken.ComposesSelectorNodeType,
-                    l: left,
-                    r: null,
-                });
-            } else {
-                node.val.splice(0, current, {
-                    typ: EnumToken.ComposesSelectorNodeType,
-                    l: left,
-                    r: right.reduce((a: Token | null, b: Token) => {
-                        return a == null
-                            ? b
-                            : b.typ == EnumToken.WhitespaceTokenType || b.typ == EnumToken.CommentTokenType
-                              ? a
-                              : b;
-                    }, null),
-                });
-            }
-        }
-    }
-
-    for (const { value: val, parent } of walkValues(node.val, node)) {
-        if (
-            val.typ == EnumToken.AttrTokenType &&
-            (val as AttrToken).chi.every((t: Token) =>
-                [EnumToken.IdenTokenType, EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ),
-            )
-        ) {
-            // @ts-ignore
-            val.typ = EnumToken.IdenListTokenType;
-        } else if (
-            val.typ === EnumToken.StringTokenType &&
-            (node.nam === "grid" ||
-                node.nam === "grid-template-areas" ||
-                node.nam === "grid-template-rows" ||
-                node.nam === "grid-template-columns")
-        ) {
-            (val as StringToken).val =
-                (val as StringToken).val.at(0) +
-                parseGridTemplate((val as StringToken).val.slice(1, -1)) +
-                (val as StringToken).val.at(-1);
-
-            // @ts-ignore
-            const array: Token[] = (<FunctionToken | ParensToken>parent)?.chi ?? node.val;
-
-            const index: number = array.indexOf(val);
-
-            if (index > 0 && array[index - 1].typ === EnumToken.WhitespaceTokenType) {
-                array.splice(index - 1, 1);
-            }
-        }
-    }
-
-    return node;
-}
-
+/**
+ * 
+ * @param template 
+ * @returns 
+ */
 function parseGridTemplate(template: string): string {
     let result: string = "";
     let buffer: string = "";
@@ -212,6 +84,11 @@ function parseGridTemplate(template: string): string {
     return buffer.length > 0 ? result + buffer : result;
 }
 
+/**
+ * 
+ * @param tokens 
+ * @returns 
+ */
 export function isDeclarationValue(tokens: Token[]): { success: boolean; errors: ErrorDescription[] } {
     const stack: Token[] = [];
     let i: number = 0;
@@ -648,7 +525,7 @@ export function parseDeclaration(
                             if (foundElse) {
                                 // else already found
                                 // ignore everything after else
-                                // if(media(any-pointer: fine): 30px; else: 44px; else 50px); -> if(media(any-pointer: fine): 30px; else: 44px;);
+                                // if(media(any-pointer: fine): 30px; else: 44px; media(any-pointer: fine): 23px); -> if(media(any-pointer: fine): 30px; else: 44px;);
                                 return acc;
                             }
 
@@ -677,7 +554,9 @@ export function parseDeclaration(
                                         r: trimArray(curr.slice(index + 1)),
                                     } as IfConditionToken,
                                 } as IfElseConditionToken;
-                            } else {
+                            } 
+                            
+                            else {
                                 acc.push({
                                     typ: EnumToken.IfConditionTokenType,
                                     l: trimArray(curr.slice(0, index)),

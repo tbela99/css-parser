@@ -9,6 +9,11 @@ import { equalsIgnoreCase } from './text.js';
 import { buildExpression } from '../../ast/math/expression.js';
 import { splitTokenList } from '../../validation/utils/list.js';
 
+/**
+ *
+ * @param template
+ * @returns
+ */
 function parseGridTemplate(template) {
     let result = "";
     let buffer = "";
@@ -37,6 +42,11 @@ function parseGridTemplate(template) {
     }
     return buffer.length > 0 ? result + buffer : result;
 }
+/**
+ *
+ * @param tokens
+ * @returns
+ */
 function isDeclarationValue(tokens) {
     const stack = [];
     let i = 0;
@@ -363,7 +373,7 @@ function parseDeclaration(tokens, parent, options, errors) {
                             if (foundElse) {
                                 // else already found
                                 // ignore everything after else
-                                // if(media(any-pointer: fine): 30px; else: 44px; else 50px); -> if(media(any-pointer: fine): 30px; else: 44px;);
+                                // if(media(any-pointer: fine): 30px; else: 44px; media(any-pointer: fine): 23px); -> if(media(any-pointer: fine): 30px; else: 44px;);
                                 return acc;
                             }
                             let index = -1;

@@ -154,6 +154,7 @@ export function* walk(node: AstNode, filter?: WalkerFilter | null, reverse?: boo
                 node,
                 parent: <AstRuleList>map.get(node),
                 root,
+                // @ts-expect-error
                 parents: function* () {
                     let parent = map.get(node);
 
