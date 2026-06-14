@@ -7,6 +7,7 @@ import commonjs from "@rollup/plugin-commonjs";
 export default [
     {
         input: ['src/node.ts', 'src/web.ts'],
+        treeshake: 'smallest', 
         plugins: [nodeResolve(), commonjs({transformMixedEsModules: true}), json(), typescript()],
         output: [
             {
@@ -18,6 +19,7 @@ export default [
     },
     {
         input: 'src/node.ts',
+        treeshake: 'smallest', 
         plugins: [nodeResolve(), commonjs({transformMixedEsModules: true}), json(), typescript()],
         output: [            
             {
@@ -29,6 +31,7 @@ export default [
     },
     {
         input: 'src/web.ts',
+        treeshake: 'smallest', 
         plugins: [nodeResolve(), commonjs({transformMixedEsModules: true}), json(), typescript()],
         output: [
             {

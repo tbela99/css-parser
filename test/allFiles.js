@@ -1,8 +1,7 @@
 import {readdir} from "node:fs/promises";
-import {load, transform} from "../dist/node/index.js";
+import {load, transform} from "../src/node.ts";
 
 const baseDir = import.meta.dirname + '/files/css/';
-
 const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'], e = Math.floor(Math.log(this) / Math.log(1024));
 
 function toFileSize(value) {

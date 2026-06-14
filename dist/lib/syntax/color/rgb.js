@@ -1,14 +1,8 @@
 import { color2srgbvalues, minmax } from './color.js';
-import { COLORS_NAMES } from './utils/constants.js';
-import { EnumToken, ColorType } from '../../ast/types.js';
-import '../../ast/minify.js';
-import '../../ast/walk.js';
-import '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
 import { expandHexValue } from './hex.js';
 import { hslvalues, hslvalues2srgbvalues, lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues, cmyk2srgbvalues, hwb2srgbvalues } from './srgb.js';
-import '../../renderer/sourcemap/lib/encode.js';
+import { EnumToken, ColorType } from '../../ast/types.js';
+import { COLORS_NAMES } from '../constants.js';
 
 function srgb2rgb(value) {
     return minmax(Math.round(value * 255), 0, 255);
@@ -70,7 +64,7 @@ function color2RgbToken(token) {
     if (values == null) {
         return null;
     }
-    return rgb2RgbToken(values.map((t, index) => index == 3 ? t : srgb2rgb(t)));
+    return rgb2RgbToken(values.map((t, index) => (index == 3 ? t : srgb2rgb(t))));
 }
 function rgb2RgbToken(values) {
     const chi = [
@@ -83,9 +77,9 @@ function rgb2RgbToken(values) {
     }
     return {
         typ: EnumToken.ColorTokenType,
-        val: 'rgb',
+        val: "rgb",
         chi,
-        kin: ColorType.RGB
+        kin: ColorType.RGB,
     };
 }
 function hex2rgbvalues(token) {
@@ -105,14 +99,16 @@ function hex2rgbvalues(token) {
     return rgb;
 }
 function hwb2rgbvalues(token) {
-    return hwb2srgbvalues(token)?.map?.((t, index) => index == 3 ? t : srgb2rgb(t)) ?? null;
+    return hwb2srgbvalues(token)?.map?.((t, index) => (index == 3 ? t : srgb2rgb(t))) ?? null;
 }
 function hsl2rgbvalues(token) {
     let { h, s, l, a } = hslvalues(token) ?? {};
     if (h == null || s == null || l == null) {
         return null;
     }
-    return hslvalues2srgbvalues(h, s, l).map((t) => minmax(Math.round(t * 255), 0, 255)).concat(a == 1 || a == null ? [] : [a]);
+    return hslvalues2srgbvalues(h, s, l)
+        .map((t) => minmax(Math.round(t * 255), 0, 255))
+        .concat(a == 1 || a == null ? [] : [a]);
 }
 function hsl2srgbvalues(token) {
     let { h, s, l, a } = hslvalues(token) ?? {};
@@ -122,19 +118,19 @@ function hsl2srgbvalues(token) {
     return hslvalues2srgbvalues(h, s, l).concat(a == 1 || a == null ? [] : [a]);
 }
 function cmyk2rgbvalues(token) {
-    return cmyk2srgbvalues(token)?.map?.((t, index) => index == 3 ? t : srgb2rgb(t)) ?? null;
+    return cmyk2srgbvalues(token)?.map?.((t, index) => (index == 3 ? t : srgb2rgb(t))) ?? null;
 }
 function oklab2rgbvalues(token) {
-    return oklab2srgbvalues(token)?.map?.((t, index) => index == 3 ? t : srgb2rgb(t)) ?? null;
+    return oklab2srgbvalues(token)?.map?.((t, index) => (index == 3 ? t : srgb2rgb(t))) ?? null;
 }
 function oklch2rgbvalues(token) {
-    return oklch2srgbvalues(token)?.map?.((t, index) => index == 3 ? t : srgb2rgb(t)) ?? null;
+    return oklch2srgbvalues(token)?.map?.((t, index) => (index == 3 ? t : srgb2rgb(t))) ?? null;
 }
 function lab2rgbvalues(token) {
-    return lab2srgbvalues(token)?.map?.((t, index) => index == 3 ? t : srgb2rgb(t)) ?? null;
+    return lab2srgbvalues(token)?.map?.((t, index) => (index == 3 ? t : srgb2rgb(t))) ?? null;
 }
 function lch2rgbvalues(token) {
-    return lch2srgbvalues(token)?.map?.((t, index) => index == 3 ? t : srgb2rgb(t)) ?? null;
+    return lch2srgbvalues(token)?.map?.((t, index) => (index == 3 ? t : srgb2rgb(t))) ?? null;
 }
 
 export { cmyk2RgbToken, cmyk2rgbvalues, color2RgbToken, hex2RgbToken, hex2rgbvalues, hsl2RgbToken, hsl2rgbvalues, hsl2srgbvalues, hwb2RgbToken, hwb2rgbvalues, lab2RgbToken, lab2rgbvalues, lch2RgbToken, lch2rgbvalues, oklab2RgbToken, oklab2rgbvalues, oklch2RgbToken, oklch2rgbvalues, srgb2rgb };

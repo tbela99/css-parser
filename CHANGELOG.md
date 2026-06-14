@@ -1,7 +1,167 @@
 # Changelog
 
+## v1.4.3
+
+
+### CSS Modules
+
+- [x] Add css module scope 'shortest' to produce short scoped names
+
+```typescript
+
+result = await transform(css, {
+
+    beautify: true,
+    module: {scoped: ModuleScopeEnumOptions.Shortest
+    }
+
+});
+
+console.log(result.code);
+```
+
+output
+
+```css
+.a {
+    background: red;
+    color: #ff0
+}
+.b {
+    background: blue
+}
+```
+
+### CSS if() function
+
+- [x] support if() css function syntax https://drafts.csswg.org/css-values-5/#if-notation
+- [x] convert css if() function into legacy syntax
+
+```typescript
+
+const css = `
+button {
+	background: linear-gradient(
+		if(media(min-width: 768px): to right; else: to bottom),
+		if(style(--dark-mode): #333; else: #fff),
+		if(style(--dark-mode): #000; else: #ccc)
+	);
+}`;
+
+result = await transform(css, {
+
+    beautify: true,
+    expandIfSyntax: true
+    }
+
+});
+
+console.log(result.code);
+```
+
+output
+
+```css
+button {
+ background: linear-gradient(to bottom,#fff,#ccc);
+ @media (min-width:768px) {
+  background: linear-gradient(to right,#fff,#ccc);
+  @container style(--dark-mode) {
+   background: linear-gradient(to right,#333,#000)
+  }
+ }
+ @container style(--dark-mode) {
+  background: linear-gradient(to bottom,#333,#000)
+ }
+}
+```
+
+
+### CSS Color Module Level 5 (Draft)
+- [x] support contrast-color() https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/contrast-color
+- [x] custom color space in color() https://drafts.csswg.org/css-color-5/#custom-color
+    - [x] relative color syntax
+    - [x] color syntax
+
+### Media Queries
+- [x] media queries validation
+- [x] automatically generate range media query
+- [x] add at-rule() and named-feature() to @support-condition syntax https://drafts.csswg.org/css-conditional-5/#changes-from-L4
+- [x] support calc() in media features
+
+
+```typescript
+
+const css = `
+
+@media (width >= calc(1024px + 50px)) {
+  h1 {
+    color: Highlight;
+  }
+}`;
+
+result = await transform(css, {
+
+    beautify: true,
+    validation: true
+    }
+
+});
+
+console.log(result.code);
+```
+
+output
+
+```css
+@media (width>=1074px) {
+ h1 {
+  color: Highlight
+ }
+}
+```
+
+### Ast
+
+- [x] add ast search functions
+  - [x] find() search the ast tree and return the first match
+  - [x] findAll() search the ast tree and return all matches
+  - [x] findLast() search the ast tree and return the last match
+  - [x] findByValue() search the ast tree by checking each node's value and return the first match
+
+### Other Changes
+- [x] fix parsing bugs
+- [x] automatically rename standard declaration names : color-adjust => print-color-adjust
+- [x] rewrite parsing and validation logic
+    - [x] selector
+    - [x] declaration
+    - [x] at-rules
+        - [x] @charset
+        - [x] @color-profile
+        - [x] @container
+        - [x] @counter-style
+        - [x] @custom-media
+        - [x] @document
+        - [x] @font-face
+        - [x] @font-feature-values
+        - [x] @font-palette-values
+        - [x] @import
+        - [x] @keyframes
+        - [x] @layer
+        - [x] @media 
+        - [x] @namespace
+        - [x] @page
+        - [x] @position-try
+        - [x] @property
+        - [x] @scope
+        - [x] @starting-style
+        - [x] @supports
+        - [x] @view-transition
+- [x] introduce rawToken type to capture unparseable tokens
+
 ## v1.4.2
 
+- [x] add css-conditional-5 @support at-rule(<at-keyword-token>) function
 - [x] fix bug when using remove prefix #120
 
 ## v1.4.0
@@ -9,7 +169,7 @@
 ### CSS Module support
 
 - [x] scoped name generation
-- composes:
+- [x] composes:
   - [x] compose from local selector
   - [x] compose from other files
   - [x] compose from global selector
@@ -24,17 +184,17 @@
 - [x] css at-rule value
 - [x] keyframe animations
 - [x] grid
-- naming
+- [x] naming
   - [x] ignore
   - [x] camelCase
   - [x] camelCaseOnly
   - [x] dashCase
   - [x] dashCaseOnly
-- default mode
+- [x] default mode
   - [x] global
   - [x] local
   - [x] pure(at least one class or id)
-  - icss
+  - [x] icss
     - [x] :import
     - [x] :export
 

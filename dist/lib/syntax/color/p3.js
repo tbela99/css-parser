@@ -1,14 +1,6 @@
 import { lsrgb2srgbvalues, xyz2srgb, srgb2lsrgbvalues } from './srgb.js';
 import { multiplyMatrices } from './utils/matrix.js';
-import './utils/constants.js';
-import '../../ast/types.js';
-import '../../ast/minify.js';
-import '../../ast/walk.js';
-import '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
 import { srgb2xyz } from './xyz.js';
-import '../../renderer/sourcemap/lib/encode.js';
 
 function p32srgbvalues(r, g, b, alpha) {
     // @ts-ignore

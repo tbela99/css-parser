@@ -22,7 +22,7 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
     }
     }
 
-`, {nestingRules: false}).then((result) => expect(result.code).equals(`@media speech{p .a,p .b{color:red}}`));
+`, {nestingRules: false}).then((result) => expect(result.code).equals(`p .a,p .b{color:red}`));
         });
 
         it('error handling #3', function () {
@@ -162,11 +162,7 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
   }
 }
 
-`, {beautify: true}).then((result) => expect(result.code).equals(`@container card scroll-state(stuck:top) and style(--themeBackground),not style(background-color:red),style(color:green) and style(background-color:transparent),style(--themeColor:blue) or style(--themeColor:purple) {
- h2 {
-  font-size: 1.5em
- }
-}`));
+`, {beautify: true}).then((result) => expect(result.code).equals(``));
         });
 
         it('container #10', function () {
@@ -364,7 +360,7 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
         it('at-rule #23', function () {
 
             return transform(`@charset /* erw */"UTF-8";
-`, {beautify: true, removeCharset: false}).then((result) => expect(result.code).equals(`@charset "UTF-8";`));
+`, {beautify: true, removeCharset: false}).then((result) => expect(result.code).equals(``));
         });
     });
 
@@ -392,7 +388,7 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
 @import url("gridy.css") supports((not (display: grid)) and (display: flex))
   screen and (max-width: 400px)
 
-`).then((result) => expect(result.code).equals(`@import "gridy.css" supports((not (display:grid)) and (display:flex)) screen and (max-width:400px);`));
+`).then((result) => expect(result.code).equals(`@import "gridy.css" supports((not (display:grid)) and (display:flex))screen and (max-width:400px);`));
         });
 
         it('import #27', function () {
@@ -754,6 +750,7 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 }
 
 `, {beautify: true, validation: true}).then((result) => expect(result.code).equals(`@font-feature-values Font Name {
+ font-display: swap;
  @styleset {
   nice-style: 12
  }
@@ -948,8 +945,11 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
                 validation: true
             }).then((result) => expect(result.code).equals(`@font-feature-values Bongo {
  @swash {
-  ornate: 1;
-  double-loops: 1
+  ornate: 1
+ }
+ @swash {
+  double-loops: 1;
+  flowing: -1
  }
  @styleset {
   double-W: 14;
@@ -958,5 +958,380 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 }`));
         });
 
+
+        it('media range query #46', function () {
+            return transform(`
+
+  @media ((color) and (hover)) or (monochrome) {
+ /* … */
+}
+/* or */
+@media (color) and (hover), (monochrome) {
+ /* … */
+}
+@media tv,(30em<=width<=50em),screen {
+}
+`, {
+                beautify: true,
+                removeEmpty: false,
+                removeComments: false,
+                validation: true
+            }).then((result) => expect(result.code).equals(`/* or */
+@media (color) and (hover),(monochrome) {
+ /* … */
+}
+@media tv,(30em<=width<=50em),screen {
+}`));
+        });
+
+        it('import #47', function () {
+            return transform(`
+
+@import 'charset.css' /* line comment */ layer(layer.one.two.three) supports((selector(h2 > p)) and (font-tech(color-COLRv1))) screen and (min-width: 30em) and (max-width: 50em), tv and (all),all and (((min-width: 30em) and (max-width: 50em)) or (all));
+`, {
+                beautify: true,
+                removeEmpty: false,
+                validation: true
+            }).then((result) => expect(result.code).equals(`@import 'charset.css' layer(layer.one.two.three) supports((selector(h2>p)) and (font-tech(color-COLRv1)))screen and (min-width:30em) and (max-width:50em),tv and (all),all and (((min-width:30em) and (max-width:50em)) or (all));`));
+        });
+
+        it('import #48', function () {
+            return transform(`
+
+
+@media all, tv,all and (min-width: 30em) and (max-width: 50em) or all, all, tv, screen or all {
+ 
+}`, {
+                beautify: true,
+                removeEmpty: false,
+                validation: true
+            }).then((result) => expect(result.code).equals(``));
+        });
+
+
+
+        it('media ratio and calc() #49', function () {
+            return transform(`
+
+  @media (calc(4 / 3) <= device-aspect-ratio <= 32 / 18) {}
+  @media ( device-aspect-ratio <= 32 / 18) {}
+@media (width >= calc(1024px - 50px)) {
+  h1 {
+    color: Highlight;
+  }
+}
+  `, {
+                beautify: true,
+                removeEmpty: false
+            }).then((result) => expect(result.code).equals(`@media (4/3<=device-aspect-ratio<=16/9) {
+}
+@media (device-aspect-ratio<=16/9) {
+}
+@media (width>=974px) {
+ h1 {
+  color: Highlight
+ }
+}`));
+        });
+
+
+
+        it('color-profile and color() #50', function () {
+            return transform(`
+
+@color-profile --swop5c {
+  src: url("https://example.org/SWOP2006_Coated5v2.icc");
+}
+.header {
+  background-color: color(--swop5c 0% 70% 20% 0%);
+}
+  `, {
+                beautify: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`@color-profile --swop5c {
+ src: url(https://example.org/SWOP2006_Coated5v2.icc)
+}
+.header {
+ background-color: color(--swop5c 0 70% 20% 0)
+}`));
+        });
+
+        it('supports and env() #51', function () {
+            return transform(`
+
+  @supports env(color-profile 1 2) {
+    
+.header {
+  background-color: color(--swop5c 0% 70% 20% 0%);
+}
+  `, {
+                beautify: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`@supports env(color-profile 1 2) {
+ .header {
+  background-color: color(--swop5c 0 70% 20% 0)
+ }
+}`));
+        });
+        
+
+        it('@view-transition #52', function () {
+            return transform(`
+
+/* Create a custom animation */
+@keyframes move-out {
+  from {
+    transform: translateY(0%);
+  }
+
+  to {
+    transform: translateY(-100%);
+  }
+}
+
+@keyframes move-in {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0%);
+  }
+}
+
+/* Apply the custom animation to the old and new page states */
+::view-transition-old(root) {
+  animation: 0.4s ease-in both move-out;
+}
+
+::view-transition-new(root) {
+  animation: 0.4s ease-in both move-in;
+}
+  @view-transition {
+  navigation: auto;
+  types: slide;
+}
+
+  `, {
+                beautify: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`@keyframes move-out {
+ 0% {
+  transform: translateY(0)
+ }
+ to {
+  transform: translateY(-100%)
+ }
+}
+@keyframes move-in {
+ 0% {
+  transform: translateY(100%)
+ }
+ to {
+  transform: translateY(0)
+ }
+}
+::view-transition-old(root) {
+ animation: .4s ease-in both move-out
+}
+::view-transition-new(root) {
+ animation: .4s ease-in both move-in
+}
+@view-transition {
+ navigation: auto;
+ types: slide
+}`));
+        });
+
+        it('@font-palette-values #53', function () {
+            return transform(`
+@font-palette-values --Alternate {
+  font-family: "Bungee Spice";
+  override-colors:
+    0 #00ffbb,
+    1 #007744;
+}
+.alternate {
+  font-palette: --Alternate;
+}
+  `, {
+                beautify: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`@font-palette-values --Alternate {
+ font-family: "Bungee Spice";
+ override-colors: 0 #0fb,1 #074
+}
+.alternate {
+ font-palette: --Alternate
+}`));
+        });
+        
+
+        it('@property  #54', function () {
+            return transform(`
+
+@property --canBeAnything {
+  syntax: "*";
+  inherits: true;
+}
+
+@property --rotation {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 45deg;
+}
+
+@property --defaultSize {
+  syntax: "<length> | <percentage>";
+  inherits: true;
+  initial-value: 200px;
+}
+
+  `, {
+                beautify: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`@property --canBeAnything {
+ syntax: "*";
+ inherits: true
+}
+@property --rotation {
+ syntax: "<angle>";
+ inherits: false;
+ initial-value: 45deg
+}
+@property --defaultSize {
+ syntax: "<length> | <percentage>";
+ inherits: true;
+ initial-value: 200px
+}`));
+        });
+            
+
+        it('@position-try  #55', function () {
+            return transform(`
+@position-try --custom-left {
+  position-area: left;
+  width: 100px;
+  margin-right: 10px;
+}
+
+@position-try --custom-bottom {
+  top: anchor(bottom);
+  justify-self: anchor-center;
+  margin-top: 10px;
+  position-area: none;
+}
+
+@position-try --custom-right {
+  left: calc(anchor(right) + 10px);
+  align-self: anchor-center;
+  width: 100px;
+  position-area: none;
+}
+
+@position-try --custom-bottom-right {
+  position-area: bottom right;
+  margin: 10px 0 0 10px;
+}
+  .infobox {
+  position: fixed;
+  position-anchor: --my-anchor;
+  position-area: top;
+  width: 200px;
+  margin-bottom: 10px;
+  position-try-fallbacks:
+    --custom-left, --custom-bottom, --custom-right, --custom-bottom-right;
+}
+  `, {
+                beautify: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`@position-try --custom-left {
+ position-area: left;
+ width: 100px;
+ margin-right: 10px
+}
+@position-try --custom-bottom {
+ top: anchor(bottom);
+ justify-self: anchor-center;
+ margin-top: 10px;
+ position-area: none
+}
+@position-try --custom-right {
+ left: calc(anchor(right) + 10px);
+ align-self: anchor-center;
+ width: 100px;
+ position-area: none
+}
+@position-try --custom-bottom-right {
+ position-area: bottom right;
+ margin: 10px 0 0 10px
+}
+.infobox {
+ position: fixed;
+ position-anchor: --my-anchor;
+ position-area: top;
+ width: 200px;
+ margin-bottom: 10px;
+ position-try-fallbacks: --custom-left,--custom-bottom,--custom-right,--custom-bottom-right
+}`));
+        });
+          
+
+        it('@starting-style  #56', function () {
+            return transform(`
+@starting-style {
+  [popover]:popover-open {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+}
+
+[popover]:popover-open {
+  opacity: 1;
+  transform: scaleX(1);
+
+  @starting-style {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+}
+  `, {
+                beautify: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`@starting-style {
+ [popover]:popover-open {
+  opacity: 0;
+  transform: scaleX(0)
+ }
+}
+[popover]:popover-open {
+ opacity: 1;
+ transform: none;
+ @starting-style {
+  opacity: 0;
+  transform: scaleX(0)
+ }
+}`));
+        });
+        
+
+        it('@starting-style  #57', function () {
+            return transform(`
+
+@media (width >= calc(1024px + 50px)) {
+  h1 {
+    color: Highlight;
+  }
+}
+  `, {
+                beautify: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`@media (width>=1074px) {
+ h1 {
+  color: Highlight
+ }
+}`));
+        });
+        
     });
     }

@@ -76,7 +76,7 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
 .search-and-account a svg {
  filter: url( 
  "230,241,245 '
- ;);
+ );
  
  a {color: pink;}
 /* secret
@@ -111,7 +111,10 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
                 removeComments: true,
                 preserveLicense: true
             }).code).equals(`.search-and-account a svg {
- filter: url()
+ filter: url();
+ a {
+  color: pink
+ }
 }`));
         });
 
@@ -123,7 +126,7 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
 <!-- secret -->
  filter: url( 
  "230,241,245 '
- ;);
+ );
  
  a {color: pink;}
 /* secret

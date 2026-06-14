@@ -1,4 +1,4 @@
-import { identity, multiply } from './utils.js';
+import { multiply, identity } from './utils.js';
 
 /**
  * angle in radian

@@ -1,4 +1,4 @@
-export function eq(a: { [key: string]: any }, b: { [key: string]: any }): boolean {
+export function eq(a: any, b: any): boolean {
 
     if (a == null || b == null) {
 

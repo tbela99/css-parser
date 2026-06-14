@@ -100,4 +100,20 @@ html { --color: green; }
 }`));
     });
 
+    it('declaration-value #3', function () {
+        return transform(`
+    
+@font-face {
+
+    font-family: var(--fontStack-monospace, ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace);
+
+
+`, {
+                beautify: true,  
+                validation: true
+    }).then(result => expect(result.code).equals(`@font-face {
+ font-family: var(--fontStack-monospace,ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace)
+}`));
+    });
+
 }

@@ -110,29 +110,41 @@ var WalkerEvent;
 function* walk(node, filter, reverse) {
     const parents = [node];
     const root = node;
-    const map = new Map;
+    const map = new Map();
     let isNumeric = false;
     let i = 0;
     while ((node = parents[i++])) {
         let option = null;
         if (filter != null) {
             option = filter(node);
-            isNumeric = typeof option == 'number';
+            isNumeric = typeof option == "number";
             if (isNumeric) {
-                if ((option & WalkerOptionEnum.Ignore)) {
+                if (option & WalkerOptionEnum.Ignore) {
                     continue;
                 }
-                if ((option & WalkerOptionEnum.Stop)) {
+                if (option & WalkerOptionEnum.Stop) {
                     break;
                 }
             }
         }
         if (!isNumeric || (option & WalkerOptionEnum.Children) === 0) {
             // @ts-ignore
-            yield { node, parent: map.get(node), root };
+            yield {
+                node,
+                parent: map.get(node),
+                root,
+                // @ts-expect-error
+                parents: function* () {
+                    let parent = map.get(node);
+                    while (parent != null) {
+                        yield parent;
+                        parent = map.get(parent);
+                    }
+                },
+            };
         }
-        if ('chi' in node && (!isNumeric || ((option & WalkerOptionEnum.IgnoreChildren) === 0))) {
-            parents.splice(i, 0, ...node.chi[reverse ? 'reverse' : 'slice']());
+        if ("chi" in node && (!isNumeric || (option & WalkerOptionEnum.IgnoreChildren) === 0)) {
+            parents.splice(i, 0, ...node.chi[reverse ? "reverse" : "slice"]());
             for (const child of node.chi) {
                 map.set(child, node);
             }
@@ -188,44 +200,70 @@ function* walk(node, filter, reverse) {
  */
 function* walkValues(values, root = null, filter, reverse) {
     const stack = values.slice();
-    const map = new Map;
+    const map = new Map();
+    const used = new Set();
     let previous = null;
-    if (filter != null && typeof filter == 'function') {
+    if (filter != null && typeof filter == "function") {
         filter = {
             event: WalkerEvent.Enter,
-            fn: filter
+            fn: filter,
         };
     }
     else if (filter == null) {
         filter = {
-            event: WalkerEvent.Enter
+            event: WalkerEvent.Enter,
         };
     }
     let isNumeric = false;
+    let value;
+    let option;
+    let node;
+    // const parents: Token[] = [];
     const eventType = filter.event ?? WalkerEvent.Enter;
     while (stack.length > 0) {
-        let value = reverse ? stack.pop() : stack.shift();
-        let option = null;
-        if (filter.fn != null && (eventType & WalkerEvent.Enter)) {
-            const isValid = filter.type == null || value.typ == filter.type ||
+        value = reverse ? stack.pop() : stack.shift();
+        option = null;
+        node = map.get(value) ?? null;
+        if (used.has(value)) {
+            continue;
+        }
+        used.add(value);
+        // parents.length = 0;
+        // while (node != null) {
+        //     parents.push(node);
+        //     node = map.get(node) ?? null;
+        // }
+        if (filter.fn != null && eventType & WalkerEvent.Enter) {
+            const isValid = filter.type == null ||
+                value.typ == filter.type ||
                 (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
-                (typeof filter.type == 'function' && filter.type(value));
+                (typeof filter.type == "function" && filter.type(value));
             if (isValid) {
-                option = filter.fn(value, map.get(value) ?? root, WalkerEvent.Enter);
-                isNumeric = typeof option == 'number';
-                if (isNumeric && (option & WalkerOptionEnum.Stop)) {
+                option = filter.fn(value, map.get(value) ?? root, WalkerEvent.Enter, 
+                // @ts-expect-error
+                function* () {
+                    // @ts-expect-error
+                    let parent = map.get(node);
+                    console.debug({ parent });
+                    while (parent != null) {
+                        yield parent;
+                        parent = map.get(parent);
+                    }
+                });
+                isNumeric = typeof option == "number";
+                if (isNumeric && option & WalkerOptionEnum.Stop) {
                     return;
                 }
-                if (isNumeric && (option & WalkerOptionEnum.Ignore)) {
+                if (isNumeric && option & WalkerOptionEnum.Ignore) {
                     continue;
                 }
                 // @ts-ignore
-                if (option != null && typeof option == 'object' && ('typ' in option || Array.isArray(option))) {
+                if (option != null && typeof option == "object" && ("typ" in option || Array.isArray(option))) {
                     const op = Array.isArray(option) ? option : [option];
                     for (const o of op) {
                         map.set(o, map.get(value) ?? root);
                     }
-                    stack[reverse ? 'push' : 'unshift'](...op);
+                    stack[reverse ? "push" : "unshift"](...op);
                 }
             }
         }
@@ -235,61 +273,79 @@ function* walkValues(values, root = null, filter, reverse) {
             previousValue: previous,
             nextValue: stack[0] ?? null,
             // @ts-ignore
-            root: root ?? null
+            root: root ?? null,
+            // @ts-expect-error
+            parents: function* () {
+                // @ts-expect-error
+                let result = map.get(node) ?? root;
+                let next;
+                do {
+                    yield result;
+                    next = map.get(result) ?? root;
+                    if (next == result) {
+                        break;
+                    }
+                    result = next;
+                } while (result != null);
+            },
         };
-        if ('chi' in value && (!isNumeric || (option & WalkerOptionEnum.IgnoreChildren) === 0)) {
-            const sliced = value.chi.slice();
-            for (const child of sliced) {
-                map.set(child, value);
+        if (!isNumeric || (option & WalkerOptionEnum.IgnoreChildren) === 0) {
+            if ("chi" in value) {
+                const sliced = value.chi.slice();
+                for (const child of sliced) {
+                    map.set(child, value);
+                }
+                stack[reverse ? "push" : "unshift"](...sliced);
             }
-            stack[reverse ? 'push' : 'unshift'](...sliced);
-        }
-        else {
-            const values = [];
-            if ('l' in value && value.l != null) {
-                // @ts-ignore
-                values.push(value.l);
-                // @ts-ignore
-                map.set(value.l, value);
-            }
-            if ('op' in value && typeof value.op == 'object') {
-                values.push(value.op);
-                // @ts-ignore
-                map.set(value.op, value);
-            }
-            if ('r' in value && value.r != null) {
-                if (Array.isArray(value.r)) {
-                    for (const r of value.r) {
+            else {
+                const values = [];
+                if ("l" in value && value.l != null) {
+                    // @ts-ignore
+                    values.push(value.l);
+                    // @ts-ignore
+                    map.set(value.l, value);
+                }
+                if ("op" in value && typeof value.op == "object") {
+                    // @ts-ignore
+                    values.push(value.op);
+                    // @ts-ignore
+                    map.set(value.op, value);
+                }
+                if ("r" in value && value.r != null) {
+                    if (Array.isArray(value.r)) {
+                        for (const r of value.r) {
+                            // @ts-ignore
+                            values.push(r);
+                            // @ts-ignore
+                            map.set(r, value);
+                        }
+                    }
+                    else {
                         // @ts-ignore
-                        values.push(r);
+                        values.push(value.r);
                         // @ts-ignore
-                        map.set(r, value);
+                        map.set(value.r, value);
                     }
                 }
-                else {
-                    // @ts-ignore
-                    values.push(value.r);
-                    // @ts-ignore
-                    map.set(value.r, value);
+                if (values.length > 0) {
+                    stack[reverse ? "push" : "unshift"](...values);
                 }
             }
-            if (values.length > 0) {
-                stack[reverse ? 'push' : 'unshift'](...values);
-            }
         }
-        if ((eventType & WalkerEvent.Leave) && filter.fn != null) {
-            const isValid = filter.type == null || value.typ == filter.type ||
+        if (eventType & WalkerEvent.Leave && filter.fn != null) {
+            const isValid = filter.type == null ||
+                value.typ == filter.type ||
                 (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
-                (typeof filter.type == 'function' && filter.type(value));
+                (typeof filter.type == "function" && filter.type(value));
             if (isValid) {
                 option = filter.fn(value, map.get(value), WalkerEvent.Leave);
                 // @ts-ignore
-                if (option != null && ('typ' in option || Array.isArray(option))) {
+                if (option != null && ("typ" in option || Array.isArray(option))) {
                     const op = Array.isArray(option) ? option : [option];
                     for (const o of op) {
                         map.set(o, map.get(value) ?? root);
                     }
-                    stack[reverse ? 'push' : 'unshift'](...op);
+                    stack[reverse ? "push" : "unshift"](...op);
                 }
             }
         }

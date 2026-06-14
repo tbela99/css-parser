@@ -61,7 +61,7 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
             height: calc(100px * 2/ 15);
     }
 }
-`, {removePrefix: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(``));
+`, {removePrefix: true}).then(result => expect(result.code).equals(``));
         });
 
         it('prefixed properties #4', function () {
@@ -140,7 +140,7 @@ a:-webkit-any-link {
 .image {
   background-image: url(image@1x.png);
 }
-@media (-webkit-min-device-pixel-ratio: 2), (-o-min-device-pixel-ratio: 2/1), (min-resolution: 2dppx) {
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 2dppx) {
   .image {
     background-image: url(image@2x.png);
   }
@@ -242,7 +242,7 @@ a {
 .image {
  background-image: url(image@1x.png)
 }
-@media (min-resolution:2x),(-o-min-device-pixel-ratio:2/1),(min-resolution:2x) {
+@media (min-resolution:2x) {
  .image {
   background-image: url(image@2x.png)
  }
@@ -252,7 +252,7 @@ a {
   height: 10px
  }
 }
-.example,.site {
+.site,.example {
  display: grid;
  display: grid
 }

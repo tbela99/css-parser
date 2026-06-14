@@ -470,6 +470,7 @@ overflow-y: hidden;
                 nestingRules: true
             }).then(result => expect(render(result.ast, {
                 minify: false,
+                removeEmpty: true,
                 removeComments: true,
                 preserveLicense: true
             }).code).equals(`a {
@@ -638,7 +639,16 @@ content: '\\21 now\\21';
 }
 
 `;
-        return parse(file, {nestingRules: false}).then(result => expect(render(result.ast).code).equals(`.invisible-scrollbar::-webkit-scrollbar{display:none}.invisible-scrollbar:is(::-moz-range-thumb,:has(::-moz-range-thumb)){display:none}`));
+        return transform(file, {
+                beautify: true,    
+                minify: true, 
+                nestingRules: false
+            }).then(result => expect(result.code).equals(`.invisible-scrollbar::-webkit-scrollbar {
+ display: none
+}
+.invisible-scrollbar:is(::-moz-range-thumb,:has(::-moz-range-thumb)) {
+ display: none
+}`));
     });
 
     it('do not merge pseudo class selectors #31', function () {
@@ -656,7 +666,7 @@ content: '\\21 now\\21';
 }
 
 `;
-        return parse(file, {nestingRules: false}).then(result => expect(render(result.ast).code).equals(`.invisible-scrollbar:is(::-moz-range-thumb,:has(::-moz-range-thumb)){display:none}`));
+        return transform(file, {nestingRules: false}).then(result => expect(result.code).equals(`.invisible-scrollbar:is(::-moz-range-thumb,:has(::-moz-range-thumb)){display:none}`));
     });
 
     it('do not merge pseudo class selectors #32', function () {
@@ -823,6 +833,119 @@ content: '\\21 now\\21';
             beautify: true
         }).then(result => expect(result.code).equals(`.table tr:nth-child(odd) {
  background-color: #f2f2f2
+}`));
+    });
+
+    it('an+b #40', function () {
+        const file = `
+.table tr:nth-child(-02n -0 of li.list-group-item){background-color: #f2f2f2;}
+`;
+        return transform(file, {
+            beautify: true
+        }).then(result => expect(result.code).equals(`.table tr:nth-child(2n of li.list-group-item) {
+ background-color: #f2f2f2
+}`));
+    });
+
+    it('an+b #41', function () {
+        const file = `
+.table tr:nth-child(-02n +0 of li.list-group-item){background-color: #f2f2f2;}
+`;
+        return transform(file, {
+            beautify: true
+        }).then(result => expect(result.code).equals(`.table tr:nth-child(2n of li.list-group-item) {
+ background-color: #f2f2f2
+}`));
+    });
+
+    it('an+b #42', function () {
+        const file = `
+.table tr:nth-child(-02n+0 of li.list-group-item){background-color: #f2f2f2;}
+`;
+        return transform(file, {
+            beautify: true
+        }).then(result => expect(result.code).equals(`.table tr:nth-child(2n of li.list-group-item) {
+ background-color: #f2f2f2
+}`));
+    });
+
+    it('an+b #43', function () {
+        const file = `
+.table tr:nth-child(-2n+0 of li.list-group-item){background-color: #f2f2f2;}
+`;
+        return transform(file, {
+            beautify: true
+        }).then(result => expect(result.code).equals(`.table tr:nth-child(2n of li.list-group-item) {
+ background-color: #f2f2f2
+}`));
+    });
+
+    it('an+b #44', function () {
+        const file = `
+.table tr:nth-child(-n+0 of li.list-group-item){background-color: #f2f2f2;}
+`;
+        return transform(file, {
+            beautify: true
+        }).then(result => expect(result.code).equals(`.table tr:nth-child(n of li.list-group-item) {
+ background-color: #f2f2f2
+}`));
+    });
+
+    it('bg-position #45', function () {
+        const file = `
+
+
+.markdown-body kbd {
+  background:  #fff url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e") center right 1.75rem/calc(0.75em + 0.375rem) calc(0.75em + 0.375rem) no-repeat;
+}
+`;
+        return transform(file, {
+            beautify: true
+        }).then(result => expect(result.code).equals(`.markdown-body kbd {
+ background: #fff url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e")center right 1.75rem/calc(.75em + .375rem)calc(.75em + .375rem)calc(.75em + .375rem)no-repeat
+}`));
+    });
+
+    it('if() #46', function () {
+        const file = `
+
+div-1 {
+  background-image: if(
+    else: none;
+  );
+}
+div-2 {
+  background-image: if(
+  style(--scheme: ice): linear-gradient(#caf0f8, white, #caf0f8) ;
+  else: none ;
+);
+
+div-3 {
+  background-image: if(
+    style(--scheme: ice): linear-gradient(#caf0f8, white, #caf0f8);
+    style(--scheme: fire): linear-gradient(#ffc971, white, #ffc971);
+    else: none;
+  );
+}
+div-4 {
+  background-image: if(
+    
+  );
+}
+`;
+        return transform(file, {
+            beautify: true
+        }).then(result => expect(result.code).equals(`div-1 {
+ background-image: if(else:none)
+}
+div-2 {
+ background-image: if(style(--scheme:ice):linear-gradient(#caf0f8,#fff,#caf0f8);else:none);
+ div-3 {
+  background-image: if(style(--scheme:ice):linear-gradient(#caf0f8,#fff,#caf0f8);style(--scheme:fire):linear-gradient(#ffc971,#fff,#ffc971);else:none)
+ }
+ div-4 {
+  background-image: if()
+ }
 }`));
     });
 }

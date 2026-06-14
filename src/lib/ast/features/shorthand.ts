@@ -1,18 +1,21 @@
-import {PropertyList} from "../../parser/declaration/index.ts";
-import {EnumToken} from "../types.ts";
+import { PropertyList } from "../../parser/declaration/list.ts";
+import { EnumToken } from "../types.ts";
 import type {
     AstAtRule,
     AstNode,
     AstRule,
     AstStyleSheet,
     ParserOptions,
-    PropertyListOptions
+    PropertyListOptions,
 } from "../../../@types/index.d.ts";
-import {FeatureWalkMode} from "./type.ts";
+import { FeatureWalkMode } from "./type.ts";
 
 export class ComputeShorthandFeature {
-
-    public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType, EnumToken.KeyFramesRuleNodeType]);
+    public accept: Set<EnumToken> = new Set([
+        EnumToken.RuleNodeType,
+        EnumToken.AtRuleNodeType,
+        EnumToken.KeyFramesRuleNodeType,
+    ]);
 
     get ordering() {
         return 3;
@@ -23,20 +26,21 @@ export class ComputeShorthandFeature {
     }
 
     static register(options: ParserOptions): void {
-
         if (options.computeShorthand) {
-
             // @ts-ignore
             options.features.push(new ComputeShorthandFeature(options));
         }
     }
 
-    run(ast: AstRule | AstAtRule, options: PropertyListOptions = {}, parent: AstRule | AstAtRule | AstStyleSheet, context: {
-        [key: string]: any
-    }): AstNode | null {
-
-        if (!('chi' in ast)) {
-
+    run(
+        ast: AstRule | AstAtRule,
+        options: PropertyListOptions = {},
+        parent: AstRule | AstAtRule | AstStyleSheet,
+        context: {
+            [key: string]: any;
+        },
+    ): AstNode | null {
+        if (!("chi" in ast)) {
             return null;
         }
 
@@ -47,19 +51,15 @@ export class ComputeShorthandFeature {
         let properties: PropertyList = new PropertyList(options);
         const rules: AstNode[] = [];
 
-
         // @ts-ignore
         for (; k < j; k++) {
-
             l = k;
             // capture comments with the next token
             while (l + 1 < j) {
-
                 // @ts-ignore
                 const node = ast.chi[l];
 
                 if (node.typ == EnumToken.CommentNodeType) {
-
                     l++;
                     continue;
                 }
@@ -71,10 +71,8 @@ export class ComputeShorthandFeature {
             const node = ast.chi[l];
 
             if (node.typ == EnumToken.DeclarationNodeType) {
-
                 properties.add(...ast.chi!.slice(k, l + 1));
             } else {
-
                 rules.push(...ast.chi!.slice(k, l + 1));
             }
 

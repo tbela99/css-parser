@@ -1,4 +1,4 @@
-import {EnumToken} from "../lib/index.ts";
+import {EnumToken} from "../lib/ast/types.ts";
 
 export interface PropertyType {
 
@@ -13,6 +13,10 @@ export interface ShorthandPropertyType {
     types: string[];
     multiple: boolean;
     separator: {
+        typ: keyof EnumToken;
+        val: string
+    };
+    valueSeparator?: {
         typ: keyof EnumToken;
         val: string
     };

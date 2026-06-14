@@ -1,15 +1,13 @@
-import {xyz2srgb} from "./srgb.ts";
-import {multiplyMatrices} from "./utils/index.ts";
-import {srgb2xyz} from "./xyz.ts";
+import { xyz2srgb } from "./srgb.ts";
+import { multiplyMatrices } from "./utils/matrix.ts";
+import { srgb2xyz } from "./xyz.ts";
 
 export function a98rgb2srgbvalues(r: number, g: number, b: number, a: number | null = null): number[] {
-
     //  @ts-ignore
     return xyz2srgb(...la98rgb2xyz(...a98rgb2la98(r, g, b, a)));
 }
 
 export function srgb2a98values(r: number, g: number, b: number, a: number | null = null): number[] {
-
     // @ts-ignore
     return la98rgb2a98rgb(...xyz2la98rgb(...srgb2xyz(r, g, b, a)));
 }
@@ -20,12 +18,14 @@ function a98rgb2la98(r: number, g: number, b: number, a: number | null = null): 
     // convert an array of a98-rgb values in the range 0.0 - 1.0
     // to linear light (un-companded) form.
     // negative values are also now accepted
-    return [r, g, b].map(function (val) {
-        let sign = val < 0 ? -1 : 1;
-        let abs = Math.abs(val);
+    return [r, g, b]
+        .map(function (val) {
+            let sign = val < 0 ? -1 : 1;
+            let abs = Math.abs(val);
 
-        return sign * Math.pow(abs, 563 / 256);
-    }).concat(a == null || a == 1 ? [] : [a]);
+            return sign * Math.pow(abs, 563 / 256);
+        })
+        .concat(a == null || a == 1 ? [] : [a]);
 }
 
 function la98rgb2a98rgb(r: number, g: number, b: number, a: number | null = null): number[] {
@@ -33,12 +33,14 @@ function la98rgb2a98rgb(r: number, g: number, b: number, a: number | null = null
     // to gamma corrected form
 
     // negative values are also now accepted
-    return [r, b, g].map(function (val) {
-        let sign = val < 0 ? -1 : 1;
-        let abs = Math.abs(val);
+    return [r, b, g]
+        .map(function (val) {
+            let sign = val < 0 ? -1 : 1;
+            let abs = Math.abs(val);
 
-        return sign * Math.pow(abs, 256 / 563);
-    }).concat(a == null || a == 1 ? [] : [a]);
+            return sign * Math.pow(abs, 256 / 563);
+        })
+        .concat(a == null || a == 1 ? [] : [a]);
 }
 
 function la98rgb2xyz(r: number, g: number, b: number, a: number | null = null): number[] {

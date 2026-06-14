@@ -1,16 +1,9 @@
 import { hwb2hsv } from './hsv.js';
 import { color2srgbvalues, toPrecisionAngle, toPrecisionValue, getNumber } from './color.js';
 import { lch2rgbvalues, lab2rgbvalues, cmyk2rgbvalues } from './rgb.js';
-import './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { hex2srgbvalues, oklch2srgbvalues, oklab2srgbvalues, hslvalues } from './srgb.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
-import '../../ast/minify.js';
-import '../../ast/walk.js';
-import '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
-import '../../renderer/sourcemap/lib/encode.js';
 
 function hex2HslToken(token) {
     // @ts-ignore
@@ -81,16 +74,16 @@ function hslToken(values) {
         { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(values[2]) * 100 },
     ];
     if (values.length == 4 && values[3] != 1) {
-        chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, {
+        chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
             typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100
+            val: values[3] * 100,
         });
     }
     return {
         typ: EnumToken.ColorTokenType,
-        val: 'hsl',
+        val: "hsl",
         chi,
-        kin: ColorType.HSL
+        kin: ColorType.HSL,
     };
 }
 function rgb2hslvalues(token) {
@@ -132,7 +125,7 @@ function hsv2hsl(h, s, v, a) {
         //If (2-sat)*val < 1 set it to sat*val/((2-sat)*val)
         //Otherwise sat*val/(2-(2-sat)*val)
         //Conditional is not operating with hue, it is reassigned!
-        s * v / ((h = (2 - s) * v) < 1 ? h : 2 - h),
+        (s * v) / ((h = (2 - s) * v) < 1 ? h : 2 - h),
         h / 2, //Lightness is (2-sat)*val/2
     ];
     if (a != null) {

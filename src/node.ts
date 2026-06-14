@@ -7,15 +7,18 @@ import type {
     RenderOptions,
     RenderResult,
     TransformOptions,
-    TransformResult
+    TransformResult,
 } from "./@types/index.d.ts";
-import process from 'node:process';
-import {doParse, doRender, ModuleScopeEnumOptions, tokenize, tokenizeStream} from "./lib/index.ts";
-import {dirname, matchUrl, resolve} from "./lib/fs/index.ts";
-import {Readable} from "node:stream";
-import {createReadStream} from "node:fs";
-import {lstat, readFile} from "node:fs/promises";
-import {ResponseType} from "./types.ts";
+import process from "node:process";
+import { Readable } from "node:stream";
+import { createReadStream } from "node:fs";
+import { lstat, readFile } from "node:fs/promises";
+import { doParse } from "./lib/parser/parse.ts";
+import { doRender } from "./lib/renderer/render.ts";
+import { ModuleScopeEnumOptions } from "./lib/ast/types.ts";
+import { tokenize, tokenizeStream } from "./lib/parser/tokenize.ts";
+import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
+import { ResponseType } from "./types.ts";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -23,39 +26,38 @@ export type * from "./@types/token.d.ts";
 export type * from "./@types/parse.d.ts";
 export type * from "./@types/validation.d.ts";
 export type * from "./@types/walker.d.ts";
-export type{
+export type {
     AstNode,
     ParseResult,
     ParserOptions,
     RenderOptions,
     RenderResult,
     TransformOptions,
-    TransformResult
+    TransformResult,
 } from "./@types/index.d.ts";
 
+export { minify } from "./lib/ast/minify.ts";
+export { expand } from "./lib/ast/expand.ts";
+export { walk, walkValues, WalkerEvent, WalkerOptionEnum } from "./lib/ast/walk.ts";
+export { parseString } from "./lib/parser/parse.ts";
+export { renderToken } from "./lib/renderer/render.ts";
+export { convertColor } from "./lib/syntax/color/color.ts";
+export { isOkLabClose, okLabDistance } from "./lib/syntax/color/utils/distance.ts";
+export { parseDeclarations } from "./lib/parser/parse.ts";
+export { find, findLast, findByValue, findAll } from "./lib/ast/find.ts";
+export { cloneNode } from "./lib/ast/clone.ts";
 export {
-    minify,
-    expand,
-    parseString,
-    parseTokens,
-    renderToken,
-    walk,
-    walkValues,
-    convertColor,
-    isOkLabClose,
-    okLabDistance,
-    parseDeclarations,
     EnumToken,
     ColorType,
-    SourceMap,
-    WalkerEvent,
     ValidationLevel,
-    WalkerOptionEnum,
     ModuleScopeEnumOptions,
-    ModuleCaseTransformEnum
-} from './lib/index.ts';
-export {FeatureWalkMode} from './lib/ast/features/type.ts';
-export {dirname, resolve, ResponseType};
+    ModuleCaseTransformEnum,
+} from "./lib/ast/types.ts";
+export { SourceMap } from "./lib/renderer/sourcemap/sourcemap.ts";
+export type { ValidationToken } from "./lib/validation/parser/types.d.ts";
+
+export { FeatureWalkMode } from "./lib/ast/features/type.ts";
+export { dirname, resolve, ResponseType };
 
 /**
  * load file or url
@@ -69,57 +71,55 @@ export {dirname, resolve, ResponseType};
  * const result = await load(file, '.', ResponseType.ArrayBuffer) as ArrayBuffer;
  * ```
  */
-export async function load(url: string, currentDirectory: string = '.', responseType: boolean | ResponseType = false): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>> {
-
+export async function load(
+    url: string,
+    currentDirectory: string = ".",
+    responseType: boolean | ResponseType = false,
+): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>> {
     const resolved = resolve(url, currentDirectory);
 
-    if (typeof responseType == 'boolean') {
-
+    if (typeof responseType == "boolean") {
         responseType = responseType ? ResponseType.ReadableStream : ResponseType.Text;
     }
 
     if (matchUrl.test(resolved.absolute)) {
+        return fetch(resolved.absolute).then(
+            async (response: Response): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>> => {
+                if (!response.ok) {
+                    throw new Error(`${response.status} ${response.statusText} ${response.url}`);
+                }
 
-        return fetch(resolved.absolute).then(async (response: Response): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>> => {
+                if (responseType == ResponseType.ArrayBuffer) {
+                    return response.arrayBuffer();
+                }
 
-            if (!response.ok) {
-
-                throw new Error(`${response.status} ${response.statusText} ${response.url}`)
-            }
-
-            if (responseType == ResponseType.ArrayBuffer) {
-
-                return response.arrayBuffer();
-            }
-
-            return responseType == ResponseType.ReadableStream ? response.body as ReadableStream<Uint8Array<ArrayBuffer>> : response.text();
-        });
+                return responseType == ResponseType.ReadableStream
+                    ? (response.body as ReadableStream<Uint8Array<ArrayBuffer>>)
+                    : response.text();
+            },
+        );
     }
 
     try {
-
         const stats = await lstat(resolved.absolute);
 
         if (stats.isFile()) {
-
             if (responseType == ResponseType.Text) {
-
-                return readFile(resolved.absolute, 'utf-8');
+                return readFile(resolved.absolute, "utf-8");
             }
 
             if (responseType == ResponseType.ArrayBuffer) {
-
-                return readFile(resolved.absolute).then(buffer => buffer.buffer);
+                return readFile(resolved.absolute).then((buffer) => buffer.buffer);
             }
 
-            return Readable.toWeb(createReadStream(resolved.absolute, {
-                encoding: 'utf-8',
-                highWaterMark: 64 * 1024
-            })) as ReadableStream<Uint8Array>;
+            return Readable.toWeb(
+                createReadStream(resolved.absolute, {
+                    encoding: "utf-8",
+                    highWaterMark: 64 * 1024,
+                }),
+            ) as ReadableStream<Uint8Array>;
         }
-
     } catch (error) {
-
         console.warn(error);
     }
 
@@ -155,12 +155,15 @@ export async function load(url: string, currentDirectory: string = '.', response
  * // }
  * ```
  */
-export function render(data: AstNode, options: RenderOptions = {}, mapping?: {
-    mapping: Record<string, string>;
-    importMapping: Record<string, Record<string, string>> | null;
-} | null): RenderResult {
-
-    return doRender(data, Object.assign(options, {resolve, dirname, cwd: options.cwd ?? process.cwd()}), mapping);
+export function render(
+    data: AstNode,
+    options: RenderOptions = {},
+    mapping?: {
+        mapping: Record<string, string>;
+        importMapping: Record<string, Record<string, string>> | null;
+    } | null,
+): RenderResult {
+    return doRender(data, Object.assign(options, { resolve, dirname, cwd: options.cwd ?? process.cwd() }), mapping);
 }
 
 /**
@@ -186,9 +189,18 @@ export function render(data: AstNode, options: RenderOptions = {}, mapping?: {
  * console.log(result.ast);
  * ```
  */
-export async function parseFile(file: string, options: ParserOptions = {}, asStream: boolean = false): Promise<ParseResult> {
-
-    return Promise.resolve(((options.load ?? load) as (file: string, currentFile: string, asStream: boolean) => LoadResult)(file, '.', asStream)).then(stream => parse(stream, {src: file, ...options}));
+export async function parseFile(
+    file: string,
+    options: ParserOptions = {},
+    asStream: boolean = false,
+): Promise<ParseResult> {
+    return Promise.resolve(
+        ((options.load ?? load) as (file: string, currentFile: string, asStream: boolean) => LoadResult)(
+            file,
+            ".",
+            asStream,
+        ),
+    ).then((stream) => parse(stream, { src: file, ...options }));
 }
 
 /**
@@ -235,22 +247,30 @@ export async function parseFile(file: string, options: ParserOptions = {}, asStr
  * ```
  */
 
-export async function parse(stream: string | ReadableStream<Uint8Array>, options: ParserOptions = {}): Promise<ParseResult> {
-
-    return doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize({
+export async function parse(
+    stream: string | ReadableStream<Uint8Array>,
+    options: ParserOptions = {},
+): Promise<ParseResult> {
+    options.parseInfo = {
         stream,
-        buffer: '',
+        buffer: "",
+        src: options.src ?? "",
         offset: 0,
-        position: {ind: 0, lin: 1, col: 1},
-        currentPosition: {ind: -1, lin: 1, col: 0}
-    } as ParseInfo), Object.assign(options, {
-        load,
-        resolve,
-        dirname,
-        cwd: options.cwd ?? process.cwd()
-    })).then(result => {
+        time: 0,
+        position: { ind: 0, lin: 1, col: 0 },
+        currentPosition: { ind: -1, lin: 1, col: 0 },
+    } as ParseInfo;
 
-        const {revMapping, ...res} = result;
+    return doParse(
+        stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo),
+        Object.assign(options, {
+            load,
+            resolve,
+            dirname,
+            cwd: options.cwd ?? process.cwd(),
+        }),
+    ).then((result) => {
+        const { revMapping, ...res } = result;
         return res as ParseResult;
     });
 }
@@ -278,9 +298,18 @@ export async function parse(stream: string | ReadableStream<Uint8Array>, options
  * console.log(result.code);
  * ```
  */
-export async function transformFile(file: string, options: TransformOptions = {}, asStream: boolean = false): Promise<TransformResult> {
-
-    return Promise.resolve(((options.load ?? load) as (file: string, currentFile: string, asStream: boolean) => LoadResult)(file, '.', asStream)).then(stream => transform(stream, {src: file, ...options}));
+export async function transformFile(
+    file: string,
+    options: TransformOptions = {},
+    asStream: boolean = false,
+): Promise<TransformResult> {
+    return Promise.resolve(
+        ((options.load ?? load) as (file: string, currentFile: string, asStream: boolean) => LoadResult)(
+            file,
+            ".",
+            asStream,
+        ),
+    ).then((stream) => transform(stream, { src: file, ...options }));
 }
 
 /**
@@ -326,29 +355,38 @@ export async function transformFile(file: string, options: TransformOptions = {}
  *  console.log(result.code);
  * ```
  */
-export async function transform(css: string | ReadableStream<Uint8Array>, options: TransformOptions = {}): Promise<TransformResult> {
-
-    options = {minify: true, removeEmpty: true, removeCharset: true, ...options};
+export async function transform(
+    css: string | ReadableStream<Uint8Array>,
+    options: TransformOptions = {},
+): Promise<TransformResult> {
+    options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
 
     const startTime: number = performance.now();
     return parse(css, options).then((parseResult: ParseResult) => {
-
         let mapping: Record<string, string> | null = null;
         let importMapping: Record<string, Record<string, string>> | null = null;
 
-        if (typeof options.module == 'number' && (options.module & ModuleScopeEnumOptions.ICSS)) {
+        if (typeof options.module == "number" && options.module & ModuleScopeEnumOptions.ICSS) {
             mapping = parseResult.mapping as Record<string, string>;
             importMapping = parseResult.importMapping as Record<string, Record<string, string>>;
-        } else if (typeof options.module == 'object' && typeof options.module.scoped == 'number' && (options.module.scoped & ModuleScopeEnumOptions.ICSS)) {
+        } else if (
+            typeof options.module == "object" &&
+            typeof options.module.scoped == "number" &&
+            options.module.scoped & ModuleScopeEnumOptions.ICSS
+        ) {
             mapping = parseResult.mapping as Record<string, string>;
             importMapping = parseResult.importMapping as Record<string, Record<string, string>>;
         }
 
         // ast already expanded by parse
-        const rendered: RenderResult = render(parseResult.ast, {
-            ...options,
-            expandNestingRules: false
-        }, mapping != null ? {mapping, importMapping} : null);
+        const rendered: RenderResult = render(
+            parseResult.ast,
+            {
+                ...options,
+                expandNestingRules: false,
+            },
+            mapping != null ? { mapping, importMapping } : null,
+        );
 
         return {
             ...parseResult,
@@ -358,8 +396,8 @@ export async function transform(css: string | ReadableStream<Uint8Array>, option
                 bytesOut: rendered.code.length,
                 ...parseResult.stats,
                 render: rendered.stats.total,
-                total: `${(performance.now() - startTime).toFixed(2)}ms`
-            }
-        } as TransformResult
+                total: `${(performance.now() - startTime).toFixed(2)}ms`,
+            },
+        } as TransformResult;
     });
 }

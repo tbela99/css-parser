@@ -1,14 +1,7 @@
 import { EnumToken } from '../types.js';
 import { consumeWhitespace } from '../../validation/utils/whitespace.js';
-import '../minify.js';
-import '../walk.js';
-import '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
-import '../../syntax/color/utils/constants.js';
-import { filterValues, renderToken } from '../../renderer/render.js';
-import '../../renderer/sourcemap/lib/encode.js';
 import { compute } from '../transform/compute.js';
+import { filterValues, renderToken } from '../../renderer/render.js';
 import { minifyTransformFunctions, eqMatrix } from '../transform/minify.js';
 import { FeatureWalkMode } from './type.js';
 
@@ -28,7 +21,7 @@ class TransformCssFeature {
         }
     }
     run(ast) {
-        if (!('chi' in ast)) {
+        if (!("chi" in ast)) {
             return null;
         }
         let i = 0;
@@ -37,18 +30,21 @@ class TransformCssFeature {
         for (; i < ast.chi.length; i++) {
             // @ts-ignore
             node = ast.chi[i];
-            if (node.typ != EnumToken.DeclarationNodeType || !node.nam.match(/^(-[a-z]+-)?transform$/)) {
+            if (node.typ != EnumToken.DeclarationNodeType ||
+                !node.nam.match(/^(-[a-z]+-)?transform$/)) {
                 continue;
             }
             const children = [];
             for (const child of node.val) {
-                children.push(child.typ == EnumToken.FunctionTokenType ? minifyTransformFunctions(child) : child);
+                children.push(child.typ == EnumToken.TransformFunctionTokenType
+                    ? minifyTransformFunctions(child)
+                    : child);
             }
             consumeWhitespace(children);
             let { matrix, cumulative, minified } = compute(children) ?? {
                 matrix: null,
                 cumulative: null,
-                minified: null
+                minified: null,
             };
             if (matrix == null || cumulative == null || minified == null) {
                 node.val = children;
@@ -63,7 +59,7 @@ class TransformCssFeature {
             }
             const l = renderToken(matrix).length;
             node.val = r.reduce((acc, curr) => {
-                if (curr.reduce((acc, t) => acc + renderToken(t), '').length < l) {
+                if (curr.reduce((acc, t) => acc + renderToken(t), "").length < l) {
                     return curr;
                 }
                 return acc;

@@ -1,15 +1,13 @@
-import {lsrgb2srgbvalues, srgb2lsrgbvalues, xyz2srgb} from "./srgb.ts";
-import {multiplyMatrices} from "./utils/index.ts";
-import {srgb2xyz} from "./xyz.ts";
+import { lsrgb2srgbvalues, srgb2lsrgbvalues, xyz2srgb } from "./srgb.ts";
+import { multiplyMatrices } from "./utils/matrix.ts";
+import { srgb2xyz } from "./xyz.ts";
 
 export function p32srgbvalues(r: number, g: number, b: number, alpha?: number) {
-
     // @ts-ignore
     return xyz2srgb(...lp32xyz(...p32lp3(r, g, b, alpha)));
 }
 
 export function srgb2p3values(r: number, g: number, b: number, alpha?: number) {
-
     // @ts-ignore
     return lp32p3(...xyz2lp3(...srgb2xyz(r, g, b, alpha)));
 }
@@ -18,14 +16,14 @@ export function p32lp3(r: number, g: number, b: number, alpha?: number) {
     // convert an array of display-p3 RGB values in the range 0.0 - 1.0
     // to linear light (un-companded) form.
 
-    return srgb2lsrgbvalues(r, g, b, alpha);	// same as sRGB
+    return srgb2lsrgbvalues(r, g, b, alpha); // same as sRGB
 }
 
 export function lp32p3(r: number, g: number, b: number, alpha?: number) {
     // convert an array of linear-light display-p3 RGB  in the range 0.0-1.0
     // to gamma corrected form
 
-    return lsrgb2srgbvalues(r, g, b, alpha);	// same as sRGB
+    return lsrgb2srgbvalues(r, g, b, alpha); // same as sRGB
 }
 
 export function lp32xyz(r: number, g: number, b: number, alpha?: number) {

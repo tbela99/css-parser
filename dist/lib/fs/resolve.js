@@ -6,30 +6,22 @@ const matchUrl = /^(https?:)?\/\//;
  * @private
  */
 function dirname(path) {
-    // if (path == '/' || path === '') {
-    //
-    //     return path;
-    // }
-    if (path === '') {
-        return '';
+    if (path === "") {
+        return "";
     }
     let i = 0;
-    let parts = [''];
+    let parts = [""];
     for (; i < path.length; i++) {
         const chr = path.charAt(i);
-        if (chr == '/') {
-            parts.push('');
+        if (chr == "/") {
+            parts.push("");
         }
-        // else if (chr == '?' || chr == '#') {
-        //
-        //     break;
-        // }
         else {
             parts[parts.length - 1] += chr;
         }
     }
     parts.pop();
-    return parts.length == 0 ? '/' : parts.join('/');
+    return parts.length == 0 ? "/" : parts.join("/");
 }
 /**
  * split path
@@ -40,17 +32,17 @@ function splitPath(result) {
     if (result.length == 0) {
         return { parts: [], i: 0 };
     }
-    if (result === '/') {
-        return { parts: ['/'], i: 0 };
+    if (result === "/") {
+        return { parts: ["/"], i: 0 };
     }
-    const parts = [''];
+    const parts = [""];
     let i = 0;
     for (; i < result.length; i++) {
         const chr = result.charAt(i);
-        if (chr == '/') {
-            parts.push('');
+        if (chr == "/") {
+            parts.push("");
         }
-        else if (chr == '?' || chr == '#') {
+        else if (chr == "?" || chr == "#") {
             break;
         }
         else {
@@ -59,10 +51,10 @@ function splitPath(result) {
     }
     let k = -1;
     while (++k < parts.length) {
-        if (parts[k] == '.') {
+        if (parts[k] == ".") {
             parts.splice(k--, 1);
         }
-        else if (parts[k] == '..') {
+        else if (parts[k] == "..") {
             parts.splice(k - 1, 2);
             k -= 2;
         }
@@ -81,44 +73,44 @@ function resolve(url, currentDirectory, cwd) {
     if (matchUrl.test(url)) {
         return {
             absolute: url,
-            relative: url
+            relative: url,
         };
     }
-    cwd ??= '';
-    currentDirectory ??= '';
-    if (currentDirectory !== '' && url.startsWith(currentDirectory + '/')) {
+    cwd ??= "";
+    currentDirectory ??= "";
+    if (currentDirectory !== "" && url.startsWith(currentDirectory + "/")) {
         return {
             absolute: url,
-            relative: url.slice(currentDirectory.length + 1)
+            relative: url.slice(currentDirectory.length + 1),
         };
     }
-    if (currentDirectory === '' && cwd !== '' && url.startsWith(cwd == '/' ? cwd : cwd + '/')) {
+    if (currentDirectory === "" && cwd !== "" && url.startsWith(cwd == "/" ? cwd : cwd + "/")) {
         cwd = normalize(cwd);
         const absolute = normalize(url);
-        const prefix = cwd == '/' ? cwd : cwd + '/';
+        const prefix = cwd == "/" ? cwd : cwd + "/";
         return {
             absolute,
-            relative: absolute.startsWith(prefix) ? absolute.slice(prefix.length) : diff(absolute, cwd)
+            relative: absolute.startsWith(prefix) ? absolute.slice(prefix.length) : diff(absolute, cwd),
         };
     }
     if (matchUrl.test(currentDirectory)) {
         const path = new URL(url, currentDirectory).href;
         return {
             absolute: path,
-            relative: path
+            relative: path,
         };
     }
-    let result = '';
-    if (url.charAt(0) == '/') {
+    let result = "";
+    if (url.charAt(0) == "/") {
         result = url;
     }
-    else if (currentDirectory.charAt(0) == '/') {
-        result = dirname(currentDirectory) + '/' + url;
+    else if (currentDirectory.charAt(0) == "/") {
+        result = dirname(currentDirectory) + "/" + url;
     }
     const absolute = normalize(result);
     return {
         absolute,
-        relative: absolute === '' ? '' : diff(absolute, cwd ?? currentDirectory),
+        relative: absolute === "" ? "" : diff(absolute, cwd ?? currentDirectory),
     };
 }
 function diff(path1, path2) {
@@ -129,22 +121,22 @@ function diff(path1, path2) {
             parts.shift();
         }
         else {
-            parts.unshift('..');
+            parts.unshift("..");
         }
     }
-    return parts.join('/');
+    return parts.join("/");
 }
 function normalize(path) {
     let parts = [];
     let i = 0;
     for (; i < path.length; i++) {
         const chr = path.charAt(i);
-        if (chr == '/') {
-            if (parts.length == 0 || parts[parts.length - 1] !== '') {
-                parts.push('');
+        if (chr == "/") {
+            if (parts.length == 0 || parts[parts.length - 1] !== "") {
+                parts.push("");
             }
         }
-        else if (chr == '?' || chr == '#') {
+        else if (chr == "?" || chr == "#") {
             break;
         }
         else {
@@ -153,15 +145,15 @@ function normalize(path) {
     }
     let k = -1;
     while (++k < parts.length) {
-        if (parts[k] == '.') {
+        if (parts[k] == ".") {
             parts.splice(k--, 1);
         }
-        else if (parts[k] == '..') {
+        else if (parts[k] == "..") {
             parts.splice(k - 1, 2);
             k -= 2;
         }
     }
-    return (path.charAt(0) == '/' ? '/' : '') + parts.join('/');
+    return (path.charAt(0) == "/" ? "/" : "") + parts.join("/");
 }
 
 export { dirname, matchUrl, resolve };

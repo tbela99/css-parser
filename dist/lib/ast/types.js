@@ -38,7 +38,7 @@ var ValidationLevel;
     /**
      * validate selectors, at-rules and declarations
      */
-    ValidationLevel[ValidationLevel["All"] = 7] = "All"; // selectors + at-rules + declarations
+    ValidationLevel[ValidationLevel["All"] = 7] = "All";
 })(ValidationLevel || (ValidationLevel = {}));
 /**
  * enum of all token types
@@ -374,7 +374,7 @@ var EnumToken;
     /**
      * invalid rule token type
      */
-    EnumToken[EnumToken["InvalidRuleTokenType"] = 81] = "InvalidRuleTokenType";
+    EnumToken[EnumToken["InvalidRuleNodeType"] = 81] = "InvalidRuleNodeType";
     /**
      * invalid class selector token type
      */
@@ -386,7 +386,7 @@ var EnumToken;
     /**
      * invalid at rule token type
      */
-    EnumToken[EnumToken["InvalidAtRuleTokenType"] = 84] = "InvalidAtRuleTokenType";
+    EnumToken[EnumToken["InvalidAtRuleNodeType"] = 84] = "InvalidAtRuleNodeType";
     /**
      * media query condition token type
      */
@@ -398,19 +398,19 @@ var EnumToken;
     /**
      * media feature only token type
      */
-    EnumToken[EnumToken["MediaFeatureOnlyTokenType"] = 87] = "MediaFeatureOnlyTokenType";
+    EnumToken[EnumToken["OnlyTokenType"] = 87] = "OnlyTokenType";
     /**
      * media feature not token type
      */
-    EnumToken[EnumToken["MediaFeatureNotTokenType"] = 88] = "MediaFeatureNotTokenType";
+    EnumToken[EnumToken["NotTokenType"] = 88] = "NotTokenType";
     /**
      * media feature and token type
      */
-    EnumToken[EnumToken["MediaFeatureAndTokenType"] = 89] = "MediaFeatureAndTokenType";
+    EnumToken[EnumToken["AndTokenType"] = 89] = "AndTokenType";
     /**
      * media feature or token type
      */
-    EnumToken[EnumToken["MediaFeatureOrTokenType"] = 90] = "MediaFeatureOrTokenType";
+    EnumToken[EnumToken["OrTokenType"] = 90] = "OrTokenType";
     /**
      * pseudo page token type
      */
@@ -444,6 +444,172 @@ var EnumToken;
      * css variable declaration map token type
      */
     EnumToken[EnumToken["CssVariableDeclarationMapTokenType"] = 98] = "CssVariableDeclarationMapTokenType";
+    /**
+     * media range query token type
+     */
+    EnumToken[EnumToken["MediaRangeQueryTokenType"] = 99] = "MediaRangeQueryTokenType";
+    /**
+     * invalid media query token type
+     */
+    EnumToken[EnumToken["InvalidMediaQueryTokenType"] = 100] = "InvalidMediaQueryTokenType";
+    /**
+     * supports query condition token type
+     */
+    EnumToken[EnumToken["SupportsQueryConditionTokenType"] = 101] = "SupportsQueryConditionTokenType";
+    /**
+     * supports query unary condition token type
+     */
+    EnumToken[EnumToken["SupportsQueryUnaryConditionTokenType"] = 102] = "SupportsQueryUnaryConditionTokenType";
+    /**
+     * when else query condition token type
+     */
+    EnumToken[EnumToken["WhenElseQueryConditionTokenType"] = 103] = "WhenElseQueryConditionTokenType";
+    /**
+     * when else query unary condition token type
+     */
+    EnumToken[EnumToken["WhenElseUnaryConditionTokenType"] = 104] = "WhenElseUnaryConditionTokenType";
+    /**
+     * container style range token type
+     */
+    EnumToken[EnumToken["ContainerStyleRangeTokenType"] = 105] = "ContainerStyleRangeTokenType";
+    /**
+     * '*'
+     */
+    EnumToken[EnumToken["Star"] = 106] = "Star";
+    /**
+     * '+'
+     */
+    EnumToken[EnumToken["Plus"] = 107] = "Plus";
+    /**
+     * '~'
+     */
+    EnumToken[EnumToken["Tilda"] = 108] = "Tilda";
+    /**
+     * '|'
+     */
+    EnumToken[EnumToken["Pipe"] = 109] = "Pipe";
+    /**
+     * '::'
+     */
+    EnumToken[EnumToken["DoubleColonTokenType"] = 110] = "DoubleColonTokenType";
+    /**
+     * math function token type  such as'calc(' etc.
+     */
+    EnumToken[EnumToken["MathFunctionTokenType"] = 111] = "MathFunctionTokenType";
+    /**
+     * transform function token type such as 'translate(' etc.
+     */
+    EnumToken[EnumToken["TransformFunctionTokenType"] = 112] = "TransformFunctionTokenType";
+    /**
+     * when function token type such as 'supports(' etc.
+     */
+    EnumToken[EnumToken["WhenElseFunctionTokenType"] = 113] = "WhenElseFunctionTokenType";
+    /**
+     * general enclosed function token type 'font-tech(' etc.
+     */
+    EnumToken[EnumToken["GeneralEnclosedFunctionTokenType"] = 114] = "GeneralEnclosedFunctionTokenType";
+    /**
+     * supports function token type such as 'at-rule('
+     */
+    EnumToken[EnumToken["SupportsFunctionTokenType"] = 115] = "SupportsFunctionTokenType";
+    /**
+     * container function token type such as 'style(' or 'scroll-state('
+     */
+    EnumToken[EnumToken["ContainerFunctionTokenType"] = 116] = "ContainerFunctionTokenType";
+    /**
+     * unrecognized node token type
+     */
+    EnumToken[EnumToken["RawNodeTokenType"] = 117] = "RawNodeTokenType";
+    /**
+     * media query boolean token type
+     * @media not ()
+     * @media only ()
+     */
+    EnumToken[EnumToken["MediaQueryUnaryFeatureTokenType"] = 118] = "MediaQueryUnaryFeatureTokenType";
+    /**
+     * grid template function token type such as 'minmax('
+     */
+    EnumToken[EnumToken["GridTemplateFuncTokenDefType"] = 119] = "GridTemplateFuncTokenDefType";
+    /**
+     * image function token type such as 'image(' etc.
+     */
+    EnumToken[EnumToken["ImageFunctionTokenDefType"] = 120] = "ImageFunctionTokenDefType";
+    /**
+     * function token type such as 'view(' etc.
+     */
+    EnumToken[EnumToken["TimelineFunctionTokenDefType"] = 121] = "TimelineFunctionTokenDefType";
+    /**
+     * function token type
+     */
+    EnumToken[EnumToken["FunctionTokenDefType"] = 122] = "FunctionTokenDefType";
+    /**
+     * timing function token type such as 'linear(' etc.
+     */
+    EnumToken[EnumToken["TimingFunctionTokenDefType"] = 123] = "TimingFunctionTokenDefType";
+    /**
+     * color function token type such as 'rgb(' etc.
+     */
+    EnumToken[EnumToken["ColorFunctionTokenDefType"] = 124] = "ColorFunctionTokenDefType";
+    /**
+     * math function token type such as 'calc(' etc.
+     */
+    EnumToken[EnumToken["MathFunctionTokenDefType"] = 125] = "MathFunctionTokenDefType";
+    /**
+     * container function token type such as 'style(' or 'scroll-state('
+     */
+    EnumToken[EnumToken["ContainerFunctionTokenDefType"] = 126] = "ContainerFunctionTokenDefType";
+    /**
+     * url function token type 'url('
+     */
+    EnumToken[EnumToken["UrlFunctionTokenDefType"] = 127] = "UrlFunctionTokenDefType";
+    /**
+     * pseudo-class function token type
+     */
+    EnumToken[EnumToken["PseudoClassFunctionTokenDefType"] = 128] = "PseudoClassFunctionTokenDefType";
+    /**
+     * transform function token type such as 'translate(' etc.
+     */
+    EnumToken[EnumToken["TransformFunctionTokenDefType"] = 129] = "TransformFunctionTokenDefType";
+    /**
+     * when function token type such as 'supports(' or 'media('
+     */
+    EnumToken[EnumToken["WhenElseFunctionTokenDefType"] = 130] = "WhenElseFunctionTokenDefType";
+    /**
+     * general enclosed function token type 'font-tech(' etc.
+     */
+    EnumToken[EnumToken["GeneralEnclosedFunctionTokenDefType"] = 131] = "GeneralEnclosedFunctionTokenDefType";
+    /**
+     * supports function token type 'font-tech('
+     */
+    EnumToken[EnumToken["SupportsFunctionTokenDefType"] = 132] = "SupportsFunctionTokenDefType";
+    /**
+     *  CDOCOMMTokenType not allowed in this context
+     */
+    EnumToken[EnumToken["InvalidCommentTokenType"] = 133] = "InvalidCommentTokenType";
+    /**
+     * custom function token type '--function-name('
+     */
+    EnumToken[EnumToken["CustomFunctionTokenDefType"] = 134] = "CustomFunctionTokenDefType";
+    /**
+     * custom function token type
+     */
+    EnumToken[EnumToken["CustomFunctionTokenType"] = 135] = "CustomFunctionTokenType";
+    /**
+     * function tokens such as 'var(', 'env(', 'if(')
+     */
+    EnumToken[EnumToken["WildCardFunctionTokenDefType"] = 136] = "WildCardFunctionTokenDefType";
+    /**
+     * function such as 'var()', 'env()', 'if()'
+     */
+    EnumToken[EnumToken["WildCardFunctionTokenType"] = 137] = "WildCardFunctionTokenType";
+    /**
+     * if condition token
+     */
+    EnumToken[EnumToken["IfConditionTokenType"] = 138] = "IfConditionTokenType";
+    /**
+     * if-Else condition token
+     */
+    EnumToken[EnumToken["IfElseConditionTokenType"] = 139] = "IfElseConditionTokenType";
     /* aliases */
     /**
      * alias for time token type
@@ -580,31 +746,31 @@ var ColorType;
      */
     ColorType[ColorType["RGBA"] = 4] = "RGBA";
     /**
-     * colors as hsl values
+     * colors using rgb
      */
     ColorType[ColorType["HSLA"] = 5] = "HSLA";
     /**
-     * colors as hwb values
+     * colors using hwb
      */
     ColorType[ColorType["HWB"] = 6] = "HWB";
     /**
-     * colors as cmyk values
+     * colors using cmyk
      */
     ColorType[ColorType["CMYK"] = 7] = "CMYK";
     /**
-     * colors as oklab values
+     * colors using oklab
      * */
     ColorType[ColorType["OKLAB"] = 8] = "OKLAB";
     /**
-     * colors as oklch values
+     * colors using oklch
      * */
     ColorType[ColorType["OKLCH"] = 9] = "OKLCH";
     /**
-     * colors as lab values
+     * colors using lab
      */
     ColorType[ColorType["LAB"] = 10] = "LAB";
     /**
-     * colors as lch values
+     * colors using lch
      */
     ColorType[ColorType["LCH"] = 11] = "LCH";
     /**
@@ -612,35 +778,35 @@ var ColorType;
      */
     ColorType[ColorType["COLOR"] = 12] = "COLOR";
     /**
-     * color using srgb values
+     * color using srgb
      */
     ColorType[ColorType["SRGB"] = 13] = "SRGB";
     /**
-     * color using prophoto-rgb values
+     * color using prophoto-rgb
      */
     ColorType[ColorType["PROPHOTO_RGB"] = 14] = "PROPHOTO_RGB";
     /**
-     * color using a98-rgb values
+     * color using a98-rgb
      */
     ColorType[ColorType["A98_RGB"] = 15] = "A98_RGB";
     /**
-     * color using rec2020 values
+     * color using rec2020
      */
     ColorType[ColorType["REC2020"] = 16] = "REC2020";
     /**
-     * color using display-p3 values
+     * color using display-p3
      */
     ColorType[ColorType["DISPLAY_P3"] = 17] = "DISPLAY_P3";
     /**
-     * color using srgb-linear values
+     * color using srgb-linear
      */
     ColorType[ColorType["SRGB_LINEAR"] = 18] = "SRGB_LINEAR";
     /**
-     * color using xyz-d50 values
+     * color using xyz-d50
      */
     ColorType[ColorType["XYZ_D50"] = 19] = "XYZ_D50";
     /**
-     * color using xyz-d65 values
+     * color using xyz-d65
      */
     ColorType[ColorType["XYZ_D65"] = 20] = "XYZ_D65";
     /**
@@ -651,6 +817,14 @@ var ColorType;
      * color-mix() color function
      */
     ColorType[ColorType["COLOR_MIX"] = 22] = "COLOR_MIX";
+    /**
+     * non-standard color
+     */
+    ColorType[ColorType["NON_STD"] = 23] = "NON_STD";
+    /**
+     * custom color
+     */
+    ColorType[ColorType["CUSTOM_COLOR"] = 24] = "CUSTOM_COLOR";
     /**
      * alias for rgba
      */
@@ -730,5 +904,65 @@ var ModuleScopeEnumOptions;
      */
     ModuleScopeEnumOptions[ModuleScopeEnumOptions["Shortest"] = 512] = "Shortest";
 })(ModuleScopeEnumOptions || (ModuleScopeEnumOptions = {}));
+// https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Values_and_units#absolute_length_units
+function length2Px(value) {
+    let result = null;
+    if (value.typ == EnumToken.NumberTokenType) {
+        result = +value.val;
+    }
+    else {
+        switch (value.unit) {
+            case "cm":
+                // @ts-ignore
+                result = value.val * 37.8;
+                break;
+            case "mm":
+                // @ts-ignore
+                result = value.val * 3.78;
+                break;
+            case "Q":
+                // @ts-ignore
+                result = (value.val * 37.8) / 40;
+                break;
+            case "in":
+                // @ts-ignore
+                result = value.val / 96;
+                break;
+            case "pc":
+                // @ts-ignore
+                result = value.val / 16;
+                break;
+            case "pt":
+                // @ts-ignore
+                result = (value.val * 4) / 3;
+                break;
+            case "px":
+                result = +value.val;
+                break;
+        }
+    }
+    return isNaN(result) ? null : result;
+}
+/**
+ * minify number
+ * @param val
+ */
+function minifyNumber(val) {
+    val = String(val);
+    if (val === "0") {
+        return "0";
+    }
+    const chr = val.charAt(0);
+    if (chr == "-") {
+        const slice = val.slice(0, 2);
+        if (slice == "-0") {
+            return val.length == 2 ? "0" : "-" + val.slice(2);
+        }
+    }
+    if (chr == "0") {
+        return val.slice(1);
+    }
+    return val;
+}
 
-export { ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SyntaxValidationResult, ValidationLevel };
+export { ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SyntaxValidationResult, ValidationLevel, length2Px, minifyNumber };

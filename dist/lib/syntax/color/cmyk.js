@@ -1,14 +1,7 @@
 import { ColorType, EnumToken } from '../../ast/types.js';
-import '../../ast/minify.js';
-import '../../ast/walk.js';
-import '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
 import { color2srgbvalues, toPrecisionValue } from './color.js';
-import { hsl2srgbvalues } from './rgb.js';
-import './utils/constants.js';
 import { lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues, hwb2srgbvalues, rgb2srgbvalues } from './srgb.js';
-import '../../renderer/sourcemap/lib/encode.js';
+import { hsl2srgbvalues } from './rgb.js';
 
 function rgb2cmykToken(token) {
     const components = rgb2srgbvalues(token);
@@ -88,19 +81,28 @@ function srgb2cmykvalues(r, g, b, a = null) {
 function cmyktoken(values) {
     return {
         typ: EnumToken.ColorTokenType,
-        val: 'device-cmyk',
-        chi: values.reduce((acc, curr, index) => index < 4 ? [...acc, {
-                typ: EnumToken.PercentageTokenType,
-                // @ts-ignore
-                val: toPrecisionValue(curr) * 100
-            }] : [...acc, {
-                typ: EnumToken.LiteralTokenType,
-                val: '/'
-            }, {
-                typ: EnumToken.PercentageTokenType,
-                val: toPrecisionValue(curr) * 100
-            }], []),
-        kin: ColorType.DEVICE_CMYK
+        val: "device-cmyk",
+        chi: values.reduce((acc, curr, index) => index < 4
+            ? [
+                ...acc,
+                {
+                    typ: EnumToken.PercentageTokenType,
+                    // @ts-ignore
+                    val: toPrecisionValue(curr) * 100,
+                },
+            ]
+            : [
+                ...acc,
+                {
+                    typ: EnumToken.LiteralTokenType,
+                    val: "/",
+                },
+                {
+                    typ: EnumToken.PercentageTokenType,
+                    val: toPrecisionValue(curr) * 100,
+                },
+            ], []),
+        kin: ColorType.DEVICE_CMYK,
     };
 }
 

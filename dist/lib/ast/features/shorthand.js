@@ -1,16 +1,13 @@
 import { PropertyList } from '../../parser/declaration/list.js';
 import { EnumToken } from '../types.js';
-import '../minify.js';
-import '../walk.js';
-import '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
-import '../../syntax/color/utils/constants.js';
-import '../../renderer/sourcemap/lib/encode.js';
 import { FeatureWalkMode } from './type.js';
 
 class ComputeShorthandFeature {
-    accept = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType, EnumToken.KeyFramesRuleNodeType]);
+    accept = new Set([
+        EnumToken.RuleNodeType,
+        EnumToken.AtRuleNodeType,
+        EnumToken.KeyFramesRuleNodeType,
+    ]);
     get ordering() {
         return 3;
     }
@@ -24,7 +21,7 @@ class ComputeShorthandFeature {
         }
     }
     run(ast, options = {}, parent, context) {
-        if (!('chi' in ast)) {
+        if (!("chi" in ast)) {
             return null;
         }
         // @ts-ignore
