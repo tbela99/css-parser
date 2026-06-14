@@ -1,6 +1,7 @@
-import {D50, e, getComponents, k} from "./utils/index.ts";
-import {srgb2xyz_d50, XYZ_D50_to_D65} from "./xyz.ts";
-import type {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
+import { D50, e, k } from "../constants.ts";
+import { getComponents } from "./utils/components.ts";
+import { srgb2xyz_d50, XYZ_D50_to_D65 } from "./xyz.ts";
+import type { ColorToken, NumberToken, PercentageToken, Token } from "../../../@types/index.d.ts";
 import {
     cmyk2srgbvalues,
     hex2srgbvalues,
@@ -8,23 +9,21 @@ import {
     hwb2srgbvalues,
     oklch2srgbvalues,
     rgb2srgb,
-    xyz2srgb
+    xyz2srgb,
 } from "./srgb.ts";
-import {getLCHComponents} from "./lch.ts";
-import {getOKLABComponents, OKLab_to_XYZ} from "./oklab.ts";
-import {color2srgbvalues, getNumber, toPrecisionValue} from "./color.ts";
-import {ColorType, EnumToken} from "../../ast/index.ts";
-import {XYZ_D65_to_D50} from "./xyzd50.ts";
+import { getLCHComponents } from "./lch.ts";
+import { getOKLABComponents, OKLab_to_XYZ } from "./oklab.ts";
+import { color2srgbvalues, getNumber, toPrecisionValue } from "./color.ts";
+import { ColorType, EnumToken } from "../../ast/types.ts";
+import { XYZ_D65_to_D50 } from "./xyzd50.ts";
 
 export function hex2labToken(token: ColorToken): ColorToken | null {
-
     const values: number[] | null = hex2labvalues(token);
 
     return values == null ? null : labToken(values);
 }
 
 export function rgb2labToken(token: ColorToken): ColorToken | null {
-
     const values: number[] | null = rgb2labvalues(token);
 
     if (values == null) {
@@ -35,7 +34,6 @@ export function rgb2labToken(token: ColorToken): ColorToken | null {
 }
 
 export function hsl2labToken(token: ColorToken): ColorToken | null {
-
     const values: number[] | null = hsl2labvalues(token);
 
     if (values == null) {
@@ -46,7 +44,6 @@ export function hsl2labToken(token: ColorToken): ColorToken | null {
 }
 
 export function hwb2labToken(token: ColorToken): ColorToken | null {
-
     const values: number[] | null = hwb2labvalues(token);
 
     if (values == null) {
@@ -57,7 +54,6 @@ export function hwb2labToken(token: ColorToken): ColorToken | null {
 }
 
 export function cmyk2labToken(token: ColorToken): ColorToken | null {
-
     const values: number[] | null = cmyk2labvalues(token);
 
     if (values == null) {
@@ -68,7 +64,6 @@ export function cmyk2labToken(token: ColorToken): ColorToken | null {
 }
 
 export function lch2labToken(token: ColorToken): ColorToken | null {
-
     const values: number[] | null = lch2labvalues(token);
 
     if (values == null) {
@@ -79,7 +74,6 @@ export function lch2labToken(token: ColorToken): ColorToken | null {
 }
 
 export function oklab2labToken(token: ColorToken): ColorToken | null {
-
     const values: number[] | null = oklab2labvalues(token);
 
     if (values == null) {
@@ -90,7 +84,6 @@ export function oklab2labToken(token: ColorToken): ColorToken | null {
 }
 
 export function oklch2labToken(token: ColorToken): ColorToken | null {
-
     const values: number[] | null = oklch2labvalues(token);
 
     if (values == null) {
@@ -101,7 +94,6 @@ export function oklch2labToken(token: ColorToken): ColorToken | null {
 }
 
 export function color2labToken(token: ColorToken): ColorToken | null {
-
     const values: number[] | null = color2labvalues(token);
 
     if (values == null) {
@@ -112,35 +104,34 @@ export function color2labToken(token: ColorToken): ColorToken | null {
 }
 
 function labToken(values: number[]): ColorToken | null {
-
     const chi: Token[] = <Token[]>[
-
-        {typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0])},
-        {typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[1])},
-        {typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[2])},
+        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[1]) },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[2]) },
     ];
 
     if (values.length == 4) {
-
-        chi.push({typ: EnumToken.LiteralTokenType, val: '/'}, {
-            typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100
-        });
+        chi.push(
+            { typ: EnumToken.LiteralTokenType, val: "/" },
+            {
+                typ: EnumToken.PercentageTokenType,
+                val: values[3] * 100,
+            },
+        );
     }
 
     return {
         typ: EnumToken.ColorTokenType,
-        val: 'lab',
+        val: "lab",
         chi,
-        kin: ColorType.LAB
-    }
+        kin: ColorType.LAB,
+    };
 }
 
 // L: 0% = 0.0, 100% = 100.0
 // for a and b: -100% = -125, 100% = 125
 
 export function hex2labvalues(token: ColorToken): number[] | null {
-
     const values: number[] | null = hex2srgbvalues(token);
 
     // @ts-ignore
@@ -148,14 +139,12 @@ export function hex2labvalues(token: ColorToken): number[] | null {
 }
 
 export function rgb2labvalues(token: ColorToken): number[] | null {
-
     const values: number[] | null = rgb2srgb(token);
     // @ts-ignore
     return values == null ? null : srgb2labvalues(...values);
 }
 
 export function cmyk2labvalues(token: ColorToken) {
-
     const values: number[] | null = cmyk2srgbvalues(token);
 
     // @ts-ignore
@@ -163,7 +152,6 @@ export function cmyk2labvalues(token: ColorToken) {
 }
 
 export function hsl2labvalues(token: ColorToken): number[] | null {
-
     const values: number[] | null = hsl2srgb(token);
 
     if (values == null) {
@@ -175,7 +163,6 @@ export function hsl2labvalues(token: ColorToken): number[] | null {
 }
 
 export function hwb2labvalues(token: ColorToken): number[] | null {
-
     const values: number[] | null = hwb2srgbvalues(token);
 
     if (values == null) {
@@ -187,8 +174,6 @@ export function hwb2labvalues(token: ColorToken): number[] | null {
 }
 
 export function lch2labvalues(token: ColorToken): number[] | null {
-
-
     const values: number[] | null = getLCHComponents(token);
 
     // @ts-ignore
@@ -196,7 +181,6 @@ export function lch2labvalues(token: ColorToken): number[] | null {
 }
 
 export function oklab2labvalues(token: ColorToken): number[] | null {
-
     const values: number[] | null = getOKLABComponents(token);
 
     if (values == null) {
@@ -208,11 +192,9 @@ export function oklab2labvalues(token: ColorToken): number[] | null {
 }
 
 export function oklch2labvalues(token: ColorToken): number[] | null {
-
     const values: number[] | null = oklch2srgbvalues(token);
 
     if (values == null) {
-
         return null;
     }
 
@@ -221,11 +203,9 @@ export function oklch2labvalues(token: ColorToken): number[] | null {
 }
 
 export function color2labvalues(token: ColorToken): number[] | null {
-
     const val: number[] | null = color2srgbvalues(token);
 
     if (val == null) {
-
         return null;
     }
 
@@ -234,7 +214,6 @@ export function color2labvalues(token: ColorToken): number[] | null {
 }
 
 export function srgb2labvalues(r: number, g: number, b: number, a: number | null): number[] {
-
     // @ts-ignore */
     const result: number[] = xyz2lab(...srgb2xyz_d50(r, g, b));
 
@@ -246,7 +225,6 @@ export function srgb2labvalues(r: number, g: number, b: number, a: number | null
     }
 
     if (a != null) {
-
         result.push(a);
     }
 
@@ -263,12 +241,12 @@ export function xyz2lab(x: number, y: number, z: number, a: number | null = null
     const xyz: number[] = [x, y, z].map((value: number, i: number) => value / D50[i]);
 
     // now compute f
-    const f: number[] = xyz.map((value: number): number => value > e ? Math.cbrt(value) : (k * value + 16) / 116);
+    const f: number[] = xyz.map((value: number): number => (value > e ? Math.cbrt(value) : (k * value + 16) / 116));
 
     const result: number[] = [
-        (116 * f[1]) - 16, 	 // L
+        116 * f[1] - 16, // L
         500 * (f[0] - f[1]), // a
-        200 * (f[1] - f[2])  // b
+        200 * (f[1] - f[2]), // b
     ];
     // L in range [0,100]. For use in CSS, add a percent
 
@@ -281,7 +259,7 @@ export function xyz2lab(x: number, y: number, z: number, a: number | null = null
 
 export function lchvalues2labvalues(l: number, c: number, h: number, a: number | null = null): number[] {
     // l, c * Math.cos(360 * h * Math.PI / 180), c * Math.sin(360 * h * Math.PI / 180
-    const result: number[] = [l, c * Math.cos(h * Math.PI / 180), c * Math.sin(h * Math.PI / 180)];
+    const result: number[] = [l, c * Math.cos((h * Math.PI) / 180), c * Math.sin((h * Math.PI) / 180)];
 
     if (a != null) {
         result.push(a);
@@ -291,18 +269,21 @@ export function lchvalues2labvalues(l: number, c: number, h: number, a: number |
 }
 
 export function getLABComponents(token: ColorToken): number[] | null {
-
     const components: Token[] | null = getComponents(token);
 
     if (components == null) {
-
         return null;
     }
 
     for (let i = 0; i < components.length; i++) {
-
-        if (![EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.IdenTokenType].includes(components[i].typ)) {
-
+        if (
+            ![
+                EnumToken.NumberTokenType,
+                EnumToken.PercentageTokenType,
+                EnumToken.AngleTokenType,
+                EnumToken.IdenTokenType,
+            ].includes(components[i].typ)
+        ) {
             return null;
         }
     }
@@ -334,7 +315,6 @@ export function getLABComponents(token: ColorToken): number[] | null {
     const result: number[] = [l, a, b];
 
     if (alpha != null && alpha != 1) {
-
         result.push(alpha);
     }
 
@@ -344,7 +324,6 @@ export function getLABComponents(token: ColorToken): number[] | null {
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // D50 LAB
 export function Lab_to_sRGB(l: number, a: number, b: number): number[] {
-
     const xyz_d50: number[] = Lab_to_XYZ(l, a, b);
     // @ts-ignore
     const xyz_d65: number[] = XYZ_D50_to_D65(...xyz_d50);
@@ -357,8 +336,8 @@ export function Lab_to_sRGB(l: number, a: number, b: number): number[] {
 export function Lab_to_XYZ(l: number, a: number, b: number): number[] {
     // Convert Lab to D50-adapted XYZ
     // http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
-    const k: number = 24389 / 27;   // 29^3/3^3
-    const e: number = 216 / 24389;  // 6^3/29^3
+    const k: number = 24389 / 27; // 29^3/3^3
+    const e: number = 216 / 24389; // 6^3/29^3
     const f: number[] = [];
 
     // compute f, starting with the luminance-related term
@@ -370,7 +349,7 @@ export function Lab_to_XYZ(l: number, a: number, b: number): number[] {
     const xyz: number[] = [
         Math.pow(f[0], 3) > e ? Math.pow(f[0], 3) : (116 * f[0] - 16) / k,
         l > k * e ? Math.pow((l + 16) / 116, 3) : l / k,
-        Math.pow(f[2], 3) > e ? Math.pow(f[2], 3) : (116 * f[2] - 16) / k
+        Math.pow(f[2], 3) > e ? Math.pow(f[2], 3) : (116 * f[2] - 16) / k,
     ];
 
     // Compute XYZ by scaling xyz by reference white

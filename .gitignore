@@ -13,6 +13,7 @@ test/*.css
 test/*.html
 test/*.json
 test/*.md
+/docs
 
 # Logs
 logs

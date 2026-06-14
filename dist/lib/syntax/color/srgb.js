@@ -1,24 +1,22 @@
-import { COLORS_NAMES } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { color2srgbvalues, getNumber, getAngle } from './color.js';
-import { OKLab_to_sRGB, getOKLABComponents } from './oklab.js';
-import { ColorType, EnumToken } from '../../ast/types.js';
-import '../../ast/minify.js';
-import '../../ast/walk.js';
-import '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
+import { EnumToken, ColorType } from '../../ast/types.js';
+import { Lab_to_sRGB, getLABComponents, lchvalues2labvalues } from './lab.js';
 import { expandHexValue } from './hex.js';
-import { lchvalues2labvalues, Lab_to_sRGB, getLABComponents } from './lab.js';
+import { OKLab_to_sRGB, getOKLABComponents } from './oklab.js';
 import { getLCHComponents } from './lch.js';
 import { getOKLCHComponents } from './oklch.js';
 import { XYZ_to_lin_sRGB } from './xyz.js';
-import '../../renderer/sourcemap/lib/encode.js';
+import { COLORS_NAMES } from '../constants.js';
+import { parseColor } from '../syntax.js';
 
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // srgb-linear -> srgb
 // 0 <= r, g, b <= 1
 function srgbvalues(token) {
+    if (token.typ === EnumToken.IdenTokenType) {
+        token = parseColor(token);
+    }
     switch (token.kin) {
         case ColorType.LIT:
         case ColorType.HEX:
@@ -45,10 +43,18 @@ function srgbvalues(token) {
     return null;
 }
 function rgb2srgb(token) {
-    return getComponents(token)?.map?.((t, index) => index == 3 ? ((t.typ == EnumToken.IdenTokenType && t.val == 'none') ? 1 : getNumber(t)) : (t.typ == EnumToken.PercentageTokenType ? 255 : 1) * getNumber(t) / 255) ?? null;
+    return (getComponents(token)?.map?.((t, index) => index == 3
+        ? t.typ == EnumToken.IdenTokenType && t.val == "none"
+            ? 1
+            : getNumber(t)
+        : ((t.typ == EnumToken.PercentageTokenType ? 255 : 1) *
+            getNumber(t)) /
+            255) ?? null);
 }
 function rgb2srgbvalues(token) {
-    return getComponents(token)?.map?.((t, index) => index == 3 ? getNumber(t) : getNumber(t) / 255) ?? null;
+    return (getComponents(token)?.map?.((t, index) => index == 3
+        ? getNumber(t)
+        : getNumber(t) / 255) ?? null);
 }
 function hex2srgbvalues(token) {
     const value = expandHexValue(token.kin == ColorType.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
@@ -71,9 +77,9 @@ function hwb2srgbvalues(token) {
     if (hue == null || white == null || black == null) {
         return [];
     }
-    const rgb = hslvalues2srgbvalues(hue, 1, .5);
+    const rgb = hslvalues2srgbvalues(hue, 1, 0.5);
     for (let i = 0; i < 3; i++) {
-        rgb[i] *= (1 - white - black);
+        rgb[i] *= 1 - white - black;
         rgb[i] = rgb[i] + white;
     }
     if (alpha != null && alpha != 1) {
@@ -112,20 +118,11 @@ function cmyk2srgbvalues(token) {
     const rgb = [
         1 - Math.min(1, c * (1 - k) + k),
         1 - Math.min(1, m * (1 - k) + k),
-        1 - Math.min(1, y * (1 - k) + k)
+        1 - Math.min(1, y * (1 - k) + k),
     ];
     if (components.length == 5) {
         rgb.push(getNumber(components[4]));
     }
-    // @ts-ignore
-    // if (token.chi.length >= 9) {
-    //
-    //     // @ts-ignore
-    //     t = <NumberToken | PercentageToken>token.chi[8];
-    //
-    //     // @ts-ignore
-    //     rgb.push(getNumber(t));
-    // }
     return rgb;
 }
 function oklab2srgbvalues(token) {
@@ -177,7 +174,7 @@ function hslvalues(token) {
     return a == null ? { h, s, l } : { h, s, l, a };
 }
 function hslvalues2srgbvalues(h, s, l, a = null) {
-    let v = l <= .5 ? l * (1.0 + s) : l + s - l * s;
+    let v = l <= 0.5 ? l * (1.0 + s) : l + s - l * s;
     let r = l;
     let g = l;
     let b = l;
@@ -241,8 +238,12 @@ function lab2srgbvalues(token) {
     return rgb;
 }
 function lch2srgbvalues(token) {
+    const components = getLCHComponents(token);
+    if (components == null) {
+        return null;
+    }
     // @ts-ignore
-    const [l, a, b, alpha] = lchvalues2labvalues(...getLCHComponents(token));
+    const [l, a, b, alpha] = lchvalues2labvalues(...components);
     if (l == null || a == null || b == null) {
         return null;
     }

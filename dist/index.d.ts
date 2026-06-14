@@ -369,7 +369,7 @@ declare enum EnumToken {
     /**
      * invalid rule token type
      */
-    InvalidRuleTokenType = 81,
+    InvalidRuleNodeType = 81,
     /**
      * invalid class selector token type
      */
@@ -381,7 +381,7 @@ declare enum EnumToken {
     /**
      * invalid at rule token type
      */
-    InvalidAtRuleTokenType = 84,
+    InvalidAtRuleNodeType = 84,
     /**
      * media query condition token type
      */
@@ -393,19 +393,19 @@ declare enum EnumToken {
     /**
      * media feature only token type
      */
-    MediaFeatureOnlyTokenType = 87,
+    OnlyTokenType = 87,
     /**
      * media feature not token type
      */
-    MediaFeatureNotTokenType = 88,
+    NotTokenType = 88,
     /**
      * media feature and token type
      */
-    MediaFeatureAndTokenType = 89,
+    AndTokenType = 89,
     /**
      * media feature or token type
      */
-    MediaFeatureOrTokenType = 90,
+    OrTokenType = 90,
     /**
      * pseudo page token type
      */
@@ -438,6 +438,172 @@ declare enum EnumToken {
      * css variable declaration map token type
      */
     CssVariableDeclarationMapTokenType = 98,
+    /**
+     * media range query token type
+     */
+    MediaRangeQueryTokenType = 99,
+    /**
+     * invalid media query token type
+     */
+    InvalidMediaQueryTokenType = 100,
+    /**
+     * supports query condition token type
+     */
+    SupportsQueryConditionTokenType = 101,
+    /**
+     * supports query unary condition token type
+     */
+    SupportsQueryUnaryConditionTokenType = 102,
+    /**
+     * when else query condition token type
+     */
+    WhenElseQueryConditionTokenType = 103,
+    /**
+     * when else query unary condition token type
+     */
+    WhenElseUnaryConditionTokenType = 104,
+    /**
+     * container style range token type
+     */
+    ContainerStyleRangeTokenType = 105,
+    /**
+     * '*'
+     */
+    Star = 106,
+    /**
+     * '+'
+     */
+    Plus = 107,
+    /**
+     * '~'
+     */
+    Tilda = 108,
+    /**
+     * '|'
+     */
+    Pipe = 109,
+    /**
+     * '::'
+     */
+    DoubleColonTokenType = 110,
+    /**
+     * math function token type  such as'calc(' etc.
+     */
+    MathFunctionTokenType = 111,
+    /**
+     * transform function token type such as 'translate(' etc.
+     */
+    TransformFunctionTokenType = 112,
+    /**
+     * when function token type such as 'supports(' etc.
+     */
+    WhenElseFunctionTokenType = 113,
+    /**
+     * general enclosed function token type 'font-tech(' etc.
+     */
+    GeneralEnclosedFunctionTokenType = 114,
+    /**
+     * supports function token type such as 'at-rule('
+     */
+    SupportsFunctionTokenType = 115,
+    /**
+     * container function token type such as 'style(' or 'scroll-state('
+     */
+    ContainerFunctionTokenType = 116,
+    /**
+     * unrecognized node token type
+     */
+    RawNodeTokenType = 117,
+    /**
+     * media query boolean token type
+     * @media not ()
+     * @media only ()
+     */
+    MediaQueryUnaryFeatureTokenType = 118,
+    /**
+     * grid template function token type such as 'minmax('
+     */
+    GridTemplateFuncTokenDefType = 119,
+    /**
+     * image function token type such as 'image(' etc.
+     */
+    ImageFunctionTokenDefType = 120,
+    /**
+     * function token type such as 'view(' etc.
+     */
+    TimelineFunctionTokenDefType = 121,
+    /**
+     * function token type
+     */
+    FunctionTokenDefType = 122,
+    /**
+     * timing function token type such as 'linear(' etc.
+     */
+    TimingFunctionTokenDefType = 123,
+    /**
+     * color function token type such as 'rgb(' etc.
+     */
+    ColorFunctionTokenDefType = 124,
+    /**
+     * math function token type such as 'calc(' etc.
+     */
+    MathFunctionTokenDefType = 125,
+    /**
+     * container function token type such as 'style(' or 'scroll-state('
+     */
+    ContainerFunctionTokenDefType = 126,
+    /**
+     * url function token type 'url('
+     */
+    UrlFunctionTokenDefType = 127,
+    /**
+     * pseudo-class function token type
+     */
+    PseudoClassFunctionTokenDefType = 128,
+    /**
+     * transform function token type such as 'translate(' etc.
+     */
+    TransformFunctionTokenDefType = 129,
+    /**
+     * when function token type such as 'supports(' or 'media('
+     */
+    WhenElseFunctionTokenDefType = 130,
+    /**
+     * general enclosed function token type 'font-tech(' etc.
+     */
+    GeneralEnclosedFunctionTokenDefType = 131,
+    /**
+     * supports function token type 'font-tech('
+     */
+    SupportsFunctionTokenDefType = 132,
+    /**
+     *  CDOCOMMTokenType not allowed in this context
+     */
+    InvalidCommentTokenType = 133,
+    /**
+     * custom function token type '--function-name('
+     */
+    CustomFunctionTokenDefType = 134,
+    /**
+     * custom function token type
+     */
+    CustomFunctionTokenType = 135,
+    /**
+     * function tokens such as 'var(', 'env(', 'if(')
+     */
+    WildCardFunctionTokenDefType = 136,
+    /**
+     * function such as 'var()', 'env()', 'if()'
+     */
+    WildCardFunctionTokenType = 137,
+    /**
+     * if condition token
+     */
+    IfConditionTokenType = 138,
+    /**
+     * if-Else condition token
+     */
+    IfElseConditionTokenType = 139,
     /**
      * alias for time token type
      */
@@ -550,7 +716,7 @@ declare enum EnumToken {
 /**
  * supported color types enum
  */
-declare enum ColorType {
+declare enum ColorType$1 {
     /**
      * deprecated system colors
      */
@@ -572,31 +738,31 @@ declare enum ColorType {
      */
     RGBA = 4,
     /**
-     * colors as hsl values
+     * colors using rgb
      */
     HSLA = 5,
     /**
-     * colors as hwb values
+     * colors using hwb
      */
     HWB = 6,
     /**
-     * colors as cmyk values
+     * colors using cmyk
      */
     CMYK = 7,
     /**
-     * colors as oklab values
+     * colors using oklab
      * */
     OKLAB = 8,
     /**
-     * colors as oklch values
+     * colors using oklch
      * */
     OKLCH = 9,
     /**
-     * colors as lab values
+     * colors using lab
      */
     LAB = 10,
     /**
-     * colors as lch values
+     * colors using lch
      */
     LCH = 11,
     /**
@@ -604,35 +770,35 @@ declare enum ColorType {
      */
     COLOR = 12,
     /**
-     * color using srgb values
+     * color using srgb
      */
     SRGB = 13,
     /**
-     * color using prophoto-rgb values
+     * color using prophoto-rgb
      */
     PROPHOTO_RGB = 14,
     /**
-     * color using a98-rgb values
+     * color using a98-rgb
      */
     A98_RGB = 15,
     /**
-     * color using rec2020 values
+     * color using rec2020
      */
     REC2020 = 16,
     /**
-     * color using display-p3 values
+     * color using display-p3
      */
     DISPLAY_P3 = 17,
     /**
-     * color using srgb-linear values
+     * color using srgb-linear
      */
     SRGB_LINEAR = 18,
     /**
-     * color using xyz-d50 values
+     * color using xyz-d50
      */
     XYZ_D50 = 19,
     /**
-     * color using xyz-d65 values
+     * color using xyz-d65
      */
     XYZ_D65 = 20,
     /**
@@ -643,6 +809,14 @@ declare enum ColorType {
      * color-mix() color function
      */
     COLOR_MIX = 22,
+    /**
+     * non-standard color
+     */
+    NON_STD = 23,
+    /**
+     * custom color
+     */
+    CUSTOM_COLOR = 24,
     /**
      * alias for rgba
      */
@@ -698,20 +872,1233 @@ declare enum ModuleScopeEnumOptions {
     /**
      * export using ICSS module format
      */
-    ICSS = 256
+    ICSS = 256,
+    /**
+     * use the shortest name possible. pattern is ignored.
+     * it will produce names such as
+     *
+     * ```css
+     *  .a {
+     *      content: 'a';
+     *  }
+     *
+     *  .b {
+     *      content: 'b';
+     *  }
+     *
+     *  .c {
+     *      content: 'c';
+     *  }
+     *  ...
+     * ```
+     */
+    Shortest = 512
 }
 
 /**
- * apply minification rules to the ast tree
- * @param ast
- * @param options
- * @param recursive
- * @param errors
- * @param nestingContent
+ * Literal token
+ */
+export declare interface LiteralToken extends BaseToken {
+    typ: EnumToken.LiteralTokenType;
+    val: string;
+}
+
+/**
+ * Class selector token
+ */
+export declare interface ClassSelectorToken extends BaseToken {
+    typ: EnumToken.ClassSelectorTokenType;
+    val: string;
+}
+
+/**
+ * Invalid class selector token
+ */
+export declare interface InvalidClassSelectorToken extends BaseToken {
+    typ: EnumToken.InvalidClassSelectorTokenType;
+    val: string;
+}
+
+/**
+ * Universal selector token
+ */
+export declare interface UniversalSelectorToken extends BaseToken {
+    typ: EnumToken.UniversalSelectorTokenType;
+}
+
+/**
+ * Ident token
+ */
+export declare interface IdentToken extends BaseToken {
+    typ: EnumToken.IdenTokenType;
+    val: string;
+}
+
+/**
+ * Ident list token
+ */
+export declare interface IdentListToken extends BaseToken {
+    typ: EnumToken.IdenListTokenType;
+    val: string;
+}
+
+/**
+ * Dashed ident token
+ */
+export declare interface DashedIdentToken extends BaseToken {
+    typ: EnumToken.DashedIdenTokenType;
+    val: string;
+}
+
+/**
+ * Comma token
+ */
+export declare interface CommaToken extends BaseToken {
+    typ: EnumToken.CommaTokenType;
+}
+
+/**
+ * Colon token
+ */
+export declare interface ColonToken extends BaseToken {
+    typ: EnumToken.ColonTokenType;
+}
+
+/**
+ * Semicolon token
+ */
+export declare interface SemiColonToken extends BaseToken {
+    typ: EnumToken.SemiColonTokenType;
+}
+
+/**
+ * Nesting selector token
+ */
+export declare interface NestingSelectorToken extends BaseToken {
+    typ: EnumToken.NestingSelectorTokenType;
+}
+
+/**
+ * Number token
+ */
+export declare interface NumberToken extends BaseToken {
+    typ: EnumToken.NumberTokenType;
+    sign?: "-" | "+";
+    val: number | FractionToken;
+}
+
+/**
+ * At rule token
+ */
+export declare interface AtRuleToken extends BaseToken {
+    typ: EnumToken.AtRuleTokenType;
+    nam: string;
+    val?: string;
+}
+
+/**
+ * Percentage token
+ */
+export declare interface PercentageToken extends BaseToken {
+    typ: EnumToken.PercentageTokenType;
+    val: number | FractionToken;
+}
+
+/**
+ * Flex token
+ */
+export declare interface FlexToken extends BaseToken {
+    typ: EnumToken.FlexTokenType;
+    val: number | FractionToken;
+}
+
+/**
+ * Function token
+ */
+export declare interface FunctionToken extends BaseToken {
+    typ:
+        | EnumToken.FunctionTokenType
+        | EnumToken.UrlFunctionTokenType
+        | EnumToken.GridTemplateFuncTokenType
+        | EnumToken.ImageFunctionTokenType
+        | EnumToken.TimelineFunctionTokenType
+        | EnumToken.TimingFunctionTokenType
+        | EnumToken.ColorFunctionTokenType
+        | EnumToken.MathFunctionTokenType
+        | EnumToken.PseudoClassFunctionTokenType
+        | EnumToken.TransformFunctionTokenType;
+    val: string;
+    chi: Token$1[];
+}
+
+/**
+ * Grid template function token
+ */
+export declare interface GridTemplateFuncToken extends BaseToken {
+    typ: EnumToken.GridTemplateFuncTokenType;
+    val: string;
+    chi: Token$1[];
+}
+
+/**
+ * Function URL token
+ */
+export declare interface FunctionURLToken extends BaseToken {
+    typ: EnumToken.UrlFunctionTokenType;
+    val: "url";
+    chi: Array<UrlToken | StringToken | CommentToken>;
+}
+
+/**
+ * Function image token
+ */
+export declare interface FunctionImageToken extends BaseToken {
+    typ: EnumToken.ImageFunctionTokenType;
+    val:
+        | "linear-gradient"
+        | "radial-gradient"
+        | "repeating-linear-gradient"
+        | "repeating-radial-gradient"
+        | "conic-gradient"
+        | "image"
+        | "image-set"
+        | "element"
+        | "cross-fade";
+    chi: Array<UrlToken | CommentToken>;
+}
+
+/**
+ * Timing function token
+ */
+export declare interface TimingFunctionToken extends BaseToken {
+    typ: EnumToken.TimingFunctionTokenType;
+    val: string;
+    chi: Token$1[];
+}
+
+/**
+ * Timeline function token
+ */
+export declare interface TimelineFunctionToken extends BaseToken {
+    typ: EnumToken.TimelineFunctionTokenType;
+    val: string;
+    chi: Token$1[];
+}
+
+/**
+ * String token
+ */
+export declare interface StringToken extends BaseToken {
+    typ: EnumToken.StringTokenType;
+    val: string;
+}
+
+/**
+ * Bad string token
+ */
+export declare interface BadStringToken extends BaseToken {
+    typ: EnumToken.BadStringTokenType;
+    val: string;
+}
+
+/**
+ * Unclosed string token
+ */
+export declare interface UnclosedStringToken extends BaseToken {
+    typ: EnumToken.UnclosedStringTokenType;
+    val: string;
+}
+
+/**
+ * Dimension token
+ */
+export declare interface DimensionToken extends BaseToken {
+    typ: EnumToken.DimensionTokenType;
+    val: number | FractionToken;
+    unit: string;
+}
+
+/**
+ * Length token
+ */
+export declare interface LengthToken extends BaseToken {
+    typ: EnumToken.LengthTokenType;
+    val: number | FractionToken;
+    unit: string;
+}
+
+/**
+ * Angle token
+ */
+export declare interface AngleToken extends BaseToken {
+    typ: EnumToken.AngleTokenType;
+    val: number | FractionToken;
+    unit: string;
+}
+
+/**
+ * Time token
+ */
+export declare interface TimeToken extends BaseToken {
+    typ: EnumToken.TimeTokenType;
+    val: number | FractionToken;
+    unit: "ms" | "s";
+}
+
+/**
+ * Frequency token
+ */
+export declare interface FrequencyToken extends BaseToken {
+    typ: EnumToken.FrequencyTokenType;
+    val: number | FractionToken;
+    unit: "Hz" | "Khz";
+}
+
+/**
+ * Resolution token
+ */
+export declare interface ResolutionToken extends BaseToken {
+    typ: EnumToken.ResolutionTokenType;
+    val: number | FractionToken;
+    unit: "dpi" | "dpcm" | "dppx" | "x";
+}
+
+/**
+ * Hash token
+ */
+export declare interface HashToken extends BaseToken {
+    typ: EnumToken.HashTokenType;
+    val: string;
+}
+
+/**
+ * Block start token
+ */
+export declare interface BlockStartToken extends BaseToken {
+    typ: EnumToken.BlockStartTokenType;
+}
+
+/**
+ * Block end token
+ */
+export declare interface BlockEndToken extends BaseToken {
+    typ: EnumToken.BlockEndTokenType;
+}
+
+/**
+ * Attribute start token
+ */
+export declare interface AttrStartToken extends BaseToken {
+    typ: EnumToken.AttrStartTokenType;
+    chi?: Token$1[];
+}
+
+/**
+ * Attribute end token
+ */
+export declare interface AttrEndToken extends BaseToken {
+    typ: EnumToken.AttrEndTokenType;
+}
+
+/**
+ * Parenthesis start token
+ */
+export declare interface ParensStartToken extends BaseToken {
+    typ: EnumToken.StartParensTokenType;
+}
+
+/**
+ * Parenthesis end token
+ */
+export declare interface ParensEndToken extends BaseToken {
+    typ: EnumToken.EndParensTokenType;
+}
+
+/**
+ * Parenthesis token
+ */
+export declare interface ParensToken extends BaseToken {
+    typ: EnumToken.ParensTokenType;
+    chi: Token$1[];
+}
+
+/**
+ * Whitespace token
+ */
+export declare interface WhitespaceToken extends BaseToken {
+    typ: EnumToken.WhitespaceTokenType;
+    val?: string;
+}
+
+/**
+ * Comment token
+ */
+export declare interface CommentToken extends BaseToken {
+    typ: EnumToken.CommentTokenType;
+    val: string;
+}
+
+/**
+ * Bad comment token
+ */
+export declare interface BadCommentToken extends BaseToken {
+    typ: EnumToken.BadCommentTokenType;
+    val: string;
+}
+
+/**
+ * CDO comment token
+ */
+export declare interface CDOCommentToken extends BaseToken {
+    typ: EnumToken.CDOCOMMTokenType;
+    val: string;
+}
+
+/**
+ * Bad CDO comment token
+ */
+export declare interface BadCDOCommentToken extends BaseToken {
+    typ: EnumToken.BadCdoTokenType;
+    val: string;
+}
+
+/**
+ * Include match token
+ */
+export declare interface IncludeMatchToken extends BaseToken {
+    typ: EnumToken.IncludeMatchTokenType;
+    // val: '~=';
+}
+
+/**
+ * Dash match token
+ */
+export declare interface DashMatchToken extends BaseToken {
+    typ: EnumToken.DashMatchTokenType;
+    // val: '|=';
+}
+
+/**
+ * Equal match token
+ */
+export declare interface EqualMatchToken extends BaseToken {
+    typ: EnumToken.EqualMatchTokenType;
+    // val: '|=';
+}
+
+/**
+ * Start match token
+ */
+export declare interface StartMatchToken extends BaseToken {
+    typ: EnumToken.StartMatchTokenType;
+    // val: '^=';
+}
+
+/**
+ * End match token
+ */
+export declare interface EndMatchToken extends BaseToken {
+    typ: EnumToken.EndMatchTokenType;
+    // val: '|=';
+}
+
+/**
+ * Contain match token
+ */
+export declare interface ContainMatchToken extends BaseToken {
+    typ: EnumToken.ContainMatchTokenType;
+    // val: '|=';
+}
+
+/**
+ * Less than token
+ */
+export declare interface LessThanToken extends BaseToken {
+    typ: EnumToken.LtTokenType;
+}
+
+/**
+ * Less than or equal token
+ */
+export declare interface LessThanOrEqualToken extends BaseToken {
+    typ: EnumToken.LteTokenType;
+}
+
+/**
+ * Greater than token
+ */
+export declare interface GreaterThanToken extends BaseToken {
+    typ: EnumToken.GtTokenType;
+}
+
+/**
+ * Greater than or equal token
+ */
+export declare interface GreaterThanOrEqualToken extends BaseToken {
+    typ: EnumToken.GteTokenType;
+}
+
+/**
+ * Column combinator token
+ */
+export declare interface ColumnCombinatorToken extends BaseToken {
+    typ: EnumToken.ColumnCombinatorTokenType;
+}
+
+/**
+ * Pseudo class token
+ */
+export declare interface PseudoClassToken extends BaseToken {
+    typ: EnumToken.PseudoClassTokenType;
+    val: string;
+}
+
+/**
+ * Pseudo element token
+ */
+export declare interface PseudoElementToken extends BaseToken {
+    typ: EnumToken.PseudoElementTokenType;
+    val: string;
+}
+
+/**
+ * Pseudo page token
+ */
+export declare interface PseudoPageToken extends BaseToken {
+    typ: EnumToken.PseudoPageTokenType;
+    val: string;
+}
+
+/**
+ * Pseudo class function token
+ */
+export declare interface PseudoClassFunctionToken extends BaseToken {
+    typ: EnumToken.PseudoClassFuncTokenType;
+    val: string;
+    chi: Token$1[];
+}
+
+/**
+ * Delim token
+ */
+export declare interface DelimToken extends BaseToken {
+    typ: EnumToken.DelimTokenType;
+}
+
+/**
+ * Bad URL token
+ */
+export declare interface BadUrlToken extends BaseToken {
+    typ: EnumToken.BadUrlTokenType;
+    val: string;
+}
+
+/**
+ * URL token
+ */
+export declare interface UrlToken extends BaseToken {
+    typ: EnumToken.UrlTokenTokenType;
+    val: string;
+}
+
+/**
+ * EOF token
+ */
+export declare interface EOFToken extends BaseToken {
+    typ: EnumToken.EOFTokenType;
+}
+
+/**
+ * Important token
+ */
+export declare interface ImportantToken extends BaseToken {
+    typ: EnumToken.ImportantTokenType;
+}
+
+/**
+ * Color token
+ */
+export declare interface ColorToken extends BaseToken {
+    typ: EnumToken.ColorTokenType;
+    val: string;
+    kin: ColorType$1;
+    chi?: Token$1[];
+    /* calculated */
+    cal?: "rel" | "mix" | "col";
+}
+
+/**
+ * Attribute token
+ */
+export declare interface AttrToken extends BaseToken {
+    typ: EnumToken.AttrTokenType;
+    chi: Token$1[];
+}
+
+/**
+ * Invalid attribute token
+ */
+export declare interface InvalidAttrToken extends BaseToken {
+    typ: EnumToken.InvalidAttrTokenType;
+    chi: Token$1[];
+}
+
+/**
+ * Child combinator token
+ */
+export declare interface ChildCombinatorToken extends BaseToken {
+    typ: EnumToken.ChildCombinatorTokenType;
+}
+
+/**
+ * Media feature token
+ */
+export declare interface MediaFeatureToken extends BaseToken {
+    typ: EnumToken.MediaFeatureTokenType;
+    val: string;
+}
+
+/**
+ * Media feature not token
+ */
+export declare interface NotToken extends BaseToken {
+    typ: EnumToken.NotTokenType;
+    val: Token$1;
+}
+
+/**
+ * Media feature only token
+ */
+export declare interface MediaFeatureOnlyToken extends BaseToken {
+    typ: EnumToken.OnlyTokenType;
+    val: Token$1;
+}
+
+/**
+ * Media feature and token
+ */
+export declare interface AndToken extends BaseToken {
+    typ: EnumToken.AndTokenType;
+}
+
+/**
+ * Media feature or token
+ */
+export declare interface OrToken extends BaseToken {
+    typ: EnumToken.OrTokenType;
+}
+
+/**
+ * Media query condition token
+ */
+export declare interface MediaQueryUnaryFeatureToken extends BaseToken {
+    typ: EnumToken.MediaQueryUnaryFeatureTokenType;
+    l: Token$1;
+    r: Token$1[];
+}
+
+export declare interface SupportsQueryUnaryConditionToken extends BaseToken {
+    typ: EnumToken.SupportsQueryUnaryConditionTokenType;
+    l: Token$1;
+    r: Token$1[];
+}
+
+export declare interface SupportsQueryConditionToken extends BaseToken {
+    typ: EnumToken.SupportsQueryConditionTokenType;
+    op: AndToken | OrToken;
+    l: Token$1[];
+    r: Token$1[];
+}
+
+export declare interface WhenElseQueryConditionToken extends BaseToken {
+    typ: EnumToken.WhenElseQueryConditionTokenType;
+    op: AndToken | OrToken;
+    l: Token$1[];
+    r: Token$1[];
+}
+
+export declare interface WhenElseUnaryConditionToken extends BaseToken {
+    typ: EnumToken.WhenElseUnaryConditionTokenType;
+    l: Token$1;
+    r: Token$1[];
+}
+
+export declare interface MediaQueryConditionToken extends BaseToken {
+    typ: EnumToken.MediaQueryConditionTokenType;
+    l: Token$1[];
+    op:
+        | ColonToken
+        | DelimToken
+        | GreaterThanToken
+        | LessThanToken
+        | GreaterThanOrEqualToken
+        | LessThanOrEqualToken
+        | AndToken
+        | OrToken;
+    r: Token$1[];
+}
+
+export declare interface IfConditionToken extends BaseToken {
+    typ: EnumToken.IfConditionTokenType;
+    l: Token$1[];
+    r: Token$1[];
+}
+
+export declare interface IfElseConditionToken extends BaseToken {
+    typ: EnumToken.IfElseConditionTokenType;
+    l: IfConditionToken;
+    r: IfConditionToken;
+}
+
+export declare interface ContainerStyleRangeToken extends BaseToken {
+    typ: EnumToken.ContainerStyleRangeTokenType;
+    l: Token$1[];
+    op: Token$1[];
+    r: Token$1[];
+}
+
+export declare interface MediaRangeQueryToken extends BaseToken {
+    typ: EnumToken.MediaRangeQueryTokenType;
+    l: Token$1[];
+    val: Token$1[];
+    op1: LessThanToken | GreaterThanToken | LessThanOrEqualToken | GreaterThanOrEqualToken;
+    op2: LessThanToken | GreaterThanToken | LessThanOrEqualToken | GreaterThanOrEqualToken;
+    r: Token$1[];
+}
+
+export declare interface InvalidMediaQueryToken extends BaseToken {
+    typ: EnumToken.InvalidMediaQueryTokenType;
+    chi: Token$1[];
+}
+
+/**
+ * Descendant combinator token
+ */
+export declare interface DescendantCombinatorToken extends BaseToken {
+    typ: EnumToken.DescendantCombinatorTokenType;
+}
+
+/**
+ * Next sibling combinator token
+ */
+export declare interface NextSiblingCombinatorToken extends BaseToken {
+    typ: EnumToken.NextSiblingCombinatorTokenType;
+}
+
+/**
+ * Subsequent sibling combinator token
+ */
+export declare interface SubsequentCombinatorToken extends BaseToken {
+    typ: EnumToken.SubsequentSiblingCombinatorTokenType;
+}
+
+/**
+ * Add token
+ */
+export declare interface AddToken extends BaseToken {
+    typ: EnumToken.Add;
+}
+
+/**
+ * Sub token
+ */
+export declare interface SubToken extends BaseToken {
+    typ: EnumToken.Sub;
+}
+
+/**
+ * Div token
+ */
+export declare interface DivToken extends BaseToken {
+    typ: EnumToken.Div;
+}
+
+/**
+ * Mul token
+ */
+export declare interface MulToken extends BaseToken {
+    typ: EnumToken.Mul;
+}
+
+/**
+ * Unary expression token
+ */
+export declare interface UnaryExpression extends BaseToken {
+    typ: EnumToken.UnaryExpressionTokenType;
+    sign: EnumToken.Add | EnumToken.Sub;
+    val: UnaryExpressionNode;
+}
+
+/**
+ * Fraction token
+ */
+export declare interface FractionToken extends BaseToken {
+    typ: EnumToken.FractionTokenType;
+    l: NumberToken;
+    r: NumberToken;
+}
+
+/**
+ * Binary expression token
+ */
+export declare interface BinaryExpressionToken extends BaseToken {
+    typ: EnumToken.BinaryExpressionTokenType;
+    op: EnumToken.Add | EnumToken.Sub | EnumToken.Div | EnumToken.Mul;
+    l: BinaryExpressionNode | Token$1;
+    r: BinaryExpressionNode | Token$1;
+}
+
+/**
+ * Match expression token
+ */
+export declare interface MatchExpressionToken extends BaseToken {
+    typ: EnumToken.MatchExpressionTokenType;
+    op: EqualMatchToken | DashMatchToken | StartMatchToken | ContainMatchToken | EndMatchToken | IncludeMatchToken;
+    l: Token$1;
+    r: Token$1;
+    attr?: "i" | "s";
+}
+
+/**
+ * Name space attribute token
+ */
+export declare interface NameSpaceAttributeToken extends BaseToken {
+    typ: EnumToken.NameSpaceAttributeTokenType;
+    l?: Token$1;
+    r: Token$1;
+}
+
+/**
+ * List token
+ */
+export declare interface ListToken extends BaseToken {
+    typ: EnumToken.ListToken;
+    chi: Token$1[];
+}
+
+/**
+ * Composes selector token
+ */
+export declare interface ComposesSelectorToken extends BaseToken {
+    typ: EnumToken.ComposesSelectorTokenType;
+    l: Token$1[];
+    r: Token$1 | null;
+}
+
+/**
+ * Css variable token
+ */
+export declare interface CssVariableToken$1 extends BaseToken {
+    typ: EnumToken.CssVariableTokenType;
+    nam: string;
+    val: Token$1[];
+}
+
+export declare interface CssVariableImportTokenType$1 extends BaseToken {
+    typ: EnumToken.CssVariableImportTokenType;
+    nam: string;
+    val: Token$1[];
+}
+
+export declare interface CssVariableMapTokenType extends BaseToken {
+    typ: EnumToken.CssVariableDeclarationMapTokenType;
+    vars: Token$1[];
+    from: Token$1[];
+}
+
+export declare interface FunctionDefToken extends BaseToken {
+    typ:
+        | EnumToken.FunctionDefTokenType
+        | EnumToken.UrlFunctionTokenDefType
+        | EnumToken.GridTemplateFuncTokenDefType
+        | EnumToken.ImageFunctionTokenDefType
+        | EnumToken.TimelineFunctionTokenDefType
+        | EnumToken.TimingFunctionTokenDefType
+        | EnumToken.ColorFunctionTokenDefType
+        | EnumToken.MathFunctionTokenDefType
+        | EnumToken.PseudoClassFunctionTokenDefType
+        | EnumToken.TransformFunctionTokenDefType;
+    nam: string;
+    val: string;
+}
+
+export declare interface RawNodeToken extends BaseToken {
+    typ: EnumToken.RawNodeTokenType;
+    chi: Token$1[];
+}
+
+/**
+ * Unary expression node
+ */
+export declare type UnaryExpressionNode =
+    | BinaryExpressionNode
+    | NumberToken
+    | DimensionToken
+    | TimeToken
+    | LengthToken
+    | AngleToken
+    | FrequencyToken;
+
+/**
+ * Binary expression node
+ */
+export declare type BinaryExpressionNode =
+    | NumberToken
+    | DimensionToken
+    | PercentageToken
+    | FlexToken
+    | FractionToken
+    | AngleToken
+    | LengthToken
+    | FrequencyToken
+    | BinaryExpressionToken
+    | FunctionToken
+    | ParensToken;
+
+/**
+ * Token
+ */
+export declare type Token$1 =
+    | InvalidClassSelectorToken
+    | InvalidAttrToken
+    | LiteralToken
+    | IdentToken
+    | IdentListToken
+    | DashedIdentToken
+    | CommaToken
+    | ColonToken
+    | SemiColonToken
+    | ClassSelectorToken
+    | UniversalSelectorToken
+    | ChildCombinatorToken
+    | DescendantCombinatorToken
+    | NextSiblingCombinatorToken
+    | SubsequentCombinatorToken
+    | ColumnCombinatorToken
+    | NestingSelectorToken
+    | WhenElseUnaryConditionToken
+    | WhenElseQueryConditionToken
+    | SupportsQueryUnaryConditionToken
+    | SupportsQueryConditionToken
+    | MediaQueryConditionToken
+    | MediaFeatureToken
+    | MediaQueryUnaryFeatureToken
+    | IfConditionToken
+    | IfElseConditionToken
+    | NotToken
+    | MediaFeatureOnlyToken
+    | AndToken
+    | OrToken
+    | MediaRangeQueryToken
+    | ContainerStyleRangeToken
+    | AstDeclaration
+    | NumberToken
+    | AtRuleToken
+    | PercentageToken
+    | FlexToken
+    | FunctionURLToken
+    | FunctionImageToken
+    | TimingFunctionToken
+    | TimelineFunctionToken
+    | FunctionToken
+    | GridTemplateFuncToken
+    | DimensionToken
+    | LengthToken
+    | AngleToken
+    | StringToken
+    | TimeToken
+    | FrequencyToken
+    | ResolutionToken
+    | UnclosedStringToken
+    | HashToken
+    | BadStringToken
+    | BlockStartToken
+    | BlockEndToken
+    | AttrStartToken
+    | AttrEndToken
+    | ParensStartToken
+    | ParensEndToken
+    | ParensToken
+    | CDOCommentToken
+    | BadCDOCommentToken
+    | CommentToken
+    | BadCommentToken
+    | WhitespaceToken
+    | IncludeMatchToken
+    | StartMatchToken
+    | EndMatchToken
+    | ContainMatchToken
+    | MatchExpressionToken
+    | NameSpaceAttributeToken
+    | ComposesSelectorToken
+    | CssVariableToken$1
+    | DashMatchToken
+    | EqualMatchToken
+    | LessThanToken
+    | LessThanOrEqualToken
+    | GreaterThanToken
+    | GreaterThanOrEqualToken
+    | ListToken
+    | PseudoClassToken
+    | PseudoPageToken
+    | PseudoElementToken
+    | PseudoClassFunctionToken
+    | DelimToken
+    | BinaryExpressionToken
+    | UnaryExpression
+    | FractionToken
+    | AddToken
+    | SubToken
+    | DivToken
+    | MulToken
+    | BadUrlToken
+    | UrlToken
+    | ImportantToken
+    | ColorToken
+    | AttrToken
+    | FunctionDefToken
+    | RawNodeToken
+    | InvalidMediaQueryToken
+    | EOFToken;
+
+/**
+ * Position
+ */
+export declare interface Position$1 {
+    /**
+     * index in the source
+     */
+    ind: number;
+    /**
+     * line number
+     */
+    lin: number;
+    /**
+     * column number
+     */
+    col: number;
+}
+
+/**
+ * token or node location
+ */
+export declare interface Location {
+    /**
+     * start position
+     */
+    sta: Position$1;
+    /**
+     * end position
+     */
+    end: Position$1;
+    /**
+     * source file
+     */
+    src: string;
+}
+
+export declare interface BaseToken {
+    /**
+     * token type
+     */
+    typ: EnumToken;
+    /**
+     * location info
+     */
+    loc?: Location;
+    /**
+     * prelude or selector tokens
+     */
+    tokens?: Token$1[] | null;
+    /**
+     * parent node
+     */
+    parent?: AstAtRule | astRule | AstKeyframesAtRule | AstKeyFrameRule | AstInvalidRule | AstInvalidAtRule | null;
+    /**
+     * @private
+     */
+    validSyntax?: boolean;
+}
+
+/**
+ * comment node
+ */
+export declare interface AstComment extends BaseToken {
+    typ: EnumToken.CommentNodeType | EnumToken.CDOCOMMNodeType;
+    tokens?: null;
+    val: string;
+}
+
+/**
+ * declaration node
+ */
+export declare interface AstDeclaration extends BaseToken {
+    nam: string;
+    tokens?: null;
+    val: Token$1[];
+    typ: EnumToken.DeclarationNodeType;
+}
+
+/**
+ * rule node
+ */
+export declare interface AstRule extends BaseToken {
+    typ: EnumToken.RuleNodeType;
+    sel: string;
+    chi: Array<
+        AstDeclaration | AstComment | AstRule | AstAtRule | AstInvalidRule | AstInvalidDeclaration | AstInvalidAtRule
+    >;
+    optimized?: OptimizedSelector | null;
+    raw?: RawSelectorTokens | null;
+}
+
+/**
+ * invalid rule node
+ */
+export declare interface AstInvalidRule extends BaseToken {
+    typ: EnumToken.InvalidRuleNodeType;
+    sel: string;
+    chi: Array<AstNode$1>;
+}
+
+/**
+ * invalid declaration node
+ */
+export declare interface AstInvalidDeclaration extends BaseToken {
+    typ: EnumToken.InvalidDeclarationNodeType;
+    tokens?: null;
+    val: Array<Token$1>;
+}
+
+/**
+ * invalid at rule node
+ */
+export declare interface AstInvalidAtRule extends BaseToken {
+    typ: EnumToken.InvalidAtRuleNodeType;
+    nam: string;
+    val: string;
+    chi?: Array<AstNode$1>;
+}
+
+/**
+ * keyframe rule node
+ */
+export declare interface AstKeyFrameRule extends BaseToken {
+    typ: EnumToken.KeyFramesRuleNodeType;
+    sel: string;
+    chi: Array<AstDeclaration | AstComment | AstInvalidDeclaration>;
+    optimized?: OptimizedSelector;
+    raw?: RawSelectorTokens;
+    tokens?: Token$1[];
+}
+
+/**
+ * raw selector tokens
+ */
+export declare type RawSelectorTokens = string[][];
+
+/**
+ * optimized selector
  *
  * @private
  */
-declare function minify(ast: AstNode$1, options: ParserOptions | MinifyFeatureOptions, recursive: boolean, errors?: ErrorDescription[], nestingContent?: boolean): AstNode$1;
+export declare interface OptimizedSelector {
+    match: boolean;
+    optimized: string[];
+    selector: string[][];
+    reducible: boolean;
+}
+
+/**
+ * optimized selector token
+ *
+ * @private
+ */
+export declare interface OptimizedSelectorToken {
+    match: boolean;
+    optimized: Token$1[];
+    selector: Token$1[][];
+    reducible: boolean;
+}
+
+/**
+ * at rule node
+ */
+export declare interface AstAtRule extends BaseToken {
+    typ: EnumToken.AtRuleNodeType;
+    nam: string;
+    val: string;
+    chi?: Array<AstNode$1>;
+}
+
+/**
+ * keyframe rule node
+ */
+export declare interface AstKeyframesRule extends BaseToken {
+    typ: EnumToken.KeyFramesRuleNodeType;
+    sel: string;
+    chi: Array<AstDeclaration | AstInvalidDeclaration | AstComment | AstRuleList>;
+    optimized?: OptimizedSelector;
+    raw?: RawSelectorTokens;
+}
+
+/**
+ * keyframe at rule node
+ */
+export declare interface AstKeyframesAtRule extends BaseToken {
+    typ: EnumToken.KeyframesAtRuleNodeType;
+    nam: string;
+    val: string;
+    chi: Array<AstKeyframesRule | AstComment>;
+}
+
+/**
+ * rule list node
+ */
+export declare type AstRuleList =
+    | AstStyleSheet
+    | AstAtRule
+    | AstRule
+    | AstKeyframesAtRule
+    | AstKeyFrameRule
+    | AstInvalidRule;
+
+/**
+ * stylesheet node
+ */
+export declare interface AstStyleSheet extends BaseToken {
+    typ: EnumToken.StyleSheetNodeType;
+    chi: Array<AstRule | AstAtRule | astKeyframesAtRule | AstComment | AstInvalidAtRule | AstInvalidRule>;
+    tokens?: null;
+}
+
+/**
+ * ast node
+ */
+export declare type AstNode$1 =
+    | AstStyleSheet
+    | AstRuleList
+    | AstComment
+    | AstAtRule
+    | AstRule
+    | AstDeclaration
+    | AstKeyframesAtRule
+    | AstKeyFrameRule
+    | AstInvalidRule
+    | AstInvalidAtRule
+    | AstInvalidDeclaration
+    | CssVariableToken
+    | CssVariableImportTokenType;
+
+    
+interface TokenSearchResult {
+    node: Token$1 | null;
+    parent: AstNode$1 | Token$1 | null;
+    root: AstNode$1 | Token$1 | null;
+    parents: Generator<Token$1> | null;
+}
+
+type AstValueMatcher = ((value: Token$1) => boolean) | ((token: Token$1, node: AstNode$1) => boolean);
 
 /**
  * options for the walk function
@@ -874,1461 +2261,17 @@ declare function walkValues(values: Token$1[], root?: AstNode$1 | Token$1 | null
     type?: EnumToken | EnumToken[] | ((token: Token$1) => boolean);
 }, reverse?: boolean): Generator<WalkAttributesResult>;
 
-/**
- * expand css nesting ast nodes
- * @param ast
- *
- * @private
- */
-declare function expand(ast: AstStyleSheet | AstAtRule | AstRule): AstNode$1;
-
-/**
- *
- * @param token
- * @param options
- *
- * @private
- */
-declare function renderToken(token: Token$1, options?: RenderOptions, cache?: {
-    [key: string]: any;
-}, reducer?: (acc: string, curr: Token$1) => string, errors?: ErrorDescription[]): string;
-
-/**
- * Source map class
- * @internal
- */
-declare class SourceMap {
-    #private;
-    /**
-     * Last location
-     */
-    lastLocation: Location | null;
-    /**
-     * Add a location
-     * @param source
-     * @param original
-     */
-    add(source: Location, original: Location): void;
-    /**
-     * Convert to URL encoded string
-     */
-    toUrl(): string;
-    /**
-     * Convert to JSON object
-     */
-    toJSON(): SourceMapObject;
-}
-
-/**
- * parse a string as an array of declaration nodes
- * @param declaration
- *
- * Example:
- * ````ts
- *
- * const declarations = await parseDeclarations('color: red; background: blue');
- * console.log(declarations);
- * ```
- */
-declare function parseDeclarations(declaration: string): Promise<Array<AstDeclaration | AstComment>>;
-/**
- * parse css string and return an array of tokens
- * @param src
- * @param options
- *
- * @private
- *
- * Example:
- *
- * ```ts
- *
- * import {parseString} from '@tbela99/css-parser';
- *
- * let tokens = parseString('body { color: red; }');
- * console.log(tokens);
- *
- *  tokens = parseString('#c322c980');
- * console.log(tokens);
- * ```
- */
-declare function parseString(src: string, options?: {
-    location: boolean;
-}): Token$1[];
-/**
- * parse function tokens in a token array
- * @param tokens
- * @param options
- *
- * Example:
- *
- * ```ts
- *
- * import {parseString, parseTokens} from '@tbela99/css-parser';
- *
- * let tokens = parseString('body { color: red; }');
- * console.log(parseTokens(tokens));
- *
- *  tokens = parseString('#c322c980');
- * console.log(parseTokens(tokens));
- * ```
- *
- * @private
- */
-declare function parseTokens(tokens: Token$1[], options?: ParseTokenOptions): Token$1[];
-
-/**
- * Literal token
- */
-export declare interface LiteralToken extends BaseToken {
-
-    typ: EnumToken.LiteralTokenType;
-    val: string;
-}
-
-/**
- * Class selector token
- */
-export declare interface ClassSelectorToken extends BaseToken {
-
-    typ: EnumToken.ClassSelectorTokenType;
-    val: string;
-}
-
-/**
- * Invalid class selector token
- */
-export declare interface InvalidClassSelectorToken extends BaseToken {
-
-    typ: EnumToken.InvalidClassSelectorTokenType;
-    val: string;
-}
-
-/**
- * Universal selector token
- */
-export declare interface UniversalSelectorToken extends BaseToken {
-
-    typ: EnumToken.UniversalSelectorTokenType;
-}
-
-/**
- * Ident token
- */
-export declare interface IdentToken extends BaseToken {
-
-    typ: EnumToken.IdenTokenType,
-    val: string;
-}
-
-/**
- * Ident list token
- */
-export declare interface IdentListToken extends BaseToken {
-
-    typ: EnumToken.IdenListTokenType,
-    val: string;
-}
-
-/**
- * Dashed ident token
- */
-export declare interface DashedIdentToken extends BaseToken {
-
-    typ: EnumToken.DashedIdenTokenType,
-    val: string;
-}
-
-/**
- * Comma token
- */
-export declare interface CommaToken extends BaseToken {
-
-    typ: EnumToken.CommaTokenType
-}
-
-/**
- * Colon token
- */
-export declare interface ColonToken extends BaseToken {
-
-    typ: EnumToken.ColonTokenType
-}
-
-/**
- * Semicolon token
- */
-export declare interface SemiColonToken extends BaseToken {
-
-    typ: EnumToken.SemiColonTokenType
-}
-
-/**
- * Nesting selector token
- */
-export declare interface NestingSelectorToken extends BaseToken {
-
-    typ: EnumToken.NestingSelectorTokenType
-}
-
-/**
- * Number token
- */
-export declare interface NumberToken extends BaseToken {
-
-    typ: EnumToken.NumberTokenType,
-    val: number | FractionToken;
-}
-
-/**
- * At rule token
- */
-export declare interface AtRuleToken extends BaseToken {
-
-    typ: EnumToken.AtRuleTokenType,
-    val: string;
-    pre: string;
-}
-
-/**
- * Percentage token
- */
-export declare interface PercentageToken extends BaseToken {
-
-    typ: EnumToken.PercentageTokenType,
-    val: number | FractionToken;
-}
-
-/**
- * Flex token
- */
-export declare interface FlexToken extends BaseToken {
-
-    typ: EnumToken.FlexTokenType,
-    val: number | FractionToken;
-}
-
-/**
- * Function token
- */
-export declare interface FunctionToken extends BaseToken {
-
-    typ: EnumToken.FunctionTokenType,
-    val: string;
-    chi: Token$1[];
-}
-
-/**
- * Grid template function token
- */
-export declare interface GridTemplateFuncToken extends BaseToken {
-
-    typ: EnumToken.GridTemplateFuncTokenType,
-    val: string;
-    chi: Token$1[];
-}
-
-/**
- * Function URL token
- */
-export declare interface FunctionURLToken extends BaseToken {
-
-    typ: EnumToken.UrlFunctionTokenType,
-    val: 'url';
-    chi: Array<UrlToken | StringToken | CommentToken>;
-}
-
-/**
- * Function image token
- */
-export declare interface FunctionImageToken extends BaseToken {
-
-    typ: EnumToken.ImageFunctionTokenType,
-    val: 'linear-gradient' | 'radial-gradient' | 'repeating-linear-gradient' | 'repeating-radial-gradient' | 'conic-gradient' | 'image' | 'image-set' | 'element' | 'cross-fade';
-    chi: Array<UrlToken | CommentToken>;
-}
-
-/**
- * Timing function token
- */
-export declare interface TimingFunctionToken extends BaseToken {
-
-    typ: EnumToken.TimingFunctionTokenType;
-    val: string;
-    chi: Token$1[];
-}
-
-/**
- * Timeline function token
- */
-export declare interface TimelineFunctionToken extends BaseToken {
-
-    typ: EnumToken.TimelineFunctionTokenType;
-    val: string;
-    chi: Token$1[];
-}
-
-/**
- * String token
- */
-export declare interface StringToken extends BaseToken {
-
-    typ: EnumToken.StringTokenType;
-    val: string;
-}
-
-/**
- * Bad string token
- */
-export declare interface BadStringToken extends BaseToken {
-
-    typ: EnumToken.BadStringTokenType;
-    val: string;
-}
-
-/**
- * Unclosed string token
- */
-export declare interface UnclosedStringToken extends BaseToken {
-
-    typ: EnumToken.UnclosedStringTokenType;
-    val: string;
-}
-
-/**
- * Dimension token
- */
-export declare interface DimensionToken extends BaseToken {
-
-    typ: EnumToken.DimensionTokenType;
-    val: number | FractionToken;
-    unit: string;
-}
-
-/**
- * Length token
- */
-export declare interface LengthToken extends BaseToken {
-
-    typ: EnumToken.LengthTokenType;
-    val: number | FractionToken;
-    unit: string;
-}
-
-/**
- * Angle token
- */
-export declare interface AngleToken extends BaseToken {
-
-    typ: EnumToken.AngleTokenType;
-    val: number | FractionToken;
-    unit: string;
-}
-
-/**
- * Time token
- */
-export declare interface TimeToken extends BaseToken {
-
-    typ: EnumToken.TimeTokenType;
-    val: number | FractionToken;
-    unit: 'ms' | 's';
-}
-
-/**
- * Frequency token
- */
-export declare interface FrequencyToken extends BaseToken {
-
-    typ: EnumToken.FrequencyTokenType;
-    val: number | FractionToken;
-    unit: 'Hz' | 'Khz';
-}
-
-/**
- * Resolution token
- */
-export declare interface ResolutionToken extends BaseToken {
-
-    typ: EnumToken.ResolutionTokenType;
-    val: number | FractionToken;
-    unit: 'dpi' | 'dpcm' | 'dppx' | 'x';
-}
-
-/**
- * Hash token
- */
-export declare interface HashToken extends BaseToken {
-
-    typ: EnumToken.HashTokenType;
-    val: string;
-}
-
-/**
- * Block start token
- */
-export declare interface BlockStartToken extends BaseToken {
-
-    typ: EnumToken.BlockStartTokenType
-}
-
-/**
- * Block end token
- */
-export declare interface BlockEndToken extends BaseToken {
-
-    typ: EnumToken.BlockEndTokenType
-}
-
-/**
- * Attribute start token
- */
-export declare interface AttrStartToken extends BaseToken {
-
-    typ: EnumToken.AttrStartTokenType;
-    chi?: Token$1[];
-}
-
-/**
- * Attribute end token
- */
-export declare interface AttrEndToken extends BaseToken {
-
-    typ: EnumToken.AttrEndTokenType
-}
-
-/**
- * Parenthesis start token
- */
-export declare interface ParensStartToken extends BaseToken {
-
-    typ: EnumToken.StartParensTokenType;
-}
-
-/**
- * Parenthesis end token
- */
-export declare interface ParensEndToken extends BaseToken {
-
-    typ: EnumToken.EndParensTokenType
-}
-
-/**
- * Parenthesis token
- */
-export declare interface ParensToken extends BaseToken {
-
-    typ: EnumToken.ParensTokenType;
-    chi: Token$1[];
-}
-
-/**
- * Whitespace token
- */
-export declare interface WhitespaceToken extends BaseToken {
-
-    typ: EnumToken.WhitespaceTokenType
-}
-
-/**
- * Comment token
- */
-export declare interface CommentToken extends BaseToken {
-
-    typ: EnumToken.CommentTokenType;
-    val: string;
-}
-
-/**
- * Bad comment token
- */
-export declare interface BadCommentToken extends BaseToken {
-
-    typ: EnumToken.BadCommentTokenType;
-    val: string;
-}
-
-/**
- * CDO comment token
- */
-export declare interface CDOCommentToken extends BaseToken {
-
-    typ: EnumToken.CDOCOMMTokenType;
-    val: string;
-}
-
-/**
- * Bad CDO comment token
- */
-export declare interface BadCDOCommentToken extends BaseToken {
-
-    typ: EnumToken.BadCdoTokenType;
-    val: string;
-}
-
-/**
- * Include match token
- */
-export declare interface IncludeMatchToken extends BaseToken {
-
-    typ: EnumToken.IncludeMatchTokenType;
-    // val: '~=';
-}
-
-/**
- * Dash match token
- */
-export declare interface DashMatchToken extends BaseToken {
-
-    typ: EnumToken.DashMatchTokenType;
-    // val: '|=';
-}
-
-/**
- * Equal match token
- */
-export declare interface EqualMatchToken extends BaseToken {
-
-    typ: EnumToken.EqualMatchTokenType;
-    // val: '|=';
-}
-
-/**
- * Start match token
- */
-export declare interface StartMatchToken extends BaseToken {
-
-    typ: EnumToken.StartMatchTokenType;
-    // val: '^=';
-}
-
-/**
- * End match token
- */
-export declare interface EndMatchToken extends BaseToken {
-
-    typ: EnumToken.EndMatchTokenType;
-    // val: '|=';
-}
-
-/**
- * Contain match token
- */
-export declare interface ContainMatchToken extends BaseToken {
-
-    typ: EnumToken.ContainMatchTokenType;
-    // val: '|=';
-}
-
-/**
- * Less than token
- */
-export declare interface LessThanToken extends BaseToken {
-
-    typ: EnumToken.LtTokenType;
-}
-
-/**
- * Less than or equal token
- */
-export declare interface LessThanOrEqualToken extends BaseToken {
-
-    typ: EnumToken.LteTokenType;
-}
-
-/**
- * Greater than token
- */
-export declare interface GreaterThanToken extends BaseToken {
-
-    typ: EnumToken.GtTokenType;
-}
-
-/**
- * Greater than or equal token
- */
-export declare interface GreaterThanOrEqualToken extends BaseToken {
-
-    typ: EnumToken.GteTokenType;
-}
-
-/**
- * Column combinator token
- */
-export declare interface ColumnCombinatorToken extends BaseToken {
-
-    typ: EnumToken.ColumnCombinatorTokenType;
-}
-
-/**
- * Pseudo class token
- */
-export declare interface PseudoClassToken extends BaseToken {
-
-    typ: EnumToken.PseudoClassTokenType;
-    val: string;
-}
-
-/**
- * Pseudo element token
- */
-export declare interface PseudoElementToken extends BaseToken {
-
-    typ: EnumToken.PseudoElementTokenType;
-    val: string;
-}
-
-/**
- * Pseudo page token
- */
-export declare interface PseudoPageToken extends BaseToken {
-
-    typ: EnumToken.PseudoPageTokenType;
-    val: string;
-}
-
-/**
- * Pseudo class function token
- */
-export declare interface PseudoClassFunctionToken extends BaseToken {
-
-    typ: EnumToken.PseudoClassFuncTokenType;
-    val: string;
-    chi: Token$1[];
-}
-
-/**
- * Delim token
- */
-export declare interface DelimToken extends BaseToken {
-
-    typ: EnumToken.DelimTokenType;
-}
-
-/**
- * Bad URL token
- */
-export declare interface BadUrlToken extends BaseToken {
-
-    typ: EnumToken.BadUrlTokenType,
-    val: string;
-}
-
-/**
- * URL token
- */
-export declare interface UrlToken extends BaseToken {
-
-    typ: EnumToken.UrlTokenTokenType,
-    val: string;
-}
-
-/**
- * EOF token
- */
-export declare interface EOFToken extends BaseToken {
-
-    typ: EnumToken.EOFTokenType;
-}
-
-/**
- * Important token
- */
-export declare interface ImportantToken extends BaseToken {
-
-    typ: EnumToken.ImportantTokenType;
-}
-
-/**
- * Color token
- */
-export declare interface ColorToken extends BaseToken {
-
-    typ: EnumToken.ColorTokenType;
-    val: string;
-    kin: ColorType;
-    chi?: Token$1[];
-    /* calculated */
-    cal?: 'rel' | 'mix';
-}
-
-/**
- * Attribute token
- */
-export declare interface AttrToken extends BaseToken {
-
-    typ: EnumToken.AttrTokenType,
-    chi: Token$1[]
-}
-
-/**
- * Invalid attribute token
- */
-export declare interface InvalidAttrToken extends BaseToken {
-
-    typ: EnumToken.InvalidAttrTokenType,
-    chi: Token$1[]
-}
-
-/**
- * Child combinator token
- */
-export declare interface ChildCombinatorToken extends BaseToken {
-
-    typ: EnumToken.ChildCombinatorTokenType
-}
-
-/**
- * Media feature token
- */
-export declare interface MediaFeatureToken extends BaseToken {
-
-    typ: EnumToken.MediaFeatureTokenType,
-    val: string;
-}
-
-/**
- * Media feature not token
- */
-export declare interface MediaFeatureNotToken extends BaseToken {
-
-    typ: EnumToken.MediaFeatureNotTokenType,
-    val: Token$1;
-}
-
-/**
- * Media feature only token
- */
-export declare interface MediaFeatureOnlyToken extends BaseToken {
-
-    typ: EnumToken.MediaFeatureOnlyTokenType,
-    val: Token$1;
-}
-
-/**
- * Media feature and token
- */
-export declare interface MediaFeatureAndToken extends BaseToken {
-
-    typ: EnumToken.MediaFeatureAndTokenType;
-}
-
-/**
- * Media feature or token
- */
-export declare interface MediaFeatureOrToken extends BaseToken {
-
-    typ: EnumToken.MediaFeatureOrTokenType;
-}
-
-/**
- * Media query condition token
- */
-export declare interface MediaQueryConditionToken extends BaseToken {
-
-    typ: EnumToken.MediaQueryConditionTokenType,
-    l: Token$1,
-    op: ColonToken | GreaterThanToken | LessThanToken | GreaterThanOrEqualToken | LessThanOrEqualToken,
-    r: Token$1[]
-}
-
-/**
- * Descendant combinator token
- */
-export declare interface DescendantCombinatorToken extends BaseToken {
-
-    typ: EnumToken.DescendantCombinatorTokenType
-}
-
-/**
- * Next sibling combinator token
- */
-export declare interface NextSiblingCombinatorToken extends BaseToken {
-
-    typ: EnumToken.NextSiblingCombinatorTokenType
-}
-
-/**
- * Subsequent sibling combinator token
- */
-export declare interface SubsequentCombinatorToken extends BaseToken {
-
-    typ: EnumToken.SubsequentSiblingCombinatorTokenType
-}
-
-/**
- * Add token
- */
-export declare interface AddToken extends BaseToken {
-
-    typ: EnumToken.Add;
-}
-
-/**
- * Sub token
- */
-export declare interface SubToken extends BaseToken {
-
-    typ: EnumToken.Sub;
-}
-
-/**
- * Div token
- */
-export declare interface DivToken extends BaseToken {
-
-    typ: EnumToken.Div;
-}
-
-/**
- * Mul token
- */
-export declare interface MulToken extends BaseToken {
-
-    typ: EnumToken.Mul;
-}
-
-/**
- * Unary expression token
- */
-export declare interface UnaryExpression extends BaseToken {
-
-    typ: EnumToken.UnaryExpressionTokenType
-    sign: EnumToken.Add | EnumToken.Sub;
-    val: UnaryExpressionNode;
-}
-
-/**
- * Fraction token
- */
-export declare interface FractionToken extends BaseToken {
-
-    typ: EnumToken.FractionTokenType;
-    l: NumberToken;
-    r: NumberToken;
-}
-
-/**
- * Binary expression token
- */
-export declare interface BinaryExpressionToken extends BaseToken {
-
-    typ: EnumToken.BinaryExpressionTokenType
-    op: EnumToken.Add | EnumToken.Sub | EnumToken.Div | EnumToken.Mul;
-    l: BinaryExpressionNode | Token$1;
-    r: BinaryExpressionNode | Token$1;
-}
-
-/**
- * Match expression token
- */
-export declare interface MatchExpressionToken extends BaseToken {
-
-    typ: EnumToken.MatchExpressionTokenType
-    op: EqualMatchToken | DashMatchToken | StartMatchToken | ContainMatchToken | EndMatchToken | IncludeMatchToken;
-    l: Token$1;
-    r: Token$1;
-    attr?: 'i' | 's';
-}
-
-/**
- * Name space attribute token
- */
-export declare interface NameSpaceAttributeToken extends BaseToken {
-
-    typ: EnumToken.NameSpaceAttributeTokenType
-    l?: Token$1;
-    r: Token$1;
-}
-
-/**
- * List token
- */
-export declare interface ListToken extends BaseToken {
-
-    typ: EnumToken.ListToken
-    chi: Token$1[];
-}
-
-/**
- * Composes selector token
- */
-export declare interface ComposesSelectorToken extends BaseToken {
-
-    typ: EnumToken.ComposesSelectorTokenType;
-    l: Token$1[];
-    r: Token$1 | null;
-}
-
-/**
- * Css variable token
- */
-export declare interface CssVariableToken$1 extends BaseToken {
-
-    typ: EnumToken.CssVariableTokenType;
-    nam: string;
-    val: Token$1[];
-}
-
-export declare interface CssVariableImportTokenType$1 extends BaseToken {
-
-    typ: EnumToken.CssVariableImportTokenType;
-    nam: string;
-    val: Token$1[];
-}
-
-export declare interface CssVariableMapTokenType extends BaseToken {
-
-    typ: EnumToken.CssVariableMapTokenType;
-    vars: Token$1[];
-    from: Token$1[];
-}
-
-/**
- * Unary expression node
- */
-export declare type UnaryExpressionNode =
-    BinaryExpressionNode
-    | NumberToken
-    | DimensionToken
-    | TimeToken
-    | LengthToken
-    | AngleToken
-    | FrequencyToken;
-
-/**
- * Binary expression node
- */
-export declare type BinaryExpressionNode = NumberToken | DimensionToken | PercentageToken | FlexToken | FractionToken |
-    AngleToken | LengthToken | FrequencyToken | BinaryExpressionToken | FunctionToken | ParensToken;
-
-/**
- * Token
- */
-export declare type Token$1 =
-    InvalidClassSelectorToken
-    | InvalidAttrToken
-    |
-    LiteralToken
-    | IdentToken
-    | IdentListToken
-    | DashedIdentToken
-    | CommaToken
-    | ColonToken
-    | SemiColonToken
-    | ClassSelectorToken
-    | UniversalSelectorToken
-    | ChildCombinatorToken
-    | DescendantCombinatorToken
-    | NextSiblingCombinatorToken
-    | SubsequentCombinatorToken
-    | ColumnCombinatorToken
-    | NestingSelectorToken
-    |
-    MediaQueryConditionToken
-    | MediaFeatureToken
-    | MediaFeatureNotToken
-    | MediaFeatureOnlyToken
-    | MediaFeatureAndToken
-    | MediaFeatureOrToken
-    | AstDeclaration
-    |
-    NumberToken
-    | AtRuleToken
-    | PercentageToken
-    | FlexToken
-    | FunctionURLToken
-    | FunctionImageToken
-    | TimingFunctionToken
-    | TimelineFunctionToken
-    | FunctionToken
-    | GridTemplateFuncToken
-    | DimensionToken
-    | LengthToken
-    |
-    AngleToken
-    | StringToken
-    | TimeToken
-    | FrequencyToken
-    | ResolutionToken
-    |
-    UnclosedStringToken
-    | HashToken
-    | BadStringToken
-    | BlockStartToken
-    | BlockEndToken
-    |
-    AttrStartToken
-    | AttrEndToken
-    | ParensStartToken
-    | ParensEndToken
-    | ParensToken
-    | CDOCommentToken
-    |
-    BadCDOCommentToken
-    | CommentToken
-    | BadCommentToken
-    | WhitespaceToken
-    | IncludeMatchToken
-    | StartMatchToken
-    | EndMatchToken
-    | ContainMatchToken
-    | MatchExpressionToken
-    | NameSpaceAttributeToken
-    | ComposesSelectorToken
-    | CssVariableToken$1
-    |
-    DashMatchToken
-    | EqualMatchToken
-    | LessThanToken
-    | LessThanOrEqualToken
-    | GreaterThanToken
-    | GreaterThanOrEqualToken
-    |
-    ListToken
-    | PseudoClassToken
-    | PseudoPageToken
-    | PseudoElementToken
-    | PseudoClassFunctionToken
-    | DelimToken
-    | BinaryExpressionToken
-    | UnaryExpression
-    | FractionToken
-    |
-    AddToken
-    | SubToken
-    | DivToken
-    | MulToken
-    |
-    BadUrlToken
-    | UrlToken
-    | ImportantToken
-    | ColorToken
-    | AttrToken
-    | EOFToken;
-
-declare enum ValidationTokenEnum {
-    Root = 0,
-    Keyword = 1,
-    PropertyType = 2,
-    DeclarationType = 3,
-    AtRule = 4,
-    ValidationFunctionDefinition = 5,
-    OpenBracket = 6,
-    CloseBracket = 7,
-    OpenParenthesis = 8,
-    CloseParenthesis = 9,
-    Comma = 10,
-    Pipe = 11,
-    Column = 12,
-    Star = 13,
-    OpenCurlyBrace = 14,
-    CloseCurlyBrace = 15,
-    HashMark = 16,
-    QuestionMark = 17,
-    Function = 18,
-    Number = 19,
-    Whitespace = 20,
-    Parenthesis = 21,
-    Bracket = 22,
-    Block = 23,
-    AtLeastOnce = 24,
-    Separator = 25,
-    Exclamation = 26,
-    Ampersand = 27,
-    PipeToken = 28,
-    ColumnToken = 29,
-    AmpersandToken = 30,
-    Parens = 31,
-    PseudoClassToken = 32,
-    PseudoClassFunctionToken = 33,
-    StringToken = 34,
-    AtRuleDefinition = 35,
-    DeclarationNameToken = 36,
-    DeclarationDefinitionToken = 37,
-    SemiColon = 38,
-    Character = 39,
-    InfinityToken = 40
-}
-declare const enum ValidationSyntaxGroupEnum {
-    Declarations = "declarations",
-    Functions = "functions",
-    Syntaxes = "syntaxes",
-    Selectors = "selectors",
-    AtRules = "atRules"
-}
-
-interface Position$1 {
-
-    ind: number;
-    lin: number;
-    col: number;
-}
-
-interface ValidationToken$1 {
-
-    typ: ValidationTokenEnum;
-    pos: Position$1;
-    isList?: boolean;
-    text?: string;
-    isRepeatable?: boolean;
-    atLeastOnce?: boolean;
-    isOptional?: boolean;
-    isRepeatableGroup?: boolean;
-    occurence?: {
-        min: number;
-        max: number | null;
-    }
-}
-
-export declare interface ValidationSyntaxNode {
-
-    syntax: string;
-    ast?: ValidationToken$1[];
-}
-
-interface ValidationSelectorOptions extends ValidationOptions {
-
-    nestedSelector?: boolean;
-}
-
-export declare interface ValidationConfiguration {
-
-    [ValidationSyntaxGroupEnum.Declarations]: ValidationSyntaxNode;
-    [ValidationSyntaxGroupEnum.Functions]: ValidationSyntaxNode;
-    [ValidationSyntaxGroupEnum.Syntaxes]: ValidationSyntaxNode;
-    [ValidationSyntaxGroupEnum.Selectors]: ValidationSyntaxNode;
-    [ValidationSyntaxGroupEnum.AtRules]: ValidationSyntaxNode;
-}
-
-//= Record<keyof ValidationSyntaxGroupEnum, ValidationSyntaxNode>;
-
-interface ValidationResult {
-
-    valid: SyntaxValidationResult;
-    node: AstNode$1 | Token$1 | null;
-    syntax: ValidationToken$1 | string | null;
-    error: string;
-    cycle?: boolean;
-}
-
-interface ValidationSyntaxResult extends ValidationResult {
-
-    syntax: ValidationToken$1 | string | null;
-    context: Context<Token$1> | Token$1[];
-}
-
-interface Context<Type> {
-
-    index: number;
-
-    /**
-     * The length of the context tokens to be consumed
-     */
-
-    readonly length: number;
-
-    current<Type>(): Type | null;
-
-    update<Type>(context: Context<Type>): void;
-
-    consume<Type>(token: Type, howMany?: number): boolean;
-
-    peek<Type>(): Type | null;
-
-    // tokens<Type>(): Type[];
-
-    next<Type>(): Type | null;
-
-    consume<Type>(token: Type, howMany?: number): boolean;
-
-    slice<Type>(): Type[];
-
-    clone<Type>(): Context<Type>;
-
-    done(): boolean;
-}
-
-/**
- * Converts a color to another color space
- * @param token
- * @param to
- *
- * @private
- *
- * <code>
- *
- *     const token = {typ: EnumToken.ColorTokenType, kin: ColorType.HEX, val: '#F00'}
- *     const result = convertColor(token, ColorType.LCH);
- *
- * </code>
- */
-declare function convertColor(token: ColorToken, to: ColorType): ColorToken | null;
-
-/**
- * Calculate the distance between two okLab colors.
- * @param okLab1
- * @param okLab2
- *
- * @private
- */
-declare function okLabDistance(okLab1: [number, number, number], okLab2: [number, number, number]): number;
-/**
- * Check if two colors are close in okLab space.
- * @param color1
- * @param color2
- * @param threshold
- *
- * @private
- */
-declare function isOkLabClose(color1: ColorToken, color2: ColorToken, threshold?: number): boolean;
-
-/**
- * Position
- */
-export declare interface Position {
-
-    /**
-     * index in the source
-     */
-    ind: number;
-    /**
-     * line number
-     */
-    lin: number;
-    /**
-     * column number
-     */
-    col: number;
-}
-
-/**
- * token or node location
- */
-export declare interface Location {
-
-    /**
-     * start position
-     */
-    sta: Position;
-    /**
-     * end position
-     */
-    end: Position;
-    /**
-     * source file
-     */
-    src: string;
-}
-
-export declare interface BaseToken {
-
-    /**
-     * token type
-     */
-    typ: EnumToken;
-    /**
-     * location info
-     */
-    loc?: Location;
-    /**
-     * prelude or selector tokens
-     */
-    tokens?: Token$1[] | null;
-    /**
-     * parent node
-     */
-    parent?: AstAtRule | astRule | AstKeyframesAtRule | AstKeyFrameRule | AstInvalidRule | AstInvalidAtRule | null;
-    /**
-     * @private
-     */
-    validSyntax?: boolean;
-}
-
-/**
- * comment node
- */
-export declare interface AstComment extends BaseToken {
-
-    typ: EnumToken.CommentNodeType | EnumToken.CDOCOMMNodeType,
-    tokens?: null;
-    val: string;
-}
-
-/**
- * declaration node
- */
-export declare interface AstDeclaration extends BaseToken {
-
-    nam: string,
-    tokens?: null;
-    val: Token$1[];
-    typ: EnumToken.DeclarationNodeType
-}
-
-/**
- * rule node
- */
-export declare interface AstRule extends BaseToken {
-
-    typ: EnumToken.RuleNodeType;
-    sel: string;
-    chi: Array<AstDeclaration | AstComment | AstRule | AstAtRule | AstInvalidRule | AstInvalidDeclaration | AstInvalidAtRule>;
-    optimized?: OptimizedSelector | null;
-    raw?: RawSelectorTokens | null;
-}
-
-/**
- * invalid rule node
- */
-export declare interface AstInvalidRule extends BaseToken {
-
-    typ: EnumToken.InvalidRuleTokenType;
-    sel: string;
-    chi: Array<AstNode$1>;
-}
-
-/**
- * invalid declaration node
- */
-export declare interface AstInvalidDeclaration extends BaseToken {
-
-    typ: EnumToken.InvalidDeclarationNodeType;
-    tokens?: null;
-    val: Array<Token$1>;
-}
-
-/**
- * invalid at rule node
- */
-export declare interface AstInvalidAtRule extends BaseToken {
-
-    typ: EnumToken.InvalidAtRuleTokenType;
-    nam: string;
-    val: string;
-    chi?: Array<AstNode$1>;
-}
-
-/**
- * keyframe rule node
- */
-export declare interface AstKeyFrameRule extends BaseToken {
-
-    typ: EnumToken.KeyFramesRuleNodeType;
-    sel: string;
-    chi: Array<AstDeclaration | AstComment | AstInvalidDeclaration>;
-    optimized?: OptimizedSelector;
-    raw?: RawSelectorTokens;
-    tokens?: Token$1[]
-}
-
-/**
- * raw selector tokens
- */
-export declare type RawSelectorTokens = string[][];
-
-/**
- * optimized selector
- *
- * @private
- */
-export declare interface OptimizedSelector {
-    match: boolean;
-    optimized: string[];
-    selector: string[][],
-    reducible: boolean;
-}
-
-/**
- * optimized selector token
- *
- * @private
- */
-export declare interface OptimizedSelectorToken {
-    match: boolean;
-    optimized: Token$1[];
-    selector: Token$1[][],
-    reducible: boolean;
-}
-
-/**
- * at rule node
- */
-export declare interface AstAtRule extends BaseToken {
-
-    typ: EnumToken.AtRuleNodeType,
-    nam: string;
-    val: string;
-    chi?: Array<AstDeclaration | AstInvalidDeclaration | AstComment> | Array<AstRule | AstComment>
-}
-
-/**
- * keyframe rule node
- */
-export declare interface AstKeyframesRule extends BaseToken {
-
-    typ: EnumToken.KeyFramesRuleNodeType;
-    sel: string;
-    chi: Array<AstDeclaration | AstInvalidDeclaration | AstComment | AstRuleList>;
-    optimized?: OptimizedSelector;
-    raw?: RawSelectorTokens;
-}
-
-/**
- * keyframe at rule node
- */
-export declare interface AstKeyframesAtRule extends BaseToken {
-
-    typ: EnumToken.KeyframesAtRuleNodeType,
-    nam: string;
-    val: string;
-    chi: Array<AstKeyframesRule | AstComment>;
-}
-
-/**
- * rule list node
- */
-export declare type AstRuleList =
-    AstStyleSheet
-    | AstAtRule
-    | AstRule
-    | AstKeyframesAtRule
-    | AstKeyFrameRule
-    | AstInvalidRule;
-
-/**
- * stylesheet node
- */
-export declare interface AstStyleSheet extends BaseToken {
-    typ: EnumToken.StyleSheetNodeType,
-    chi: Array<AstRule | AstAtRule | astKeyframesAtRule | AstComment | AstInvalidAtRule | AstInvalidRule>;
-    tokens?: null;
-}
-
-/**
- * ast node
- */
-export declare type AstNode$1 =
-    AstStyleSheet
-    | AstRuleList
-    | AstComment
-    | AstAtRule
-    | AstRule
-    | AstDeclaration
-    | AstKeyframesAtRule
-    | AstKeyFrameRule
-    | AstInvalidRule
-    | AstInvalidAtRule
-    | AstInvalidDeclaration
-    | CssVariableToken
-    | CssVariableImportTokenType;
-
 export declare type GenericVisitorResult<T> = T | T[] | Promise<T> | Promise<T[]> | null | Promise<null>;
-export declare type GenericVisitorHandler<T> = ((node: T, parent?: AstNode | Token, root?: AstNode | Token) => GenericVisitorResult<T>);
+export declare type GenericVisitorHandler<T> = (
+    node: T,
+    parent?: AstNode | Token,
+    root?: AstNode | Token,
+) => GenericVisitorResult<T>;
 export declare type GenericVisitorAstNodeHandlerMap<T> =
-    Record<string, GenericVisitorHandler<T>>
+    | Record<string, GenericVisitorHandler<T>>
     | GenericVisitorHandler<T>
-    | { type: WalkerEvent, handler: GenericVisitorHandler<T> }
-    | { type: WalkerEvent, handler: Record<string, GenericVisitorHandler<T>> };
+    | { type: WalkerEvent; handler: GenericVisitorHandler<T> }
+    | { type: WalkerEvent; handler: Record<string, GenericVisitorHandler<T>> };
 
 export declare type ValueVisitorHandler = GenericVisitorHandler<Token>;
 
@@ -2351,7 +2294,6 @@ export declare type AtRuleVisitorHandler = GenericVisitorHandler<AstAtRule>;
  *
  */
 export declare interface VisitorNodeMap {
-
     /**
      * at rule visitor
      *
@@ -2596,7 +2538,33 @@ export declare interface VisitorNodeMap {
      * // body {color:#f3fff0}
      * ```
      */
-    [key : keyof typeof EnumToken]: GenericVisitorAstNodeHandlerMap<Token> | GenericVisitorAstNodeHandlerMap<AstNode>;
+    [key: keyof typeof EnumToken]: GenericVisitorAstNodeHandlerMap<Token> | GenericVisitorAstNodeHandlerMap<AstNode>;
+}
+
+/**
+ * Source map class
+ * @internal
+ */
+declare class SourceMap {
+    #private;
+    /**
+     * Last location
+     */
+    lastLocation: Location | null;
+    /**
+     * Add a location
+     * @param source
+     * @param original
+     */
+    add(source: Location, original: Location): void;
+    /**
+     * Convert to URL encoded string
+     */
+    toUrl(): string;
+    /**
+     * Convert to JSON object
+     */
+    toJSON(): SourceMapObject;
 }
 
 export declare interface PropertyListOptions {
@@ -2608,7 +2576,12 @@ export declare interface PropertyListOptions {
 /**
  * parse info
  */
-export declare interface ParseInfo {
+export declare interface ParseInfo$1 {
+
+    /**
+     * source file or url
+     */
+    src: string;
 
     /**
      * read buffer
@@ -2618,19 +2591,30 @@ export declare interface ParseInfo {
      * stream
      */
     stream: string;
+
+    /**
+     * the accumulated css string
+     */
+    // acc: string;
+    
     /**
      * last token position
      */
-    position: Position;
+    position: Position$1;
     /**
      * current parsing position
      */
-    currentPosition: Position;
+    currentPosition: Position$1;
 
     /**
      * offset
      */
     offset: number;
+
+    /**
+     * tokenizing time
+     */
+    time: number;
 }
 
 /**
@@ -2649,18 +2633,159 @@ declare enum FeatureWalkMode {
     Post = 2
 }
 
-/**
- * supported transform functions
- *
- * @internal
- */
-declare const transformFunctions: string[];
-/**
- * supported math functions
- *
- * @internal
- */
-declare const mathFuncs: string[];
+declare enum ValidationTokenEnum {
+    Root = 0,
+    Keyword = 1,
+    PropertyType = 2,
+    DeclarationType = 3,
+    AtRule = 4,
+    FunctionDefinition = 5,
+    OpenBracket = 6,
+    CloseBracket = 7,
+    OpenParenthesis = 8,
+    CloseParenthesis = 9,
+    Comma = 10,
+    Pipe = 11,
+    Column = 12,
+    Star = 13,
+    OpenCurlyBrace = 14,
+    CloseCurlyBrace = 15,
+    HashMark = 16,
+    QuestionMark = 17,
+    Function = 18,
+    Number = 19,
+    Whitespace = 20,
+    Parenthesis = 21,
+    Bracket = 22,
+    Block = 23,
+    Plus = 24,
+    Separator = 25,
+    Exclamation = 26,
+    Ampersand = 27,
+    PipeToken = 28,
+    ColumnToken = 29,
+    AmpersandToken = 30,
+    Parens = 31,
+    PseudoClassToken = 32,
+    PseudoClassFunctionToken = 33,
+    StringToken = 34,
+    AtRuleDefinition = 35,
+    DeclarationNameToken = 36,
+    DeclarationDefinitionToken = 37,
+    SemiColon = 38,
+    Character = 39,
+    InfinityToken = 40,
+    LessThan = 41,
+    GreaterThan = 42,
+    /**
+     * end of token stream
+     */
+    EOF = 43,
+    /**
+     * optional group or tokens, used to group validation tokens
+     *
+     * ```ts
+     * // <bg-layer>#? , <final-bg-layer> -> [<bg-layer>#? ,]? <final-bg-layer>
+     * // , <angular-color-stop> ]#? -> [, <angular-color-stop> ]#?]?
+     * ```
+     */
+    OptionalGroupToken = 44,
+    /**
+     * dimension token
+     *
+     * ```ts
+     * // <time [0s,∞]> -> {
+     * //     typ: ValidationTokenEnum.PropertyType
+     * //     val: 'time',
+     * //     range: {
+     * //         min: ValidationNumberToken,
+     * //         max: null | ValidationNumberToken | ValidationInfinityToken
+     * //     }
+     * // }
+     * ```
+     */
+    Dimension = 45,
+    DisallowWhitespace = 46,
+    Colon = 47
+}
+declare enum ValidationSyntaxGroupEnum {
+    Declarations = "declarations",
+    Functions = "functions",
+    Syntaxes = "syntaxes",
+    Selectors = "selectors",
+    AtRules = "atRules",
+    Units = "units",
+    Languages = "languages",
+    mediaFeatures = "mediaFeatures"
+}
+declare enum MediaFeatureType {
+    BooleanType = "boolean",
+    IntergerType = "integer",
+    KeywordType = "keyword",
+    LengthType = "length",
+    NumberType = "number",
+    RatioType = "ratio",
+    ResolutionType = "resolution",
+    StringType = "string"
+}
+
+interface Position {
+
+    ind: number;
+    lin: number;
+    col: number;
+}
+
+interface ValidationValueRangeMatch {
+        min: ValidationNumberToken;
+        max: ValidationNumberToken | null;
+}
+
+interface ValidationDimensionRangeMatch {
+        min: ValidationDimensionToken;
+        max: ValidationDimensionToken | null;
+}
+
+interface ValidationToken$1 {
+
+    typ: ValidationTokenEnum;
+    pos: Position;
+    // a#
+    isList?: boolean;
+    text?: string;
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Values_and_units/Value_definition_syntax
+    // a*
+    isRepeatable?: boolean;
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Values_and_units/Value_definition_syntax
+    // a+
+    isRepeatableAtLeastOnce?: boolean;
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Values_and_units/Value_definition_syntax
+    // a?
+    isOptional?: boolean;
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Values_and_units/Value_definition_syntax
+    // a!
+    isMandatatoryGroup?: boolean;
+    // a{1,2}
+    match?: {
+        min: ValidationNumberToken;
+        max: ValidationNumberToken | null;
+    },
+    range?: ValidationValueRangeMatch |  ValidationDimensionRangeMatch
+}
+
+interface ValidationNumberToken extends ValidationToken$1 {
+
+    typ: ValidationTokenEnum.Number;
+    val: number;
+}
+
+interface ValidationDimensionToken extends ValidationToken$1 {
+
+    typ: ValidationTokenEnum.AtRuleName;
+    val: number;
+    unitText: string;
+    unit: keyof EnumToken
+}
 
 interface PropertyType {
 
@@ -2675,6 +2800,10 @@ interface ShorthandPropertyType {
     types: string[];
     multiple: boolean;
     separator: {
+        typ: keyof EnumToken;
+        val: string
+    };
+    valueSeparator?: {
         typ: keyof EnumToken;
         val: string
     };
@@ -3173,14 +3302,26 @@ export declare type WalkerOption = WalkerOptionEnum | AstNode$1 | Token$1 | null
 export declare type WalkerFilter = (node: AstNode$1) => WalkerOption;
 
 /**
- * filter nodes
+ * returned value:
+ * - {@link WalkerOptionEnum.Ignore}: ignore this node and its children
+ * - {@link WalkerOptionEnum.Stop}: stop walking the tree
+ * - {@link WalkerOptionEnum.Children}: walk the children and ignore the current node
+ * - {@link WalkerOptionEnum.IgnoreChildren}: walk the node and ignore children
+ * - {@link AstNode}:
+ * - {@link Token}:
  */
-export declare type WalkerValueFilter = (node: AstNode$1 | Token$1, parent?: AstNode$1 | Token$1 | AstNode$1[] | Token$1[] | null, event?: WalkerEvent) => WalkerOption | null;
+export declare type WalkerValueFilter = (
+    node: AstNode$1 | Token$1,
+    parent?: AstNode$1 | Token$1 | AstNode$1[] | Token$1[] | null,
+    event?: WalkerEvent,
+    parents?: Generator<Token$1>,
+) => WalkerOption | null;
 
 export declare interface WalkResult {
     node: AstNode$1;
     parent?: AstRuleList;
     root?: AstNode$1;
+    parents: Generator<AstNode$1>;
 }
 
 export declare interface WalkAttributesResult {
@@ -3189,18 +3330,18 @@ export declare interface WalkAttributesResult {
     nextValue: Token$1 | null;
     root?: AstNode$1 | Token$1 | null;
     parent: AstNode$1 | Token$1 | null;
+    parents: Generator<Token$1>;
 }
 
 /**
  * error description
  */
 export declare interface ErrorDescription {
-
     /**
      *  drop rule or declaration
      */
 
-    action: 'drop' | 'ignore';
+    action: "drop" | "ignore";
     /**
      * error message
      */
@@ -3208,7 +3349,7 @@ export declare interface ErrorDescription {
     /**
      * syntax error description
      */
-    syntax?: string | null;
+    syntax?: string | ValidationToken$1 | null;
     /**
      * error node
      */
@@ -3233,45 +3374,57 @@ export declare interface ErrorDescription {
 interface ValidationOptions {
 
     /**
+     * nested rule context
+     */
+    nestedRule?: boolean;
+
+    /**
      * enable css validation
      *
      * see {@link ValidationLevel}
      */
     validation?: boolean | ValidationLevel;
+
     /**
      * lenient validation. retain nodes that failed validation
      */
     lenient?: boolean;
+
     /**
      * visited tokens
      *
      * @private
      */
-    visited?: WeakMap<Token$1, Map<string, Set<ValidationToken>>>;
+    visited?: Map<Token$1, Set<ValidationToken$1>>;
+    
     /**
      * is optional
      *
      * @private
      */
     isOptional?: boolean | null;
+
     /**
      * is repeatable
      *
      * @private
      */
     isRepeatable?: boolean | null;
+
     /**
      * is list
      *
      * @private
      */
     isList?: boolean | null;
+
     /**
      * occurence
      *
      * @private
      */
     occurrence?: boolean | null;
+
     /**
      * at least once
      *
@@ -3284,7 +3437,6 @@ interface ValidationOptions {
  * minify options
  */
 interface MinifyOptions {
-
     /**
      * enable minification
      */
@@ -3362,13 +3514,12 @@ interface MinifyOptions {
 }
 
 export declare type LoadResult =
-    Promise<ReadableStream<Uint8Array>>
+    | Promise<ReadableStream<Uint8Array>>
     | ReadableStream<Uint8Array>
     | string
     | Promise<string>;
 
 export declare interface ModuleOptions {
-
     /**
      * use local scope vs global scope
      */
@@ -3470,7 +3621,7 @@ export declare interface ModuleOptions {
      * - {@link ModuleCaseTransformEnum.DashCaseOnly}: dashCase {@link ParseResult.mapping} key name and the scoped class name
      *
      */
-    naming?: ModuleCaseTransformEnum,
+    naming?: ModuleCaseTransformEnum;
 
     /**
      * optional function to generate scoped name
@@ -3483,15 +3634,15 @@ export declare interface ModuleOptions {
         localName: string,
         filePath: string,
         pattern: string,
-        hashLength?: number
+        hashLength?: number,
     ) => string | Promise<string>;
 }
 
 /**
  * parser options
  */
-export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptions, ValidationOptions, PropertyListOptions {
-
+export declare interface ParserOptions
+    extends MinifyOptions, MinifyFeatureOptions, ValidationOptions, PropertyListOptions {
     /**
      * source file to be used for sourcemap
      */
@@ -3499,7 +3650,7 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
     /**
      * include sourcemap in the ast. sourcemap info is always generated
      */
-    sourcemap?: boolean | 'inline';
+    sourcemap?: boolean | "inline";
     /**
      * remove at-rule charset
      */
@@ -3518,14 +3669,24 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
      * expand nested rules
      */
     expandNestingRules?: boolean;
+
+    /**
+     * experimental, convert css if() function into legacy syntax.
+     */
+    expandIfSyntax?: boolean;
+
     /**
      * url and file loader
      * @param url
-     * @param currentUrl
-     * @param asStream
+     * @param currentDirectory
+     * @param responseType
      *
      */
-    load?: (url: string, currentUrl?: string, asStream?: boolean) => LoadResult;
+    load?: (
+        url: string,
+        currentDirectory: string,
+        responseType?: boolean | ResponseType,
+    ) => Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
     /**
      * get directory name
      * @param path
@@ -3544,7 +3705,11 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
      * @param currentWorkingDirectory
      *
      */
-    resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => {
+    resolve?: (
+        url: string,
+        currentUrl: string,
+        currentWorkingDirectory?: string,
+    ) => {
         absolute: string;
         relative: string;
     };
@@ -3583,7 +3748,13 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
     /**
      * css modules options
      */
-    module?: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions
+    module?: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions;
+
+    /**
+     * tokenizing info
+     * @private
+     */
+    parseInfo?: ParseInfo;
 }
 
 /**
@@ -3592,7 +3763,6 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
  * @internal
  */
 export declare interface MinifyFeatureOptions {
-
     /**
      * minify features
      *
@@ -3607,7 +3777,6 @@ export declare interface MinifyFeatureOptions {
  * @internal
  */
 export declare interface MinifyFeature {
-
     /**
      * accepted tokens
      */
@@ -3634,9 +3803,15 @@ export declare interface MinifyFeature {
      * @param context
      * @param mode
      */
-    run: (ast: AstRule | AstAtRule, options: ParserOptions, parent: AstRule | AstAtRule | AstStyleSheet, context: {
-        [key: string]: any
-    }, mode: FeatureWalkMode) => AstNode$1 | null;
+    run: (
+        ast: AstRule | AstAtRule,
+        options: ParserOptions,
+        parent: AstRule | AstAtRule | AstStyleSheet,
+        context: {
+            [key: string]: any;
+        },
+        mode: FeatureWalkMode,
+    ) => AstNode$1 | null;
 }
 
 /**
@@ -3658,7 +3833,6 @@ export declare interface ResolvedPath {
  * ast node render options
  */
 export declare interface RenderOptions {
-
     /**
      * minify css values.
      */
@@ -3698,7 +3872,7 @@ export declare interface RenderOptions {
     /**
      * generate sourcemap object. 'inline' will embed it in the css
      */
-    sourcemap?: boolean | 'inline';
+    sourcemap?: boolean | "inline";
     /**
      * indent string
      */
@@ -3739,9 +3913,7 @@ export declare interface RenderOptions {
 /**
  * transform options
  */
-export declare interface TransformOptions extends ParserOptions, RenderOptions {
-
-}
+export declare interface TransformOptions extends ParserOptions, RenderOptions {}
 
 /**
  * parse result stats object
@@ -3759,12 +3931,18 @@ export declare interface ParseResultStats {
      * bytes read from imported files
      */
     importedBytesIn: number;
+
     /**
-     * parse processing time
+     * tokenizing processing time
+     */
+
+    tokenize: string;
+    /**
+     * parsing processing time
      */
     parse: string;
     /**
-     * minify processing time
+     * minification processing time
      */
     minify: string;
     /**
@@ -3778,7 +3956,7 @@ export declare interface ParseResultStats {
     /**
      * imported files stats
      */
-    imports: ParseResultStats[],
+    imports: ParseResultStats[];
 
     /**
      * nodes count
@@ -3844,18 +4022,17 @@ export declare interface RenderResult {
          * render time
          */
         total: string;
-    },
+    };
     /**
      * source map
      */
-    map?: SourceMap
+    map?: SourceMap;
 }
 
 /**
  * transform result object
  */
 export declare interface TransformResult extends ParseResult, RenderResult {
-
     /**
      * transform stats
      */
@@ -3896,14 +4073,13 @@ export declare interface TransformResult extends ParseResult, RenderResult {
          * imported files stats
          */
         imports: ParseResultStats[];
-    }
+    };
 }
 
 /**
  * parse token options
  */
-export declare interface ParseTokenOptions extends ParserOptions {
-}
+export declare interface ParseTokenOptions extends ParserOptions {}
 
 /**
  * tokenize result object
@@ -3913,23 +4089,7 @@ export declare interface TokenizeResult {
     /**
      * token
      */
-    token: string;
-    /**
-     * token length
-     */
-    len: number;
-    /**
-     * token type hint
-     */
-    hint?: EnumToken;
-    /**
-     * token start position
-     */
-    sta: Position;
-    /**
-     * token end position
-     */
-    end: Position;
+    token: Token$1;
     /**
      * bytes in
      */
@@ -3956,7 +4116,7 @@ export declare interface MatchedSelector {
     /**
      * selectors partially match
      */
-    eq: boolean
+    eq: boolean;
 }
 
 /**
@@ -4027,7 +4187,7 @@ declare function resolve(url: string, currentDirectory: string, cwd?: string): {
 /**
  * response type
  */
-declare enum ResponseType {
+declare enum ResponseType$1 {
     /**
      * return text
      */
@@ -4042,16 +4202,326 @@ declare enum ResponseType {
     ArrayBuffer = 2
 }
 
+export declare interface ValidationSyntaxNode {
+    syntax: string;
+    ast?: ValidationToken[];
+    descriptors?: Record<string, Record<string, string>>;
+}
+
+interface ValidationSelectorOptions extends ValidationOptions {
+    nestedSelector?: boolean;
+}
+
+export declare interface ValidationMediaFeature {
+    type: MediaFeatureType;
+    status?: string;
+    category: string;
+    values?: Array<string> | Array<number>;
+}
+
+export declare type ValidationConfiguration = Record<
+    ValidationSyntaxGroupEnum,
+    ValidationSyntaxNode | Record<string, string[]> | Record<string, ValidationMediaFeature>
+>;
+
+interface ValidationResult {
+    valid: SyntaxValidationResult;
+    node: AstNode$1 | Token$1 | null;
+    syntax: ValidationToken | string | null;
+    error: string;
+    cycle?: boolean;
+}
+
+interface ValidationSyntaxResult extends ValidationResult {
+    syntax: ValidationToken | string | null;
+    context: Context<Token$1> | Token$1[];
+}
+
+interface Context<Type> {
+    index: number;
+
+    /**
+     * The length of the context tokens to be consumed
+     */
+
+    readonly length: number;
+
+    current<Type>(): Type | null;
+
+    update<Type>(context: Context<Type>): void;
+
+    consume<Type>(token: Type, howMany?: number): boolean;
+
+    peek<Type>(): Type | null;
+
+    // tokens<Type>(): Type[];
+
+    next<Type>(): Type | null;
+
+    consume<Type>(token: Type, howMany?: number): boolean;
+
+    slice<Type>(): Type[];
+
+    clone<Type>(): Context<Type>;
+
+    done(): boolean;
+}
+
 /**
- * load file or url as stream
- * @param url
- * @param currentFile
- * @param responseType
- * @throws Error file not found
+ * apply minification rules to the ast tree
+ * @param ast
+ * @param options
+ * @param recursive
+ * @param errors
+ * @param nestingContent
  *
  * @private
  */
-declare function load(url: string, currentFile?: string, responseType?: boolean | ResponseType): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
+declare function minify(ast: AstNode$1, options: ParserOptions | MinifyFeatureOptions, recursive: boolean, errors?: ErrorDescription[], nestingContent?: boolean): AstNode$1;
+
+/**
+ * expand css nesting ast nodes
+ * @param ast
+ *
+ * @private
+ */
+declare function expand(ast: AstStyleSheet | AstAtRule | AstRule): AstNode$1;
+
+/**
+ * parse a string as an array of declaration nodes
+ * @param declaration
+ *
+ * Example:
+ * ````ts
+ *
+ * const declarations = await parseDeclarations('color: red; background: blue');
+ * console.log(declarations);
+ * ```
+ */
+declare function parseDeclarations(declaration: string): Promise<Array<AstDeclaration | AstComment>>;
+/**
+ * parse css string and return an array of tokens
+ * @param src
+ * @param options
+ *
+ * @private
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ * import {parseString} from '@tbela99/css-parser';
+ *
+ * let tokens = parseString('body { color: red; }');
+ * console.log(tokens);
+ *
+ *  tokens = parseString('#c322c980');
+ * console.log(tokens);
+ * ```
+ */
+declare function parseString(src: string, options?: {
+    location: boolean;
+    src?: string;
+}): Token$1[];
+
+/**
+ * render ast token
+ * @param token
+ * @param options
+ * @private
+ */
+declare function renderToken(token: Token$1, options?: RenderOptions, cache?: {
+    [key: string]: any;
+}, reducer?: (acc: string, curr: Token$1) => string, errors?: ErrorDescription[]): string;
+
+/**
+ * Converts a color to another color space
+ * @param token
+ * @param to
+ *
+ * @private
+ *
+ * ```ts
+ *
+ *     const token = {typ: EnumToken.ColorTokenType, kin: ColorType.HEX, val: '#F00'}
+ *     const result = convertColor(token, ColorType.LCH);
+ *
+ * ```
+ */
+declare function convertColor(token: ColorToken, to: ColorType$1): ColorToken | null;
+
+/**
+ * Calculate the distance between two okLab colors.
+ * @param okLab1
+ * @param okLab2
+ *
+ * @private
+ */
+declare function okLabDistance(okLab1: [number, number, number], okLab2: [number, number, number]): number;
+/**
+ * Check if two colors are close in okLab space.
+ * @param color1
+ * @param color2
+ * @param threshold
+ *
+ * @private
+ */
+declare function isOkLabClose(color1: ColorToken, color2: ColorToken, threshold?: number): boolean;
+
+/**
+ * search the ast tree and return the first match
+ *
+ * ```ts
+ *  // find the first ast declaration node which name is 'aspect-ratio'
+import { find, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+ * const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+ // find declaration which contain a '30px'
+  const nodeMatcher = (node: AstNode) =>
+      return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio';
+
+     const result  = await transform(css);
+     const node = find(result.ast, nodeMatcher);
+
+     console.log({node});
+ 
+    ```
+ *
+ * @param ast
+ * @param matcher
+ * @returns
+ */
+declare function find(ast: AstNode$1, matcher: (node: AstNode$1) => boolean): AstNode$1 | null;
+/**
+ * search the ast tree by checking each node's value and return the first match
+ *
+ * ```ts
+ *  // find the first ast node which contains the length token '30px'
+import { findByValue, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+ * const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+ // find declaration which contain a '30px'
+  const nodeMatcher = (value: Token) =>
+      return value.typ == EnumToken.LengthTokenType && (value as LengthToken).val == 30 && (value as LengthToken).unit == 'px' ;
+
+     const result  = await transform(css);
+     const { node, value } = findByValue(result.ast, nodeMatcher) ?? {};
+
+     console.log({node, value});
+ 
+    ```
+ *
+ * @param ast
+ * @param matcher
+ * @returns
+ */
+declare function findByValue(ast: AstNode$1, matcher: AstValueMatcher): {
+    node: AstNode$1;
+    value: TokenSearchResult;
+} | null;
+/**
+ * search the ast tree and return all matches
+ *
+ * ```ts
+ *  // find the first ast declaration node which name is 'aspect-ratio'
+import { findAll, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+ * const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+ // find declaration which contain a '30px'
+  const nodeMatcher = (node: AstNode) =>
+      return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio';
+
+     const result  = await transform(css);
+     const nodes = findAll(result.ast, nodeMatcher);
+
+     console.log({nodes});
+ 
+    ```
+ *
+ * @param ast
+ * @param matcher
+ * @returns
+ */
+declare function findAll(ast: AstNode$1, matcher: (node: AstNode$1) => boolean): AstNode$1[];
+/**
+ * search the ast tree and return the last match
+ *
+ * ```ts
+ *  // find the first ast declaration node which name is 'aspect-ratio'
+import { findLast, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+ * const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+ // find declaration which contain a '30px'
+  const nodeMatcher = (node: AstNode) =>
+      return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio';
+
+     const result  = await transform(css);
+     const node = findLast(result.ast, nodeMatcher);
+
+     console.log({node});
+ 
+    ```
+ *
+ * @param ast
+ * @param matcher
+ * @returns
+ */
+declare function findLast(ast: AstNode$1, matcher: (node: AstNode$1) => boolean): AstNode$1 | null;
+
+/**
+ *
+ * @param node he nod to clone
+ * @param cloneChildren deep clone
+ * @param cloneMap a map of existing children as keys and their clones as values
+ * @returns
+ */
+declare function cloneNode(node: AstNode$1, cloneChildren?: boolean, cloneMap?: Map<Token$1 | AstNode$1, Token$1 | AstNode$1> | null): AstNode$1;
+
+/**
+ * load file or url
+ * @param url
+ * @param currentDirectory
+ * @param responseType
+ * @throws Error file not found
+ *
+ * ```ts
+ * import {load, ResponseType} from '@tbela99/css-parser';
+ * const result = await load(file, '.', ResponseType.ArrayBuffer) as ArrayBuffer;
+ * ```
+ */
+declare function load(url: string, currentDirectory?: string, responseType?: boolean | ResponseType$1): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
 /**
  * render the ast tree
  * @param data
@@ -4222,5 +4692,5 @@ declare function transformFile(file: string, options?: TransformOptions, asStrea
  */
 declare function transform(css: string | ReadableStream<Uint8Array>, options?: TransformOptions): Promise<TransformResult>;
 
-export { ColorType, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType, SourceMap, ValidationLevel, WalkerEvent, WalkerOptionEnum, convertColor, dirname, expand, isOkLabClose, load, mathFuncs, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, parseTokens, render, renderToken, resolve, transform, transformFile, transformFunctions, walk, walkValues };
-export type { AddToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyFrameRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstRule, AstRuleList, AstStyleSheet, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, Context, CssVariableImportTokenType$1 as CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken$1 as CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorHandler, GenericVisitorResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, ImportantToken, IncludeMatchToken, InvalidAttrToken, InvalidClassSelectorToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Location, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureAndToken, MediaFeatureNotToken, MediaFeatureOnlyToken, MediaFeatureOrToken, MediaFeatureToken, MediaQueryConditionToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleOptions, MulToken, NameSpaceAttributeToken, NestingSelectorToken, NextSiblingCombinatorToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo, ParseResult, ParseResultStats, ParseTokenOptions, ParserOptions, PercentageToken, Position, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenizeResult, TransformOptions, TransformResult, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, Value, ValueVisitorHandler, VariableScopeInfo, VisitorNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerValueFilter, WhitespaceToken };
+export { ColorType$1 as ColorType, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType$1 as ResponseType, SourceMap, ValidationLevel, WalkerEvent, WalkerOptionEnum, cloneNode, convertColor, dirname, expand, find, findAll, findByValue, findLast, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, render, renderToken, resolve, transform, transformFile, walk, walkValues };
+export type { AddToken, AndToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyFrameRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, Context, CssVariableImportTokenType$1 as CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken$1 as CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorHandler, GenericVisitorResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InvalidAttrToken, InvalidClassSelectorToken, InvalidMediaQueryToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Location, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleOptions, MulToken, NameSpaceAttributeToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseResult, ParseResultStats, ParseTokenOptions, ParserOptions, PercentageToken, Position$1 as Position, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenSearchResult, TokenizeResult, TransformOptions, TransformResult, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, VariableScopeInfo, VisitorNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerValueFilter, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken };

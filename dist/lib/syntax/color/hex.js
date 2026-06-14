@@ -1,39 +1,28 @@
 import { EnumToken, ColorType } from '../../ast/types.js';
-import '../../ast/minify.js';
-import '../../ast/walk.js';
-import '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
 import { color2srgbvalues, getNumber } from './color.js';
 import { srgb2rgb, cmyk2rgbvalues, hwb2rgbvalues, hsl2rgbvalues } from './rgb.js';
-import { COLORS_NAMES, NAMES_COLORS } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues } from './srgb.js';
-import '../../renderer/sourcemap/lib/encode.js';
+import { COLORS_NAMES, NAMES_COLORS } from '../constants.js';
 
 function toHexString(acc, value) {
-    return acc + value.toString(16).padStart(2, '0');
+    return acc + value.toString(16).padStart(2, "0");
 }
 function reduceHexValue(value) {
-    if (value[0] != '#') {
+    if (value[0] != "#") {
         value = COLORS_NAMES[value.toLowerCase()] ?? value;
     }
     const named_color = NAMES_COLORS[expandHexValue(value)];
     if (value.length == 7) {
-        if (value[1] == value[2] &&
-            value[3] == value[4] &&
-            value[5] == value[6]) {
+        if (value[1] == value[2] && value[3] == value[4] && value[5] == value[6]) {
             value = `#${value[1]}${value[3]}${value[5]}`;
         }
     }
     else if (value.length == 9) {
-        if (value[1] == value[2] &&
-            value[3] == value[4] &&
-            value[5] == value[6] &&
-            value[7] == value[8]) {
-            value = `#${value[1]}${value[3]}${value[5]}${value[7] == 'f' ? '' : value[7]}`;
+        if (value[1] == value[2] && value[3] == value[4] && value[5] == value[6] && value[7] == value[8]) {
+            value = `#${value[1]}${value[3]}${value[5]}${value[7] == "f" ? "" : value[7]}`;
         }
-        if (value.endsWith('ff')) {
+        if (value.endsWith("ff")) {
             value = value.slice(0, -2);
         }
     }
@@ -81,46 +70,46 @@ function color2HexToken(token) {
     if (value == null) {
         return null;
     }
-    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, '0'), '#'));
+    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
 }
 function oklab2HexToken(token) {
     let value = oklab2srgbvalues(token);
     if (value == null) {
         return null;
     }
-    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, '0'), '#'));
+    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
 }
 function oklch2HexToken(token) {
     let value = oklch2srgbvalues(token);
     if (value == null) {
         return null;
     }
-    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, '0'), '#'));
+    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
 }
 function lab2HexToken(token) {
     let value = lab2srgbvalues(token);
     if (value == null) {
         return null;
     }
-    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, '0'), '#'));
+    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
 }
 function lch2HexToken(token) {
     let value = lch2srgbvalues(token);
     if (value == null) {
         return null;
     }
-    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, '0'), '#'));
+    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
 }
 function hexToken(value) {
     value = reduceHexValue(value);
     return {
         typ: EnumToken.ColorTokenType,
         val: value,
-        kin: value[0] == '#' ? ColorType.HEX : ColorType.LIT
+        kin: value[0] == "#" ? ColorType.HEX : ColorType.LIT,
     };
 }
 function rgb2hexvalues(token) {
-    let value = '#';
+    let value = "#";
     let t;
     // @ts-ignore
     const components = getComponents(token);
@@ -131,8 +120,13 @@ function rgb2hexvalues(token) {
     for (let i = 0; i < 3; i++) {
         // @ts-ignore
         t = components[i];
-        // @ts-ignore
-        value += (t.typ == EnumToken.Iden && t.val == 'none' ? '0' : Math.round(getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 255 : 1))).toString(16).padStart(2, '0');
+        value +=
+            ( // @ts-expect-error
+            t.typ == EnumToken.Iden && t.val == "none"
+                ? "0"
+                : Math.round(getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 255 : 1)))
+                .toString(16)
+                .padStart(2, "0");
     }
     // @ts-ignore
     if (components.length == 4) {
@@ -143,7 +137,9 @@ function rgb2hexvalues(token) {
         // @ts-ignore
         if (v < 1) {
             // @ts-ignore
-            value += Math.round(255 * getNumber(t)).toString(16).padStart(2, '0');
+            value += Math.round(255 * getNumber(t))
+                .toString(16)
+                .padStart(2, "0");
         }
     }
     return value;
@@ -156,7 +152,7 @@ function hsl2hexvalues(token) {
     if (t.length == 4) {
         t[3] = srgb2rgb(t[3]);
     }
-    return `${t.reduce(toHexString, '#')}`;
+    return `${t.reduce(toHexString, "#")}`;
 }
 function hwb2hexvalues(token) {
     const t = hwb2rgbvalues(token);
@@ -166,7 +162,7 @@ function hwb2hexvalues(token) {
     if (t.length == 4) {
         t[3] = srgb2rgb(t[3]);
     }
-    return `${t.reduce(toHexString, '#')}`;
+    return `${t.reduce(toHexString, "#")}`;
 }
 function cmyk2hexvalues(token) {
     const t = cmyk2rgbvalues(token);
@@ -176,7 +172,7 @@ function cmyk2hexvalues(token) {
     if (t.length == 4) {
         t[3] = srgb2rgb(t[3]);
     }
-    return `#${t.reduce(toHexString, '')}`;
+    return `#${t.reduce(toHexString, "")}`;
 }
 
 export { cmyk2HexToken, cmyk2hexvalues, color2HexToken, expandHexValue, hsl2HexToken, hsl2hexvalues, hwb2HexToken, hwb2hexvalues, lab2HexToken, lch2HexToken, oklab2HexToken, oklch2HexToken, reduceHexValue, rgb2HexToken, rgb2hexvalues };

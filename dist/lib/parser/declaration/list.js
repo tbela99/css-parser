@@ -1,13 +1,8 @@
 import { PropertySet } from './set.js';
 import { getConfig } from '../utils/config.js';
-import { EnumToken } from '../../ast/types.js';
-import '../../ast/minify.js';
-import '../../ast/walk.js';
-import { parseString } from '../parse.js';
-import '../tokenize.js';
-import '../../syntax/color/utils/constants.js';
-import '../../renderer/sourcemap/lib/encode.js';
 import { PropertyMap } from './map.js';
+import { parseString } from '../parse.js';
+import { EnumToken } from '../../ast/types.js';
 
 const config = getConfig();
 class PropertyList {
@@ -15,23 +10,29 @@ class PropertyList {
     declarations;
     constructor(options = {}) {
         this.options = options;
-        this.declarations = new Map;
+        this.declarations = new Map();
     }
     set(nam, value) {
         return this.add({
             typ: EnumToken.DeclarationNodeType,
             nam,
-            val: Array.isArray(value) ? value : parseString(String(value))
+            val: Array.isArray(value) ? value : parseString(String(value)),
         });
     }
     add(...declarations) {
         let name;
         for (const declaration of declarations) {
-            name = declaration.typ != EnumToken.DeclarationNodeType ? null : declaration.nam.toLowerCase();
+            name =
+                declaration.typ != EnumToken.DeclarationNodeType
+                    ? null
+                    : declaration.nam.toLowerCase();
             if (declaration.typ != EnumToken.DeclarationNodeType ||
-                'composes' === name ||
-                (typeof this.options.removeDuplicateDeclarations === 'string' && this.options.removeDuplicateDeclarations === name) ||
-                (Array.isArray(this.options.removeDuplicateDeclarations) ? this.options.removeDuplicateDeclarations.includes(declaration.nam) : !this.options.removeDuplicateDeclarations)) {
+                "composes" === name ||
+                (typeof this.options.removeDuplicateDeclarations === "string" &&
+                    this.options.removeDuplicateDeclarations === name) ||
+                (Array.isArray(this.options.removeDuplicateDeclarations)
+                    ? this.options.removeDuplicateDeclarations.includes(declaration.nam)
+                    : !this.options.removeDuplicateDeclarations)) {
                 this.declarations.set(Number(Math.random().toString().slice(2)).toString(36), declaration);
                 continue;
             }
@@ -44,24 +45,24 @@ class PropertyList {
             let shorthand;
             if (propertyName in config.properties) {
                 // @ts-ignore
-                if ('map' in config.properties[propertyName]) {
-                    shortHandType = 'map';
+                if ("map" in config.properties[propertyName]) {
+                    shortHandType = "map";
                     // @ts-ignore
                     shorthand = config.properties[propertyName].map;
                 }
                 else {
-                    shortHandType = 'set';
+                    shortHandType = "set";
                     // @ts-ignore
                     shorthand = config.properties[propertyName].shorthand;
                 }
             }
             else if (propertyName in config.map) {
-                shortHandType = 'map';
+                shortHandType = "map";
                 // @ts-ignore
                 shorthand = config.map[propertyName].shorthand;
             }
             // @ts-ignore
-            if (shortHandType == 'map') {
+            if (shortHandType == "map") {
                 // @ts-ignore
                 if (!this.declarations.has(shorthand)) {
                     // @ts-ignore
@@ -69,19 +70,20 @@ class PropertyList {
                 }
                 // @ts-ignore
                 this.declarations.get(shorthand).add(declaration);
-                // return this;
             }
             // @ts-ignore
-            else if (shortHandType == 'set') {
+            else if (shortHandType == "set") {
                 // @ts-ignore
-                // const shorthand: string = <string>config.properties[propertyName].shorthand;
                 if (!this.declarations.has(shorthand)) {
                     // @ts-ignore
-                    this.declarations.set(shorthand, new PropertySet(config.properties[shorthand]));
+                    this.declarations.set(
+                    // @ts-ignore
+                    shorthand, 
+                    // @ts-ignore
+                    new PropertySet(config.properties[shorthand]));
                 }
                 // @ts-ignore
                 this.declarations.get(shorthand).add(declaration);
-                // return this;
             }
             else {
                 this.declarations.set(propertyName, declaration);
@@ -110,7 +112,7 @@ class PropertyList {
                     }
                 }
                 return value;
-            }
+            },
         };
     }
 }

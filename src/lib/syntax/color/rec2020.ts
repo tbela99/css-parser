@@ -1,9 +1,8 @@
-import {xyz2srgb} from "./srgb.ts";
-import {multiplyMatrices} from "./utils/index.ts";
-import {srgb2xyz} from "./xyz.ts";
+import { xyz2srgb } from "./srgb.ts";
+import { multiplyMatrices } from "./utils/matrix.ts";
+import { srgb2xyz } from "./xyz.ts";
 
 export function rec20202srgb(r: number, g: number, b: number, a?: number): number[] {
-
     // @ts-ignore
     return xyz2srgb(...lrec20202xyz(...rec20202lrec2020(r, g, b)), a);
 }
@@ -17,19 +16,21 @@ function rec20202lrec2020(r: number, g: number, b: number, a?: number): number[]
     // to linear light (un-companded) form.
     // ITU-R BT.2020-2 p.4
 
-    const alpha = 1.09929682680944 ;
+    const alpha = 1.09929682680944;
     const beta = 0.018053968510807;
 
-    return [r, g, b].map(function (val) {
-        let sign = val < 0? -1 : 1;
-        let abs = Math.abs(val);
+    return [r, g, b]
+        .map(function (val) {
+            let sign = val < 0 ? -1 : 1;
+            let abs = Math.abs(val);
 
-        if (abs < beta * 4.5 ) {
-            return val / 4.5;
-        }
+            if (abs < beta * 4.5) {
+                return val / 4.5;
+            }
 
-        return sign * (Math.pow((abs + alpha -1 ) / alpha, 1/0.45));
-    }).concat(a == null || a == 1 ? [] : [a]);
+            return sign * Math.pow((abs + alpha - 1) / alpha, 1 / 0.45);
+        })
+        .concat(a == null || a == 1 ? [] : [a]);
 }
 
 function lrec20202rec2020(r: number, g: number, b: number, a?: number): number[] {
@@ -37,20 +38,21 @@ function lrec20202rec2020(r: number, g: number, b: number, a?: number): number[]
     // to gamma corrected form
     // ITU-R BT.2020-2 p.4
 
-    const alpha = 1.09929682680944 ;
+    const alpha = 1.09929682680944;
     const beta = 0.018053968510807;
 
+    return [r, g, b]
+        .map(function (val) {
+            let sign = val < 0 ? -1 : 1;
+            let abs = Math.abs(val);
 
-    return [r, g, b].map(function (val) {
-        let sign = val < 0? -1 : 1;
-        let abs = Math.abs(val);
+            if (abs > beta) {
+                return sign * (alpha * Math.pow(abs, 0.45) - (alpha - 1));
+            }
 
-        if (abs > beta ) {
-            return sign * (alpha * Math.pow(abs, 0.45) - (alpha - 1));
-        }
-
-        return 4.5 * val;
-    }).concat(a == null || a == 1 ? [] : [a]);
+            return 4.5 * val;
+        })
+        .concat(a == null || a == 1 ? [] : [a]);
 }
 
 function lrec20202xyz(r: number, g: number, b: number, a?: number): number[] {
@@ -58,9 +60,9 @@ function lrec20202xyz(r: number, g: number, b: number, a?: number): number[] {
     // using  D65 (no chromatic adaptation)
     // http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
     let M = [
-        [ 63426534 / 99577255,  20160776 / 139408157,  47086771 / 278816314 ],
-        [ 26158966 / 99577255, 472592308 / 697040785,   8267143 / 139408157 ],
-        [        0,  19567812 / 697040785, 295819943 / 278816314 ],
+        [63426534 / 99577255, 20160776 / 139408157, 47086771 / 278816314],
+        [26158966 / 99577255, 472592308 / 697040785, 8267143 / 139408157],
+        [0, 19567812 / 697040785, 295819943 / 278816314],
     ];
     // 0 is actually calculated as  4.994106574466076e-17
 
@@ -70,9 +72,9 @@ function lrec20202xyz(r: number, g: number, b: number, a?: number): number[] {
 function xyz2lrec2020(x: number, y: number, z: number, a?: number): number[] {
     // convert XYZ to linear-light rec2020
     let M = [
-        [  30757411 / 17917100, -6372589 / 17917100, -4539589 / 17917100 ],
-        [ -19765991 / 29648200, 47925759 / 29648200,   467509 / 29648200 ],
-        [    792561 / 44930125, -1921689 / 44930125, 42328811 / 44930125 ],
+        [30757411 / 17917100, -6372589 / 17917100, -4539589 / 17917100],
+        [-19765991 / 29648200, 47925759 / 29648200, 467509 / 29648200],
+        [792561 / 44930125, -1921689 / 44930125, 42328811 / 44930125],
     ];
 
     return multiplyMatrices(M, [x, y, z]).concat(a == null || a == 1 ? [] : [a]);

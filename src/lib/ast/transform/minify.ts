@@ -71,17 +71,17 @@ export function minify(matrix: Matrix): Token[] | null {
             if (coordinates.has('x')) {
 
                 result.push({
-                    typ: EnumToken.FunctionTokenType,
+                    typ: EnumToken.TransformFunctionTokenType,
                     val: 'translate',
                     chi: [{typ: EnumToken.LengthTokenType, val: round(decomposed.translate[0]), unit: 'px'}]
-                });
+                } );
             } else {
 
                 let axis: string = coordinates.has('y') ? 'y' : 'z';
                 let index: number = axis == 'y' ? 1 : 2;
 
                 result.push({
-                    typ: EnumToken.FunctionTokenType,
+                    typ: EnumToken.TransformFunctionTokenType,
                     val: 'translate' + axis.toUpperCase(),
                     chi: [{typ: EnumToken.LengthTokenType, val: round(decomposed.translate[index]), unit: 'px'}]
                 });
@@ -89,7 +89,7 @@ export function minify(matrix: Matrix): Token[] | null {
         } else if (coordinates.has('z')) {
 
             result.push({
-                typ: EnumToken.FunctionTokenType,
+                typ: EnumToken.TransformFunctionTokenType,
                 val: 'translate3d',
                 chi: [
                     decomposed.translate[0] == 0 ? {
@@ -108,7 +108,7 @@ export function minify(matrix: Matrix): Token[] | null {
         } else {
 
             result.push({
-                typ: EnumToken.FunctionTokenType,
+                typ: EnumToken.TransformFunctionTokenType,
                 val: 'translate',
                 chi: [
                     {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[0]), unit: 'px'},
@@ -126,7 +126,7 @@ export function minify(matrix: Matrix): Token[] | null {
         if (y == 0 && z == 0) {
 
             result.push({
-                typ: EnumToken.FunctionTokenType,
+                typ: EnumToken.TransformFunctionTokenType,
                 val: 'rotateX',
                 chi: [
                     {
@@ -139,7 +139,7 @@ export function minify(matrix: Matrix): Token[] | null {
         } else if (x == 0 && z == 0) {
 
             result.push({
-                typ: EnumToken.FunctionTokenType,
+                typ: EnumToken.TransformFunctionTokenType,
                 val: 'rotateY',
                 chi: [
                     {
@@ -153,7 +153,7 @@ export function minify(matrix: Matrix): Token[] | null {
         } else if (x == 0 && y == 0) {
 
             result.push({
-                typ: EnumToken.FunctionTokenType,
+                typ: EnumToken.TransformFunctionTokenType,
                 val: 'rotate',
                 chi: [
                     {
@@ -166,7 +166,7 @@ export function minify(matrix: Matrix): Token[] | null {
         } else {
 
             result.push({
-                typ: EnumToken.FunctionTokenType,
+                typ: EnumToken.TransformFunctionTokenType,
                 val: 'rotate3d',
                 chi: [
                     {
@@ -209,7 +209,7 @@ export function minify(matrix: Matrix): Token[] | null {
         if (skew.size == 1) {
 
             result.push({
-                typ: EnumToken.FunctionTokenType,
+                typ: EnumToken.TransformFunctionTokenType,
                 val: 'skew' + (skew.has('x') ? '' : 'Y'),
                 chi: [
                     {typ: EnumToken.AngleTokenType, val: round(decomposed.skew[0]), unit: 'deg'}
@@ -218,7 +218,7 @@ export function minify(matrix: Matrix): Token[] | null {
         } else {
 
             result.push({
-                typ: EnumToken.FunctionTokenType,
+                typ: EnumToken.TransformFunctionTokenType,
                 val: 'skew',
                 chi: [
                     {typ: EnumToken.AngleTokenType, val: round(decomposed.skew[0]), unit: 'deg'},
@@ -253,7 +253,7 @@ export function minify(matrix: Matrix): Token[] | null {
             let prefix: string = scales.has('x') ? 'X' : scales.has('y') ? 'Y' : 'Z';
 
             result.push({
-                typ: EnumToken.FunctionTokenType,
+                typ: EnumToken.TransformFunctionTokenType,
                 val: 'scale' + prefix,
                 chi: [
                     {typ: EnumToken.NumberTokenType, val: round(prefix == 'Z' ? sz : prefix == 'Y' ? sy : sx)}
@@ -262,7 +262,7 @@ export function minify(matrix: Matrix): Token[] | null {
         } else if (!scales.has('z')) {
 
             result.push({
-                typ: EnumToken.FunctionTokenType,
+                typ: EnumToken.TransformFunctionTokenType,
                 val: 'scale',
                 chi: [
                     {typ: EnumToken.NumberTokenType, val: round(sx)},
@@ -273,7 +273,7 @@ export function minify(matrix: Matrix): Token[] | null {
         } else {
 
             result.push({
-                typ: EnumToken.FunctionTokenType,
+                typ: EnumToken.TransformFunctionTokenType,
                 val: 'scale3d',
                 chi: [
                     {typ: EnumToken.NumberTokenType, val: round(sx)},
@@ -393,7 +393,7 @@ export function minifyTransformFunctions(transform: FunctionToken): FunctionToke
         if (t.size == 0) {
 
             return {
-                typ: EnumToken.FunctionTokenType,
+                typ: EnumToken.TransformFunctionTokenType,
                 val: 'translate',
                 chi: [
                     {typ: EnumToken.NumberTokenType, val: 0}
@@ -404,7 +404,7 @@ export function minifyTransformFunctions(transform: FunctionToken): FunctionToke
         if (t.size == 1) {
 
             return {
-                typ: EnumToken.FunctionTokenType,
+                typ: EnumToken.TransformFunctionTokenType,
                 val: 'translate' + (t.has('x') ? '' : t.has('y') ? 'Y' : 'Z'),
                 chi: [
                     values[t.has('x') ? 0 : t.has('y') ? 1 : 2]
@@ -420,7 +420,7 @@ export function minifyTransformFunctions(transform: FunctionToken): FunctionToke
             }
 
             return {
-                typ: EnumToken.FunctionTokenType,
+                typ: EnumToken.TransformFunctionTokenType,
                 val: 'translate',
                 chi: [
                     values[0],
@@ -436,7 +436,7 @@ export function minifyTransformFunctions(transform: FunctionToken): FunctionToke
         if (t.size == 0) {
 
             return {
-                typ: EnumToken.FunctionTokenType,
+                typ: EnumToken.TransformFunctionTokenType,
                 val: 'scale',
                 chi: [
                     {typ: EnumToken.NumberTokenType, val: 1}
@@ -447,7 +447,7 @@ export function minifyTransformFunctions(transform: FunctionToken): FunctionToke
         if (t.size == 1) {
 
             return {
-                typ: EnumToken.FunctionTokenType,
+                typ: EnumToken.TransformFunctionTokenType,
                 val: 'scale' + (t.has('x') ? 'X' : t.has('y') ? 'Y' : 'Z'),
                 chi: [
                     values[t.has('x') ? 0 : t.has('y') ? 1 : 2]
@@ -463,7 +463,7 @@ export function minifyTransformFunctions(transform: FunctionToken): FunctionToke
             }
 
             return {
-                typ: EnumToken.FunctionTokenType,
+                typ: EnumToken.TransformFunctionTokenType,
                 val: 'scale',
                 chi: [
                     values[0],

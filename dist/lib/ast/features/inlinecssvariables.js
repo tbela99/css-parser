@@ -1,20 +1,20 @@
 import { EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
 import { renderToken } from '../../renderer/render.js';
-import '../../renderer/sourcemap/lib/encode.js';
-import { mathFuncs } from '../../syntax/syntax.js';
 import { splitRule } from '../minify.js';
-import '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
 import { FeatureWalkMode } from './type.js';
+import { mathFuncs } from '../../syntax/constants.js';
 
 function inlineExpression(token) {
     const result = [];
     if (token.typ == EnumToken.BinaryExpressionTokenType) {
         result.push({
             typ: EnumToken.ParensTokenType,
-            chi: [...inlineExpression(token.l), { typ: token.op }, ...inlineExpression(token.r)]
+            chi: [
+                ...inlineExpression(token.l),
+                { typ: token.op },
+                ...inlineExpression(token.r),
+            ],
         });
     }
     else {
@@ -24,15 +24,17 @@ function inlineExpression(token) {
 }
 function replace(node, variableScope) {
     for (const { value, parent: parentValue } of walkValues(node.val)) {
-        if (value.typ == EnumToken.BinaryExpressionTokenType && parentValue != null && 'chi' in parentValue) {
+        if (value.typ == EnumToken.BinaryExpressionTokenType && parentValue != null && "chi" in parentValue) {
             // @ts-ignore
             parentValue.chi.splice(parentValue.chi.indexOf(value), 1, ...inlineExpression(value));
         }
     }
     for (const { value, parent: parentValue } of walkValues(node.val)) {
-        if (value.typ == EnumToken.FunctionTokenType && value.val == 'var') {
-            if (value.chi.length == 1 && value.chi[0].typ == EnumToken.DashedIdenTokenType) {
-                const info = variableScope.get(value.chi[0].val);
+        if (value.typ == EnumToken.MathFunctionTokenDefType ||
+            (value.typ == EnumToken.WildCardFunctionTokenType && value.val == "var")) {
+            if (value.chi.length == 1 &&
+                value.chi[0].typ == EnumToken.DashedIdenTokenType) {
+                const info = (variableScope.get(value.chi[0].val));
                 if (info?.replaceable) {
                     if (parentValue != null) {
                         let i = 0;
@@ -66,24 +68,25 @@ class InlineCssVariablesFeature {
         }
     }
     run(ast, options = {}, parent, context) {
-        // if (!('chi' in ast)) {
-        //
-        //     return null;
-        // }
-        if (!('variableScope' in context)) {
-            context.variableScope = new Map;
+        if (!("chi" in ast)) {
+            return null;
+        }
+        if (!("variableScope" in context)) {
+            context.variableScope = new Map();
         }
         // [':root', 'html']
-        const isRoot = parent.typ == EnumToken.StyleSheetNodeType && ast.typ == EnumToken.RuleNodeType && (ast.raw ?? splitRule(ast.sel)).some(segment => segment.some(s => s == ':root' || s == 'html'));
+        const isRoot = parent.typ == EnumToken.StyleSheetNodeType &&
+            ast.typ == EnumToken.RuleNodeType &&
+            (ast.raw ?? splitRule(ast.sel)).some((segment) => segment.some((s) => s == ":root" || s == "html"));
         const variableScope = context.variableScope;
         // @ts-ignore
         for (const node of ast.chi) {
-            if (node.typ != EnumToken.DeclarationNodeType) {
+            if (node.typ !== EnumToken.DeclarationNodeType) {
                 continue;
             }
             // css variable
-            if (node.nam.startsWith('--')) {
-                if (!variableScope.has(node.nam)) {
+            if (node.nam.startsWith("--")) {
+                if (!variableScope.has(node.val)) {
                     const info = {
                         globalScope: isRoot,
                         // @ts-ignore
@@ -91,13 +94,16 @@ class InlineCssVariablesFeature {
                         declarationCount: 1,
                         replaceable: isRoot,
                         node: node,
-                        values: structuredClone(node.val)
+                        values: structuredClone(node.val),
                     };
                     info.parent.add(ast);
                     variableScope.set(node.nam, info);
                     let recursive = false;
                     for (const { value } of walkValues(node.val)) {
-                        if (value?.typ == EnumToken.FunctionTokenType && (mathFuncs.includes(value.val) || value.val == 'var')) {
+                        if (value?.typ == EnumToken.MathFunctionTokenDefType ||
+                            (value?.typ == EnumToken.WildCardFunctionTokenType &&
+                                (mathFuncs.includes(value.val) ||
+                                    value.val === "var"))) {
                             recursive = true;
                             break;
                         }
@@ -115,10 +121,9 @@ class InlineCssVariablesFeature {
     }
     cleanup(ast, options = {}, context) {
         const variableScope = context.variableScope;
-        // if (variableScope == null) {
-        //
-        //     return;
-        // }
+        if (variableScope == null) {
+            return;
+        }
         for (const info of variableScope.values()) {
             if (info.replaceable) {
                 let i;
@@ -130,7 +135,7 @@ class InlineCssVariablesFeature {
                             // @ts-ignore
                             parent.chi.splice(i, 1, {
                                 typ: EnumToken.CommentTokenType,
-                                val: `/* ${info.node.nam}: ${info.values.reduce((acc, curr) => acc + renderToken(curr, { convertColor: false }), '')} */`
+                                val: `/* ${info.node.nam}: ${info.values.reduce((acc, curr) => acc + renderToken(curr, { convertColor: false }), "")} */`,
                             });
                             break;
                         }

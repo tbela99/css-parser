@@ -1,16 +1,9 @@
-import './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { color2srgbvalues, toPrecisionAngle, toPrecisionValue, getNumber, getAngle } from './color.js';
-import { srgb2oklab, lch2oklabvalues, getOKLABComponents, lab2oklabvalues, hwb2oklabvalues, hsl2oklabvalues, rgb2oklabvalues, hex2oklabvalues } from './oklab.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
-import '../../ast/minify.js';
-import '../../ast/walk.js';
-import '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
-import { cmyk2srgbvalues } from './srgb.js';
 import { labvalues2lchvalues } from './lch.js';
-import '../../renderer/sourcemap/lib/encode.js';
+import { srgb2oklab, lch2oklabvalues, getOKLABComponents, lab2oklabvalues, hwb2oklabvalues, hsl2oklabvalues, rgb2oklabvalues, hex2oklabvalues } from './oklab.js';
+import { cmyk2srgbvalues } from './srgb.js';
 
 function hex2oklchToken(token) {
     const values = hex2oklchvalues(token);
@@ -81,16 +74,16 @@ function oklchToken(values) {
         { typ: EnumToken.NumberTokenType, val: values[2] },
     ];
     if (values.length == 4) {
-        chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, {
+        chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
             typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100
+            val: values[3] * 100,
         });
     }
     return {
         typ: EnumToken.ColorTokenType,
-        val: 'oklch',
+        val: "oklch",
         chi,
-        kin: ColorType.OKLCH
+        kin: ColorType.OKLCH,
     };
 }
 function hex2oklchvalues(token) {
@@ -152,7 +145,12 @@ function getOKLCHComponents(token) {
         return null;
     }
     for (let i = 0; i < components.length; i++) {
-        if (![EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.IdenTokenType].includes(components[i].typ)) {
+        if (![
+            EnumToken.NumberTokenType,
+            EnumToken.PercentageTokenType,
+            EnumToken.AngleTokenType,
+            EnumToken.IdenTokenType,
+        ].includes(components[i].typ)) {
             return [];
         }
     }
@@ -163,7 +161,7 @@ function getOKLCHComponents(token) {
     // @ts-ignore
     t = components[1];
     // @ts-ignore
-    const c = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? .4 : 1);
+    const c = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 0.4 : 1);
     // @ts-ignore
     t = components[2];
     // @ts-ignore
@@ -171,7 +169,7 @@ function getOKLCHComponents(token) {
     // @ts-ignore
     t = components[3];
     // @ts-ignore
-    const alpha = t == null || (t.typ == EnumToken.IdenTokenType && t.val == 'none') ? 1 : getNumber(t);
+    const alpha = t == null || (t.typ == EnumToken.IdenTokenType && t.val == "none") ? 1 : getNumber(t);
     return [l, c, h, alpha];
 }
 

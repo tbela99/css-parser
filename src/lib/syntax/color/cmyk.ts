@@ -1,18 +1,17 @@
-import type {ColorToken, Token} from "../../../@types/token.d.ts";
-import {ColorType, EnumToken} from "../../ast/index.ts";
-import {color2srgbvalues, toPrecisionValue} from "./color.ts";
+import type { ColorToken, Token } from "../../../@types/token.d.ts";
+import { ColorType, EnumToken } from "../../ast/types.ts";
+import { color2srgbvalues, toPrecisionValue } from "./color.ts";
 import {
     hwb2srgbvalues,
     lab2srgbvalues,
     lch2srgbvalues,
     oklab2srgbvalues,
     oklch2srgbvalues,
-    rgb2srgbvalues
+    rgb2srgbvalues,
 } from "./srgb.ts";
-import {hsl2srgbvalues} from "./rgb.ts";
+import { hsl2srgbvalues } from "./rgb.ts";
 
 export function rgb2cmykToken(token: ColorToken): ColorToken | null {
-
     const components: number[] | null = rgb2srgbvalues(token);
 
     if (components == null || components.length < 3) {
@@ -24,7 +23,6 @@ export function rgb2cmykToken(token: ColorToken): ColorToken | null {
 }
 
 export function hsl2cmykToken(token: ColorToken): ColorToken | null {
-
     const values: number[] | null = hsl2srgbvalues(token);
 
     if (values == null) {
@@ -36,7 +34,6 @@ export function hsl2cmykToken(token: ColorToken): ColorToken | null {
 }
 
 export function hwb2cmykToken(token: ColorToken): ColorToken | null {
-
     const values: number[] | null = hwb2srgbvalues(token);
 
     if (values == null) {
@@ -48,7 +45,6 @@ export function hwb2cmykToken(token: ColorToken): ColorToken | null {
 }
 
 export function lab2cmykToken(token: ColorToken): ColorToken | null {
-
     const components: number[] | null = lab2srgbvalues(token);
 
     if (components == null || components.length < 3) {
@@ -60,7 +56,6 @@ export function lab2cmykToken(token: ColorToken): ColorToken | null {
 }
 
 export function lch2cmykToken(token: ColorToken): ColorToken | null {
-
     const components: number[] | null = lch2srgbvalues(token);
 
     if (components == null || components.length < 3) {
@@ -72,7 +67,6 @@ export function lch2cmykToken(token: ColorToken): ColorToken | null {
 }
 
 export function oklab2cmyk(token: ColorToken): ColorToken | null {
-
     const components: number[] | null = oklab2srgbvalues(token);
 
     if (components == null || components.length < 3) {
@@ -84,7 +78,6 @@ export function oklab2cmyk(token: ColorToken): ColorToken | null {
 }
 
 export function oklch2cmykToken(token: ColorToken): ColorToken | null {
-
     const components: number[] | null = oklch2srgbvalues(token);
 
     if (components == null || components.length < 3) {
@@ -96,7 +89,6 @@ export function oklch2cmykToken(token: ColorToken): ColorToken | null {
 }
 
 export function color2cmykToken(token: ColorToken): ColorToken | null {
-
     const values = color2srgbvalues(token);
 
     if (values == null) {
@@ -108,7 +100,6 @@ export function color2cmykToken(token: ColorToken): ColorToken | null {
 }
 
 export function srgb2cmykvalues(r: number, g: number, b: number, a: number | null = null): number[] {
-
     const k: number = 1 - Math.max(r, g, b);
     const c: number = k == 1 ? 0 : (1 - r - k) / (1 - k);
     const m: number = k == 1 ? 0 : (1 - g - k) / (1 - k);
@@ -123,21 +114,33 @@ export function srgb2cmykvalues(r: number, g: number, b: number, a: number | nul
 }
 
 function cmyktoken(values: number[]): ColorToken {
-
     return {
         typ: EnumToken.ColorTokenType,
-        val: 'device-cmyk',
-        chi: values.reduce((acc: Token[], curr: number, index: number) => index < 4 ? [...acc, {
-            typ: EnumToken.PercentageTokenType,
-            // @ts-ignore
-            val: toPrecisionValue(curr) * 100
-        } as Token] : [...acc, {
-            typ: EnumToken.LiteralTokenType,
-            val: '/'
-        } as Token, {
-            typ: EnumToken.PercentageTokenType,
-            val: toPrecisionValue(curr) * 100
-        } as Token], [] as Token[]) as Token[],
-        kin: ColorType.DEVICE_CMYK
-    }
+        val: "device-cmyk",
+        chi: values.reduce(
+            (acc: Token[], curr: number, index: number) =>
+                index < 4
+                    ? [
+                          ...acc,
+                          {
+                              typ: EnumToken.PercentageTokenType,
+                              // @ts-ignore
+                              val: toPrecisionValue(curr) * 100,
+                          } as Token,
+                      ]
+                    : [
+                          ...acc,
+                          {
+                              typ: EnumToken.LiteralTokenType,
+                              val: "/",
+                          } as Token,
+                          {
+                              typ: EnumToken.PercentageTokenType,
+                              val: toPrecisionValue(curr) * 100,
+                          } as Token,
+                      ],
+            [] as Token[],
+        ) as Token[],
+        kin: ColorType.DEVICE_CMYK,
+    };
 }

@@ -1,18 +1,12 @@
-import { e, k, D50 } from './utils/constants.js';
+import { e, k, D50 } from '../constants.js';
 import { getComponents } from './utils/components.js';
-import { color2srgbvalues, toPrecisionValue, getNumber } from './color.js';
-import { getOKLABComponents, OKLab_to_XYZ } from './oklab.js';
-import { EnumToken, ColorType } from '../../ast/types.js';
-import '../../ast/minify.js';
-import '../../ast/walk.js';
-import '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
+import { srgb2xyz_d50, XYZ_D50_to_D65 } from './xyz.js';
 import { oklch2srgbvalues, cmyk2srgbvalues, hwb2srgbvalues, hsl2srgb, rgb2srgb, hex2srgbvalues, xyz2srgb } from './srgb.js';
 import { getLCHComponents } from './lch.js';
-import { srgb2xyz_d50, XYZ_D50_to_D65 } from './xyz.js';
+import { getOKLABComponents, OKLab_to_XYZ } from './oklab.js';
+import { color2srgbvalues, toPrecisionValue, getNumber } from './color.js';
+import { EnumToken, ColorType } from '../../ast/types.js';
 import { XYZ_D65_to_D50 } from './xyzd50.js';
-import '../../renderer/sourcemap/lib/encode.js';
 
 function hex2labToken(token) {
     const values = hex2labvalues(token);
@@ -81,16 +75,16 @@ function labToken(values) {
         { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[2]) },
     ];
     if (values.length == 4) {
-        chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, {
+        chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
             typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100
+            val: values[3] * 100,
         });
     }
     return {
         typ: EnumToken.ColorTokenType,
-        val: 'lab',
+        val: "lab",
         chi,
-        kin: ColorType.LAB
+        kin: ColorType.LAB,
     };
 }
 // L: 0% = 0.0, 100% = 100.0
@@ -177,11 +171,11 @@ function xyz2lab(x, y, z, a = null) {
     // compute xyz, which is XYZ scaled relative to reference white
     const xyz = [x, y, z].map((value, i) => value / D50[i]);
     // now compute f
-    const f = xyz.map((value) => value > e ? Math.cbrt(value) : (k * value + 16) / 116);
+    const f = xyz.map((value) => (value > e ? Math.cbrt(value) : (k * value + 16) / 116));
     const result = [
-        (116 * f[1]) - 16, // L
+        116 * f[1] - 16, // L
         500 * (f[0] - f[1]), // a
-        200 * (f[1] - f[2]) // b
+        200 * (f[1] - f[2]), // b
     ];
     // L in range [0,100]. For use in CSS, add a percent
     if (a != null && a != 1) {
@@ -191,7 +185,7 @@ function xyz2lab(x, y, z, a = null) {
 }
 function lchvalues2labvalues(l, c, h, a = null) {
     // l, c * Math.cos(360 * h * Math.PI / 180), c * Math.sin(360 * h * Math.PI / 180
-    const result = [l, c * Math.cos(h * Math.PI / 180), c * Math.sin(h * Math.PI / 180)];
+    const result = [l, c * Math.cos((h * Math.PI) / 180), c * Math.sin((h * Math.PI) / 180)];
     if (a != null) {
         result.push(a);
     }
@@ -203,7 +197,12 @@ function getLABComponents(token) {
         return null;
     }
     for (let i = 0; i < components.length; i++) {
-        if (![EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.IdenTokenType].includes(components[i].typ)) {
+        if (![
+            EnumToken.NumberTokenType,
+            EnumToken.PercentageTokenType,
+            EnumToken.AngleTokenType,
+            EnumToken.IdenTokenType,
+        ].includes(components[i].typ)) {
             return null;
         }
     }
@@ -253,7 +252,7 @@ function Lab_to_XYZ(l, a, b) {
     const xyz = [
         Math.pow(f[0], 3) > e ? Math.pow(f[0], 3) : (116 * f[0] - 16) / k,
         l > k * e ? Math.pow((l + 16) / 116, 3) : l / k,
-        Math.pow(f[2], 3) > e ? Math.pow(f[2], 3) : (116 * f[2] - 16) / k
+        Math.pow(f[2], 3) > e ? Math.pow(f[2], 3) : (116 * f[2] - 16) / k,
     ];
     // Compute XYZ by scaling xyz by reference white
     return xyz.map((value, i) => value * D50[i]);

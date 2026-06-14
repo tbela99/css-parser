@@ -33,6 +33,7 @@ $ deno add @tbela99/css-parser
 - color conversion to any supported color format
 - automatic nested css rules generation
 - nested css rules conversion to legacy syntax
+- convert css if() function to legacy syntax
 - sourcemap generation
 - css shorthands computation. see the supported properties list below
 - css transform functions minification
@@ -221,6 +222,7 @@ Include ParseOptions and RenderOptions
 - nestingRules: boolean, optional. automatically generated nested rules.
 - expandNestingRules: boolean, optional. convert nesting rules into separate rules. will automatically set nestingRules
   to false.
+- expandIfSyntax: experimental, convert css if() function into legacy syntax.
 - removeDuplicateDeclarations: boolean, optional. remove duplicate declarations.
 - computeTransform: boolean, optional. compute css transform functions.
 - computeShorthand: boolean, optional. compute shorthand properties.
@@ -685,6 +687,47 @@ table.colortable th {
     text-align: center;
     background: black;
     color: white;
+}
+```
+
+### CSS if() function expansion
+
+```typescript
+
+const css = `
+button {
+	background: linear-gradient(
+		if(media(min-width: 768px): to right; else: to bottom),
+		if(style(--dark-mode): #333; else: #fff),
+		if(style(--dark-mode): #000; else: #ccc)
+	);
+}`;
+
+result = await transform(css, {
+
+    beautify: true,
+    expandIfSyntax: true
+    }
+
+});
+
+console.log(result.code);
+```
+
+output
+
+```css
+button {
+ background: linear-gradient(to bottom,#fff,#ccc);
+ @media (min-width:768px) {
+  background: linear-gradient(to right,#fff,#ccc);
+  @container style(--dark-mode) {
+   background: linear-gradient(to right,#333,#000)
+  }
+ }
+ @container style(--dark-mode) {
+  background: linear-gradient(to bottom,#333,#000)
+ }
 }
 ```
 

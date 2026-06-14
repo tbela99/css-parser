@@ -332,6 +332,22 @@
                                 Expand nesting rules
                             </label>
                         </div>
+
+                        <div class="form-check">
+                            <input
+                                    class="form-check-input"
+                                    id="parseoptionsexpandIfSyntax"
+                                    name="parseoptions[expandIfSyntax]"
+                                    type="checkbox"
+                                    value=""
+                            />
+                            <label
+                                    class="form-check-label"
+                                    for="parseoptionsexpandIfSyntax"
+                            >
+                                Expand if() function
+                            </label>
+                        </div>
                         <div class="form-check">
                             <input
                                     class="form-check-input"
@@ -775,7 +791,7 @@
         render,
         EnumToken,
         ColorType,
-    } from "https://esm.sh/@tbela99/css-parser@1.4.2/web";
+    } from "https://esm.sh/@tbela99/css-parser@1.4.3/web";
     import {buildTree} from "./tree.js";
 
     const units = ["B", "KB", "MB", "GB", "TB", "PB"];

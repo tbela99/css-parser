@@ -1,5 +1,5 @@
-import {EnumToken} from "../../ast/index.ts";
-import {ValidationTokenEnum} from "./parse.ts";
+import {EnumToken} from "../../ast/types.ts";
+import {ValidationTokenEnum} from "./typedef.ts";
 
 export interface Position {
 
@@ -8,25 +8,46 @@ export interface Position {
     col: number;
 }
 
+export interface ValidationValueRangeMatch {
+        min: ValidationNumberToken;
+        max: ValidationNumberToken | null;
+}
+
+export interface ValidationDimensionRangeMatch {
+        min: ValidationDimensionToken;
+        max: ValidationDimensionToken | null;
+}
+
 export interface ValidationToken {
 
     typ: ValidationTokenEnum;
     pos: Position;
+    // a#
     isList?: boolean;
     text?: string;
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Values_and_units/Value_definition_syntax
+    // a*
     isRepeatable?: boolean;
-    atLeastOnce?: boolean;
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Values_and_units/Value_definition_syntax
+    // a+
+    isRepeatableAtLeastOnce?: boolean;
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Values_and_units/Value_definition_syntax
+    // a?
     isOptional?: boolean;
-    isRepeatableGroup?: boolean;
-    occurence?: {
-        min: number;
-        max: number | null;
-    }
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Values_and_units/Value_definition_syntax
+    // a!
+    isMandatatoryGroup?: boolean;
+    // a{1,2}
+    match?: {
+        min: ValidationNumberToken;
+        max: ValidationNumberToken | null;
+    },
+    range?: ValidationValueRangeMatch |  ValidationDimensionRangeMatch
 }
 
 export interface AtLeastOneToken extends ValidationToken {
 
-    typ: ValidationTokenEnum.AtLeastOnce;
+    typ: ValidationTokenEnum.Plus;
 }
 
 export interface ValidationCharacterToken extends ValidationToken {
@@ -89,7 +110,7 @@ export interface ValidationRootToken extends ValidationToken {
     chi: ValidationToken[];
 }
 
-export interface NumberToken extends ValidationToken {
+export interface ValidationNumberToken extends ValidationToken {
 
     typ: ValidationTokenEnum.Number;
     val: number;
@@ -105,6 +126,14 @@ export interface ValidationAtRule extends ValidationToken {
 
     typ: ValidationTokenEnum.AtRule;
     val: string;
+}
+
+export interface ValidationDimensionToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.AtRuleName;
+    val: number;
+    unitText: string;
+    unit: keyof EnumToken
 }
 
 export interface ValidationAtRuleDefinitionToken extends ValidationToken {
@@ -183,15 +212,14 @@ export interface ValidationAmpersandToken extends ValidationToken {
 export interface ValidationColumnToken extends ValidationToken {
 
     typ: ValidationTokenEnum.ColumnToken,
-    l: ValidationToken[];
-    r: ValidationToken[];
+    chi: ValidationToken[][];
 }
 
-// export interface ValidationColumnArrayToken extends ValidationToken {
-//
-//     typ: ValidationTokenEnum.ColumnArrayToken,
-//     chi: ValidationToken[];
-// }
+export interface ValidationOptionalGroupToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.OptionalGroupToken,
+    chi: ValidationToken[];
+}
 
 export interface ValidationDeclarationToken extends ValidationToken {
 
@@ -203,7 +231,6 @@ export interface ValidationPropertyToken extends ValidationToken {
 
     typ: ValidationTokenEnum.PropertyType;
     unit?: keyof EnumToken;
-    range?: [number, number];
     val: string;
 }
 
@@ -281,6 +308,6 @@ export interface ValidationFunctionToken extends ValidationToken {
 
 export interface ValidationFunctionDefinitionToken extends ValidationToken {
 
-    typ: ValidationTokenEnum.ValidationFunctionDefinition
+    typ: ValidationTokenEnum.FunctionDefinition
     val: string;
 }

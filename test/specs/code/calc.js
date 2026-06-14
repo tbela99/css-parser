@@ -216,10 +216,10 @@ scale: rem(10 * 2, 1.7);
   --size-0: 100px;
   --size-1: hypot(var(--size-0));
   --size-2: hypot(var(--size-0), var(--size-0));
-  );
   --size-3: hypot(
     calc(var(--size-0) * 1.5),
     calc(var(--size-0) * 2)
+  );
 }
 .one {
   width: var(--size-1);
@@ -238,7 +238,7 @@ scale: rem(10 * 2, 1.7);
  /* --size-0: 100px */
  /* --size-1: hypot(var(--size-0)) */
  /* --size-2: hypot(var(--size-0),var(--size-0)) */
- /* --size-3: hypot(var(--size-0)*1.5,var(--size-0)*2) */
+ /* --size-3: hypot(calc(var(--size-0)*1.5),calc(var(--size-0)*2)) */
 }
 .one {
  width: 100px;
@@ -261,14 +261,11 @@ scale: rem(10 * 2, 1.7);
 a {
 
 -moz-transform: rotate(atan2(1rem, -0.5rem));
-height: rotate(atan2(pi, 45));
 line-height: calc(pi);
 transform: rotate(atan2(e, 30));
-line-height: calc(pi);
 }
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
  -moz-transform: rotate(atan2(1rem,-.5rem));
- height: rotate(atan2(pi,45));
  line-height: calc(pi);
  transform: rotate(atan2(e,30))
 }`));
@@ -335,7 +332,6 @@ a {
 width: calc(2px *abs(-1);}
 }
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
- width: 2px
 }`));
         });
 
@@ -348,7 +344,6 @@ a {
 width: calc(-2px *sign(-1);}
 }
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
- width: 2px
 }`));
         });
 
@@ -433,6 +428,96 @@ width: calc(-2px *sign(-1);}
     width: max(calc(calc(var(--preferred-width) + 2px) / (10/3px)), 200px);
 `, {inlineCssVariables: true, beautify: true}).then(result => expect(result.code).equals(`.foo-bar {
  width: 201.6px
+}`));
+        });
+
+        it('pow() #34', function () {
+            
+            return transform(`
+
+:root {
+  --size-0: 100px;
+  --size-1: hypot(var(--size-0));
+  --size-2: hypot(var(--size-0), var(--size-0));
+  --size-3: hypot(
+    calc(var(--size-0) * 1.5),
+    calc(var(--size-0) * 2)
+  );
+}
+.one {
+  width: var(--size-1);
+  height: var(--size-1);
+}
+.two {
+  width: var(--size-2);
+  height: var(--size-2);
+}
+.three {
+  width: var(--size-3);
+  height: var(--size-3);
+}
+
+`, {inlineCssVariables: true, removeComments: false, beautify: true}).then(result => expect(result.code).equals(`:root {
+ /* --size-0: 100px */
+ /* --size-1: hypot(var(--size-0)) */
+ /* --size-2: hypot(var(--size-0),var(--size-0)) */
+ /* --size-3: hypot(calc(var(--size-0)*1.5),calc(var(--size-0)*2)) */
+}
+.one {
+ width: 100px;
+ height: 100px
+}
+.two {
+ width: 141px;
+ height: 141px
+}
+.three {
+ width: 250px;
+ height: 250px
+}`));
+        });
+
+
+
+        it('abs() #35', function () {
+
+            return parse(`
+
+a {
+
+width: calc(2px *abs(-1));}
+}
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ width: 2px
+}`));
+        });
+
+
+        it('translate() #36', function () {
+
+            return parse(`
+
+a {
+
+     transform: translate(0, -50px);
+}
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ transform: translateY(-50px)
+}`));
+        });
+
+
+        it('hypth() #37', function () {
+
+            return parse(`
+
+:root {
+  --size-0: 100px;
+  --size-1: hypot(var(--size-0));
+
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`:root {
+ --size-0: 100px;
+ --size-1: hypot(var(--size-0))
 }`));
         });
     });

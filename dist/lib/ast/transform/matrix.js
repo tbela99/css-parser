@@ -1,18 +1,11 @@
-import { is2DMatrix, identity } from './utils.js';
+import { identity, is2DMatrix } from './utils.js';
 import { EnumToken } from '../types.js';
 import { eq } from '../../parser/utils/eq.js';
 import { getNumber } from '../../syntax/color/color.js';
-import '../../syntax/color/utils/constants.js';
-import '../minify.js';
-import '../walk.js';
-import '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
-import '../../renderer/sourcemap/lib/encode.js';
 
 function parseMatrix(mat) {
     if (mat.typ == EnumToken.IdenTokenType) {
-        return mat.val == 'none' ? identity() : null;
+        return mat.val == "none" ? identity() : null;
     }
     const children = mat.chi.filter((t) => t.typ == EnumToken.NumberTokenType || t.typ == EnumToken.IdenTokenType);
     const values = [];
@@ -66,46 +59,39 @@ function serialize(matrix) {
     if (eq(matrix, identity())) {
         return {
             typ: EnumToken.IdenTokenType,
-            val: 'none'
+            val: "none",
         };
     }
     if (is2DMatrix(matrix)) {
         // https://drafts.csswg.org/css-transforms-2/#two-dimensional-subset
         return {
-            typ: EnumToken.FunctionTokenType,
-            val: 'matrix',
-            chi: [
-                matrix[0],
-                matrix[1],
-                matrix[4],
-                matrix[4 + 1],
-                matrix[3 * 4],
-                matrix[3 * 4 + 1]
-            ].reduce((acc, t) => {
+            typ: EnumToken.TransformFunctionTokenType,
+            val: "matrix",
+            chi: [matrix[0], matrix[1], matrix[4], matrix[4 + 1], matrix[3 * 4], matrix[3 * 4 + 1]].reduce((acc, t) => {
                 if (acc.length > 0) {
                     acc.push({ typ: EnumToken.CommaTokenType });
                 }
                 acc.push({
                     typ: EnumToken.NumberTokenType,
-                    val: t
+                    val: t,
                 });
                 return acc;
-            }, [])
+            }, []),
         };
     }
     return {
-        typ: EnumToken.FunctionTokenType,
-        val: 'matrix3d',
+        typ: EnumToken.TransformFunctionTokenType,
+        val: "matrix3d",
         chi: matrix.reduce((acc, curr) => {
             if (acc.length > 0) {
                 acc.push({ typ: EnumToken.CommaTokenType });
             }
             acc.push({
                 typ: EnumToken.NumberTokenType,
-                val: curr
+                val: curr,
             });
             return acc;
-        }, [])
+        }, []),
     };
 }
 
