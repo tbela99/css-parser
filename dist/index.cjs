@@ -21247,7 +21247,7 @@ function matchRepeatableSyntax(syntax, context, options) {
     node.typ === EnumToken.DeclarationNodeType &&
      value.typ === EnumToken.ColorTokenType;
 
-     const { node, attribute } = findByAttribute(astNode, nodeMatcher) ?? {};
+     const { node, value } = findByAttribute(astNode, nodeMatcher) ?? {};
  
     ```
  *
@@ -21255,7 +21255,7 @@ function matchRepeatableSyntax(syntax, context, options) {
  * @param matcher
  * @returns
  */
-function findByAttribute(root, matcher) {
+function findByValue(root, matcher) {
     let source;
     for (const { node } of walk(root)) {
         source = null;
@@ -21404,7 +21404,7 @@ function processNode(declarationNode, cache) {
     const stack = [declarationNode];
     while (++k < stack.length) {
         astNode = stack[k];
-        const { node: declaration, value: node } = findByAttribute(astNode, nodeMatcher) ?? {};
+        const { node: declaration, value: node } = findByValue(astNode, nodeMatcher) ?? {};
         if (node != null && cache.has(node.node)) {
             continue;
         }
