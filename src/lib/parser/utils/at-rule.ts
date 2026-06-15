@@ -1,18 +1,14 @@
-import type { AtRuleToken, Token, ParserOptions, ValidationOptions } from "../../../@types/index.d.ts";
+import type { AtRuleToken, Token, ParserOptions, ValidationOptions, ErrorDescription } from "../../../@types/index.d.ts";
 import { EnumToken } from "../../ast/types.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";
 import { getSyntaxRule } from "../../validation/config.ts";
 import { createValidationContext, matchAllSyntax, trimArray } from "../../validation/match.ts";
 
-// export const mediaQueryConditionEnum: Set<EnumToken> = new Set([
-//     EnumToken.ParensTokenType,
-//     EnumToken.IdenTokenType,
-//     EnumToken.MediaQueryConditionTokenType,
-//     EnumToken.MediaQueryUnaryFeatureTokenType,
-// ]);
-
-export function matchAtRuleSyntax(atRule: AtRuleToken, stream: Token[], options: ParserOptions | ValidationOptions) {
+export function matchAtRuleSyntax(atRule: AtRuleToken, stream: Token[], options: ParserOptions | ValidationOptions): {
+    success: boolean;
+    errors: ErrorDescription[]
+} {
     const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + atRule.nam);
     const syntax: ValidationToken[] = syntaxRules?.getPreludeRules()?.slice?.(1) as ValidationToken[];
 

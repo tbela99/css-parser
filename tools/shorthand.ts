@@ -4,758 +4,863 @@ import type {
     ShorthandDef,
     ShorthandMapType,
     ShorthandPropertyType,
-    ShorthandType
+    ShorthandType,
+    SinglePropertyTypeMapping,
 } from "../src/@types/index.d.ts";
-import {writeFile} from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 
 function createProperties(data: ShorthandPropertyType) {
-
     const map: string = <string>data.map;
     return {
-        [data.shorthand]: {...data}, ...data.properties.reduce((acc, property: string) => {
-
-            return Object.assign(acc, {
-                [property]: {
-                    map,
-                    shorthand: data.shorthand
-                }
-            });
-        }, <PropertySetType>{})
-    }
+        [data.shorthand]: { ...data },
+        ...data.properties.reduce(
+            (acc, property: string) => {
+                return Object.assign(acc, {
+                    [property]: {
+                        map,
+                        shorthand: data.shorthand,
+                    },
+                });
+            },
+            <PropertySetType>{},
+        ),
+    };
 }
 
 function createMap(data: ShorthandDef, fields: Array<ShorthandType>) {
+    return fields.reduce(
+        (acc, curr: ShorthandType) => {
+            Object.assign(acc[data.shorthand].properties, {
+                [curr.shorthand]: { ...(<ShorthandType>curr).properties },
+            });
 
-    return fields.reduce((acc, curr: ShorthandType) => {
-
-        Object.assign(acc[data.shorthand].properties, {
-            [curr.shorthand]: {...(<ShorthandType>curr).properties}
-        });
-
-        return Object.assign(acc, {
-
-            [curr.shorthand]: {
-                shorthand: data.shorthand
-            }
-        });
-    }, {
-        [data.shorthand]: {
-            ...data,
-            properties: {}
-        }
-    })
+            return Object.assign(acc, {
+                [curr.shorthand]: {
+                    shorthand: data.shorthand,
+                },
+            });
+        },
+        {
+            [data.shorthand]: {
+                ...data,
+                properties: {},
+            },
+        },
+    );
 }
 
 export const map: ShorthandMapType = (<ShorthandMapType[][]>[
-
     [
         {
-            shorthand: 'flex-flow',
+            shorthand: "flex-flow",
             pattern: `flex-direction flex-wrap`,
             keywords: [],
-            default: ['row', 'nowrap']
+            default: ["row", "nowrap"],
         },
         [
             {
-                shorthand: 'flex-direction',
+                shorthand: "flex-direction",
                 properties: {
-
-                    keywords: ['row', 'row-reverse', 'column', 'column-reverse'],
-                    default: ['row'],
-                    types: []
-                }
+                    keywords: ["row", "row-reverse", "column", "column-reverse"],
+                    default: ["row"],
+                    types: [],
+                },
             },
             {
-                shorthand: 'flex-wrap',
+                shorthand: "flex-wrap",
                 properties: {
-
-                    keywords: ['wrap', 'nowrap', 'wrap-reverse'],
-                    default: ['nowrap'],
-                    types: []
-                }
-            }
-        ]
+                    keywords: ["wrap", "nowrap", "wrap-reverse"],
+                    default: ["nowrap"],
+                    types: [],
+                },
+            },
+        ],
     ],
     [
         {
-            shorthand: 'flex-flow',
+            shorthand: "flex-flow",
             pattern: `flex-direction flex-wrap`,
             keywords: [],
-            default: ['row', 'nowrap']
+            default: ["row", "nowrap"],
         },
         [
             {
-                shorthand: 'flex-direction',
+                shorthand: "flex-direction",
                 properties: {
-
-                    keywords: ['row', 'row-reverse', 'column', 'column-reverse'],
-                    default: ['row'],
-                    types: []
-                }
+                    keywords: ["row", "row-reverse", "column", "column-reverse"],
+                    default: ["row"],
+                    types: [],
+                },
             },
             {
-                shorthand: 'flex-wrap',
+                shorthand: "flex-wrap",
                 properties: {
-
-                    keywords: ['wrap', 'nowrap', 'wrap-reverse'],
-                    default: ['nowrap'],
-                    types: []
-                }
-            }
-        ]
+                    keywords: ["wrap", "nowrap", "wrap-reverse"],
+                    default: ["nowrap"],
+                    types: [],
+                },
+            },
+        ],
     ],
     [
         {
-            shorthand: 'container',
-            pattern: 'container-name container-type',
+            shorthand: "container",
+            pattern: "container-name container-type",
             keywords: [],
-            default: []
+            default: [],
         },
         [
             {
-                shorthand: 'container-name',
+                shorthand: "container-name",
                 properties: {
-
                     required: true,
                     multiple: true,
-                    keywords: ['none'],
-                    default: ['none'],
-                    types: ['Iden', 'DashedIden']
-                }
+                    keywords: ["none"],
+                    default: ["none"],
+                    types: ["Iden", "DashedIden"],
+                },
             },
             {
-                shorthand: 'container-type',
+                shorthand: "container-type",
                 properties: {
-
-                    previous: 'container-name',
+                    previous: "container-name",
                     prefix: {
-                        typ: 'Literal',
-                        val: '/'
+                        typ: "Literal",
+                        val: "/",
                     },
-                    keywords: ['size', 'inline-size', 'normal'],
-                    default: ['normal'],
-                    types: []
-                }
-            }
-        ]
+                    keywords: ["size", "inline-size", "normal"],
+                    default: ["normal"],
+                    types: [],
+                },
+            },
+        ],
     ],
     [
         {
-            shorthand: 'flex',
+            shorthand: "flex",
             pattern: `flex-grow flex-shrink flex-basis`,
-            keywords: ['auto', 'none', 'initial'],
+            keywords: ["auto", "none", "initial"],
             default: [],
             mapping: {
-                '0 1 auto': 'initial',
-                '0 0 auto': 'none',
-                '1 1 auto': 'auto',
-            }
+                "0 1 auto": "initial",
+                "0 0 auto": "none",
+                "1 1 auto": "auto",
+            },
         },
         [
             {
-                shorthand: 'flex-grow',
+                shorthand: "flex-grow",
                 properties: {
-
                     required: true,
                     keywords: [],
                     default: [],
-                    types: ['Number']
-                }
+                    types: ["Number"],
+                },
             },
             {
-                shorthand: 'flex-shrink',
+                shorthand: "flex-shrink",
                 properties: {
-
                     keywords: [],
                     default: [],
-                    types: ['Number']
-                }
+                    types: ["Number"],
+                },
             },
             {
-                shorthand: 'flex-basis',
+                shorthand: "flex-basis",
                 properties: {
-
-                    keywords: ['max-content', 'min-content', 'fit-content', 'fit-content', 'content', 'auto'],
+                    keywords: ["max-content", "min-content", "fit-content", "fit-content", "content", "auto"],
                     default: [],
-                    types: ['Length', 'Perc'],
-                }
-            }
-        ]
+                    types: ["Length", "Perc"],
+                },
+            },
+        ],
     ],
     [
         {
-            shorthand: 'columns',
-            pattern: 'column-count column-width',
-            keywords: ['auto'],
-            default: ['auto', 'auto auto'],
+            shorthand: "columns",
+            pattern: "column-count column-width",
+            keywords: ["auto"],
+            default: ["auto", "auto auto"],
         },
         [
             {
-                shorthand: 'column-count',
+                shorthand: "column-count",
                 properties: {
-
-                    keywords: ['auto'],
-                    default: ['auto'],
-                    types: ['Number']
-                }
+                    keywords: ["auto"],
+                    default: ["auto"],
+                    types: ["Number"],
+                },
             },
             {
-                shorthand: 'column-width',
+                shorthand: "column-width",
                 properties: {
-
-                    keywords: ['auto'],
-                    default: ['auto'],
-                    types: ['Length']
-                }
-            }
-        ]
+                    keywords: ["auto"],
+                    default: ["auto"],
+                    types: ["Length"],
+                },
+            },
+        ],
     ],
     [
         {
-            shorthand: 'transition',
+            shorthand: "transition",
             multiple: true,
             separator: {
-                typ: 'Comma'
+                typ: "Comma",
             },
-            pattern: 'transition-property transition-duration transition-timing-function transition-delay transition-behavior',
-            keywords: ['none', 'all'],
-            default: ['0s', '0ms', 'all', 'ease', 'none', 'normal'],
+            pattern:
+                "transition-property transition-duration transition-timing-function transition-delay transition-behavior",
+            keywords: ["none", "all"],
+            default: ["0s", "0ms", "all", "ease", "none", "normal"],
             mapping: {
-                'cubic-bezier(.25,.1,.25,1)': 'ease',
-                'cubic-bezier(0,0,1,1)': 'linear',
-                'cubic-bezier(.42,0,1,1)': 'ease-in',
-                'cubic-bezier(0,0,.58,1)': 'ease-out',
-                'cubic-bezier(.42,0,.58,.42)': 'ease-in-out'
-            }
+                "cubic-bezier(.25,.1,.25,1)": "ease",
+                "cubic-bezier(0,0,1,1)": "linear",
+                "cubic-bezier(.42,0,1,1)": "ease-in",
+                "cubic-bezier(0,0,.58,1)": "ease-out",
+                "cubic-bezier(.42,0,.58,.42)": "ease-in-out",
+            },
         },
         [
             {
-                shorthand: 'transition-property',
+                shorthand: "transition-property",
                 properties: {
-
-                    keywords: ['none', 'all'],
-                    default: ['all'],
-                    types: ['Iden']
-                }
+                    keywords: ["none", "all"],
+                    default: ["all"],
+                    types: ["Iden"],
+                },
             },
             {
-                shorthand: 'transition-duration',
+                shorthand: "transition-duration",
                 properties: {
-
                     keywords: [],
-                    default: ['0s', '0ms', 'normal'],
-                    types: ['Time']
-                }
+                    default: ["0s", "0ms", "normal"],
+                    types: ["Time"],
+                },
             },
             {
-                shorthand: 'transition-timing-function',
+                shorthand: "transition-timing-function",
                 properties: {
-
-                    keywords: ['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'step-start', 'step-end'],
-                    default: ['ease'],
-                    types: ['TimingFunction'],
+                    keywords: ["ease", "ease-in", "ease-out", "ease-in-out", "linear", "step-start", "step-end"],
+                    default: ["ease"],
+                    types: ["TimingFunction"],
                     mapping: {
-                        'cubic-bezier(.25,.1,.25,1)': 'ease',
-                        'cubic-bezier(0,0,1,1)': 'linear',
-                        'cubic-bezier(.42,0,1,1)': 'ease-in',
-                        'cubic-bezier(0,0,.58,1)': 'ease-out',
-                        'cubic-bezier(.42,0,.58,.42)': 'ease-in-out'
-                    }
-                }
+                        "cubic-bezier(.25,.1,.25,1)": "ease",
+                        "cubic-bezier(0,0,1,1)": "linear",
+                        "cubic-bezier(.42,0,1,1)": "ease-in",
+                        "cubic-bezier(0,0,.58,1)": "ease-out",
+                        "cubic-bezier(.42,0,.58,.42)": "ease-in-out",
+                    },
+                },
             },
             {
-                shorthand: 'transition-delay',
+                shorthand: "transition-delay",
                 properties: {
-
                     keywords: [],
-                    default: ['0s'],
-                    types: ['Time']
-                }
+                    default: ["0s"],
+                    types: ["Time"],
+                },
             },
             {
-                shorthand: 'transition-behavior',
+                shorthand: "transition-behavior",
                 properties: {
-
-                    keywords: ['normal', 'allow-discrete'],
-                    default: ['normal'],
-                    types: []
-                }
-            }
-        ]
+                    keywords: ["normal", "allow-discrete"],
+                    default: ["normal"],
+                    types: [],
+                },
+            },
+        ],
     ],
     [
         {
-            shorthand: 'animation',
+            shorthand: "animation",
             separator: {
-                typ: 'Comma'
+                typ: "Comma",
             },
-            pattern: 'animation-name animation-duration animation-timing-function animation-delay animation-iteration-count animation-direction animation-fill-mode animation-play-state animation-timeline',
-            default: ['1', '0s', '0ms', 'none', 'ease', 'normal', 'running', 'auto']
+            pattern:
+                "animation-name animation-duration animation-timing-function animation-delay animation-iteration-count animation-direction animation-fill-mode animation-play-state animation-timeline",
+            default: ["1", "0s", "0ms", "none", "ease", "normal", "running", "auto"],
         },
         [
             {
-                shorthand: 'animation-name',
+                shorthand: "animation-name",
                 properties: {
-
-                    keywords: ['none'],
-                    default: ['none'],
-                    types: ['Iden']
-                }
+                    keywords: ["none"],
+                    default: ["none"],
+                    types: ["Iden"],
+                },
             },
             {
-                shorthand: 'animation-duration',
+                shorthand: "animation-duration",
                 properties: {
-                    keywords: ['auto'],
-                    default: ['0s', '0ms', 'auto'],
-                    types: ['Time'],
+                    keywords: ["auto"],
+                    default: ["0s", "0ms", "auto"],
+                    types: ["Time"],
                     mapping: {
-                        'auto': '0s'
-                    }
-                }
+                        auto: "0s",
+                    },
+                },
             },
             {
-                shorthand: 'animation-timing-function',
+                shorthand: "animation-timing-function",
                 properties: {
-                    keywords: ['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'step-start', 'step-end'],
-                    default: ['ease'],
-                    types: ['TimingFunction'],
+                    keywords: ["ease", "ease-in", "ease-out", "ease-in-out", "linear", "step-start", "step-end"],
+                    default: ["ease"],
+                    types: ["TimingFunction"],
                     mapping: {
-                        'cubic-bezier(.25,.1,.25,1)': 'ease',
-                        'cubic-bezier(0,0,1,1)': 'linear',
-                        'cubic-bezier(.42,0,1,1)': 'ease-in',
-                        'cubic-bezier(0,0,.58,1)': 'ease-out',
-                        'cubic-bezier(.42,0,.58,.42)': 'ease-in-out'
-                    }
-                }
+                        "cubic-bezier(.25,.1,.25,1)": "ease",
+                        "cubic-bezier(0,0,1,1)": "linear",
+                        "cubic-bezier(.42,0,1,1)": "ease-in",
+                        "cubic-bezier(0,0,.58,1)": "ease-out",
+                        "cubic-bezier(.42,0,.58,.42)": "ease-in-out",
+                    },
+                },
             },
             {
-                shorthand: 'animation-delay',
+                shorthand: "animation-delay",
                 properties: {
                     keywords: [],
-                    default: ['0s', '0ms'],
-                    types: ['Time']
-                }
+                    default: ["0s", "0ms"],
+                    types: ["Time"],
+                },
             },
             {
-                shorthand: 'animation-iteration-count',
+                shorthand: "animation-iteration-count",
                 properties: {
-                    keywords: ['infinite'],
-                    default: ['1'],
-                    types: ['Number']
-                }
+                    keywords: ["infinite"],
+                    default: ["1"],
+                    types: ["Number"],
+                },
             },
             {
-                shorthand: 'animation-direction',
+                shorthand: "animation-direction",
                 properties: {
-                    keywords: ['normal', 'reverse', 'alternate', 'alternate-reverse'],
-                    default: ['normal'],
-                    types: []
-                }
+                    keywords: ["normal", "reverse", "alternate", "alternate-reverse"],
+                    default: ["normal"],
+                    types: [],
+                },
             },
             {
-                shorthand: 'animation-fill-mode',
+                shorthand: "animation-fill-mode",
                 properties: {
-                    keywords: ['none', 'forwards', 'backwards', 'both'],
-                    default: ['none'],
-                    types: []
-                }
+                    keywords: ["none", "forwards", "backwards", "both"],
+                    default: ["none"],
+                    types: [],
+                },
             },
             {
-                shorthand: 'animation-play-state',
+                shorthand: "animation-play-state",
                 properties: {
-                    keywords: ['running', 'paused'],
-                    default: ['running'],
-                    types: []
-                }
+                    keywords: ["running", "paused"],
+                    default: ["running"],
+                    types: [],
+                },
             },
             {
-                shorthand: 'animation-timeline',
+                shorthand: "animation-timeline",
                 properties: {
-                    keywords: ['none', 'auto'],
-                    default: ['auto'],
-                    types: ['DashedIden', 'TimelineFunction']
-                }
-            }
-        ]
+                    keywords: ["none", "auto"],
+                    default: ["auto"],
+                    types: ["DashedIden", "TimelineFunction"],
+                },
+            },
+        ],
     ],
     [
         {
-            shorthand: 'text-emphasis',
-            pattern: 'text-emphasis-color text-emphasis-style',
-            default: ['none', 'currentcolor']
+            shorthand: "text-emphasis",
+            pattern: "text-emphasis-color text-emphasis-style",
+            default: ["none", "currentcolor"],
         },
         [
             {
-                shorthand: 'text-emphasis-style',
+                shorthand: "text-emphasis-style",
                 properties: {
-
-                    keywords: ['none', 'filled', 'open', 'dot', 'circle', 'double-circle', 'triangle', 'sesame'],
-                    default: ['none'],
-                    types: ['String']
-                }
+                    keywords: ["none", "filled", "open", "dot", "circle", "double-circle", "triangle", "sesame"],
+                    default: ["none"],
+                    types: ["String"],
+                },
             },
             {
-                shorthand: 'text-emphasis-color',
+                shorthand: "text-emphasis-color",
                 properties: {
-                    default: ['currentcolor'],
-                    types: ['Color']
-                }
-            }
-        ]
+                    default: ["currentcolor"],
+                    types: ["Color"],
+                },
+            },
+        ],
     ],
     [
         {
-            shorthand: 'border',
-            pattern: 'border-color border-style border-width',
-            keywords: ['none'],
-            default: ['0', 'none']
+            shorthand: "border",
+            pattern: "border-color border-style border-width",
+            keywords: ["none"],
+            default: ["0", "none"],
         },
         [
             {
-                shorthand: 'border-color',
-                properties: {}
+                shorthand: "border-color",
+                properties: {},
             },
             {
-                shorthand: 'border-style',
-                properties: {}
+                shorthand: "border-style",
+                properties: {},
             },
             {
-                shorthand: 'border-width',
-                properties: {}
-            }
-        ]
+                shorthand: "border-width",
+                properties: {},
+            },
+        ],
     ],
     [
         {
-            shorthand: 'list-style',
-            pattern: 'list-style-type list-style-position list-style-image',
-            keywords: ['none', 'outside'],
-            default: ['none', 'outside']
+            shorthand: "list-style",
+            pattern: "list-style-type list-style-position list-style-image",
+            keywords: ["none", "outside"],
+            default: ["none", "outside"],
         },
         [
             {
-                shorthand: 'list-style-position',
+                shorthand: "list-style-position",
                 properties: {
                     types: [],
-                    default: ['outside'],
-                    keywords: ['inside', 'outside'],
-                }
+                    default: ["outside"],
+                    keywords: ["inside", "outside"],
+                },
             },
             {
-                shorthand: 'list-style-image',
+                shorthand: "list-style-image",
                 properties: {
-                    default: ['none'],
-                    keywords: ['node'],
-                    types: ['UrlFunc', 'ImageFunc']
-                }
+                    default: ["none"],
+                    keywords: ["node"],
+                    types: ["UrlFunc", "ImageFunc"],
+                },
             },
             {
-                shorthand: 'list-style-type',
-                properties:
-                    {
-                        types: ['String', 'Iden', 'Symbols'],
-                        default: ['disc'],
-                        keywords: ['disc', 'circle', 'square', 'decimal', 'decimal-leading-zero', 'lower-roman', 'upper-roman', 'lower-greek', 'lower-latin', 'upper-latin', 'none']
-                    }
-            }
-        ]
+                shorthand: "list-style-type",
+                properties: {
+                    types: ["String", "Iden", "Symbols"],
+                    default: ["disc"],
+                    keywords: [
+                        "disc",
+                        "circle",
+                        "square",
+                        "decimal",
+                        "decimal-leading-zero",
+                        "lower-roman",
+                        "upper-roman",
+                        "lower-greek",
+                        "lower-latin",
+                        "upper-latin",
+                        "none",
+                    ],
+                },
+            },
+        ],
     ],
 
     [
         {
-            shorthand: 'overflow',
-            pattern: 'overflow-x overflow-y',
-            keywords: ['auto', 'visible', 'hidden', 'clip', 'scroll'],
+            shorthand: "overflow",
+            pattern: "overflow-x overflow-y",
+            keywords: ["auto", "visible", "hidden", "clip", "scroll"],
             default: [],
             mapping: {
-                'visible visible': 'visible',
-                'auto auto': 'auto',
-                'hidden hidden': 'hidden',
-                'scroll scroll': 'scroll'
-            }
+                "visible visible": "visible",
+                "auto auto": "auto",
+                "hidden hidden": "hidden",
+                "scroll scroll": "scroll",
+            },
         },
         [
             {
-                shorthand: 'overflow-x',
-                properties: {
-
-                    default: [],
-                    types: [],
-                    keywords: ['auto', 'visible', 'hidden', 'clip', 'scroll']
-                }
-            },
-            {
-                shorthand: 'overflow-y',
+                shorthand: "overflow-x",
                 properties: {
                     default: [],
                     types: [],
-                    keywords: ['auto', 'visible', 'hidden', 'clip', 'scroll']
-                }
-            }
-        ]
+                    keywords: ["auto", "visible", "hidden", "clip", "scroll"],
+                },
+            },
+            {
+                shorthand: "overflow-y",
+                properties: {
+                    default: [],
+                    types: [],
+                    keywords: ["auto", "visible", "hidden", "clip", "scroll"],
+                },
+            },
+        ],
     ],
     [
         {
-            shorthand: 'outline',
-            pattern: 'outline-color outline-style outline-width',
-            keywords: ['none'],
-            default: ['0', 'none', 'currentcolor']
+            shorthand: "outline",
+            pattern: "outline-color outline-style outline-width",
+            keywords: ["none"],
+            default: ["0", "none", "currentcolor"],
         },
         [
             {
-                shorthand: 'outline-color',
+                shorthand: "outline-color",
                 properties: {
-                    types: ['Color'],
-                    default: ['currentcolor'],
-                    keywords: ['currentcolor'],
-                }
+                    types: ["Color"],
+                    default: ["currentcolor"],
+                    keywords: ["currentcolor"],
+                },
             },
             {
-                shorthand: 'outline-style',
+                shorthand: "outline-style",
                 properties: {
                     types: [],
-                    default: ['none'],
-                    keywords: ['auto', 'none', 'dotted', 'dashed', 'solid', 'double', 'groove', 'ridge', 'inset', 'outset']
-                }
+                    default: ["none"],
+                    keywords: [
+                        "auto",
+                        "none",
+                        "dotted",
+                        "dashed",
+                        "solid",
+                        "double",
+                        "groove",
+                        "ridge",
+                        "inset",
+                        "outset",
+                    ],
+                },
             },
             {
-                shorthand: 'outline-width',
+                shorthand: "outline-width",
                 properties: {
-                    types: ['Length', 'Perc'],
-                    default: ['medium'],
-                    keywords: ['thin', 'medium', 'thick']
-                }
-            }
-        ]
+                    types: ["Length", "Perc"],
+                    default: ["medium"],
+                    keywords: ["thin", "medium", "thick"],
+                },
+            },
+        ],
     ],
     [
         {
-            shorthand: 'font',
-            pattern: 'font-weight font-style font-size line-height font-stretch font-variant font-family',
-            keywords: ['caption', 'icon', 'menu', 'message-box', 'small-caption', 'status-bar', '-moz-window, ', '-moz-document, ', '-moz-desktop, ', '-moz-info, ', '-moz-dialog', '-moz-button', '-moz-pull-down-menu', '-moz-list', '-moz-field'],
-            default: []
+            shorthand: "font",
+            pattern: "font-weight font-style font-size line-height font-stretch font-variant font-family",
+            keywords: [
+                "caption",
+                "icon",
+                "menu",
+                "message-box",
+                "small-caption",
+                "status-bar",
+                "-moz-window, ",
+                "-moz-document, ",
+                "-moz-desktop, ",
+                "-moz-info, ",
+                "-moz-dialog",
+                "-moz-button",
+                "-moz-pull-down-menu",
+                "-moz-list",
+                "-moz-field",
+            ],
+            default: [],
         },
         [
             {
-                shorthand: 'font-weight',
+                shorthand: "font-weight",
                 properties: {
-                    types: ['Number'],
-                    default: ['400', 'normal'],
-                    keywords: ['normal', 'bold', 'lighter', 'bolder'],
+                    types: ["Number"],
+                    default: ["400", "normal"],
+                    keywords: ["normal", "bold", "lighter", "bolder"],
                     constraints: {
                         value: {
-                            min: '1', max: '1000'
-                        }
+                            min: "1",
+                            max: "1000",
+                        },
                     },
                     mapping: {
-                        thin: '100',
-                        hairline: '100',
-                        'extra light': '200',
-                        'ultra light': '200',
-                        'light': '300',
-                        'normal': '400',
-                        regular: '400',
-                        'medium': '500',
-                        'semi bold': '600',
-                        'demi bold': '600',
-                        'bold': '700',
-                        'extra bold': '800',
-                        'ultra bold': '800',
-                        'black': '900',
-                        'heavy': '900',
-                        'extra black': '950',
-                        'ultra black': '950'
-                    }
-                }
+                        thin: "100",
+                        hairline: "100",
+                        "extra light": "200",
+                        "ultra light": "200",
+                        light: "300",
+                        normal: "400",
+                        regular: "400",
+                        medium: "500",
+                        "semi bold": "600",
+                        "demi bold": "600",
+                        bold: "700",
+                        "extra bold": "800",
+                        "ultra bold": "800",
+                        black: "900",
+                        heavy: "900",
+                        "extra black": "950",
+                        "ultra black": "950",
+                    },
+                },
             },
             {
-                shorthand: 'font-style',
+                shorthand: "font-style",
                 properties: {
-                    types: ['Angle'],
-                    default: ['normal'],
-                    keywords: ['normal', 'italic', 'oblique']
-                }
+                    types: ["Angle"],
+                    default: ["normal"],
+                    keywords: ["normal", "italic", "oblique"],
+                },
             },
             {
-                shorthand: 'font-size',
+                shorthand: "font-size",
                 properties: {
-                    types: ['Length', 'Perc'],
+                    types: ["Length", "Perc"],
                     default: [],
-                    keywords: ['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large', 'xxx-large', 'larger', 'smaller'],
-                    required: true
-                }
+                    keywords: [
+                        "xx-small",
+                        "x-small",
+                        "small",
+                        "medium",
+                        "large",
+                        "x-large",
+                        "xx-large",
+                        "xxx-large",
+                        "larger",
+                        "smaller",
+                    ],
+                    required: true,
+                },
             },
             {
-                shorthand: 'line-height',
+                shorthand: "line-height",
                 properties: {
-                    types: ['Length', 'Perc', 'Number'],
-                    default: ['normal'],
-                    keywords: ['normal'],
-                    previous: 'font-size',
+                    types: ["Length", "Perc", "Number"],
+                    default: ["normal"],
+                    keywords: ["normal"],
+                    previous: "font-size",
                     prefix: {
-                        typ: 'Literal',
-                        val: '/'
-                    }
-                }
+                        typ: "Literal",
+                        val: "/",
+                    },
+                },
             },
             {
-                shorthand: 'font-stretch',
+                shorthand: "font-stretch",
                 properties: {
-                    types: ['Perc'],
-                    default: ['normal'],
-                    keywords: ['ultra-condensed', 'extra-condensed', 'condensed', 'semi-condensed', 'normal', 'semi-expanded', 'expanded', 'extra-expanded', 'ultra-expanded'],
+                    types: ["Perc"],
+                    default: ["normal"],
+                    keywords: [
+                        "ultra-condensed",
+                        "extra-condensed",
+                        "condensed",
+                        "semi-condensed",
+                        "normal",
+                        "semi-expanded",
+                        "expanded",
+                        "extra-expanded",
+                        "ultra-expanded",
+                    ],
                     mapping: {
-                        'ultra-condensed': '50%',
-                        'extra-condensed': '62.5%',
-                        'condensed': '75%',
-                        'semi-condensed': '87.5%',
-                        'normal': '100%',
-                        'semi-expanded': '112.5%',
-                        'expanded': '125%',
-                        'extra-expanded': '150%',
-                        'ultra-expanded': '200%'
-                    }
-                }
+                        "ultra-condensed": "50%",
+                        "extra-condensed": "62.5%",
+                        condensed: "75%",
+                        "semi-condensed": "87.5%",
+                        normal: "100%",
+                        "semi-expanded": "112.5%",
+                        expanded: "125%",
+                        "extra-expanded": "150%",
+                        "ultra-expanded": "200%",
+                    },
+                },
             },
             {
-                shorthand: 'font-variant',
+                shorthand: "font-variant",
                 properties: {
                     types: [],
-                    default: ['normal'],
-                    keywords: ['normal', 'none', 'common-ligatures', 'no-common-ligatures', 'discretionary-ligatures', 'no-discretionary-ligatures', 'historical-ligatures', 'no-historical-ligatures', 'contextual', 'no-contextual', 'historical-forms', 'small-caps', 'all-small-caps', 'petite-caps', 'all-petite-caps', 'unicase', 'titling-caps', 'ordinal', 'slashed-zero', 'lining-nums', 'oldstyle-nums', 'proportional-nums', 'tabular-nums', 'diagonal-fractions', 'stacked-fractions', 'ordinal', 'slashed-zero', 'ruby', 'jis78', 'jis83', 'jis90', 'jis04', 'simplified', 'traditional', 'full-width', 'proportional-width', 'ruby', 'sub', 'super', 'text', 'emoji', 'unicode']
-                }
+                    default: ["normal"],
+                    keywords: [
+                        "normal",
+                        "none",
+                        "common-ligatures",
+                        "no-common-ligatures",
+                        "discretionary-ligatures",
+                        "no-discretionary-ligatures",
+                        "historical-ligatures",
+                        "no-historical-ligatures",
+                        "contextual",
+                        "no-contextual",
+                        "historical-forms",
+                        "small-caps",
+                        "all-small-caps",
+                        "petite-caps",
+                        "all-petite-caps",
+                        "unicase",
+                        "titling-caps",
+                        "ordinal",
+                        "slashed-zero",
+                        "lining-nums",
+                        "oldstyle-nums",
+                        "proportional-nums",
+                        "tabular-nums",
+                        "diagonal-fractions",
+                        "stacked-fractions",
+                        "ordinal",
+                        "slashed-zero",
+                        "ruby",
+                        "jis78",
+                        "jis83",
+                        "jis90",
+                        "jis04",
+                        "simplified",
+                        "traditional",
+                        "full-width",
+                        "proportional-width",
+                        "ruby",
+                        "sub",
+                        "super",
+                        "text",
+                        "emoji",
+                        "unicode",
+                    ],
+                },
             },
             {
-                shorthand: 'font-family',
+                shorthand: "font-family",
                 properties: {
-                    types: ['String', 'Iden'],
+                    types: ["String", "Iden"],
                     default: [],
-                    keywords: ['serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'system-ui', 'ui-serif', 'ui-sans-serif', 'ui-monospace', 'ui-rounded', 'math', 'emoji', 'fangsong'],
+                    keywords: [
+                        "serif",
+                        "sans-serif",
+                        "monospace",
+                        "cursive",
+                        "fantasy",
+                        "system-ui",
+                        "ui-serif",
+                        "ui-sans-serif",
+                        "ui-monospace",
+                        "ui-rounded",
+                        "math",
+                        "emoji",
+                        "fangsong",
+                    ],
                     required: true,
                     multiple: true,
                     separator: {
-                        typ: 'Comma'
-                    }
-                }
-            }
-        ]
+                        typ: "Comma",
+                    },
+                },
+            },
+        ],
     ],
     [
         {
-            shorthand: 'background',
-            pattern: 'background-attachment background-origin background-clip background-color background-image background-repeat background-position background-size',
-            keywords: ['none'],
-            default: ['0 0', 'none', 'auto', 'repeat', 'transparent', '#0000', 'scroll', 'padding-box', 'border-box'],
+            shorthand: "background",
+            pattern:
+                "background-attachment background-origin background-clip background-color background-image background-repeat background-position background-size",
+            keywords: ["none"],
+            default: ["0 0", "none", "auto", "repeat", "transparent", "#0000", "scroll", "padding-box", "border-box"],
             multiple: true,
             set: {
-
-                'background-origin': ['background-clip']
+                "background-origin": ["background-clip"],
             },
-            separator: {typ: 'Comma'}
+            separator: { typ: "Comma" },
         },
         [
             {
-                shorthand: 'background-repeat',
+                shorthand: "background-repeat",
                 properties: {
                     types: [],
-                    default: ['repeat'],
+                    default: ["repeat"],
                     multiple: true,
-                    keywords: ['repeat-x', 'repeat-y', 'repeat', 'space', 'round', 'no-repeat'],
+                    keywords: ["repeat-x", "repeat-y", "repeat", "space", "round", "no-repeat"],
                     mapping: {
-                        'repeat no-repeat': 'repeat-x',
-                        'no-repeat repeat': 'repeat-y',
-                        'repeat repeat': 'repeat',
-                        'space space': 'space',
-                        'round round': 'round',
-                        'no-repeat no-repeat': 'no-repeat'
-                    }
-                }
+                        "repeat no-repeat": "repeat-x",
+                        "no-repeat repeat": "repeat-y",
+                        "repeat repeat": "repeat",
+                        "space space": "space",
+                        "round round": "round",
+                        "no-repeat no-repeat": "no-repeat",
+                    },
+                },
             },
             {
-                shorthand: 'background-color',
+                shorthand: "background-color",
                 properties: {
-                    types: ['Color'],
-                    default: ['#0000', 'transparent'],
+                    types: ["Color"],
+                    default: ["#0000", "transparent"],
                     multiple: true,
-                    keywords: []
-                }
+                    keywords: [],
+                },
             },
             {
-                shorthand: 'background-image',
+                shorthand: "background-image",
                 properties: {
-                    types: ['UrlFunc', 'ImageFunc'],
-                    default: ['none'],
-                    keywords: ['none']
-                }
+                    types: ["UrlFunc", "ImageFunc"],
+                    default: ["none"],
+                    keywords: ["none"],
+                },
             },
             {
-                shorthand: 'background-attachment',
+                shorthand: "background-attachment",
                 properties: {
                     types: [],
-                    default: ['scroll'],
+                    default: ["scroll"],
                     multiple: true,
-                    keywords: ['scroll', 'fixed', 'local']
-                }
+                    keywords: ["scroll", "fixed", "local"],
+                },
             },
             {
-                shorthand: 'background-clip',
+                shorthand: "background-clip",
                 properties: {
                     types: [],
-                    default: ['border-box'],
+                    default: ["border-box"],
                     multiple: true,
-                    keywords: ['border-box', 'padding-box', 'content-box', 'text']
-                }
+                    keywords: ["border-box", "padding-box", "content-box", "text"],
+                },
             },
             {
-                shorthand: 'background-origin',
+                shorthand: "background-origin",
                 properties: {
                     types: [],
-                    default: ['padding-box'],
+                    default: ["padding-box"],
                     multiple: true,
-                    keywords: ['border-box', 'padding-box', 'content-box']
-                }
+                    keywords: ["border-box", "padding-box", "content-box"],
+                },
             },
             {
-                shorthand: 'background-position',
+                shorthand: "background-position",
                 properties: {
                     multiple: true,
-                    types: ['Perc', 'Length'],
-                    default: ['0 0', 'top left', 'left top'],
-                    keywords: ['top', 'left', 'center', 'bottom', 'right'],
+                    types: ["Perc", "Length"],
+                    default: ["0 0", "top left", "left top"],
+                    keywords: ["top", "left", "center", "bottom", "right"],
                     mapping: {
-                        left: '0',
-                        top: '0',
-                        center: '50%',
-                        'center center': '50%',
-                        '50% 50%': '50%',
-                        bottom: '100%',
-                        right: '100%'
+                        left: "0",
+                        top: "0",
+                        center: "50%",
+                        "center center": "50%",
+                        "50% 50%": "50%",
+                        bottom: "100%",
+                        right: "100%",
                     },
                     constraints: {
                         mapping: {
-                            max: 2
-                        }
-                    }
-                }
+                            max: 2,
+                        },
+                    },
+                },
             },
             {
-                shorthand: 'background-size',
+                shorthand: "background-size",
                 properties: {
                     multiple: true,
-                    previous: 'background-position',
-                    prefix: {typ: 'Literal', val: '/'},
-                    types: ['Perc', 'Length'],
-                    default: ['auto', 'auto auto'],
-                    keywords: ['auto', 'cover', 'contain'],
+                    previous: "background-position",
+                    prefix: { typ: "Literal", val: "/" },
+                    types: ["Perc", "Length"],
+                    default: ["auto", "auto auto"],
+                    keywords: ["auto", "cover", "contain"],
                     mapping: {
-                        'auto auto': 'auto'
-                    }
-                }
-            }
-        ]
-    ]
+                        "auto auto": "auto",
+                    },
+                },
+            },
+        ],
+    ],
     // @ts-ignore
-]).reduce((acc: ShorthandMapType, data: ShorthandMapType[]) => Object.assign(acc, createMap(...data)), <ShorthandMapType>{});
+]).reduce(
+    (acc: ShorthandMapType, data: ShorthandMapType[]) => Object.assign(acc, createMap(...data)),
+    <ShorthandMapType>{},
+);
 
 /*
 
@@ -769,123 +874,153 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
  */
 export const properties: PropertySetType = [
     {
-        shorthand: 'gap',
-        properties: ['row-gap', 'column-gap'],
-        types: ['Length', 'Perc'],
+        shorthand: "gap",
+        properties: ["row-gap", "column-gap"],
+        types: ["Length", "Perc"],
         multiple: false,
         separator: null,
-        keywords: ['normal']
+        keywords: ["normal"],
     },
     {
-        shorthand: 'inset',
-        properties: ['top', 'right', 'bottom', 'left'],
-        types: ['Length', 'Perc'],
+        shorthand: "inset",
+        properties: ["top", "right", "bottom", "left"],
+        types: ["Length", "Perc"],
         multiple: false,
         separator: null,
-        keywords: ['auto']
+        keywords: ["auto"],
     },
     {
-        shorthand: 'margin',
-        properties: ['margin-top', 'margin-right', 'margin-bottom', 'margin-left'],
-        types: ['Length', 'Perc'],
+        shorthand: "margin",
+        properties: ["margin-top", "margin-right", "margin-bottom", "margin-left"],
+        types: ["Length", "Perc"],
         multiple: false,
         separator: null,
-        keywords: ['auto']
+        keywords: ["auto"],
     },
     {
-        shorthand: 'padding',
-        properties: ['padding-top', 'padding-right', 'padding-bottom', 'padding-left'],
-        types: ['Length', 'Perc'],
+        shorthand: "padding",
+        properties: ["padding-top", "padding-right", "padding-bottom", "padding-left"],
+        types: ["Length", "Perc"],
         // multiple: false,
         // separator:null ,
-        keywords: []
+        keywords: [],
     },
     {
-        shorthand: 'border-radius',
-        properties: ['border-top-left-radius', 'border-top-right-radius', 'border-bottom-right-radius', 'border-bottom-left-radius'],
-        types: ['Length', 'Perc'],
+        shorthand: "border-radius",
+        properties: [
+            "border-top-left-radius",
+            "border-top-right-radius",
+            "border-bottom-right-radius",
+            "border-bottom-left-radius",
+        ],
+        types: ["Length", "Perc"],
         multiple: true,
         separator: {
-            typ: 'Literal',
-            val: '/'
+            typ: "Literal",
+            val: "/",
         },
-        keywords: []
+        keywords: [],
     },
     {
-        shorthand: 'border-width',
-        map: 'border',
-        properties: [
-            'border-top-width',
-            'border-right-width',
-            'border-bottom-width',
-            'border-left-width'
-        ],
-        types: ['Length', 'Perc'],
+        shorthand: "border-width",
+        map: "border",
+        properties: ["border-top-width", "border-right-width", "border-bottom-width", "border-left-width"],
+        types: ["Length", "Perc"],
         // multiple: false,
         // separator: null,
-        default: ['medium'],
-        keywords: ['thin', 'medium', 'thick']
+        default: ["medium"],
+        keywords: ["thin", "medium", "thick"],
     },
     {
-        shorthand: 'border-style',
-        map: 'border',
-        properties: ['border-top-style', 'border-right-style', 'border-bottom-style', 'border-left-style'],
+        shorthand: "border-style",
+        map: "border",
+        properties: ["border-top-style", "border-right-style", "border-bottom-style", "border-left-style"],
         types: [],
         // multiple: false,
         // separator: null,
-        default: ['none'],
-        keywords: ['none', 'hidden', 'dotted', 'dashed', 'solid', 'double', 'groove', 'ridge', 'inset', 'outset']
+        default: ["none"],
+        keywords: ["none", "hidden", "dotted", "dashed", "solid", "double", "groove", "ridge", "inset", "outset"],
     },
     {
-        shorthand: 'border-color',
-        map: 'border',
-        properties: ['border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color'],
-        types: ['Color'],
+        shorthand: "border-color",
+        map: "border",
+        properties: ["border-top-color", "border-right-color", "border-bottom-color", "border-left-color"],
+        types: ["Color"],
         // multiple: false,
         // separator: null,
-        default: ['currentcolor'],
-        keywords: []
+        default: ["currentcolor"],
+        keywords: [],
     },
     {
-        shorthand: 'grid-row',
-        properties: [
-            'grid-row-start',
-            'grid-row-end'
-        ],
-        types: ['Iden', 'Number'],
+        shorthand: "grid-row",
+        properties: ["grid-row-start", "grid-row-end"],
+        types: ["Iden", "Number"],
         multiple: true,
         valueSeparator: {
-            typ: 'Literal',
-            val: '/'
+            typ: "Literal",
+            val: "/",
         },
-        default: ['auto'],
-        keywords: ['auto', 'span']
-    }
-].reduce((acc: PropertySetType, data) => {
+        default: ["auto"],
+        keywords: ["auto", "span"],
+    },
+].reduce(
+    (acc: PropertySetType, data) => {
+        if (data.map) {
+            // console.debug({data});
 
-    if (data.map) {
+            // @ts-ignore
+            (<PropertyMapType>map[data.map].properties[data.shorthand]).types = data.types;
+            // @ts-ignore
+            (<PropertyMapType>map[data.map].properties[data.shorthand]).default = data.default;
+            // @ts-ignore
+            (<PropertyMapType>map[data.map].properties[data.shorthand]).keywords = data.keywords;
 
-        // console.debug({data});
+            // @ts-ignore
+            // (<PropertyMapType>map[data.shorthand]).types = data.types;
+            // @ts-ignore
+            // (<PropertyMapType>map[data.shorthand]).keywords = data.keywords;
+        }
 
-        // @ts-ignore
-        (<PropertyMapType>map[data.map].properties[data.shorthand]).types = data.types;
-        // @ts-ignore
-        (<PropertyMapType>map[data.map].properties[data.shorthand]).default = data.default;
-        // @ts-ignore
-        (<PropertyMapType>map[data.map].properties[data.shorthand]).keywords = data.keywords;
+        return Object.assign(acc, createProperties(<ShorthandPropertyType>data));
+    },
+    <PropertySetType>{},
+);
 
-        // @ts-ignore
-        // (<PropertyMapType>map[data.shorthand]).types = data.types;
-        // @ts-ignore
-        // (<PropertyMapType>map[data.shorthand]).keywords = data.keywords;
+// @ts-expect-error
+export const property = {
+    "transform-origin": {
+        pattern: [
+            ['left|center|right', 'top|center|bottom', '<length>'],
+            ['left|center|right', 'top|center|bottom'],
+            ['center|left|right|center|top|bottom|<length>'],
+        ],
+        mapping: {
+            "center": {
+                typ: "Perc",
+                val: 50,
+            },
+            "left": {
+                typ: "Perc",
+                val: 0,
+            },
+            "right": {
+                typ: "Perc",
+                val: 100,
+            },
+            "top": {
+                typ: "Perc",
+                val: 0,
+            },
+            "bottom": {
+                typ: "Perc",
+                val: 100,
+            }
+        },
+    },
+} as Record<string, SinglePropertyTypeMapping>;
 
-    }
+const result = JSON.stringify({ properties, map, property });
 
-    return Object.assign(acc, createProperties(<ShorthandPropertyType>data));
-}, <PropertySetType>{});
-
-const result = JSON.stringify({properties, map});
-
-await writeFile(import.meta.dirname + '/../src/config.json', result);
+await writeFile(import.meta.dirname + "/../src/config.json", result);
 
 console.debug(result);

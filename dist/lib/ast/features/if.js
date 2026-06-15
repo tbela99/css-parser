@@ -184,8 +184,7 @@ class ExpandIfFeature {
         }
     }
     run(declaration) {
-        const cache = new Set();
-        const result = processNode(declaration, cache);
+        const result = processNode(declaration, new Set());
         let i;
         for (const n of result) {
             for (const { node } of walk(n)) {

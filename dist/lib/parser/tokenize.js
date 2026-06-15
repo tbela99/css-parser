@@ -1,6 +1,6 @@
 import { EnumToken, ColorType } from '../ast/types.js';
 import { definedPropertySettings, wildCardFuncs, whenElseFunc, transformFunctions, mathFuncs, colorsFunc, timingFunc, supportFunc, generalEnclosedFunc, timelineFunc, imageFunc, gridTemplateFunc, urlFunc, containerFunc } from '../syntax/constants.js';
-import { isDigit, isPseudo, isIdent, isNumber, isWhiteSpace, isNewLine, isHexColor, isHash, isPercentage, parseDimension } from '../syntax/syntax.js';
+import { isDigit, isPseudo, isIdent, isWhiteSpace, isNumber, isNewLine, isHexColor, isHash, isPercentage, parseDimension } from '../syntax/syntax.js';
 
 const SymbolsMapTokens = {
     "+": EnumToken.Plus,
@@ -408,10 +408,62 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                         break;
                     }
                     else if (isIdent(buffer)) {
-                        result.push(yieldResult(buffer, parseInfo, buffer.startsWith("--")
+                        const hint = buffer.startsWith("--")
                             ? EnumToken.CustomFunctionTokenDefType
-                            : (SymbolsMapTokens[buffer.toLowerCase() + "("] ?? EnumToken.FunctionTokenDefType)));
+                            : (SymbolsMapTokens[buffer.toLowerCase() + "("] ?? EnumToken.FunctionTokenDefType);
+                        result.push(yieldResult(buffer, parseInfo, hint));
                         buffer = "";
+                        if (hint === EnumToken.UrlFunctionTokenDefType) {
+                            value = peek(parseInfo);
+                            // consume an <url>
+                            while (isWhiteSpace((charCode = value.charCodeAt(0)))) {
+                                buffer += next(parseInfo);
+                                value = peek(parseInfo);
+                                charCode = value.charCodeAt(0);
+                                if (value === "/" && match(parseInfo, "/*")) {
+                                    if (buffer.length > 0) {
+                                        result.push(yieldResult(buffer, parseInfo));
+                                        buffer = "";
+                                    }
+                                    buffer += next(parseInfo, 2);
+                                    while ((value = next(parseInfo))) {
+                                        if (value == "*") {
+                                            buffer += value;
+                                            if (match(parseInfo, "/")) {
+                                                result.push(yieldResult(buffer + next(parseInfo), parseInfo, EnumToken.CommentTokenType));
+                                                buffer = "";
+                                                break;
+                                            }
+                                        }
+                                        else {
+                                            buffer += value;
+                                        }
+                                    }
+                                    if (buffer.length > 0) {
+                                        result.push(yieldResult(buffer, parseInfo, EnumToken.BadCommentTokenType));
+                                        buffer = "";
+                                    }
+                                    value = peek(parseInfo);
+                                    charCode = value.charCodeAt(0);
+                                }
+                            }
+                            if (buffer.length > 0) {
+                                result.push(yieldResult(buffer, parseInfo, EnumToken.WhitespaceTokenType));
+                                buffer = "";
+                            }
+                            if (value === ")" || value === '"' || value === "'") {
+                                break;
+                            }
+                            do {
+                                buffer += next(parseInfo);
+                                value = peek(parseInfo);
+                                charCode = value.charCodeAt(0);
+                            } while (value !== ")" && !isWhiteSpace(charCode) && !(value === '/' && match(parseInfo, "/*")));
+                            if (buffer.length > 0) {
+                                result.push(yieldResult(buffer, parseInfo, peek(parseInfo) === "" ? EnumToken.BadUrlTokenType : EnumToken.UrlTokenTokenType));
+                                buffer = "";
+                            }
+                        }
                         break;
                     }
                 }

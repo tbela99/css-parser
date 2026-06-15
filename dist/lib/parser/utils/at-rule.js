@@ -3,12 +3,6 @@ import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { getSyntaxRule } from '../../validation/config.js';
 import { trimArray, matchAllSyntax, createValidationContext } from '../../validation/match.js';
 
-// export const mediaQueryConditionEnum: Set<EnumToken> = new Set([
-//     EnumToken.ParensTokenType,
-//     EnumToken.IdenTokenType,
-//     EnumToken.MediaQueryConditionTokenType,
-//     EnumToken.MediaQueryUnaryFeatureTokenType,
-// ]);
 function matchAtRuleSyntax(atRule, stream, options) {
     const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + atRule.nam);
     const syntax = syntaxRules?.getPreludeRules()?.slice?.(1);

@@ -15335,9 +15335,50 @@ var map = {
 		shorthand: "background"
 	}
 };
+var property = {
+	"transform-origin": {
+		pattern: [
+			[
+				"left|center|right",
+				"top|center|bottom",
+				"<length>"
+			],
+			[
+				"left|center|right",
+				"top|center|bottom"
+			],
+			[
+				"center|left|right|center|top|bottom|<length>"
+			]
+		],
+		mapping: {
+			center: {
+				typ: "Perc",
+				val: 50
+			},
+			left: {
+				typ: "Perc",
+				val: 0
+			},
+			right: {
+				typ: "Perc",
+				val: 100
+			},
+			top: {
+				typ: "Perc",
+				val: 0
+			},
+			bottom: {
+				typ: "Perc",
+				val: 100
+			}
+		}
+	}
+};
 var config$2 = {
 	properties: properties,
-	map: map
+	map: map,
+	property: property
 };
 
 Object.freeze(config$2);
@@ -16088,7 +16129,7 @@ class PropertyList {
             }
             let propertyName = declaration.nam;
             let shortHandType;
-            let shorthand;
+            let shorthand = null;
             if (propertyName in config$1.properties) {
                 // @ts-ignore
                 if ("map" in config$1.properties[propertyName]) {
@@ -16106,6 +16147,11 @@ class PropertyList {
                 shortHandType = "map";
                 // @ts-ignore
                 shorthand = config$1.map[propertyName].shorthand;
+            }
+            else if (propertyName in config$1.property) {
+                shortHandType = "single";
+                // @ts-ignore
+                shorthand = config$1.property[propertyName];
             }
             // @ts-ignore
             if (shortHandType == "map") {
@@ -16132,10 +16178,70 @@ class PropertyList {
                 this.declarations.get(shorthand).add(declaration);
             }
             else {
+                if (shorthand != null) {
+                    this.mapValues(declaration, shorthand);
+                }
                 this.declarations.set(propertyName, declaration);
             }
         }
         return this;
+    }
+    mapValues(declaration, mapping) {
+        let name;
+        let values = declaration.val;
+        if (mapping.pattern != null) {
+            // match pattern
+            for (const patterns of mapping.pattern) {
+                const set = new Set(values.filter((v) => v.typ !== exports.EnumToken.CommentTokenType && v.typ !== exports.EnumToken.WhitespaceTokenType));
+                const val = [];
+                for (const pattern of patterns) {
+                    switch (pattern) {
+                        case "<length>":
+                            for (const v of set) {
+                                if (v.typ === exports.EnumToken.LengthTokenType ||
+                                    (v.typ === exports.EnumToken.NumberTokenType && v.val === 0)) {
+                                    val.push(v);
+                                    set.delete(v);
+                                }
+                            }
+                        default: {
+                            for (const v of set) {
+                                if (v.typ === exports.EnumToken.IdenTokenType) {
+                                    const value = v.val.toLowerCase();
+                                    if (value === pattern || new RegExp(`(^|\|)${pattern}(\||$)`).test(value)) {
+                                        val.push(v);
+                                        set.delete(v);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (set.size === 0) {
+                    values = val.reduce((acc, curr) => {
+                        if (acc.length > 0) {
+                            acc.push({ typ: exports.EnumToken.WhitespaceTokenType });
+                        }
+                        acc.push(curr);
+                        return acc;
+                    }, []);
+                    break;
+                }
+            }
+        }
+        for (const val of declaration.val) {
+            if (val.typ === exports.EnumToken.IdenTokenType) {
+                name = val.val.toLowerCase();
+                if (mapping.mapping[name] != null) {
+                    // @ts-expect-error
+                    Object.assign(val, mapping.mapping[name], { typ: exports.EnumToken[mapping.mapping[name].typ] });
+                }
+            }
+        }
+        if (values != declaration.val) {
+            declaration.val.length = 0;
+            declaration.val.push(...values);
+        }
     }
     [Symbol.iterator]() {
         let iterator = this.declarations.values();
@@ -17426,9 +17532,10 @@ function trimWhiteSpaceTokens(tokens) {
 
 /**
  *
- * @param node he nod to clone
- * @param cloneChildren deep clone
- * @param cloneMap a map of existing children as keys and their clones as values
+ * clone an ast node or value
+ * @param node
+ * @param cloneChildren
+ * @param cloneMap
  * @returns
  */
 function cloneNode(node, cloneChildren = false, cloneMap = null) {
@@ -17975,6 +18082,15 @@ function parseDeclaration(tokens, parent, options, errors) {
         if (value.typ === exports.EnumToken.IdenTokenType && isColor(value)) {
             parseColor(value);
         }
+        // else if (value.typ === EnumToken.UrlFunctionTokenType) {
+        //     const token = (value as FunctionToken).chi.find((t: Token) => t.typ === EnumToken.StringTokenType) as StringToken;
+        //     if (token != null && urlTokenMatcher.test((token as StringToken).val)) {
+        //         Object.assign(token, {
+        //             typ: EnumToken.UrlTokenTokenType,
+        //             val: (token as StringToken).val.slice(1, -1),
+        //         });
+        //     }
+        // }
     }
     if (name.val === "grid" ||
         name.val === "grid-template-areas" ||
@@ -21375,8 +21491,7 @@ class ExpandIfFeature {
         }
     }
     run(declaration) {
-        const cache = new Set();
-        const result = processNode(declaration, cache);
+        const result = processNode(declaration, new Set());
         let i;
         for (const n of result) {
             for (const { node } of walk(n)) {
@@ -21819,10 +21934,62 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                         break;
                     }
                     else if (isIdent(buffer)) {
-                        result.push(yieldResult(buffer, parseInfo, buffer.startsWith("--")
+                        const hint = buffer.startsWith("--")
                             ? exports.EnumToken.CustomFunctionTokenDefType
-                            : (SymbolsMapTokens[buffer.toLowerCase() + "("] ?? exports.EnumToken.FunctionTokenDefType)));
+                            : (SymbolsMapTokens[buffer.toLowerCase() + "("] ?? exports.EnumToken.FunctionTokenDefType);
+                        result.push(yieldResult(buffer, parseInfo, hint));
                         buffer = "";
+                        if (hint === exports.EnumToken.UrlFunctionTokenDefType) {
+                            value = peek(parseInfo);
+                            // consume an <url>
+                            while (isWhiteSpace((charCode = value.charCodeAt(0)))) {
+                                buffer += next(parseInfo);
+                                value = peek(parseInfo);
+                                charCode = value.charCodeAt(0);
+                                if (value === "/" && match(parseInfo, "/*")) {
+                                    if (buffer.length > 0) {
+                                        result.push(yieldResult(buffer, parseInfo));
+                                        buffer = "";
+                                    }
+                                    buffer += next(parseInfo, 2);
+                                    while ((value = next(parseInfo))) {
+                                        if (value == "*") {
+                                            buffer += value;
+                                            if (match(parseInfo, "/")) {
+                                                result.push(yieldResult(buffer + next(parseInfo), parseInfo, exports.EnumToken.CommentTokenType));
+                                                buffer = "";
+                                                break;
+                                            }
+                                        }
+                                        else {
+                                            buffer += value;
+                                        }
+                                    }
+                                    if (buffer.length > 0) {
+                                        result.push(yieldResult(buffer, parseInfo, exports.EnumToken.BadCommentTokenType));
+                                        buffer = "";
+                                    }
+                                    value = peek(parseInfo);
+                                    charCode = value.charCodeAt(0);
+                                }
+                            }
+                            if (buffer.length > 0) {
+                                result.push(yieldResult(buffer, parseInfo, exports.EnumToken.WhitespaceTokenType));
+                                buffer = "";
+                            }
+                            if (value === ")" || value === '"' || value === "'") {
+                                break;
+                            }
+                            do {
+                                buffer += next(parseInfo);
+                                value = peek(parseInfo);
+                                charCode = value.charCodeAt(0);
+                            } while (value !== ")" && !isWhiteSpace(charCode) && !(value === '/' && match(parseInfo, "/*")));
+                            if (buffer.length > 0) {
+                                result.push(yieldResult(buffer, parseInfo, peek(parseInfo) === "" ? exports.EnumToken.BadUrlTokenType : exports.EnumToken.UrlTokenTokenType));
+                                buffer = "";
+                            }
+                        }
                         break;
                     }
                 }
@@ -27412,12 +27579,6 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
     };
 }
 
-// export const mediaQueryConditionEnum: Set<EnumToken> = new Set([
-//     EnumToken.ParensTokenType,
-//     EnumToken.IdenTokenType,
-//     EnumToken.MediaQueryConditionTokenType,
-//     EnumToken.MediaQueryUnaryFeatureTokenType,
-// ]);
 function matchAtRuleSyntax(atRule, stream, options) {
     const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + atRule.nam);
     const syntax = syntaxRules?.getPreludeRules()?.slice?.(1);
@@ -27441,27 +27602,6 @@ function matchAtRuleSyntax(atRule, stream, options) {
     }
     const { success, errors} = matchAllSyntax(syntax, createValidationContext(stream), options);
     return { success, errors };
-}
-
-function parseAtRulePage(context, stream, options, errors) {
-    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@page");
-    const syntax = syntaxRules?.getPreludeRules?.()?.slice?.(1);
-    let validate = false;
-    for (const token of stream) {
-        if (token.typ !== exports.EnumToken.WhitespaceTokenType && token.typ !== exports.EnumToken.CommentTokenType) {
-            validate = true;
-            break;
-        }
-    }
-    if (!validate) {
-        return {
-            success: true,
-            errors,
-        };
-    }
-    const result = matchAllSyntax(trimSyntaxArray(syntax), createValidationContext(stream), options);
-    errors.push(...result.errors);
-    return { success: result.success, errors };
 }
 
 function parseAtRuleFontFeatureValues(stream, context, options = {}) {
@@ -29154,7 +29294,6 @@ vbbnkit;;;jmjhyg77 * @param options
  * @param parseAsBlock
  */
 function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
-    // const rules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + (stream[0] as AtRuleToken).nam);
     let success = true;
     let atRuleName = stream[0].nam;
     if (atRuleName.startsWith("-")) {
@@ -29414,6 +29553,9 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             if (!result.success) {
                 errors.push(...result.errors);
             }
+            // else {
+            //     parseUrlToken(stream);
+            // }
             const valid = blockAllowed === parseAsBlock && result.success;
             if (valid) {
                 let start = 0;
@@ -29466,7 +29608,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             }
             else {
                 if (stream[0]?.typ == exports.EnumToken.UrlFunctionTokenType &&
-                    stream[0].chi.some((t) => t.typ == exports.EnumToken.StringTokenType)) {
+                    stream[0].chi.some((t) => t.typ == exports.EnumToken.StringTokenType || t.typ == exports.EnumToken.UrlTokenTokenType)) {
                     stream.splice(0, 1, ...stream[0].chi);
                 }
             }
@@ -29682,7 +29824,6 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
         }
         case "page": {
             trimArray(stream);
-            parseAtRulePage(atRule, stream, options, errors);
             // @ts-expect-error
             return Object.defineProperties(Object.assign(atRule, {
                 typ: success ? exports.EnumToken.AtRuleNodeType : exports.EnumToken.InvalidRuleNodeType,
@@ -29837,6 +29978,12 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             }
             else {
                 result = matchAtRuleSyntax(atRule, stream, options);
+                if (result.errors.length > 0) {
+                    errors.push(...result.errors);
+                }
+                // else if (atRuleName === "document") {
+                //     parseUrlToken(stream);
+                // }
                 if (result.success) {
                     let i = 0;
                     const stack = [];

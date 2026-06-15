@@ -22,7 +22,6 @@ import { replaceToken, trimWhiteSpaceTokens } from './utils/token.js';
 import { parseAtRuleContainerQueryList } from './utils/at-rule-container.js';
 import { parseMediaqueryList } from './utils/at-rule-media.js';
 import { matchAtRuleSyntax } from './utils/at-rule.js';
-import { parseAtRulePage } from './utils/at-rule-page.js';
 import { parseAtRuleFontFeatureValues } from './utils/at-rule-font-feature-values.js';
 import { matchGenericSyntax } from './utils/at-rule-generic.js';
 import { memoize } from './utils/cache.js';
@@ -1596,7 +1595,6 @@ vbbnkit;;;jmjhyg77 * @param options
  * @param parseAsBlock
  */
 function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
-    // const rules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + (stream[0] as AtRuleToken).nam);
     let success = true;
     let atRuleName = stream[0].nam;
     if (atRuleName.startsWith("-")) {
@@ -1856,6 +1854,9 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             if (!result.success) {
                 errors.push(...result.errors);
             }
+            // else {
+            //     parseUrlToken(stream);
+            // }
             const valid = blockAllowed === parseAsBlock && result.success;
             if (valid) {
                 let start = 0;
@@ -1908,7 +1909,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             }
             else {
                 if (stream[0]?.typ == EnumToken.UrlFunctionTokenType &&
-                    stream[0].chi.some((t) => t.typ == EnumToken.StringTokenType)) {
+                    stream[0].chi.some((t) => t.typ == EnumToken.StringTokenType || t.typ == EnumToken.UrlTokenTokenType)) {
                     stream.splice(0, 1, ...stream[0].chi);
                 }
             }
@@ -2124,7 +2125,6 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
         }
         case "page": {
             trimArray(stream);
-            parseAtRulePage(atRule, stream, options, errors);
             // @ts-expect-error
             return Object.defineProperties(Object.assign(atRule, {
                 typ: success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
@@ -2279,6 +2279,12 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             }
             else {
                 result = matchAtRuleSyntax(atRule, stream, options);
+                if (result.errors.length > 0) {
+                    errors.push(...result.errors);
+                }
+                // else if (atRuleName === "document") {
+                //     parseUrlToken(stream);
+                // }
                 if (result.success) {
                     let i = 0;
                     const stack = [];

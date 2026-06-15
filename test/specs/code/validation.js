@@ -580,6 +580,24 @@ html, body, div, span, applet, object, iframe,
  min-height: 52px
 }`)).then(() => done(), () => done());
         });
+
+        it('selector validation #29', function (done) {
+
+            transform(`
+@document url(https://www.example.com/) {
+ h1 {
+  color: green
+ }
+}
+`, {
+    beautify: true,
+                validation: true
+            }).then(result => expect(result.code).equals(`@document https://www.example.com/ {
+ h1 {
+  color: green
+ }
+}`)).then(() => done(), () => done());
+        });
     });
 
 }

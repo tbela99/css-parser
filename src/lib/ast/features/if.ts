@@ -310,8 +310,8 @@ export class ExpandIfFeature {
     }
 
     run(declaration: AstDeclaration): AstNode | null {
-        const cache = new Set<AstNode>();
-        const result = processNode(declaration, cache);
+
+        const result = processNode(declaration, new Set<AstNode>());
 
         let i: number;
 

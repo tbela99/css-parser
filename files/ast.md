@@ -6,8 +6,8 @@ category: Guides
 
 ## Ast node types
 
-the ast root node returned by the parser is always a [AstStyleSheet](../docs/interfaces/node.AstStyleSheet.html) node.
-the other node types
+The ast root node returned by the parser is always a [AstStyleSheet](../docs/interfaces/node.AstStyleSheet.html) node.
+The other node types
 are [AstRule](../docs/interfaces/node.AstRule.html), [AstAtRule](../docs/interfaces/node.AstAtRule.html), [AstDeclaration](../docs/interfaces/node.AstDeclaration.html), [AstComment](../docs/interfaces/node.AstComment.html), [AstInvalidRule](../docs/interfaces/node.AstInvalidRule.html), [AstInvalidAtRule](../docs/interfaces/node.AstInvalidAtRule.html), [AstInvalidDeclaration](../docs/interfaces/node.AstInvalidDeclaration.html)
 
 ## Ast node attributes
@@ -16,8 +16,8 @@ are [AstRule](../docs/interfaces/node.AstRule.html), [AstAtRule](../docs/interfa
 
 [Ast rule](../docs/interfaces/node.AstRule.html) _tokens_ attribute is an array
 of [Token](../docs/types/node.Token.html) representing the parsed selector.
-the _sel_ attribute string that contains the rule's selector.
-modifying the sel attribute does not affect the tokens attribute, and similarly, changes to the tokens attribute do not
+The _sel_ attribute string that contains the rule's selector.
+Modifying the sel attribute does not affect the tokens attribute, and similarly, changes to the tokens attribute do not
 update the sel attribute.
 
 ```ts
@@ -56,9 +56,9 @@ console.debug(result.code);
 
 [Ast at-rule](../docs/interfaces/node.AstAtRule.html) _tokens_ attribute is either null or an array
 of [Token](../docs/types/node.Token.html) representing the parsed prelude.
-the _val_ attribute string that contains the at-rule's prelude.
+The _val_ attribute string that contains the at-rule's prelude.
 
-modifying the _val_ attribute does not affect the _tokens_ attribute, and similarly, changes to the _tokens_ attribute do not
+Modifying the _val_ attribute does not affect the _tokens_ attribute, and similarly, changes to the _tokens_ attribute do not
 update the _val_ attribute.
 
 ```ts
@@ -153,7 +153,7 @@ console.debug(result.code);
 
 ## Ast traversal
 
-ast traversal is achieved using [walk()](../docs/functions/node.walk.html)
+Ast traversal is achieved using [walk()](../docs/functions/node.walk.html)
 
 ```ts
 
@@ -179,7 +179,7 @@ for (const {node, parent, root} of walk(ast)) {
 }
 ```
 
-ast traversal can be controlled using a [filter](../docs/media/node.walk.html#walk) function. the filter function returns a value of type [WalkerOption](../docs/types/node.WalkerOption.html).
+Ast traversal can be controlled using a [filter](../docs/media/node.walk.html#walk) function. the filter function returns a value of type [WalkerOption](../docs/types/node.WalkerOption.html).
 if the filter function returns new nodes, those will also be visited.
 
 ```ts
@@ -227,7 +227,7 @@ for (const {node} of walk(result.ast, filter)) {
 
 ### Ast node values traversal
 
-the function [walkValues()](../docs/functions/node.walkValues.html) is used to walk the node attribute's tokens.
+The function [walkValues()](../docs/functions/node.walkValues.html) is used to walk the node attribute's tokens.
 
 ```ts
 

@@ -2,12 +2,7 @@ import type { VisitorNodeMap } from "./visitor.d.ts";
 import type { AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet, Location } from "./ast.d.ts";
 import { SourceMap } from "../lib/renderer/sourcemap/sourcemap.ts";
 import type { PropertyListOptions } from "./parse.d.ts";
-import {
-    EnumToken,
-    ModuleCaseTransformEnum,
-    ModuleScopeEnumOptions,
-    ValidationLevel,
-} from "../lib/ast/types.ts";
+import { EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ValidationLevel } from "../lib/ast/types.ts";
 import type { CssVariableToken, Token } from "./token.d.ts";
 import { FeatureWalkMode } from "../lib/ast/features/type.ts";
 import { mathFuncs } from "../lib/syntax/constants.ts";
@@ -22,99 +17,99 @@ export * from "./walker.d.ts";
 export * from "./parse.d.ts";
 
 /**
- * error description
+ * Error description
  */
 export declare interface ErrorDescription {
     /**
-     *  drop rule or declaration
+     *  Drop rule or declaration
      */
 
     action: "drop" | "ignore";
     /**
-     * error message
+     * Error message
      */
     message: string;
     /**
-     * syntax error description
+     * Syntax error description
      */
     syntax?: string | ValidationToken | null;
     /**
-     * error node
+     * Error node
      */
     node?: Token | AstNode | null;
     /**
-     * error location
+     * Error location
      */
     location?: Location;
     /**
-     * error object
+     * Error object
      */
     error?: Error;
     /**
-     * raw tokens
+     * Raw tokens
      */
     rawTokens?: TokenizeResult[];
 }
 
 /**
- * css validation options
+ * CSS validation options
  */
 export interface ValidationOptions {
-
     /**
      * nested rule context
+     * @internal
      */
     nestedRule?: boolean;
 
     /**
-     * enable css validation
+     * enable CSS validation
      *
      * see {@link ValidationLevel}
      */
     validation?: boolean | ValidationLevel;
 
     /**
-     * lenient validation. retain nodes that failed validation
+     * Lenient validation. retain nodes that failed validation
      */
     lenient?: boolean;
 
     /**
-     * visited tokens
+     * Visited tokens
      *
      * @private
      */
     visited?: Map<Token, Set<ValidationToken>>;
-    
+
     /**
-     * is optional
+     * Is optional
      *
      * @private
      */
     isOptional?: boolean | null;
 
     /**
-     * is repeatable
+     * Is repeatable
      *
      * @private
      */
     isRepeatable?: boolean | null;
 
     /**
-     * is list
+     * Is list
      *
      * @private
      */
     isList?: boolean | null;
 
     /**
-     * occurence
+     * Occurence
      *
      * @private
      */
     occurrence?: boolean | null;
 
     /**
-     * at least once
+     * At least once
      *
      * @private
      */
@@ -122,23 +117,23 @@ export interface ValidationOptions {
 }
 
 /**
- * minify options
+ * Minify options
  */
 export interface MinifyOptions {
     /**
-     * enable minification
+     * Enable minification
      */
     minify?: boolean;
     /**
-     * parse color tokens
+     * Parse color tokens
      */
     parseColor?: boolean;
     /**
-     * generate nested rules
+     * Generate nested rules
      */
     nestingRules?: boolean;
     /**
-     * remove duplicate declarations from the same rule. if passed as a string array, duplicated declarations are removed, except for those in the array
+     * Remove duplicate declarations from the same rule. if passed as a string array, duplicated declarations are removed, except for those in the array
      *
      *
      * ```ts
@@ -170,33 +165,31 @@ export interface MinifyOptions {
      */
     removeDuplicateDeclarations?: boolean | string | string[];
     /**
-     * compute shorthand properties
+     * Compute shorthand properties
      */
     computeShorthand?: boolean;
     /**
-     * compute transform functions
-     * see supported functions {@link transformFunctions}
+     * Compute css transform functions
      */
     computeTransform?: boolean;
     /**
-     * compute math functions
-     * see supported functions {@link mathFuncs}
+     * Compute css math functions
      */
     computeCalcExpression?: boolean;
     /**
-     * inline css variables
+     * Inline css variables
      */
     inlineCssVariables?: boolean;
     /**
-     * remove empty ast nodes
+     * Remove empty ast nodes
      */
     removeEmpty?: boolean;
     /**
-     * remove css prefix
+     * Remove css prefix
      */
     removePrefix?: boolean;
     /**
-     * define minification passes.
+     * Define minification passes.
      */
     pass?: number;
 }
@@ -209,22 +202,22 @@ export declare type LoadResult =
 
 export declare interface ModuleOptions {
     /**
-     * use local scope vs global scope
+     * Use local scope vs global scope
      */
     scoped?: boolean | ModuleScopeEnumOptions;
 
     /**
-     * module output file path. it is used to generate the scoped name. if not provided, [options.src](../docs/interfaces/node.ParserOptions.html#src) will be used
+     * Module output file path. it is used to generate the scoped name. if not provided, [options.src](../docs/interfaces/node.ParserOptions.html#src) will be used
      */
     filePath?: string;
 
     /**
-     * generated scope hash length. the default is 5
+     * Generated scope hash length. the default is 5
      */
     hashLength?: number;
 
     /**
-     * the pattern used to generate scoped names. the supported placeholders are:
+     * The pattern used to generate scoped names. the supported placeholders are:
      * - name: the file base name without the extension
      * - hash: the file path hash
      * - local: the local name
@@ -312,7 +305,7 @@ export declare interface ModuleOptions {
     naming?: ModuleCaseTransformEnum;
 
     /**
-     * optional function to generate scoped name
+     * Function to generate scoped name
      * @param localName
      * @param filePath
      * @param pattern see {@link ModuleOptions.pattern}
@@ -327,44 +320,44 @@ export declare interface ModuleOptions {
 }
 
 /**
- * parser options
+ * Parser options
  */
 export declare interface ParserOptions
     extends MinifyOptions, MinifyFeatureOptions, ValidationOptions, PropertyListOptions {
     /**
-     * source file to be used for sourcemap
+     * Source file to be used for sourcemap
      */
     src?: string;
     /**
-     * include sourcemap in the ast. sourcemap info is always generated
+     * Include sourcemap in the ast. Sourcemap info is always generated
      */
     sourcemap?: boolean | "inline";
     /**
-     * remove at-rule charset
+     * Remove at-rule charset
      */
     removeCharset?: boolean;
     /**
-     * resolve import
+     * Resolve import
      */
     resolveImport?: boolean;
     /**
-     * current working directory
+     * Current working directory
      *
      * @internal
      */
     cwd?: string;
     /**
-     * expand nested rules
+     * Expand nested rules
      */
     expandNestingRules?: boolean;
 
     /**
-     * experimental, convert css if() function into legacy syntax.
+     * Experimental, convert css if() function into legacy syntax.
      */
     expandIfSyntax?: boolean;
 
     /**
-     * url and file loader
+     * Url and file loader
      * @param url
      * @param currentDirectory
      * @param responseType
@@ -376,18 +369,18 @@ export declare interface ParserOptions
         responseType?: boolean | ResponseType,
     ) => Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
     /**
-     * get directory name
+     * Get directory name
      * @param path
      *
      * @private
      */
     dirname?: (path: string) => string;
     /**
-     * resolve urls
+     * Resolve urls
      */
     resolveUrls?: boolean;
     /**
-     * url and path resolver
+     * Url and path resolver
      * @param url
      * @param currentUrl
      * @param currentWorkingDirectory
@@ -403,12 +396,12 @@ export declare interface ParserOptions
     };
 
     /**
-     * node visitor
+     * Node visitor
      * {@link VisitorNodeMap | VisitorNodeMap[]}
      */
     visitor?: VisitorNodeMap | VisitorNodeMap[];
     /**
-     * abort signal
+     * Abort signal
      *
      * Example: abort after 10 seconds
      * ```ts
@@ -421,38 +414,38 @@ export declare interface ParserOptions
      */
     signal?: AbortSignal;
     /**
-     * set parent node
+     * Set parent node
      *
      * @private
      */
     setParent?: boolean;
     /**
-     * cache
+     * Cache
      *
      * @private
      */
     cache?: WeakMap<AstNode, string>;
 
     /**
-     * css modules options
+     * CSS modules options
      */
     module?: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions;
 
     /**
-     * tokenizing info
+     * Tokenizing info
      * @private
      */
     parseInfo?: ParseInfo;
 }
 
 /**
- * minify feature options
+ * Minify feature options
  *
  * @internal
  */
 export declare interface MinifyFeatureOptions {
     /**
-     * minify features
+     * Minify features
      *
      * @private
      */
@@ -460,31 +453,31 @@ export declare interface MinifyFeatureOptions {
 }
 
 /**
- * minify feature
+ * Minify feature
  *
  * @internal
  */
 export declare interface MinifyFeature {
     /**
-     * accepted tokens
+     * Accepted tokens
      */
     accept?: Set<EnumToken>;
 
     /**
-     * ordering
+     * Ordering
      */
     ordering: number;
     /**
-     * process mode
+     * Process mode
      */
     processMode: FeatureWalkMode;
     /**
-     * register feature
+     * Register feature
      * @param options
      */
     register: (options: MinifyFeatureOptions | ParserOptions) => void;
     /**
-     * run feature
+     * Run feature
      * @param ast
      * @param options
      * @param parent
@@ -503,30 +496,30 @@ export declare interface MinifyFeature {
 }
 
 /**
- * resolved path
+ * Resolved path
  * @internal
  */
 export declare interface ResolvedPath {
     /**
-     * absolute path
+     * Absolute path
      */
     absolute: string;
     /**
-     * relative path
+     * Relative path
      */
     relative: string;
 }
 
 /**
- * ast node render options
+ * Ast node render options
  */
 export declare interface RenderOptions {
     /**
-     * minify css values.
+     * Minify css values.
      */
     minify?: boolean;
     /**
-     * pretty print css
+     * Pretty print css
      *
      * ```ts
      * const result = await transform(css, {beautify: true});
@@ -534,7 +527,7 @@ export declare interface RenderOptions {
      */
     beautify?: boolean;
     /**
-     * remove empty nodes. empty nodes are removed by default
+     * Remove empty nodes. Empty nodes are removed by default
      *
      * ```ts
      *
@@ -550,304 +543,333 @@ export declare interface RenderOptions {
      */
     removeEmpty?: boolean;
     /**
-     * expand nesting rules
+     * Expand nesting rules
      */
     expandNestingRules?: boolean;
     /**
-     * preserve license comments. license comments are comments that start with /*!
+     * Preserve license comments. License comments are comments that start with '/*!'
      */
     preserveLicense?: boolean;
     /**
-     * generate sourcemap object. 'inline' will embed it in the css
+     * Generate sourcemap object. 'inline' will embed it in the css
      */
     sourcemap?: boolean | "inline";
     /**
-     * indent string
+     * Indention string
      */
     indent?: string;
     /**
-     * new line string
+     * New line string
      */
     newLine?: string;
     /**
-     * remove comments
+     * Remove comments
      */
     removeComments?: boolean;
     /**
-     * convert color to the specified color space. 'true' will convert to HEX
+     * Convert color to the specified color space. 'true' will convert to HEX
      */
     convertColor?: boolean | ColorType;
     /**
-     * render the node along with its parents
+     * Render the node along with its parents
      */
     withParents?: boolean;
     /**
-     * output file. used for url resolution
+     * Output file. Used for url resolution
      * @internal
      */
     output?: string;
     /**
-     * current working directory
+     * Current working directory
      * @internal
      */
     cwd?: string;
     /**
-     * resolve path
+     * Resolve path
      * @internal
      */
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => ResolvedPath;
 }
 
 /**
- * transform options
+ * Transform options
  */
 export declare interface TransformOptions extends ParserOptions, RenderOptions {}
 
 /**
- * parse result stats object
+ * Parse result stats object
  */
 export declare interface ParseResultStats {
     /**
-     * source file
+     * Source file
      */
     src: string;
     /**
-     * bytes read
+     * Bytes read
      */
     bytesIn: number;
     /**
-     * bytes read from imported files
+     * Bytes read from imported files
      */
     importedBytesIn: number;
 
     /**
-     * tokenizing processing time
+     * Tokenizing processing time
      */
 
     tokenize: string;
     /**
-     * parsing processing time
+     * Parsing processing time
      */
     parse: string;
     /**
-     * minification processing time
+     * Minification processing time
      */
     minify: string;
     /**
-     * module processing time
+     * Module processing time
      */
     module?: string;
     /**
-     * total time
+     * Total time
      */
     total: string;
     /**
-     * imported files stats
+     * Imported files stats
      */
     imports: ParseResultStats[];
 
     /**
-     * nodes count
+     * Nodes count
      */
     nodesCount: number;
 
     /**
-     * tokens count
+     * Tokens count
      */
     tokensCount: number;
 }
 
 /**
- * parse result object
+ * Parse result object
  */
 export declare interface ParseResult {
     /**
-     * parsed ast tree
+     * Parsed ast tree
      */
     ast: AstStyleSheet;
     /**
-     * parse errors
+     * Parse errors
      */
     errors: ErrorDescription[];
     /**
-     * parse stats
+     * Parse stats
      */
     stats: ParseResultStats;
 
     /**
-     * css module mapping
+     * CSS module mapping
      */
     mapping?: Record<string, string>;
 
+    /**
+     * CSS module variables
+     * @private
+     */
     cssModuleVariables?: Record<string, CssVariableToken>;
 
+    /**
+     * css module import mapping
+     * @private
+     */
     importMapping?: Record<string, Record<string, string>>;
 
     /**
-     * css module reverse mapping
+     * CSS module reverse mapping
      * @private
      */
     revMapping?: Record<string, string>;
 }
 
 /**
- * render result object
+ * Render result object
  */
 export declare interface RenderResult {
     /**
-     * rendered css
+     * Rendered CSS
      */
     code: string;
     /**
-     * render errors
+     * Render errors
      */
     errors: ErrorDescription[];
     /**
-     * render stats
+     * Render stats
      */
     stats: {
         /**
-         * render time
+         * Render time
          */
         total: string;
     };
     /**
-     * source map
+     * Source map
      */
     map?: SourceMap;
 }
 
 /**
- * transform result object
+ * Transform result object
  */
 export declare interface TransformResult extends ParseResult, RenderResult {
     /**
-     * transform stats
+     * Transform stats
      */
     stats: {
         /**
-         * source file
+         * Source file
          */
         src: string;
         /**
-         * bytes read
+         * Bytes read
          */
         bytesIn: number;
         /**
-         * generated css size
+         * Generated CSS size
          */
         bytesOut: number;
         /**
-         * bytes read from imported files
+         * Bytes read from imported files
          */
         importedBytesIn: number;
         /**
-         * parse time
+         * Parse time
          */
         parse: string;
         /**
-         * minify time
+         * Minify time
          */
         minify: string;
         /**
-         * render time
+         * Render time
          */
         render: string;
         /**
-         * total time
+         * Total time
          */
         total: string;
         /**
-         * imported files stats
+         * Imported files stats
          */
         imports: ParseResultStats[];
     };
 }
 
 /**
- * parse token options
+ * Parse token options
  */
 export declare interface ParseTokenOptions extends ParserOptions {}
 
 /**
- * tokenize result object
+ * Tokenize result object
  * @internal
  */
 export declare interface TokenizeResult {
     /**
-     * token
+     * Token
      */
     token: Token;
     /**
-     * bytes in
+     * Bytes in
      */
     bytesIn: number;
 }
 
 /**
- * matched selector object
+ * Matched selector object
  * @internal
  */
 export declare interface MatchedSelector {
     /**
-     * matched selector
+     * Matched selector
      */
     match: string[][];
     /**
-     * selector 1
+     * Selector 1
      */
     selector1: string[][];
     /**
-     * selector 2
+     * Selector 2
      */
     selector2: string[][];
     /**
-     * selectors partially match
+     * Selectors partially match
      */
     eq: boolean;
 }
 
 /**
- * variable scope info object
+ * Variable scope info object
  * @internal
  */
 export declare interface VariableScopeInfo {
     /**
-     * global scope
+     * Global scope
      */
     globalScope: boolean;
     /**
-     * parent nodes
+     * Parent nodes
      */
     parent: Set<AstRule | AstAtRule>;
     /**
-     * declaration count
+     * Declaration count
      */
     declarationCount: number;
     /**
-     * replaceable
+     * Replaceable
      */
     replaceable: boolean;
     /**
-     * declaration node
+     * Declaration node
      */
     node: AstDeclaration;
     /**
-     * declaration values
+     * Declaration values
      */
     values: Token[];
 }
 
 /**
- * source map object
+ * Source map object
  * @internal
  */
 export declare interface SourceMapObject {
+    /**
+     * Source map version
+     */
     version: number;
+    /**
+     * Source file
+     */
     file?: string;
+    /**
+     * Source root
+     */
     sourceRoot?: string;
+    /**
+     * Source files
+     */
     sources?: string[];
+    /**
+     * Source files content
+     */
     sourcesContent?: Array<string | null>;
+    /**
+     * Variable names
+     */
     names?: string[];
+    /**
+     * Mappings
+     */
     mappings: string;
 }

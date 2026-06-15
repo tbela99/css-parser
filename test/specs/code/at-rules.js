@@ -414,7 +414,7 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 `).then((result) => expect(result.code).equals(``));
         });
 
-        it('import #28', function () {
+        it('import #29', function () {
             return transform(`
 
 @import "theme.css" layer("bar");

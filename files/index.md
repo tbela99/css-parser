@@ -7,6 +7,8 @@ children:
     - ./features.md
     - ./install.md
     - ./usage.md
+    - ./parsing.md
+    - ./rendering.md
     - ./css-module.md
     - ./minification.md
     - ./transform.md
@@ -20,6 +22,8 @@ children:
 - [Features](./features.md)
 - [Installation](./install.md)
 - [Usage](./usage.md)
+- [Parsing](./parsing.md)
+- [Rendering](./rendering.md)
 - [CSS module](./css-module.md)
 - [Minification](./minification.md)
 - [Transform](./transform.md)

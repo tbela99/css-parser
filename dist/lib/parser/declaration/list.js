@@ -42,7 +42,7 @@ class PropertyList {
             }
             let propertyName = declaration.nam;
             let shortHandType;
-            let shorthand;
+            let shorthand = null;
             if (propertyName in config.properties) {
                 // @ts-ignore
                 if ("map" in config.properties[propertyName]) {
@@ -60,6 +60,11 @@ class PropertyList {
                 shortHandType = "map";
                 // @ts-ignore
                 shorthand = config.map[propertyName].shorthand;
+            }
+            else if (propertyName in config.property) {
+                shortHandType = "single";
+                // @ts-ignore
+                shorthand = config.property[propertyName];
             }
             // @ts-ignore
             if (shortHandType == "map") {
@@ -86,10 +91,70 @@ class PropertyList {
                 this.declarations.get(shorthand).add(declaration);
             }
             else {
+                if (shorthand != null) {
+                    this.mapValues(declaration, shorthand);
+                }
                 this.declarations.set(propertyName, declaration);
             }
         }
         return this;
+    }
+    mapValues(declaration, mapping) {
+        let name;
+        let values = declaration.val;
+        if (mapping.pattern != null) {
+            // match pattern
+            for (const patterns of mapping.pattern) {
+                const set = new Set(values.filter((v) => v.typ !== EnumToken.CommentTokenType && v.typ !== EnumToken.WhitespaceTokenType));
+                const val = [];
+                for (const pattern of patterns) {
+                    switch (pattern) {
+                        case "<length>":
+                            for (const v of set) {
+                                if (v.typ === EnumToken.LengthTokenType ||
+                                    (v.typ === EnumToken.NumberTokenType && v.val === 0)) {
+                                    val.push(v);
+                                    set.delete(v);
+                                }
+                            }
+                        default: {
+                            for (const v of set) {
+                                if (v.typ === EnumToken.IdenTokenType) {
+                                    const value = v.val.toLowerCase();
+                                    if (value === pattern || new RegExp(`(^|\|)${pattern}(\||$)`).test(value)) {
+                                        val.push(v);
+                                        set.delete(v);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (set.size === 0) {
+                    values = val.reduce((acc, curr) => {
+                        if (acc.length > 0) {
+                            acc.push({ typ: EnumToken.WhitespaceTokenType });
+                        }
+                        acc.push(curr);
+                        return acc;
+                    }, []);
+                    break;
+                }
+            }
+        }
+        for (const val of declaration.val) {
+            if (val.typ === EnumToken.IdenTokenType) {
+                name = val.val.toLowerCase();
+                if (mapping.mapping[name] != null) {
+                    // @ts-expect-error
+                    Object.assign(val, mapping.mapping[name], { typ: EnumToken[mapping.mapping[name].typ] });
+                }
+            }
+        }
+        if (values != declaration.val) {
+            declaration.val.length = 0;
+            declaration.val.push(...values);
+        }
     }
     [Symbol.iterator]() {
         let iterator = this.declarations.values();

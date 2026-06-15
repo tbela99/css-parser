@@ -948,4 +948,18 @@ div-2 {
  }
 }`));
     });
+
+    it('transform-origin #47', function () {
+        const file = `
+
+  .xl\:origin-bottom-left {
+    transform-origin: bottom left;
+  }
+`;
+        return transform(file, {
+            beautify: true
+        }).then(result => expect(result.code).equals(`.xl:origin-bottom-left {
+ transform-origin: 0 100%
+}`));
+    });
 }

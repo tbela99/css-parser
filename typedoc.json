@@ -1,8 +1,6 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": [
-    "./src"
-  ],
+  "entryPoints": ["./src"],
   "readme": "files/index.md",
   "entryPointStrategy": "resolve",
   "navigationLinks": {
@@ -11,27 +9,11 @@
     "Playground": "https://tbela99.github.io/css-parser/playground/",
     "GitHub": "https://github.com/tbela99/css-parser"
   },
-  "plugin": [
-    "typedoc-material-theme"
-  ],
+  "plugin": ["typedoc-material-theme"],
   "out": "docs",
-  "projectDocuments": [
-    "files/index.md"
-  ],
-  "groupOrder": [
-    "Functions",
-    "Classes",
-    "TypeAlias",
-    "Enumerations",
-    "*"
-  ],
-  "categoryOrder": [
-    "Functions",
-    "Classes",
-    "TypeAlias",
-    "Enumerations",
-    "*"
-  ],
+  "projectDocuments": ["files/index.md"],
+  "groupOrder": ["Functions", "Classes", "TypeAlias", "Enumerations", "*"],
+  "categoryOrder": ["Functions", "Classes", "TypeAlias", "Enumerations", "*"],
   "kindSortOrder": [
     "Document",
     "Project",
@@ -58,5 +40,6 @@
     "Interface",
     "Reference"
   ],
-  "json": "docs/typedoc.json"
+  "json": "docs/typedoc.json",
+  "customCss": "./files/assets/typedoc-custom.css"
 }

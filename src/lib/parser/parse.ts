@@ -593,7 +593,6 @@ export async function doParse(
             : // @ts-expect-error
               ((iter as Iterator<TokenizeResult>).next().value as TokenizeResult))
     ) {
-
         stats.bytesIn = item.bytesIn;
         stats.tokensCount++;
 
@@ -716,7 +715,6 @@ export async function doParse(
                 context = node as AstRuleList;
             }
         }
-
     }
 
     if (imports.length > 0 && options.resolveImport) {
@@ -726,7 +724,6 @@ export async function doParse(
                 const url: string = token.typ == EnumToken.StringTokenType ? token.val.slice(1, -1) : token.val;
 
                 try {
-
                     const result = options.load!(url, <string>options.src) as LoadResult;
                     const stream =
                         result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
@@ -737,7 +734,7 @@ export async function doParse(
                             ? tokenizeStream(stream)
                             : tokenize({
                                   stream,
-                                  src: options.resolve!(url, options.src || options.cwd as string).relative,
+                                  src: options.resolve!(url, options.src || (options.cwd as string)).relative,
                                   buffer: "",
                                   offset: 0,
                                   position: { ind: 0, lin: 1, col: 1 },
@@ -746,7 +743,7 @@ export async function doParse(
                         Object.assign({}, options, {
                             minify: false,
                             setParent: false,
-                            src: options.resolve!(url, options.src || options.cwd as string).relative,
+                            src: options.resolve!(url, options.src || (options.cwd as string)).relative,
                         }) as ParserOptions,
                     );
 
@@ -1326,7 +1323,6 @@ export async function doParse(
 
                     for (const token of node.val) {
                         if (token.typ == EnumToken.ComposesSelectorNodeType) {
-                            
                             tokens.push(token as ComposesSelectorToken);
                         }
                     }
@@ -1339,7 +1335,6 @@ export async function doParse(
                     }
 
                     if (/* !isValid || */ tokens.length == 0) {
-
                         errors.push({
                             action: "drop",
                             message: `composes is empty`,
@@ -2146,7 +2141,6 @@ function parseNode(
         context.chi!.push(node);
         // @ts-expect-error
         return Object.defineProperty(node, "parent", { ...definedPropertySettings, value: context });
-
     } else {
         stats.nodesCount++;
 
@@ -2194,8 +2188,6 @@ export function parseAtRule(
     errors: ErrorDescription[],
     parseAsBlock: boolean | null = null,
 ): AstAtRule | AstInvalidAtRule | CssVariableImportTokenType | CssVariableToken | null {
-    // const rules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + (stream[0] as AtRuleToken).nam);
-
     let success: boolean = true;
     let atRuleName = (stream[0] as AtRuleToken).nam;
 
@@ -2467,8 +2459,6 @@ export function parseAtRule(
             ) as AstKeyframesAtRule;
         }
         case "keyframes": {
-
-            
             const tokens = trimArray(stream.slice(1));
             const filtered: Token[] = stream.filter(
                 (t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType,
@@ -2519,6 +2509,9 @@ export function parseAtRule(
             if (!result.success) {
                 errors.push(...result.errors);
             }
+            // else {
+            //     parseUrlToken(stream);
+            // }
 
             const valid: boolean = blockAllowed === parseAsBlock && result.success;
 
@@ -2587,7 +2580,9 @@ export function parseAtRule(
             } else {
                 if (
                     stream[0]?.typ == EnumToken.UrlFunctionTokenType &&
-                    (stream[0] as FunctionToken).chi.some((t) => t.typ == EnumToken.StringTokenType)
+                    (stream[0] as FunctionToken).chi.some(
+                        (t) => t.typ == EnumToken.StringTokenType || t.typ == EnumToken.UrlTokenTokenType,
+                    )
                 ) {
                     stream.splice(0, 1, ...(stream[0] as FunctionToken).chi);
                 }
@@ -2730,7 +2725,6 @@ export function parseAtRule(
             ) as AstAtRule | AstInvalidAtRule;
         }
         case "scope": {
-
             let context = createValidationContext(trimArray(stream));
 
             let success: boolean = true;
@@ -2848,8 +2842,6 @@ export function parseAtRule(
         case "page": {
             trimArray(stream);
 
-            const result = parseAtRulePage(atRule, stream, options, errors);
-
             // @ts-expect-error
             return Object.defineProperties(
                 Object.assign(atRule, {
@@ -2931,7 +2923,6 @@ export function parseAtRule(
             let isVarDeclaration: boolean = false;
 
             for (; index < stream.length; index++) {
-
                 if (stream[index].typ == EnumToken.PseudoClassTokenType) {
                     Object.assign(stream[index], {
                         typ: EnumToken.IdenTokenType,
@@ -3049,6 +3040,13 @@ export function parseAtRule(
                 }
             } else {
                 result = matchAtRuleSyntax(atRule, stream, options);
+
+                if (result.errors.length > 0) {
+                    errors.push(...result.errors);
+                }
+                // else if (atRuleName === "document") {
+                //     parseUrlToken(stream);
+                // }
 
                 if (result.success) {
                     let i: number = 0;

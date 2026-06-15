@@ -1,7 +1,10 @@
 # Changelog
 
-## v1.4.3
+## v1.4.4
 
+- [x] minify transform-origin property
+
+## v1.4.3
 
 ### CSS Modules
 

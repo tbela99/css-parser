@@ -7,8 +7,8 @@ category: Guides
 # CSS Modules
 
 CSS module is a feature that allows you to use CSS classes in a way that is safe from conflicts with other classes in the same project.
-to enable CSS module support, pass the `module` option to the parse() or transform() function.
-for a detailed explanation of the module options, see the [module options](../docs/interfaces/node.ParserOptions.html#module) section.
+To enable CSS module support, pass the `module` option to the parse() or transform() function.
+For a detailed explanation of the module options, see the [module options](../docs/interfaces/node.ParserOptions.html#module) section.
 
 ```typescript
 
@@ -22,11 +22,11 @@ transformFile(css, {module: boolean | ModuleCaseTransformEnum | ModuleScopeEnumO
 
 ## Scope
 
-the `scoped` option is used to configure the scope of the generated class names.
+The `scoped` option is used to configure the scope of the generated class names.
 
 ### Local scope
 
-this is the default scope.
+This is the default scope.
 
 ```typescript
 
@@ -55,7 +55,7 @@ let result: TransformResult = await transform(css, {
 console.log(result.code);
 ```
 
-output
+Output:
 
 ```css
 .className_vjnt1 {
@@ -69,7 +69,7 @@ output
 
 ### Global scope
 
-the class names are not scoped unless they are scoped using :local or :local()
+The class names are not scoped unless they are scoped using :local or :local()
 
 ```typescript
 
@@ -84,7 +84,7 @@ result = await transform(css, {
 console.log(result.code);
 ```
 
-output
+Output:
 
 ```css
 .className {
@@ -98,7 +98,7 @@ output
 
 ### ICSS scope
 
-export css using ICSS format 
+Export CSS using ICSS format 
 ```typescript
 
  result = await transform(css, {
@@ -112,7 +112,7 @@ export css using ICSS format
 console.log(result.code);
 ```
 
-output
+Output:
 
 ```css
 :export {
@@ -130,7 +130,7 @@ output
 
 ### Pure scope
 
-require to use at least one id or class in selectors. it will throw an error it there are no id or class name in the selector.
+Require the use at least one id or class in selectors. It will throw an error it there are no id or class name in the selector.
 
 ```typescript
 
@@ -145,7 +145,7 @@ require to use at least one id or class in selectors. it will throw an error it 
 console.log(result.code);
 ```
 
-output
+Output:
 
 ```css
 .className {
@@ -159,7 +159,7 @@ output
 
 ### Shortest Scope
 
-produce short scope names.
+Produce short scope names.
 
 ```typescript
 
@@ -174,7 +174,7 @@ result = await transform(css, {
 console.log(result.code);
 ```
 
-output
+Output:
 
 ```css
 .a {
@@ -188,7 +188,7 @@ output
 
 ### Mixing scopes
 
-scopes can be mixed using the bitwise OR operator '|'
+Scopes can be mixed using the bitwise OR operator '|'
 
 ```typescript
 
@@ -205,7 +205,7 @@ console.log(result.code);
 
 ## Class composition
 
-class composition is supported using the `composes` property.
+Class composition is supported using the `composes` property.
 
 ```typescript
 
@@ -234,7 +234,7 @@ console.log(result.mapping);
 
 ```
 
-generated css code
+Generated css code:
 
 ```css
 .goal_r7bhp .bg-indigo_gy28g {
@@ -244,7 +244,7 @@ generated css code
  color: #fff
 }
 ```
-generated class mapping
+Generated class mapping:
 
 ```json
 
@@ -256,7 +256,7 @@ generated class mapping
 }
 ```
 
-classes can be composed from other files as well as the global scope
+Classes can be composed from other files as well as the global scope
 
 ```typescript
 
@@ -285,11 +285,11 @@ const result = await transform(`
 
 ## Naming
 
-the `naming` option is used to configure the case of the generated class names as well as the class mapping. 
+The `naming` option is used to configure the case of the generated class names as well as the class mapping. 
 
 ### Ignore Case
 
-no case transformation
+No case transformation
 
 ```typescript
 
@@ -320,7 +320,7 @@ console.log(result.code);
 ```
 ### Camel case
 
-use camel case for the mapping key names
+Use camel case for the mapping key names
 
 ```typescript
 
@@ -349,7 +349,7 @@ let result = await transform(css, {
 
 console.log(result.code);
 ```
-generated css
+Generated css:
 ```css
 .class-name_agkqy {
  background: red;
@@ -359,7 +359,7 @@ generated css
  background: blue
 }
 ```
-generated mapping
+Generated mapping:
 
 ```ts
 console.log(result.mapping);
@@ -373,7 +373,7 @@ console.log(result.mapping);
 
 ### Camel case only
 
-use camel case key names and the scoped class names
+Use camel case key names and the scoped class names.
 
 ```typescript
 
@@ -402,7 +402,7 @@ let result = await transform(css, {
 
 console.log(result.code);
 ```
-generated css
+Generated css:
 
 ```css
 .className_agkqy {
@@ -413,7 +413,7 @@ generated css
  background: blue
 }
 ```
-generated mapping
+Generated mapping:
 
 ```ts
 console.log(result.mapping);
@@ -427,7 +427,7 @@ console.log(result.mapping);
 
 ### Dash case
 
-use dash case for the mapping key names
+Use dash case for the mapping key names
 
 ```typescript
 
@@ -457,7 +457,7 @@ let result = await transform(css, {
 
 console.log(result.code);
 ```
-generated css
+Generated css:
 
 ```css
 .className_vjnt1 {
@@ -468,7 +468,7 @@ generated css
  background: blue
 }
 ```
-generated mapping
+Generated mapping:
 
 ```ts
 console.log(result.mapping);
@@ -482,7 +482,7 @@ console.log(result.mapping);
 
 ### Dash case only
 
-use dash case key names and the scoped class names
+Use dash case key names and the scoped class names.
 
 ```typescript
 
@@ -512,7 +512,7 @@ let result = await transform(css, {
 
 console.log(result.code);
 ```
-generated css
+Generated css:
 
 ```css
 .class-name_vjnt1 {
@@ -523,7 +523,7 @@ generated css
  background: blue
 }
 ```
-generated mapping
+Generated mapping:
 
 ```ts
 console.log(result.mapping);
@@ -537,7 +537,7 @@ console.log(result.mapping);
 
 ## Pattern
 
-the `pattern` option is used to configure the generated scoped names.
+The `pattern` option is used to configure the generated scoped names.
 
 ```typescript
 
@@ -567,7 +567,7 @@ let result: TransformResult = await transform(css, {
 
 console.log(result.code);
 ```
-generated css
+Generated css:
 
 ```css
 .className-b629f {
@@ -578,7 +578,7 @@ generated css
     background: blue
 }
 ```
-generated mapping
+Generated mapping:
 
 ```ts
 console.log(result.mapping);
@@ -589,7 +589,7 @@ console.log(result.mapping);
     "subClass": "subClass-a0c35 className-b629f"
 }
 ```
-the supported placeholders are:
+The supported placeholders are:
 - name: the file base name without the extension
 - hash: the file path hash
 - local: the local name
@@ -597,11 +597,11 @@ the supported placeholders are:
 - folder: the folder name
 - ext: the file extension
 
-the pattern placeholders can optionally have a maximum number of characters:
+The pattern placeholders can optionally have a maximum number of characters:
 ```
 pattern: '[local:2]-[hash:5]'
 ```
-the hash pattern can take an algorithm, a maximum number of characters or both:
+The hash pattern can take an algorithm, a maximum number of characters or both:
 ```
 pattern: '[local]-[hash:base64:5]'
 ```
@@ -614,7 +614,7 @@ or
 pattern: '[local]-[hash:sha1]'
 ```
 
-supported hash algorithms are:
+Supported hash algorithms are:
 - base64
 - hex
 - base64url

@@ -7,7 +7,7 @@ import type {
     ValidationOptions,
 } from "../../../@types/index.d.ts";
 import { EnumToken } from "../../ast/types.ts";
-import { tokensfuncDefMap, tokensMap } from "../../syntax/constants.ts";
+import { tokensfuncDefMap } from "../../syntax/constants.ts";
 import { equalsIgnoreCase } from "./text.ts";
 
 export function matchGenericSyntax(

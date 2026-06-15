@@ -6,20 +6,20 @@ category: Guides
 
 ## Installation
 
-### From npm
+### From NPM
 
 ```shell
 $ npm install @tbela99/css-parser
 ```
 
-### From jsr
+### From JSR
 
 ```shell
 $ deno add @tbela99/css-parser
 ```
-### As web module
+### As Web module
 
-the library can be imported as a module in the browser
+The library can be imported as a module in the browser.
 
 ```html
 <script type="module">
@@ -56,9 +56,9 @@ the library can be imported as a module in the browser
 </script>
 ```
 
-### As umd module
+### As UMD module
 
-it can also be imported as an umd module
+It can also be imported as an umd module
 
 ```html
 
