@@ -9,11 +9,11 @@ children:
     - ./usage.md
     - ./parsing.md
     - ./rendering.md
+    - ./validation.md
     - ./css-module.md
     - ./minification.md
     - ./transform.md
     - ./ast.md
-    - ./validation.md
 ---
 
 ## Contents
@@ -24,11 +24,11 @@ children:
 - [Usage](./usage.md)
 - [Parsing](./parsing.md)
 - [Rendering](./rendering.md)
+- [Validation](./validation.md)
 - [CSS module](./css-module.md)
 - [Minification](./minification.md)
 - [Transform](./transform.md)
 - [Ast traversal](ast.md)
-- [Validation](./validation.md)
 
 ## Modules
 

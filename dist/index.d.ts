@@ -4409,7 +4409,7 @@ declare function okLabDistance(okLab1: [number, number, number], okLab2: [number
 declare function isOkLabClose(color1: ColorToken, color2: ColorToken, threshold?: number): boolean;
 
 /**
- * search the ast tree and return the first match
+ * Search the ast tree and return the first match
  *
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'
@@ -4441,7 +4441,7 @@ button {
  */
 declare function find(ast: AstNode$1, matcher: (node: AstNode$1) => boolean): AstNode$1 | null;
 /**
- * search the ast tree by checking each node's value and return the first match
+ * search the ast tree by checking each node's value token and return the first match
  *
  * ```ts
  *  // find the first ast node which contains the length token '30px'
@@ -4456,7 +4456,7 @@ button {
 }
     `;
 
- // find declaration which contain a '30px'
+ // find declaration which contain the length token '30px'
   const nodeMatcher = (value: Token) =>
       return value.typ == EnumToken.LengthTokenType && (value as LengthToken).val == 30 && (value as LengthToken).unit == 'px' ;
 
@@ -4508,7 +4508,7 @@ button {
  */
 declare function findAll(ast: AstNode$1, matcher: (node: AstNode$1) => boolean): AstNode$1[];
 /**
- * search the ast tree and return the last match
+ * Search the ast tree and return the last match.
  *
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'

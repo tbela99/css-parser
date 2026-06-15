@@ -35,4 +35,4 @@ A non-exhaustive list of features is provided below:
 - Experimental CSS prefix removal
 
 ------
-[← About](./about.md) | [Getting Started →](./install.md) 
+[← About](./about.md) | [Installation →](./install.md) 

@@ -350,6 +350,143 @@ Output:
 }
 ```
 
+### Calc() resolution
+
+```javascript
+
+import {parse, render} from '@tbela99/css-parser';
+
+const css = `
+a {
+
+width: calc(100px * log(625, 5));
+}
+.foo-bar {
+    width: calc(100px * 2);
+    height: calc(((75.37% - 63.5px) - 900px) + (2 * 100px));
+    max-width: calc(3.5rem + calc(var(--bs-border-width) * 2));
+}
+`;
+
+const prettyPrint = await parse(css).then(result => render(result.ast, {minify: false}).code);
+
+```
+
+result
+
+```css
+a {
+    width: 400px;
+}
+
+.foo-bar {
+    width: 200px;
+    height: calc(75.37% - 763.5px);
+    max-width: calc(3.5rem + var(--bs-border-width) * 2)
+}
+```
+
+### CSS variable inlining
+
+```javascript
+
+import {parse, render} from '@tbela99/css-parser';
+
+const css = `
+
+:root {
+
+--preferred-width: 20px;
+}
+.foo-bar {
+
+    width: calc(calc(var(--preferred-width) + 1px) / 3 + 5px);
+    height: calc(100% / 4);}
+`
+
+const prettyPrint = await parse(css, {inlineCssVariables: true}).then(result => render(result.ast, {minify: false}).code);
+
+```
+
+result
+
+```css
+.foo-bar {
+    width: 12px;
+    height: 25%
+}
+
+```
+
+### CSS variable inlining and relative color
+
+```javascript
+
+import {parse, render} from '@tbela99/css-parser';
+
+const css = `
+
+:root {
+--color: green;
+}
+._19_u :focus {
+    color:  hsl(from var(--color) calc(h * 2) s l);
+
+}
+`
+
+const prettyPrint = await parse(css, {inlineCssVariables: true}).then(result => render(result.ast, {minify: false}).code);
+
+```
+
+result
+
+```css
+._19_u :focus {
+    color: navy
+}
+
+```
+
+### CSS variable inlining and relative color
+
+```javascript
+
+import {parse, render} from '@tbela99/css-parser';
+
+const css = `
+
+html { --bluegreen:  oklab(54.3% -22.5% -5%); }
+.overlay {
+  background:  oklab(from var(--bluegreen) calc(1.0 - l) calc(a * 0.8) b);
+}
+`
+
+const prettyPrint = await parse(css, {inlineCssVariables: true}).then(result => render(result.ast, {minify: false}).code);
+
+```
+
+result
+
+```css
+.overlay {
+    background: #0c6464
+}
+
+```
+
+# Node Walker
+
+```javascript
+
+import {walk} from '@tbela99/css-parser';
+
+for (const {node, parent, root} of walk(ast)) {
+
+    // do something
+}
+```
+
 ### Merging adjacent rules
 
 Adjacent rules with common declarations and at-rules with the same name and prelude are merged.

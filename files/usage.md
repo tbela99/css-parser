@@ -110,5 +110,5 @@ Load as an UMD module
 ```
 
 ------
-[← Getting started](../documents/Guide.Getting_started.html) | [Parsing →](../documents/Guide.Parsing.html) 
+[← Installation](./install.md) | [Parsing →](./parsing.md) 
 

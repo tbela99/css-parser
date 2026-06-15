@@ -624,4 +624,4 @@ Supported hash algorithms are:
 - sha512
 ------
 
-[← Usage](./usage.md) | [Minification →]( ../../docs/documents/Guide.Minification.html )  
+[← Validation](./validation.md) | [Minification →](./minification.md)  

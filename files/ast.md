@@ -10,6 +10,8 @@ The ast root node returned by the parser is always a [AstStyleSheet](../docs/int
 The other node types
 are [AstRule](../docs/interfaces/node.AstRule.html), [AstAtRule](../docs/interfaces/node.AstAtRule.html), [AstDeclaration](../docs/interfaces/node.AstDeclaration.html), [AstComment](../docs/interfaces/node.AstComment.html), [AstInvalidRule](../docs/interfaces/node.AstInvalidRule.html), [AstInvalidAtRule](../docs/interfaces/node.AstInvalidAtRule.html), [AstInvalidDeclaration](../docs/interfaces/node.AstInvalidDeclaration.html)
 
+The full list of tokens is available [here](../interfaces/node.BaseToken.html).
+
 ## Ast node attributes
 
 ### Ast rule attributes
@@ -267,5 +269,146 @@ for (const {value} of walkValues(declaration.val, null, null,true)) {
 // [ "Iden", "from" ]
 ```
 
+### Ast search API
+
+#### find()
+
+Search the ast tree and return the first match.
+  
+ ```ts
+  // find the first ast declaration node which name is 'aspect-ratio'
+import { find, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+ // find declaration which contain a '30px'
+  const nodeMatcher = (node: AstNode) =>
+      return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio'; 
+
+     const result  = await transform(css);     
+     const node = find(result.ast, nodeMatcher);
+
+     console.log({node});
+ 
+```
+
+#### findByValue()
+
+Search the ast tree by checking each node's value token and return the first match.
+  
+ ```ts
+// find the first ast node which contains the length token '30px'
+import { findByValue, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+ // find declaration which contain the length token '30px'
+  const nodeMatcher = (value: Token) =>
+      return value.typ == EnumToken.LengthTokenType && (value as LengthToken).val == 30 && (value as LengthToken).unit == 'px' ; 
+
+     const result  = await transform(css);     
+     const { node, value } = findByValue(result.ast, nodeMatcher) ?? {};
+
+     console.log({node, value});
+ 
+```
+
+#### findAll()
+
+Search the ast tree and return all matches.
+  
+ ```ts
+ // find the first ast declaration node which name is 'aspect-ratio'
+import { findAll, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+ // find declaration which contain a '30px'
+  const nodeMatcher = (node: AstNode) =>
+      return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio'; 
+
+     const result  = await transform(css);     
+     const nodes = findAll(result.ast, nodeMatcher);
+
+     console.log({nodes});
+ 
+```
+
+#### findLast()
+
+Search the ast tree and return the last match.
+  
+ ```ts
+ *  // find the first ast declaration node which name is 'aspect-ratio'
+import { findLast, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+ * const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+ // find declaration which contain a '30px'
+  const nodeMatcher = (node: AstNode) =>
+      return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio'; 
+
+     const result  = await transform(css);     
+     const node = findLast(result.ast, nodeMatcher);
+
+     console.log({node});
+```
+
+#### findValue()
+
+Find the node's value token of the specified ast node
+  
+ ```ts
+// find the first ast declaration node which name is 'aspect-ratio'
+import { findValue, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+ // find declaration which contain a '30px'
+  const nodeMatcher = (node: AstNode) =>
+      return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio'; 
+
+     const result  = await transform(css);     
+     const found = findValue(result.ast.chi[0], nodeMatcher);
+
+     console.log({found}); // 'button' token of the selector
+  
+```
+
 ------
-[← Custom Transform](./transform.md) | [Validation →](./validation.md) 
+[← Custom Transform](./transform.md) | [Module Node →](../docs/modules/node.html)

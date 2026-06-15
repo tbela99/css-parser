@@ -4,7 +4,7 @@ import { EnumToken } from "./types.ts";
 import { walk, walkValues } from "./walk.ts";
 
 /**
- * search the ast tree and return the first match
+ * Search the ast tree and return the first match
  * 
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'
@@ -45,7 +45,7 @@ export function find(ast: AstNode, matcher: (node: AstNode) => boolean): AstNode
 }
 
 /**
- * search the ast tree by checking each node's value and return the first match
+ * search the ast tree by checking each node's value token and return the first match
  * 
  * ```ts
  *  // find the first ast node which contains the length token '30px'
@@ -60,7 +60,7 @@ button {
 }
     `;
 
- // find declaration which contain a '30px'
+ // find declaration which contain the length token '30px'
   const nodeMatcher = (value: Token) =>
       return value.typ == EnumToken.LengthTokenType && (value as LengthToken).val == 30 && (value as LengthToken).unit == 'px' ; 
 
@@ -148,7 +148,7 @@ export function findAll(ast: AstNode, matcher: (node: AstNode) => boolean): AstN
 }
 
 /**
- * search the ast tree and return the last match
+ * Search the ast tree and return the last match.
  * 
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'
@@ -188,14 +188,14 @@ export function findLast(ast: AstNode, matcher: (node: AstNode) => boolean): Ast
     return null;
 }
 /**
- * find the node's value token of the specified ast node
+ * Find the node's value token of the specified ast node
  * 
  * ```ts
- *  // find the first ast declaration node which name is 'aspect-ratio'
+// find the first ast declaration node which name is 'aspect-ratio'
 import { findValue, EnumToken, transform } from "@tbela99/css-parser";
 import type { AstNode } from "@tbela99/css-parser";
 
- * const css = `
+const css = `
 
 button {
   aspect-ratio: 1;
@@ -212,7 +212,7 @@ button {
 
      console.log({found}); // 'button' token of the selector
   
-    ```
+```
  *
  * @param ast
  * @param matcher

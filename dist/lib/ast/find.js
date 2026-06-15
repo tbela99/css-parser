@@ -2,7 +2,7 @@ import { EnumToken } from './types.js';
 import { walk, walkValues } from './walk.js';
 
 /**
- * search the ast tree and return the first match
+ * Search the ast tree and return the first match
  *
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'
@@ -41,7 +41,7 @@ function find(ast, matcher) {
     return null;
 }
 /**
- * search the ast tree by checking each node's value and return the first match
+ * search the ast tree by checking each node's value token and return the first match
  *
  * ```ts
  *  // find the first ast node which contains the length token '30px'
@@ -56,7 +56,7 @@ button {
 }
     `;
 
- // find declaration which contain a '30px'
+ // find declaration which contain the length token '30px'
   const nodeMatcher = (value: Token) =>
       return value.typ == EnumToken.LengthTokenType && (value as LengthToken).val == 30 && (value as LengthToken).unit == 'px' ;
 
@@ -133,7 +133,7 @@ function findAll(ast, matcher) {
     return result;
 }
 /**
- * search the ast tree and return the last match
+ * Search the ast tree and return the last match.
  *
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'
