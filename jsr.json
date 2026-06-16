@@ -33,7 +33,11 @@
       "typedoc.json",
       "typedoc-tsconfig.jsonc",
       "docs/",
-      "files/"
+      "files/",
+      "playground/",
+      ".nyc_output",
+      ".repl_history",
+      "deno.lock"
     ]
   },
   "exports": {

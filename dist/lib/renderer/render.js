@@ -6,6 +6,7 @@ import { SourceMap } from './sourcemap/sourcemap.js';
 import { colorsFunc, urlTokenMatcher, tokensfuncSet } from '../syntax/constants.js';
 import { isColor, pseudoElements, parseColor } from '../syntax/syntax.js';
 import { move } from '../parser/tokenize.js';
+import { equalsIgnoreCase } from '../parser/utils/text.js';
 
 /**
  * render ast
@@ -282,6 +283,10 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
  * @private
  */
 function renderToken(token, options = {}, cache = Object.create(null), reducer, errors) {
+    if (token.typ === EnumToken.WhenElseFunctionTokenType && equalsIgnoreCase(token.val, "supports")) {
+        options = { ...options, minify: false, convertColor: false };
+        reducer = null;
+    }
     if (reducer == null) {
         reducer = function (acc, curr) {
             if (curr.typ == EnumToken.CommentTokenType && options.removeComments) {

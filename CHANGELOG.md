@@ -3,6 +3,7 @@
 ## v1.4.4
 
 - [x] minify transform-origin property
+- [x] do not minify supports() arguments
 
 ## v1.4.3
 

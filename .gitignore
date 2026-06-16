@@ -14,6 +14,10 @@ test/*.html
 test/*.json
 test/*.md
 /docs
+/deno.lock
+/badges
+/.nyc_output
+/.repl_history
 
 # Logs
 logs

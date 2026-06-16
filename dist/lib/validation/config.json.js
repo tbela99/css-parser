@@ -3493,7 +3493,7 @@ var syntaxes = {
 		syntax: "( <declaration> )"
 	},
 	"supports-feature": {
-		syntax: "<supports-selector-fn> | <supports-font-tech-fn> | <supports-font-format-fn> | <supports-at-rule-fn> | <supports-named-feature-fn> | <supports-env-fn> | <supports-decl>"
+		syntax: "<supports-decl> | <supports-selector-fn>"
 	},
 	"supports-in-parens": {
 		syntax: "( <supports-condition> ) | <supports-feature> | <general-enclosed>"

@@ -160,6 +160,7 @@ const imageFunc = [
     "element",
     "cross-fade",
     "paint",
+    "-webkit-linear-gradient"
 ];
 const transformFunctions = [
     "translate",

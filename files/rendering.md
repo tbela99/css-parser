@@ -125,7 +125,7 @@ const result = await transform(css, {preserveLicense: true});
 ### Converting colors
 
 Color conversion is controlled by the `convertColor` option. Colors are converted to the HEX format by default.
-That behavior can be changed by passing the chosen color type to the convertColor option:
+That behavior can be changed by passing the desired color type to the convertColor option:
 
 - ColorType.HEX
 - ColorType.RGB or ColorType.RGBA

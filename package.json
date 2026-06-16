@@ -24,8 +24,8 @@
     "test:cov": "c8 -x 'test/specs/**/*.js' --reporter=html --reporter=text --reporter=json-summary mocha --reporter-options='maxDiffSize=1801920' --timeout=10000 \"test/**/node.spec.js\"",
     "test:web-cov": "web-test-runner -x 'test/specs/**/*.js' \"test/**/web.spec.js\" --node-resolve --playwright --browsers chromium firefox webkit --root-dir=. --coverage",
     "profile": "node --enable-source-maps --inspect-brk test/inspect.js",
-    "config-update": "esno tools/shorthand.ts",
-    "syntax-update": "esno tools/validation.ts",
+    "config-update": "esno scripts/shorthand.ts",
+    "syntax-update": "esno scripts/validation.ts",
     "debug": "web-test-runner \"./test/**/web.spec.js\" --manual --open --node-resolve --root-dir=."
   },
   "repository": {

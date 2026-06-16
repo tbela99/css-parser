@@ -858,6 +858,7 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
     ],
     // @ts-ignore
 ]).reduce(
+    // @ts-expect-error
     (acc: ShorthandMapType, data: ShorthandMapType[]) => Object.assign(acc, createMap(...data)),
     <ShorthandMapType>{},
 );

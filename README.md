@@ -22,26 +22,26 @@ $ deno add @tbela99/css-parser
 
 ## Features
 
-- no dependency
+- No dependency
+- Fault-tolerant parser implementing the CSS syntax module 3 recommendations.
+- Fast and efficient minification without unsafe transforms,
+  see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
+- Colors minification: color(), lab(), lch(), oklab(), oklch(), color-mix(), light-dark(), system colors and
+  relative color
 - CSS validation based upon mdn-data
 - CSS modules support
-- fault-tolerant parser implementing the CSS syntax module 3 recommendations.
-- fast and efficient minification without unsafe transforms,
-  see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
-- colors minification: color(), lab(), lch(), oklab(), oklch(), color-mix(), light-dark(), system colors and
-  relative color
-- color conversion to any supported color format
-- automatic nested css rules generation
-- nested css rules conversion to legacy syntax
-- convert css if() function to legacy syntax
-- sourcemap generation
-- css shorthands computation. see the supported properties list below
-- css transform functions minification
-- css math functions evaluation: calc(), clamp(), min(), max(), etc.
-- css variables inlining
-- duplicate properties removal
+- CSS shorthands computation. see the supported properties list below
+- CSS transform functions minification
+- CSS math functions evaluation: calc(), clamp(), min(), max(), etc.
+- CSS variables inlining
+- CSS prefix removal (experimental)
+- Nested CSS rules conversion to legacy syntax
+- Convert CSS if() function to legacy syntax
+- Color conversion to any supported color format
+- Automatic nested css rules generation
+- Sourcemap generation
+- Duplicate properties removal
 - @import rules flattening
-- experimental CSS prefix removal
 
 ## Playground
 
@@ -114,29 +114,29 @@ parseFile(filePathOrUrl: string, options?: ParseOptions = {}, asStream?: boolean
 
 ## Sourcemap
 
-- [x] sourcemap generation
+- [x] Sourcemap generation
 
 ## Minification
 
-- [x] minify keyframes
-- [x] minify transform functions
-- [x] evaluate math functions calc(), clamp(), min(), max(), round(), mod(), rem(), sin(), cos(), tan(), asin(),
+- [x] Minify keyframes
+- [x] Minify transform functions
+- [x] Evaluate math functions calc(), clamp(), min(), max(), round(), mod(), rem(), sin(), cos(), tan(), asin(),
   acos(), atan(), atan2(), pow(), sqrt(), hypot(), log(), exp(), abs(), sign()
-- [x] minify colors
-- [x] minify numbers and Dimensions tokens
-- [x] multi-pass minification
-- [x] inline css variables
-- [x] merge identical rules
-- [x] merge adjacent rules
-- [x] compute shorthand: see the list below
-- [x] remove redundant declarations
-- [x] conditionally unwrap :is()
-- [x] automatic css nesting
-- [x] automatically wrap selectors using :is()
-- [x] avoid reparsing (declarations, selectors, at-rule)
-- [x] node and browser versions
-- [x] decode and replace utf-8 escape sequence
-- [x] experimental CSS prefix removal
+- [x] Minify colors
+- [x] Minify numbers and Dimensions tokens
+- [x] Multi-pass minification
+- [x] Inline css variables
+- [x] Merge identical rules
+- [x] Merge adjacent rules
+- [x] Compute shorthand: see the list below
+- [x] Remove redundant declarations
+- [x] Conditionally unwrap :is()
+- [x] Automatic css nesting
+- [x] Automatically wrap selectors using :is()
+- [x] Avoid reparsing (declarations, selectors, at-rule)
+- [x] Node and browser versions
+- [x] Decode and replace utf-8 escape sequence
+- [x] CSS prefix removal (Experimental)
 
 ## Computed shorthands properties
 

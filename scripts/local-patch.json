@@ -251,9 +251,6 @@
     "env()": {
       "syntax": "env( <custom-ident> <integer [0,∞]>* , <declaration-value>? )"
     },
-    "supports-feature": {
-      "syntax": "<supports-selector-fn> | <supports-font-tech-fn> | <supports-font-format-fn> | <supports-at-rule-fn> | <supports-named-feature-fn> | <supports-env-fn> | <supports-decl>"
-    },
     "colorspace-params": {
       "syntax": "[<custom-params> | <predefined-rgb-params> | <xyz-params>]"
     },

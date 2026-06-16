@@ -4844,7 +4844,7 @@
     		syntax: "( <declaration> )"
     	},
     	"supports-feature": {
-    		syntax: "<supports-selector-fn> | <supports-font-tech-fn> | <supports-font-format-fn> | <supports-at-rule-fn> | <supports-named-feature-fn> | <supports-env-fn> | <supports-decl>"
+    		syntax: "<supports-decl> | <supports-selector-fn>"
     	},
     	"supports-in-parens": {
     		syntax: "( <supports-condition> ) | <supports-feature> | <general-enclosed>"
@@ -6828,6 +6828,7 @@
         "element",
         "cross-fade",
         "paint",
+        "-webkit-linear-gradient"
     ];
     const transformFunctions = [
         "translate",
@@ -13339,6 +13340,34 @@
         }, [[]]);
     }
 
+    /**
+     * convert angle to degrees
+     * @param angle
+     * @returns
+     */
+    function toDegrees(angle) {
+        switch (angle.unit) {
+            // case "deg":
+            //     return angle;
+            case "rad":
+                // @ts-expect-error
+                angle.val *= 180 / Math.PI;
+                angle.unit = "deg";
+                return angle;
+            case "grad":
+                // @ts-expect-error
+                angle.val *= 0.9;
+                angle.unit = "deg";
+                return angle;
+            case "turn":
+                // @ts-expect-error
+                angle.val *= 360;
+                angle.unit = "deg";
+                return angle;
+        }
+        return angle;
+    }
+
     const config$3 = getSyntaxConfig();
     function replacePseudo(tokens) {
         return tokens.map((raw) => raw.map((r) => {
@@ -13363,7 +13392,9 @@
                 if (token != null) {
                     if (token.val in pseudoAliasMap) {
                         token.val = pseudoAliasMap[token.val];
-                        if (["min-resolution", "max-resolution"].includes(token.val) &&
+                        if ((equalsIgnoreCase(token.val, "min-resolution") ||
+                            equalsIgnoreCase(token.val, "max-resolution")) &&
+                            // ["min-resolution", "max-resolution"].includes((token as IdentToken).val) &&
                             value.r?.[0]?.typ == exports.EnumToken.NumberTokenType) {
                             Object.assign(value.r?.[0], {
                                 typ: exports.EnumToken.ResolutionTokenType,
@@ -13461,6 +13492,13 @@
                         (value.typ != exports.EnumToken.ParensTokenType && funcLike.includes(value.typ))) &&
                         value.val.match(/^-([^-]+)-(.+)$/) != null) {
                         if (value.val.endsWith("-gradient")) {
+                            if (equalsIgnoreCase("-webkit-linear-gradient", value.val)) {
+                                console.debug({ value, typ: exports.EnumToken[value.typ] });
+                                Object.assign(value, {
+                                    val: "linear-gradient",
+                                    chi: this.toLinearGradient(value.chi),
+                                });
+                            }
                             // not supported yet
                             break;
                         }
@@ -13495,6 +13533,140 @@
                 }
             }
             return node;
+        }
+        toLinearGradient(tokens) {
+            let i;
+            let k;
+            let to;
+            let val;
+            let key;
+            // conversion rules
+            // translation:
+            // - left -> to right
+            // - right -> to left
+            // - top -> to bottom
+            // - top right -> to bottom left
+            // - top left -> to bottom right
+            // - bottom -> to top
+            // - bottom right -> to top left
+            // - bottom left -> to top right
+            // https://drafts.csswg.org/css-images-3/#linear-gradients
+            // final angle:
+            // - to top -> 0deg
+            // - to right -> 90deg
+            // - to bottom -> 180deg
+            // - to left -> 270deg
+            for (i = 0; i < tokens.length; i++) {
+                if (tokens[i].typ == exports.EnumToken.AngleTokenType ||
+                    (tokens[i].typ == exports.EnumToken.NumberTokenType && tokens[i].val == 0)) {
+                    tokens[i].val =
+                        (90 -
+                            // @ts-expect-error
+                            (tokens[i].typ == exports.EnumToken.NumberTokenType
+                                ? tokens[i]
+                                : toDegrees(tokens[i]).val)) %
+                            360;
+                }
+                else if (tokens[i].typ == exports.EnumToken.IdenTokenType) {
+                    key = tokens[i].val.toLowerCase();
+                    switch (key) {
+                        case "right":
+                        case "left":
+                            tokens.splice(i, 1, { typ: exports.EnumToken.IdenTokenType, val: "to" }, { typ: exports.EnumToken.WhitespaceTokenType }, {
+                                typ: exports.EnumToken.IdenTokenType,
+                                val: key == "right" ? "left" : "right",
+                            });
+                            i += 2;
+                            break;
+                        case "top":
+                        case "bottom":
+                            k = i + 1;
+                            to = key == "top" ? "bottom" : "top";
+                            while (k < tokens.length &&
+                                (tokens[k].typ === exports.EnumToken.WhitespaceTokenType ||
+                                    tokens[k].typ === exports.EnumToken.CommentTokenType)) {
+                                k++;
+                            }
+                            if (tokens[k]?.typ === exports.EnumToken.IdenTokenType) {
+                                val = "";
+                                if (equalsIgnoreCase(tokens[k].val, "left")) {
+                                    val = "right";
+                                }
+                                if (equalsIgnoreCase(tokens[k].val, "right")) {
+                                    val = "left";
+                                }
+                                if (val !== "") {
+                                    tokens.splice(i, k - i + 1, { typ: exports.EnumToken.IdenTokenType, val: "to" }, { typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val: to }, { typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val });
+                                    i += 4;
+                                    break;
+                                }
+                            }
+                            tokens.splice(i, 1, { typ: exports.EnumToken.IdenTokenType, val: "to" }, { typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val: to });
+                            i += 2;
+                            break;
+                    }
+                }
+            }
+            return tokens;
+        }
+        toGradient(tokens) {
+            let i;
+            let k;
+            let to;
+            let val;
+            let key;
+            for (i = 0; i < tokens.length; i++) {
+                if (tokens[i].typ == exports.EnumToken.AngleTokenType ||
+                    (tokens[i].typ == exports.EnumToken.NumberTokenType && tokens[i].val == 0)) {
+                    tokens[i].val =
+                        (90 -
+                            // @ts-expect-error
+                            (tokens[i].typ == exports.EnumToken.NumberTokenType
+                                ? tokens[i]
+                                : toDegrees(tokens[i]).val)) %
+                            360;
+                }
+                else if (tokens[i].typ == exports.EnumToken.IdenTokenType) {
+                    key = tokens[i].val.toLowerCase();
+                    switch (key) {
+                        case "right":
+                        case "left":
+                            tokens.splice(i, 1, { typ: exports.EnumToken.IdenTokenType, val: "to" }, { typ: exports.EnumToken.WhitespaceTokenType }, {
+                                typ: exports.EnumToken.IdenTokenType,
+                                val: key == "right" ? "left" : "right",
+                            });
+                            i += 2;
+                            break;
+                        case "top":
+                        case "bottom":
+                            k = i + 1;
+                            to = key == "top" ? "bottom" : "top";
+                            while (k < tokens.length &&
+                                (tokens[k].typ === exports.EnumToken.WhitespaceTokenType ||
+                                    tokens[k].typ === exports.EnumToken.CommentTokenType)) {
+                                k++;
+                            }
+                            if (tokens[k]?.typ === exports.EnumToken.IdenTokenType) {
+                                val = "";
+                                if (equalsIgnoreCase(tokens[k].val, "left")) {
+                                    val = "right";
+                                }
+                                if (equalsIgnoreCase(tokens[k].val, "right")) {
+                                    val = "left";
+                                }
+                                if (val !== "") {
+                                    tokens.splice(i, k - i + 1, { typ: exports.EnumToken.IdenTokenType, val: "to" }, { typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val: to }, { typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val });
+                                    i += 4;
+                                    break;
+                                }
+                            }
+                            tokens.splice(i, 1, { typ: exports.EnumToken.IdenTokenType, val: "to" }, { typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val: to });
+                            i += 2;
+                            break;
+                    }
+                }
+            }
+            return tokens;
         }
     }
 
@@ -17531,7 +17703,7 @@
 
     /**
      *
-     * clone an ast node or value
+     * Clone an ast node or value
      * @param node
      * @param cloneChildren
      * @param cloneMap
@@ -24342,6 +24514,10 @@
      * @private
      */
     function renderToken(token, options = {}, cache = Object.create(null), reducer, errors) {
+        if (token.typ === exports.EnumToken.WhenElseFunctionTokenType && equalsIgnoreCase(token.val, "supports")) {
+            options = { ...options, minify: false, convertColor: false };
+            reducer = null;
+        }
         if (reducer == null) {
             reducer = function (acc, curr) {
                 if (curr.typ == exports.EnumToken.CommentTokenType && options.removeComments) {

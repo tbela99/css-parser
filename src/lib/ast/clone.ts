@@ -4,7 +4,7 @@ import { EnumToken } from "../ast/types.ts";
 
 /**
  * 
- * clone an ast node or value
+ * Clone an ast node or value
  * @param node 
  * @param cloneChildren 
  * @param cloneMap 

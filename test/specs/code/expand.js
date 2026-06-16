@@ -532,5 +532,36 @@ div-4 {
 }`));
         });
         
+        
+        it('if(supports()) #22', function () {
+            const nesting1 = `
+
+body {
+  background-color: if(
+    supports(color: oklch(0.7 0.185 232)): oklch(0.7 0.185 232);
+    else: #00adf3;
+  );
+  
+  &::after {
+    content: if(
+    supports(color: oklch(0.7 0.185 232)): "Your browser supports OKLCH";
+    else: "Your browser does not support OKLCH";
+    );
+  }
+}
+
+`;
+            return transform(nesting1, {
+                beautify: true,
+                removePrefix: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`body {
+ background-color: if(supports(color:oklch(.7 .185 232)):#00aefc;else:#00adf3);
+ &:after {
+  content: if(supports(color:oklch(.7 .185 232)):"Your browser supports OKLCH";else:"Your browser does not support OKLCH")
+ }
+}`));
+        });
+        
     });
 }

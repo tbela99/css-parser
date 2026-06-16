@@ -1,5 +1,6 @@
 import { EnumToken, SyntaxValidationResult } from "../types.ts";
 import type {
+    AngleToken,
     AstAtRule,
     AstDeclaration,
     AstNode,
@@ -7,6 +8,7 @@ import type {
     FunctionToken,
     IdentToken,
     MediaQueryConditionToken,
+    NumberToken,
     ParserOptions,
     PseudoClassToken,
     Token,
@@ -21,6 +23,8 @@ import { FeatureWalkMode } from "./type.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import { getSyntaxConfig } from "../../validation/config.ts";
 import { splitTokenList } from "../../validation/utils/list.ts";
+import { equalsIgnoreCase } from "../../parser/utils/text.ts";
+import { toDegrees } from "../../parser/utils/angle.ts";
 
 const config: ValidationConfiguration = getSyntaxConfig();
 
@@ -58,7 +62,9 @@ function replaceAstNodes(tokens: Token[], root?: AstNode): boolean {
                     token.val = pseudoAliasMap[token.val];
 
                     if (
-                        ["min-resolution", "max-resolution"].includes((token as IdentToken).val) &&
+                        (equalsIgnoreCase(token.val, "min-resolution") ||
+                            equalsIgnoreCase(token.val, "max-resolution")) &&
+                        // ["min-resolution", "max-resolution"].includes((token as IdentToken).val) &&
                         (value as MediaQueryConditionToken).r?.[0]?.typ == EnumToken.NumberTokenType
                     ) {
                         Object.assign((value as MediaQueryConditionToken).r?.[0], {
@@ -184,7 +190,14 @@ export class ComputePrefixFeature {
                         (value.typ != EnumToken.ParensTokenType && funcLike.includes(value.typ))) &&
                     (value as IdentToken | FunctionToken).val.match(/^-([^-]+)-(.+)$/) != null
                 ) {
-                    if ((value as IdentToken | FunctionToken).val.endsWith("-gradient")) {
+                    if ((value as FunctionToken).val.endsWith("-gradient")) {
+                        if (equalsIgnoreCase("-webkit-linear-gradient", (value as IdentToken | FunctionToken).val)) {
+                            console.debug({ value, typ: EnumToken[value.typ] });
+                            Object.assign(value, {
+                                val: "linear-gradient",
+                                chi: this.toLinearGradient((value as FunctionToken).chi),
+                            });
+                        }
                         // not supported yet
                         break;
                     }
@@ -229,5 +242,208 @@ export class ComputePrefixFeature {
         }
 
         return node;
+    }
+
+    toLinearGradient(tokens: Token[]): Token[] {
+        let i: number;
+        let k: number;
+        let to: string;
+        let val: string;
+        let key: string;
+
+        // conversion rules
+        // translation:
+        // - left -> to right
+        // - right -> to left
+        // - top -> to bottom
+        // - top right -> to bottom left
+        // - top left -> to bottom right
+        // - bottom -> to top
+        // - bottom right -> to top left
+        // - bottom left -> to top right
+        // https://drafts.csswg.org/css-images-3/#linear-gradients
+        // final angle:
+        // - to top -> 0deg
+        // - to right -> 90deg
+        // - to bottom -> 180deg
+        // - to left -> 270deg
+
+        for (i = 0; i < tokens.length; i++) {
+            if (
+                tokens[i].typ == EnumToken.AngleTokenType ||
+                (tokens[i].typ == EnumToken.NumberTokenType && (tokens[i] as AngleToken).val == 0)
+            ) {
+                (tokens[i] as AngleToken | NumberToken).val =
+                    (90 -
+                    // @ts-expect-error
+                        ((tokens[i] as AngleToken | NumberToken).typ == EnumToken.NumberTokenType
+                            ? (tokens[i] as NumberToken)
+                            : (toDegrees(tokens[i] as AngleToken).val as number))) %
+                    360;
+            } else if (tokens[i].typ == EnumToken.IdenTokenType) {
+                key = (tokens[i] as IdentToken).val.toLowerCase();
+                switch (key) {
+                    case "right":
+                    case "left":
+                        tokens.splice(
+                            i,
+                            1,
+                            { typ: EnumToken.IdenTokenType, val: "to" },
+                            { typ: EnumToken.WhitespaceTokenType },
+                            {
+                                typ: EnumToken.IdenTokenType,
+                                val: key == "right" ? "left" : "right",
+                            },
+                        );
+                        i += 2;
+                        break;
+
+                    case "top":
+                    case "bottom":
+                        k = i + 1;
+
+                        to = key == "top" ? "bottom" : "top";
+
+                        while (
+                            k < tokens.length &&
+                            (tokens[k].typ === EnumToken.WhitespaceTokenType ||
+                                tokens[k].typ === EnumToken.CommentTokenType)
+                        ) {
+                            k++;
+                        }
+
+                        if (tokens[k]?.typ === EnumToken.IdenTokenType) {
+                            val = "";
+
+                            if (equalsIgnoreCase((tokens[k] as IdentToken).val, "left")) {
+                                val = "right";
+                            }
+
+                            if (equalsIgnoreCase((tokens[k] as IdentToken).val, "right")) {
+                                val = "left";
+                            }
+
+                            if (val !== "") {
+                                tokens.splice(
+                                    i,
+                                    k - i + 1,
+                                    { typ: EnumToken.IdenTokenType, val: "to" },
+                                    { typ: EnumToken.WhitespaceTokenType },
+                                    { typ: EnumToken.IdenTokenType, val: to },
+                                    { typ: EnumToken.WhitespaceTokenType },
+                                    { typ: EnumToken.IdenTokenType, val },
+                                );
+                                i += 4;
+                                break;
+                            }
+                        }
+
+                        tokens.splice(
+                            i,
+                            1,
+                            { typ: EnumToken.IdenTokenType, val: "to" },
+                            { typ: EnumToken.WhitespaceTokenType },
+                            { typ: EnumToken.IdenTokenType, val: to },
+                        );
+                        i += 2;
+                        break;
+                }
+            }
+        }
+
+        return tokens;
+    }
+
+    toGradient(tokens: Token[]): Token[] {
+        let i: number;
+        let k: number;
+        let to: string;
+        let val: string;
+        let key: string;
+
+        for (i = 0; i < tokens.length; i++) {
+            if (
+                tokens[i].typ == EnumToken.AngleTokenType ||
+                (tokens[i].typ == EnumToken.NumberTokenType && (tokens[i] as AngleToken).val == 0)
+            ) {
+                (tokens[i] as AngleToken | NumberToken).val =
+                    (90 -
+                    // @ts-expect-error
+                        ((tokens[i] as AngleToken | NumberToken).typ == EnumToken.NumberTokenType
+                            ? (tokens[i] as NumberToken)
+                            : (toDegrees(tokens[i] as AngleToken).val as number))) %
+                    360;
+            } else if (tokens[i].typ == EnumToken.IdenTokenType) {
+                key = (tokens[i] as IdentToken).val.toLowerCase();
+                switch (key) {
+                    case "right":
+                    case "left":
+                        tokens.splice(
+                            i,
+                            1,
+                            { typ: EnumToken.IdenTokenType, val: "to" },
+                            { typ: EnumToken.WhitespaceTokenType },
+                            {
+                                typ: EnumToken.IdenTokenType,
+                                val: key == "right" ? "left" : "right",
+                            },
+                        );
+                        i += 2;
+                        break;
+
+                    case "top":
+                    case "bottom":
+                        k = i + 1;
+
+                        to = key == "top" ? "bottom" : "top";
+
+                        while (
+                            k < tokens.length &&
+                            (tokens[k].typ === EnumToken.WhitespaceTokenType ||
+                                tokens[k].typ === EnumToken.CommentTokenType)
+                        ) {
+                            k++;
+                        }
+
+                        if (tokens[k]?.typ === EnumToken.IdenTokenType) {
+                            val = "";
+
+                            if (equalsIgnoreCase((tokens[k] as IdentToken).val, "left")) {
+                                val = "right";
+                            }
+
+                            if (equalsIgnoreCase((tokens[k] as IdentToken).val, "right")) {
+                                val = "left";
+                            }
+
+                            if (val !== "") {
+                                tokens.splice(
+                                    i,
+                                    k - i + 1,
+                                    { typ: EnumToken.IdenTokenType, val: "to" },
+                                    { typ: EnumToken.WhitespaceTokenType },
+                                    { typ: EnumToken.IdenTokenType, val: to },
+                                    { typ: EnumToken.WhitespaceTokenType },
+                                    { typ: EnumToken.IdenTokenType, val },
+                                );
+                                i += 4;
+                                break;
+                            }
+                        }
+
+                        tokens.splice(
+                            i,
+                            1,
+                            { typ: EnumToken.IdenTokenType, val: "to" },
+                            { typ: EnumToken.WhitespaceTokenType },
+                            { typ: EnumToken.IdenTokenType, val: to },
+                        );
+                        i += 2;
+                        break;
+                }
+            }
+        }
+
+        return tokens;
     }
 }

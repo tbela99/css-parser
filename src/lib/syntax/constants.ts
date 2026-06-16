@@ -168,6 +168,7 @@ export const imageFunc: string[] = [
     "element",
     "cross-fade",
     "paint",
+    "-webkit-linear-gradient"
 ];
 export const transformFunctions: string[] = [
     "translate",

@@ -62,6 +62,7 @@ import { SourceMap } from "./sourcemap/sourcemap.ts";
 import { colorsFunc, tokensfuncSet, urlTokenMatcher } from "../syntax/constants.ts";
 import { isColor, parseColor, pseudoElements } from "../syntax/syntax.ts";
 import { move } from "../parser/tokenize.ts";
+import { equalsIgnoreCase } from "../parser/utils/text.ts";
 
 /**
  * render ast
@@ -476,9 +477,16 @@ export function renderToken(
     cache: {
         [key: string]: any;
     } = Object.create(null),
-    reducer?: (acc: string, curr: Token) => string,
+    reducer?: null |((acc: string, curr: Token) => string),
     errors?: ErrorDescription[],
 ): string {
+
+            if (token.typ === EnumToken.WhenElseFunctionTokenType && equalsIgnoreCase((token as FunctionToken).val, "supports")) {
+              
+                options = { ...options, minify: false, convertColor : false };
+                reducer = null;
+            }
+
     if (reducer == null) {
         reducer = function (acc: string, curr: Token): string {
             if (curr.typ == EnumToken.CommentTokenType && options.removeComments) {

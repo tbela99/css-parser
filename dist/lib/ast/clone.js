@@ -2,7 +2,7 @@ import { EnumToken } from './types.js';
 
 /**
  *
- * clone an ast node or value
+ * Clone an ast node or value
  * @param node
  * @param cloneChildren
  * @param cloneMap
