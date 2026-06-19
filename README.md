@@ -52,29 +52,50 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 - [Installation](https://tbela99.github.io/css-parser/docs/documents/Guide.Getting_Started.html)
 - [Usage](https://tbela99.github.io/css-parser/docs/documents/Guide.Usage.html)
 - [Parsing](https://tbela99.github.io/css-parser/docs/documents/Guide.Parsing.html)
+  - [Parsing options](https://tbela99.github.io/css-parser/docs/documents/Guide.Parsing.html#parsing-options)
+  - [Parsing files](https://tbela99.github.io/css-parser/docs/documents/Guide.Parsing.html#parsing-files)
+  - [Parsing streams](https://tbela99.github.io/css-parser/docs/documents/Guide.Parsing.html#parsing-from-a-readable-stream)
 - [Rendering](https://tbela99.github.io/css-parser/docs/documents/Guide.Rendering.html)
+  - [Rendering options](https://tbela99.github.io/css-parser/docs/documents/Guide.Rendering.html#renderoptions)
+  - [Pretty printing](https://tbela99.github.io/css-parser/docs/documents/Guide.Rendering.html#pretty-printing)
+  - [Converting colors](https://tbela99.github.io/css-parser/docs/documents/Guide.Rendering.html#converting-colors)
 - [Validation](https://tbela99.github.io/css-parser/docs/documents/Guide.Validation.html)
 - [CSS Modules](https://tbela99.github.io/css-parser/docs/documents/Guide.CSS_Modules.html)
+  - [Scopes](https://tbela99.github.io/css-parser/docs/documents/Guide.CSS_Modules.html#scope)
+  - [Class composition](https://tbela99.github.io/css-parser/docs/documents/Guide.CSS_Modules.html#class-composition)
+  - [Naming](https://tbela99.github.io/css-parser/docs/documents/Guide.CSS_Modules.html#naming)
+  - [Pattern](https://tbela99.github.io/css-parser/docs/documents/Guide.CSS_Modules.html#pattern)
+- Syntax lowering
+  - [Expand CSS nesting rules](https://tbela99.github.io/css-parser/docs/documents/Guide.Parsing.html#expand-css-nesting-rules)
+  - [Expand CSS if() syntax](https://tbela99.github.io/css-parser/docs/documents/Guide.Parsing.html#css-if-function-expansion)
 - [Minification](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html)
+
+  - [Keyframes](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#keyframes)
+  - [Inline css variables](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#css-variables-inlining)
+  - [Transform functions](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#transform-functions)
+  - [Math functions](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#math-functions)
+  - [Colors](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#color-minification)
+  - [Numbers and Dimensions](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#css-values)
+  - [Multi-pass minification](https://tbela99.github.io/css-parser/docs/interfaces/node.MinifyOptions.html#pass)
+  - [Merge adjacent rules](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#merging-adjacent-rules)
+  - [Compute shorthand](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#shorthands): see the list below
+  - [Remove redundant declarations](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#redundant-declarations)
+  - [Conditionally wrap or unwrap selectors using :is()](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#conditional-wrapping-or-unwrapping-selectors-using-is)
+  - [Automatic css nesting](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#css-nesting)
+  - Avoid reparsing (declarations, selectors, at-rule)
+  - [Decode and replace utf-8 escape sequence](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#utf-8-escape-sequence)
+  - [CSS prefix removal (Experimental)](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html##experimental-css-prefix-removal)
 - [Custom Transform](https://tbela99.github.io/css-parser/docs/documents/Guide.Custom_Transform.html)
 - [Ast](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.html)
-
-## Exported functions
-
-```ts
-
-/* parse and render css */
-transform(css: string | ReadableStream<string>, options?: TransformOptions = {}): Promise<TransformResult>
-/* parse css */
-parse(css: string | ReadableStream<string>, options?: ParseOptions = {}): Promise<ParseResult>;
-/* render ast */
-render(ast: AstNode, options?: RenderOptions = {}): RenderResult;
-/* parse and render css file or url */
-transformFile(filePathOrUrl: string, options?: TransformOptions = {}, asStream?: boolean): Promise<TransformResult>;
-/* parse css file or url */
-parseFile(filePathOrUrl: string, options?: ParseOptions = {}, asStream?: boolean): Promise<ParseResult>;
-
-```
+  - [Ast traversal](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Traversal.html)
+    - [walk()](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Traversal.html)
+    - [find()](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Traversal.html#find)
+    - [findAll()](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Traversal.html#findall)
+    - [findLast()](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Traversal.html#findlast)
+    - [walkValues()](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Traversal.html#walkvalues)
+    - [findByValue()](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Traversal.html#findbyvalue)
+    - [findValue()](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Traversal.html#findvalue)
+  - [Ast utilities](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Utilities.html)
 
 ## AST
 
@@ -117,26 +138,6 @@ parseFile(filePathOrUrl: string, options?: ParseOptions = {}, asStream?: boolean
 - [x] Sourcemap generation
 
 ## Minification
-
-- [x] Minify keyframes
-- [x] Minify transform functions
-- [x] Evaluate math functions calc(), clamp(), min(), max(), round(), mod(), rem(), sin(), cos(), tan(), asin(),
-  acos(), atan(), atan2(), pow(), sqrt(), hypot(), log(), exp(), abs(), sign()
-- [x] Minify colors
-- [x] Minify numbers and Dimensions tokens
-- [x] Multi-pass minification
-- [x] Inline css variables
-- [x] Merge identical rules
-- [x] Merge adjacent rules
-- [x] Compute shorthand: see the list below
-- [x] Remove redundant declarations
-- [x] Conditionally unwrap :is()
-- [x] Automatic css nesting
-- [x] Automatically wrap selectors using :is()
-- [x] Avoid reparsing (declarations, selectors, at-rule)
-- [x] Node and browser versions
-- [x] Decode and replace utf-8 escape sequence
-- [x] CSS prefix removal (Experimental)
 
 ## Computed shorthands properties
 

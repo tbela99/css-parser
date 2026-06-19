@@ -33,7 +33,6 @@ import {
     tokensMap,
     definedPropertySettings,
     trimTokenSpace,
-    urlTokenMatcher,
 } from "../../syntax/constants.ts";
 import { isColor, isValue, isWhiteSpace, parseColor, renamedStandardProperties } from "../../syntax/syntax.ts";
 import { getSyntaxRule, getParsedSyntax, ValidationSyntaxRule } from "../../validation/config.ts";
@@ -129,7 +128,7 @@ export function isDeclarationValue(tokens: Token[]): { success: boolean; errors:
 }
 
 /**
- * parse declaration
+ * Parse declaration
  * @param tokens
  * @param parent
  * @param options
@@ -704,19 +703,6 @@ export function parseDeclaration(
         if (value.typ === EnumToken.IdenTokenType && isColor(value)) {
             parseColor(value);
         }
-
-        // else if (value.typ === EnumToken.UrlFunctionTokenType) {
-            
-        //     const token = (value as FunctionToken).chi.find((t: Token) => t.typ === EnumToken.StringTokenType) as StringToken;
-
-        //     if (token != null && urlTokenMatcher.test((token as StringToken).val)) {
-                
-        //         Object.assign(token, {
-        //             typ: EnumToken.UrlTokenTokenType,
-        //             val: (token as StringToken).val.slice(1, -1),
-        //         });
-        //     }
-        // }
     }
 
     if (

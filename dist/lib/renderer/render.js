@@ -132,7 +132,7 @@ function updateSourceMap(node, options, cache, sourcemap, position, str) {
         { src, sta: { ...position } }, {
             ...node.loc,
             // @ts-ignore
-            src
+            src,
         });
     }
     move(position, str);
@@ -283,7 +283,8 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
  * @private
  */
 function renderToken(token, options = {}, cache = Object.create(null), reducer, errors) {
-    if (token.typ === EnumToken.WhenElseFunctionTokenType && equalsIgnoreCase(token.val, "supports")) {
+    if (token.typ === EnumToken.WhenElseFunctionTokenType &&
+        equalsIgnoreCase(token.val, "supports")) {
         options = { ...options, minify: false, convertColor: false };
         reducer = null;
     }
@@ -484,6 +485,83 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.FunctionTokenType:
         case EnumToken.MathFunctionTokenType:
         case EnumToken.ImageFunctionTokenType:
+            if (token.typ === EnumToken.ImageFunctionTokenType) {
+                switch (token.val) {
+                    case "linear-gradient": {
+                        let i;
+                        let k;
+                        let j;
+                        let key;
+                        for (i = 0; i < token.chi.length; i++) {
+                            if (token.chi[i].typ == EnumToken.IdenTokenType &&
+                                equalsIgnoreCase(token.chi[i].val, "to")) {
+                                k = i + 1;
+                                while (k < token.chi.length &&
+                                    (token.chi[k].typ === EnumToken.WhitespaceTokenType ||
+                                        token.chi[k].typ === EnumToken.CommentTokenType)) {
+                                    k++;
+                                }
+                                if (k < token.chi.length &&
+                                    token.chi[k].typ === EnumToken.IdenTokenType) {
+                                    // convert keyword to angle
+                                    key = token.chi[k].val.toLowerCase();
+                                    switch (key) {
+                                        case "right":
+                                            token.chi.splice(i, k - i + 1, {
+                                                typ: EnumToken.AngleTokenType,
+                                                val: 90,
+                                            });
+                                            break;
+                                        case "left":
+                                            token.chi.splice(i, k - i + 1, {
+                                                typ: EnumToken.AngleTokenType,
+                                                val: 270,
+                                            });
+                                            break;
+                                        case "top":
+                                        case "bottom":
+                                            j = k + 1;
+                                            while (j < token.chi.length &&
+                                                (token.chi[j].typ ===
+                                                    EnumToken.WhitespaceTokenType ||
+                                                    token.chi[j].typ === EnumToken.CommentTokenType)) {
+                                                j++;
+                                            }
+                                            if (j < token.chi.length &&
+                                                token.chi[j].typ != EnumToken.CommaTokenType) {
+                                                break;
+                                            }
+                                            token.chi.splice(i, k - i + 1, {
+                                                typ: EnumToken.AngleTokenType,
+                                                val: key === "top" ? 0 : 180,
+                                            });
+                                            break;
+                                    }
+                                }
+                            }
+                            else if (token.chi[i].typ == EnumToken.ColorTokenType) {
+                                // color 100% -> color  
+                                let k = i + 1;
+                                while (k < token.chi.length) {
+                                    if (token.chi[k].typ === EnumToken.WhitespaceTokenType || token.chi[k].typ === EnumToken.CommentTokenType) {
+                                        k++;
+                                        continue;
+                                    }
+                                    break;
+                                }
+                                if (token.chi[k]?.typ === EnumToken.PercentageTokenType) {
+                                    if (token.chi[k].val === 100) {
+                                        token.chi.splice(i + 1, k - i);
+                                    }
+                                    else {
+                                        i = k;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         case EnumToken.TimingFunctionTokenType:
         case EnumToken.PseudoClassFuncTokenType:
         case EnumToken.WhenElseFunctionTokenType:
@@ -726,12 +804,13 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 " " +
                 token.r.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer, errors), ""));
         case EnumToken.IfConditionTokenType:
-            return token.l.length == 0 ? '' : (token.l.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer, errors), "") +
-                ':' +
-                token.r.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer, errors), ""));
+            return token.l.length == 0
+                ? ""
+                : token.l.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer, errors), "") +
+                    ":" +
+                    token.r.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer, errors), "");
         case EnumToken.IfElseConditionTokenType:
-            return (renderToken(token.l) +
-                renderToken(token.r));
+            return renderToken(token.l) + renderToken(token.r);
         case EnumToken.DeclarationNodeType:
             return (token.nam +
                 ":" +

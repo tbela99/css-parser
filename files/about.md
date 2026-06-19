@@ -21,4 +21,4 @@ See the full documentation at the [CSS Parser](https://tbela99.github.io/css-par
 Try it [online](https://tbela99.github.io/css-parser/playground/)
 
 ------
-[← Index](../docs/documents/Guide.html) | [Features →](./features.md) 
+[← Index](./index.md) | [Features →](./features.md) 

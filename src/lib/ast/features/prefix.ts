@@ -10,6 +10,7 @@ import type {
     MediaQueryConditionToken,
     NumberToken,
     ParserOptions,
+    PercentageToken,
     PseudoClassToken,
     Token,
 } from "../../../@types/index.d.ts";
@@ -18,7 +19,7 @@ import { pseudoAliasMap } from "../../syntax/syntax.ts";
 import { splitRule } from "../minify.ts";
 import type { ValidationConfiguration } from "../../../@types/validation.d.ts";
 import { renderToken } from "../../renderer/render.ts";
-import { funcLike } from "../../syntax/constants.ts";
+import { funcLike, regMatchLinearGradient } from "../../syntax/constants.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import { getSyntaxConfig } from "../../validation/config.ts";
@@ -124,7 +125,7 @@ function replaceAstNodes(tokens: Token[], root?: AstNode): boolean {
                 set.add(str);
 
                 if (acc.length > 0) {
-                    tokens.push({
+                    acc.push({
                         typ: EnumToken.CommaTokenType,
                     });
                 }
@@ -148,6 +149,7 @@ export class ComputePrefixFeature {
 
     static register(options: ParserOptions) {
         if (options.removePrefix) {
+
             // @ts-ignore
             options.features.push(new ComputePrefixFeature(options));
         }
@@ -155,6 +157,7 @@ export class ComputePrefixFeature {
 
     run(node: AstNode): AstNode | null {
         if (node.typ == EnumToken.RuleNodeType) {
+
             (node as AstRule).sel = replacePseudo(splitRule((node as AstRule).sel)).reduce(
                 (acc, curr, index) => acc + (index > 0 ? "," : "") + curr.join(""),
                 "",
@@ -163,6 +166,7 @@ export class ComputePrefixFeature {
             if ((node as AstRule).tokens != null) {
                 replaceAstNodes((node as AstRule).tokens as Token[]);
             }
+
         } else if (node.typ == EnumToken.DeclarationNodeType) {
             if ((<AstDeclaration>node).nam.charAt(0) == "-") {
                 const match = (<AstDeclaration>node).nam.match(/^-([^-]+)-(.+)$/);
@@ -191,12 +195,13 @@ export class ComputePrefixFeature {
                     (value as IdentToken | FunctionToken).val.match(/^-([^-]+)-(.+)$/) != null
                 ) {
                     if ((value as FunctionToken).val.endsWith("-gradient")) {
-                        if (equalsIgnoreCase("-webkit-linear-gradient", (value as IdentToken | FunctionToken).val)) {
-                            console.debug({ value, typ: EnumToken[value.typ] });
+                        if (regMatchLinearGradient.test((value as IdentToken | FunctionToken).val)) {
                             Object.assign(value, {
                                 val: "linear-gradient",
-                                chi: this.toLinearGradient((value as FunctionToken).chi),
+                                chi: this.webkitLinearToLinearGradient((value as FunctionToken).chi),
                             });
+                        } else if (equalsIgnoreCase((value as IdentToken | FunctionToken).val, "-webkit-gradient")) {
+                            this.webkitGradientToGradient(value as FunctionToken);
                         }
                         // not supported yet
                         break;
@@ -244,7 +249,7 @@ export class ComputePrefixFeature {
         return node;
     }
 
-    toLinearGradient(tokens: Token[]): Token[] {
+    webkitLinearToLinearGradient(tokens: Token[]): Token[] {
         let i: number;
         let k: number;
         let to: string;
@@ -275,7 +280,7 @@ export class ComputePrefixFeature {
             ) {
                 (tokens[i] as AngleToken | NumberToken).val =
                     (90 -
-                    // @ts-expect-error
+                        // @ts-expect-error
                         ((tokens[i] as AngleToken | NumberToken).typ == EnumToken.NumberTokenType
                             ? (tokens[i] as NumberToken)
                             : (toDegrees(tokens[i] as AngleToken).val as number))) %
@@ -354,96 +359,274 @@ export class ComputePrefixFeature {
         return tokens;
     }
 
-    toGradient(tokens: Token[]): Token[] {
-        let i: number;
+    webkitGradientToGradient(token: FunctionToken): void {
+        let i: number = 0;
         let k: number;
         let to: string;
         let val: string;
-        let key: string;
+        let key: string = "";
+        let commaCount: number;
+        let type: string = "";
+        let tokens = token.chi.slice();
+
+        while (
+            i < tokens.length &&
+            (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)
+        ) {
+            i++;
+        }
+
+        if (i >= tokens.length || tokens[i].typ !== EnumToken.IdenTokenType) {
+            return;
+        }
+
+        // linear or radial
+        if (equalsIgnoreCase((tokens[i] as IdentToken).val, "linear")) {
+            type = "linear-gradient";
+            i++;
+        } else {
+            return;
+        }
+
+        while (
+            i < tokens.length &&
+            (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)
+        ) {
+            i++;
+        }
+
+        if (tokens[i].typ !== EnumToken.CommaTokenType) {
+            return;
+        }
+
+        tokens.splice(0, i + 1);
+
+        commaCount = 0;
 
         for (i = 0; i < tokens.length; i++) {
-            if (
-                tokens[i].typ == EnumToken.AngleTokenType ||
-                (tokens[i].typ == EnumToken.NumberTokenType && (tokens[i] as AngleToken).val == 0)
-            ) {
-                (tokens[i] as AngleToken | NumberToken).val =
-                    (90 -
+            if (tokens[i].typ === EnumToken.CommaTokenType) {
+                commaCount++;
+
+                if (commaCount > 1) {
+                    break;
+                }
+            }
+
+            if (tokens[i].typ === EnumToken.IdenTokenType) {
+                key += (key.length > 0 ? " " : "") + (tokens[i] as IdentToken).val;
+            }
+        }
+
+        // key = key.toLowerCase();
+
+        // mapping keywords
+        // left top → left bottom	to bottom
+        // left bottom → left top	to top
+        // left top → right top	to right
+        // right top → left top	to left
+        // left top → right bottom	to bottom right
+        // right top → left bottom	to bottom left
+        // left bottom → right top	to top right
+        // right bottom → left top	to top left
+
+        const replacements: Token[] = [];
+
+        if (key === "left top left bottom") {
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" });
+            replacements.push({ typ: EnumToken.WhitespaceTokenType });
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "bottom" });
+        } else if (key === "left bottom left top") {
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" });
+            replacements.push({ typ: EnumToken.WhitespaceTokenType });
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "top" });
+        } else if (key === "left top right top") {
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" });
+            replacements.push({ typ: EnumToken.WhitespaceTokenType });
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "right" });
+        } else if (key === "right top left top") {
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" });
+            replacements.push({ typ: EnumToken.WhitespaceTokenType });
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "left" });
+        } else if (key === "left top right bottom") {
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" });
+            replacements.push({ typ: EnumToken.WhitespaceTokenType });
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "bottom" });
+            replacements.push({ typ: EnumToken.WhitespaceTokenType });
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "right" });
+        } else if (key === "right top left bottom") {
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" });
+            replacements.push({ typ: EnumToken.WhitespaceTokenType });
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "bottom" });
+            replacements.push({ typ: EnumToken.WhitespaceTokenType });
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "left" });
+        } else if (key === "left bottom right top") {
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" });
+            replacements.push({ typ: EnumToken.WhitespaceTokenType });
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "top" });
+            replacements.push({ typ: EnumToken.WhitespaceTokenType });
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "right" });
+        } else if (key === "right bottom left top") {
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" });
+            replacements.push({ typ: EnumToken.WhitespaceTokenType });
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "top" });
+            replacements.push({ typ: EnumToken.WhitespaceTokenType });
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "left" });
+        }
+
+        tokens.splice(0, i, ...replacements);
+
+        let checkStop: boolean = true;
+        let checkStopIndex: number = replacements.length + 1;
+        let colorStop: Token[] = [];
+        // i = replacements.length + 1;
+
+        for (i = replacements.length + 1; i < tokens.length; i++) {
+            if (tokens[i].typ === EnumToken.CommaTokenType && checkStop) {
+                checkStopIndex = i;
+                continue;
+            }
+
+            if (tokens[i].typ === EnumToken.FunctionTokenType) {
+                if (equalsIgnoreCase((tokens[i] as FunctionToken).val, "to")) {
+                    colorStop.push(
+                        tokens[checkStopIndex],
+                        ...(tokens[i] as FunctionToken)
+                            .chi /*, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: 100 } */,
+                    );
+                    tokens.splice(checkStopIndex!, i - checkStopIndex! + 1);
+
+                    i = checkStopIndex!;
+                    checkStop = false;
+
+                    // k = (tokens[i] as FunctionToken).chi.length + 2;
+                    // tokens.splice(i, 1, ...(tokens[i] as FunctionToken).chi, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: 100 });
+                    // i += k;
+                } else if (equalsIgnoreCase((tokens[i] as FunctionToken).val, "from")) {
+                    k = (tokens[i] as FunctionToken).chi.length + 1;
+                    tokens.splice(
+                        i,
+                        1,
+                        ...(tokens[i] as FunctionToken).chi,
+                        { typ: EnumToken.WhitespaceTokenType },
+                        { typ: EnumToken.PercentageTokenType, val: 0 },
+                    );
+                    i += k;
+                } else if (equalsIgnoreCase((tokens[i] as FunctionToken).val, "color-stop")) {
+                    k = (tokens[i] as FunctionToken).chi.length - 1;
                     // @ts-expect-error
-                        ((tokens[i] as AngleToken | NumberToken).typ == EnumToken.NumberTokenType
-                            ? (tokens[i] as NumberToken)
-                            : (toDegrees(tokens[i] as AngleToken).val as number))) %
-                    360;
-            } else if (tokens[i].typ == EnumToken.IdenTokenType) {
-                key = (tokens[i] as IdentToken).val.toLowerCase();
-                switch (key) {
-                    case "right":
-                    case "left":
-                        tokens.splice(
-                            i,
-                            1,
-                            { typ: EnumToken.IdenTokenType, val: "to" },
-                            { typ: EnumToken.WhitespaceTokenType },
-                            {
-                                typ: EnumToken.IdenTokenType,
-                                val: key == "right" ? "left" : "right",
-                            },
-                        );
-                        i += 2;
-                        break;
-
-                    case "top":
-                    case "bottom":
-                        k = i + 1;
-
-                        to = key == "top" ? "bottom" : "top";
-
-                        while (
-                            k < tokens.length &&
-                            (tokens[k].typ === EnumToken.WhitespaceTokenType ||
-                                tokens[k].typ === EnumToken.CommentTokenType)
-                        ) {
-                            k++;
-                        }
-
-                        if (tokens[k]?.typ === EnumToken.IdenTokenType) {
-                            val = "";
-
-                            if (equalsIgnoreCase((tokens[k] as IdentToken).val, "left")) {
-                                val = "right";
-                            }
-
-                            if (equalsIgnoreCase((tokens[k] as IdentToken).val, "right")) {
-                                val = "left";
-                            }
-
-                            if (val !== "") {
-                                tokens.splice(
-                                    i,
-                                    k - i + 1,
-                                    { typ: EnumToken.IdenTokenType, val: "to" },
-                                    { typ: EnumToken.WhitespaceTokenType },
-                                    { typ: EnumToken.IdenTokenType, val: to },
-                                    { typ: EnumToken.WhitespaceTokenType },
-                                    { typ: EnumToken.IdenTokenType, val },
-                                );
-                                i += 4;
-                                break;
-                            }
-                        }
-
-                        tokens.splice(
-                            i,
-                            1,
-                            { typ: EnumToken.IdenTokenType, val: "to" },
-                            { typ: EnumToken.WhitespaceTokenType },
-                            { typ: EnumToken.IdenTokenType, val: to },
-                        );
-                        i += 2;
-                        break;
+                    tokens.splice(
+                        i,
+                        1,
+                        ...(tokens[i] as FunctionToken).chi
+                            .reverse()
+                            .map((t: Token) =>
+                                t.typ === EnumToken.CommaTokenType
+                                    ? { typ: EnumToken.WhitespaceTokenType }
+                                    : t.typ === EnumToken.NumberTokenType
+                                      ? ({
+                                            typ: EnumToken.PercentageTokenType,
+                                            val: (t as NumberToken).val * 100,
+                                        } as PercentageToken)
+                                      : t,
+                            ),
+                    );
+                    i += k;
                 }
             }
         }
 
-        return tokens;
+        if (colorStop.length > 0) {
+            tokens.push(...colorStop);
+        }
+
+        if (type !== "") {
+            token.val = type;
+
+            token.chi.length = 0;
+            token.chi.push(...tokens);
+        }
+
+        // for (i = 0; i < tokens.length; i++) {
+        //     if (
+        //         tokens[i].typ == EnumToken.AngleTokenType ||
+        //         (tokens[i].typ == EnumToken.NumberTokenType && (tokens[i] as AngleToken).val == 0)
+        //     ) {
+        //         (tokens[i] as AngleToken | NumberToken).val =
+        //             (90 -
+        //             // @ts-expect-error
+        //                 ((tokens[i] as AngleToken | NumberToken).typ == EnumToken.NumberTokenType
+        //                     ? (tokens[i] as NumberToken)
+        //                     : (toDegrees(tokens[i] as AngleToken).val as number))) %
+        //             360;
+        //     } else if (tokens[i].typ == EnumToken.IdenTokenType) {
+        //         key = (tokens[i] as IdentToken).val.toLowerCase();
+        //         switch (key) {
+        //             case "right":
+        //             case "left":
+        //                 tokens.splice(
+        //                     i,
+        //                     1,
+        //                     { typ: EnumToken.IdenTokenType, val: "to" },
+        //                     { typ: EnumToken.WhitespaceTokenType },
+        //                     {
+        //                         typ: EnumToken.IdenTokenType,
+        //                         val: key == "right" ? "left" : "right",
+        //                     },
+        //                 );
+        //                 i += 2;
+        //                 break;
+
+        //             case "top":
+        //             case "bottom":
+        //                 k = i + 1;
+
+        //                 to = key == "top" ? "bottom" : "top";
+
+        //                 while (
+        //                     k < tokens.length &&
+        //                     (tokens[k].typ === EnumToken.WhitespaceTokenType ||
+        //                         tokens[k].typ === EnumToken.CommentTokenType)
+        //                 ) {
+        //                     k++;
+        //                 }
+
+        //                 if (tokens[k]?.typ === EnumToken.IdenTokenType) {
+        //                     val = "";
+
+        //                     if (equalsIgnoreCase((tokens[k] as IdentToken).val, "left")) {
+        //                         val = "right";
+        //                     }
+
+        //                     if (equalsIgnoreCase((tokens[k] as IdentToken).val, "right")) {
+        //                         val = "left";
+        //                     }
+
+        //                     if (val !== "") {
+        //                         tokens.splice(
+        //                             i,
+        //                             k - i + 1,
+        //                             { typ: EnumToken.IdenTokenType, val: "to" },
+        //                             { typ: EnumToken.WhitespaceTokenType },
+        //                             { typ: EnumToken.IdenTokenType, val: to },
+        //                             { typ: EnumToken.WhitespaceTokenType },
+        //                             { typ: EnumToken.IdenTokenType, val },
+        //                         );
+        //                         i += 4;
+        //                         break;
+        //                     }
+        //                 }
+
+        //                 tokens.splice(
+        //                     i,
+        //                     1,
+        //                     { typ: EnumToken.IdenTokenType, val: "to" },
+        //                     { typ: EnumToken.WhitespaceTokenType },
+        //                     { typ: EnumToken.IdenTokenType, val: to },
+        //                 );
+        //                 i += 2;
+        //                 break;
+        //         }
+        //     }
+        // }
     }
 }

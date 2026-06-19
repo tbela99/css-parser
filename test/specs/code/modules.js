@@ -166,7 +166,7 @@ composes: button cell title from "${dirname(new URL(import.meta.url).pathname)}/
  --progress_rlpv3: 25%;
  width: 100%;
  height: 5px;
- background: linear-gradient(to right,#00d230 var(--progress_rlpv3),#000 var(--progress_rlpv3));
+ background: linear-gradient(90deg,#00d230 var(--progress_rlpv3),#000 var(--progress_rlpv3));
  animation: progressAnimation_nrv19 2.5s infinite
 }
 @keyframes progressAnimation_nrv19 {

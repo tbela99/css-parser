@@ -83,11 +83,10 @@ import type { ValidationMatch } from "../validation/types.d.ts";
 import { matchAtRuleWhenElseSyntax } from "./utils/at-rule-when-else.ts";
 import { urlTokenMatcher } from "../syntax/constants.ts";
 import { parseAtRuleSupportSyntax } from "./utils/at-rule-support.ts";
-import { replaceToken, trimWhiteSpaceTokens } from "./utils/token.ts";
+import { replaceNodeOrValue, trimWhiteSpaceTokens } from "./utils/token.ts";
 import { parseAtRuleContainerQueryList } from "./utils/at-rule-container.ts";
 import { parseMediaqueryList } from "./utils/at-rule-media.ts";
 import { matchAtRuleSyntax } from "./utils/at-rule.ts";
-import { parseAtRulePage } from "./utils/at-rule-page.ts";
 import { parseAtRuleFontFeatureValues } from "./utils/at-rule-font-feature-values.ts";
 import { matchGenericSyntax } from "./utils/at-rule-generic.ts";
 import { memoize } from "./utils/cache.ts";
@@ -125,7 +124,7 @@ const forbiddenStartCharacters: number[] = ["0", "1", "2", "3", "4", "5", "6", "
 );
 
 /**
- * short-scoped name generator.
+ * Short-scoped name generator.
  *
  * @param localName
  * @param filePath
@@ -159,7 +158,7 @@ function reject(reason?: any) {
 }
 
 /**
- * transform case of key name
+ * Transform case of key name
  * @param key
  * @param how
  *
@@ -181,7 +180,7 @@ export const getKeyName = memoize((key: string, how: ModuleCaseTransformEnum): s
 });
 
 /**
- * generate scoped name
+ * Generate scoped name
  * @param localName
  * @param filePath
  * @param pattern
@@ -316,7 +315,7 @@ export const generateScopedName = memoize(
 );
 
 /**
- * parse css string
+ * Parse css string
  * @param iter
  * @param options
  *
@@ -913,7 +912,7 @@ export async function doParse(
                     }
 
                     if (node != result.node) {
-                        replaceToken(
+                        replaceNodeOrValue(
                             result.parent as AstRule | AstAtRule | AstKeyframesAtRule | AstKeyFrameRule | AstStyleSheet,
                             result.node,
                             node,
@@ -996,7 +995,7 @@ export async function doParse(
                     // @ts-ignore
                     if (node != result.node) {
                         // @ts-ignore
-                        replaceToken(result.parent, result.node, node);
+                        replaceNodeOrValue(result.parent, result.node, node);
                     }
                 } else if (valuesHandlers!.size > 0) {
                     let node: Token | AstNode | null = null;
@@ -1041,7 +1040,7 @@ export async function doParse(
 
                     if (node != result.node) {
                         // @ts-ignore
-                        replaceToken(result.parent, value, node);
+                        replaceNodeOrValue(result.parent, value, node);
                     }
 
                     const tokens: Token[] = Array.isArray(result.node.tokens) ? (result.node.tokens as Token[]) : [];
@@ -1095,7 +1094,7 @@ export async function doParse(
 
                         if (node != value) {
                             // @ts-ignore
-                            replaceToken(parent, value, node);
+                            replaceNodeOrValue(parent, value, node);
                         }
                     }
                 }
@@ -1104,10 +1103,12 @@ export async function doParse(
     }
 
     if (options.minify) {
+
         if (ast.chi.length > 0) {
             let passes: number = options.pass ?? (1 as number);
 
             while (passes--) {
+
                 minify(ast, options, true, errors, false);
             }
         }
@@ -1715,7 +1716,7 @@ export async function doParse(
                         (value.typ == EnumToken.IdenTokenType || isIdentColor(value)) &&
                         (value as IdentToken).val in importedCssVariables
                     ) {
-                        replaceToken(parent, value, importedCssVariables[(value as IdentToken).val].val);
+                        replaceNodeOrValue(parent, value, importedCssVariables[(value as IdentToken).val].val);
                     }
                 }
             } else if (node.typ == EnumToken.RuleNodeType) {
@@ -2175,8 +2176,8 @@ function parseNode(
     return null;
 }
 
-/**mjgvgyikjkml,kmbm b8790u89y70
-vbbnkit;;;jmjhyg77 * @param options
+/**
+ * @param options
  * @param errors
  * @param parseAsBlock
  */
@@ -3095,7 +3096,7 @@ export function parseAtRule(
 }
 
 /**
- * parse a string as an array of declaration nodes
+ * Parse a string as an array of declaration nodes
  * @param declaration
  *
  * Example:
@@ -3126,7 +3127,7 @@ export async function parseDeclarations(declaration: string): Promise<Array<AstD
 }
 
 /**
- * parse css string and return an array of tokens
+ * Parse css string and return an array of tokens
  * @param src
  * @param options
  *
@@ -3163,7 +3164,7 @@ export function parseString(src: string, options: { location: boolean; src?: str
 }
 
 /**
- * parse function tokens in a token array
+ * Parse function tokens in a token array
  * @param tokens
  * @param options
  *

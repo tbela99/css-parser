@@ -43,6 +43,7 @@ export { isOkLabClose, okLabDistance } from "./lib/syntax/color/utils/distance.t
 export { parseDeclarations } from "./lib/parser/parse.ts";
 export { find, findLast, findByValue, findAll } from "./lib/ast/find.ts";
 export { cloneNode } from "./lib/ast/clone.ts";
+export { replaceNodeOrValue } from "./lib/parser/utils/token.ts";
 export {
     EnumToken,
     ColorType,
@@ -57,7 +58,7 @@ export { FeatureWalkMode } from "./lib/ast/features/type.ts";
 export { dirname, resolve, ResponseType };
 
 /**
- * load file or url
+ * Load file or url
  * @param url
  * @param currentDirectory
  * @param responseType
@@ -103,7 +104,7 @@ export async function load(
 }
 
 /**
- * render the ast tree
+ * Render the ast tree
  * @param data
  * @param options
  * @param mapping
@@ -154,7 +155,7 @@ export function render(
 }
 
 /**
- * parse css file
+ * Parse css file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
@@ -191,7 +192,7 @@ export async function parseFile(
 }
 
 /**
- * parse css
+ * Parse css
  * @param stream
  * @param options
  *
@@ -250,7 +251,7 @@ export async function parse(
 }
 
 /**
- * transform css file
+ * Transform css file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
@@ -285,7 +286,7 @@ export async function transformFile(
 }
 
 /**
- * transform css
+ * Transform css
  * @param css
  * @param options
  *

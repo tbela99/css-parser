@@ -3,8 +3,23 @@
 ## v1.4.4
 
 - [x] minify transform-origin property
-- [x] do not minify supports() arguments
 
+### Bug fixes
+- [x] do not minify supports() arguments
+- [x] incorreectly parse selector when removePrefix and css module settings are enabled
+
+```css
+*,:before,:after {
+ box-sizing: border-box
+}
+```
+is parsed and rendered as 
+
+```css
+,,*:before:after {
+ box-sizing: border-box
+}
+```
 ## v1.4.3
 
 ### CSS Modules

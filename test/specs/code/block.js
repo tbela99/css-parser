@@ -808,7 +808,7 @@ content: '\\21 now\\21';
  color: #00b400;
  background: -o-linear-gradient(top,#fff,#000);
  background: -webkit-gradient(linear,left top,left bottom,from(#fff),to(#000));
- background: linear-gradient(to bottom,#fff,#000)
+ background: linear-gradient(.5turn,#fff,#000)
 }`));
     });
 
@@ -960,6 +960,19 @@ div-2 {
             beautify: true
         }).then(result => expect(result.code).equals(`.xl:origin-bottom-left {
  transform-origin: 0 100%
+}`));
+    });
+
+    it('transform-origin #48', function () {
+        const file = `
+*,:before,:after {
+ box-sizing: border-box
+}
+`;
+        return transform(file, {
+            beautify: true
+        }).then(result => expect(result.code).equals(`*,:before,:after {
+ box-sizing: border-box
 }`));
     });
 }

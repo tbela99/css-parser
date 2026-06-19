@@ -1,6 +1,7 @@
 import { EnumToken } from "../ast/types.ts";
 import { config } from "../validation/json.ts";
 
+export const regMatchLinearGradient = /^-((webkit)|o|moz)-linear-gradient$/i;
 export const mFLT = new Set([EnumToken.LtTokenType, EnumToken.LteTokenType]);
 export const mFGT = new Set([EnumToken.GtTokenType, EnumToken.GteTokenType]);
 
@@ -168,7 +169,10 @@ export const imageFunc: string[] = [
     "element",
     "cross-fade",
     "paint",
-    "-webkit-linear-gradient"
+    "-o-linear-gradient",
+    "-moz-linear-gradient",
+    "-webkit-linear-gradient",
+    "-webkit-gradient",
 ];
 export const transformFunctions: string[] = [
     "translate",

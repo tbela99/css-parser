@@ -671,7 +671,7 @@ Output:
 
 UTF-8 escape sequences are decoded and replaced by their corresponding characters.
 
-### Experimental CSS prefix removal
+### CSS prefix removal (Experimental)
 
 This feature is disabled by default. The prefixed versions of the css gradient functions are not supported.
 

@@ -45,7 +45,7 @@ export function find(ast: AstNode, matcher: (node: AstNode) => boolean): AstNode
 }
 
 /**
- * search the ast tree by checking each node's value token and return the first match
+ * Search the ast tree by checking each node's value token and return the first match
  * 
  * ```ts
  *  // find the first ast node which contains the length token '30px'
@@ -105,7 +105,7 @@ export function findByValue(
 }
 
 /** 
- * search the ast tree and return all matches
+ * Search the ast tree and return all matches
  * 
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'

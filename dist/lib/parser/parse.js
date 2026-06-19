@@ -18,7 +18,7 @@ import { ValidationSyntaxGroupEnum } from '../validation/parser/typedef.js';
 import { matchAtRuleImportSyntax } from './utils/at-rule-import.js';
 import { matchAtRuleWhenElseSyntax } from './utils/at-rule-when-else.js';
 import { parseAtRuleSupportSyntax } from './utils/at-rule-support.js';
-import { replaceToken, trimWhiteSpaceTokens } from './utils/token.js';
+import { replaceNodeOrValue, trimWhiteSpaceTokens } from './utils/token.js';
 import { parseAtRuleContainerQueryList } from './utils/at-rule-container.js';
 import { parseMediaqueryList } from './utils/at-rule-media.js';
 import { matchAtRuleSyntax } from './utils/at-rule.js';
@@ -51,7 +51,7 @@ let keyNameCounter = 0;
 let keyNameCache = {};
 const forbiddenStartCharacters = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].map((c) => c.charCodeAt(0));
 /**
- * short-scoped name generator.
+ * Short-scoped name generator.
  *
  * @param localName
  * @param filePath
@@ -77,7 +77,7 @@ function reject(reason) {
     throw new Error(reason ?? "Parsing aborted");
 }
 /**
- * transform case of key name
+ * Transform case of key name
  * @param key
  * @param how
  *
@@ -96,7 +96,7 @@ const getKeyName = memoize((key, how) => {
     return key;
 });
 /**
- * generate scoped name
+ * Generate scoped name
  * @param localName
  * @param filePath
  * @param pattern
@@ -200,7 +200,7 @@ const generateScopedName = memoize(async (localName, filePath, pattern, hashLeng
     return (/^[0-9]/.test(result) ? "_" : "") + result;
 });
 /**
- * parse css string
+ * Parse css string
  * @param iter
  * @param options
  *
@@ -654,7 +654,7 @@ async function doParse(iter, options = {}) {
                         }
                     }
                     if (node != result.node) {
-                        replaceToken(result.parent, result.node, node);
+                        replaceNodeOrValue(result.parent, result.node, node);
                     }
                 }
                 else if ((result.node.typ == EnumToken.RuleNodeType &&
@@ -709,7 +709,7 @@ async function doParse(iter, options = {}) {
                     // @ts-ignore
                     if (node != result.node) {
                         // @ts-ignore
-                        replaceToken(result.parent, result.node, node);
+                        replaceNodeOrValue(result.parent, result.node, node);
                     }
                 }
                 else if (valuesHandlers.size > 0) {
@@ -743,7 +743,7 @@ async function doParse(iter, options = {}) {
                     }
                     if (node != result.node) {
                         // @ts-ignore
-                        replaceToken(result.parent, value, node);
+                        replaceNodeOrValue(result.parent, value, node);
                     }
                     const tokens = Array.isArray(result.node.tokens) ? result.node.tokens : [];
                     if (Array.isArray(result.node.val)) {
@@ -785,7 +785,7 @@ async function doParse(iter, options = {}) {
                         }
                         if (node != value) {
                             // @ts-ignore
-                            replaceToken(parent, value, node);
+                            replaceNodeOrValue(parent, value, node);
                         }
                     }
                 }
@@ -1260,7 +1260,7 @@ async function doParse(iter, options = {}) {
                     }
                     else if ((value.typ == EnumToken.IdenTokenType || isIdentColor(value)) &&
                         value.val in importedCssVariables) {
-                        replaceToken(parent, value, importedCssVariables[value.val].val);
+                        replaceNodeOrValue(parent, value, importedCssVariables[value.val].val);
                     }
                 }
             }
@@ -1589,8 +1589,8 @@ function parseNode(tokens, context, options, errors, stats) {
     }
     return null;
 }
-/**mjgvgyikjkml,kmbm b8790u89y70
-vbbnkit;;;jmjhyg77 * @param options
+/**
+ * @param options
  * @param errors
  * @param parseAsBlock
  */
@@ -2324,7 +2324,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
     }
 }
 /**
- * parse a string as an array of declaration nodes
+ * Parse a string as an array of declaration nodes
  * @param declaration
  *
  * Example:
@@ -2348,7 +2348,7 @@ async function parseDeclarations(declaration) {
     });
 }
 /**
- * parse css string and return an array of tokens
+ * Parse css string and return an array of tokens
  * @param src
  * @param options
  *
@@ -2380,7 +2380,7 @@ function parseString(src, options = { location: false }) {
     return parseTokens([...tokenize(parseInfo)].map((t) => t.token), { sourcemap: options.location }).slice(0, -1);
 }
 /**
- * parse function tokens in a token array
+ * Parse function tokens in a token array
  * @param tokens
  * @param options
  *

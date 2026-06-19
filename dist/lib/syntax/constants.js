@@ -1,6 +1,7 @@
 import { EnumToken } from '../ast/types.js';
 import config from '../validation/config.json.js';
 
+const regMatchLinearGradient = /^-((webkit)|o|moz)-linear-gradient$/i;
 const mFLT = new Set([EnumToken.LtTokenType, EnumToken.LteTokenType]);
 const mFGT = new Set([EnumToken.GtTokenType, EnumToken.GteTokenType]);
 const tokensMap = new Map([
@@ -160,7 +161,10 @@ const imageFunc = [
     "element",
     "cross-fade",
     "paint",
-    "-webkit-linear-gradient"
+    "-o-linear-gradient",
+    "-moz-linear-gradient",
+    "-webkit-linear-gradient",
+    "-webkit-gradient",
 ];
 const transformFunctions = [
     "translate",
@@ -434,4 +438,4 @@ const trimTokenSpace = new Set([
 const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
 const combinators = ["+", ">", "~", "||", "|"];
 
-export { COLORS_NAMES, D50, NAMES_COLORS, anglePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, definedPropertySettings, deprecatedSystemColors, e, funcLike, generalEnclosedFunc, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };
+export { COLORS_NAMES, D50, NAMES_COLORS, anglePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, definedPropertySettings, deprecatedSystemColors, e, funcLike, generalEnclosedFunc, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, regMatchLinearGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };

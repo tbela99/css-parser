@@ -56,6 +56,141 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
  height: 25%
 }`));
         });
+
+        it('-webkit-linear-gradient() angle #3', function () {
+
+            return transform(`
+  .xl\:origin-bottom-left {
+    background-image:-webkit-linear-gradient( 30deg, red, blue);
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl:origin-bottom-left {
+ background-image: linear-gradient(60deg,red,blue)
+}`));
+        });
+
+        it('-webkit-linear-gradient() left #4', function () {
+
+            return transform(`
+  .xl\:origin-bottom-left {
+    background-image:-webkit-linear-gradient( left, red, blue);
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl:origin-bottom-left {
+ background-image: linear-gradient(90deg,red,blue)
+}`));
+        });
+
+        it('-webkit-linear-gradient() right #5', function () {
+
+            return transform(`
+  .xl\:origin-bottom-left {
+    background-image:-webkit-linear-gradient( right, red, blue);
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl:origin-bottom-left {
+ background-image: linear-gradient(270deg,red,blue)
+}`));
+        });
+
+        it('-webkit-linear-gradient() top #6', function () {
+
+            return transform(`
+  .xl\:origin-bottom-left {
+    background-image:-webkit-linear-gradient( top, red, blue);
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl:origin-bottom-left {
+ background-image: linear-gradient(.5turn,red,blue)
+}`));
+        });
+
+        it('-webkit-linear-gradient() top right #7', function () {
+
+            return transform(`
+  .xl\:origin-bottom-left {
+    background-image:-webkit-linear-gradient( top right, red, blue);
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl:origin-bottom-left {
+ background-image: linear-gradient(to bottom left,red,blue)
+}`));
+        });
+
+        it('-webkit-linear-gradient() top left #8', function () {
+
+            return transform(`
+  .xl\:origin-bottom-left {
+    background-image:-webkit-linear-gradient( top left, red, blue);
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl:origin-bottom-left {
+ background-image: linear-gradient(to bottom right,red,blue)
+}`));
+        });
+
+        it('-webkit-linear-gradient() bottom #9', function () {
+
+            return transform(`
+  .xl\:origin-bottom-left {
+    background-image:-webkit-linear-gradient( bottom, red, blue);
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl:origin-bottom-left {
+ background-image: linear-gradient(0,red,blue)
+}`));
+        });
+
+        it('-webkit-linear-gradient() bottom right #10', function () {
+
+            return transform(`
+  .xl\:origin-bottom-left {
+    background-image:-webkit-linear-gradient( bottom right, red, blue);
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl:origin-bottom-left {
+ background-image: linear-gradient(to top left,red,blue)
+}`));
+        });
+
+        it('-webkit-linear-gradient() bottom left #11', function () {
+
+            return transform(`
+  .xl\:origin-bottom-left {
+    background-image:-webkit-linear-gradient( bottom left, red, blue);
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl:origin-bottom-left {
+ background-image: linear-gradient(to top right,red,blue)
+}`));
+        });
     });
 
 }

@@ -1,5 +1,5 @@
 /**
- * options for the walk function
+ * Options for the walk function
  */
 var WalkerOptionEnum;
 (function (WalkerOptionEnum) {
@@ -21,7 +21,7 @@ var WalkerOptionEnum;
     WalkerOptionEnum[WalkerOptionEnum["IgnoreChildren"] = 8] = "IgnoreChildren";
 })(WalkerOptionEnum || (WalkerOptionEnum = {}));
 /**
- * event types for the walkValues function
+ * Event types for the walkValues function
  */
 var WalkerEvent;
 (function (WalkerEvent) {
@@ -35,7 +35,7 @@ var WalkerEvent;
     WalkerEvent[WalkerEvent["Leave"] = 2] = "Leave";
 })(WalkerEvent || (WalkerEvent = {}));
 /**
- * walk ast nodes
+ * Walk ast nodes
  * @param node initial node
  * @param filter control the walk process
  * @param reverse walk in reverse order
@@ -152,7 +152,7 @@ function* walk(node, filter, reverse) {
     }
 }
 /**
- * walk ast node value tokens
+ * Walk ast node value tokens
  * @param values
  * @param root
  * @param filter

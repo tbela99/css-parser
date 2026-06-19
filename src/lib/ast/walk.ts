@@ -14,7 +14,7 @@ import type {
 import { EnumToken } from "./types.ts";
 
 /**
- * options for the walk function
+ * Options for the walk function
  */
 export enum WalkerOptionEnum {
     /**
@@ -36,7 +36,7 @@ export enum WalkerOptionEnum {
 }
 
 /**
- * event types for the walkValues function
+ * Event types for the walkValues function
  */
 export enum WalkerEvent {
     /**
@@ -50,7 +50,7 @@ export enum WalkerEvent {
 }
 
 /**
- * walk ast nodes
+ * Walk ast nodes
  * @param node initial node
  * @param filter control the walk process
  * @param reverse walk in reverse order
@@ -177,7 +177,7 @@ export function* walk(node: AstNode, filter?: WalkerFilter | null, reverse?: boo
 }
 
 /**
- * walk ast node value tokens
+ * Walk ast node value tokens
  * @param values
  * @param root
  * @param filter

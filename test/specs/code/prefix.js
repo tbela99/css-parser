@@ -270,9 +270,9 @@ a {
  user-select: none;
  user-select: none;
  user-select: none;
- background: -o-linear-gradient(top,#fff,#000);
- background: -webkit-gradient(linear,left top,left bottom,from(#fff),to(#000));
- background: linear-gradient(to bottom,#fff,#000)
+ background: linear-gradient(.5turn,#fff,#000);
+ background: linear-gradient(.5turn,#fff 0,#000);
+ background: linear-gradient(.5turn,#fff,#000)
 }
 .site>* {
  padding: 30px;

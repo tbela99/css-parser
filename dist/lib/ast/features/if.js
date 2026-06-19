@@ -3,7 +3,7 @@ import { renderToken } from '../../renderer/render.js';
 import { FeatureWalkMode } from './type.js';
 import { definedPropertySettings } from '../../syntax/constants.js';
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
-import { replaceToken } from '../../parser/utils/token.js';
+import { replaceNodeOrValue } from '../../parser/utils/token.js';
 import { cloneNode } from '../clone.js';
 import { trimArray } from '../../validation/match.js';
 import { findByValue } from '../find.js';
@@ -30,7 +30,7 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
             }
             //
             if (target.typ === EnumToken.IdenTokenType && equalsIgnoreCase("else", target.val)) {
-                replaceToken(nodeMap.get(targetParentWrapper), nodeMap.get(targetWrapper), node.r.r.at(-1)?.typ ===
+                replaceNodeOrValue(nodeMap.get(targetParentWrapper), nodeMap.get(targetWrapper), node.r.r.at(-1)?.typ ===
                     EnumToken.SemiColonTokenType
                     ? trimArray(node.r.r.slice(0, -1))
                     : node.r.r);
@@ -49,7 +49,7 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
                                         let leftSide = siblingWrapper.chi[k].l.l.find((t) => t.typ != EnumToken.CommentTokenType &&
                                             t.typ != EnumToken.WhitespaceTokenType);
                                         if (eq(left, leftSide)) {
-                                            replaceToken(nodeMap.get(targetParentWrapper), nodeMap.get(targetParentWrapper.chi[i]), siblingWrapper.chi[k]
+                                            replaceNodeOrValue(nodeMap.get(targetParentWrapper), nodeMap.get(targetParentWrapper.chi[i]), siblingWrapper.chi[k]
                                                 .r.r.at(-1)?.typ === EnumToken.SemiColonTokenType
                                                 ? trimArray(siblingWrapper.chi[k]
                                                     .r.r.slice(0, -1))
@@ -67,12 +67,12 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
             }
         }
         if (replaceRight) {
-            replaceToken(nodeMap.get(targetParentWrapper), nodeMap.get(targetWrapper), node.r);
+            replaceNodeOrValue(nodeMap.get(targetParentWrapper), nodeMap.get(targetWrapper), node.r);
         }
         result.push(clonedDeclaration);
         nodeMap.clear();
         clonedDeclaration = cloneNode(declaration, true, nodeMap);
-        replaceToken(nodeMap.get(targetParentWrapper), nodeMap.get(targetWrapper), node.l);
+        replaceNodeOrValue(nodeMap.get(targetParentWrapper), nodeMap.get(targetWrapper), node.l);
         result.push(clonedDeclaration);
     }
     else if (node.typ === EnumToken.IfConditionTokenType) {
@@ -82,7 +82,7 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
         }
         if (left.typ === EnumToken.IdenTokenType && equalsIgnoreCase("else", left.val)) {
             clonedDeclaration = cloneNode(declaration, true, nodeMap);
-            replaceToken(nodeMap.get(parentWrapper), nodeMap.get(targetWrapper.typ === EnumToken.DeclarationNodeType ? node : targetWrapper), node.r.at(-1)?.typ === EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
+            replaceNodeOrValue(nodeMap.get(parentWrapper), nodeMap.get(targetWrapper.typ === EnumToken.DeclarationNodeType ? node : targetWrapper), node.r.at(-1)?.typ === EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
             result.push(clonedDeclaration);
         }
         else if (left?.typ === EnumToken.WhenElseFunctionTokenType) {
@@ -95,9 +95,14 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
                 ...definedPropertySettings,
                 value: [{ typ: EnumToken.ParensTokenType, chi: left.chi.slice() }],
             });
-            atRule.val = atRule.tokens.reduce((acc, curr) => acc + renderToken(curr), "");
+            const minify = atRule.nam !== 'supports';
+            const options = {
+                minify,
+                convertColor: minify,
+            };
+            atRule.val = atRule.tokens.reduce((acc, curr) => acc + renderToken(curr, options), "");
             clonedDeclaration = cloneNode(declaration, true, nodeMap);
-            replaceToken(nodeMap.get(targetWrapper), nodeMap.get(node), node.r.at(-1)?.typ === EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
+            replaceNodeOrValue(nodeMap.get(targetWrapper), nodeMap.get(node), node.r.at(-1)?.typ === EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
             clonedDeclaration.parent = atRule;
             atRule.chi.push(clonedDeclaration);
             result.push(atRule);
@@ -113,7 +118,7 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
             Object.defineProperty(atRule, "tokens", { ...definedPropertySettings, value: [left] });
             atRule.val = atRule.tokens.reduce((acc, curr) => acc + renderToken(curr), "");
             clonedDeclaration = cloneNode(declaration, true, nodeMap);
-            replaceToken(nodeMap.get(targetWrapper.typ === EnumToken.WildCardFunctionTokenType ? targetParentWrapper : targetWrapper), nodeMap.get(targetWrapper.typ === EnumToken.WildCardFunctionTokenType ? targetWrapper : node), node.r.at(-1)?.typ === EnumToken.SemiColonTokenType
+            replaceNodeOrValue(nodeMap.get(targetWrapper.typ === EnumToken.WildCardFunctionTokenType ? targetParentWrapper : targetWrapper), nodeMap.get(targetWrapper.typ === EnumToken.WildCardFunctionTokenType ? targetWrapper : node), node.r.at(-1)?.typ === EnumToken.SemiColonTokenType
                 ? trimArray(node.r.slice(0, -1))
                 : node.r);
             clonedDeclaration.parent = atRule;
@@ -124,7 +129,7 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
     }
     else if (wrapper.typ === EnumToken.WildCardFunctionTokenType) {
         clonedDeclaration = cloneNode(declaration, true, nodeMap);
-        replaceToken(nodeMap.get(parentWrapper), nodeMap.get(wrapper), node);
+        replaceNodeOrValue(nodeMap.get(parentWrapper), nodeMap.get(wrapper), node);
         result.push(clonedDeclaration);
     }
     return result;
@@ -164,7 +169,7 @@ function processNode(declarationNode, cache) {
         }
     }
     if (result.length > 0) {
-        replaceToken(declarationNode.parent, declarationNode, result);
+        replaceNodeOrValue(declarationNode.parent, declarationNode, result);
     }
     // else remove node?
     return result;
@@ -184,9 +189,9 @@ class ExpandIfFeature {
         }
     }
     run(declaration) {
-        const result = processNode(declaration, new Set());
+        processNode(declaration, new Set());
         let i;
-        for (const n of result) {
+        for (const n of declaration.parent.chi) {
             for (const { node } of walk(n)) {
                 if (node.typ === EnumToken.AtRuleNodeType && Array.isArray(node.chi)) {
                     for (i = 0; i < node.chi.length; i++) {
@@ -196,6 +201,7 @@ class ExpandIfFeature {
                             node.chi[i].val === node.chi[i + 1].val) {
                             node.chi[i].chi.push(...node.chi[i + 1].chi);
                             node.chi.splice(i + 1, 1);
+                            i--;
                         }
                     }
                     for (i = 0; i < node.chi.length; i++) {
@@ -203,6 +209,7 @@ class ExpandIfFeature {
                             node.chi[i].nam === node.nam &&
                             node.chi[i].val === node.val) {
                             node.chi.splice(i, 1, ...node.chi[i].chi);
+                            i--;
                         }
                     }
                 }

@@ -74,6 +74,9 @@ var ValidationTokenEnum;
     ValidationTokenEnum[ValidationTokenEnum["DisallowWhitespace"] = 46] = "DisallowWhitespace";
     ValidationTokenEnum[ValidationTokenEnum["Colon"] = 47] = "Colon";
 })(ValidationTokenEnum || (ValidationTokenEnum = {}));
+/**
+ * Keys of the validation config object
+ */
 var ValidationSyntaxGroupEnum;
 (function (ValidationSyntaxGroupEnum) {
     ValidationSyntaxGroupEnum["Declarations"] = "declarations";
@@ -85,6 +88,9 @@ var ValidationSyntaxGroupEnum;
     ValidationSyntaxGroupEnum["Languages"] = "languages";
     ValidationSyntaxGroupEnum["mediaFeatures"] = "mediaFeatures";
 })(ValidationSyntaxGroupEnum || (ValidationSyntaxGroupEnum = {}));
+/**
+ * Types of media features
+ */
 var MediaFeatureType;
 (function (MediaFeatureType) {
     MediaFeatureType["BooleanType"] = "boolean";

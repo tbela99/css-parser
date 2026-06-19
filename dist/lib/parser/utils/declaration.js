@@ -86,7 +86,7 @@ function isDeclarationValue(tokens) {
     };
 }
 /**
- * parse declaration
+ * Parse declaration
  * @param tokens
  * @param parent
  * @param options
@@ -518,15 +518,6 @@ function parseDeclaration(tokens, parent, options, errors) {
         if (value.typ === EnumToken.IdenTokenType && isColor(value)) {
             parseColor(value);
         }
-        // else if (value.typ === EnumToken.UrlFunctionTokenType) {
-        //     const token = (value as FunctionToken).chi.find((t: Token) => t.typ === EnumToken.StringTokenType) as StringToken;
-        //     if (token != null && urlTokenMatcher.test((token as StringToken).val)) {
-        //         Object.assign(token, {
-        //             typ: EnumToken.UrlTokenTokenType,
-        //             val: (token as StringToken).val.slice(1, -1),
-        //         });
-        //     }
-        // }
     }
     if (name.val === "grid" ||
         name.val === "grid-template-areas" ||

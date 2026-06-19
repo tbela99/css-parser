@@ -173,9 +173,9 @@ const {ast, code, map, errors, stats} = await transform(css, {minify: true, reso
 Read from stdin with node using readable stream
 
 ```typescript
-import {transform} from "../src/node";
+import {transform} from '@tbela99/css-parser';
 import {Readable} from "node:stream";
-import type {TransformResult} from '../src/@types/index.d.ts';
+import type {TransformResult} from '@tbela99/css-parser';
 
 const readableStream: ReadableStream<string> = Readable.toWeb(process.stdin) as ReadableStream<string>;
 const result: TransformResult = await transform(readableStream, {beautify: true});
@@ -183,9 +183,75 @@ const result: TransformResult = await transform(readableStream, {beautify: true}
 console.log(result.code);
 ```
 
-### CSS if() function expansion
+### Expand CSS nesting rules
+
+Convert css nesting rules to legacy syntax.
 
 ```typescript
+import {transform} from '@tbela99/css-parser';
+
+const css = `
+table.colortable {
+    & td {
+        text-align: center;
+
+        &.c {
+            text-transform: uppercase
+        }
+
+        &:first-child, &:first-child + td {
+            border: 1px solid #000
+        }
+    }
+
+    & th {
+        text-align: center;
+        background: #000;
+        color: #fff
+    }
+}`;
+
+result = await transform(css, {
+
+    beautify: true,
+    expandNestingRules: true
+    }
+
+});
+
+console.log(result.code);
+```
+
+output
+
+```css
+
+table.colortable td {
+    text-align: center;
+}
+
+table.colortable td.c {
+    text-transform: uppercase;
+}
+
+table.colortable td:first-child, table.colortable td:first-child + td {
+    border: 1px solid black;
+}
+
+table.colortable th {
+    text-align: center;
+    background: black;
+    color: white;
+}
+```
+
+### CSS if() function expansion
+
+Convert CSS if() to legacy syntax.
+
+```typescript
+
+import {transform} from '@tbela99/css-parser';
 
 const css = `
 button {

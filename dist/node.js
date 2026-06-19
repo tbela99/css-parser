@@ -18,11 +18,12 @@ export { convertColor } from './lib/syntax/color/color.js';
 export { isOkLabClose, okLabDistance } from './lib/syntax/color/utils/distance.js';
 export { find, findAll, findByValue, findLast } from './lib/ast/find.js';
 export { cloneNode } from './lib/ast/clone.js';
+export { replaceNodeOrValue } from './lib/parser/utils/token.js';
 export { SourceMap } from './lib/renderer/sourcemap/sourcemap.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 
 /**
- * load file or url
+ * Load file or url
  * @param url
  * @param currentDirectory
  * @param responseType
@@ -72,7 +73,7 @@ async function load(url, currentDirectory = ".", responseType = false) {
     throw new Error(`File not found: '${resolved.absolute || url}'`);
 }
 /**
- * render the ast tree
+ * Render the ast tree
  * @param data
  * @param options
  * @param mapping
@@ -104,7 +105,7 @@ function render(data, options = {}, mapping) {
     return doRender(data, Object.assign(options, { resolve, dirname, cwd: options.cwd ?? process.cwd() }), mapping);
 }
 /**
- * parse css file
+ * Parse css file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
@@ -130,7 +131,7 @@ async function parseFile(file, options = {}, asStream = false) {
     return Promise.resolve((options.load ?? load)(file, ".", asStream)).then((stream) => parse(stream, { src: file, ...options }));
 }
 /**
- * parse css
+ * Parse css
  * @param stream
  * @param options
  *
@@ -193,7 +194,7 @@ async function parse(stream, options = {}) {
     });
 }
 /**
- * transform css file
+ * Transform css file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
@@ -219,7 +220,7 @@ async function transformFile(file, options = {}, asStream = false) {
     return Promise.resolve((options.load ?? load)(file, ".", asStream)).then((stream) => transform(stream, { src: file, ...options }));
 }
 /**
- * transform css
+ * Transform css
  * @param css
  * @param options
  *

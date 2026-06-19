@@ -489,15 +489,15 @@ button {
             return transform(nesting1, {
                 beautify: true, expandIfSyntax: true
             }).then((result) => expect(result.code).equals(`button {
- background: linear-gradient(to bottom,#fff,#ccc);
+ background: linear-gradient(.5turn,#fff,#ccc);
  @media (min-width:768px) {
-  background: linear-gradient(to right,#fff,#ccc);
+  background: linear-gradient(90deg,#fff,#ccc);
   @container style(--dark-mode) {
-   background: linear-gradient(to right,#333,#000)
+   background: linear-gradient(90deg,#333,#000)
   }
  }
  @container style(--dark-mode) {
-  background: linear-gradient(to bottom,#333,#000)
+  background: linear-gradient(.5turn,#333,#000)
  }
 }`));
         });

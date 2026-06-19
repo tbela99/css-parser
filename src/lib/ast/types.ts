@@ -1,4 +1,4 @@
-import type { LengthToken, NumberToken } from "../../@types";
+import type { LengthToken, NumberToken } from "../../@types/token.d.ts";
 
 /**
  * syntax validation enum

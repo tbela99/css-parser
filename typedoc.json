@@ -41,5 +41,5 @@
     "Reference"
   ],
   "json": "docs/typedoc.json",
-  "customCss": "./files/assets/typedoc-custom.css"
+  "customCss": "./files/assets/typedoc-custom.css",
 }
