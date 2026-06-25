@@ -489,7 +489,7 @@ button {
             return transform(nesting1, {
                 beautify: true, expandIfSyntax: true
             }).then((result) => expect(result.code).equals(`button {
- background: linear-gradient(.5turn,#fff,#ccc);
+ background: linear-gradient(#fff,#ccc);
  @media (min-width:768px) {
   background: linear-gradient(90deg,#fff,#ccc);
   @container style(--dark-mode) {
@@ -497,7 +497,7 @@ button {
   }
  }
  @container style(--dark-mode) {
-  background: linear-gradient(.5turn,#333,#000)
+  background: linear-gradient(#333,#000)
  }
 }`));
         });

@@ -3,7 +3,7 @@ import { walkValues } from '../walk.js';
 import { pseudoAliasMap } from '../../syntax/syntax.js';
 import { splitRule } from '../minify.js';
 import { renderToken } from '../../renderer/render.js';
-import { funcLike, regMatchLinearGradient } from '../../syntax/constants.js';
+import { funcLike, regMatchLinearGradient, regMatchRadialGradient } from '../../syntax/constants.js';
 import { FeatureWalkMode } from './type.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { getSyntaxConfig } from '../../validation/config.js';
@@ -136,10 +136,10 @@ class ComputePrefixFeature {
                     value.val.match(/^-([^-]+)-(.+)$/) != null) {
                     if (value.val.endsWith("-gradient")) {
                         if (regMatchLinearGradient.test(value.val)) {
-                            Object.assign(value, {
-                                val: "linear-gradient",
-                                chi: this.webkitLinearToLinearGradient(value.chi),
-                            });
+                            this.webkitLinearToLinearGradient(value);
+                        }
+                        else if (regMatchRadialGradient.test(value.val)) {
+                            this.webkitRadialToRadialGradient(value);
                         }
                         else if (equalsIgnoreCase(value.val, "-webkit-gradient")) {
                             this.webkitGradientToGradient(value);
@@ -179,12 +179,18 @@ class ComputePrefixFeature {
         }
         return node;
     }
-    webkitLinearToLinearGradient(tokens) {
+    /**
+     * Convert -webkit-linear-gradient to linear-gradient syntax
+     * @param tokens
+     * @returns
+     */
+    webkitLinearToLinearGradient(token) {
         let i;
         let k;
         let to;
         let val;
         let key;
+        const tokens = token.chi;
         // conversion rules
         // translation:
         // - left -> to right
@@ -252,8 +258,13 @@ class ComputePrefixFeature {
                 }
             }
         }
-        return tokens;
+        token.val = equalsIgnoreCase(token.val, "-webkit-repeating-linear-gradient") ? "repeating-linear-gradient" : "linear-gradient";
     }
+    /**
+     * Convert -webkit-gradient(linear) to linear-gradient or linear-gradient syntax
+     * @param token
+     * @returns
+     */
     webkitGradientToGradient(token) {
         let i = 0;
         let k;
@@ -383,14 +394,14 @@ class ComputePrefixFeature {
                 }
                 else if (equalsIgnoreCase(tokens[i].val, "color-stop")) {
                     k = tokens[i].chi.length - 1;
+                    tokens.splice(i, 1, 
                     // @ts-expect-error
-                    tokens.splice(i, 1, ...tokens[i].chi
-                        .reverse()
-                        .map((t) => t.typ === EnumToken.CommaTokenType
+                    ...tokens[i].chi.reverse().map((t) => t.typ === EnumToken.CommaTokenType
                         ? { typ: EnumToken.WhitespaceTokenType }
                         : t.typ === EnumToken.NumberTokenType
                             ? {
                                 typ: EnumToken.PercentageTokenType,
+                                // @ts-expect-error
                                 val: t.val * 100,
                             }
                             : t));
@@ -480,6 +491,93 @@ class ComputePrefixFeature {
         //         }
         //     }
         // }
+    }
+    /**
+     * Convert -webkit-radial-gradient to radial-gradient syntax
+     * @param tokens
+     * @returns
+     */
+    webkitRadialToRadialGradient(token) {
+        let i = 0;
+        const tokens = token.chi;
+        while (i < tokens.length &&
+            (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)) {
+            i++;
+        }
+        const positions = [];
+        const form = [];
+        const size = [];
+        const colorStops = [];
+        if (tokens[i]?.typ === EnumToken.PercentageTokenType ||
+            (tokens[i]?.typ === EnumToken.NumberTokenType && 0 === tokens[i].val) ||
+            (tokens[i]?.typ === EnumToken.IdenTokenType &&
+                (equalsIgnoreCase(tokens[i].val, "center") ||
+                    equalsIgnoreCase(tokens[i].val, "top") ||
+                    equalsIgnoreCase(tokens[i].val, "bottom") ||
+                    equalsIgnoreCase(tokens[i].val, "left") ||
+                    equalsIgnoreCase(tokens[i].val, "right")))) {
+            do {
+                positions.push(tokens[i]);
+                i++;
+            } while (tokens[i]?.typ !== EnumToken.CommaTokenType);
+            if (tokens[i]?.typ === EnumToken.CommaTokenType) {
+                i++;
+            }
+        }
+        if (tokens[i]?.typ === EnumToken.IdenTokenType) {
+            if (equalsIgnoreCase(tokens[i].val, "closest-side") ||
+                equalsIgnoreCase(tokens[i].val, "closest-corner") ||
+                equalsIgnoreCase(tokens[i].val, "farthest-side") ||
+                equalsIgnoreCase(tokens[i].val, "farthest-corner")) {
+                size.push(tokens[i++]);
+            }
+            else if (equalsIgnoreCase(tokens[i].val, "circle") ||
+                equalsIgnoreCase(tokens[i].val, "ellipse")) {
+                form.push(tokens[i++]);
+            }
+            while (tokens[i]?.typ === EnumToken.WhitespaceTokenType || tokens[i]?.typ === EnumToken.CommentTokenType) {
+                i++;
+            }
+            if (tokens[i]?.typ === EnumToken.CommaTokenType) {
+                i++;
+            }
+        }
+        if (tokens[i]?.typ === EnumToken.IdenTokenType) {
+            if (equalsIgnoreCase(tokens[i].val, "closest-side") ||
+                equalsIgnoreCase(tokens[i].val, "closest-corner") ||
+                equalsIgnoreCase(tokens[i].val, "farthest-side") ||
+                equalsIgnoreCase(tokens[i].val, "farthest-corner")) {
+                size.push(tokens[i++]);
+            }
+            else if (equalsIgnoreCase(tokens[i].val, "circle") ||
+                equalsIgnoreCase(tokens[i].val, "ellipse")) {
+                form.push(tokens[i++]);
+            }
+            while (tokens[i]?.typ === EnumToken.WhitespaceTokenType || tokens[i]?.typ === EnumToken.CommentTokenType) {
+                i++;
+            }
+            if (tokens[i]?.typ === EnumToken.CommaTokenType) {
+                i++;
+            }
+        }
+        colorStops.push(...tokens.slice(i));
+        tokens.length = 0;
+        if (form.length > 0 || size.length > 0) {
+            if (form.length === 0) {
+                form.push({ typ: EnumToken.IdenTokenType, val: "ellipse" });
+            }
+            if (size.length > 0) {
+                form.push({ typ: EnumToken.WhitespaceTokenType });
+                form.push(...size);
+            }
+            if (positions.length > 0) {
+                form.push({ typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "at" }, { typ: EnumToken.WhitespaceTokenType }, ...positions);
+            }
+            tokens.push(...form, { typ: EnumToken.CommaTokenType });
+        }
+        token.val = equalsIgnoreCase(token.val, "-webkit-repeating-radial-gradient") ? "repeating-radial-gradient" : "radial-gradient";
+        tokens.push(...colorStops);
+        return tokens;
     }
 }
 

@@ -1,7 +1,8 @@
 import { EnumToken } from "../ast/types.ts";
 import { config } from "../validation/json.ts";
 
-export const regMatchLinearGradient = /^-((webkit)|o|moz)-linear-gradient$/i;
+export const regMatchLinearGradient = /^-((webkit)|o|moz)(-repeating)?-linear-gradient$/i;
+export const regMatchRadialGradient = /^-((webkit)|o|moz)(-repeating)?-radial-gradient$/i;
 export const mFLT = new Set([EnumToken.LtTokenType, EnumToken.LteTokenType]);
 export const mFGT = new Set([EnumToken.GtTokenType, EnumToken.GteTokenType]);
 
@@ -163,6 +164,7 @@ export const imageFunc: string[] = [
     "radial-gradient",
     "repeating-linear-gradient",
     "repeating-radial-gradient",
+    "repeating-conic-gradient",
     "conic-gradient",
     "image",
     "image-set",
@@ -173,6 +175,9 @@ export const imageFunc: string[] = [
     "-moz-linear-gradient",
     "-webkit-linear-gradient",
     "-webkit-gradient",
+    "-webkit-radial-gradient",
+    "-webkit-repeating-linear-gradient",
+    "-webkit-repeating-radial-gradient"
 ];
 export const transformFunctions: string[] = [
     "translate",

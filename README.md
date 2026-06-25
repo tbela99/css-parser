@@ -22,26 +22,35 @@ $ deno add @tbela99/css-parser
 
 ## Features
 
-- No dependency
-- Fault-tolerant parser implementing the CSS syntax module 3 recommendations.
-- Fast and efficient minification without unsafe transforms,
-  see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
-- Colors minification: color(), lab(), lch(), oklab(), oklch(), color-mix(), light-dark(), system colors and
-  relative color
-- CSS validation based upon mdn-data
-- CSS modules support
-- CSS shorthands computation. see the supported properties list below
-- CSS transform functions minification
-- CSS math functions evaluation: calc(), clamp(), min(), max(), etc.
-- CSS variables inlining
-- CSS prefix removal (experimental)
-- Nested CSS rules conversion to legacy syntax
-- Convert CSS if() function to legacy syntax
-- Color conversion to any supported color format
-- Automatic nested css rules generation
-- Sourcemap generation
-- Duplicate properties removal
-- @import rules flattening
+* **Zero dependencies** — lightweight and easy to integrate into any project.
+* **Standards-based CSS validation** powered by MDN data.
+* **Full CSS Modules support** for modern component-based workflows.
+* **Fault-tolerant parsing** that follows the CSS Syntax Module Level 3 specification.
+* **High-performance minification** with safe optimizations and no unsafe transforms.
+* **Advanced color processing** with support for modern color spaces and functions, including `color()`, `lab()`, `lch()`, `oklab()`, `oklch()`, `color-mix()`, `light-dark()`, system colors, and relative colors.
+* **Color conversion engine** capable of transforming colors between all supported formats.
+* **Automatic CSS nesting generation** from compatible selectors.
+* **Nested CSS transpilation** to legacy-compatible syntax.
+* **`if()` function transpilation** for broader browser compatibility.
+* **Source map generation** for easier debugging and development workflows.
+* **Shorthand property computation** to reduce output size and improve optimization.
+* **Transform function optimization** for more compact CSS output.
+* **Math function evaluation**, including `calc()`, `clamp()`, `min()`, `max()`, and related expressions.
+* **CSS variable inlining** where values can be safely resolved.
+* **Duplicate declaration removal** to eliminate redundant rules.
+* **`@import` flattening** to produce self-contained stylesheets.
+* **Experimental vendor prefix cleanup** to modernize generated CSS.
+
+## Benchmarking
+
+According to [this benchmark](https://tbela99.github.io/css-parser/benchmark/index.html), CSS parser is the most efficient CSS minifier with a compression ratio of 36,34% followed by csso (29.57%) and lightningcss (23.42%).
+
+| File | ligthningcss | CSS Parser |
+| --- | --- | --- |
+| tailwind.css - 2380419 bytes | 1864728 bytes | 1501464 bytes |
+| bootstrap-4.css - 200078 bytes | 153616 bytes | 144716 bytes |
+| bootstrap-5.css - 205481 bytes | 159987 bytes | 150964 bytes |
+
 
 ## Playground
 
@@ -74,11 +83,12 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
   - [Inline css variables](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#css-variables-inlining)
   - [Transform functions](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#transform-functions)
   - [Math functions](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#math-functions)
+  - Gradient functions
   - [Colors](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#color-minification)
   - [Numbers and Dimensions](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#css-values)
   - [Multi-pass minification](https://tbela99.github.io/css-parser/docs/interfaces/node.MinifyOptions.html#pass)
   - [Merge adjacent rules](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#merging-adjacent-rules)
-  - [Compute shorthand](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#shorthands): see the list below
+  - [Compute shorthand](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#shorthands): see the list [below](#computed-shorthands-properties)
   - [Remove redundant declarations](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#redundant-declarations)
   - [Conditionally wrap or unwrap selectors using :is()](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#conditional-wrapping-or-unwrapping-selectors-using-is)
   - [Automatic css nesting](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#css-nesting)
@@ -96,6 +106,11 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
     - [findByValue()](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Traversal.html#findbyvalue)
     - [findValue()](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Traversal.html#findvalue)
   - [Ast utilities](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Utilities.html)
+ - Color manipulation
+   - Supported colors
+   - Checking color distance
+   - Converting colors
+
 
 ## AST
 

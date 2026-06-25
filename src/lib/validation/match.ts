@@ -1789,11 +1789,24 @@ function matchSyntax(
         success = false;
 
         switch (syntaxes[i].typ) {
-            case ValidationTokenEnum.Colon:
-                if (token.typ == EnumToken.ColonTokenType) {
+            case ValidationTokenEnum.Comma:
+                if (token.typ == EnumToken.CommaTokenType) {
                     success = true;
                     (options.visited!.get(token) as Set<ValidationToken>)!.delete(syntaxes[i]);
                     context.next();
+                    
+                    if (context.done()) {
+                        
+                        return {
+                            success: true,
+                            valid: true,
+                            token: null,
+                            context,
+                            syntaxToken: syntaxes[i + 1],
+                            errors: [],
+                        }
+                    }
+
                     break;
                 }
 
@@ -1809,6 +1822,41 @@ function matchSyntax(
                     syntaxToken: syntaxes[i],
                     errors: [],
                 };
+
+            case ValidationTokenEnum.Colon:
+                if (token.typ == EnumToken.ColonTokenType) {
+                    success = true;
+                    (options.visited!.get(token) as Set<ValidationToken>)!.delete(syntaxes[i]);
+                    context.next();
+                    
+                    if (context.done()) {
+                        
+                        return {
+                            success: true,
+                            valid: true,
+                            token: null,
+                            context,
+                            syntaxToken: syntaxes[i + 1],
+                            errors: [],
+                        }
+                    }
+
+                    break;
+                }
+
+                if (isOptional) {
+                    break;
+                }
+
+                return {
+                    success: false,
+                    valid: true,
+                    token,
+                    context,
+                    syntaxToken: syntaxes[i],
+                    errors: [],
+                };
+
             case ValidationTokenEnum.Keyword:
                 if (
                     token.typ == EnumToken.IdenTokenType &&
@@ -2631,9 +2679,7 @@ function matchColumnSyntax(
             context.update(curr);
 
             success = true;
-
             syntaxes.splice(i, 1);
-
             i = -1;
         }
     }

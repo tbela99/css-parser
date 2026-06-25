@@ -458,9 +458,13 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                                 buffer += next(parseInfo);
                                 value = peek(parseInfo);
                                 charCode = value.charCodeAt(0);
-                            } while (value !== ")" && !isWhiteSpace(charCode) && !(value === '/' && match(parseInfo, "/*")));
+                            } while (value !== ")" &&
+                                !isWhiteSpace(charCode) &&
+                                !(value === "/" && match(parseInfo, "/*")));
                             if (buffer.length > 0) {
-                                result.push(yieldResult(buffer, parseInfo, peek(parseInfo) === "" ? EnumToken.BadUrlTokenType : EnumToken.UrlTokenTokenType));
+                                result.push(yieldResult(buffer, parseInfo, peek(parseInfo) === ""
+                                    ? EnumToken.BadUrlTokenType
+                                    : EnumToken.UrlTokenTokenType));
                                 buffer = "";
                             }
                         }

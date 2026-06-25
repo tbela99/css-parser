@@ -1,10 +1,13 @@
+/**
+ * Generate validation rules
+ */
 import type { ValidationToken } from "../src/lib/validation/parser/types.d.ts";
 import process from "node:process";
 import { writeFile } from "node:fs/promises";
 import localPatch from "./local-patch.json" with { type: "json" };
 
 const fetchInit = {
-    headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:180.0) Gecko/20100101 Firefox/140.0" },
+    headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:180.0) Gecko/20100101 Firefox/151.0" },
 };
 
 function debug(error: any) {

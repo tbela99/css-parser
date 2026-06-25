@@ -47,9 +47,9 @@ import { buildExpression } from "../../ast/math/expression.ts";
 import { splitTokenList } from "../../validation/utils/list.ts";
 
 /**
- * 
- * @param template 
- * @returns 
+ *
+ * @param template
+ * @returns
  */
 function parseGridTemplate(template: string): string {
     let result: string = "";
@@ -85,9 +85,9 @@ function parseGridTemplate(template: string): string {
 }
 
 /**
- * 
- * @param tokens 
- * @returns 
+ *
+ * @param tokens
+ * @returns
  */
 export function isDeclarationValue(tokens: Token[]): { success: boolean; errors: ErrorDescription[] } {
     const stack: Token[] = [];
@@ -553,9 +553,7 @@ export function parseDeclaration(
                                         r: trimArray(curr.slice(index + 1)),
                                     } as IfConditionToken,
                                 } as IfElseConditionToken;
-                            } 
-                            
-                            else {
+                            } else {
                                 acc.push({
                                     typ: EnumToken.IfConditionTokenType,
                                     l: trimArray(curr.slice(0, index)),

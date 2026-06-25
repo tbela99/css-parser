@@ -8,26 +8,25 @@ category: Guides
 
 A non-exhaustive list of features is provided below:
 
-- No dependency
-- Fault-tolerant parser implementing the CSS syntax module 3 recommendations.
-- Fast and efficient minification without unsafe transforms,
-  see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
-- Colors minification: color(), lab(), lch(), oklab(), oklch(), color-mix(), light-dark(), system colors and
-  relative color
-- CSS validation based upon mdn-data
-- CSS modules support
-- CSS shorthands computation. see the supported properties list below
-- CSS transform functions minification
-- CSS math functions evaluation: calc(), clamp(), min(), max(), etc.
-- CSS variables inlining
-- CSS prefix removal (experimental)
-- Nested CSS rules conversion to legacy syntax
-- Convert CSS if() function to legacy syntax
-- Color conversion to any supported color format
-- Automatic nested css rules generation
-- Sourcemap generation
-- Duplicate properties removal
-- @import rules flattening
+
+* **Zero dependencies** — lightweight and easy to integrate into any project.
+* **Standards-based CSS validation** powered by MDN data.
+* **Full CSS Modules support** for modern component-based workflows.
+* **Fault-tolerant parsing** that follows the CSS Syntax Module Level 3 specification.
+* **High-performance minification** with safe optimizations and no unsafe transforms.
+* **Advanced color processing** with support for modern color spaces and functions, including `color()`, `lab()`, `lch()`, `oklab()`, `oklch()`, `color-mix()`, `light-dark()`, system colors, and relative colors.
+* **Color conversion engine** capable of transforming colors between all supported formats.
+* **Automatic CSS nesting generation** from compatible selectors.
+* **Nested CSS transpilation** to legacy-compatible syntax.
+* **`if()` function transpilation** for broader browser compatibility.
+* **Source map generation** for easier debugging and development workflows.
+* **Shorthand property computation** to reduce output size and improve optimization.
+* **Transform function optimization** for more compact CSS output.
+* **Math function evaluation**, including `calc()`, `clamp()`, `min()`, `max()`, and related expressions.
+* **CSS variable inlining** where values can be safely resolved.
+* **Duplicate declaration removal** to eliminate redundant rules.
+* **`@import` flattening** to produce self-contained stylesheets.
+* **Experimental vendor prefix cleanup** to modernize generated CSS.
 
 ------
 [← About](./about.md) | [Installation →](./install.md) 

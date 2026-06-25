@@ -995,45 +995,6 @@ function doMinify(
     return ast;
 }
 
-function mergeNodes<T>(node1: T, node2: T): T {
-    const tokens: Token[] = [];
-    let i: number;
-
-    for (i = 0; i < (node1 as AstRule | AstAtRule | AstKeyframesAtRule | AstKeyframesRule).chi!.length; i++) {
-        if (
-            (node1 as AstRule | AstAtRule | AstKeyframesAtRule | AstKeyframesRule).chi![i].typ ==
-                EnumToken.CommentNodeType ||
-            (node1 as AstRule | AstAtRule | AstKeyframesAtRule | AstKeyframesRule).chi![i].typ ==
-                EnumToken.DeclarationNodeType
-        ) {
-            tokens.push((node1 as AstRule | AstAtRule | AstKeyframesAtRule | AstKeyframesRule).chi![i]);
-            (node1 as AstRule | AstAtRule | AstKeyframesAtRule | AstKeyframesRule).chi!.splice(i--, 1);
-        }
-    }
-
-    for (i = 0; i < (node2 as AstRule | AstAtRule | AstKeyframesAtRule | AstKeyframesRule).chi!.length; i++) {
-        if (
-            (node2 as AstRule | AstAtRule | AstKeyframesAtRule | AstKeyframesRule).chi![i].typ ==
-                EnumToken.CommentNodeType ||
-            (node2 as AstRule | AstAtRule | AstKeyframesAtRule | AstKeyframesRule).chi![i].typ ==
-                EnumToken.DeclarationNodeType
-        ) {
-            tokens.push((node2 as AstRule | AstAtRule | AstKeyframesAtRule | AstKeyframesRule).chi![i]);
-            (node2 as AstRule | AstAtRule | AstKeyframesAtRule | AstKeyframesRule).chi!.splice(i--, 1);
-        }
-    }
-
-    (node1 as AstRule | AstAtRule | AstKeyframesAtRule | AstKeyframesRule).chi!.push(
-        ...(node2 as AstRule | AstAtRule | AstKeyframesAtRule | AstKeyframesRule).chi!,
-    );
-
-    if (tokens.length > 0) {
-        (node1 as AstRule | AstAtRule | AstKeyframesAtRule | AstKeyframesRule).chi!.unshift(...tokens);
-    }
-
-    return node1;
-}
-
 /**
  * Check if a rule has a declaration
  * @param node

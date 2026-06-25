@@ -1331,11 +1331,49 @@ function matchSyntax(syntaxes, context, options) {
         options.visited.get(token).add(syntaxes[i]);
         success = false;
         switch (syntaxes[i].typ) {
+            case ValidationTokenEnum.Comma:
+                if (token.typ == EnumToken.CommaTokenType) {
+                    success = true;
+                    options.visited.get(token).delete(syntaxes[i]);
+                    context.next();
+                    if (context.done()) {
+                        return {
+                            success: true,
+                            valid: true,
+                            token: null,
+                            context,
+                            syntaxToken: syntaxes[i + 1],
+                            errors: [],
+                        };
+                    }
+                    break;
+                }
+                if (isOptional) {
+                    break;
+                }
+                return {
+                    success: false,
+                    valid: true,
+                    token,
+                    context,
+                    syntaxToken: syntaxes[i],
+                    errors: [],
+                };
             case ValidationTokenEnum.Colon:
                 if (token.typ == EnumToken.ColonTokenType) {
                     success = true;
                     options.visited.get(token).delete(syntaxes[i]);
                     context.next();
+                    if (context.done()) {
+                        return {
+                            success: true,
+                            valid: true,
+                            token: null,
+                            context,
+                            syntaxToken: syntaxes[i + 1],
+                            errors: [],
+                        };
+                    }
                     break;
                 }
                 if (isOptional) {

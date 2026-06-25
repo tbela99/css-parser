@@ -1,7 +1,7 @@
 {
   "name": "@tbela99/css-parser",
   "description": "CSS parser, minifier and validator for node and the browser",
-  "version": "1.4.4-alpha1",
+  "version": "1.4.4-alpha3",
   "exports": {
     ".": "./dist/node.js",
     "./node": "./dist/node.js",
@@ -21,7 +21,7 @@
     "test": "web-test-runner \"./test/**/web.spec.js\" --timeout=10000 --node-resolve --playwright --browsers chromium firefox webkit --root-dir=.; mocha --reporter-options='maxDiffSize=1801920' --timeout=10000 \"test/**/node.spec.js\"",
     "test:web": "web-test-runner \"./test/**/web.spec.js\" --timeout 30000 --node-resolve --playwright --browsers chromium firefox webkit --root-dir=.",
     "test:node": "mocha -p --reporter-options='maxDiffSize=1801920' --timeout=10000 \"test/**/node.spec.js\"",
-    "test:cov": "c8 -x 'test/specs/**/*.js' --reporter=html --reporter=text --reporter=json-summary mocha --reporter-options='maxDiffSize=1801920' --timeout=10000 \"test/**/node.spec.js\"",
+    "test:cov": "superc8 -x 'test/specs/**/*.js' --reporter=html --reporter=text --reporter=json-summary mocha --reporter-options='maxDiffSize=1801920' --timeout=10000 'test/**/node.spec.js'",
     "test:web-cov": "web-test-runner -x 'test/specs/**/*.js' \"test/**/web.spec.js\" --node-resolve --playwright --browsers chromium firefox webkit --root-dir=. --coverage",
     "profile": "node --enable-source-maps --inspect-brk test/inspect.js",
     "config-update": "esno scripts/shorthand.ts",
@@ -66,19 +66,24 @@
     "@rollup/plugin-typescript": "^12.3.0",
     "@types/chai": "^5.2.3",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^25.9.3",
+    "@types/node": "^26.0.1",
     "@types/web": "^0.0.350",
     "@web/test-runner": "^0.20.2",
     "@web/test-runner-playwright": "^0.11.1",
-    "c8": "^11.0.0",
     "esno": "^4.8.0",
     "mocha": "^11.7.6",
-    "playwright": "^1.61.0",
-    "rollup": "^4.62.0",
+    "playwright": "^1.61.1",
+    "rollup": "^4.62.2",
     "rollup-plugin-dts": "^6.4.1",
+    "superc8": "^12.7.0",
     "tslib": "^2.8.1",
     "typedoc": "^0.28.19",
     "typedoc-material-theme": "^1.4.1"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "fsevents@2.3.2": true,
+    "fsevents@2.3.3": true
+  }
 }

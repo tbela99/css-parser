@@ -19,9 +19,13 @@ import type {
     TimeToken,
     Token,
 } from "../../@types/index.d.ts";
+import { isOkLabClose } from "../../node.ts";
 import { ColorType, EnumToken } from "../ast/types.ts";
 import { WalkerOptionEnum, walkValues } from "../ast/walk.ts";
+import { eq } from "../parser/utils/eq.ts";
 import { equalsIgnoreCase } from "../parser/utils/text.ts";
+import { trimArray } from "../validation/match.ts";
+import { splitTokenList } from "../validation/utils/list.ts";
 import {
     colorsFunc,
     systemColors,
@@ -563,6 +567,63 @@ export function isColorspace(token: Token): boolean {
         "hsl",
         "hwb",
     ].includes((token as IdentToken).val.toLowerCase());
+}
+
+export function reduceColorStops(stops: Token[]) {
+    const parts = splitTokenList(stops);
+    const n = parts.length == 1 ? 1 : parts.length - 1;
+
+    let j: number;
+    let i: number;
+    let updated: boolean = false;
+
+    for (i = 0; i < parts.length; i++) {
+        if (parts[i].length != 3) {
+            continue;
+        }
+
+        if (i > 0 && isOkLabClose(parts[i - 1][0] as ColorToken, parts[i][0] as ColorToken)) {
+            if (parts[i - 1].length == 1) {
+                parts[i - 1].push(
+                    { typ: EnumToken.WhitespaceTokenType },
+                    { typ: EnumToken.PercentageTokenType, val: ((i - 1) * 100) / n },
+                );
+            }
+
+            parts[i - 1].push(...parts[i].slice(1));
+            parts.splice(i--, 1);
+            updated = true;
+            continue;
+        }
+
+        for (j = 0; j < parts[i].length; j++) {
+            if (
+                (parts[i][j].typ == EnumToken.LengthTokenType && 0 == (parts[i][j] as LengthToken).val) ||
+                parts[i][j].typ == EnumToken.NumberTokenType ||
+                parts[i][j].typ == EnumToken.PercentageTokenType
+            ) {
+                if ((parts[i][j] as NumberToken | PercentageToken | LengthToken).val === (i * 100) / n) {
+                    parts[i].length = j;
+                    trimArray(parts[i]);
+                    updated = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (updated) {
+        stops.length = 0;
+
+        for (j = 0; j < parts.length; j++) {
+            if (stops.length > 0) {
+                stops.push({ typ: EnumToken.CommaTokenType });
+            }
+            stops.push(...parts[j]);
+        }
+    }
+
+    return stops;
 }
 
 export function isRectangularOrthogonalColorspace(token: Token): boolean {

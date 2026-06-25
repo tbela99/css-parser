@@ -641,7 +641,7 @@ background-image:-webkit-radial-gradient(center, 5em 40px, white, black); }
                 beautify: true,
                 validation: true
             }).then((result) => expect(result.code).equals(`a {
- background-image: linear-gradient(45deg,#ffffff26 25%,#0000 25%,#0000 50%,#ffffff26 50%,#ffffff26 75%,#0000 75%,#0000);
+ background-image: linear-gradient(45deg,#ffffff26 25%,#0000 25% 50%,#ffffff26 50% 75%,#0000 75%,#0000);
  b {
   background: -webkit-linear-gradient(cyan,#fff);
   &.c {

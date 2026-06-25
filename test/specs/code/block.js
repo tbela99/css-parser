@@ -808,7 +808,7 @@ content: '\\21 now\\21';
  color: #00b400;
  background: -o-linear-gradient(top,#fff,#000);
  background: -webkit-gradient(linear,left top,left bottom,from(#fff),to(#000));
- background: linear-gradient(.5turn,#fff,#000)
+ background: linear-gradient(#fff,#000)
 }`));
     });
 

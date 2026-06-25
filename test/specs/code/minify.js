@@ -113,7 +113,7 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
                 removePrefix: true,
                 pass: 2
             }).then((result) => expect(result.code).equals(`.xl:origin-bottom-left {
- background-image: linear-gradient(.5turn,red,blue)
+ background-image: linear-gradient(red,blue)
 }`));
         });
 
@@ -189,6 +189,213 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
                 pass: 2
             }).then((result) => expect(result.code).equals(`.xl:origin-bottom-left {
  background-image: linear-gradient(to top right,red,blue)
+}`));
+        });
+
+        it('-webkit-linear-gradient() bottom left #11', function () {
+
+            return transform(`
+  .xl\:origin-bottom-left {
+    background-image:-webkit-linear-gradient( bottom left, red, blue);
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl:origin-bottom-left {
+ background-image: linear-gradient(to top right,red,blue)
+}`));
+        });
+
+        it('-o-linear-gradient() #12', function () {
+
+            return transform(`
+  
+  .xl\\:origin-bottom-left2 {
+ background: -o-linear-gradient(-90deg,#fff,#000);
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl\\:origin-bottom-left2 {
+ background: linear-gradient(#fff,#000)
+}`));
+        });
+
+        it(' -webkit-radial-gradient() #13', function () {
+
+            return transform(`
+  
+  .xl\\:origin-bottom-left {
+    background: -webkit-radial-gradient(center, circle closest-side , red 0%, blue 100%);
+}
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl\\:origin-bottom-left {
+ background: radial-gradient(circle closest-side,red,blue)
+}`));
+        });
+
+        it(' radial-gradient() #14', function () {
+
+            return transform(`
+  
+  .xl\\:origin-bottom-left {
+    background: radial-gradient(circle at center in hsl longer hue, red 0, blue, green 100%);
+}
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl\\:origin-bottom-left {
+ background: radial-gradient(circle in hsl longer hue,red,blue,green)
+}`));
+        });
+
+        it(' radial-gradient() #15', function () {
+
+            return transform(`
+  
+  .xl\\:origin-bottom-left {
+    background: radial-gradient(circle at 50% 0, rgb(255 0 0 / 50%), transparent 70.71%);
+}
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl\\:origin-bottom-left {
+ background: radial-gradient(circle at top,#ff000080,#0000 70.71%)
+}`));
+        });
+
+        it(' radial-gradient() #16', function () {
+
+            return transform(`
+  
+  .xl\\:origin-bottom-left {
+    background: radial-gradient(ellipse at 50% 0, rgb(255 0 0 / 50%), transparent 70.71%);
+}
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl\\:origin-bottom-left {
+ background: radial-gradient(at top,#ff000080,#0000 70.71%)
+}`));
+        });
+
+        it(' radial-gradient() #17', function () {
+
+            return transform(`
+  
+  .xl\\:origin-bottom-left {
+    background: radial-gradient(ellipse at 50% 50%, rgb(255 0 0 / 50%), transparent 70.71%);
+}
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl\\:origin-bottom-left {
+ background: radial-gradient(#ff000080,#0000 70.71%)
+}`));
+        });
+
+        it(' radial-gradient() #17', function () {
+
+            return transform(`
+  
+  .xl\\:origin-bottom-left {
+    background: radial-gradient(closest-side ellipse at 50% 50%, rgb(255 0 0 / 50%), transparent 70.71%);
+}
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl\\:origin-bottom-left {
+ background: radial-gradient(closest-side,#ff000080,#0000 70.71%)
+}`));
+        });
+
+        it(' linear-gradient() #18', function () {
+
+            return transform(`
+  
+  .xl\\:origin-bottom-left {
+    background: linear-gradient(45deg, red 0%, blue 100%);
+}
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl\\:origin-bottom-left {
+ background: linear-gradient(45deg,red,blue)
+}`));
+        });
+
+        it(' linear-gradient() #18', function () {
+
+            return transform(`
+  
+  .xl\\:origin-bottom-left {
+    background: linear-gradient(45deg, red 0%, blue 50% 100%);
+}
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl\\:origin-bottom-left {
+ background: linear-gradient(45deg,red,blue 50% 100%)
+}`));
+        });
+
+        it(' linear-gradient() #19', function () {
+
+            return transform(`
+  
+  .xl\\:origin-bottom-left {
+    background: linear-gradient(45deg, red 0%, blue 50%, blue 100%);
+}
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl\\:origin-bottom-left {
+ background: linear-gradient(45deg,red,blue 50% 100%)
+}`));
+        });
+
+        it(' linear-gradient() #20', function () {
+
+            return transform(`
+  
+  .xl\\:origin-bottom-left {
+    background: linear-gradient(red 0%, orange 25%, yellow 50%, green 75%, blue 100%);
+}
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl\\:origin-bottom-left {
+ background: linear-gradient(red,orange,#ff0,green,blue)
+}`));
+        });
+
+        it(' -webkit-gradient(linear) #20', function () {
+
+            return transform(`
+  
+  .xl\\:origin-bottom-left {
+    background: -webkit-gradient( linear, left top, right bottom, from(#ff0), color-stop(0.5, orange), to(rgb(255, 0, 0) ));
+}
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl\\:origin-bottom-left {
+ background: linear-gradient(to bottom right,#ff0,orange,red)
 }`));
         });
     });

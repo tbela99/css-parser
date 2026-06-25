@@ -1,4 +1,4 @@
-import type { LengthToken, NumberToken } from "../../@types/token.d.ts";
+import type { LengthToken, NumberToken, Token } from "../../@types/token.d.ts";
 
 /**
  * syntax validation enum
@@ -798,7 +798,7 @@ export enum ColorType {
      */
     CMYK,
     /**
-     * colors using oklab 
+     * colors using oklab
      * */
     OKLAB,
     /**
@@ -826,27 +826,27 @@ export enum ColorType {
      */
     PROPHOTO_RGB,
     /**
-     * color using a98-rgb 
+     * color using a98-rgb
      */
     A98_RGB,
     /**
-     * color using rec2020 
+     * color using rec2020
      */
     REC2020,
     /**
-     * color using display-p3 
+     * color using display-p3
      */
     DISPLAY_P3,
     /**
-     * color using srgb-linear 
+     * color using srgb-linear
      */
     SRGB_LINEAR,
     /**
-     * color using xyz-d50 
+     * color using xyz-d50
      */
     XYZ_D50,
     /**
-     * color using xyz-d65 
+     * color using xyz-d65
      */
     XYZ_D65,
     /**
@@ -985,6 +985,7 @@ export function length2Px(value: LengthToken | NumberToken): number | null {
 
     return isNaN(result as number) ? null : result;
 }
+
 /**
  * minify number
  * @param val

@@ -1,0 +1,10 @@
+import type { ColorToken } from "../../../@types/token.d.ts";
+export declare function rgb2cmykToken(token: ColorToken): ColorToken | null;
+export declare function hsl2cmykToken(token: ColorToken): ColorToken | null;
+export declare function hwb2cmykToken(token: ColorToken): ColorToken | null;
+export declare function lab2cmykToken(token: ColorToken): ColorToken | null;
+export declare function lch2cmykToken(token: ColorToken): ColorToken | null;
+export declare function oklab2cmyk(token: ColorToken): ColorToken | null;
+export declare function oklch2cmykToken(token: ColorToken): ColorToken | null;
+export declare function color2cmykToken(token: ColorToken): ColorToken | null;
+export declare function srgb2cmykvalues(r: number, g: number, b: number, a?: number | null): number[];

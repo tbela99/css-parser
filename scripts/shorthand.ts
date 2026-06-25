@@ -1,3 +1,6 @@
+/**
+ * Generate shorthand computation rules
+ */
 import type {
     PropertyMapType,
     PropertySetType,

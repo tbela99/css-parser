@@ -1326,29 +1326,6 @@
         }
     }
 
-    function dasherize(value) {
-        return value.replace(/([A-Z])/g, (all, one) => `-${one.toLowerCase()}`);
-    }
-    function camelize(value) {
-        return value.replace(/-([a-z])/g, (all, one) => one.toUpperCase());
-    }
-    function equalsIgnoreCase(a, b) {
-        if (a.length !== b.length)
-            return false;
-        for (let i = 0; i < a.length; i++) {
-            let ca = a.charCodeAt(i);
-            let cb = b.charCodeAt(i);
-            // Normalize A-Z to a-z
-            if (ca >= 65 && ca <= 90)
-                ca += 32;
-            if (cb >= 65 && cb <= 90)
-                cb += 32;
-            if (ca !== cb)
-                return false;
-        }
-        return true;
-    }
-
     var declarations = {
     	"-ms-accelerator": {
     		syntax: "false | true"
@@ -4982,7 +4959,7 @@
     		syntax: "-moz-repeating-radial-gradient( <-legacy-radial-gradient-arguments> ) | -webkit-repeating-radial-gradient( <-legacy-radial-gradient-arguments> ) | -o-repeating-radial-gradient( <-legacy-radial-gradient-arguments> )"
     	},
     	"-legacy-radial-gradient-arguments": {
-    		syntax: "[ <position> , ]? [ [ [ <-legacy-radial-gradient-shape> || <-legacy-radial-gradient-size> ] | [ <length> | <percentage> ]{2} ] , ]? <color-stop-list>"
+    		syntax: " <position>? , [ [ <-legacy-radial-gradient-shape> || <-legacy-radial-gradient-size> ] | [ <length> | <percentage> ]{2} ]? , <color-stop-list>"
     	},
     	"-legacy-radial-gradient-size": {
     		syntax: "closest-side | closest-corner | farthest-side | farthest-corner | contain | cover"
@@ -6669,7 +6646,8 @@
     	mediaFeatures: mediaFeatures
     };
 
-    const regMatchLinearGradient = /^-((webkit)|o|moz)-linear-gradient$/i;
+    const regMatchLinearGradient = /^-((webkit)|o|moz)(-repeating)?-linear-gradient$/i;
+    const regMatchRadialGradient = /^-((webkit)|o|moz)(-repeating)?-radial-gradient$/i;
     const mFLT = new Set([exports.EnumToken.LtTokenType, exports.EnumToken.LteTokenType]);
     const mFGT = new Set([exports.EnumToken.GtTokenType, exports.EnumToken.GteTokenType]);
     const tokensMap = new Map([
@@ -6823,6 +6801,7 @@
         "radial-gradient",
         "repeating-linear-gradient",
         "repeating-radial-gradient",
+        "repeating-conic-gradient",
         "conic-gradient",
         "image",
         "image-set",
@@ -6833,6 +6812,9 @@
         "-moz-linear-gradient",
         "-webkit-linear-gradient",
         "-webkit-gradient",
+        "-webkit-radial-gradient",
+        "-webkit-repeating-linear-gradient",
+        "-webkit-repeating-radial-gradient"
     ];
     const transformFunctions = [
         "translate",
@@ -7105,944 +7087,6 @@
     ]);
     const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
     const combinators = ["+", ">", "~", "||", "|"];
-
-    // https://www.w3.org/TR/CSS21/syndata.html#syntax
-    // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
-    // '\\'
-    const REVERSE_SOLIDUS = 0x5c;
-    const dimensionUnits = new Set([
-        "q",
-        "cap",
-        "ch",
-        "cm",
-        "cqb",
-        "cqh",
-        "cqi",
-        "cqmax",
-        "cqmin",
-        "cqw",
-        "dvb",
-        "dvh",
-        "dvi",
-        "dvmax",
-        "dvmin",
-        "dvw",
-        "em",
-        "ex",
-        "ic",
-        "in",
-        "lh",
-        "lvb",
-        "lvh",
-        "lvi",
-        "lvmax",
-        "lvw",
-        "mm",
-        "pc",
-        "pt",
-        "px",
-        "rem",
-        "rlh",
-        "svb",
-        "svh",
-        "svi",
-        "svmin",
-        "svw",
-        "vb",
-        "vh",
-        "vi",
-        "vmax",
-        "vmin",
-        "vw",
-    ]);
-    // https://www.w3.org/TR/css-values-4/#math-function
-    const pseudoElements = [":before", ":after", ":first-line", ":first-letter"];
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/Mozilla_Extensions
-    const pseudoAliasMap = {
-        "-moz-center": "center",
-        "-webkit-center": "center",
-        "-ms-grid-columns": "grid-template-columns",
-        "-ms-grid-rows": "grid-template-rows",
-        "-ms-grid-row": "grid-row-start",
-        "-ms-grid-column": "grid-column-start",
-        "-ms-grid-row-align": "align-self",
-        "-ms-grid-row-span": "grid-row-end",
-        "-ms-grid-column-span": "grid-column-end",
-        "-ms-grid-column-align": "justify-self",
-        ":-ms-input-placeholder": "::placeholder",
-        "::-ms-input-placeholder": "::placeholder",
-        ":-moz-any()": ":is",
-        "-moz-user-modify": "user-modify",
-        "-webkit-match-parent": "match-parent",
-        "-moz-background-clip": "background-clip",
-        "-moz-background-origin": "background-origin",
-        "-ms-input-placeholder": "placeholder",
-        ":-webkit-autofill": ":autofill",
-        ":-webkit-any()": ":is",
-        "::-webkit-input-placeholder": "::placeholder",
-        "::-webkit-file-upload-button": "::file-selector-button",
-        "::-moz-placeholder": "::placeholder",
-        ":-webkit-any-link": ":any-link",
-        "-webkit-border-after": "border-block-end",
-        "-webkit-border-after-color": "border-block-end-color",
-        "-webkit-border-after-style": "border-block-end-style",
-        "-webkit-border-after-width": "border-block-end-width",
-        "-webkit-border-before": "border-block-start",
-        "-webkit-border-before-color": "border-block-start-color",
-        "-webkit-border-before-style": "border-block-start-style",
-        "-webkit-border-before-width": "border-block-start-width",
-        "-webkit-border-end": "border-inline-end",
-        "-webkit-border-end-color": "border-inline-end-color",
-        "-webkit-border-end-style": "border-inline-end-style",
-        "-webkit-border-end-width": "border-inline-end-width",
-        "-webkit-border-start": "border-inline-start",
-        "-webkit-border-start-color": "border-inline-start-color",
-        "-webkit-border-start-style": "border-inline-start-style",
-        "-webkit-border-start-width": "border-inline-start-width",
-        "-webkit-box-align": "align-items",
-        "-webkit-box-direction": "flex-direction",
-        "-webkit-box-flex": "flex-grow",
-        "-webkit-box-lines": "flex-flow",
-        "-webkit-box-ordinal-group": "order",
-        "-webkit-box-orient": "flex-direction",
-        "-webkit-box-pack": "justify-content",
-        "-webkit-column-break-after": "break-after",
-        "-webkit-column-break-before": "break-before",
-        "-webkit-column-break-inside": "break-inside",
-        "-webkit-font-feature-settings": "font-feature-settings",
-        "-webkit-hyphenate-character": "hyphenate-character",
-        "-webkit-initial-letter": "initial-letter",
-        "-webkit-margin-end": "margin-block-end",
-        "-webkit-margin-start": "margin-block-start",
-        "-webkit-padding-after": "padding-block-end",
-        "-webkit-padding-before": "padding-block-start",
-        "-webkit-padding-end": "padding-inline-end",
-        "-webkit-padding-start": "padding-inline-start",
-        "-webkit-min-device-pixel-ratio": "min-resolution",
-        "-webkit-max-device-pixel-ratio": "max-resolution",
-        "-webkit-font-smoothing": "font-smooth",
-        "-webkit-line-clamp": "line-clamp",
-        ":-webkit-autofill-strong-password": ":autofill",
-        ":-webkit-full-page-media": ":fullscreen",
-        ":-webkit-full-screen": ":fullscreen",
-        ":-webkit-full-screen-ancestor": ":fullscreen",
-        ":-webkit-full-screen-document": ":fullscreen",
-        ":-webkit-full-screen-controls-hidden": ":fullscreen",
-        "-moz-background-inline-policy": "box-decoration-break",
-        "-moz-background-size": "background-size",
-        "-moz-border-end": "border-inline-end",
-        "-moz-border-end-color": "border-inline-end-color",
-        "-moz-border-end-style": "border-inline-end-style",
-        "-moz-border-end-width": "border-inline-end-width",
-        "-moz-border-image": "border-inline-end-width",
-        "-moz-border-start": "border-inline-start",
-        "-moz-border-start-color": "border-inline-start-color",
-        "-moz-border-start-style": "border-inline-start-style",
-        "-moz-border-start-width": "border-inline-start-width",
-        "-moz-column-count": "column-count",
-        "-moz-column-fill": "column-fill",
-        "-moz-column-gap": "column-gap",
-        "-moz-column-width": "column-width",
-        "-moz-column-rule": "column-rule",
-        "-moz-column-rule-width": "column-rule-width",
-        "-moz-column-rule-style": "column-rule-style",
-        "-moz-column-rule-color": "column-rule-color",
-        "-moz-margin-end": "margin-inline-end",
-        "-moz-margin-start": "margin-inline-start",
-        "-moz-opacity": "opacity",
-        "-moz-outline": "outline",
-        "-moz-outline-color": "outline-color",
-        "-moz-outline-offset": "outline-offset",
-        "-moz-outline-style": "outline-style",
-        "-moz-outline-width": "outline-width",
-        "-moz-padding-end": "padding-inline-end",
-        "-moz-padding-start": "padding-inline-start",
-        "-moz-tab-size": "tab-size",
-        "-moz-text-align-last": "text-align-last",
-        "-moz-text-decoration-color": "text-decoration-color",
-        "-moz-text-decoration-line": "text-decoration-line",
-        "-moz-text-decoration-style": "text-decoration-style",
-        "-moz-transition": "transition",
-        "-moz-transition-delay": "transition-delay",
-        "-moz-transition-duration": "transition-duration",
-        "-moz-transition-property": "transition-property",
-        "-moz-transition-timing-function": "transition-timing-function",
-        "-moz-user-select": "user-select",
-        "-moz-initial": "initial",
-        "-moz-linear-gradient()": "linear-gradient",
-        "-moz-radial-gradient()": "radial-gradient",
-        "-moz-element()": "element",
-        "-moz-crisp-edges": "crisp-edges",
-        "-moz-calc()": "calc",
-        "-moz-min-content": "min-content",
-        "-moz-fit-content": "fit-content",
-        "-moz-max-content": "max-content",
-        "-moz-available": "stretch",
-        ":-moz-any-link": ":any-link",
-        ":-moz-full-screen": ":fullscreen",
-        ":-moz-full-screen-ancestor": ":fullscreen",
-        ":-moz-placeholder": ":placeholder-shown",
-        ":-moz-read-only": ":read-only",
-        ":-moz-read-write": ":read-write",
-        ":-moz-submit-invalid": ":invalid",
-        ":-moz-ui-invalid": ":user-invalid",
-        ":-moz-ui-valid": ":user-valid",
-        "::-moz-selection": "::selection",
-    };
-    // renamed standard properties
-    const renamedStandardProperties = new Map([["color-adjust", "print-color-adjust"]]);
-    function isLength(dimension) {
-        return "unit" in dimension && dimensionUnits.has(dimension.unit.toLowerCase());
-    }
-    function isResolution(dimension) {
-        return "unit" in dimension && ["dpi", "dpcm", "dppx", "x"].includes(dimension.unit.toLowerCase());
-    }
-    function isAngle(dimension) {
-        return "unit" in dimension && ["rad", "turn", "deg", "grad"].includes(dimension.unit.toLowerCase());
-    }
-    function isTime(dimension) {
-        return "unit" in dimension && ["ms", "s"].includes(dimension.unit.toLowerCase());
-    }
-    function isFrequency(dimension) {
-        return "unit" in dimension && ["hz", "khz"].includes(dimension.unit.toLowerCase());
-    }
-    function isColorspace(token) {
-        if (token.typ === exports.EnumToken.WildCardFunctionTokenType && token.val === "var") {
-            return true;
-        }
-        if (token.typ != exports.EnumToken.IdenTokenType) {
-            return false;
-        }
-        return [
-            "srgb",
-            "srgb-linear",
-            "lab",
-            "oklab",
-            "lch",
-            "oklch",
-            "xyz",
-            "xyz-d50",
-            "xyz-d65",
-            "display-p3",
-            "a98-rgb",
-            "prophoto-rgb",
-            "rec2020",
-            "rgb",
-            "hsl",
-            "hwb",
-        ].includes(token.val.toLowerCase());
-    }
-    function isRectangularOrthogonalColorspace(token) {
-        if (token.typ != exports.EnumToken.IdenTokenType) {
-            return false;
-        }
-        return [
-            "srgb",
-            "srgb-linear",
-            "display-p3",
-            "a98-rgb",
-            "prophoto-rgb",
-            "rec2020",
-            "lab",
-            "oklab",
-            "xyz",
-            "xyz-d50",
-            "xyz-d65",
-        ].includes(token.val.toLowerCase());
-    }
-    function isPolarColorspace(token) {
-        if (token.typ != exports.EnumToken.IdenTokenType) {
-            return false;
-        }
-        return ["hsl", "hwb", "lch", "oklch"].includes(token.val);
-    }
-    function isHueInterpolationMethod(token) {
-        if (!Array.isArray(token)) {
-            return token.typ == exports.EnumToken.IdenTokenType && "hue" === token.val?.toLowerCase?.();
-        }
-        if (token.length != 2 || token[0].typ != exports.EnumToken.IdenTokenType || token[1].typ != exports.EnumToken.IdenTokenType) {
-            return false;
-        }
-        return (["shorter", "longer", "increasing", "decreasing"].includes(token[0].val?.toLowerCase?.()) &&
-            "hue" === token[1].val?.toLowerCase?.());
-    }
-    function isIdentColor(token) {
-        return (token.typ == exports.EnumToken.ColorTokenType &&
-            [exports.ColorType.SYS, exports.ColorType.DPSYS, exports.ColorType.LIT].includes(token.kin) &&
-            isIdent(token.val));
-    }
-    function isPercentageToken(token) {
-        return (token.typ == exports.EnumToken.PercentageTokenType ||
-            (token.typ == exports.EnumToken.NumberTokenType && token.val == 0));
-    }
-    function isColor(token, errors) {
-        if (token.typ == exports.EnumToken.WildCardFunctionTokenType) {
-            return true;
-        }
-        if (token.typ == exports.EnumToken.FunctionTokenType) {
-            if (!colorsFunc.includes(token.val.toLowerCase())) {
-                return false;
-            }
-        }
-        if (token.typ == exports.EnumToken.ColorTokenType) {
-            if ("kin" in token && !("chi" in token)) {
-                return true;
-            }
-        }
-        if (token.typ == exports.EnumToken.IdenTokenType) {
-            const val = token.val.toLowerCase();
-            if (systemColors.has(val) || deprecatedSystemColors.has(val) || nonStandardColors.has(val)) {
-                return true;
-            }
-            // named color
-            return val in COLORS_NAMES || "currentcolor" === val || "transparent" === val;
-        }
-        let isLegacySyntax = false;
-        if (token.typ === exports.EnumToken.FunctionTokenType || token.typ === exports.EnumToken.ColorTokenType) {
-            if (!colorsFunc.includes(token.val.toLowerCase())) {
-                return false;
-            }
-            if (token.chi.length > 0) {
-                // @ts-ignore
-                if (token.val === "light-dark") {
-                    // @ts-ignore
-                    const children = token.chi.filter((t) => [
-                        exports.EnumToken.IdenTokenType,
-                        exports.EnumToken.NumberTokenType,
-                        exports.EnumToken.LiteralTokenType,
-                        exports.EnumToken.ColorTokenType,
-                        exports.EnumToken.FunctionTokenType,
-                        exports.EnumToken.PercentageTokenType,
-                        exports.EnumToken.WildCardFunctionTokenType,
-                    ].includes(t.typ));
-                    if (children.length != 2) {
-                        errors?.push({
-                            message: "light-dark function must have 2 arguments",
-                            node: token,
-                            action: "drop",
-                        });
-                        return false;
-                    }
-                    if (isColor(children[0]) && isColor(children[1])) {
-                        return true;
-                    }
-                }
-                // adding numbers and percentages is disallowed
-                // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/lch#defining_relative_color_output_channel_components:~:text=Adding%20a%20%3Cpercentage%3E%20to%20a%20%3Cnumber%3E%2C%20for%20example%2C%20doesn%27t%20work
-                // @ts-ignore
-                for (const { value, parent } of walkValues(token.chi, token, (value) => value.typ === exports.EnumToken.WildCardFunctionTokenType
-                    ? exports.WalkerOptionEnum.Ignore | exports.WalkerOptionEnum.IgnoreChildren
-                    : null)) {
-                    let k = 0;
-                    let l;
-                    let tk = null;
-                    let tl = null;
-                    if (value.typ === exports.EnumToken.BinaryExpressionTokenType) {
-                        tk = value.l;
-                        tl = value.r;
-                    }
-                    else if (parent?.typ === exports.EnumToken.MathFunctionTokenType &&
-                        parent.val === "calc") {
-                        l = k + 1;
-                        while (l + 1 < parent.chi.length) {
-                            const tk = parent.chi[l];
-                            if (tk.typ === exports.EnumToken.WhitespaceTokenType ||
-                                tk.typ === exports.EnumToken.CommentTokenType ||
-                                tk.typ === exports.EnumToken.Add ||
-                                tk.typ === exports.EnumToken.Sub ||
-                                tk.typ === exports.EnumToken.Div ||
-                                tk.typ === exports.EnumToken.Mul) {
-                                l++;
-                                continue;
-                            }
-                            break;
-                        }
-                        tk = parent.chi[k];
-                        tl = parent.chi[l];
-                    }
-                    if (tk != null && tl != null) {
-                        if ((tk.typ === exports.EnumToken.PercentageTokenType || tl.typ === exports.EnumToken.PercentageTokenType) &&
-                            tk.typ !== tl.typ) {
-                            errors?.push({
-                                action: "drop",
-                                message: "adding percentage and number is not allowed",
-                                node: token,
-                                location: token.loc,
-                            });
-                            return false;
-                        }
-                    }
-                }
-                // @ts-ignore
-                if (token.val == "color") {
-                    // @ts-ignore
-                    const children = token.chi.filter((t) => [
-                        exports.EnumToken.DashedIdenTokenType,
-                        exports.EnumToken.IdenTokenType,
-                        exports.EnumToken.NumberTokenType,
-                        exports.EnumToken.LiteralTokenType,
-                        exports.EnumToken.ColorTokenType,
-                        exports.EnumToken.FunctionTokenType,
-                        exports.EnumToken.MathFunctionTokenType,
-                        exports.EnumToken.PercentageTokenType,
-                    ].includes(t.typ));
-                    const isRelative = children[0].typ == exports.EnumToken.IdenTokenType && children[0].val == "from";
-                    let offset = 0;
-                    if (isRelative) {
-                        offset = 2;
-                    }
-                    if (children[offset]?.typ == exports.EnumToken.DashedIdenTokenType) {
-                        if (children.length < offset + 1) {
-                            return false;
-                        }
-                        for (let i = offset + 1; i < children.length; i++) {
-                            if (children[i].typ == exports.EnumToken.NumberTokenType ||
-                                children[i].typ == exports.EnumToken.LiteralTokenType ||
-                                children[i].typ == exports.EnumToken.ColorTokenType ||
-                                children[i].typ == exports.EnumToken.FunctionTokenType ||
-                                children[i].typ == exports.EnumToken.MathFunctionTokenType ||
-                                children[i].typ == exports.EnumToken.PercentageTokenType ||
-                                isColor(children[i]) ||
-                                (children[i].typ == exports.EnumToken.IdenTokenType &&
-                                    equalsIgnoreCase("none", children[i].val))) {
-                                continue;
-                            }
-                            return false;
-                        }
-                        return true;
-                    }
-                    if (children.length < 4 || children.length > 8) {
-                        return false;
-                    }
-                    if (!isRelative && !isColorspace(children[0])) {
-                        return false;
-                    }
-                    for (let i = 1; i < children.length - 2; i++) {
-                        if (children[i].typ == exports.EnumToken.IdenTokenType) {
-                            if (isColor(children[i])) {
-                                continue;
-                            }
-                            if (children[i].val != "none" &&
-                                !((isRelative &&
-                                    ["alpha", "r", "g", "b", "x", "y", "z"].includes(children[i].val)) ||
-                                    isColorspace(children[i]))) {
-                                return false;
-                            }
-                        }
-                        if (children[i].typ === exports.EnumToken.WildCardFunctionTokenType) {
-                            continue;
-                        }
-                        if (children[i].typ === exports.EnumToken.FunctionTokenType ||
-                            children[i].typ === exports.EnumToken.MathFunctionTokenType) {
-                            if (!mathFuncs.includes(children[i].val)) {
-                                return false;
-                            }
-                        }
-                    }
-                    if (children.length == 4 || (isRelative && children.length == 6)) {
-                        return true;
-                    }
-                    if (children.length == 8 || children.length == 6) {
-                        const sep = children.at(-2);
-                        const alpha = children.at(-1);
-                        // @ts-ignore
-                        if (((children.length > 6 || !isRelative) && sep.typ != exports.EnumToken.LiteralTokenType) ||
-                            sep.val != "/") {
-                            return false;
-                        }
-                        if (alpha.typ == exports.EnumToken.IdenTokenType && alpha.val != "none") {
-                            return false;
-                        }
-                        else {
-                            // @ts-ignore
-                            if (alpha.typ == exports.EnumToken.PercentageTokenType) {
-                                if (+alpha.val < 0 || +alpha.val > 100) {
-                                    return false;
-                                }
-                            }
-                            else if (alpha.typ == exports.EnumToken.NumberTokenType) {
-                                if (+alpha.val < 0 || +alpha.val > 1) {
-                                    return false;
-                                }
-                            }
-                        }
-                    }
-                    return true;
-                }
-                // @ts-ignore
-                else if (token.val == "color-mix") {
-                    // @ts-ignore
-                    const children = token.chi.reduce((acc, t) => {
-                        if (t.typ == exports.EnumToken.CommaTokenType) {
-                            acc.push([]);
-                        }
-                        else {
-                            if (![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(t.typ)) {
-                                acc[acc.length - 1].push(t);
-                            }
-                        }
-                        return acc;
-                    }, [[]]);
-                    if (children.length == 3) {
-                        if (children[0].length > 4 ||
-                            children[0][0].typ != exports.EnumToken.IdenTokenType ||
-                            "in" !== children[0][0].val?.toLowerCase?.() ||
-                            !isColorspace(children[0][1]) ||
-                            (children[0].length >= 3 && !isHueInterpolationMethod(children[0].slice(2))) ||
-                            children[1].length > 2 ||
-                            !isColor(children[1][0]) ||
-                            (children[1].length == 2 && !isPercentageToken(children[1][1])) ||
-                            children[2].length > 2 ||
-                            (children[2].length == 2 && !isPercentageToken(children[2][1])) ||
-                            !isColor(children[2][0])) {
-                            return false;
-                        }
-                        if (children[1].length == 2) {
-                            if (!(children[1][1].typ == exports.EnumToken.PercentageTokenType ||
-                                (children[1][1].typ == exports.EnumToken.NumberTokenType &&
-                                    children[1][1].val == 0))) {
-                                return false;
-                            }
-                        }
-                        if (children[2].length == 2) {
-                            if (!(children[2][1].typ == exports.EnumToken.PercentageTokenType ||
-                                (children[2][1].typ == exports.EnumToken.NumberTokenType &&
-                                    children[2][1].val == 0))) {
-                                return false;
-                            }
-                        }
-                        return true;
-                    }
-                    return false;
-                }
-                else {
-                    const keywords = ["from", "none"];
-                    // @ts-ignore
-                    if (["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch"].includes(token.val)) {
-                        // @ts-ignore
-                        keywords.push("alpha", ...token.val.slice(-3).split(""));
-                    }
-                    // @ts-ignore
-                    for (const v of token.chi) {
-                        if (v.typ == exports.EnumToken.CommaTokenType) {
-                            isLegacySyntax = true;
-                        }
-                        if (v.typ == exports.EnumToken.IdenTokenType) {
-                            if (isColor(v)) {
-                                continue;
-                            }
-                            if (!(keywords.includes(v.val) || v.val.toLowerCase() in COLORS_NAMES)) {
-                                return false;
-                            }
-                            if (keywords.includes(v.val)) {
-                                if (isLegacySyntax) {
-                                    return false;
-                                }
-                                // @ts-ignore
-                                if (v.val == "from" && ["rgba", "hsla"].includes(token.val)) {
-                                    return false;
-                                }
-                            }
-                            continue;
-                        }
-                        if (v.typ === exports.EnumToken.MathFunctionTokenType ||
-                            v.typ === exports.EnumToken.WildCardFunctionTokenType ||
-                            colorsFunc.includes(v.val)) {
-                            continue;
-                        }
-                        if (![
-                            exports.EnumToken.ColorTokenType,
-                            exports.EnumToken.IdenTokenType,
-                            exports.EnumToken.NumberTokenType,
-                            exports.EnumToken.AngleTokenType,
-                            exports.EnumToken.PercentageTokenType,
-                            exports.EnumToken.CommaTokenType,
-                            exports.EnumToken.WhitespaceTokenType,
-                            exports.EnumToken.LiteralTokenType,
-                        ].includes(v.typ)) {
-                            return false;
-                        }
-                    }
-                }
-                return true;
-            }
-        }
-        return false;
-    }
-    function parseColor(token) {
-        if (token.typ === exports.EnumToken.IdenTokenType) {
-            const val = token.val.toLowerCase();
-            if (nonStandardColors.has(val)) {
-                Object.assign(token, {
-                    typ: exports.EnumToken.ColorTokenType,
-                    kin: exports.ColorType.NON_STD,
-                });
-                return token;
-            }
-            if (systemColors.has(val)) {
-                Object.assign(token, {
-                    typ: exports.EnumToken.ColorTokenType,
-                    kin: exports.ColorType.SYS,
-                });
-                return token;
-            }
-            if (deprecatedSystemColors.has(val)) {
-                Object.assign(token, {
-                    typ: exports.EnumToken.ColorTokenType,
-                    kin: exports.ColorType.DPSYS,
-                });
-                return token;
-            }
-            if (val in COLORS_NAMES || val === "currentcolor") {
-                Object.assign(token, {
-                    typ: exports.EnumToken.ColorTokenType,
-                    val,
-                    kin: exports.ColorType.LIT,
-                });
-                return token;
-            }
-        }
-        if (token.typ === exports.EnumToken.ColorTokenType) {
-            if (!("kin" in token) && "val" in token) {
-                // @ts-expect-error
-                token.kin = exports.ColorType[token.val.replaceAll("-", "_").toUpperCase()];
-            }
-            if ("chi" in token) {
-                const tk = token.chi?.find((t) => t.typ !== exports.EnumToken.WhitespaceTokenType && t.typ !== exports.EnumToken.CommentTokenType);
-                if (tk?.typ === exports.EnumToken.IdenTokenType && tk.val === "from") {
-                    token.cal = "rel";
-                }
-                else if (token.val == "color-mix" && tk.val == "in") {
-                    token.cal = "mix";
-                }
-                if (token.val == "color") {
-                    let index = token.chi.indexOf(tk);
-                    if (token.cal == "rel") {
-                        for (let k = 0; k < token.chi.length; k++) {
-                            if (exports.EnumToken.DashedIdenTokenType == token.chi[k].typ) {
-                                index = k;
-                                break;
-                            }
-                        }
-                    }
-                    if (exports.EnumToken.DashedIdenTokenType == token?.chi?.[index]?.typ) {
-                        token.kin = exports.ColorType.CUSTOM_COLOR;
-                    }
-                }
-            }
-            return token;
-        }
-        // @ts-ignore
-        token.typ = exports.EnumToken.ColorTokenType;
-        // @ts-ignore
-        token.kin = exports.ColorType[token.val.replaceAll("-", "_").toUpperCase()];
-        if (!("chi" in token)) {
-            const val = token.val.toLowerCase();
-            if (val == "currentcolor" || val == "transparent" || val in COLORS_NAMES) {
-                token.kin = exports.ColorType.LIT;
-            }
-            else if (isHexColor(val)) {
-                token.kin = exports.ColorType.HEX;
-            }
-            const tk = token.chi?.find((t) => t.typ !== exports.EnumToken.WhitespaceTokenType && t.typ !== exports.EnumToken.CommentTokenType);
-            if (tk?.typ === exports.EnumToken.IdenTokenType && tk.val === "from") {
-                token.cal = "rel";
-            }
-            else if (token.val == "color-mix" && tk.val == "in") {
-                token.cal = "mix";
-            }
-            else if (token.val == "color") {
-                token.cal = "col";
-            }
-            return token;
-        }
-        // @ts-ignore
-        if (token.chi[0].typ == exports.EnumToken.IdenTokenType) {
-            // @ts-ignore
-            if (token.chi[0].val == "from") {
-                // @ts-ignore
-                token.cal = "rel";
-            }
-            // @ts-ignore
-            else if (token.val == "color-mix" && token.chi[0].val == "in") {
-                // @ts-ignore
-                token.cal = "mix";
-            }
-            else {
-                // @ts-ignore
-                if (token.val == "color") {
-                    // @ts-ignore
-                    token.cal = "col";
-                }
-            }
-        }
-        return token;
-    }
-    function isLetter(codepoint) {
-        // lowercase
-        return ((codepoint >= 0x61 && codepoint <= 0x7a) ||
-            // uppercase
-            (codepoint >= 0x41 && codepoint <= 0x5a));
-    }
-    function isNonAscii(codepoint) {
-        return codepoint >= 0x80;
-    }
-    function isIdentStart(codepoint) {
-        // _
-        return codepoint == 0x5f || isLetter(codepoint) || isNonAscii(codepoint) || codepoint == REVERSE_SOLIDUS;
-    }
-    function isDigit(codepoint) {
-        return codepoint >= 0x30 && codepoint <= 0x39;
-    }
-    function isIdentCodepoint(codepoint) {
-        // -
-        return codepoint == 0x2d || isDigit(codepoint) || isIdentStart(codepoint);
-    }
-    function isIdent(name) {
-        const j = name.length - 1;
-        let i = 0;
-        let codepoint = name.charCodeAt(0);
-        // -
-        if (codepoint == 0x2d) {
-            const nextCodepoint = name.charCodeAt(1);
-            if (Number.isNaN(nextCodepoint)) {
-                return false;
-            }
-            if (nextCodepoint == REVERSE_SOLIDUS) {
-                return name.length > 2 && !isNewLine(name.charCodeAt(2));
-            }
-            if (isDigit(nextCodepoint)) {
-                return false;
-            }
-            codepoint = nextCodepoint;
-            i = 1;
-        }
-        if (codepoint !== 0x2d && !isIdentStart(codepoint)) {
-            return false;
-        }
-        if (codepoint == REVERSE_SOLIDUS) {
-            codepoint = name.charCodeAt(i + 1);
-            if (!isIdentCodepoint(codepoint)) {
-                return false;
-            }
-            i += String.fromCodePoint(codepoint).length;
-            if (i < j) {
-                codepoint = name.charCodeAt(i);
-                if (!isIdentCodepoint(codepoint)) {
-                    return false;
-                }
-            }
-        }
-        while (i < j) {
-            i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
-            codepoint = name.charCodeAt(i);
-            if (codepoint == REVERSE_SOLIDUS) {
-                i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
-                codepoint = name.charCodeAt(i);
-                i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
-                continue;
-            }
-            if (codepoint !== 0x2d && !isIdentCodepoint(codepoint)) {
-                return false;
-            }
-        }
-        return true;
-    }
-    function isPseudo(name) {
-        return (name.charAt(0) == ":" &&
-            ((name.endsWith("(") && isIdent(name.charAt(1) == ":" ? name.slice(2, -1) : name.slice(1, -1))) ||
-                isIdent(name.charAt(1) == ":" ? name.slice(2) : name.slice(1))));
-    }
-    function isHash(name) {
-        return name.charAt(0) == "#" && isIdent(name.charAt(1));
-    }
-    function isNumber(name) {
-        if (name.length == 0) {
-            return false;
-        }
-        let codepoint = name.charCodeAt(0);
-        let i = 0;
-        const j = name.length;
-        if (j == 1 && !isDigit(codepoint)) {
-            return false;
-        }
-        // '+' '-'
-        if ([0x2b, 0x2d].includes(codepoint)) {
-            i++;
-        }
-        // consume digits
-        while (i < j) {
-            codepoint = name.charCodeAt(i);
-            if (isDigit(codepoint)) {
-                i++;
-                continue;
-            }
-            // '.' 'E' 'e'
-            if (codepoint == 0x2e || codepoint == 0x45 || codepoint == 0x65) {
-                break;
-            }
-            return false;
-        }
-        // '.'
-        if (codepoint == 0x2e) {
-            if (!isDigit(name.charCodeAt(++i))) {
-                return false;
-            }
-        }
-        while (i < j) {
-            codepoint = name.charCodeAt(i);
-            if (isDigit(codepoint)) {
-                i++;
-                continue;
-            }
-            // 'E' 'e'
-            if (codepoint == 0x45 || codepoint == 0x65) {
-                i++;
-                break;
-            }
-            return false;
-        }
-        // 'E' 'e'
-        if (codepoint == 0x45 || codepoint == 0x65) {
-            if (i == j) {
-                return false;
-            }
-            codepoint = name.charCodeAt(i + 1);
-            // '+' '-'
-            if ([0x2b, 0x2d].includes(codepoint)) {
-                i++;
-            }
-            codepoint = name.charCodeAt(i + 1);
-            if (!isDigit(codepoint)) {
-                return false;
-            }
-        }
-        while (++i < j) {
-            codepoint = name.charCodeAt(i);
-            if (!isDigit(codepoint)) {
-                return false;
-            }
-        }
-        return true;
-    }
-    function isPercentage(name) {
-        return name.endsWith("%") && isNumber(name.slice(0, -1));
-    }
-    function isFlex(dimension) {
-        return "unit" in dimension && "fr" == dimension.unit.toLowerCase();
-    }
-    function parseDimension(name) {
-        let index = name.length;
-        while (index--) {
-            if (isLetter(name.charCodeAt(index))) {
-                continue;
-            }
-            index++;
-            break;
-        }
-        if (index < 0) {
-            return null;
-        }
-        const dimension = {
-            typ: exports.EnumToken.DimensionTokenType,
-            val: +name.slice(0, index),
-            unit: name.slice(index),
-        };
-        if (Number.isNaN(dimension.val)) {
-            return null;
-        }
-        if (isAngle(dimension)) {
-            // @ts-ignore
-            dimension.typ = exports.EnumToken.AngleTokenType;
-        }
-        else if (isLength(dimension)) {
-            // @ts-ignore
-            dimension.typ = exports.EnumToken.LengthTokenType;
-        }
-        else if (isTime(dimension)) {
-            // @ts-ignore
-            dimension.typ = exports.EnumToken.TimeTokenType;
-        }
-        else if (isResolution(dimension)) {
-            // @ts-ignore
-            dimension.typ = exports.EnumToken.ResolutionTokenType;
-            if (dimension.unit == "dppx") {
-                dimension.unit = "x";
-            }
-        }
-        else if (isFrequency(dimension)) {
-            // @ts-ignore
-            dimension.typ = exports.EnumToken.FrequencyTokenType;
-        }
-        else if (isFlex(dimension)) {
-            // @ts-ignore
-            dimension.typ = exports.EnumToken.FlexTokenType;
-        }
-        return dimension;
-    }
-    function isHexColor(name) {
-        if (name.charAt(0) != "#" || ![4, 5, 7, 9].includes(name.length)) {
-            return false;
-        }
-        for (let chr of name.slice(1)) {
-            let codepoint = chr.charCodeAt(0);
-            if (!isDigit(codepoint) &&
-                // A-F
-                !(codepoint >= 0x41 && codepoint <= 0x46) &&
-                // a-f
-                !(codepoint >= 0x61 && codepoint <= 0x66)) {
-                return false;
-            }
-        }
-        return true;
-    }
-    function isFunction(name) {
-        return name.endsWith("(") && isIdent(name.slice(0, -1));
-    }
-    function isNewLine(codepoint) {
-        // \n \r \f \v
-        return (codepoint == 0xa ||
-            codepoint == 0xb ||
-            codepoint == 0xc ||
-            codepoint == 0xd ||
-            codepoint == 0x2028 ||
-            codepoint == 0x2029);
-    }
-    function isWhiteSpace(codepoint) {
-        return (codepoint == 0x9 ||
-            codepoint == 0x20 ||
-            // isNewLine
-            codepoint == 0xa ||
-            codepoint == 0xb ||
-            codepoint == 0xc ||
-            codepoint == 0xd ||
-            codepoint == 0x2028 ||
-            codepoint == 0x2029);
-    }
-    function isValue(token) {
-        if (token == null) {
-            return false;
-        }
-        return (token.typ === exports.EnumToken.IdenTokenType ||
-            token.typ === exports.EnumToken.DimensionTokenType ||
-            token.typ === exports.EnumToken.LengthTokenType ||
-            token.typ === exports.EnumToken.AngleTokenType ||
-            token.typ === exports.EnumToken.FlexTokenType ||
-            token.typ === exports.EnumToken.TimeTokenType ||
-            token.typ === exports.EnumToken.ResolutionTokenType ||
-            token.typ === exports.EnumToken.FrequencyTokenType ||
-            token.typ === exports.EnumToken.NumberTokenType ||
-            token.typ === exports.EnumToken.ColorTokenType ||
-            token.typ === exports.EnumToken.FunctionTokenType ||
-            token.typ === exports.EnumToken.UrlFunctionTokenType ||
-            token.typ === exports.EnumToken.GridTemplateFuncTokenType ||
-            token.typ === exports.EnumToken.ImageFunctionTokenType ||
-            token.typ === exports.EnumToken.TimelineFunctionTokenType ||
-            token.typ === exports.EnumToken.TimingFunctionTokenType ||
-            token.typ === exports.EnumToken.MathFunctionTokenType ||
-            token.typ === exports.EnumToken.TransformFunctionTokenType);
-    }
 
     function getComponents(token) {
         if (token.typ === exports.EnumToken.IdenTokenType) {
@@ -13350,6 +12394,29 @@
         }, [[]]);
     }
 
+    function dasherize(value) {
+        return value.replace(/([A-Z])/g, (all, one) => `-${one.toLowerCase()}`);
+    }
+    function camelize(value) {
+        return value.replace(/-([a-z])/g, (all, one) => one.toUpperCase());
+    }
+    function equalsIgnoreCase(a, b) {
+        if (a.length !== b.length)
+            return false;
+        for (let i = 0; i < a.length; i++) {
+            let ca = a.charCodeAt(i);
+            let cb = b.charCodeAt(i);
+            // Normalize A-Z to a-z
+            if (ca >= 65 && ca <= 90)
+                ca += 32;
+            if (cb >= 65 && cb <= 90)
+                cb += 32;
+            if (ca !== cb)
+                return false;
+        }
+        return true;
+    }
+
     /**
      * convert angle to degrees
      * @param angle
@@ -13503,10 +12570,10 @@
                         value.val.match(/^-([^-]+)-(.+)$/) != null) {
                         if (value.val.endsWith("-gradient")) {
                             if (regMatchLinearGradient.test(value.val)) {
-                                Object.assign(value, {
-                                    val: "linear-gradient",
-                                    chi: this.webkitLinearToLinearGradient(value.chi),
-                                });
+                                this.webkitLinearToLinearGradient(value);
+                            }
+                            else if (regMatchRadialGradient.test(value.val)) {
+                                this.webkitRadialToRadialGradient(value);
                             }
                             else if (equalsIgnoreCase(value.val, "-webkit-gradient")) {
                                 this.webkitGradientToGradient(value);
@@ -13546,12 +12613,18 @@
             }
             return node;
         }
-        webkitLinearToLinearGradient(tokens) {
+        /**
+         * Convert -webkit-linear-gradient to linear-gradient syntax
+         * @param tokens
+         * @returns
+         */
+        webkitLinearToLinearGradient(token) {
             let i;
             let k;
             let to;
             let val;
             let key;
+            const tokens = token.chi;
             // conversion rules
             // translation:
             // - left -> to right
@@ -13619,8 +12692,13 @@
                     }
                 }
             }
-            return tokens;
+            token.val = equalsIgnoreCase(token.val, "-webkit-repeating-linear-gradient") ? "repeating-linear-gradient" : "linear-gradient";
         }
+        /**
+         * Convert -webkit-gradient(linear) to linear-gradient or linear-gradient syntax
+         * @param token
+         * @returns
+         */
         webkitGradientToGradient(token) {
             let i = 0;
             let k;
@@ -13750,14 +12828,14 @@
                     }
                     else if (equalsIgnoreCase(tokens[i].val, "color-stop")) {
                         k = tokens[i].chi.length - 1;
+                        tokens.splice(i, 1, 
                         // @ts-expect-error
-                        tokens.splice(i, 1, ...tokens[i].chi
-                            .reverse()
-                            .map((t) => t.typ === exports.EnumToken.CommaTokenType
+                        ...tokens[i].chi.reverse().map((t) => t.typ === exports.EnumToken.CommaTokenType
                             ? { typ: exports.EnumToken.WhitespaceTokenType }
                             : t.typ === exports.EnumToken.NumberTokenType
                                 ? {
                                     typ: exports.EnumToken.PercentageTokenType,
+                                    // @ts-expect-error
                                     val: t.val * 100,
                                 }
                                 : t));
@@ -13847,6 +12925,93 @@
             //         }
             //     }
             // }
+        }
+        /**
+         * Convert -webkit-radial-gradient to radial-gradient syntax
+         * @param tokens
+         * @returns
+         */
+        webkitRadialToRadialGradient(token) {
+            let i = 0;
+            const tokens = token.chi;
+            while (i < tokens.length &&
+                (tokens[i].typ === exports.EnumToken.WhitespaceTokenType || tokens[i].typ === exports.EnumToken.CommentTokenType)) {
+                i++;
+            }
+            const positions = [];
+            const form = [];
+            const size = [];
+            const colorStops = [];
+            if (tokens[i]?.typ === exports.EnumToken.PercentageTokenType ||
+                (tokens[i]?.typ === exports.EnumToken.NumberTokenType && 0 === tokens[i].val) ||
+                (tokens[i]?.typ === exports.EnumToken.IdenTokenType &&
+                    (equalsIgnoreCase(tokens[i].val, "center") ||
+                        equalsIgnoreCase(tokens[i].val, "top") ||
+                        equalsIgnoreCase(tokens[i].val, "bottom") ||
+                        equalsIgnoreCase(tokens[i].val, "left") ||
+                        equalsIgnoreCase(tokens[i].val, "right")))) {
+                do {
+                    positions.push(tokens[i]);
+                    i++;
+                } while (tokens[i]?.typ !== exports.EnumToken.CommaTokenType);
+                if (tokens[i]?.typ === exports.EnumToken.CommaTokenType) {
+                    i++;
+                }
+            }
+            if (tokens[i]?.typ === exports.EnumToken.IdenTokenType) {
+                if (equalsIgnoreCase(tokens[i].val, "closest-side") ||
+                    equalsIgnoreCase(tokens[i].val, "closest-corner") ||
+                    equalsIgnoreCase(tokens[i].val, "farthest-side") ||
+                    equalsIgnoreCase(tokens[i].val, "farthest-corner")) {
+                    size.push(tokens[i++]);
+                }
+                else if (equalsIgnoreCase(tokens[i].val, "circle") ||
+                    equalsIgnoreCase(tokens[i].val, "ellipse")) {
+                    form.push(tokens[i++]);
+                }
+                while (tokens[i]?.typ === exports.EnumToken.WhitespaceTokenType || tokens[i]?.typ === exports.EnumToken.CommentTokenType) {
+                    i++;
+                }
+                if (tokens[i]?.typ === exports.EnumToken.CommaTokenType) {
+                    i++;
+                }
+            }
+            if (tokens[i]?.typ === exports.EnumToken.IdenTokenType) {
+                if (equalsIgnoreCase(tokens[i].val, "closest-side") ||
+                    equalsIgnoreCase(tokens[i].val, "closest-corner") ||
+                    equalsIgnoreCase(tokens[i].val, "farthest-side") ||
+                    equalsIgnoreCase(tokens[i].val, "farthest-corner")) {
+                    size.push(tokens[i++]);
+                }
+                else if (equalsIgnoreCase(tokens[i].val, "circle") ||
+                    equalsIgnoreCase(tokens[i].val, "ellipse")) {
+                    form.push(tokens[i++]);
+                }
+                while (tokens[i]?.typ === exports.EnumToken.WhitespaceTokenType || tokens[i]?.typ === exports.EnumToken.CommentTokenType) {
+                    i++;
+                }
+                if (tokens[i]?.typ === exports.EnumToken.CommaTokenType) {
+                    i++;
+                }
+            }
+            colorStops.push(...tokens.slice(i));
+            tokens.length = 0;
+            if (form.length > 0 || size.length > 0) {
+                if (form.length === 0) {
+                    form.push({ typ: exports.EnumToken.IdenTokenType, val: "ellipse" });
+                }
+                if (size.length > 0) {
+                    form.push({ typ: exports.EnumToken.WhitespaceTokenType });
+                    form.push(...size);
+                }
+                if (positions.length > 0) {
+                    form.push({ typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val: "at" }, { typ: exports.EnumToken.WhitespaceTokenType }, ...positions);
+                }
+                tokens.push(...form, { typ: exports.EnumToken.CommaTokenType });
+            }
+            token.val = equalsIgnoreCase(token.val, "-webkit-repeating-radial-gradient") ? "repeating-radial-gradient" : "radial-gradient";
+            tokens.push(...colorStops);
+            return tokens;
         }
     }
 
@@ -18043,7 +17208,7 @@
                 },
             });
         }
-        tokens = trimArray(tokens.slice(i + 1));
+        tokens = trimArray$1(tokens.slice(i + 1));
         for (i = 0; i < tokens.length; i++) {
             const token = tokens[i];
             if (token.typ == exports.EnumToken.WhitespaceTokenType ||
@@ -18277,7 +17442,7 @@
                             typ: stack.at(-1)?.typ === exports.EnumToken.StartParensTokenType
                                 ? exports.EnumToken.ParensTokenType
                                 : tokensfuncDefMap.get(stack.at(-1)?.typ),
-                            chi: trimArray(tokens.splice(index + 1, i - index - 1)),
+                            chi: trimArray$1(tokens.splice(index + 1, i - index - 1)),
                         });
                         if (tokens[index].typ === exports.EnumToken.WildCardFunctionTokenType &&
                             equalsIgnoreCase(tokens[index].val, "if")) {
@@ -18308,16 +17473,16 @@
                                         l: acc[acc.length - 1],
                                         r: {
                                             typ: exports.EnumToken.IfConditionTokenType,
-                                            l: trimArray(curr.slice(0, index)),
-                                            r: trimArray(curr.slice(index + 1)),
+                                            l: trimArray$1(curr.slice(0, index)),
+                                            r: trimArray$1(curr.slice(index + 1)),
                                         },
                                     };
                                 }
                                 else {
                                     acc.push({
                                         typ: exports.EnumToken.IfConditionTokenType,
-                                        l: trimArray(curr.slice(0, index)),
-                                        r: trimArray(curr.slice(index + 1)),
+                                        l: trimArray$1(curr.slice(0, index)),
+                                        r: trimArray$1(curr.slice(index + 1)),
                                     });
                                 }
                                 return acc;
@@ -18485,8 +17650,8 @@
                     break;
                 }
             }
-            const left = trimArray(index == -1 ? tokens : tokens.slice(0, index));
-            const right = index == -1 ? null : trimArray(tokens.slice(index + 1));
+            const left = trimArray$1(index == -1 ? tokens : tokens.slice(0, index));
+            const right = index == -1 ? null : trimArray$1(tokens.slice(index + 1));
             tokens = [
                 Object.defineProperty({
                     typ: exports.EnumToken.ComposesSelectorNodeType,
@@ -18523,7 +17688,7 @@
         exports.EnumToken.FunctionTokenType,
         exports.EnumToken.PseudoClassFuncTokenType,
     ];
-    function trimArray(tokens) {
+    function trimArray$1(tokens) {
         while (tokens[0]?.typ === exports.EnumToken.WhitespaceTokenType) {
             tokens.shift();
         }
@@ -18645,10 +17810,10 @@
         return result;
     }
     function createValidationContext(tokens) {
-        tokens = trimArray(tokens.filter((t) => t.typ !== exports.EnumToken.CommentTokenType));
+        tokens = trimArray$1(tokens.filter((t) => t.typ !== exports.EnumToken.CommentTokenType));
         if (tokens.at(-1)?.typ === exports.EnumToken.ImportantTokenType) {
             tokens.pop();
-            trimArray(tokens);
+            trimArray$1(tokens);
         }
         const token = {
             tokens,
@@ -19699,7 +18864,7 @@
                     }
                     break;
                 }
-                const range = trimArray(context.peekRange());
+                const range = trimArray$1(context.peekRange());
                 context.next();
                 i++;
                 result = matchSyntax([syntaxes[i + 1]], createValidationContext(range.slice(1, -1)), options);
@@ -19711,7 +18876,7 @@
             }
             if (tokensfuncDefMap.has(token.typ) &&
                 token.typ === exports.EnumToken.WildCardFunctionTokenDefType) {
-                const range = trimArray(context.peekRange());
+                const range = trimArray$1(context.peekRange());
                 result = matchSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, token.val + "()")?.[0]?.chi, createValidationContext(range.slice(1, -1)), options);
                 if (result.success) {
                     context.update(range.at(-1));
@@ -19839,11 +19004,49 @@
             options.visited.get(token).add(syntaxes[i]);
             success = false;
             switch (syntaxes[i].typ) {
+                case ValidationTokenEnum.Comma:
+                    if (token.typ == exports.EnumToken.CommaTokenType) {
+                        success = true;
+                        options.visited.get(token).delete(syntaxes[i]);
+                        context.next();
+                        if (context.done()) {
+                            return {
+                                success: true,
+                                valid: true,
+                                token: null,
+                                context,
+                                syntaxToken: syntaxes[i + 1],
+                                errors: [],
+                            };
+                        }
+                        break;
+                    }
+                    if (isOptional) {
+                        break;
+                    }
+                    return {
+                        success: false,
+                        valid: true,
+                        token,
+                        context,
+                        syntaxToken: syntaxes[i],
+                        errors: [],
+                    };
                 case ValidationTokenEnum.Colon:
                     if (token.typ == exports.EnumToken.ColonTokenType) {
                         success = true;
                         options.visited.get(token).delete(syntaxes[i]);
                         context.next();
+                        if (context.done()) {
+                            return {
+                                success: true,
+                                valid: true,
+                                token: null,
+                                context,
+                                syntaxToken: syntaxes[i + 1],
+                                errors: [],
+                            };
+                        }
                         break;
                     }
                     if (isOptional) {
@@ -20326,7 +19529,7 @@
                 case ValidationTokenEnum.FunctionDefinition:
                     if (tokensfuncDefMap.has(token.typ) &&
                         equalsIgnoreCase(token.val, syntaxes[i].val)) {
-                        const children = trimArray(context.peekRange());
+                        const children = trimArray$1(context.peekRange());
                         result = matchSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, syntaxes[i].val + "()")?.[0]).chi ?? [], createValidationContext(children.slice(1, -1)), options);
                         if (result.success) {
                             success = true;
@@ -21683,7 +20886,7 @@
                 if (target.typ === exports.EnumToken.IdenTokenType && equalsIgnoreCase("else", target.val)) {
                     replaceNodeOrValue(nodeMap.get(targetParentWrapper), nodeMap.get(targetWrapper), node.r.r.at(-1)?.typ ===
                         exports.EnumToken.SemiColonTokenType
-                        ? trimArray(node.r.r.slice(0, -1))
+                        ? trimArray$1(node.r.r.slice(0, -1))
                         : node.r.r);
                     if (targetParentWrapper.typ != exports.EnumToken.DeclarationNodeType) {
                         let index = targetParentWrapper.chi.indexOf(targetWrapper);
@@ -21702,7 +20905,7 @@
                                             if (eq(left, leftSide)) {
                                                 replaceNodeOrValue(nodeMap.get(targetParentWrapper), nodeMap.get(targetParentWrapper.chi[i]), siblingWrapper.chi[k]
                                                     .r.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType
-                                                    ? trimArray(siblingWrapper.chi[k]
+                                                    ? trimArray$1(siblingWrapper.chi[k]
                                                         .r.r.slice(0, -1))
                                                     : siblingWrapper.chi[k]
                                                         .r.r);
@@ -21733,7 +20936,7 @@
             }
             if (left.typ === exports.EnumToken.IdenTokenType && equalsIgnoreCase("else", left.val)) {
                 clonedDeclaration = cloneNode(declaration, true, nodeMap);
-                replaceNodeOrValue(nodeMap.get(parentWrapper), nodeMap.get(targetWrapper.typ === exports.EnumToken.DeclarationNodeType ? node : targetWrapper), node.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
+                replaceNodeOrValue(nodeMap.get(parentWrapper), nodeMap.get(targetWrapper.typ === exports.EnumToken.DeclarationNodeType ? node : targetWrapper), node.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType ? trimArray$1(node.r.slice(0, -1)) : node.r);
                 result.push(clonedDeclaration);
             }
             else if (left?.typ === exports.EnumToken.WhenElseFunctionTokenType) {
@@ -21746,14 +20949,14 @@
                     ...definedPropertySettings,
                     value: [{ typ: exports.EnumToken.ParensTokenType, chi: left.chi.slice() }],
                 });
-                const minify = atRule.nam !== 'supports';
+                const minify = atRule.nam !== "supports";
                 const options = {
                     minify,
                     convertColor: minify,
                 };
                 atRule.val = atRule.tokens.reduce((acc, curr) => acc + renderToken(curr, options), "");
                 clonedDeclaration = cloneNode(declaration, true, nodeMap);
-                replaceNodeOrValue(nodeMap.get(targetWrapper), nodeMap.get(node), node.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
+                replaceNodeOrValue(nodeMap.get(targetWrapper), nodeMap.get(node), node.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType ? trimArray$1(node.r.slice(0, -1)) : node.r);
                 clonedDeclaration.parent = atRule;
                 atRule.chi.push(clonedDeclaration);
                 result.push(atRule);
@@ -21770,7 +20973,7 @@
                 atRule.val = atRule.tokens.reduce((acc, curr) => acc + renderToken(curr), "");
                 clonedDeclaration = cloneNode(declaration, true, nodeMap);
                 replaceNodeOrValue(nodeMap.get(targetWrapper.typ === exports.EnumToken.WildCardFunctionTokenType ? targetParentWrapper : targetWrapper), nodeMap.get(targetWrapper.typ === exports.EnumToken.WildCardFunctionTokenType ? targetWrapper : node), node.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType
-                    ? trimArray(node.r.slice(0, -1))
+                    ? trimArray$1(node.r.slice(0, -1))
                     : node.r);
                 clonedDeclaration.parent = atRule;
                 atRule.chi.push(clonedDeclaration);
@@ -22335,9 +21538,13 @@
                                     buffer += next(parseInfo);
                                     value = peek(parseInfo);
                                     charCode = value.charCodeAt(0);
-                                } while (value !== ")" && !isWhiteSpace(charCode) && !(value === '/' && match(parseInfo, "/*")));
+                                } while (value !== ")" &&
+                                    !isWhiteSpace(charCode) &&
+                                    !(value === "/" && match(parseInfo, "/*")));
                                 if (buffer.length > 0) {
-                                    result.push(yieldResult(buffer, parseInfo, peek(parseInfo) === "" ? exports.EnumToken.BadUrlTokenType : exports.EnumToken.UrlTokenTokenType));
+                                    result.push(yieldResult(buffer, parseInfo, peek(parseInfo) === ""
+                                        ? exports.EnumToken.BadUrlTokenType
+                                        : exports.EnumToken.UrlTokenTokenType));
                                     buffer = "";
                                 }
                             }
@@ -22899,7 +22106,7 @@
                 }
             }
         }
-        return { hasUpdates, values: trimArray(values) };
+        return { hasUpdates, values: trimArray$1(values) };
     }
     /**
      * Minify at-rule media
@@ -23093,7 +22300,7 @@
                         if (l < node.tokens.length) {
                             const slice = node.tokens?.slice(l);
                             node.tokens.splice(l, slice.length, ...minifyAtRuleMedia(slice));
-                            node.val = trimArray(node.tokens).reduce((acc, curr, index, arr) => acc +
+                            node.val = trimArray$1(node.tokens).reduce((acc, curr, index, arr) => acc +
                                 (curr.typ === exports.EnumToken.CommentTokenType ||
                                     (curr.typ === exports.EnumToken.WhitespaceTokenType &&
                                         arr[index + 1]?.typ === exports.EnumToken.CommentTokenType &&
@@ -24897,82 +24104,322 @@
             case exports.EnumToken.FunctionTokenType:
             case exports.EnumToken.MathFunctionTokenType:
             case exports.EnumToken.ImageFunctionTokenType:
-                if (token.typ === exports.EnumToken.ImageFunctionTokenType) {
+                if (options.minify && token.typ === exports.EnumToken.ImageFunctionTokenType) {
+                    const slice = token.chi.slice();
                     switch (token.val) {
-                        case "linear-gradient": {
-                            let i;
-                            let k;
-                            let j;
-                            let key;
-                            for (i = 0; i < token.chi.length; i++) {
-                                if (token.chi[i].typ == exports.EnumToken.IdenTokenType &&
-                                    equalsIgnoreCase(token.chi[i].val, "to")) {
-                                    k = i + 1;
-                                    while (k < token.chi.length &&
-                                        (token.chi[k].typ === exports.EnumToken.WhitespaceTokenType ||
-                                            token.chi[k].typ === exports.EnumToken.CommentTokenType)) {
-                                        k++;
+                        case "linear-gradient":
+                        case "repeating-linear-gradient":
+                            {
+                                let i;
+                                let k;
+                                let j;
+                                let key;
+                                for (i = 0; i < slice.length; i++) {
+                                    if (slice[i].typ == exports.EnumToken.ColorTokenType || slice[i].typ === exports.EnumToken.CommaTokenType) {
+                                        break;
                                     }
-                                    if (k < token.chi.length &&
-                                        token.chi[k].typ === exports.EnumToken.IdenTokenType) {
-                                        // convert keyword to angle
-                                        key = token.chi[k].val.toLowerCase();
-                                        switch (key) {
-                                            case "right":
-                                                token.chi.splice(i, k - i + 1, {
-                                                    typ: exports.EnumToken.AngleTokenType,
-                                                    val: 90,
-                                                });
-                                                break;
-                                            case "left":
-                                                token.chi.splice(i, k - i + 1, {
-                                                    typ: exports.EnumToken.AngleTokenType,
-                                                    val: 270,
-                                                });
-                                                break;
-                                            case "top":
-                                            case "bottom":
-                                                j = k + 1;
-                                                while (j < token.chi.length &&
-                                                    (token.chi[j].typ ===
-                                                        exports.EnumToken.WhitespaceTokenType ||
-                                                        token.chi[j].typ === exports.EnumToken.CommentTokenType)) {
-                                                    j++;
-                                                }
-                                                if (j < token.chi.length &&
-                                                    token.chi[j].typ != exports.EnumToken.CommaTokenType) {
+                                    if (slice[i].typ == exports.EnumToken.IdenTokenType &&
+                                        equalsIgnoreCase(slice[i].val, "to")) {
+                                        k = i + 1;
+                                        while (k < slice.length &&
+                                            (slice[k].typ === exports.EnumToken.WhitespaceTokenType ||
+                                                slice[k].typ === exports.EnumToken.CommentTokenType)) {
+                                            k++;
+                                        }
+                                        if (k < slice.length && slice[k].typ === exports.EnumToken.IdenTokenType) {
+                                            // convert keyword to angle
+                                            key = slice[k].val.toLowerCase();
+                                            switch (key) {
+                                                case "right":
+                                                    slice.splice(i, k - i + 1, {
+                                                        typ: exports.EnumToken.AngleTokenType,
+                                                        val: 90,
+                                                    });
                                                     break;
-                                                }
-                                                token.chi.splice(i, k - i + 1, {
-                                                    typ: exports.EnumToken.AngleTokenType,
-                                                    val: key === "top" ? 0 : 180,
-                                                });
-                                                break;
+                                                case "left":
+                                                    slice.splice(i, k - i + 1, {
+                                                        typ: exports.EnumToken.AngleTokenType,
+                                                        val: 270,
+                                                    });
+                                                    break;
+                                                case "top":
+                                                case "bottom":
+                                                    j = k + 1;
+                                                    while (j < slice.length &&
+                                                        (slice[j].typ === exports.EnumToken.WhitespaceTokenType ||
+                                                            slice[j].typ === exports.EnumToken.CommentTokenType)) {
+                                                        j++;
+                                                    }
+                                                    if (j < slice.length && slice[j].typ !== exports.EnumToken.CommaTokenType) {
+                                                        i = j - 1;
+                                                        break;
+                                                    }
+                                                    // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/gradient/linear-gradient#:~:text=If%20unspecified%2C%20it%20defaults%20to%20to%20bottom
+                                                    if (key === "bottom") {
+                                                        // to bottom -> 180deg is the default angle and will be removed
+                                                        while (k < slice.length &&
+                                                            slice[k].typ != exports.EnumToken.CommaTokenType) {
+                                                            k++;
+                                                        }
+                                                        slice.splice(i, k - i + 1);
+                                                        i--;
+                                                        continue;
+                                                    }
+                                                    slice.splice(i, k - i + 1, {
+                                                        typ: exports.EnumToken.AngleTokenType,
+                                                        val: key === "top" ? 0 : 180,
+                                                    });
+                                                    i--;
+                                                    break;
+                                            }
+                                        }
+                                    }
+                                    else if (slice[i].typ == exports.EnumToken.AngleTokenType) {
+                                        if ((180 - toDegrees(slice[i]).val) % 360 === 0) {
+                                            k = i + 1;
+                                            while (k < slice.length && slice[k].typ !== exports.EnumToken.CommaTokenType) {
+                                                k++;
+                                            }
+                                            slice.splice(i, k - i + 1);
                                         }
                                     }
                                 }
-                                else if (token.chi[i].typ == exports.EnumToken.ColorTokenType) {
-                                    // color 100% -> color  
-                                    let k = i + 1;
-                                    while (k < token.chi.length) {
-                                        if (token.chi[k].typ === exports.EnumToken.WhitespaceTokenType || token.chi[k].typ === exports.EnumToken.CommentTokenType) {
-                                            k++;
-                                            continue;
-                                        }
+                                if (slice[i]?.typ === exports.EnumToken.CommaTokenType) {
+                                    i++;
+                                    while (i < slice.length &&
+                                        (slice[i].typ === exports.EnumToken.WhitespaceTokenType ||
+                                            slice[i].typ === exports.EnumToken.CommentTokenType)) {
+                                        i++;
+                                    }
+                                }
+                                if (slice[i]?.typ === exports.EnumToken.ColorTokenType) {
+                                    slice.push(...reduceColorStops(slice.splice(i, slice.length - i)));
+                                }
+                            }
+                            break;
+                        case "radial-gradient":
+                        case 'repeating-radial-gradient': {
+                            let i = 0;
+                            while (i < slice.length &&
+                                (slice[i].typ === exports.EnumToken.WhitespaceTokenType ||
+                                    slice[i].typ === exports.EnumToken.CommentTokenType)) {
+                                i++;
+                            }
+                            const positions = [];
+                            const form = [];
+                            const size = [];
+                            const colorSpaceDef = [];
+                            if (slice[i]?.typ === exports.EnumToken.IdenTokenType) {
+                                if (equalsIgnoreCase(slice[i].val, "farthest-corner") ||
+                                    equalsIgnoreCase(slice[i].val, "ellipse")) {
+                                    i++;
+                                }
+                                else if (equalsIgnoreCase(slice[i].val, "closest-side") ||
+                                    equalsIgnoreCase(slice[i].val, "closest-corner") ||
+                                    equalsIgnoreCase(slice[i].val, "farthest-side")) {
+                                    size.push(slice[i++]);
+                                }
+                                else if (equalsIgnoreCase(slice[i].val, "circle")) {
+                                    form.push(slice[i++]);
+                                }
+                                while (slice[i]?.typ === exports.EnumToken.WhitespaceTokenType ||
+                                    slice[i]?.typ === exports.EnumToken.CommentTokenType) {
+                                    i++;
+                                }
+                                // if (slice[i]?.typ === EnumToken.CommaTokenType) {
+                                //     i++;
+                                // }
+                            }
+                            if (slice[i]?.typ === exports.EnumToken.IdenTokenType) {
+                                if (equalsIgnoreCase(slice[i].val, "farthest-corner") ||
+                                    equalsIgnoreCase(slice[i].val, "ellipse")) {
+                                    i++;
+                                }
+                                else if (equalsIgnoreCase(slice[i].val, "closest-side") ||
+                                    equalsIgnoreCase(slice[i].val, "closest-corner") ||
+                                    equalsIgnoreCase(slice[i].val, "farthest-side")) {
+                                    size.push(slice[i++]);
+                                }
+                                else if (equalsIgnoreCase(slice[i].val, "circle")) {
+                                    form.push(slice[i++]);
+                                }
+                                while (slice[i]?.typ === exports.EnumToken.WhitespaceTokenType ||
+                                    slice[i]?.typ === exports.EnumToken.CommentTokenType) {
+                                    i++;
+                                }
+                                // if (slice[i]?.typ === EnumToken.CommaTokenType) {
+                                //     i++;
+                                // }
+                            }
+                            if (equalsIgnoreCase(slice[i].val, "at")) {
+                                i++;
+                            }
+                            while (slice[i]?.typ === exports.EnumToken.WhitespaceTokenType ||
+                                slice[i]?.typ === exports.EnumToken.CommentTokenType) {
+                                i++;
+                            }
+                            if (slice[i]?.typ === exports.EnumToken.PercentageTokenType ||
+                                (slice[i]?.typ === exports.EnumToken.NumberTokenType && 0 === slice[i].val) ||
+                                (slice[i]?.typ === exports.EnumToken.IdenTokenType &&
+                                    (equalsIgnoreCase(slice[i].val, "center") ||
+                                        equalsIgnoreCase(slice[i].val, "top") ||
+                                        equalsIgnoreCase(slice[i].val, "bottom") ||
+                                        equalsIgnoreCase(slice[i].val, "left") ||
+                                        equalsIgnoreCase(slice[i].val, "right")))) {
+                                do {
+                                    if (slice[i]?.typ === exports.EnumToken.IdenTokenType &&
+                                        "in" === slice[i].val) {
                                         break;
                                     }
-                                    if (token.chi[k]?.typ === exports.EnumToken.PercentageTokenType) {
-                                        if (token.chi[k].val === 100) {
-                                            token.chi.splice(i + 1, k - i);
+                                    positions.push(slice[i]);
+                                    i++;
+                                } while (slice[i]?.typ !== exports.EnumToken.CommaTokenType);
+                                //     if (slice[i]?.typ === EnumToken.IdenTokenType && 'in' === (slice[i] as IdentToken).val) {
+                                //         colorSpaceDef.push(slice[i++]);
+                                //     }
+                                // while (slice[i]?.typ !== EnumToken.CommaTokenType) {
+                                //         colorSpaceDef.push(slice[i++]);
+                                // }
+                                // if (slice[i]?.typ === EnumToken.CommaTokenType) {
+                                //     i++;
+                                // }
+                            }
+                            while (slice[i]?.typ !== exports.EnumToken.CommaTokenType) {
+                                colorSpaceDef.push(slice[i++]);
+                            }
+                            if (slice[i]?.typ === exports.EnumToken.CommaTokenType) {
+                                i++;
+                            }
+                            if (positions.length > 0) {
+                                let k;
+                                let position1 = "";
+                                let position2 = "";
+                                for (k = 0; k < positions.length; k++) {
+                                    if (positions[k].typ === exports.EnumToken.IdenTokenType) {
+                                        if (position1.length === 0) {
+                                            position1 = positions[k].val;
                                         }
                                         else {
-                                            i = k;
+                                            position2 = positions[k].val;
                                         }
+                                    }
+                                    else if (positions[k].typ === exports.EnumToken.PercentageTokenType ||
+                                        positions[k].typ === exports.EnumToken.NumberTokenType) {
+                                        if (position1.length === 0) {
+                                            position1 = positions[k].val + "%";
+                                        }
+                                        else {
+                                            position2 = positions[k].val + "%";
+                                        }
+                                    }
+                                    if (position2.length > 0) {
+                                        break;
+                                    }
+                                }
+                                if (position1.length > 0) {
+                                    let key = `${position1} ${position2}`.trim();
+                                    if (key === "50% 50%" || key === "center center" || key === "50%" || key === "center") {
+                                        positions.length = 0;
+                                    }
+                                    else if (key === "0% 0%" ||
+                                        key === "0 0" ||
+                                        key === "top left" ||
+                                        key === "left top") {
+                                        positions.splice(0, positions.length, {
+                                            typ: exports.EnumToken.PercentageTokenType,
+                                            val: 0,
+                                        });
+                                    }
+                                    else if (key === "50% 0%" ||
+                                        key === "50% 0" ||
+                                        key === "center top" ||
+                                        key === "top center") {
+                                        positions.splice(0, positions.length, { typ: exports.EnumToken.IdenTokenType, val: "top" });
+                                    }
+                                    else if (key === "top right" || key === "right top") {
+                                        positions.splice(0, positions.length, {
+                                            typ: exports.EnumToken.PercentageTokenType,
+                                            val: 100,
+                                        }, { typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.PercentageTokenType, val: 0 });
+                                    }
+                                    else if (key === "0 50%" ||
+                                        key === "0% 50%" ||
+                                        key === "left center" ||
+                                        key === "center left") {
+                                        positions.splice(0, positions.length, {
+                                            typ: exports.EnumToken.IdenTokenType,
+                                            val: "left",
+                                        });
+                                    }
+                                    else if (key === "100% 50%" || key === "right center" || key === "center right") {
+                                        positions.splice(0, positions.length, {
+                                            typ: exports.EnumToken.IdenTokenType,
+                                            val: "right",
+                                        });
+                                    }
+                                    else if (key === "0 100%" ||
+                                        key === "0% 100%" ||
+                                        key === "left bottom" ||
+                                        key === "bottom left") {
+                                        positions.splice(0, positions.length, {
+                                            typ: exports.EnumToken.IdenTokenType,
+                                            val: "bottom",
+                                        });
+                                    }
+                                    else if (key === "50% 100%" || key === "center bottom" || key === "bottom center") {
+                                        positions.splice(0, positions.length, {
+                                            typ: exports.EnumToken.IdenTokenType,
+                                            val: "bottom",
+                                        });
+                                    }
+                                    else if (key === "100% 100%" || key === "right bottom" || key === "bottom right") {
+                                        positions.splice(0, positions.length, {
+                                            typ: exports.EnumToken.PercentageTokenType,
+                                            val: 100,
+                                        });
+                                    }
+                                    else if (position1 === position2) {
+                                        positions.splice(0, positions.length, positions[k]);
                                     }
                                 }
                             }
+                            const result = [];
+                            if (form.length > 0) {
+                                result.push(...form);
+                            }
+                            if (size.length > 0) {
+                                if (result.length > 0) {
+                                    result.push({ typ: exports.EnumToken.WhitespaceTokenType });
+                                }
+                                result.push(...size);
+                            }
+                            if (positions.length > 0) {
+                                if (result.length > 0) {
+                                    result.push({ typ: exports.EnumToken.WhitespaceTokenType });
+                                }
+                                result.push({ typ: exports.EnumToken.IdenTokenType, val: "at" }, { typ: exports.EnumToken.WhitespaceTokenType }, ...positions);
+                            }
+                            if (colorSpaceDef.length > 0) {
+                                if (result.length > 0) {
+                                    result.push({ typ: exports.EnumToken.WhitespaceTokenType });
+                                }
+                                result.push(...colorSpaceDef);
+                            }
+                            // console.debug({
+                            //     positions,
+                            //     form,
+                            //     size,
+                            //     colorSpaceDef,
+                            // });
+                            if (result.length > 0) {
+                                result.push({ typ: exports.EnumToken.CommaTokenType });
+                            }
+                            result.push(...reduceColorStops(slice.slice(i)));
+                            slice.length = 0;
+                            slice.push(...result);
                         }
                     }
+                    return token.val + "(" + slice.reduce(reducer, "") + ")";
                 }
             case exports.EnumToken.TimingFunctionTokenType:
             case exports.EnumToken.PseudoClassFuncTokenType:
@@ -25299,6 +24746,1196 @@
         return values;
     }
 
+    const matchUrl = /^(https?:)?\/\//;
+    /**
+     * return the directory name of a path
+     * @param path
+     *
+     * @private
+     */
+    function dirname(path) {
+        if (path === "") {
+            return "";
+        }
+        let i = 0;
+        let parts = [""];
+        for (; i < path.length; i++) {
+            const chr = path.charAt(i);
+            if (chr == "/") {
+                parts.push("");
+            }
+            else {
+                parts[parts.length - 1] += chr;
+            }
+        }
+        parts.pop();
+        return parts.length == 0 ? "/" : parts.join("/");
+    }
+    /**
+     * split path
+     * @param result
+     * @private
+     */
+    function splitPath(result) {
+        if (result.length == 0) {
+            return { parts: [], i: 0 };
+        }
+        if (result === "/") {
+            return { parts: ["/"], i: 0 };
+        }
+        const parts = [""];
+        let i = 0;
+        for (; i < result.length; i++) {
+            const chr = result.charAt(i);
+            if (chr == "/") {
+                parts.push("");
+            }
+            else if (chr == "?" || chr == "#") {
+                break;
+            }
+            else {
+                parts[parts.length - 1] += chr;
+            }
+        }
+        let k = -1;
+        while (++k < parts.length) {
+            if (parts[k] == ".") {
+                parts.splice(k--, 1);
+            }
+            else if (parts[k] == "..") {
+                parts.splice(k - 1, 2);
+                k -= 2;
+            }
+        }
+        return { parts, i };
+    }
+    /**
+     * resolve path
+     * @param url url or path to resolve
+     * @param currentDirectory directory used to resolve the path
+     * @param cwd current working directory
+     *
+     * @private
+     */
+    function resolve(url, currentDirectory, cwd) {
+        if (matchUrl.test(url)) {
+            return {
+                absolute: url,
+                relative: url,
+            };
+        }
+        cwd ??= "";
+        currentDirectory ??= "";
+        if (currentDirectory !== "" && url.startsWith(currentDirectory + "/")) {
+            return {
+                absolute: url,
+                relative: url.slice(currentDirectory.length + 1),
+            };
+        }
+        if (currentDirectory === "" && cwd !== "" && url.startsWith(cwd == "/" ? cwd : cwd + "/")) {
+            cwd = normalize(cwd);
+            const absolute = normalize(url);
+            const prefix = cwd == "/" ? cwd : cwd + "/";
+            return {
+                absolute,
+                relative: absolute.startsWith(prefix) ? absolute.slice(prefix.length) : diff(absolute, cwd),
+            };
+        }
+        if (matchUrl.test(currentDirectory)) {
+            const path = new URL(url, currentDirectory).href;
+            return {
+                absolute: path,
+                relative: path,
+            };
+        }
+        let result = "";
+        if (url.charAt(0) == "/") {
+            result = url;
+        }
+        else if (currentDirectory.charAt(0) == "/") {
+            result = dirname(currentDirectory) + "/" + url;
+        }
+        const absolute = normalize(result);
+        return {
+            absolute,
+            relative: absolute === "" ? "" : diff(absolute, cwd ?? currentDirectory),
+        };
+    }
+    function diff(path1, path2) {
+        let { parts } = splitPath(path1);
+        const { parts: dirs } = splitPath(path2);
+        for (const p of dirs) {
+            if (parts[0] == p) {
+                parts.shift();
+            }
+            else {
+                parts.unshift("..");
+            }
+        }
+        return parts.join("/");
+    }
+    function normalize(path) {
+        let parts = [];
+        let i = 0;
+        for (; i < path.length; i++) {
+            const chr = path.charAt(i);
+            if (chr == "/") {
+                if (parts.length == 0 || parts[parts.length - 1] !== "") {
+                    parts.push("");
+                }
+            }
+            else if (chr == "?" || chr == "#") {
+                break;
+            }
+            else {
+                parts[parts.length - 1] += chr;
+            }
+        }
+        let k = -1;
+        while (++k < parts.length) {
+            if (parts[k] == ".") {
+                parts.splice(k--, 1);
+            }
+            else if (parts[k] == "..") {
+                parts.splice(k - 1, 2);
+                k -= 2;
+            }
+        }
+        return (path.charAt(0) == "/" ? "/" : "") + parts.join("/");
+    }
+
+    /**
+     * response type
+     */
+    exports.ResponseType = void 0;
+    (function (ResponseType) {
+        /**
+         * return text
+         */
+        ResponseType[ResponseType["Text"] = 0] = "Text";
+        /**
+         * return a readable stream
+         */
+        ResponseType[ResponseType["ReadableStream"] = 1] = "ReadableStream";
+        /**
+         * return an arraybuffer
+         */
+        ResponseType[ResponseType["ArrayBuffer"] = 2] = "ArrayBuffer";
+    })(exports.ResponseType || (exports.ResponseType = {}));
+
+    /**
+     * Calculate the distance between two okLab colors.
+     * @param okLab1
+     * @param okLab2
+     *
+     * @private
+     */
+    function okLabDistance(okLab1, okLab2) {
+        return Math.sqrt(Math.pow(okLab1[0] - okLab2[0], 2) + Math.pow(okLab1[1] - okLab2[1], 2) + Math.pow(okLab1[2] - okLab2[2], 2));
+    }
+    /**
+     * Check if two colors are close in okLab space.
+     * @param color1
+     * @param color2
+     * @param threshold
+     *
+     * @private
+     */
+    function isOkLabClose(color1, color2, threshold = 0.01) {
+        color1 = convertColor(color1, exports.ColorType.OKLAB);
+        color2 = convertColor(color2, exports.ColorType.OKLAB);
+        if (color1 == null || color2 == null) {
+            return false;
+        }
+        const okLab1 = getOKLABComponents(color1);
+        const okLab2 = getOKLABComponents(color2);
+        if (okLab1 == null || okLab2 == null) {
+            return false;
+        }
+        return okLabDistance(okLab1, okLab2) < threshold;
+    }
+
+    // https://www.w3.org/TR/CSS21/syndata.html#syntax
+    // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
+    // '\\'
+    const REVERSE_SOLIDUS = 0x5c;
+    const dimensionUnits = new Set([
+        "q",
+        "cap",
+        "ch",
+        "cm",
+        "cqb",
+        "cqh",
+        "cqi",
+        "cqmax",
+        "cqmin",
+        "cqw",
+        "dvb",
+        "dvh",
+        "dvi",
+        "dvmax",
+        "dvmin",
+        "dvw",
+        "em",
+        "ex",
+        "ic",
+        "in",
+        "lh",
+        "lvb",
+        "lvh",
+        "lvi",
+        "lvmax",
+        "lvw",
+        "mm",
+        "pc",
+        "pt",
+        "px",
+        "rem",
+        "rlh",
+        "svb",
+        "svh",
+        "svi",
+        "svmin",
+        "svw",
+        "vb",
+        "vh",
+        "vi",
+        "vmax",
+        "vmin",
+        "vw",
+    ]);
+    // https://www.w3.org/TR/css-values-4/#math-function
+    const pseudoElements = [":before", ":after", ":first-line", ":first-letter"];
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/Mozilla_Extensions
+    const pseudoAliasMap = {
+        "-moz-center": "center",
+        "-webkit-center": "center",
+        "-ms-grid-columns": "grid-template-columns",
+        "-ms-grid-rows": "grid-template-rows",
+        "-ms-grid-row": "grid-row-start",
+        "-ms-grid-column": "grid-column-start",
+        "-ms-grid-row-align": "align-self",
+        "-ms-grid-row-span": "grid-row-end",
+        "-ms-grid-column-span": "grid-column-end",
+        "-ms-grid-column-align": "justify-self",
+        ":-ms-input-placeholder": "::placeholder",
+        "::-ms-input-placeholder": "::placeholder",
+        ":-moz-any()": ":is",
+        "-moz-user-modify": "user-modify",
+        "-webkit-match-parent": "match-parent",
+        "-moz-background-clip": "background-clip",
+        "-moz-background-origin": "background-origin",
+        "-ms-input-placeholder": "placeholder",
+        ":-webkit-autofill": ":autofill",
+        ":-webkit-any()": ":is",
+        "::-webkit-input-placeholder": "::placeholder",
+        "::-webkit-file-upload-button": "::file-selector-button",
+        "::-moz-placeholder": "::placeholder",
+        ":-webkit-any-link": ":any-link",
+        "-webkit-border-after": "border-block-end",
+        "-webkit-border-after-color": "border-block-end-color",
+        "-webkit-border-after-style": "border-block-end-style",
+        "-webkit-border-after-width": "border-block-end-width",
+        "-webkit-border-before": "border-block-start",
+        "-webkit-border-before-color": "border-block-start-color",
+        "-webkit-border-before-style": "border-block-start-style",
+        "-webkit-border-before-width": "border-block-start-width",
+        "-webkit-border-end": "border-inline-end",
+        "-webkit-border-end-color": "border-inline-end-color",
+        "-webkit-border-end-style": "border-inline-end-style",
+        "-webkit-border-end-width": "border-inline-end-width",
+        "-webkit-border-start": "border-inline-start",
+        "-webkit-border-start-color": "border-inline-start-color",
+        "-webkit-border-start-style": "border-inline-start-style",
+        "-webkit-border-start-width": "border-inline-start-width",
+        "-webkit-box-align": "align-items",
+        "-webkit-box-direction": "flex-direction",
+        "-webkit-box-flex": "flex-grow",
+        "-webkit-box-lines": "flex-flow",
+        "-webkit-box-ordinal-group": "order",
+        "-webkit-box-orient": "flex-direction",
+        "-webkit-box-pack": "justify-content",
+        "-webkit-column-break-after": "break-after",
+        "-webkit-column-break-before": "break-before",
+        "-webkit-column-break-inside": "break-inside",
+        "-webkit-font-feature-settings": "font-feature-settings",
+        "-webkit-hyphenate-character": "hyphenate-character",
+        "-webkit-initial-letter": "initial-letter",
+        "-webkit-margin-end": "margin-block-end",
+        "-webkit-margin-start": "margin-block-start",
+        "-webkit-padding-after": "padding-block-end",
+        "-webkit-padding-before": "padding-block-start",
+        "-webkit-padding-end": "padding-inline-end",
+        "-webkit-padding-start": "padding-inline-start",
+        "-webkit-min-device-pixel-ratio": "min-resolution",
+        "-webkit-max-device-pixel-ratio": "max-resolution",
+        "-webkit-font-smoothing": "font-smooth",
+        "-webkit-line-clamp": "line-clamp",
+        ":-webkit-autofill-strong-password": ":autofill",
+        ":-webkit-full-page-media": ":fullscreen",
+        ":-webkit-full-screen": ":fullscreen",
+        ":-webkit-full-screen-ancestor": ":fullscreen",
+        ":-webkit-full-screen-document": ":fullscreen",
+        ":-webkit-full-screen-controls-hidden": ":fullscreen",
+        "-moz-background-inline-policy": "box-decoration-break",
+        "-moz-background-size": "background-size",
+        "-moz-border-end": "border-inline-end",
+        "-moz-border-end-color": "border-inline-end-color",
+        "-moz-border-end-style": "border-inline-end-style",
+        "-moz-border-end-width": "border-inline-end-width",
+        "-moz-border-image": "border-inline-end-width",
+        "-moz-border-start": "border-inline-start",
+        "-moz-border-start-color": "border-inline-start-color",
+        "-moz-border-start-style": "border-inline-start-style",
+        "-moz-border-start-width": "border-inline-start-width",
+        "-moz-column-count": "column-count",
+        "-moz-column-fill": "column-fill",
+        "-moz-column-gap": "column-gap",
+        "-moz-column-width": "column-width",
+        "-moz-column-rule": "column-rule",
+        "-moz-column-rule-width": "column-rule-width",
+        "-moz-column-rule-style": "column-rule-style",
+        "-moz-column-rule-color": "column-rule-color",
+        "-moz-margin-end": "margin-inline-end",
+        "-moz-margin-start": "margin-inline-start",
+        "-moz-opacity": "opacity",
+        "-moz-outline": "outline",
+        "-moz-outline-color": "outline-color",
+        "-moz-outline-offset": "outline-offset",
+        "-moz-outline-style": "outline-style",
+        "-moz-outline-width": "outline-width",
+        "-moz-padding-end": "padding-inline-end",
+        "-moz-padding-start": "padding-inline-start",
+        "-moz-tab-size": "tab-size",
+        "-moz-text-align-last": "text-align-last",
+        "-moz-text-decoration-color": "text-decoration-color",
+        "-moz-text-decoration-line": "text-decoration-line",
+        "-moz-text-decoration-style": "text-decoration-style",
+        "-moz-transition": "transition",
+        "-moz-transition-delay": "transition-delay",
+        "-moz-transition-duration": "transition-duration",
+        "-moz-transition-property": "transition-property",
+        "-moz-transition-timing-function": "transition-timing-function",
+        "-moz-user-select": "user-select",
+        "-moz-initial": "initial",
+        "-moz-linear-gradient()": "linear-gradient",
+        "-moz-radial-gradient()": "radial-gradient",
+        "-moz-element()": "element",
+        "-moz-crisp-edges": "crisp-edges",
+        "-moz-calc()": "calc",
+        "-moz-min-content": "min-content",
+        "-moz-fit-content": "fit-content",
+        "-moz-max-content": "max-content",
+        "-moz-available": "stretch",
+        ":-moz-any-link": ":any-link",
+        ":-moz-full-screen": ":fullscreen",
+        ":-moz-full-screen-ancestor": ":fullscreen",
+        ":-moz-placeholder": ":placeholder-shown",
+        ":-moz-read-only": ":read-only",
+        ":-moz-read-write": ":read-write",
+        ":-moz-submit-invalid": ":invalid",
+        ":-moz-ui-invalid": ":user-invalid",
+        ":-moz-ui-valid": ":user-valid",
+        "::-moz-selection": "::selection",
+    };
+    // renamed standard properties
+    const renamedStandardProperties = new Map([["color-adjust", "print-color-adjust"]]);
+    function isLength(dimension) {
+        return "unit" in dimension && dimensionUnits.has(dimension.unit.toLowerCase());
+    }
+    function isResolution(dimension) {
+        return "unit" in dimension && ["dpi", "dpcm", "dppx", "x"].includes(dimension.unit.toLowerCase());
+    }
+    function isAngle(dimension) {
+        return "unit" in dimension && ["rad", "turn", "deg", "grad"].includes(dimension.unit.toLowerCase());
+    }
+    function isTime(dimension) {
+        return "unit" in dimension && ["ms", "s"].includes(dimension.unit.toLowerCase());
+    }
+    function isFrequency(dimension) {
+        return "unit" in dimension && ["hz", "khz"].includes(dimension.unit.toLowerCase());
+    }
+    function isColorspace(token) {
+        if (token.typ === exports.EnumToken.WildCardFunctionTokenType && token.val === "var") {
+            return true;
+        }
+        if (token.typ != exports.EnumToken.IdenTokenType) {
+            return false;
+        }
+        return [
+            "srgb",
+            "srgb-linear",
+            "lab",
+            "oklab",
+            "lch",
+            "oklch",
+            "xyz",
+            "xyz-d50",
+            "xyz-d65",
+            "display-p3",
+            "a98-rgb",
+            "prophoto-rgb",
+            "rec2020",
+            "rgb",
+            "hsl",
+            "hwb",
+        ].includes(token.val.toLowerCase());
+    }
+    function reduceColorStops(stops) {
+        const parts = splitTokenList(stops);
+        const n = parts.length == 1 ? 1 : parts.length - 1;
+        let j;
+        let i;
+        let updated = false;
+        for (i = 0; i < parts.length; i++) {
+            if (parts[i].length != 3) {
+                continue;
+            }
+            if (i > 0 && isOkLabClose(parts[i - 1][0], parts[i][0])) {
+                if (parts[i - 1].length == 1) {
+                    parts[i - 1].push({ typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.PercentageTokenType, val: ((i - 1) * 100) / n });
+                }
+                parts[i - 1].push(...parts[i].slice(1));
+                parts.splice(i--, 1);
+                updated = true;
+                continue;
+            }
+            for (j = 0; j < parts[i].length; j++) {
+                if ((parts[i][j].typ == exports.EnumToken.LengthTokenType && 0 == parts[i][j].val) ||
+                    parts[i][j].typ == exports.EnumToken.NumberTokenType ||
+                    parts[i][j].typ == exports.EnumToken.PercentageTokenType) {
+                    if (parts[i][j].val === (i * 100) / n) {
+                        parts[i].length = j;
+                        trimArray$1(parts[i]);
+                        updated = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if (updated) {
+            stops.length = 0;
+            for (j = 0; j < parts.length; j++) {
+                if (stops.length > 0) {
+                    stops.push({ typ: exports.EnumToken.CommaTokenType });
+                }
+                stops.push(...parts[j]);
+            }
+        }
+        return stops;
+    }
+    function isRectangularOrthogonalColorspace(token) {
+        if (token.typ != exports.EnumToken.IdenTokenType) {
+            return false;
+        }
+        return [
+            "srgb",
+            "srgb-linear",
+            "display-p3",
+            "a98-rgb",
+            "prophoto-rgb",
+            "rec2020",
+            "lab",
+            "oklab",
+            "xyz",
+            "xyz-d50",
+            "xyz-d65",
+        ].includes(token.val.toLowerCase());
+    }
+    function isPolarColorspace(token) {
+        if (token.typ != exports.EnumToken.IdenTokenType) {
+            return false;
+        }
+        return ["hsl", "hwb", "lch", "oklch"].includes(token.val);
+    }
+    function isHueInterpolationMethod(token) {
+        if (!Array.isArray(token)) {
+            return token.typ == exports.EnumToken.IdenTokenType && "hue" === token.val?.toLowerCase?.();
+        }
+        if (token.length != 2 || token[0].typ != exports.EnumToken.IdenTokenType || token[1].typ != exports.EnumToken.IdenTokenType) {
+            return false;
+        }
+        return (["shorter", "longer", "increasing", "decreasing"].includes(token[0].val?.toLowerCase?.()) &&
+            "hue" === token[1].val?.toLowerCase?.());
+    }
+    function isIdentColor(token) {
+        return (token.typ == exports.EnumToken.ColorTokenType &&
+            [exports.ColorType.SYS, exports.ColorType.DPSYS, exports.ColorType.LIT].includes(token.kin) &&
+            isIdent(token.val));
+    }
+    function isPercentageToken(token) {
+        return (token.typ == exports.EnumToken.PercentageTokenType ||
+            (token.typ == exports.EnumToken.NumberTokenType && token.val == 0));
+    }
+    function isColor(token, errors) {
+        if (token.typ == exports.EnumToken.WildCardFunctionTokenType) {
+            return true;
+        }
+        if (token.typ == exports.EnumToken.FunctionTokenType) {
+            if (!colorsFunc.includes(token.val.toLowerCase())) {
+                return false;
+            }
+        }
+        if (token.typ == exports.EnumToken.ColorTokenType) {
+            if ("kin" in token && !("chi" in token)) {
+                return true;
+            }
+        }
+        if (token.typ == exports.EnumToken.IdenTokenType) {
+            const val = token.val.toLowerCase();
+            if (systemColors.has(val) || deprecatedSystemColors.has(val) || nonStandardColors.has(val)) {
+                return true;
+            }
+            // named color
+            return val in COLORS_NAMES || "currentcolor" === val || "transparent" === val;
+        }
+        let isLegacySyntax = false;
+        if (token.typ === exports.EnumToken.FunctionTokenType || token.typ === exports.EnumToken.ColorTokenType) {
+            if (!colorsFunc.includes(token.val.toLowerCase())) {
+                return false;
+            }
+            if (token.chi.length > 0) {
+                // @ts-ignore
+                if (token.val === "light-dark") {
+                    // @ts-ignore
+                    const children = token.chi.filter((t) => [
+                        exports.EnumToken.IdenTokenType,
+                        exports.EnumToken.NumberTokenType,
+                        exports.EnumToken.LiteralTokenType,
+                        exports.EnumToken.ColorTokenType,
+                        exports.EnumToken.FunctionTokenType,
+                        exports.EnumToken.PercentageTokenType,
+                        exports.EnumToken.WildCardFunctionTokenType,
+                    ].includes(t.typ));
+                    if (children.length != 2) {
+                        errors?.push({
+                            message: "light-dark function must have 2 arguments",
+                            node: token,
+                            action: "drop",
+                        });
+                        return false;
+                    }
+                    if (isColor(children[0]) && isColor(children[1])) {
+                        return true;
+                    }
+                }
+                // adding numbers and percentages is disallowed
+                // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/lch#defining_relative_color_output_channel_components:~:text=Adding%20a%20%3Cpercentage%3E%20to%20a%20%3Cnumber%3E%2C%20for%20example%2C%20doesn%27t%20work
+                // @ts-ignore
+                for (const { value, parent } of walkValues(token.chi, token, (value) => value.typ === exports.EnumToken.WildCardFunctionTokenType
+                    ? exports.WalkerOptionEnum.Ignore | exports.WalkerOptionEnum.IgnoreChildren
+                    : null)) {
+                    let k = 0;
+                    let l;
+                    let tk = null;
+                    let tl = null;
+                    if (value.typ === exports.EnumToken.BinaryExpressionTokenType) {
+                        tk = value.l;
+                        tl = value.r;
+                    }
+                    else if (parent?.typ === exports.EnumToken.MathFunctionTokenType &&
+                        parent.val === "calc") {
+                        l = k + 1;
+                        while (l + 1 < parent.chi.length) {
+                            const tk = parent.chi[l];
+                            if (tk.typ === exports.EnumToken.WhitespaceTokenType ||
+                                tk.typ === exports.EnumToken.CommentTokenType ||
+                                tk.typ === exports.EnumToken.Add ||
+                                tk.typ === exports.EnumToken.Sub ||
+                                tk.typ === exports.EnumToken.Div ||
+                                tk.typ === exports.EnumToken.Mul) {
+                                l++;
+                                continue;
+                            }
+                            break;
+                        }
+                        tk = parent.chi[k];
+                        tl = parent.chi[l];
+                    }
+                    if (tk != null && tl != null) {
+                        if ((tk.typ === exports.EnumToken.PercentageTokenType || tl.typ === exports.EnumToken.PercentageTokenType) &&
+                            tk.typ !== tl.typ) {
+                            errors?.push({
+                                action: "drop",
+                                message: "adding percentage and number is not allowed",
+                                node: token,
+                                location: token.loc,
+                            });
+                            return false;
+                        }
+                    }
+                }
+                // @ts-ignore
+                if (token.val == "color") {
+                    // @ts-ignore
+                    const children = token.chi.filter((t) => [
+                        exports.EnumToken.DashedIdenTokenType,
+                        exports.EnumToken.IdenTokenType,
+                        exports.EnumToken.NumberTokenType,
+                        exports.EnumToken.LiteralTokenType,
+                        exports.EnumToken.ColorTokenType,
+                        exports.EnumToken.FunctionTokenType,
+                        exports.EnumToken.MathFunctionTokenType,
+                        exports.EnumToken.PercentageTokenType,
+                    ].includes(t.typ));
+                    const isRelative = children[0].typ == exports.EnumToken.IdenTokenType && children[0].val == "from";
+                    let offset = 0;
+                    if (isRelative) {
+                        offset = 2;
+                    }
+                    if (children[offset]?.typ == exports.EnumToken.DashedIdenTokenType) {
+                        if (children.length < offset + 1) {
+                            return false;
+                        }
+                        for (let i = offset + 1; i < children.length; i++) {
+                            if (children[i].typ == exports.EnumToken.NumberTokenType ||
+                                children[i].typ == exports.EnumToken.LiteralTokenType ||
+                                children[i].typ == exports.EnumToken.ColorTokenType ||
+                                children[i].typ == exports.EnumToken.FunctionTokenType ||
+                                children[i].typ == exports.EnumToken.MathFunctionTokenType ||
+                                children[i].typ == exports.EnumToken.PercentageTokenType ||
+                                isColor(children[i]) ||
+                                (children[i].typ == exports.EnumToken.IdenTokenType &&
+                                    equalsIgnoreCase("none", children[i].val))) {
+                                continue;
+                            }
+                            return false;
+                        }
+                        return true;
+                    }
+                    if (children.length < 4 || children.length > 8) {
+                        return false;
+                    }
+                    if (!isRelative && !isColorspace(children[0])) {
+                        return false;
+                    }
+                    for (let i = 1; i < children.length - 2; i++) {
+                        if (children[i].typ == exports.EnumToken.IdenTokenType) {
+                            if (isColor(children[i])) {
+                                continue;
+                            }
+                            if (children[i].val != "none" &&
+                                !((isRelative &&
+                                    ["alpha", "r", "g", "b", "x", "y", "z"].includes(children[i].val)) ||
+                                    isColorspace(children[i]))) {
+                                return false;
+                            }
+                        }
+                        if (children[i].typ === exports.EnumToken.WildCardFunctionTokenType) {
+                            continue;
+                        }
+                        if (children[i].typ === exports.EnumToken.FunctionTokenType ||
+                            children[i].typ === exports.EnumToken.MathFunctionTokenType) {
+                            if (!mathFuncs.includes(children[i].val)) {
+                                return false;
+                            }
+                        }
+                    }
+                    if (children.length == 4 || (isRelative && children.length == 6)) {
+                        return true;
+                    }
+                    if (children.length == 8 || children.length == 6) {
+                        const sep = children.at(-2);
+                        const alpha = children.at(-1);
+                        // @ts-ignore
+                        if (((children.length > 6 || !isRelative) && sep.typ != exports.EnumToken.LiteralTokenType) ||
+                            sep.val != "/") {
+                            return false;
+                        }
+                        if (alpha.typ == exports.EnumToken.IdenTokenType && alpha.val != "none") {
+                            return false;
+                        }
+                        else {
+                            // @ts-ignore
+                            if (alpha.typ == exports.EnumToken.PercentageTokenType) {
+                                if (+alpha.val < 0 || +alpha.val > 100) {
+                                    return false;
+                                }
+                            }
+                            else if (alpha.typ == exports.EnumToken.NumberTokenType) {
+                                if (+alpha.val < 0 || +alpha.val > 1) {
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                    return true;
+                }
+                // @ts-ignore
+                else if (token.val == "color-mix") {
+                    // @ts-ignore
+                    const children = token.chi.reduce((acc, t) => {
+                        if (t.typ == exports.EnumToken.CommaTokenType) {
+                            acc.push([]);
+                        }
+                        else {
+                            if (![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(t.typ)) {
+                                acc[acc.length - 1].push(t);
+                            }
+                        }
+                        return acc;
+                    }, [[]]);
+                    if (children.length == 3) {
+                        if (children[0].length > 4 ||
+                            children[0][0].typ != exports.EnumToken.IdenTokenType ||
+                            "in" !== children[0][0].val?.toLowerCase?.() ||
+                            !isColorspace(children[0][1]) ||
+                            (children[0].length >= 3 && !isHueInterpolationMethod(children[0].slice(2))) ||
+                            children[1].length > 2 ||
+                            !isColor(children[1][0]) ||
+                            (children[1].length == 2 && !isPercentageToken(children[1][1])) ||
+                            children[2].length > 2 ||
+                            (children[2].length == 2 && !isPercentageToken(children[2][1])) ||
+                            !isColor(children[2][0])) {
+                            return false;
+                        }
+                        if (children[1].length == 2) {
+                            if (!(children[1][1].typ == exports.EnumToken.PercentageTokenType ||
+                                (children[1][1].typ == exports.EnumToken.NumberTokenType &&
+                                    children[1][1].val == 0))) {
+                                return false;
+                            }
+                        }
+                        if (children[2].length == 2) {
+                            if (!(children[2][1].typ == exports.EnumToken.PercentageTokenType ||
+                                (children[2][1].typ == exports.EnumToken.NumberTokenType &&
+                                    children[2][1].val == 0))) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                    return false;
+                }
+                else {
+                    const keywords = ["from", "none"];
+                    // @ts-ignore
+                    if (["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch"].includes(token.val)) {
+                        // @ts-ignore
+                        keywords.push("alpha", ...token.val.slice(-3).split(""));
+                    }
+                    // @ts-ignore
+                    for (const v of token.chi) {
+                        if (v.typ == exports.EnumToken.CommaTokenType) {
+                            isLegacySyntax = true;
+                        }
+                        if (v.typ == exports.EnumToken.IdenTokenType) {
+                            if (isColor(v)) {
+                                continue;
+                            }
+                            if (!(keywords.includes(v.val) || v.val.toLowerCase() in COLORS_NAMES)) {
+                                return false;
+                            }
+                            if (keywords.includes(v.val)) {
+                                if (isLegacySyntax) {
+                                    return false;
+                                }
+                                // @ts-ignore
+                                if (v.val == "from" && ["rgba", "hsla"].includes(token.val)) {
+                                    return false;
+                                }
+                            }
+                            continue;
+                        }
+                        if (v.typ === exports.EnumToken.MathFunctionTokenType ||
+                            v.typ === exports.EnumToken.WildCardFunctionTokenType ||
+                            colorsFunc.includes(v.val)) {
+                            continue;
+                        }
+                        if (![
+                            exports.EnumToken.ColorTokenType,
+                            exports.EnumToken.IdenTokenType,
+                            exports.EnumToken.NumberTokenType,
+                            exports.EnumToken.AngleTokenType,
+                            exports.EnumToken.PercentageTokenType,
+                            exports.EnumToken.CommaTokenType,
+                            exports.EnumToken.WhitespaceTokenType,
+                            exports.EnumToken.LiteralTokenType,
+                        ].includes(v.typ)) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+    function parseColor(token) {
+        if (token.typ === exports.EnumToken.IdenTokenType) {
+            const val = token.val.toLowerCase();
+            if (nonStandardColors.has(val)) {
+                Object.assign(token, {
+                    typ: exports.EnumToken.ColorTokenType,
+                    kin: exports.ColorType.NON_STD,
+                });
+                return token;
+            }
+            if (systemColors.has(val)) {
+                Object.assign(token, {
+                    typ: exports.EnumToken.ColorTokenType,
+                    kin: exports.ColorType.SYS,
+                });
+                return token;
+            }
+            if (deprecatedSystemColors.has(val)) {
+                Object.assign(token, {
+                    typ: exports.EnumToken.ColorTokenType,
+                    kin: exports.ColorType.DPSYS,
+                });
+                return token;
+            }
+            if (val in COLORS_NAMES || val === "currentcolor") {
+                Object.assign(token, {
+                    typ: exports.EnumToken.ColorTokenType,
+                    val,
+                    kin: exports.ColorType.LIT,
+                });
+                return token;
+            }
+        }
+        if (token.typ === exports.EnumToken.ColorTokenType) {
+            if (!("kin" in token) && "val" in token) {
+                // @ts-expect-error
+                token.kin = exports.ColorType[token.val.replaceAll("-", "_").toUpperCase()];
+            }
+            if ("chi" in token) {
+                const tk = token.chi?.find((t) => t.typ !== exports.EnumToken.WhitespaceTokenType && t.typ !== exports.EnumToken.CommentTokenType);
+                if (tk?.typ === exports.EnumToken.IdenTokenType && tk.val === "from") {
+                    token.cal = "rel";
+                }
+                else if (token.val == "color-mix" && tk.val == "in") {
+                    token.cal = "mix";
+                }
+                if (token.val == "color") {
+                    let index = token.chi.indexOf(tk);
+                    if (token.cal == "rel") {
+                        for (let k = 0; k < token.chi.length; k++) {
+                            if (exports.EnumToken.DashedIdenTokenType == token.chi[k].typ) {
+                                index = k;
+                                break;
+                            }
+                        }
+                    }
+                    if (exports.EnumToken.DashedIdenTokenType == token?.chi?.[index]?.typ) {
+                        token.kin = exports.ColorType.CUSTOM_COLOR;
+                    }
+                }
+            }
+            return token;
+        }
+        // @ts-ignore
+        token.typ = exports.EnumToken.ColorTokenType;
+        // @ts-ignore
+        token.kin = exports.ColorType[token.val.replaceAll("-", "_").toUpperCase()];
+        if (!("chi" in token)) {
+            const val = token.val.toLowerCase();
+            if (val == "currentcolor" || val == "transparent" || val in COLORS_NAMES) {
+                token.kin = exports.ColorType.LIT;
+            }
+            else if (isHexColor(val)) {
+                token.kin = exports.ColorType.HEX;
+            }
+            const tk = token.chi?.find((t) => t.typ !== exports.EnumToken.WhitespaceTokenType && t.typ !== exports.EnumToken.CommentTokenType);
+            if (tk?.typ === exports.EnumToken.IdenTokenType && tk.val === "from") {
+                token.cal = "rel";
+            }
+            else if (token.val == "color-mix" && tk.val == "in") {
+                token.cal = "mix";
+            }
+            else if (token.val == "color") {
+                token.cal = "col";
+            }
+            return token;
+        }
+        // @ts-ignore
+        if (token.chi[0].typ == exports.EnumToken.IdenTokenType) {
+            // @ts-ignore
+            if (token.chi[0].val == "from") {
+                // @ts-ignore
+                token.cal = "rel";
+            }
+            // @ts-ignore
+            else if (token.val == "color-mix" && token.chi[0].val == "in") {
+                // @ts-ignore
+                token.cal = "mix";
+            }
+            else {
+                // @ts-ignore
+                if (token.val == "color") {
+                    // @ts-ignore
+                    token.cal = "col";
+                }
+            }
+        }
+        return token;
+    }
+    function isLetter(codepoint) {
+        // lowercase
+        return ((codepoint >= 0x61 && codepoint <= 0x7a) ||
+            // uppercase
+            (codepoint >= 0x41 && codepoint <= 0x5a));
+    }
+    function isNonAscii(codepoint) {
+        return codepoint >= 0x80;
+    }
+    function isIdentStart(codepoint) {
+        // _
+        return codepoint == 0x5f || isLetter(codepoint) || isNonAscii(codepoint) || codepoint == REVERSE_SOLIDUS;
+    }
+    function isDigit(codepoint) {
+        return codepoint >= 0x30 && codepoint <= 0x39;
+    }
+    function isIdentCodepoint(codepoint) {
+        // -
+        return codepoint == 0x2d || isDigit(codepoint) || isIdentStart(codepoint);
+    }
+    function isIdent(name) {
+        const j = name.length - 1;
+        let i = 0;
+        let codepoint = name.charCodeAt(0);
+        // -
+        if (codepoint == 0x2d) {
+            const nextCodepoint = name.charCodeAt(1);
+            if (Number.isNaN(nextCodepoint)) {
+                return false;
+            }
+            if (nextCodepoint == REVERSE_SOLIDUS) {
+                return name.length > 2 && !isNewLine(name.charCodeAt(2));
+            }
+            if (isDigit(nextCodepoint)) {
+                return false;
+            }
+            codepoint = nextCodepoint;
+            i = 1;
+        }
+        if (codepoint !== 0x2d && !isIdentStart(codepoint)) {
+            return false;
+        }
+        if (codepoint == REVERSE_SOLIDUS) {
+            codepoint = name.charCodeAt(i + 1);
+            if (!isIdentCodepoint(codepoint)) {
+                return false;
+            }
+            i += String.fromCodePoint(codepoint).length;
+            if (i < j) {
+                codepoint = name.charCodeAt(i);
+                if (!isIdentCodepoint(codepoint)) {
+                    return false;
+                }
+            }
+        }
+        while (i < j) {
+            i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
+            codepoint = name.charCodeAt(i);
+            if (codepoint == REVERSE_SOLIDUS) {
+                i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
+                codepoint = name.charCodeAt(i);
+                i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
+                continue;
+            }
+            if (codepoint !== 0x2d && !isIdentCodepoint(codepoint)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    function isPseudo(name) {
+        return (name.charAt(0) == ":" &&
+            ((name.endsWith("(") && isIdent(name.charAt(1) == ":" ? name.slice(2, -1) : name.slice(1, -1))) ||
+                isIdent(name.charAt(1) == ":" ? name.slice(2) : name.slice(1))));
+    }
+    function isHash(name) {
+        return name.charAt(0) == "#" && isIdent(name.charAt(1));
+    }
+    function isNumber(name) {
+        if (name.length == 0) {
+            return false;
+        }
+        let codepoint = name.charCodeAt(0);
+        let i = 0;
+        const j = name.length;
+        if (j == 1 && !isDigit(codepoint)) {
+            return false;
+        }
+        // '+' '-'
+        if ([0x2b, 0x2d].includes(codepoint)) {
+            i++;
+        }
+        // consume digits
+        while (i < j) {
+            codepoint = name.charCodeAt(i);
+            if (isDigit(codepoint)) {
+                i++;
+                continue;
+            }
+            // '.' 'E' 'e'
+            if (codepoint == 0x2e || codepoint == 0x45 || codepoint == 0x65) {
+                break;
+            }
+            return false;
+        }
+        // '.'
+        if (codepoint == 0x2e) {
+            if (!isDigit(name.charCodeAt(++i))) {
+                return false;
+            }
+        }
+        while (i < j) {
+            codepoint = name.charCodeAt(i);
+            if (isDigit(codepoint)) {
+                i++;
+                continue;
+            }
+            // 'E' 'e'
+            if (codepoint == 0x45 || codepoint == 0x65) {
+                i++;
+                break;
+            }
+            return false;
+        }
+        // 'E' 'e'
+        if (codepoint == 0x45 || codepoint == 0x65) {
+            if (i == j) {
+                return false;
+            }
+            codepoint = name.charCodeAt(i + 1);
+            // '+' '-'
+            if ([0x2b, 0x2d].includes(codepoint)) {
+                i++;
+            }
+            codepoint = name.charCodeAt(i + 1);
+            if (!isDigit(codepoint)) {
+                return false;
+            }
+        }
+        while (++i < j) {
+            codepoint = name.charCodeAt(i);
+            if (!isDigit(codepoint)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    function isPercentage(name) {
+        return name.endsWith("%") && isNumber(name.slice(0, -1));
+    }
+    function isFlex(dimension) {
+        return "unit" in dimension && "fr" == dimension.unit.toLowerCase();
+    }
+    function parseDimension(name) {
+        let index = name.length;
+        while (index--) {
+            if (isLetter(name.charCodeAt(index))) {
+                continue;
+            }
+            index++;
+            break;
+        }
+        if (index < 0) {
+            return null;
+        }
+        const dimension = {
+            typ: exports.EnumToken.DimensionTokenType,
+            val: +name.slice(0, index),
+            unit: name.slice(index),
+        };
+        if (Number.isNaN(dimension.val)) {
+            return null;
+        }
+        if (isAngle(dimension)) {
+            // @ts-ignore
+            dimension.typ = exports.EnumToken.AngleTokenType;
+        }
+        else if (isLength(dimension)) {
+            // @ts-ignore
+            dimension.typ = exports.EnumToken.LengthTokenType;
+        }
+        else if (isTime(dimension)) {
+            // @ts-ignore
+            dimension.typ = exports.EnumToken.TimeTokenType;
+        }
+        else if (isResolution(dimension)) {
+            // @ts-ignore
+            dimension.typ = exports.EnumToken.ResolutionTokenType;
+            if (dimension.unit == "dppx") {
+                dimension.unit = "x";
+            }
+        }
+        else if (isFrequency(dimension)) {
+            // @ts-ignore
+            dimension.typ = exports.EnumToken.FrequencyTokenType;
+        }
+        else if (isFlex(dimension)) {
+            // @ts-ignore
+            dimension.typ = exports.EnumToken.FlexTokenType;
+        }
+        return dimension;
+    }
+    function isHexColor(name) {
+        if (name.charAt(0) != "#" || ![4, 5, 7, 9].includes(name.length)) {
+            return false;
+        }
+        for (let chr of name.slice(1)) {
+            let codepoint = chr.charCodeAt(0);
+            if (!isDigit(codepoint) &&
+                // A-F
+                !(codepoint >= 0x41 && codepoint <= 0x46) &&
+                // a-f
+                !(codepoint >= 0x61 && codepoint <= 0x66)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    function isFunction(name) {
+        return name.endsWith("(") && isIdent(name.slice(0, -1));
+    }
+    function isNewLine(codepoint) {
+        // \n \r \f \v
+        return (codepoint == 0xa ||
+            codepoint == 0xb ||
+            codepoint == 0xc ||
+            codepoint == 0xd ||
+            codepoint == 0x2028 ||
+            codepoint == 0x2029);
+    }
+    function isWhiteSpace(codepoint) {
+        return (codepoint == 0x9 ||
+            codepoint == 0x20 ||
+            // isNewLine
+            codepoint == 0xa ||
+            codepoint == 0xb ||
+            codepoint == 0xc ||
+            codepoint == 0xd ||
+            codepoint == 0x2028 ||
+            codepoint == 0x2029);
+    }
+    function isValue(token) {
+        if (token == null) {
+            return false;
+        }
+        return (token.typ === exports.EnumToken.IdenTokenType ||
+            token.typ === exports.EnumToken.DimensionTokenType ||
+            token.typ === exports.EnumToken.LengthTokenType ||
+            token.typ === exports.EnumToken.AngleTokenType ||
+            token.typ === exports.EnumToken.FlexTokenType ||
+            token.typ === exports.EnumToken.TimeTokenType ||
+            token.typ === exports.EnumToken.ResolutionTokenType ||
+            token.typ === exports.EnumToken.FrequencyTokenType ||
+            token.typ === exports.EnumToken.NumberTokenType ||
+            token.typ === exports.EnumToken.ColorTokenType ||
+            token.typ === exports.EnumToken.FunctionTokenType ||
+            token.typ === exports.EnumToken.UrlFunctionTokenType ||
+            token.typ === exports.EnumToken.GridTemplateFuncTokenType ||
+            token.typ === exports.EnumToken.ImageFunctionTokenType ||
+            token.typ === exports.EnumToken.TimelineFunctionTokenType ||
+            token.typ === exports.EnumToken.TimingFunctionTokenType ||
+            token.typ === exports.EnumToken.MathFunctionTokenType ||
+            token.typ === exports.EnumToken.TransformFunctionTokenType);
+    }
+
     // Alphabet: a-z, A-Z, 0-9, _, -
     const LOWER = "abcdefghijklmnopqrstuvwxyz";
     const DIGITS = "0123456789";
@@ -25392,7 +26029,7 @@
             const result = matchAllSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "keyframe-selectors"), createValidationContext(tokens), options);
             const parts = splitTokenList(tokens);
             for (const part of parts) {
-                trimArray(part);
+                trimArray$1(part);
                 if (options.minify) {
                     const filtered = part.filter((token) => token.typ !== exports.EnumToken.WhitespaceTokenType && token.typ !== exports.EnumToken.CommentTokenType);
                     if (filtered.length === 1) {
@@ -25430,7 +26067,7 @@
             return Object.defineProperties({
                 typ: result.success ? exports.EnumToken.KeyFramesRuleNodeType : exports.EnumToken.InvalidRuleNodeType,
                 sel: [
-                    ...splitTokenList(trimArray(tokens)).reduce((acc, curr) => {
+                    ...splitTokenList(trimArray$1(tokens)).reduce((acc, curr) => {
                         acc.add(curr.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), ""));
                         return acc;
                     }, new Set()),
@@ -25524,7 +26161,7 @@
             }
         }
         const result = matchSelectorSyntax(tokens, errors, options, nested === true);
-        trimArray(tokens);
+        trimArray$1(tokens);
         if (result.success) {
             for (let i = 0; i < tokens.length; i++) {
                 const token = tokens[i];
@@ -26059,7 +26696,7 @@
                                 const index = tokens.indexOf(stack.at(-1));
                                 Object.defineProperty(Object.assign(tokens[index], {
                                     typ: tokensfuncDefMap.get(stack.at(-1)?.typ),
-                                    chi: trimArray(tokens.slice(index + 1, tokens.length - 1)),
+                                    chi: trimArray$1(tokens.slice(index + 1, tokens.length - 1)),
                                 }), "loc", {
                                     ...definedPropertySettings,
                                     value: { ...tokens[index].loc, end: stream[i].loc.end },
@@ -26113,9 +26750,9 @@
                                     const index2 = tokens.indexOf(prevToken);
                                     // '('
                                     const index3 = tokens.indexOf(stack.at(-3));
-                                    const left = trimArray(tokens.slice(index3 + 1, index2));
-                                    const right = trimArray(tokens.slice(index + 1, tokens.length - 1));
-                                    const names = trimArray(tokens.slice(index2 + 1, index));
+                                    const left = trimArray$1(tokens.slice(index3 + 1, index2));
+                                    const right = trimArray$1(tokens.slice(index + 1, tokens.length - 1));
+                                    const names = trimArray$1(tokens.slice(index2 + 1, index));
                                     const filteredNames = names.filter((n) => n.typ !== exports.EnumToken.WhitespaceTokenType && n.typ !== exports.EnumToken.CommentTokenType);
                                     if (filteredNames.length !== 1 || filteredNames[0].typ !== exports.EnumToken.IdenTokenType) {
                                         success = false;
@@ -26236,8 +26873,8 @@
                                 }
                                 const index2 = tokens.indexOf(stack.at(-1));
                                 const index3 = tokens.indexOf(stack.at(-2));
-                                let names = trimArray(tokens.slice(index3 + 1, index2));
-                                let values = trimArray(tokens.slice(index2 + 1, tokens.length - 1));
+                                let names = trimArray$1(tokens.slice(index3 + 1, index2));
+                                let values = trimArray$1(tokens.slice(index2 + 1, tokens.length - 1));
                                 let swapped = false;
                                 if (stack.at(-1)?.typ !== exports.EnumToken.ColonTokenType) {
                                     const filteredNames = names.filter((n) => n.typ !== exports.EnumToken.WhitespaceTokenType && n.typ !== exports.EnumToken.CommentTokenType);
@@ -26365,7 +27002,7 @@
                                 if (stack.at(-1)?.typ === exports.EnumToken.NotTokenType ||
                                     stack.at(-1)?.typ === exports.EnumToken.OnlyTokenType) {
                                     const index = tokens.indexOf(stack.at(-1));
-                                    const slice = trimArray(tokens.slice(index + 1));
+                                    const slice = trimArray$1(tokens.slice(index + 1));
                                     tokens[index] = Object.defineProperty({
                                         typ: exports.EnumToken.MediaQueryUnaryFeatureTokenType,
                                         l: stack.pop(),
@@ -26385,8 +27022,8 @@
                                             tokens[l].typ === exports.EnumToken.CommentTokenType)) {
                                         l--;
                                     }
-                                    const left = trimArray(tokens.slice(l, index));
-                                    const right = trimArray(tokens.slice(index + 1));
+                                    const left = trimArray$1(tokens.slice(l, index));
+                                    const right = trimArray$1(tokens.slice(index + 1));
                                     tokens[l] = Object.defineProperty({
                                         typ: exports.EnumToken.MediaQueryConditionTokenType,
                                         op: stack.pop(),
@@ -26420,7 +27057,7 @@
                     parts.splice(parts.indexOf(stream), 1);
                 }
                 stream.length = 0;
-                stream.push(...trimArray(tokens));
+                stream.push(...trimArray$1(tokens));
             }
         }
         stream.length = 0;
@@ -26581,7 +27218,7 @@
                             }
                             // match declaration
                             const index = tokens.indexOf(stack[stack.length - 2]);
-                            const slice = trimArray(tokens.splice(index + 1, tokens.length - index - 2));
+                            const slice = trimArray$1(tokens.splice(index + 1, tokens.length - index - 2));
                             const declaration = parseDeclaration(slice, context, { ...options, validation: exports.ValidationLevel.None }, errors);
                             if (declaration.typ !== exports.EnumToken.DeclarationNodeType) {
                                 return {
@@ -26602,7 +27239,7 @@
                         // @supports (--condition-name) {}
                         if (stack.at(-1)?.typ === exports.EnumToken.StartParensTokenType) {
                             const index = tokens.indexOf(stack.at(-1));
-                            const slice = trimArray(tokens.splice(index + 1, tokens.length - index - 2));
+                            const slice = trimArray$1(tokens.splice(index + 1, tokens.length - index - 2));
                             const filtered = slice.filter((token) => {
                                 return (token.typ !== exports.EnumToken.WhitespaceTokenType && token.typ !== exports.EnumToken.CommentTokenType);
                             });
@@ -26640,7 +27277,7 @@
                             tokens[index] = Object.defineProperty({
                                 typ: tokensfuncDefMap.get(stack.at(-1)?.typ),
                                 val: stack.at(-1).val,
-                                chi: trimArray(tokens.splice(index + 1, tokens.length - index - 2)),
+                                chi: trimArray$1(tokens.splice(index + 1, tokens.length - index - 2)),
                             }, "loc", {
                                 ...definedPropertySettings,
                                 value: { ...stack.at(-1).loc, end: { ...stream[i]?.loc?.end } },
@@ -26686,7 +27323,7 @@
                             tokens[index] = Object.defineProperty({
                                 typ: exports.EnumToken.SupportsQueryUnaryConditionTokenType,
                                 l: stack.at(-1),
-                                r: trimArray(tokens.splice(index + 1, i - index - 1)),
+                                r: trimArray$1(tokens.splice(index + 1, i - index - 1)),
                             }, "loc", {
                                 ...definedPropertySettings,
                                 value: { ...stack.at(-1).loc, end: { ...stream[i]?.loc?.end } },
@@ -26708,7 +27345,7 @@
                             }
                             const index = tokens.indexOf(stack.at(-1));
                             const index2 = stack.length > 1 ? tokens.indexOf(stack.at(-2)) + 1 : 0;
-                            const left = trimArray(tokens.slice(index2, index));
+                            const left = trimArray$1(tokens.slice(index2, index));
                             const notToken = left.find((t) => t.typ === exports.EnumToken.SupportsQueryUnaryConditionTokenType &&
                                 t.l.typ === exports.EnumToken.NotTokenType);
                             if (notToken != null) {
@@ -26727,7 +27364,7 @@
                                 typ: exports.EnumToken.SupportsQueryConditionTokenType,
                                 op: stack.at(-1),
                                 l: left,
-                                r: trimArray(tokens.slice(index + 1)),
+                                r: trimArray$1(tokens.slice(index + 1)),
                             }, "loc", {
                                 ...definedPropertySettings,
                                 value: { ...stack.at(-1).loc, end: { ...stream[i]?.loc?.end } },
@@ -26795,7 +27432,7 @@
             };
         }
         stream.length = 0;
-        stream.push(...trimArray(tokens));
+        stream.push(...trimArray$1(tokens));
         return { success, errors };
     }
 
@@ -26810,7 +27447,7 @@
         const prelude = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@import")
             .getPreludeRules()
             .slice(1);
-        trimArray(stream);
+        trimArray$1(stream);
         // <string> | <url>
         if (stream[index]?.typ === exports.EnumToken.StringTokenType) {
             tokens.push(stream[index++]);
@@ -26869,7 +27506,7 @@
             const slice = stream.slice(index + 1, k);
             tokens.push(Object.defineProperties(Object.assign({}, stream[0], {
                 typ: tokensfuncDefMap.get(stream[0].typ),
-                chi: trimArray(slice),
+                chi: trimArray$1(slice),
             }), {
                 loc: {
                     ...definedPropertySettings,
@@ -26956,7 +27593,7 @@
                 tokens.splice(index, 1);
                 Object.assign(stack.at(-1), {
                     typ: exports.EnumToken.FunctionTokenType,
-                    chi: trimArray(tokens.splice(i + 1, index++ - i - 1)),
+                    chi: trimArray$1(tokens.splice(i + 1, index++ - i - 1)),
                 });
                 stack.pop();
             }
@@ -27029,7 +27666,7 @@
                                 tokens.splice(index, 1);
                                 Object.assign(stack.at(-1), {
                                     typ: tokensfuncDefMap.get(stack.at(-1).typ),
-                                    chi: trimArray(tokens.splice(i + 1, index++ - i - 1)),
+                                    chi: trimArray$1(tokens.splice(i + 1, index++ - i - 1)),
                                 });
                                 stack.pop();
                                 break;
@@ -27061,7 +27698,7 @@
                             tokens.splice(index, 1);
                             Object.assign(stack.at(-1), {
                                 typ: tokensfuncDefMap.get(stack.at(-1).typ),
-                                chi: trimArray(tokens.splice(i + 1, index++ - i - 1)),
+                                chi: trimArray$1(tokens.splice(i + 1, index++ - i - 1)),
                             });
                             stack.pop();
                             break;
@@ -27084,7 +27721,7 @@
                             i = tokens.indexOf(stack.at(-1));
                             Object.assign(stack.at(-1), {
                                 typ: tokensfuncDefMap.get(stack.at(-1).typ),
-                                chi: trimArray(tokens.splice(i + 1, index++ - i - 1)),
+                                chi: trimArray$1(tokens.splice(i + 1, index++ - i - 1)),
                             });
                             stack.pop();
                             break;
@@ -27119,7 +27756,7 @@
                 while (j < supports.chi.length && supports.chi[j].typ !== exports.EnumToken.ColonTokenType) {
                     j++;
                 }
-                const val = trimArray(supports.chi.slice(j + 1));
+                const val = trimArray$1(supports.chi.slice(j + 1));
                 supports.chi[i] = Object.defineProperties({
                     typ: exports.EnumToken.DeclarationNodeType,
                     nam: supports.chi[i].val,
@@ -27144,7 +27781,7 @@
                         val.splice(i, 1);
                         Object.assign(stack.at(-1), {
                             typ: tokensfuncDefMap.get(stack.at(-1).typ),
-                            chi: trimArray(val.splice(index + 1, i - index - 1)),
+                            chi: trimArray$1(val.splice(index + 1, i - index - 1)),
                         });
                         i = index;
                         stack.pop();
@@ -27175,7 +27812,7 @@
             success = false;
         }
         stream.length = 0;
-        stream.push(...trimArray(tokens));
+        stream.push(...trimArray$1(tokens));
         return {
             success,
             errors,
@@ -27286,7 +27923,7 @@
                         }
                         if (stack.at(-1)?.typ === exports.EnumToken.StartParensTokenType) {
                             const index = tokens.indexOf(stack.at(-1));
-                            const slice = trimArray(tokens.splice(index + 1, tokens.length - index - 2));
+                            const slice = trimArray$1(tokens.splice(index + 1, tokens.length - index - 2));
                             const filtered = slice.filter((token) => {
                                 return (token.typ !== exports.EnumToken.WhitespaceTokenType && token.typ !== exports.EnumToken.CommentTokenType);
                             });
@@ -27325,7 +27962,7 @@
                             tokens[index] = Object.defineProperty({
                                 typ: exports.EnumToken.SupportsQueryUnaryConditionTokenType,
                                 l: stack.at(-1),
-                                r: trimArray(tokens.splice(index + 1, i - index - 1)),
+                                r: trimArray$1(tokens.splice(index + 1, i - index - 1)),
                             }, "loc", {
                                 ...definedPropertySettings,
                                 value: { ...stack.at(-1).loc, end: { ...stream[i]?.loc?.end } },
@@ -27347,7 +27984,7 @@
                             }
                             const index = tokens.indexOf(stack.at(-1));
                             const index2 = stack.length > 1 ? tokens.indexOf(stack.at(-2)) + 1 : 0;
-                            const left = trimArray(tokens.slice(index2, index));
+                            const left = trimArray$1(tokens.slice(index2, index));
                             const notToken = left.find((t) => t.typ === exports.EnumToken.SupportsQueryUnaryConditionTokenType &&
                                 t.l.typ === exports.EnumToken.NotTokenType);
                             if (notToken != null) {
@@ -27366,7 +28003,7 @@
                                 typ: exports.EnumToken.SupportsQueryConditionTokenType,
                                 op: stack.at(-1),
                                 l: left,
-                                r: trimArray(tokens.slice(index + 1)),
+                                r: trimArray$1(tokens.slice(index + 1)),
                             }, "loc", {
                                 ...definedPropertySettings,
                                 value: { ...stack.at(-1).loc, end: { ...stream[i]?.loc?.end } },
@@ -27473,7 +28110,7 @@
                         Object.defineProperty(Object.assign(stream[i], {
                             typ: tokensfuncDefMap.get(stream[i].typ),
                             chi: stream[i].typ === exports.EnumToken.SupportsFunctionTokenDefType
-                                ? trimArray(slice.slice(1, -1))
+                                ? trimArray$1(slice.slice(1, -1))
                                 : tokenList[0].chi,
                         }), "loc", {
                             ...definedPropertySettings,
@@ -27484,7 +28121,7 @@
                             tokens[index] = Object.defineProperty({
                                 typ: exports.EnumToken.WhenElseUnaryConditionTokenType,
                                 l: stack.at(-1),
-                                r: trimArray(tokens.slice(index + 1)),
+                                r: trimArray$1(tokens.slice(index + 1)),
                             }, "loc", {
                                 ...definedPropertySettings,
                                 value: { ...stack.at(-1).loc, end: { ...stream[i]?.loc?.end } },
@@ -27498,8 +28135,8 @@
                             tokens[index2] = Object.defineProperty({
                                 typ: exports.EnumToken.WhenElseQueryConditionTokenType,
                                 op: stack.at(-1),
-                                l: trimArray(tokens.slice(index2, index)),
-                                r: trimArray(tokens.slice(index + 1)),
+                                l: trimArray$1(tokens.slice(index2, index)),
+                                r: trimArray$1(tokens.slice(index + 1)),
                             }, "loc", {
                                 ...definedPropertySettings,
                                 value: { ...stack.at(-1).loc, end: { ...stream[i]?.loc?.end } },
@@ -27532,7 +28169,7 @@
             };
         }
         stream.length = 0;
-        stream.push(...trimArray(tokens));
+        stream.push(...trimArray$1(tokens));
         return { success, errors };
     }
 
@@ -27774,9 +28411,9 @@
                                     const index2 = tokens.indexOf(prevToken);
                                     // '('
                                     const index3 = tokens.indexOf(stack.at(-3));
-                                    const left = trimArray(tokens.slice(index3 + 1, index2));
-                                    const right = trimArray(tokens.slice(index + 1, tokens.length - 1));
-                                    const names = trimArray(tokens.slice(index2 + 1, index));
+                                    const left = trimArray$1(tokens.slice(index3 + 1, index2));
+                                    const right = trimArray$1(tokens.slice(index + 1, tokens.length - 1));
+                                    const names = trimArray$1(tokens.slice(index2 + 1, index));
                                     if (!isStyleRangeValue(left)) {
                                         success = false;
                                         errors.push({
@@ -27847,8 +28484,8 @@
                                 }
                                 const index2 = tokens.indexOf(stack.at(-1));
                                 const index3 = tokens.indexOf(stack.at(-2));
-                                let names = trimArray(tokens.slice(index3 + 1, index2));
-                                let values = trimArray(tokens.slice(index2 + 1, tokens.length - 1));
+                                let names = trimArray$1(tokens.slice(index3 + 1, index2));
+                                let values = trimArray$1(tokens.slice(index2 + 1, tokens.length - 1));
                                 if (stack.at(-1)?.typ !== exports.EnumToken.ColonTokenType &&
                                     stack.at(-1)?.typ !== exports.EnumToken.DelimTokenType) {
                                     names.filter((n) => n.typ !== exports.EnumToken.WhitespaceTokenType && n.typ !== exports.EnumToken.CommentTokenType);
@@ -27868,7 +28505,7 @@
                                 const index = tokens.indexOf(stack.at(-1));
                                 Object.defineProperty(Object.assign(tokens[index], {
                                     typ: tokensfuncDefMap.get(stack.at(-1)?.typ),
-                                    chi: trimArray(tokens.slice(index + 1, tokens.length - 1)),
+                                    chi: trimArray$1(tokens.slice(index + 1, tokens.length - 1)),
                                 }), "loc", {
                                     ...definedPropertySettings,
                                     value: { ...tokens[index].loc, end: stream[i].loc.end },
@@ -27934,7 +28571,7 @@
                                     }
                                 }
                                 const index = tokens.indexOf(stack.at(-1));
-                                const slice = trimArray(tokens.slice(index + 1));
+                                const slice = trimArray$1(tokens.slice(index + 1));
                                 tokens[index] = Object.defineProperty({
                                     typ: exports.EnumToken.MediaQueryUnaryFeatureTokenType,
                                     l: stack.pop(),
@@ -27954,8 +28591,8 @@
                                         tokens[l].typ === exports.EnumToken.CommentTokenType)) {
                                     l--;
                                 }
-                                const left = trimArray(tokens.slice(l, index));
-                                const right = trimArray(tokens.slice(index + 1));
+                                const left = trimArray$1(tokens.slice(l, index));
+                                const right = trimArray$1(tokens.slice(index + 1));
                                 tokens[l] = Object.defineProperty({
                                     typ: exports.EnumToken.MediaQueryConditionTokenType,
                                     op: stack.pop(),
@@ -27995,7 +28632,7 @@
                     };
                 }
                 stream.length = 0;
-                stream.push(...trimArray(tokens));
+                stream.push(...trimArray$1(tokens));
             }
         }
         stream.length = 0;
@@ -28017,7 +28654,7 @@
     function matchAtRuleSyntax(atRule, stream, options) {
         const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + atRule.nam);
         const syntax = syntaxRules?.getPreludeRules()?.slice?.(1);
-        trimArray(stream);
+        trimArray$1(stream);
         if (syntax.length === 0) {
             const filtered = stream.filter((token) => token.typ !== exports.EnumToken.WhitespaceTokenType && token.typ !== exports.EnumToken.CommentTokenType);
             if (filtered.length > 0) {
@@ -28042,7 +28679,7 @@
     function parseAtRuleFontFeatureValues(stream, context, options = {}) {
         const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + context.nam);
         const syntax = syntaxRules?.getPreludeRules()?.slice?.(1);
-        trimArray(stream);
+        trimArray$1(stream);
         const { success, errors} = matchAllSyntax(syntax, createValidationContext(stream), options);
         return { success, errors };
     }
@@ -29404,7 +30041,7 @@
                         matchSelectorSyntax(tokens, [], options);
                         Object.defineProperty(node, "tokens", {
                             ...definedPropertySettings,
-                            value: trimArray(tokens),
+                            value: trimArray$1(tokens),
                         });
                         let i;
                         const stack = [];
@@ -29750,7 +30387,7 @@
                 return {
                     ...atRule,
                     typ: exports.EnumToken.InvalidRuleNodeType,
-                    val: renderTokens(trimArray(stream), options),
+                    val: renderTokens(trimArray$1(stream), options),
                     ...(parseAsBlock ? { chi: [] } : {}),
                 };
             }
@@ -29769,7 +30406,7 @@
                 return {
                     ...atRule,
                     typ: exports.EnumToken.InvalidRuleNodeType,
-                    val: renderTokens(trimArray(stream), options),
+                    val: renderTokens(trimArray$1(stream), options),
                     ...(parseAsBlock ? { chi: [] } : {}),
                 };
             }
@@ -29785,7 +30422,7 @@
                 return {
                     ...atRule,
                     typ: exports.EnumToken.InvalidRuleNodeType,
-                    val: renderTokens(trimArray(stream), options),
+                    val: renderTokens(trimArray$1(stream), options),
                     ...(parseAsBlock ? { chi: [] } : {}),
                 };
             }
@@ -29805,7 +30442,7 @@
             return {
                 ...atRule,
                 typ: exports.EnumToken.InvalidRuleNodeType,
-                val: renderTokens(trimArray(stream), options),
+                val: renderTokens(trimArray$1(stream), options),
                 ...(parseAsBlock ? { chi: [] } : {}),
             };
         }
@@ -29847,7 +30484,7 @@
                 // @ts-expect-error
                 return Object.defineProperties(Object.assign(atRule, {
                     typ: success ? exports.EnumToken.AtRuleNodeType : exports.EnumToken.InvalidRuleNodeType,
-                    val: renderTokens(trimArray(stream), options),
+                    val: renderTokens(trimArray$1(stream), options),
                 }), {
                     loc: {
                         ...definedPropertySettings,
@@ -29934,7 +30571,7 @@
                 });
             }
             case "custom-media": {
-                const tokens = trimArray(stream.slice(1));
+                const tokens = trimArray$1(stream.slice(1));
                 const result = matchAllSyntax(syntax, createValidationContext(tokens), options);
                 if (result.errors.length > 0) {
                     errors.push(...result.errors);
@@ -29954,7 +30591,7 @@
                 });
             }
             case "keyframes": {
-                const tokens = trimArray(stream.slice(1));
+                const tokens = trimArray$1(stream.slice(1));
                 const filtered = stream.filter((t) => t.typ !== exports.EnumToken.WhitespaceTokenType && t.typ !== exports.EnumToken.CommentTokenType);
                 if (filtered.length != 1 ||
                     (filtered[0].typ !== exports.EnumToken.IdenTokenType &&
@@ -30020,7 +30657,7 @@
                 // @ts-expect-error
                 return Object.defineProperties(Object.assign(atRule, {
                     typ: valid ? exports.EnumToken.AtRuleNodeType : exports.EnumToken.InvalidAtRuleNodeType,
-                    val: trimArray(stream).reduce((acc, t, index) => acc +
+                    val: trimArray$1(stream).reduce((acc, t, index) => acc +
                         (t.typ === exports.EnumToken.CommentTokenType ||
                             (t.typ === exports.EnumToken.WhitespaceTokenType &&
                                 stream[index + 1]?.typ === exports.EnumToken.CommentTokenType &&
@@ -30156,7 +30793,7 @@
                 });
             }
             case "scope": {
-                let context = createValidationContext(trimArray(stream));
+                let context = createValidationContext(trimArray$1(stream));
                 let success = true;
                 // @ts-ignore
                 let range = context.peekRange((t) => t.typ === exports.EnumToken.EndParensTokenType);
@@ -30258,7 +30895,7 @@
                 });
             }
             case "page": {
-                trimArray(stream);
+                trimArray$1(stream);
                 // @ts-expect-error
                 return Object.defineProperties(Object.assign(atRule, {
                     typ: success ? exports.EnumToken.AtRuleNodeType : exports.EnumToken.InvalidRuleNodeType,
@@ -30297,7 +30934,7 @@
                     });
                 }
                 else {
-                    trimArray(stream);
+                    trimArray$1(stream);
                     for (let i = 0; i < stream.length; i++) {
                         if (stream[i].typ !== exports.EnumToken.WhitespaceTokenType &&
                             stream[i].typ !== exports.EnumToken.CommentTokenType) {
@@ -30369,7 +31006,7 @@
                 }
                 if (isVarDeclaration) {
                     const nam = stream.find((t) => t.typ == exports.EnumToken.IdenTokenType);
-                    const value = trimArray(stream.slice(index + 1).filter((t) => t.typ != exports.EnumToken.CommentTokenType));
+                    const value = trimArray$1(stream.slice(index + 1).filter((t) => t.typ != exports.EnumToken.CommentTokenType));
                     if (value.length == 1 && value[0].typ == exports.EnumToken.StringTokenType) {
                         // import from file as alias
                         return {
@@ -30388,7 +31025,7 @@
                 // @ts-expect-error
                 return Object.defineProperties(Object.assign(atRule, {
                     typ: exports.EnumToken.CssVariableDeclarationMapTokenType,
-                    vars: trimArray(stream.slice(0, index)),
+                    vars: trimArray$1(stream.slice(0, index)),
                     from: stream.slice(index + 1),
                 }), {
                     tokens: { ...definedPropertySettings, value: stream.slice() },
@@ -30904,215 +31541,6 @@
             }
         }
         return tokens;
-    }
-
-    const matchUrl = /^(https?:)?\/\//;
-    /**
-     * return the directory name of a path
-     * @param path
-     *
-     * @private
-     */
-    function dirname(path) {
-        if (path === "") {
-            return "";
-        }
-        let i = 0;
-        let parts = [""];
-        for (; i < path.length; i++) {
-            const chr = path.charAt(i);
-            if (chr == "/") {
-                parts.push("");
-            }
-            else {
-                parts[parts.length - 1] += chr;
-            }
-        }
-        parts.pop();
-        return parts.length == 0 ? "/" : parts.join("/");
-    }
-    /**
-     * split path
-     * @param result
-     * @private
-     */
-    function splitPath(result) {
-        if (result.length == 0) {
-            return { parts: [], i: 0 };
-        }
-        if (result === "/") {
-            return { parts: ["/"], i: 0 };
-        }
-        const parts = [""];
-        let i = 0;
-        for (; i < result.length; i++) {
-            const chr = result.charAt(i);
-            if (chr == "/") {
-                parts.push("");
-            }
-            else if (chr == "?" || chr == "#") {
-                break;
-            }
-            else {
-                parts[parts.length - 1] += chr;
-            }
-        }
-        let k = -1;
-        while (++k < parts.length) {
-            if (parts[k] == ".") {
-                parts.splice(k--, 1);
-            }
-            else if (parts[k] == "..") {
-                parts.splice(k - 1, 2);
-                k -= 2;
-            }
-        }
-        return { parts, i };
-    }
-    /**
-     * resolve path
-     * @param url url or path to resolve
-     * @param currentDirectory directory used to resolve the path
-     * @param cwd current working directory
-     *
-     * @private
-     */
-    function resolve(url, currentDirectory, cwd) {
-        if (matchUrl.test(url)) {
-            return {
-                absolute: url,
-                relative: url,
-            };
-        }
-        cwd ??= "";
-        currentDirectory ??= "";
-        if (currentDirectory !== "" && url.startsWith(currentDirectory + "/")) {
-            return {
-                absolute: url,
-                relative: url.slice(currentDirectory.length + 1),
-            };
-        }
-        if (currentDirectory === "" && cwd !== "" && url.startsWith(cwd == "/" ? cwd : cwd + "/")) {
-            cwd = normalize(cwd);
-            const absolute = normalize(url);
-            const prefix = cwd == "/" ? cwd : cwd + "/";
-            return {
-                absolute,
-                relative: absolute.startsWith(prefix) ? absolute.slice(prefix.length) : diff(absolute, cwd),
-            };
-        }
-        if (matchUrl.test(currentDirectory)) {
-            const path = new URL(url, currentDirectory).href;
-            return {
-                absolute: path,
-                relative: path,
-            };
-        }
-        let result = "";
-        if (url.charAt(0) == "/") {
-            result = url;
-        }
-        else if (currentDirectory.charAt(0) == "/") {
-            result = dirname(currentDirectory) + "/" + url;
-        }
-        const absolute = normalize(result);
-        return {
-            absolute,
-            relative: absolute === "" ? "" : diff(absolute, cwd ?? currentDirectory),
-        };
-    }
-    function diff(path1, path2) {
-        let { parts } = splitPath(path1);
-        const { parts: dirs } = splitPath(path2);
-        for (const p of dirs) {
-            if (parts[0] == p) {
-                parts.shift();
-            }
-            else {
-                parts.unshift("..");
-            }
-        }
-        return parts.join("/");
-    }
-    function normalize(path) {
-        let parts = [];
-        let i = 0;
-        for (; i < path.length; i++) {
-            const chr = path.charAt(i);
-            if (chr == "/") {
-                if (parts.length == 0 || parts[parts.length - 1] !== "") {
-                    parts.push("");
-                }
-            }
-            else if (chr == "?" || chr == "#") {
-                break;
-            }
-            else {
-                parts[parts.length - 1] += chr;
-            }
-        }
-        let k = -1;
-        while (++k < parts.length) {
-            if (parts[k] == ".") {
-                parts.splice(k--, 1);
-            }
-            else if (parts[k] == "..") {
-                parts.splice(k - 1, 2);
-                k -= 2;
-            }
-        }
-        return (path.charAt(0) == "/" ? "/" : "") + parts.join("/");
-    }
-
-    /**
-     * response type
-     */
-    exports.ResponseType = void 0;
-    (function (ResponseType) {
-        /**
-         * return text
-         */
-        ResponseType[ResponseType["Text"] = 0] = "Text";
-        /**
-         * return a readable stream
-         */
-        ResponseType[ResponseType["ReadableStream"] = 1] = "ReadableStream";
-        /**
-         * return an arraybuffer
-         */
-        ResponseType[ResponseType["ArrayBuffer"] = 2] = "ArrayBuffer";
-    })(exports.ResponseType || (exports.ResponseType = {}));
-
-    /**
-     * Calculate the distance between two okLab colors.
-     * @param okLab1
-     * @param okLab2
-     *
-     * @private
-     */
-    function okLabDistance(okLab1, okLab2) {
-        return Math.sqrt(Math.pow(okLab1[0] - okLab2[0], 2) + Math.pow(okLab1[1] - okLab2[1], 2) + Math.pow(okLab1[2] - okLab2[2], 2));
-    }
-    /**
-     * Check if two colors are close in okLab space.
-     * @param color1
-     * @param color2
-     * @param threshold
-     *
-     * @private
-     */
-    function isOkLabClose(color1, color2, threshold = 0.01) {
-        color1 = convertColor(color1, exports.ColorType.OKLAB);
-        color2 = convertColor(color2, exports.ColorType.OKLAB);
-        if (color1 == null || color2 == null) {
-            return false;
-        }
-        const okLab1 = getOKLABComponents(color1);
-        const okLab2 = getOKLABComponents(color2);
-        if (okLab1 == null || okLab2 == null) {
-            return false;
-        }
-        return okLabDistance(okLab1, okLab2) < threshold;
     }
 
     /**

@@ -1,7 +1,10 @@
 import { EnumToken, ColorType } from '../ast/types.js';
 import { walkValues, WalkerOptionEnum } from '../ast/walk.js';
 import { equalsIgnoreCase } from '../parser/utils/text.js';
+import { trimArray } from '../validation/match.js';
+import { splitTokenList } from '../validation/utils/list.js';
 import { colorsFunc, systemColors, deprecatedSystemColors, nonStandardColors, COLORS_NAMES, mathFuncs } from './constants.js';
+import { isOkLabClose } from './color/utils/distance.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
@@ -229,6 +232,49 @@ function isColorspace(token) {
         "hsl",
         "hwb",
     ].includes(token.val.toLowerCase());
+}
+function reduceColorStops(stops) {
+    const parts = splitTokenList(stops);
+    const n = parts.length == 1 ? 1 : parts.length - 1;
+    let j;
+    let i;
+    let updated = false;
+    for (i = 0; i < parts.length; i++) {
+        if (parts[i].length != 3) {
+            continue;
+        }
+        if (i > 0 && isOkLabClose(parts[i - 1][0], parts[i][0])) {
+            if (parts[i - 1].length == 1) {
+                parts[i - 1].push({ typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: ((i - 1) * 100) / n });
+            }
+            parts[i - 1].push(...parts[i].slice(1));
+            parts.splice(i--, 1);
+            updated = true;
+            continue;
+        }
+        for (j = 0; j < parts[i].length; j++) {
+            if ((parts[i][j].typ == EnumToken.LengthTokenType && 0 == parts[i][j].val) ||
+                parts[i][j].typ == EnumToken.NumberTokenType ||
+                parts[i][j].typ == EnumToken.PercentageTokenType) {
+                if (parts[i][j].val === (i * 100) / n) {
+                    parts[i].length = j;
+                    trimArray(parts[i]);
+                    updated = true;
+                    break;
+                }
+            }
+        }
+    }
+    if (updated) {
+        stops.length = 0;
+        for (j = 0; j < parts.length; j++) {
+            if (stops.length > 0) {
+                stops.push({ typ: EnumToken.CommaTokenType });
+            }
+            stops.push(...parts[j]);
+        }
+    }
+    return stops;
 }
 function isRectangularOrthogonalColorspace(token) {
     if (token.typ != EnumToken.IdenTokenType) {
@@ -941,4 +987,4 @@ function isValue(token) {
         token.typ === EnumToken.TransformFunctionTokenType);
 }
 
-export { dimensionUnits, isAngle, isColor, isColorspace, isDigit, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isLetter, isNewLine, isNumber, isPercentage, isPercentageToken, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isValue, isWhiteSpace, parseColor, parseDimension, pseudoAliasMap, pseudoElements, renamedStandardProperties };
+export { dimensionUnits, isAngle, isColor, isColorspace, isDigit, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isLetter, isNewLine, isNumber, isPercentage, isPercentageToken, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isValue, isWhiteSpace, parseColor, parseDimension, pseudoAliasMap, pseudoElements, reduceColorStops, renamedStandardProperties };

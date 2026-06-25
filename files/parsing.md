@@ -6,7 +6,7 @@ category: Guides
 
 ## Parsing CSS
 
-Parsing will turn the input css into an AST (Abstract Syntax Tree). It is achieved using the functions `parse()` and `transform()` or by using the corresponding functions `parseFile()` and `transformFile()`. `parse()` and `parseFile()` will not produce any css. To the contrary, the `transform()` and `transformFile()` functions will parse and also produce the CSS code, which comes handing if you do not want an additional step to render the ast.
+Parsing will turn the input css into an AST (Abstract Syntax Tree). It is achieved using the functions `parse()` and `transform()` or by using the corresponding functions `parseFile()` and `transformFile()`. `parse()` and `parseFile()` will not produce any CSS text. To the contrary, the `transform()` and `transformFile()` functions will parse and also produce the CSS text, which comes handing if you do not want an additional step to render the ast.
 
 ```ts
 import {parse, render} from '@tbela99/css-parser';
@@ -153,7 +153,7 @@ console.debug(result.code);
 
 ## Transform
 
-The transform function parse and render css.
+The transform function parse and render CSS.
 
 ### TransformOptions
 

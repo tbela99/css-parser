@@ -223,6 +223,9 @@ a {
   transition: -ms-transform 1s;
   transition: transform 1s
 }
+  .xl\:origin-bottom-left2 {
+ background: -o-linear-gradient(-90deg,#fff,#000);
+  }
 `, {
                 removePrefix: true,
                 removeDuplicateDeclarations: false,
@@ -270,9 +273,9 @@ a {
  user-select: none;
  user-select: none;
  user-select: none;
- background: linear-gradient(.5turn,#fff,#000);
- background: linear-gradient(.5turn,#fff 0,#000);
- background: linear-gradient(.5turn,#fff,#000)
+ background: linear-gradient(#fff,#000);
+ background: linear-gradient(#fff,#000);
+ background: linear-gradient(#fff,#000)
 }
 .site>* {
  padding: 30px;
@@ -311,8 +314,11 @@ a {
  transition: transform 1s;
  transition: transform 1s;
  transition: transform 1s
+}
+.xl\:origin-bottom-left2 {
+ background: linear-gradient(#fff,#000)
 }`));
-        })
+        });
 
         it('do not mix #6', function () {
             return transform(`

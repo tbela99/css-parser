@@ -1,7 +1,8 @@
 import { EnumToken } from '../ast/types.js';
 import config from '../validation/config.json.js';
 
-const regMatchLinearGradient = /^-((webkit)|o|moz)-linear-gradient$/i;
+const regMatchLinearGradient = /^-((webkit)|o|moz)(-repeating)?-linear-gradient$/i;
+const regMatchRadialGradient = /^-((webkit)|o|moz)(-repeating)?-radial-gradient$/i;
 const mFLT = new Set([EnumToken.LtTokenType, EnumToken.LteTokenType]);
 const mFGT = new Set([EnumToken.GtTokenType, EnumToken.GteTokenType]);
 const tokensMap = new Map([
@@ -155,6 +156,7 @@ const imageFunc = [
     "radial-gradient",
     "repeating-linear-gradient",
     "repeating-radial-gradient",
+    "repeating-conic-gradient",
     "conic-gradient",
     "image",
     "image-set",
@@ -165,6 +167,9 @@ const imageFunc = [
     "-moz-linear-gradient",
     "-webkit-linear-gradient",
     "-webkit-gradient",
+    "-webkit-radial-gradient",
+    "-webkit-repeating-linear-gradient",
+    "-webkit-repeating-radial-gradient"
 ];
 const transformFunctions = [
     "translate",
@@ -438,4 +443,4 @@ const trimTokenSpace = new Set([
 const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
 const combinators = ["+", ">", "~", "||", "|"];
 
-export { COLORS_NAMES, D50, NAMES_COLORS, anglePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, definedPropertySettings, deprecatedSystemColors, e, funcLike, generalEnclosedFunc, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, regMatchLinearGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };
+export { COLORS_NAMES, D50, NAMES_COLORS, anglePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, definedPropertySettings, deprecatedSystemColors, e, funcLike, generalEnclosedFunc, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, regMatchLinearGradient, regMatchRadialGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };

@@ -95,7 +95,7 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
                 ...definedPropertySettings,
                 value: [{ typ: EnumToken.ParensTokenType, chi: left.chi.slice() }],
             });
-            const minify = atRule.nam !== 'supports';
+            const minify = atRule.nam !== "supports";
             const options = {
                 minify,
                 convertColor: minify,

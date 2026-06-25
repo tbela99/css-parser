@@ -213,7 +213,7 @@ button {
      console.log({found}); // 'button' token of the selector
   
 ```
- *
+ * Find the node's value token of the specified ast node.
  * @param ast
  * @param matcher
  * @returns

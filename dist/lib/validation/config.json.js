@@ -3631,7 +3631,7 @@ var syntaxes = {
 		syntax: "-moz-repeating-radial-gradient( <-legacy-radial-gradient-arguments> ) | -webkit-repeating-radial-gradient( <-legacy-radial-gradient-arguments> ) | -o-repeating-radial-gradient( <-legacy-radial-gradient-arguments> )"
 	},
 	"-legacy-radial-gradient-arguments": {
-		syntax: "[ <position> , ]? [ [ [ <-legacy-radial-gradient-shape> || <-legacy-radial-gradient-size> ] | [ <length> | <percentage> ]{2} ] , ]? <color-stop-list>"
+		syntax: " <position>? , [ [ <-legacy-radial-gradient-shape> || <-legacy-radial-gradient-size> ] | [ <length> | <percentage> ]{2} ]? , <color-stop-list>"
 	},
 	"-legacy-radial-gradient-size": {
 		syntax: "closest-side | closest-corner | farthest-side | farthest-corner | contain | cover"

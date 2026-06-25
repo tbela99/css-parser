@@ -3,10 +3,24 @@
 ## v1.4.4
 
 - [x] minify transform-origin property
+- [ ] convert -webkit-* gradient functions
+  - [x] -webkit-gradient() to
+    - [x] linear-gradient()
+    - [ ] radial-gradient() - not supported
+  - [x] -webkit-linear-gradient()
+  - [x] -webkit-radial-gradient()
+  - [ ] -webkit-repeating-radial-gradient()  
+- [ ] minify gradient functions
+  - [x] linear-gradient()
+  - [x] radial-gradient()
+  - [ ] conic-gradient()
+  - [x] repeating-linear-gradient()
+  - [x] repeating-radial-gradient()
+  - [ ] repeating-conic-gradient()
 
 ### Bug fixes
 - [x] do not minify supports() arguments
-- [x] incorreectly parse selector when removePrefix and css module settings are enabled
+- [x] incorrectly parse selector when removePrefix and css module settings are enabled
 
 ```css
 *,:before,:after {

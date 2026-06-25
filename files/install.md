@@ -19,7 +19,7 @@ $ deno add @tbela99/css-parser
 ```
 ### As Web module
 
-The library can be imported as a module in the browser.
+It can be imported as an umd module.
 
 ```html
 <script type="module">
@@ -58,7 +58,7 @@ The library can be imported as a module in the browser.
 
 ### As UMD module
 
-It can also be imported as an umd module
+It can be imported as a module in the browser.
 
 ```html
 

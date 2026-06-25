@@ -175,11 +175,11 @@ function substituteIfElseNode(
                 value: [{ typ: EnumToken.ParensTokenType, chi: (left as FunctionToken).chi.slice() }],
             });
 
-            const minify: boolean = atRule.nam !== 'supports';
+            const minify: boolean = atRule.nam !== "supports";
             const options: RenderOptions = {
                 minify,
                 convertColor: minify,
-            }
+            };
 
             atRule.val = atRule.tokens!.reduce((acc: string, curr: Token) => acc + renderToken(curr, options), "");
 
@@ -315,7 +315,6 @@ export class ExpandIfFeature {
 
     static register(options: ParserOptions): void {
         if (options.expandIfSyntax) {
-            
             // @ts-ignore
             options.features.push(new ExpandIfFeature());
         }
