@@ -4,12 +4,12 @@
 
 - [x] minify transform-origin property
 - [ ] convert -webkit-* gradient functions
-  - [x] -webkit-gradient() to
+  - [x] -webkit-gradient() to:
     - [x] linear-gradient()
     - [ ] radial-gradient() - not supported
   - [x] -webkit-linear-gradient()
   - [x] -webkit-radial-gradient()
-  - [ ] -webkit-repeating-radial-gradient()  
+  - [x] -webkit-repeating-radial-gradient()  
 - [ ] minify gradient functions
   - [x] linear-gradient()
   - [x] radial-gradient()

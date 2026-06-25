@@ -778,8 +778,10 @@ export function renderToken(
                             let key: string;
 
                             for (i = 0; i < slice.length; i++) {
-
-                                if (slice[i].typ == EnumToken.ColorTokenType || slice[i].typ === EnumToken.CommaTokenType) {
+                                if (
+                                    slice[i].typ == EnumToken.ColorTokenType ||
+                                    slice[i].typ === EnumToken.CommaTokenType
+                                ) {
                                     break;
                                 }
 
@@ -866,17 +868,16 @@ export function renderToken(
                             }
 
                             if (slice[i]?.typ === EnumToken.CommaTokenType) {
-                                
                                 i++;
-                                    while (
-                                        i < slice.length &&
-                                        (slice[i].typ === EnumToken.WhitespaceTokenType ||
-                                            slice[i].typ === EnumToken.CommentTokenType)
-                                    ) {
-                                        i++;
-                                    }
+                                while (
+                                    i < slice.length &&
+                                    (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                                        slice[i].typ === EnumToken.CommentTokenType)
+                                ) {
+                                    i++;
+                                }
                             }
-                                                
+
                             if (slice[i]?.typ === EnumToken.ColorTokenType) {
                                 slice.push(...reduceColorStops(slice.splice(i, slice.length - i)));
                             }
@@ -885,7 +886,7 @@ export function renderToken(
                         break;
 
                     case "radial-gradient":
-                        case 'repeating-radial-gradient': {
+                    case "repeating-radial-gradient": {
                         let i: number = 0;
 
                         while (
@@ -923,10 +924,6 @@ export function renderToken(
                             ) {
                                 i++;
                             }
-
-                            // if (slice[i]?.typ === EnumToken.CommaTokenType) {
-                            //     i++;
-                            // }
                         }
 
                         if (slice[i]?.typ === EnumToken.IdenTokenType) {
@@ -951,10 +948,6 @@ export function renderToken(
                             ) {
                                 i++;
                             }
-
-                            // if (slice[i]?.typ === EnumToken.CommaTokenType) {
-                            //     i++;
-                            // }
                         }
 
                         if (equalsIgnoreCase((slice[i] as IdentToken).val, "at")) {
@@ -990,19 +983,6 @@ export function renderToken(
                                 i++;
                             } while (slice[i]?.typ !== EnumToken.CommaTokenType);
 
-                            //     if (slice[i]?.typ === EnumToken.IdenTokenType && 'in' === (slice[i] as IdentToken).val) {
-
-                            //         colorSpaceDef.push(slice[i++]);
-                            //     }
-
-                            // while (slice[i]?.typ !== EnumToken.CommaTokenType) {
-
-                            //         colorSpaceDef.push(slice[i++]);
-                            // }
-
-                            // if (slice[i]?.typ === EnumToken.CommaTokenType) {
-                            //     i++;
-                            // }
                         }
 
                         while (slice[i]?.typ !== EnumToken.CommaTokenType) {
@@ -1147,13 +1127,6 @@ export function renderToken(
                             }
                             result.push(...colorSpaceDef);
                         }
-
-                        // console.debug({
-                        //     positions,
-                        //     form,
-                        //     size,
-                        //     colorSpaceDef,
-                        // });
 
                         if (result.length > 0) {
                             result.push({ typ: EnumToken.CommaTokenType });

@@ -1,10 +1,10 @@
 [![playground](https://img.shields.io/badge/playground-try%20it%20now-%230a7398
 )](https://tbela99.github.io/css-parser/playground/) [![npm](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftbela99%2Fcss-parser%2Fmaster%2Fpackage.json&query=version&logo=npm&label=npm&link=https%3A%2F%2Fwww.npmjs.com%2Fpackage%2F%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![npm](https://img.shields.io/jsr/v/%40tbela99/css-parser?link=https%3A%2F%2Fjsr.io%2F%40tbela99%2Fcss-parser
-)](https://jsr.io/@tbela99/css-parser) [![cov](https://tbela99.github.io/css-parser/badges/coverage.svg)](https://github.com/tbela99/css-parser/actions) [![Doc](https://img.shields.io/badge/online-documentation-blue)](https://tbela99.github.io/css-parser/docs) [![NPM Downloads](https://img.shields.io/npm/dm/%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![bundle size](https://img.shields.io/bundlejs/size/%40tbela99/css-parser%400.9.0?exports=cjs)](https://www.npmjs.com/package/@tbela99/css-parser)
+)](https://jsr.io/@tbela99/css-parser) [![cov](https://tbela99.github.io/css-parser/badges/coverage.svg)](https://github.com/tbela99/css-parser/actions) [![Doc](https://tbela99.github.io/css-parser/docs/coverage.svg)](https://tbela99.github.io/css-parser/docs) [![NPM Downloads](https://img.shields.io/npm/dm/%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![bundle size](https://img.shields.io/bundlejs/size/%40tbela99/css-parser%400.9.0?exports=cjs)](https://www.npmjs.com/package/@tbela99/css-parser)
 
 # css-parser
 
-CSS parser, minifier and validator for node and the browser
+CSS parser, transformer, minifier and validator for node and the browser
 
 ## Installation
 
@@ -30,8 +30,6 @@ $ deno add @tbela99/css-parser
 * **Advanced color processing** with support for modern color spaces and functions, including `color()`, `lab()`, `lch()`, `oklab()`, `oklch()`, `color-mix()`, `light-dark()`, system colors, and relative colors.
 * **Color conversion engine** capable of transforming colors between all supported formats.
 * **Automatic CSS nesting generation** from compatible selectors.
-* **Nested CSS transpilation** to legacy-compatible syntax.
-* **`if()` function transpilation** for broader browser compatibility.
 * **Source map generation** for easier debugging and development workflows.
 * **Shorthand property computation** to reduce output size and improve optimization.
 * **Transform function optimization** for more compact CSS output.
@@ -39,11 +37,22 @@ $ deno add @tbela99/css-parser
 * **CSS variable inlining** where values can be safely resolved.
 * **Duplicate declaration removal** to eliminate redundant rules.
 * **`@import` flattening** to produce self-contained stylesheets.
-* **Experimental vendor prefix cleanup** to modernize generated CSS.
 
-## Benchmarking
+## Vendor prefix removal
+**Experimental vendor prefix cleanup** to modernize generated CSS.
 
-According to [this benchmark](https://tbela99.github.io/css-parser/benchmark/index.html), CSS parser is the most efficient CSS minifier with a compression ratio of 36,34% followed by csso (29.57%) and lightningcss (23.42%).
+## Syntax lowering
+CSS-Parser can transform these modern CSS features into lower-level CSS syntax:
+* **Nested CSS transpilation** to legacy-compatible syntax.
+* **`if()` function transpilation** for broader browser compatibility.
+  
+## Benchmark
+
+css-parser consistently produced the smallest output across all [benchmarked stylesheets](https://tbela99.github.io/css-parser/benchmark/index.html), including against Lightning CSS.
+
+The benchmark evaluates minification effectiveness on a diverse set of real-world stylesheets, including Bootstrap 4, Bootstrap 5, Tailwind CSS, Animate.css, Foundation, Font Awesome, Normalize.css, and others.
+
+Across all tested datasets, css-parser consistently produces the smallest output among the benchmarked tools, including Lightning CSS, cssnano, csso, clean-css, css-tree, and esbuild. For example:
 
 | File | ligthningcss | CSS Parser |
 | --- | --- | --- |
@@ -51,6 +60,8 @@ According to [this benchmark](https://tbela99.github.io/css-parser/benchmark/ind
 | bootstrap-4.css - 200078 bytes | 153616 bytes | 144716 bytes |
 | bootstrap-5.css - 205481 bytes | 159987 bytes | 150964 bytes |
 
+On the complete benchmark suite, css-parser generated a total output size of 2,072,973 bytes, compared to 2,494,113 bytes for Lightning CSS and larger outputs for all other tested minifiers. 
+While some tools prioritize raw execution speed, css-parser focuses on maximizing compression while preserving stylesheet semantics, resulting in consistently smaller production bundles.
 
 ## Playground
 
@@ -108,7 +119,7 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
   - [Ast utilities](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Utilities.html)
  - Color manipulation
    - Supported colors
-   - Checking color distance
+   - Color distance
    - Converting colors
 
 

@@ -71,6 +71,7 @@
     "@web/test-runner": "^0.20.2",
     "@web/test-runner-playwright": "^0.11.1",
     "esno": "^4.8.0",
+    "markdown-it-task-lists": "^2.1.1",
     "mocha": "^11.7.6",
     "playwright": "^1.61.1",
     "rollup": "^4.62.2",
@@ -78,7 +79,8 @@
     "superc8": "^12.7.0",
     "tslib": "^2.8.1",
     "typedoc": "^0.28.19",
-    "typedoc-material-theme": "^1.4.1"
+    "typedoc-plugin-coverage": "^4.0.3",
+    "typedoc-unhoax-theme": "^0.5.3"
   },
   "sideEffects": false,
   "allowScripts": {

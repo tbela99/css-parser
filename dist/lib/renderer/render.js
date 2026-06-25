@@ -497,7 +497,8 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                             let j;
                             let key;
                             for (i = 0; i < slice.length; i++) {
-                                if (slice[i].typ == EnumToken.ColorTokenType || slice[i].typ === EnumToken.CommaTokenType) {
+                                if (slice[i].typ == EnumToken.ColorTokenType ||
+                                    slice[i].typ === EnumToken.CommaTokenType) {
                                     break;
                                 }
                                 if (slice[i].typ == EnumToken.IdenTokenType &&
@@ -580,7 +581,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                         }
                         break;
                     case "radial-gradient":
-                    case 'repeating-radial-gradient': {
+                    case "repeating-radial-gradient": {
                         let i = 0;
                         while (i < slice.length &&
                             (slice[i].typ === EnumToken.WhitespaceTokenType ||
@@ -608,9 +609,6 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                                 slice[i]?.typ === EnumToken.CommentTokenType) {
                                 i++;
                             }
-                            // if (slice[i]?.typ === EnumToken.CommaTokenType) {
-                            //     i++;
-                            // }
                         }
                         if (slice[i]?.typ === EnumToken.IdenTokenType) {
                             if (equalsIgnoreCase(slice[i].val, "farthest-corner") ||
@@ -629,9 +627,6 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                                 slice[i]?.typ === EnumToken.CommentTokenType) {
                                 i++;
                             }
-                            // if (slice[i]?.typ === EnumToken.CommaTokenType) {
-                            //     i++;
-                            // }
                         }
                         if (equalsIgnoreCase(slice[i].val, "at")) {
                             i++;
@@ -656,15 +651,6 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                                 positions.push(slice[i]);
                                 i++;
                             } while (slice[i]?.typ !== EnumToken.CommaTokenType);
-                            //     if (slice[i]?.typ === EnumToken.IdenTokenType && 'in' === (slice[i] as IdentToken).val) {
-                            //         colorSpaceDef.push(slice[i++]);
-                            //     }
-                            // while (slice[i]?.typ !== EnumToken.CommaTokenType) {
-                            //         colorSpaceDef.push(slice[i++]);
-                            // }
-                            // if (slice[i]?.typ === EnumToken.CommaTokenType) {
-                            //     i++;
-                            // }
                         }
                         while (slice[i]?.typ !== EnumToken.CommaTokenType) {
                             colorSpaceDef.push(slice[i++]);
@@ -787,12 +773,6 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                             }
                             result.push(...colorSpaceDef);
                         }
-                        // console.debug({
-                        //     positions,
-                        //     form,
-                        //     size,
-                        //     colorSpaceDef,
-                        // });
                         if (result.length > 0) {
                             result.push({ typ: EnumToken.CommaTokenType });
                         }

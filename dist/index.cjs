@@ -8880,7 +8880,7 @@ function parseDeclaration(tokens, parent, options, errors) {
             },
         });
     }
-    tokens = trimArray$1(tokens.slice(i + 1));
+    tokens = trimArray(tokens.slice(i + 1));
     for (i = 0; i < tokens.length; i++) {
         const token = tokens[i];
         if (token.typ == exports.EnumToken.WhitespaceTokenType ||
@@ -9114,7 +9114,7 @@ function parseDeclaration(tokens, parent, options, errors) {
                         typ: stack.at(-1)?.typ === exports.EnumToken.StartParensTokenType
                             ? exports.EnumToken.ParensTokenType
                             : tokensfuncDefMap.get(stack.at(-1)?.typ),
-                        chi: trimArray$1(tokens.splice(index + 1, i - index - 1)),
+                        chi: trimArray(tokens.splice(index + 1, i - index - 1)),
                     });
                     if (tokens[index].typ === exports.EnumToken.WildCardFunctionTokenType &&
                         equalsIgnoreCase(tokens[index].val, "if")) {
@@ -9145,16 +9145,16 @@ function parseDeclaration(tokens, parent, options, errors) {
                                     l: acc[acc.length - 1],
                                     r: {
                                         typ: exports.EnumToken.IfConditionTokenType,
-                                        l: trimArray$1(curr.slice(0, index)),
-                                        r: trimArray$1(curr.slice(index + 1)),
+                                        l: trimArray(curr.slice(0, index)),
+                                        r: trimArray(curr.slice(index + 1)),
                                     },
                                 };
                             }
                             else {
                                 acc.push({
                                     typ: exports.EnumToken.IfConditionTokenType,
-                                    l: trimArray$1(curr.slice(0, index)),
-                                    r: trimArray$1(curr.slice(index + 1)),
+                                    l: trimArray(curr.slice(0, index)),
+                                    r: trimArray(curr.slice(index + 1)),
                                 });
                             }
                             return acc;
@@ -9322,8 +9322,8 @@ function parseDeclaration(tokens, parent, options, errors) {
                 break;
             }
         }
-        const left = trimArray$1(index == -1 ? tokens : tokens.slice(0, index));
-        const right = index == -1 ? null : trimArray$1(tokens.slice(index + 1));
+        const left = trimArray(index == -1 ? tokens : tokens.slice(0, index));
+        const right = index == -1 ? null : trimArray(tokens.slice(index + 1));
         tokens = [
             Object.defineProperty({
                 typ: exports.EnumToken.ComposesSelectorNodeType,
@@ -9360,7 +9360,7 @@ const funcTypes = [
     exports.EnumToken.FunctionTokenType,
     exports.EnumToken.PseudoClassFuncTokenType,
 ];
-function trimArray$1(tokens) {
+function trimArray(tokens) {
     while (tokens[0]?.typ === exports.EnumToken.WhitespaceTokenType) {
         tokens.shift();
     }
@@ -9482,10 +9482,10 @@ function isStyleRangeValue(tokens) {
     return result;
 }
 function createValidationContext(tokens) {
-    tokens = trimArray$1(tokens.filter((t) => t.typ !== exports.EnumToken.CommentTokenType));
+    tokens = trimArray(tokens.filter((t) => t.typ !== exports.EnumToken.CommentTokenType));
     if (tokens.at(-1)?.typ === exports.EnumToken.ImportantTokenType) {
         tokens.pop();
-        trimArray$1(tokens);
+        trimArray(tokens);
     }
     const token = {
         tokens,
@@ -10536,7 +10536,7 @@ function matchSyntax(syntaxes, context, options) {
                 }
                 break;
             }
-            const range = trimArray$1(context.peekRange());
+            const range = trimArray(context.peekRange());
             context.next();
             i++;
             result = matchSyntax([syntaxes[i + 1]], createValidationContext(range.slice(1, -1)), options);
@@ -10548,7 +10548,7 @@ function matchSyntax(syntaxes, context, options) {
         }
         if (tokensfuncDefMap.has(token.typ) &&
             token.typ === exports.EnumToken.WildCardFunctionTokenDefType) {
-            const range = trimArray$1(context.peekRange());
+            const range = trimArray(context.peekRange());
             result = matchSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, token.val + "()")?.[0]?.chi, createValidationContext(range.slice(1, -1)), options);
             if (result.success) {
                 context.update(range.at(-1));
@@ -11201,7 +11201,7 @@ function matchSyntax(syntaxes, context, options) {
             case ValidationTokenEnum.FunctionDefinition:
                 if (tokensfuncDefMap.has(token.typ) &&
                     equalsIgnoreCase(token.val, syntaxes[i].val)) {
-                    const children = trimArray$1(context.peekRange());
+                    const children = trimArray(context.peekRange());
                     result = matchSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, syntaxes[i].val + "()")?.[0]).chi ?? [], createValidationContext(children.slice(1, -1)), options);
                     if (result.success) {
                         success = true;
@@ -12617,7 +12617,7 @@ function reduceColorStops(stops) {
                 parts[i][j].typ == exports.EnumToken.PercentageTokenType) {
                 if (parts[i][j].val === (i * 100) / n) {
                     parts[i].length = j;
-                    trimArray$1(parts[i]);
+                    trimArray(parts[i]);
                     updated = true;
                     break;
                 }
@@ -17029,7 +17029,7 @@ function toDegrees(angle) {
     return angle;
 }
 
-const config = getSyntaxConfig();
+const config$2 = getSyntaxConfig();
 function replacePseudo(tokens) {
     return tokens.map((raw) => raw.map((r) => {
         if (r.includes("(")) {
@@ -17040,7 +17040,7 @@ function replacePseudo(tokens) {
             }
             return r;
         }
-        return r in pseudoAliasMap && pseudoAliasMap[r] in config[ValidationSyntaxGroupEnum.Selectors]
+        return r in pseudoAliasMap && pseudoAliasMap[r] in config$2[ValidationSyntaxGroupEnum.Selectors]
             ? pseudoAliasMap[r]
             : r;
     }));
@@ -17137,12 +17137,12 @@ class ComputePrefixFeature {
                 const match = node.nam.match(/^-([^-]+)-(.+)$/);
                 if (match != null) {
                     let nam = match[2];
-                    if (!(nam in config.declarations)) {
+                    if (!(nam in config$2.declarations)) {
                         if (node.nam in pseudoAliasMap) {
                             nam = pseudoAliasMap[node.nam];
                         }
                     }
-                    if (nam in config.declarations) {
+                    if (nam in config$2.declarations) {
                         node.nam = nam;
                     }
                 }
@@ -17185,7 +17185,7 @@ class ComputePrefixFeature {
         else if (node.typ == exports.EnumToken.AtRuleNodeType || node.typ == exports.EnumToken.KeyframesAtRuleNodeType) {
             if (node.nam.startsWith("-")) {
                 const match = node.nam.match(/^-([^-]+)-(.+)$/);
-                if (match != null && "@" + match[2] in config.atRules) {
+                if (match != null && "@" + match[2] in config$2.atRules) {
                     node.nam = match[2];
                 }
             }
@@ -19475,15 +19475,15 @@ var property = {
 		}
 	}
 };
-var config$2 = {
+var config$1 = {
 	properties: properties,
 	map: map,
 	property: property
 };
 
-Object.freeze(config$2);
+Object.freeze(config$1);
 // @ts-expect-error
-const getConfig = () => config$2;
+const getConfig = () => config$1;
 
 function matchType(val, properties) {
     if ((val.typ === exports.EnumToken.IdenTokenType && properties.keywords.includes(val.val)) ||
@@ -20191,7 +20191,7 @@ class PropertyMap {
     }
 }
 
-const config$1 = getConfig();
+const config = getConfig();
 class PropertyList {
     options = { removeDuplicateDeclarations: true, computeShorthand: true };
     declarations;
@@ -20230,35 +20230,35 @@ class PropertyList {
             let propertyName = declaration.nam;
             let shortHandType;
             let shorthand = null;
-            if (propertyName in config$1.properties) {
+            if (propertyName in config.properties) {
                 // @ts-ignore
-                if ("map" in config$1.properties[propertyName]) {
+                if ("map" in config.properties[propertyName]) {
                     shortHandType = "map";
                     // @ts-ignore
-                    shorthand = config$1.properties[propertyName].map;
+                    shorthand = config.properties[propertyName].map;
                 }
                 else {
                     shortHandType = "set";
                     // @ts-ignore
-                    shorthand = config$1.properties[propertyName].shorthand;
+                    shorthand = config.properties[propertyName].shorthand;
                 }
             }
-            else if (propertyName in config$1.map) {
+            else if (propertyName in config.map) {
                 shortHandType = "map";
                 // @ts-ignore
-                shorthand = config$1.map[propertyName].shorthand;
+                shorthand = config.map[propertyName].shorthand;
             }
-            else if (propertyName in config$1.property) {
+            else if (propertyName in config.property) {
                 shortHandType = "single";
                 // @ts-ignore
-                shorthand = config$1.property[propertyName];
+                shorthand = config.property[propertyName];
             }
             // @ts-ignore
             if (shortHandType == "map") {
                 // @ts-ignore
                 if (!this.declarations.has(shorthand)) {
                     // @ts-ignore
-                    this.declarations.set(shorthand, new PropertyMap(config$1.map[shorthand]));
+                    this.declarations.set(shorthand, new PropertyMap(config.map[shorthand]));
                 }
                 // @ts-ignore
                 this.declarations.get(shorthand).add(declaration);
@@ -20272,7 +20272,7 @@ class PropertyList {
                     // @ts-ignore
                     shorthand, 
                     // @ts-ignore
-                    new PropertySet(config$1.properties[shorthand]));
+                    new PropertySet(config.properties[shorthand]));
                 }
                 // @ts-ignore
                 this.declarations.get(shorthand).add(declaration);
@@ -21868,7 +21868,7 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
             if (target.typ === exports.EnumToken.IdenTokenType && equalsIgnoreCase("else", target.val)) {
                 replaceNodeOrValue(nodeMap.get(targetParentWrapper), nodeMap.get(targetWrapper), node.r.r.at(-1)?.typ ===
                     exports.EnumToken.SemiColonTokenType
-                    ? trimArray$1(node.r.r.slice(0, -1))
+                    ? trimArray(node.r.r.slice(0, -1))
                     : node.r.r);
                 if (targetParentWrapper.typ != exports.EnumToken.DeclarationNodeType) {
                     let index = targetParentWrapper.chi.indexOf(targetWrapper);
@@ -21887,7 +21887,7 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
                                         if (eq(left, leftSide)) {
                                             replaceNodeOrValue(nodeMap.get(targetParentWrapper), nodeMap.get(targetParentWrapper.chi[i]), siblingWrapper.chi[k]
                                                 .r.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType
-                                                ? trimArray$1(siblingWrapper.chi[k]
+                                                ? trimArray(siblingWrapper.chi[k]
                                                     .r.r.slice(0, -1))
                                                 : siblingWrapper.chi[k]
                                                     .r.r);
@@ -21918,7 +21918,7 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
         }
         if (left.typ === exports.EnumToken.IdenTokenType && equalsIgnoreCase("else", left.val)) {
             clonedDeclaration = cloneNode(declaration, true, nodeMap);
-            replaceNodeOrValue(nodeMap.get(parentWrapper), nodeMap.get(targetWrapper.typ === exports.EnumToken.DeclarationNodeType ? node : targetWrapper), node.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType ? trimArray$1(node.r.slice(0, -1)) : node.r);
+            replaceNodeOrValue(nodeMap.get(parentWrapper), nodeMap.get(targetWrapper.typ === exports.EnumToken.DeclarationNodeType ? node : targetWrapper), node.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
             result.push(clonedDeclaration);
         }
         else if (left?.typ === exports.EnumToken.WhenElseFunctionTokenType) {
@@ -21938,7 +21938,7 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
             };
             atRule.val = atRule.tokens.reduce((acc, curr) => acc + renderToken(curr, options), "");
             clonedDeclaration = cloneNode(declaration, true, nodeMap);
-            replaceNodeOrValue(nodeMap.get(targetWrapper), nodeMap.get(node), node.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType ? trimArray$1(node.r.slice(0, -1)) : node.r);
+            replaceNodeOrValue(nodeMap.get(targetWrapper), nodeMap.get(node), node.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
             clonedDeclaration.parent = atRule;
             atRule.chi.push(clonedDeclaration);
             result.push(atRule);
@@ -21955,7 +21955,7 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
             atRule.val = atRule.tokens.reduce((acc, curr) => acc + renderToken(curr), "");
             clonedDeclaration = cloneNode(declaration, true, nodeMap);
             replaceNodeOrValue(nodeMap.get(targetWrapper.typ === exports.EnumToken.WildCardFunctionTokenType ? targetParentWrapper : targetWrapper), nodeMap.get(targetWrapper.typ === exports.EnumToken.WildCardFunctionTokenType ? targetWrapper : node), node.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType
-                ? trimArray$1(node.r.slice(0, -1))
+                ? trimArray(node.r.slice(0, -1))
                 : node.r);
             clonedDeclaration.parent = atRule;
             atRule.chi.push(clonedDeclaration);
@@ -23088,7 +23088,7 @@ function transformAtRuleMediaPrelude(values) {
             }
         }
     }
-    return { hasUpdates, values: trimArray$1(values) };
+    return { hasUpdates, values: trimArray(values) };
 }
 /**
  * Minify at-rule media
@@ -23282,7 +23282,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     if (l < node.tokens.length) {
                         const slice = node.tokens?.slice(l);
                         node.tokens.splice(l, slice.length, ...minifyAtRuleMedia(slice));
-                        node.val = trimArray$1(node.tokens).reduce((acc, curr, index, arr) => acc +
+                        node.val = trimArray(node.tokens).reduce((acc, curr, index, arr) => acc +
                             (curr.typ === exports.EnumToken.CommentTokenType ||
                                 (curr.typ === exports.EnumToken.WhitespaceTokenType &&
                                     arr[index + 1]?.typ === exports.EnumToken.CommentTokenType &&
@@ -25097,7 +25097,8 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                             let j;
                             let key;
                             for (i = 0; i < slice.length; i++) {
-                                if (slice[i].typ == exports.EnumToken.ColorTokenType || slice[i].typ === exports.EnumToken.CommaTokenType) {
+                                if (slice[i].typ == exports.EnumToken.ColorTokenType ||
+                                    slice[i].typ === exports.EnumToken.CommaTokenType) {
                                     break;
                                 }
                                 if (slice[i].typ == exports.EnumToken.IdenTokenType &&
@@ -25180,7 +25181,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                         }
                         break;
                     case "radial-gradient":
-                    case 'repeating-radial-gradient': {
+                    case "repeating-radial-gradient": {
                         let i = 0;
                         while (i < slice.length &&
                             (slice[i].typ === exports.EnumToken.WhitespaceTokenType ||
@@ -25208,9 +25209,6 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                                 slice[i]?.typ === exports.EnumToken.CommentTokenType) {
                                 i++;
                             }
-                            // if (slice[i]?.typ === EnumToken.CommaTokenType) {
-                            //     i++;
-                            // }
                         }
                         if (slice[i]?.typ === exports.EnumToken.IdenTokenType) {
                             if (equalsIgnoreCase(slice[i].val, "farthest-corner") ||
@@ -25229,9 +25227,6 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                                 slice[i]?.typ === exports.EnumToken.CommentTokenType) {
                                 i++;
                             }
-                            // if (slice[i]?.typ === EnumToken.CommaTokenType) {
-                            //     i++;
-                            // }
                         }
                         if (equalsIgnoreCase(slice[i].val, "at")) {
                             i++;
@@ -25256,15 +25251,6 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                                 positions.push(slice[i]);
                                 i++;
                             } while (slice[i]?.typ !== exports.EnumToken.CommaTokenType);
-                            //     if (slice[i]?.typ === EnumToken.IdenTokenType && 'in' === (slice[i] as IdentToken).val) {
-                            //         colorSpaceDef.push(slice[i++]);
-                            //     }
-                            // while (slice[i]?.typ !== EnumToken.CommaTokenType) {
-                            //         colorSpaceDef.push(slice[i++]);
-                            // }
-                            // if (slice[i]?.typ === EnumToken.CommaTokenType) {
-                            //     i++;
-                            // }
                         }
                         while (slice[i]?.typ !== exports.EnumToken.CommaTokenType) {
                             colorSpaceDef.push(slice[i++]);
@@ -25387,12 +25373,6 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                             }
                             result.push(...colorSpaceDef);
                         }
-                        // console.debug({
-                        //     positions,
-                        //     form,
-                        //     size,
-                        //     colorSpaceDef,
-                        // });
                         if (result.length > 0) {
                             result.push({ typ: exports.EnumToken.CommaTokenType });
                         }
@@ -25821,7 +25801,7 @@ function parseSelector(tokens, context, options, errors) {
         const result = matchAllSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "keyframe-selectors"), createValidationContext(tokens), options);
         const parts = splitTokenList(tokens);
         for (const part of parts) {
-            trimArray$1(part);
+            trimArray(part);
             if (options.minify) {
                 const filtered = part.filter((token) => token.typ !== exports.EnumToken.WhitespaceTokenType && token.typ !== exports.EnumToken.CommentTokenType);
                 if (filtered.length === 1) {
@@ -25859,7 +25839,7 @@ function parseSelector(tokens, context, options, errors) {
         return Object.defineProperties({
             typ: result.success ? exports.EnumToken.KeyFramesRuleNodeType : exports.EnumToken.InvalidRuleNodeType,
             sel: [
-                ...splitTokenList(trimArray$1(tokens)).reduce((acc, curr) => {
+                ...splitTokenList(trimArray(tokens)).reduce((acc, curr) => {
                     acc.add(curr.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), ""));
                     return acc;
                 }, new Set()),
@@ -25953,7 +25933,7 @@ function parseSelector(tokens, context, options, errors) {
         }
     }
     const result = matchSelectorSyntax(tokens, errors, options, nested === true);
-    trimArray$1(tokens);
+    trimArray(tokens);
     if (result.success) {
         for (let i = 0; i < tokens.length; i++) {
             const token = tokens[i];
@@ -26488,7 +26468,7 @@ function parseMediaqueryList(stream, options) {
                             const index = tokens.indexOf(stack.at(-1));
                             Object.defineProperty(Object.assign(tokens[index], {
                                 typ: tokensfuncDefMap.get(stack.at(-1)?.typ),
-                                chi: trimArray$1(tokens.slice(index + 1, tokens.length - 1)),
+                                chi: trimArray(tokens.slice(index + 1, tokens.length - 1)),
                             }), "loc", {
                                 ...definedPropertySettings,
                                 value: { ...tokens[index].loc, end: stream[i].loc.end },
@@ -26542,9 +26522,9 @@ function parseMediaqueryList(stream, options) {
                                 const index2 = tokens.indexOf(prevToken);
                                 // '('
                                 const index3 = tokens.indexOf(stack.at(-3));
-                                const left = trimArray$1(tokens.slice(index3 + 1, index2));
-                                const right = trimArray$1(tokens.slice(index + 1, tokens.length - 1));
-                                const names = trimArray$1(tokens.slice(index2 + 1, index));
+                                const left = trimArray(tokens.slice(index3 + 1, index2));
+                                const right = trimArray(tokens.slice(index + 1, tokens.length - 1));
+                                const names = trimArray(tokens.slice(index2 + 1, index));
                                 const filteredNames = names.filter((n) => n.typ !== exports.EnumToken.WhitespaceTokenType && n.typ !== exports.EnumToken.CommentTokenType);
                                 if (filteredNames.length !== 1 || filteredNames[0].typ !== exports.EnumToken.IdenTokenType) {
                                     success = false;
@@ -26665,8 +26645,8 @@ function parseMediaqueryList(stream, options) {
                             }
                             const index2 = tokens.indexOf(stack.at(-1));
                             const index3 = tokens.indexOf(stack.at(-2));
-                            let names = trimArray$1(tokens.slice(index3 + 1, index2));
-                            let values = trimArray$1(tokens.slice(index2 + 1, tokens.length - 1));
+                            let names = trimArray(tokens.slice(index3 + 1, index2));
+                            let values = trimArray(tokens.slice(index2 + 1, tokens.length - 1));
                             let swapped = false;
                             if (stack.at(-1)?.typ !== exports.EnumToken.ColonTokenType) {
                                 const filteredNames = names.filter((n) => n.typ !== exports.EnumToken.WhitespaceTokenType && n.typ !== exports.EnumToken.CommentTokenType);
@@ -26794,7 +26774,7 @@ function parseMediaqueryList(stream, options) {
                             if (stack.at(-1)?.typ === exports.EnumToken.NotTokenType ||
                                 stack.at(-1)?.typ === exports.EnumToken.OnlyTokenType) {
                                 const index = tokens.indexOf(stack.at(-1));
-                                const slice = trimArray$1(tokens.slice(index + 1));
+                                const slice = trimArray(tokens.slice(index + 1));
                                 tokens[index] = Object.defineProperty({
                                     typ: exports.EnumToken.MediaQueryUnaryFeatureTokenType,
                                     l: stack.pop(),
@@ -26814,8 +26794,8 @@ function parseMediaqueryList(stream, options) {
                                         tokens[l].typ === exports.EnumToken.CommentTokenType)) {
                                     l--;
                                 }
-                                const left = trimArray$1(tokens.slice(l, index));
-                                const right = trimArray$1(tokens.slice(index + 1));
+                                const left = trimArray(tokens.slice(l, index));
+                                const right = trimArray(tokens.slice(index + 1));
                                 tokens[l] = Object.defineProperty({
                                     typ: exports.EnumToken.MediaQueryConditionTokenType,
                                     op: stack.pop(),
@@ -26849,7 +26829,7 @@ function parseMediaqueryList(stream, options) {
                 parts.splice(parts.indexOf(stream), 1);
             }
             stream.length = 0;
-            stream.push(...trimArray$1(tokens));
+            stream.push(...trimArray(tokens));
         }
     }
     stream.length = 0;
@@ -27010,7 +26990,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                         }
                         // match declaration
                         const index = tokens.indexOf(stack[stack.length - 2]);
-                        const slice = trimArray$1(tokens.splice(index + 1, tokens.length - index - 2));
+                        const slice = trimArray(tokens.splice(index + 1, tokens.length - index - 2));
                         const declaration = parseDeclaration(slice, context, { ...options, validation: exports.ValidationLevel.None }, errors);
                         if (declaration.typ !== exports.EnumToken.DeclarationNodeType) {
                             return {
@@ -27031,7 +27011,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                     // @supports (--condition-name) {}
                     if (stack.at(-1)?.typ === exports.EnumToken.StartParensTokenType) {
                         const index = tokens.indexOf(stack.at(-1));
-                        const slice = trimArray$1(tokens.splice(index + 1, tokens.length - index - 2));
+                        const slice = trimArray(tokens.splice(index + 1, tokens.length - index - 2));
                         const filtered = slice.filter((token) => {
                             return (token.typ !== exports.EnumToken.WhitespaceTokenType && token.typ !== exports.EnumToken.CommentTokenType);
                         });
@@ -27069,7 +27049,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                         tokens[index] = Object.defineProperty({
                             typ: tokensfuncDefMap.get(stack.at(-1)?.typ),
                             val: stack.at(-1).val,
-                            chi: trimArray$1(tokens.splice(index + 1, tokens.length - index - 2)),
+                            chi: trimArray(tokens.splice(index + 1, tokens.length - index - 2)),
                         }, "loc", {
                             ...definedPropertySettings,
                             value: { ...stack.at(-1).loc, end: { ...stream[i]?.loc?.end } },
@@ -27115,7 +27095,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                         tokens[index] = Object.defineProperty({
                             typ: exports.EnumToken.SupportsQueryUnaryConditionTokenType,
                             l: stack.at(-1),
-                            r: trimArray$1(tokens.splice(index + 1, i - index - 1)),
+                            r: trimArray(tokens.splice(index + 1, i - index - 1)),
                         }, "loc", {
                             ...definedPropertySettings,
                             value: { ...stack.at(-1).loc, end: { ...stream[i]?.loc?.end } },
@@ -27137,7 +27117,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                         }
                         const index = tokens.indexOf(stack.at(-1));
                         const index2 = stack.length > 1 ? tokens.indexOf(stack.at(-2)) + 1 : 0;
-                        const left = trimArray$1(tokens.slice(index2, index));
+                        const left = trimArray(tokens.slice(index2, index));
                         const notToken = left.find((t) => t.typ === exports.EnumToken.SupportsQueryUnaryConditionTokenType &&
                             t.l.typ === exports.EnumToken.NotTokenType);
                         if (notToken != null) {
@@ -27156,7 +27136,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                             typ: exports.EnumToken.SupportsQueryConditionTokenType,
                             op: stack.at(-1),
                             l: left,
-                            r: trimArray$1(tokens.slice(index + 1)),
+                            r: trimArray(tokens.slice(index + 1)),
                         }, "loc", {
                             ...definedPropertySettings,
                             value: { ...stack.at(-1).loc, end: { ...stream[i]?.loc?.end } },
@@ -27224,7 +27204,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
         };
     }
     stream.length = 0;
-    stream.push(...trimArray$1(tokens));
+    stream.push(...trimArray(tokens));
     return { success, errors };
 }
 
@@ -27239,7 +27219,7 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
     const prelude = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@import")
         .getPreludeRules()
         .slice(1);
-    trimArray$1(stream);
+    trimArray(stream);
     // <string> | <url>
     if (stream[index]?.typ === exports.EnumToken.StringTokenType) {
         tokens.push(stream[index++]);
@@ -27298,7 +27278,7 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
         const slice = stream.slice(index + 1, k);
         tokens.push(Object.defineProperties(Object.assign({}, stream[0], {
             typ: tokensfuncDefMap.get(stream[0].typ),
-            chi: trimArray$1(slice),
+            chi: trimArray(slice),
         }), {
             loc: {
                 ...definedPropertySettings,
@@ -27385,7 +27365,7 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
             tokens.splice(index, 1);
             Object.assign(stack.at(-1), {
                 typ: exports.EnumToken.FunctionTokenType,
-                chi: trimArray$1(tokens.splice(i + 1, index++ - i - 1)),
+                chi: trimArray(tokens.splice(i + 1, index++ - i - 1)),
             });
             stack.pop();
         }
@@ -27458,7 +27438,7 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                             tokens.splice(index, 1);
                             Object.assign(stack.at(-1), {
                                 typ: tokensfuncDefMap.get(stack.at(-1).typ),
-                                chi: trimArray$1(tokens.splice(i + 1, index++ - i - 1)),
+                                chi: trimArray(tokens.splice(i + 1, index++ - i - 1)),
                             });
                             stack.pop();
                             break;
@@ -27490,7 +27470,7 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                         tokens.splice(index, 1);
                         Object.assign(stack.at(-1), {
                             typ: tokensfuncDefMap.get(stack.at(-1).typ),
-                            chi: trimArray$1(tokens.splice(i + 1, index++ - i - 1)),
+                            chi: trimArray(tokens.splice(i + 1, index++ - i - 1)),
                         });
                         stack.pop();
                         break;
@@ -27513,7 +27493,7 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                         i = tokens.indexOf(stack.at(-1));
                         Object.assign(stack.at(-1), {
                             typ: tokensfuncDefMap.get(stack.at(-1).typ),
-                            chi: trimArray$1(tokens.splice(i + 1, index++ - i - 1)),
+                            chi: trimArray(tokens.splice(i + 1, index++ - i - 1)),
                         });
                         stack.pop();
                         break;
@@ -27548,7 +27528,7 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
             while (j < supports.chi.length && supports.chi[j].typ !== exports.EnumToken.ColonTokenType) {
                 j++;
             }
-            const val = trimArray$1(supports.chi.slice(j + 1));
+            const val = trimArray(supports.chi.slice(j + 1));
             supports.chi[i] = Object.defineProperties({
                 typ: exports.EnumToken.DeclarationNodeType,
                 nam: supports.chi[i].val,
@@ -27573,7 +27553,7 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                     val.splice(i, 1);
                     Object.assign(stack.at(-1), {
                         typ: tokensfuncDefMap.get(stack.at(-1).typ),
-                        chi: trimArray$1(val.splice(index + 1, i - index - 1)),
+                        chi: trimArray(val.splice(index + 1, i - index - 1)),
                     });
                     i = index;
                     stack.pop();
@@ -27604,7 +27584,7 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
         success = false;
     }
     stream.length = 0;
-    stream.push(...trimArray$1(tokens));
+    stream.push(...trimArray(tokens));
     return {
         success,
         errors,
@@ -27715,7 +27695,7 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
                     }
                     if (stack.at(-1)?.typ === exports.EnumToken.StartParensTokenType) {
                         const index = tokens.indexOf(stack.at(-1));
-                        const slice = trimArray$1(tokens.splice(index + 1, tokens.length - index - 2));
+                        const slice = trimArray(tokens.splice(index + 1, tokens.length - index - 2));
                         const filtered = slice.filter((token) => {
                             return (token.typ !== exports.EnumToken.WhitespaceTokenType && token.typ !== exports.EnumToken.CommentTokenType);
                         });
@@ -27754,7 +27734,7 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
                         tokens[index] = Object.defineProperty({
                             typ: exports.EnumToken.SupportsQueryUnaryConditionTokenType,
                             l: stack.at(-1),
-                            r: trimArray$1(tokens.splice(index + 1, i - index - 1)),
+                            r: trimArray(tokens.splice(index + 1, i - index - 1)),
                         }, "loc", {
                             ...definedPropertySettings,
                             value: { ...stack.at(-1).loc, end: { ...stream[i]?.loc?.end } },
@@ -27776,7 +27756,7 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
                         }
                         const index = tokens.indexOf(stack.at(-1));
                         const index2 = stack.length > 1 ? tokens.indexOf(stack.at(-2)) + 1 : 0;
-                        const left = trimArray$1(tokens.slice(index2, index));
+                        const left = trimArray(tokens.slice(index2, index));
                         const notToken = left.find((t) => t.typ === exports.EnumToken.SupportsQueryUnaryConditionTokenType &&
                             t.l.typ === exports.EnumToken.NotTokenType);
                         if (notToken != null) {
@@ -27795,7 +27775,7 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
                             typ: exports.EnumToken.SupportsQueryConditionTokenType,
                             op: stack.at(-1),
                             l: left,
-                            r: trimArray$1(tokens.slice(index + 1)),
+                            r: trimArray(tokens.slice(index + 1)),
                         }, "loc", {
                             ...definedPropertySettings,
                             value: { ...stack.at(-1).loc, end: { ...stream[i]?.loc?.end } },
@@ -27902,7 +27882,7 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
                     Object.defineProperty(Object.assign(stream[i], {
                         typ: tokensfuncDefMap.get(stream[i].typ),
                         chi: stream[i].typ === exports.EnumToken.SupportsFunctionTokenDefType
-                            ? trimArray$1(slice.slice(1, -1))
+                            ? trimArray(slice.slice(1, -1))
                             : tokenList[0].chi,
                     }), "loc", {
                         ...definedPropertySettings,
@@ -27913,7 +27893,7 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
                         tokens[index] = Object.defineProperty({
                             typ: exports.EnumToken.WhenElseUnaryConditionTokenType,
                             l: stack.at(-1),
-                            r: trimArray$1(tokens.slice(index + 1)),
+                            r: trimArray(tokens.slice(index + 1)),
                         }, "loc", {
                             ...definedPropertySettings,
                             value: { ...stack.at(-1).loc, end: { ...stream[i]?.loc?.end } },
@@ -27927,8 +27907,8 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
                         tokens[index2] = Object.defineProperty({
                             typ: exports.EnumToken.WhenElseQueryConditionTokenType,
                             op: stack.at(-1),
-                            l: trimArray$1(tokens.slice(index2, index)),
-                            r: trimArray$1(tokens.slice(index + 1)),
+                            l: trimArray(tokens.slice(index2, index)),
+                            r: trimArray(tokens.slice(index + 1)),
                         }, "loc", {
                             ...definedPropertySettings,
                             value: { ...stack.at(-1).loc, end: { ...stream[i]?.loc?.end } },
@@ -27961,7 +27941,7 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
         };
     }
     stream.length = 0;
-    stream.push(...trimArray$1(tokens));
+    stream.push(...trimArray(tokens));
     return { success, errors };
 }
 
@@ -28203,9 +28183,9 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                                 const index2 = tokens.indexOf(prevToken);
                                 // '('
                                 const index3 = tokens.indexOf(stack.at(-3));
-                                const left = trimArray$1(tokens.slice(index3 + 1, index2));
-                                const right = trimArray$1(tokens.slice(index + 1, tokens.length - 1));
-                                const names = trimArray$1(tokens.slice(index2 + 1, index));
+                                const left = trimArray(tokens.slice(index3 + 1, index2));
+                                const right = trimArray(tokens.slice(index + 1, tokens.length - 1));
+                                const names = trimArray(tokens.slice(index2 + 1, index));
                                 if (!isStyleRangeValue(left)) {
                                     success = false;
                                     errors.push({
@@ -28276,8 +28256,8 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                             }
                             const index2 = tokens.indexOf(stack.at(-1));
                             const index3 = tokens.indexOf(stack.at(-2));
-                            let names = trimArray$1(tokens.slice(index3 + 1, index2));
-                            let values = trimArray$1(tokens.slice(index2 + 1, tokens.length - 1));
+                            let names = trimArray(tokens.slice(index3 + 1, index2));
+                            let values = trimArray(tokens.slice(index2 + 1, tokens.length - 1));
                             if (stack.at(-1)?.typ !== exports.EnumToken.ColonTokenType &&
                                 stack.at(-1)?.typ !== exports.EnumToken.DelimTokenType) {
                                 names.filter((n) => n.typ !== exports.EnumToken.WhitespaceTokenType && n.typ !== exports.EnumToken.CommentTokenType);
@@ -28297,7 +28277,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                             const index = tokens.indexOf(stack.at(-1));
                             Object.defineProperty(Object.assign(tokens[index], {
                                 typ: tokensfuncDefMap.get(stack.at(-1)?.typ),
-                                chi: trimArray$1(tokens.slice(index + 1, tokens.length - 1)),
+                                chi: trimArray(tokens.slice(index + 1, tokens.length - 1)),
                             }), "loc", {
                                 ...definedPropertySettings,
                                 value: { ...tokens[index].loc, end: stream[i].loc.end },
@@ -28363,7 +28343,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                                 }
                             }
                             const index = tokens.indexOf(stack.at(-1));
-                            const slice = trimArray$1(tokens.slice(index + 1));
+                            const slice = trimArray(tokens.slice(index + 1));
                             tokens[index] = Object.defineProperty({
                                 typ: exports.EnumToken.MediaQueryUnaryFeatureTokenType,
                                 l: stack.pop(),
@@ -28383,8 +28363,8 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                                     tokens[l].typ === exports.EnumToken.CommentTokenType)) {
                                 l--;
                             }
-                            const left = trimArray$1(tokens.slice(l, index));
-                            const right = trimArray$1(tokens.slice(index + 1));
+                            const left = trimArray(tokens.slice(l, index));
+                            const right = trimArray(tokens.slice(index + 1));
                             tokens[l] = Object.defineProperty({
                                 typ: exports.EnumToken.MediaQueryConditionTokenType,
                                 op: stack.pop(),
@@ -28424,7 +28404,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                 };
             }
             stream.length = 0;
-            stream.push(...trimArray$1(tokens));
+            stream.push(...trimArray(tokens));
         }
     }
     stream.length = 0;
@@ -28446,7 +28426,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
 function matchAtRuleSyntax(atRule, stream, options) {
     const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + atRule.nam);
     const syntax = syntaxRules?.getPreludeRules()?.slice?.(1);
-    trimArray$1(stream);
+    trimArray(stream);
     if (syntax.length === 0) {
         const filtered = stream.filter((token) => token.typ !== exports.EnumToken.WhitespaceTokenType && token.typ !== exports.EnumToken.CommentTokenType);
         if (filtered.length > 0) {
@@ -28471,7 +28451,7 @@ function matchAtRuleSyntax(atRule, stream, options) {
 function parseAtRuleFontFeatureValues(stream, context, options = {}) {
     const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + context.nam);
     const syntax = syntaxRules?.getPreludeRules()?.slice?.(1);
-    trimArray$1(stream);
+    trimArray(stream);
     const { success, errors} = matchAllSyntax(syntax, createValidationContext(stream), options);
     return { success, errors };
 }
@@ -29833,7 +29813,7 @@ async function doParse(iter, options = {}) {
                     matchSelectorSyntax(tokens, [], options);
                     Object.defineProperty(node, "tokens", {
                         ...definedPropertySettings,
-                        value: trimArray$1(tokens),
+                        value: trimArray(tokens),
                     });
                     let i;
                     const stack = [];
@@ -30179,7 +30159,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             return {
                 ...atRule,
                 typ: exports.EnumToken.InvalidRuleNodeType,
-                val: renderTokens(trimArray$1(stream), options),
+                val: renderTokens(trimArray(stream), options),
                 ...(parseAsBlock ? { chi: [] } : {}),
             };
         }
@@ -30198,7 +30178,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             return {
                 ...atRule,
                 typ: exports.EnumToken.InvalidRuleNodeType,
-                val: renderTokens(trimArray$1(stream), options),
+                val: renderTokens(trimArray(stream), options),
                 ...(parseAsBlock ? { chi: [] } : {}),
             };
         }
@@ -30214,7 +30194,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             return {
                 ...atRule,
                 typ: exports.EnumToken.InvalidRuleNodeType,
-                val: renderTokens(trimArray$1(stream), options),
+                val: renderTokens(trimArray(stream), options),
                 ...(parseAsBlock ? { chi: [] } : {}),
             };
         }
@@ -30234,7 +30214,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
         return {
             ...atRule,
             typ: exports.EnumToken.InvalidRuleNodeType,
-            val: renderTokens(trimArray$1(stream), options),
+            val: renderTokens(trimArray(stream), options),
             ...(parseAsBlock ? { chi: [] } : {}),
         };
     }
@@ -30276,7 +30256,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             // @ts-expect-error
             return Object.defineProperties(Object.assign(atRule, {
                 typ: success ? exports.EnumToken.AtRuleNodeType : exports.EnumToken.InvalidRuleNodeType,
-                val: renderTokens(trimArray$1(stream), options),
+                val: renderTokens(trimArray(stream), options),
             }), {
                 loc: {
                     ...definedPropertySettings,
@@ -30363,7 +30343,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             });
         }
         case "custom-media": {
-            const tokens = trimArray$1(stream.slice(1));
+            const tokens = trimArray(stream.slice(1));
             const result = matchAllSyntax(syntax, createValidationContext(tokens), options);
             if (result.errors.length > 0) {
                 errors.push(...result.errors);
@@ -30383,7 +30363,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             });
         }
         case "keyframes": {
-            const tokens = trimArray$1(stream.slice(1));
+            const tokens = trimArray(stream.slice(1));
             const filtered = stream.filter((t) => t.typ !== exports.EnumToken.WhitespaceTokenType && t.typ !== exports.EnumToken.CommentTokenType);
             if (filtered.length != 1 ||
                 (filtered[0].typ !== exports.EnumToken.IdenTokenType &&
@@ -30449,7 +30429,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             // @ts-expect-error
             return Object.defineProperties(Object.assign(atRule, {
                 typ: valid ? exports.EnumToken.AtRuleNodeType : exports.EnumToken.InvalidAtRuleNodeType,
-                val: trimArray$1(stream).reduce((acc, t, index) => acc +
+                val: trimArray(stream).reduce((acc, t, index) => acc +
                     (t.typ === exports.EnumToken.CommentTokenType ||
                         (t.typ === exports.EnumToken.WhitespaceTokenType &&
                             stream[index + 1]?.typ === exports.EnumToken.CommentTokenType &&
@@ -30585,7 +30565,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             });
         }
         case "scope": {
-            let context = createValidationContext(trimArray$1(stream));
+            let context = createValidationContext(trimArray(stream));
             let success = true;
             // @ts-ignore
             let range = context.peekRange((t) => t.typ === exports.EnumToken.EndParensTokenType);
@@ -30687,7 +30667,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             });
         }
         case "page": {
-            trimArray$1(stream);
+            trimArray(stream);
             // @ts-expect-error
             return Object.defineProperties(Object.assign(atRule, {
                 typ: success ? exports.EnumToken.AtRuleNodeType : exports.EnumToken.InvalidRuleNodeType,
@@ -30726,7 +30706,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                 });
             }
             else {
-                trimArray$1(stream);
+                trimArray(stream);
                 for (let i = 0; i < stream.length; i++) {
                     if (stream[i].typ !== exports.EnumToken.WhitespaceTokenType &&
                         stream[i].typ !== exports.EnumToken.CommentTokenType) {
@@ -30798,7 +30778,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             }
             if (isVarDeclaration) {
                 const nam = stream.find((t) => t.typ == exports.EnumToken.IdenTokenType);
-                const value = trimArray$1(stream.slice(index + 1).filter((t) => t.typ != exports.EnumToken.CommentTokenType));
+                const value = trimArray(stream.slice(index + 1).filter((t) => t.typ != exports.EnumToken.CommentTokenType));
                 if (value.length == 1 && value[0].typ == exports.EnumToken.StringTokenType) {
                     // import from file as alias
                     return {
@@ -30817,7 +30797,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             // @ts-expect-error
             return Object.defineProperties(Object.assign(atRule, {
                 typ: exports.EnumToken.CssVariableDeclarationMapTokenType,
-                vars: trimArray$1(stream.slice(0, index)),
+                vars: trimArray(stream.slice(0, index)),
                 from: stream.slice(index + 1),
             }), {
                 tokens: { ...definedPropertySettings, value: stream.slice() },
