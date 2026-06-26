@@ -74,6 +74,7 @@
     "markdown-it-task-lists": "^2.1.1",
     "mocha": "^11.7.6",
     "playwright": "^1.61.1",
+    "preact": "^10.29.2",
     "rollup": "^4.62.2",
     "rollup-plugin-dts": "^6.4.1",
     "superc8": "^12.7.0",

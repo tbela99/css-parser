@@ -37,4 +37,17 @@
             }
         }
     }
+
+    @layer {
+        .page-content {
+            .breadcrumb {
+                & a {
+                    &:hover {
+                    background-color: var(--transparent-blue) !important;
+                    color: var(--blue-dark) !important;
+                    }
+                }
+            }
+        }
+    }
 }
