@@ -434,13 +434,14 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 return token.val;
             }
             if (Array.isArray(token.chi)) {
+                const fnName = token.val.toLowerCase();
                 const isLegacy = ["rgb", "rgba", "hsl", "hsla"].includes(token.val.toLowerCase());
-                const useAlpha = (["rgb", "rgba", "hsl", "hsla", "hwb", "oklab", "oklch", "lab", "lch"].includes(token.val.toLowerCase()) &&
+                const useAlpha = (["rgb", "rgba", "hsl", "hsla", "hwb", "oklab", "oklch", "lab", "lch"].includes(fnName) &&
                     token.chi.length == 4) ||
                     ("color" == token.val.toLowerCase() && token.chi.length == 5);
                 return ((token.val.endsWith("a")
-                    ? token.val.slice(0, -1)
-                    : token.val) +
+                    ? fnName.slice(0, -1)
+                    : fnName) +
                     "(" +
                     token
                         .chi.reduce((acc, curr, index, array) => {

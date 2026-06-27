@@ -158,6 +158,7 @@ export const colorsFunc: string[] = [
     "lch",
     "light-dark",
     "contrast-color",
+    "alpha",
 ];
 export const imageFunc: string[] = [
     "linear-gradient",
@@ -177,7 +178,7 @@ export const imageFunc: string[] = [
     "-webkit-repeating-linear-gradient",
     "-webkit-gradient",
     "-webkit-radial-gradient",
-    "-webkit-repeating-radial-gradient"
+    "-webkit-repeating-radial-gradient",
 ];
 export const transformFunctions: string[] = [
     "translate",

@@ -797,7 +797,7 @@ export function isRectangularOrthogonalColorspace(token: Token): boolean {
         "xyz",
         "xyz-d50",
         "xyz-d65",
-    ].includes((token as IdentToken).val.toLowerCase());
+    ].some(t => equalsIgnoreCase(t,(token as IdentToken).val));
 }
 
 export function isPolarColorspace(token: Token): boolean {
@@ -805,7 +805,7 @@ export function isPolarColorspace(token: Token): boolean {
         return false;
     }
 
-    return ["hsl", "hwb", "lch", "oklch"].includes((token as IdentToken).val);
+    return ["hsl", "hwb", "lch", "oklch"].some(t => equalsIgnoreCase(t, (token as IdentToken).val));
 }
 
 export function isHueInterpolationMethod(token: Token | Token[]): boolean {
@@ -818,7 +818,7 @@ export function isHueInterpolationMethod(token: Token | Token[]): boolean {
     }
 
     return (
-        ["shorter", "longer", "increasing", "decreasing"].includes((token[0] as IdentToken).val?.toLowerCase?.()) &&
+        ["shorter", "longer", "increasing", "decreasing"].some(t => equalsIgnoreCase(t, (token[0] as IdentToken).val ?? '')) &&
         "hue" === (token[1] as IdentToken).val?.toLowerCase?.()
     );
 }
@@ -1156,7 +1156,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                 const keywords: string[] = ["from", "none"];
 
                 // @ts-ignore
-                if (["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch"].includes((token as ColorToken).val)) {
+                if (["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch"].some(t => equalsIgnoreCase(t, (token as ColorToken).val))) {
                     // @ts-ignore
                     keywords.push("alpha", ...(token as ColorToken).val.slice(-3).split(""));
                 }

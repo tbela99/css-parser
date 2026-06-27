@@ -410,13 +410,13 @@ function isRectangularOrthogonalColorspace(token) {
         "xyz",
         "xyz-d50",
         "xyz-d65",
-    ].includes(token.val.toLowerCase());
+    ].some(t => equalsIgnoreCase(t, token.val));
 }
 function isPolarColorspace(token) {
     if (token.typ != EnumToken.IdenTokenType) {
         return false;
     }
-    return ["hsl", "hwb", "lch", "oklch"].includes(token.val);
+    return ["hsl", "hwb", "lch", "oklch"].some(t => equalsIgnoreCase(t, token.val));
 }
 function isHueInterpolationMethod(token) {
     if (!Array.isArray(token)) {
@@ -425,7 +425,7 @@ function isHueInterpolationMethod(token) {
     if (token.length != 2 || token[0].typ != EnumToken.IdenTokenType || token[1].typ != EnumToken.IdenTokenType) {
         return false;
     }
-    return (["shorter", "longer", "increasing", "decreasing"].includes(token[0].val?.toLowerCase?.()) &&
+    return (["shorter", "longer", "increasing", "decreasing"].some(t => equalsIgnoreCase(t, token[0].val ?? '')) &&
         "hue" === token[1].val?.toLowerCase?.());
 }
 function isIdentColor(token) {
@@ -680,7 +680,7 @@ function isColor(token, errors) {
             else {
                 const keywords = ["from", "none"];
                 // @ts-ignore
-                if (["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch"].includes(token.val)) {
+                if (["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch"].some(t => equalsIgnoreCase(t, token.val))) {
                     // @ts-ignore
                     keywords.push("alpha", ...token.val.slice(-3).split(""));
                 }

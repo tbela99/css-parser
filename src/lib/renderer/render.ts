@@ -699,19 +699,20 @@ export function renderToken(
             }
 
             if (Array.isArray((token as ColorToken).chi)) {
+                const fnName: string = (token as ColorToken).val.toLowerCase();
                 const isLegacy: boolean = ["rgb", "rgba", "hsl", "hsla"].includes(
                     (token as ColorToken).val.toLowerCase(),
                 );
                 const useAlpha: boolean =
                     (["rgb", "rgba", "hsl", "hsla", "hwb", "oklab", "oklch", "lab", "lch"].includes(
-                        (token as ColorToken).val.toLowerCase(),
+                        fnName,
                     ) &&
                         (token as ColorToken).chi!.length == 4) ||
                     ("color" == (token as ColorToken).val.toLowerCase() && (token as ColorToken).chi!.length == 5);
                 return (
                     ((token as ColorToken).val.endsWith("a")
-                        ? (token as ColorToken).val.slice(0, -1)
-                        : (token as ColorToken).val) +
+                        ? fnName.slice(0, -1)
+                        : fnName) +
                     "(" +
                     (token as ColorToken)
                         .chi!.reduce((acc: string, curr: Token, index: number, array: Token[]) => {

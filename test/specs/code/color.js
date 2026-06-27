@@ -1419,4 +1419,19 @@ color: lch(from slateblue calc(l * sin(pi / 4)) c h);
  box-shadow: 0 20px 25px -5px #0000001a,0 10px 10px -5px #0000000a
 }`));
     });
+
+    it('color OkLcH #136', function () {
+        return transform(`
+
+  a {
+  color: OkLcH(from peru  l    c  h);
+
+
+`, {
+                beautify: true,  
+                validation: true,
+        }).then(result => expect(result.code).equals(`a {
+ color: peru
+}`));
+    });
 }

@@ -150,6 +150,7 @@ const colorsFunc = [
     "lch",
     "light-dark",
     "contrast-color",
+    "alpha",
 ];
 const imageFunc = [
     "linear-gradient",
@@ -169,7 +170,7 @@ const imageFunc = [
     "-webkit-repeating-linear-gradient",
     "-webkit-gradient",
     "-webkit-radial-gradient",
-    "-webkit-repeating-radial-gradient"
+    "-webkit-repeating-radial-gradient",
 ];
 const transformFunctions = [
     "translate",

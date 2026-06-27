@@ -45,6 +45,7 @@ import {
     isWhiteSpace,
     parseDimension,
 } from "../syntax/syntax.ts";
+import { equalsIgnoreCase } from "./utils/text.ts";
 
 export const SymbolsMapTokens: Record<string, EnumToken> = {
     "+": EnumToken.Plus,
@@ -293,6 +294,54 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
         | null;
 
     if (hint != null) {
+        let searchArray: string[] | null = null;
+
+        switch (hint) {
+            case EnumToken.TransformFunctionTokenDefType:
+                searchArray = transformFunctions;
+                break;
+            case EnumToken.ColorFunctionTokenDefType:
+                searchArray = colorsFunc;
+                break;
+            case EnumToken.ContainerFunctionTokenDefType:
+                searchArray = containerFunc;
+                break;
+            case EnumToken.UrlFunctionTokenDefType:
+                searchArray = urlFunc;
+                break;
+            case EnumToken.GridTemplateFuncTokenDefType:
+                searchArray = gridTemplateFunc;
+                break;
+            case EnumToken.ImageFunctionTokenDefType:
+                searchArray = imageFunc;
+                break;
+            case EnumToken.TimelineFunctionTokenDefType:
+                searchArray = timelineFunc;
+                break;
+            case EnumToken.GeneralEnclosedFunctionTokenDefType:
+                searchArray = generalEnclosedFunc;
+                break;
+            case EnumToken.SupportsFunctionTokenDefType:
+                searchArray = supportFunc;
+                break;
+            case EnumToken.TimingFunctionTokenDefType:
+                searchArray = timingFunc;
+                break;
+            case EnumToken.MathFunctionTokenDefType:
+                searchArray = mathFuncs;
+                break;
+            case EnumToken.WhenElseFunctionTokenDefType:
+                searchArray = whenElseFunc;
+                break;
+            case EnumToken.WildCardFunctionTokenDefType:
+                searchArray = wildCardFuncs;
+                break;
+        }
+
+        if (searchArray != null) {
+            val = searchArray.find((v) => equalsIgnoreCase(v, val)) as string;
+        }
+
         token = hintsEnum.has(hint) ? ({ typ: hint } as Token) : ({ typ: hint, val } as Token);
     } else {
         let slice: string = val.slice(1);

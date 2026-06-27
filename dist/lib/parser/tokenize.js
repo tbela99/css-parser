@@ -1,6 +1,7 @@
 import { EnumToken, ColorType } from '../ast/types.js';
 import { definedPropertySettings, wildCardFuncs, whenElseFunc, transformFunctions, mathFuncs, colorsFunc, timingFunc, supportFunc, generalEnclosedFunc, timelineFunc, imageFunc, gridTemplateFunc, urlFunc, containerFunc } from '../syntax/constants.js';
 import { isDigit, isPseudo, isIdent, isWhiteSpace, isNumber, isNewLine, isHexColor, isHash, isPercentage, parseDimension } from '../syntax/syntax.js';
+import { equalsIgnoreCase } from './utils/text.js';
 
 const SymbolsMapTokens = {
     "+": EnumToken.Plus,
@@ -205,6 +206,51 @@ function getTokenType(val, hint) {
     let token = null;
     let dimension;
     if (hint != null) {
+        let searchArray = null;
+        switch (hint) {
+            case EnumToken.TransformFunctionTokenDefType:
+                searchArray = transformFunctions;
+                break;
+            case EnumToken.ColorFunctionTokenDefType:
+                searchArray = colorsFunc;
+                break;
+            case EnumToken.ContainerFunctionTokenDefType:
+                searchArray = containerFunc;
+                break;
+            case EnumToken.UrlFunctionTokenDefType:
+                searchArray = urlFunc;
+                break;
+            case EnumToken.GridTemplateFuncTokenDefType:
+                searchArray = gridTemplateFunc;
+                break;
+            case EnumToken.ImageFunctionTokenDefType:
+                searchArray = imageFunc;
+                break;
+            case EnumToken.TimelineFunctionTokenDefType:
+                searchArray = timelineFunc;
+                break;
+            case EnumToken.GeneralEnclosedFunctionTokenDefType:
+                searchArray = generalEnclosedFunc;
+                break;
+            case EnumToken.SupportsFunctionTokenDefType:
+                searchArray = supportFunc;
+                break;
+            case EnumToken.TimingFunctionTokenDefType:
+                searchArray = timingFunc;
+                break;
+            case EnumToken.MathFunctionTokenDefType:
+                searchArray = mathFuncs;
+                break;
+            case EnumToken.WhenElseFunctionTokenDefType:
+                searchArray = whenElseFunc;
+                break;
+            case EnumToken.WildCardFunctionTokenDefType:
+                searchArray = wildCardFuncs;
+                break;
+        }
+        if (searchArray != null) {
+            val = searchArray.find((v) => equalsIgnoreCase(v, val));
+        }
         token = hintsEnum.has(hint) ? { typ: hint } : { typ: hint, val };
     }
     else {

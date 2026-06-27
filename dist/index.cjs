@@ -7873,6 +7873,7 @@ const colorsFunc = [
     "lch",
     "light-dark",
     "contrast-color",
+    "alpha",
 ];
 const imageFunc = [
     "linear-gradient",
@@ -7892,7 +7893,7 @@ const imageFunc = [
     "-webkit-repeating-linear-gradient",
     "-webkit-gradient",
     "-webkit-radial-gradient",
-    "-webkit-repeating-radial-gradient"
+    "-webkit-repeating-radial-gradient",
 ];
 const transformFunctions = [
     "translate",
@@ -12771,13 +12772,13 @@ function isRectangularOrthogonalColorspace(token) {
         "xyz",
         "xyz-d50",
         "xyz-d65",
-    ].includes(token.val.toLowerCase());
+    ].some(t => equalsIgnoreCase(t, token.val));
 }
 function isPolarColorspace(token) {
     if (token.typ != exports.EnumToken.IdenTokenType) {
         return false;
     }
-    return ["hsl", "hwb", "lch", "oklch"].includes(token.val);
+    return ["hsl", "hwb", "lch", "oklch"].some(t => equalsIgnoreCase(t, token.val));
 }
 function isHueInterpolationMethod(token) {
     if (!Array.isArray(token)) {
@@ -12786,7 +12787,7 @@ function isHueInterpolationMethod(token) {
     if (token.length != 2 || token[0].typ != exports.EnumToken.IdenTokenType || token[1].typ != exports.EnumToken.IdenTokenType) {
         return false;
     }
-    return (["shorter", "longer", "increasing", "decreasing"].includes(token[0].val?.toLowerCase?.()) &&
+    return (["shorter", "longer", "increasing", "decreasing"].some(t => equalsIgnoreCase(t, token[0].val ?? '')) &&
         "hue" === token[1].val?.toLowerCase?.());
 }
 function isIdentColor(token) {
@@ -13041,7 +13042,7 @@ function isColor(token, errors) {
             else {
                 const keywords = ["from", "none"];
                 // @ts-ignore
-                if (["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch"].includes(token.val)) {
+                if (["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch"].some(t => equalsIgnoreCase(t, token.val))) {
                     // @ts-ignore
                     keywords.push("alpha", ...token.val.slice(-3).split(""));
                 }
@@ -22311,6 +22312,51 @@ function getTokenType(val, hint) {
     let token = null;
     let dimension;
     if (hint != null) {
+        let searchArray = null;
+        switch (hint) {
+            case exports.EnumToken.TransformFunctionTokenDefType:
+                searchArray = transformFunctions;
+                break;
+            case exports.EnumToken.ColorFunctionTokenDefType:
+                searchArray = colorsFunc;
+                break;
+            case exports.EnumToken.ContainerFunctionTokenDefType:
+                searchArray = containerFunc;
+                break;
+            case exports.EnumToken.UrlFunctionTokenDefType:
+                searchArray = urlFunc;
+                break;
+            case exports.EnumToken.GridTemplateFuncTokenDefType:
+                searchArray = gridTemplateFunc;
+                break;
+            case exports.EnumToken.ImageFunctionTokenDefType:
+                searchArray = imageFunc;
+                break;
+            case exports.EnumToken.TimelineFunctionTokenDefType:
+                searchArray = timelineFunc;
+                break;
+            case exports.EnumToken.GeneralEnclosedFunctionTokenDefType:
+                searchArray = generalEnclosedFunc;
+                break;
+            case exports.EnumToken.SupportsFunctionTokenDefType:
+                searchArray = supportFunc;
+                break;
+            case exports.EnumToken.TimingFunctionTokenDefType:
+                searchArray = timingFunc;
+                break;
+            case exports.EnumToken.MathFunctionTokenDefType:
+                searchArray = mathFuncs;
+                break;
+            case exports.EnumToken.WhenElseFunctionTokenDefType:
+                searchArray = whenElseFunc;
+                break;
+            case exports.EnumToken.WildCardFunctionTokenDefType:
+                searchArray = wildCardFuncs;
+                break;
+        }
+        if (searchArray != null) {
+            val = searchArray.find((v) => equalsIgnoreCase(v, val));
+        }
         token = hintsEnum.has(hint) ? { typ: hint } : { typ: hint, val };
     }
     else {
@@ -25078,13 +25124,14 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 return token.val;
             }
             if (Array.isArray(token.chi)) {
+                const fnName = token.val.toLowerCase();
                 const isLegacy = ["rgb", "rgba", "hsl", "hsla"].includes(token.val.toLowerCase());
-                const useAlpha = (["rgb", "rgba", "hsl", "hsla", "hwb", "oklab", "oklch", "lab", "lch"].includes(token.val.toLowerCase()) &&
+                const useAlpha = (["rgb", "rgba", "hsl", "hsla", "hwb", "oklab", "oklch", "lab", "lch"].includes(fnName) &&
                     token.chi.length == 4) ||
                     ("color" == token.val.toLowerCase() && token.chi.length == 5);
                 return ((token.val.endsWith("a")
-                    ? token.val.slice(0, -1)
-                    : token.val) +
+                    ? fnName.slice(0, -1)
+                    : fnName) +
                     "(" +
                     token
                         .chi.reduce((acc, curr, index, array) => {
