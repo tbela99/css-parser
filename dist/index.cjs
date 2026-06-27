@@ -7889,9 +7889,9 @@ const imageFunc = [
     "-o-linear-gradient",
     "-moz-linear-gradient",
     "-webkit-linear-gradient",
+    "-webkit-repeating-linear-gradient",
     "-webkit-gradient",
     "-webkit-radial-gradient",
-    "-webkit-repeating-linear-gradient",
     "-webkit-repeating-radial-gradient"
 ];
 const transformFunctions = [
