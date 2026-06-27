@@ -11,13 +11,13 @@
   - [x] -webkit-repeating-linear-gradient()
   - [x] -webkit-radial-gradient()
   - [x] -webkit-repeating-radial-gradient()  
-- [ ] minify gradient functions
+- [x] minify gradient functions
   - [x] linear-gradient()
   - [x] radial-gradient()
-  - [ ] conic-gradient()
+  - [x] conic-gradient()
   - [x] repeating-linear-gradient()
   - [x] repeating-radial-gradient()
-  - [ ] repeating-conic-gradient()
+  - [x] repeating-conic-gradient()
 
 ### Bug fixes
 - [x] do not minify supports() arguments
