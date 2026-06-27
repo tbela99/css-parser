@@ -6,7 +6,6 @@ import { pseudoElements, isValue, isColor } from '../syntax/syntax.js';
 import { isDeclarationValue } from '../parser/utils/declaration.js';
 import { renderSyntax } from './parser/parse.js';
 import { equalsIgnoreCase } from '../parser/utils/text.js';
-import { renderToken } from '../renderer/render.js';
 
 const config = getSyntaxConfig();
 // @ts-expect-error
@@ -1117,8 +1116,8 @@ function matchSyntax(syntaxes, context, options) {
             errors: [],
         };
     }
-    console.debug(`>> ` + syntaxes.reduce((acc, b) => acc + renderSyntax(b), ""));
-    console.debug(`>>>` + context.getRemainingTokens().reduce((acc, b) => acc + renderToken(b), ""));
+    // console.debug(`>> ` + syntaxes.reduce((acc, b) => acc + renderSyntax(b), ""));
+    // console.debug(`>>>` + context.getRemainingTokens().reduce((acc, b) => acc + renderToken(b), ""));
     while (++i < syntaxes.length) {
         if (syntaxes[i].typ == ValidationTokenEnum.Whitespace) {
             continue;
