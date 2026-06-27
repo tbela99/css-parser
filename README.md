@@ -48,11 +48,11 @@ CSS-Parser can transform these modern CSS features into lower-level CSS syntax:
   
 ## Benchmark
 
-css-parser consistently produced the smallest output across all [benchmarked stylesheets](https://tbela99.github.io/css-parser/benchmark/index.html), including against Lightning CSS.
+Across all tested datasets, css-parser consistently produces the smallest output among the benchmarked tools, including Lightning CSS, cssnano, csso, clean-css, css-tree, and esbuild. 
 
-The benchmark evaluates minification effectiveness on a diverse set of real-world stylesheets, including Bootstrap 4, Bootstrap 5, Tailwind CSS, Animate.css, Foundation, Font Awesome, Normalize.css, and others.
+The [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html) evaluates minification effectiveness on a diverse set of real-world stylesheets, including Bootstrap 4, Bootstrap 5, Tailwind CSS, Animate.css, Foundation, Font Awesome, Normalize.css, and others.
 
-Across all tested datasets, css-parser consistently produces the smallest output among the benchmarked tools, including Lightning CSS, cssnano, csso, clean-css, css-tree, and esbuild. For example:
+A sample result:
 
 | File | ligthningcss | CSS Parser |
 | --- | --- | --- |

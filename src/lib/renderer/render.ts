@@ -60,7 +60,14 @@ import { ColorType, EnumToken, minifyNumber } from "../ast/types.ts";
 import { expand } from "../ast/expand.ts";
 import { SourceMap } from "./sourcemap/sourcemap.ts";
 import { colorsFunc, tokensfuncSet, urlTokenMatcher } from "../syntax/constants.ts";
-import { isColor, parseColor, pseudoElements, reduceColorStops } from "../syntax/syntax.ts";
+import {
+    isColor,
+    parseColor,
+    pseudoElements,
+    reducegradientBackgroundPosition,
+    reduceColorStops,
+    reduceConicColorStops,
+} from "../syntax/syntax.ts";
 import { move } from "../parser/tokenize.ts";
 import { equalsIgnoreCase } from "../parser/utils/text.ts";
 import { toDegrees } from "../parser/utils/angle.ts";
@@ -886,257 +893,409 @@ export function renderToken(
                         break;
 
                     case "radial-gradient":
-                    case "repeating-radial-gradient": {
-                        let i: number = 0;
-
-                        while (
-                            i < slice.length &&
-                            (slice[i].typ === EnumToken.WhitespaceTokenType ||
-                                slice[i].typ === EnumToken.CommentTokenType)
-                        ) {
-                            i++;
-                        }
-
-                        const positions: Token[] = [];
-                        const form: Token[] = [];
-                        const size: Token[] = [];
-                        const colorSpaceDef: Token[] = [];
-
-                        if (slice[i]?.typ === EnumToken.IdenTokenType) {
-                            if (
-                                equalsIgnoreCase((slice[i] as IdentToken).val, "farthest-corner") ||
-                                equalsIgnoreCase((slice[i] as IdentToken).val, "ellipse")
-                            ) {
-                                i++;
-                            } else if (
-                                equalsIgnoreCase((slice[i] as IdentToken).val, "closest-side") ||
-                                equalsIgnoreCase((slice[i] as IdentToken).val, "closest-corner") ||
-                                equalsIgnoreCase((slice[i] as IdentToken).val, "farthest-side")
-                            ) {
-                                size.push(slice[i++]);
-                            } else if (equalsIgnoreCase((slice[i] as IdentToken).val, "circle")) {
-                                form.push(slice[i++]);
-                            }
+                    case "repeating-radial-gradient":
+                        {
+                            let i: number = 0;
 
                             while (
-                                slice[i]?.typ === EnumToken.WhitespaceTokenType ||
-                                slice[i]?.typ === EnumToken.CommentTokenType
+                                i < slice.length &&
+                                (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                                    slice[i].typ === EnumToken.CommentTokenType)
                             ) {
                                 i++;
                             }
-                        }
 
-                        if (slice[i]?.typ === EnumToken.IdenTokenType) {
-                            if (
-                                equalsIgnoreCase((slice[i] as IdentToken).val, "farthest-corner") ||
-                                equalsIgnoreCase((slice[i] as IdentToken).val, "ellipse")
-                            ) {
-                                i++;
-                            } else if (
-                                equalsIgnoreCase((slice[i] as IdentToken).val, "closest-side") ||
-                                equalsIgnoreCase((slice[i] as IdentToken).val, "closest-corner") ||
-                                equalsIgnoreCase((slice[i] as IdentToken).val, "farthest-side")
-                            ) {
-                                size.push(slice[i++]);
-                            } else if (equalsIgnoreCase((slice[i] as IdentToken).val, "circle")) {
-                                form.push(slice[i++]);
-                            }
+                            const positions: Token[] = [];
+                            const form: Token[] = [];
+                            const size: Token[] = [];
+                            const colorSpaceDef: Token[] = [];
 
-                            while (
-                                slice[i]?.typ === EnumToken.WhitespaceTokenType ||
-                                slice[i]?.typ === EnumToken.CommentTokenType
-                            ) {
-                                i++;
-                            }
-                        }
-
-                        if (equalsIgnoreCase((slice[i] as IdentToken).val, "at")) {
-                            i++;
-                        }
-
-                        while (
-                            slice[i]?.typ === EnumToken.WhitespaceTokenType ||
-                            slice[i]?.typ === EnumToken.CommentTokenType
-                        ) {
-                            i++;
-                        }
-
-                        if (
-                            slice[i]?.typ === EnumToken.PercentageTokenType ||
-                            (slice[i]?.typ === EnumToken.NumberTokenType && 0 === (slice[i] as NumberToken).val) ||
-                            (slice[i]?.typ === EnumToken.IdenTokenType &&
-                                (equalsIgnoreCase((slice[i] as IdentToken).val, "center") ||
-                                    equalsIgnoreCase((slice[i] as IdentToken).val, "top") ||
-                                    equalsIgnoreCase((slice[i] as IdentToken).val, "bottom") ||
-                                    equalsIgnoreCase((slice[i] as IdentToken).val, "left") ||
-                                    equalsIgnoreCase((slice[i] as IdentToken).val, "right")))
-                        ) {
-                            do {
+                            if (slice[i]?.typ === EnumToken.IdenTokenType) {
                                 if (
-                                    slice[i]?.typ === EnumToken.IdenTokenType &&
-                                    "in" === (slice[i] as IdentToken).val
+                                    equalsIgnoreCase((slice[i] as IdentToken).val, "farthest-corner") ||
+                                    equalsIgnoreCase((slice[i] as IdentToken).val, "ellipse")
                                 ) {
-                                    break;
-                                }
-
-                                positions.push(slice[i]);
-                                i++;
-                            } while (slice[i]?.typ !== EnumToken.CommaTokenType);
-
-                        }
-
-                        while (slice[i]?.typ !== EnumToken.CommaTokenType) {
-                            colorSpaceDef.push(slice[i++]);
-                        }
-
-                        if (slice[i]?.typ === EnumToken.CommaTokenType) {
-                            i++;
-                        }
-
-                        if (positions.length > 0) {
-                            let k: number;
-                            let position1: string = "";
-                            let position2: string = "";
-
-                            for (k = 0; k < positions.length; k++) {
-                                if (positions[k].typ === EnumToken.IdenTokenType) {
-                                    if (position1.length === 0) {
-                                        position1 = (positions[k] as IdentToken).val;
-                                    } else {
-                                        position2 = (positions[k] as IdentToken).val;
-                                    }
+                                    i++;
                                 } else if (
-                                    positions[k].typ === EnumToken.PercentageTokenType ||
-                                    positions[k].typ === EnumToken.NumberTokenType
+                                    equalsIgnoreCase((slice[i] as IdentToken).val, "closest-side") ||
+                                    equalsIgnoreCase((slice[i] as IdentToken).val, "closest-corner") ||
+                                    equalsIgnoreCase((slice[i] as IdentToken).val, "farthest-side")
                                 ) {
-                                    if (position1.length === 0) {
-                                        position1 = (positions[k] as PercentageToken | NumberToken).val + "%";
-                                    } else {
-                                        position2 = (positions[k] as PercentageToken | NumberToken).val + "%";
-                                    }
+                                    size.push(slice[i++]);
+                                } else if (equalsIgnoreCase((slice[i] as IdentToken).val, "circle")) {
+                                    form.push(slice[i++]);
                                 }
 
-                                if (position2.length > 0) {
-                                    break;
+                                while (
+                                    slice[i]?.typ === EnumToken.WhitespaceTokenType ||
+                                    slice[i]?.typ === EnumToken.CommentTokenType
+                                ) {
+                                    i++;
                                 }
                             }
 
-                            if (position1.length > 0) {
-                                let key = `${position1} ${position2}`.trim();
+                            if (slice[i]?.typ === EnumToken.IdenTokenType) {
+                                if (
+                                    equalsIgnoreCase((slice[i] as IdentToken).val, "farthest-corner") ||
+                                    equalsIgnoreCase((slice[i] as IdentToken).val, "ellipse")
+                                ) {
+                                    i++;
+                                } else if (
+                                    equalsIgnoreCase((slice[i] as IdentToken).val, "closest-side") ||
+                                    equalsIgnoreCase((slice[i] as IdentToken).val, "closest-corner") ||
+                                    equalsIgnoreCase((slice[i] as IdentToken).val, "farthest-side")
+                                ) {
+                                    size.push(slice[i++]);
+                                } else if (equalsIgnoreCase((slice[i] as IdentToken).val, "circle")) {
+                                    form.push(slice[i++]);
+                                }
 
-                                if (key === "50% 50%" || key === "center center" || key === "50%" || key === "center") {
-                                    positions.length = 0;
-                                } else if (
-                                    key === "0% 0%" ||
-                                    key === "0 0" ||
-                                    key === "top left" ||
-                                    key === "left top"
+                                while (
+                                    slice[i]?.typ === EnumToken.WhitespaceTokenType ||
+                                    slice[i]?.typ === EnumToken.CommentTokenType
                                 ) {
-                                    positions.splice(0, positions.length, {
-                                        typ: EnumToken.PercentageTokenType,
-                                        val: 0,
-                                    });
-                                } else if (
-                                    key === "50% 0%" ||
-                                    key === "50% 0" ||
-                                    key === "center top" ||
-                                    key === "top center"
-                                ) {
-                                    positions.splice(0, positions.length, { typ: EnumToken.IdenTokenType, val: "top" });
-                                } else if (key === "top right" || key === "right top") {
-                                    positions.splice(
-                                        0,
-                                        positions.length,
-                                        {
+                                    i++;
+                                }
+                            }
+
+                            if (equalsIgnoreCase((slice[i] as IdentToken).val, "at")) {
+                                i++;
+                            }
+
+                            while (
+                                slice[i]?.typ === EnumToken.WhitespaceTokenType ||
+                                slice[i]?.typ === EnumToken.CommentTokenType
+                            ) {
+                                i++;
+                            }
+
+                            if (
+                                slice[i]?.typ === EnumToken.PercentageTokenType ||
+                                (slice[i]?.typ === EnumToken.NumberTokenType && 0 === (slice[i] as NumberToken).val) ||
+                                (slice[i]?.typ === EnumToken.IdenTokenType &&
+                                    (equalsIgnoreCase((slice[i] as IdentToken).val, "center") ||
+                                        equalsIgnoreCase((slice[i] as IdentToken).val, "top") ||
+                                        equalsIgnoreCase((slice[i] as IdentToken).val, "bottom") ||
+                                        equalsIgnoreCase((slice[i] as IdentToken).val, "left") ||
+                                        equalsIgnoreCase((slice[i] as IdentToken).val, "right")))
+                            ) {
+                                do {
+                                    if (
+                                        slice[i]?.typ === EnumToken.IdenTokenType &&
+                                        "in" === (slice[i] as IdentToken).val
+                                    ) {
+                                        break;
+                                    }
+
+                                    positions.push(slice[i]);
+                                    i++;
+                                } while (slice[i]?.typ !== EnumToken.CommaTokenType);
+                            }
+
+                            while (slice[i]?.typ !== EnumToken.CommaTokenType) {
+                                colorSpaceDef.push(slice[i++]);
+                            }
+
+                            if (slice[i]?.typ === EnumToken.CommaTokenType) {
+                                i++;
+                            }
+
+                            if (positions.length > 0) {
+                                let k: number;
+                                let position1: string = "";
+                                let position2: string = "";
+
+                                for (k = 0; k < positions.length; k++) {
+                                    if (positions[k].typ === EnumToken.IdenTokenType) {
+                                        if (position1.length === 0) {
+                                            position1 = (positions[k] as IdentToken).val;
+                                        } else {
+                                            position2 = (positions[k] as IdentToken).val;
+                                        }
+                                    } else if (
+                                        positions[k].typ === EnumToken.PercentageTokenType ||
+                                        positions[k].typ === EnumToken.NumberTokenType
+                                    ) {
+                                        if (position1.length === 0) {
+                                            position1 = (positions[k] as PercentageToken | NumberToken).val + "%";
+                                        } else {
+                                            position2 = (positions[k] as PercentageToken | NumberToken).val + "%";
+                                        }
+                                    }
+
+                                    if (position2.length > 0) {
+                                        break;
+                                    }
+                                }
+
+                                if (position1.length > 0) {
+                                    let key = `${position1} ${position2}`.trim();
+
+                                    if (
+                                        key === "50% 50%" ||
+                                        key === "center center" ||
+                                        key === "50%" ||
+                                        key === "center"
+                                    ) {
+                                        positions.length = 0;
+                                    } else if (
+                                        key === "0% 0%" ||
+                                        key === "0 0" ||
+                                        key === "top left" ||
+                                        key === "left top"
+                                    ) {
+                                        positions.splice(0, positions.length, {
+                                            typ: EnumToken.PercentageTokenType,
+                                            val: 0,
+                                        });
+                                    } else if (
+                                        key === "50% 0%" ||
+                                        key === "50% 0" ||
+                                        key === "center top" ||
+                                        key === "top center"
+                                    ) {
+                                        positions.splice(0, positions.length, {
+                                            typ: EnumToken.IdenTokenType,
+                                            val: "top",
+                                        });
+                                    } else if (key === "top right" || key === "right top") {
+                                        positions.splice(
+                                            0,
+                                            positions.length,
+                                            {
+                                                typ: EnumToken.PercentageTokenType,
+                                                val: 100,
+                                            },
+                                            { typ: EnumToken.WhitespaceTokenType },
+                                            { typ: EnumToken.PercentageTokenType, val: 0 },
+                                        );
+                                    } else if (
+                                        key === "0 50%" ||
+                                        key === "0% 50%" ||
+                                        key === "left center" ||
+                                        key === "center left"
+                                    ) {
+                                        positions.splice(0, positions.length, {
+                                            typ: EnumToken.IdenTokenType,
+                                            val: "left",
+                                        });
+                                    } else if (key === "100% 50%" || key === "right center" || key === "center right") {
+                                        positions.splice(0, positions.length, {
+                                            typ: EnumToken.IdenTokenType,
+                                            val: "right",
+                                        });
+                                    } else if (
+                                        key === "0 100%" ||
+                                        key === "0% 100%" ||
+                                        key === "left bottom" ||
+                                        key === "bottom left"
+                                    ) {
+                                        positions.splice(0, positions.length, {
+                                            typ: EnumToken.IdenTokenType,
+                                            val: "bottom",
+                                        });
+                                    } else if (
+                                        key === "50% 100%" ||
+                                        key === "center bottom" ||
+                                        key === "bottom center"
+                                    ) {
+                                        positions.splice(0, positions.length, {
+                                            typ: EnumToken.IdenTokenType,
+                                            val: "bottom",
+                                        });
+                                    } else if (
+                                        key === "100% 100%" ||
+                                        key === "right bottom" ||
+                                        key === "bottom right"
+                                    ) {
+                                        positions.splice(0, positions.length, {
                                             typ: EnumToken.PercentageTokenType,
                                             val: 100,
-                                        },
-                                        { typ: EnumToken.WhitespaceTokenType },
-                                        { typ: EnumToken.PercentageTokenType, val: 0 },
-                                    );
-                                } else if (
-                                    key === "0 50%" ||
-                                    key === "0% 50%" ||
-                                    key === "left center" ||
-                                    key === "center left"
-                                ) {
-                                    positions.splice(0, positions.length, {
-                                        typ: EnumToken.IdenTokenType,
-                                        val: "left",
-                                    });
-                                } else if (key === "100% 50%" || key === "right center" || key === "center right") {
-                                    positions.splice(0, positions.length, {
-                                        typ: EnumToken.IdenTokenType,
-                                        val: "right",
-                                    });
-                                } else if (
-                                    key === "0 100%" ||
-                                    key === "0% 100%" ||
-                                    key === "left bottom" ||
-                                    key === "bottom left"
-                                ) {
-                                    positions.splice(0, positions.length, {
-                                        typ: EnumToken.IdenTokenType,
-                                        val: "bottom",
-                                    });
-                                } else if (key === "50% 100%" || key === "center bottom" || key === "bottom center") {
-                                    positions.splice(0, positions.length, {
-                                        typ: EnumToken.IdenTokenType,
-                                        val: "bottom",
-                                    });
-                                } else if (key === "100% 100%" || key === "right bottom" || key === "bottom right") {
-                                    positions.splice(0, positions.length, {
-                                        typ: EnumToken.PercentageTokenType,
-                                        val: 100,
-                                    });
-                                } else if (position1 === position2) {
-                                    positions.splice(0, positions.length, positions[k]);
+                                        });
+                                    } else if (position1 === position2) {
+                                        positions.splice(0, positions.length, positions[k]);
+                                    }
                                 }
                             }
-                        }
 
-                        const result: Token[] = [];
+                            const result: Token[] = [];
 
-                        if (form.length > 0) {
-                            result.push(...form);
-                        }
-
-                        if (size.length > 0) {
-                            if (result.length > 0) {
-                                result.push({ typ: EnumToken.WhitespaceTokenType });
+                            if (form.length > 0) {
+                                result.push(...form);
                             }
 
-                            result.push(...size);
-                        }
+                            if (size.length > 0) {
+                                if (result.length > 0) {
+                                    result.push({ typ: EnumToken.WhitespaceTokenType });
+                                }
 
-                        if (positions.length > 0) {
-                            if (result.length > 0) {
-                                result.push({ typ: EnumToken.WhitespaceTokenType });
+                                result.push(...size);
                             }
 
-                            result.push(
-                                { typ: EnumToken.IdenTokenType, val: "at" },
-                                { typ: EnumToken.WhitespaceTokenType },
-                                ...positions,
-                            );
-                        }
+                            if (positions.length > 0) {
+                                if (result.length > 0) {
+                                    result.push({ typ: EnumToken.WhitespaceTokenType });
+                                }
 
-                        if (colorSpaceDef.length > 0) {
-                            if (result.length > 0) {
-                                result.push({ typ: EnumToken.WhitespaceTokenType });
+                                result.push(
+                                    { typ: EnumToken.IdenTokenType, val: "at" },
+                                    { typ: EnumToken.WhitespaceTokenType },
+                                    ...positions,
+                                );
                             }
-                            result.push(...colorSpaceDef);
+
+                            if (colorSpaceDef.length > 0) {
+                                if (result.length > 0) {
+                                    result.push({ typ: EnumToken.WhitespaceTokenType });
+                                }
+                                result.push(...colorSpaceDef);
+                            }
+
+                            if (result.length > 0) {
+                                result.push({ typ: EnumToken.CommaTokenType });
+                            }
+
+                            result.push(...reduceColorStops(slice.slice(i)));
+
+                            slice.length = 0;
+                            slice.push(...result);
                         }
+                        break;
 
-                        if (result.length > 0) {
-                            result.push({ typ: EnumToken.CommaTokenType });
+                    case "conic-gradient":
+                    case "repeating-conic-gradient":
+                        {
+                            let i: number = 0;
+
+                            while (
+                                i < slice.length &&
+                                (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                                    slice[i].typ === EnumToken.CommentTokenType)
+                            ) {
+                                i++;
+                            }
+
+                            const angles: Token[] = [];
+                            const positions: Token[] = [];
+
+                            if (
+                                slice[i]?.typ === EnumToken.IdenTokenType &&
+                                equalsIgnoreCase((slice[i] as IdentToken).val, "from")
+                            ) {
+                                angles.push(slice[i++]);
+                            }
+
+                            while (
+                                i < slice.length &&
+                                (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                                    slice[i].typ === EnumToken.CommentTokenType)
+                            ) {
+                                angles.push(slice[i++]);
+                            }
+
+                            if (
+                                (slice[i]?.typ === EnumToken.NumberTokenType ||
+                                    slice[i]?.typ === EnumToken.AngleTokenType) &&
+                                0 === toDegrees(slice[i] as AngleToken).val
+                            ) {
+                                angles.length = 0;
+                                i++;
+                            } else if (slice[i]?.typ !== EnumToken.CommaTokenType) {
+                                angles.push(slice[i++]);
+                            }
+
+                            while (
+                                i < slice.length &&
+                                (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                                    slice[i].typ === EnumToken.CommentTokenType)
+                            ) {
+                                i++;
+                            }
+
+                            if (
+                                slice[i]?.typ === EnumToken.IdenTokenType &&
+                                equalsIgnoreCase((slice[i] as IdentToken).val, "at")
+                            ) {
+                                i++;
+
+                                while (
+                                    i < slice.length &&
+                                    (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                                        slice[i].typ === EnumToken.CommentTokenType)
+                                ) {
+                                    i++;
+                                }
+
+                                let position1: string = "";
+                                let position2: string = "";
+
+                                if (slice[i]?.typ === EnumToken.IdenTokenType) {
+                                    position1 = (slice[i] as IdentToken).val;
+                                    positions.push(slice[i++]);
+                                } else if (
+                                    slice[i]?.typ === EnumToken.PercentageTokenType ||
+                                    slice[i]?.typ === EnumToken.NumberTokenType
+                                ) {
+                                    position1 = (slice[i] as IdentToken).val + "%";
+                                    positions.push(slice[i++]);
+                                }
+
+                                while (
+                                    i < slice.length &&
+                                    (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                                        slice[i].typ === EnumToken.CommentTokenType)
+                                ) {
+                                    positions.push(slice[i++]);
+                                }
+
+                                if (slice[i]?.typ === EnumToken.IdenTokenType) {
+                                    position2 = (slice[i] as IdentToken).val;
+                                    positions.push(slice[i++]);
+                                } else if (
+                                    slice[i]?.typ === EnumToken.PercentageTokenType ||
+                                    slice[i]?.typ === EnumToken.NumberTokenType
+                                ) {
+                                    position2 = (slice[i] as IdentToken).val + "%";
+                                    positions.push(slice[i++]);
+                                }
+
+                                while (
+                                    i < slice.length &&
+                                    (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                                        slice[i].typ === EnumToken.CommentTokenType)
+                                ) {
+                                    i++;
+                                }
+
+                                if (position1.length > 0) {
+                                    reducegradientBackgroundPosition(positions, `${position1} ${position2}`.trim());
+                                }
+                            }
+
+                            if (slice[i]?.typ === EnumToken.CommaTokenType) {
+                                i++;
+                            }
+
+                            const result: Token[] = [];
+
+                            if (angles.length > 0) {
+                                result.push(...angles, { typ: EnumToken.CommaTokenType });
+                            }
+
+                            if (positions.length > 0) {
+                                result.push(
+                                    { typ: EnumToken.IdenTokenType, val: "at" },
+                                    { typ: EnumToken.WhitespaceTokenType },
+                                    ...positions,
+                                    { typ: EnumToken.CommaTokenType },
+                                );
+                            }
+
+                            result.push(...reduceConicColorStops(slice.slice(i)));
+                            slice.length = 0;
+                            slice.push(...result);
                         }
-
-                        result.push(...reduceColorStops(slice.slice(i)));
-
-                        slice.length = 0;
-                        slice.push(...result);
-                    }
+                        break;
                 }
 
                 return (token as FunctionToken).val + "(" + slice.reduce(reducer, "") + ")";

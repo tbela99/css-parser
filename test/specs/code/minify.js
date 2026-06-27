@@ -383,7 +383,23 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
 }`));
         });
 
-        it(' -webkit-gradient(linear) #20', function () {
+        it(' conic-gradient() #21', function () {
+
+            return transform(`
+  
+  .xl\\:origin-bottom-left {
+    background: conic-gradient(from 0deg at 50% 50%, red 0deg, orange 90deg, yellow 180deg, green 270deg, blue 360deg);
+}
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl\\:origin-bottom-left {
+ background: conic-gradient(red,orange,#ff0,green,blue)
+}`));
+        });
+
+        it(' -webkit-gradient(linear) #22', function () {
 
             return transform(`
   
@@ -396,6 +412,22 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
                 pass: 2
             }).then((result) => expect(result.code).equals(`.xl\\:origin-bottom-left {
  background: linear-gradient(to bottom right,#ff0,orange,red)
+}`));
+        });
+
+        it(' conic-gradient() #23', function () {
+
+            return transform(`
+  
+  .xl\\:origin-bottom-left {
+    background: conic-gradient(from 0deg at 50% 50%, red 0deg, red 90deg, yellow 180deg, green 270deg, blue 360deg);
+}
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl\\:origin-bottom-left {
+ background: conic-gradient(red 0 90deg,#ff0,green,blue)
 }`));
         });
     });

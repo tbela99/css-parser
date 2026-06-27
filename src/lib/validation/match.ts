@@ -1499,6 +1499,9 @@ function matchSyntax(
         };
     }
 
+    console.debug(`>> ` + syntaxes.reduce((acc, b) => acc + renderSyntax(b), ""));
+    console.debug(`>>>` + context.getRemainingTokens().reduce((acc, b) => acc + renderToken(b), ""));
+
     while (++i < syntaxes.length) {
         if (syntaxes[i].typ == ValidationTokenEnum.Whitespace) {
             continue;

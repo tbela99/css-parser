@@ -238,14 +238,16 @@ function reduceColorStops(stops) {
     const n = parts.length == 1 ? 1 : parts.length - 1;
     let j;
     let i;
+    let k = -1;
     let updated = false;
     for (i = 0; i < parts.length; i++) {
+        k++;
         if (parts[i].length != 3) {
             continue;
         }
         if (i > 0 && isOkLabClose(parts[i - 1][0], parts[i][0])) {
             if (parts[i - 1].length == 1) {
-                parts[i - 1].push({ typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: ((i - 1) * 100) / n });
+                parts[i - 1].push({ typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: (k - 1) * 100 / n });
             }
             parts[i - 1].push(...parts[i].slice(1));
             parts.splice(i--, 1);
@@ -256,7 +258,123 @@ function reduceColorStops(stops) {
             if ((parts[i][j].typ == EnumToken.LengthTokenType && 0 == parts[i][j].val) ||
                 parts[i][j].typ == EnumToken.NumberTokenType ||
                 parts[i][j].typ == EnumToken.PercentageTokenType) {
-                if (parts[i][j].val === (i * 100) / n) {
+                if (parts[i][j].val === (k * 100) / n) {
+                    parts[i].length = j;
+                    trimArray(parts[i]);
+                    updated = true;
+                    break;
+                }
+            }
+        }
+    }
+    if (updated) {
+        stops.length = 0;
+        for (j = 0; j < parts.length; j++) {
+            if (stops.length > 0) {
+                stops.push({ typ: EnumToken.CommaTokenType });
+            }
+            stops.push(...parts[j]);
+        }
+    }
+    return stops;
+}
+/**
+ * Reduce background-position values.
+ * @param positions
+ * @param position
+ */
+function reducegradientBackgroundPosition(positions, position) {
+    switch (position) {
+        case "50%":
+        case "50% 50%":
+        case "center":
+        case "center center":
+            positions.length = 0;
+            break;
+        case "0 50%":
+        case "0% 50%":
+        case "left":
+        case "left center":
+        case "center left":
+            positions.length = 2;
+            positions.push({ typ: EnumToken.PercentageTokenType, val: 0 });
+            break;
+        case "50% 0":
+        case "50% 0%":
+        case "top center":
+        case "center top":
+            positions.length = 2;
+            positions.push({ typ: EnumToken.IdenTokenType, val: "top" });
+            break;
+        case "bottom":
+        case "50% 100%":
+        case "bottom center":
+        case "center bottom":
+            positions.length = 2;
+            positions.push({ typ: EnumToken.IdenTokenType, val: "bottom" });
+            break;
+        case "left":
+        case "0 50%":
+        case "0% 50%":
+        case "left center":
+        case "center left":
+            positions.length = 2;
+            positions.push({ typ: EnumToken.PercentageTokenType, val: 0 });
+            break;
+        case "100% 50%":
+        case "right":
+        case "right center":
+        case "center right":
+            positions.length = 2;
+            positions.push({ typ: EnumToken.PercentageTokenType, val: 100 });
+            break;
+        case "bottom left":
+        case "left bottom":
+            positions.length = 2;
+            positions.push({ typ: EnumToken.PercentageTokenType, val: 0 }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: 100 });
+            break;
+        case "bottom right":
+        case "right bottom":
+            positions.length = 2;
+            positions.push({ typ: EnumToken.PercentageTokenType, val: 100 }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: 100 });
+            break;
+        case "top left":
+        case "left top":
+            positions.length = 2;
+            positions.push({ typ: EnumToken.PercentageTokenType, val: 0 }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: 0 });
+            break;
+        case "top right":
+        case "right top":
+            positions.length = 2;
+            positions.push({ typ: EnumToken.PercentageTokenType, val: 100 }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: 0 });
+            break;
+    }
+}
+function reduceConicColorStops(stops) {
+    const parts = splitTokenList(stops);
+    const n = parts.length == 1 ? 1 : parts.length - 1;
+    let j;
+    let i;
+    let k = -1;
+    let updated = false;
+    for (i = 0; i < parts.length; i++) {
+        k++;
+        if (parts[i].length != 3) {
+            continue;
+        }
+        if (i > 0 && isOkLabClose(parts[i - 1][0], parts[i][0])) {
+            if (parts[i - 1].length == 1) {
+                parts[i - 1].push({ typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: (k - 1) * 100 / n });
+            }
+            parts[i - 1].push(...parts[i].slice(1));
+            parts.splice(i--, 1);
+            updated = true;
+            continue;
+        }
+        for (j = 0; j < parts[i].length; j++) {
+            if ((parts[i][j].typ == EnumToken.NumberTokenType && 0 == parts[i][j].val) ||
+                parts[i][j].typ == EnumToken.AngleTokenType) {
+                if (parts[i][j].val === (k * 360) / n) {
                     parts[i].length = j;
                     trimArray(parts[i]);
                     updated = true;
@@ -987,4 +1105,4 @@ function isValue(token) {
         token.typ === EnumToken.TransformFunctionTokenType);
 }
 
-export { dimensionUnits, isAngle, isColor, isColorspace, isDigit, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isLetter, isNewLine, isNumber, isPercentage, isPercentageToken, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isValue, isWhiteSpace, parseColor, parseDimension, pseudoAliasMap, pseudoElements, reduceColorStops, renamedStandardProperties };
+export { dimensionUnits, isAngle, isColor, isColorspace, isDigit, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isLetter, isNewLine, isNumber, isPercentage, isPercentageToken, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isValue, isWhiteSpace, parseColor, parseDimension, pseudoAliasMap, pseudoElements, reduceColorStops, reduceConicColorStops, reducegradientBackgroundPosition, renamedStandardProperties };

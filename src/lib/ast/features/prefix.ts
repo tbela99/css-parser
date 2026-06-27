@@ -1,4 +1,4 @@
-import { EnumToken, SyntaxValidationResult } from "../types.ts";
+import { EnumToken } from "../types.ts";
 import type {
     AngleToken,
     AstAtRule,
@@ -193,12 +193,9 @@ export class ComputePrefixFeature {
                 ) {
                     if ((value as FunctionToken).val.endsWith("-gradient")) {
                         if (regMatchLinearGradient.test((value as IdentToken | FunctionToken).val)) {
-                            this.webkitLinearToLinearGradient((value as FunctionToken));
-                           
+                            this.webkitLinearToLinearGradient(value as FunctionToken);
                         } else if (regMatchRadialGradient.test((value as IdentToken | FunctionToken).val)) {
-                           
-                            this.webkitRadialToRadialGradient((value as FunctionToken));
-                           
+                            this.webkitRadialToRadialGradient(value as FunctionToken);
                         } else if (equalsIgnoreCase((value as IdentToken | FunctionToken).val, "-webkit-gradient")) {
                             this.webkitGradientToGradient(value as FunctionToken);
                         }
@@ -363,7 +360,9 @@ export class ComputePrefixFeature {
             }
         }
 
-        token.val = equalsIgnoreCase(token.val, "-webkit-repeating-linear-gradient") ? "repeating-linear-gradient" : "linear-gradient";
+        token.val = equalsIgnoreCase(token.val, "-webkit-repeating-linear-gradient")
+            ? "repeating-linear-gradient"
+            : "linear-gradient";
     }
 
     /**
@@ -427,8 +426,6 @@ export class ComputePrefixFeature {
             }
         }
 
-        // key = key.toLowerCase();
-
         // mapping keywords
         // left top → left bottom	to bottom
         // left bottom → left top	to top
@@ -488,7 +485,6 @@ export class ComputePrefixFeature {
         let checkStop: boolean = true;
         let checkStopIndex: number = replacements.length + 1;
         let colorStop: Token[] = [];
-        // i = replacements.length + 1;
 
         for (i = replacements.length + 1; i < tokens.length; i++) {
             if (tokens[i].typ === EnumToken.CommaTokenType && checkStop) {
@@ -498,19 +494,11 @@ export class ComputePrefixFeature {
 
             if (tokens[i].typ === EnumToken.FunctionTokenType) {
                 if (equalsIgnoreCase((tokens[i] as FunctionToken).val, "to")) {
-                    colorStop.push(
-                        tokens[checkStopIndex],
-                        ...(tokens[i] as FunctionToken)
-                            .chi /*, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: 100 } */,
-                    );
+                    colorStop.push(tokens[checkStopIndex], ...(tokens[i] as FunctionToken).chi);
                     tokens.splice(checkStopIndex!, i - checkStopIndex! + 1);
 
                     i = checkStopIndex!;
                     checkStop = false;
-
-                    // k = (tokens[i] as FunctionToken).chi.length + 2;
-                    // tokens.splice(i, 1, ...(tokens[i] as FunctionToken).chi, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: 100 });
-                    // i += k;
                 } else if (equalsIgnoreCase((tokens[i] as FunctionToken).val, "from")) {
                     k = (tokens[i] as FunctionToken).chi.length + 1;
                     tokens.splice(
@@ -554,89 +542,6 @@ export class ComputePrefixFeature {
             token.chi.length = 0;
             token.chi.push(...tokens);
         }
-
-        // for (i = 0; i < tokens.length; i++) {
-        //     if (
-        //         tokens[i].typ == EnumToken.AngleTokenType ||
-        //         (tokens[i].typ == EnumToken.NumberTokenType && (tokens[i] as AngleToken).val == 0)
-        //     ) {
-        //         (tokens[i] as AngleToken | NumberToken).val =
-        //             (90 -
-        //             // @ts-expect-error
-        //                 ((tokens[i] as AngleToken | NumberToken).typ == EnumToken.NumberTokenType
-        //                     ? (tokens[i] as NumberToken)
-        //                     : (toDegrees(tokens[i] as AngleToken).val as number))) %
-        //             360;
-        //     } else if (tokens[i].typ == EnumToken.IdenTokenType) {
-        //         key = (tokens[i] as IdentToken).val.toLowerCase();
-        //         switch (key) {
-        //             case "right":
-        //             case "left":
-        //                 tokens.splice(
-        //                     i,
-        //                     1,
-        //                     { typ: EnumToken.IdenTokenType, val: "to" },
-        //                     { typ: EnumToken.WhitespaceTokenType },
-        //                     {
-        //                         typ: EnumToken.IdenTokenType,
-        //                         val: key == "right" ? "left" : "right",
-        //                     },
-        //                 );
-        //                 i += 2;
-        //                 break;
-
-        //             case "top":
-        //             case "bottom":
-        //                 k = i + 1;
-
-        //                 to = key == "top" ? "bottom" : "top";
-
-        //                 while (
-        //                     k < tokens.length &&
-        //                     (tokens[k].typ === EnumToken.WhitespaceTokenType ||
-        //                         tokens[k].typ === EnumToken.CommentTokenType)
-        //                 ) {
-        //                     k++;
-        //                 }
-
-        //                 if (tokens[k]?.typ === EnumToken.IdenTokenType) {
-        //                     val = "";
-
-        //                     if (equalsIgnoreCase((tokens[k] as IdentToken).val, "left")) {
-        //                         val = "right";
-        //                     }
-
-        //                     if (equalsIgnoreCase((tokens[k] as IdentToken).val, "right")) {
-        //                         val = "left";
-        //                     }
-
-        //                     if (val !== "") {
-        //                         tokens.splice(
-        //                             i,
-        //                             k - i + 1,
-        //                             { typ: EnumToken.IdenTokenType, val: "to" },
-        //                             { typ: EnumToken.WhitespaceTokenType },
-        //                             { typ: EnumToken.IdenTokenType, val: to },
-        //                             { typ: EnumToken.WhitespaceTokenType },
-        //                             { typ: EnumToken.IdenTokenType, val },
-        //                         );
-        //                         i += 4;
-        //                         break;
-        //                     }
-        //                 }
-
-        //                 tokens.splice(
-        //                     i,
-        //                     1,
-        //                     { typ: EnumToken.IdenTokenType, val: "to" },
-        //                     { typ: EnumToken.WhitespaceTokenType },
-        //                     { typ: EnumToken.IdenTokenType, val: to },
-        //                 );
-        //                 i += 2;
-        //                 break;
-        //         }
-        //     }
-        // }
     }
 
     /**
@@ -753,7 +658,9 @@ export class ComputePrefixFeature {
             tokens.push(...form, { typ: EnumToken.CommaTokenType });
         }
 
-        token.val = equalsIgnoreCase(token.val, "-webkit-repeating-radial-gradient") ? "repeating-radial-gradient" : "radial-gradient";
+        token.val = equalsIgnoreCase(token.val, "-webkit-repeating-radial-gradient")
+            ? "repeating-radial-gradient"
+            : "radial-gradient";
 
         tokens.push(...colorStops);
         return tokens;

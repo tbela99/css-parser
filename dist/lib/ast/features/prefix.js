@@ -258,7 +258,9 @@ class ComputePrefixFeature {
                 }
             }
         }
-        token.val = equalsIgnoreCase(token.val, "-webkit-repeating-linear-gradient") ? "repeating-linear-gradient" : "linear-gradient";
+        token.val = equalsIgnoreCase(token.val, "-webkit-repeating-linear-gradient")
+            ? "repeating-linear-gradient"
+            : "linear-gradient";
     }
     /**
      * Convert -webkit-gradient(linear) to linear-gradient or linear-gradient syntax
@@ -307,7 +309,6 @@ class ComputePrefixFeature {
                 key += (key.length > 0 ? " " : "") + tokens[i].val;
             }
         }
-        // key = key.toLowerCase();
         // mapping keywords
         // left top → left bottom	to bottom
         // left bottom → left top	to top
@@ -370,7 +371,6 @@ class ComputePrefixFeature {
         let checkStop = true;
         let checkStopIndex = replacements.length + 1;
         let colorStop = [];
-        // i = replacements.length + 1;
         for (i = replacements.length + 1; i < tokens.length; i++) {
             if (tokens[i].typ === EnumToken.CommaTokenType && checkStop) {
                 checkStopIndex = i;
@@ -378,14 +378,10 @@ class ComputePrefixFeature {
             }
             if (tokens[i].typ === EnumToken.FunctionTokenType) {
                 if (equalsIgnoreCase(tokens[i].val, "to")) {
-                    colorStop.push(tokens[checkStopIndex], ...tokens[i]
-                        .chi /*, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: 100 } */);
+                    colorStop.push(tokens[checkStopIndex], ...tokens[i].chi);
                     tokens.splice(checkStopIndex, i - checkStopIndex + 1);
                     i = checkStopIndex;
                     checkStop = false;
-                    // k = (tokens[i] as FunctionToken).chi.length + 2;
-                    // tokens.splice(i, 1, ...(tokens[i] as FunctionToken).chi, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: 100 });
-                    // i += k;
                 }
                 else if (equalsIgnoreCase(tokens[i].val, "from")) {
                     k = tokens[i].chi.length + 1;
@@ -417,80 +413,6 @@ class ComputePrefixFeature {
             token.chi.length = 0;
             token.chi.push(...tokens);
         }
-        // for (i = 0; i < tokens.length; i++) {
-        //     if (
-        //         tokens[i].typ == EnumToken.AngleTokenType ||
-        //         (tokens[i].typ == EnumToken.NumberTokenType && (tokens[i] as AngleToken).val == 0)
-        //     ) {
-        //         (tokens[i] as AngleToken | NumberToken).val =
-        //             (90 -
-        //             // @ts-expect-error
-        //                 ((tokens[i] as AngleToken | NumberToken).typ == EnumToken.NumberTokenType
-        //                     ? (tokens[i] as NumberToken)
-        //                     : (toDegrees(tokens[i] as AngleToken).val as number))) %
-        //             360;
-        //     } else if (tokens[i].typ == EnumToken.IdenTokenType) {
-        //         key = (tokens[i] as IdentToken).val.toLowerCase();
-        //         switch (key) {
-        //             case "right":
-        //             case "left":
-        //                 tokens.splice(
-        //                     i,
-        //                     1,
-        //                     { typ: EnumToken.IdenTokenType, val: "to" },
-        //                     { typ: EnumToken.WhitespaceTokenType },
-        //                     {
-        //                         typ: EnumToken.IdenTokenType,
-        //                         val: key == "right" ? "left" : "right",
-        //                     },
-        //                 );
-        //                 i += 2;
-        //                 break;
-        //             case "top":
-        //             case "bottom":
-        //                 k = i + 1;
-        //                 to = key == "top" ? "bottom" : "top";
-        //                 while (
-        //                     k < tokens.length &&
-        //                     (tokens[k].typ === EnumToken.WhitespaceTokenType ||
-        //                         tokens[k].typ === EnumToken.CommentTokenType)
-        //                 ) {
-        //                     k++;
-        //                 }
-        //                 if (tokens[k]?.typ === EnumToken.IdenTokenType) {
-        //                     val = "";
-        //                     if (equalsIgnoreCase((tokens[k] as IdentToken).val, "left")) {
-        //                         val = "right";
-        //                     }
-        //                     if (equalsIgnoreCase((tokens[k] as IdentToken).val, "right")) {
-        //                         val = "left";
-        //                     }
-        //                     if (val !== "") {
-        //                         tokens.splice(
-        //                             i,
-        //                             k - i + 1,
-        //                             { typ: EnumToken.IdenTokenType, val: "to" },
-        //                             { typ: EnumToken.WhitespaceTokenType },
-        //                             { typ: EnumToken.IdenTokenType, val: to },
-        //                             { typ: EnumToken.WhitespaceTokenType },
-        //                             { typ: EnumToken.IdenTokenType, val },
-        //                         );
-        //                         i += 4;
-        //                         break;
-        //                     }
-        //                 }
-        //                 tokens.splice(
-        //                     i,
-        //                     1,
-        //                     { typ: EnumToken.IdenTokenType, val: "to" },
-        //                     { typ: EnumToken.WhitespaceTokenType },
-        //                     { typ: EnumToken.IdenTokenType, val: to },
-        //                 );
-        //                 i += 2;
-        //                 break;
-        //         }
-        //     }
-        // }
     }
     /**
      * Convert -webkit-radial-gradient to radial-gradient syntax
@@ -575,7 +497,9 @@ class ComputePrefixFeature {
             }
             tokens.push(...form, { typ: EnumToken.CommaTokenType });
         }
-        token.val = equalsIgnoreCase(token.val, "-webkit-repeating-radial-gradient") ? "repeating-radial-gradient" : "radial-gradient";
+        token.val = equalsIgnoreCase(token.val, "-webkit-repeating-radial-gradient")
+            ? "repeating-radial-gradient"
+            : "radial-gradient";
         tokens.push(...colorStops);
         return tokens;
     }

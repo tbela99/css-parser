@@ -6,7 +6,7 @@
 - [ ] convert -webkit-* gradient functions
   - [x] -webkit-gradient() to:
     - [x] linear-gradient()
-    - [ ] radial-gradient() - not supported
+    - [ ] radial-gradient() - not supported ⚠️
   - [x] -webkit-linear-gradient()
   - [x] -webkit-radial-gradient()
   - [x] -webkit-repeating-radial-gradient()  
