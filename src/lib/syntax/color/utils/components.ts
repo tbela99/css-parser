@@ -4,6 +4,7 @@ import { walkValues } from "../../../ast/walk.ts";
 import { COLORS_NAMES } from "../../constants.ts";
 import { expandHexValue } from "../hex.ts";
 import { isColor, parseColor } from "../../syntax.ts";
+import { equalsIgnoreCase } from "../../../parser/utils/text.ts";
 
 export function getComponents(token: ColorToken | IdentToken): Token[] | null {
     if (token.typ === EnumToken.IdenTokenType) {
@@ -62,7 +63,7 @@ export function getComponents(token: ColorToken | IdentToken): Token[] | null {
             }
         }
 
-        if (child.typ == EnumToken.ColorTokenType && "currentcolor" === (child as ColorToken).val.toLowerCase()) {
+        if (child.typ == EnumToken.ColorTokenType && equalsIgnoreCase("currentcolor",(child as ColorToken).val)) {
             return null;
         }
 

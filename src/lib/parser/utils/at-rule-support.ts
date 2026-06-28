@@ -11,7 +11,7 @@ import type {
     DashedIdentToken,
 } from "../../../@types/index.d.ts";
 import { EnumToken, ValidationLevel } from "../../ast/types.ts";
-import { renderToken } from "../../renderer/render.ts";
+import { renderValue } from "../../renderer/render.ts";
 import { definedPropertySettings, trimTokenSpace } from "../../syntax/constants.ts";
 import { getParsedSyntax } from "../../validation/config.ts";
 import { trimArray, matchAllSyntax, createValidationContext } from "../../validation/match.ts";
@@ -484,7 +484,7 @@ export function parseAtRuleSupportSyntax(
                 {
                     action: "drop",
                     node: stack.at(-1),
-                    message: `unmatched token '${renderToken(stack.at(-1) as Token)}' at ${stack.at(-1)!.loc!.src}:${stack.at(-1)!.loc!.sta.lin}:${stack.at(-1)!.loc!.sta.col}`,
+                    message: `unmatched token '${renderValue(stack.at(-1) as Token)}' at ${stack.at(-1)!.loc!.src}:${stack.at(-1)!.loc!.sta.lin}:${stack.at(-1)!.loc!.sta.col}`,
                 },
             ],
         };

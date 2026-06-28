@@ -3,6 +3,7 @@ export * as angle from './angle.js';
 export * as block from './block.js';
 export * as calc from './calc.js';
 export * as color from './color.js';
+export * as colorAlpha from './color-alpha.js';
 export * as colorHex from './color-hex.js';
 export * as colorRGB from './color-rgb.js';
 export * as colorHSL from './color-hsl.js';

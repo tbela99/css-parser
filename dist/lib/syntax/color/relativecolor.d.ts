@@ -8,6 +8,16 @@ type XYZKeyType = "x" | "y" | "z" | "alpha";
 type LCHKeyType = "l" | "c" | "h" | "alpha";
 type OKLCHKeyType = "l" | "c" | "h" | "alpha";
 export type RelativeColorTypes = RGBKeyType | HSLKeyType | HWBKeyType | LABKeyType | OKLABKeyType | LCHKeyType | OKLCHKeyType | XYZKeyType;
-export declare function parseRelativeColor(relativeKeys: string, original: ColorToken, rExp: Token, gExp: Token, bExp: Token, aExp: Token | null): Record<RelativeColorTypes, Token> | null;
+/**
+ * Parse relative color components
+ * @param relativeKeys
+ * @param original
+ * @param rExp
+ * @param gExp
+ * @param bExp
+ * @param aExp
+ * @returns
+ */
+export declare function parseRelativeColorComponents(relativeKeys: string, original: ColorToken, rExp: Token, gExp: Token, bExp: Token, aExp: Token | null): Record<RelativeColorTypes, Token> | null;
 export declare function replaceValue(parent: FunctionToken | ParensToken | BinaryExpressionToken, value: Token, newValue: Token): void;
 export {};

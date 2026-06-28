@@ -1,5 +1,5 @@
 import { EnumToken } from '../../ast/types.js';
-import { renderToken } from '../../renderer/render.js';
+import { renderValue } from '../../renderer/render.js';
 import { definedPropertySettings, tokensfuncDefMap, combinators } from '../../syntax/constants.js';
 import { pseudoElements, isIdent, isHash } from '../../syntax/syntax.js';
 import { getParsedSyntax, getSyntaxConfig } from '../../validation/config.js';
@@ -55,7 +55,7 @@ function parseSelector(tokens, context, options, errors) {
             typ: result.success ? EnumToken.KeyFramesRuleNodeType : EnumToken.InvalidRuleNodeType,
             sel: [
                 ...splitTokenList(trimArray(tokens)).reduce((acc, curr) => {
-                    acc.add(curr.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), ""));
+                    acc.add(curr.reduce((acc, curr) => acc + renderValue(curr, { minify: false }), ""));
                     return acc;
                 }, new Set()),
             ].join(),
@@ -434,7 +434,7 @@ function parseSelector(tokens, context, options, errors) {
                         return acc;
                     }
                 }
-                let t = renderToken(curr, { minify: false });
+                let t = renderValue(curr, { minify: false });
                 if (t == ",") {
                     acc.push([]);
                 }

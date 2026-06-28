@@ -26,6 +26,32 @@
     }
 }
 
+html[data-theme="dark"] {
+    @layer components {
+        aside {
+            a.nav-leaf {
+                &:hover {
+                    background-color: var(--transparent-blue);
+                    color: var(--blue-dark);
+                }
+            }
+        }
+    }
+
+    @layer {
+        .page-content {
+            .breadcrumb {
+                & a {
+                    &:hover {
+                        background-color: var(--transparent-blue) !important;
+                        color: var(--blue-dark) !important;
+                    }
+                }
+            }
+        }
+    }
+}
+
 @media (prefers-color-scheme: dark) {
     @layer components {
         aside {
@@ -43,8 +69,8 @@
             .breadcrumb {
                 & a {
                     &:hover {
-                    background-color: var(--transparent-blue) !important;
-                    color: var(--blue-dark) !important;
+                        background-color: var(--transparent-blue) !important;
+                        color: var(--blue-dark) !important;
                     }
                 }
             }

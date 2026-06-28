@@ -1,7 +1,7 @@
 import { doParse } from './lib/parser/parse.js';
 export { parseDeclarations, parseString } from './lib/parser/parse.js';
 import { doRender } from './lib/renderer/render.js';
-export { renderToken } from './lib/renderer/render.js';
+export { renderValue as renderToken } from './lib/renderer/render.js';
 import { ModuleScopeEnumOptions } from './lib/ast/types.js';
 export { ColorType, EnumToken, ModuleCaseTransformEnum, ValidationLevel } from './lib/ast/types.js';
 import { tokenizeStream, tokenize } from './lib/parser/tokenize.js';

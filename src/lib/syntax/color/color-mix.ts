@@ -16,6 +16,7 @@ import { srgb2xyz_d50 } from "./xyz.ts";
 import { XYZ_D65_to_D50, xyzd502lch } from "./xyzd50.ts";
 import { srgb2rec2020values } from "./rec2020.ts";
 import { isPolarColorspace, isRectangularOrthogonalColorspace } from "../syntax.ts";
+import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 
 function interpolateHue(interpolationMethod: IdentToken, h1: number, h2: number): number[] {
     switch (interpolationMethod.val) {
@@ -65,7 +66,7 @@ export function colorMix(
     color2: ColorToken,
     percentage2: PercentageToken | NumberToken | null,
 ): ColorToken | null {
-    if (color1.val.toLowerCase() == "currentcolor" || color2.val == "currentcolor".toLowerCase()) {
+    if (equalsIgnoreCase(color1.val, "currentcolor" )|| equalsIgnoreCase(color2.val, "currentcolor")) {
         return null;
     }
 

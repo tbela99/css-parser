@@ -15,19 +15,20 @@ import { p32srgbvalues, srgb2p3values } from './p3.js';
 import { xyzd502srgb } from './xyzd50.js';
 import { colorMix } from './color-mix.js';
 import { reduceHexValue, rgb2HexToken, color2HexToken, lch2HexToken, lab2HexToken, oklch2HexToken, oklab2HexToken, cmyk2HexToken, hwb2HexToken, hsl2HexToken } from './hex.js';
-import { parseRelativeColor } from './relativecolor.js';
+import { parseRelativeColorComponents } from './relativecolor.js';
 import { isIdentColor } from '../syntax.js';
 import { color2cmykToken, lch2cmykToken, lab2cmykToken, oklch2cmykToken, oklab2cmyk, hwb2cmykToken, hsl2cmykToken, rgb2cmykToken } from './cmyk.js';
 import { a98rgb2srgbvalues, srgb2a98values } from './a98rgb.js';
 import { epsilon } from '../../ast/transform/utils.js';
 import { definedPropertySettings, colorFuncColorSpace, colorPrecision, anglePrecision } from '../constants.js';
+import { trimArray } from '../../validation/match.js';
+import { alpha } from './alpha.js';
+import { equalsIgnoreCase } from '../../parser/utils/text.js';
 
 /**
  * Converts a color to another color space
  * @param token
  * @param to
- *
- * @private
  *
  * ```ts
  *
@@ -41,6 +42,17 @@ function convertColor(token, to) {
         token.kin == ColorType.DPSYS ||
         (isIdentColor(token) && "currentcolor" == token.val.toLowerCase())) {
         return token;
+    }
+    if (token.kin == ColorType.ALPHA) {
+        const args = token.chi.filter((token) => token.typ !== EnumToken.WhitespaceTokenType && token.typ !== EnumToken.CommentTokenType);
+        if (args.at(-2)?.typ === EnumToken.LiteralTokenType && "/" === args.at(-2)?.val) {
+            args.splice(args.length - 2, 1);
+        }
+        // @ts-expect-error
+        token = alpha(...trimArray(args.slice(1)));
+        if (token == null) {
+            return null;
+        }
     }
     if (token.kin == ColorType.COLOR_MIX && to != ColorType.COLOR_MIX) {
         const children = token.chi.reduce((acc, t) => {
@@ -58,13 +70,13 @@ function convertColor(token, to) {
         }
     }
     if (token.cal == "rel" &&
-        ["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch", "color"].includes(token.val.toLowerCase())) {
+        ["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch", "color"].some((t) => equalsIgnoreCase(t, token.val))) {
         const chi = getComponents(token);
         const offset = token.val == "color" ? 2 : 1;
         if (chi != null) {
             // @ts-ignore
             const color = chi[1];
-            const components = parseRelativeColor(token.val.toLowerCase() == "color"
+            const components = parseRelativeColorComponents(equalsIgnoreCase(token.val, "color")
                 ? chi[offset].val
                 : token.val, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
             if (components == null) {
@@ -464,13 +476,7 @@ function srgb2srgbcolorspace(val, to) {
     return values;
 }
 function minmax(value, min, max) {
-    if (value < min) {
-        return min;
-    }
-    if (value > max) {
-        return max;
-    }
-    return value;
+    return value < min ? min : value > max ? max : value;
 }
 function color2srgbvalues(token) {
     const components = getComponents(token);

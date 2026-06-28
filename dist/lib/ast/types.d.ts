@@ -819,6 +819,10 @@ export declare enum ColorType {
      */
     CUSTOM_COLOR = 24,
     /**
+     * alpha() color function
+     */
+    ALPHA = 25,
+    /**
      * alias for rgba
      */
     RGB = 4,

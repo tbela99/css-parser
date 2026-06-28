@@ -15,6 +15,7 @@ import { srgb2xyz_d50 } from './xyz.js';
 import { XYZ_D65_to_D50, xyzd502lch } from './xyzd50.js';
 import { srgb2rec2020values } from './rec2020.js';
 import { isRectangularOrthogonalColorspace, isPolarColorspace } from '../syntax.js';
+import { equalsIgnoreCase } from '../../parser/utils/text.js';
 
 function interpolateHue(interpolationMethod, h1, h2) {
     switch (interpolationMethod.val) {
@@ -50,7 +51,7 @@ function interpolateHue(interpolationMethod, h1, h2) {
     return [h1, h2];
 }
 function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color2, percentage2) {
-    if (color1.val.toLowerCase() == "currentcolor" || color2.val == "currentcolor".toLowerCase()) {
+    if (equalsIgnoreCase(color1.val, "currentcolor") || equalsIgnoreCase(color2.val, "currentcolor")) {
         return null;
     }
     if (hueInterpolationMethod != null && isRectangularOrthogonalColorspace(colorSpace)) {

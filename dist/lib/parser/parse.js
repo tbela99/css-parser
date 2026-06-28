@@ -1,6 +1,6 @@
 import { isIdentColor, isIdentStart, isIdent, isColor, parseColor } from '../syntax/syntax.js';
 import { camelize, equalsIgnoreCase, dasherize } from './utils/text.js';
-import { renderToken } from '../renderer/render.js';
+import { renderValue } from '../renderer/render.js';
 import { EnumToken, ValidationLevel, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from '../ast/types.js';
 import { minify } from '../ast/minify.js';
 import { expand } from '../ast/expand.js';
@@ -30,8 +30,8 @@ function renderTokens(tokens, options) {
     if (tokens == null || tokens.length === 0)
         return "";
     if (options != null)
-        return tokens.map((t) => renderToken(t, options)).join("");
-    return tokens.map((t) => renderToken(t)).join("");
+        return tokens.map((t) => renderValue(t, options)).join("");
+    return tokens.map((t) => renderValue(t)).join("");
 }
 const trimWhiteSpace = [
     EnumToken.CommentTokenType,
@@ -1376,7 +1376,7 @@ async function doParse(iter, options = {}) {
                 }
                 node.sel = "";
                 for (const token of node.tokens) {
-                    node.sel += renderToken(token);
+                    node.sel += renderValue(token);
                 }
             }
             else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframesAtRuleNodeType) {
@@ -1892,7 +1892,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                             stream[index + 1]?.typ === EnumToken.CommentTokenType &&
                             (stream.length < index + 3 || stream[index + 2]?.typ === EnumToken.WhitespaceTokenType))
                         ? ""
-                        : renderToken(t, options)), ""),
+                        : renderValue(t, options)), ""),
                 ...(parseAsBlock ? { chi: [] } : {}),
             }), {
                 tokens: { ...definedPropertySettings, value: stream.slice() },
@@ -1922,7 +1922,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                             stream[index + 1]?.typ === EnumToken.CommentTokenType &&
                             (stream.length < index + 3 || stream[index + 2]?.typ === EnumToken.WhitespaceTokenType))
                         ? ""
-                        : renderToken(t, options)), ""),
+                        : renderValue(t, options)), ""),
             }), {
                 tokens: { ...definedPropertySettings, value: stream.slice() },
                 loc: {

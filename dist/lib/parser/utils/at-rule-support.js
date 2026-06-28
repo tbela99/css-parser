@@ -1,5 +1,5 @@
 import { EnumToken, ValidationLevel } from '../../ast/types.js';
-import { renderToken } from '../../renderer/render.js';
+import { renderValue } from '../../renderer/render.js';
 import { tokensfuncDefMap, trimTokenSpace, tokensfuncSet, definedPropertySettings } from '../../syntax/constants.js';
 import { getParsedSyntax } from '../../validation/config.js';
 import { matchAllSyntax, createValidationContext, trimArray } from '../../validation/match.js';
@@ -353,7 +353,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                 {
                     action: "drop",
                     node: stack.at(-1),
-                    message: `unmatched token '${renderToken(stack.at(-1))}' at ${stack.at(-1).loc.src}:${stack.at(-1).loc.sta.lin}:${stack.at(-1).loc.sta.col}`,
+                    message: `unmatched token '${renderValue(stack.at(-1))}' at ${stack.at(-1).loc.src}:${stack.at(-1).loc.sta.lin}:${stack.at(-1).loc.sta.col}`,
                 },
             ],
         };

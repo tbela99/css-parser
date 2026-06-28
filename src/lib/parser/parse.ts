@@ -1,6 +1,6 @@
 import { isColor, isIdent, isIdentColor, isIdentStart, parseColor } from "../syntax/syntax.ts";
 import { camelize, dasherize, equalsIgnoreCase } from "./utils/text.ts";
-import { renderToken } from "../renderer/render.ts";
+import { renderValue } from "../renderer/render.ts";
 import { EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ValidationLevel } from "../ast/types.ts";
 import { minify } from "../ast/minify.ts";
 import { expand } from "../ast/expand.ts";
@@ -93,8 +93,8 @@ import { memoize } from "./utils/cache.ts";
 
 function renderTokens(tokens: Token[] | null | undefined, options?: any): string {
     if (tokens == null || tokens.length === 0) return "";
-    if (options != null) return tokens.map((t) => renderToken(t, options)).join("");
-    return tokens.map((t) => renderToken(t)).join("");
+    if (options != null) return tokens.map((t) => renderValue(t, options)).join("");
+    return tokens.map((t) => renderValue(t)).join("");
 }
 
 declare type T = AstDeclaration | AstAtRule | AstRule | AstKeyframesRule | AstKeyframesAtRule;
@@ -1880,7 +1880,7 @@ export async function doParse(
                 node.sel = "";
 
                 for (const token of node.tokens! as Token[]) {
-                    node.sel += renderToken(token);
+                    node.sel += renderValue(token);
                 }
             } else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframesAtRuleNodeType) {
                 const val: string = node.nam.toLowerCase();
@@ -2558,7 +2558,7 @@ export function parseAtRule(
                                 stream[index + 1]?.typ === EnumToken.CommentTokenType &&
                                 (stream.length < index + 3 || stream[index + 2]?.typ === EnumToken.WhitespaceTokenType))
                                 ? ""
-                                : renderToken(t, options)),
+                                : renderValue(t, options)),
                         "",
                     ),
                     ...(parseAsBlock ? { chi: [] } : {}),
@@ -2601,7 +2601,7 @@ export function parseAtRule(
                                 stream[index + 1]?.typ === EnumToken.CommentTokenType &&
                                 (stream.length < index + 3 || stream[index + 2]?.typ === EnumToken.WhitespaceTokenType))
                                 ? ""
-                                : renderToken(t, options)),
+                                : renderValue(t, options)),
                         "",
                     ),
                 }),

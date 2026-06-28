@@ -2,7 +2,7 @@ import { EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
 import { pseudoAliasMap } from '../../syntax/syntax.js';
 import { splitRule } from '../minify.js';
-import { renderToken } from '../../renderer/render.js';
+import { renderValue } from '../../renderer/render.js';
 import { funcLike, regMatchLinearGradient, regMatchRadialGradient } from '../../syntax/constants.js';
 import { FeatureWalkMode } from './type.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
@@ -79,7 +79,7 @@ function replaceAstNodes(tokens, root) {
         const split = splitTokenList(tokens, [EnumToken.CommaTokenType]);
         tokens.length = 0;
         tokens.push(...split.reduce((acc, curr) => {
-            const str = curr.reduce((acc, curr) => acc + renderToken(curr), "");
+            const str = curr.reduce((acc, curr) => acc + renderValue(curr), "");
             if (set.has(str)) {
                 return acc;
             }
@@ -173,7 +173,7 @@ class ComputePrefixFeature {
             }
             if (node.typ == EnumToken.AtRuleNodeType && node.val !== "") {
                 if (replaceAstNodes(node.tokens)) {
-                    node.val = node.tokens.reduce((acc, curr) => acc + renderToken(curr), "");
+                    node.val = node.tokens.reduce((acc, curr) => acc + renderValue(curr), "");
                 }
             }
         }

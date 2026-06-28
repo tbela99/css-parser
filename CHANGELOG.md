@@ -2,7 +2,19 @@
 
 ## v1.4.4
 
-- [x] minify transform-origin property
+### Interpolated functions
+
+- [ ] mix() 
+- [ ] calc-mix() https://www.w3.org/TR/css-values-5/#calc-mix
+- [ ] toggle()
+- [ ] inherit()
+
+### Color
+
+- [x] alpha() css color
+
+### Webkit gradient prefix removal
+
 - [x] convert -webkit-* gradient functions
   - [x] -webkit-gradient() to:
     - [x] linear-gradient()
@@ -11,6 +23,9 @@
   - [x] -webkit-repeating-linear-gradient()
   - [x] -webkit-radial-gradient()
   - [x] -webkit-repeating-radial-gradient()  
+  
+### CSS gradient minification
+
 - [x] minify gradient functions
   - [x] linear-gradient()
   - [x] radial-gradient()
@@ -19,8 +34,55 @@
   - [x] repeating-radial-gradient()
   - [x] repeating-conic-gradient()
 
+### Other minification
+
+- [x] minify transform-origin property
+  
 ### Bug fixes
 - [x] do not minify supports() arguments
+  
+css incorrectly parsed
+```css
+body {
+  background-color: if(
+    supports(color: oklch(0.7 0.185 232)): oklch(0.7 0.185 232);
+    else: #00adf3;
+  );
+  
+  &::after {
+    content: if(
+    supports(color: oklch(0.7 0.185 232)): "Your browser supports OKLCH";
+    else: "Your browser does not support OKLCH";
+    );
+  }
+}
+```
+
+result
+```css
+body {
+ background-color: if(supports(color:#00aefc):#00aefc;else:#00adf3);
+ &:after {
+  content: if(supports(color:#00aefc):"Your browser supports OKLCH";else:"Your browser does not support OKLCH")
+ }
+}
+```
+instead of
+```css
+body {
+ background-color: #00adf3;
+ @supports (color:oklch(.7 .185 232)) {
+  background-color: #00aefc
+ }
+ &:after {
+  content: "Your browser does not support OKLCH";
+  @supports (color:oklch(.7 .185 232)) {
+   content: "Your browser supports OKLCH"
+  }
+ }
+}
+```
+
 - [x] incorrectly parse selector when removePrefix and css module settings are enabled
 
 ```css
@@ -32,6 +94,13 @@ is parsed and rendered as
 
 ```css
 ,,*:before:after {
+ box-sizing: border-box
+}
+```
+
+instead of 
+```css
+*,:before,:after {
  box-sizing: border-box
 }
 ```

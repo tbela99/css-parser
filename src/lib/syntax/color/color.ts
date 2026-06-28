@@ -3,6 +3,7 @@ import type {
     ColorToken,
     FractionToken,
     IdentToken,
+    LiteralToken,
     NumberToken,
     PercentageToken,
     Token,
@@ -118,7 +119,7 @@ import {
     rgb2HexToken,
 } from "./hex.ts";
 import type { RelativeColorTypes } from "./relativecolor.ts";
-import { parseRelativeColor } from "./relativecolor.ts";
+import { parseRelativeColorComponents } from "./relativecolor.ts";
 import { isIdentColor } from "../syntax.ts";
 import {
     color2cmykToken,
@@ -133,13 +134,14 @@ import {
 import { a98rgb2srgbvalues, srgb2a98values } from "./a98rgb.ts";
 import { epsilon } from "../../ast/transform/utils.ts";
 import { colorFuncColorSpace, colorPrecision, anglePrecision, definedPropertySettings } from "../constants.ts";
+import { trimArray } from "../../validation/match.ts";
+import { alpha } from "./alpha.ts";
+import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 
 /**
  * Converts a color to another color space
  * @param token
  * @param to
- *
- * @private
  *
  * ```ts
  *
@@ -155,6 +157,23 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
         (isIdentColor(token) && "currentcolor" == token.val.toLowerCase())
     ) {
         return token;
+    }
+
+    if (token.kin == ColorType.ALPHA) {
+        const args: Token[] = ((token as ColorToken).chi as Token[]).filter(
+            (token: Token) => token.typ !== EnumToken.WhitespaceTokenType && token.typ !== EnumToken.CommentTokenType,
+        );
+
+        if (args.at(-2)?.typ === EnumToken.LiteralTokenType && "/" === (args.at(-2) as LiteralToken)?.val) {
+            args.splice(args.length - 2, 1);
+        }
+
+        // @ts-expect-error
+        token = alpha(...trimArray(args.slice(1)));
+
+        if (token == null) {
+            return null;
+        }
     }
 
     if (token.kin == ColorType.COLOR_MIX && to != ColorType.COLOR_MIX) {
@@ -187,16 +206,17 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
 
     if (
         (token as ColorToken).cal == "rel" &&
-        ["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch", "color"].includes((token as ColorToken).val.toLowerCase())
+        ["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch", "color"].some((t) => equalsIgnoreCase(t, (token as ColorToken).val))
     ) {
         const chi: Token[] | null = getComponents(token as ColorToken);
         const offset: number = (token as ColorToken).val == "color" ? 2 : 1;
 
         if (chi != null) {
+
             // @ts-ignore
             const color: ColorToken = chi[1];
-            const components: Record<RelativeColorTypes, Token> = parseRelativeColor(
-                (token as ColorToken).val.toLowerCase() == "color"
+            const components: Record<RelativeColorTypes, Token> = parseRelativeColorComponents(
+                equalsIgnoreCase((token as ColorToken).val, "color")
                     ? (chi[offset] as IdentToken).val
                     : ((token as ColorToken).val as string),
                 color,
@@ -728,15 +748,7 @@ function srgb2srgbcolorspace(val: number[], to: ColorType): number[] {
 }
 
 export function minmax(value: number, min: number, max: number): number {
-    if (value < min) {
-        return min;
-    }
-
-    if (value > max) {
-        return max;
-    }
-
-    return value;
+    return value < min ? min : value > max ? max : value;
 }
 
 export function color2srgbvalues(token: ColorToken): number[] | null {

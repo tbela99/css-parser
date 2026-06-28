@@ -826,6 +826,10 @@ var ColorType;
      */
     ColorType[ColorType["CUSTOM_COLOR"] = 24] = "CUSTOM_COLOR";
     /**
+     * alpha() color function
+     */
+    ColorType[ColorType["ALPHA"] = 25] = "ALPHA";
+    /**
      * alias for rgba
      */
     ColorType[ColorType["RGB"] = 4] = "RGB";

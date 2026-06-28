@@ -18,7 +18,7 @@ import { walkValues } from "../walk.ts";
 import { pseudoAliasMap } from "../../syntax/syntax.ts";
 import { splitRule } from "../minify.ts";
 import type { ValidationConfiguration } from "../../../@types/validation.d.ts";
-import { renderToken } from "../../renderer/render.ts";
+import { renderValue } from "../../renderer/render.ts";
 import { funcLike, regMatchLinearGradient, regMatchRadialGradient } from "../../syntax/constants.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
@@ -118,7 +118,7 @@ function replaceAstNodes(tokens: Token[], root?: AstNode): boolean {
         tokens.length = 0;
         tokens.push(
             ...split.reduce((acc, curr) => {
-                const str = curr.reduce((acc, curr) => acc + renderToken(curr), "");
+                const str = curr.reduce((acc, curr) => acc + renderValue(curr), "");
                 if (set.has(str)) {
                     return acc;
                 }
@@ -236,7 +236,7 @@ export class ComputePrefixFeature {
             if (node.typ == EnumToken.AtRuleNodeType && (node as AstAtRule).val !== "") {
                 if (replaceAstNodes((node as AstAtRule).tokens as Token[])) {
                     (node as AstAtRule).val = ((node as AstAtRule).tokens as Token[]).reduce(
-                        (acc, curr) => acc + renderToken(curr),
+                        (acc, curr) => acc + renderValue(curr),
                         "",
                     );
                 }

@@ -5,8 +5,6 @@ import { ColorType } from "../../ast/types.ts";
  * @param token
  * @param to
  *
- * @private
- *
  * ```ts
  *
  *     const token = {typ: EnumToken.ColorTokenType, kin: ColorType.HEX, val: '#F00'}

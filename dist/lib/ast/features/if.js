@@ -1,5 +1,5 @@
 import { EnumToken } from '../types.js';
-import { renderToken } from '../../renderer/render.js';
+import { renderValue } from '../../renderer/render.js';
 import { FeatureWalkMode } from './type.js';
 import { definedPropertySettings } from '../../syntax/constants.js';
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
@@ -100,7 +100,7 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
                 minify,
                 convertColor: minify,
             };
-            atRule.val = atRule.tokens.reduce((acc, curr) => acc + renderToken(curr, options), "");
+            atRule.val = atRule.tokens.reduce((acc, curr) => acc + renderValue(curr, options), "");
             clonedDeclaration = cloneNode(declaration, true, nodeMap);
             replaceNodeOrValue(nodeMap.get(targetWrapper), nodeMap.get(node), node.r.at(-1)?.typ === EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
             clonedDeclaration.parent = atRule;
@@ -116,7 +116,7 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
                 chi: [],
             });
             Object.defineProperty(atRule, "tokens", { ...definedPropertySettings, value: [left] });
-            atRule.val = atRule.tokens.reduce((acc, curr) => acc + renderToken(curr), "");
+            atRule.val = atRule.tokens.reduce((acc, curr) => acc + renderValue(curr), "");
             clonedDeclaration = cloneNode(declaration, true, nodeMap);
             replaceNodeOrValue(nodeMap.get(targetWrapper.typ === EnumToken.WildCardFunctionTokenType ? targetParentWrapper : targetWrapper), nodeMap.get(targetWrapper.typ === EnumToken.WildCardFunctionTokenType ? targetWrapper : node), node.r.at(-1)?.typ === EnumToken.SemiColonTokenType
                 ? trimArray(node.r.slice(0, -1))
