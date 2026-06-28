@@ -160,7 +160,11 @@ export function evaluate(tokens: Token[]): Token[] {
  * @param r
  * @param op
  */
-function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Plus | EnumToken.Sub | EnumToken.Div | EnumToken.Mul): Token {
+function doEvaluate(
+    l: Token,
+    r: Token,
+    op: EnumToken.Add | EnumToken.Plus | EnumToken.Sub | EnumToken.Div | EnumToken.Mul,
+): Token {
     const defaultReturn: BinaryExpressionToken = <BinaryExpressionToken>{
         typ: EnumToken.BinaryExpressionTokenType,
         op,
@@ -184,7 +188,7 @@ function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Plus | Enu
         }
     }
 
-    if (op == EnumToken.Add  ||  op == EnumToken.Plus|| op == EnumToken.Sub) {
+    if (op == EnumToken.Add || op == EnumToken.Plus || op == EnumToken.Sub) {
         // @ts-ignore
         if (l.typ != r.typ) {
             return defaultReturn;
@@ -192,7 +196,7 @@ function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Plus | Enu
     }
 
     let typ: EnumToken =
-        l.typ == EnumToken.NumberTokenType
+        l.typ == EnumToken.NumberTokenType || l.typ === EnumToken.IdenTokenType
             ? r.typ
             : r.typ == EnumToken.NumberTokenType
               ? l.typ
@@ -203,8 +207,10 @@ function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Plus | Enu
     // @ts-expect-error
     let v1: number | Token | null = l.val?.typ == EnumToken.FractionTokenType ? l.val : getValue(l);
     let v2: number | Token | null =
-    // @ts-expect-error
-        ((r as NumberToken | DimensionToken).val as FractionToken)?.typ == EnumToken.FractionTokenType ? r.val : getValue(r as NumberToken | IdentToken | FunctionToken);
+        // @ts-expect-error
+        ((r as NumberToken | DimensionToken).val as FractionToken)?.typ == EnumToken.FractionTokenType
+            ? r.val
+            : getValue(r as NumberToken | IdentToken | FunctionToken);
 
     if (op == EnumToken.Mul) {
         if (l.typ != EnumToken.NumberTokenType && r.typ != EnumToken.NumberTokenType) {
@@ -228,7 +234,7 @@ function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Plus | Enu
     const val: number | FractionToken = compute(v1, v2, op);
 
     const token = {
-        ...(l.typ == EnumToken.NumberTokenType ? r : l),
+        ...(l.typ === EnumToken.NumberTokenType || l.typ === EnumToken.IdenTokenType ? r : l),
         typ,
         val /* : typeof val == 'number' ? minifyNumber(val) : val */,
     } as Token;
@@ -251,8 +257,7 @@ function getValue(t: NumberToken | IdentToken | FunctionToken): number | null {
     return t.typ == EnumToken.FractionTokenType ? (t as FractionToken).l.val / (t as FractionToken).r.val : +t.val;
 }
 
-export function evaluateFunc(token: FunctionToken): Token[] | null{
-
+export function evaluateFunc(token: FunctionToken): Token[] | null {
     const values: Token[] = token.chi.slice();
 
     switch (token.val) {
@@ -271,9 +276,9 @@ export function evaluateFunc(token: FunctionToken): Token[] | null{
             // @ts-ignore
             let val: number =
                 value[0].typ == EnumToken.NumberTokenType
-                    ? +(value[0] as NumberToken | DimensionToken).val as number
-                    // @ts-expect-error
-                    : (value[0] as FractionToken).l.val as number / (value[0] as FractionToken).r.val;
+                    ? (+(value[0] as NumberToken | DimensionToken).val as number)
+                    : // @ts-expect-error
+                      ((value[0] as FractionToken).l.val as number) / (value[0] as FractionToken).r.val;
 
             return [
                 {
@@ -300,7 +305,6 @@ export function evaluateFunc(token: FunctionToken): Token[] | null{
                 const val = getValue(chi[i] as DimensionToken | NumberToken) as number;
 
                 if (Number.isNaN(val)) {
-                    
                     return null;
                 }
 
@@ -585,7 +589,7 @@ export function buildExpression(tokens: Token[]): BinaryExpressionToken {
 
 function getArithmeticOperation(
     op: "+" | "-" | "/" | "*",
-): EnumToken.Mul | EnumToken.Div | EnumToken.Add |  EnumToken.Sub {
+): EnumToken.Mul | EnumToken.Div | EnumToken.Add | EnumToken.Sub {
     if (op == "+") {
         return EnumToken.Add;
     }
@@ -657,7 +661,9 @@ function factor(tokens: Array<Token | BinaryExpressionToken>, ops: Array<"+" | "
             tokens.splice(i - 1, 3, <BinaryExpressionToken>{
                 typ: EnumToken.BinaryExpressionTokenType,
                 op: isOp
-                    ? ((tokens[i] as Token).typ === EnumToken.Plus ? EnumToken.Add : (tokens[i] as Token).typ)
+                    ? (tokens[i] as Token).typ === EnumToken.Plus
+                        ? EnumToken.Add
+                        : (tokens[i] as Token).typ
                     : getArithmeticOperation(<"-" | "+" | "/" | "*">(tokens[i] as LiteralToken).val),
                 l: factorToken(tokens[i - 1]),
                 r: factorToken(tokens[i + 1]),

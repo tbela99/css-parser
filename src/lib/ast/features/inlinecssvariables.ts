@@ -17,7 +17,7 @@ import type {
 } from "../../../@types/index.d.ts";
 import { EnumToken } from "../types.ts";
 import { walkValues } from "../walk.ts";
-import { renderToken } from "../../renderer/render.ts";
+import { renderValue } from "../../renderer/render.ts";
 import { splitRule } from "../minify.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { mathFuncs } from "../../syntax/constants.ts";
@@ -196,7 +196,7 @@ export class InlineCssVariablesFeature {
                             // @ts-ignore
                             (<AstDeclaration[]>parent.chi).splice(i, 1, {
                                 typ: EnumToken.CommentTokenType,
-                                val: `/* ${info.node.nam}: ${info.values.reduce((acc: string, curr: Token): string => acc + renderToken(curr, { convertColor: false }), "")} */`,
+                                val: `/* ${info.node.nam}: ${info.values.reduce((acc: string, curr: Token): string => acc + renderValue(curr, { convertColor: false }), "")} */`,
                             } as CommentToken);
                             break;
                         }

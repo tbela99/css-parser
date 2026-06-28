@@ -2,8 +2,20 @@
 
 ## v1.4.4
 
-- [x] minify transform-origin property
-- [ ] convert -webkit-* gradient functions
+### Interpolated functions
+
+- [ ] mix() 
+- [ ] calc-mix() https://www.w3.org/TR/css-values-5/#calc-mix
+- [ ] toggle()
+- [ ] inherit()
+
+### Color
+
+- [ ] alpha()
+
+### Webkit gradient prefix removal
+
+- [x] convert -webkit-* gradient functions
   - [x] -webkit-gradient() to:
     - [x] linear-gradient()
     - [ ] radial-gradient() - not supported ⚠️
@@ -11,6 +23,9 @@
   - [x] -webkit-repeating-linear-gradient()
   - [x] -webkit-radial-gradient()
   - [x] -webkit-repeating-radial-gradient()  
+  
+### CSS gradient minification
+
 - [x] minify gradient functions
   - [x] linear-gradient()
   - [x] radial-gradient()
@@ -19,6 +34,10 @@
   - [x] repeating-radial-gradient()
   - [x] repeating-conic-gradient()
 
+### Other minification
+
+- [x] minify transform-origin property
+  
 ### Bug fixes
 - [x] do not minify supports() arguments
 - [x] incorrectly parse selector when removePrefix and css module settings are enabled

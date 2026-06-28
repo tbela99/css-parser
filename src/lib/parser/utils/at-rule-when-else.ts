@@ -15,7 +15,7 @@ import type {
     WhenElseUnaryConditionToken,
 } from "../../../@types/index.d.ts";
 import { EnumToken } from "../../ast/types.ts";
-import { renderToken } from "../../renderer/render.ts";
+import { renderValue } from "../../renderer/render.ts";
 import { trimArray } from "../../validation/match.ts";
 import { definedPropertySettings, tokensfuncDefMap, tokensfuncSet } from "../../syntax/constants.ts";
 import { parseMediaqueryList } from "./at-rule-media.ts";
@@ -462,7 +462,7 @@ export function matchAtRuleWhenElseSyntax(
                 {
                     action: "drop",
                     node: stack.at(-1),
-                    message: `unmatched token '${renderToken(stack.at(-1) as Token)}' at ${stack.at(-1)!.loc!.src}:${
+                    message: `unmatched token '${renderValue(stack.at(-1) as Token)}' at ${stack.at(-1)!.loc!.src}:${
                         stack.at(-1)!.loc!.sta.lin
                     }:${stack.at(-1)!.loc!.sta.col}`,
                 },

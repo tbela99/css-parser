@@ -430,6 +430,71 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
  background: conic-gradient(red 0 90deg,#ff0,green,blue)
 }`));
         });
+
+        it(' conic-gradient() #24', function () {
+
+            return transform(`
+  
+ .xl\\:origin-bottom-left {
+background: conic-gradient(in hsl longer hue, red 0deg, red 90deg, yellow 180deg, green 270deg, blue 360deg);
+}
+
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl\\:origin-bottom-left {
+ background: conic-gradient(in hsl longer hue,red 0 90deg,#ff0,green,blue)
+}`));
+        });
+
+        it(' conic-gradient() #25', function () {
+
+            return transform(`
+  
+ .xl\\:origin-bottom-left {
+background: conic-gradient(red 40grad, 80grad, blue 360grad);
+
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl\\:origin-bottom-left {
+ background: conic-gradient(red 36deg,72deg,blue 324deg)
+}`));
+        });
+
+        it(' conic-gradient() #25', function () {
+
+            return transform(`
+  
+ .xl\\:origin-bottom-left {
+background: conic-gradient(red 40grad, 80grad, blue 360grad, black 400grad, black 450grad);
+
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl\\:origin-bottom-left {
+ background: conic-gradient(red 36deg,72deg,blue 324deg,#000 1turn 405deg)
+}`));
+        });
+
+        it(' conic-gradient() #26', function () {
+
+            return transform(`
+  
+ .xl\\:origin-bottom-left {
+background:  conic-gradient(white 90deg, black 0.25turn 0.5turn, white calc(2*pi * 1rad) calc(pi * 1.5rad), black 300grad);
+
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`.xl\\:origin-bottom-left {
+ background: conic-gradient(#fff 90deg,#000 90deg .5turn,#fff 1turn 270deg,#000 270deg)
+}`));
+        });
     });
 
 }

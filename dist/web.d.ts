@@ -12,7 +12,7 @@ export { minify } from "./lib/ast/minify.ts";
 export { expand } from "./lib/ast/expand.ts";
 export { walk, walkValues, WalkerEvent, WalkerOptionEnum } from "./lib/ast/walk.ts";
 export { parseString } from "./lib/parser/parse.ts";
-export { renderToken } from "./lib/renderer/render.ts";
+export { renderValue as renderToken } from "./lib/renderer/render.ts";
 export { convertColor } from "./lib/syntax/color/color.ts";
 export { isOkLabClose, okLabDistance } from "./lib/syntax/color/utils/distance.ts";
 export { parseDeclarations } from "./lib/parser/parse.ts";

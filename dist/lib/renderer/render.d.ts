@@ -16,7 +16,7 @@ export declare function doRender(data: AstNode, options?: RenderOptions, mapping
  * @param options
  * @private
  */
-export declare function renderToken(token: Token, options?: RenderOptions, cache?: {
+export declare function renderValue(token: Token, options?: RenderOptions, cache?: {
     [key: string]: any;
 }, reducer?: null | ((acc: string, curr: Token) => string), errors?: ErrorDescription[]): string;
 /**

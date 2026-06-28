@@ -44,7 +44,7 @@ import { isColor, isValue, pseudoElements } from "../syntax/syntax.ts";
 import { isDeclarationValue } from "../parser/utils/declaration.ts";
 import { renderSyntax } from "./parser/parse.ts";
 import { equalsIgnoreCase } from "../parser/utils/text.ts";
-import { renderToken } from "../renderer/render.ts";
+import { renderValue } from "../renderer/render.ts";
 
 const config: ValidationConfiguration = getSyntaxConfig();
 

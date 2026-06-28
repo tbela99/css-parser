@@ -11,7 +11,7 @@ import type {
     Token,
 } from "../../../@types/index.d.ts";
 import { EnumToken } from "../types.ts";
-import { renderToken } from "../../renderer/render.ts";
+import { renderValue } from "../../renderer/render.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { definedPropertySettings } from "../../syntax/constants.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
@@ -135,7 +135,6 @@ function substituteIfElseNode(
         result.push(clonedDeclaration);
 
         nodeMap.clear();
-
         clonedDeclaration = cloneNode(declaration, true, nodeMap) as AstDeclaration;
 
         replaceNodeOrValue(
@@ -181,7 +180,7 @@ function substituteIfElseNode(
                 convertColor: minify,
             };
 
-            atRule.val = atRule.tokens!.reduce((acc: string, curr: Token) => acc + renderToken(curr, options), "");
+            atRule.val = atRule.tokens!.reduce((acc: string, curr: Token) => acc + renderValue(curr, options), "");
 
             clonedDeclaration = cloneNode(declaration, true, nodeMap) as AstDeclaration;
 
@@ -206,7 +205,7 @@ function substituteIfElseNode(
             }) as AstAtRule;
 
             Object.defineProperty(atRule, "tokens", { ...definedPropertySettings, value: [left] });
-            atRule.val = atRule.tokens!.reduce((acc: string, curr: Token) => acc + renderToken(curr), "");
+            atRule.val = atRule.tokens!.reduce((acc: string, curr: Token) => acc + renderValue(curr), "");
 
             clonedDeclaration = cloneNode(declaration, true, nodeMap) as AstDeclaration;
 

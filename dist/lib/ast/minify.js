@@ -1,5 +1,5 @@
 import { eq } from '../parser/utils/eq.js';
-import { renderToken, doRender } from '../renderer/render.js';
+import { renderValue, doRender } from '../renderer/render.js';
 import * as index from './features/index.js';
 import { walkValues } from './walk.js';
 import { EnumToken } from './types.js';
@@ -262,7 +262,7 @@ function minifyAtRuleMedia(tokens) {
         if (result.hasUpdates) {
             hasUpdates = true;
         }
-        acc.set(values.reduce((acc, t) => acc + renderToken(t), ""), result.values);
+        acc.set(values.reduce((acc, t) => acc + renderValue(t), ""), result.values);
         return acc;
     }, new Map());
     if (sections.has("all")) {
@@ -401,7 +401,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                         (index + 3 < arr.length ||
                                             arr[index + 2]?.typ === EnumToken.WhitespaceTokenType))
                                     ? ""
-                                    : renderToken(curr)), "");
+                                    : renderValue(curr)), "");
                         }
                     }
                     if (["all", "", null].includes(node.val)) {
@@ -429,7 +429,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                     arr[index + 1]?.typ === EnumToken.CommentTokenType &&
                                     (index + 3 < arr.length || arr[index + 2].typ === EnumToken.WhitespaceTokenType))
                                 ? ""
-                                : renderToken(curr)), "");
+                                : renderValue(curr)), "");
                     }
                 }
                 if (previous?.typ == EnumToken.AtRuleNodeType &&
@@ -1112,7 +1112,7 @@ function fixSelector(node) {
                 }
             }
         }
-        node.sel = attributes.reduce((acc, curr) => acc + renderToken(curr), "");
+        node.sel = attributes.reduce((acc, curr) => acc + renderValue(curr), "");
     }
 }
 /**

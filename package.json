@@ -1,7 +1,7 @@
 {
   "name": "@tbela99/css-parser",
   "description": "CSS parser, minifier and validator for node and the browser",
-  "version": "1.4.4-alpha4",
+  "version": "1.4.4-alpha5",
   "exports": {
     ".": "./dist/node.js",
     "./node": "./dist/node.js",
@@ -84,6 +84,7 @@
   },
   "sideEffects": false,
   "allowScripts": {
+    "esbuild@0.28.0": true,
     "esbuild@0.28.1": true,
     "fsevents@2.3.2": true,
     "fsevents@2.3.3": true

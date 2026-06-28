@@ -20,7 +20,7 @@ import type {
     ColorToken,
 } from "../../../@types/index.d.ts";
 import { EnumToken } from "../../ast/types.ts";
-import { renderToken } from "../../renderer/render.ts";
+import { renderValue } from "../../renderer/render.ts";
 import { combinators, definedPropertySettings, tokensfuncDefMap } from "../../syntax/constants.ts";
 import { isHash, isIdent, pseudoElements } from "../../syntax/syntax.ts";
 import { getParsedSyntax, getSyntaxConfig } from "../../validation/config.ts";
@@ -113,7 +113,7 @@ export function parseSelector(
                 typ: result.success ? EnumToken.KeyFramesRuleNodeType : EnumToken.InvalidRuleNodeType,
                 sel: [
                     ...splitTokenList(trimArray(tokens)).reduce((acc, curr: Token[]) => {
-                        acc.add(curr.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), ""));
+                        acc.add(curr.reduce((acc, curr) => acc + renderValue(curr, { minify: false }), ""));
                         return acc;
                     }, new Set<string>()),
                 ].join(),
@@ -571,7 +571,7 @@ export function parseSelector(
                                 }
                             }
 
-                            let t: string = renderToken(curr, { minify: false });
+                            let t: string = renderValue(curr, { minify: false });
 
                             if (t == ",") {
                                 acc.push([]);

@@ -1,5 +1,6 @@
 import { EnumToken, ColorType } from '../ast/types.js';
 import { walkValues, WalkerOptionEnum } from '../ast/walk.js';
+import { toDegrees } from '../parser/utils/angle.js';
 import { equalsIgnoreCase } from '../parser/utils/text.js';
 import { trimArray } from '../validation/match.js';
 import { splitTokenList } from '../validation/utils/list.js';
@@ -364,7 +365,7 @@ function reduceConicColorStops(stops) {
         }
         if (i > 0 && isOkLabClose(parts[i - 1][0], parts[i][0])) {
             if (parts[i - 1].length == 1) {
-                parts[i - 1].push({ typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: (k - 1) * 100 / n });
+                parts[i - 1].push({ typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.AngleTokenType, val: (k - 1) * 100 / n, unit: 'deg' });
             }
             parts[i - 1].push(...parts[i].slice(1));
             parts.splice(i--, 1);
@@ -374,7 +375,7 @@ function reduceConicColorStops(stops) {
         for (j = 0; j < parts[i].length; j++) {
             if ((parts[i][j].typ == EnumToken.NumberTokenType && 0 == parts[i][j].val) ||
                 parts[i][j].typ == EnumToken.AngleTokenType) {
-                if (parts[i][j].val === (k * 360) / n) {
+                if (toDegrees(parts[i][j]).val === (k * 360) / n) {
                     parts[i].length = j;
                     trimArray(parts[i]);
                     updated = true;

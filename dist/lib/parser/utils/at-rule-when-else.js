@@ -1,5 +1,5 @@
 import { EnumToken } from '../../ast/types.js';
-import { renderToken } from '../../renderer/render.js';
+import { renderValue } from '../../renderer/render.js';
 import { trimArray } from '../../validation/match.js';
 import { tokensfuncDefMap, definedPropertySettings, tokensfuncSet } from '../../syntax/constants.js';
 import { parseMediaqueryList } from './at-rule-media.js';
@@ -350,7 +350,7 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
                 {
                     action: "drop",
                     node: stack.at(-1),
-                    message: `unmatched token '${renderToken(stack.at(-1))}' at ${stack.at(-1).loc.src}:${stack.at(-1).loc.sta.lin}:${stack.at(-1).loc.sta.col}`,
+                    message: `unmatched token '${renderValue(stack.at(-1))}' at ${stack.at(-1).loc.src}:${stack.at(-1).loc.sta.lin}:${stack.at(-1).loc.sta.col}`,
                 },
             ],
         };

@@ -1,4 +1,15 @@
 document.addEventListener("readystatechange", () => {
+    if (document.readyState === "interactive" || document.readyState === "complete") {
+        const theme = localStorage.getItem("typedoc-theme");
+
+        if (theme == null) {
+            localStorage.setItem("typedoc-theme", "dark");
+            document.documentElement.setAttribute("data-theme", 'dark');
+        }
+    }
+});
+
+document.addEventListener("readystatechange", () => {
     if (document.readyState !== "complete") {
         return;
     }

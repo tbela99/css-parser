@@ -22,6 +22,7 @@ import type {
 import { isOkLabClose } from "../../node.ts";
 import { ColorType, EnumToken } from "../ast/types.ts";
 import { WalkerOptionEnum, walkValues } from "../ast/walk.ts";
+import { toDegrees } from "../parser/utils/angle.ts";
 import { equalsIgnoreCase } from "../parser/utils/text.ts";
 import { trimArray } from "../validation/match.ts";
 import { splitTokenList } from "../validation/utils/list.ts";
@@ -741,7 +742,7 @@ export function reduceConicColorStops(stops: Token[]) {
             if (parts[i - 1].length == 1) {
                 parts[i - 1].push(
                     { typ: EnumToken.WhitespaceTokenType },
-                    { typ: EnumToken.PercentageTokenType, val: (k - 1) * 100 / n },
+                    { typ: EnumToken.AngleTokenType, val: (k - 1) * 100 / n, unit: 'deg' },
                 );
             }
 
@@ -756,7 +757,7 @@ export function reduceConicColorStops(stops: Token[]) {
                 (parts[i][j].typ == EnumToken.NumberTokenType && 0 == (parts[i][j] as NumberToken).val) ||
                 parts[i][j].typ == EnumToken.AngleTokenType
             ) {
-                if ((parts[i][j] as NumberToken | PercentageToken | LengthToken).val === (k * 360) / n) {
+                if (toDegrees((parts[i][j] as AngleToken)).val === (k * 360) / n) {
                     parts[i].length = j;
                     trimArray(parts[i]);
                     updated = true;
