@@ -24,7 +24,7 @@ export function okLabDistance(okLab1: [number, number, number], okLab2: [number,
  *
  * @private
  */
-export function isOkLabClose(color1: ColorToken, color2: ColorToken, threshold: number = 0.01): boolean {
+export function isOkLabClose(color1: ColorToken, color2: ColorToken, threshold: number = 0.00001): boolean {
     color1 = convertColor(color1, ColorType.OKLAB) as ColorToken;
     color2 = convertColor(color2, ColorType.OKLAB) as ColorToken;
 

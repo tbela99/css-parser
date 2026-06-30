@@ -2,16 +2,29 @@
 
 ## v1.4.4
 
+### Validation changes
+
+- [ ] allow unknown functions by default - avoid breaking new features.
+- [ ] do not drop tokens that did not pass validation and do not alter their types. only report them.
+
+## Sourcemap
+
+- [ ] sourcemap is only available when parsing a file
+
 ### Interpolated functions
 
 - [ ] mix() 
 - [ ] calc-mix() https://www.w3.org/TR/css-values-5/#calc-mix
 - [ ] toggle()
 - [ ] inherit()
+- [ ] color-mix() 
+- [ ] progress() https://www.w3.org/TR/css-values-5/#progress-func 
+- [ ] media-progress() https://www.w3.org/TR/css-values-5/#media-progress-func
+- [ ] container-progress() https://www.w3.org/TR/css-values-5/#container-progress-func
 
 ### Color
 
-- [x] alpha() css color
+- [x] alpha() 
 
 ### Webkit gradient prefix removal
 
@@ -34,9 +47,10 @@
   - [x] repeating-radial-gradient()
   - [x] repeating-conic-gradient()
 
-### Other minification
+### Other
 
 - [x] minify transform-origin property
+- [x] changing oklab distance threshold to `0.00001` according to https://drafts.csswg.org/css-color-4/#comparing-color-values
   
 ### Bug fixes
 - [x] do not minify supports() arguments
