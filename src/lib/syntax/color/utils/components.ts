@@ -6,7 +6,7 @@ import { expandHexValue } from "../hex.ts";
 import { isColor, parseColor } from "../../syntax.ts";
 import { equalsIgnoreCase } from "../../../parser/utils/text.ts";
 
-export function getComponents(token: ColorToken | IdentToken): Token[] | null {
+export function getColorComponents(token: ColorToken | IdentToken): Token[] | null {
     if (token.typ === EnumToken.IdenTokenType) {
         if (isColor(token)) {
             parseColor(token);
@@ -46,9 +46,11 @@ export function getComponents(token: ColorToken | IdentToken): Token[] | null {
             parseColor(child);
         }
 
-        if (child.typ === EnumToken.FunctionTokenType || 
+        if (
+            child.typ === EnumToken.FunctionTokenType ||
             child.typ === EnumToken.WildCardFunctionTokenType ||
-            child.typ === EnumToken.MathFunctionTokenType) {
+            child.typ === EnumToken.MathFunctionTokenType
+        ) {
             if ("var" == (child as FunctionToken).val.toLowerCase()) {
                 return null;
             } else {
@@ -63,7 +65,7 @@ export function getComponents(token: ColorToken | IdentToken): Token[] | null {
             }
         }
 
-        if (child.typ == EnumToken.ColorTokenType && equalsIgnoreCase("currentcolor",(child as ColorToken).val)) {
+        if (child.typ == EnumToken.ColorTokenType && equalsIgnoreCase("currentcolor", (child as ColorToken).val)) {
             return null;
         }
 

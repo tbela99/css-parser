@@ -1,6 +1,6 @@
 import { D50, e, k } from "../constants.ts";
-import { getComponents } from "./utils/components.ts";
-import { srgb2xyz_d50, XYZ_D50_to_D65 } from "./xyz.ts";
+import { getColorComponents } from "./utils/components.ts";
+import { srgb2xyz_d65, XYZ_D50_to_D65 } from "./xyz.ts";
 import type { ColorToken, NumberToken, PercentageToken, Token } from "../../../@types/index.d.ts";
 import {
     cmyk2srgbvalues,
@@ -115,7 +115,7 @@ function labToken(values: number[]): ColorToken | null {
             { typ: EnumToken.LiteralTokenType, val: "/" },
             {
                 typ: EnumToken.PercentageTokenType,
-                val: values[3] * 100,
+                val: toPrecisionValue(values[3], 2) * 100,
             },
         );
     }
@@ -215,7 +215,7 @@ export function color2labvalues(token: ColorToken): number[] | null {
 
 export function srgb2labvalues(r: number, g: number, b: number, a: number | null): number[] {
     // @ts-ignore */
-    const result: number[] = xyz2lab(...srgb2xyz_d50(r, g, b));
+    const result: number[] = xyz2lab(...srgb2xyz_d65(r, g, b));
 
     // Fixes achromatic RGB colors having a _slight_ chroma due to floating-point errors
     // and approximated computations in sRGB <-> CIELab.
@@ -269,7 +269,7 @@ export function lchvalues2labvalues(l: number, c: number, h: number, a: number |
 }
 
 export function getLABComponents(token: ColorToken): number[] | null {
-    const components: Token[] | null = getComponents(token);
+    const components: Token[] | null = getColorComponents(token);
 
     if (components == null) {
         return null;

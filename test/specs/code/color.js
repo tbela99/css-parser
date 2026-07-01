@@ -809,7 +809,7 @@ color: oklch(from hsl(346.1 100% 50%) l c h)  ;
 .selector {
 color: oklch(from hwb(346 0 0) l c h)  ;
 `).then(result => expect(render(result.ast, {beautify: true}).code).equals(`.selector {
- color: #ff003c
+ color: #ff003b
 }`));
     });
 
@@ -845,7 +845,7 @@ color: oklch(from oklab(100% 0.4 0.4) l c h)  ;
 .selector {
 color: color-mix(in srgb, rgb(100% 0% 0% / 0.7) 25%, rgb(0% 100% 0% / 0.2))  ;
 `).then(result => expect(render(result.ast, {beautify: true}).code).equals(`.selector {
- color: #89760053
+ color: #89760054
 }`));
     });
 

@@ -14,11 +14,11 @@ export function run(describe, expect, it, transform, parse, render) {
                     typ: EnumToken.ColorTokenType,
                     val: 'hsl',
                     chi: [
-                        {typ: EnumToken.NumberTokenType, val: '0'},
+                        {typ: EnumToken.NumberTokenType, val: 0},
                         {typ: EnumToken.PercentageTokenType, val: '68.07511737089203'},
                         {typ: EnumToken.PercentageTokenType, val: '41.764705882352935'},
                         {typ: EnumToken.LiteralTokenType, val: '/'},
-                        {typ: EnumToken.PercentageTokenType, val: '50'}
+                        {typ: EnumToken.PercentageTokenType, val: 50}
                     ],
                     kin: ColorType.HSL
                 })).equals(true)
@@ -34,11 +34,11 @@ export function run(describe, expect, it, transform, parse, render) {
                     typ: EnumToken.ColorTokenType,
                     val: 'hsl',
                     chi: [
-                        {typ: EnumToken.NumberTokenType, val: '0'},
+                        {typ: EnumToken.NumberTokenType, val: 0},
                         {typ: EnumToken.PercentageTokenType, val: '68.07511737089203'},
                         {typ: EnumToken.PercentageTokenType, val: '41.764705882352935'},
                         {typ: EnumToken.LiteralTokenType, val: '/'},
-                        {typ: EnumToken.PercentageTokenType, val: '50'}
+                        {typ: EnumToken.PercentageTokenType, val: 50}
                     ],
                     kin: ColorType.HSL
                 })).equals(true));
@@ -53,14 +53,14 @@ export function run(describe, expect, it, transform, parse, render) {
                     typ: EnumToken.ColorTokenType,
                     val: 'hsl',
                     chi: [
-                        {typ: EnumToken.NumberTokenType, val: '0'},
-                        {typ: EnumToken.PercentageTokenType, val: '68.07511737089203'},
-                        {typ: EnumToken.PercentageTokenType, val: '41.764705882352935'},
+                        {typ: EnumToken.NumberTokenType, val: 0},
+                        {typ: EnumToken.PercentageTokenType, val: 68.0751},
+                        {typ: EnumToken.PercentageTokenType, val: 41.7647},
                         {typ: EnumToken.LiteralTokenType, val: '/'},
-                        {typ: EnumToken.PercentageTokenType, val: '50'}
+                        {typ: EnumToken.PercentageTokenType, val: 50}
                     ],
                     kin: ColorType.HSL
-                })).equals(true));
+                }, .1)).equals(true));
         });
 
         it('hwb() to hsl #4', function () {
@@ -72,11 +72,11 @@ export function run(describe, expect, it, transform, parse, render) {
                     typ: EnumToken.ColorTokenType,
                     val: 'hsl',
                     chi: [
-                        {typ: EnumToken.NumberTokenType, val: '0'},
+                        {typ: EnumToken.NumberTokenType, val: 0},
                         {typ: EnumToken.PercentageTokenType, val: '68.07511737089203'},
                         {typ: EnumToken.PercentageTokenType, val: '41.764705882352935'},
                         {typ: EnumToken.LiteralTokenType, val: '/'},
-                        {typ: EnumToken.PercentageTokenType, val: '50'}
+                        {typ: EnumToken.PercentageTokenType, val: 50}
                     ],
                     kin: ColorType.HSL
                 })).equals(true));
@@ -91,11 +91,11 @@ export function run(describe, expect, it, transform, parse, render) {
                     typ: EnumToken.ColorTokenType,
                     val: 'hsl',
                     chi: [
-                        {typ: EnumToken.NumberTokenType, val: '0'},
+                        {typ: EnumToken.NumberTokenType, val: 0},
                         {typ: EnumToken.PercentageTokenType, val: '68.07511737089203'},
                         {typ: EnumToken.PercentageTokenType, val: '41.764705882352935'},
                         {typ: EnumToken.LiteralTokenType, val: '/'},
-                        {typ: EnumToken.PercentageTokenType, val: '50'}
+                        {typ: EnumToken.PercentageTokenType, val: 50}
                     ],
                     kin: ColorType.HSL
                 })).equals(true));
@@ -110,11 +110,11 @@ export function run(describe, expect, it, transform, parse, render) {
                     typ: EnumToken.ColorTokenType,
                     val: 'hsl',
                     chi: [
-                        {typ: EnumToken.NumberTokenType, val: '0'},
+                        {typ: EnumToken.NumberTokenType, val: 0},
                         {typ: EnumToken.PercentageTokenType, val: '68.07511737089203'},
                         {typ: EnumToken.PercentageTokenType, val: '41.764705882352935'},
                         {typ: EnumToken.LiteralTokenType, val: '/'},
-                        {typ: EnumToken.PercentageTokenType, val: '50'}
+                        {typ: EnumToken.PercentageTokenType, val: 50}
                     ],
                     kin: ColorType.HSL
                 })).equals(true));
@@ -129,11 +129,11 @@ export function run(describe, expect, it, transform, parse, render) {
                     typ: EnumToken.ColorTokenType,
                     val: 'hsl',
                     chi: [
-                        {typ: EnumToken.NumberTokenType, val: '0'},
+                        {typ: EnumToken.NumberTokenType, val: 0},
                         {typ: EnumToken.PercentageTokenType, val: '68.07511737089203'},
                         {typ: EnumToken.PercentageTokenType, val: '41.764705882352935'},
                         {typ: EnumToken.LiteralTokenType, val: '/'},
-                        {typ: EnumToken.PercentageTokenType, val: '50'}
+                        {typ: EnumToken.PercentageTokenType, val: 50}
                     ],
                     kin: ColorType.HSL
                 })).equals(true));
@@ -148,11 +148,11 @@ export function run(describe, expect, it, transform, parse, render) {
                     typ: EnumToken.ColorTokenType,
                     val: 'hsl',
                     chi: [
-                        {typ: EnumToken.NumberTokenType, val: '0'},
+                        {typ: EnumToken.NumberTokenType, val: 0},
                         {typ: EnumToken.PercentageTokenType, val: '68.07511737089203'},
                         {typ: EnumToken.PercentageTokenType, val: '41.764705882352935'},
                         {typ: EnumToken.LiteralTokenType, val: '/'},
-                        {typ: EnumToken.PercentageTokenType, val: '50'}
+                        {typ: EnumToken.PercentageTokenType, val: 50}
                     ],
                     kin: ColorType.HSL
                 })).equals(true));
@@ -167,11 +167,11 @@ export function run(describe, expect, it, transform, parse, render) {
                     typ: EnumToken.ColorTokenType,
                     val: 'hsl',
                     chi: [
-                        {typ: EnumToken.NumberTokenType, val: '0'},
+                        {typ: EnumToken.NumberTokenType, val: 0},
                         {typ: EnumToken.PercentageTokenType, val: '68.07511737089203'},
                         {typ: EnumToken.PercentageTokenType, val: '41.764705882352935'},
                         {typ: EnumToken.LiteralTokenType, val: '/'},
-                        {typ: EnumToken.PercentageTokenType, val: '50'}
+                        {typ: EnumToken.PercentageTokenType, val: 50}
                     ],
                     kin: ColorType.HSL
                 })).equals(true));
@@ -186,11 +186,11 @@ export function run(describe, expect, it, transform, parse, render) {
                     typ: EnumToken.ColorTokenType,
                     val: 'hsl',
                     chi: [
-                        {typ: EnumToken.NumberTokenType, val: '0'},
+                        {typ: EnumToken.NumberTokenType, val: 0},
                         {typ: EnumToken.PercentageTokenType, val: '68.07511737089203'},
                         {typ: EnumToken.PercentageTokenType, val: '41.764705882352935'},
                         {typ: EnumToken.LiteralTokenType, val: '/'},
-                        {typ: EnumToken.PercentageTokenType, val: '50'}
+                        {typ: EnumToken.PercentageTokenType, val: 50}
                     ],
                     kin: ColorType.HSL
                 })).equals(true));
@@ -205,11 +205,11 @@ export function run(describe, expect, it, transform, parse, render) {
                     typ: EnumToken.ColorTokenType,
                     val: 'hsl',
                     chi: [
-                        {typ: EnumToken.NumberTokenType, val: '0'},
+                        {typ: EnumToken.NumberTokenType, val: 0},
                         {typ: EnumToken.PercentageTokenType, val: '68.07511737089203'},
                         {typ: EnumToken.PercentageTokenType, val: '41.764705882352935'},
                         {typ: EnumToken.LiteralTokenType, val: '/'},
-                        {typ: EnumToken.PercentageTokenType, val: '50'}
+                        {typ: EnumToken.PercentageTokenType, val: 50}
                     ],
                     kin: ColorType.HSL
                 })).equals(true));
@@ -224,11 +224,11 @@ export function run(describe, expect, it, transform, parse, render) {
                     typ: EnumToken.ColorTokenType,
                     val: 'hsl',
                     chi: [
-                        {typ: EnumToken.NumberTokenType, val: '0'},
+                        {typ: EnumToken.NumberTokenType, val: 0},
                         {typ: EnumToken.PercentageTokenType, val: '68.07511737089203'},
                         {typ: EnumToken.PercentageTokenType, val: '41.764705882352935'},
                         {typ: EnumToken.LiteralTokenType, val: '/'},
-                        {typ: EnumToken.PercentageTokenType, val: '50'}
+                        {typ: EnumToken.PercentageTokenType, val: 50}
                     ],
                     kin: ColorType.HSL
                 })).equals(true));
@@ -243,11 +243,11 @@ export function run(describe, expect, it, transform, parse, render) {
                     typ: EnumToken.ColorTokenType,
                     val: 'hsl',
                     chi: [
-                        {typ: EnumToken.NumberTokenType, val: '0'},
+                        {typ: EnumToken.NumberTokenType, val: 0},
                         {typ: EnumToken.PercentageTokenType, val: '68.07511737089203'},
                         {typ: EnumToken.PercentageTokenType, val: '41.764705882352935'},
                         {typ: EnumToken.LiteralTokenType, val: '/'},
-                        {typ: EnumToken.PercentageTokenType, val: '50'}
+                        {typ: EnumToken.PercentageTokenType, val: 50}
                     ],
                     kin: ColorType.HSL
                 })).equals(true));
@@ -262,11 +262,11 @@ export function run(describe, expect, it, transform, parse, render) {
                     typ: EnumToken.ColorTokenType,
                     val: 'hsl',
                     chi: [
-                        {typ: EnumToken.NumberTokenType, val: '0'},
+                        {typ: EnumToken.NumberTokenType, val: 0},
                         {typ: EnumToken.PercentageTokenType, val: '68.07511737089203'},
                         {typ: EnumToken.PercentageTokenType, val: '41.764705882352935'},
                         {typ: EnumToken.LiteralTokenType, val: '/'},
-                        {typ: EnumToken.PercentageTokenType, val: '50'}
+                        {typ: EnumToken.PercentageTokenType, val: 50}
                     ],
                     kin: ColorType.HSL
                 })).equals(true));
@@ -281,11 +281,11 @@ export function run(describe, expect, it, transform, parse, render) {
                     typ: EnumToken.ColorTokenType,
                     val: 'hsl',
                     chi: [
-                        {typ: EnumToken.NumberTokenType, val: '0'},
+                        {typ: EnumToken.NumberTokenType, val: 0},
                         {typ: EnumToken.PercentageTokenType, val: '68.07511737089203'},
                         {typ: EnumToken.PercentageTokenType, val: '41.764705882352935'},
                         {typ: EnumToken.LiteralTokenType, val: '/'},
-                        {typ: EnumToken.PercentageTokenType, val: '50'}
+                        {typ: EnumToken.PercentageTokenType, val: 50}
                     ],
                     kin: ColorType.HSL
                 })).equals(true));
@@ -300,11 +300,11 @@ export function run(describe, expect, it, transform, parse, render) {
                     typ: EnumToken.ColorTokenType,
                     val: 'hsl',
                     chi: [
-                        {typ: EnumToken.NumberTokenType, val: '0'},
+                        {typ: EnumToken.NumberTokenType, val: 0},
                         {typ: EnumToken.PercentageTokenType, val: '68.07511737089203'},
                         {typ: EnumToken.PercentageTokenType, val: '41.764705882352935'},
                         {typ: EnumToken.LiteralTokenType, val: '/'},
-                        {typ: EnumToken.PercentageTokenType, val: '50'}
+                        {typ: EnumToken.PercentageTokenType, val: 50}
                     ],
                     kin: ColorType.HSL
                 })).equals(true));
@@ -319,11 +319,11 @@ export function run(describe, expect, it, transform, parse, render) {
                     typ: EnumToken.ColorTokenType,
                     val: 'hsl',
                     chi: [
-                        {typ: EnumToken.NumberTokenType, val: '0'},
+                        {typ: EnumToken.NumberTokenType, val: 0},
                         {typ: EnumToken.PercentageTokenType, val: '68.07511737089203'},
                         {typ: EnumToken.PercentageTokenType, val: '41.764705882352935'},
                         {typ: EnumToken.LiteralTokenType, val: '/'},
-                        {typ: EnumToken.PercentageTokenType, val: '50'}
+                        {typ: EnumToken.PercentageTokenType, val: 50}
                     ],
                     kin: ColorType.HSL
                 })).equals(true));

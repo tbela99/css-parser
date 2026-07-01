@@ -4034,7 +4034,7 @@ var syntaxes = {
 		syntax: "in [ <rectangular-color-space> | <polar-color-space> <hue-interpolation-method>? | <custom-color-space> ]"
 	},
 	"color-mix()": {
-		syntax: "color-mix( <color-interpolation-method> , [ <color> && <percentage [0,100]>? ]#{2} )"
+		syntax: "color-mix( <color-interpolation-method> ,? [ <color> && <percentage [0,100]>? ]#)"
 	},
 	"color-stop": {
 		syntax: "<color-stop-length> | <color-stop-angle>"
@@ -7784,8 +7784,25 @@ const tokensfuncDefMap = new Map([
     [exports.EnumToken.GeneralEnclosedFunctionTokenDefType, exports.EnumToken.GeneralEnclosedFunctionTokenType],
 ]);
 const tokensfuncSet = new Set(tokensfuncDefMap.values());
+/**
+ * Epsilon
+ */
+const epsilon = 1e-5;
+/**
+ * Color distance precision
+ */
+const colorDistancePrecision = epsilon;
+/**
+ * Color precision
+ */
 const colorPrecision = 6;
+/**
+ * Angle precision
+ */
 const anglePrecision = 0.001;
+/**
+ * Color range definitions
+ */
 const colorRange = {
     lab: {
         l: [0, 100],
@@ -8447,10 +8464,9 @@ function doEvaluate(l, r, op) {
                 : l.typ;
     // @ts-expect-error
     let v1 = l.val?.typ == exports.EnumToken.FractionTokenType ? l.val : getValue$1(l);
-    let v2 = 
-    // @ts-expect-error
-    r.val?.typ == exports.EnumToken.FractionTokenType
-        ? r.val
+    let v2 = r.val?.typ == exports.EnumToken.FractionTokenType
+        ? // @ts-expect-error
+            r.val
         : getValue$1(r);
     if (op == exports.EnumToken.Mul) {
         if (l.typ != exports.EnumToken.NumberTokenType && r.typ != exports.EnumToken.NumberTokenType) {
@@ -12645,7 +12661,7 @@ function reduceColorStops(stops) {
         }
         if (i > 0 && isOkLabClose(parts[i - 1][0], parts[i][0])) {
             if (parts[i - 1].length == 1) {
-                parts[i - 1].push({ typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.PercentageTokenType, val: (k - 1) * 100 / n });
+                parts[i - 1].push({ typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.PercentageTokenType, val: ((k - 1) * 100) / n });
             }
             parts[i - 1].push(...parts[i].slice(1));
             parts.splice(i--, 1);
@@ -12762,7 +12778,7 @@ function reduceConicColorStops(stops) {
         }
         if (i > 0 && isOkLabClose(parts[i - 1][0], parts[i][0])) {
             if (parts[i - 1].length == 1) {
-                parts[i - 1].push({ typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.AngleTokenType, val: (k - 1) * 100 / n, unit: 'deg' });
+                parts[i - 1].push({ typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.AngleTokenType, val: ((k - 1) * 100) / n, unit: "deg" });
             }
             parts[i - 1].push(...parts[i].slice(1));
             parts.splice(i--, 1);
@@ -12808,23 +12824,13 @@ function isRectangularOrthogonalColorspace(token) {
         "xyz",
         "xyz-d50",
         "xyz-d65",
-    ].some(t => equalsIgnoreCase(t, token.val));
+    ].some((t) => equalsIgnoreCase(t, token.val));
 }
 function isPolarColorspace(token) {
     if (token.typ != exports.EnumToken.IdenTokenType) {
         return false;
     }
-    return ["hsl", "hwb", "lch", "oklch"].some(t => equalsIgnoreCase(t, token.val));
-}
-function isHueInterpolationMethod(token) {
-    if (!Array.isArray(token)) {
-        return token.typ == exports.EnumToken.IdenTokenType && "hue" === token.val?.toLowerCase?.();
-    }
-    if (token.length != 2 || token[0].typ != exports.EnumToken.IdenTokenType || token[1].typ != exports.EnumToken.IdenTokenType) {
-        return false;
-    }
-    return (["shorter", "longer", "increasing", "decreasing"].some(t => equalsIgnoreCase(t, token[0].val ?? '')) &&
-        "hue" === token[1].val?.toLowerCase?.());
+    return ["hsl", "hwb", "lch", "oklch"].some((t) => equalsIgnoreCase(t, token.val));
 }
 function isIdentColor(token) {
     return (token.typ == exports.EnumToken.ColorTokenType &&
@@ -13043,42 +13049,116 @@ function isColor(token, errors) {
                     }
                     return acc;
                 }, [[]]);
-                if (children.length == 3) {
-                    if (children[0].length > 4 ||
-                        children[0][0].typ != exports.EnumToken.IdenTokenType ||
-                        "in" !== children[0][0].val?.toLowerCase?.() ||
-                        !isColorspace(children[0][1]) ||
-                        (children[0].length >= 3 && !isHueInterpolationMethod(children[0].slice(2))) ||
-                        children[1].length > 2 ||
-                        !isColor(children[1][0]) ||
-                        (children[1].length == 2 && !isPercentageToken(children[1][1])) ||
-                        children[2].length > 2 ||
-                        (children[2].length == 2 && !isPercentageToken(children[2][1])) ||
-                        !isColor(children[2][0])) {
+                if (children.length === 0 || children[0].length === 0) {
+                    return false;
+                }
+                let j = 0;
+                let k = 0;
+                if (children[j][0].typ === exports.EnumToken.IdenTokenType && equalsIgnoreCase("in", children[j][k].val)) {
+                    k++;
+                    if (children[j][k]?.typ === exports.EnumToken.IdenTokenType) {
+                        if (!isRectangularOrthogonalColorspace(children[j][k])) {
+                            if (isPolarColorspace(children[j][k++])) {
+                                if (k == children[j].length) ;
+                                else if (children[j][k].typ !== exports.EnumToken.IdenTokenType) {
+                                    return false;
+                                }
+                                else if (equalsIgnoreCase("hue", children[j][k].val)) {
+                                    k++;
+                                }
+                                else {
+                                    switch (children[j][k].val) {
+                                        case "increasing":
+                                        case "decreasing":
+                                        case "longer":
+                                        case "shorter":
+                                            k++;
+                                            break;
+                                        default:
+                                            return false;
+                                    }
+                                    if (children[j][k]?.typ !== exports.EnumToken.IdenTokenType ||
+                                        !equalsIgnoreCase("hue", children[j][k].val)) {
+                                        return false;
+                                    }
+                                    k++;
+                                }
+                            }
+                            else {
+                                return false;
+                            }
+                        }
+                        else {
+                            k++;
+                        }
+                    }
+                    else {
                         return false;
                     }
-                    if (children[1].length == 2) {
-                        if (!(children[1][1].typ == exports.EnumToken.PercentageTokenType ||
-                            (children[1][1].typ == exports.EnumToken.NumberTokenType &&
-                                children[1][1].val == 0))) {
-                            return false;
-                        }
+                    if (k != children[j].length) {
+                        return false;
                     }
-                    if (children[2].length == 2) {
-                        if (!(children[2][1].typ == exports.EnumToken.PercentageTokenType ||
-                            (children[2][1].typ == exports.EnumToken.NumberTokenType &&
-                                children[2][1].val == 0))) {
-                            return false;
-                        }
-                    }
-                    return true;
+                    j++;
                 }
-                return false;
+                while (j < children.length) {
+                    if (children[j].length > 2) {
+                        return false;
+                    }
+                    if (!isColor(children[j][0])) {
+                        return false;
+                    }
+                    if (children[j].length > 1 && !isPercentageToken(children[j][1])) {
+                        return false;
+                    }
+                    j++;
+                }
+                return true;
+                // if (children.length == 3) {
+                //     if (
+                //         children[0].length > 4 ||
+                //         children[0][0].typ != EnumToken.IdenTokenType ||
+                //         "in" !== (children[0][0] as IdentToken).val?.toLowerCase?.() ||
+                //         !isColorspace(children[0][1]) ||
+                //         (children[0].length >= 3 && !isHueInterpolationMethod(children[0].slice(2))) ||
+                //         children[1].length > 2 ||
+                //         !isColor(children[1][0]) ||
+                //         (children[1].length == 2 && !isPercentageToken(children[1][1])) ||
+                //         children[2].length > 2 ||
+                //         (children[2].length == 2 && !isPercentageToken(children[2][1])) ||
+                //         !isColor(children[2][0])
+                //     ) {
+                //         return false;
+                //     }
+                //     if (children[1].length == 2) {
+                //         if (
+                //             !(
+                //                 children[1][1].typ == EnumToken.PercentageTokenType ||
+                //                 (children[1][1].typ == EnumToken.NumberTokenType &&
+                //                     (children[1][1] as NumberToken).val == 0)
+                //             )
+                //         ) {
+                //             return false;
+                //         }
+                //     }
+                //     if (children[2].length == 2) {
+                //         if (
+                //             !(
+                //                 children[2][1].typ == EnumToken.PercentageTokenType ||
+                //                 (children[2][1].typ == EnumToken.NumberTokenType &&
+                //                     (children[2][1] as NumberToken).val == 0)
+                //             )
+                //         ) {
+                //             return false;
+                //         }
+                //     }
+                //     return true;
+                // }
+                // return false;
             }
             else {
                 const keywords = ["from", "none"];
                 // @ts-ignore
-                if (["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch"].some(t => equalsIgnoreCase(t, token.val))) {
+                if (["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch"].some((t) => equalsIgnoreCase(t, token.val))) {
                     // @ts-ignore
                     keywords.push("alpha", ...token.val.slice(-3).split(""));
                 }
@@ -13503,7 +13583,7 @@ function isValue(token) {
         token.typ === exports.EnumToken.TransformFunctionTokenType);
 }
 
-function getComponents(token) {
+function getColorComponents(token) {
     if (token.typ === exports.EnumToken.IdenTokenType) {
         if (isColor(token)) {
             parseColor(token);
@@ -13660,12 +13740,12 @@ function lchToken(values) {
     const chi = [
         { typ: exports.EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
         { typ: exports.EnumToken.NumberTokenType, val: toPrecisionValue(values[1]) },
-        { typ: exports.EnumToken.NumberTokenType, val: values[2] },
+        { typ: exports.EnumToken.NumberTokenType, val: toPrecisionAngle(values[2]) },
     ];
     if (values.length == 4) {
         chi.push({ typ: exports.EnumToken.LiteralTokenType, val: "/" }, {
             typ: exports.EnumToken.PercentageTokenType,
-            val: values[3] * 100,
+            val: toPrecisionValue(values[3], 2) * 100,
         });
     }
     return {
@@ -13747,7 +13827,7 @@ function xyz2lchvalues(x, y, z, alpha) {
     return alpha == null || alpha == 1 ? lch : lch.concat(alpha);
 }
 function getLCHComponents(token) {
-    const components = getComponents(token);
+    const components = getColorComponents(token);
     if (components == null) {
         return null;
     }
@@ -13850,7 +13930,7 @@ function srgb2xyz(r, g, b, alpha) {
     return rgb;
 }
 // xyz d50
-function srgb2xyz_d50(r, g, b, alpha) {
+function srgb2xyz_d65(r, g, b, alpha) {
     // xyx d65
     // @ts-ignore
     let rgb = XYZ_D65_to_D50(...srgb2xyz(r, g, b));
@@ -13931,7 +14011,7 @@ function oklchToken(values) {
     if (values.length == 4) {
         chi.push({ typ: exports.EnumToken.LiteralTokenType, val: "/" }, {
             typ: exports.EnumToken.PercentageTokenType,
-            val: values[3] * 100,
+            val: toPrecisionValue(values[3], 2) * 100,
         });
     }
     return {
@@ -13995,7 +14075,7 @@ function srgb2oklch(r, g, blue, alpha) {
     return labvalues2lchvalues(...srgb2oklab(r, g, blue, alpha));
 }
 function getOKLCHComponents(token) {
-    const components = getComponents(token);
+    const components = getColorComponents(token);
     if (components == null) {
         return null;
     }
@@ -14100,7 +14180,7 @@ function oklabToken(values) {
     if (values.length == 4) {
         chi.push({ typ: exports.EnumToken.LiteralTokenType, val: "/" }, {
             typ: exports.EnumToken.PercentageTokenType,
-            val: values[3] * 100,
+            val: toPrecisionValue(values[3], 2) * 100,
         });
     }
     return {
@@ -14177,7 +14257,7 @@ function srgb2oklab(r, g, blue, alpha) {
     return alpha == null || alpha == 1 ? [l, a, b] : [l, a, b, alpha];
 }
 function getOKLABComponents(token) {
-    const components = getComponents(token);
+    const components = getColorComponents(token);
     if (components == null || components.length < 3) {
         return null;
     }
@@ -14306,7 +14386,7 @@ function labToken(values) {
     if (values.length == 4) {
         chi.push({ typ: exports.EnumToken.LiteralTokenType, val: "/" }, {
             typ: exports.EnumToken.PercentageTokenType,
-            val: values[3] * 100,
+            val: toPrecisionValue(values[3], 2) * 100,
         });
     }
     return {
@@ -14380,7 +14460,7 @@ function color2labvalues(token) {
 }
 function srgb2labvalues(r, g, b, a) {
     // @ts-ignore */
-    const result = xyz2lab(...srgb2xyz_d50(r, g, b));
+    const result = xyz2lab(...srgb2xyz_d65(r, g, b));
     // Fixes achromatic RGB colors having a _slight_ chroma due to floating-point errors
     // and approximated computations in sRGB <-> CIELab.
     // See: https://github.com/d3/d3-color/pull/46
@@ -14421,7 +14501,7 @@ function lchvalues2labvalues(l, c, h, a = null) {
     return result;
 }
 function getLABComponents(token) {
-    const components = getComponents(token);
+    const components = getColorComponents(token);
     if (components == null) {
         return null;
     }
@@ -14520,7 +14600,7 @@ function srgbvalues(token) {
     return null;
 }
 function rgb2srgb(token) {
-    return (getComponents(token)?.map?.((t, index) => index == 3
+    return (getColorComponents(token)?.map?.((t, index) => index == 3
         ? t.typ == exports.EnumToken.IdenTokenType && t.val == "none"
             ? 1
             : getNumber(t)
@@ -14529,7 +14609,7 @@ function rgb2srgb(token) {
             255) ?? null);
 }
 function rgb2srgbvalues(token) {
-    return (getComponents(token)?.map?.((t, index) => index == 3
+    return (getColorComponents(token)?.map?.((t, index) => index == 3
         ? getNumber(t)
         : getNumber(t) / 255) ?? null);
 }
@@ -14572,7 +14652,7 @@ function hsl2srgb(token) {
     return hslvalues2srgbvalues(h, s, l, a);
 }
 function cmyk2srgbvalues(token) {
-    const components = getComponents(token);
+    const components = getColorComponents(token);
     if (components == null) {
         return null;
     }
@@ -14626,7 +14706,7 @@ function oklch2srgbvalues(token) {
     return rgb;
 }
 function hslvalues(token) {
-    const components = getComponents(token);
+    const components = getColorComponents(token);
     if (components == null) {
         return null;
     }
@@ -14878,7 +14958,7 @@ function rgb2hexvalues(token) {
     let value = "#";
     let t;
     // @ts-ignore
-    const components = getComponents(token);
+    const components = getColorComponents(token);
     if (components == null || components.length < 3) {
         return null;
     }
@@ -15160,7 +15240,7 @@ function hslToken(values) {
     if (values.length == 4 && values[3] != 1) {
         chi.push({ typ: exports.EnumToken.LiteralTokenType, val: "/" }, {
             typ: exports.EnumToken.PercentageTokenType,
-            val: values[3] * 100,
+            val: toPrecisionValue(values[3], 2) * 100,
         });
     }
     return {
@@ -15171,7 +15251,7 @@ function hslToken(values) {
     };
 }
 function rgb2hslvalues(token) {
-    const chi = getComponents(token);
+    const chi = getColorComponents(token);
     if (chi == null || chi.length < 3) {
         return null;
     }
@@ -15345,14 +15425,14 @@ function color2hwbToken(token) {
 function hwbToken(values) {
     values[0] = toPrecisionAngle(values[0] * 360);
     const chi = [
-        { typ: exports.EnumToken.NumberTokenType, val: values[0] },
-        { typ: exports.EnumToken.PercentageTokenType, val: toPrecisionValue(values[1]) * 100 },
-        { typ: exports.EnumToken.PercentageTokenType, val: toPrecisionValue(values[2]) * 100 },
+        { typ: exports.EnumToken.NumberTokenType, val: toPrecisionAngle(values[0]) },
+        { typ: exports.EnumToken.PercentageTokenType, val: toPrecisionValue(values[1] * 100) },
+        { typ: exports.EnumToken.PercentageTokenType, val: toPrecisionValue(values[2] * 100) },
     ];
     if (values.length == 4) {
         chi.push({ typ: exports.EnumToken.LiteralTokenType, val: "/" }, {
             typ: exports.EnumToken.PercentageTokenType,
-            val: values[3] * 100,
+            val: toPrecisionValue(values[3], 2) * 100
         });
     }
     return {
@@ -15364,7 +15444,7 @@ function hwbToken(values) {
 }
 function rgb2hwbvalues(token) {
     // @ts-ignore
-    return srgb2hwb(...getComponents(token).map((t, index) => {
+    return srgb2hwb(...getColorComponents(token).map((t, index) => {
         if (index == 3) {
             return getNumber(t);
         }
@@ -15377,7 +15457,7 @@ function cmyk2hwbvalues(token) {
 }
 function hsl2hwbvalues(token) {
     // @ts-ignore
-    return hslvalues2hwbvalues(...getComponents(token).map((t, index) => {
+    return hslvalues2hwbvalues(...getColorComponents(token).map((t, index) => {
         if (index == 3 && t.typ == exports.EnumToken.IdenTokenType && t.val == "none") {
             return 1;
         }
@@ -15634,7 +15714,7 @@ function xyz2lp3(x, y, z, alpha) {
 }
 
 function interpolateHue(interpolationMethod, h1, h2) {
-    switch (interpolationMethod.val) {
+    switch (interpolationMethod) {
         case "longer":
             if (h2 - h1 < 180 && h2 - h1 > 0) {
                 h1 += 360;
@@ -15666,227 +15746,278 @@ function interpolateHue(interpolationMethod, h1, h2) {
     }
     return [h1, h2];
 }
-function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color2, percentage2) {
-    if (equalsIgnoreCase(color1.val, "currentcolor") || equalsIgnoreCase(color2.val, "currentcolor")) {
+function colorMix(...args) {
+    // invalid color or custom color profile
+    if (args.length == 0 || args[0].typ === exports.EnumToken.DashedIdenTokenType) {
         return null;
     }
-    if (hueInterpolationMethod != null && isRectangularOrthogonalColorspace(colorSpace)) {
-        return null;
-    }
-    if (isPolarColorspace(colorSpace) && hueInterpolationMethod == null) {
-        hueInterpolationMethod = { typ: exports.EnumToken.IdenTokenType, val: "shorter" };
-    }
-    if (percentage1 == null) {
-        if (percentage2 == null) {
-            // @ts-ignore
-            percentage1 = { typ: exports.EnumToken.NumberTokenType, val: 0.5 };
-            // @ts-ignore
-            percentage2 = { typ: exports.EnumToken.NumberTokenType, val: 0.5 };
-        }
-        else {
-            if (+percentage2.val <= 0) {
-                return null;
-            }
-            if (+percentage2.val >= 100) {
-                percentage2 = { typ: exports.EnumToken.NumberTokenType, val: 1 };
-            }
-            // @ts-ignore
-            percentage1 = { typ: exports.EnumToken.NumberTokenType, val: 1 - percentage2.val / 100 };
-        }
-    }
-    else {
-        // @ts-ignore
-        if (percentage1.val <= 0) {
+    let i = 0;
+    let missingPercentageCount = 0;
+    let totalPercentage = 0;
+    let leftOverPercentage = 0;
+    let colorSpace = "oklab";
+    let hueInterpolationMethod = "shorter";
+    let values = null;
+    const colors = [];
+    const percentages = [];
+    const srgbComponentValues = [];
+    const colorComponents = [];
+    if (args[i]?.typ === exports.EnumToken.IdenTokenType) {
+        if (!equalsIgnoreCase(args[i++].val, "in")) {
             return null;
         }
-        if (percentage2 == null) {
-            // @ts-ignore
-            if (percentage1.val >= 100) {
-                // @ts-ignore
-                percentage1 = { typ: exports.EnumToken.NumberTokenType, val: 1 };
-            }
-            // @ts-ignore
-            percentage2 = { typ: exports.EnumToken.NumberTokenType, val: 1 - percentage1.val / 100 };
+        if (args[i]?.typ !== exports.EnumToken.IdenTokenType) {
+            return null;
         }
-        else {
-            // @ts-ignore
-            if (percentage2.val <= 0) {
+        if (isRectangularOrthogonalColorspace(args[i])) {
+            colorSpace = args[i++].val;
+        }
+        else if (isPolarColorspace(args[i])) {
+            colorSpace = args[i++].val;
+            if (args[i]?.typ !== exports.EnumToken.IdenTokenType && args[i]?.typ !== exports.EnumToken.ColorTokenType) {
                 return null;
             }
+            if (args[i].typ === exports.EnumToken.IdenTokenType && !equalsIgnoreCase(args[i].val, "hue")) {
+                if (args[i]?.typ !== exports.EnumToken.IdenTokenType) {
+                    return null;
+                }
+                hueInterpolationMethod = args[i++].val;
+                switch (hueInterpolationMethod) {
+                    case "increasing":
+                    case "decreasing":
+                    case "longer":
+                    case "shorter":
+                        break;
+                    default:
+                        return null;
+                }
+                if (!equalsIgnoreCase(args[i++].val, "hue")) {
+                    return null;
+                }
+            }
         }
     }
-    let values1 = srgbvalues(color1);
-    let values2 = srgbvalues(color2);
-    if (values1 == null || values2 == null) {
-        return null;
-    }
-    const components1 = getComponents(color1);
-    const components2 = getComponents(color2);
-    if (components1 == null || components2 == null) {
-        return null;
-    }
-    if (components1[3] != null &&
-        components1[3].typ == exports.EnumToken.IdenTokenType &&
-        components1[3].val == "none" &&
-        values2.length == 4) {
-        values1[3] = values2[3];
-    }
-    if (components2[3] != null &&
-        components2[3].typ == exports.EnumToken.IdenTokenType &&
-        components2[3].val == "none" &&
-        values1.length == 4) {
-        values2[3] = values1[3];
-    }
-    const p1 = getNumber(percentage1);
-    const p2 = getNumber(percentage2);
-    const mul1 = values1.length == 4 ? values1.pop() : 1;
-    const mul2 = values2.length == 4 ? values2.pop() : 1;
-    const mul = mul1 * p1 + mul2 * p2;
-    const calculate = () => [colorSpace].concat(
-    // @ts-ignore
-    values1
-        .map((v1, i) => {
-        return {
-            typ: exports.EnumToken.NumberTokenType,
-            val: (mul1 * v1 * p1 + mul2 * values2[i] * p2) / mul,
-        };
-    })
-        .concat(mul == 1
-        ? []
-        : [
-            {
-                typ: exports.EnumToken.NumberTokenType,
-                val: mul,
-            },
-        ]));
-    switch (colorSpace.val) {
-        case "srgb":
-            break;
-        case "display-p3":
-            // @ts-ignore
-            values1 = srgb2p3values(...values1);
-            // @ts-ignore
-            values2 = srgb2p3values(...values2);
-            break;
-        case "a98-rgb":
-            // @ts-ignore
-            values1 = srgb2a98values(...values1);
-            // @ts-ignore
-            values2 = srgb2a98values(...values2);
-            break;
-        case "prophoto-rgb":
-            // @ts-ignore
-            values1 = srgb2prophotorgbvalues(...values1);
-            // @ts-ignore
-            values2 = srgb2prophotorgbvalues(...values2);
-            break;
-        case "srgb-linear":
-            // @ts-ignore
-            values1 = srgb2lsrgbvalues(...values1);
-            // @ts-ignore
-            values2 = srgb2lsrgbvalues(...values2);
-            break;
-        case "rec2020":
-            // @ts-ignore
-            values1 = srgb2rec2020values(...values1);
-            // @ts-ignore
-            values2 = srgb2rec2020values(...values2);
-            break;
-        case "xyz":
-        case "xyz-d65":
-        case "xyz-d50":
-            // @ts-ignore
-            values1 = srgb2xyz_d50(...values1);
-            // @ts-ignore
-            values2 = srgb2xyz_d50(...values2);
-            if (colorSpace.val == "xyz-d50") {
-                // @ts-ignore
-                values1 = XYZ_D65_to_D50(...values1);
-                // @ts-ignore
-                values2 = XYZ_D65_to_D50(...values2);
-            }
-            break;
-        case "rgb":
-            // @ts-ignore
-            values1 = srgb2rgb(...values1);
-            // @ts-ignore
-            values2 = srgb2rgb(...values2);
-            break;
-        case "hsl":
-            // @ts-ignore
-            values1 = srgb2hslvalues(...values1);
-            // @ts-ignore
-            values2 = srgb2hslvalues(...values2);
-            break;
-        case "hwb":
-            // @ts-ignore
-            values1 = srgb2hwb(...values1);
-            // @ts-ignore
-            values2 = srgb2hwb(...values2);
-            break;
-        case "lab":
-            // @ts-ignore
-            values1 = srgb2labvalues(...values1);
-            // @ts-ignore
-            values2 = srgb2labvalues(...values2);
-            break;
-        case "lch":
-            // @ts-ignore
-            values1 = srgb2lch(...values1);
-            // @ts-ignore
-            values2 = srgb2lch(...values2);
-            break;
-        case "oklab":
-            // @ts-ignore
-            values1 = srgb2oklab(...values1);
-            // @ts-ignore
-            values2 = srgb2oklab(...values2);
-            break;
-        case "oklch":
-            // @ts-ignore
-            values1 = srgb2oklch(...values1);
-            // @ts-ignore
-            values2 = srgb2oklch(...values2);
-            break;
-        default:
+    while (i < args.length) {
+        if (args[i].typ !== exports.EnumToken.ColorTokenType ||
+            exports.ColorType.SYS == args[i].kin ||
+            exports.ColorType.DPSYS == args[i].kin ||
+            exports.ColorType.NON_STD == args[i].kin ||
+            exports.ColorType.CUSTOM_COLOR == args[i].kin ||
+            equalsIgnoreCase(args[i].val, "currentcolor")) {
             return null;
+        }
+        colorComponents.push(getColorComponents(args[i]));
+        values = srgbvalues(args[i]);
+        if (values == null) {
+            return null;
+        }
+        switch (colorSpace) {
+            case "srgb":
+                break;
+            case "display-p3":
+                // @ts-ignore
+                values = srgb2p3values(...values);
+                break;
+            case "a98-rgb":
+                // @ts-ignore
+                values = srgb2a98values(...values);
+                break;
+            case "prophoto-rgb":
+                // @ts-ignore
+                values = srgb2prophotorgbvalues(...values);
+                break;
+            case "srgb-linear":
+                // @ts-ignore
+                values = srgb2lsrgbvalues(...values);
+                break;
+            case "rec2020":
+                // @ts-ignore
+                values = srgb2rec2020values(...values);
+                break;
+            case "xyz":
+            case "xyz-d65":
+                // @ts-ignore
+                values = srgb2xyz_d65(...values);
+                break;
+            case "xyz-d50":
+                // @ts-ignore
+                values = XYZ_D65_to_D50(...srgb2xyz_d65(...values));
+                break;
+            case "rgb":
+                // @ts-ignore
+                values = srgb2rgb(...values);
+                break;
+            case "hsl":
+                // @ts-ignore
+                values = srgb2hslvalues(...values);
+                break;
+            case "hwb":
+                // @ts-ignore
+                values = srgb2hwb(...values);
+                break;
+            case "lab":
+                // @ts-ignore
+                values = srgb2labvalues(...values);
+                break;
+            case "lch":
+                // @ts-ignore
+                values = srgb2lch(...values);
+                break;
+            case "oklab":
+                // @ts-ignore
+                values = srgb2oklab(...values);
+                break;
+            case "oklch":
+                // @ts-ignore
+                values = srgb2oklch(...values);
+                break;
+            default:
+                return null;
+        }
+        srgbComponentValues.push(values);
+        colors.push(args[i++]);
+        if (i >= args.length) {
+            missingPercentageCount++;
+            percentages.push(null);
+            break;
+        }
+        if (args[i]?.typ === exports.EnumToken.ColorTokenType) {
+            percentages.push(null);
+            missingPercentageCount++;
+            continue;
+        }
+        if (args[i]?.typ === exports.EnumToken.PercentageTokenType ||
+            (args[i]?.typ === exports.EnumToken.NumberTokenType && 0 == args[i].val)) {
+            if (args[i].val < 0) {
+                return null;
+            }
+            percentages.push(minmax(getNumber(args[i++]), 0, 1));
+            totalPercentage += percentages.at(-1);
+        }
     }
+    // normalize percentages
+    if (missingPercentageCount > 0) {
+        let normalizedTotalPercentages = totalPercentage > 1 ? 0 : 1 - totalPercentage;
+        for (i = 0; i < percentages.length; i++) {
+            if (percentages[i] == null) {
+                percentages[i] = normalizedTotalPercentages / missingPercentageCount;
+            }
+        }
+        totalPercentage = 0;
+        for (i = 0; i < percentages.length; i++) {
+            totalPercentage += percentages[i];
+        }
+    }
+    if (totalPercentage != 1) {
+        if (totalPercentage < 1) {
+            leftOverPercentage = 1 - totalPercentage;
+        }
+        const perc = totalPercentage == 0 ? 1 : totalPercentage;
+        // scale down percentages
+        for (i = 0; i < percentages.length; i++) {
+            percentages[i] = percentages[i] / perc;
+        }
+        totalPercentage = 1;
+    }
+    i = colors.length;
+    let currentIndex = 0;
+    let r1;
+    let r2;
+    let r;
+    let mult1;
+    let mult2;
+    let mult;
+    let premult1;
+    let premult2;
+    let mixedPremult;
+    let colorSpace1;
+    const stack = [];
     const lchSpaces = ["lch", "oklch"];
-    const colorSpace1 = exports.ColorType[color1.kin].toLowerCase().replaceAll("_", "-");
-    const colorSpace2 = exports.ColorType[color2.kin].toLowerCase().replaceAll("_", "-");
-    // powerless
-    if (lchSpaces.includes(colorSpace1) || lchSpaces.includes(colorSpace.val)) {
-        if ((components1[2].typ == exports.EnumToken.IdenTokenType && components1[2].val == "none") ||
-            values1[2] == 0) {
-            values1[2] = values2[2];
+    i = srgbComponentValues.length;
+    while (i--) {
+        stack.push({
+            color: srgbComponentValues[i],
+            alpha: percentages[i],
+        });
+    }
+    // @ts-expect-error
+    colorSpace1 = exports.ColorType[colorComponents.at(-1).kin]?.toLowerCase?.();
+    if (colorComponents[0][3] != null &&
+        colorComponents[0][3].typ == exports.EnumToken.IdenTokenType &&
+        colorComponents[0][3].val == "none" &&
+        colorComponents[1].length == 4) {
+        // fix powerless alpha for last color if previous color has alpha
+        stack[stack.length - 1].color[3] = stack[stack.length - 2].color[3];
+    }
+    // powerless hue for lch spaces
+    if (lchSpaces.includes(colorSpace1) || lchSpaces.includes(colorSpace)) {
+        if ((stack.length > 1 &&
+            colorComponents[0][2].typ == exports.EnumToken.IdenTokenType &&
+            colorComponents[0][2].val == "none") ||
+            stack[stack.length - 1].color[2] == 0) {
+            stack[stack.length - 1].color[2] = stack[stack.length - 2].color[2];
         }
     }
-    // powerless
-    if (lchSpaces.includes(colorSpace2) || lchSpaces.includes(colorSpace.val)) {
-        if ((components2[2].typ == exports.EnumToken.IdenTokenType && components2[2].val == "none") ||
-            values2[2] == 0) {
-            values2[2] = values1[2];
+    while (stack.length > 1) {
+        r1 = stack.pop();
+        r2 = stack.pop();
+        // r2 powerless alpha
+        if (colorComponents[++currentIndex][3] != null &&
+            colorComponents[currentIndex][3].typ == exports.EnumToken.IdenTokenType &&
+            colorComponents[currentIndex][3].val == "none") {
+            // fix powerless alpha for last color if previous color has alpha
+            r2.color[3] = r1.color[3];
         }
-    }
-    if (hueInterpolationMethod != null) {
-        let hueIndex = 2;
-        let multiplier = 1;
-        if (["hwb", "hsl"].includes(colorSpace.val)) {
-            hueIndex = 0;
-            multiplier = 360;
+        // @ts-expect-error
+        colorSpace1 = exports.ColorType[colorComponents[currentIndex].kin]?.toLowerCase?.();
+        // powerless hue for lch spaces
+        if (lchSpaces.includes(colorSpace1) || lchSpaces.includes(colorSpace)) {
+            if ((colorComponents[currentIndex][2].typ == exports.EnumToken.IdenTokenType &&
+                colorComponents[currentIndex][2].val == "none") ||
+                r2.color[2] == 0) {
+                r2.color[2] = r1.color[2];
+            }
         }
-        const [h1, h2] = interpolateHue(hueInterpolationMethod, values1[hueIndex] * multiplier, values2[hueIndex] * multiplier);
-        values1[hueIndex] = h1 / multiplier;
-        values2[hueIndex] = h2 / multiplier;
+        if (hueInterpolationMethod != null) {
+            let hueIndex = 2;
+            let multiplier = 1;
+            if (colorSpace == "hwb" || colorSpace == "hsl") {
+                hueIndex = 0;
+                multiplier = 360;
+            }
+            const [h1, h2] = interpolateHue(hueInterpolationMethod, r1.color[hueIndex] * multiplier, r2.color[hueIndex] * multiplier);
+            r1.color[hueIndex] = h1 / multiplier;
+            r2.color[hueIndex] = h2 / multiplier;
+        }
+        mult1 = r1.color[3] ?? 1;
+        mult2 = r2.color[3] ?? 1;
+        mult = mult1 * r1.alpha + mult2 * r2.alpha;
+        premult1 = [r1.color[0] * mult1 * r1.alpha, r1.color[1] * mult1 * r1.alpha, r1.color[2] * mult1 * r1.alpha];
+        premult2 = [r2.color[0] * mult2 * r2.alpha, r2.color[1] * mult2 * r2.alpha, r2.color[2] * mult2 * r2.alpha];
+        mixedPremult = [premult1[0] + premult2[0], premult1[1] + premult2[1], premult1[2] + premult2[2]];
+        if (mult == 0) {
+            r = { color: [0, 0, 0, 0], alpha: 0 };
+        }
+        else {
+            r = {
+                color: [mixedPremult[0] / mult, mixedPremult[1] / mult, mixedPremult[2] / mult],
+                alpha: mult,
+            };
+        }
+        stack.push(r);
     }
-    switch (colorSpace.val) {
+    const result = stack.pop();
+    values = result.color;
+    values.length = 3;
+    const alpha = result.alpha * (1 - leftOverPercentage);
+    if (alpha != 1) {
+        values.push(alpha);
+    }
+    switch (colorSpace) {
         case "xyz":
         case "xyz-d65":
         case "xyz-d50":
-            let values = values1
-                .map((v1, i) => (mul1 * v1 * p1 + mul2 * values2[i] * p2) / mul)
-                .concat(mul == 1 ? [] : [mul]);
-            if (colorSpace.val == "xyz-d50") {
+            if (colorSpace == "xyz-d50") {
                 // @ts-ignore
                 values = xyzd502lch(...values);
             }
@@ -15901,7 +16032,7 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
                 chi: values.map((v) => {
                     return {
                         typ: exports.EnumToken.NumberTokenType,
-                        val: v,
+                        val: toPrecisionValue(v),
                     };
                 }),
                 kin: exports.ColorType.LCH,
@@ -15914,7 +16045,14 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
             return {
                 typ: exports.EnumToken.ColorTokenType,
                 val: "color",
-                chi: calculate(),
+                chi: [{ typ: exports.EnumToken.IdenTokenType, val: colorSpace }].concat(
+                // @ts-expect-error
+                values.map((v) => {
+                    return {
+                        typ: exports.EnumToken.NumberTokenType,
+                        val: toPrecisionValue(v),
+                    };
+                })),
                 kin: exports.ColorType.COLOR,
                 cal: "col",
             };
@@ -15925,44 +16063,43 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
         case "lch":
         case "oklab":
         case "oklch":
-            if (["hsl", "hwb"].includes(colorSpace.val)) {
+            if (colorSpace == "hsl" || colorSpace == "hwb") {
                 // @ts-ignore
-                if (values1[2] < 0) {
+                if (values[2] < 0) {
                     // @ts-ignore
-                    values1[2] += 1;
-                }
-                // @ts-ignore
-                if (values2[2] < 0) {
-                    // @ts-ignore
-                    values2[2] += 1;
+                    values[2] += 1;
                 }
             }
-            else if (["lch", "oklch"].includes(colorSpace.val)) {
+            else if (colorSpace == "lch" || colorSpace == "oklch") {
                 // @ts-ignore
-                if (values1[2] < 0) {
+                if (values[2] < 0) {
                     // @ts-ignore
-                    values1[2] += 360;
+                    values[2] += 360;
                 }
-                // @ts-ignore
-                if (values2[2] < 0) {
+                else if (values[2] > 360) {
                     // @ts-ignore
-                    values2[2] += 360;
+                    values[2] %= 360;
                 }
             }
             // @ts-ignore
             const result = {
                 typ: exports.EnumToken.ColorTokenType,
-                val: colorSpace.val,
-                chi: calculate().slice(1),
-                kin: exports.ColorType[colorSpace.val.toUpperCase().replaceAll("-", "_")],
+                val: colorSpace,
+                chi: values.map((v) => {
+                    return {
+                        typ: exports.EnumToken.NumberTokenType,
+                        val: toPrecisionValue(v),
+                    };
+                }),
+                kin: exports.ColorType[colorSpace.toUpperCase().replaceAll("-", "_")],
             };
-            if (colorSpace.val == "hsl" || colorSpace.val == "hwb") {
+            if (colorSpace == "hsl" || colorSpace == "hwb") {
                 // @ts-ignore
-                result.chi[0] = { typ: exports.EnumToken.AngleTokenType, val: result.chi[0].val * 360 };
+                result.chi[0] = { typ: exports.EnumToken.AngleTokenType, val: toPrecisionAngle(result.chi[0].val * 360) };
                 // @ts-ignore
-                result.chi[1] = { typ: exports.EnumToken.PercentageTokenType, val: result.chi[1].val * 100 };
+                result.chi[1] = { typ: exports.EnumToken.PercentageTokenType, val: toPrecisionValue(result.chi[1].val) * 100 };
                 // @ts-ignore
-                result.chi[2] = { typ: exports.EnumToken.PercentageTokenType, val: result.chi[2].val * 100 };
+                result.chi[2] = { typ: exports.EnumToken.PercentageTokenType, val: toPrecisionValue(result.chi[2].val) * 100 };
             }
             return result;
     }
@@ -16229,7 +16366,7 @@ function cmyktoken(values) {
                 {
                     typ: exports.EnumToken.PercentageTokenType,
                     // @ts-ignore
-                    val: toPrecisionValue(curr) * 100,
+                    val: toPrecisionValue(curr * 100),
                 },
             ]
             : [
@@ -16240,7 +16377,7 @@ function cmyktoken(values) {
                 },
                 {
                     typ: exports.EnumToken.PercentageTokenType,
-                    val: toPrecisionValue(curr) * 100,
+                    val: toPrecisionValue(curr, 2) * 100,
                 },
             ], []),
         kin: exports.ColorType.DEVICE_CMYK,
@@ -16303,248 +16440,6 @@ function xyz2la98rgb(x, y, z, a = null) {
         [16779 / 1248040, -147721 / 1248040, 1266979 / 1248040],
     ];
     return multiplyMatrices(M, [x, y, z]).concat(a == null || a == 1 ? [] : [a]);
-}
-
-const epsilon = 1e-5;
-function identity() {
-    return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
-}
-function normalize$1(point) {
-    const [x, y, z] = point;
-    const norm = Math.sqrt(point[0] * point[0] + point[1] * point[1] + point[2] * point[2]);
-    return norm === 0 ? [0, 0, 0] : [x / norm, y / norm, z / norm];
-}
-function dot(point1, point2) {
-    if (point1.length === 4 && point2.length === 4) {
-        return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2] + point1[3] * point2[3];
-    }
-    return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2];
-}
-function multiply(matrixA, matrixB) {
-    let result = new Array(16).fill(0);
-    for (let i = 0; i < 4; i++) {
-        for (let j = 0; j < 4; j++) {
-            for (let k = 0; k < 4; k++) {
-                // Utiliser l'indexation linéaire pour accéder aux éléments
-                // Pour une matrice 4x4, l'index est (row * 4 + col)
-                result[j * 4 + i] += matrixA[k * 4 + i] * matrixB[j * 4 + k];
-            }
-        }
-    }
-    return result;
-}
-function inverse(matrix) {
-    // Create augmented matrix [matrix | identity]
-    let augmented = [
-        ...matrix.slice(0, 4),
-        1, 0, 0, 0,
-        ...matrix.slice(4, 8),
-        0, 1, 0, 0,
-        ...matrix.slice(8, 12),
-        0, 0, 1, 0,
-        ...matrix.slice(12, 16),
-        0, 0, 0, 1
-    ];
-    // Gaussian elimination with partial pivoting
-    for (let col = 0; col < 4; col++) {
-        // Find pivot row with maximum absolute value
-        let maxRow = col;
-        let maxVal = Math.abs(augmented[col * 4 + col]);
-        for (let row = col + 1; row < 4; row++) {
-            let val = Math.abs(augmented[row * 4 + col]);
-            if (val > maxVal) {
-                maxVal = val;
-                maxRow = row;
-            }
-        }
-        // Check for singularity
-        if (maxVal < 1e-5) {
-            return null;
-        }
-        // Swap rows if necessary
-        if (maxRow !== col) {
-            [augmented[col], augmented[maxRow]] = [augmented[maxRow], augmented[col]];
-        }
-        // Scale pivot row to make pivot element 1
-        let pivot = augmented[col * 4 + col];
-        for (let j = 0; j < 8; j++) {
-            augmented[col * 4 + j] /= pivot;
-        }
-        // Eliminate column in other rows
-        for (let row = 0; row < 4; row++) {
-            if (row !== col) {
-                let factor = augmented[row * 4 + col];
-                for (let j = 0; j < 8; j++) {
-                    augmented[row * 4 + j] -= factor * augmented[col * 4 + j];
-                }
-            }
-        }
-    }
-    // Extract the inverse from the right side of the augmented matrix
-    return augmented.slice(0, 16);
-}
-function round(number) {
-    const rounded = Math.round(number);
-    return Math.abs(rounded - number) <= epsilon ? rounded : +number.toPrecision(6);
-}
-// translate3d(25.9808px, 0, 15px ) rotateY(60deg) skewX(49.9999deg) scale(1, 1.2)
-// translate → rotate → skew → scale
-function decompose(original) {
-    const matrix = original.slice();
-    // Normalize last row
-    if (matrix[15] === 0) {
-        return null;
-    }
-    for (let i = 0; i < 16; i++)
-        matrix[i] /= matrix[15];
-    // Perspective extraction
-    const perspective = [0, 0, 0, 1];
-    if (matrix[3] !== 0 || matrix[7] !== 0 || matrix[11] !== 0) {
-        const rightHandSide = [matrix[3], matrix[7], matrix[11], matrix[15]];
-        const perspectiveMatrix = matrix.slice();
-        perspectiveMatrix[3] = 0;
-        perspectiveMatrix[7] = 0;
-        perspectiveMatrix[11] = 0;
-        perspectiveMatrix[15] = 1;
-        // @ts-ignore
-        const inverted = inverse(original.slice());
-        if (inverted === null) {
-            return null;
-        }
-        const transposedInverse = transposeMatrix4(inverted);
-        perspective[0] = dot(rightHandSide, transposedInverse.slice(0, 4));
-        perspective[1] = dot(rightHandSide, transposedInverse.slice(4, 8));
-        perspective[2] = dot(rightHandSide, transposedInverse.slice(8, 12));
-        perspective[3] = dot(rightHandSide, transposedInverse.slice(12, 16));
-        // Clear perspective from matrix
-        matrix[3] = 0;
-        matrix[7] = 0;
-        matrix[11] = 0;
-        matrix[15] = 1;
-    }
-    // Translation
-    const translate = [matrix[12], matrix[13], matrix[14]];
-    matrix[12] = matrix[13] = matrix[14] = 0;
-    // Build the 3x3 matrix
-    const row0 = [matrix[0], matrix[1], matrix[2]];
-    const row1 = [matrix[4], matrix[5], matrix[6]];
-    const row2 = [matrix[8], matrix[9], matrix[10]];
-    const cross = [
-        row1[1] * row2[2] - row1[2] * row2[1],
-        row1[2] * row2[0] - row1[0] * row2[2],
-        row1[0] * row2[1] - row1[1] * row2[0],
-    ];
-    // Compute scale
-    const scaleX = Math.hypot(...row0);
-    const row0Norm = normalize$1(row0);
-    const skewXY = dot(row0Norm, row1);
-    const row1Proj = [
-        row1[0] - skewXY * row0Norm[0],
-        row1[1] - skewXY * row0Norm[1],
-        row1[2] - skewXY * row0Norm[2]
-    ];
-    const scaleY = Math.hypot(...row1Proj);
-    const row1Norm = normalize$1(row1Proj);
-    const skewXZ = dot(row0Norm, row2);
-    const skewYZ = dot(row1Norm, row2);
-    const row2Proj = [
-        row2[0] - skewXZ * row0Norm[0] - skewYZ * row1Norm[0],
-        row2[1] - skewXZ * row0Norm[1] - skewYZ * row1Norm[1],
-        row2[2] - skewXZ * row0Norm[2] - skewYZ * row1Norm[2]
-    ];
-    const row2Norm = normalize$1(row2Proj);
-    const determinant = row0[0] * cross[0] + row0[1] * cross[1] + row0[2] * cross[2];
-    const scaleZ = Math.hypot(...row2Proj) * (determinant < 0 ? -1 : 1);
-    // Build rotation matrix from orthonormalized vectors
-    const r00 = row0Norm[0], r01 = row1Norm[0], r02 = row2Norm[0];
-    const r10 = row0Norm[1], r11 = row1Norm[1], r12 = row2Norm[1];
-    const r20 = row0Norm[2], r21 = row1Norm[2], r22 = row2Norm[2];
-    // Convert to quaternion
-    const trace = r00 + r11 + r22;
-    let qw, qx, qy, qz;
-    if (trace > 0) {
-        const s = 0.5 / Math.sqrt(trace + 1.0);
-        qw = 0.25 / s;
-        qx = (r21 - r12) * s;
-        qy = (r02 - r20) * s;
-        qz = (r10 - r01) * s;
-    }
-    else if (r00 > r11 && r00 > r22) {
-        const s = 2.0 * Math.sqrt(1.0 + r00 - r11 - r22);
-        qw = (r21 - r12) / s;
-        qx = 0.25 * s;
-        qy = (r01 + r10) / s;
-        qz = (r02 + r20) / s;
-    }
-    else if (r11 > r22) {
-        const s = 2.0 * Math.sqrt(1.0 + r11 - r00 - r22);
-        qw = (r02 - r20) / s;
-        qx = (r01 + r10) / s;
-        qy = 0.25 * s;
-        qz = (r12 + r21) / s;
-    }
-    else {
-        const s = 2.0 * Math.sqrt(1.0 + r22 - r00 - r11);
-        qw = (r10 - r01) / s;
-        qx = (r02 + r20) / s;
-        qy = (r12 + r21) / s;
-        qz = 0.25 * s;
-    }
-    [qx, qy, qz] = toZero([qx, qy, qz]);
-    let q = [Math.abs(qx), Math.abs(qy), Math.abs(qz)].reduce((acc, curr) => {
-        if (acc == 0 || (curr > 0 && curr < acc)) {
-            acc = curr;
-        }
-        return acc;
-    }, 0);
-    if (q > 0) {
-        qx /= q;
-        qy /= q;
-        qz /= q;
-    }
-    const rotate = [qx, qy, qz, Object.is(qw, 0) ? 0 : 2 * Math.acos(qw) * 180 / Math.PI];
-    const scale = [scaleX, scaleY, scaleZ];
-    const skew = [skewXY, skewXZ, skewYZ];
-    return {
-        translate,
-        scale,
-        rotate,
-        skew,
-        perspective
-    };
-}
-function transposeMatrix4(m) {
-    return [
-        m[0], m[4], m[8], m[12],
-        m[1], m[5], m[9], m[13],
-        m[2], m[6], m[10], m[14],
-        m[3], m[7], m[11], m[15],
-    ];
-}
-function toZero(v) {
-    for (let i = 0; i < v.length; i++) {
-        if (Math.abs(v[i]) <= epsilon) {
-            v[i] = 0;
-        }
-        else {
-            v[i] = +v[i].toPrecision(6);
-        }
-    }
-    return v;
-}
-// https://drafts.csswg.org/css-transforms-1/#2d-matrix
-function is2DMatrix(matrix) {
-    // m13,m14,  m23, m24, m31, m32, m34, m43 are all 0
-    return matrix[2] === 0 &&
-        matrix[3] === 0 &&
-        matrix[6] === 0 &&
-        matrix[7] === 0 &&
-        matrix[8] === 0 &&
-        matrix[9] === 0 &&
-        matrix[11] === 0 &&
-        matrix[14] === 0 &&
-        matrix[10] === 1 &&
-        matrix[15] === 1;
 }
 
 function makeColor(kind, components, alpha) {
@@ -16613,13 +16508,16 @@ function alpha(color, alpha) {
     if (color.kin === exports.ColorType.DEVICE_CMYK) {
         return null;
     }
+    if (alpha == null) {
+        return color;
+    }
     if (color.kin === exports.ColorType.COLOR_MIX || color.cal === 'rel') {
         color = convertColor(color, getColorType(color));
         if (color == null) {
             return null;
         }
     }
-    const components = getComponents(color);
+    const components = getColorComponents(color);
     if (components == null) {
         return null;
     }
@@ -16665,14 +16563,14 @@ function convertColor(token, to) {
             }
             return acc;
         }, [[]]);
-        token = colorMix(children[0][1], children[0][2], children[1][0], children[1][1], children[2][0], children[2][1]);
+        token = colorMix(...children.flat(2));
         if (token == null) {
             return null;
         }
     }
     if (token.cal == "rel" &&
         ["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch", "color"].some((t) => equalsIgnoreCase(t, token.val))) {
-        const chi = getComponents(token);
+        const chi = getColorComponents(token);
         const offset = token.val == "color" ? 2 : 1;
         if (chi != null) {
             // @ts-ignore
@@ -16997,7 +16895,7 @@ function hwb2colorToken(token, to) {
     return values2colortoken(values, to);
 }
 function cmyk2colorToken(token, to) {
-    const values = cmyk2rgbvalues(token);
+    const values = cmyk2srgbvalues(token);
     if (values == null) {
         return null;
     }
@@ -17071,7 +16969,7 @@ function srgb2srgbcolorspace(val, to) {
             break;
         case exports.ColorType.XYZ_D50:
             // @ts-ignore
-            values.push(...srgb2xyz_d50(...val));
+            values.push(...srgb2xyz_d65(...val));
             break;
     }
     return values;
@@ -17080,7 +16978,7 @@ function minmax(value, min, max) {
     return value < min ? min : value > max ? max : value;
 }
 function color2srgbvalues(token) {
-    const components = getComponents(token);
+    const components = getColorComponents(token);
     if (components == null) {
         return null;
     }
@@ -17117,6 +17015,9 @@ function color2srgbvalues(token) {
             values = xyzd502srgb(...values);
             break;
     }
+    if (values.length == 4) {
+        values[3] = toPrecisionValue(values[3], 2);
+    }
     return values;
 }
 function values2colortoken(values, to) {
@@ -17129,7 +17030,7 @@ function values2colortoken(values, to) {
     if (values.length == 4) {
         chi.push({ typ: exports.EnumToken.LiteralTokenType, val: "/" }, {
             typ: exports.EnumToken.PercentageTokenType,
-            val: values[3] * 100,
+            val: toPrecisionValue(values[3], 2) * 100,
         });
     }
     const colorSpace = exports.ColorType[to].toLowerCase().replaceAll("_", "-");
@@ -17193,12 +17094,13 @@ function getAngle(token) {
     // @ts-ignore
     return token.val / 360;
 }
-function toPrecisionValue(value) {
-    value = +value.toFixed(colorPrecision);
+function toPrecisionValue(value, precision = colorPrecision) {
+    const div = Math.pow(10, precision);
+    value = Math.round(value * div) / div;
     return Math.abs(value) < epsilon ? 0 : value;
 }
-function toPrecisionAngle(angle) {
-    angle = +angle.toPrecision(colorPrecision);
+function toPrecisionAngle(angle, precision = colorPrecision) {
+    angle = toPrecisionValue(angle, precision);
     if (Math.abs(angle) >= 360) {
         angle %= 360;
     }
@@ -20744,6 +20646,247 @@ function consumeWhitespace(tokens) {
         tokens.shift();
     }
     return true;
+}
+
+function identity() {
+    return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+}
+function normalize$1(point) {
+    const [x, y, z] = point;
+    const norm = Math.sqrt(point[0] * point[0] + point[1] * point[1] + point[2] * point[2]);
+    return norm === 0 ? [0, 0, 0] : [x / norm, y / norm, z / norm];
+}
+function dot(point1, point2) {
+    if (point1.length === 4 && point2.length === 4) {
+        return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2] + point1[3] * point2[3];
+    }
+    return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2];
+}
+function multiply(matrixA, matrixB) {
+    let result = new Array(16).fill(0);
+    for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+            for (let k = 0; k < 4; k++) {
+                // Utiliser l'indexation linéaire pour accéder aux éléments
+                // Pour une matrice 4x4, l'index est (row * 4 + col)
+                result[j * 4 + i] += matrixA[k * 4 + i] * matrixB[j * 4 + k];
+            }
+        }
+    }
+    return result;
+}
+function inverse(matrix) {
+    // Create augmented matrix [matrix | identity]
+    let augmented = [
+        ...matrix.slice(0, 4),
+        1, 0, 0, 0,
+        ...matrix.slice(4, 8),
+        0, 1, 0, 0,
+        ...matrix.slice(8, 12),
+        0, 0, 1, 0,
+        ...matrix.slice(12, 16),
+        0, 0, 0, 1
+    ];
+    // Gaussian elimination with partial pivoting
+    for (let col = 0; col < 4; col++) {
+        // Find pivot row with maximum absolute value
+        let maxRow = col;
+        let maxVal = Math.abs(augmented[col * 4 + col]);
+        for (let row = col + 1; row < 4; row++) {
+            let val = Math.abs(augmented[row * 4 + col]);
+            if (val > maxVal) {
+                maxVal = val;
+                maxRow = row;
+            }
+        }
+        // Check for singularity
+        if (maxVal < 1e-5) {
+            return null;
+        }
+        // Swap rows if necessary
+        if (maxRow !== col) {
+            [augmented[col], augmented[maxRow]] = [augmented[maxRow], augmented[col]];
+        }
+        // Scale pivot row to make pivot element 1
+        let pivot = augmented[col * 4 + col];
+        for (let j = 0; j < 8; j++) {
+            augmented[col * 4 + j] /= pivot;
+        }
+        // Eliminate column in other rows
+        for (let row = 0; row < 4; row++) {
+            if (row !== col) {
+                let factor = augmented[row * 4 + col];
+                for (let j = 0; j < 8; j++) {
+                    augmented[row * 4 + j] -= factor * augmented[col * 4 + j];
+                }
+            }
+        }
+    }
+    // Extract the inverse from the right side of the augmented matrix
+    return augmented.slice(0, 16);
+}
+function round(number) {
+    const rounded = Math.round(number);
+    return Math.abs(rounded - number) <= epsilon ? rounded : +number.toPrecision(6);
+}
+// translate3d(25.9808px, 0, 15px ) rotateY(60deg) skewX(49.9999deg) scale(1, 1.2)
+// translate → rotate → skew → scale
+function decompose(original) {
+    const matrix = original.slice();
+    // Normalize last row
+    if (matrix[15] === 0) {
+        return null;
+    }
+    for (let i = 0; i < 16; i++)
+        matrix[i] /= matrix[15];
+    // Perspective extraction
+    const perspective = [0, 0, 0, 1];
+    if (matrix[3] !== 0 || matrix[7] !== 0 || matrix[11] !== 0) {
+        const rightHandSide = [matrix[3], matrix[7], matrix[11], matrix[15]];
+        const perspectiveMatrix = matrix.slice();
+        perspectiveMatrix[3] = 0;
+        perspectiveMatrix[7] = 0;
+        perspectiveMatrix[11] = 0;
+        perspectiveMatrix[15] = 1;
+        // @ts-ignore
+        const inverted = inverse(original.slice());
+        if (inverted === null) {
+            return null;
+        }
+        const transposedInverse = transposeMatrix4(inverted);
+        perspective[0] = dot(rightHandSide, transposedInverse.slice(0, 4));
+        perspective[1] = dot(rightHandSide, transposedInverse.slice(4, 8));
+        perspective[2] = dot(rightHandSide, transposedInverse.slice(8, 12));
+        perspective[3] = dot(rightHandSide, transposedInverse.slice(12, 16));
+        // Clear perspective from matrix
+        matrix[3] = 0;
+        matrix[7] = 0;
+        matrix[11] = 0;
+        matrix[15] = 1;
+    }
+    // Translation
+    const translate = [matrix[12], matrix[13], matrix[14]];
+    matrix[12] = matrix[13] = matrix[14] = 0;
+    // Build the 3x3 matrix
+    const row0 = [matrix[0], matrix[1], matrix[2]];
+    const row1 = [matrix[4], matrix[5], matrix[6]];
+    const row2 = [matrix[8], matrix[9], matrix[10]];
+    const cross = [
+        row1[1] * row2[2] - row1[2] * row2[1],
+        row1[2] * row2[0] - row1[0] * row2[2],
+        row1[0] * row2[1] - row1[1] * row2[0],
+    ];
+    // Compute scale
+    const scaleX = Math.hypot(...row0);
+    const row0Norm = normalize$1(row0);
+    const skewXY = dot(row0Norm, row1);
+    const row1Proj = [
+        row1[0] - skewXY * row0Norm[0],
+        row1[1] - skewXY * row0Norm[1],
+        row1[2] - skewXY * row0Norm[2]
+    ];
+    const scaleY = Math.hypot(...row1Proj);
+    const row1Norm = normalize$1(row1Proj);
+    const skewXZ = dot(row0Norm, row2);
+    const skewYZ = dot(row1Norm, row2);
+    const row2Proj = [
+        row2[0] - skewXZ * row0Norm[0] - skewYZ * row1Norm[0],
+        row2[1] - skewXZ * row0Norm[1] - skewYZ * row1Norm[1],
+        row2[2] - skewXZ * row0Norm[2] - skewYZ * row1Norm[2]
+    ];
+    const row2Norm = normalize$1(row2Proj);
+    const determinant = row0[0] * cross[0] + row0[1] * cross[1] + row0[2] * cross[2];
+    const scaleZ = Math.hypot(...row2Proj) * (determinant < 0 ? -1 : 1);
+    // Build rotation matrix from orthonormalized vectors
+    const r00 = row0Norm[0], r01 = row1Norm[0], r02 = row2Norm[0];
+    const r10 = row0Norm[1], r11 = row1Norm[1], r12 = row2Norm[1];
+    const r20 = row0Norm[2], r21 = row1Norm[2], r22 = row2Norm[2];
+    // Convert to quaternion
+    const trace = r00 + r11 + r22;
+    let qw, qx, qy, qz;
+    if (trace > 0) {
+        const s = 0.5 / Math.sqrt(trace + 1.0);
+        qw = 0.25 / s;
+        qx = (r21 - r12) * s;
+        qy = (r02 - r20) * s;
+        qz = (r10 - r01) * s;
+    }
+    else if (r00 > r11 && r00 > r22) {
+        const s = 2.0 * Math.sqrt(1.0 + r00 - r11 - r22);
+        qw = (r21 - r12) / s;
+        qx = 0.25 * s;
+        qy = (r01 + r10) / s;
+        qz = (r02 + r20) / s;
+    }
+    else if (r11 > r22) {
+        const s = 2.0 * Math.sqrt(1.0 + r11 - r00 - r22);
+        qw = (r02 - r20) / s;
+        qx = (r01 + r10) / s;
+        qy = 0.25 * s;
+        qz = (r12 + r21) / s;
+    }
+    else {
+        const s = 2.0 * Math.sqrt(1.0 + r22 - r00 - r11);
+        qw = (r10 - r01) / s;
+        qx = (r02 + r20) / s;
+        qy = (r12 + r21) / s;
+        qz = 0.25 * s;
+    }
+    [qx, qy, qz] = toZero([qx, qy, qz]);
+    let q = [Math.abs(qx), Math.abs(qy), Math.abs(qz)].reduce((acc, curr) => {
+        if (acc == 0 || (curr > 0 && curr < acc)) {
+            acc = curr;
+        }
+        return acc;
+    }, 0);
+    if (q > 0) {
+        qx /= q;
+        qy /= q;
+        qz /= q;
+    }
+    const rotate = [qx, qy, qz, Object.is(qw, 0) ? 0 : 2 * Math.acos(qw) * 180 / Math.PI];
+    const scale = [scaleX, scaleY, scaleZ];
+    const skew = [skewXY, skewXZ, skewYZ];
+    return {
+        translate,
+        scale,
+        rotate,
+        skew,
+        perspective
+    };
+}
+function transposeMatrix4(m) {
+    return [
+        m[0], m[4], m[8], m[12],
+        m[1], m[5], m[9], m[13],
+        m[2], m[6], m[10], m[14],
+        m[3], m[7], m[11], m[15],
+    ];
+}
+function toZero(v) {
+    for (let i = 0; i < v.length; i++) {
+        if (Math.abs(v[i]) <= epsilon) {
+            v[i] = 0;
+        }
+        else {
+            v[i] = +v[i].toPrecision(6);
+        }
+    }
+    return v;
+}
+// https://drafts.csswg.org/css-transforms-1/#2d-matrix
+function is2DMatrix(matrix) {
+    // m13,m14,  m23, m24, m31, m32, m34, m43 are all 0
+    return matrix[2] === 0 &&
+        matrix[3] === 0 &&
+        matrix[6] === 0 &&
+        matrix[7] === 0 &&
+        matrix[8] === 0 &&
+        matrix[9] === 0 &&
+        matrix[11] === 0 &&
+        matrix[14] === 0 &&
+        matrix[10] === 1 &&
+        matrix[15] === 1;
 }
 
 function translateX(x, from) {
@@ -31837,9 +31980,20 @@ exports.ResponseType = void 0;
  * @param okLab2
  *
  * @private
+ * {@link https://drafts.csswg.org/css-color-4/#comparing-color-values}
  */
-function okLabDistance(okLab1, okLab2) {
-    return Math.sqrt(Math.pow(okLab1[0] - okLab2[0], 2) + Math.pow(okLab1[1] - okLab2[1], 2) + Math.pow(okLab1[2] - okLab2[2], 2));
+function okLabDistance(color1, color2) {
+    color1 = convertColor(color1, exports.ColorType.OKLAB);
+    color2 = convertColor(color2, exports.ColorType.OKLAB);
+    if (color1 == null || color2 == null) {
+        return null;
+    }
+    const okLab1 = getOKLABComponents(color1);
+    const okLab2 = getOKLABComponents(color2);
+    if (okLab1 == null || okLab2 == null) {
+        return null;
+    }
+    return Math.hypot(okLab1[0] - okLab2[0], okLab1[1] - okLab2[1], okLab1[2] - okLab2[2]);
 }
 /**
  * Check if two colors are close in okLab space.
@@ -31849,7 +32003,7 @@ function okLabDistance(okLab1, okLab2) {
  *
  * @private
  */
-function isOkLabClose(color1, color2, threshold = 0.01) {
+function isOkLabClose(color1, color2, threshold = colorDistancePrecision) {
     color1 = convertColor(color1, exports.ColorType.OKLAB);
     color2 = convertColor(color2, exports.ColorType.OKLAB);
     if (color1 == null || color2 == null) {
@@ -31857,10 +32011,12 @@ function isOkLabClose(color1, color2, threshold = 0.01) {
     }
     const okLab1 = getOKLABComponents(color1);
     const okLab2 = getOKLABComponents(color2);
-    if (okLab1 == null || okLab2 == null) {
-        return false;
+    for (let i = 0; i < 3; i++) {
+        if (Math.abs(okLab1[i] - okLab2[i]) > threshold) {
+            return false;
+        }
     }
-    return okLabDistance(okLab1, okLab2) < threshold;
+    return true;
 }
 
 /**

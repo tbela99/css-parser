@@ -245,6 +245,9 @@
     "color()": {
       "syntax": "color( [from <color>]? <colorspace-params> [ / [ <alpha-value> | none ] ]? )"
     },
+    "color-mix()": {
+      "syntax": "color-mix( <color-interpolation-method> ,? [ <color> && <percentage [0,100]>? ]#)"
+    },
     "contrast-color()": {
       "syntax": "contrast-color(<color> )"
     },

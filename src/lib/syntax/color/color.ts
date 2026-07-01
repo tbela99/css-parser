@@ -86,8 +86,9 @@ import {
     oklab2oklchToken,
     rgb2oklchToken,
 } from "./oklch.ts";
-import { getComponents } from "./utils/components.ts";
+import { getColorComponents } from "./utils/components.ts";
 import {
+    cmyk2srgbvalues,
     hex2srgbvalues,
     hsl2srgb,
     hwb2srgbvalues,
@@ -102,7 +103,7 @@ import {
 } from "./srgb.ts";
 import { prophotorgb2srgbvalues, srgb2prophotorgbvalues } from "./prophotorgb.ts";
 import { rec20202srgb, srgb2rec2020values } from "./rec2020.ts";
-import { srgb2xyz, srgb2xyz_d50 } from "./xyz.ts";
+import { srgb2xyz, srgb2xyz_d65 } from "./xyz.ts";
 import { p32srgbvalues, srgb2p3values } from "./p3.ts";
 import { xyzd502srgb } from "./xyzd50.ts";
 import { colorMix } from "./color-mix.ts";
@@ -132,7 +133,7 @@ import {
     rgb2cmykToken,
 } from "./cmyk.ts";
 import { a98rgb2srgbvalues, srgb2a98values } from "./a98rgb.ts";
-import { epsilon } from "../../ast/transform/utils.ts";
+import { epsilon } from "../constants.ts";
 import { colorFuncColorSpace, colorPrecision, anglePrecision, definedPropertySettings } from "../constants.ts";
 import { trimArray } from "../../validation/match.ts";
 import { alpha } from "./alpha.ts";
@@ -191,12 +192,13 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
         );
 
         token = colorMix(
-            children[0][1] as IdentToken,
-            children[0][2] as IdentToken,
-            children[1][0] as ColorToken,
-            children[1][1] as PercentageToken,
-            children[2][0] as ColorToken,
-            children[2][1] as PercentageToken,
+            ...children.flat(2),
+            // children[0][1] as IdentToken,
+            // children[0][2] as IdentToken,
+            // children[1][0] as ColorToken,
+            // children[1][1] as PercentageToken,
+            // children[2][0] as ColorToken,
+            // children[2][1] as PercentageToken,
         ) as ColorToken;
 
         if (token == null) {
@@ -206,13 +208,14 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
 
     if (
         (token as ColorToken).cal == "rel" &&
-        ["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch", "color"].some((t) => equalsIgnoreCase(t, (token as ColorToken).val))
+        ["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch", "color"].some((t) =>
+            equalsIgnoreCase(t, (token as ColorToken).val),
+        )
     ) {
-        const chi: Token[] | null = getComponents(token as ColorToken);
+        const chi: Token[] | null = getColorComponents(token as ColorToken);
         const offset: number = (token as ColorToken).val == "color" ? 2 : 1;
 
         if (chi != null) {
-
             // @ts-ignore
             const color: ColorToken = chi[1];
             const components: Record<RelativeColorTypes, Token> = parseRelativeColorComponents(
@@ -644,7 +647,7 @@ export function hwb2colorToken(token: ColorToken, to: ColorType): ColorToken | n
 }
 
 export function cmyk2colorToken(token: ColorToken, to: ColorType): ColorToken | null {
-    const values: number[] | null = cmyk2rgbvalues(token);
+    const values: number[] | null = cmyk2srgbvalues(token);
 
     if (values == null) {
         return null;
@@ -740,7 +743,7 @@ function srgb2srgbcolorspace(val: number[], to: ColorType): number[] {
 
         case ColorType.XYZ_D50:
             // @ts-ignore
-            values.push(...srgb2xyz_d50(...val));
+            values.push(...srgb2xyz_d65(...val));
             break;
     }
 
@@ -752,7 +755,7 @@ export function minmax(value: number, min: number, max: number): number {
 }
 
 export function color2srgbvalues(token: ColorToken): number[] | null {
-    const components: Token[] = getComponents(token) as Token[];
+    const components: Token[] = getColorComponents(token) as Token[];
 
     if (components == null) {
         return null;
@@ -795,6 +798,10 @@ export function color2srgbvalues(token: ColorToken): number[] | null {
             break;
     }
 
+    if (values.length == 4) {
+        values[3] = toPrecisionValue(values[3], 2);
+    }
+
     return values;
 }
 
@@ -812,7 +819,7 @@ function values2colortoken(values: number[], to: ColorType): ColorToken {
             { typ: EnumToken.LiteralTokenType, val: "/" },
             {
                 typ: EnumToken.PercentageTokenType,
-                val: values[3] * 100,
+                val: toPrecisionValue(values[3], 2) * 100,
             },
         );
     }
@@ -922,14 +929,15 @@ export function getAngle(token: NumberToken | AngleToken | IdentToken): number {
     return token.val / 360;
 }
 
-export function toPrecisionValue(value: number): number {
-    value = +value.toFixed(colorPrecision);
+export function toPrecisionValue(value: number, precision: number = colorPrecision): number {
+    const div: number = Math.pow(10, precision);
+    value = Math.round(value * div) / div;
 
     return Math.abs(value) < epsilon ? 0 : value;
 }
 
-export function toPrecisionAngle(angle: number): number {
-    angle = +angle.toPrecision(colorPrecision);
+export function toPrecisionAngle(angle: number, precision: number = colorPrecision): number {
+    angle = toPrecisionValue(angle, precision);
 
     if (Math.abs(angle) >= 360) {
         angle %= 360;

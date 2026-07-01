@@ -143,10 +143,9 @@ function doEvaluate(l, r, op) {
                 : l.typ;
     // @ts-expect-error
     let v1 = l.val?.typ == EnumToken.FractionTokenType ? l.val : getValue(l);
-    let v2 = 
-    // @ts-expect-error
-    r.val?.typ == EnumToken.FractionTokenType
-        ? r.val
+    let v2 = r.val?.typ == EnumToken.FractionTokenType
+        ? // @ts-expect-error
+            r.val
         : getValue(r);
     if (op == EnumToken.Mul) {
         if (l.typ != EnumToken.NumberTokenType && r.typ != EnumToken.NumberTokenType) {

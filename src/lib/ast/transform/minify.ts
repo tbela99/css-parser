@@ -1,4 +1,5 @@
-import {decompose, epsilon, identity, multiply, round, toZero} from "./utils.ts";
+import {decompose, identity, multiply, round, toZero} from "./utils.ts";
+import { epsilon } from "../../syntax/constants.ts";
 import {EnumToken} from "../types.ts";
 import type {
     AngleToken,

@@ -207,9 +207,9 @@ function doEvaluate(
     // @ts-expect-error
     let v1: number | Token | null = l.val?.typ == EnumToken.FractionTokenType ? l.val : getValue(l);
     let v2: number | Token | null =
-        // @ts-expect-error
         ((r as NumberToken | DimensionToken).val as FractionToken)?.typ == EnumToken.FractionTokenType
-            ? r.val
+            ? // @ts-expect-error
+              r.val
             : getValue(r as NumberToken | IdentToken | FunctionToken);
 
     if (op == EnumToken.Mul) {

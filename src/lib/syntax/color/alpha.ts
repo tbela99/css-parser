@@ -1,7 +1,7 @@
 import type { ColorToken, Token } from "../../../@types/index.ts";
 import { ColorType } from "../../ast/types.ts";
 import { convertColor } from "./color.ts";
-import { getComponents } from "./utils/components.ts";
+import { getColorComponents } from "./utils/components.ts";
 import { makeColor } from "./utils/make-color.ts";
 import {getColorType} from "./utils/color-type.ts";
 
@@ -17,6 +17,11 @@ export function alpha(color: ColorToken, alpha?: Token): ColorToken | null {
         return null;
     }
 
+    if (alpha == null) {
+        
+        return color;
+    }
+
     if (color.kin === ColorType.COLOR_MIX || color.cal === 'rel')  {
 
         color = convertColor(color, getColorType(color) as ColorType) as ColorToken;
@@ -26,7 +31,7 @@ export function alpha(color: ColorToken, alpha?: Token): ColorToken | null {
         }
     }
 
-    const components = getComponents(color);
+    const components = getColorComponents(color);
 
     if (components == null) {
         

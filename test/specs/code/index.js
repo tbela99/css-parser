@@ -38,3 +38,4 @@ export * as lenient from './lenient.js';
 export * as minify from './minify.js';
 export * as transform from './transform.js';
 export * as modules from './modules.js';
+export * as colorMix from './color-mix.js';

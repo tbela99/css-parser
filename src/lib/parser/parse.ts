@@ -723,7 +723,7 @@ export async function doParse(
                 const url: string = token.typ == EnumToken.StringTokenType ? token.val.slice(1, -1) : token.val;
 
                 try {
-                    const result = options.load!(url, <string>options.src) as LoadResult;
+                    const result = options.load!(url, options.src as string) as LoadResult;
                     const stream =
                         result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                             ? await result
@@ -797,7 +797,7 @@ export async function doParse(
     const endParseTime: number = performance.now();
 
     if (options.expandNestingRules) {
-        ast = <AstStyleSheet>expand(ast);
+        ast = expand(ast) as AstStyleSheet;
     }
 
     let replacement: GenericVisitorResult<T>;
@@ -1213,7 +1213,7 @@ export async function doParse(
                     ) as StringToken
                 ).val.slice(1, -1);
                 const src = options.resolve!(url, options.dirname!(options.src as string), options.cwd);
-                const result = options.load!(url, <string>options.src) as LoadResult;
+                const result = options.load!(url, options.src as string) as LoadResult;
                 const stream =
                     result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                         ? await result
@@ -1404,7 +1404,7 @@ export async function doParse(
                         else if (token.r.typ == EnumToken.String) {
                             const url: string = (token.r as StringToken).val.slice(1, -1);
                             const src = options.resolve!(url, options.dirname!(options.src as string), options.cwd);
-                            const result = options.load!(url, <string>options.src) as LoadResult;
+                            const result = options.load!(url, options.src as string) as LoadResult;
                             const stream =
                                 result instanceof Promise ||
                                 Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
@@ -2097,7 +2097,7 @@ function parseNode(
         return null;
     }
 
-    let delim: Token = <Token>tokens.at(-1);
+    let delim: Token = tokens.at(-1) as Token;
 
     if (
         delim.typ == EnumToken.SemiColonTokenType ||
@@ -3281,7 +3281,7 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                 if (typ == EnumToken.FunctionTokenType) {
                     tokens[i + 1].typ = EnumToken.PseudoClassFuncTokenType;
                 } else if (typ == EnumToken.IdenTokenType) {
-                    (<PseudoClassToken>tokens[i + 1]).val = ":" + (<PseudoClassToken>tokens[i + 1]).val;
+                    (tokens[i + 1] as PseudoClassToken).val = ":" + (tokens[i + 1] as PseudoClassToken).val;
                     tokens[i + 1].typ = EnumToken.PseudoClassTokenType;
                 }
 
@@ -3326,11 +3326,11 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                 parseTokens(attr.chi, (t as AttrToken).typ, options);
             }
 
-            let m: number = (<Token[]>attr.chi).length;
+            let m: number = (attr.chi as Token[]).length;
             let val: Token;
 
-            for (m = 0; m < (<Token[]>attr.chi).length; m++) {
-                val = (<Token[]>attr.chi)[m];
+            for (m = 0; m < (attr.chi as Token[]).length; m++) {
+                val = (attr.chi as Token[])[m];
 
                 if (val.typ == EnumToken.StringTokenType) {
                     const slice = (val as StringToken).val.slice(1, -1);
@@ -3344,8 +3344,8 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                     let upper: number = m;
                     let lower: number = m;
 
-                    while (++upper < (<Token[]>attr.chi).length) {
-                        if ((<Token[]>attr.chi)[upper].typ == EnumToken.CommentTokenType) {
+                    while (++upper < (attr.chi as Token[]).length) {
+                        if ((attr.chi as Token[])[upper].typ == EnumToken.CommentTokenType) {
                             continue;
                         }
 
@@ -3353,7 +3353,7 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                     }
 
                     while (lower-- > 0) {
-                        if ((<Token[]>attr.chi)[lower].typ == EnumToken.CommentTokenType) {
+                        if ((attr.chi as Token[])[lower].typ == EnumToken.CommentTokenType) {
                             continue;
                         }
 
@@ -3361,16 +3361,16 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                     }
 
                     // @ts-ignore
-                    (<Token[]>attr.chi)[m] = <NameSpaceAttributeToken>{
+                    (attr.chi as Token[])[m] = {
                         typ: EnumToken.NameSpaceAttributeTokenType,
-                        l: (<Token[]>attr.chi)[lower],
-                        r: (<Token[]>attr.chi)[upper],
-                    };
+                        l: (attr.chi as Token[])[lower],
+                        r: (attr.chi as Token[])[upper],
+                    } as NameSpaceAttributeToken;
 
-                    (<Token[]>attr.chi).splice(upper, 1);
+                    (attr.chi as Token[]).splice(upper, 1);
 
                     if (lower >= 0) {
-                        (<Token[]>attr.chi).splice(lower, 1);
+                        (attr.chi as Token[]).splice(lower, 1);
                         m--;
                     }
                 } else if (
@@ -3381,13 +3381,13 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                         EnumToken.EndMatchTokenType,
                         EnumToken.IncludeMatchTokenType,
                         EnumToken.DelimTokenType,
-                    ].includes((<Token[]>attr.chi)[m].typ)
+                    ].includes((attr.chi as Token[])[m].typ)
                 ) {
                     let upper: number = m;
                     let lower: number = m;
 
-                    while (++upper < (<Token[]>attr.chi).length) {
-                        if ((<Token[]>attr.chi)[upper].typ == EnumToken.CommentTokenType) {
+                    while (++upper < (attr.chi as Token[]).length) {
+                        if ((attr.chi as Token[])[upper].typ == EnumToken.CommentTokenType) {
                             continue;
                         }
 
@@ -3395,14 +3395,14 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                     }
 
                     while (lower-- > 0) {
-                        if ((<Token[]>attr.chi)[lower].typ == EnumToken.CommentTokenType) {
+                        if ((attr.chi as Token[])[lower].typ == EnumToken.CommentTokenType) {
                             continue;
                         }
 
                         break;
                     }
 
-                    val = (<Token[]>attr.chi)[lower];
+                    val = (attr.chi as Token[])[lower];
 
                     if (val.typ == EnumToken.StringTokenType) {
                         const slice: string = (val as StringToken).val.slice(1, -1);
@@ -3414,7 +3414,7 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                         }
                     }
 
-                    val = (<Token[]>attr.chi)[upper];
+                    val = (attr.chi as Token[])[upper];
 
                     if (val.typ == EnumToken.StringTokenType) {
                         const slice: string = (val as StringToken).val.slice(1, -1);
@@ -3427,72 +3427,68 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                     }
 
                     // @ts-ignore
-                    const typ = <
-                        | EnumToken.DashMatchTokenType
-                        | EnumToken.StartMatchTokenType
-                        | EnumToken.ContainMatchTokenType
-                        | EnumToken.EndMatchTokenType
-                        | EnumToken.IncludeMatchTokenType
-                    >(<
-                        | DashMatchToken
+                    const typ = (((t as AttrStartToken).chi as Token[])[m] as DashMatchToken
                         | StartMatchToken
                         | ContainMatchToken
                         | EndMatchToken
                         | IncludeMatchToken
-                        | EqualMatchToken
-                    >(<Token[]>(t as AttrStartToken).chi)[m]).typ;
+                        | EqualMatchToken).typ as EnumToken.DashMatchTokenType
+                        | EnumToken.StartMatchTokenType
+                        | EnumToken.ContainMatchTokenType
+                        | EnumToken.EndMatchTokenType
+                        | EnumToken.IncludeMatchTokenType;
 
                     // @ts-ignore
-                    (<Token[]>(t as AttrStartToken).chi)[m] = <MatchExpressionToken>{
+                   ( (t as AttrStartToken).chi as Token[])[m] = {
                         typ: EnumToken.MatchExpressionTokenType,
                         op: {
                             // @ts-ignore
                             typ: typ == EnumToken.DelimTokenType ? EnumToken.EqualMatchTokenType : typ,
                         },
-                        l: (<Token[]>(t as AttrStartToken).chi)[lower],
-                        r: (<Token[]>(t as AttrStartToken).chi)[upper],
-                    };
+                        l: ((t as AttrStartToken).chi as Token[])[lower],
+                        r: ((t as AttrStartToken).chi as Token[])[upper],
+                    } as MatchExpressionToken;
 
-                    if (isIdentColor(((<Token[]>(t as AttrStartToken).chi)[m] as MatchExpressionToken).l)) {
-                        ((<Token[]>(t as AttrStartToken).chi)[m] as MatchExpressionToken).l.typ =
+                    if (isIdentColor((((t as AttrStartToken).chi as Token[])[m] as MatchExpressionToken).l)) {
+                        (((t as AttrStartToken).chi as Token[])[m] as MatchExpressionToken).l.typ =
                             EnumToken.IdenTokenType;
                     }
 
-                    if (isIdentColor(((<Token[]>(t as AttrStartToken).chi)[m] as MatchExpressionToken).r)) {
-                        ((<Token[]>(t as AttrStartToken).chi)[m] as MatchExpressionToken).r.typ =
+                    if (isIdentColor((((t as AttrStartToken).chi as Token[])[m] as MatchExpressionToken).r)) {
+                        (((t as AttrStartToken).chi as Token[])[m] as MatchExpressionToken).r.typ =
                             EnumToken.IdenTokenType;
                     }
 
-                    (<Token[]>(t as AttrStartToken).chi).splice(upper, 1);
-                    (<Token[]>(t as AttrStartToken).chi).splice(lower, 1);
+                    ((t as AttrStartToken).chi as Token[]).splice(upper, 1);
+                    ((t as AttrStartToken).chi as Token[]).splice(lower, 1);
 
                     upper = m;
                     m--;
 
                     while (
                         upper < ((t as AttrStartToken).chi as Token[]).length &&
-                        (<Token[]>(t as AttrStartToken).chi)[upper].typ == EnumToken.WhitespaceTokenType
+                        ((t as AttrStartToken).chi as Token[])[upper].typ == EnumToken.WhitespaceTokenType
                     ) {
                         upper++;
                     }
 
                     if (
                         upper < ((t as AttrStartToken).chi as Token[]).length &&
-                        (<Token[]>(t as AttrStartToken).chi)[upper].typ == EnumToken.IdenTokenType &&
-                        ["i", "s"].includes((<IdentToken>(<Token[]>(t as AttrStartToken).chi)[upper]).val.toLowerCase())
+                        ((t as AttrStartToken).chi as Token[])[upper].typ == EnumToken.IdenTokenType &&
+                        ["i", "s"].includes((((t as AttrStartToken).chi as Token[])[upper] as IdentToken).val.toLowerCase())
                     ) {
-                        (<MatchExpressionToken>(<Token[]>(t as AttrStartToken).chi)[m]).attr = <"i" | "s">(
-                            (<IdentToken>(<Token[]>(t as AttrStartToken).chi)[upper]).val
-                        );
-                        (<Token[]>(t as AttrStartToken).chi).splice(upper, 1);
+                        (((t as AttrStartToken).chi as Token[])[m] as MatchExpressionToken).attr =(
+                            (((t as AttrStartToken).chi as Token[])[upper] as IdentToken).val
+                        ) as "i" | "s";
+                        ((t as AttrStartToken).chi as Token[]).splice(upper, 1);
                     }
                 }
             }
 
-            m = (<Token[]>(t as AttrStartToken).chi).length;
+            m = ((t as AttrStartToken).chi as Token[]).length;
 
-            while ((<Token[]>(t as AttrStartToken).chi).at(-1)?.typ == EnumToken.WhitespaceTokenType) {
-                (<Token[]>(t as AttrStartToken).chi).pop();
+            while (((t as AttrStartToken).chi as Token[]).at(-1)?.typ == EnumToken.WhitespaceTokenType) {
+                ((t as AttrStartToken).chi as Token[]).pop();
             }
 
             continue;
@@ -3508,11 +3504,11 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                     if (typ != null) {
                         if (typ == EnumToken.IdenTokenType) {
                             tokens[k + 1].typ = EnumToken.PseudoClassTokenType;
-                            (<PseudoClassToken>tokens[k + 1]).val = ":" + (<PseudoClassToken>tokens[k + 1]).val;
+                            (tokens[k + 1] as PseudoClassToken).val = ":" + (tokens[k + 1] as PseudoClassToken).val;
                         } else if (typ == EnumToken.FunctionTokenType) {
-                            (<PseudoClassFunctionToken>tokens[k + 1]).typ = EnumToken.PseudoClassFuncTokenType;
-                            (<PseudoClassFunctionToken>tokens[k + 1]).val =
-                                ":" + (<PseudoClassFunctionToken>tokens[k + 1]).val;
+                            (tokens[k + 1] as PseudoClassFunctionToken).typ = EnumToken.PseudoClassFuncTokenType;
+                            (tokens[k + 1] as PseudoClassFunctionToken).val =
+                                ":" + (tokens[k + 1] as PseudoClassFunctionToken).val;
                         }
                         if (typ == EnumToken.FunctionTokenType || typ == EnumToken.IdenTokenType) {
                             tokens.splice(k, 1);
@@ -3548,14 +3544,14 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                 parseTokens(t.chi, options);
             }
 
-            if (t.typ == EnumToken.FunctionTokenType && mathFuncs.includes((<FunctionToken>t).val)) {
-                for (const { value, parent } of walkValues((<FunctionToken>t).chi)) {
+            if (t.typ == EnumToken.FunctionTokenType && mathFuncs.includes((t as FunctionToken).val)) {
+                for (const { value, parent } of walkValues((t as FunctionToken).chi)) {
                     if (value.typ == EnumToken.WhitespaceTokenType) {
-                        const p = <FunctionToken | ParensToken>(parent ?? t);
+                        const p = (parent ?? t) as FunctionToken | ParensToken;
 
                         for (let i = 0; i < p.chi.length; i++) {
                             // @ts-ignore
-                            if ((<FunctionToken | ParensToken>p).chi[i] == value) {
+                            if ((p as FunctionToken | ParensToken).chi[i] == value) {
                                 // @ts-ignore
                                 p.chi.splice(i, 1);
                                 i--;
@@ -3564,15 +3560,15 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                         }
                     } else if (
                         value.typ == EnumToken.LiteralTokenType &&
-                        ["+", "-", "/", "*"].includes((<LiteralToken>value).val)
+                        ["+", "-", "/", "*"].includes((value as LiteralToken).val)
                     ) {
                         // @ts-ignore
                         value.typ =
-                            (<LiteralToken>value).val === "+"
+                            (value as LiteralToken).val === "+"
                                 ? EnumToken.Add
-                                : (<LiteralToken>value).val === "-"
+                                : (value as LiteralToken).val === "-"
                                   ? EnumToken.Sub
-                                  : (<LiteralToken>value).val === "*"
+                                  : (value as LiteralToken).val === "*"
                                     ? EnumToken.Mul
                                     : EnumToken.Div;
 
@@ -3594,7 +3590,7 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                 );
             } else if (
                 t.typ == EnumToken.FunctionTokenType &&
-                ["minmax", "fit-content", "repeat"].includes((<FunctionToken>t).val)
+                ["minmax", "fit-content", "repeat"].includes((t as FunctionToken).val)
             ) {
                 // @ts-ignore
                 t.typ = EnumToken.GridTemplateFuncTokenType;

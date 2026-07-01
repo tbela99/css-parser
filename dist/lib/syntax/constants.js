@@ -29,8 +29,25 @@ const tokensfuncDefMap = new Map([
     [EnumToken.GeneralEnclosedFunctionTokenDefType, EnumToken.GeneralEnclosedFunctionTokenType],
 ]);
 const tokensfuncSet = new Set(tokensfuncDefMap.values());
+/**
+ * Epsilon
+ */
+const epsilon = 1e-5;
+/**
+ * Color distance precision
+ */
+const colorDistancePrecision = epsilon;
+/**
+ * Color precision
+ */
 const colorPrecision = 6;
+/**
+ * Angle precision
+ */
 const anglePrecision = 0.001;
+/**
+ * Color range definitions
+ */
 const colorRange = {
     lab: {
         l: [0, 100],
@@ -444,4 +461,4 @@ const trimTokenSpace = new Set([
 const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
 const combinators = ["+", ">", "~", "||", "|"];
 
-export { COLORS_NAMES, D50, NAMES_COLORS, anglePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, definedPropertySettings, deprecatedSystemColors, e, funcLike, generalEnclosedFunc, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, regMatchLinearGradient, regMatchRadialGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };
+export { COLORS_NAMES, D50, NAMES_COLORS, anglePrecision, colorDistancePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, definedPropertySettings, deprecatedSystemColors, e, epsilon, funcLike, generalEnclosedFunc, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, regMatchLinearGradient, regMatchRadialGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };

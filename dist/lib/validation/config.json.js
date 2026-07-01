@@ -2650,7 +2650,7 @@ var syntaxes = {
 		syntax: "in [ <rectangular-color-space> | <polar-color-space> <hue-interpolation-method>? | <custom-color-space> ]"
 	},
 	"color-mix()": {
-		syntax: "color-mix( <color-interpolation-method> , [ <color> && <percentage [0,100]>? ]#{2} )"
+		syntax: "color-mix( <color-interpolation-method> ,? [ <color> && <percentage [0,100]>? ]#)"
 	},
 	"color-stop": {
 		syntax: "<color-stop-length> | <color-stop-angle>"

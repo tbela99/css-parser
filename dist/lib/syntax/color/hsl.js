@@ -1,7 +1,7 @@
 import { hwb2hsv } from './hsv.js';
 import { color2srgbvalues, toPrecisionAngle, toPrecisionValue, getNumber } from './color.js';
 import { lch2rgbvalues, lab2rgbvalues, cmyk2rgbvalues } from './rgb.js';
-import { getComponents } from './utils/components.js';
+import { getColorComponents } from './utils/components.js';
 import { hex2srgbvalues, oklch2srgbvalues, oklab2srgbvalues, hslvalues } from './srgb.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 
@@ -76,7 +76,7 @@ function hslToken(values) {
     if (values.length == 4 && values[3] != 1) {
         chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
             typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100,
+            val: toPrecisionValue(values[3], 2) * 100,
         });
     }
     return {
@@ -87,7 +87,7 @@ function hslToken(values) {
     };
 }
 function rgb2hslvalues(token) {
-    const chi = getComponents(token);
+    const chi = getColorComponents(token);
     if (chi == null || chi.length < 3) {
         return null;
     }

@@ -13,11 +13,11 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'rgb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '179'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
+                    {typ: EnumToken.NumberTokenType, val: 179},
+                    {typ: EnumToken.NumberTokenType, val: 34},
+                    {typ: EnumToken.NumberTokenType, val: 34},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.RGB
             })).equals(true));
@@ -31,50 +31,51 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'rgb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '179'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
+                    {typ: EnumToken.NumberTokenType, val: 179},
+                    {typ: EnumToken.NumberTokenType, val: 34},
+                    {typ: EnumToken.NumberTokenType, val: 34},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.RGB
             })).equals(true));
         });
 
         it('device-cmyk() to rgb #3', function () {
-            return transform(`.hsl { color: device-cmyk(0 81% 81% 30%/50%); }`, {
+            return transform(`.hsl { color: device-cmyk(0 81.005587% 81.005587% 29.803922%/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.RGB
             }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
                 typ: EnumToken.ColorTokenType,
                 val: 'rgb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '179'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
+                    {typ: EnumToken.NumberTokenType, val: 179},
+                    {typ: EnumToken.NumberTokenType, val: 34},
+                    {typ: EnumToken.NumberTokenType, val: 34},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.RGB
             })).equals(true));
         });
 
         it('hwb() to rgb #4', function () {
-            return transform(`.hsl { color: hwb(0 13.333333333333334% 30%/50%); }`, {
+            return transform(`.hsl { color: hwb(0 13.333333% 32%/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.RGB
             }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
                 typ: EnumToken.ColorTokenType,
                 val: 'rgb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '179'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
+                    {typ: EnumToken.NumberTokenType, val: 179},
+                    {typ: EnumToken.NumberTokenType, val: 34},
+                    {typ: EnumToken.NumberTokenType, val: 34},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.RGB
-            })).equals(true));
+            }, 
+        .1)).equals(true));
         });
 
         it('srgb to rgb #5', function () {
@@ -85,14 +86,14 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'rgb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '179'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
+                    {typ: EnumToken.NumberTokenType, val: 179},
+                    {typ: EnumToken.NumberTokenType, val: 34},
+                    {typ: EnumToken.NumberTokenType, val: 34},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.RGB
-            })).equals(true));
+            }, 0.1)).equals(true));
         });
 
         it('srgb-linear to rgb #6', function () {
@@ -103,11 +104,11 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'rgb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '179'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
+                    {typ: EnumToken.NumberTokenType, val: 179},
+                    {typ: EnumToken.NumberTokenType, val: 34},
+                    {typ: EnumToken.NumberTokenType, val: 34},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.RGB
             })).equals(true));
@@ -121,155 +122,155 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'rgb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '179'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
+                    {typ: EnumToken.NumberTokenType, val: 179},
+                    {typ: EnumToken.NumberTokenType, val: 34},
+                    {typ: EnumToken.NumberTokenType, val: 34},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.RGB
             })).equals(true));
         });
 
         it('a98-rgb to rgb #8', function () {
-            return transform(`.hsl { color: color(a98-rgb 0.6015 0.1525 0.1525 / 0.50); }`, {
+            return transform(`.hsl { color: color(a98-rgb .601473 .15253 .15253/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.RGB
             }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
                 typ: EnumToken.ColorTokenType,
                 val: 'rgb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '179'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
+                    {typ: EnumToken.NumberTokenType, val: 179},
+                    {typ: EnumToken.NumberTokenType, val: 34},
+                    {typ: EnumToken.NumberTokenType, val: 34},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.RGB
             })).equals(true));
         });
 
         it('photo-rgb to rgb #9', function () {
-            return transform(`.hsl { color: color(prophoto-rgb 0.4589 0.2071 0.124 / 0.50); }`, {
+            return transform(`.hsl { color: color(prophoto-rgb .458932 .207098 .123972/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.RGB
             }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
                 typ: EnumToken.ColorTokenType,
                 val: 'rgb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '179'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
+                    {typ: EnumToken.NumberTokenType, val: 179},
+                    {typ: EnumToken.NumberTokenType, val: 34},
+                    {typ: EnumToken.NumberTokenType, val: 34},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.RGB
             })).equals(true));
         });
 
         it('rec2020 to rgb #10', function () {
-            return transform(`.hsl { color: color(prophoto-rgb 0.4589 0.2071 0.124 / 0.50); }`, {
+            return transform(`.hsl { color: color(prophoto-rgb .458932 .207098 .123972); }`, {
                 beautify: true,
                 convertColor: ColorType.RGB
             }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
                 typ: EnumToken.ColorTokenType,
                 val: 'rgb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '179'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
+                    {typ: EnumToken.NumberTokenType, val: 179},
+                    {typ: EnumToken.NumberTokenType, val: 34},
+                    {typ: EnumToken.NumberTokenType, val: 34},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.RGB
             })).equals(true));
         });
 
         it('xyz to rgb #11', function () {
-            return transform(`.hsl { color: color(xyz-d65 0.1945 0.1084 0.0258 / 0.50); }`, {
+            return transform(`.hsl { color: color(xyz .194507 .108449 .025826/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.RGB
             }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
                 typ: EnumToken.ColorTokenType,
                 val: 'rgb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '179'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
+                    {typ: EnumToken.NumberTokenType, val: 179},
+                    {typ: EnumToken.NumberTokenType, val: 34},
+                    {typ: EnumToken.NumberTokenType, val: 34},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.RGB
             })).equals(true));
         });
 
         it('xyz-d50 to rgb #12', function () {
-            return transform(`.hsl { color: color(xyz-d50 0.205 0.1127 0.0193 / 0.50); }`, {
+            return transform(`.hsl { color: color(xyz-d50 .205022 .112734 .019253/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.RGB
             }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
                 typ: EnumToken.ColorTokenType,
                 val: 'rgb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '179'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
+                    {typ: EnumToken.NumberTokenType, val: 179},
+                    {typ: EnumToken.NumberTokenType, val: 34},
+                    {typ: EnumToken.NumberTokenType, val: 34},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.RGB
             })).equals(true));
         });
 
         it('xyz-d65 to rgb #13', function () {
-            return transform(`.hsl { color: color(xyz-d65 0.1945 0.1084 0.0258 / 0.50); }`, {
+            return transform(`.hsl { color: color(xyz-d65 .194507 .108449 .025826/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.RGB
             }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
                 typ: EnumToken.ColorTokenType,
                 val: 'rgb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '179'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
+                    {typ: EnumToken.NumberTokenType, val: 179},
+                    {typ: EnumToken.NumberTokenType, val: 34},
+                    {typ: EnumToken.NumberTokenType, val: 34},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.RGB
             })).equals(true));
         });
 
         it('oklab to rgb #14', function () {
-            return transform(`.hsl { color: oklab(.49863253097209403 .16117650019451524 .08155524287358212/50%); }`, {
+            return transform(`.hsl { color: oklab(.498633 .161177 .081555/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.RGB
             }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
                 typ: EnumToken.ColorTokenType,
                 val: 'rgb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '179'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
+                    {typ: EnumToken.NumberTokenType, val: 179},
+                    {typ: EnumToken.NumberTokenType, val: 34},
+                    {typ: EnumToken.NumberTokenType, val: 34},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.RGB
             })).equals(true));
         });
 
         it('oklch to rgb #15', function () {
-            return transform(`.hsl { color: oklch(.49863253097209403 .1806353283694016 26.839391611662446/50%); }`, {
+            return transform(`.hsl { color: oklch(.498633 .180635 26.839392/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.RGB
             }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
                 typ: EnumToken.ColorTokenType,
                 val: 'rgb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '179'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
+                    {typ: EnumToken.NumberTokenType, val: 179},
+                    {typ: EnumToken.NumberTokenType, val: 34},
+                    {typ: EnumToken.NumberTokenType, val: 34},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.RGB
             })).equals(true));
@@ -283,11 +284,11 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'rgb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '179'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
+                    {typ: EnumToken.NumberTokenType, val: 179},
+                    {typ: EnumToken.NumberTokenType, val: 34},
+                    {typ: EnumToken.NumberTokenType, val: 34},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.RGB
             })).equals(true));
@@ -301,11 +302,11 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'rgb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '179'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
-                    {typ: EnumToken.NumberTokenType, val: '34'},
+                    {typ: EnumToken.NumberTokenType, val: 179},
+                    {typ: EnumToken.NumberTokenType, val: 34},
+                    {typ: EnumToken.NumberTokenType, val: 34},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.RGB
             })).equals(true));

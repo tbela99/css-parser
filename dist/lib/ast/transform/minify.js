@@ -1,4 +1,5 @@
-import { multiply, epsilon, decompose, round, toZero, identity } from './utils.js';
+import { multiply, decompose, round, toZero, identity } from './utils.js';
+import { epsilon } from '../../syntax/constants.js';
 import { EnumToken } from '../types.js';
 import { computeMatrix } from './compute.js';
 import { parseMatrix } from './matrix.js';

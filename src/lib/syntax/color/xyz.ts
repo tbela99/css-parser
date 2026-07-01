@@ -58,7 +58,7 @@ export function srgb2xyz(r: number, g: number, b: number, alpha?: number): numbe
 }
 
 // xyz d50
-export function srgb2xyz_d50(r: number, g: number, b: number, alpha?: number): number[] {
+export function srgb2xyz_d65(r: number, g: number, b: number, alpha?: number): number[] {
     // xyx d65
     // @ts-ignore
     let rgb: number[] = XYZ_D65_to_D50(...srgb2xyz(r, g, b));

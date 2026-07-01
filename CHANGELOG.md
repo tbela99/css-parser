@@ -13,18 +13,11 @@
 
 ### Interpolated functions
 
-- [ ] mix() 
-- [ ] calc-mix() https://www.w3.org/TR/css-values-5/#calc-mix
-- [ ] toggle()
-- [ ] inherit()
-- [ ] color-mix() 
-- [ ] progress() https://www.w3.org/TR/css-values-5/#progress-func 
-- [ ] media-progress() https://www.w3.org/TR/css-values-5/#media-progress-func
-- [ ] container-progress() https://www.w3.org/TR/css-values-5/#container-progress-func
 
 ### Color
 
-- [x] alpha() 
+- [x] alpha() minify alpha() color function https://www.w3.org/TR/css-color-5/#funcdef-alpha
+- [x] color-mix() implement new color-mix() syntax https://www.w3.org/TR/css-values-5/#color-mix
 
 ### Webkit gradient prefix removal
 
