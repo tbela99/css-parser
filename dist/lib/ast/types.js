@@ -39,6 +39,10 @@ var ValidationLevel;
      * validate selectors, at-rules and declarations
      */
     ValidationLevel[ValidationLevel["All"] = 7] = "All";
+    /**
+     * Report only. Apply validation and report nodes that are marked as invalid
+     */
+    ValidationLevel[ValidationLevel["ReportOnly"] = 8] = "ReportOnly";
 })(ValidationLevel || (ValidationLevel = {}));
 /**
  * enum of all token types
@@ -846,6 +850,9 @@ var ColorType;
      */
     ColorType[ColorType["DEVICE_CMYK"] = 7] = "DEVICE_CMYK";
 })(ColorType || (ColorType = {}));
+/**
+ * supported module case transform
+ */
 var ModuleCaseTransformEnum;
 (function (ModuleCaseTransformEnum) {
     /**
@@ -869,6 +876,9 @@ var ModuleCaseTransformEnum;
      */
     ModuleCaseTransformEnum[ModuleCaseTransformEnum["DashCaseOnly"] = 16] = "DashCaseOnly";
 })(ModuleCaseTransformEnum || (ModuleCaseTransformEnum = {}));
+/**
+ * supported module scope
+ */
 var ModuleScopeEnumOptions;
 (function (ModuleScopeEnumOptions) {
     /**
@@ -909,6 +919,11 @@ var ModuleScopeEnumOptions;
     ModuleScopeEnumOptions[ModuleScopeEnumOptions["Shortest"] = 512] = "Shortest";
 })(ModuleScopeEnumOptions || (ModuleScopeEnumOptions = {}));
 // https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Values_and_units#absolute_length_units
+/**
+ * Convert length to px
+ * @param value
+ * @returns
+ */
 function length2Px(value) {
     let result = null;
     if (value.typ == EnumToken.NumberTokenType) {

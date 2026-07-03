@@ -723,7 +723,7 @@ export async function doParse(
                 const url: string = token.typ == EnumToken.StringTokenType ? token.val.slice(1, -1) : token.val;
 
                 try {
-                    const result = options.load!(url, options.src as string) as LoadResult;
+                    const result = options.load!(url, options.src || options.cwd as string) as LoadResult;
                     const stream =
                         result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                             ? await result
@@ -1213,7 +1213,7 @@ export async function doParse(
                     ) as StringToken
                 ).val.slice(1, -1);
                 const src = options.resolve!(url, options.dirname!(options.src as string), options.cwd);
-                const result = options.load!(url, options.src as string) as LoadResult;
+                const result = options.load!(src, '') as LoadResult;
                 const stream =
                     result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                         ? await result
@@ -1404,7 +1404,7 @@ export async function doParse(
                         else if (token.r.typ == EnumToken.String) {
                             const url: string = (token.r as StringToken).val.slice(1, -1);
                             const src = options.resolve!(url, options.dirname!(options.src as string), options.cwd);
-                            const result = options.load!(url, options.src as string) as LoadResult;
+                            const result = options.load!(src, '') as LoadResult;
                             const stream =
                                 result instanceof Promise ||
                                 Object.getPrototypeOf(result).constructor.name == "AsyncFunction"

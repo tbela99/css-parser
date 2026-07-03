@@ -190,6 +190,13 @@ export function consumeString(quoteStr: '"' | "'", buffer: string, parseInfo: Pa
 
     while ((value = parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset + 1))) {
         if (value == "\\") {
+
+            if ('\\' == parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset + 2)) {
+
+                buffer += next(parseInfo, 2);
+                continue;
+            }
+
             const sequence: string = peek(parseInfo, 6);
             let escapeSequence: string = "";
             let codepoint: number;

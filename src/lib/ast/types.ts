@@ -41,6 +41,11 @@ export enum ValidationLevel {
      * validate selectors, at-rules and declarations
      */
     All = Selector | AtRule | Declaration, // selectors + at-rules + declarations
+
+    /**
+     * Report only. Apply validation and report nodes that are marked as invalid
+     */
+    ReportOnly = 0x8,
 }
 
 /**
@@ -887,6 +892,9 @@ export enum ColorType {
     DEVICE_CMYK = CMYK,
 }
 
+/**
+ * supported module case transform
+ */
 export enum ModuleCaseTransformEnum {
     /**
      * export class names as-is
@@ -910,6 +918,9 @@ export enum ModuleCaseTransformEnum {
     DashCaseOnly = 0x10,
 }
 
+/**
+ * supported module scope
+ */
 export enum ModuleScopeEnumOptions {
     /**
      * use the global scope
@@ -951,6 +962,11 @@ export enum ModuleScopeEnumOptions {
 }
 
 // https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Values_and_units#absolute_length_units
+/**
+ * Convert length to px
+ * @param value
+ * @returns
+ */
 export function length2Px(value: LengthToken | NumberToken): number | null {
     let result: number | null = null;
     if (value.typ == EnumToken.NumberTokenType) {

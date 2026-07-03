@@ -11,7 +11,6 @@ import type {
 import { ColorType, EnumToken } from "../../ast/types.ts";
 import {
     cmyk2RgbToken,
-    cmyk2rgbvalues,
     color2RgbToken,
     hex2RgbToken,
     hsl2RgbToken,
@@ -191,15 +190,7 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
             [[]] as Token[][],
         );
 
-        token = colorMix(
-            ...children.flat(2),
-            // children[0][1] as IdentToken,
-            // children[0][2] as IdentToken,
-            // children[1][0] as ColorToken,
-            // children[1][1] as PercentageToken,
-            // children[2][0] as ColorToken,
-            // children[2][1] as PercentageToken,
-        ) as ColorToken;
+        token = colorMix(...children.flat(2)) as ColorToken;
 
         if (token == null) {
             return null;

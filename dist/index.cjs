@@ -46,6 +46,10 @@ exports.ValidationLevel = void 0;
      * validate selectors, at-rules and declarations
      */
     ValidationLevel[ValidationLevel["All"] = 7] = "All";
+    /**
+     * Report only. Apply validation and report nodes that are marked as invalid
+     */
+    ValidationLevel[ValidationLevel["ReportOnly"] = 8] = "ReportOnly";
 })(exports.ValidationLevel || (exports.ValidationLevel = {}));
 /**
  * enum of all token types
@@ -853,6 +857,9 @@ exports.ColorType = void 0;
      */
     ColorType[ColorType["DEVICE_CMYK"] = 7] = "DEVICE_CMYK";
 })(exports.ColorType || (exports.ColorType = {}));
+/**
+ * supported module case transform
+ */
 exports.ModuleCaseTransformEnum = void 0;
 (function (ModuleCaseTransformEnum) {
     /**
@@ -876,6 +883,9 @@ exports.ModuleCaseTransformEnum = void 0;
      */
     ModuleCaseTransformEnum[ModuleCaseTransformEnum["DashCaseOnly"] = 16] = "DashCaseOnly";
 })(exports.ModuleCaseTransformEnum || (exports.ModuleCaseTransformEnum = {}));
+/**
+ * supported module scope
+ */
 exports.ModuleScopeEnumOptions = void 0;
 (function (ModuleScopeEnumOptions) {
     /**
@@ -916,6 +926,11 @@ exports.ModuleScopeEnumOptions = void 0;
     ModuleScopeEnumOptions[ModuleScopeEnumOptions["Shortest"] = 512] = "Shortest";
 })(exports.ModuleScopeEnumOptions || (exports.ModuleScopeEnumOptions = {}));
 // https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Values_and_units#absolute_length_units
+/**
+ * Convert length to px
+ * @param value
+ * @returns
+ */
 function length2Px(value) {
     let result = null;
     if (value.typ == exports.EnumToken.NumberTokenType) {
@@ -22509,6 +22524,10 @@ function consumeString(quoteStr, buffer, parseInfo) {
     buffer += quoteStr;
     while ((value = parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset + 1))) {
         if (value == "\\") {
+            if ('\\' == parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset + 2)) {
+                buffer += next(parseInfo, 2);
+                continue;
+            }
             const sequence = peek(parseInfo, 6);
             let escapeSequence = "";
             let codepoint;
@@ -29539,7 +29558,7 @@ async function doParse(iter, options = {}) {
             const token = node.tokens[0];
             const url = token.typ == exports.EnumToken.StringTokenType ? token.val.slice(1, -1) : token.val;
             try {
-                const result = options.load(url, options.src);
+                const result = options.load(url, options.src || options.cwd);
                 const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                     ? await result
                     : result;
@@ -29909,7 +29928,7 @@ async function doParse(iter, options = {}) {
             if (node.typ == exports.EnumToken.CssVariableImportTokenType) {
                 const url = node.val.find((t) => t.typ == exports.EnumToken.StringTokenType).val.slice(1, -1);
                 const src = options.resolve(url, options.dirname(options.src), options.cwd);
-                const result = options.load(url, options.src);
+                const result = options.load(src, '');
                 const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                     ? await result
                     : result;
@@ -30051,7 +30070,7 @@ async function doParse(iter, options = {}) {
                         else if (token.r.typ == exports.EnumToken.String) {
                             const url = token.r.val.slice(1, -1);
                             const src = options.resolve(url, options.dirname(options.src), options.cwd);
-                            const result = options.load(url, options.src);
+                            const result = options.load(src, '');
                             const stream = result instanceof Promise ||
                                 Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                                 ? await result
@@ -31860,6 +31879,54 @@ function splitPath(result) {
     }
     return { parts, i };
 }
+const normalize = memoize(function (path) {
+    let parts = [];
+    let i = 0;
+    if (path.includes("\\")) {
+        path = path.replace(/(\\)/g, "/");
+    }
+    for (; i < path.length; i++) {
+        const chr = path.charAt(i);
+        if (chr == "/") {
+            if (parts.length == 0 || parts[parts.length - 1] !== "") {
+                parts.push("");
+            }
+        }
+        else if (chr == "?" || chr == "#") {
+            break;
+        }
+        else {
+            if (parts.length == 0) {
+                parts.push('');
+            }
+            parts[parts.length - 1] += chr;
+        }
+    }
+    let k = -1;
+    while (++k < parts.length) {
+        if (parts[k] == ".") {
+            parts.splice(k--, 1);
+        }
+        else if (parts[k] == "..") {
+            parts.splice(k - 1, 2);
+            k -= 2;
+        }
+    }
+    return (path.charAt(0) == "/" ? "/" : "") + parts.join("/");
+});
+const diff = memoize(function (path1, path2) {
+    let { parts } = splitPath(path1);
+    const { parts: dirs } = splitPath(path2);
+    for (const p of dirs) {
+        if (parts[0] == p) {
+            parts.shift();
+        }
+        else {
+            parts.unshift("..");
+        }
+    }
+    return parts.join("/");
+});
 /**
  * resolve path
  * @param url url or path to resolve
@@ -31868,7 +31935,7 @@ function splitPath(result) {
  *
  * @private
  */
-function resolve(url, currentDirectory, cwd) {
+const resolve = memoize(function (url, currentDirectory, cwd) {
     if (matchUrl.test(url)) {
         return {
             absolute: url,
@@ -31877,20 +31944,26 @@ function resolve(url, currentDirectory, cwd) {
     }
     cwd ??= "";
     currentDirectory ??= "";
-    if (currentDirectory !== "" && url.startsWith(currentDirectory + "/")) {
-        return {
-            absolute: url,
-            relative: url.slice(currentDirectory.length + 1),
-        };
+    url = normalize(url);
+    if (currentDirectory !== "") {
+        currentDirectory = normalize(currentDirectory);
+        if (url.startsWith(currentDirectory + "/")) {
+            return {
+                absolute: url,
+                relative: url.slice(currentDirectory.length + 1),
+            };
+        }
     }
-    if (currentDirectory === "" && cwd !== "" && url.startsWith(cwd == "/" ? cwd : cwd + "/")) {
+    if (currentDirectory === "" && cwd !== "") {
         cwd = normalize(cwd);
-        const absolute = normalize(url);
-        const prefix = cwd == "/" ? cwd : cwd + "/";
-        return {
-            absolute,
-            relative: absolute.startsWith(prefix) ? absolute.slice(prefix.length) : diff(absolute, cwd),
-        };
+        if (url.startsWith(cwd == "/" ? cwd : cwd + "/")) {
+            const absolute = url;
+            const prefix = cwd == "/" ? cwd : cwd + "/";
+            return {
+                absolute,
+                relative: absolute.startsWith(prefix) ? absolute.slice(prefix.length) : diff(absolute, cwd),
+            };
+        }
     }
     if (matchUrl.test(currentDirectory)) {
         const path = new URL(url, currentDirectory).href;
@@ -31911,49 +31984,7 @@ function resolve(url, currentDirectory, cwd) {
         absolute,
         relative: absolute === "" ? "" : diff(absolute, cwd ?? currentDirectory),
     };
-}
-function diff(path1, path2) {
-    let { parts } = splitPath(path1);
-    const { parts: dirs } = splitPath(path2);
-    for (const p of dirs) {
-        if (parts[0] == p) {
-            parts.shift();
-        }
-        else {
-            parts.unshift("..");
-        }
-    }
-    return parts.join("/");
-}
-function normalize(path) {
-    let parts = [];
-    let i = 0;
-    for (; i < path.length; i++) {
-        const chr = path.charAt(i);
-        if (chr == "/") {
-            if (parts.length == 0 || parts[parts.length - 1] !== "") {
-                parts.push("");
-            }
-        }
-        else if (chr == "?" || chr == "#") {
-            break;
-        }
-        else {
-            parts[parts.length - 1] += chr;
-        }
-    }
-    let k = -1;
-    while (++k < parts.length) {
-        if (parts[k] == ".") {
-            parts.splice(k--, 1);
-        }
-        else if (parts[k] == "..") {
-            parts.splice(k - 1, 2);
-            k -= 2;
-        }
-    }
-    return (path.charAt(0) == "/" ? "/" : "") + parts.join("/");
-}
+});
 
 /**
  * response type
@@ -32032,7 +32063,7 @@ function isOkLabClose(color1, color2, threshold = colorDistancePrecision) {
  * ```
  */
 async function load(url, currentDirectory = ".", responseType = false) {
-    const resolved = resolve(url, currentDirectory);
+    const resolved = typeof url == 'string' ? resolve(url, currentDirectory) : url;
     if (typeof responseType == "boolean") {
         responseType = responseType ? exports.ResponseType.ReadableStream : exports.ResponseType.Text;
     }

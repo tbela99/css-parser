@@ -514,7 +514,7 @@ async function doParse(iter, options = {}) {
             const token = node.tokens[0];
             const url = token.typ == EnumToken.StringTokenType ? token.val.slice(1, -1) : token.val;
             try {
-                const result = options.load(url, options.src);
+                const result = options.load(url, options.src || options.cwd);
                 const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                     ? await result
                     : result;
@@ -884,7 +884,7 @@ async function doParse(iter, options = {}) {
             if (node.typ == EnumToken.CssVariableImportTokenType) {
                 const url = node.val.find((t) => t.typ == EnumToken.StringTokenType).val.slice(1, -1);
                 const src = options.resolve(url, options.dirname(options.src), options.cwd);
-                const result = options.load(url, options.src);
+                const result = options.load(src, '');
                 const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                     ? await result
                     : result;
@@ -1026,7 +1026,7 @@ async function doParse(iter, options = {}) {
                         else if (token.r.typ == EnumToken.String) {
                             const url = token.r.val.slice(1, -1);
                             const src = options.resolve(url, options.dirname(options.src), options.cwd);
-                            const result = options.load(url, options.src);
+                            const result = options.load(src, '');
                             const stream = result instanceof Promise ||
                                 Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                                 ? await result

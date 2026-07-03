@@ -364,7 +364,7 @@ export declare interface ParserOptions
      *
      */
     load?: (
-        url: string,
+        url: string | { absolute: string; relative: string } ,
         currentDirectory: string,
         responseType?: boolean | ResponseType,
     ) => Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;

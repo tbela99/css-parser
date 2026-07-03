@@ -1,3 +1,6 @@
+
+import { memoize } from "../parser/utils/cache.ts";
+
 export const matchUrl: RegExp = /^(https?:)?\/\//;
 
 /**
@@ -73,6 +76,62 @@ function splitPath(result: string): { i: number; parts: string[] } {
     return { parts, i };
 }
 
+export const normalize = memoize(function (path: string) {
+    let parts: string[] = [];
+    let i: number = 0;
+
+    if (path.includes("\\")) {
+        path = path.replace(/(\\)/g, "/");
+    }
+
+    for (; i < path.length; i++) {
+        const chr: string = path.charAt(i);
+
+        if (chr == "/") {
+            if (parts.length == 0 || parts[parts.length - 1] !== "") {
+                parts.push("");
+            }
+        } else if (chr == "?" || chr == "#") {
+            break;
+        } else {
+
+            if (parts.length == 0) {
+
+                parts.push('');
+            }
+
+            parts[parts.length - 1] += chr;
+        }
+    }
+
+    let k: number = -1;
+
+    while (++k < parts.length) {
+        if (parts[k] == ".") {
+            parts.splice(k--, 1);
+        } else if (parts[k] == "..") {
+            parts.splice(k - 1, 2);
+            k -= 2;
+        }
+    }
+
+    return (path.charAt(0) == "/" ? "/" : "") + parts.join("/");
+});
+
+export const diff = memoize(function (path1: string, path2: string) {
+    let { parts } = splitPath(path1);
+    const { parts: dirs } = splitPath(path2);
+    for (const p of dirs) {
+        if (parts[0] == p) {
+            parts.shift();
+        } else {
+            parts.unshift("..");
+        }
+    }
+
+    return parts.join("/");
+});
+
 /**
  * resolve path
  * @param url url or path to resolve
@@ -81,7 +140,11 @@ function splitPath(result: string): { i: number; parts: string[] } {
  *
  * @private
  */
-export function resolve(url: string, currentDirectory: string, cwd?: string): { absolute: string; relative: string } {
+export const resolve = memoize(function (
+    url: string,
+    currentDirectory: string,
+    cwd?: string,
+): { absolute: string; relative: string } {
     if (matchUrl.test(url)) {
         return {
             absolute: url,
@@ -92,22 +155,32 @@ export function resolve(url: string, currentDirectory: string, cwd?: string): { 
     cwd ??= "";
     currentDirectory ??= "";
 
-    if (currentDirectory !== "" && url.startsWith(currentDirectory + "/")) {
-        return {
-            absolute: url,
-            relative: url.slice(currentDirectory.length + 1),
-        };
+    url = normalize(url);
+
+    if (currentDirectory !== "") {
+        currentDirectory = normalize(currentDirectory);
+
+        if (url.startsWith(currentDirectory + "/")) {
+            return {
+                absolute: url,
+                relative: url.slice(currentDirectory.length + 1),
+            };
+        }
     }
 
-    if (currentDirectory === "" && cwd !== "" && url.startsWith(cwd == "/" ? cwd : cwd + "/")) {
+    if (currentDirectory === "" && cwd !== "") {
+
         cwd = normalize(cwd);
-        const absolute: string = normalize(url);
+
+    if (  url.startsWith(cwd == "/" ? cwd : cwd + "/")) {
+        const absolute: string = url;
         const prefix: string = cwd == "/" ? cwd : cwd + "/";
 
         return {
             absolute,
             relative: absolute.startsWith(prefix) ? absolute.slice(prefix.length) : diff(absolute, cwd),
         };
+    }
     }
 
     if (matchUrl.test(currentDirectory)) {
@@ -133,50 +206,5 @@ export function resolve(url: string, currentDirectory: string, cwd?: string): { 
         absolute,
         relative: absolute === "" ? "" : diff(absolute, cwd ?? currentDirectory),
     };
-}
+});
 
-function diff(path1: string, path2: string) {
-    let { parts } = splitPath(path1);
-    const { parts: dirs } = splitPath(path2);
-    for (const p of dirs) {
-        if (parts[0] == p) {
-            parts.shift();
-        } else {
-            parts.unshift("..");
-        }
-    }
-
-    return parts.join("/");
-}
-
-function normalize(path: string) {
-    let parts: string[] = [];
-    let i: number = 0;
-
-    for (; i < path.length; i++) {
-        const chr: string = path.charAt(i);
-
-        if (chr == "/") {
-            if (parts.length == 0 || parts[parts.length - 1] !== "") {
-                parts.push("");
-            }
-        } else if (chr == "?" || chr == "#") {
-            break;
-        } else {
-            parts[parts.length - 1] += chr;
-        }
-    }
-
-    let k: number = -1;
-
-    while (++k < parts.length) {
-        if (parts[k] == ".") {
-            parts.splice(k--, 1);
-        } else if (parts[k] == "..") {
-            parts.splice(k - 1, 2);
-            k -= 2;
-        }
-    }
-
-    return (path.charAt(0) == "/" ? "/" : "") + parts.join("/");
-}

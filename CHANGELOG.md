@@ -11,9 +11,6 @@
 
 - [ ] sourcemap is only available when parsing a file
 
-### Interpolated functions
-
-
 ### Color
 
 - [x] alpha() minify alpha() color function https://www.w3.org/TR/css-color-5/#funcdef-alpha
@@ -46,6 +43,7 @@
 - [x] changing oklab distance threshold to `0.00001` according to https://drafts.csswg.org/css-color-4/#comparing-color-values
   
 ### Bug fixes
+- [x] fix path resolution on Windows
 - [x] do not minify supports() arguments
   
 css incorrectly parsed
@@ -111,6 +109,7 @@ instead of
  box-sizing: border-box
 }
 ```
+
 ## v1.4.3
 
 ### CSS Modules

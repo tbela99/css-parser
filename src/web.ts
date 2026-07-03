@@ -71,7 +71,7 @@ export { dirname, resolve, ResponseType };
  */
 
 export async function load(
-    url: string,
+    url: string | { absolute: string; relative: string } ,
     currentDirectory: string = ".",
     responseType: boolean | ResponseType = false,
 ): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>> {
@@ -81,7 +81,12 @@ export async function load(
 
     let t: URL;
 
-    if (matchUrl.test(url)) {
+    if (typeof url == 'object') {
+
+        t = new URL(url.absolute, self.origin);
+    }
+
+    else if (matchUrl.test(url)) {
         t = new URL(url);
     } else if (currentDirectory != null && matchUrl.test(currentDirectory)) {
         t = new URL(url, currentDirectory);

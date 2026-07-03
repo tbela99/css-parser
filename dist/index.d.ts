@@ -1002,7 +1002,11 @@ declare enum ValidationLevel {
     /**
      * validate selectors, at-rules and declarations
      */
-    All = 7
+    All = 7,// selectors + at-rules + declarations
+    /**
+     * Report only. Apply validation and report nodes that are marked as invalid
+     */
+    ReportOnly = 8
 }
 /**
  * enum of all token types
@@ -1804,6 +1808,9 @@ declare enum ColorType$1 {
      */
     DEVICE_CMYK = 7
 }
+/**
+ * supported module case transform
+ */
 declare enum ModuleCaseTransformEnum {
     /**
      * export class names as-is
@@ -1826,6 +1833,9 @@ declare enum ModuleCaseTransformEnum {
      */
     DashCaseOnly = 16
 }
+/**
+ * supported module scope
+ */
 declare enum ModuleScopeEnumOptions {
     /**
      * use the global scope
@@ -3704,7 +3714,7 @@ export declare interface ParserOptions
      *
      */
     load?: (
-        url: string,
+        url: string | { absolute: string; relative: string } ,
         currentDirectory: string,
         responseType?: boolean | ResponseType,
     ) => Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
@@ -4229,10 +4239,7 @@ declare function dirname(path: string): string;
  *
  * @private
  */
-declare function resolve(url: string, currentDirectory: string, cwd?: string): {
-    absolute: string;
-    relative: string;
-};
+declare const resolve: (...args: any[]) => any;
 
 /**
  * response type
@@ -4585,7 +4592,10 @@ declare function replaceNodeOrValue(parent: BinaryExpressionToken | (AstNode$1 &
  * const result = await load(file, '.', ResponseType.ArrayBuffer) as ArrayBuffer;
  * ```
  */
-declare function load(url: string, currentDirectory?: string, responseType?: boolean | ResponseType$1): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
+declare function load(url: string | {
+    absolute: string;
+    relative: string;
+}, currentDirectory?: string, responseType?: boolean | ResponseType$1): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
 /**
  * Render the ast tree
  * @param data
