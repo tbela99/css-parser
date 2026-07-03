@@ -37,6 +37,7 @@
       "playground/",
       ".nyc_output",
       ".repl_history",
+      "bun.lock",
       "deno.lock"
     ]
   },

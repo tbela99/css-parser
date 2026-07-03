@@ -73,11 +73,11 @@ export { dirname, resolve, ResponseType };
  * ```
  */
 export async function load(
-    url: string | { absolute: string; relative: string } ,
+    url: string | { absolute: string; relative: string },
     currentDirectory: string = ".",
     responseType: boolean | ResponseType = false,
 ): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>> {
-    const resolved = typeof url == 'string' ? resolve(url, currentDirectory) : url;
+    const resolved = typeof url == "string" ? resolve(url, currentDirectory) : url;
 
     if (typeof responseType == "boolean") {
         responseType = responseType ? ResponseType.ReadableStream : ResponseType.Text;

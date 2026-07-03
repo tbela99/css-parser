@@ -1,4 +1,3 @@
-
 import { memoize } from "../parser/utils/cache.ts";
 
 export const matchUrl: RegExp = /^(https?:)?\/\//;
@@ -94,10 +93,8 @@ export const normalize = memoize(function (path: string) {
         } else if (chr == "?" || chr == "#") {
             break;
         } else {
-
             if (parts.length == 0) {
-
-                parts.push('');
+                parts.push("");
             }
 
             parts[parts.length - 1] += chr;
@@ -169,18 +166,17 @@ export const resolve = memoize(function (
     }
 
     if (currentDirectory === "" && cwd !== "") {
-
         cwd = normalize(cwd);
 
-    if (  url.startsWith(cwd == "/" ? cwd : cwd + "/")) {
-        const absolute: string = url;
-        const prefix: string = cwd == "/" ? cwd : cwd + "/";
+        if (url.startsWith(cwd == "/" ? cwd : cwd + "/")) {
+            const absolute: string = url;
+            const prefix: string = cwd == "/" ? cwd : cwd + "/";
 
-        return {
-            absolute,
-            relative: absolute.startsWith(prefix) ? absolute.slice(prefix.length) : diff(absolute, cwd),
-        };
-    }
+            return {
+                absolute,
+                relative: absolute.startsWith(prefix) ? absolute.slice(prefix.length) : diff(absolute, cwd),
+            };
+        }
     }
 
     if (matchUrl.test(currentDirectory)) {
@@ -206,5 +202,8 @@ export const resolve = memoize(function (
         absolute,
         relative: absolute === "" ? "" : diff(absolute, cwd ?? currentDirectory),
     };
-});
-
+}) as (
+    url: string,
+    currentDirectory?: string,
+    cwd?: string,
+) => { absolute: string; relative: string };

@@ -65,7 +65,10 @@ export declare interface BaseToken {
  */
 export declare interface AstComment extends BaseToken {
     typ: EnumToken.CommentNodeType | EnumToken.CDOCOMMNodeType;
-    tokens?: null;
+   
+    /**
+     * CSS comment
+     */
     val: string;
 }
 
@@ -73,8 +76,13 @@ export declare interface AstComment extends BaseToken {
  * declaration node
  */
 export declare interface AstDeclaration extends BaseToken {
+    /**
+     * Declaration name
+     */
     nam: string;
-    tokens?: null;
+    /**
+     * Declaration value
+     */
     val: Token[];
     typ: EnumToken.DeclarationNodeType;
 }
@@ -84,11 +92,25 @@ export declare interface AstDeclaration extends BaseToken {
  */
 export declare interface AstRule extends BaseToken {
     typ: EnumToken.RuleNodeType;
+    /**
+     * Selector as string
+     */
     sel: string;
+    /**
+     * Child nodes
+     */
     chi: Array<
         AstDeclaration | AstComment | AstRule | AstAtRule | AstInvalidRule | AstInvalidDeclaration | AstInvalidAtRule
     >;
+    /**
+     * Optimized selector
+     * @internal
+     */
     optimized?: OptimizedSelector | null;
+    /**
+     * Raw selector
+     * @internal
+     */
     raw?: RawSelectorTokens | null;
 }
 

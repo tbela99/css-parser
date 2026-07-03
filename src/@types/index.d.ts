@@ -194,12 +194,18 @@ export interface MinifyOptions {
     pass?: number;
 }
 
+/**
+ * Result of options.load() function call.
+ */
 export declare type LoadResult =
     | Promise<ReadableStream<Uint8Array>>
     | ReadableStream<Uint8Array>
     | string
     | Promise<string>;
 
+    /**
+     * CSS module parser options
+     */
 export declare interface ModuleOptions {
     /**
      * Use local scope vs global scope
