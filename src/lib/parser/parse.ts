@@ -333,7 +333,7 @@ export async function doParse(
         inlineCssVariables: false,
         setParent: true,
         removePrefix: false,
-        validation: true,
+        validation: false,
         lenient: true,
         ...options,
     };
