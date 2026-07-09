@@ -228,7 +228,7 @@ async function doParse(iter, options = {}) {
         inlineCssVariables: false,
         setParent: true,
         removePrefix: false,
-        validation: true,
+        validation: false,
         lenient: true,
         ...options,
     };
@@ -772,7 +772,6 @@ async function doParse(iter, options = {}) {
     if (invalidNodes.length > 0) {
         let k = invalidNodes.length;
         while (k-- > 0) {
-            // console.debug(invalidNodes[k], EnumAstNodeStatus[invalidNodes[k].state]);
             if (options.lenient && invalidNodes[k].state == EnumAstNodeStatus.Unknown) {
                 continue;
             }

@@ -151,5 +151,21 @@ color: alpha(from OkLcH(from OkLcH(from peru  l    c  h) l c calc(h / 2) / 20%)/
 }`));
         });
 
+        it('color-mix() #7', function () {
+            return transform(`
+
+    .s {
+    
+    color:
+ alpha(from  oklch(60% 0.25 315 / 0.8) / calc(alpha * 0.5));
+
+`, {
+                beautify: true,
+                inlineCssVariables: true
+            }).then(result => expect(result.code).equals(`.s {
+ color: #b538e366
+}`));
+        });
+
     });
 }

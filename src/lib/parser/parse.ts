@@ -1063,7 +1063,6 @@ export async function doParse(
         let k: number = invalidNodes.length;
 
         while (k-- > 0) {
-            // console.debug(invalidNodes[k], EnumAstNodeStatus[invalidNodes[k].state]);
             if (options.lenient && invalidNodes[k].state == EnumAstNodeStatus.Unknown) {
                 continue;
             }

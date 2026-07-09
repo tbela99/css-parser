@@ -1986,7 +1986,6 @@ export declare interface BaseToken {
 }
 
 export declare interface AstNodeStatus {
-
     state?: EnumAstNodeStatus;
     errors?: ErrorDescription[];
 }

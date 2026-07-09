@@ -494,10 +494,6 @@ function doMinify(
         let nodeIndex: number = -1;
 
         for (; i < ast.chi!.length; i++) {
-            if (ast.chi[i] == null) {
-                console.debug(new Error("node is null"));
-            }
-
             if (
                 ast.chi![i].typ === EnumToken.CommentNodeType ||
                 ast.chi![i].typ === EnumToken.InvalidRuleNodeType ||

@@ -294,8 +294,6 @@ export function* walkValues(
                         // @ts-expect-error
                         let parent = map.get(node);
 
-                        console.debug({ parent });
-
                         while (parent != null) {
                             yield parent;
                             parent = map.get(parent);

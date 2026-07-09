@@ -59,7 +59,6 @@ class PropertyList {
                     });
                 }
             }
-            // console.debug(EnumAstNodeStatus[declaration.state]);
             // do not compute shorthand for invalid declarations
             if (declaration.state !== EnumAstNodeStatus.Validated) {
                 this.declarations.set(declaration.nam, declaration);

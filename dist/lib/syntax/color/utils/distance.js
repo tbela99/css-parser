@@ -40,6 +40,9 @@ function isOkLabClose(color1, color2, threshold = colorDistancePrecision) {
     }
     const okLab1 = getOKLABComponents(color1);
     const okLab2 = getOKLABComponents(color2);
+    if (okLab1 == null || okLab2 == null) {
+        return false;
+    }
     for (let i = 0; i < 3; i++) {
         if (Math.abs(okLab1[i] - okLab2[i]) > threshold) {
             return false;

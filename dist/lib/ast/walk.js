@@ -244,7 +244,6 @@ function* walkValues(values, root = null, filter, reverse) {
                 function* () {
                     // @ts-expect-error
                     let parent = map.get(node);
-                    console.debug({ parent });
                     while (parent != null) {
                         yield parent;
                         parent = map.get(parent);

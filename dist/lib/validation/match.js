@@ -375,7 +375,7 @@ function matchSelectorSyntax(stream, errors, options, nested) {
         }
         tokens.push(token);
         if (tokensfuncDefMap.has(token.typ)) {
-            if (stack.at(-1)?.typ === EnumToken.CommaTokenType) {
+            if (stack.length > 0 && nodes.includes(stack.at(-1)?.typ)) {
                 stack.pop();
             }
             stack.push(token);
@@ -1116,8 +1116,6 @@ function matchSyntax(syntaxes, context, options) {
             errors: [],
         };
     }
-    // console.debug(`>> ` + syntaxes.reduce((acc, b) => acc + renderSyntax(b), ""));
-    // console.debug(`>>>` + context.getRemainingTokens().reduce((acc, b) => acc + renderValue(b), ""));
     while (++i < syntaxes.length) {
         if (syntaxes[i].typ == ValidationTokenEnum.Whitespace) {
             continue;

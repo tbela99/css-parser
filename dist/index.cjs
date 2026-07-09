@@ -1275,7 +1275,6 @@ function* walkValues(values, root = null, filter, reverse) {
                 function* () {
                     // @ts-expect-error
                     let parent = map.get(node);
-                    console.debug({ parent });
                     while (parent != null) {
                         yield parent;
                         parent = map.get(parent);
@@ -9926,7 +9925,7 @@ function matchSelectorSyntax(stream, errors, options, nested) {
         }
         tokens.push(token);
         if (tokensfuncDefMap.has(token.typ)) {
-            if (stack.at(-1)?.typ === exports.EnumToken.CommaTokenType) {
+            if (stack.length > 0 && nodes.includes(stack.at(-1)?.typ)) {
                 stack.pop();
             }
             stack.push(token);
@@ -10667,8 +10666,6 @@ function matchSyntax(syntaxes, context, options) {
             errors: [],
         };
     }
-    // console.debug(`>> ` + syntaxes.reduce((acc, b) => acc + renderSyntax(b), ""));
-    // console.debug(`>>>` + context.getRemainingTokens().reduce((acc, b) => acc + renderValue(b), ""));
     while (++i < syntaxes.length) {
         if (syntaxes[i].typ == ValidationTokenEnum.Whitespace) {
             continue;
@@ -13778,6 +13775,9 @@ function getColorComponents(token) {
         }
     }
     if (token.kin == exports.ColorType.HEX || token.kin == exports.ColorType.LIT) {
+        if (equalsIgnoreCase('currentcolor', token.val)) {
+            return null;
+        }
         const value = expandHexValue(token.kin == exports.ColorType.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
         // @ts-ignore
         return value
@@ -16698,6 +16698,155 @@ function getColorType(color) {
     return color.kin;
 }
 
+/**
+ *
+ * Clone an ast node or value
+ * @param node
+ * @param cloneChildren
+ * @param cloneMap
+ * @returns
+ */
+function cloneNode(node, cloneChildren = false, cloneMap = null) {
+    const checkNode = node.typ == exports.EnumToken.DeclarationNodeType ? "val" : "chi";
+    const clone = {};
+    const properties = {};
+    cloneMap?.set?.(node, clone);
+    for (const [name, value] of Object.entries(Object.getOwnPropertyDescriptors(node))) {
+        // @ts-expect-error
+        if (value.value == null || typeof value.value != "object" || name == "parent") {
+            // @ts-expect-error
+            properties[name] = { ...value };
+            // @ts-expect-error
+        }
+        else if (Array.isArray(value.value)) {
+            // @ts-expect-error
+            properties[name] = {
+                // @ts-expect-error
+                ...value,
+                value: !cloneChildren && name == checkNode
+                    ? []
+                    : // @ts-expect-error
+                        value.value.map((c) => {
+                            const newObj = cloneNode(c, cloneChildren, cloneMap);
+                            cloneMap?.set?.(c, newObj);
+                            return newObj;
+                        }),
+            };
+        }
+        else {
+            // @ts-expect-error
+            properties[name] = { ...value, value: cloneNode(value.value, clone) };
+        }
+    }
+    return Object.defineProperties(clone, properties);
+}
+
+const trimTokenSpace = new Set([
+    exports.EnumToken.CommaTokenType,
+    exports.EnumToken.DelimTokenType,
+    exports.EnumToken.GtTokenType,
+    exports.EnumToken.GteTokenType,
+    exports.EnumToken.LtTokenType,
+    exports.EnumToken.LteTokenType,
+    exports.EnumToken.ChildCombinatorTokenType,
+]);
+const trimSpaceAfter = new Set([
+    ...tokensfuncSet.values(),
+    exports.EnumToken.ChildCombinatorTokenType,
+    exports.EnumToken.SupportsQueryConditionTokenType,
+    exports.EnumToken.SupportsQueryUnaryConditionTokenType,
+]);
+/**
+ * Replace token in its parent node
+ * @param parent
+ * @param node
+ * @param replacement
+ * @throws TypeError replacement is null
+ * @throws ReferenceError node not found in parent
+ */
+function replaceNodeOrValue(parent, node, replacement) {
+    if (replacement == null || (Array.isArray(replacement) && replacement.length === 0)) {
+        throw new TypeError(`replacement is null`);
+    }
+    for (const node of Array.isArray(replacement) ? replacement : [replacement]) {
+        if ("parent" in node && node.parent != node.parent) {
+            Object.defineProperty(node, "parent", {
+                ...definedPropertySettings,
+                value: node.parent,
+            });
+        }
+    }
+    if (parent.typ == exports.EnumToken.BinaryExpressionTokenType) {
+        if (parent.l == node) {
+            parent.l = replacement;
+        }
+        else if (parent.r == node) {
+            parent.r = replacement;
+        }
+        else {
+            throw new ReferenceError("Node not found");
+        }
+    }
+    else {
+        const target = "val" in parent && Array.isArray(parent.val)
+            ? parent.val
+            : (parent.chi ?? parent);
+        if (Array.isArray(target)) {
+            // @ts-ignore
+            const index = target.indexOf(node);
+            if (index == -1) {
+                throw new ReferenceError("Node not found");
+            }
+            target.splice(index, 1, ...(Array.isArray(replacement) ? replacement : [replacement]));
+        }
+        else if ("l" in target && target.l == node) {
+            target.l = replacement;
+        }
+        else if ("r" in target && target.r == node) {
+            target.r = replacement;
+        }
+        else {
+            throw new ReferenceError("Node not found");
+        }
+    }
+    return true;
+}
+function trimWhiteSpaceTokens(tokens) {
+    let i = 0;
+    if (tokens[0]?.typ === exports.EnumToken.WhitespaceTokenType) {
+        tokens.shift();
+    }
+    if (tokens[tokens.length - 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
+        tokens.pop();
+    }
+    if (tokens.length === 1) {
+        if (tokens[0].typ === exports.EnumToken.WhitespaceTokenType) {
+            tokens.length = 0;
+        }
+        return tokens;
+    }
+    for (; i < tokens.length; i++) {
+        if (trimSpaceAfter.has(tokens[i].typ) && tokens[i + 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
+            tokens.splice(i + 1, 1);
+        }
+        else if (trimTokenSpace.has(tokens[i].typ)) {
+            if (tokens[i + 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
+                tokens.splice(i + 1, 1);
+            }
+            if (i > 0 && tokens[i - 1].typ === exports.EnumToken.Whitespace) {
+                tokens.splice(--i, 1);
+            }
+        }
+    }
+    return tokens;
+}
+
+/**
+ * Compute alpha color
+ * @param color
+ * @param alpha
+ * @returns
+ */
 function alpha(color, alpha) {
     if (alpha == null) {
         return color;
@@ -16708,7 +16857,7 @@ function alpha(color, alpha) {
     if (alpha == null) {
         return color;
     }
-    if (color.kin === exports.ColorType.COLOR_MIX || color.cal === 'rel') {
+    if (color.kin === exports.ColorType.COLOR_MIX || color.cal === "rel") {
         color = convertColor(color, getColorType(color));
         if (color == null) {
             return null;
@@ -16717,6 +16866,29 @@ function alpha(color, alpha) {
     const components = getColorComponents(color);
     if (components == null) {
         return null;
+    }
+    if (alpha.typ === exports.EnumToken.IdenTokenType && equalsIgnoreCase(alpha.val, "alpha")) {
+        alpha = components[3] ?? {
+            typ: exports.EnumToken.NumberTokenType,
+            val: 1,
+        };
+    }
+    else if (alpha.typ === exports.EnumToken.MathFunctionTokenType &&
+        equalsIgnoreCase(alpha.val, "calc")) {
+        alpha = cloneNode(alpha, true);
+        const alphaValue = components[3] ?? {
+            typ: exports.EnumToken.NumberTokenType,
+            val: 1,
+        };
+        for (const { value, parent } of walkValues(alpha.chi, alpha)) {
+            if (value.typ === exports.EnumToken.IdenTokenType && equalsIgnoreCase(value.val, "alpha")) {
+                replaceNodeOrValue(parent, value, alphaValue);
+            }
+        }
+        const result = evaluate([alpha]);
+        if (result.length == 1) {
+            alpha = result[0];
+        }
     }
     return makeColor(color.kin, components, alpha);
 }
@@ -20500,7 +20672,6 @@ class PropertyList {
                     });
                 }
             }
-            // console.debug(EnumAstNodeStatus[declaration.state]);
             // do not compute shorthand for invalid declarations
             if (declaration.state !== EnumAstNodeStatus.Validated) {
                 this.declarations.set(declaration.nam, declaration);
@@ -22061,149 +22232,6 @@ class TransformCssFeature {
         }
         return null;
     }
-}
-
-const trimTokenSpace = new Set([
-    exports.EnumToken.CommaTokenType,
-    exports.EnumToken.DelimTokenType,
-    exports.EnumToken.GtTokenType,
-    exports.EnumToken.GteTokenType,
-    exports.EnumToken.LtTokenType,
-    exports.EnumToken.LteTokenType,
-    exports.EnumToken.ChildCombinatorTokenType,
-]);
-const trimSpaceAfter = new Set([
-    ...tokensfuncSet.values(),
-    exports.EnumToken.ChildCombinatorTokenType,
-    exports.EnumToken.SupportsQueryConditionTokenType,
-    exports.EnumToken.SupportsQueryUnaryConditionTokenType,
-]);
-/**
- * Replace token in its parent node
- * @param parent
- * @param node
- * @param replacement
- * @throws TypeError replacement is null
- * @throws ReferenceError node not found in parent
- */
-function replaceNodeOrValue(parent, node, replacement) {
-    if (replacement == null || (Array.isArray(replacement) && replacement.length === 0)) {
-        throw new TypeError(`replacement is null`);
-    }
-    for (const node of Array.isArray(replacement) ? replacement : [replacement]) {
-        if ("parent" in node && node.parent != node.parent) {
-            Object.defineProperty(node, "parent", {
-                ...definedPropertySettings,
-                value: node.parent,
-            });
-        }
-    }
-    if (parent.typ == exports.EnumToken.BinaryExpressionTokenType) {
-        if (parent.l == node) {
-            parent.l = replacement;
-        }
-        else if (parent.r == node) {
-            parent.r = replacement;
-        }
-        else {
-            throw new ReferenceError("Node not found");
-        }
-    }
-    else {
-        const target = "val" in parent && Array.isArray(parent.val)
-            ? parent.val
-            : (parent.chi ?? parent);
-        if (Array.isArray(target)) {
-            // @ts-ignore
-            const index = target.indexOf(node);
-            if (index == -1) {
-                throw new ReferenceError("Node not found");
-            }
-            target.splice(index, 1, ...(Array.isArray(replacement) ? replacement : [replacement]));
-        }
-        else if ("l" in target && target.l == node) {
-            target.l = replacement;
-        }
-        else if ("r" in target && target.r == node) {
-            target.r = replacement;
-        }
-        else {
-            throw new ReferenceError("Node not found");
-        }
-    }
-    return true;
-}
-function trimWhiteSpaceTokens(tokens) {
-    let i = 0;
-    if (tokens[0]?.typ === exports.EnumToken.WhitespaceTokenType) {
-        tokens.shift();
-    }
-    if (tokens[tokens.length - 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
-        tokens.pop();
-    }
-    if (tokens.length === 1) {
-        if (tokens[0].typ === exports.EnumToken.WhitespaceTokenType) {
-            tokens.length = 0;
-        }
-        return tokens;
-    }
-    for (; i < tokens.length; i++) {
-        if (trimSpaceAfter.has(tokens[i].typ) && tokens[i + 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
-            tokens.splice(i + 1, 1);
-        }
-        else if (trimTokenSpace.has(tokens[i].typ)) {
-            if (tokens[i + 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
-                tokens.splice(i + 1, 1);
-            }
-            if (i > 0 && tokens[i - 1].typ === exports.EnumToken.Whitespace) {
-                tokens.splice(--i, 1);
-            }
-        }
-    }
-    return tokens;
-}
-
-/**
- *
- * Clone an ast node or value
- * @param node
- * @param cloneChildren
- * @param cloneMap
- * @returns
- */
-function cloneNode(node, cloneChildren = false, cloneMap = null) {
-    const checkNode = node.typ == exports.EnumToken.DeclarationNodeType ? "val" : "chi";
-    const clone = {};
-    const properties = {};
-    cloneMap?.set?.(node, clone);
-    for (const [name, value] of Object.entries(Object.getOwnPropertyDescriptors(node))) {
-        // @ts-expect-error
-        if (value.value == null || typeof value.value != "object" || name == "parent") {
-            // @ts-expect-error
-            properties[name] = { ...value };
-            // @ts-expect-error
-        }
-        else if (Array.isArray(value.value)) {
-            // @ts-expect-error
-            properties[name] = {
-                // @ts-expect-error
-                ...value,
-                value: !cloneChildren && name == checkNode
-                    ? []
-                    : // @ts-expect-error
-                        value.value.map((c) => {
-                            const newObj = cloneNode(c, cloneChildren, cloneMap);
-                            cloneMap?.set?.(c, newObj);
-                            return newObj;
-                        }),
-            };
-        }
-        else {
-            // @ts-expect-error
-            properties[name] = { ...value, value: cloneNode(value.value, clone) };
-        }
-    }
-    return Object.defineProperties(clone, properties);
 }
 
 /**
@@ -23769,9 +23797,6 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
         let node = null;
         let nodeIndex = -1;
         for (; i < ast.chi.length; i++) {
-            if (ast.chi[i] == null) {
-                console.debug(new Error("node is null"));
-            }
             if (ast.chi[i].typ === exports.EnumToken.CommentNodeType ||
                 ast.chi[i].typ === exports.EnumToken.InvalidRuleNodeType ||
                 ast.chi[i].typ === exports.EnumToken.InvalidAtRuleNodeType ||
@@ -25619,14 +25644,20 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
             if (Array.isArray(token.chi)) {
                 const fnName = token.val.toLowerCase();
                 const isLegacy = ["rgb", "rgba", "hsl", "hsla"].includes(token.val.toLowerCase());
-                const hasAlpha = ["rgb", "rgba", "hsl", "hsla", "hwb", "oklab", "oklch", "lab", "lch"].includes(fnName);
-                const useAlpha = hasAlpha
-                    &&
-                        token.chi.length == 4 ||
+                const hasAlpha = [
+                    "rgb",
+                    "rgba",
+                    "hsl",
+                    "hsla",
+                    "hwb",
+                    "oklab",
+                    "oklch",
+                    "lab",
+                    "lch",
+                ].includes(fnName);
+                const useAlpha = (hasAlpha && token.chi.length == 4) ||
                     ("color" == token.val.toLowerCase() && token.chi.length == 5);
-                return ((hasAlpha && token.val.endsWith("a")
-                    ? fnName.slice(0, -1)
-                    : fnName) +
+                return ((hasAlpha && token.val.endsWith("a") ? fnName.slice(0, -1) : fnName) +
                     "(" +
                     token
                         .chi.reduce((acc, curr, index, array) => {
@@ -25815,7 +25846,8 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                                     i++;
                                 }
                             }
-                            if (equalsIgnoreCase(slice[i].val, "at")) {
+                            if (slice[i]?.typ === exports.EnumToken.IdenTokenType &&
+                                equalsIgnoreCase(slice[i].val, "at")) {
                                 i++;
                             }
                             while (slice[i]?.typ === exports.EnumToken.WhitespaceTokenType ||
@@ -29528,7 +29560,7 @@ async function doParse(iter, options = {}) {
         inlineCssVariables: false,
         setParent: true,
         removePrefix: false,
-        validation: true,
+        validation: false,
         lenient: true,
         ...options,
     };
@@ -30072,7 +30104,6 @@ async function doParse(iter, options = {}) {
     if (invalidNodes.length > 0) {
         let k = invalidNodes.length;
         while (k-- > 0) {
-            // console.debug(invalidNodes[k], EnumAstNodeStatus[invalidNodes[k].state]);
             if (options.lenient && invalidNodes[k].state == EnumAstNodeStatus.Unknown) {
                 continue;
             }
@@ -32350,6 +32381,9 @@ function isOkLabClose(color1, color2, threshold = colorDistancePrecision) {
     }
     const okLab1 = getOKLABComponents(color1);
     const okLab2 = getOKLABComponents(color2);
+    if (okLab1 == null || okLab2 == null) {
+        return false;
+    }
     for (let i = 0; i < 3; i++) {
         if (Math.abs(okLab1[i] - okLab2[i]) > threshold) {
             return false;

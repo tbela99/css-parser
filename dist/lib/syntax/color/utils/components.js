@@ -15,6 +15,9 @@ function getColorComponents(token) {
         }
     }
     if (token.kin == ColorType.HEX || token.kin == ColorType.LIT) {
+        if (equalsIgnoreCase('currentcolor', token.val)) {
+            return null;
+        }
         const value = expandHexValue(token.kin == ColorType.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
         // @ts-ignore
         return value

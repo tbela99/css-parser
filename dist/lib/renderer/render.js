@@ -436,14 +436,20 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
             if (Array.isArray(token.chi)) {
                 const fnName = token.val.toLowerCase();
                 const isLegacy = ["rgb", "rgba", "hsl", "hsla"].includes(token.val.toLowerCase());
-                const hasAlpha = ["rgb", "rgba", "hsl", "hsla", "hwb", "oklab", "oklch", "lab", "lch"].includes(fnName);
-                const useAlpha = hasAlpha
-                    &&
-                        token.chi.length == 4 ||
+                const hasAlpha = [
+                    "rgb",
+                    "rgba",
+                    "hsl",
+                    "hsla",
+                    "hwb",
+                    "oklab",
+                    "oklch",
+                    "lab",
+                    "lch",
+                ].includes(fnName);
+                const useAlpha = (hasAlpha && token.chi.length == 4) ||
                     ("color" == token.val.toLowerCase() && token.chi.length == 5);
-                return ((hasAlpha && token.val.endsWith("a")
-                    ? fnName.slice(0, -1)
-                    : fnName) +
+                return ((hasAlpha && token.val.endsWith("a") ? fnName.slice(0, -1) : fnName) +
                     "(" +
                     token
                         .chi.reduce((acc, curr, index, array) => {
@@ -632,7 +638,8 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                                     i++;
                                 }
                             }
-                            if (equalsIgnoreCase(slice[i].val, "at")) {
+                            if (slice[i]?.typ === EnumToken.IdenTokenType &&
+                                equalsIgnoreCase(slice[i].val, "at")) {
                                 i++;
                             }
                             while (slice[i]?.typ === EnumToken.WhitespaceTokenType ||

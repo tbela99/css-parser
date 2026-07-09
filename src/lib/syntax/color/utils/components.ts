@@ -16,6 +16,11 @@ export function getColorComponents(token: ColorToken | IdentToken): Token[] | nu
     }
 
     if ((token as ColorToken).kin == ColorType.HEX || (token as ColorToken).kin == ColorType.LIT) {
+
+        if (equalsIgnoreCase('currentcolor', (token as ColorToken).val)) {
+            return null;
+        }
+
         const value: string = expandHexValue(
             (token as ColorToken).kin == ColorType.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val,
         );

@@ -53,6 +53,10 @@ export function isOkLabClose(
     const okLab1: [number, number, number] = getOKLABComponents(color1) as [number, number, number];
     const okLab2: [number, number, number] = getOKLABComponents(color2) as [number, number, number];
 
+    if (okLab1 == null || okLab2 == null) {
+        return false;
+    }
+
     for (let i = 0; i < 3; i++) {
         if (Math.abs(okLab1[i] - okLab2[i]) > threshold) {
             return false;

@@ -961,7 +961,7 @@ export function renderValue(
                                 }
                             }
 
-                            if (equalsIgnoreCase((slice[i] as IdentToken).val, "at")) {
+                            if (slice[i]?.typ === EnumToken.IdenTokenType && equalsIgnoreCase((slice[i] as IdentToken).val, "at")) {
                                 i++;
                             }
 
