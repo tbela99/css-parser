@@ -19,14 +19,15 @@ import type {
     AtRuleToken,
     ColorToken,
 } from "../../../@types/index.d.ts";
-import { EnumToken } from "../../ast/types.ts";
+import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import { renderValue } from "../../renderer/render.ts";
 import { combinators, definedPropertySettings, tokensfuncDefMap } from "../../syntax/constants.ts";
 import { isHash, isIdent, pseudoElements } from "../../syntax/syntax.ts";
-import { getParsedSyntax, getSyntaxConfig } from "../../validation/config.ts";
+import { getParsedSyntax, getSyntaxConfig, getSyntaxRule } from "../../validation/config.ts";
 import { createValidationContext, matchAllSyntax, matchSelectorSyntax, trimArray } from "../../validation/match.ts";
 
-import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
+import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from "../../validation/parser/typedef.ts";
+import type { ValidationPropertyToken } from "../../validation/parser/types.d.ts";
 import { splitTokenList } from "../../validation/utils/list.ts";
 import { trimWhiteSpace } from "../parse.ts";
 
@@ -110,7 +111,7 @@ export function parseSelector(
 
         return Object.defineProperties(
             {
-                typ: result.success ? EnumToken.KeyFramesRuleNodeType : EnumToken.InvalidRuleNodeType,
+                typ: EnumToken.KeyFramesRuleNodeType,
                 sel: [
                     ...splitTokenList(trimArray(tokens)).reduce((acc, curr: Token[]) => {
                         acc.add(curr.reduce((acc, curr) => acc + renderValue(curr, { minify: false }), ""));
@@ -120,6 +121,14 @@ export function parseSelector(
                 chi: [],
             },
             {
+                state: {
+                    ...definedPropertySettings,
+                    value: result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid,
+                },
+                errors: {
+                    ...definedPropertySettings,
+                    value: result.errors,
+                },
                 tokens: { ...definedPropertySettings, value: tokens.length === 0 ? null : tokens },
                 loc: {
                     ...definedPropertySettings,
@@ -135,11 +144,40 @@ export function parseSelector(
     const stack: Token[] = [];
     const uniq = new Map<string, string[]>();
 
+    let allowed: boolean = true;
     let i: number = 0;
     let index: number;
     let parent: AstRuleList = context as AstRuleList;
     let nested: boolean = false;
     let val: string;
+
+    if (context?.typ !== EnumToken.StyleSheetNodeType && context?.typ !== EnumToken.RuleNodeType) {
+        allowed = false;
+
+        if (context?.typ === EnumToken.AtRuleNodeType) {
+            const syntaxRule = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + (context as AstAtRule).nam);
+
+            allowed = syntaxRule?.acceptAnyRule ?? false;
+
+            if (!allowed) {
+                const rules = syntaxRule?.getBlockRules?.();
+
+                if (rules != null) {
+                    for (const rule of rules) {
+                        if (ValidationTokenEnum.PropertyType === rule.typ) {
+                            if (
+                                "block-contents" === (rule as ValidationPropertyToken).val ||
+                                "rule-list" === (rule as ValidationPropertyToken).val
+                            ) {
+                                allowed = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     do {
         if (parent?.typ === EnumToken.AtRuleNodeType && "media" === (parent as AstAtRule).nam) {
@@ -551,7 +589,7 @@ export function parseSelector(
 
     return Object.defineProperties(
         {
-            typ: result.success ? EnumToken.RuleNodeType : EnumToken.InvalidRuleNodeType,
+            typ: EnumToken.RuleNodeType,
             sel: [
                 ...tokens
                     .reduce(
@@ -605,6 +643,19 @@ export function parseSelector(
             chi: [],
         },
         {
+            state: {
+                ...definedPropertySettings,
+                value:
+                    result.success && allowed
+                        ? EnumAstNodeStatus.Validated
+                        : allowed
+                          ? EnumAstNodeStatus.Invalid
+                          : EnumAstNodeStatus.Disallowed,
+            },
+            errors: {
+                ...definedPropertySettings,
+                value: result.success ? [] : result.errors,
+            },
             tokens: { ...definedPropertySettings, value: tokens },
             loc: {
                 ...definedPropertySettings,

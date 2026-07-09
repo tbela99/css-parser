@@ -1,4 +1,4 @@
-import { EnumToken, ColorType, ValidationLevel } from '../../ast/types.js';
+import { EnumToken, EnumAstNodeStatus, ColorType, ValidationLevel } from '../../ast/types.js';
 import { definedPropertySettings, tokensfuncDefMap, COLORS_NAMES, nonStandardColors, systemColors, deprecatedSystemColors, tokensMap, trimTokenSpace } from '../../syntax/constants.js';
 import { renamedStandardProperties, isColor, parseColor, isWhiteSpace, isValue } from '../../syntax/syntax.js';
 import { getSyntaxRule, getParsedSyntax } from '../../validation/config.js';
@@ -8,6 +8,7 @@ import { walkValues } from '../../ast/walk.js';
 import { equalsIgnoreCase } from './text.js';
 import { buildExpression } from '../../ast/math/expression.js';
 import { splitTokenList } from '../../validation/utils/list.js';
+import { parseTokens } from '../parse.js';
 
 /**
  *
@@ -115,14 +116,31 @@ function parseDeclaration(tokens, parent, options, errors) {
     }
     if ((name.typ !== EnumToken.IdenTokenType && name.typ !== EnumToken.DashedIdenTokenType) ||
         tokens[i]?.typ !== EnumToken.ColonTokenType) {
-        return Object.defineProperty(Object.assign({
+        return Object.defineProperties(Object.assign({
             typ: EnumToken.RawNodeTokenType,
-            chi: tokens,
-        }), "loc", {
-            ...definedPropertySettings,
-            value: {
-                ...name.loc,
-                end: tokens[tokens.length - 1]?.loc?.end ?? name.loc.end,
+            val: tokens,
+        }), {
+            state: {
+                ...definedPropertySettings,
+                value: EnumAstNodeStatus.Unparsed,
+            },
+            errors: {
+                ...definedPropertySettings,
+                value: [
+                    {
+                        action: "drop",
+                        node: name,
+                        location: name.loc,
+                        message: "invalid declaration",
+                    },
+                ],
+            },
+            loc: {
+                ...definedPropertySettings,
+                value: {
+                    ...name.loc,
+                    end: tokens[tokens.length - 1]?.loc?.end ?? name.loc.end,
+                },
             },
         });
     }
@@ -173,7 +191,7 @@ function parseDeclaration(tokens, parent, options, errors) {
     }
     if (validate && name.typ === EnumToken.IdenTokenType) {
         if (parent != null &&
-            (parent.typ == EnumToken.AtRuleNodeType || parent.typ === EnumToken.InvalidAtRuleNodeType) &&
+            parent.typ === EnumToken.AtRuleNodeType &&
             parent.nam != "import" &&
             parent.nam != "supports" &&
             parent.nam != "media") {
@@ -188,30 +206,53 @@ function parseDeclaration(tokens, parent, options, errors) {
                 }
                 else {
                     syntaxRules =
-                        rules.acceptAnyDeclarations && rules.acceptAnyRules
+                        rules.acceptAnyDeclaration && rules.acceptAnyRule
                             ? getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, name.val.toLowerCase())
                             : rules.getBlockRules();
                     if (syntaxRules == null) {
-                        errors.push({
-                            action: "drop",
-                            message: "declaration not allowed in context",
-                            node: name,
-                            location: name.loc,
-                        });
-                        return Object.defineProperty(Object.assign(name, {
-                            typ: EnumToken.InvalidDeclarationNodeType,
-                            nam: name.val,
-                            val: tokens,
-                        }), "loc", {
-                            ...definedPropertySettings,
-                            value: {
-                                ...name.loc,
-                                end: tokens[tokens.length - 1].loc.end,
-                            },
-                        });
+                        // check rule in nested context
+                        let pr = parent.parent;
+                        while (pr != null && pr.typ !== EnumToken.RuleNodeType) {
+                            pr = pr.parent;
+                        }
+                        if (pr != null) {
+                            syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, name.val.toLowerCase());
+                        }
+                        if (syntaxRules == null) {
+                            errors.push({
+                                action: "drop",
+                                message: "declaration not allowed in context",
+                                node: name,
+                                location: name.loc,
+                            });
+                            return Object.defineProperties(Object.assign(name, {
+                                typ: EnumToken.DeclarationNodeType,
+                                nam: name.val,
+                                val: tokens,
+                            }), {
+                                state: {
+                                    ...definedPropertySettings,
+                                    value: EnumAstNodeStatus.Disallowed,
+                                },
+                                errors: {
+                                    ...definedPropertySettings,
+                                    value: [errors[errors.length - 1]],
+                                },
+                                loc: {
+                                    ...definedPropertySettings,
+                                    value: {
+                                        ...name.loc,
+                                        end: tokens[tokens.length - 1].loc.end,
+                                    },
+                                },
+                            });
+                        }
                     }
                 }
             }
+        }
+        else {
+            syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, name.val.toLowerCase());
         }
         // <declaration-list> or <declaration-rule-list>
         // else
@@ -246,15 +287,25 @@ function parseDeclaration(tokens, parent, options, errors) {
             node: name,
             location: name.loc,
         });
-        return Object.defineProperty(Object.assign(name, {
+        return Object.defineProperties(Object.assign(name, {
             typ: EnumToken.InvalidDeclarationNodeType,
             nam: name.val,
             val: tokens,
-        }), "loc", {
-            ...definedPropertySettings,
-            value: {
-                ...name.loc,
-                end: tokens[tokens.length - 1]?.loc.end ?? name.loc.end,
+        }), {
+            state: {
+                ...definedPropertySettings,
+                value: EnumAstNodeStatus.Invalid,
+            },
+            errors: {
+                ...definedPropertySettings,
+                value: [errors[errors.length - 1]],
+            },
+            loc: {
+                ...definedPropertySettings,
+                value: {
+                    ...name.loc,
+                    end: tokens[tokens.length - 1]?.loc.end ?? name.loc.end,
+                },
             },
         });
     }
@@ -283,15 +334,25 @@ function parseDeclaration(tokens, parent, options, errors) {
                 errors.push(...result.errors);
             }
             if (!doNotValidate && !(success || result.success)) {
-                return Object.defineProperty(Object.assign(name, {
-                    typ: EnumToken.InvalidDeclarationNodeType,
+                return Object.defineProperties(Object.assign(name, {
+                    typ: EnumToken.DeclarationNodeType,
                     nam: name.val,
-                    val: tokens,
-                }), "loc", {
-                    ...definedPropertySettings,
-                    value: {
-                        ...name.loc,
-                        end: tokens[tokens.length - 1]?.loc.end ?? name.loc.end,
+                    val: parseTokens(tokens),
+                }), {
+                    state: {
+                        ...definedPropertySettings,
+                        value: EnumAstNodeStatus.ValidationFailed,
+                    },
+                    errors: {
+                        ...definedPropertySettings,
+                        value: result?.errors ?? [],
+                    },
+                    loc: {
+                        ...definedPropertySettings,
+                        value: {
+                            ...name.loc,
+                            end: tokens[tokens.length - 1]?.loc.end ?? name.loc.end,
+                        },
                     },
                 });
             }
@@ -341,15 +402,25 @@ function parseDeclaration(tokens, parent, options, errors) {
                         node: token,
                         location: token.loc,
                     });
-                    return Object.defineProperty(Object.assign(name, {
-                        typ: EnumToken.InvalidDeclarationNodeType,
+                    return Object.defineProperties(Object.assign(name, {
+                        typ: EnumToken.DeclarationNodeType,
                         nam: name.val,
                         val: tokens,
-                    }), "loc", {
-                        ...definedPropertySettings,
-                        value: {
-                            ...name.loc,
-                            end: tokens[tokens.length - 1]?.loc.end ?? name.loc.end,
+                    }), {
+                        state: {
+                            ...definedPropertySettings,
+                            value: EnumAstNodeStatus.Invalid,
+                        },
+                        errors: {
+                            ...definedPropertySettings,
+                            value: errors[errors.length - 1],
+                        },
+                        loc: {
+                            ...definedPropertySettings,
+                            value: {
+                                ...name.loc,
+                                end: tokens[tokens.length - 1]?.loc.end ?? name.loc.end,
+                            },
                         },
                     });
                 }
@@ -502,15 +573,25 @@ function parseDeclaration(tokens, parent, options, errors) {
             node: stack[stack.length - 1],
             location: stack[stack.length - 1].loc,
         });
-        return Object.defineProperty(Object.assign(name, {
-            typ: EnumToken.InvalidDeclarationNodeType,
+        return Object.defineProperties(Object.assign(name, {
+            typ: EnumToken.DeclarationNodeType,
             nam: name.val,
             val: tokens,
-        }), "loc", {
-            ...definedPropertySettings,
-            value: {
-                ...name.loc,
-                end: tokens[tokens.length - 1].loc.end,
+        }), {
+            state: {
+                ...definedPropertySettings,
+                value: EnumAstNodeStatus.Invalid,
+            },
+            errors: {
+                ...definedPropertySettings,
+                value: result?.errors ?? [],
+            },
+            loc: {
+                ...definedPropertySettings,
+                value: {
+                    ...name.loc,
+                    end: tokens[tokens.length - 1].loc.end,
+                },
             },
         });
     }
@@ -537,17 +618,25 @@ function parseDeclaration(tokens, parent, options, errors) {
         }
     }
     if (validate && syntaxRules == null && name.typ === EnumToken.IdenTokenType) {
-        const node = Object.defineProperty(Object.assign(name, {
-            typ: options.validation & ValidationLevel.Declaration
-                ? EnumToken.InvalidDeclarationNodeType
-                : EnumToken.DeclarationNodeType,
+        const node = Object.defineProperties(Object.assign(name, {
+            typ: EnumToken.DeclarationNodeType,
             nam: name.val,
             val: tokens,
-        }), "loc", {
-            ...definedPropertySettings,
-            value: {
-                ...name.loc,
-                end: tokens[tokens.length - 1]?.loc?.end ?? name.loc.end,
+        }), {
+            state: {
+                ...definedPropertySettings,
+                value: EnumAstNodeStatus.Unknown,
+            },
+            errors: {
+                ...definedPropertySettings,
+                value: result?.errors ?? [],
+            },
+            loc: {
+                ...definedPropertySettings,
+                value: {
+                    ...name.loc,
+                    end: tokens[tokens.length - 1]?.loc?.end ?? name.loc.end,
+                },
             },
         });
         if (options.validation & ValidationLevel.Declaration) {
@@ -585,15 +674,29 @@ function parseDeclaration(tokens, parent, options, errors) {
             }),
         ];
     }
-    return Object.defineProperty(Object.assign(name, {
+    return Object.defineProperties(Object.assign(name, {
         typ: success ? EnumToken.DeclarationNodeType : EnumToken.InvalidDeclarationNodeType,
         nam: name.val,
         val: tokens,
-    }), "loc", {
-        ...definedPropertySettings,
-        value: {
-            ...name.loc,
-            end: (tokens[tokens.length - 1] ?? name).loc.end,
+    }), {
+        state: {
+            ...definedPropertySettings,
+            value: success
+                ? result == null
+                    ? EnumAstNodeStatus.Unvalidated
+                    : EnumAstNodeStatus.Validated
+                : EnumAstNodeStatus.ValidationFailed,
+        },
+        errors: {
+            ...definedPropertySettings,
+            value: result?.errors ?? [],
+        },
+        loc: {
+            ...definedPropertySettings,
+            value: {
+                ...name.loc,
+                end: (tokens[tokens.length - 1] ?? name).loc.end,
+            },
         },
     });
 }

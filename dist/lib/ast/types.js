@@ -1,5 +1,5 @@
 /**
- * syntax validation enum
+ * Syntax validation enum
  */
 var SyntaxValidationResult;
 (function (SyntaxValidationResult) {
@@ -11,7 +11,45 @@ var SyntaxValidationResult;
     SyntaxValidationResult[SyntaxValidationResult["Lenient"] = 2] = "Lenient";
 })(SyntaxValidationResult || (SyntaxValidationResult = {}));
 /**
- * enum of validation levels
+ * Enum of node statuses
+ */
+var EnumAstNodeStatus;
+(function (EnumAstNodeStatus) {
+    /**
+     * Node passed validation
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["Validated"] = 0] = "Validated";
+    /**
+     * Node is invalid
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["Invalid"] = 1] = "Invalid";
+    /**
+     * node is not validated
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["Unvalidated"] = 2] = "Unvalidated";
+    /**
+     * Node did not pass validation, but is allowed in the context
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["ValidationFailed"] = 3] = "ValidationFailed";
+    /**
+     * Node is not recognized
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["Unknown"] = 4] = "Unknown";
+    /**
+     * Node is unparsed
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["Unparsed"] = 5] = "Unparsed";
+    /**
+     * Node is disallowed in the context
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["Disallowed"] = 6] = "Disallowed";
+    /**
+     * Node is malformed
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["Malformed"] = 7] = "Malformed";
+})(EnumAstNodeStatus || (EnumAstNodeStatus = {}));
+/**
+ * Enum of validation levels
  */
 var ValidationLevel;
 (function (ValidationLevel) {
@@ -45,7 +83,7 @@ var ValidationLevel;
     ValidationLevel[ValidationLevel["ReportOnly"] = 8] = "ReportOnly";
 })(ValidationLevel || (ValidationLevel = {}));
 /**
- * enum of all token types
+ * Enum of all token types
  */
 var EnumToken;
 (function (EnumToken) {
@@ -725,7 +763,7 @@ var EnumToken;
     EnumToken[EnumToken["TimelineFunction"] = 16] = "TimelineFunction";
 })(EnumToken || (EnumToken = {}));
 /**
- * supported color types enum
+ * Supported color types enum
  */
 var ColorType;
 (function (ColorType) {
@@ -851,7 +889,7 @@ var ColorType;
     ColorType[ColorType["DEVICE_CMYK"] = 7] = "DEVICE_CMYK";
 })(ColorType || (ColorType = {}));
 /**
- * supported module case transform
+ * Supported module case transform
  */
 var ModuleCaseTransformEnum;
 (function (ModuleCaseTransformEnum) {
@@ -877,7 +915,7 @@ var ModuleCaseTransformEnum;
     ModuleCaseTransformEnum[ModuleCaseTransformEnum["DashCaseOnly"] = 16] = "DashCaseOnly";
 })(ModuleCaseTransformEnum || (ModuleCaseTransformEnum = {}));
 /**
- * supported module scope
+ * Supported module scope
  */
 var ModuleScopeEnumOptions;
 (function (ModuleScopeEnumOptions) {
@@ -984,4 +1022,4 @@ function minifyNumber(val) {
     return val;
 }
 
-export { ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SyntaxValidationResult, ValidationLevel, length2Px, minifyNumber };
+export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SyntaxValidationResult, ValidationLevel, length2Px, minifyNumber };

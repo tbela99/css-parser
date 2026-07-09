@@ -7,7 +7,6 @@ import type {
     PropertyListOptions,
     ShorthandMapType,
     ShorthandPropertyType,
-    SinglePropertyType,
     SinglePropertyTypeMapping,
     Token,
 } from "../../../@types/index.d.ts";
@@ -15,8 +14,13 @@ import { PropertySet } from "./set.ts";
 import { getConfig } from "../utils/config.ts";
 import { PropertyMap } from "./map.ts";
 import { parseString } from "../parse.ts";
-import { EnumToken } from "../../ast/types.ts";
-import { walk } from "../../ast/walk.ts";
+import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
+import { getParsedSyntax } from "../../validation/config.ts";
+import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
+import { ValidationMatch } from "../../validation/types.js";
+import { createValidationContext, matchAllSyntax } from "../../validation/match.ts";
+import type { ValidationToken } from "../../validation/parser/types.d.ts";
+import { definedPropertySettings } from "../../syntax/constants.ts";
 
 const config: PropertiesConfig = getConfig();
 
@@ -39,6 +43,8 @@ export class PropertyList {
 
     add(...declarations: AstNode[]) {
         let name: string | null;
+        let syntaxRules: ValidationToken[] | null = null;
+        let result: ValidationMatch;
 
         for (const declaration of declarations) {
             name =
@@ -46,7 +52,14 @@ export class PropertyList {
                     ? null
                     : (declaration as AstDeclaration).nam.toLowerCase();
 
+            if (declaration.state == EnumAstNodeStatus.Unvalidated) {
+                // validate declaration
+            }
+
             if (
+                (declaration as AstDeclaration).state == EnumAstNodeStatus.Invalid ||
+                (declaration as AstDeclaration).state == EnumAstNodeStatus.Unknown ||
+                (declaration as AstDeclaration).state == EnumAstNodeStatus.ValidationFailed ||
                 declaration.typ != EnumToken.DeclarationNodeType ||
                 "composes" === name ||
                 (typeof this.options.removeDuplicateDeclarations === "string" &&
@@ -62,6 +75,27 @@ export class PropertyList {
             if (!this.options.computeShorthand) {
                 this.declarations.set((<AstDeclaration>declaration).nam, declaration);
                 continue;
+            }
+
+            if (declaration.state == EnumAstNodeStatus.Unvalidated) {
+                syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, declaration.nam.toLowerCase());
+
+                if (syntaxRules != null) {
+                    result = matchAllSyntax(syntaxRules, createValidationContext(declaration.val), this.options);
+
+                    Object.defineProperty(declaration, "state", {
+                        ...definedPropertySettings,
+                        value: result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.ValidationFailed,
+                    });
+                }
+            }
+
+            // console.debug(EnumAstNodeStatus[declaration.state]);
+
+            // do not compute shorthand for invalid declarations
+            if (declaration.state !== EnumAstNodeStatus.Validated) {
+                this.declarations.set(declaration.nam, declaration);
+                return this;
             }
 
             let propertyName: string = <string>(<AstDeclaration>declaration).nam;
@@ -173,7 +207,6 @@ export class PropertyList {
                 }
 
                 if (set.size === 0) {
-
                     values = val.reduce((acc: Token[], curr: Token): Token[] => {
                         if (acc.length > 0) {
                             acc.push({ typ: EnumToken.WhitespaceTokenType });

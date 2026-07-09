@@ -57,7 +57,11 @@ function interpolateHue(interpolationMethod: string, h1: number, h2: number): nu
 
     return [h1, h2];
 }
-
+/**
+ * Compute color mix
+ * @param args 
+ * @returns 
+ */
 export function colorMix(...args: Token[]): ColorToken | null {
     // invalid color or custom color profile
     if (args.length == 0 || args[0].typ === EnumToken.DashedIdenTokenType) {

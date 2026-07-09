@@ -18,7 +18,6 @@ import { evaluate } from "../math/expression.ts";
 import { renderValue } from "../../renderer/render.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { mathFuncs, tokensfuncSet } from "../../syntax/constants.ts";
-import { replaceNodeOrValue } from "../../../node.ts";
 
 export class ComputeCalcExpressionFeature {
     public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);

@@ -945,9 +945,7 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
                 validation: true
             }).then((result) => expect(result.code).equals(`@font-feature-values Bongo {
  @swash {
-  ornate: 1
- }
- @swash {
+  ornate: 1;
   double-loops: 1;
   flowing: -1
  }

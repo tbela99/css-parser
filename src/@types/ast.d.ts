@@ -60,29 +60,27 @@ export declare interface BaseToken {
     validSyntax?: boolean;
 }
 
+export declare interface AstNodeStatus {
+
+    state?: EnumAstNodeStatus;
+    errors?: ErrorDescription[];
+}
+
 /**
  * comment node
  */
 export declare interface AstComment extends BaseToken {
     typ: EnumToken.CommentNodeType | EnumToken.CDOCOMMNodeType;
-   
-    /**
-     * CSS comment
-     */
+    tokens?: null;
     val: string;
 }
 
 /**
  * declaration node
  */
-export declare interface AstDeclaration extends BaseToken {
-    /**
-     * Declaration name
-     */
+export declare interface AstDeclaration extends BaseToken, AstNodeStatus {
     nam: string;
-    /**
-     * Declaration value
-     */
+    tokens?: null;
     val: Token[];
     typ: EnumToken.DeclarationNodeType;
 }
@@ -90,34 +88,20 @@ export declare interface AstDeclaration extends BaseToken {
 /**
  * rule node
  */
-export declare interface AstRule extends BaseToken {
+export declare interface AstRule extends BaseToken, AstNodeStatus {
     typ: EnumToken.RuleNodeType;
-    /**
-     * Selector as string
-     */
     sel: string;
-    /**
-     * Child nodes
-     */
     chi: Array<
         AstDeclaration | AstComment | AstRule | AstAtRule | AstInvalidRule | AstInvalidDeclaration | AstInvalidAtRule
     >;
-    /**
-     * Optimized selector
-     * @internal
-     */
     optimized?: OptimizedSelector | null;
-    /**
-     * Raw selector
-     * @internal
-     */
     raw?: RawSelectorTokens | null;
 }
 
 /**
  * invalid rule node
  */
-export declare interface AstInvalidRule extends BaseToken {
+export declare interface AstInvalidRule extends BaseToken, AstNodeStatus {
     typ: EnumToken.InvalidRuleNodeType;
     sel: string;
     chi: Array<AstNode>;
@@ -126,7 +110,7 @@ export declare interface AstInvalidRule extends BaseToken {
 /**
  * invalid declaration node
  */
-export declare interface AstInvalidDeclaration extends BaseToken {
+export declare interface AstInvalidDeclaration extends BaseToken, AstNodeStatus {
     typ: EnumToken.InvalidDeclarationNodeType;
     tokens?: null;
     val: Array<Token>;
@@ -135,7 +119,7 @@ export declare interface AstInvalidDeclaration extends BaseToken {
 /**
  * invalid at rule node
  */
-export declare interface AstInvalidAtRule extends BaseToken {
+export declare interface AstInvalidAtRule extends BaseToken, AstNodeStatus {
     typ: EnumToken.InvalidAtRuleNodeType;
     nam: string;
     val: string;
@@ -145,7 +129,7 @@ export declare interface AstInvalidAtRule extends BaseToken {
 /**
  * keyframe rule node
  */
-export declare interface AstKeyFrameRule extends BaseToken {
+export declare interface AstKeyFrameRule extends BaseToken, AstNodeStatus {
     typ: EnumToken.KeyFramesRuleNodeType;
     sel: string;
     chi: Array<AstDeclaration | AstComment | AstInvalidDeclaration>;
@@ -186,7 +170,7 @@ export declare interface OptimizedSelectorToken {
 /**
  * at rule node
  */
-export declare interface AstAtRule extends BaseToken {
+export declare interface AstAtRule extends BaseToken, AstNodeStatus {
     typ: EnumToken.AtRuleNodeType;
     nam: string;
     val: string;
@@ -196,7 +180,7 @@ export declare interface AstAtRule extends BaseToken {
 /**
  * keyframe rule node
  */
-export declare interface AstKeyframesRule extends BaseToken {
+export declare interface AstKeyframesRule extends BaseToken, AstNodeStatus {
     typ: EnumToken.KeyFramesRuleNodeType;
     sel: string;
     chi: Array<AstDeclaration | AstInvalidDeclaration | AstComment | AstRuleList>;
@@ -207,7 +191,7 @@ export declare interface AstKeyframesRule extends BaseToken {
 /**
  * keyframe at rule node
  */
-export declare interface AstKeyframesAtRule extends BaseToken {
+export declare interface AstKeyframesAtRule extends BaseToken, AstNodeStatus {
     typ: EnumToken.KeyframesAtRuleNodeType;
     nam: string;
     val: string;
@@ -252,7 +236,6 @@ export declare type AstNode =
     | CssVariableToken
     | CssVariableImportTokenType;
 
-    
 export interface TokenSearchResult {
     node: Token | null;
     parent: AstNode | Token | null;

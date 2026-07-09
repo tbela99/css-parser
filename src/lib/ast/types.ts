@@ -1,7 +1,7 @@
 import type { LengthToken, NumberToken } from "../../@types/token.d.ts";
 
 /**
- * syntax validation enum
+ * Syntax validation enum
  */
 export enum SyntaxValidationResult {
     /** valid syntax */
@@ -13,7 +13,45 @@ export enum SyntaxValidationResult {
 }
 
 /**
- * enum of validation levels
+ * Enum of node statuses
+ */
+export enum EnumAstNodeStatus {
+    /**
+     * Node passed validation
+     */
+    Validated,
+    /**
+     * Node is invalid
+     */
+    Invalid,
+    /**
+     * node is not validated
+     */
+    Unvalidated,
+    /**
+     * Node did not pass validation, but is allowed in the context
+     */
+    ValidationFailed,
+    /**
+     * Node is not recognized
+     */
+    Unknown,
+    /**
+     * Node is unparsed
+     */
+    Unparsed,
+    /**
+     * Node is disallowed in the context
+     */
+    Disallowed,
+    /**
+     * Node is malformed
+     */
+    Malformed,
+}
+
+/**
+ * Enum of validation levels
  */
 export enum ValidationLevel {
     /**
@@ -49,7 +87,7 @@ export enum ValidationLevel {
 }
 
 /**
- * enum of all token types
+ * Enum of all token types
  */
 export enum EnumToken {
     /**
@@ -767,7 +805,7 @@ export enum EnumToken {
 }
 
 /**
- * supported color types enum
+ * Supported color types enum
  */
 export enum ColorType {
     /**
@@ -893,7 +931,7 @@ export enum ColorType {
 }
 
 /**
- * supported module case transform
+ * Supported module case transform
  */
 export enum ModuleCaseTransformEnum {
     /**
@@ -919,7 +957,7 @@ export enum ModuleCaseTransformEnum {
 }
 
 /**
- * supported module scope
+ * Supported module scope
  */
 export enum ModuleScopeEnumOptions {
     /**

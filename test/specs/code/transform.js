@@ -493,7 +493,9 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
                 beautify: true,
                 computeTransform: true,
                 validation: true
-            }).then((result) => expect(result.code).equals(``));
+            }).then((result) => expect(result.code).equals(`.now {
+ transform: scale()
+}`));
         });
 
         it('matrix #28', function () {
@@ -522,7 +524,9 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
                 beautify: true,
                 computeTransform: true,
                 validation: true
-            }).then((result) => expect(result.code).equals(``));
+            }).then((result) => expect(result.code).equals(`.foo-bar {
+ transform: matrix(2,0,0,1,0,0,5)
+}`));
         });
 
         it('matrix #30', function () {
@@ -722,6 +726,7 @@ transform: translate3d(0, 100%, 0);
                 removeDuplicateDeclarations: ['transform']
             }).then((result) => expect(result.code).equals(`.scale {
  transform: scaleY(-.5);
+ transform: scale(100%,-50%,100%);
  transform: scale3d(.5,1,1.5);
  transform: none;
  transform: scale3d(.5,1,1.7);
@@ -799,6 +804,22 @@ transform: translate3d(0, 100%, 0);
 .animate__slideOutUp {
  -webkit-animation-name: slideOutUp;
  animation-name: slideOutUp
+}`));
+        });
+
+
+
+        it('matrix #43', function () {
+            const nesting1 = `
+
+.foo-bar {
+transform: translateY(20px) translateZ(20px, 50px) translateX(0);
+`;
+            return transform(nesting1, {
+                beautify: true,
+                computeTransform: true
+            }).then((result) => expect(result.code).equals(`.foo-bar {
+ transform: translateY(20px)translateZ(20px,50px)translateX(0)
 }`));
         });
     });

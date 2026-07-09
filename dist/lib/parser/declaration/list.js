@@ -2,7 +2,11 @@ import { PropertySet } from './set.js';
 import { getConfig } from '../utils/config.js';
 import { PropertyMap } from './map.js';
 import { parseString } from '../parse.js';
-import { EnumToken } from '../../ast/types.js';
+import { EnumToken, EnumAstNodeStatus } from '../../ast/types.js';
+import { getParsedSyntax } from '../../validation/config.js';
+import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
+import { matchAllSyntax, createValidationContext } from '../../validation/match.js';
+import { definedPropertySettings } from '../../syntax/constants.js';
 
 const config = getConfig();
 class PropertyList {
@@ -21,12 +25,17 @@ class PropertyList {
     }
     add(...declarations) {
         let name;
+        let syntaxRules = null;
+        let result;
         for (const declaration of declarations) {
             name =
                 declaration.typ != EnumToken.DeclarationNodeType
                     ? null
                     : declaration.nam.toLowerCase();
-            if (declaration.typ != EnumToken.DeclarationNodeType ||
+            if (declaration.state == EnumAstNodeStatus.Invalid ||
+                declaration.state == EnumAstNodeStatus.Unknown ||
+                declaration.state == EnumAstNodeStatus.ValidationFailed ||
+                declaration.typ != EnumToken.DeclarationNodeType ||
                 "composes" === name ||
                 (typeof this.options.removeDuplicateDeclarations === "string" &&
                     this.options.removeDuplicateDeclarations === name) ||
@@ -39,6 +48,22 @@ class PropertyList {
             if (!this.options.computeShorthand) {
                 this.declarations.set(declaration.nam, declaration);
                 continue;
+            }
+            if (declaration.state == EnumAstNodeStatus.Unvalidated) {
+                syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, declaration.nam.toLowerCase());
+                if (syntaxRules != null) {
+                    result = matchAllSyntax(syntaxRules, createValidationContext(declaration.val), this.options);
+                    Object.defineProperty(declaration, "state", {
+                        ...definedPropertySettings,
+                        value: result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.ValidationFailed,
+                    });
+                }
+            }
+            // console.debug(EnumAstNodeStatus[declaration.state]);
+            // do not compute shorthand for invalid declarations
+            if (declaration.state !== EnumAstNodeStatus.Validated) {
+                this.declarations.set(declaration.nam, declaration);
+                return this;
             }
             let propertyName = declaration.nam;
             let shortHandType;

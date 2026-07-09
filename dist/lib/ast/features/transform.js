@@ -1,4 +1,4 @@
-import { EnumToken } from '../types.js';
+import { EnumToken, EnumAstNodeStatus } from '../types.js';
 import { consumeWhitespace } from '../../validation/utils/whitespace.js';
 import { compute } from '../transform/compute.js';
 import { filterValues, renderValue } from '../../renderer/render.js';
@@ -30,6 +30,9 @@ class TransformCssFeature {
         for (; i < ast.chi.length; i++) {
             // @ts-ignore
             node = ast.chi[i];
+            if (node.state == EnumAstNodeStatus.Invalid || node.state == EnumAstNodeStatus.ValidationFailed) {
+                continue;
+            }
             if (node.typ != EnumToken.DeclarationNodeType ||
                 !node.nam.match(/^(-[a-z]+-)?transform$/)) {
                 continue;

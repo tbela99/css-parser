@@ -1,5 +1,5 @@
 import type { AstDeclaration, BaseToken } from "./ast.d.ts";
-import { ColorType, EnumToken } from "../lib/ast/types.ts";
+import { ColorType, EnumToken, EnumAstNodeStatus } from "../lib/ast/types.ts";
 
 /**
  * Literal token
@@ -68,6 +68,13 @@ export declare interface CommaToken extends BaseToken {
  */
 export declare interface ColonToken extends BaseToken {
     typ: EnumToken.ColonTokenType;
+}
+
+/**
+ * Double colon token
+ */
+export declare interface DoubleColonToken extends BaseToken {
+    typ: EnumToken.DoubleColonTokenType;
 }
 
 /**
@@ -812,6 +819,9 @@ export declare interface CssVariableMapTokenType extends BaseToken {
     from: Token[];
 }
 
+/**
+ * Function definition token
+ */
 export declare interface FunctionDefToken extends BaseToken {
     typ:
         | EnumToken.FunctionDefTokenType
@@ -828,9 +838,12 @@ export declare interface FunctionDefToken extends BaseToken {
     val: string;
 }
 
-export declare interface RawNodeToken extends BaseToken {
+/**
+ * Raw node token
+ */
+export declare interface RawNodeToken extends BaseToken, EnumAstNodeStatus {
     typ: EnumToken.RawNodeTokenType;
-    chi: Token[];
+    val: Token[];
 }
 
 /**
@@ -873,6 +886,7 @@ export declare type Token =
     | DashedIdentToken
     | CommaToken
     | ColonToken
+    | DoubleColonToken
     | SemiColonToken
     | ClassSelectorToken
     | UniversalSelectorToken

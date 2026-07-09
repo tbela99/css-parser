@@ -655,6 +655,7 @@ function factor(tokens: Array<Token | BinaryExpressionToken>, ops: Array<"+" | "
 
         if (
             isOp ||
+            tokens[i].typ === EnumToken.Star ||
             // @ts-ignore
             ((<Token>tokens[i]).typ == EnumToken.LiteralTokenType && ops.includes((tokens[i] as LiteralToken).val))
         ) {

@@ -3,23 +3,24 @@ import { ColorType, EnumToken } from "../../../ast/types.ts";
 import { equalsIgnoreCase } from "../../../parser/utils/text.ts";
 import { getNumber, minmax } from "../color.ts";
 
+/**
+ * Create a color token
+ * @param kind 
+ * @param components 
+ * @param alpha 
+ * @returns 
+ */
 export function makeColor(kind: ColorType, components: Token[], alpha?: Token): ColorToken | null {
-
-    if (
-        components.length < 3 ||
-        alpha == null ||
-        (alpha.typ != EnumToken.NumberTokenType &&
-            alpha.typ != EnumToken.PercentageTokenType &&
-            !(alpha.typ === EnumToken.IdenTokenType && equalsIgnoreCase((alpha as IdentToken).val, "none")))
-    ) {
+    if (components.length < 3) {
         return null;
     }
 
-    const alphaValue = minmax(
-        alpha.typ === EnumToken.IdenTokenType ? 1 : getNumber(alpha as NumberToken | PercentageToken | IdentToken),
-        0,
-        1,
-    );
+    const alphaValue =
+        alpha == null
+            ? 1
+            : alpha.typ === EnumToken.IdenTokenType && equalsIgnoreCase((alpha as IdentToken).val, "none")
+              ? 0
+              : minmax(getNumber(alpha as NumberToken | PercentageToken | IdentToken), 0, 1);
 
     components.length = 3;
 

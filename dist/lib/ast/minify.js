@@ -330,6 +330,9 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
         let node = null;
         let nodeIndex = -1;
         for (; i < ast.chi.length; i++) {
+            if (ast.chi[i] == null) {
+                console.debug(new Error("node is null"));
+            }
             if (ast.chi[i].typ === EnumToken.CommentNodeType ||
                 ast.chi[i].typ === EnumToken.InvalidRuleNodeType ||
                 ast.chi[i].typ === EnumToken.InvalidAtRuleNodeType ||
@@ -672,7 +675,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                             }
                         }
                     }
-                    if (recursive && previous != node) {
+                    if (recursive && previous != null && previous != node) {
                         if (!hasDeclaration(previous)) {
                             doMinify(previous, options, recursive, errors, nestingContent, context);
                         }

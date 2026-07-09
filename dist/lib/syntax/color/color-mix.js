@@ -50,6 +50,11 @@ function interpolateHue(interpolationMethod, h1, h2) {
     }
     return [h1, h2];
 }
+/**
+ * Compute color mix
+ * @param args
+ * @returns
+ */
 function colorMix(...args) {
     // invalid color or custom color profile
     if (args.length == 0 || args[0].typ === EnumToken.DashedIdenTokenType) {

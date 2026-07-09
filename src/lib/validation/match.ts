@@ -1500,7 +1500,7 @@ function matchSyntax(
     }
 
     // console.debug(`>> ` + syntaxes.reduce((acc, b) => acc + renderSyntax(b), ""));
-    // console.debug(`>>>` + context.getRemainingTokens().reduce((acc, b) => acc + renderToken(b), ""));
+    // console.debug(`>>>` + context.getRemainingTokens().reduce((acc, b) => acc + renderValue(b), ""));
 
     while (++i < syntaxes.length) {
         if (syntaxes[i].typ == ValidationTokenEnum.Whitespace) {
@@ -1797,9 +1797,8 @@ function matchSyntax(
                     success = true;
                     (options.visited!.get(token) as Set<ValidationToken>)!.delete(syntaxes[i]);
                     context.next();
-                    
+
                     if (context.done()) {
-                        
                         return {
                             success: true,
                             valid: true,
@@ -1807,7 +1806,7 @@ function matchSyntax(
                             context,
                             syntaxToken: syntaxes[i + 1],
                             errors: [],
-                        }
+                        };
                     }
 
                     break;
@@ -1831,9 +1830,8 @@ function matchSyntax(
                     success = true;
                     (options.visited!.get(token) as Set<ValidationToken>)!.delete(syntaxes[i]);
                     context.next();
-                    
+
                     if (context.done()) {
-                        
                         return {
                             success: true,
                             valid: true,
@@ -1841,7 +1839,7 @@ function matchSyntax(
                             context,
                             syntaxToken: syntaxes[i + 1],
                             errors: [],
-                        }
+                        };
                     }
 
                     break;
@@ -2097,6 +2095,15 @@ function matchSyntax(
 
                         if (result!.context.done()) {
                             context.end();
+
+                            return {
+                                success: true,
+                                valid: true,
+                                token: null,
+                                context,
+                                syntaxToken: syntaxes[i + 1],
+                                errors: [],
+                            };
                         } else {
                             context.update(result!.context.current() as Token);
                         }
@@ -2741,9 +2748,9 @@ function matchProperty(
     options: ParserOptions | ValidationOptions,
 ): ValidationMatch {
     let success: boolean = false;
-
+    let t: EnumToken = context.peek()?.typ as EnumToken;
     let checkCalc: boolean =
-        context.peek()?.typ == EnumToken.MathFunctionTokenDefType &&
+        (t == EnumToken.MathFunctionTokenDefType || t == EnumToken.MathFunctionTokenType) &&
         [
             "number",
             "zero",
@@ -2762,30 +2769,49 @@ function matchProperty(
     }
 
     if (checkCalc) {
-        const range = context.peekRange();
+        let result: ValidationMatch;
+        const syntax = (
+            getParsedSyntax(
+                ValidationSyntaxGroupEnum.Syntaxes,
+                (context.peek() as FunctionToken).val + "()",
+            ) as ValidationFunctionToken[]
+        )?.[0]?.chi as ValidationToken[];
 
-        const result = matchSyntax(
-            (
-                getParsedSyntax(
-                    ValidationSyntaxGroupEnum.Syntaxes,
-                    (context.peek() as FunctionToken).val + "()",
-                ) as ValidationFunctionToken[]
-            )?.[0]?.chi,
-            createValidationContext(range.slice(1, -1)),
-            options as ValidationOptions,
-        );
+        if (t === EnumToken.MathFunctionTokenType) {
+            result = matchSyntax(
+                syntax,
+                createValidationContext((context.peek() as FunctionToken).chi),
+                options as ValidationOptions,
+            );
 
-        if (result.success) {
-            context.update(range.at(-1) as Token);
+            if (result.success) {
+                context.next();
 
-            return {
-                success: true,
-                valid: true,
-                token: range.at(-1) as Token,
-                context,
-                syntaxToken: null,
-                errors: [],
-            };
+                return {
+                    success: true,
+                    valid: true,
+                    token: context.peek() as Token,
+                    context,
+                    syntaxToken: null,
+                    errors: [],
+                };
+            }
+        } else {
+            const range = context.peekRange();
+            result = matchSyntax(syntax, createValidationContext(range.slice(1, -1)), options as ValidationOptions);
+
+            if (result.success) {
+                context.update(range.at(-1) as Token);
+
+                return {
+                    success: true,
+                    valid: true,
+                    token: range.at(-1) as Token,
+                    context,
+                    syntaxToken: null,
+                    errors: [],
+                };
+            }
         }
 
         return {
@@ -3915,6 +3941,7 @@ function matchRepeatableSyntax(
     let result: ValidationMatch | null = null;
     let tmpResult: ValidationMatch;
     let success: boolean = !!isRepeatable;
+    let index: number = context.index;
 
     do {
         tmpResult = matchSyntax([rest], context.slice(), options);
@@ -3933,6 +3960,12 @@ function matchRepeatableSyntax(
             } else {
                 context.update(result.context.current() as Token);
             }
+
+            if (index === context.index) {
+                break;
+            }
+
+            index = context.index;
         }
     } while (tmpResult.success && !context.done());
 

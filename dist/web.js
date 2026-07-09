@@ -35,7 +35,7 @@ async function load(url, currentDirectory = ".", responseType = false) {
         responseType = responseType ? ResponseType.ReadableStream : ResponseType.Text;
     }
     let t;
-    if (typeof url == 'object') {
+    if (typeof url == "object") {
         t = new URL(url.absolute, self.origin);
     }
     else if (matchUrl.test(url)) {

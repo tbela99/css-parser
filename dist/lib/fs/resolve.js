@@ -81,7 +81,7 @@ const normalize = memoize(function (path) {
         }
         else {
             if (parts.length == 0) {
-                parts.push('');
+                parts.push("");
             }
             parts[parts.length - 1] += chr;
         }

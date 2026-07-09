@@ -1117,7 +1117,7 @@ function matchSyntax(syntaxes, context, options) {
         };
     }
     // console.debug(`>> ` + syntaxes.reduce((acc, b) => acc + renderSyntax(b), ""));
-    // console.debug(`>>>` + context.getRemainingTokens().reduce((acc, b) => acc + renderToken(b), ""));
+    // console.debug(`>>>` + context.getRemainingTokens().reduce((acc, b) => acc + renderValue(b), ""));
     while (++i < syntaxes.length) {
         if (syntaxes[i].typ == ValidationTokenEnum.Whitespace) {
             continue;
@@ -1587,6 +1587,14 @@ function matchSyntax(syntaxes, context, options) {
                         options.visited.get(token).delete(syntaxes[i]);
                         if (result.context.done()) {
                             context.end();
+                            return {
+                                success: true,
+                                valid: true,
+                                token: null,
+                                context,
+                                syntaxToken: syntaxes[i + 1],
+                                errors: [],
+                            };
                         }
                         else {
                             context.update(result.context.current());
@@ -2076,7 +2084,8 @@ function matchAmpersandSyntax(syntax, context, options) {
 }
 function matchProperty(property, context, options) {
     let success = false;
-    let checkCalc = context.peek()?.typ == EnumToken.MathFunctionTokenDefType &&
+    let t = context.peek()?.typ;
+    let checkCalc = (t == EnumToken.MathFunctionTokenDefType || t == EnumToken.MathFunctionTokenType) &&
         [
             "number",
             "zero",
@@ -2093,18 +2102,36 @@ function matchProperty(property, context, options) {
         checkCalc = context.peek().val === "calc";
     }
     if (checkCalc) {
-        const range = context.peekRange();
-        const result = matchSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, context.peek().val + "()")?.[0]?.chi, createValidationContext(range.slice(1, -1)), options);
-        if (result.success) {
-            context.update(range.at(-1));
-            return {
-                success: true,
-                valid: true,
-                token: range.at(-1),
-                context,
-                syntaxToken: null,
-                errors: [],
-            };
+        let result;
+        const syntax = getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, context.peek().val + "()")?.[0]?.chi;
+        if (t === EnumToken.MathFunctionTokenType) {
+            result = matchSyntax(syntax, createValidationContext(context.peek().chi), options);
+            if (result.success) {
+                context.next();
+                return {
+                    success: true,
+                    valid: true,
+                    token: context.peek(),
+                    context,
+                    syntaxToken: null,
+                    errors: [],
+                };
+            }
+        }
+        else {
+            const range = context.peekRange();
+            result = matchSyntax(syntax, createValidationContext(range.slice(1, -1)), options);
+            if (result.success) {
+                context.update(range.at(-1));
+                return {
+                    success: true,
+                    valid: true,
+                    token: range.at(-1),
+                    context,
+                    syntaxToken: null,
+                    errors: [],
+                };
+            }
         }
         return {
             success: false,
@@ -2995,6 +3022,7 @@ function matchRepeatableSyntax(syntax, context, options) {
     let result = null;
     let tmpResult;
     let success = !!isRepeatable;
+    let index = context.index;
     do {
         tmpResult = matchSyntax([rest], context.slice(), options);
         if (tmpResult.success) {
@@ -3010,6 +3038,10 @@ function matchRepeatableSyntax(syntax, context, options) {
             else {
                 context.update(result.context.current());
             }
+            if (index === context.index) {
+                break;
+            }
+            index = context.index;
         }
     } while (tmpResult.success && !context.done());
     return {

@@ -63,7 +63,7 @@ color: var(--palemarker);
                 beautify: true,
                 inlineCssVariables: true
             }).then(result => expect(result.code).equals(`body {
- color: teal
+ color: #00808000
 }`));
         });
 

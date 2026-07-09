@@ -18,6 +18,7 @@ test/*.md
 /badges
 /.nyc_output
 /.repl_history
+/CPU.*
 
 # Logs
 logs

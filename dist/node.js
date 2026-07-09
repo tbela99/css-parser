@@ -35,7 +35,7 @@ export { FeatureWalkMode } from './lib/ast/features/type.js';
  * ```
  */
 async function load(url, currentDirectory = ".", responseType = false) {
-    const resolved = typeof url == 'string' ? resolve(url, currentDirectory) : url;
+    const resolved = typeof url == "string" ? resolve(url, currentDirectory) : url;
     if (typeof responseType == "boolean") {
         responseType = responseType ? ResponseType.ReadableStream : ResponseType.Text;
     }

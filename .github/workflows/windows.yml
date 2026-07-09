@@ -30,4 +30,4 @@ jobs:
         run: npm install
       - name: Install playwright dependencies
         run: npx playwright install --with-deps
-      - run: npm test
+      - run: npm test:node

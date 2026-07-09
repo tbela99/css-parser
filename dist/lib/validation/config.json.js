@@ -4455,7 +4455,7 @@ var atRules = {
 		}
 	},
 	"@font-feature-values": {
-		syntax: " @font-feature-values <family-name># { <declaration-rule-list> } ",
+		syntax: " @font-feature-values <family-name># { <@historical-forms> | <@styleset> | <@character-variant> | <@swash> | <@ornaments> | <@annotation> } ",
 		descriptors: {
 			"font-display": {
 				syntax: "auto | block | swap | fallback | optional"
@@ -4595,9 +4595,6 @@ var atRules = {
 				syntax: "<url>"
 			}
 		}
-	},
-	"@stylistic": {
-		syntax: " @stylistic { <declaration-list> } "
 	},
 	"@historical-forms": {
 		syntax: " @historical-forms { <declaration-list> }"

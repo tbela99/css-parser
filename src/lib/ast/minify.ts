@@ -494,6 +494,10 @@ function doMinify(
         let nodeIndex: number = -1;
 
         for (; i < ast.chi!.length; i++) {
+            if (ast.chi[i] == null) {
+                console.debug(new Error("node is null"));
+            }
+
             if (
                 ast.chi![i].typ === EnumToken.CommentNodeType ||
                 ast.chi![i].typ === EnumToken.InvalidRuleNodeType ||
@@ -950,7 +954,7 @@ function doMinify(
                         }
                     }
 
-                    if (recursive && previous != node) {
+                    if (recursive && previous != null && previous != node) {
                         if (!hasDeclaration(previous as AstRule)) {
                             doMinify(previous, options, recursive, errors, nestingContent, context);
                         }

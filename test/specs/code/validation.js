@@ -181,7 +181,8 @@ html, body, div, span, applet, object, iframe,
  border-top-width: 0;
  border-left-width: 0;
  border-right-width: 0;
- border-color: #34edc7
+ border-color: #34edc7;
+ border-style: medium
 }`));
         });
 
@@ -581,9 +582,9 @@ html, body, div, span, applet, object, iframe,
 }`)).then(() => done(), () => done());
         });
 
-        it('selector validation #29', function (done) {
+        it('selector validation #29', function () {
 
-            transform(`
+            return transform(`
 @document url(https://www.example.com/) {
  h1 {
   color: green
@@ -592,11 +593,53 @@ html, body, div, span, applet, object, iframe,
 `, {
     beautify: true,
                 validation: true
-            }).then(result => expect(result.code).equals(`@document https://www.example.com/ {
+            }).then(result => expect(result.code).equals(`@document url(https://www.example.com/) {
  h1 {
   color: green
  }
-}`)).then(() => done(), () => done());
+}`));
+        });
+
+        it('selector validation #30', function () {
+
+            return transform(`
+
+.pure-table-bordered tbody > tr:last-child > td {
+    border-bottom-width: 0;
+    border-top-width: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-color: #34edc7;
+    border-style: medium;
+}
+`, {
+    beautify: true,
+                validation: true
+            }).then(result => expect(result.code).equals(`.pure-table-bordered tbody>tr:last-child>td {
+ border-width: 0;
+ border-color: #34edc7;
+ border-style: medium
+}`));
+        });
+
+        it('selector validation #31', function () {
+
+            return transform(`
+
+.pure-table-bordered tbody > tr:last-child > td {
+    border-bottom-width: 0;
+    border-top-width: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-color: #34edc7;
+    border-style: groove;
+}
+`, {
+    beautify: true,
+                validation: true
+            }).then(result => expect(result.code).equals(`.pure-table-bordered tbody>tr:last-child>td {
+ border: #34edc7 groove 0
+}`));
         });
     });
 

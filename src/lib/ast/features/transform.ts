@@ -7,7 +7,7 @@ import type {
     ParserOptions,
     Token,
 } from "../../../@types/index.d.ts";
-import { EnumToken } from "../types.ts";
+import { EnumAstNodeStatus, EnumToken } from "../types.ts";
 import { consumeWhitespace } from "../../validation/utils/whitespace.ts";
 import { compute } from "../transform/compute.ts";
 import { filterValues, renderValue } from "../../renderer/render.ts";
@@ -45,6 +45,10 @@ export class TransformCssFeature {
         for (; i < ast.chi.length; i++) {
             // @ts-ignore
             node = ast.chi[i] as AstNode | AstDeclaration;
+
+            if (node.state == EnumAstNodeStatus.Invalid || node.state == EnumAstNodeStatus.ValidationFailed) {
+                continue;
+            }
 
             if (
                 node.typ != EnumToken.DeclarationNodeType ||

@@ -1,20 +1,13 @@
 import type {
-    AtRuleToken,
     ErrorDescription,
     IdentToken,
-    ParserOptions,
     Token,
-    ValidationOptions,
 } from "../../../@types/index.d.ts";
 import { EnumToken } from "../../ast/types.ts";
 import { tokensfuncDefMap } from "../../syntax/constants.ts";
 import { equalsIgnoreCase } from "./text.ts";
 
-export function matchGenericSyntax(
-    atRule: AtRuleToken,
-    stream: Token[],
-    options: ParserOptions | ValidationOptions,
-): {
+export function matchGenericSyntax(stream: Token[]): {
     success: boolean;
     errors: ErrorDescription[];
 } {

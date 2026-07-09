@@ -452,6 +452,7 @@ function factor(tokens, ops) {
         }
         isOp = opList.includes(tokens[i].typ === EnumToken.Plus ? EnumToken.Add : tokens[i].typ);
         if (isOp ||
+            tokens[i].typ === EnumToken.Star ||
             // @ts-ignore
             (tokens[i].typ == EnumToken.LiteralTokenType && ops.includes(tokens[i].val))) {
             tokens.splice(i - 1, 3, {

@@ -4,8 +4,11 @@
 
 ### Validation changes
 
-- [ ] allow unknown functions by default - avoid breaking new features.
-- [ ] do not drop tokens that did not pass validation and do not alter their types. only report them.
+- [x] Change validation strategy to manage tokens based upon their validation status and remove the use of invalid token types.
+  - [ ] Unknown tokens are preserved
+  - [ ] Invalid and Malformed tokens are discared
+  - [ ] Validated tokens are preserved
+  - [ ] ValidationFailed tokens are preserved
 
 ## Sourcemap
 
@@ -13,8 +16,8 @@
 
 ### Color
 
-- [x] alpha() minify alpha() color function https://www.w3.org/TR/css-color-5/#funcdef-alpha
-- [x] color-mix() implement new color-mix() syntax https://www.w3.org/TR/css-values-5/#color-mix
+- [x] alpha(): minify alpha() color function https://www.w3.org/TR/css-color-5/#funcdef-alpha
+- [x] color-mix(): implement new color-mix() syntax https://www.w3.org/TR/css-values-5/#color-mix
 
 ### Webkit gradient prefix removal
 

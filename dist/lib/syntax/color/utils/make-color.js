@@ -2,15 +2,22 @@ import { EnumToken, ColorType } from '../../../ast/types.js';
 import { equalsIgnoreCase } from '../../../parser/utils/text.js';
 import { minmax, getNumber } from '../color.js';
 
+/**
+ * Create a color token
+ * @param kind
+ * @param components
+ * @param alpha
+ * @returns
+ */
 function makeColor(kind, components, alpha) {
-    if (components.length < 3 ||
-        alpha == null ||
-        (alpha.typ != EnumToken.NumberTokenType &&
-            alpha.typ != EnumToken.PercentageTokenType &&
-            !(alpha.typ === EnumToken.IdenTokenType && equalsIgnoreCase(alpha.val, "none")))) {
+    if (components.length < 3) {
         return null;
     }
-    const alphaValue = minmax(alpha.typ === EnumToken.IdenTokenType ? 1 : getNumber(alpha), 0, 1);
+    const alphaValue = alpha == null
+        ? 1
+        : alpha.typ === EnumToken.IdenTokenType && equalsIgnoreCase(alpha.val, "none")
+            ? 0
+            : minmax(getNumber(alpha), 0, 1);
     components.length = 3;
     if (alphaValue !== 1) {
         components.push({ typ: EnumToken.NumberTokenType, val: alphaValue });
