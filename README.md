@@ -45,6 +45,7 @@ $ deno add @tbela99/css-parser
 CSS-Parser can transform these modern CSS features into lower-level CSS syntax:
 * **Nested CSS transpilation** to legacy-compatible syntax.
 * **`if()` function transpilation** for broader browser compatibility.
+* **`color-mix()` function conversion** convert new color-mix() syntax to any of the supported colors.
   
 ## Benchmark
 
@@ -56,11 +57,11 @@ A sample result:
 
 | File | ligthningcss | CSS Parser |
 | --- | --- | --- |
-| tailwind.css - 2380419 bytes | 1864728 bytes | 1501464 bytes |
-| bootstrap-4.css - 200078 bytes | 153616 bytes | 144716 bytes |
-| bootstrap-5.css - 205481 bytes | 159987 bytes | 150964 bytes |
+| tailwind.css - 2380419 bytes | 1864728 bytes | 1633251 bytes |
+| bootstrap-4.css - 200078 bytes | 153616 bytes | 144700 bytes |
+| bootstrap-5.css - 205481 bytes | 159987 bytes | 151258 bytes |
 
-On the complete benchmark suite, css-parser generated a total output size of 2,072,973 bytes, compared to 2,494,113 bytes for Lightning CSS and larger outputs for all other tested minifiers. 
+On the [complete benchmark suite](https://tbela99.github.io/css-parser/benchmark/index.html), css-parser generated a total output size of 2,204,888 bytes, compared to 2,494,113 bytes for Lightning CSS and larger outputs for all other tested minifiers. 
 While some tools prioritize raw execution speed, css-parser focuses on maximizing compression while preserving stylesheet semantics, resulting in consistently smaller production bundles.
 
 ## Playground
@@ -69,60 +70,19 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 
 ## Documentation
 
-- [Installation](https://tbela99.github.io/css-parser/docs/documents/Guide.Getting_Started.html)
+- [Installation](https://tbela99.github.io/css-parser/docs/documents/Guide.Getting_started.html#installation)
 - [Usage](https://tbela99.github.io/css-parser/docs/documents/Guide.Usage.html)
-- [Parsing](https://tbela99.github.io/css-parser/docs/documents/Guide.Parsing.html)
-  - [Parsing options](https://tbela99.github.io/css-parser/docs/documents/Guide.Parsing.html#parsing-options)
-  - [Parsing files](https://tbela99.github.io/css-parser/docs/documents/Guide.Parsing.html#parsing-files)
-  - [Parsing streams](https://tbela99.github.io/css-parser/docs/documents/Guide.Parsing.html#parsing-from-a-readable-stream)
-- [Rendering](https://tbela99.github.io/css-parser/docs/documents/Guide.Rendering.html)
-  - [Rendering options](https://tbela99.github.io/css-parser/docs/documents/Guide.Rendering.html#renderoptions)
-  - [Pretty printing](https://tbela99.github.io/css-parser/docs/documents/Guide.Rendering.html#pretty-printing)
-  - [Converting colors](https://tbela99.github.io/css-parser/docs/documents/Guide.Rendering.html#converting-colors)
+- [Parsing Strings](https://tbela99.github.io/css-parser/docs/documents/Guide.Usage.html#parsing)
+  - [Parsing files](https://tbela99.github.io/css-parser/docs/documents/Guide.Usage.html#parsing-files)
+  - [Parsing streams](https://tbela99.github.io/css-parser/docs/documents/Guide.Usage.html#parsing-from-a-readable-stream)
+  - [Transform](https://tbela99.github.io/css-parser/docs/documents/Guide.Usage.html#transform)
+- [Rendering AST](https://tbela99.github.io/css-parser/docs/documents/Guide.Usage.html#rendering-ast)
 - [Validation](https://tbela99.github.io/css-parser/docs/documents/Guide.Validation.html)
 - [CSS Modules](https://tbela99.github.io/css-parser/docs/documents/Guide.CSS_Modules.html)
-  - [Scopes](https://tbela99.github.io/css-parser/docs/documents/Guide.CSS_Modules.html#scope)
-  - [Class composition](https://tbela99.github.io/css-parser/docs/documents/Guide.CSS_Modules.html#class-composition)
-  - [Naming](https://tbela99.github.io/css-parser/docs/documents/Guide.CSS_Modules.html#naming)
-  - [Pattern](https://tbela99.github.io/css-parser/docs/documents/Guide.CSS_Modules.html#pattern)
-- Syntax lowering
-  - [Expand CSS nesting rules](https://tbela99.github.io/css-parser/docs/documents/Guide.Parsing.html#expand-css-nesting-rules)
-  - [Expand CSS if() syntax](https://tbela99.github.io/css-parser/docs/documents/Guide.Parsing.html#css-if-function-expansion)
 - [Minification](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html)
-
-  - [Keyframes](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#keyframes)
-  - [Inline css variables](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#css-variables-inlining)
-  - [Transform functions](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#transform-functions)
-  - [Math functions](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#math-functions)
-  - Gradient functions
-  - [Colors](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#color-minification)
-  - [Numbers and Dimensions](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#css-values)
-  - [Multi-pass minification](https://tbela99.github.io/css-parser/docs/interfaces/node.MinifyOptions.html#pass)
-  - [Merge adjacent rules](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#merging-adjacent-rules)
-  - [Compute shorthand](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#shorthands): see the list [below](#computed-shorthands-properties)
-  - [Remove redundant declarations](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#redundant-declarations)
-  - [Conditionally wrap or unwrap selectors using :is()](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#conditional-wrapping-or-unwrapping-selectors-using-is)
-  - [Automatic css nesting](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#css-nesting)
-  - Avoid reparsing (declarations, selectors, at-rule)
-  - [Decode and replace utf-8 escape sequence](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html#utf-8-escape-sequence)
-  - [CSS prefix removal (Experimental)](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html##experimental-css-prefix-removal)
 - [Custom Transform](https://tbela99.github.io/css-parser/docs/documents/Guide.Custom_Transform.html)
-- [Ast](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.html)
-  - [Ast traversal](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Traversal.html)
-    - [walk()](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Traversal.html)
-    - [find()](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Traversal.html#find)
-    - [findAll()](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Traversal.html#findall)
-    - [findLast()](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Traversal.html#findlast)
-    - [walkValues()](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Traversal.html#walkvalues)
-    - [findByValue()](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Traversal.html#findbyvalue)
-    - [findValue()](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Traversal.html#findvalue)
-  - [Ast utilities](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast.Ast_Utilities.html)
- - Color manipulation
-   - Supported colors
-   - Color distance
-   - Converting colors
-
-
+- [Ast Manipulation](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast_Manipulation.html)
+  - [Utility Functions](https://tbela99.github.io/css-parser/docs/documents/Guide.Utility_Functions.html)
 ## AST
 
 ### Comment
@@ -135,18 +95,24 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 - typ: number
 - nam: string, declaration name
 - val: array of tokens
+- state: EnumAstNodeStatus, validation state
+- errors: ErrorDescription[], validation errors
 
 ### Rule
 
 - typ: number
 - sel: string, css selector
 - chi: array of children
+- state: EnumAstNodeStatus, validation state
+- errors: ErrorDescription[], validation errors
 
 ### AtRule
 
 - typ: number
 - nam: string. AtRule name
 - val: rule prelude
+- state: EnumAstNodeStatus, validation state
+- errors: ErrorDescription[], validation errors
 
 ### AtRuleStyleSheet
 
@@ -158,12 +124,12 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 - typ: number
 - sel: string, css selector
 - chi: array of children
+- state: EnumAstNodeStatus, validation state
+- errors: ErrorDescription[], validation errors
 
 ## Sourcemap
 
 - [x] Sourcemap generation
-
-## Minification
 
 ## Computed shorthands properties
 
@@ -219,4 +185,4 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 
 ## Performance
 
-- [x] flatten @import
+- [x] bundle file referenced by the @import statement.

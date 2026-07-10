@@ -1,17 +1,17 @@
-import { isIdentColor, isColor, parseColor } from '../syntax/syntax.js';
+import { isIdentColor, parseColor, isColor } from '../syntax/syntax.js';
 import { camelize, equalsIgnoreCase, dasherize } from './utils/text.js';
 import { renderValue } from '../renderer/render.js';
-import { EnumToken, ValidationLevel, EnumAstNodeStatus, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from '../ast/types.js';
+import { EnumToken, EnumAstNodeStatus, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from '../ast/types.js';
 import { minify } from '../ast/minify.js';
 import { expand } from '../ast/expand.js';
 import { WalkerEvent, walk, walkValues } from '../ast/walk.js';
-import { tokenize, tokenizeStream } from './tokenize.js';
+import { tokenizeStream, tokenize } from './tokenize.js';
 import { definedPropertySettings, tokensfuncDefMap, pageMarginBoxType } from '../syntax/constants.js';
 import { hashAlgorithms, hash } from './utils/hash.js';
 import { parseSelector } from './utils/selector.js';
 import { parseDeclaration } from './utils/declaration.js';
 import { getSyntaxRule } from '../validation/config.js';
-import { matchSelectorSyntax, trimArray, matchAllSyntax, createValidationContext } from '../validation/match.js';
+import { matchSelectorSyntax, trimArray, matchAllSyntaxes, createValidationContext } from '../validation/match.js';
 import { ValidationSyntaxGroupEnum } from '../validation/parser/typedef.js';
 import { matchAtRuleImportSyntax } from './utils/at-rule-import.js';
 import { matchAtRuleWhenElseSyntax } from './utils/at-rule-when-else.js';
@@ -232,8 +232,8 @@ async function doParse(iter, options = {}) {
         lenient: true,
         ...options,
     };
-    if (typeof options.validation == "boolean") {
-        options.validation = options.validation ? ValidationLevel.All : ValidationLevel.None;
+    if (typeof options.validation !== "boolean") {
+        options.validation = !!options.validation;
     }
     if (options.module) {
         options.expandNestingRules = true;
@@ -772,6 +772,9 @@ async function doParse(iter, options = {}) {
     if (invalidNodes.length > 0) {
         let k = invalidNodes.length;
         while (k-- > 0) {
+            if (invalidNodes[k].state == EnumAstNodeStatus.Validated || invalidNodes[k].state == EnumAstNodeStatus.Unvalidated || invalidNodes[k].state == EnumAstNodeStatus.ValidationFailed) {
+                continue;
+            }
             if (options.lenient && invalidNodes[k].state == EnumAstNodeStatus.Unknown) {
                 continue;
             }
@@ -1604,8 +1607,7 @@ function parseNode(tokens, context, options, errors, stats, invalidNodes) {
             const node = parseDeclaration(tokens, context, options, errors);
             Object.defineProperty(node, "parent", { ...definedPropertySettings, value: context });
             if (context.typ === EnumToken.StyleSheetNodeType && node.typ === EnumToken.DeclarationNodeType) {
-                // @ts-expect-error
-                node.typ = EnumToken.InvalidDeclarationNodeType;
+                node.state = EnumAstNodeStatus.Invalid;
                 errors.push({
                     message: "<declaration> not allowed in <stylesheet>",
                     action: "drop",
@@ -1925,7 +1927,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
         }
         case "custom-media": {
             const tokens = trimArray(stream.slice(1));
-            const result = matchAllSyntax(syntax, createValidationContext(tokens), options);
+            const result = matchAllSyntaxes(syntax, createValidationContext(tokens), options);
             if (result.errors.length > 0) {
                 errors.push(...result.errors);
             }
@@ -1990,7 +1992,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             });
         }
         case "namespace": {
-            const result = matchAllSyntax(syntax, createValidationContext(stream), options);
+            const result = matchAllSyntaxes(syntax, createValidationContext(stream), options);
             if (!result.success) {
                 errors.push(...result.errors);
             }
@@ -2097,7 +2099,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             if (result.errors.length > 0) {
                 errors.push(...result.errors);
             }
-            let success = true;
+            let success = result.success;
             if (atRule.nam === "else") {
                 const siblings = context.chi;
                 let sibling = null;
@@ -2418,7 +2420,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             // @value <ident>: <string>; // import from file as alias
             // @value id : <declaration-value>; // variable declaration
             // @value <ident># from <ident>; // import variables from alias
-            let result = matchAllSyntax(syntaxRules?.getPreludeRules()?.slice?.(1), createValidationContext(stream), options);
+            let result = matchAllSyntaxes(syntaxRules?.getPreludeRules()?.slice?.(1), createValidationContext(stream), options);
             if (!result.success) {
                 errors.push(...result.errors);
                 return Object.defineProperties({
@@ -2567,8 +2569,7 @@ async function parseDeclarations(declaration) {
         currentPosition: { ind: -1, lin: 1, col: 0 },
     }), { setParent: false, minify: false, validation: false }).then((result) => {
         return result.ast.chi[0].chi.filter((t) => t.typ == EnumToken.DeclarationNodeType ||
-            t.typ == EnumToken.CommentNodeType ||
-            t.typ == EnumToken.InvalidDeclarationNodeType);
+            t.typ == EnumToken.CommentNodeType);
     });
 }
 /**
@@ -2577,8 +2578,8 @@ async function parseDeclarations(declaration) {
  * @param options
  *    - parseColor: parse identifiers as colors
  *    - src: source url used for source map
- *
- * @private
+ * @param errors capture parse errors in the provided array
+
  *
  * Example:
  *
@@ -2589,11 +2590,11 @@ async function parseDeclarations(declaration) {
  * let tokens = parseString('body { color: red; }');
  * console.log(tokens);
  *
- *  tokens = parseString('#c322c980');
+ * tokens = parseString('#c322c980');
  * console.log(tokens);
  * ```
  */
-function parseString(src, options, errors) {
+function parseString(src, options = { parseColor: true }, errors) {
     const parseInfo = {
         stream: src,
         src: options?.src ?? "",
@@ -2639,6 +2640,7 @@ function parseTokens(tokens, options, errors) {
     let i = 0;
     let index;
     let t;
+    options ??= { parseColor: true };
     for (; i < tokens.length; i++) {
         t = tokens[i];
         if (t.typ === EnumToken.FunctionTokenDefType) {
@@ -2682,6 +2684,9 @@ function parseTokens(tokens, options, errors) {
                 chi: trimArray(tokens.splice(index + 1, i - index - 1)),
             });
             i = index;
+            if (tokens[index].typ === EnumToken.ColorTokenType && options?.parseColor) {
+                parseColor(tokens[index]);
+            }
             stack.pop();
             continue;
         }

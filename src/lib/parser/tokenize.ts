@@ -486,7 +486,7 @@ export function next(parseInfo: ParseInfo, count: number = 1): string {
 }
 
 /**
- * tokenize css string
+ * Tokenize css string
  * @param parseInfo
  * @param yieldEOFToken
  */

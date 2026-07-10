@@ -384,7 +384,7 @@ function next(parseInfo, count = 1) {
     return char;
 }
 /**
- * tokenize css string
+ * Tokenize css string
  * @param parseInfo
  * @param yieldEOFToken
  */

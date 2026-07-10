@@ -18,30 +18,65 @@ export interface ValidationDimensionRangeMatch {
         max: ValidationDimensionToken | null;
 }
 
+/**
+ * Validation token
+ */
 export interface ValidationToken {
 
+    /**
+     * token type
+     */
     typ: ValidationTokenEnum;
+    /**
+     * token position
+     */
     pos: Position;
-    // a#
+    /**
+     * match a comma separated list
+     */
     isList?: boolean;
+    /**
+     * 
+     * @private
+     */
     text?: string;
     // https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Values_and_units/Value_definition_syntax
-    // a*
+    /**
+     * token matches 0 or more times
+     */
     isRepeatable?: boolean;
     // https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Values_and_units/Value_definition_syntax
-    // a+
+    /**
+     * token matches 1 or more times
+     */
     isRepeatableAtLeastOnce?: boolean;
     // https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Values_and_units/Value_definition_syntax
-    // a?
+   /**
+    * token is optional
+    */
     isOptional?: boolean;
     // https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Values_and_units/Value_definition_syntax
-    // a!
+   
+    /**
+     * token is a mandatory group
+     */
     isMandatatoryGroup?: boolean;
-    // a{1,2}
+    /**
+     * token matching rules
+     */
     match?: {
+        /**
+         * token matches at least the specified number of times
+         */
         min: ValidationNumberToken;
+        /**
+         * token matches at most the specified number of times.
+         */
         max: ValidationNumberToken | null;
     },
+    /**
+     * tokan's value range
+     */
     range?: ValidationValueRangeMatch |  ValidationDimensionRangeMatch
 }
 
@@ -110,9 +145,18 @@ export interface ValidationRootToken extends ValidationToken {
     chi: ValidationToken[];
 }
 
+/**
+ * Number token
+ */
 export interface ValidationNumberToken extends ValidationToken {
 
+    /**
+     * token type
+     */
     typ: ValidationTokenEnum.Number;
+    /**
+     * token value
+     */
     val: number;
 }
 

@@ -3,7 +3,7 @@ import { EnumToken } from "../../ast/types.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";
 import { getSyntaxRule } from "../../validation/config.ts";
-import { createValidationContext, matchAllSyntax, trimArray } from "../../validation/match.ts";
+import { createValidationContext, matchAllSyntaxes, trimArray } from "../../validation/match.ts";
 
 export function matchAtRuleSyntax(atRule: AtRuleToken, stream: Token[], options: ParserOptions | ValidationOptions): {
     success: boolean;
@@ -38,7 +38,7 @@ export function matchAtRuleSyntax(atRule: AtRuleToken, stream: Token[], options:
         return { success: true, errors: [] };
     }
 
-    const { success, errors, ...all } = matchAllSyntax(syntax, createValidationContext(stream), options);
+    const { success, errors, ...all } = matchAllSyntaxes(syntax, createValidationContext(stream), options);
 
     return { success, errors };
 }

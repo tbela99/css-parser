@@ -1,9 +1,10 @@
 import { convertColor, getNumber } from './color.js';
-import { ColorType, EnumToken } from '../../ast/types.js';
+import { EnumToken, ColorType } from '../../ast/types.js';
 import { walkValues } from '../../ast/walk.js';
 import { evaluateFunc, evaluate } from '../../ast/math/expression.js';
-import { colorRange, mathFuncs } from '../constants.js';
+import { colorsFunc, colorFuncColorSpace, colorRange, mathFuncs } from '../constants.js';
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
+import { getColorComponents } from './utils/components.js';
 
 /**
  * Parse relative color components
@@ -28,6 +29,66 @@ function parseRelativeColorComponents(relativeKeys, original, rExp, gExp, bExp, 
         : ["srgb", "srgb-linear", "display-p3", "a98-rgb", "prophoto-rgb", "rec2020", "rgb"].some((t) => equalsIgnoreCase(t, relativeKeys))
             ? "rgb"
             : relativeKeys.slice(-3);
+    const allComponents = [rExp, gExp, bExp, aExp];
+    const components = getColorComponents(original);
+    const validKeys = names.split("");
+    let val = "";
+    if (components != null) {
+        allComponents.push(...components);
+    }
+    // ensure all components are valid for the color space
+    for (const component of allComponents) {
+        if (component == null) {
+            continue;
+        }
+        if (component.typ == EnumToken.IdenTokenType) {
+            val = component.val.toLowerCase();
+            if (
+            // @ts-expect-error
+            typeof Math[val.toUpperCase()] !== "number" &&
+                val != "in" &&
+                val != "hue" &&
+                val != "from" &&
+                val != "alpha" &&
+                val != "none" &&
+                val != "shorter" &&
+                val != "longer" &&
+                val != "increasing" &&
+                val != "decreasing" &&
+                !colorsFunc.includes(val) &&
+                !colorFuncColorSpace.includes(val) &&
+                !validKeys.includes(val)) {
+                return null;
+            }
+            continue;
+        }
+        if (component.typ === EnumToken.MathFunctionTokenType &&
+            equalsIgnoreCase("calc", component.val)) {
+            for (const { value } of walkValues(component.chi)) {
+                if (value.typ == EnumToken.IdenTokenType) {
+                    val = value.val.toLowerCase();
+                    if (
+                    // @ts-expect-error
+                    typeof Math[val.toUpperCase()] !== "number" &&
+                        val != "in" &&
+                        val != "hue" &&
+                        val != "from" &&
+                        val != "alpha" &&
+                        val != "none" &&
+                        val != "shorter" &&
+                        val != "longer" &&
+                        val != "increasing" &&
+                        val != "decreasing" &&
+                        !colorsFunc.includes(val) &&
+                        !colorFuncColorSpace.includes(val) &&
+                        !validKeys.includes(val)) {
+                        return null;
+                    }
+                }
+            }
+        }
+    }
+    // console.debug({ allComponents });
     const converted = (convertColor(original, ColorType[relativeKeys.toUpperCase().replaceAll("-", "_")]));
     if (converted == null) {
         return null;

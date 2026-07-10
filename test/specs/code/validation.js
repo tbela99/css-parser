@@ -503,69 +503,69 @@ html, body, div, span, applet, object, iframe,
 }`));
         });
 
-        it('file validation #21', function (done) {
+        it('file validation #21', function () {
 
-            transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/full.css';
-`, {validation: true, resolveImport: true}).then(result => expect(result.errors.length).equals(1)).then(() => done(), () => done());
+           return transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/full.css';
+`, {validation: true, resolveImport: true}).then(result => expect(result.errors.length).equals(5));
         });
 
-        it('file validation #22', function (done) {
+        it('file validation #22', function () {
 
             transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/bootstrap.css';
 `, {
                 validation: true,
                 resolveImport: true
-            }).then(result => expect(result.errors.length).equals(2)).then(() => done(), () => done());
+            }).then(result => expect(result.errors.length).equals(2));
         });
 
-        it('file validation #23', function (done) {
+        it('file validation #23', function () {
 
-            transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/bootstrap-4.css';
+            return transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/bootstrap-4.css';
 `, {
                 validation: true,
                 resolveImport: true
-            }).then(result => expect(result.errors.length).equals(1)).then(() => done(), () => done());
+            }).then(result => expect(result.errors.length).equals(1));
         });
 
-        it('file validation #24', function (done) {
+        it('file validation #24', function () {
 
-            transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/bootstrap-5.css';
+           return transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/bootstrap-5.css';
 `, {
                 validation: true,
                 resolveImport: true
-            }).then(result => expect(result.errors.length).equals(0)).then(() => done(), () => done());
+            }).then(result => expect(result.errors.length).equals(0));
         });
 
-        it('file validation #25', function (done) {
+        it('file validation #25', function () {
 
-            transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/tailwind.css';
+            return transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/tailwind.css';
 `, {
                 validation: true,
                 resolveImport: true
-            }).then(result => expect(result.errors.length).equals(20)).then(() => done(), () => done());
+            }).then(result => expect(result.errors.length).equals(20));
         });
 
-        it('file validation #26', function (done) {
+        it('file validation #26', function () {
 
-            transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/tailwind-2.0.4.css';
+            return transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/tailwind-2.0.4.css';
 `, {
                 validation: true,
                 resolveImport: true
-            }).then(result => expect(result.errors.length).equals(12)).then(() => done(), () => done());
+            }).then(result => expect(result.errors.length).equals(12));
         });
 
-        it('file validation #27', function (done) {
+        it('file validation #27', function () {
 
-            transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/github-markdown.css';
+            return transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/github-markdown.css';
 `, {
                 validation: true,
                 resolveImport: true
-            }).then(result => expect(result.errors.length).equals(1)).then(() => done(), () => done());
+            }).then(result => expect(result.errors.length).equals(1));
         });
 
-        it('selector validation #28', function (done) {
+        it('selector validation #28', function () {
 
-            transform(`
+           return transform(`
   .markdown-body .highlight pre:has(
   >.zeroclipboard-container,
   ~.zeroclipboard-container,
@@ -577,9 +577,9 @@ html, body, div, span, applet, object, iframe,
 `, {
     beautify: true,
                 validation: true
-            }).then(result => expect(result.code).equals(`.markdown-body .highlight pre:has(>.zeroclipboard-container,~.zeroclipboard-container,+.zeroclipboard-container ) {
+            }).then(result => expect(result.code).equals(`.markdown-body .highlight pre:has(>.zeroclipboard-container,~.zeroclipboard-container,+.zeroclipboard-container) {
  min-height: 52px
-}`)).then(() => done(), () => done());
+}`));
         });
 
         it('selector validation #29', function () {

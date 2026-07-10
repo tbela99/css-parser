@@ -98,7 +98,8 @@ export declare interface AstRule extends BaseToken, AstNodeStatus {
 }
 
 /**
- * invalid rule node
+ * Invalid rule node
+ * @deprecated
  */
 export declare interface AstInvalidRule extends BaseToken, AstNodeStatus {
     typ: EnumToken.InvalidRuleNodeType;
@@ -108,6 +109,7 @@ export declare interface AstInvalidRule extends BaseToken, AstNodeStatus {
 
 /**
  * invalid declaration node
+ * @deprecated
  */
 export declare interface AstInvalidDeclaration extends BaseToken, AstNodeStatus {
     typ: EnumToken.InvalidDeclarationNodeType;
@@ -117,6 +119,7 @@ export declare interface AstInvalidDeclaration extends BaseToken, AstNodeStatus 
 
 /**
  * invalid at rule node
+ * @deprecated
  */
 export declare interface AstInvalidAtRule extends BaseToken, AstNodeStatus {
     typ: EnumToken.InvalidAtRuleNodeType;

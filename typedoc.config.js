@@ -1,4 +1,3 @@
-
 import taskLists from "markdown-it-task-lists";
 
 export default {
@@ -12,7 +11,10 @@ export default {
         Playground: "https://tbela99.github.io/css-parser/playground/",
         GitHub: "https://github.com/tbela99/css-parser",
     },
-    plugin: ["typedoc-unhoax-theme", "typedoc-plugin-coverage"],
+    plugin: ["typedoc-unhoax-theme", "typedoc-plugin-coverage", "typedoc-plugin-redirect"],
+    redirects: {
+        "documents/Guide.html": "documents/Guide.Getting_started.html"
+    },
     coverageOutputType: "all",
     out: "docs",
     // Inject the checkbox parser into TypeDoc's markdown engine

@@ -5,8 +5,7 @@ import {
     EnumAstNodeStatus,
     EnumToken,
     ModuleCaseTransformEnum,
-    ModuleScopeEnumOptions,
-    ValidationLevel,
+    ModuleScopeEnumOptions
 } from "../ast/types.ts";
 import { minify } from "../ast/minify.ts";
 import { expand } from "../ast/expand.ts";
@@ -16,8 +15,6 @@ import type {
     AstAtRule,
     AstComment,
     AstDeclaration,
-    AstInvalidAtRule,
-    AstInvalidRule,
     AstKeyFrameRule,
     AstKeyframesAtRule,
     AstKeyframesRule,
@@ -60,7 +57,7 @@ import { hash, hashAlgorithms } from "../parser/utils/hash.ts";
 import { parseSelector } from "./utils/selector.ts";
 import { parseDeclaration } from "./utils/declaration.ts";
 import { getSyntaxRule } from "../validation/config.ts";
-import { createValidationContext, matchAllSyntax, matchSelectorSyntax, trimArray } from "../validation/match.ts";
+import { createValidationContext, matchAllSyntaxes, matchSelectorSyntax, trimArray } from "../validation/match.ts";
 import { ValidationSyntaxGroupEnum } from "../validation/parser/typedef.ts";
 import type { ValidationToken } from "../validation/parser/types.d.ts";
 import { matchAtRuleImportSyntax } from "./utils/at-rule-import.ts";
@@ -338,8 +335,8 @@ export async function doParse(
         ...options,
     };
 
-    if (typeof options.validation == "boolean") {
-        options.validation = options.validation ? ValidationLevel.All : ValidationLevel.None;
+    if (typeof options.validation !== "boolean") {
+        options.validation = !!options.validation;
     }
 
     if (options.module) {
@@ -379,7 +376,7 @@ export async function doParse(
     };
 
     let tokens: Token[] = [];
-    let context: AstRuleList | AstInvalidAtRule | AstInvalidRule = ast;
+    let context: AstRuleList = ast;
 
     if (options.sourcemap) {
         ast.loc = {
@@ -421,7 +418,6 @@ export async function doParse(
         | AstRule
         | AstKeyFrameRule
         | AstKeyframesAtRule
-        | AstInvalidRule
         | AstDeclaration
         | AstComment
         | null;
@@ -621,7 +617,7 @@ export async function doParse(
 
             if (node != null) {
                 if ("chi" in node) {
-                    stack.push(node as AstAtRule | AstRule | AstKeyFrameRule | AstInvalidRule);
+                    stack.push(node as AstAtRule | AstRule | AstKeyFrameRule );
                     context = node as AstRuleList;
                 } else if (node.typ == EnumToken.AtRuleNodeType && (node as AstAtRule).nam === "import") {
                     imports.push(node);
@@ -1058,11 +1054,17 @@ export async function doParse(
             }
         }
     }
-
+    
     if (invalidNodes.length > 0) {
         let k: number = invalidNodes.length;
 
         while (k-- > 0) {
+
+            if (invalidNodes[k].state == EnumAstNodeStatus.Validated || invalidNodes[k].state == EnumAstNodeStatus.Unvalidated || invalidNodes[k].state == EnumAstNodeStatus.ValidationFailed) {
+                
+                continue;
+            }
+
             if (options.lenient && invalidNodes[k].state == EnumAstNodeStatus.Unknown) {
                 continue;
             }
@@ -1996,7 +1998,7 @@ function parseNode(
     errors: ErrorDescription[],
     stats: ParseResultStats,
     invalidNodes: AstNode[],
-): AstRule | AstAtRule | AstKeyFrameRule | AstKeyframesAtRule | AstInvalidRule | AstDeclaration | AstComment | null {
+): AstRule | AstAtRule | AstKeyFrameRule | AstKeyframesAtRule | AstDeclaration | AstComment | null {
     let i: number = 0;
 
     if (tokens.at(-1)?.typ === EnumToken.EOFTokenType) {
@@ -2189,8 +2191,7 @@ function parseNode(
             Object.defineProperty(node, "parent", { ...definedPropertySettings, value: context });
 
             if (context.typ === EnumToken.StyleSheetNodeType && node.typ === EnumToken.DeclarationNodeType) {
-                // @ts-expect-error
-                node.typ = EnumToken.InvalidDeclarationNodeType;
+                node.state = EnumAstNodeStatus.Invalid;
 
                 errors.push({
                     message: "<declaration> not allowed in <stylesheet>",
@@ -2229,7 +2230,7 @@ export function parseAtRule(
     options: ParserOptions,
     errors: ErrorDescription[],
     parseAsBlock: boolean | null = null,
-): AstAtRule | AstInvalidAtRule | CssVariableImportTokenType | CssVariableToken | null {
+): AstAtRule | CssVariableImportTokenType | CssVariableToken | null {
     let success: boolean = true;
     let atRuleName = (stream[0] as AtRuleToken).nam;
 
@@ -2579,7 +2580,7 @@ export function parseAtRule(
         }
         case "custom-media": {
             const tokens = trimArray(stream.slice(1));
-            const result = matchAllSyntax(syntax, createValidationContext(tokens), options);
+            const result = matchAllSyntaxes(syntax, createValidationContext(tokens), options);
 
             if (result.errors.length > 0) {
                 errors.push(...result.errors);
@@ -2661,7 +2662,7 @@ export function parseAtRule(
         }
 
         case "namespace": {
-            const result: ValidationMatch = matchAllSyntax(
+            const result: ValidationMatch = matchAllSyntaxes(
                 syntax as ValidationToken[],
                 createValidationContext(stream),
                 options,
@@ -2805,7 +2806,7 @@ export function parseAtRule(
                 errors.push(...result.errors);
             }
 
-            let success: boolean = true;
+            let success: boolean = result.success;
 
             if (atRule.nam === "else") {
                 const siblings = (context as AstAtRule | AstStyleSheet).chi as AstNode[];
@@ -2898,7 +2899,7 @@ export function parseAtRule(
                 Object.assign(atRule, {
                     typ: EnumToken.AtRuleNodeType,
                     val: renderTokens(stream, options),
-                    chi: [],
+                    chi: [] as AstNode[],
                 }),
                 {
                     state: {
@@ -2915,7 +2916,7 @@ export function parseAtRule(
                         value: { ...atRule.loc, end: { ...(stream.at(-1)?.loc?.end ?? atRule.loc!.end) } },
                     },
                 },
-            ) as AstAtRule | AstInvalidAtRule;
+            ) as AstAtRule;
         }
         case "scope": {
             let context = createValidationContext(trimArray(stream));
@@ -3038,7 +3039,7 @@ export function parseAtRule(
                         value: { ...atRule.loc, end: { ...(stream.at(-1)?.loc?.end ?? atRule.loc!.end) } },
                     },
                 },
-            ) as AstAtRule | AstInvalidAtRule;
+            ) as AstAtRule ;
         }
         case "page": {
             trimArray(stream);
@@ -3048,7 +3049,7 @@ export function parseAtRule(
                 Object.assign(atRule, {
                     typ: EnumToken.AtRuleNodeType,
                     val: renderTokens(stream, options),
-                    chi: [],
+                    chi: [] as AstNode[],
                 }),
                 {
                     state: {
@@ -3065,7 +3066,7 @@ export function parseAtRule(
                         value: { ...atRule.loc, end: { ...(stream.at(-1)?.loc?.end ?? atRule.loc!.end) } },
                     },
                 },
-            ) as AstAtRule | AstInvalidAtRule;
+            ) as AstAtRule;
         }
         case "top-left-corner":
         case "top-left":
@@ -3115,7 +3116,7 @@ export function parseAtRule(
                 Object.assign(atRule, {
                     typ: EnumToken.AtRuleNodeType,
                     val: renderTokens(stream, options),
-                    chi: [],
+                    chi: [] as AstNode[],
                 }),
                 {
                     state: {
@@ -3132,7 +3133,7 @@ export function parseAtRule(
                         value: { ...atRule.loc, end: { ...(stream.at(-1)?.loc?.end ?? atRule.loc!.end) } },
                     },
                 },
-            ) as AstAtRule | AstInvalidAtRule;
+            ) as AstAtRule;
         }
 
         case "value": {
@@ -3178,7 +3179,7 @@ export function parseAtRule(
             // @value <ident>: <string>; // import from file as alias
             // @value id : <declaration-value>; // variable declaration
             // @value <ident># from <ident>; // import variables from alias
-            let result = matchAllSyntax(
+            let result = matchAllSyntaxes(
                 syntaxRules?.getPreludeRules()?.slice?.(1) as ValidationToken[],
                 createValidationContext(stream),
                 options,
@@ -3369,8 +3370,7 @@ export async function parseDeclarations(declaration: string): Promise<Array<AstD
         return (result.ast.chi[0] as AstRule).chi.filter(
             (t) =>
                 t.typ == EnumToken.DeclarationNodeType ||
-                t.typ == EnumToken.CommentNodeType ||
-                t.typ == EnumToken.InvalidDeclarationNodeType,
+                t.typ == EnumToken.CommentNodeType
         ) as Array<AstDeclaration | AstComment>;
     });
 }
@@ -3381,8 +3381,8 @@ export async function parseDeclarations(declaration: string): Promise<Array<AstD
  * @param options
  *    - parseColor: parse identifiers as colors
  *    - src: source url used for source map
- *
- * @private
+ * @param errors capture parse errors in the provided array
+
  *
  * Example:
  *
@@ -3393,13 +3393,13 @@ export async function parseDeclarations(declaration: string): Promise<Array<AstD
  * let tokens = parseString('body { color: red; }');
  * console.log(tokens);
  *
- *  tokens = parseString('#c322c980');
+ * tokens = parseString('#c322c980');
  * console.log(tokens);
  * ```
  */
 export function parseString(
     src: string,
-    options?: { src?: string; parseColor?: boolean } | null,
+    options: { src?: string; parseColor?: boolean } | null = { parseColor: true },
     errors?: ErrorDescription[],
 ): Token[] {
     const parseInfo: ParseInfo = {
@@ -3462,6 +3462,8 @@ export function parseTokens(
     let index: number;
     let t: Token;
 
+    options ??= { parseColor: true };
+
     for (; i < tokens.length; i++) {
         t = tokens[i];
 
@@ -3519,6 +3521,12 @@ export function parseTokens(
                 chi: trimArray(tokens.splice(index + 1, i - index - 1)),
             });
             i = index;
+
+            if (tokens[index].typ === EnumToken.ColorTokenType && options?.parseColor) {
+
+                parseColor(tokens[index]);
+            }
+
             stack.pop();
             continue;
         }

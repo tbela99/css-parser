@@ -77,3 +77,9 @@ html[data-theme="dark"] {
         }
     }
 }
+
+
+#function-differences + table th {
+
+    text-align: left;
+}

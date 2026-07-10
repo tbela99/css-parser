@@ -69,7 +69,6 @@ export function alpha(color: ColorToken, alpha?: Token): ColorToken | null {
 
         if (result.length == 1) {
             alpha = result[0];
-
         }
     }
 

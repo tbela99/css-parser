@@ -4,24 +4,77 @@
 
 ### Validation changes
 
-- [x] Change validation strategy to manage tokens based upon their validation status and remove the use of invalid token types.
-  - [ ] Unknown tokens are preserved
-  - [ ] Invalid and Malformed tokens are discared
-  - [ ] Validated tokens are preserved
-  - [ ] ValidationFailed tokens are preserved
-
-## Sourcemap
-
-- [ ] sourcemap is only available when parsing a file
+- [x] Added the `state` and `errors` properties to nodes to expose their validation status and any associated validation errors.
+- [x] Nodes that fail validation are no longer discarded. Nodes are discarded only if they are invalid, unparsed, or malformed. Unknown nodes are discarded when lenient parsing is disabled.
 
 ### Color
 
-- [x] alpha(): minify alpha() color function https://www.w3.org/TR/css-color-5/#funcdef-alpha
-- [x] color-mix(): implement new color-mix() syntax https://www.w3.org/TR/css-values-5/#color-mix
+- [x] `alpha()`: Added support for minifying the CSS Color 5 `alpha()` color function.
+
+```ts
+
+import {transform} from '@tbela99/css-parser';
+
+const css = `
+
+:root {
+--mycolor:  oklch(60% 0.25 315 / 0.8);
+}
+    .s {
+    
+    color:
+ alpha(from var(--mycolor)  / calc(alpha * 0.5));
+
+`;
+
+const result = await transform(css, {
+                    beautify: true,
+                    inlineCssVariables: true,
+                });
+
+console.debug(result.code);
+
+```
+
+result:
+
+```css
+.s {
+ color: #b538e366
+}
+```
+
+- [x] `color-mix()`: Implemented support for the updated `color-mix()` syntax defined in https://www.w3.org/TR/css-values-5/#color-mix
+
+
+```ts
+
+import {transform} from '@tbela99/css-parser';
+
+const css = `
+.hsl { color: color-mix(firebrick, goldenrod); }
+`;
+
+const result = await transform(css, {
+                    beautify: true,
+                    convertColor: ColorType.OKLAB
+                });
+
+console.debug(result.code);
+
+```
+
+result:
+
+```css
+.hsl {
+ color: oklab(.624172 .087878 .113592)
+}
+```
 
 ### Webkit gradient prefix removal
 
-- [x] convert -webkit-* gradient functions
+- [x] Convert -webkit-* gradient functions
   - [x] -webkit-gradient() to:
     - [x] linear-gradient()
     - [ ] radial-gradient() - not supported ⚠️
@@ -32,7 +85,7 @@
   
 ### CSS gradient minification
 
-- [x] minify gradient functions
+- [x] Minify gradient functions
   - [x] linear-gradient()
   - [x] radial-gradient()
   - [x] conic-gradient()
@@ -40,16 +93,17 @@
   - [x] repeating-radial-gradient()
   - [x] repeating-conic-gradient()
 
-### Other
+### Other changes
 
-- [x] minify transform-origin property
-- [x] changing oklab distance threshold to `0.00001` according to https://drafts.csswg.org/css-color-4/#comparing-color-values
+- [x] Minify transform-origin property
+- [x] Changing oklab distance threshold to `0.00001` according to https://drafts.csswg.org/css-color-4/#comparing-color-values
   
 ### Bug fixes
-- [x] fix path resolution on Windows
-- [x] do not minify supports() arguments
+- [x] Fix path resolution on Windows
+- [x] Do not minify supports() arguments
   
-css incorrectly parsed
+CSS incorrectly parsed:
+
 ```css
 body {
   background-color: if(
@@ -66,7 +120,8 @@ body {
 }
 ```
 
-result
+result:
+
 ```css
 body {
  background-color: if(supports(color:#00aefc):#00aefc;else:#00adf3);
@@ -75,7 +130,9 @@ body {
  }
 }
 ```
-instead of
+
+instead of:
+
 ```css
 body {
  background-color: #00adf3;
@@ -91,14 +148,14 @@ body {
 }
 ```
 
-- [x] incorrectly parse selector when removePrefix and css module settings are enabled
+- [x] Incorrectly parse selector when removePrefix and css module settings are enabled
 
 ```css
 *,:before,:after {
  box-sizing: border-box
 }
 ```
-is parsed and rendered as 
+is parsed and rendered as:
 
 ```css
 ,,*:before:after {
@@ -106,12 +163,34 @@ is parsed and rendered as
 }
 ```
 
-instead of 
+instead of:
+
 ```css
 *,:before,:after {
  box-sizing: border-box
 }
 ```
+
+### Deprecation
+
+#### Loading as commonjs module
+- [x] Deprecate commonjs entry point. It will be removed in a future release.
+
+#### Functions
+- [x] Deprecate `parseFile()`. Use `parse({file, asStream, ...options})` instead.
+- [x] Deprecate `transformFile()`. Use `transform({file, asStream, ...options})` instead
+
+#### Enums
+- [x] Deprecate using `ValidationLevel` to configure parsing validation settings. Use `boolean` values instead.
+- [x] Deprecate invalid `EnumToken` node types. There are no longer used.
+- [x] `EnumToken.InvalidRuleNodeType`
+- [x] `EnumToken.InvalidAtRuleNodeType`
+- [x] `EnumToken.InvalidDeclarationNodeType`
+
+#### Interfaces
+- [x] `AstInvalidRule`
+- [x] `AstInvalidDeclaration`
+- [x] `AstInvalidAtRule`
 
 ## v1.4.3
 
@@ -126,7 +205,6 @@ result = await transform(css, {
     beautify: true,
     module: {scoped: ModuleScopeEnumOptions.Shortest
     }
-
 });
 
 console.log(result.code);

@@ -2,7 +2,7 @@ import { EnumToken, EnumAstNodeStatus, ColorType, ValidationLevel } from '../../
 import { definedPropertySettings, tokensfuncDefMap, COLORS_NAMES, nonStandardColors, systemColors, deprecatedSystemColors, tokensMap, trimTokenSpace } from '../../syntax/constants.js';
 import { renamedStandardProperties, isColor, parseColor, isWhiteSpace, isValue } from '../../syntax/syntax.js';
 import { getSyntaxRule, getParsedSyntax } from '../../validation/config.js';
-import { trimArray, matchAllSyntax, createValidationContext } from '../../validation/match.js';
+import { trimArray, matchAllSyntaxes, createValidationContext } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from '../../validation/parser/typedef.js';
 import { walkValues } from '../../ast/walk.js';
 import { equalsIgnoreCase } from './text.js';
@@ -101,7 +101,7 @@ function parseDeclaration(tokens, parent, options, errors) {
     let success = true;
     let validate = typeof options.validation === "boolean"
         ? options.validation
-        : options.validation & ValidationLevel.Declaration;
+        : !!options.validation;
     if (renamedStandardProperties.has(name.val)) {
         name.val = renamedStandardProperties.get(name.val);
     }
@@ -288,7 +288,7 @@ function parseDeclaration(tokens, parent, options, errors) {
             location: name.loc,
         });
         return Object.defineProperties(Object.assign(name, {
-            typ: EnumToken.InvalidDeclarationNodeType,
+            typ: EnumToken.DeclarationNodeType,
             nam: name.val,
             val: tokens,
         }), {
@@ -315,7 +315,7 @@ function parseDeclaration(tokens, parent, options, errors) {
     let index;
     if (syntaxRules != null) {
         const doNotValidate = options.validation === false || options.validation === ValidationLevel.None;
-        result = doNotValidate ? null : matchAllSyntax(syntaxRules, createValidationContext(tokens), options);
+        result = doNotValidate ? null : matchAllSyntaxes(syntaxRules, createValidationContext(tokens), options);
         if (doNotValidate || result != null) {
             success = doNotValidate || result?.success;
             if (success) {
@@ -675,7 +675,7 @@ function parseDeclaration(tokens, parent, options, errors) {
         ];
     }
     return Object.defineProperties(Object.assign(name, {
-        typ: success ? EnumToken.DeclarationNodeType : EnumToken.InvalidDeclarationNodeType,
+        typ: success ? EnumToken.DeclarationNodeType : EnumToken.DeclarationNodeType,
         nam: name.val,
         val: tokens,
     }), {

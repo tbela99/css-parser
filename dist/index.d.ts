@@ -1006,15 +1006,15 @@ declare enum EnumAstNodeStatus$1 {
      */
     Unvalidated = 2,
     /**
-     * Node did not pass validation, but is allowed in the context
+     * Node did not pass validation, but is preserved.
      */
     ValidationFailed = 3,
     /**
-     * Node is not recognized
+     * Parsing the node is not supported yet or the node syntax definition does not exist.
      */
     Unknown = 4,
     /**
-     * Node is unparsed
+     * Failed to parse the node.
      */
     Unparsed = 5,
     /**
@@ -1028,6 +1028,7 @@ declare enum EnumAstNodeStatus$1 {
 }
 /**
  * Enum of validation levels
+ * @deprecated
  */
 declare enum ValidationLevel {
     /**
@@ -1388,7 +1389,8 @@ declare enum EnumToken {
      */
     NestingSelectorTokenType = 80,// &
     /**
-     * invalid rule token type
+     * Invalid rule token type
+     * @deprecated
      */
     InvalidRuleNodeType = 81,
     /**
@@ -1400,7 +1402,8 @@ declare enum EnumToken {
      */
     InvalidAttrTokenType = 83,
     /**
-     * invalid at rule token type
+     * Invalid at rule token type
+     * @deprecated
      */
     InvalidAtRuleNodeType = 84,
     /**
@@ -1440,7 +1443,8 @@ declare enum EnumToken {
      */
     KeyframesAtRuleNodeType = 93,
     /**
-     * invalid declaration node type
+     * invalid declaration node type.
+     * @deprecated
      */
     InvalidDeclarationNodeType = 94,
     /**
@@ -2023,7 +2027,8 @@ export declare interface AstRule extends BaseToken, AstNodeStatus {
 }
 
 /**
- * invalid rule node
+ * Invalid rule node
+ * @deprecated
  */
 export declare interface AstInvalidRule extends BaseToken, AstNodeStatus {
     typ: EnumToken.InvalidRuleNodeType;
@@ -2033,6 +2038,7 @@ export declare interface AstInvalidRule extends BaseToken, AstNodeStatus {
 
 /**
  * invalid declaration node
+ * @deprecated
  */
 export declare interface AstInvalidDeclaration extends BaseToken, AstNodeStatus {
     typ: EnumToken.InvalidDeclarationNodeType;
@@ -2042,6 +2048,7 @@ export declare interface AstInvalidDeclaration extends BaseToken, AstNodeStatus 
 
 /**
  * invalid at rule node
+ * @deprecated
  */
 export declare interface AstInvalidAtRule extends BaseToken, AstNodeStatus {
     typ: EnumToken.InvalidAtRuleNodeType;
@@ -2821,36 +2828,80 @@ interface ValidationDimensionRangeMatch {
         max: ValidationDimensionToken | null;
 }
 
+/**
+ * Validation token
+ */
 interface ValidationToken$1 {
 
+    /**
+     * token type
+     */
     typ: ValidationTokenEnum;
+    /**
+     * token position
+     */
     pos: Position;
-    // a#
+    /**
+     * match a comma separated list
+     */
     isList?: boolean;
+    /**
+     * 
+     * @private
+     */
     text?: string;
     // https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Values_and_units/Value_definition_syntax
-    // a*
+    /**
+     * token matches 0 or more times
+     */
     isRepeatable?: boolean;
     // https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Values_and_units/Value_definition_syntax
-    // a+
+    /**
+     * token matches 1 or more times
+     */
     isRepeatableAtLeastOnce?: boolean;
     // https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Values_and_units/Value_definition_syntax
-    // a?
+   /**
+    * token is optional
+    */
     isOptional?: boolean;
     // https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Values_and_units/Value_definition_syntax
-    // a!
+   
+    /**
+     * token is a mandatory group
+     */
     isMandatatoryGroup?: boolean;
-    // a{1,2}
+    /**
+     * token matching rules
+     */
     match?: {
+        /**
+         * token matches at least the specified number of times
+         */
         min: ValidationNumberToken;
+        /**
+         * token matches at most the specified number of times.
+         */
         max: ValidationNumberToken | null;
     },
+    /**
+     * tokan's value range
+     */
     range?: ValidationValueRangeMatch |  ValidationDimensionRangeMatch
 }
 
+/**
+ * Number token
+ */
 interface ValidationNumberToken extends ValidationToken$1 {
 
+    /**
+     * token type
+     */
     typ: ValidationTokenEnum.Number;
+    /**
+     * token value
+     */
     val: number;
 }
 
@@ -3461,13 +3512,13 @@ export declare interface ErrorDescription$1 {
  */
 interface ValidationOptions {
     /**
-     * nested rule context
-     * @internal
+     * Nested rule context
+     * @private
      */
     nestedRule?: boolean;
 
     /**
-     * enable CSS validation
+     * Enable CSS validation. Using ValidationLevel as value is deprecated and will be removed
      *
      * see {@link ValidationLevel}
      */
@@ -3608,9 +3659,9 @@ export declare type LoadResult =
     | string
     | Promise<string>;
 
-    /**
-     * CSS module parser options
-     */
+/**
+ * CSS module parser options
+ */
 export declare interface ModuleOptions {
     /**
      * Use local scope vs global scope
@@ -3730,6 +3781,15 @@ export declare interface ModuleOptions {
     ) => string | Promise<string>;
 }
 
+export declare interface ParseInputFileOptions {
+    file: string;
+    asStream?: boolean;
+}
+
+export declare interface ParseInputStreamOptions {
+    input: string | ReadableStream<Uint8Array>;
+}
+
 /**
  * Parser options
  */
@@ -3768,14 +3828,14 @@ export declare interface ParserOptions
     expandIfSyntax?: boolean;
 
     /**
-     * Url and file loader
+     * Custom URL and file loader.
      * @param url
      * @param currentDirectory
      * @param responseType
      *
      */
     load?: (
-        url: string | { absolute: string; relative: string } ,
+        url: string | { absolute: string; relative: string },
         currentDirectory: string,
         responseType?: boolean | ResponseType,
     ) => Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
@@ -4426,8 +4486,8 @@ declare function parseDeclarations(declaration: string): Promise<Array<AstDeclar
  * @param options
  *    - parseColor: parse identifiers as colors
  *    - src: source url used for source map
- *
- * @private
+ * @param errors capture parse errors in the provided array
+
  *
  * Example:
  *
@@ -4438,7 +4498,7 @@ declare function parseDeclarations(declaration: string): Promise<Array<AstDeclar
  * let tokens = parseString('body { color: red; }');
  * console.log(tokens);
  *
- *  tokens = parseString('#c322c980');
+ * tokens = parseString('#c322c980');
  * console.log(tokens);
  * ```
  */
@@ -4701,6 +4761,7 @@ declare function render(data: AstNode$1, options?: RenderOptions, mapping?: {
  * @param options
  * @param asStream load file as stream
  *
+ * @deprecated
  * @throws Error file not found
  *
  * Example:
@@ -4718,119 +4779,38 @@ declare function render(data: AstNode$1, options?: RenderOptions, mapping?: {
  * console.log(result.ast);
  * ```
  */
-declare function parseFile(file: string, options?: ParserOptions, asStream?: boolean): Promise<ParseResult>;
-/**
- * Parse css
- * @param stream
- * @param options
- *
- * Example:
- *
- * ```ts
- *
- * import {parse} from '@tbela99/css-parser';
- *
- *  // css string
- *  let result = await parse(css);
- *  console.log(result.ast);
- * ```
- *
- * Example using stream
- *
- * ```ts
- *
- * import {parse} from '@tbela99/css-parser';
- * import {Readable} from "node:stream";
- *
- * // usage: node index.ts < styles.css or cat styles.css | node index.ts
- *
- *  const readableStream = Readable.toWeb(process.stdin);
- *  let result = await parse(readableStream, {beautify: true});
- *
- *  console.log(result.ast);
- * ```
- *
- * Example using fetch and readable stream
- *
- * ```ts
- *
- *  import {parse} from '@tbela99/css-parser';
- *
- *  const response = await fetch('https://docs.deno.com/styles.css');
- *  const result = await parse(response.body, {beautify: true});
- *
- *  console.log(result.ast);
- * ```
- */
+declare const parseFile: (file: string, options?: ParserOptions, asStream?: boolean) => Promise<ParseResult>;
 declare function parse(stream: string | ReadableStream<Uint8Array>, options?: ParserOptions): Promise<ParseResult>;
+declare function parse(options: ParseInputFileOptions & ParserOptions): Promise<ParseResult>;
+declare function parse(options: ParseInputStreamOptions & ParserOptions): Promise<ParseResult>;
 /**
  * Transform css file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
  *
+ * @deprecated Use transform() instead.
  * @throws Error file not found
  *
  * Example:
  *
  * ```ts
  *
- *  import {transformFile} from '@tbela99/css-parser';
+ *  import {transform} from '@tbela99/css-parser';
  *
  *  // remote file
- * let result = await transformFile('https://docs.deno.com/styles.css');
+ * let result = await transform({file: 'https://docs.deno.com/styles.css'});
  * console.log(result.code);
  *
  * // local file
- * result = await transformFile('./css/styles.css');
+ * result = await transform({file: './css/styles.css'});
  * console.log(result.code);
  * ```
  */
-declare function transformFile(file: string, options?: TransformOptions, asStream?: boolean): Promise<TransformResult>;
-/**
- * Transform css
- * @param css
- * @param options
- *
- * Example:
- *
- * ```ts
- *
- * import {transform} from '@tbela99/css-parser';
- *
- *  // css string
- *  const result = await transform(css);
- *  console.log(result.code);
- * ```
- *
- * Example using stream
- *
- * ```ts
- *
- * import {transform} from '@tbela99/css-parser';
- * import {Readable} from "node:stream";
- *
- * // usage: node index.ts < styles.css or cat styles.css | node index.ts
- *
- *  const readableStream = Readable.toWeb(process.stdin);
- *  const result = await transform(readableStream, {beautify: true});
- *
- *  console.log(result.code);
- * ```
- *
- * Example using fetch
- *
- * ```ts
- *
- *  import {transform} from '@tbela99/css-parser';
- *
- *  const response = await fetch('https://docs.deno.com/styles.css');
- *  result = await transform(response.body, {beautify: true});
- *
- *  console.log(result.code);
- * ```
- */
-declare function transform(css: string | ReadableStream<Uint8Array>, options?: TransformOptions): Promise<TransformResult>;
+declare const transformFile: (file: string, options?: TransformOptions, asStream?: boolean) => Promise<TransformResult>;
+declare function transform(css: string | ReadableStream<Uint8Array>, options: TransformOptions): Promise<TransformResult>;
+declare function transform(options: ParseInputFileOptions & TransformOptions): Promise<TransformResult>;
+declare function transform(options: ParseInputStreamOptions & TransformOptions): Promise<TransformResult>;
 
-export { ColorType$1 as ColorType, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType$1 as ResponseType, SourceMap, ValidationLevel, WalkerEvent, WalkerOptionEnum, cloneNode, convertColor, dirname, expand, find, findAll, findByValue, findLast, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, render, renderValue as renderToken, replaceNodeOrValue, resolve, transform, transformFile, walk, walkValues };
-export type { AddToken, AndToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyFrameRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstNodeStatus, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, Context, CssVariableImportTokenType$1 as CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken$1 as CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, DoubleColonToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription$1 as ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorHandler, GenericVisitorResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InvalidAttrToken, InvalidClassSelectorToken, InvalidMediaQueryToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Location, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleOptions, MulToken, NameSpaceAttributeToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseResult, ParseResultStats, ParseTokenOptions, ParserOptions, PercentageToken, Position$1 as Position, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SinglePropertyType, SinglePropertyTypeMapping, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenSearchResult, TokenizeResult, TransformOptions, TransformResult, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, VariableScopeInfo, VisitorNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerValueFilter, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken };
+export { ColorType$1 as ColorType, EnumAstNodeStatus$1 as EnumAstNodeStatus, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType$1 as ResponseType, SourceMap, ValidationLevel, WalkerEvent, WalkerOptionEnum, cloneNode, convertColor, dirname, expand, find, findAll, findByValue, findLast, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, render, renderValue as renderToken, replaceNodeOrValue, resolve, transform, transformFile, walk, walkValues };
+export type { AddToken, AndToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyFrameRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstNodeStatus, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, Context, CssVariableImportTokenType$1 as CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken$1 as CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, DoubleColonToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription$1 as ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorHandler, GenericVisitorResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InvalidAttrToken, InvalidClassSelectorToken, InvalidMediaQueryToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Location, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleOptions, MulToken, NameSpaceAttributeToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseInputFileOptions, ParseInputStreamOptions, ParseResult, ParseResultStats, ParseTokenOptions, ParserOptions, PercentageToken, Position$1 as Position, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SinglePropertyType, SinglePropertyTypeMapping, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenSearchResult, TokenizeResult, TransformOptions, TransformResult, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, VariableScopeInfo, VisitorNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerValueFilter, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken };

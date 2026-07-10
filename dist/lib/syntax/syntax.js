@@ -2,9 +2,13 @@ import { EnumToken, ColorType } from '../ast/types.js';
 import { walkValues, WalkerOptionEnum } from '../ast/walk.js';
 import { toDegrees } from '../parser/utils/angle.js';
 import { equalsIgnoreCase } from '../parser/utils/text.js';
-import { trimArray } from '../validation/match.js';
+import { getParsedSyntax } from '../validation/config.js';
+import { matchAllSyntaxes, createValidationContext, trimArray } from '../validation/match.js';
+import { ValidationSyntaxGroupEnum } from '../validation/parser/typedef.js';
 import { splitTokenList } from '../validation/utils/list.js';
-import { colorsFunc, systemColors, deprecatedSystemColors, nonStandardColors, COLORS_NAMES, mathFuncs } from './constants.js';
+import { getColorSpace } from './color/utils/colorspace.js';
+import { getColorComponents } from './color/utils/components.js';
+import { colorsFunc, systemColors, deprecatedSystemColors, nonStandardColors, COLORS_NAMES, colorFuncColorSpace, mathFuncs } from './constants.js';
 import { isOkLabClose } from './color/utils/distance.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
@@ -482,6 +486,74 @@ function isColor(token, errors) {
             }
             // adding numbers and percentages is disallowed
             // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/lch#defining_relative_color_output_channel_components:~:text=Adding%20a%20%3Cpercentage%3E%20to%20a%20%3Cnumber%3E%2C%20for%20example%2C%20doesn%27t%20work
+            const components = getColorComponents(token);
+            if (components !== null) {
+                const colorSpace = getColorSpace(token)?.split?.("");
+                if (colorSpace != null) {
+                    for (const value of components) {
+                        if (value.typ === EnumToken.IdenTokenType) {
+                            const val = value.val.toLowerCase();
+                            if (
+                            // @ts-expect-error
+                            typeof Math[val.toUpperCase()] !== "number" &&
+                                val != "in" &&
+                                val != "hue" &&
+                                val != "from" &&
+                                val != "alpha" &&
+                                val != "none" &&
+                                val != "shorter" &&
+                                val != "longer" &&
+                                val != "increasing" &&
+                                val != "decreasing" &&
+                                !colorsFunc.includes(val) &&
+                                !colorSpace.includes(val) &&
+                                !colorFuncColorSpace.includes(val)) {
+                                // console.debug({ val });
+                                errors?.push({
+                                    action: "drop",
+                                    message: `Unexpected constant '${val}'`,
+                                    node: value,
+                                    location: value.loc,
+                                });
+                                return false;
+                            }
+                        }
+                        else if (value.typ === EnumToken.MathFunctionTokenType &&
+                            equalsIgnoreCase("calc", value.val)) {
+                            let val;
+                            for (const v of walkValues(value.chi)) {
+                                if (v.value.typ === EnumToken.IdenTokenType) {
+                                    val = v.value.val.toLowerCase();
+                                    if (
+                                    // @ts-expect-error
+                                    typeof Math[val.toUpperCase()] !== "number" &&
+                                        val != "in" &&
+                                        val != "hue" &&
+                                        val != "from" &&
+                                        val != "alpha" &&
+                                        val != "none" &&
+                                        val != "shorter" &&
+                                        val != "longer" &&
+                                        val != "increasing" &&
+                                        val != "decreasing" &&
+                                        !colorsFunc.includes(val) &&
+                                        !colorSpace.includes(val) &&
+                                        !colorFuncColorSpace.includes(val)) {
+                                        // console.debug({ val });
+                                        errors?.push({
+                                            action: "drop",
+                                            message: `Unexpected constant '${val}'`,
+                                            node: v.value,
+                                            location: v.value.loc,
+                                        });
+                                        return false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             // @ts-ignore
             for (const { value, parent } of walkValues(token.chi, token, (value) => value.typ === EnumToken.WildCardFunctionTokenType
                 ? WalkerOptionEnum.Ignore | WalkerOptionEnum.IgnoreChildren
@@ -641,7 +713,8 @@ function isColor(token, errors) {
                 }
                 let j = 0;
                 let k = 0;
-                if (children[j][0].typ === EnumToken.IdenTokenType && equalsIgnoreCase("in", children[j][k].val)) {
+                if (children[j][0].typ === EnumToken.IdenTokenType &&
+                    equalsIgnoreCase("in", children[j][k].val)) {
                     k++;
                     if (children[j][k]?.typ === EnumToken.IdenTokenType) {
                         if (!isRectangularOrthogonalColorspace(children[j][k])) {
@@ -691,8 +764,16 @@ function isColor(token, errors) {
                     if (children[j].length > 2) {
                         return false;
                     }
-                    if (!isColor(children[j][0])) {
+                    if (!isColor(children[j][0]) &&
+                        !(children[j][0].typ == EnumToken.WildCardFunctionTokenType &&
+                            equalsIgnoreCase("calc", children[j][0].val))) {
                         return false;
+                    }
+                    if (children[j][0].typ == EnumToken.WildCardFunctionTokenType) {
+                        const result = matchAllSyntaxes(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "calc()"), createValidationContext([children[j][0]]), {});
+                        if (!result.success) {
+                            return false;
+                        }
                     }
                     if (children[j].length > 1 && !isPercentageToken(children[j][1])) {
                         return false;
@@ -700,47 +781,6 @@ function isColor(token, errors) {
                     j++;
                 }
                 return true;
-                // if (children.length == 3) {
-                //     if (
-                //         children[0].length > 4 ||
-                //         children[0][0].typ != EnumToken.IdenTokenType ||
-                //         "in" !== (children[0][0] as IdentToken).val?.toLowerCase?.() ||
-                //         !isColorspace(children[0][1]) ||
-                //         (children[0].length >= 3 && !isHueInterpolationMethod(children[0].slice(2))) ||
-                //         children[1].length > 2 ||
-                //         !isColor(children[1][0]) ||
-                //         (children[1].length == 2 && !isPercentageToken(children[1][1])) ||
-                //         children[2].length > 2 ||
-                //         (children[2].length == 2 && !isPercentageToken(children[2][1])) ||
-                //         !isColor(children[2][0])
-                //     ) {
-                //         return false;
-                //     }
-                //     if (children[1].length == 2) {
-                //         if (
-                //             !(
-                //                 children[1][1].typ == EnumToken.PercentageTokenType ||
-                //                 (children[1][1].typ == EnumToken.NumberTokenType &&
-                //                     (children[1][1] as NumberToken).val == 0)
-                //             )
-                //         ) {
-                //             return false;
-                //         }
-                //     }
-                //     if (children[2].length == 2) {
-                //         if (
-                //             !(
-                //                 children[2][1].typ == EnumToken.PercentageTokenType ||
-                //                 (children[2][1].typ == EnumToken.NumberTokenType &&
-                //                     (children[2][1] as NumberToken).val == 0)
-                //             )
-                //         ) {
-                //             return false;
-                //         }
-                //     }
-                //     return true;
-                // }
-                // return false;
             }
             else {
                 const keywords = ["from", "none"];

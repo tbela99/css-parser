@@ -1,5 +1,5 @@
 
-export function run(describe, expect, it, transform, parse, render) {
+export function run(describe, expect, it, transform, parse, render, dirname, readFile, resolve, ColorType) {
 
     describe('Parse color', function () {
 
@@ -1278,7 +1278,9 @@ color: light-dark(rgb(0 0 0), rgb(255 255 255));
         return transform(`
  
 a {color:lch(from slateblue calc(l + 10%) c h) ;
-`, {minify: false, validation: true}).then(result => expect(result.code).equals(``));
+`, {minify: false, validation: true}).then(result => expect(result.code).equals(`a {
+ color: lch(from #6a5acd calc(l + 10%) c h)
+}`));
     });
 
     it('percentage in calc() #129', function () {
@@ -1432,6 +1434,35 @@ color: lch(from slateblue calc(l * sin(pi / 4)) c h);
                 validation: true,
         }).then(result => expect(result.code).equals(`a {
  color: peru
+}`));
+    });
+
+    it('color hwb #137', function () {
+        return transform(`
+.foo {
+    color: hwb(from peru  h   w  calc(l * 0.5));
+
+}
+`, {
+                beautify: true,  
+                validation: true,
+        }).then(result => expect(result.code).equals(`.foo {
+ color: hwb(from peru h w calc(l*.5))
+}`));
+    });
+
+    it('color hwb #138', function () {
+        return transform(`
+   .foo {
+    color: rgba(255, 255, 255, 0.15);
+
+}
+`, {
+                beautify: true,  
+                validation: true,
+                convertColor: ColorType.RGB
+        }).then(result => expect(result.code).equals(`.foo {
+ color: rgb(255 255 255/.15)
 }`));
     });
 }

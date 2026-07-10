@@ -24,7 +24,7 @@ import { renderValue } from "../../renderer/render.ts";
 import { combinators, definedPropertySettings, tokensfuncDefMap } from "../../syntax/constants.ts";
 import { isHash, isIdent, pseudoElements } from "../../syntax/syntax.ts";
 import { getParsedSyntax, getSyntaxConfig, getSyntaxRule } from "../../validation/config.ts";
-import { createValidationContext, matchAllSyntax, matchSelectorSyntax, trimArray } from "../../validation/match.ts";
+import { createValidationContext, matchAllSyntaxes, matchSelectorSyntax, trimArray } from "../../validation/match.ts";
 
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from "../../validation/parser/typedef.ts";
 import type { ValidationPropertyToken } from "../../validation/parser/types.d.ts";
@@ -40,9 +40,9 @@ export function parseSelector(
     context: AtRuleToken | AstRule | AstAtRule | AstKeyFrameRule | AstKeyframesAtRule | AstStyleSheet | null,
     options: ParserOptions,
     errors: ErrorDescription[],
-): AstRule | AstInvalidRule | AstKeyFrameRule {
+): AstRule | AstKeyFrameRule {
     if (context?.typ === EnumToken.KeyframesAtRuleNodeType) {
-        const result = matchAllSyntax(
+        const result = matchAllSyntaxes(
             getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "keyframe-selectors"),
             createValidationContext(tokens),
             options,
@@ -315,7 +315,7 @@ export function parseSelector(
                         if (tokensfuncDefMap.has(func.typ)) {
                             // @ts-expect-error
                             func.typ = tokensfuncDefMap.get(func.typ) as EnumToken;
-                            func.chi = tokens.splice(index + 1, i - index - 1);
+                            func.chi = trimArray(tokens.splice(index + 1, i - index - 1));
                         }
 
                         if (result.success && options.minify) {

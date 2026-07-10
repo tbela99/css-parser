@@ -73,7 +73,7 @@ const css = `
 `;
 const result = await transform(css, {
     beautify: true,
-    convertColor: false,
+    convertColor: true,
     inlineCssVariables: true,
     computeCalcExpression: false
 });
@@ -85,7 +85,7 @@ console.log(result.code);
 Output:
 ```css
 ._19_u :focus {
- color: hsl(from green calc((h*2)) s l)
+ color: navy
 }
 ```
 
@@ -99,11 +99,27 @@ Math functions such as `calc()` are evaluated when enabled using `{computeCalcEx
 import {transform, ColorType} from '@tbela99/css-parser';
 
 const css = `
+
 :root {
---color: green;
+  --size-0: 100px;
+  --size-1: hypot(var(--size-0));
+  --size-2: hypot(var(--size-0), var(--size-0));
+  --size-3: hypot(
+    calc(var(--size-0) * 1.5),
+    calc(var(--size-0) * 2)
+  );
 }
-._19_u :focus {
-    color:  hsl(from var(--color) calc(h * 2) s l);
+.one {
+  width: var(--size-1);
+  height: var(--size-1);
+}
+.two {
+  width: var(--size-2);
+  height: var(--size-2);
+}
+.three {
+  width: var(--size-3);
+  height: var(--size-3);
 }
 `;
 const result = await transform(css, {
@@ -119,8 +135,52 @@ console.log(result.code);
 Output:
 
 ```css
-._19_u :focus {
- color: navy
+:root {
+ /* --size-0: 100px */
+ /* --size-1: hypot(var(--size-0)) */
+ /* --size-2: hypot(var(--size-0),var(--size-0)) */
+ /* --size-3: hypot(calc(var(--size-0)*1.5),calc(var(--size-0)*2)) */
+}
+.one {
+ width: 100px;
+ height: 100px
+}
+.two {
+ width: 141px;
+ height: 141px
+}
+.three {
+ width: 250px;
+ height: 250px
+}
+```
+### CSS Gradient functions
+
+CSS gradients are minified.
+
+```ts
+
+import {transform, ColorType} from '@tbela99/css-parser';
+
+const css = `
+
+.s {
+      background: linear-gradient(to bottom, white, black);
+  }
+`;
+const result = await transform(css, {
+    beautify: true
+});
+
+console.log(result.code);
+
+```
+
+Output:
+
+```css
+.s {
+ background: linear-gradient(#fff,#000)
 }
 ```
 
@@ -386,68 +446,6 @@ a {
 }
 ```
 
-### CSS variable inlining
-
-```javascript
-
-import {parse, render} from '@tbela99/css-parser';
-
-const css = `
-
-:root {
-
---preferred-width: 20px;
-}
-.foo-bar {
-
-    width: calc(calc(var(--preferred-width) + 1px) / 3 + 5px);
-    height: calc(100% / 4);}
-`
-
-const prettyPrint = await parse(css, {inlineCssVariables: true}).then(result => render(result.ast, {minify: false}).code);
-
-```
-
-result
-
-```css
-.foo-bar {
-    width: 12px;
-    height: 25%
-}
-
-```
-
-### CSS variable inlining and relative color
-
-```javascript
-
-import {parse, render} from '@tbela99/css-parser';
-
-const css = `
-
-:root {
---color: green;
-}
-._19_u :focus {
-    color:  hsl(from var(--color) calc(h * 2) s l);
-
-}
-`
-
-const prettyPrint = await parse(css, {inlineCssVariables: true}).then(result => render(result.ast, {minify: false}).code);
-
-```
-
-result
-
-```css
-._19_u :focus {
-    color: navy
-}
-
-```
-
 ### CSS variable inlining and relative color
 
 ```javascript
@@ -473,18 +471,6 @@ result
     background: #0c6464
 }
 
-```
-
-# Node Walker
-
-```javascript
-
-import {walk} from '@tbela99/css-parser';
-
-for (const {node, parent, root} of walk(ast)) {
-
-    // do something
-}
 ```
 
 ### Merging adjacent rules
@@ -667,13 +653,9 @@ Output:
 }
 ```
 
-### UTF-8 escape sequence
-
-UTF-8 escape sequences are decoded and replaced by their corresponding characters.
-
 ### CSS prefix removal (Experimental)
 
-This feature is disabled by default. The prefixed versions of the css gradient functions are not supported.
+This feature is disabled by default.
 
 ```ts   
 
@@ -809,7 +791,7 @@ Output:
   color: grey
  }
 }
-@media (min-resolution:2x),(-o-min-device-pixel-ratio:2/1),(min-resolution:2x) {
+@media (min-resolution:2x) {
  .image {
   background-image: url(image@2x.png)
  }
@@ -819,7 +801,7 @@ Output:
   height: 10px
  }
 }
-.example,.site {
+.site,.example {
  display: grid
 }
 .site {
@@ -830,7 +812,7 @@ Output:
  animation: bar 1s infinite;
  transition: .5s;
  user-select: none;
- background: linear-gradient(to bottom,#fff,#000)
+ background: linear-gradient(#fff,#000)
 }
 .site>* {
  padding: 30px;
@@ -903,9 +885,9 @@ Output:
 }
 ```
 
-#### Computed shorthands properties
+### Computed shorthands properties
 
-List of computed shorthands properties:
+Below is the list of computed shorthands properties:
 
 - [ ] ~all~
 - [x] animation
@@ -956,6 +938,10 @@ List of computed shorthands properties:
 - [x] text-decoration
 - [x] text-emphasis
 - [x] transition
+
+### UTF-8 escape sequence
+
+UTF-8 escape sequences are decoded and replaced by their corresponding characters.
 
 ------
 [← CSS Modules](./css-module.md) | [Custom Transform →](./transform.md) 

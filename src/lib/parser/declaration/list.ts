@@ -17,8 +17,8 @@ import { parseString } from "../parse.ts";
 import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import { getParsedSyntax } from "../../validation/config.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
-import { ValidationMatch } from "../../validation/types.js";
-import { createValidationContext, matchAllSyntax } from "../../validation/match.ts";
+import type { ValidationMatch } from "../../validation/types.js";
+import { createValidationContext, matchAllSyntaxes } from "../../validation/match.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";
 import { definedPropertySettings } from "../../syntax/constants.ts";
 
@@ -81,7 +81,7 @@ export class PropertyList {
                 syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, declaration.nam.toLowerCase());
 
                 if (syntaxRules != null) {
-                    result = matchAllSyntax(syntaxRules, createValidationContext(declaration.val), this.options);
+                    result = matchAllSyntaxes(syntaxRules, createValidationContext(declaration.val), this.options);
 
                     Object.defineProperty(declaration, "state", {
                         ...definedPropertySettings,

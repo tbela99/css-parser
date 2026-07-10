@@ -3,27 +3,20 @@ title: Guide
 group: Documents
 category: Guides
 children:
-    - ./about.md
-    - ./features.md
-    - ./install.md
+    - ./getting-started.md
     - ./usage.md
-    - ./parsing.md
-    - ./rendering.md
     - ./validation.md
     - ./css-module.md
     - ./minification.md
     - ./transform.md
     - ./ast.md
+    - ./utilities.md
 ---
 
 ## Contents
 
-- [About](./about.md)
-- [Features](./features.md)
-- [Installation](./install.md)
+- [Getting started](./getting-started.md)
 - [Usage](./usage.md)
-- [Parsing](./parsing.md)
-- [Rendering](./rendering.md)
 - [Validation](./validation.md)
 - [CSS module](./css-module.md)
 - [Minification](./minification.md)

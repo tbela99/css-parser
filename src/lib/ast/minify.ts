@@ -25,7 +25,7 @@ import type {
     RawSelectorTokens,
     Token,
 } from "../../@types/index.d.ts";
-import { EnumToken } from "./types.ts";
+import { EnumAstNodeStatus, EnumToken } from "./types.ts";
 import { isFunction, isIdent, isIdentStart, isWhiteSpace } from "../syntax/syntax.ts";
 import { FeatureWalkMode } from "./features/type.ts";
 import { trimArray } from "../validation/match.ts";
@@ -495,19 +495,13 @@ function doMinify(
 
         for (; i < ast.chi!.length; i++) {
             if (
-                ast.chi![i].typ === EnumToken.CommentNodeType ||
-                ast.chi![i].typ === EnumToken.InvalidRuleNodeType ||
-                ast.chi![i].typ === EnumToken.InvalidAtRuleNodeType ||
-                ast.chi![i].typ === EnumToken.InvalidRuleNodeType
+                ast.chi![i].typ === EnumToken.CommentNodeType
             ) {
                 continue;
             }
 
             while (
-                previous?.typ === EnumToken.CommentNodeType ||
-                previous?.typ === EnumToken.InvalidRuleNodeType ||
-                previous?.typ === EnumToken.InvalidAtRuleNodeType ||
-                previous?.typ === EnumToken.InvalidRuleNodeType
+                previous?.typ === EnumToken.CommentNodeType
             ) {
                 previous = ast.chi[--nodeIndex];
                 continue;

@@ -196,6 +196,60 @@
     }
   },
   "types": {
+    "alpha-value": {
+      "syntax": "<number> | <percentage> | none"
+    },
+    "relative-hwb-component": {
+      "syntax": "<number> | <percentage> | none | h | w | b | alpha"
+    },
+    "hwb()": {
+      "syntax": "| hwb(from <color> [ <hue> | none | h | w | b ] <relative-hwb-component>{2} [ / [ <alpha-value> | none]  ]? )",
+      "comment": "extend hwb() syntax"
+    },
+    "relative-hsl-component": {
+      "syntax": "<number> | <percentage> | none | h | s | l | alpha"
+    },
+    "hsl()": {
+      "syntax": "| hsl(from <color> [ <hue> | none | h | s | l ] <relative-hsl-component>{2} [ / [ <alpha-value> | none]  ]? )",
+      "comment": "extend hsl() syntax"
+    },
+    "hsla()": {
+      "syntax": "| hsla(from <color> < [ <hue> | none | h | s | l ] <relative-hsl-component>{2} [ / [ <alpha-value> | none ] ]? )",
+      "comment": "extend hsla() syntax"
+    },
+    "relative-rgb-component": {
+      "syntax": "<number> | <percentage> | none | r | g | b | alpha"
+    },
+    "rgb()": {
+      "syntax": "| rgb(from <color> <relative-rgb-component>{3} [ / [ <alpha-value> | none]  ]? )",
+      "comment": "extend rgb() syntax"
+    },
+    "rgba()": {
+      "syntax": "| rgba(from <color> <relative-rgb-component>{3} [ / [ <alpha-value> | none ] ]? )",
+      "comment": "extend rgba() syntax"
+    },
+    "relative-lab-component": {
+      "syntax": "<number> | <percentage> | none | l | a | b | alpha"
+    },
+    "lab()": {
+      "syntax": "| lab(from <color> <relative-lab-component>{3} [ / [ <alpha-value> | none ] ]? )",
+      "comment": "extend lab() syntax"
+    },
+    "oklab()": {
+      "syntax": "| oklab(from <color> <relative-lab-component>{3} [ / [ <alpha-value> | none ] ]? )",
+      "comment": "extend oklab() syntax"
+    },
+    "relative-lch-component": {
+      "syntax": "<number> | <percentage> | none | l | c | h | alpha"
+    },
+    "lch()": {
+      "syntax": "| lch(from <color> <relative-lch-component>{2} [ <hue> | none | l | c | h ] [ / [ <alpha-value> | none ] ]? )",
+      "comment": "extend lch() syntax"
+    },
+    "oklch()": {
+      "syntax": "| oklch(from <color> <relative-lch-component>{2} [ <hue> | none | l | c | h ] [ / [ <alpha-value> | none ] ]? )",
+      "comment": "extend oklch() syntax"
+    },
     "function-name": {
       "syntax": "<dashed-ident>("
     },
@@ -327,9 +381,6 @@
     },
     "scroll-state-feature-boolean": {
       "syntax": "stuck | snapped | scrollable | scrolled"
-    },
-    "oklch()": {
-      "syntax": "oklch( [ from <color> ]? [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ <hue> | none ] [ / [ <alpha-value> | none ] ]? )"
     },
     "color-font-tech": {
       "syntax": "color-colrv0 | color-colrv1 | color-svg | color-sbix | color-cbdt"

@@ -28,15 +28,15 @@ var EnumAstNodeStatus;
      */
     EnumAstNodeStatus[EnumAstNodeStatus["Unvalidated"] = 2] = "Unvalidated";
     /**
-     * Node did not pass validation, but is allowed in the context
+     * Node did not pass validation, but is preserved.
      */
     EnumAstNodeStatus[EnumAstNodeStatus["ValidationFailed"] = 3] = "ValidationFailed";
     /**
-     * Node is not recognized
+     * Parsing the node is not supported yet or the node syntax definition does not exist.
      */
     EnumAstNodeStatus[EnumAstNodeStatus["Unknown"] = 4] = "Unknown";
     /**
-     * Node is unparsed
+     * Failed to parse the node.
      */
     EnumAstNodeStatus[EnumAstNodeStatus["Unparsed"] = 5] = "Unparsed";
     /**
@@ -50,6 +50,7 @@ var EnumAstNodeStatus;
 })(EnumAstNodeStatus || (EnumAstNodeStatus = {}));
 /**
  * Enum of validation levels
+ * @deprecated
  */
 var ValidationLevel;
 (function (ValidationLevel) {
@@ -414,7 +415,8 @@ var EnumToken;
      */
     EnumToken[EnumToken["NestingSelectorTokenType"] = 80] = "NestingSelectorTokenType";
     /**
-     * invalid rule token type
+     * Invalid rule token type
+     * @deprecated
      */
     EnumToken[EnumToken["InvalidRuleNodeType"] = 81] = "InvalidRuleNodeType";
     /**
@@ -426,7 +428,8 @@ var EnumToken;
      */
     EnumToken[EnumToken["InvalidAttrTokenType"] = 83] = "InvalidAttrTokenType";
     /**
-     * invalid at rule token type
+     * Invalid at rule token type
+     * @deprecated
      */
     EnumToken[EnumToken["InvalidAtRuleNodeType"] = 84] = "InvalidAtRuleNodeType";
     /**
@@ -466,7 +469,8 @@ var EnumToken;
      */
     EnumToken[EnumToken["KeyframesAtRuleNodeType"] = 93] = "KeyframesAtRuleNodeType";
     /**
-     * invalid declaration node type
+     * invalid declaration node type.
+     * @deprecated
      */
     EnumToken[EnumToken["InvalidDeclarationNodeType"] = 94] = "InvalidDeclarationNodeType";
     /* css module nodes */

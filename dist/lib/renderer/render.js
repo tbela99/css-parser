@@ -447,8 +447,8 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                     "lab",
                     "lch",
                 ].includes(fnName);
-                const useAlpha = (hasAlpha && token.chi.length == 4) ||
-                    ("color" == token.val.toLowerCase() && token.chi.length == 5);
+                const useAlpha = (hasAlpha && token.chi.length == (isLegacy ? 7 : 4)) ||
+                    ("color" == token.val && token.chi.length == 5);
                 return ((hasAlpha && token.val.endsWith("a") ? fnName.slice(0, -1) : fnName) +
                     "(" +
                     token

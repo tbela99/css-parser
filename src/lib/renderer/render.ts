@@ -666,7 +666,6 @@ export function renderValue(
             }
 
             if (options.convertColor !== false) {
-                
                 const value: ColorToken | null = convertColor(
                     token as ColorToken,
                     typeof options.convertColor === "boolean"
@@ -704,17 +703,23 @@ export function renderValue(
                 const isLegacy: boolean = ["rgb", "rgba", "hsl", "hsla"].includes(
                     (token as ColorToken).val.toLowerCase(),
                 );
-                const hasAlpha: boolean = ["rgb", "rgba", "hsl", "hsla", "hwb", "oklab", "oklch", "lab", "lch"].includes(
-                        fnName,
-                    );
-                const useAlpha: boolean =hasAlpha
-                     &&
-                        (token as ColorToken).chi!.length == 4 ||
-                    ("color" == (token as ColorToken).val.toLowerCase() && (token as ColorToken).chi!.length == 5);
+                const hasAlpha: boolean = [
+                    "rgb",
+                    "rgba",
+                    "hsl",
+                    "hsla",
+                    "hwb",
+                    "oklab",
+                    "oklch",
+                    "lab",
+                    "lch",
+                ].includes(fnName);
+                const useAlpha: boolean =
+                    (hasAlpha && (token as ColorToken).chi!.length == (isLegacy? 7: 4)) ||
+                    ("color" == (token as ColorToken).val && (token as ColorToken).chi!.length == 5);
+
                 return (
-                    (hasAlpha && (token as ColorToken).val.endsWith("a") 
-                        ? fnName.slice(0, -1)
-                        : fnName) +
+                    (hasAlpha && (token as ColorToken).val.endsWith("a") ? fnName.slice(0, -1) : fnName) +
                     "(" +
                     (token as ColorToken)
                         .chi!.reduce((acc: string, curr: Token, index: number, array: Token[]) => {
@@ -961,7 +966,10 @@ export function renderValue(
                                 }
                             }
 
-                            if (slice[i]?.typ === EnumToken.IdenTokenType && equalsIgnoreCase((slice[i] as IdentToken).val, "at")) {
+                            if (
+                                slice[i]?.typ === EnumToken.IdenTokenType &&
+                                equalsIgnoreCase((slice[i] as IdentToken).val, "at")
+                            ) {
                                 i++;
                             }
 

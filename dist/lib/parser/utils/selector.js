@@ -3,7 +3,7 @@ import { renderValue } from '../../renderer/render.js';
 import { definedPropertySettings, tokensfuncDefMap, combinators } from '../../syntax/constants.js';
 import { pseudoElements, isIdent, isHash } from '../../syntax/syntax.js';
 import { getParsedSyntax, getSyntaxRule, getSyntaxConfig } from '../../validation/config.js';
-import { matchAllSyntax, createValidationContext, trimArray, matchSelectorSyntax } from '../../validation/match.js';
+import { matchAllSyntaxes, createValidationContext, trimArray, matchSelectorSyntax } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from '../../validation/parser/typedef.js';
 import { splitTokenList } from '../../validation/utils/list.js';
 import { trimWhiteSpace } from '../parse.js';
@@ -13,7 +13,7 @@ import { trimWhiteSpace } from '../parse.js';
  */
 function parseSelector(tokens, context, options, errors) {
     if (context?.typ === EnumToken.KeyframesAtRuleNodeType) {
-        const result = matchAllSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "keyframe-selectors"), createValidationContext(tokens), options);
+        const result = matchAllSyntaxes(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "keyframe-selectors"), createValidationContext(tokens), options);
         const parts = splitTokenList(tokens);
         for (const part of parts) {
             trimArray(part);
@@ -220,7 +220,7 @@ function parseSelector(tokens, context, options, errors) {
                         if (tokensfuncDefMap.has(func.typ)) {
                             // @ts-expect-error
                             func.typ = tokensfuncDefMap.get(func.typ);
-                            func.chi = tokens.splice(index + 1, i - index - 1);
+                            func.chi = trimArray(tokens.splice(index + 1, i - index - 1));
                         }
                         if (result.success && options.minify) {
                             // parse an+b

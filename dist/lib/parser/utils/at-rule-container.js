@@ -1,6 +1,6 @@
 import { EnumToken } from '../../ast/types.js';
 import { tokensfuncDefMap, mFLT, mFGT, definedPropertySettings } from '../../syntax/constants.js';
-import { matchAllSyntax, createValidationContext, trimArray, isStyleRangeValue } from '../../validation/match.js';
+import { matchAllSyntaxes, createValidationContext, trimArray, isStyleRangeValue } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { getSyntaxRule } from '../../validation/config.js';
 import { parseColor } from '../../syntax/syntax.js';
@@ -27,7 +27,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
         }
         return acc;
     }, [[]]);
-    const result = matchAllSyntax(syntax, createValidationContext(stream), options);
+    const result = matchAllSyntaxes(syntax, createValidationContext(stream), options);
     if (!result.success) {
         errors.push(...result.errors);
         return {

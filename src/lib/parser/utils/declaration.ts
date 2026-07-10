@@ -1,8 +1,6 @@
 import type {
     AstAtRule,
     AstDeclaration,
-    AstInvalidAtRule,
-    AstInvalidRule,
     AstKeyFrameRule,
     AstRule,
     AstStyleSheet,
@@ -35,7 +33,7 @@ import {
 } from "../../syntax/constants.ts";
 import { isColor, isValue, isWhiteSpace, parseColor, renamedStandardProperties } from "../../syntax/syntax.ts";
 import { getSyntaxRule, getParsedSyntax, ValidationSyntaxRule } from "../../validation/config.ts";
-import { matchAllSyntax, createValidationContext, trimArray } from "../../validation/match.ts";
+import { matchAllSyntaxes, createValidationContext, trimArray } from "../../validation/match.ts";
 import type { ValidationMatch } from "../../validation/types.d.ts";
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from "../../validation/parser/typedef.ts";
 import { tokensfuncDefMap } from "../../syntax/constants.ts";
@@ -143,8 +141,6 @@ export function parseDeclaration(
         | AstKeyFrameRule
         | AstStyleSheet
         | AtRuleToken
-        | AstInvalidAtRule
-        | AstInvalidRule
         | null,
     options: ParserOptions,
     errors: ErrorDescription[],
@@ -158,7 +154,7 @@ export function parseDeclaration(
     let validate =
         typeof options.validation === "boolean"
             ? options.validation
-            : (options.validation as ValidationLevel) & ValidationLevel.Declaration;
+            : !!options.validation;
 
     if (renamedStandardProperties.has(name.val)) {
         name.val = renamedStandardProperties.get(name.val) as string;
@@ -359,6 +355,7 @@ export function parseDeclaration(
         else {
 
             syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, name.val.toLowerCase());
+            
         }
 
         // <declaration-list> or <declaration-rule-list>
@@ -402,7 +399,7 @@ export function parseDeclaration(
 
         return Object.defineProperties(
             Object.assign(name, {
-                typ: EnumToken.InvalidDeclarationNodeType,
+                typ: EnumToken.DeclarationNodeType,
                 nam: name.val,
                 val: tokens,
             }),
@@ -434,7 +431,7 @@ export function parseDeclaration(
 
     if (syntaxRules != null) {
         const doNotValidate: boolean = options.validation === false || options.validation === ValidationLevel.None;
-        result = doNotValidate ? null : matchAllSyntax(syntaxRules, createValidationContext(tokens), options);
+        result = doNotValidate ? null : matchAllSyntaxes(syntaxRules, createValidationContext(tokens), options);
 
         if (doNotValidate || result != null) {
             success = doNotValidate || (result?.success as boolean);
@@ -881,7 +878,7 @@ export function parseDeclaration(
 
     return Object.defineProperties(
         Object.assign(name, {
-            typ: success ? EnumToken.DeclarationNodeType : EnumToken.InvalidDeclarationNodeType,
+            typ: success ? EnumToken.DeclarationNodeType : EnumToken.DeclarationNodeType,
             nam: name.val,
             val: tokens,
         }),

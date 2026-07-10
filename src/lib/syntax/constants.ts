@@ -47,6 +47,7 @@ export const colorPrecision = 6;
  * Angle precision
  */
 export const anglePrecision = 0.001;
+
 /**
  * Color range definitions
  */
@@ -489,5 +490,3 @@ export const trimTokenSpace: Set<EnumToken> = new Set([
 ]);
 export const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
 export const combinators: string[] = ["+", ">", "~", "||", "|"];
-
-

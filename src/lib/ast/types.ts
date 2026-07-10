@@ -29,15 +29,15 @@ export enum EnumAstNodeStatus {
      */
     Unvalidated,
     /**
-     * Node did not pass validation, but is allowed in the context
+     * Node did not pass validation, but is preserved.
      */
     ValidationFailed,
     /**
-     * Node is not recognized
+     * Parsing the node is not supported yet or the node syntax definition does not exist.
      */
     Unknown,
     /**
-     * Node is unparsed
+     * Failed to parse the node.
      */
     Unparsed,
     /**
@@ -52,6 +52,7 @@ export enum EnumAstNodeStatus {
 
 /**
  * Enum of validation levels
+ * @deprecated
  */
 export enum ValidationLevel {
     /**
@@ -417,7 +418,8 @@ export enum EnumToken {
      */
     NestingSelectorTokenType, // &
     /**
-     * invalid rule token type
+     * Invalid rule token type
+     * @deprecated
      */
     InvalidRuleNodeType,
     /**
@@ -429,7 +431,8 @@ export enum EnumToken {
      */
     InvalidAttrTokenType,
     /**
-     * invalid at rule token type
+     * Invalid at rule token type
+     * @deprecated
      */
     InvalidAtRuleNodeType,
     /**
@@ -470,7 +473,8 @@ export enum EnumToken {
      */
     KeyframesAtRuleNodeType,
     /**
-     * invalid declaration node type
+     * invalid declaration node type.
+     * @deprecated
      */
     InvalidDeclarationNodeType,
 

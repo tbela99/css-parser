@@ -5,7 +5,7 @@ import { parseString } from '../parse.js';
 import { EnumToken, EnumAstNodeStatus } from '../../ast/types.js';
 import { getParsedSyntax } from '../../validation/config.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
-import { matchAllSyntax, createValidationContext } from '../../validation/match.js';
+import { matchAllSyntaxes, createValidationContext } from '../../validation/match.js';
 import { definedPropertySettings } from '../../syntax/constants.js';
 
 const config = getConfig();
@@ -52,7 +52,7 @@ class PropertyList {
             if (declaration.state == EnumAstNodeStatus.Unvalidated) {
                 syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, declaration.nam.toLowerCase());
                 if (syntaxRules != null) {
-                    result = matchAllSyntax(syntaxRules, createValidationContext(declaration.val), this.options);
+                    result = matchAllSyntaxes(syntaxRules, createValidationContext(declaration.val), this.options);
                     Object.defineProperty(declaration, "state", {
                         ...definedPropertySettings,
                         value: result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.ValidationFailed,

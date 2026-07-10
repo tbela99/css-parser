@@ -330,16 +330,10 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
         let node = null;
         let nodeIndex = -1;
         for (; i < ast.chi.length; i++) {
-            if (ast.chi[i].typ === EnumToken.CommentNodeType ||
-                ast.chi[i].typ === EnumToken.InvalidRuleNodeType ||
-                ast.chi[i].typ === EnumToken.InvalidAtRuleNodeType ||
-                ast.chi[i].typ === EnumToken.InvalidRuleNodeType) {
+            if (ast.chi[i].typ === EnumToken.CommentNodeType) {
                 continue;
             }
-            while (previous?.typ === EnumToken.CommentNodeType ||
-                previous?.typ === EnumToken.InvalidRuleNodeType ||
-                previous?.typ === EnumToken.InvalidAtRuleNodeType ||
-                previous?.typ === EnumToken.InvalidRuleNodeType) {
+            while (previous?.typ === EnumToken.CommentNodeType) {
                 previous = ast.chi[--nodeIndex];
                 continue;
             }

@@ -13,13 +13,14 @@ import type {
 import { EnumToken, ValidationLevel } from "../../ast/types.ts";
 import { renderValue } from "../../renderer/render.ts";
 import { definedPropertySettings, trimTokenSpace } from "../../syntax/constants.ts";
-import { getParsedSyntax } from "../../validation/config.ts";
-import { trimArray, matchAllSyntax, createValidationContext } from "../../validation/match.ts";
+import { getParsedSyntax, getSyntaxConfig } from "../../validation/config.ts";
+import { trimArray, matchAllSyntaxes, createValidationContext } from "../../validation/match.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import type { ValidationFunctionToken, ValidationToken } from "../../validation/parser/types.d.ts";
 import { tokensfuncDefMap, tokensfuncSet } from "../../syntax/constants.ts";
 import { parseDeclaration } from "./declaration.ts";
 import { equalsIgnoreCase } from "./text.ts";
+import { pseudoElements } from "../../syntax/syntax.ts";
 
 export function parseAtRuleSupportSyntax(
     stream: Token[],
@@ -33,6 +34,7 @@ export function parseAtRuleSupportSyntax(
     let success: boolean = true;
     let expectAndOr: boolean = false;
     let scope: Set<EnumToken> = new Set();
+    let val: string;
     const errors: ErrorDescription[] = [];
     const scopes: Array<Set<EnumToken>> = [scope];
     const trimWhiteSpace: Set<EnumToken> = new Set([
@@ -58,7 +60,7 @@ export function parseAtRuleSupportSyntax(
         !(stream[i]?.typ === EnumToken.IdenTokenType && "not" === (stream[i] as IdentToken)?.val.toLowerCase())
     ) {
         return {
-            success,
+            success: false,
             errors: [
                 {
                     action: "drop",
@@ -70,7 +72,68 @@ export function parseAtRuleSupportSyntax(
     }
 
     for (; i < stream.length; i++) {
+
         tokens.push(stream[i]);
+
+        if (stream[i].typ == EnumToken.ColonTokenType) {
+            if (stream[i + 1]?.typ == EnumToken.IdenTokenType) {
+                Object.assign(stream[i], {
+                    typ: EnumToken.PseudoElementTokenType,
+                    val: ":" + (stream[i + 1] as IdentToken).val,
+                });
+
+                stream[i].loc!.end = stream[i + 1]!.loc!.end;
+                stream.splice(i + 1, 1);
+                continue;
+            }
+
+            if (stream[i + 1]?.typ == EnumToken.FunctionTokenDefType) {
+                val = ":" + (stream[i + 1] as IdentToken).val;
+
+                Object.assign(stream[i], {
+                    typ:
+                        val + "()" in getSyntaxConfig().selectors
+                            ? EnumToken.PseudoClassFunctionTokenDefType
+                            : stream[i + 1].typ,
+                    val,
+                });
+
+                stack.push(stream[i]);
+                stream[i].loc!.end = stream[i + 1]!.loc!.end;
+                stream.splice(i + 1, 1);
+                continue;
+            }
+        }
+
+        if (stream[i].typ == EnumToken.DoubleColonTokenType) {
+            val = ":" + (stream[i + 1] as IdentToken).val;
+            if (stream[i + 1]?.typ == EnumToken.IdenTokenType) {
+                Object.assign(stream[i], {
+                    typ: EnumToken.PseudoClassTokenType,
+                    val: (pseudoElements.includes(val) ? "" : ":") + val,
+                });
+
+                stream[i].loc!.end = stream[i + 1]!.loc!.end;
+                stream.splice(i + 1, 1);
+                continue;
+            }
+
+            if (stream[i + 1]?.typ == EnumToken.FunctionTokenDefType) {
+                val = "::" + (stream[i + 1] as IdentToken).val;
+                Object.assign(stream[i], {
+                    typ:
+                        val + "()" in getSyntaxConfig().selectors
+                            ? EnumToken.PseudoClassFunctionTokenDefType
+                            : EnumToken.FunctionTokenDefType,
+                    val,
+                });
+
+                stack.push(stream[i]);
+                stream[i].loc!.end = stream[i + 1]!.loc!.end;
+                stream.splice(i + 1, 1);
+                continue;
+            }
+        }
 
         if (trimWhiteSpace.has(stream[i].typ)) {
             if (tokens.at(-2)?.typ === EnumToken.WhitespaceTokenType) {
@@ -127,6 +190,9 @@ export function parseAtRuleSupportSyntax(
         switch (stream[i].typ) {
             case EnumToken.EndParensTokenType:
                 {
+
+                    // console.debug('na', tokensfuncDefMap.has(stack.at(-1)?.typ));
+
                     if (stack.length === 0) {
                         return {
                             success: false,
@@ -159,7 +225,7 @@ export function parseAtRuleSupportSyntax(
                                 stack.pop();
 
                                 const index2: number = tokens.indexOf(stack[stack.length - 1]);
-                                const result = matchAllSyntax(
+                                const result = matchAllSyntaxes(
                                     (
                                         getParsedSyntax(
                                             ValidationSyntaxGroupEnum.Syntaxes,
@@ -285,6 +351,7 @@ export function parseAtRuleSupportSyntax(
 
                         expectAndOr = true;
                     } else if (tokensfuncDefMap.has(stack.at(-1)?.typ)) {
+                    
                         const index: number = tokens.indexOf(stack.at(-1)!);
                         tokens[index] = Object.defineProperty(
                             {
@@ -298,6 +365,32 @@ export function parseAtRuleSupportSyntax(
                                 value: { ...stack.at(-1)!.loc, end: { ...stream[i]?.loc?.end } },
                             },
                         ) as FunctionToken;
+
+                        if (tokens[index].typ === EnumToken.PseudoClassFuncTokenType) {
+                            
+                                // not a declaration
+                                const result = matchAllSyntaxes(
+                                    (
+                                        getParsedSyntax(
+                                            ValidationSyntaxGroupEnum.Selectors,
+                                            (tokens[index] as FunctionToken).val + "()",
+                                        ) as ValidationFunctionToken[]
+                                    )?.[0]?.chi as ValidationToken[],
+                                    createValidationContext((tokens[index] as FunctionToken).chi as Token[]),
+                                    options,
+                                );
+
+                                if (!result.success) {
+                                    return {
+                                        success: false,
+                                        errors: result.errors,
+                                    };
+                                }
+
+                            stack.pop();
+                            tokens.pop();
+                            break;
+                        }
 
                         //
                         let k: number = stack.length - 1;
@@ -316,7 +409,7 @@ export function parseAtRuleSupportSyntax(
                                 });
                             } else {
                                 // not a declaration
-                                const result = matchAllSyntax(
+                                const result = matchAllSyntaxes(
                                     (
                                         getParsedSyntax(
                                             ValidationSyntaxGroupEnum.Syntaxes,
@@ -342,11 +435,16 @@ export function parseAtRuleSupportSyntax(
                             }
                         }
 
+                    // console.debug({stack2: stack});
+                    
                         stack.pop();
                         tokens.pop();
 
+                    // console.debug({stack});
+                    
                         scopes.pop();
                         scope = scopes[scopes.length - 1];
+                    
                     }
 
                     if (stack.at(-1)?.typ === EnumToken.NotTokenType) {

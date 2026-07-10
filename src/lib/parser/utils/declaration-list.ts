@@ -1,7 +1,7 @@
 import type { AstAtRule, AtRuleToken, Token, ParserOptions, ErrorDescription } from "../../../@types/index.d.ts";
 import { EnumToken } from "../../ast/types.ts";
 import { getSyntaxRule } from "../../validation/config.ts";
-import { matchAllSyntax, createValidationContext } from "../../validation/match.ts";
+import { matchAllSyntaxes, createValidationContext } from "../../validation/match.ts";
 import { trimSyntaxArray } from "../../validation/parser/parse.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";
@@ -40,7 +40,7 @@ export  function parseDeclarationList(context: AstAtRule | AtRuleToken, stream: 
         }
     }
         
-    const result = matchAllSyntax(trimSyntaxArray(syntax), createValidationContext(stream), options);
+    const result = matchAllSyntaxes(trimSyntaxArray(syntax), createValidationContext(stream), options);
     errors.push(...result.errors);
 
     return { success: result.success, errors };

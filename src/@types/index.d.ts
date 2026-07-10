@@ -56,13 +56,13 @@ export declare interface ErrorDescription {
  */
 export interface ValidationOptions {
     /**
-     * nested rule context
-     * @internal
+     * Nested rule context
+     * @private
      */
     nestedRule?: boolean;
 
     /**
-     * enable CSS validation
+     * Enable CSS validation. Using ValidationLevel as value is deprecated and will be removed
      *
      * see {@link ValidationLevel}
      */
@@ -203,9 +203,9 @@ export declare type LoadResult =
     | string
     | Promise<string>;
 
-    /**
-     * CSS module parser options
-     */
+/**
+ * CSS module parser options
+ */
 export declare interface ModuleOptions {
     /**
      * Use local scope vs global scope
@@ -325,6 +325,15 @@ export declare interface ModuleOptions {
     ) => string | Promise<string>;
 }
 
+export declare interface ParseInputFileOptions {
+    file: string;
+    asStream?: boolean;
+}
+
+export declare interface ParseInputStreamOptions {
+    input: string | ReadableStream<Uint8Array>;
+}
+
 /**
  * Parser options
  */
@@ -363,14 +372,14 @@ export declare interface ParserOptions
     expandIfSyntax?: boolean;
 
     /**
-     * Url and file loader
+     * Custom URL and file loader.
      * @param url
      * @param currentDirectory
      * @param responseType
      *
      */
     load?: (
-        url: string | { absolute: string; relative: string } ,
+        url: string | { absolute: string; relative: string },
         currentDirectory: string,
         responseType?: boolean | ResponseType,
     ) => Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
