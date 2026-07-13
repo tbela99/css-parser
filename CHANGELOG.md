@@ -1,14 +1,18 @@
 # Changelog
 
+## v1.4.6
+
+- [x] Fix if syntax expansion regression bug #134
+
 ## v1.4.5
 
-- [x] Temporarily disable if syntax expansion
+- [x] Temporarily disable if syntax expansion #131
 
 ## v1.4.4
 
 ### Validation changes
 
-- [x] Added the `state` and `errors` properties to nodes to expose their validation status and any associated validation errors.
+- [x] Added the `state` and `errors` properties to nodes to expose their validation status and any associated validation errors. #127
 - [x] Nodes that fail validation are no longer discarded. Nodes are discarded only if they are invalid, unparsed, or malformed. Unknown nodes are discarded when lenient parsing is disabled.
 
 ### Color
