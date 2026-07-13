@@ -505,13 +505,13 @@ html, body, div, span, applet, object, iframe,
 
         it('file validation #21', function () {
 
-           return transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/full.css';
+           return transform(`@import '${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replaceAll('\\', '/')}/../../files/css/full.css';
 `, {validation: true, resolveImport: true}).then(result => expect(result.errors.length).equals(5));
         });
 
         it('file validation #22', function () {
 
-            transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/bootstrap.css';
+            transform(`@import '${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replaceAll('\\', '/')}/../../files/css/bootstrap.css';
 `, {
                 validation: true,
                 resolveImport: true
@@ -520,7 +520,7 @@ html, body, div, span, applet, object, iframe,
 
         it('file validation #23', function () {
 
-            return transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/bootstrap-4.css';
+            return transform(`@import '${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replaceAll('\\', '/')}/../../files/css/bootstrap-4.css';
 `, {
                 validation: true,
                 resolveImport: true
@@ -529,7 +529,7 @@ html, body, div, span, applet, object, iframe,
 
         it('file validation #24', function () {
 
-           return transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/bootstrap-5.css';
+           return transform(`@import '${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replaceAll('\\', '/')}/../../files/css/bootstrap-5.css';
 `, {
                 validation: true,
                 resolveImport: true
@@ -538,7 +538,7 @@ html, body, div, span, applet, object, iframe,
 
         it('file validation #25', function () {
 
-            return transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/tailwind.css';
+            return transform(`@import '${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replaceAll('\\', '/')}/../../files/css/tailwind.css';
 `, {
                 validation: true,
                 resolveImport: true
@@ -547,7 +547,7 @@ html, body, div, span, applet, object, iframe,
 
         it('file validation #26', function () {
 
-            return transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/tailwind-2.0.4.css';
+            return transform(`@import '${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replaceAll('\\', '/')}/../../files/css/tailwind-2.0.4.css';
 `, {
                 validation: true,
                 resolveImport: true
@@ -556,7 +556,7 @@ html, body, div, span, applet, object, iframe,
 
         it('file validation #27', function () {
 
-            return transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/github-markdown.css';
+            return transform(`@import '${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replaceAll('\\', '/')}/../../files/css/github-markdown.css';
 `, {
                 validation: true,
                 resolveImport: true

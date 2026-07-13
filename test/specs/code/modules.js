@@ -99,7 +99,7 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
 
 .indigo-white {
   composes: bg-indigo;
-composes: button cell title from "${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replace(/\\/g, '/')}/../../css-modules/mixins.css";  color: white;
+composes: button cell title from "${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replaceAll('\\', '/')}/../../css-modules/mixins.css";  color: white;
 }
 `, {
                 module: true, beautify: true
@@ -565,7 +565,7 @@ a span {
               
               .indigo-white {
                 composes: bg-indigo;
-              composes: button cell title from "${dirname(new URL(import.meta.url).pathname)}/../../css-modules/mixins.css";  color: white;
+              composes: button cell title from "${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replaceAll('\\', '/')}/../../css-modules/mixins.css";  color: white;
               }
 `, {
                 module: ModuleScopeEnumOptions.ICSS, beautify: true
@@ -633,7 +633,7 @@ a span {
             transform(`
 
   /* import your colors... */
-  @value colors: "${dirname(new URL(import.meta.url).pathname)}/../../css-modules/color.css";
+  @value colors: "${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replaceAll('\\', '/')}/../../css-modules/color.css";
   @value blue, red, green from colors;
   
   .button {
