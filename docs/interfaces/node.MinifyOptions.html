@@ -1,202 +1,554 @@
-<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>MinifyOptions | @tbela99/css-parser</title><meta name="description" content="Documentation for @tbela99/css-parser"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script><style>
-@media (prefers-color-scheme: dark) {
-  :root {
-    --md-sys-color-primary: #f6be46;
-    --md-sys-color-on-primary: #412d00;
-    --md-sys-color-primary-container: #5d4200;
-    --md-sys-color-on-primary-container: #ffdea3;
-    --md-sys-color-secondary: #d9c4a0;
-    --md-sys-color-on-secondary: #3b2f15;
-    --md-sys-color-secondary-container: #53452a;
-    --md-sys-color-on-secondary-container: #f6e0bb;
-    --md-sys-color-tertiary: #b2cfa8;
-    --md-sys-color-on-tertiary: #1e361a;
-    --md-sys-color-tertiary-container: #344d2f;
-    --md-sys-color-on-tertiary-container: #cdebc2;
-    --md-sys-color-error: #ffb4ab;
-    --md-sys-color-on-error: #690005;
-    --md-sys-color-error-container: #93000a;
-    --md-sys-color-on-error-container: #ffb4ab;
-    --md-sys-color-background: #1e1b16;
-    --md-sys-color-on-background: #e9e1d9;
-    --md-sys-color-surface: #1e1b16;
-    --md-sys-color-on-surface: #e9e1d9;
-    --md-sys-color-surface-variant: #4e4639;
-    --md-sys-color-on-surface-variant: #d1c5b4;
-    --md-sys-color-outline: #9a8f80;
-    --md-sys-color-outline-variant: #4e4639;
-    --md-sys-color-shadow: #000000;
-    --md-sys-color-scrim: #000000;
-    --md-sys-color-inverse-surface: #e9e1d9;
-    --md-sys-color-inverse-on-surface: #34302a;
-    --md-sys-color-inverse-primary: #7a5900;
-    --md-sys-color-surface-dim: #16130e;
-    --md-sys-color-surface-bright: #3d3933;
-    --md-sys-color-surface-container-lowest: #110e09;
-    --md-sys-color-surface-container-low: #1e1b16;
-    --md-sys-color-surface-container: #221f1a;
-    --md-sys-color-surface-container-high: #2d2924;
-    --md-sys-color-surface-container-highest: #38342e
-  }
-}
-:root[data-theme="dark"] {
-  --md-sys-color-primary: #f6be46;
-  --md-sys-color-on-primary: #412d00;
-  --md-sys-color-primary-container: #5d4200;
-  --md-sys-color-on-primary-container: #ffdea3;
-  --md-sys-color-secondary: #d9c4a0;
-  --md-sys-color-on-secondary: #3b2f15;
-  --md-sys-color-secondary-container: #53452a;
-  --md-sys-color-on-secondary-container: #f6e0bb;
-  --md-sys-color-tertiary: #b2cfa8;
-  --md-sys-color-on-tertiary: #1e361a;
-  --md-sys-color-tertiary-container: #344d2f;
-  --md-sys-color-on-tertiary-container: #cdebc2;
-  --md-sys-color-error: #ffb4ab;
-  --md-sys-color-on-error: #690005;
-  --md-sys-color-error-container: #93000a;
-  --md-sys-color-on-error-container: #ffb4ab;
-  --md-sys-color-background: #1e1b16;
-  --md-sys-color-on-background: #e9e1d9;
-  --md-sys-color-surface: #1e1b16;
-  --md-sys-color-on-surface: #e9e1d9;
-  --md-sys-color-surface-variant: #4e4639;
-  --md-sys-color-on-surface-variant: #d1c5b4;
-  --md-sys-color-outline: #9a8f80;
-  --md-sys-color-outline-variant: #4e4639;
-  --md-sys-color-shadow: #000000;
-  --md-sys-color-scrim: #000000;
-  --md-sys-color-inverse-surface: #e9e1d9;
-  --md-sys-color-inverse-on-surface: #34302a;
-  --md-sys-color-inverse-primary: #7a5900;
-  --md-sys-color-surface-dim: #16130e;
-  --md-sys-color-surface-bright: #3d3933;
-  --md-sys-color-surface-container-lowest: #110e09;
-  --md-sys-color-surface-container-low: #1e1b16;
-  --md-sys-color-surface-container: #221f1a;
-  --md-sys-color-surface-container-high: #2d2924;
-  --md-sys-color-surface-container-highest: #38342e
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    --md-sys-color-primary: #7a5900;
-    --md-sys-color-on-primary: #ffffff;
-    --md-sys-color-primary-container: #ffdea3;
-    --md-sys-color-on-primary-container: #261900;
-    --md-sys-color-secondary: #6c5c3f;
-    --md-sys-color-on-secondary: #ffffff;
-    --md-sys-color-secondary-container: #f6e0bb;
-    --md-sys-color-on-secondary-container: #251a04;
-    --md-sys-color-tertiary: #4b6545;
-    --md-sys-color-on-tertiary: #ffffff;
-    --md-sys-color-tertiary-container: #cdebc2;
-    --md-sys-color-on-tertiary-container: #092007;
-    --md-sys-color-error: #ba1a1a;
-    --md-sys-color-on-error: #ffffff;
-    --md-sys-color-error-container: #ffdad6;
-    --md-sys-color-on-error-container: #410002;
-    --md-sys-color-background: #fffbff;
-    --md-sys-color-on-background: #1e1b16;
-    --md-sys-color-surface: #fffbff;
-    --md-sys-color-on-surface: #1e1b16;
-    --md-sys-color-surface-variant: #ede1cf;
-    --md-sys-color-on-surface-variant: #4e4639;
-    --md-sys-color-outline: #7f7667;
-    --md-sys-color-outline-variant: #d1c5b4;
-    --md-sys-color-shadow: #000000;
-    --md-sys-color-scrim: #000000;
-    --md-sys-color-inverse-surface: #34302a;
-    --md-sys-color-inverse-on-surface: #f8efe7;
-    --md-sys-color-inverse-primary: #f6be46;
-    --md-sys-color-surface-dim: #e1d9d0;
-    --md-sys-color-surface-bright: #fff8f2;
-    --md-sys-color-surface-container-lowest: #ffffff;
-    --md-sys-color-surface-container-low: #fbf2e9;
-    --md-sys-color-surface-container: #f5ede4;
-    --md-sys-color-surface-container-high: #efe7de;
-    --md-sys-color-surface-container-highest: #e9e1d9
-  }
-}
-:root[data-theme="light"] {
-  --md-sys-color-primary: #7a5900;
-  --md-sys-color-on-primary: #ffffff;
-  --md-sys-color-primary-container: #ffdea3;
-  --md-sys-color-on-primary-container: #261900;
-  --md-sys-color-secondary: #6c5c3f;
-  --md-sys-color-on-secondary: #ffffff;
-  --md-sys-color-secondary-container: #f6e0bb;
-  --md-sys-color-on-secondary-container: #251a04;
-  --md-sys-color-tertiary: #4b6545;
-  --md-sys-color-on-tertiary: #ffffff;
-  --md-sys-color-tertiary-container: #cdebc2;
-  --md-sys-color-on-tertiary-container: #092007;
-  --md-sys-color-error: #ba1a1a;
-  --md-sys-color-on-error: #ffffff;
-  --md-sys-color-error-container: #ffdad6;
-  --md-sys-color-on-error-container: #410002;
-  --md-sys-color-background: #fffbff;
-  --md-sys-color-on-background: #1e1b16;
-  --md-sys-color-surface: #fffbff;
-  --md-sys-color-on-surface: #1e1b16;
-  --md-sys-color-surface-variant: #ede1cf;
-  --md-sys-color-on-surface-variant: #4e4639;
-  --md-sys-color-outline: #7f7667;
-  --md-sys-color-outline-variant: #d1c5b4;
-  --md-sys-color-shadow: #000000;
-  --md-sys-color-scrim: #000000;
-  --md-sys-color-inverse-surface: #34302a;
-  --md-sys-color-inverse-on-surface: #f8efe7;
-  --md-sys-color-inverse-primary: #f6be46;
-  --md-sys-color-surface-dim: #e1d9d0;
-  --md-sys-color-surface-bright: #fff8f2;
-  --md-sys-color-surface-container-lowest: #ffffff;
-  --md-sys-color-surface-container-low: #fbf2e9;
-  --md-sys-color-surface-container: #f5ede4;
-  --md-sys-color-surface-container-high: #efe7de;
-  --md-sys-color-surface-container-highest: #e9e1d9
-}
-</style><link rel="stylesheet" href="../assets/material-style.css"/></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index.html" class="title">@tbela99/css-parser</a><div id="tsd-toolbar-links"><a href="https://tbela99.github.io/css-parser/benchmark/index.html">Benchmark</a><a href="https://tbela99.github.io/css-parser/docs/">Docs</a><a href="https://tbela99.github.io/css-parser/playground/">Playground</a><a href="https://github.com/tbela99/css-parser">GitHub</a></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="../modules/node.html">node</a></li><li><a href="" aria-current="page">MinifyOptions</a></li></ul><h1>Interface MinifyOptions</h1></div><section class="tsd-panel tsd-comment"><div class="tsd-comment tsd-typography"><p>minify options</p>
-</div></section><div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">MinifyOptions</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#computecalcexpression">computeCalcExpression</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#computeshorthand">computeShorthand</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#computetransform">computeTransform</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#inlinecssvariables">inlineCssVariables</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#minify">minify</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#nestingrules">nestingRules</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#parsecolor">parseColor</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#pass">pass</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#removeduplicatedeclarations">removeDuplicateDeclarations</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">boolean</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#removeempty">removeEmpty</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#removeprefix">removePrefix</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><section class="tsd-panel tsd-hierarchy" data-refl="93"><h4>Hierarchy (<a href="../hierarchy.html#node.MinifyOptions">View Summary</a>)</h4><ul class="tsd-hierarchy"><li class="tsd-hierarchy-item"><span class="tsd-hierarchy-target">MinifyOptions</span><ul class="tsd-hierarchy"><li class="tsd-hierarchy-item"><a href="node.ParserOptions.html" class="tsd-signature-type tsd-kind-interface">ParserOptions</a></li></ul></li></ul></section><aside class="tsd-sources"><ul><li>Defined in <a href="https://github.com/tbela99/css-parser/blob/d4752a6881be70c278c928d736a9ab6645380124/src/@types/index.d.ts#L127">@types/index.d.ts:127</a></li></ul></aside><section class="tsd-panel-group tsd-index-group"><section class="tsd-panel tsd-index-panel"><details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h5 class="tsd-index-heading uppercase">Index</h5></summary><div class="tsd-accordion-details"><section class="tsd-index-section"><h3 class="tsd-index-heading">Properties</h3><div class="tsd-index-list"><a href="#computecalcexpression" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>compute<wbr/>Calc<wbr/>Expression?</span></a>
-<a href="#computeshorthand" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>compute<wbr/>Shorthand?</span></a>
-<a href="#computetransform" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>compute<wbr/>Transform?</span></a>
-<a href="#inlinecssvariables" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>inline<wbr/>Css<wbr/>Variables?</span></a>
-<a href="#minify" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>minify?</span></a>
-<a href="#nestingrules" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>nesting<wbr/>Rules?</span></a>
-<a href="#parsecolor" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>parse<wbr/>Color?</span></a>
-<a href="#pass" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>pass?</span></a>
-<a href="#removeduplicatedeclarations" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>remove<wbr/>Duplicate<wbr/>Declarations?</span></a>
-<a href="#removeempty" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>remove<wbr/>Empty?</span></a>
-<a href="#removeprefix" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>remove<wbr/>Prefix?</span></a>
-</div></section></div></details></section></section><details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h2>Properties</h2></summary><section><section class="tsd-panel tsd-member"><h3 class="tsd-anchor-link" id="computecalcexpression"><code class="tsd-tag">Optional</code><span>compute<wbr/>Calc<wbr/>Expression</span><a href="#computecalcexpression" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><div class="tsd-signature"><span class="tsd-kind-property">computeCalcExpression</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div><div class="tsd-comment tsd-typography"><p>compute math functions
-see supported functions mathFuncs</p>
-</div><aside class="tsd-sources"><ul><li>Defined in <a href="https://github.com/tbela99/css-parser/blob/d4752a6881be70c278c928d736a9ab6645380124/src/@types/index.d.ts#L185">@types/index.d.ts:185</a></li></ul></aside></section><section class="tsd-panel tsd-member"><h3 class="tsd-anchor-link" id="computeshorthand"><code class="tsd-tag">Optional</code><span>compute<wbr/>Shorthand</span><a href="#computeshorthand" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><div class="tsd-signature"><span class="tsd-kind-property">computeShorthand</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div><div class="tsd-comment tsd-typography"><p>compute shorthand properties</p>
-</div><aside class="tsd-sources"><ul><li>Defined in <a href="https://github.com/tbela99/css-parser/blob/d4752a6881be70c278c928d736a9ab6645380124/src/@types/index.d.ts#L175">@types/index.d.ts:175</a></li></ul></aside></section><section class="tsd-panel tsd-member"><h3 class="tsd-anchor-link" id="computetransform"><code class="tsd-tag">Optional</code><span>compute<wbr/>Transform</span><a href="#computetransform" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><div class="tsd-signature"><span class="tsd-kind-property">computeTransform</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div><div class="tsd-comment tsd-typography"><p>compute transform functions
-see supported functions transformFunctions</p>
-</div><aside class="tsd-sources"><ul><li>Defined in <a href="https://github.com/tbela99/css-parser/blob/d4752a6881be70c278c928d736a9ab6645380124/src/@types/index.d.ts#L180">@types/index.d.ts:180</a></li></ul></aside></section><section class="tsd-panel tsd-member"><h3 class="tsd-anchor-link" id="inlinecssvariables"><code class="tsd-tag">Optional</code><span>inline<wbr/>Css<wbr/>Variables</span><a href="#inlinecssvariables" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><div class="tsd-signature"><span class="tsd-kind-property">inlineCssVariables</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div><div class="tsd-comment tsd-typography"><p>inline css variables</p>
-</div><aside class="tsd-sources"><ul><li>Defined in <a href="https://github.com/tbela99/css-parser/blob/d4752a6881be70c278c928d736a9ab6645380124/src/@types/index.d.ts#L189">@types/index.d.ts:189</a></li></ul></aside></section><section class="tsd-panel tsd-member"><h3 class="tsd-anchor-link" id="minify"><code class="tsd-tag">Optional</code><span>minify</span><a href="#minify" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><div class="tsd-signature"><span class="tsd-kind-property">minify</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div><div class="tsd-comment tsd-typography"><p>enable minification</p>
-</div><aside class="tsd-sources"><ul><li>Defined in <a href="https://github.com/tbela99/css-parser/blob/d4752a6881be70c278c928d736a9ab6645380124/src/@types/index.d.ts#L131">@types/index.d.ts:131</a></li></ul></aside></section><section class="tsd-panel tsd-member"><h3 class="tsd-anchor-link" id="nestingrules"><code class="tsd-tag">Optional</code><span>nesting<wbr/>Rules</span><a href="#nestingrules" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><div class="tsd-signature"><span class="tsd-kind-property">nestingRules</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div><div class="tsd-comment tsd-typography"><p>generate nested rules</p>
-</div><aside class="tsd-sources"><ul><li>Defined in <a href="https://github.com/tbela99/css-parser/blob/d4752a6881be70c278c928d736a9ab6645380124/src/@types/index.d.ts#L139">@types/index.d.ts:139</a></li></ul></aside></section><section class="tsd-panel tsd-member"><h3 class="tsd-anchor-link" id="parsecolor"><code class="tsd-tag">Optional</code><span>parse<wbr/>Color</span><a href="#parsecolor" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><div class="tsd-signature"><span class="tsd-kind-property">parseColor</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div><div class="tsd-comment tsd-typography"><p>parse color tokens</p>
-</div><aside class="tsd-sources"><ul><li>Defined in <a href="https://github.com/tbela99/css-parser/blob/d4752a6881be70c278c928d736a9ab6645380124/src/@types/index.d.ts#L135">@types/index.d.ts:135</a></li></ul></aside></section><section class="tsd-panel tsd-member"><h3 class="tsd-anchor-link" id="pass"><code class="tsd-tag">Optional</code><span>pass</span><a href="#pass" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><div class="tsd-signature"><span class="tsd-kind-property">pass</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div><div class="tsd-comment tsd-typography"><p>define minification passes.</p>
-</div><aside class="tsd-sources"><ul><li>Defined in <a href="https://github.com/tbela99/css-parser/blob/d4752a6881be70c278c928d736a9ab6645380124/src/@types/index.d.ts#L201">@types/index.d.ts:201</a></li></ul></aside></section><section class="tsd-panel tsd-member"><h3 class="tsd-anchor-link" id="removeduplicatedeclarations"><code class="tsd-tag">Optional</code><span>remove<wbr/>Duplicate<wbr/>Declarations</span><a href="#removeduplicatedeclarations" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><div class="tsd-signature"><span class="tsd-kind-property">removeDuplicateDeclarations</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">boolean</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div><div class="tsd-comment tsd-typography"><p>remove duplicate declarations from the same rule. if passed as a string array, duplicated declarations are removed, except for those in the array</p>
-<pre><code class="ts"><br/><span class="hl-8">import</span><span class="hl-1"> {</span><span class="hl-9">transform</span><span class="hl-1">} </span><span class="hl-8">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-10">const</span><span class="hl-1"> </span><span class="hl-11">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><br/><span class="hl-2">.table {</span><br/><br/><span class="hl-2">    width: 100%;</span><br/><span class="hl-2">    width: calc(100% + 40px);</span><br/><span class="hl-2">    margin-left: 20px;</span><br/><span class="hl-2">    margin-left: min(100% , 20px)</span><br/><span class="hl-2">}</span><br/><br/><span class="hl-2">`</span><span class="hl-1">;</span><br/><span class="hl-10">const</span><span class="hl-1"> </span><span class="hl-11">result</span><span class="hl-1"> = </span><span class="hl-8">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-9">css</span><span class="hl-1">, {</span><br/><br/><span class="hl-1">    </span><span class="hl-9">beautify:</span><span class="hl-1"> </span><span class="hl-10">true</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-9">validation:</span><span class="hl-1"> </span><span class="hl-10">true</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-9">removeDuplicateDeclarations:</span><span class="hl-1"> [</span><span class="hl-2">&#39;width&#39;</span><span class="hl-1">]</span><br/><span class="hl-1">}</span><br/><span class="hl-1">);</span><br/><br/><span class="hl-9">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-9">result</span><span class="hl-1">.</span><span class="hl-9">code</span><span class="hl-1">);</span><br/>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="description" content="Documentation for @tbela99/css-parser"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>node.MinifyOptions</title><link rel="stylesheet" href="../assets/highlight.css"/><link rel="stylesheet" href="../assets/custom.css"/><script defer src="../assets/custom.js"></script><link rel="stylesheet" href="../assets/styles.css"/></head><body><dialog id="search-dialog" popover><button type="button" class="close-button" popovertarget="search-dialog"><svg width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M6.75827 17.2426L12.0009 12M17.2435 6.75736L12.0009 12M12.0009 12L6.75827 6.75736M12.0009 12L17.2435 17.2426" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+<h3>Search</h3><input type="search" id="search-input" placeholder="Search…"/><hr/>
+<div id="search-results" data-state="idle">Search something to see results</div></dialog><header class="page-header">
+<h3 class="site-title"><a href="../" class="header-logo">@tbela99/css-parser</a></h3>
+<div class="header-content">
+<div class="header-nav-links"><a href="https://tbela99.github.io/css-parser/benchmark/index.html">Benchmark</a><a href="https://tbela99.github.io/css-parser/docs/">Docs</a><a href="https://tbela99.github.io/css-parser/playground/">Playground</a><a href="https://github.com/tbela99/css-parser">GitHub</a></div><button type="button" popovertarget="search-dialog"><svg class="icon-search" width="1em" height="1em" viewBox="0 0 24 24" stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M17 17L21 21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M3 11C3 15.4183 6.58172 19 11 19C13.213 19 15.2161 18.1015 16.6644 16.6493C18.1077 15.2022 19 13.2053 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button><label for="mobile-nav-opened" class="mobile-nav-burger-trigger" aria-label="Menu"><svg class="icon-menu" width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M3 5H21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M3 12H21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M3 19H21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></label></div></header><input id="mobile-nav-opened" type="checkbox" hidden/>
+<div class="page-layout"><aside class="site-nav-wrapper">
+<div class="site-nav">
+<nav class="project-nav"><a href="../modules.html" class="nav-leaf">Modules</a>
+<ul class="nav-tree">
+<li>
+<details class="nav-accordion"><summary><span>Guide</span><svg class="icon-chevron-down" width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></summary>
+<ul class="nav-tree">
+<li><a class="nav-leaf" href="../documents/Guide.Getting_started.html"><svg class="icon-document" width="1em" height="1em" viewBox="0 0 24 24" stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M4 21.4V2.6C4 2.26863 4.26863 2 4.6 2H16.2515C16.4106 2 16.5632 2.06321 16.6757 2.17574L19.8243 5.32426C19.9368 5.43679 20 5.5894 20 5.74853V21.4C20 21.7314 19.7314 22 19.4 22H4.6C4.26863 22 4 21.7314 4 21.4Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 10L16 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 18L16 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 14L12 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16 2V5.4C16 5.73137 16.2686 6 16.6 6H20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg><span>Getting started</span></a></li>
+<li><a class="nav-leaf" href="../documents/Guide.Usage.html"><svg class="icon-document" width="1em" height="1em" viewBox="0 0 24 24" stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M4 21.4V2.6C4 2.26863 4.26863 2 4.6 2H16.2515C16.4106 2 16.5632 2.06321 16.6757 2.17574L19.8243 5.32426C19.9368 5.43679 20 5.5894 20 5.74853V21.4C20 21.7314 19.7314 22 19.4 22H4.6C4.26863 22 4 21.7314 4 21.4Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 10L16 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 18L16 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 14L12 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16 2V5.4C16 5.73137 16.2686 6 16.6 6H20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg><span>Usage</span></a></li>
+<li><a class="nav-leaf" href="../documents/Guide.Validation.html"><svg class="icon-document" width="1em" height="1em" viewBox="0 0 24 24" stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M4 21.4V2.6C4 2.26863 4.26863 2 4.6 2H16.2515C16.4106 2 16.5632 2.06321 16.6757 2.17574L19.8243 5.32426C19.9368 5.43679 20 5.5894 20 5.74853V21.4C20 21.7314 19.7314 22 19.4 22H4.6C4.26863 22 4 21.7314 4 21.4Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 10L16 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 18L16 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 14L12 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16 2V5.4C16 5.73137 16.2686 6 16.6 6H20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg><span>Validation</span></a></li>
+<li><a class="nav-leaf" href="../documents/Guide.CSS_Modules.html"><svg class="icon-document" width="1em" height="1em" viewBox="0 0 24 24" stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M4 21.4V2.6C4 2.26863 4.26863 2 4.6 2H16.2515C16.4106 2 16.5632 2.06321 16.6757 2.17574L19.8243 5.32426C19.9368 5.43679 20 5.5894 20 5.74853V21.4C20 21.7314 19.7314 22 19.4 22H4.6C4.26863 22 4 21.7314 4 21.4Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 10L16 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 18L16 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 14L12 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16 2V5.4C16 5.73137 16.2686 6 16.6 6H20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg><span>CSS Modules</span></a></li>
+<li><a class="nav-leaf" href="../documents/Guide.Minification.html"><svg class="icon-document" width="1em" height="1em" viewBox="0 0 24 24" stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M4 21.4V2.6C4 2.26863 4.26863 2 4.6 2H16.2515C16.4106 2 16.5632 2.06321 16.6757 2.17574L19.8243 5.32426C19.9368 5.43679 20 5.5894 20 5.74853V21.4C20 21.7314 19.7314 22 19.4 22H4.6C4.26863 22 4 21.7314 4 21.4Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 10L16 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 18L16 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 14L12 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16 2V5.4C16 5.73137 16.2686 6 16.6 6H20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg><span>Minification</span></a></li>
+<li><a class="nav-leaf" href="../documents/Guide.Custom_Transform.html"><svg class="icon-document" width="1em" height="1em" viewBox="0 0 24 24" stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M4 21.4V2.6C4 2.26863 4.26863 2 4.6 2H16.2515C16.4106 2 16.5632 2.06321 16.6757 2.17574L19.8243 5.32426C19.9368 5.43679 20 5.5894 20 5.74853V21.4C20 21.7314 19.7314 22 19.4 22H4.6C4.26863 22 4 21.7314 4 21.4Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 10L16 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 18L16 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 14L12 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16 2V5.4C16 5.73137 16.2686 6 16.6 6H20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg><span>Custom Transform</span></a></li>
+<li><a class="nav-leaf" href="../documents/Guide.Ast_Manipulation.html"><svg class="icon-document" width="1em" height="1em" viewBox="0 0 24 24" stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M4 21.4V2.6C4 2.26863 4.26863 2 4.6 2H16.2515C16.4106 2 16.5632 2.06321 16.6757 2.17574L19.8243 5.32426C19.9368 5.43679 20 5.5894 20 5.74853V21.4C20 21.7314 19.7314 22 19.4 22H4.6C4.26863 22 4 21.7314 4 21.4Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 10L16 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 18L16 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 14L12 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16 2V5.4C16 5.73137 16.2686 6 16.6 6H20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg><span>Ast Manipulation</span></a></li>
+<li><a class="nav-leaf" href="../documents/Guide.Utility_Functions.html"><svg class="icon-document" width="1em" height="1em" viewBox="0 0 24 24" stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M4 21.4V2.6C4 2.26863 4.26863 2 4.6 2H16.2515C16.4106 2 16.5632 2.06321 16.6757 2.17574L19.8243 5.32426C19.9368 5.43679 20 5.5894 20 5.74853V21.4C20 21.7314 19.7314 22 19.4 22H4.6C4.26863 22 4 21.7314 4 21.4Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 10L16 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 18L16 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 14L12 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16 2V5.4C16 5.73137 16.2686 6 16.6 6H20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg><span>Utility Functions</span></a></li></ul></details></li>
+<li>
+<details class="nav-accordion" open><summary><span>node</span><svg class="icon-chevron-down" width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></summary>
+<ul class="nav-tree">
+<li><a class="nav-leaf" href="../functions/node.cloneNode.html"><span>cloneNode</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/node.convertColor.html"><span>convertColor</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/node.find.html"><span>find</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/node.findAll.html"><span>findAll</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/node.findByValue.html"><span>findByValue</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/node.findLast.html"><span>findLast</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/node.load.html"><span>load</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/node.parse.html"><span>parse</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/node.parseDeclarations.html"><span>parseDeclarations</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/node.parseString.html"><span>parseString</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/node.render.html"><span>render</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/node.replaceNodeOrValue.html"><span>replaceNodeOrValue</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/node.transform.html"><span>transform</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/node.walk.html"><span>walk</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/node.walkValues.html"><span>walkValues</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../classes/node.SourceMap.html"><span>SourceMap</span><small><abbr title="Class" class="kind-icon">(C)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../variables/node.parseFile.html"><span>parseFile</span><small><abbr title="Variable" class="kind-icon">(V)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../variables/node.transformFile.html"><span>transformFile</span><small><abbr title="Variable" class="kind-icon">(V)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../enums/node.ColorType.html"><span>ColorType</span><small><abbr title="Enum" class="kind-icon">(E)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../enums/node.EnumAstNodeStatus.html"><span>EnumAstNodeStatus</span><small><abbr title="Enum" class="kind-icon">(E)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../enums/node.EnumToken.html"><span>EnumToken</span><small><abbr title="Enum" class="kind-icon">(E)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../enums/node.ModuleCaseTransformEnum.html"><span>ModuleCaseTransformEnum</span><small><abbr title="Enum" class="kind-icon">(E)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../enums/node.ModuleScopeEnumOptions.html"><span>ModuleScopeEnumOptions</span><small><abbr title="Enum" class="kind-icon">(E)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../enums/node.ResponseType.html"><span>ResponseType</span><small><abbr title="Enum" class="kind-icon">(E)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../enums/node.ValidationLevel.html"><span>ValidationLevel</span><small><abbr title="Enum" class="kind-icon">(E)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../enums/node.WalkerEvent.html"><span>WalkerEvent</span><small><abbr title="Enum" class="kind-icon">(E)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../enums/node.WalkerOptionEnum.html"><span>WalkerOptionEnum</span><small><abbr title="Enum" class="kind-icon">(E)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.AstNode.html"><span>AstNode</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.AstRuleList.html"><span>AstRuleList</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.AstValueMatcher.html"><span>AstValueMatcher</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.AtRuleVisitorHandler.html"><span>AtRuleVisitorHandler</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.BinaryExpressionNode.html"><span>BinaryExpressionNode</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.DeclarationVisitorHandler.html"><span>DeclarationVisitorHandler</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.GenericVisitorAstNodeHandlerMap.html"><span>GenericVisitorAstNodeHandlerMap</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.GenericVisitorHandler.html"><span>GenericVisitorHandler</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.GenericVisitorResult.html"><span>GenericVisitorResult</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.LoadResult.html"><span>LoadResult</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.RawSelectorTokens.html"><span>RawSelectorTokens</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.RuleVisitorHandler.html"><span>RuleVisitorHandler</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.Token.html"><span>Token</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.UnaryExpressionNode.html"><span>UnaryExpressionNode</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.ValidationConfiguration.html"><span>ValidationConfiguration</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.ValueVisitorHandler.html"><span>ValueVisitorHandler</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.WalkerFilter.html"><span>WalkerFilter</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.WalkerOption.html"><span>WalkerOption</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.WalkerValueFilter.html"><span>WalkerValueFilter</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.AddToken.html"><span>AddToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.AndToken.html"><span>AndToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.AngleToken.html"><span>AngleToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.AstAtRule.html"><span>AstAtRule</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.AstComment.html"><span>AstComment</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.AstDeclaration.html"><span>AstDeclaration</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.AstInvalidAtRule.html"><span>AstInvalidAtRule</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.AstInvalidDeclaration.html"><span>AstInvalidDeclaration</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.AstInvalidRule.html"><span>AstInvalidRule</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.AstKeyFrameRule.html"><span>AstKeyFrameRule</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.AstKeyframesAtRule.html"><span>AstKeyframesAtRule</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.AstKeyframesRule.html"><span>AstKeyframesRule</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.AstNodeStatus.html"><span>AstNodeStatus</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.AstRule.html"><span>AstRule</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.AstStyleSheet.html"><span>AstStyleSheet</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.AtRuleToken.html"><span>AtRuleToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.AttrEndToken.html"><span>AttrEndToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.AttrStartToken.html"><span>AttrStartToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.AttrToken.html"><span>AttrToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.BadCDOCommentToken.html"><span>BadCDOCommentToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.BadCommentToken.html"><span>BadCommentToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.BadStringToken.html"><span>BadStringToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.BadUrlToken.html"><span>BadUrlToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.BaseToken.html"><span>BaseToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.BinaryExpressionToken.html"><span>BinaryExpressionToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.BlockEndToken.html"><span>BlockEndToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.BlockStartToken.html"><span>BlockStartToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.CDOCommentToken.html"><span>CDOCommentToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ChildCombinatorToken.html"><span>ChildCombinatorToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ClassSelectorToken.html"><span>ClassSelectorToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ColonToken.html"><span>ColonToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ColorToken.html"><span>ColorToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ColumnCombinatorToken.html"><span>ColumnCombinatorToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.CommaToken.html"><span>CommaToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.CommentToken.html"><span>CommentToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ComposesSelectorToken.html"><span>ComposesSelectorToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ContainerStyleRangeToken.html"><span>ContainerStyleRangeToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ContainMatchToken.html"><span>ContainMatchToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.Context.html"><span>Context</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.CssVariableImportTokenType.html"><span>CssVariableImportTokenType</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.CssVariableMapTokenType.html"><span>CssVariableMapTokenType</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.CssVariableToken.html"><span>CssVariableToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.DashedIdentToken.html"><span>DashedIdentToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.DashMatchToken.html"><span>DashMatchToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.DelimToken.html"><span>DelimToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.DescendantCombinatorToken.html"><span>DescendantCombinatorToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.DimensionToken.html"><span>DimensionToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.DivToken.html"><span>DivToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.DoubleColonToken.html"><span>DoubleColonToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.EndMatchToken.html"><span>EndMatchToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.EOFToken.html"><span>EOFToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.EqualMatchToken.html"><span>EqualMatchToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ErrorDescription.html"><span>ErrorDescription</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.FlexToken.html"><span>FlexToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.FractionToken.html"><span>FractionToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.FrequencyToken.html"><span>FrequencyToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.FunctionDefToken.html"><span>FunctionDefToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.FunctionImageToken.html"><span>FunctionImageToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.FunctionToken.html"><span>FunctionToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.FunctionURLToken.html"><span>FunctionURLToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.GreaterThanOrEqualToken.html"><span>GreaterThanOrEqualToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.GreaterThanToken.html"><span>GreaterThanToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.GridTemplateFuncToken.html"><span>GridTemplateFuncToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.HashToken.html"><span>HashToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.IdentListToken.html"><span>IdentListToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.IdentToken.html"><span>IdentToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.IfConditionToken.html"><span>IfConditionToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.IfElseConditionToken.html"><span>IfElseConditionToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ImportantToken.html"><span>ImportantToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.IncludeMatchToken.html"><span>IncludeMatchToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.InvalidAttrToken.html"><span>InvalidAttrToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.InvalidClassSelectorToken.html"><span>InvalidClassSelectorToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.InvalidMediaQueryToken.html"><span>InvalidMediaQueryToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.LengthToken.html"><span>LengthToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.LessThanOrEqualToken.html"><span>LessThanOrEqualToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.LessThanToken.html"><span>LessThanToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ListToken.html"><span>ListToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.LiteralToken.html"><span>LiteralToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.Location.html"><span>Location</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.MatchedSelector.html"><span>MatchedSelector</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.MatchExpressionToken.html"><span>MatchExpressionToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.MediaFeatureOnlyToken.html"><span>MediaFeatureOnlyToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.MediaFeatureToken.html"><span>MediaFeatureToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.MediaQueryConditionToken.html"><span>MediaQueryConditionToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.MediaQueryUnaryFeatureToken.html"><span>MediaQueryUnaryFeatureToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.MediaRangeQueryToken.html"><span>MediaRangeQueryToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.MinifyFeature.html"><span>MinifyFeature</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.MinifyFeatureOptions.html"><span>MinifyFeatureOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf is-active" href="../interfaces/node.MinifyOptions.html"><span>MinifyOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ModuleOptions.html"><span>ModuleOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.MulToken.html"><span>MulToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.NameSpaceAttributeToken.html"><span>NameSpaceAttributeToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.NestingSelectorToken.html"><span>NestingSelectorToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.NextSiblingCombinatorToken.html"><span>NextSiblingCombinatorToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.NotToken.html"><span>NotToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.NumberToken.html"><span>NumberToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.OrToken.html"><span>OrToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ParensEndToken.html"><span>ParensEndToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ParensStartToken.html"><span>ParensStartToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ParensToken.html"><span>ParensToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ParseInfo.html"><span>ParseInfo</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ParseInputFileOptions.html"><span>ParseInputFileOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ParseInputStreamOptions.html"><span>ParseInputStreamOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ParseResult.html"><span>ParseResult</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ParseResultStats.html"><span>ParseResultStats</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ParserOptions.html"><span>ParserOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ParseTokenOptions.html"><span>ParseTokenOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.PercentageToken.html"><span>PercentageToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.Position.html"><span>Position</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.PropertyListOptions.html"><span>PropertyListOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.PropertyMapType.html"><span>PropertyMapType</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.PropertySetType.html"><span>PropertySetType</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.PropertyType.html"><span>PropertyType</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.PseudoClassFunctionToken.html"><span>PseudoClassFunctionToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.PseudoClassToken.html"><span>PseudoClassToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.PseudoElementToken.html"><span>PseudoElementToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.PseudoPageToken.html"><span>PseudoPageToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.RawNodeToken.html"><span>RawNodeToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.RenderOptions.html"><span>RenderOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.RenderResult.html"><span>RenderResult</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ResolutionToken.html"><span>ResolutionToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ResolvedPath.html"><span>ResolvedPath</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.SemiColonToken.html"><span>SemiColonToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ShorthandDef.html"><span>ShorthandDef</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ShorthandMapType.html"><span>ShorthandMapType</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ShorthandProperties.html"><span>ShorthandProperties</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ShorthandPropertyType.html"><span>ShorthandPropertyType</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ShorthandType.html"><span>ShorthandType</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.SinglePropertyType.html"><span>SinglePropertyType</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.SinglePropertyTypeMapping.html"><span>SinglePropertyTypeMapping</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.SourceMapObject.html"><span>SourceMapObject</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.StartMatchToken.html"><span>StartMatchToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.StringToken.html"><span>StringToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.SubsequentCombinatorToken.html"><span>SubsequentCombinatorToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.SubToken.html"><span>SubToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.SupportsQueryConditionToken.html"><span>SupportsQueryConditionToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.SupportsQueryUnaryConditionToken.html"><span>SupportsQueryUnaryConditionToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.TimelineFunctionToken.html"><span>TimelineFunctionToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.TimeToken.html"><span>TimeToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.TimingFunctionToken.html"><span>TimingFunctionToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.TokenizeResult.html"><span>TokenizeResult</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.TokenSearchResult.html"><span>TokenSearchResult</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.TransformOptions.html"><span>TransformOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.TransformResult.html"><span>TransformResult</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.UnaryExpression.html"><span>UnaryExpression</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.UnclosedStringToken.html"><span>UnclosedStringToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.UniversalSelectorToken.html"><span>UniversalSelectorToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.UrlToken.html"><span>UrlToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ValidationMediaFeature.html"><span>ValidationMediaFeature</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ValidationOptions.html"><span>ValidationOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ValidationResult.html"><span>ValidationResult</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ValidationSelectorOptions.html"><span>ValidationSelectorOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ValidationSyntaxNode.html"><span>ValidationSyntaxNode</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ValidationSyntaxResult.html"><span>ValidationSyntaxResult</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ValidationToken.html"><span>ValidationToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.VariableScopeInfo.html"><span>VariableScopeInfo</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.VisitorNodeMap.html"><span>VisitorNodeMap</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.WalkAttributesResult.html"><span>WalkAttributesResult</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.WalkResult.html"><span>WalkResult</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.WhenElseQueryConditionToken.html"><span>WhenElseQueryConditionToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.WhenElseUnaryConditionToken.html"><span>WhenElseUnaryConditionToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.WhitespaceToken.html"><span>WhitespaceToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li></ul></details></li>
+<li>
+<details class="nav-accordion"><summary><span>web</span><svg class="icon-chevron-down" width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></summary>
+<ul class="nav-tree">
+<li><a class="nav-leaf" href="../functions/web.load.html"><span>load</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/web.parse.html"><span>parse</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/web.parseFile.html"><span>parseFile</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/web.render.html"><span>render</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/web.transform.html"><span>transform</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/web.transformFile.html"><span>transformFile</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#addtoken"><span>AddToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#andtoken"><span>AndToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#angletoken"><span>AngleToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#astatrule"><span>AstAtRule</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#astcomment"><span>AstComment</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#astdeclaration"><span>AstDeclaration</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#astinvalidatrule"><span>AstInvalidAtRule</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#astinvaliddeclaration"><span>AstInvalidDeclaration</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#astinvalidrule"><span>AstInvalidRule</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#astkeyframerule"><span>AstKeyFrameRule</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#astkeyframesatrule"><span>AstKeyframesAtRule</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#astkeyframesrule"><span>AstKeyframesRule</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#astnode"><span>AstNode</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#astnodestatus"><span>AstNodeStatus</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#astrule"><span>AstRule</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#astrulelist"><span>AstRuleList</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#aststylesheet"><span>AstStyleSheet</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#astvaluematcher"><span>AstValueMatcher</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#atruletoken"><span>AtRuleToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#atrulevisitorhandler"><span>AtRuleVisitorHandler</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#attrendtoken"><span>AttrEndToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#attrstarttoken"><span>AttrStartToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#attrtoken"><span>AttrToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#badcdocommenttoken"><span>BadCDOCommentToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#badcommenttoken"><span>BadCommentToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#badstringtoken"><span>BadStringToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#badurltoken"><span>BadUrlToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#basetoken"><span>BaseToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#binaryexpressionnode"><span>BinaryExpressionNode</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#binaryexpressiontoken"><span>BinaryExpressionToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#blockendtoken"><span>BlockEndToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#blockstarttoken"><span>BlockStartToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#cdocommenttoken"><span>CDOCommentToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#childcombinatortoken"><span>ChildCombinatorToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#classselectortoken"><span>ClassSelectorToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#clonenode"><span>cloneNode</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#colontoken"><span>ColonToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#colortoken"><span>ColorToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#colortype"><span>ColorType</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#columncombinatortoken"><span>ColumnCombinatorToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#commatoken"><span>CommaToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#commenttoken"><span>CommentToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#composesselectortoken"><span>ComposesSelectorToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#containerstylerangetoken"><span>ContainerStyleRangeToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#containmatchtoken"><span>ContainMatchToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#context"><span>Context</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#convertcolor"><span>convertColor</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#cssvariableimporttokentype"><span>CssVariableImportTokenType</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#cssvariablemaptokentype"><span>CssVariableMapTokenType</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#cssvariabletoken"><span>CssVariableToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#dashedidenttoken"><span>DashedIdentToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#dashmatchtoken"><span>DashMatchToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#declarationvisitorhandler"><span>DeclarationVisitorHandler</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#delimtoken"><span>DelimToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#descendantcombinatortoken"><span>DescendantCombinatorToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#dimensiontoken"><span>DimensionToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#divtoken"><span>DivToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#doublecolontoken"><span>DoubleColonToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#endmatchtoken"><span>EndMatchToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#enumastnodestatus"><span>EnumAstNodeStatus</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#enumtoken"><span>EnumToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#eoftoken"><span>EOFToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#equalmatchtoken"><span>EqualMatchToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#errordescription"><span>ErrorDescription</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#find"><span>find</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#findall"><span>findAll</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#findbyvalue"><span>findByValue</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#findlast"><span>findLast</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#flextoken"><span>FlexToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#fractiontoken"><span>FractionToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#frequencytoken"><span>FrequencyToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#functiondeftoken"><span>FunctionDefToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#functionimagetoken"><span>FunctionImageToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#functiontoken"><span>FunctionToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#functionurltoken"><span>FunctionURLToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#genericvisitorastnodehandlermap"><span>GenericVisitorAstNodeHandlerMap</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#genericvisitorhandler"><span>GenericVisitorHandler</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#genericvisitorresult"><span>GenericVisitorResult</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#greaterthanorequaltoken"><span>GreaterThanOrEqualToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#greaterthantoken"><span>GreaterThanToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#gridtemplatefunctoken"><span>GridTemplateFuncToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#hashtoken"><span>HashToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#identlisttoken"><span>IdentListToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#identtoken"><span>IdentToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#ifconditiontoken"><span>IfConditionToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#ifelseconditiontoken"><span>IfElseConditionToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#importanttoken"><span>ImportantToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#includematchtoken"><span>IncludeMatchToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#invalidattrtoken"><span>InvalidAttrToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#invalidclassselectortoken"><span>InvalidClassSelectorToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#invalidmediaquerytoken"><span>InvalidMediaQueryToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#lengthtoken"><span>LengthToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#lessthanorequaltoken"><span>LessThanOrEqualToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#lessthantoken"><span>LessThanToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#listtoken"><span>ListToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#literaltoken"><span>LiteralToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#loadresult"><span>LoadResult</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#location"><span>Location</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#matchedselector"><span>MatchedSelector</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#matchexpressiontoken"><span>MatchExpressionToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#mediafeatureonlytoken"><span>MediaFeatureOnlyToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#mediafeaturetoken"><span>MediaFeatureToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#mediaqueryconditiontoken"><span>MediaQueryConditionToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#mediaqueryunaryfeaturetoken"><span>MediaQueryUnaryFeatureToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#mediarangequerytoken"><span>MediaRangeQueryToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#minifyfeature"><span>MinifyFeature</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#minifyfeatureoptions"><span>MinifyFeatureOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#minifyoptions"><span>MinifyOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#modulecasetransformenum"><span>ModuleCaseTransformEnum</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#moduleoptions"><span>ModuleOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#modulescopeenumoptions"><span>ModuleScopeEnumOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#multoken"><span>MulToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#namespaceattributetoken"><span>NameSpaceAttributeToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#nestingselectortoken"><span>NestingSelectorToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#nextsiblingcombinatortoken"><span>NextSiblingCombinatorToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#nottoken"><span>NotToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#numbertoken"><span>NumberToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#ortoken"><span>OrToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#parensendtoken"><span>ParensEndToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#parensstarttoken"><span>ParensStartToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#parenstoken"><span>ParensToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#parsedeclarations"><span>parseDeclarations</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#parseinfo"><span>ParseInfo</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#parseinputfileoptions"><span>ParseInputFileOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#parseinputstreamoptions"><span>ParseInputStreamOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#parseresult"><span>ParseResult</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#parseresultstats"><span>ParseResultStats</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#parseroptions"><span>ParserOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#parsestring"><span>parseString</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#parsetokenoptions"><span>ParseTokenOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#percentagetoken"><span>PercentageToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#position"><span>Position</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#propertylistoptions"><span>PropertyListOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#propertymaptype"><span>PropertyMapType</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#propertysettype"><span>PropertySetType</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#propertytype"><span>PropertyType</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#pseudoclassfunctiontoken"><span>PseudoClassFunctionToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#pseudoclasstoken"><span>PseudoClassToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#pseudoelementtoken"><span>PseudoElementToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#pseudopagetoken"><span>PseudoPageToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#rawnodetoken"><span>RawNodeToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#rawselectortokens"><span>RawSelectorTokens</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#renderoptions"><span>RenderOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#renderresult"><span>RenderResult</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#replacenodeorvalue"><span>replaceNodeOrValue</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#resolutiontoken"><span>ResolutionToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#resolvedpath"><span>ResolvedPath</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#responsetype"><span>ResponseType</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#rulevisitorhandler"><span>RuleVisitorHandler</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#semicolontoken"><span>SemiColonToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#shorthanddef"><span>ShorthandDef</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#shorthandmaptype"><span>ShorthandMapType</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#shorthandproperties"><span>ShorthandProperties</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#shorthandpropertytype"><span>ShorthandPropertyType</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#shorthandtype"><span>ShorthandType</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#singlepropertytype"><span>SinglePropertyType</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#singlepropertytypemapping"><span>SinglePropertyTypeMapping</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#sourcemap"><span>SourceMap</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#sourcemapobject"><span>SourceMapObject</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#startmatchtoken"><span>StartMatchToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#stringtoken"><span>StringToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#subsequentcombinatortoken"><span>SubsequentCombinatorToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#subtoken"><span>SubToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#supportsqueryconditiontoken"><span>SupportsQueryConditionToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#supportsqueryunaryconditiontoken"><span>SupportsQueryUnaryConditionToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#timelinefunctiontoken"><span>TimelineFunctionToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#timetoken"><span>TimeToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#timingfunctiontoken"><span>TimingFunctionToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#token"><span>Token</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#tokenizeresult"><span>TokenizeResult</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#tokensearchresult"><span>TokenSearchResult</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#transformoptions"><span>TransformOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#transformresult"><span>TransformResult</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#unaryexpression"><span>UnaryExpression</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#unaryexpressionnode"><span>UnaryExpressionNode</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#unclosedstringtoken"><span>UnclosedStringToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#universalselectortoken"><span>UniversalSelectorToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#urltoken"><span>UrlToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#validationconfiguration"><span>ValidationConfiguration</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#validationlevel"><span>ValidationLevel</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#validationmediafeature"><span>ValidationMediaFeature</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#validationoptions"><span>ValidationOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#validationresult"><span>ValidationResult</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#validationselectoroptions"><span>ValidationSelectorOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#validationsyntaxnode"><span>ValidationSyntaxNode</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#validationsyntaxresult"><span>ValidationSyntaxResult</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#validationtoken"><span>ValidationToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#valuevisitorhandler"><span>ValueVisitorHandler</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#variablescopeinfo"><span>VariableScopeInfo</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#visitornodemap"><span>VisitorNodeMap</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#walk"><span>walk</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#walkattributesresult"><span>WalkAttributesResult</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#walkerevent"><span>WalkerEvent</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#walkerfilter"><span>WalkerFilter</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#walkeroption"><span>WalkerOption</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#walkeroptionenum"><span>WalkerOptionEnum</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#walkervaluefilter"><span>WalkerValueFilter</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#walkresult"><span>WalkResult</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#walkvalues"><span>walkValues</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#whenelsequeryconditiontoken"><span>WhenElseQueryConditionToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#whenelseunaryconditiontoken"><span>WhenElseUnaryConditionToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#whitespacetoken"><span>WhitespaceToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li></ul></details></li></ul></nav></div></aside><aside class="page-toc-wrapper">
+<div class="page-toc"></div></aside><main class="page-content">
+<div class="page-content-header">
+<ul class="breadcrumb">
+<li><a href="../modules.html">@tbela99/css-parser</a></li><span>/</span>
+<li><a href="../modules/node.html">node</a></li><span>/</span>
+<li><span>MinifyOptions</span></li></ul>
+<h1>MinifyOptions</h1></div>
+<section class="comment">
+<div class="tsd-comment tsd-typography"><p>Minify options</p>
+</div></section>
+<div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">MinifyOptions</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#computecalcexpression">computeCalcExpression</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#computeshorthand">computeShorthand</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#computetransform">computeTransform</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#inlinecssvariables">inlineCssVariables</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#minify">minify</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#nestingrules">nestingRules</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#parsecolor">parseColor</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#pass">pass</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#removeduplicatedeclarations">removeDuplicateDeclarations</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">boolean</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#removeempty">removeEmpty</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#removeprefix">removePrefix</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div>
+<section class="tsd-panel tsd-hierarchy" data-refl="116">
+<h4>Hierarchy (<a href="../hierarchy.html#node.MinifyOptions">View Summary</a>)</h4>
+<ul class="tsd-hierarchy">
+<li class="tsd-hierarchy-item"><span class="tsd-hierarchy-target">MinifyOptions</span>
+<ul class="tsd-hierarchy">
+<li class="tsd-hierarchy-item"><a href="node.ParserOptions.html" class="tsd-signature-type tsd-kind-interface">ParserOptions</a></li></ul></li></ul></section><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/tbela99/css-parser/blob/900219d0a4a5cff110bc647f8bfa5d495ba1fc8c/src/@types/index.d.ts#L122">@types/index.d.ts:122</a></li></ul></aside>
+<section class="tsd-panel tsd-index-panel">
+<h3>Index</h3>
+<section class="tsd-index-section">
+<h3 class="tsd-index-heading">Properties</h3>
+<div class="tsd-index-list"><a href="#computecalcexpression" class="tsd-index-link"><span>node.MinifyOptions.computeCalcExpression</span></a><a href="#computeshorthand" class="tsd-index-link"><span>node.MinifyOptions.computeShorthand</span></a><a href="#computetransform" class="tsd-index-link"><span>node.MinifyOptions.computeTransform</span></a><a href="#inlinecssvariables" class="tsd-index-link"><span>node.MinifyOptions.inlineCssVariables</span></a><a href="#minify" class="tsd-index-link"><span>node.MinifyOptions.minify</span></a><a href="#nestingrules" class="tsd-index-link"><span>node.MinifyOptions.nestingRules</span></a><a href="#parsecolor" class="tsd-index-link"><span>node.MinifyOptions.parseColor</span></a><a href="#pass" class="tsd-index-link"><span>node.MinifyOptions.pass</span></a><a href="#removeduplicatedeclarations" class="tsd-index-link"><span>node.MinifyOptions.removeDuplicateDeclarations</span></a><a href="#removeempty" class="tsd-index-link"><span>node.MinifyOptions.removeEmpty</span></a><a href="#removeprefix" class="tsd-index-link"><span>node.MinifyOptions.removePrefix</span></a></div></section></section>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Properties"><svg class="icon-chevron-down" width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<h2 class="tsd-anchor-link" id="properties">Properties<a href="#properties" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon-anchor" width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M14 11.9976C14 9.5059 11.683 7 8.85714 7C8.52241 7 7.41904 7.00001 7.14286 7.00001C4.30254 7.00001 2 9.23752 2 11.9976C2 14.376 3.70973 16.3664 6 16.8714C6.36756 16.9525 6.75006 16.9952 7.14286 16.9952" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10 11.9976C10 14.4893 12.317 16.9952 15.1429 16.9952C15.4776 16.9952 16.581 16.9952 16.8571 16.9952C19.6975 16.9952 22 14.7577 22 11.9976C22 9.6192 20.2903 7.62884 18 7.12383C17.6324 7.04278 17.2499 6.99999 16.8571 6.99999" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></h2></summary>
+<section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="computecalcexpression"><code class="tsd-tag">Optional</code><span>compute<wbr/>Calc<wbr/>Expression</span><a href="#computecalcexpression" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon-anchor" width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M14 11.9976C14 9.5059 11.683 7 8.85714 7C8.52241 7 7.41904 7.00001 7.14286 7.00001C4.30254 7.00001 2 9.23752 2 11.9976C2 14.376 3.70973 16.3664 6 16.8714C6.36756 16.9525 6.75006 16.9952 7.14286 16.9952" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10 11.9976C10 14.4893 12.317 16.9952 15.1429 16.9952C15.4776 16.9952 16.581 16.9952 16.8571 16.9952C19.6975 16.9952 22 14.7577 22 11.9976C22 9.6192 20.2903 7.62884 18 7.12383C17.6324 7.04278 17.2499 6.99999 16.8571 6.99999" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">computeCalcExpression</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
+<div class="tsd-comment tsd-typography"><p>Compute css math functions</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/tbela99/css-parser/blob/900219d0a4a5cff110bc647f8bfa5d495ba1fc8c/src/@types/index.d.ts#L178">@types/index.d.ts:178</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="computeshorthand"><code class="tsd-tag">Optional</code><span>compute<wbr/>Shorthand</span><a href="#computeshorthand" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon-anchor" width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M14 11.9976C14 9.5059 11.683 7 8.85714 7C8.52241 7 7.41904 7.00001 7.14286 7.00001C4.30254 7.00001 2 9.23752 2 11.9976C2 14.376 3.70973 16.3664 6 16.8714C6.36756 16.9525 6.75006 16.9952 7.14286 16.9952" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10 11.9976C10 14.4893 12.317 16.9952 15.1429 16.9952C15.4776 16.9952 16.581 16.9952 16.8571 16.9952C19.6975 16.9952 22 14.7577 22 11.9976C22 9.6192 20.2903 7.62884 18 7.12383C17.6324 7.04278 17.2499 6.99999 16.8571 6.99999" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">computeShorthand</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
+<div class="tsd-comment tsd-typography"><p>Compute shorthand properties</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/tbela99/css-parser/blob/900219d0a4a5cff110bc647f8bfa5d495ba1fc8c/src/@types/index.d.ts#L170">@types/index.d.ts:170</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="computetransform"><code class="tsd-tag">Optional</code><span>compute<wbr/>Transform</span><a href="#computetransform" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon-anchor" width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M14 11.9976C14 9.5059 11.683 7 8.85714 7C8.52241 7 7.41904 7.00001 7.14286 7.00001C4.30254 7.00001 2 9.23752 2 11.9976C2 14.376 3.70973 16.3664 6 16.8714C6.36756 16.9525 6.75006 16.9952 7.14286 16.9952" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10 11.9976C10 14.4893 12.317 16.9952 15.1429 16.9952C15.4776 16.9952 16.581 16.9952 16.8571 16.9952C19.6975 16.9952 22 14.7577 22 11.9976C22 9.6192 20.2903 7.62884 18 7.12383C17.6324 7.04278 17.2499 6.99999 16.8571 6.99999" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">computeTransform</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
+<div class="tsd-comment tsd-typography"><p>Compute css transform functions</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/tbela99/css-parser/blob/900219d0a4a5cff110bc647f8bfa5d495ba1fc8c/src/@types/index.d.ts#L174">@types/index.d.ts:174</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="inlinecssvariables"><code class="tsd-tag">Optional</code><span>inline<wbr/>Css<wbr/>Variables</span><a href="#inlinecssvariables" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon-anchor" width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M14 11.9976C14 9.5059 11.683 7 8.85714 7C8.52241 7 7.41904 7.00001 7.14286 7.00001C4.30254 7.00001 2 9.23752 2 11.9976C2 14.376 3.70973 16.3664 6 16.8714C6.36756 16.9525 6.75006 16.9952 7.14286 16.9952" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10 11.9976C10 14.4893 12.317 16.9952 15.1429 16.9952C15.4776 16.9952 16.581 16.9952 16.8571 16.9952C19.6975 16.9952 22 14.7577 22 11.9976C22 9.6192 20.2903 7.62884 18 7.12383C17.6324 7.04278 17.2499 6.99999 16.8571 6.99999" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">inlineCssVariables</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
+<div class="tsd-comment tsd-typography"><p>Inline css variables</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/tbela99/css-parser/blob/900219d0a4a5cff110bc647f8bfa5d495ba1fc8c/src/@types/index.d.ts#L182">@types/index.d.ts:182</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="minify"><code class="tsd-tag">Optional</code><span>minify</span><a href="#minify" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon-anchor" width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M14 11.9976C14 9.5059 11.683 7 8.85714 7C8.52241 7 7.41904 7.00001 7.14286 7.00001C4.30254 7.00001 2 9.23752 2 11.9976C2 14.376 3.70973 16.3664 6 16.8714C6.36756 16.9525 6.75006 16.9952 7.14286 16.9952" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10 11.9976C10 14.4893 12.317 16.9952 15.1429 16.9952C15.4776 16.9952 16.581 16.9952 16.8571 16.9952C19.6975 16.9952 22 14.7577 22 11.9976C22 9.6192 20.2903 7.62884 18 7.12383C17.6324 7.04278 17.2499 6.99999 16.8571 6.99999" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">minify</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
+<div class="tsd-comment tsd-typography"><p>Enable minification</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/tbela99/css-parser/blob/900219d0a4a5cff110bc647f8bfa5d495ba1fc8c/src/@types/index.d.ts#L126">@types/index.d.ts:126</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="nestingrules"><code class="tsd-tag">Optional</code><span>nesting<wbr/>Rules</span><a href="#nestingrules" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon-anchor" width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M14 11.9976C14 9.5059 11.683 7 8.85714 7C8.52241 7 7.41904 7.00001 7.14286 7.00001C4.30254 7.00001 2 9.23752 2 11.9976C2 14.376 3.70973 16.3664 6 16.8714C6.36756 16.9525 6.75006 16.9952 7.14286 16.9952" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10 11.9976C10 14.4893 12.317 16.9952 15.1429 16.9952C15.4776 16.9952 16.581 16.9952 16.8571 16.9952C19.6975 16.9952 22 14.7577 22 11.9976C22 9.6192 20.2903 7.62884 18 7.12383C17.6324 7.04278 17.2499 6.99999 16.8571 6.99999" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">nestingRules</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
+<div class="tsd-comment tsd-typography"><p>Generate nested rules</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/tbela99/css-parser/blob/900219d0a4a5cff110bc647f8bfa5d495ba1fc8c/src/@types/index.d.ts#L134">@types/index.d.ts:134</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="parsecolor"><code class="tsd-tag">Optional</code><span>parse<wbr/>Color</span><a href="#parsecolor" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon-anchor" width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M14 11.9976C14 9.5059 11.683 7 8.85714 7C8.52241 7 7.41904 7.00001 7.14286 7.00001C4.30254 7.00001 2 9.23752 2 11.9976C2 14.376 3.70973 16.3664 6 16.8714C6.36756 16.9525 6.75006 16.9952 7.14286 16.9952" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10 11.9976C10 14.4893 12.317 16.9952 15.1429 16.9952C15.4776 16.9952 16.581 16.9952 16.8571 16.9952C19.6975 16.9952 22 14.7577 22 11.9976C22 9.6192 20.2903 7.62884 18 7.12383C17.6324 7.04278 17.2499 6.99999 16.8571 6.99999" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">parseColor</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
+<div class="tsd-comment tsd-typography"><p>Parse color tokens</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/tbela99/css-parser/blob/900219d0a4a5cff110bc647f8bfa5d495ba1fc8c/src/@types/index.d.ts#L130">@types/index.d.ts:130</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="pass"><code class="tsd-tag">Optional</code><span>pass</span><a href="#pass" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon-anchor" width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M14 11.9976C14 9.5059 11.683 7 8.85714 7C8.52241 7 7.41904 7.00001 7.14286 7.00001C4.30254 7.00001 2 9.23752 2 11.9976C2 14.376 3.70973 16.3664 6 16.8714C6.36756 16.9525 6.75006 16.9952 7.14286 16.9952" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10 11.9976C10 14.4893 12.317 16.9952 15.1429 16.9952C15.4776 16.9952 16.581 16.9952 16.8571 16.9952C19.6975 16.9952 22 14.7577 22 11.9976C22 9.6192 20.2903 7.62884 18 7.12383C17.6324 7.04278 17.2499 6.99999 16.8571 6.99999" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">pass</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
+<div class="tsd-comment tsd-typography"><p>Define minification passes.</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/tbela99/css-parser/blob/900219d0a4a5cff110bc647f8bfa5d495ba1fc8c/src/@types/index.d.ts#L194">@types/index.d.ts:194</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="removeduplicatedeclarations"><code class="tsd-tag">Optional</code><span>remove<wbr/>Duplicate<wbr/>Declarations</span><a href="#removeduplicatedeclarations" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon-anchor" width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M14 11.9976C14 9.5059 11.683 7 8.85714 7C8.52241 7 7.41904 7.00001 7.14286 7.00001C4.30254 7.00001 2 9.23752 2 11.9976C2 14.376 3.70973 16.3664 6 16.8714C6.36756 16.9525 6.75006 16.9952 7.14286 16.9952" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10 11.9976C10 14.4893 12.317 16.9952 15.1429 16.9952C15.4776 16.9952 16.581 16.9952 16.8571 16.9952C19.6975 16.9952 22 14.7577 22 11.9976C22 9.6192 20.2903 7.62884 18 7.12383C17.6324 7.04278 17.2499 6.99999 16.8571 6.99999" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">removeDuplicateDeclarations</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">boolean</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
+<div class="tsd-comment tsd-typography"><p>Remove duplicate declarations from the same rule. if passed as a string array, duplicated declarations are removed, except for those in the array</p>
+<pre><code class="ts"><br/><span class="hl-4">import</span><span class="hl-1"> </span><span class="hl-3">{</span><span class="hl-5">transform</span><span class="hl-3">}</span><span class="hl-1"> </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-6">&#39;</span><span class="hl-2">@tbela99/css-parser</span><span class="hl-6">&#39;</span><span class="hl-3">;</span><br/><br/><span class="hl-7">const </span><span class="hl-5">css</span><span class="hl-7"> </span><span class="hl-3">=</span><span class="hl-7"> </span><span class="hl-6">`</span><br/><br/><span class="hl-2">.table {</span><br/><br/><span class="hl-2">    width: 100%;</span><br/><span class="hl-2">    width: calc(100% + 40px);</span><br/><span class="hl-2">    margin-left: 20px;</span><br/><span class="hl-2">    margin-left: min(100% , 20px)</span><br/><span class="hl-2">}</span><br/><br/><span class="hl-6">`</span><span class="hl-3">;</span><br/><span class="hl-7">const </span><span class="hl-5">result</span><span class="hl-7"> </span><span class="hl-3">=</span><span class="hl-7"> </span><span class="hl-4">await</span><span class="hl-7"> </span><span class="hl-0">transform</span><span class="hl-3">(</span><span class="hl-5">css</span><span class="hl-3">,</span><span class="hl-7"> </span><span class="hl-3">{</span><br/><br/><span class="hl-3">    </span><span class="hl-8">beautify</span><span class="hl-3">: </span><span class="hl-4">true</span><span class="hl-3">,</span><br/><span class="hl-3">    </span><span class="hl-8">validation</span><span class="hl-3">: </span><span class="hl-4">true</span><span class="hl-3">,</span><br/><span class="hl-3">    </span><span class="hl-8">removeDuplicateDeclarations</span><span class="hl-3">: [</span><span class="hl-6">&#39;</span><span class="hl-2">width</span><span class="hl-6">&#39;</span><span class="hl-3">]</span><br/><span class="hl-3">}</span><br/><span class="hl-3">);</span><br/><br/><span class="hl-5">console</span><span class="hl-3">.</span><span class="hl-0">log</span><span class="hl-3">(</span><span class="hl-5">result</span><span class="hl-3">.</span><span class="hl-5">code</span><span class="hl-3">);</span><br/>
 </code><button type="button">Copy</button></pre>
 
-</div><aside class="tsd-sources"><ul><li>Defined in <a href="https://github.com/tbela99/css-parser/blob/d4752a6881be70c278c928d736a9ab6645380124/src/@types/index.d.ts#L171">@types/index.d.ts:171</a></li></ul></aside></section><section class="tsd-panel tsd-member"><h3 class="tsd-anchor-link" id="removeempty"><code class="tsd-tag">Optional</code><span>remove<wbr/>Empty</span><a href="#removeempty" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><div class="tsd-signature"><span class="tsd-kind-property">removeEmpty</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div><div class="tsd-comment tsd-typography"><p>remove empty ast nodes</p>
-</div><aside class="tsd-sources"><ul><li>Defined in <a href="https://github.com/tbela99/css-parser/blob/d4752a6881be70c278c928d736a9ab6645380124/src/@types/index.d.ts#L193">@types/index.d.ts:193</a></li></ul></aside></section><section class="tsd-panel tsd-member"><h3 class="tsd-anchor-link" id="removeprefix"><code class="tsd-tag">Optional</code><span>remove<wbr/>Prefix</span><a href="#removeprefix" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><div class="tsd-signature"><span class="tsd-kind-property">removePrefix</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div><div class="tsd-comment tsd-typography"><p>remove css prefix</p>
-</div><aside class="tsd-sources"><ul><li>Defined in <a href="https://github.com/tbela99/css-parser/blob/d4752a6881be70c278c928d736a9ab6645380124/src/@types/index.d.ts#L197">@types/index.d.ts:197</a></li></ul></aside></section></section></details></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Properties</summary><div><a href="#computecalcexpression"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>compute<wbr/>Calc<wbr/>Expression</span></a><a href="#computeshorthand"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>compute<wbr/>Shorthand</span></a><a href="#computetransform"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>compute<wbr/>Transform</span></a><a href="#inlinecssvariables"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>inline<wbr/>Css<wbr/>Variables</span></a><a href="#minify"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>minify</span></a><a href="#nestingrules"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>nesting<wbr/>Rules</span></a><a href="#parsecolor"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>parse<wbr/>Color</span></a><a href="#pass"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>pass</span></a><a href="#removeduplicatedeclarations"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>remove<wbr/>Duplicate<wbr/>Declarations</span></a><a href="#removeempty"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>remove<wbr/>Empty</span></a><a href="#removeprefix"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>remove<wbr/>Prefix</span></a></div></details></div></details></div><div class="site-menu"><nav id="tsd-sidebar-links" class="tsd-navigation"><a href="https://tbela99.github.io/css-parser/benchmark/index.html" class="tsd-nav-link">Benchmark</a><a href="https://tbela99.github.io/css-parser/docs/" class="tsd-nav-link">Docs</a><a href="https://tbela99.github.io/css-parser/playground/" class="tsd-nav-link">Playground</a><a href="https://github.com/tbela99/css-parser" class="tsd-nav-link">GitHub</a></nav><nav class="tsd-navigation"><a href="../modules.html">@tbela99/css-parser</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div><script>
-          try {
-            const generateLinkElement = document.querySelector(".tsd-generator a");
-            const link = document.createElement("a");
-            Object.assign(link, {
-              href: "https://github.com/dmnsgn/typedoc-material-theme",
-              target: "_blank",
-              rel: "noreferrer",
-              innerText: "typedoc-material-theme."
-            });
-            generateLinkElement.insertAdjacentElement("afterend", link);
-            generateLinkElement.insertAdjacentText("afterend", " with ");
-          } catch (error) {
-
-          }
-        </script></body></html>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/tbela99/css-parser/blob/900219d0a4a5cff110bc647f8bfa5d495ba1fc8c/src/@types/index.d.ts#L166">@types/index.d.ts:166</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="removeempty"><code class="tsd-tag">Optional</code><span>remove<wbr/>Empty</span><a href="#removeempty" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon-anchor" width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M14 11.9976C14 9.5059 11.683 7 8.85714 7C8.52241 7 7.41904 7.00001 7.14286 7.00001C4.30254 7.00001 2 9.23752 2 11.9976C2 14.376 3.70973 16.3664 6 16.8714C6.36756 16.9525 6.75006 16.9952 7.14286 16.9952" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10 11.9976C10 14.4893 12.317 16.9952 15.1429 16.9952C15.4776 16.9952 16.581 16.9952 16.8571 16.9952C19.6975 16.9952 22 14.7577 22 11.9976C22 9.6192 20.2903 7.62884 18 7.12383C17.6324 7.04278 17.2499 6.99999 16.8571 6.99999" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">removeEmpty</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
+<div class="tsd-comment tsd-typography"><p>Remove empty ast nodes</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/tbela99/css-parser/blob/900219d0a4a5cff110bc647f8bfa5d495ba1fc8c/src/@types/index.d.ts#L186">@types/index.d.ts:186</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="removeprefix"><code class="tsd-tag">Optional</code><span>remove<wbr/>Prefix</span><a href="#removeprefix" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon-anchor" width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M14 11.9976C14 9.5059 11.683 7 8.85714 7C8.52241 7 7.41904 7.00001 7.14286 7.00001C4.30254 7.00001 2 9.23752 2 11.9976C2 14.376 3.70973 16.3664 6 16.8714C6.36756 16.9525 6.75006 16.9952 7.14286 16.9952" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10 11.9976C10 14.4893 12.317 16.9952 15.1429 16.9952C15.4776 16.9952 16.581 16.9952 16.8571 16.9952C19.6975 16.9952 22 14.7577 22 11.9976C22 9.6192 20.2903 7.62884 18 7.12383C17.6324 7.04278 17.2499 6.99999 16.8571 6.99999" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">removePrefix</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
+<div class="tsd-comment tsd-typography"><p>Remove css prefix</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/tbela99/css-parser/blob/900219d0a4a5cff110bc647f8bfa5d495ba1fc8c/src/@types/index.d.ts#L190">@types/index.d.ts:190</a></li></ul></aside></section></section></details></main></div><footer class="page-footer">
+<div class="footer-content"><select id="theme-select"><option value="light">☀️   Light</option><option value="dark">🌙   Dark</option></select>
+<div>TypeDoc 🤓 Unhoax Theme</div></div><hr/><small class="copyright"><span>Made with ❤️ by SacNoeuds</span><span>Copyright 2026</span></small></footer>
+<div class="overlay"></div><script>window.ReflectionKind={"1":"Project","2":"Module","4":"Namespace","8":"Enum","16":"EnumMember","32":"Variable","64":"Function","128":"Class","256":"Interface","512":"Constructor","1024":"Property","2048":"Method","4096":"CallSignature","8192":"IndexSignature","16384":"ConstructorSignature","32768":"Parameter","65536":"TypeLiteral","131072":"TypeParameter","262144":"Accessor","524288":"GetSignature","1048576":"SetSignature","2097152":"TypeAlias","4194304":"Reference","8388608":"Document","Project":1,"Module":2,"Namespace":4,"Enum":8,"EnumMember":16,"Variable":32,"Function":64,"Class":128,"Interface":256,"Constructor":512,"Property":1024,"Method":2048,"CallSignature":4096,"IndexSignature":8192,"ConstructorSignature":16384,"Parameter":32768,"TypeLiteral":65536,"TypeParameter":131072,"Accessor":262144,"GetSignature":524288,"SetSignature":1048576,"TypeAlias":2097152,"Reference":4194304,"Document":8388608,"All":8388607,"ClassOrInterface":384,"VariableOrProperty":1056,"FunctionOrMethod":2112,"ClassMember":265728,"SomeSignature":1601536,"SomeModule":6,"SomeType":2294016,"SomeValue":96,"SomeMember":265232,"SomeExport":6291950,"MayContainDocuments":14680559,"ExportContainer":7,"Inheritable":273920,"ContainsCallSignatures":2624,"TypeReferenceTarget":2097544,"ValueReferenceTarget":102,"SignatureContainer":264768,"VariableContainer":7,"MethodContainer":69088}
+window.basePath="//"</script><script type="module" src="../assets/init-app.js"></script></body></html>
