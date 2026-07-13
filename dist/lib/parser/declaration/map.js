@@ -2,7 +2,7 @@ import { eq } from '../utils/eq.js';
 import { getConfig } from '../utils/config.js';
 import { matchType } from '../utils/type.js';
 import { EnumToken } from '../../ast/types.js';
-import { renderToken } from '../../renderer/render.js';
+import { renderValue } from '../../renderer/render.js';
 import { parseString } from '../parse.js';
 import { PropertySet } from './set.js';
 
@@ -219,7 +219,7 @@ class PropertyMap {
                         };
                     // @ts-ignore
                     const separator = this.config.separator
-                        ? renderToken({
+                        ? renderValue({
                             ...this.config.separator,
                             typ: EnumToken[this.config.separator.typ],
                         })
@@ -229,7 +229,7 @@ class PropertyMap {
                     for (i = 0; i < declaration.val.length; i++) {
                         t = declaration.val[i];
                         if (!cache.has(t)) {
-                            cache.set(t, renderToken(t, { minify: true }));
+                            cache.set(t, renderValue(t, { minify: true }));
                         }
                         if (t.typ == typ && separator == cache.get(t)) {
                             this.removeDefaults(map, value);
@@ -430,7 +430,7 @@ class PropertyMap {
                             return acc;
                         }, []);
                         if (props.default.includes(curr[1][i]
-                            .reduce((acc, curr) => acc + renderToken(curr) + " ", "")
+                            .reduce((acc, curr) => acc + renderValue(curr) + " ", "")
                             .trimEnd())) {
                             if (!this.config.properties[curr[0]].required) {
                                 continue;
@@ -527,7 +527,7 @@ class PropertyMap {
                 }, []);
                 if (this.config.mapping != null) {
                     const val = values.reduce((acc, curr) => acc +
-                        renderToken(curr, {
+                        renderValue(curr, {
                             removeComments: true,
                             minify: true,
                         }), "");

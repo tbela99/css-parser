@@ -1,0 +1,85 @@
+@layer reset {
+    :not(pre, code) {
+        font-size: 18px;
+        line-height: 1.45em;
+    }
+}
+
+@layer global {
+    .contains-task-list {
+        .task-list-item {
+            list-style-type: none;
+            & input[type="checkbox"] {
+                display: inline-block;
+                inline-size: auto;
+            }
+        }
+    }
+}
+
+@layer components {
+    .page-content-anchor-link {
+        &.is-active {
+            background-color: var(--transparent-blue);
+            color: var(--blue-dark);
+        }
+    }
+}
+
+html[data-theme="dark"] {
+    @layer components {
+        aside {
+            a.nav-leaf {
+                &:hover {
+                    background-color: var(--transparent-blue);
+                    color: var(--blue-dark);
+                }
+            }
+        }
+    }
+
+    @layer {
+        .page-content {
+            .breadcrumb {
+                & a {
+                    &:hover {
+                        background-color: var(--transparent-blue) !important;
+                        color: var(--blue-dark) !important;
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    @layer components {
+        aside {
+            a.nav-leaf {
+                &:hover {
+                    background-color: var(--transparent-blue);
+                    color: var(--blue-dark);
+                }
+            }
+        }
+    }
+
+    @layer {
+        .page-content {
+            .breadcrumb {
+                & a {
+                    &:hover {
+                        background-color: var(--transparent-blue) !important;
+                        color: var(--blue-dark) !important;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+#function-differences + table th {
+
+    text-align: left;
+}

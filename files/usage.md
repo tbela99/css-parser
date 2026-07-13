@@ -4,120 +4,24 @@ group: Documents
 category: Guides
 ---
 
-## Usage
-### From node, bun or deno
+## Main function differences
 
-```ts
+| Function | Parses CSS | Generates CSS Output |
+|----------|------------|----------------------|
+| `parse()` | ✅ | ❌ |
+| `render()` | ❌ | ✅
+| `transform()` | ✅ | ✅ |
 
-import {transform, ColorType} from '@tbela99/css-parser';
+> **Note:** `parse()` only produce the AST and does not generate CSS output.
 
-const css = `
-
-.ruler {
-
-    height: 10px;
-    background-color: orange
-}
-.hsl { color: #b3222280; }
-`;
-
-const result = await transform(css, {
-
-    beautify: true,
-    convertColor: ColorType.SRGB
-});
-
-console.debug(result.code);
-```
-
-the library exposes three entry points
-
-- `@tbela99/css-parser` or `@tbela99/css-parser/node` which relies on node fs and fs/promises to read files
-- `@tbela99/css-parser/cjs` same as the previous except it is exported as a commonjs module
-- `@tbela99/css-parser/web` which relies on the web fetch api to read files
-
-the default file loader can be overridden via the options [ParseOptions.load](../interfaces/node.ParserOptions.html#load) or [TransformOptions.load](../interfaces/node.TransformOptions.html#load) of parse() and transform() functions
-
-### From the web browser
-
-load as javascript module
-
-```html
-<script type="module">
-
-    import {transform, ColorType} from 'https://esm.sh/@tbela99/css-parser@1.3.2/web';
-
-const css = `
-
-.ruler {
-
-    height: 10px;
-    background-color: orange
-}
-.hsl { color: #b3222280; }
-`;
-
-const result = await transform(css, {
-
-    beautify: true,
-    convertColor: ColorType.RGB
-});
-
-console.debug(result.code);
-
-</script>
-```
-
-load as an umd module
-
-```html
-
-<script src="https://unpkg.com/@tbela99/css-parser@1.3.2/dist/index-umd-web.js"></script>
-<script>
-
-    (async () => {
-
-        const css = `
-
-.table {
-    border-collapse: collapse;
-    width: 100%;
-}
-
-.table td, .table th {
-    border: 1px solid #ddd;
-    padding: 8px;
-}
-
-.table tr:nth-child(even){background-color: #f2f2f2;}
-
-.table tr:hover {background-color: #ddd;}
-
-.table th {
-    padding-top: 12px;
-    padding-bottom: 12px;
-    text-align: left;
-    background-color: #4CAF50;
-    color: white;
-}
-    `;
-
-        console.debug(await CSSParser.transform(css, {beautify: true, convertColor: CSSParser.ColorType.OKLCH}).then(r => r.code));
-    })();
-
-</script>
-```
-
-### Parsing
-
-parsing is achieved using the parse() or transform() or the corresponding parseFile() and transformFile() functions. the transform() function will also provide the css code as a result which comes handing if you do not want an additional step of rendering the ast.
+By contrast, `transform()` parses the CSS **and** generates the transformed CSS text. This is useful when you want the rendered CSS directly without performing a separate AST rendering step.
 
 ```ts
 import {parse, render} from '@tbela99/css-parser';
 
 const css = `...`;
 
-const result = await parse(css);
+const result = await parse(css); // or parse({input: css});
 console.debug(result.ast);
 console.debug(result.stats);
 
@@ -133,33 +37,58 @@ import {transform} from '@tbela99/css-parser';
 
 const css = `...`;
 
-const result = await transform(css);
+const result = await transform(css); // or transform({input: css});
 console.debug(result.ast);
 console.debug(result.code);
 console.debug(result.stats);
 ````
+## Parsing
+
+Parsing converts input CSS into an **AST (Abstract Syntax Tree)**.
+
+You can parse CSS in two ways:
+
+- `parse()` – Parses CSS and returns an AST.
+- `transform()` – Parses and generate CSS as part of the transformation process.
+
+For more information about the available parsing options, see the TypeScript documentation for [`ParserOptions`](../interfaces/node.ParserOptions.html).
+
+### Usage
+
+```javascript
+parse(css, parserOptions = {})
+parse(parserOptions = {input: css})
+```
+
+### Example
+
+````javascript
+import {parse} from '@tbela99/css-parser';
+
+const {ast, errors, stats} = await parse(css);
+````
 
 ### Parsing files
 
-the parseFile() and transformFile() functions can be used to parse files.
-they both accept a file url or path as first argument.
+The parse() and transform() functions can parse files.
+They both accept a file url or path as first argument.
 
 ```ts
-import {transformFile} from '@tbela99/css-parser';
+import {transform} from '@tbela99/css-parser';
 
 const css = `https://docs.deno.com/styles.css`;
 
-let result = await transformFile(css);
+let result = await transform({file: css});
 console.debug(result.code);
 
 // load file as readable stream
-result = await transformFile(css, true);
+result = await transform({file: css, asStream: true});
 console.debug(result.code);
 ```
 
 ### Parsing from a Readable Stream
 
-the parse() and transform() functions accept a string or readable stream as first argument.
+The parse() and transform() functions accept a string or readable stream as first argument.
 
 ```ts
 import {parse} from '@tbela99/css-parser';
@@ -168,28 +97,66 @@ import {Readable} from "node:stream";
 // usage: node index.ts < styles.css or cat styles.css | node index.ts
 
 const readableStream = Readable.toWeb(process.stdin);
-const result = await parse(readableStream, {beautify: true});
+const result = await parse(readableStream, {beautify: true}); // or  parse({input: readableStream, beautify: true})
 
 console.log(result.ast);
 ```
 
-a response body object can also be passed to parseFile() or transformFile() functions
+A response body object can also be passed to parse() or transform() functions. 
 
 ```ts
 
-import {transformFile} from '@tbela99/css-parser';
+import {transform} from '@tbela99/css-parser';
 
 const response = await fetch(`https://docs.deno.com/styles.css`);
-const result = await transformFile(response.body); // or parse(response.body)
+const result = await transform(response.body); // or parse(response.body)
 console.debug(result.code);
 
 ```
-### Rendering css
 
-[rendering options](../interfaces/node.RenderOptions.html) can be passed to both transform() and render() functions.
+## Rendering AST
 
-#### Pretty printing
-by default css output is minified. that behavior can be changed by passing the `{beautify:true}` option.
+For more information about the available transform options, see the TypeScript documentation for [`RenderOptions`](../interfaces/node.RenderOptions.html).
+
+### Usage
+
+```javascript
+render(ast, RenderOptions = {});
+```
+
+### Examples
+
+Rendering ast
+
+```javascript
+import {parse, render} from '@tbela99/css-parser';
+
+const css = `
+@media screen and (min-width: 40em) {
+    .featurette-heading {
+        font-size: 50px;
+    }
+    .a {
+        color: red;
+        width: 3px;
+    }
+}
+`;
+
+const result = await parse(css, options);
+
+// print declaration without parents
+console.error(render(result.ast.chi[0].chi[1].chi[1], {withParents: false}));
+// -> width:3px
+
+// print declaration with parents
+console.debug(render(result.ast.chi[0].chi[1].chi[1], {withParents: true}));
+// -> @media screen and (min-width:40em){.a{width:3px}}
+
+```
+
+### Pretty printing
+By default, CSS output is minified. That behavior can be changed by passing the option `{beautify:true}`.
 
 ```ts
 
@@ -200,11 +167,11 @@ console.log(result.code);
 
 ```
 
-#### Preserving license comments
+### Preserving license comments
 
-by default all comments are removed. they can be preserved by passing the `{removeComments:false}` option,
+By default all comments are removed from the output. They can be preserved by passing the `{removeComments:false}` option,
 
-if you only want to preserve license comments, and remove other comments, you can pass `{preserveLicense:true}` instead.
+If you only want to preserve license comments, and remove other comments, you can pass `{preserveLicense:true}` instead.
 
 ```ts
 
@@ -221,10 +188,10 @@ const css = `/*!
 const result = await transform(css, {preserveLicense: true}); 
 ```
 
-#### Converting colors
+### Converting colors
 
-color conversion is controlled by the `convertColor` option. colors are converted to the HEX format by default.
-that behavior can be changed by passing the chosen color type to the convertColor option:
+Color conversion is controlled by the `convertColor` option. Colors are converted to the HEX format by default.
+That behavior can be changed by passing the desired color type to the convertColor option:
 
 - ColorType.HEX
 - ColorType.RGB or ColorType.RGBA
@@ -267,8 +234,145 @@ console.log(result.code);
 //     background-color: rgb(0 226 226)
 // }
 ```
-.
+
+## Transform
+
+The transform function parses and renders CSS. For more information about the available transform options, see the TypeScript documentation for [`TransformOptions`](../interfaces/node.TransformOptions.html).
+
+### TransformOptions
+
+Include ParserOptions and RenderOptions
+
+### Example
+
+```javascript
+import {transform} from '@tbela99/css-parser';
+
+const {ast, code, map, errors, stats} = await transform(css, {minify: true, resolveImport: true, cwd: 'files/css'});
+```
+
+### Example
+
+Read from stdin with node using readable stream
+
+```typescript
+import {transform} from '@tbela99/css-parser';
+import {Readable} from "node:stream";
+import type {TransformResult} from '@tbela99/css-parser';
+
+const readableStream: ReadableStream<string> = Readable.toWeb(process.stdin) as ReadableStream<string>;
+const result: TransformResult = await transform(readableStream, {beautify: true});
+
+console.log(result.code);
+```
+
+### Expand CSS nesting rules
+
+Convert css nesting rules to legacy syntax.
+
+```typescript
+import {transform} from '@tbela99/css-parser';
+
+const css = `
+table.colortable {
+    & td {
+        text-align: center;
+
+        &.c {
+            text-transform: uppercase
+        }
+
+        &:first-child, &:first-child + td {
+            border: 1px solid #000
+        }
+    }
+
+    & th {
+        text-align: center;
+        background: #000;
+        color: #fff
+    }
+}`;
+
+result = await transform(css, {
+
+    beautify: true,
+    expandNestingRules: true
+    }
+
+});
+
+console.log(result.code);
+```
+
+output
+
+```css
+
+table.colortable td {
+    text-align: center;
+}
+
+table.colortable td.c {
+    text-transform: uppercase;
+}
+
+table.colortable td:first-child, table.colortable td:first-child + td {
+    border: 1px solid black;
+}
+
+table.colortable th {
+    text-align: center;
+    background: black;
+    color: white;
+}
+```
+
+### CSS if() function expansion
+
+Convert CSS if() to legacy syntax.
+
+```typescript
+
+import {transform} from '@tbela99/css-parser';
+
+const css = `
+button {
+	background: linear-gradient(
+		if(media(min-width: 768px): to right; else: to bottom),
+		if(style(--dark-mode): #333; else: #fff),
+		if(style(--dark-mode): #000; else: #ccc)
+	);
+}`;
+
+result = await transform(css, {
+
+    beautify: true,
+    expandIfSyntax: true
+    }
+});
+
+console.log(result.code);
+```
+
+output
+
+```css
+button {
+ background: linear-gradient(to bottom,#fff,#ccc);
+ @media (min-width:768px) {
+  background: linear-gradient(to right,#fff,#ccc);
+  @container style(--dark-mode) {
+   background: linear-gradient(to right,#333,#000)
+  }
+ }
+ @container style(--dark-mode) {
+  background: linear-gradient(to bottom,#333,#000)
+ }
+}
+```
+
 
 ------
-[← Getting started](../documents/Guide.Getting_started.html) | [CSS Modules →](../documents/Guide.CSS_modules.html) 
+[← Getting started](./getting-started.md) | [Validation →](./Guide.Validation.html) 
 

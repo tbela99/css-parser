@@ -1,5 +1,5 @@
 import { eq } from "../parser/utils/eq.ts";
-import { doRender, renderToken } from "../renderer/render.ts";
+import { doRender, renderValue } from "../renderer/render.ts";
 import * as allFeatures from "./features/index.ts";
 import { walkValues } from "./walk.ts";
 import type {
@@ -7,6 +7,7 @@ import type {
     AstDeclaration,
     AstKeyFrameRule,
     AstKeyframesAtRule,
+    AstKeyframesRule,
     AstNode,
     AstRule,
     AstStyleSheet,
@@ -24,15 +25,14 @@ import type {
     RawSelectorTokens,
     Token,
 } from "../../@types/index.d.ts";
-import { EnumToken } from "./types.ts";
+import { EnumAstNodeStatus, EnumToken } from "./types.ts";
 import { isFunction, isIdent, isIdentStart, isWhiteSpace } from "../syntax/syntax.ts";
 import { FeatureWalkMode } from "./features/type.ts";
 import { trimArray } from "../validation/match.ts";
 import { combinators, definedPropertySettings } from "../syntax/constants.ts";
-import { replaceToken } from "../parser/utils/token.ts";
+import { replaceNodeOrValue } from "../parser/utils/token.ts";
 import { parseString } from "../parser/parse.ts";
 import { tokenize } from "../parser/tokenize.ts";
-import { parseSelector } from "../parser/utils/selector.ts";
 import { replaceCompound } from "./expand.ts";
 
 const notEndingWith: string[] = ["(", "["].concat(combinators);
@@ -48,7 +48,7 @@ const features: MinifyFeature[] = Object.values(allFeatures as Record<string, Mi
 ) as MinifyFeature[];
 
 /**
- * apply minification rules to the ast tree
+ * Apply minification rules to the ast tree
  * @param ast
  * @param options
  * @param recursive
@@ -66,7 +66,7 @@ export function minify(
 ): AstNode;
 
 /**
- * apply minification rules to the ast tree
+ * Apply minification rules to the ast tree
  * @param ast
  * @param options
  * @param recursive
@@ -163,7 +163,7 @@ export function minify(
 
             if (replacement != parent && parent.parent != null) {
                 // @ts-ignore
-                replaceToken(parent.parent as AstRule | AstAtRule | AstStyleSheet, parent, replacement);
+                replaceNodeOrValue(parent.parent as AstRule | AstAtRule | AstStyleSheet, parent, replacement);
             }
 
             if ("chi" in replacement) {
@@ -223,7 +223,7 @@ export function minify(
 
         if (replacement != null && replacement != parent && parent.parent != null) {
             // @ts-ignore
-            replaceToken(parent.parent, parent, replacement);
+            replaceNodeOrValue(parent.parent, parent, replacement);
         }
 
         if ("chi" in replacement) {
@@ -266,7 +266,7 @@ function transformAtRuleMediaPrelude(values: Token[]) {
                     // @ts-ignore
                     values[values.indexOf(value)] = (value as MediaQueryConditionToken).l;
                 } else {
-                    replaceToken(parent, value, (value as MediaQueryConditionToken).l);
+                    replaceNodeOrValue(parent, value, (value as MediaQueryConditionToken).l);
                     // @ts-ignore
                     value = (value as MediaQueryConditionToken).l;
                 }
@@ -342,7 +342,7 @@ function transformAtRuleMediaPrelude(values: Token[]) {
                     const p = parents?.[parents?.indexOf?.(parent) + 1];
 
                     if (p != null) {
-                        replaceToken(p, parent, replacement);
+                        replaceNodeOrValue(p, parent, replacement);
                     } else {
                         values.splice(values.indexOf(parent), 1, replacement as Token);
                     }
@@ -358,7 +358,7 @@ function transformAtRuleMediaPrelude(values: Token[]) {
 }
 
 /**
- * minify at-rule media
+ * Minify at-rule media
  * - remove redundant tokens
  * - generate range queries
  * @param ast
@@ -398,7 +398,7 @@ function minifyAtRuleMedia(tokens: Token[]): Token[] {
                 }
 
                 acc.set(
-                    values.reduce((acc, t) => acc + renderToken(t), ""),
+                    values.reduce((acc, t) => acc + renderValue(t), ""),
                     result.values,
                 );
 
@@ -430,7 +430,7 @@ function minifyAtRuleMedia(tokens: Token[]): Token[] {
 }
 
 /**
- * reduce selectors
+ * Reduce selectors
  * @param acc
  * @param curr
  *
@@ -450,7 +450,7 @@ function reduce(acc: string[], curr: string[]): string[] {
 }
 
 /**
- * apply minification rules to the ast tree
+ * Apply minification rules to the ast tree
  * @param ast
  * @param options
  * @param recursive
@@ -494,19 +494,11 @@ function doMinify(
         let nodeIndex: number = -1;
 
         for (; i < ast.chi!.length; i++) {
-            if (
-                ast.chi![i].typ === EnumToken.CommentNodeType ||
-                ast.chi![i].typ === EnumToken.InvalidRuleNodeType ||
-                ast.chi![i].typ === EnumToken.InvalidRuleNodeType
-            ) {
+            if (ast.chi![i].typ === EnumToken.CommentNodeType) {
                 continue;
             }
 
-            while (
-                previous?.typ === EnumToken.CommentNodeType ||
-                previous?.typ === EnumToken.InvalidRuleNodeType ||
-                previous?.typ === EnumToken.InvalidRuleNodeType
-            ) {
+            while (previous?.typ === EnumToken.CommentNodeType) {
                 previous = ast.chi[--nodeIndex];
                 continue;
             }
@@ -590,15 +582,14 @@ function doMinify(
                                         (index + 3 < arr.length ||
                                             arr[index + 2]?.typ === EnumToken.WhitespaceTokenType))
                                         ? ""
-                                        : renderToken(curr)),
+                                        : renderValue(curr)),
                                 "",
                             );
                         }
                     }
 
                     if (["all", "", null].includes((node as AstAtRule).val)) {
-                        ast.chi?.splice(i, 1, ...node.chi!);
-                        i--;
+                        ast.chi?.splice(i--, 1, ...node.chi!);
                         continue;
                     }
                 } else if ((node as AstAtRule).nam === "import" && Array.isArray((node as AstAtRule).tokens)) {
@@ -629,7 +620,7 @@ function doMinify(
                                     arr[index + 1]?.typ === EnumToken.CommentTokenType &&
                                     (index + 3 < arr.length || arr[index + 2].typ === EnumToken.WhitespaceTokenType))
                                     ? ""
-                                    : renderToken(curr)),
+                                    : renderValue(curr)),
                             "",
                         );
                     }
@@ -949,7 +940,7 @@ function doMinify(
                         }
                     }
 
-                    if (recursive && previous != node) {
+                    if (recursive && previous != null && previous != node) {
                         if (!hasDeclaration(previous as AstRule)) {
                             doMinify(previous, options, recursive, errors, nestingContent, context);
                         }
@@ -995,7 +986,7 @@ function doMinify(
 }
 
 /**
- * check if a rule has a declaration
+ * Check if a rule has a declaration
  * @param node
  *
  * @private
@@ -1015,12 +1006,12 @@ function hasDeclaration(node: AstRule | AstAtRule): boolean {
 }
 
 /**
- * optimize selector
+ * Optimize selector
  * @param selector
  *
  * @private
  */
-function optimizeSelector(selector: string[][]): OptimizedSelector | null {
+export function optimizeSelector(selector: string[][]): OptimizedSelector | null {
     const map = new Set<string>();
     selector = selector
         .reduce((acc: string[][], curr: string[]) => {
@@ -1154,7 +1145,7 @@ function optimizeSelector(selector: string[][]): OptimizedSelector | null {
 }
 
 /**
- * split selector string
+ * Split selector string
  * @param buffer
  *
  * @internal
@@ -1271,7 +1262,7 @@ export function splitRule(buffer: string): string[][] {
 }
 
 /**
- * reduce selector
+ * Reduce selector
  * @param acc
  * @param curr
  *
@@ -1345,7 +1336,7 @@ function reduceSelector(acc: string[][], curr: string[]): string[][] | null {
 }
 
 /**
- * match selectors
+ * Match selectors
  * @param selector1
  * @param selector2
  *
@@ -1483,12 +1474,12 @@ function matchSelectors(selector1: string[][], selector2: string[][]): null | Ma
 }
 
 /**
- * fix selector
+ * Fix selector
  * @param node
  *
  * @private
  */
-function fixSelector(node: AstRule) {
+function fixSelector(node: AstRule): void {
     if (node.sel.includes("&")) {
         const attributes: Token[] = [...tokenize(node.sel as string)].map((t) => t.token) as Token[]; // parseString(node.sel);
 
@@ -1507,12 +1498,12 @@ function fixSelector(node: AstRule) {
             }
         }
 
-        node.sel = attributes.reduce((acc: string, curr: Token) => acc + renderToken(curr), "");
+        node.sel = attributes.reduce((acc: string, curr: Token) => acc + renderValue(curr), "");
     }
 }
 
 /**
- * wrap nodes
+ * Wrap nodes
  * @param previous
  * @param node
  * @param match
@@ -1571,7 +1562,7 @@ function wrapNodes(
 }
 
 /**
- * diff nodes
+ * Diff nodes
  * @param n1
  * @param n2
  * @param reducer
@@ -1781,7 +1772,7 @@ function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOption
 }
 
 /**
- * reduce rule selector
+ * Reduce rule selector
  * @param node
  *
  * @private

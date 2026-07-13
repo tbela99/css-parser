@@ -1,10 +1,13 @@
+/**
+ * Generate validation rules
+ */
 import type { ValidationToken } from "../src/lib/validation/parser/types.d.ts";
 import process from "node:process";
 import { writeFile } from "node:fs/promises";
 import localPatch from "./local-patch.json" with { type: "json" };
 
 const fetchInit = {
-    headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:180.0) Gecko/20100101 Firefox/140.0" },
+    headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:180.0) Gecko/20100101 Firefox/151.0" },
 };
 
 function debug(error: any) {
@@ -80,9 +83,10 @@ const codes = (await fetch("https://cdn.jsdelivr.net/npm/@iso-639/data/1/en.json
     string,
     string
 >;
+// @ts-expect-error
 json.languages = Object.keys(codes);
 
-await writeFile(import.meta.dirname + "/../src/lib/validation/config.json", JSON.stringify(json, null, 1));
+await writeFile(import.meta.dirname! + "/../src/lib/validation/config.json", JSON.stringify(json, null, 1));
 console.debug(json);
 
 // =============================== //
@@ -120,9 +124,11 @@ function applyPatches(...patches: PatchSyntax[]) {
                 json.declarations[key] = { syntax: value.syntax };
             } else if (value.comment?.startsWith?.("extend") || value.syntax.startsWith("|")) {
                 console.error(`>> extending declaration syntax >> ${key}`);
+                // @ts-expect-error
                 json.declarations[key].syntax += " " + value.syntax;
             } else {
                 console.error(`>> replacing declaration syntax >> ${key}`);
+                // @ts-expect-error
                 json.declarations[key].syntax = " " + value.syntax;
             }
         }
@@ -138,6 +144,7 @@ function applyPatches(...patches: PatchSyntax[]) {
                 json.syntaxes[key] = { syntax: value.syntax };
             } else if (value.comment?.startsWith?.("extend") || value.syntax.startsWith("|")) {
                 console.error(`>> extending type syntax >> ${key} >> ${JSON.stringify(value)}`);
+                // @ts-expect-error
                 json.syntaxes[key].syntax += " " + value.syntax;
             } else {
                 console.error(`>> replacing type syntax >> ${key} >> ${JSON.stringify(value)}`);
@@ -162,9 +169,13 @@ function applyPatches(...patches: PatchSyntax[]) {
         }
 
         if ("mediaFeatures" in patch) {
+            // @ts-expect-error
             for (const [group, config] of Object.entries(patch.mediaFeatures)) {
+                // @ts-expect-error
                 for (const [category, features] of Object.entries(config)) {
+                    // @ts-expect-error
                     for (const [name, feature] of Object.entries(features)) {
+                        // @ts-expect-error
                         json.mediaFeatures[name] = Object.assign(feature, { category });
 
                         // if (!(key in json.mediaFeatures)) {

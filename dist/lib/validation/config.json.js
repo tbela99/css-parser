@@ -1016,6 +1016,9 @@ var declarations = {
 	"forced-color-adjust": {
 		syntax: "auto | none | preserve-parent-color"
 	},
+	"frame-sizing": {
+		syntax: "auto | content-width | content-height | content-block-size | content-inline-size"
+	},
 	gap: {
 		syntax: "<'row-gap'> <'column-gap'>?"
 	},
@@ -2488,7 +2491,7 @@ var syntaxes = {
 		syntax: "acos( <calc-sum> )"
 	},
 	"alpha-value": {
-		syntax: "<number> | <percentage>"
+		syntax: "<number> | <percentage> | none"
 	},
 	"an+b": {
 		syntax: "odd | even | <integer> | <n-dimension> | '+'?† n | -n | <ndashdigit-dimension> | '+'?† <ndashdigit-ident> | <dashndashdigit-ident> | <n-dimension> <signed-integer> | '+'?† n <signed-integer> | -n <signed-integer> | <ndash-dimension> <signless-integer> | '+'?† n- <signless-integer> | -n- <signless-integer> | <n-dimension> ['+' | '-'] <signless-integer> | '+'?† n ['+' | '-'] <signless-integer> | -n ['+' | '-'] <signless-integer>"
@@ -2650,7 +2653,7 @@ var syntaxes = {
 		syntax: "in [ <rectangular-color-space> | <polar-color-space> <hue-interpolation-method>? | <custom-color-space> ]"
 	},
 	"color-mix()": {
-		syntax: "color-mix( <color-interpolation-method> , [ <color> && <percentage [0,100]>? ]#{2} )"
+		syntax: "color-mix( <color-interpolation-method> ,? [ <color> && <percentage [0,100]>? ]#)"
 	},
 	"color-stop": {
 		syntax: "<color-stop-length> | <color-stop-angle>"
@@ -2926,10 +2929,10 @@ var syntaxes = {
 		syntax: "[ historical-ligatures | no-historical-ligatures ]"
 	},
 	"hsl()": {
-		syntax: "hsl( <hue>, <percentage>, <percentage>, <alpha-value>? ) | hsl( [ <hue> | none ] [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ / [ <alpha-value> | none ] ]? )"
+		syntax: "hsl( <hue>, <percentage>, <percentage>, <alpha-value>? ) | hsl( [ <hue> | none ] [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ / [ <alpha-value> | none ] ]? ) | hsl(from <color> [ <hue> | none | h | s | l ] <relative-hsl-component>{2} [ / [ <alpha-value> | none]  ]? )"
 	},
 	"hsla()": {
-		syntax: "hsla( <hue>, <percentage>, <percentage>, <alpha-value>? ) | hsla( [ <hue> | none ] [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ / [ <alpha-value> | none ] ]? )"
+		syntax: "hsla( <hue>, <percentage>, <percentage>, <alpha-value>? ) | hsla( [ <hue> | none ] [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ / [ <alpha-value> | none ] ]? ) | hsla(from <color> < [ <hue> | none | h | s | l ] <relative-hsl-component>{2} [ / [ <alpha-value> | none ] ]? )"
 	},
 	hue: {
 		syntax: "<number> | <angle>"
@@ -2941,7 +2944,7 @@ var syntaxes = {
 		syntax: "hue-rotate( [ <angle> | <zero> ]? )"
 	},
 	"hwb()": {
-		syntax: "hwb( [ <hue> | none ] [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ / [ <alpha-value> | none ] ]? )"
+		syntax: "hwb( [ <hue> | none ] [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ / [ <alpha-value> | none ] ]? ) | hwb(from <color> [ <hue> | none | h | w | b ] <relative-hwb-component>{2} [ / [ <alpha-value> | none]  ]? )"
 	},
 	"hypot()": {
 		syntax: "hypot( <calc-sum># )"
@@ -2989,7 +2992,7 @@ var syntaxes = {
 		syntax: "<custom-ident> | <string>"
 	},
 	"lab()": {
-		syntax: "lab( [<percentage> | <number> | none] [ <percentage> | <number> | none] [ <percentage> | <number> | none] [ / [<alpha-value> | none] ]? )"
+		syntax: "lab( [<percentage> | <number> | none] [ <percentage> | <number> | none] [ <percentage> | <number> | none] [ / [<alpha-value> | none] ]? ) | lab(from <color> <relative-lab-component>{3} [ / [ <alpha-value> | none ] ]? )"
 	},
 	"layer()": {
 		syntax: "layer( <layer-name> )"
@@ -2998,7 +3001,7 @@ var syntaxes = {
 		syntax: "<ident> [ '.' <ident> ]*"
 	},
 	"lch()": {
-		syntax: "lch( [<percentage> | <number> | none] [ <percentage> | <number> | none] [ <hue> | none] [ / [<alpha-value> | none] ]? )"
+		syntax: "lch( [<percentage> | <number> | none] [ <percentage> | <number> | none] [ <hue> | none] [ / [<alpha-value> | none] ]? ) | lch(from <color> <relative-lch-component>{2} [ <hue> | none | l | c | h ] [ / [ <alpha-value> | none ] ]? )"
 	},
 	"leader()": {
 		syntax: "leader( <leader-type> )"
@@ -3163,10 +3166,10 @@ var syntaxes = {
 		syntax: "<ray()> | <url> | <basic-shape>"
 	},
 	"oklab()": {
-		syntax: "oklab( [ <percentage> | <number> | none] [ <percentage> | <number> | none] [ <percentage> | <number> | none] [ / [<alpha-value> | none] ]? )"
+		syntax: "oklab( [ <percentage> | <number> | none] [ <percentage> | <number> | none] [ <percentage> | <number> | none] [ / [<alpha-value> | none] ]? ) | oklab(from <color> <relative-lab-component>{3} [ / [ <alpha-value> | none ] ]? )"
 	},
 	"oklch()": {
-		syntax: "oklch( [ from <color> ]? [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ <hue> | none ] [ / [ <alpha-value> | none ] ]? )"
+		syntax: "oklch( [ <percentage> | <number> | none] [ <percentage> | <number> | none] [ <hue> | none] [ / [<alpha-value> | none] ]? ) | oklch(from <color> <relative-lch-component>{2} [ <hue> | none | l | c | h ] [ / [ <alpha-value> | none ] ]? )"
 	},
 	"opacity()": {
 		syntax: "opacity( [ <number> | <percentage> ]? )"
@@ -3316,10 +3319,10 @@ var syntaxes = {
 		syntax: "reversed( <counter-name> )"
 	},
 	"rgb()": {
-		syntax: "rgb( <percentage>#{3} , <alpha-value>? ) | rgb( <number>#{3} , <alpha-value>? ) | rgb( [ <number> | <percentage> | none ]{3} [ / [ <alpha-value> | none ] ]? )"
+		syntax: "rgb( <percentage>#{3} , <alpha-value>? ) | rgb( <number>#{3} , <alpha-value>? ) | rgb( [ <number> | <percentage> | none ]{3} [ / [ <alpha-value> | none ] ]? ) | rgb(from <color> <relative-rgb-component>{3} [ / [ <alpha-value> | none]  ]? )"
 	},
 	"rgba()": {
-		syntax: "rgba( <percentage>#{3} , <alpha-value>? ) | rgba( <number>#{3} , <alpha-value>? ) | rgba( [ <number> | <percentage> | none ]{3} [ / [ <alpha-value> | none ] ]? )"
+		syntax: "rgba( <percentage>#{3} , <alpha-value>? ) | rgba( <number>#{3} , <alpha-value>? ) | rgba( [ <number> | <percentage> | none ]{3} [ / [ <alpha-value> | none ] ]? ) | rgba(from <color> <relative-rgb-component>{3} [ / [ <alpha-value> | none ] ]? )"
 	},
 	"rotate()": {
 		syntax: "rotate( [ <angle> | <zero> ] )"
@@ -3493,7 +3496,7 @@ var syntaxes = {
 		syntax: "( <declaration> )"
 	},
 	"supports-feature": {
-		syntax: "<supports-selector-fn> | <supports-font-tech-fn> | <supports-font-format-fn> | <supports-at-rule-fn> | <supports-named-feature-fn> | <supports-env-fn> | <supports-decl>"
+		syntax: "<supports-decl> | <supports-selector-fn>"
 	},
 	"supports-in-parens": {
 		syntax: "( <supports-condition> ) | <supports-feature> | <general-enclosed>"
@@ -3631,7 +3634,7 @@ var syntaxes = {
 		syntax: "-moz-repeating-radial-gradient( <-legacy-radial-gradient-arguments> ) | -webkit-repeating-radial-gradient( <-legacy-radial-gradient-arguments> ) | -o-repeating-radial-gradient( <-legacy-radial-gradient-arguments> )"
 	},
 	"-legacy-radial-gradient-arguments": {
-		syntax: "[ <position> , ]? [ [ [ <-legacy-radial-gradient-shape> || <-legacy-radial-gradient-size> ] | [ <length> | <percentage> ]{2} ] , ]? <color-stop-list>"
+		syntax: " <position>? , [ [ <-legacy-radial-gradient-shape> || <-legacy-radial-gradient-size> ] | [ <length> | <percentage> ]{2} ]? , <color-stop-list>"
 	},
 	"-legacy-radial-gradient-size": {
 		syntax: "closest-side | closest-corner | farthest-side | farthest-corner | contain | cover"
@@ -3833,6 +3836,21 @@ var syntaxes = {
 	},
 	"syntax-string": {
 		syntax: "<string>"
+	},
+	"relative-hwb-component": {
+		syntax: "<number> | <percentage> | none | h | w | b | alpha"
+	},
+	"relative-hsl-component": {
+		syntax: "<number> | <percentage> | none | h | s | l | alpha"
+	},
+	"relative-rgb-component": {
+		syntax: "<number> | <percentage> | none | r | g | b | alpha"
+	},
+	"relative-lab-component": {
+		syntax: "<number> | <percentage> | none | l | a | b | alpha"
+	},
+	"relative-lch-component": {
+		syntax: "<number> | <percentage> | none | l | c | h | alpha"
 	},
 	"function-name": {
 		syntax: "<dashed-ident>("
@@ -4455,7 +4473,7 @@ var atRules = {
 		}
 	},
 	"@font-feature-values": {
-		syntax: " @font-feature-values <family-name># { <declaration-rule-list> } ",
+		syntax: " @font-feature-values <family-name># { <@historical-forms> | <@styleset> | <@character-variant> | <@swash> | <@ornaments> | <@annotation> } ",
 		descriptors: {
 			"font-display": {
 				syntax: "auto | block | swap | fallback | optional"
@@ -4595,9 +4613,6 @@ var atRules = {
 				syntax: "<url>"
 			}
 		}
-	},
-	"@stylistic": {
-		syntax: " @stylistic { <declaration-list> } "
 	},
 	"@historical-forms": {
 		syntax: " @historical-forms { <declaration-list> }"

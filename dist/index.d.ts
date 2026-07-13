@@ -1,901 +1,4 @@
 /**
- * syntax validation enum
- */
-declare enum SyntaxValidationResult {
-    /** valid syntax */
-    Valid = 0,
-    /** drop invalid syntax */
-    Drop = 1,
-    /** preserve unknown at-rules, declarations and pseudo-classes */
-    Lenient = 2
-}
-/**
- * enum of validation levels
- */
-declare enum ValidationLevel {
-    /**
-     * disable validation
-     */
-    None = 0,
-    /**
-     * validate selectors
-     */
-    Selector = 1,
-    /**
-     * validate at-rules
-     */
-    AtRule = 2,
-    /**
-     * validate declarations
-     */
-    Declaration = 4,
-    /**
-     * validate selectors and at-rules
-     */
-    Default = 3,// selectors + at-rules
-    /**
-     * validate selectors, at-rules and declarations
-     */
-    All = 7
-}
-/**
- * enum of all token types
- */
-declare enum EnumToken {
-    /**
-     * comment token
-     */
-    CommentTokenType = 0,
-    /**
-     * cdata section token
-     */
-    CDOCOMMTokenType = 1,
-    /**
-     * style sheet node type
-     */
-    StyleSheetNodeType = 2,
-    /**
-     * at-rule node type
-     */
-    AtRuleNodeType = 3,
-    /**
-     * rule node type
-     */
-    RuleNodeType = 4,
-    /**
-     * declaration node type
-     */
-    DeclarationNodeType = 5,
-    /**
-     * literal token type
-     */
-    LiteralTokenType = 6,
-    /**
-     * identifier token type
-     */
-    IdenTokenType = 7,
-    /**
-     * dashed identifier token type
-     */
-    DashedIdenTokenType = 8,
-    /**
-     * comma token type
-     */
-    CommaTokenType = 9,
-    /**
-     * colon token type
-     */
-    ColonTokenType = 10,
-    /**
-     * semicolon token type
-     */
-    SemiColonTokenType = 11,
-    /**
-     * number token type
-     */
-    NumberTokenType = 12,
-    /**
-     * at-rule token type
-     */
-    AtRuleTokenType = 13,
-    /**
-     * percentage token type
-     */
-    PercentageTokenType = 14,
-    /**
-     * function token type
-     */
-    FunctionTokenType = 15,
-    /**
-     * timeline function token type
-     */
-    TimelineFunctionTokenType = 16,
-    /**
-     * timing function token type
-     */
-    TimingFunctionTokenType = 17,
-    /**
-     * url function token type
-     */
-    UrlFunctionTokenType = 18,
-    /**
-     * image function token type
-     */
-    ImageFunctionTokenType = 19,
-    /**
-     * string token type
-     */
-    StringTokenType = 20,
-    /**
-     * unclosed string token type
-     */
-    UnclosedStringTokenType = 21,
-    /**
-     * dimension token type
-     */
-    DimensionTokenType = 22,
-    /**
-     * length token type
-     */
-    LengthTokenType = 23,
-    /**
-     * angle token type
-     */
-    AngleTokenType = 24,
-    /**
-     * time token type
-     */
-    TimeTokenType = 25,
-    /**
-     * frequency token type
-     */
-    FrequencyTokenType = 26,
-    /**
-     * resolution token type
-     */
-    ResolutionTokenType = 27,
-    /**
-     * hash token type
-     */
-    HashTokenType = 28,
-    /**
-     * block start token type
-     */
-    BlockStartTokenType = 29,
-    /**
-     * block end token type
-     */
-    BlockEndTokenType = 30,
-    /**
-     * attribute start token type
-     */
-    AttrStartTokenType = 31,
-    /**
-     * attribute end token type
-     */
-    AttrEndTokenType = 32,
-    /**
-     * start parentheses token type
-     */
-    StartParensTokenType = 33,
-    /**
-     * end parentheses token type
-     */
-    EndParensTokenType = 34,
-    /**
-     * parentheses token type
-     */
-    ParensTokenType = 35,
-    /**
-     * whitespace token type
-     */
-    WhitespaceTokenType = 36,
-    /**
-     * include match token type
-     */
-    IncludeMatchTokenType = 37,
-    /**
-     * dash match token type
-     */
-    DashMatchTokenType = 38,
-    /**
-     * equal match token type
-     */
-    EqualMatchTokenType = 39,
-    /**
-     * less than token type
-     */
-    LtTokenType = 40,
-    /**
-     * less than or equal to token type
-     */
-    LteTokenType = 41,
-    /**
-     * greater than token type
-     */
-    GtTokenType = 42,
-    /**
-     * greater than or equal to token type
-     */
-    GteTokenType = 43,
-    /**
-     * pseudo-class token type
-     */
-    PseudoClassTokenType = 44,
-    /**
-     * pseudo-class function token type
-     */
-    PseudoClassFuncTokenType = 45,
-    /**
-     * delimiter token type
-     */
-    DelimTokenType = 46,
-    /**
-     * URL token type
-     */
-    UrlTokenTokenType = 47,
-    /**
-     * end of file token type
-     */
-    EOFTokenType = 48,
-    /**
-     * important token type
-     */
-    ImportantTokenType = 49,
-    /**
-     * color token type
-     */
-    ColorTokenType = 50,
-    /**
-     * attribute token type
-     */
-    AttrTokenType = 51,
-    /**
-     * bad comment token type
-     */
-    BadCommentTokenType = 52,
-    /**
-     * bad cdo token type
-     */
-    BadCdoTokenType = 53,
-    /**
-     * bad URL token type
-     */
-    BadUrlTokenType = 54,
-    /**
-     * bad string token type
-     */
-    BadStringTokenType = 55,
-    /**
-     * binary expression token type
-     */
-    BinaryExpressionTokenType = 56,
-    /**
-     * unary expression token type
-     */
-    UnaryExpressionTokenType = 57,
-    /**
-     * flex token type
-     */
-    FlexTokenType = 58,
-    /**
-     *  token list token type
-     */
-    ListToken = 59,
-    /**
-     * addition token type
-     */
-    Add = 60,
-    /**
-     * multiplication token type
-     */
-    Mul = 61,
-    /**
-     * division token type
-     */
-    Div = 62,
-    /**
-     * subtraction token type
-     */
-    Sub = 63,
-    /**
-     * column combinator token type
-     */
-    ColumnCombinatorTokenType = 64,
-    /**
-     * contain match token type
-     */
-    ContainMatchTokenType = 65,
-    /**
-     * start match token type
-     */
-    StartMatchTokenType = 66,
-    /**
-     * end match token type
-     */
-    EndMatchTokenType = 67,
-    /**
-     * match expression token type
-     */
-    MatchExpressionTokenType = 68,
-    /**
-     * namespace attribute token type
-     */
-    NameSpaceAttributeTokenType = 69,
-    /**
-     * fraction token type
-     */
-    FractionTokenType = 70,
-    /**
-     * identifier list token type
-     */
-    IdenListTokenType = 71,
-    /**
-     * grid template function token type
-     */
-    GridTemplateFuncTokenType = 72,
-    /**
-     * keyframe rule node type
-     */
-    KeyFramesRuleNodeType = 73,
-    /**
-     * class selector token type
-     */
-    ClassSelectorTokenType = 74,
-    /**
-     * universal selector token type
-     */
-    UniversalSelectorTokenType = 75,
-    /**
-     * child combinator token type
-     */
-    ChildCombinatorTokenType = 76,// >
-    /**
-     * descendant combinator token type
-     */
-    DescendantCombinatorTokenType = 77,// whitespace
-    /**
-     * next sibling combinator token type
-     */
-    NextSiblingCombinatorTokenType = 78,// +
-    /**
-     * subsequent sibling combinator token type
-     */
-    SubsequentSiblingCombinatorTokenType = 79,// ~
-    /**
-     * nesting selector token type
-     */
-    NestingSelectorTokenType = 80,// &
-    /**
-     * invalid rule token type
-     */
-    InvalidRuleNodeType = 81,
-    /**
-     * invalid class selector token type
-     */
-    InvalidClassSelectorTokenType = 82,
-    /**
-     * invalid attribute token type
-     */
-    InvalidAttrTokenType = 83,
-    /**
-     * invalid at rule token type
-     */
-    InvalidAtRuleNodeType = 84,
-    /**
-     * media query condition token type
-     */
-    MediaQueryConditionTokenType = 85,
-    /**
-     * media feature token type
-     */
-    MediaFeatureTokenType = 86,
-    /**
-     * media feature only token type
-     */
-    OnlyTokenType = 87,
-    /**
-     * media feature not token type
-     */
-    NotTokenType = 88,
-    /**
-     * media feature and token type
-     */
-    AndTokenType = 89,
-    /**
-     * media feature or token type
-     */
-    OrTokenType = 90,
-    /**
-     * pseudo page token type
-     */
-    PseudoPageTokenType = 91,
-    /**
-     * pseudo element token type
-     */
-    PseudoElementTokenType = 92,
-    /**
-     * keyframe at rule node type
-     */
-    KeyframesAtRuleNodeType = 93,
-    /**
-     * invalid declaration node type
-     */
-    InvalidDeclarationNodeType = 94,
-    /**
-     * composes token node type
-     */
-    ComposesSelectorNodeType = 95,
-    /**
-     * css variable token type
-     */
-    CssVariableTokenType = 96,
-    /**
-     * css variable import token type
-     */
-    CssVariableImportTokenType = 97,
-    /**
-     * css variable declaration map token type
-     */
-    CssVariableDeclarationMapTokenType = 98,
-    /**
-     * media range query token type
-     */
-    MediaRangeQueryTokenType = 99,
-    /**
-     * invalid media query token type
-     */
-    InvalidMediaQueryTokenType = 100,
-    /**
-     * supports query condition token type
-     */
-    SupportsQueryConditionTokenType = 101,
-    /**
-     * supports query unary condition token type
-     */
-    SupportsQueryUnaryConditionTokenType = 102,
-    /**
-     * when else query condition token type
-     */
-    WhenElseQueryConditionTokenType = 103,
-    /**
-     * when else query unary condition token type
-     */
-    WhenElseUnaryConditionTokenType = 104,
-    /**
-     * container style range token type
-     */
-    ContainerStyleRangeTokenType = 105,
-    /**
-     * '*'
-     */
-    Star = 106,
-    /**
-     * '+'
-     */
-    Plus = 107,
-    /**
-     * '~'
-     */
-    Tilda = 108,
-    /**
-     * '|'
-     */
-    Pipe = 109,
-    /**
-     * '::'
-     */
-    DoubleColonTokenType = 110,
-    /**
-     * math function token type  such as'calc(' etc.
-     */
-    MathFunctionTokenType = 111,
-    /**
-     * transform function token type such as 'translate(' etc.
-     */
-    TransformFunctionTokenType = 112,
-    /**
-     * when function token type such as 'supports(' etc.
-     */
-    WhenElseFunctionTokenType = 113,
-    /**
-     * general enclosed function token type 'font-tech(' etc.
-     */
-    GeneralEnclosedFunctionTokenType = 114,
-    /**
-     * supports function token type such as 'at-rule('
-     */
-    SupportsFunctionTokenType = 115,
-    /**
-     * container function token type such as 'style(' or 'scroll-state('
-     */
-    ContainerFunctionTokenType = 116,
-    /**
-     * unrecognized node token type
-     */
-    RawNodeTokenType = 117,
-    /**
-     * media query boolean token type
-     * @media not ()
-     * @media only ()
-     */
-    MediaQueryUnaryFeatureTokenType = 118,
-    /**
-     * grid template function token type such as 'minmax('
-     */
-    GridTemplateFuncTokenDefType = 119,
-    /**
-     * image function token type such as 'image(' etc.
-     */
-    ImageFunctionTokenDefType = 120,
-    /**
-     * function token type such as 'view(' etc.
-     */
-    TimelineFunctionTokenDefType = 121,
-    /**
-     * function token type
-     */
-    FunctionTokenDefType = 122,
-    /**
-     * timing function token type such as 'linear(' etc.
-     */
-    TimingFunctionTokenDefType = 123,
-    /**
-     * color function token type such as 'rgb(' etc.
-     */
-    ColorFunctionTokenDefType = 124,
-    /**
-     * math function token type such as 'calc(' etc.
-     */
-    MathFunctionTokenDefType = 125,
-    /**
-     * container function token type such as 'style(' or 'scroll-state('
-     */
-    ContainerFunctionTokenDefType = 126,
-    /**
-     * url function token type 'url('
-     */
-    UrlFunctionTokenDefType = 127,
-    /**
-     * pseudo-class function token type
-     */
-    PseudoClassFunctionTokenDefType = 128,
-    /**
-     * transform function token type such as 'translate(' etc.
-     */
-    TransformFunctionTokenDefType = 129,
-    /**
-     * when function token type such as 'supports(' or 'media('
-     */
-    WhenElseFunctionTokenDefType = 130,
-    /**
-     * general enclosed function token type 'font-tech(' etc.
-     */
-    GeneralEnclosedFunctionTokenDefType = 131,
-    /**
-     * supports function token type 'font-tech('
-     */
-    SupportsFunctionTokenDefType = 132,
-    /**
-     *  CDOCOMMTokenType not allowed in this context
-     */
-    InvalidCommentTokenType = 133,
-    /**
-     * custom function token type '--function-name('
-     */
-    CustomFunctionTokenDefType = 134,
-    /**
-     * custom function token type
-     */
-    CustomFunctionTokenType = 135,
-    /**
-     * function tokens such as 'var(', 'env(', 'if(')
-     */
-    WildCardFunctionTokenDefType = 136,
-    /**
-     * function such as 'var()', 'env()', 'if()'
-     */
-    WildCardFunctionTokenType = 137,
-    /**
-     * if condition token
-     */
-    IfConditionTokenType = 138,
-    /**
-     * if-Else condition token
-     */
-    IfElseConditionTokenType = 139,
-    /**
-     * alias for time token type
-     */
-    Time = 25,
-    /**
-     * alias for identifier token type
-     */
-    Iden = 7,
-    /**
-     * alias for end of file token type
-     */
-    EOF = 48,
-    /**
-     * alias for hash token type
-     */
-    Hash = 28,
-    /**
-     * alias for flex token type
-     */
-    Flex = 58,
-    /**
-     * alias for angle token type
-     */
-    Angle = 24,
-    /**
-     * alias for color token type
-     */
-    Color = 50,
-    /**
-     * alias for comma token type
-     */
-    Comma = 9,
-    /**
-     * alias for string token type
-     */
-    String = 20,
-    /**
-     * alias for length token type
-     */
-    Length = 23,
-    /**
-     * alias for number token type
-     */
-    Number = 12,
-    /**
-     * alias for percentage token type
-     */
-    Perc = 14,
-    /**
-     * alias for literal token type
-     */
-    Literal = 6,
-    /**
-     * alias for comment token type
-     */
-    Comment = 0,
-    /**
-     * alias for url function token type
-     */
-    UrlFunc = 18,
-    /**
-     * alias for dimension token type
-     */
-    Dimension = 22,
-    /**
-     * alias for frequency token type
-     */
-    Frequency = 26,
-    /**
-     * alias for resolution token type
-     */
-    Resolution = 27,
-    /**
-     * alias for whitespace token type
-     */
-    Whitespace = 36,
-    /**
-     * alias for identifier list token type
-     */
-    IdenList = 71,
-    /**
-     * alias for dashed identifier token type
-     */
-    DashedIden = 8,
-    /**
-     * alias for grid template function token type
-     */
-    GridTemplateFunc = 72,
-    /**
-     * alias for image function token type
-     */
-    ImageFunc = 19,
-    /**
-     * alias for comment node type
-     */
-    CommentNodeType = 0,
-    /**
-     * alias for cdata section node type
-     */
-    CDOCOMMNodeType = 1,
-    /**
-     * alias for timing function token type
-     */
-    TimingFunction = 17,
-    /**
-     * alias for timeline function token type
-     */
-    TimelineFunction = 16
-}
-/**
- * supported color types enum
- */
-declare enum ColorType$1 {
-    /**
-     * deprecated system colors
-     */
-    SYS = 0,
-    /**
-     * deprecated system colors
-     */
-    DPSYS = 1,
-    /**
-     * named colors
-     */
-    LIT = 2,
-    /**
-     * colors as hex values
-     */
-    HEX = 3,
-    /**
-     * colors as rgb values
-     */
-    RGBA = 4,
-    /**
-     * colors using rgb
-     */
-    HSLA = 5,
-    /**
-     * colors using hwb
-     */
-    HWB = 6,
-    /**
-     * colors using cmyk
-     */
-    CMYK = 7,
-    /**
-     * colors using oklab
-     * */
-    OKLAB = 8,
-    /**
-     * colors using oklch
-     * */
-    OKLCH = 9,
-    /**
-     * colors using lab
-     */
-    LAB = 10,
-    /**
-     * colors using lch
-     */
-    LCH = 11,
-    /**
-     * colors using color() function
-     */
-    COLOR = 12,
-    /**
-     * color using srgb
-     */
-    SRGB = 13,
-    /**
-     * color using prophoto-rgb
-     */
-    PROPHOTO_RGB = 14,
-    /**
-     * color using a98-rgb
-     */
-    A98_RGB = 15,
-    /**
-     * color using rec2020
-     */
-    REC2020 = 16,
-    /**
-     * color using display-p3
-     */
-    DISPLAY_P3 = 17,
-    /**
-     * color using srgb-linear
-     */
-    SRGB_LINEAR = 18,
-    /**
-     * color using xyz-d50
-     */
-    XYZ_D50 = 19,
-    /**
-     * color using xyz-d65
-     */
-    XYZ_D65 = 20,
-    /**
-     * light-dark() color function
-     */
-    LIGHT_DARK = 21,
-    /**
-     * color-mix() color function
-     */
-    COLOR_MIX = 22,
-    /**
-     * non-standard color
-     */
-    NON_STD = 23,
-    /**
-     * custom color
-     */
-    CUSTOM_COLOR = 24,
-    /**
-     * alias for rgba
-     */
-    RGB = 4,
-    /**
-     * alias for hsl
-     */
-    HSL = 5,
-    /**
-     * alias for xyz-d65
-     */
-    XYZ = 20,
-    /**
-     * alias for cmyk
-     */
-    DEVICE_CMYK = 7
-}
-declare enum ModuleCaseTransformEnum {
-    /**
-     * export class names as-is
-     */
-    IgnoreCase = 1,
-    /**
-     * transform mapping key name to camel case
-     */
-    CamelCase = 2,
-    /**
-     * transform class names and mapping key name to camel case
-     */
-    CamelCaseOnly = 4,
-    /**
-     * transform mapping key name to dash case
-     */
-    DashCase = 8,
-    /**
-     * transform class names and mapping key name to dash case
-     */
-    DashCaseOnly = 16
-}
-declare enum ModuleScopeEnumOptions {
-    /**
-     * use the global scope
-     */
-    Global = 32,
-    /**
-     * use the local scope
-     */
-    Local = 64,
-    /**
-     * do not allow selector without an id or class
-     */
-    Pure = 128,
-    /**
-     * export using ICSS module format
-     */
-    ICSS = 256,
-    /**
-     * use the shortest name possible. pattern is ignored.
-     * it will produce names such as
-     *
-     * ```css
-     *  .a {
-     *      content: 'a';
-     *  }
-     *
-     *  .b {
-     *      content: 'b';
-     *  }
-     *
-     *  .c {
-     *      content: 'c';
-     *  }
-     *  ...
-     * ```
-     */
-    Shortest = 512
-}
-
-/**
  * Literal token
  */
 export declare interface LiteralToken extends BaseToken {
@@ -962,6 +65,13 @@ export declare interface CommaToken extends BaseToken {
  */
 export declare interface ColonToken extends BaseToken {
     typ: EnumToken.ColonTokenType;
+}
+
+/**
+ * Double colon token
+ */
+export declare interface DoubleColonToken extends BaseToken {
+    typ: EnumToken.DoubleColonTokenType;
 }
 
 /**
@@ -1706,6 +816,9 @@ export declare interface CssVariableMapTokenType extends BaseToken {
     from: Token$1[];
 }
 
+/**
+ * Function definition token
+ */
 export declare interface FunctionDefToken extends BaseToken {
     typ:
         | EnumToken.FunctionDefTokenType
@@ -1722,9 +835,12 @@ export declare interface FunctionDefToken extends BaseToken {
     val: string;
 }
 
-export declare interface RawNodeToken extends BaseToken {
+/**
+ * Raw node token
+ */
+export declare interface RawNodeToken extends BaseToken, EnumAstNodeStatus$1 {
     typ: EnumToken.RawNodeTokenType;
-    chi: Token$1[];
+    val: Token$1[];
 }
 
 /**
@@ -1767,6 +883,7 @@ export declare type Token$1 =
     | DashedIdentToken
     | CommaToken
     | ColonToken
+    | DoubleColonToken
     | SemiColonToken
     | ClassSelectorToken
     | UniversalSelectorToken
@@ -1862,6 +979,958 @@ export declare type Token$1 =
     | EOFToken;
 
 /**
+ * Syntax validation enum
+ */
+declare enum SyntaxValidationResult {
+    /** valid syntax */
+    Valid = 0,
+    /** drop invalid syntax */
+    Drop = 1,
+    /** preserve unknown at-rules, declarations and pseudo-classes */
+    Lenient = 2
+}
+/**
+ * Enum of node statuses
+ */
+declare enum EnumAstNodeStatus$1 {
+    /**
+     * Node passed validation
+     */
+    Validated = 0,
+    /**
+     * Node is invalid
+     */
+    Invalid = 1,
+    /**
+     * node is not validated
+     */
+    Unvalidated = 2,
+    /**
+     * Node did not pass validation, but is preserved.
+     */
+    ValidationFailed = 3,
+    /**
+     * Parsing the node is not supported yet or the node syntax definition does not exist.
+     */
+    Unknown = 4,
+    /**
+     * Failed to parse the node.
+     */
+    Unparsed = 5,
+    /**
+     * Node is disallowed in the context
+     */
+    Disallowed = 6,
+    /**
+     * Node is malformed
+     */
+    Malformed = 7
+}
+/**
+ * Enum of validation levels
+ * @deprecated
+ */
+declare enum ValidationLevel {
+    /**
+     * disable validation
+     */
+    None = 0,
+    /**
+     * validate selectors
+     */
+    Selector = 1,
+    /**
+     * validate at-rules
+     */
+    AtRule = 2,
+    /**
+     * validate declarations
+     */
+    Declaration = 4,
+    /**
+     * validate selectors and at-rules
+     */
+    Default = 3,// selectors + at-rules
+    /**
+     * validate selectors, at-rules and declarations
+     */
+    All = 7,// selectors + at-rules + declarations
+    /**
+     * Report only. Apply validation and report nodes that are marked as invalid
+     */
+    ReportOnly = 8
+}
+/**
+ * Enum of all token types
+ */
+declare enum EnumToken {
+    /**
+     * comment token
+     */
+    CommentTokenType = 0,
+    /**
+     * cdata section token
+     */
+    CDOCOMMTokenType = 1,
+    /**
+     * style sheet node type
+     */
+    StyleSheetNodeType = 2,
+    /**
+     * at-rule node type
+     */
+    AtRuleNodeType = 3,
+    /**
+     * rule node type
+     */
+    RuleNodeType = 4,
+    /**
+     * declaration node type
+     */
+    DeclarationNodeType = 5,
+    /**
+     * literal token type
+     */
+    LiteralTokenType = 6,
+    /**
+     * identifier token type
+     */
+    IdenTokenType = 7,
+    /**
+     * dashed identifier token type
+     */
+    DashedIdenTokenType = 8,
+    /**
+     * comma token type
+     */
+    CommaTokenType = 9,
+    /**
+     * colon token type
+     */
+    ColonTokenType = 10,
+    /**
+     * semicolon token type
+     */
+    SemiColonTokenType = 11,
+    /**
+     * number token type
+     */
+    NumberTokenType = 12,
+    /**
+     * at-rule token type
+     */
+    AtRuleTokenType = 13,
+    /**
+     * percentage token type
+     */
+    PercentageTokenType = 14,
+    /**
+     * function token type
+     */
+    FunctionTokenType = 15,
+    /**
+     * timeline function token type
+     */
+    TimelineFunctionTokenType = 16,
+    /**
+     * timing function token type
+     */
+    TimingFunctionTokenType = 17,
+    /**
+     * url function token type
+     */
+    UrlFunctionTokenType = 18,
+    /**
+     * image function token type
+     */
+    ImageFunctionTokenType = 19,
+    /**
+     * string token type
+     */
+    StringTokenType = 20,
+    /**
+     * unclosed string token type
+     */
+    UnclosedStringTokenType = 21,
+    /**
+     * dimension token type
+     */
+    DimensionTokenType = 22,
+    /**
+     * length token type
+     */
+    LengthTokenType = 23,
+    /**
+     * angle token type
+     */
+    AngleTokenType = 24,
+    /**
+     * time token type
+     */
+    TimeTokenType = 25,
+    /**
+     * frequency token type
+     */
+    FrequencyTokenType = 26,
+    /**
+     * resolution token type
+     */
+    ResolutionTokenType = 27,
+    /**
+     * hash token type
+     */
+    HashTokenType = 28,
+    /**
+     * block start token type
+     */
+    BlockStartTokenType = 29,
+    /**
+     * block end token type
+     */
+    BlockEndTokenType = 30,
+    /**
+     * attribute start token type
+     */
+    AttrStartTokenType = 31,
+    /**
+     * attribute end token type
+     */
+    AttrEndTokenType = 32,
+    /**
+     * start parentheses token type
+     */
+    StartParensTokenType = 33,
+    /**
+     * end parentheses token type
+     */
+    EndParensTokenType = 34,
+    /**
+     * parentheses token type
+     */
+    ParensTokenType = 35,
+    /**
+     * whitespace token type
+     */
+    WhitespaceTokenType = 36,
+    /**
+     * include match token type
+     */
+    IncludeMatchTokenType = 37,
+    /**
+     * dash match token type
+     */
+    DashMatchTokenType = 38,
+    /**
+     * equal match token type
+     */
+    EqualMatchTokenType = 39,
+    /**
+     * less than token type
+     */
+    LtTokenType = 40,
+    /**
+     * less than or equal to token type
+     */
+    LteTokenType = 41,
+    /**
+     * greater than token type
+     */
+    GtTokenType = 42,
+    /**
+     * greater than or equal to token type
+     */
+    GteTokenType = 43,
+    /**
+     * pseudo-class token type
+     */
+    PseudoClassTokenType = 44,
+    /**
+     * pseudo-class function token type
+     */
+    PseudoClassFuncTokenType = 45,
+    /**
+     * delimiter token type
+     */
+    DelimTokenType = 46,
+    /**
+     * URL token type
+     */
+    UrlTokenTokenType = 47,
+    /**
+     * end of file token type
+     */
+    EOFTokenType = 48,
+    /**
+     * important token type
+     */
+    ImportantTokenType = 49,
+    /**
+     * color token type
+     */
+    ColorTokenType = 50,
+    /**
+     * attribute token type
+     */
+    AttrTokenType = 51,
+    /**
+     * bad comment token type
+     */
+    BadCommentTokenType = 52,
+    /**
+     * bad cdo token type
+     */
+    BadCdoTokenType = 53,
+    /**
+     * bad URL token type
+     */
+    BadUrlTokenType = 54,
+    /**
+     * bad string token type
+     */
+    BadStringTokenType = 55,
+    /**
+     * binary expression token type
+     */
+    BinaryExpressionTokenType = 56,
+    /**
+     * unary expression token type
+     */
+    UnaryExpressionTokenType = 57,
+    /**
+     * flex token type
+     */
+    FlexTokenType = 58,
+    /**
+     *  token list token type
+     */
+    ListToken = 59,
+    /**
+     * addition token type
+     */
+    Add = 60,
+    /**
+     * multiplication token type
+     */
+    Mul = 61,
+    /**
+     * division token type
+     */
+    Div = 62,
+    /**
+     * subtraction token type
+     */
+    Sub = 63,
+    /**
+     * column combinator token type
+     */
+    ColumnCombinatorTokenType = 64,
+    /**
+     * contain match token type
+     */
+    ContainMatchTokenType = 65,
+    /**
+     * start match token type
+     */
+    StartMatchTokenType = 66,
+    /**
+     * end match token type
+     */
+    EndMatchTokenType = 67,
+    /**
+     * match expression token type
+     */
+    MatchExpressionTokenType = 68,
+    /**
+     * namespace attribute token type
+     */
+    NameSpaceAttributeTokenType = 69,
+    /**
+     * fraction token type
+     */
+    FractionTokenType = 70,
+    /**
+     * identifier list token type
+     */
+    IdenListTokenType = 71,
+    /**
+     * grid template function token type
+     */
+    GridTemplateFuncTokenType = 72,
+    /**
+     * keyframe rule node type
+     */
+    KeyFramesRuleNodeType = 73,
+    /**
+     * class selector token type
+     */
+    ClassSelectorTokenType = 74,
+    /**
+     * universal selector token type
+     */
+    UniversalSelectorTokenType = 75,
+    /**
+     * child combinator token type
+     */
+    ChildCombinatorTokenType = 76,// >
+    /**
+     * descendant combinator token type
+     */
+    DescendantCombinatorTokenType = 77,// whitespace
+    /**
+     * next sibling combinator token type
+     */
+    NextSiblingCombinatorTokenType = 78,// +
+    /**
+     * subsequent sibling combinator token type
+     */
+    SubsequentSiblingCombinatorTokenType = 79,// ~
+    /**
+     * nesting selector token type
+     */
+    NestingSelectorTokenType = 80,// &
+    /**
+     * Invalid rule token type
+     * @deprecated
+     */
+    InvalidRuleNodeType = 81,
+    /**
+     * invalid class selector token type
+     */
+    InvalidClassSelectorTokenType = 82,
+    /**
+     * invalid attribute token type
+     */
+    InvalidAttrTokenType = 83,
+    /**
+     * Invalid at rule token type
+     * @deprecated
+     */
+    InvalidAtRuleNodeType = 84,
+    /**
+     * media query condition token type
+     */
+    MediaQueryConditionTokenType = 85,
+    /**
+     * media feature token type
+     */
+    MediaFeatureTokenType = 86,
+    /**
+     * media feature only token type
+     */
+    OnlyTokenType = 87,
+    /**
+     * media feature not token type
+     */
+    NotTokenType = 88,
+    /**
+     * media feature and token type
+     */
+    AndTokenType = 89,
+    /**
+     * media feature or token type
+     */
+    OrTokenType = 90,
+    /**
+     * pseudo page token type
+     */
+    PseudoPageTokenType = 91,
+    /**
+     * pseudo element token type
+     */
+    PseudoElementTokenType = 92,
+    /**
+     * keyframe at rule node type
+     */
+    KeyframesAtRuleNodeType = 93,
+    /**
+     * invalid declaration node type.
+     * @deprecated
+     */
+    InvalidDeclarationNodeType = 94,
+    /**
+     * composes token node type
+     */
+    ComposesSelectorNodeType = 95,
+    /**
+     * css variable token type
+     */
+    CssVariableTokenType = 96,
+    /**
+     * css variable import token type
+     */
+    CssVariableImportTokenType = 97,
+    /**
+     * css variable declaration map token type
+     */
+    CssVariableDeclarationMapTokenType = 98,
+    /**
+     * media range query token type
+     */
+    MediaRangeQueryTokenType = 99,
+    /**
+     * invalid media query token type
+     */
+    InvalidMediaQueryTokenType = 100,
+    /**
+     * supports query condition token type
+     */
+    SupportsQueryConditionTokenType = 101,
+    /**
+     * supports query unary condition token type
+     */
+    SupportsQueryUnaryConditionTokenType = 102,
+    /**
+     * when else query condition token type
+     */
+    WhenElseQueryConditionTokenType = 103,
+    /**
+     * when else query unary condition token type
+     */
+    WhenElseUnaryConditionTokenType = 104,
+    /**
+     * container style range token type
+     */
+    ContainerStyleRangeTokenType = 105,
+    /**
+     * '*'
+     */
+    Star = 106,
+    /**
+     * '+'
+     */
+    Plus = 107,
+    /**
+     * '~'
+     */
+    Tilda = 108,
+    /**
+     * '|'
+     */
+    Pipe = 109,
+    /**
+     * '::'
+     */
+    DoubleColonTokenType = 110,
+    /**
+     * math function token type  such as'calc(' etc.
+     */
+    MathFunctionTokenType = 111,
+    /**
+     * transform function token type such as 'translate(' etc.
+     */
+    TransformFunctionTokenType = 112,
+    /**
+     * when function token type such as 'supports(' etc.
+     */
+    WhenElseFunctionTokenType = 113,
+    /**
+     * general enclosed function token type 'font-tech(' etc.
+     */
+    GeneralEnclosedFunctionTokenType = 114,
+    /**
+     * supports function token type such as 'at-rule('
+     */
+    SupportsFunctionTokenType = 115,
+    /**
+     * container function token type such as 'style(' or 'scroll-state('
+     */
+    ContainerFunctionTokenType = 116,
+    /**
+     * unrecognized node token type
+     */
+    RawNodeTokenType = 117,
+    /**
+     * media query boolean token type
+     * @media not ()
+     * @media only ()
+     */
+    MediaQueryUnaryFeatureTokenType = 118,
+    /**
+     * grid template function token type such as 'minmax('
+     */
+    GridTemplateFuncTokenDefType = 119,
+    /**
+     * image function token type such as 'image(' etc.
+     */
+    ImageFunctionTokenDefType = 120,
+    /**
+     * function token type such as 'view(' etc.
+     */
+    TimelineFunctionTokenDefType = 121,
+    /**
+     * function token type
+     */
+    FunctionTokenDefType = 122,
+    /**
+     * timing function token type such as 'linear(' etc.
+     */
+    TimingFunctionTokenDefType = 123,
+    /**
+     * color function token type such as 'rgb(' etc.
+     */
+    ColorFunctionTokenDefType = 124,
+    /**
+     * math function token type such as 'calc(' etc.
+     */
+    MathFunctionTokenDefType = 125,
+    /**
+     * container function token type such as 'style(' or 'scroll-state('
+     */
+    ContainerFunctionTokenDefType = 126,
+    /**
+     * url function token type 'url('
+     */
+    UrlFunctionTokenDefType = 127,
+    /**
+     * pseudo-class function token type
+     */
+    PseudoClassFunctionTokenDefType = 128,
+    /**
+     * transform function token type such as 'translate(' etc.
+     */
+    TransformFunctionTokenDefType = 129,
+    /**
+     * when function token type such as 'supports(' or 'media('
+     */
+    WhenElseFunctionTokenDefType = 130,
+    /**
+     * general enclosed function token type 'font-tech(' etc.
+     */
+    GeneralEnclosedFunctionTokenDefType = 131,
+    /**
+     * supports function token type 'font-tech('
+     */
+    SupportsFunctionTokenDefType = 132,
+    /**
+     *  CDOCOMMTokenType not allowed in this context
+     */
+    InvalidCommentTokenType = 133,
+    /**
+     * custom function token type '--function-name('
+     */
+    CustomFunctionTokenDefType = 134,
+    /**
+     * custom function token type
+     */
+    CustomFunctionTokenType = 135,
+    /**
+     * function tokens such as 'var(', 'env(', 'if(')
+     */
+    WildCardFunctionTokenDefType = 136,
+    /**
+     * function such as 'var()', 'env()', 'if()'
+     */
+    WildCardFunctionTokenType = 137,
+    /**
+     * if condition token
+     */
+    IfConditionTokenType = 138,
+    /**
+     * if-Else condition token
+     */
+    IfElseConditionTokenType = 139,
+    /**
+     * alias for time token type
+     */
+    Time = 25,
+    /**
+     * alias for identifier token type
+     */
+    Iden = 7,
+    /**
+     * alias for end of file token type
+     */
+    EOF = 48,
+    /**
+     * alias for hash token type
+     */
+    Hash = 28,
+    /**
+     * alias for flex token type
+     */
+    Flex = 58,
+    /**
+     * alias for angle token type
+     */
+    Angle = 24,
+    /**
+     * alias for color token type
+     */
+    Color = 50,
+    /**
+     * alias for comma token type
+     */
+    Comma = 9,
+    /**
+     * alias for string token type
+     */
+    String = 20,
+    /**
+     * alias for length token type
+     */
+    Length = 23,
+    /**
+     * alias for number token type
+     */
+    Number = 12,
+    /**
+     * alias for percentage token type
+     */
+    Perc = 14,
+    /**
+     * alias for literal token type
+     */
+    Literal = 6,
+    /**
+     * alias for comment token type
+     */
+    Comment = 0,
+    /**
+     * alias for url function token type
+     */
+    UrlFunc = 18,
+    /**
+     * alias for dimension token type
+     */
+    Dimension = 22,
+    /**
+     * alias for frequency token type
+     */
+    Frequency = 26,
+    /**
+     * alias for resolution token type
+     */
+    Resolution = 27,
+    /**
+     * alias for whitespace token type
+     */
+    Whitespace = 36,
+    /**
+     * alias for identifier list token type
+     */
+    IdenList = 71,
+    /**
+     * alias for dashed identifier token type
+     */
+    DashedIden = 8,
+    /**
+     * alias for grid template function token type
+     */
+    GridTemplateFunc = 72,
+    /**
+     * alias for image function token type
+     */
+    ImageFunc = 19,
+    /**
+     * alias for comment node type
+     */
+    CommentNodeType = 0,
+    /**
+     * alias for cdata section node type
+     */
+    CDOCOMMNodeType = 1,
+    /**
+     * alias for timing function token type
+     */
+    TimingFunction = 17,
+    /**
+     * alias for timeline function token type
+     */
+    TimelineFunction = 16
+}
+/**
+ * Supported color types enum
+ */
+declare enum ColorType$1 {
+    /**
+     * deprecated system colors
+     */
+    SYS = 0,
+    /**
+     * deprecated system colors
+     */
+    DPSYS = 1,
+    /**
+     * named colors
+     */
+    LIT = 2,
+    /**
+     * colors as hex values
+     */
+    HEX = 3,
+    /**
+     * colors as rgb values
+     */
+    RGBA = 4,
+    /**
+     * colors using rgb
+     */
+    HSLA = 5,
+    /**
+     * colors using hwb
+     */
+    HWB = 6,
+    /**
+     * colors using cmyk
+     */
+    CMYK = 7,
+    /**
+     * colors using oklab
+     * */
+    OKLAB = 8,
+    /**
+     * colors using oklch
+     * */
+    OKLCH = 9,
+    /**
+     * colors using lab
+     */
+    LAB = 10,
+    /**
+     * colors using lch
+     */
+    LCH = 11,
+    /**
+     * colors using color() function
+     */
+    COLOR = 12,
+    /**
+     * color using srgb
+     */
+    SRGB = 13,
+    /**
+     * color using prophoto-rgb
+     */
+    PROPHOTO_RGB = 14,
+    /**
+     * color using a98-rgb
+     */
+    A98_RGB = 15,
+    /**
+     * color using rec2020
+     */
+    REC2020 = 16,
+    /**
+     * color using display-p3
+     */
+    DISPLAY_P3 = 17,
+    /**
+     * color using srgb-linear
+     */
+    SRGB_LINEAR = 18,
+    /**
+     * color using xyz-d50
+     */
+    XYZ_D50 = 19,
+    /**
+     * color using xyz-d65
+     */
+    XYZ_D65 = 20,
+    /**
+     * light-dark() color function
+     */
+    LIGHT_DARK = 21,
+    /**
+     * color-mix() color function
+     */
+    COLOR_MIX = 22,
+    /**
+     * non-standard color
+     */
+    NON_STD = 23,
+    /**
+     * custom color
+     */
+    CUSTOM_COLOR = 24,
+    /**
+     * alpha() color function
+     */
+    ALPHA = 25,
+    /**
+     * alias for rgba
+     */
+    RGB = 4,
+    /**
+     * alias for hsl
+     */
+    HSL = 5,
+    /**
+     * alias for xyz-d65
+     */
+    XYZ = 20,
+    /**
+     * alias for cmyk
+     */
+    DEVICE_CMYK = 7
+}
+/**
+ * Supported module case transform
+ */
+declare enum ModuleCaseTransformEnum {
+    /**
+     * export class names as-is
+     */
+    IgnoreCase = 1,
+    /**
+     * transform mapping key name to camel case
+     */
+    CamelCase = 2,
+    /**
+     * transform class names and mapping key name to camel case
+     */
+    CamelCaseOnly = 4,
+    /**
+     * transform mapping key name to dash case
+     */
+    DashCase = 8,
+    /**
+     * transform class names and mapping key name to dash case
+     */
+    DashCaseOnly = 16
+}
+/**
+ * Supported module scope
+ */
+declare enum ModuleScopeEnumOptions {
+    /**
+     * use the global scope
+     */
+    Global = 32,
+    /**
+     * use the local scope
+     */
+    Local = 64,
+    /**
+     * do not allow selector without an id or class
+     */
+    Pure = 128,
+    /**
+     * export using ICSS module format
+     */
+    ICSS = 256,
+    /**
+     * use the shortest name possible. pattern is ignored.
+     * it will produce names such as
+     *
+     * ```css
+     *  .a {
+     *      content: 'a';
+     *  }
+     *
+     *  .b {
+     *      content: 'b';
+     *  }
+     *
+     *  .c {
+     *      content: 'c';
+     *  }
+     *  ...
+     * ```
+     */
+    Shortest = 512
+}
+
+/**
  * Position
  */
 export declare interface Position$1 {
@@ -1920,6 +1989,11 @@ export declare interface BaseToken {
     validSyntax?: boolean;
 }
 
+export declare interface AstNodeStatus {
+    state?: EnumAstNodeStatus;
+    errors?: ErrorDescription[];
+}
+
 /**
  * comment node
  */
@@ -1932,7 +2006,7 @@ export declare interface AstComment extends BaseToken {
 /**
  * declaration node
  */
-export declare interface AstDeclaration extends BaseToken {
+export declare interface AstDeclaration extends BaseToken, AstNodeStatus {
     nam: string;
     tokens?: null;
     val: Token$1[];
@@ -1942,7 +2016,7 @@ export declare interface AstDeclaration extends BaseToken {
 /**
  * rule node
  */
-export declare interface AstRule extends BaseToken {
+export declare interface AstRule extends BaseToken, AstNodeStatus {
     typ: EnumToken.RuleNodeType;
     sel: string;
     chi: Array<
@@ -1953,9 +2027,10 @@ export declare interface AstRule extends BaseToken {
 }
 
 /**
- * invalid rule node
+ * Invalid rule node
+ * @deprecated
  */
-export declare interface AstInvalidRule extends BaseToken {
+export declare interface AstInvalidRule extends BaseToken, AstNodeStatus {
     typ: EnumToken.InvalidRuleNodeType;
     sel: string;
     chi: Array<AstNode$1>;
@@ -1963,8 +2038,9 @@ export declare interface AstInvalidRule extends BaseToken {
 
 /**
  * invalid declaration node
+ * @deprecated
  */
-export declare interface AstInvalidDeclaration extends BaseToken {
+export declare interface AstInvalidDeclaration extends BaseToken, AstNodeStatus {
     typ: EnumToken.InvalidDeclarationNodeType;
     tokens?: null;
     val: Array<Token$1>;
@@ -1972,8 +2048,9 @@ export declare interface AstInvalidDeclaration extends BaseToken {
 
 /**
  * invalid at rule node
+ * @deprecated
  */
-export declare interface AstInvalidAtRule extends BaseToken {
+export declare interface AstInvalidAtRule extends BaseToken, AstNodeStatus {
     typ: EnumToken.InvalidAtRuleNodeType;
     nam: string;
     val: string;
@@ -1983,7 +2060,7 @@ export declare interface AstInvalidAtRule extends BaseToken {
 /**
  * keyframe rule node
  */
-export declare interface AstKeyFrameRule extends BaseToken {
+export declare interface AstKeyFrameRule extends BaseToken, AstNodeStatus {
     typ: EnumToken.KeyFramesRuleNodeType;
     sel: string;
     chi: Array<AstDeclaration | AstComment | AstInvalidDeclaration>;
@@ -2024,7 +2101,7 @@ export declare interface OptimizedSelectorToken {
 /**
  * at rule node
  */
-export declare interface AstAtRule extends BaseToken {
+export declare interface AstAtRule extends BaseToken, AstNodeStatus {
     typ: EnumToken.AtRuleNodeType;
     nam: string;
     val: string;
@@ -2034,7 +2111,7 @@ export declare interface AstAtRule extends BaseToken {
 /**
  * keyframe rule node
  */
-export declare interface AstKeyframesRule extends BaseToken {
+export declare interface AstKeyframesRule extends BaseToken, AstNodeStatus {
     typ: EnumToken.KeyFramesRuleNodeType;
     sel: string;
     chi: Array<AstDeclaration | AstInvalidDeclaration | AstComment | AstRuleList>;
@@ -2045,7 +2122,7 @@ export declare interface AstKeyframesRule extends BaseToken {
 /**
  * keyframe at rule node
  */
-export declare interface AstKeyframesAtRule extends BaseToken {
+export declare interface AstKeyframesAtRule extends BaseToken, AstNodeStatus {
     typ: EnumToken.KeyframesAtRuleNodeType;
     nam: string;
     val: string;
@@ -2090,7 +2167,6 @@ export declare type AstNode$1 =
     | CssVariableToken
     | CssVariableImportTokenType;
 
-    
 interface TokenSearchResult {
     node: Token$1 | null;
     parent: AstNode$1 | Token$1 | null;
@@ -2101,7 +2177,7 @@ interface TokenSearchResult {
 type AstValueMatcher = ((value: Token$1) => boolean) | ((token: Token$1, node: AstNode$1) => boolean);
 
 /**
- * options for the walk function
+ * Options for the walk function
  */
 declare enum WalkerOptionEnum {
     /**
@@ -2122,7 +2198,7 @@ declare enum WalkerOptionEnum {
     IgnoreChildren = 8
 }
 /**
- * event types for the walkValues function
+ * Event types for the walkValues function
  */
 declare enum WalkerEvent {
     /**
@@ -2135,7 +2211,7 @@ declare enum WalkerEvent {
     Leave = 2
 }
 /**
- * walk ast nodes
+ * Walk ast nodes
  * @param node initial node
  * @param filter control the walk process
  * @param reverse walk in reverse order
@@ -2209,7 +2285,7 @@ declare enum WalkerEvent {
  */
 declare function walk(node: AstNode$1, filter?: WalkerFilter | null, reverse?: boolean): Generator<WalkResult>;
 /**
- * walk ast node value tokens
+ * Walk ast node value tokens
  * @param values
  * @param root
  * @param filter
@@ -2708,6 +2784,9 @@ declare enum ValidationTokenEnum {
     DisallowWhitespace = 46,
     Colon = 47
 }
+/**
+ * Keys of the validation config object
+ */
 declare enum ValidationSyntaxGroupEnum {
     Declarations = "declarations",
     Functions = "functions",
@@ -2718,6 +2797,9 @@ declare enum ValidationSyntaxGroupEnum {
     Languages = "languages",
     mediaFeatures = "mediaFeatures"
 }
+/**
+ * Types of media features
+ */
 declare enum MediaFeatureType {
     BooleanType = "boolean",
     IntergerType = "integer",
@@ -2746,36 +2828,80 @@ interface ValidationDimensionRangeMatch {
         max: ValidationDimensionToken | null;
 }
 
+/**
+ * Validation token
+ */
 interface ValidationToken$1 {
 
+    /**
+     * token type
+     */
     typ: ValidationTokenEnum;
+    /**
+     * token position
+     */
     pos: Position;
-    // a#
+    /**
+     * match a comma separated list
+     */
     isList?: boolean;
+    /**
+     * 
+     * @private
+     */
     text?: string;
     // https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Values_and_units/Value_definition_syntax
-    // a*
+    /**
+     * token matches 0 or more times
+     */
     isRepeatable?: boolean;
     // https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Values_and_units/Value_definition_syntax
-    // a+
+    /**
+     * token matches 1 or more times
+     */
     isRepeatableAtLeastOnce?: boolean;
     // https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Values_and_units/Value_definition_syntax
-    // a?
+   /**
+    * token is optional
+    */
     isOptional?: boolean;
     // https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Values_and_units/Value_definition_syntax
-    // a!
+   
+    /**
+     * token is a mandatory group
+     */
     isMandatatoryGroup?: boolean;
-    // a{1,2}
+    /**
+     * token matching rules
+     */
     match?: {
+        /**
+         * token matches at least the specified number of times
+         */
         min: ValidationNumberToken;
+        /**
+         * token matches at most the specified number of times.
+         */
         max: ValidationNumberToken | null;
     },
+    /**
+     * tokan's value range
+     */
     range?: ValidationValueRangeMatch |  ValidationDimensionRangeMatch
 }
 
+/**
+ * Number token
+ */
 interface ValidationNumberToken extends ValidationToken$1 {
 
+    /**
+     * token type
+     */
     typ: ValidationTokenEnum.Number;
+    /**
+     * token value
+     */
     val: number;
 }
 
@@ -2788,12 +2914,20 @@ interface ValidationDimensionToken extends ValidationToken$1 {
 }
 
 interface PropertyType {
-
     shorthand: string;
 }
 
-interface ShorthandPropertyType {
+interface SinglePropertyType {
+        typ: keyof EnumToken;
+        val: string | number;
+}
 
+interface SinglePropertyTypeMapping {
+    pattern?: string[][];
+    mapping: Record<string, SinglePropertyType>;
+}
+
+interface ShorthandPropertyType {
     shorthand: string;
     map?: string;
     properties: string[];
@@ -2801,22 +2935,20 @@ interface ShorthandPropertyType {
     multiple: boolean;
     separator: {
         typ: keyof EnumToken;
-        val: string
+        val: string;
     };
     valueSeparator?: {
         typ: keyof EnumToken;
-        val: string
+        val: string;
     };
     keywords: string[];
 }
 
 interface PropertySetType {
-
     [key: string]: PropertyType | ShorthandPropertyType;
 }
 
 interface PropertyMapType {
-
     default: string[];
     types: string[];
     keywords: string[];
@@ -2824,23 +2956,21 @@ interface PropertyMapType {
     multiple?: boolean;
     prefix?: {
         typ: keyof EnumToken;
-        val: string
+        val: string;
     };
     previous?: string;
     separator?: {
-
         typ: keyof EnumToken;
     };
     constraints?: {
         [key: string]: {
             [key: string]: any;
-        }
+        };
     };
-    mapping?: Record<string, string>
+    mapping?: Record<string, string>;
 }
 
 interface ShorthandMapType {
-
     shorthand: string;
     pattern: string;
     keywords: string[];
@@ -2848,10 +2978,10 @@ interface ShorthandMapType {
     mapping?: Record<string, string>;
     multiple?: boolean;
     separator?: { typ: keyof EnumToken; val?: string };
-    set?: Record<string, string[]>
+    set?: Record<string, string[]>;
     properties: {
         [property: string]: PropertyMapType;
-    }
+    };
 }
 
 interface ShorthandProperties {
@@ -2890,51 +3020,61 @@ interface ShorthandType {
  * @private
  */
 export declare interface PropertiesConfig {
+    /**
+     * shorthand property minification rules
+     */
     properties: PropertiesConfigProperties;
-    map:        Map$1;
+    /**
+     * shorthand property minification rules
+     */
+    map: Map$1;
+    /**
+     * single property minification rules
+     */
+    property: Record<string, SinglePropertyTypeMapping>;
 }
 
 /**
  * @private
  */
 interface Map$1 {
-    border:                  Border;
-    "border-color":          BackgroundPositionClass;
-    "border-style":          BackgroundPositionClass;
-    "border-width":          BackgroundPositionClass;
-    outline:                 Outline;
-    "outline-color":         BackgroundPositionClass;
-    "outline-style":         BackgroundPositionClass;
-    "outline-width":         BackgroundPositionClass;
-    font:                    Font;
-    "font-weight":           BackgroundPositionClass;
-    "font-style":            BackgroundPositionClass;
-    "font-size":             BackgroundPositionClass;
-    "line-height":           BackgroundPositionClass;
-    "font-stretch":          BackgroundPositionClass;
-    "font-variant":          BackgroundPositionClass;
-    "font-family":           BackgroundPositionClass;
-    background:              Background;
-    "background-repeat":     BackgroundPositionClass;
-    "background-color":      BackgroundPositionClass;
-    "background-image":      BackgroundPositionClass;
+    border: Border;
+    "border-color": BackgroundPositionClass;
+    "border-style": BackgroundPositionClass;
+    "border-width": BackgroundPositionClass;
+    outline: Outline;
+    "outline-color": BackgroundPositionClass;
+    "outline-style": BackgroundPositionClass;
+    "outline-width": BackgroundPositionClass;
+    font: Font;
+    "font-weight": BackgroundPositionClass;
+    "font-style": BackgroundPositionClass;
+    "font-size": BackgroundPositionClass;
+    "line-height": BackgroundPositionClass;
+    "font-stretch": BackgroundPositionClass;
+    "font-variant": BackgroundPositionClass;
+    "font-family": BackgroundPositionClass;
+    background: Background;
+    "background-repeat": BackgroundPositionClass;
+    "background-color": BackgroundPositionClass;
+    "background-image": BackgroundPositionClass;
     "background-attachment": BackgroundPositionClass;
-    "background-clip":       BackgroundPositionClass;
-    "background-origin":     BackgroundPositionClass;
-    "background-position":   BackgroundPositionClass;
-    "background-size":       BackgroundPositionClass;
+    "background-clip": BackgroundPositionClass;
+    "background-origin": BackgroundPositionClass;
+    "background-position": BackgroundPositionClass;
+    "background-size": BackgroundPositionClass;
 }
 
 /**
  * @private
  */
 interface Background {
-    shorthand:  string;
-    pattern:    string;
-    keywords:   string[];
-    default:    any[];
-    multiple:   boolean;
-    separator:  Separator;
+    shorthand: string;
+    pattern: string;
+    keywords: string[];
+    default: any[];
+    multiple: boolean;
+    separator: Separator;
     properties: BackgroundProperties;
 }
 
@@ -2942,25 +3082,25 @@ interface Background {
  * @private
  */
 interface BackgroundProperties {
-    "background-repeat":     BackgroundRepeat;
-    "background-color":      PurpleBackgroundAttachment;
-    "background-image":      PurpleBackgroundAttachment;
+    "background-repeat": BackgroundRepeat;
+    "background-color": PurpleBackgroundAttachment;
+    "background-image": PurpleBackgroundAttachment;
     "background-attachment": PurpleBackgroundAttachment;
-    "background-clip":       PurpleBackgroundAttachment;
-    "background-origin":     PurpleBackgroundAttachment;
-    "background-position":   BackgroundPosition;
-    "background-size":       BackgroundSize;
+    "background-clip": PurpleBackgroundAttachment;
+    "background-origin": PurpleBackgroundAttachment;
+    "background-position": BackgroundPosition;
+    "background-size": BackgroundSize;
 }
 
 /**
  * @private
  */
 interface PurpleBackgroundAttachment {
-    types:     string[];
-    default:   string[];
-    keywords:  string[];
+    types: string[];
+    default: string[];
+    keywords: string[];
     required?: boolean;
-    mapping?:  BackgroundAttachmentMapping;
+    mapping?: BackgroundAttachmentMapping;
 }
 
 /**
@@ -2969,24 +3109,24 @@ interface PurpleBackgroundAttachment {
 interface BackgroundAttachmentMapping {
     "ultra-condensed": string;
     "extra-condensed": string;
-    condensed:         string;
-    "semi-condensed":  string;
-    normal:            string;
-    "semi-expanded":   string;
-    expanded:          string;
-    "extra-expanded":  string;
-    "ultra-expanded":  string;
+    condensed: string;
+    "semi-condensed": string;
+    normal: string;
+    "semi-expanded": string;
+    expanded: string;
+    "extra-expanded": string;
+    "ultra-expanded": string;
 }
 
 /**
  * @private
  */
 interface BackgroundPosition {
-    multiple:    boolean;
-    types:       string[];
-    default:     string[];
-    keywords:    string[];
-    mapping:     BackgroundPositionMapping;
+    multiple: boolean;
+    types: string[];
+    default: string[];
+    keywords: string[];
+    mapping: BackgroundPositionMapping;
     constraints: BackgroundPositionConstraints;
 }
 
@@ -3008,33 +3148,33 @@ interface ConstraintsMapping {
  * @private
  */
 interface BackgroundPositionMapping {
-    left:   string;
-    top:    string;
+    left: string;
+    top: string;
     center: string;
     bottom: string;
-    right:  string;
+    right: string;
 }
 
 /**
  * @private
  */
 interface BackgroundRepeat {
-    types:    any[];
-    default:  string[];
+    types: any[];
+    default: string[];
     multiple: boolean;
     keywords: string[];
-    mapping:  BackgroundRepeatMapping;
+    mapping: BackgroundRepeatMapping;
 }
 
 /**
  * @private
  */
 interface BackgroundRepeatMapping {
-    "repeat no-repeat":    string;
-    "no-repeat repeat":    string;
-    "repeat repeat":       string;
-    "space space":         string;
-    "round round":         string;
+    "repeat no-repeat": string;
+    "no-repeat repeat": string;
+    "repeat repeat": string;
+    "space space": string;
+    "round round": string;
     "no-repeat no-repeat": string;
 }
 
@@ -3044,11 +3184,11 @@ interface BackgroundRepeatMapping {
 interface BackgroundSize {
     multiple: boolean;
     previous: string;
-    prefix:   Prefix;
-    types:    string[];
-    default:  string[];
+    prefix: Prefix;
+    types: string[];
+    default: string[];
     keywords: string[];
-    mapping:  BackgroundSizeMapping;
+    mapping: BackgroundSizeMapping;
 }
 
 /**
@@ -3084,10 +3224,10 @@ interface BackgroundPositionClass {
  * @private
  */
 interface Border {
-    shorthand:  string;
-    pattern:    string;
-    keywords:   string[];
-    default:    string[];
+    shorthand: string;
+    pattern: string;
+    keywords: string[];
+    default: string[];
     properties: BorderProperties;
 }
 
@@ -3103,17 +3243,16 @@ interface BorderProperties {
 /**
  * @private
  */
-interface BorderColorClass {
-}
+interface BorderColorClass {}
 
 /**
  * @private
  */
 interface Font {
-    shorthand:  string;
-    pattern:    string;
-    keywords:   string[];
-    default:    any[];
+    shorthand: string;
+    pattern: string;
+    keywords: string[];
+    default: any[];
     properties: FontProperties;
 }
 
@@ -3121,24 +3260,24 @@ interface Font {
  * @private
  */
 interface FontProperties {
-    "font-weight":  FontWeight;
-    "font-style":   PurpleBackgroundAttachment;
-    "font-size":    PurpleBackgroundAttachment;
-    "line-height":  LineHeight;
+    "font-weight": FontWeight;
+    "font-style": PurpleBackgroundAttachment;
+    "font-size": PurpleBackgroundAttachment;
+    "line-height": LineHeight;
     "font-stretch": PurpleBackgroundAttachment;
     "font-variant": PurpleBackgroundAttachment;
-    "font-family":  FontFamily;
+    "font-family": FontFamily;
 }
 
 /**
  * @private
  */
 interface FontFamily {
-    types:     string[];
-    default:   any[];
-    keywords:  string[];
-    required:  boolean;
-    multiple:  boolean;
+    types: string[];
+    default: any[];
+    keywords: string[];
+    required: boolean;
+    multiple: boolean;
     separator: Separator;
 }
 
@@ -3146,11 +3285,11 @@ interface FontFamily {
  * @private
  */
 interface FontWeight {
-    types:       string[];
-    default:     string[];
-    keywords:    string[];
+    types: string[];
+    default: string[];
+    keywords: string[];
     constraints: FontWeightConstraints;
-    mapping:     FontWeightMapping;
+    mapping: FontWeightMapping;
 }
 
 /**
@@ -3172,21 +3311,21 @@ interface Value {
  * @private
  */
 interface FontWeightMapping {
-    thin:          string;
-    hairline:      string;
+    thin: string;
+    hairline: string;
     "extra light": string;
     "ultra light": string;
-    light:         string;
-    normal:        string;
-    regular:       string;
-    medium:        string;
-    "semi bold":   string;
-    "demi bold":   string;
-    bold:          string;
-    "extra bold":  string;
-    "ultra bold":  string;
-    black:         string;
-    heavy:         string;
+    light: string;
+    normal: string;
+    regular: string;
+    medium: string;
+    "semi bold": string;
+    "demi bold": string;
+    bold: string;
+    "extra bold": string;
+    "ultra bold": string;
+    black: string;
+    heavy: string;
     "extra black": string;
     "ultra black": string;
 }
@@ -3195,21 +3334,21 @@ interface FontWeightMapping {
  * @private
  */
 interface LineHeight {
-    types:    string[];
-    default:  string[];
+    types: string[];
+    default: string[];
     keywords: string[];
     previous: string;
-    prefix:   Prefix;
+    prefix: Prefix;
 }
 
 /**
  * @private
  */
 interface Outline {
-    shorthand:  string;
-    pattern:    string;
-    keywords:   string[];
-    default:    string[];
+    shorthand: string;
+    pattern: string;
+    keywords: string[];
+    default: string[];
     properties: OutlineProperties;
 }
 
@@ -3226,64 +3365,64 @@ interface OutlineProperties {
  * @private
  */
 interface PropertiesConfigProperties {
-    inset:                        BorderRadius;
-    top:                          BackgroundPositionClass;
-    right:                        BackgroundPositionClass;
-    bottom:                       BackgroundPositionClass;
-    left:                         BackgroundPositionClass;
-    margin:                       BorderRadius;
-    "margin-top":                 BackgroundPositionClass;
-    "margin-right":               BackgroundPositionClass;
-    "margin-bottom":              BackgroundPositionClass;
-    "margin-left":                BackgroundPositionClass;
-    padding:                      BorderColor;
-    "padding-top":                BackgroundPositionClass;
-    "padding-right":              BackgroundPositionClass;
-    "padding-bottom":             BackgroundPositionClass;
-    "padding-left":               BackgroundPositionClass;
-    "border-radius":              BorderRadius;
-    "border-top-left-radius":     BackgroundPositionClass;
-    "border-top-right-radius":    BackgroundPositionClass;
+    inset: BorderRadius;
+    top: BackgroundPositionClass;
+    right: BackgroundPositionClass;
+    bottom: BackgroundPositionClass;
+    left: BackgroundPositionClass;
+    margin: BorderRadius;
+    "margin-top": BackgroundPositionClass;
+    "margin-right": BackgroundPositionClass;
+    "margin-bottom": BackgroundPositionClass;
+    "margin-left": BackgroundPositionClass;
+    padding: BorderColor;
+    "padding-top": BackgroundPositionClass;
+    "padding-right": BackgroundPositionClass;
+    "padding-bottom": BackgroundPositionClass;
+    "padding-left": BackgroundPositionClass;
+    "border-radius": BorderRadius;
+    "border-top-left-radius": BackgroundPositionClass;
+    "border-top-right-radius": BackgroundPositionClass;
     "border-bottom-right-radius": BackgroundPositionClass;
-    "border-bottom-left-radius":  BackgroundPositionClass;
-    "border-width":               BorderColor;
-    "border-top-width":           BackgroundPositionClass;
-    "border-right-width":         BackgroundPositionClass;
-    "border-bottom-width":        BackgroundPositionClass;
-    "border-left-width":          BackgroundPositionClass;
-    "border-style":               BorderColor;
-    "border-top-style":           BackgroundPositionClass;
-    "border-right-style":         BackgroundPositionClass;
-    "border-bottom-style":        BackgroundPositionClass;
-    "border-left-style":          BackgroundPositionClass;
-    "border-color":               BorderColor;
-    "border-top-color":           BackgroundPositionClass;
-    "border-right-color":         BackgroundPositionClass;
-    "border-bottom-color":        BackgroundPositionClass;
-    "border-left-color":          BackgroundPositionClass;
+    "border-bottom-left-radius": BackgroundPositionClass;
+    "border-width": BorderColor;
+    "border-top-width": BackgroundPositionClass;
+    "border-right-width": BackgroundPositionClass;
+    "border-bottom-width": BackgroundPositionClass;
+    "border-left-width": BackgroundPositionClass;
+    "border-style": BorderColor;
+    "border-top-style": BackgroundPositionClass;
+    "border-right-style": BackgroundPositionClass;
+    "border-bottom-style": BackgroundPositionClass;
+    "border-left-style": BackgroundPositionClass;
+    "border-color": BorderColor;
+    "border-top-color": BackgroundPositionClass;
+    "border-right-color": BackgroundPositionClass;
+    "border-bottom-color": BackgroundPositionClass;
+    "border-left-color": BackgroundPositionClass;
 }
 
 /**
  * @private
  */
 interface BorderColor {
-    shorthand:  string;
-    map?:       string;
+    shorthand: string;
+    map?: string;
     properties: string[];
-    types:      string[];
-    keywords:   string[];
+    types: string[];
+    keywords: string[];
 }
 
 /**
  * @private
  */
 interface BorderRadius {
-    shorthand:  string;
+    shorthand: string;
     properties: string[];
-    types:      string[];
-    multiple:   boolean;
-    separator:  null | string;
-    keywords:   string[];
+    types: string[];
+    multiple: boolean;
+    separator: null | string;
+    keywords: string[];
 }
 
 /**
@@ -3334,99 +3473,99 @@ export declare interface WalkAttributesResult {
 }
 
 /**
- * error description
+ * Error description
  */
-export declare interface ErrorDescription {
+export declare interface ErrorDescription$1 {
     /**
-     *  drop rule or declaration
+     *  Drop rule or declaration
      */
 
     action: "drop" | "ignore";
     /**
-     * error message
+     * Error message
      */
     message: string;
     /**
-     * syntax error description
+     * Syntax error description
      */
     syntax?: string | ValidationToken$1 | null;
     /**
-     * error node
+     * Error node
      */
     node?: Token$1 | AstNode$1 | null;
     /**
-     * error location
+     * Error location
      */
     location?: Location;
     /**
-     * error object
+     * Error object
      */
     error?: Error;
     /**
-     * raw tokens
+     * Raw tokens
      */
     rawTokens?: TokenizeResult[];
 }
 
 /**
- * css validation options
+ * CSS validation options
  */
 interface ValidationOptions {
-
     /**
-     * nested rule context
+     * Nested rule context
+     * @private
      */
     nestedRule?: boolean;
 
     /**
-     * enable css validation
+     * Enable CSS validation. Using ValidationLevel as value is deprecated and will be removed
      *
      * see {@link ValidationLevel}
      */
     validation?: boolean | ValidationLevel;
 
     /**
-     * lenient validation. retain nodes that failed validation
+     * Lenient validation. retain nodes that failed validation
      */
     lenient?: boolean;
 
     /**
-     * visited tokens
+     * Visited tokens
      *
      * @private
      */
     visited?: Map<Token$1, Set<ValidationToken$1>>;
-    
+
     /**
-     * is optional
+     * Is optional
      *
      * @private
      */
     isOptional?: boolean | null;
 
     /**
-     * is repeatable
+     * Is repeatable
      *
      * @private
      */
     isRepeatable?: boolean | null;
 
     /**
-     * is list
+     * Is list
      *
      * @private
      */
     isList?: boolean | null;
 
     /**
-     * occurence
+     * Occurence
      *
      * @private
      */
     occurrence?: boolean | null;
 
     /**
-     * at least once
+     * At least once
      *
      * @private
      */
@@ -3434,23 +3573,23 @@ interface ValidationOptions {
 }
 
 /**
- * minify options
+ * Minify options
  */
 interface MinifyOptions {
     /**
-     * enable minification
+     * Enable minification
      */
     minify?: boolean;
     /**
-     * parse color tokens
+     * Parse color tokens
      */
     parseColor?: boolean;
     /**
-     * generate nested rules
+     * Generate nested rules
      */
     nestingRules?: boolean;
     /**
-     * remove duplicate declarations from the same rule. if passed as a string array, duplicated declarations are removed, except for those in the array
+     * Remove duplicate declarations from the same rule. if passed as a string array, duplicated declarations are removed, except for those in the array
      *
      *
      * ```ts
@@ -3482,61 +3621,65 @@ interface MinifyOptions {
      */
     removeDuplicateDeclarations?: boolean | string | string[];
     /**
-     * compute shorthand properties
+     * Compute shorthand properties
      */
     computeShorthand?: boolean;
     /**
-     * compute transform functions
-     * see supported functions {@link transformFunctions}
+     * Compute css transform functions
      */
     computeTransform?: boolean;
     /**
-     * compute math functions
-     * see supported functions {@link mathFuncs}
+     * Compute css math functions
      */
     computeCalcExpression?: boolean;
     /**
-     * inline css variables
+     * Inline css variables
      */
     inlineCssVariables?: boolean;
     /**
-     * remove empty ast nodes
+     * Remove empty ast nodes
      */
     removeEmpty?: boolean;
     /**
-     * remove css prefix
+     * Remove css prefix
      */
     removePrefix?: boolean;
     /**
-     * define minification passes.
+     * Define minification passes.
      */
     pass?: number;
 }
 
+/**
+ * Result of options.load() function call.
+ */
 export declare type LoadResult =
     | Promise<ReadableStream<Uint8Array>>
     | ReadableStream<Uint8Array>
     | string
     | Promise<string>;
 
+/**
+ * CSS module parser options
+ */
 export declare interface ModuleOptions {
     /**
-     * use local scope vs global scope
+     * Use local scope vs global scope
      */
     scoped?: boolean | ModuleScopeEnumOptions;
 
     /**
-     * module output file path. it is used to generate the scoped name. if not provided, [options.src](../docs/interfaces/node.ParserOptions.html#src) will be used
+     * Module output file path. it is used to generate the scoped name. if not provided, [options.src](../docs/interfaces/node.ParserOptions.html#src) will be used
      */
     filePath?: string;
 
     /**
-     * generated scope hash length. the default is 5
+     * Generated scope hash length. the default is 5
      */
     hashLength?: number;
 
     /**
-     * the pattern used to generate scoped names. the supported placeholders are:
+     * The pattern used to generate scoped names. the supported placeholders are:
      * - name: the file base name without the extension
      * - hash: the file path hash
      * - local: the local name
@@ -3624,7 +3767,7 @@ export declare interface ModuleOptions {
     naming?: ModuleCaseTransformEnum;
 
     /**
-     * optional function to generate scoped name
+     * Function to generate scoped name
      * @param localName
      * @param filePath
      * @param pattern see {@link ModuleOptions.pattern}
@@ -3638,68 +3781,77 @@ export declare interface ModuleOptions {
     ) => string | Promise<string>;
 }
 
+export declare interface ParseInputFileOptions {
+    file: string;
+    asStream?: boolean;
+}
+
+export declare interface ParseInputStreamOptions {
+    input: string | ReadableStream<Uint8Array>;
+}
+
 /**
- * parser options
+ * Parser options
  */
 export declare interface ParserOptions
     extends MinifyOptions, MinifyFeatureOptions, ValidationOptions, PropertyListOptions {
     /**
-     * source file to be used for sourcemap
+     * Source file to be used for sourcemap
      */
     src?: string;
     /**
-     * include sourcemap in the ast. sourcemap info is always generated
+     * Include sourcemap in the ast. Sourcemap info is always generated
      */
     sourcemap?: boolean | "inline";
     /**
-     * remove at-rule charset
+     * Remove at-rule charset
      */
     removeCharset?: boolean;
     /**
-     * resolve import
+     * Resolve import
      */
     resolveImport?: boolean;
     /**
-     * current working directory
+     * Current working directory
      *
      * @internal
      */
     cwd?: string;
     /**
-     * expand nested rules
+     * Expand nested rules
      */
     expandNestingRules?: boolean;
 
     /**
-     * experimental, convert css if() function into legacy syntax.
+     * Experimental, convert css if() function into legacy syntax.
      */
     expandIfSyntax?: boolean;
 
     /**
-     * url and file loader
+     * Custom URL and file loader.
      * @param url
      * @param currentDirectory
      * @param responseType
      *
      */
     load?: (
-        url: string,
+        url: string | { absolute: string; relative: string },
         currentDirectory: string,
         responseType?: boolean | ResponseType,
     ) => Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
     /**
-     * get directory name
+     * Get directory name
      * @param path
      *
      * @private
      */
     dirname?: (path: string) => string;
     /**
-     * resolve urls
+     * Resolve urls
      */
     resolveUrls?: boolean;
     /**
-     * url and path resolver
+     * Url and path resolver
      * @param url
      * @param currentUrl
      * @param currentWorkingDirectory
@@ -3715,12 +3867,12 @@ export declare interface ParserOptions
     };
 
     /**
-     * node visitor
+     * Node visitor
      * {@link VisitorNodeMap | VisitorNodeMap[]}
      */
     visitor?: VisitorNodeMap | VisitorNodeMap[];
     /**
-     * abort signal
+     * Abort signal
      *
      * Example: abort after 10 seconds
      * ```ts
@@ -3733,38 +3885,38 @@ export declare interface ParserOptions
      */
     signal?: AbortSignal;
     /**
-     * set parent node
+     * Set parent node
      *
      * @private
      */
     setParent?: boolean;
     /**
-     * cache
+     * Cache
      *
      * @private
      */
     cache?: WeakMap<AstNode$1, string>;
 
     /**
-     * css modules options
+     * CSS modules options
      */
     module?: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions;
 
     /**
-     * tokenizing info
+     * Tokenizing info
      * @private
      */
     parseInfo?: ParseInfo;
 }
 
 /**
- * minify feature options
+ * Minify feature options
  *
  * @internal
  */
 export declare interface MinifyFeatureOptions {
     /**
-     * minify features
+     * Minify features
      *
      * @private
      */
@@ -3772,31 +3924,31 @@ export declare interface MinifyFeatureOptions {
 }
 
 /**
- * minify feature
+ * Minify feature
  *
  * @internal
  */
 export declare interface MinifyFeature {
     /**
-     * accepted tokens
+     * Accepted tokens
      */
     accept?: Set<EnumToken>;
 
     /**
-     * ordering
+     * Ordering
      */
     ordering: number;
     /**
-     * process mode
+     * Process mode
      */
     processMode: FeatureWalkMode;
     /**
-     * register feature
+     * Register feature
      * @param options
      */
     register: (options: MinifyFeatureOptions | ParserOptions) => void;
     /**
-     * run feature
+     * Run feature
      * @param ast
      * @param options
      * @param parent
@@ -3815,30 +3967,30 @@ export declare interface MinifyFeature {
 }
 
 /**
- * resolved path
+ * Resolved path
  * @internal
  */
 export declare interface ResolvedPath {
     /**
-     * absolute path
+     * Absolute path
      */
     absolute: string;
     /**
-     * relative path
+     * Relative path
      */
     relative: string;
 }
 
 /**
- * ast node render options
+ * Ast node render options
  */
 export declare interface RenderOptions {
     /**
-     * minify css values.
+     * Minify css values.
      */
     minify?: boolean;
     /**
-     * pretty print css
+     * Pretty print css
      *
      * ```ts
      * const result = await transform(css, {beautify: true});
@@ -3846,7 +3998,7 @@ export declare interface RenderOptions {
      */
     beautify?: boolean;
     /**
-     * remove empty nodes. empty nodes are removed by default
+     * Remove empty nodes. Empty nodes are removed by default
      *
      * ```ts
      *
@@ -3862,305 +4014,334 @@ export declare interface RenderOptions {
      */
     removeEmpty?: boolean;
     /**
-     * expand nesting rules
+     * Expand nesting rules
      */
     expandNestingRules?: boolean;
     /**
-     * preserve license comments. license comments are comments that start with /*!
+     * Preserve license comments. License comments are comments that start with '/*!'
      */
     preserveLicense?: boolean;
     /**
-     * generate sourcemap object. 'inline' will embed it in the css
+     * Generate sourcemap object. 'inline' will embed it in the css
      */
     sourcemap?: boolean | "inline";
     /**
-     * indent string
+     * Indention string
      */
     indent?: string;
     /**
-     * new line string
+     * New line string
      */
     newLine?: string;
     /**
-     * remove comments
+     * Remove comments
      */
     removeComments?: boolean;
     /**
-     * convert color to the specified color space. 'true' will convert to HEX
+     * Convert color to the specified color space. 'true' will convert to HEX
      */
     convertColor?: boolean | ColorType;
     /**
-     * render the node along with its parents
+     * Render the node along with its parents
      */
     withParents?: boolean;
     /**
-     * output file. used for url resolution
+     * Output file. Used for url resolution
      * @internal
      */
     output?: string;
     /**
-     * current working directory
+     * Current working directory
      * @internal
      */
     cwd?: string;
     /**
-     * resolve path
+     * Resolve path
      * @internal
      */
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => ResolvedPath;
 }
 
 /**
- * transform options
+ * Transform options
  */
 export declare interface TransformOptions extends ParserOptions, RenderOptions {}
 
 /**
- * parse result stats object
+ * Parse result stats object
  */
 export declare interface ParseResultStats {
     /**
-     * source file
+     * Source file
      */
     src: string;
     /**
-     * bytes read
+     * Bytes read
      */
     bytesIn: number;
     /**
-     * bytes read from imported files
+     * Bytes read from imported files
      */
     importedBytesIn: number;
 
     /**
-     * tokenizing processing time
+     * Tokenizing processing time
      */
 
     tokenize: string;
     /**
-     * parsing processing time
+     * Parsing processing time
      */
     parse: string;
     /**
-     * minification processing time
+     * Minification processing time
      */
     minify: string;
     /**
-     * module processing time
+     * Module processing time
      */
     module?: string;
     /**
-     * total time
+     * Total time
      */
     total: string;
     /**
-     * imported files stats
+     * Imported files stats
      */
     imports: ParseResultStats[];
 
     /**
-     * nodes count
+     * Nodes count
      */
     nodesCount: number;
 
     /**
-     * tokens count
+     * Tokens count
      */
     tokensCount: number;
 }
 
 /**
- * parse result object
+ * Parse result object
  */
 export declare interface ParseResult {
     /**
-     * parsed ast tree
+     * Parsed ast tree
      */
     ast: AstStyleSheet;
     /**
-     * parse errors
+     * Parse errors
      */
-    errors: ErrorDescription[];
+    errors: ErrorDescription$1[];
     /**
-     * parse stats
+     * Parse stats
      */
     stats: ParseResultStats;
 
     /**
-     * css module mapping
+     * CSS module mapping
      */
     mapping?: Record<string, string>;
 
+    /**
+     * CSS module variables
+     * @private
+     */
     cssModuleVariables?: Record<string, CssVariableToken$1>;
 
+    /**
+     * css module import mapping
+     * @private
+     */
     importMapping?: Record<string, Record<string, string>>;
 
     /**
-     * css module reverse mapping
+     * CSS module reverse mapping
      * @private
      */
     revMapping?: Record<string, string>;
 }
 
 /**
- * render result object
+ * Render result object
  */
 export declare interface RenderResult {
     /**
-     * rendered css
+     * Rendered CSS
      */
     code: string;
     /**
-     * render errors
+     * Render errors
      */
-    errors: ErrorDescription[];
+    errors: ErrorDescription$1[];
     /**
-     * render stats
+     * Render stats
      */
     stats: {
         /**
-         * render time
+         * Render time
          */
         total: string;
     };
     /**
-     * source map
+     * Source map
      */
     map?: SourceMap;
 }
 
 /**
- * transform result object
+ * Transform result object
  */
 export declare interface TransformResult extends ParseResult, RenderResult {
     /**
-     * transform stats
+     * Transform stats
      */
     stats: {
         /**
-         * source file
+         * Source file
          */
         src: string;
         /**
-         * bytes read
+         * Bytes read
          */
         bytesIn: number;
         /**
-         * generated css size
+         * Generated CSS size
          */
         bytesOut: number;
         /**
-         * bytes read from imported files
+         * Bytes read from imported files
          */
         importedBytesIn: number;
         /**
-         * parse time
+         * Parse time
          */
         parse: string;
         /**
-         * minify time
+         * Minify time
          */
         minify: string;
         /**
-         * render time
+         * Render time
          */
         render: string;
         /**
-         * total time
+         * Total time
          */
         total: string;
         /**
-         * imported files stats
+         * Imported files stats
          */
         imports: ParseResultStats[];
     };
 }
 
 /**
- * parse token options
+ * Parse token options
  */
 export declare interface ParseTokenOptions extends ParserOptions {}
 
 /**
- * tokenize result object
+ * Tokenize result object
  * @internal
  */
 export declare interface TokenizeResult {
     /**
-     * token
+     * Token
      */
     token: Token$1;
     /**
-     * bytes in
+     * Bytes in
      */
     bytesIn: number;
 }
 
 /**
- * matched selector object
+ * Matched selector object
  * @internal
  */
 export declare interface MatchedSelector {
     /**
-     * matched selector
+     * Matched selector
      */
     match: string[][];
     /**
-     * selector 1
+     * Selector 1
      */
     selector1: string[][];
     /**
-     * selector 2
+     * Selector 2
      */
     selector2: string[][];
     /**
-     * selectors partially match
+     * Selectors partially match
      */
     eq: boolean;
 }
 
 /**
- * variable scope info object
+ * Variable scope info object
  * @internal
  */
 export declare interface VariableScopeInfo {
     /**
-     * global scope
+     * Global scope
      */
     globalScope: boolean;
     /**
-     * parent nodes
+     * Parent nodes
      */
     parent: Set<AstRule | AstAtRule>;
     /**
-     * declaration count
+     * Declaration count
      */
     declarationCount: number;
     /**
-     * replaceable
+     * Replaceable
      */
     replaceable: boolean;
     /**
-     * declaration node
+     * Declaration node
      */
     node: AstDeclaration;
     /**
-     * declaration values
+     * Declaration values
      */
     values: Token$1[];
 }
 
 /**
- * source map object
+ * Source map object
  * @internal
  */
 export declare interface SourceMapObject {
+    /**
+     * Source map version
+     */
     version: number;
+    /**
+     * Source file
+     */
     file?: string;
+    /**
+     * Source root
+     */
     sourceRoot?: string;
+    /**
+     * Source files
+     */
     sources?: string[];
+    /**
+     * Source files content
+     */
     sourcesContent?: Array<string | null>;
+    /**
+     * Variable names
+     */
     names?: string[];
+    /**
+     * Mappings
+     */
     mappings: string;
 }
 
@@ -4179,7 +4360,7 @@ declare function dirname(path: string): string;
  *
  * @private
  */
-declare function resolve(url: string, currentDirectory: string, cwd?: string): {
+declare const resolve: (url: string, currentDirectory?: string, cwd?: string) => {
     absolute: string;
     relative: string;
 };
@@ -4268,7 +4449,7 @@ interface Context<Type> {
 }
 
 /**
- * apply minification rules to the ast tree
+ * Apply minification rules to the ast tree
  * @param ast
  * @param options
  * @param recursive
@@ -4277,7 +4458,7 @@ interface Context<Type> {
  *
  * @private
  */
-declare function minify(ast: AstNode$1, options: ParserOptions | MinifyFeatureOptions, recursive: boolean, errors?: ErrorDescription[], nestingContent?: boolean): AstNode$1;
+declare function minify(ast: AstNode$1, options: ParserOptions | MinifyFeatureOptions, recursive: boolean, errors?: ErrorDescription$1[], nestingContent?: boolean): AstNode$1;
 
 /**
  * expand css nesting ast nodes
@@ -4288,7 +4469,7 @@ declare function minify(ast: AstNode$1, options: ParserOptions | MinifyFeatureOp
 declare function expand(ast: AstStyleSheet | AstAtRule | AstRule): AstNode$1;
 
 /**
- * parse a string as an array of declaration nodes
+ * Parse a string as an array of declaration nodes
  * @param declaration
  *
  * Example:
@@ -4300,11 +4481,13 @@ declare function expand(ast: AstStyleSheet | AstAtRule | AstRule): AstNode$1;
  */
 declare function parseDeclarations(declaration: string): Promise<Array<AstDeclaration | AstComment>>;
 /**
- * parse css string and return an array of tokens
+ * Parse css string and return an array of tokens
  * @param src
  * @param options
- *
- * @private
+ *    - parseColor: parse identifiers as colors
+ *    - src: source url used for source map
+ * @param errors capture parse errors in the provided array
+
  *
  * Example:
  *
@@ -4315,14 +4498,14 @@ declare function parseDeclarations(declaration: string): Promise<Array<AstDeclar
  * let tokens = parseString('body { color: red; }');
  * console.log(tokens);
  *
- *  tokens = parseString('#c322c980');
+ * tokens = parseString('#c322c980');
  * console.log(tokens);
  * ```
  */
 declare function parseString(src: string, options?: {
-    location: boolean;
     src?: string;
-}): Token$1[];
+    parseColor?: boolean;
+} | null, errors?: ErrorDescription$1[]): Token$1[];
 
 /**
  * render ast token
@@ -4330,16 +4513,14 @@ declare function parseString(src: string, options?: {
  * @param options
  * @private
  */
-declare function renderToken(token: Token$1, options?: RenderOptions, cache?: {
+declare function renderValue(token: Token$1, options?: RenderOptions, cache?: {
     [key: string]: any;
-}, reducer?: (acc: string, curr: Token$1) => string, errors?: ErrorDescription[]): string;
+}, reducer?: null | ((acc: string, curr: Token$1) => string), errors?: ErrorDescription$1[]): string;
 
 /**
  * Converts a color to another color space
  * @param token
  * @param to
- *
- * @private
  *
  * ```ts
  *
@@ -4356,8 +4537,9 @@ declare function convertColor(token: ColorToken, to: ColorType$1): ColorToken | 
  * @param okLab2
  *
  * @private
+ * {@link https://drafts.csswg.org/css-color-4/#comparing-color-values}
  */
-declare function okLabDistance(okLab1: [number, number, number], okLab2: [number, number, number]): number;
+declare function okLabDistance(color1: ColorToken, color2: ColorToken): number | null;
 /**
  * Check if two colors are close in okLab space.
  * @param color1
@@ -4369,7 +4551,7 @@ declare function okLabDistance(okLab1: [number, number, number], okLab2: [number
 declare function isOkLabClose(color1: ColorToken, color2: ColorToken, threshold?: number): boolean;
 
 /**
- * search the ast tree and return the first match
+ * Search the ast tree and return the first match
  *
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'
@@ -4401,7 +4583,7 @@ button {
  */
 declare function find(ast: AstNode$1, matcher: (node: AstNode$1) => boolean): AstNode$1 | null;
 /**
- * search the ast tree by checking each node's value and return the first match
+ * Search the ast tree by checking each node's value token and return the first match
  *
  * ```ts
  *  // find the first ast node which contains the length token '30px'
@@ -4416,7 +4598,7 @@ button {
 }
     `;
 
- // find declaration which contain a '30px'
+ // find declaration which contain the length token '30px'
   const nodeMatcher = (value: Token) =>
       return value.typ == EnumToken.LengthTokenType && (value as LengthToken).val == 30 && (value as LengthToken).unit == 'px' ;
 
@@ -4436,7 +4618,7 @@ declare function findByValue(ast: AstNode$1, matcher: AstValueMatcher): {
     value: TokenSearchResult;
 } | null;
 /**
- * search the ast tree and return all matches
+ * Search the ast tree and return all matches
  *
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'
@@ -4468,7 +4650,7 @@ button {
  */
 declare function findAll(ast: AstNode$1, matcher: (node: AstNode$1) => boolean): AstNode$1[];
 /**
- * search the ast tree and return the last match
+ * Search the ast tree and return the last match.
  *
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'
@@ -4502,15 +4684,30 @@ declare function findLast(ast: AstNode$1, matcher: (node: AstNode$1) => boolean)
 
 /**
  *
- * @param node he nod to clone
- * @param cloneChildren deep clone
- * @param cloneMap a map of existing children as keys and their clones as values
+ * Clone an ast node or value
+ * @param node
+ * @param cloneChildren
+ * @param cloneMap
  * @returns
  */
-declare function cloneNode(node: AstNode$1, cloneChildren?: boolean, cloneMap?: Map<Token$1 | AstNode$1, Token$1 | AstNode$1> | null): AstNode$1;
+declare function cloneNode(node: AstNode$1 | Token$1, cloneChildren?: boolean, cloneMap?: Map<Token$1 | AstNode$1, Token$1 | AstNode$1> | null): AstNode$1 | Token$1;
 
 /**
- * load file or url
+ * Replace token in its parent node
+ * @param parent
+ * @param node
+ * @param replacement
+ * @throws TypeError replacement is null
+ * @throws ReferenceError node not found in parent
+ */
+declare function replaceNodeOrValue(parent: BinaryExpressionToken | (AstNode$1 & ({
+    chi: Token$1[];
+} | {
+    val: Token$1[];
+})), node: Token$1, replacement: Token$1 | Token$1[]): boolean;
+
+/**
+ * Load file or url
  * @param url
  * @param currentDirectory
  * @param responseType
@@ -4521,9 +4718,12 @@ declare function cloneNode(node: AstNode$1, cloneChildren?: boolean, cloneMap?: 
  * const result = await load(file, '.', ResponseType.ArrayBuffer) as ArrayBuffer;
  * ```
  */
-declare function load(url: string, currentDirectory?: string, responseType?: boolean | ResponseType$1): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
+declare function load(url: string | {
+    absolute: string;
+    relative: string;
+}, currentDirectory?: string, responseType?: boolean | ResponseType$1): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
 /**
- * render the ast tree
+ * Render the ast tree
  * @param data
  * @param options
  * @param mapping
@@ -4556,11 +4756,12 @@ declare function render(data: AstNode$1, options?: RenderOptions, mapping?: {
     importMapping: Record<string, Record<string, string>> | null;
 } | null): RenderResult;
 /**
- * parse css file
+ * Parse css file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
  *
+ * @deprecated
  * @throws Error file not found
  *
  * Example:
@@ -4578,119 +4779,38 @@ declare function render(data: AstNode$1, options?: RenderOptions, mapping?: {
  * console.log(result.ast);
  * ```
  */
-declare function parseFile(file: string, options?: ParserOptions, asStream?: boolean): Promise<ParseResult>;
-/**
- * parse css
- * @param stream
- * @param options
- *
- * Example:
- *
- * ```ts
- *
- * import {parse} from '@tbela99/css-parser';
- *
- *  // css string
- *  let result = await parse(css);
- *  console.log(result.ast);
- * ```
- *
- * Example using stream
- *
- * ```ts
- *
- * import {parse} from '@tbela99/css-parser';
- * import {Readable} from "node:stream";
- *
- * // usage: node index.ts < styles.css or cat styles.css | node index.ts
- *
- *  const readableStream = Readable.toWeb(process.stdin);
- *  let result = await parse(readableStream, {beautify: true});
- *
- *  console.log(result.ast);
- * ```
- *
- * Example using fetch and readable stream
- *
- * ```ts
- *
- *  import {parse} from '@tbela99/css-parser';
- *
- *  const response = await fetch('https://docs.deno.com/styles.css');
- *  const result = await parse(response.body, {beautify: true});
- *
- *  console.log(result.ast);
- * ```
- */
+declare const parseFile: (file: string, options?: ParserOptions, asStream?: boolean) => Promise<ParseResult>;
 declare function parse(stream: string | ReadableStream<Uint8Array>, options?: ParserOptions): Promise<ParseResult>;
+declare function parse(options: ParseInputFileOptions & ParserOptions): Promise<ParseResult>;
+declare function parse(options: ParseInputStreamOptions & ParserOptions): Promise<ParseResult>;
 /**
- * transform css file
+ * Transform css file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
  *
+ * @deprecated Use transform() instead.
  * @throws Error file not found
  *
  * Example:
  *
  * ```ts
  *
- *  import {transformFile} from '@tbela99/css-parser';
+ *  import {transform} from '@tbela99/css-parser';
  *
  *  // remote file
- * let result = await transformFile('https://docs.deno.com/styles.css');
+ * let result = await transform({file: 'https://docs.deno.com/styles.css'});
  * console.log(result.code);
  *
  * // local file
- * result = await transformFile('./css/styles.css');
+ * result = await transform({file: './css/styles.css'});
  * console.log(result.code);
  * ```
  */
-declare function transformFile(file: string, options?: TransformOptions, asStream?: boolean): Promise<TransformResult>;
-/**
- * transform css
- * @param css
- * @param options
- *
- * Example:
- *
- * ```ts
- *
- * import {transform} from '@tbela99/css-parser';
- *
- *  // css string
- *  const result = await transform(css);
- *  console.log(result.code);
- * ```
- *
- * Example using stream
- *
- * ```ts
- *
- * import {transform} from '@tbela99/css-parser';
- * import {Readable} from "node:stream";
- *
- * // usage: node index.ts < styles.css or cat styles.css | node index.ts
- *
- *  const readableStream = Readable.toWeb(process.stdin);
- *  const result = await transform(readableStream, {beautify: true});
- *
- *  console.log(result.code);
- * ```
- *
- * Example using fetch
- *
- * ```ts
- *
- *  import {transform} from '@tbela99/css-parser';
- *
- *  const response = await fetch('https://docs.deno.com/styles.css');
- *  result = await transform(response.body, {beautify: true});
- *
- *  console.log(result.code);
- * ```
- */
-declare function transform(css: string | ReadableStream<Uint8Array>, options?: TransformOptions): Promise<TransformResult>;
+declare const transformFile: (file: string, options?: TransformOptions, asStream?: boolean) => Promise<TransformResult>;
+declare function transform(css: string | ReadableStream<Uint8Array>, options: TransformOptions): Promise<TransformResult>;
+declare function transform(options: ParseInputFileOptions & TransformOptions): Promise<TransformResult>;
+declare function transform(options: ParseInputStreamOptions & TransformOptions): Promise<TransformResult>;
 
-export { ColorType$1 as ColorType, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType$1 as ResponseType, SourceMap, ValidationLevel, WalkerEvent, WalkerOptionEnum, cloneNode, convertColor, dirname, expand, find, findAll, findByValue, findLast, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, render, renderToken, resolve, transform, transformFile, walk, walkValues };
-export type { AddToken, AndToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyFrameRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, Context, CssVariableImportTokenType$1 as CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken$1 as CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorHandler, GenericVisitorResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InvalidAttrToken, InvalidClassSelectorToken, InvalidMediaQueryToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Location, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleOptions, MulToken, NameSpaceAttributeToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseResult, ParseResultStats, ParseTokenOptions, ParserOptions, PercentageToken, Position$1 as Position, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenSearchResult, TokenizeResult, TransformOptions, TransformResult, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, VariableScopeInfo, VisitorNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerValueFilter, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken };
+export { ColorType$1 as ColorType, EnumAstNodeStatus$1 as EnumAstNodeStatus, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType$1 as ResponseType, SourceMap, ValidationLevel, WalkerEvent, WalkerOptionEnum, cloneNode, convertColor, dirname, expand, find, findAll, findByValue, findLast, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, render, renderValue as renderToken, replaceNodeOrValue, resolve, transform, transformFile, walk, walkValues };
+export type { AddToken, AndToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyFrameRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstNodeStatus, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, Context, CssVariableImportTokenType$1 as CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken$1 as CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, DoubleColonToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription$1 as ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorHandler, GenericVisitorResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InvalidAttrToken, InvalidClassSelectorToken, InvalidMediaQueryToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Location, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleOptions, MulToken, NameSpaceAttributeToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseInputFileOptions, ParseInputStreamOptions, ParseResult, ParseResultStats, ParseTokenOptions, ParserOptions, PercentageToken, Position$1 as Position, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SinglePropertyType, SinglePropertyTypeMapping, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenSearchResult, TokenizeResult, TransformOptions, TransformResult, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, VariableScopeInfo, VisitorNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerValueFilter, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken };

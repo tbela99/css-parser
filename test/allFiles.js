@@ -15,6 +15,10 @@ function toFileSize(value) {
 for (const file of await readdir(baseDir)) {
 
     let message = `>>>>>>>>>>>> ${file} >>>>>>>>>>>>\n [file]: ${file}:\n `;
+    console.debug(message);
+    
+    message = '';
+
     const result = await load(baseDir + file, import.meta.dirname).then(css => transform(css, {
         src: baseDir + file, minify: true, sourcemap: true,
         removePrefix: true,

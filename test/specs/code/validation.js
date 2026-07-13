@@ -181,7 +181,8 @@ html, body, div, span, applet, object, iframe,
  border-top-width: 0;
  border-left-width: 0;
  border-right-width: 0;
- border-color: #34edc7
+ border-color: #34edc7;
+ border-style: medium
 }`));
         });
 
@@ -502,69 +503,69 @@ html, body, div, span, applet, object, iframe,
 }`));
         });
 
-        it('file validation #21', function (done) {
+        it('file validation #21', function () {
 
-            transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/full.css';
-`, {validation: true, resolveImport: true}).then(result => expect(result.errors.length).equals(1)).then(() => done(), () => done());
+           return transform(`@import '${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replaceAll('\\', '/')}/../../files/css/full.css';
+`, {validation: true, resolveImport: true}).then(result => expect(result.errors.length).equals(5));
         });
 
-        it('file validation #22', function (done) {
+        it('file validation #22', function () {
 
-            transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/bootstrap.css';
+            transform(`@import '${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replaceAll('\\', '/')}/../../files/css/bootstrap.css';
 `, {
                 validation: true,
                 resolveImport: true
-            }).then(result => expect(result.errors.length).equals(2)).then(() => done(), () => done());
+            }).then(result => expect(result.errors.length).equals(2));
         });
 
-        it('file validation #23', function (done) {
+        it('file validation #23', function () {
 
-            transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/bootstrap-4.css';
+            return transform(`@import '${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replaceAll('\\', '/')}/../../files/css/bootstrap-4.css';
 `, {
                 validation: true,
                 resolveImport: true
-            }).then(result => expect(result.errors.length).equals(1)).then(() => done(), () => done());
+            }).then(result => expect(result.errors.length).equals(1));
         });
 
-        it('file validation #24', function (done) {
+        it('file validation #24', function () {
 
-            transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/bootstrap-5.css';
+           return transform(`@import '${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replaceAll('\\', '/')}/../../files/css/bootstrap-5.css';
 `, {
                 validation: true,
                 resolveImport: true
-            }).then(result => expect(result.errors.length).equals(0)).then(() => done(), () => done());
+            }).then(result => expect(result.errors.length).equals(0));
         });
 
-        it('file validation #25', function (done) {
+        it('file validation #25', function () {
 
-            transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/tailwind.css';
+            return transform(`@import '${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replaceAll('\\', '/')}/../../files/css/tailwind.css';
 `, {
                 validation: true,
                 resolveImport: true
-            }).then(result => expect(result.errors.length).equals(20)).then(() => done(), () => done());
+            }).then(result => expect(result.errors.length).equals(20));
         });
 
-        it('file validation #26', function (done) {
+        it('file validation #26', function () {
 
-            transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/tailwind-2.0.4.css';
+            return transform(`@import '${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replaceAll('\\', '/')}/../../files/css/tailwind-2.0.4.css';
 `, {
                 validation: true,
                 resolveImport: true
-            }).then(result => expect(result.errors.length).equals(12)).then(() => done(), () => done());
+            }).then(result => expect(result.errors.length).equals(12));
         });
 
-        it('file validation #27', function (done) {
+        it('file validation #27', function () {
 
-            transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/github-markdown.css';
+            return transform(`@import '${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replaceAll('\\', '/')}/../../files/css/github-markdown.css';
 `, {
                 validation: true,
                 resolveImport: true
-            }).then(result => expect(result.errors.length).equals(1)).then(() => done(), () => done());
+            }).then(result => expect(result.errors.length).equals(1));
         });
 
-        it('selector validation #28', function (done) {
+        it('selector validation #28', function () {
 
-            transform(`
+           return transform(`
   .markdown-body .highlight pre:has(
   >.zeroclipboard-container,
   ~.zeroclipboard-container,
@@ -576,9 +577,69 @@ html, body, div, span, applet, object, iframe,
 `, {
     beautify: true,
                 validation: true
-            }).then(result => expect(result.code).equals(`.markdown-body .highlight pre:has(>.zeroclipboard-container,~.zeroclipboard-container,+.zeroclipboard-container ) {
+            }).then(result => expect(result.code).equals(`.markdown-body .highlight pre:has(>.zeroclipboard-container,~.zeroclipboard-container,+.zeroclipboard-container) {
  min-height: 52px
-}`)).then(() => done(), () => done());
+}`));
+        });
+
+        it('selector validation #29', function () {
+
+            return transform(`
+@document url(https://www.example.com/) {
+ h1 {
+  color: green
+ }
+}
+`, {
+    beautify: true,
+                validation: true
+            }).then(result => expect(result.code).equals(`@document url(https://www.example.com/) {
+ h1 {
+  color: green
+ }
+}`));
+        });
+
+        it('selector validation #30', function () {
+
+            return transform(`
+
+.pure-table-bordered tbody > tr:last-child > td {
+    border-bottom-width: 0;
+    border-top-width: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-color: #34edc7;
+    border-style: medium;
+}
+`, {
+    beautify: true,
+                validation: true
+            }).then(result => expect(result.code).equals(`.pure-table-bordered tbody>tr:last-child>td {
+ border-width: 0;
+ border-color: #34edc7;
+ border-style: medium
+}`));
+        });
+
+        it('selector validation #31', function () {
+
+            return transform(`
+
+.pure-table-bordered tbody > tr:last-child > td {
+    border-bottom-width: 0;
+    border-top-width: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-color: #34edc7;
+    border-style: groove;
+}
+`, {
+    beautify: true,
+                validation: true
+            }).then(result => expect(result.code).equals(`.pure-table-bordered tbody>tr:last-child>td {
+ border: #34edc7 groove 0
+}`));
         });
     });
 

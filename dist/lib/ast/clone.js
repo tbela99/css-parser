@@ -2,9 +2,10 @@ import { EnumToken } from './types.js';
 
 /**
  *
- * @param node he nod to clone
- * @param cloneChildren deep clone
- * @param cloneMap a map of existing children as keys and their clones as values
+ * Clone an ast node or value
+ * @param node
+ * @param cloneChildren
+ * @param cloneMap
  * @returns
  */
 function cloneNode(node, cloneChildren = false, cloneMap = null) {

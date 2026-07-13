@@ -1,6 +1,8 @@
 import { EnumToken } from '../ast/types.js';
 import config from '../validation/config.json.js';
 
+const regMatchLinearGradient = /^-((webkit)|o|moz)(-repeating)?-linear-gradient$/i;
+const regMatchRadialGradient = /^-((webkit)|o|moz)(-repeating)?-radial-gradient$/i;
 const mFLT = new Set([EnumToken.LtTokenType, EnumToken.LteTokenType]);
 const mFGT = new Set([EnumToken.GtTokenType, EnumToken.GteTokenType]);
 const tokensMap = new Map([
@@ -27,8 +29,25 @@ const tokensfuncDefMap = new Map([
     [EnumToken.GeneralEnclosedFunctionTokenDefType, EnumToken.GeneralEnclosedFunctionTokenType],
 ]);
 const tokensfuncSet = new Set(tokensfuncDefMap.values());
+/**
+ * Epsilon
+ */
+const epsilon = 1e-5;
+/**
+ * Color distance precision
+ */
+const colorDistancePrecision = epsilon;
+/**
+ * Color precision
+ */
 const colorPrecision = 6;
+/**
+ * Angle precision
+ */
 const anglePrecision = 0.001;
+/**
+ * Color range definitions
+ */
 const colorRange = {
     lab: {
         l: [0, 100],
@@ -148,18 +167,27 @@ const colorsFunc = [
     "lch",
     "light-dark",
     "contrast-color",
+    "alpha",
 ];
 const imageFunc = [
     "linear-gradient",
     "radial-gradient",
     "repeating-linear-gradient",
     "repeating-radial-gradient",
+    "repeating-conic-gradient",
     "conic-gradient",
     "image",
     "image-set",
     "element",
     "cross-fade",
     "paint",
+    "-o-linear-gradient",
+    "-moz-linear-gradient",
+    "-webkit-linear-gradient",
+    "-webkit-repeating-linear-gradient",
+    "-webkit-gradient",
+    "-webkit-radial-gradient",
+    "-webkit-repeating-radial-gradient",
 ];
 const transformFunctions = [
     "translate",
@@ -433,4 +461,4 @@ const trimTokenSpace = new Set([
 const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
 const combinators = ["+", ">", "~", "||", "|"];
 
-export { COLORS_NAMES, D50, NAMES_COLORS, anglePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, definedPropertySettings, deprecatedSystemColors, e, funcLike, generalEnclosedFunc, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };
+export { COLORS_NAMES, D50, NAMES_COLORS, anglePrecision, colorDistancePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, definedPropertySettings, deprecatedSystemColors, e, epsilon, funcLike, generalEnclosedFunc, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, regMatchLinearGradient, regMatchRadialGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };

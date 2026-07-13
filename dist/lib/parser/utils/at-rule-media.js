@@ -2,7 +2,7 @@ import { EnumToken } from '../../ast/types.js';
 import { evaluate } from '../../ast/math/expression.js';
 import { gcd } from '../../ast/math/math.js';
 import { tokensfuncDefMap, mediaTypes, definedPropertySettings, mFLT, mFGT } from '../../syntax/constants.js';
-import { trimArray, matchAllSyntax, createValidationContext, getMFInfo, isMFValue, isMFName } from '../../validation/match.js';
+import { trimArray, matchAllSyntaxes, createValidationContext, getMFInfo, isMFValue, isMFName } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum, MediaFeatureType } from '../../validation/parser/typedef.js';
 import { getParsedSyntax } from '../../validation/config.js';
 
@@ -222,7 +222,7 @@ function parseMediaqueryList(stream, options) {
                                 value: { ...tokens[index].loc, end: stream[i].loc.end },
                             });
                             tokens.length = index + 1;
-                            const result = matchAllSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, tokens[index].val + "()")?.[0]?.chi, createValidationContext(tokens[index].chi), options);
+                            const result = matchAllSyntaxes(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, tokens[index].val + "()")?.[0]?.chi, createValidationContext(tokens[index].chi), options);
                             stack.pop();
                             scopes.pop();
                             currentScope = scopes.at(-1);

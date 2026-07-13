@@ -4,8 +4,10 @@ import { EnumToken, minifyNumber, ColorType } from '../ast/types.js';
 import { expand } from '../ast/expand.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
 import { colorsFunc, urlTokenMatcher, tokensfuncSet } from '../syntax/constants.js';
-import { isColor, pseudoElements, parseColor } from '../syntax/syntax.js';
+import { isColor, pseudoElements, reducegradientBackgroundPosition, reduceConicColorStops, reduceColorStops, parseColor } from '../syntax/syntax.js';
 import { move } from '../parser/tokenize.js';
+import { equalsIgnoreCase } from '../parser/utils/text.js';
+import { toDegrees } from '../parser/utils/angle.js';
 
 /**
  * render ast
@@ -88,7 +90,7 @@ function doRender(data, options = {}, mapping) {
                     }
                     return acc + curr.val;
                 }
-                return acc + renderToken(curr, options, cache, reducer, errors);
+                return acc + renderValue(curr, options, cache, reducer, errors);
             }, cache),
         errors,
         stats: {
@@ -131,7 +133,7 @@ function updateSourceMap(node, options, cache, sourcemap, position, str) {
         { src, sta: { ...position } }, {
             ...node.loc,
             // @ts-ignore
-            src
+            src,
         });
     }
     move(position, str);
@@ -264,9 +266,9 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                 .trim()};`;
         case EnumToken.CssVariableDeclarationMapTokenType:
             return `@value ${filterValues(data.vars)
-                .reduce((acc, curr) => acc + renderToken(curr), "")
+                .reduce((acc, curr) => acc + renderValue(curr), "")
                 .trim()} from ${filterValues(data.from)
-                .reduce((acc, curr) => acc + renderToken(curr), "")
+                .reduce((acc, curr) => acc + renderValue(curr), "")
                 .trim()};`;
         case EnumToken.InvalidDeclarationNodeType:
         case EnumToken.InvalidRuleNodeType:
@@ -281,7 +283,12 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
  * @param options
  * @private
  */
-function renderToken(token, options = {}, cache = Object.create(null), reducer, errors) {
+function renderValue(token, options = {}, cache = Object.create(null), reducer, errors) {
+    if (token.typ === EnumToken.WhenElseFunctionTokenType &&
+        equalsIgnoreCase(token.val, "supports")) {
+        options = { ...options, minify: false, convertColor: false };
+        reducer = null;
+    }
     if (reducer == null) {
         reducer = function (acc, curr) {
             if (curr.typ == EnumToken.CommentTokenType && options.removeComments) {
@@ -290,7 +297,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 }
                 return acc + curr.val;
             }
-            return acc + renderToken(curr, options, cache, reducer, errors);
+            return acc + renderValue(curr, options, cache, reducer, errors);
         };
     }
     if (token.typ == EnumToken.FunctionTokenType && colorsFunc.includes(token.val)) {
@@ -348,33 +355,33 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.WildCardFunctionTokenDefType:
             return token.val + "(";
         case EnumToken.ListToken:
-            return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), "");
+            return token.chi.reduce((acc, curr) => acc + renderValue(curr, options, cache), "");
         case EnumToken.BinaryExpressionTokenType:
             if (EnumToken.Mul === token.op ||
                 EnumToken.Div === token.op) {
                 let result = "";
                 if (token.l.typ == EnumToken.BinaryExpressionTokenType &&
                     [EnumToken.Add, EnumToken.Sub].includes(token.l.op)) {
-                    result = "(" + renderToken(token.l, options, cache) + ")";
+                    result = "(" + renderValue(token.l, options, cache) + ")";
                 }
                 else {
-                    result = renderToken(token.l, options, cache);
+                    result = renderValue(token.l, options, cache);
                 }
                 result += token.op == EnumToken.Mul ? "*" : "/";
                 if (token.r.typ == EnumToken.BinaryExpressionTokenType &&
                     [EnumToken.Add, EnumToken.Sub].includes(token.r.op)) {
-                    result += "(" + renderToken(token.r, options, cache) + ")";
+                    result += "(" + renderValue(token.r, options, cache) + ")";
                 }
                 else {
-                    result += renderToken(token.r, options, cache);
+                    result += renderValue(token.r, options, cache);
                 }
                 return result;
             }
-            return (renderToken(token.l, options, cache) +
+            return (renderValue(token.l, options, cache) +
                 (token.op == EnumToken.Add ? " + " : " - ") +
-                renderToken(token.r, options, cache));
+                renderValue(token.r, options, cache));
         case EnumToken.FractionTokenType:
-            const fraction = renderToken(token.l) + "/" + renderToken(token.r);
+            const fraction = renderValue(token.l) + "/" + renderValue(token.r);
             if (+token.r.val != 0) {
                 const value = minifyNumber(+token.l.val / +token.r.val);
                 if (value.length <= fraction.length) {
@@ -401,12 +408,12 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                         if (curr.typ === EnumToken.IdenTokenType) {
                             parseColor(curr);
                         }
-                        return acc + renderToken(curr, options, cache);
+                        return acc + renderValue(curr, options, cache);
                     }, "") +
                     ")");
             }
             if (options.convertColor !== false) {
-                const value = convertColor(token, typeof options.convertColor == "boolean"
+                const value = convertColor(token, typeof options.convertColor === "boolean"
                     ? ColorType.HEX
                     : (ColorType[ColorType[options.convertColor ?? "HEX"]
                         ?.toUpperCase?.()
@@ -427,13 +434,22 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 return token.val;
             }
             if (Array.isArray(token.chi)) {
+                const fnName = token.val.toLowerCase();
                 const isLegacy = ["rgb", "rgba", "hsl", "hsla"].includes(token.val.toLowerCase());
-                const useAlpha = (["rgb", "rgba", "hsl", "hsla", "hwb", "oklab", "oklch", "lab", "lch"].includes(token.val.toLowerCase()) &&
-                    token.chi.length == 4) ||
-                    ("color" == token.val.toLowerCase() && token.chi.length == 5);
-                return ((token.val.endsWith("a")
-                    ? token.val.slice(0, -1)
-                    : token.val) +
+                const hasAlpha = [
+                    "rgb",
+                    "rgba",
+                    "hsl",
+                    "hsla",
+                    "hwb",
+                    "oklab",
+                    "oklch",
+                    "lab",
+                    "lch",
+                ].includes(fnName);
+                const useAlpha = (hasAlpha && token.chi.length == (isLegacy ? 7 : 4)) ||
+                    ("color" == token.val && token.chi.length == 5);
+                return ((hasAlpha && token.val.endsWith("a") ? fnName.slice(0, -1) : fnName) +
                     "(" +
                     token
                         .chi.reduce((acc, curr, index, array) => {
@@ -441,7 +457,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                             if (curr.typ == EnumToken.WhitespaceTokenType) {
                                 return acc.trimEnd();
                             }
-                            return acc.trimStart() + renderToken(curr, options, cache);
+                            return acc.trimStart() + renderValue(curr, options, cache);
                         }
                         if (isLegacy && curr.typ == EnumToken.CommaTokenType) {
                             return acc.trimEnd() + " ";
@@ -455,7 +471,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                         }
                         return (acc.trimEnd() +
                             (useAlpha && index == array.length - 1 ? "/" : " ") +
-                            renderToken(curr, options, cache));
+                            renderValue(curr, options, cache));
                     }, "")
                         .trimStart() +
                     ")");
@@ -479,6 +495,431 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.FunctionTokenType:
         case EnumToken.MathFunctionTokenType:
         case EnumToken.ImageFunctionTokenType:
+            if (options.minify && token.typ === EnumToken.ImageFunctionTokenType) {
+                const slice = token.chi.slice();
+                switch (token.val) {
+                    case "linear-gradient":
+                    case "repeating-linear-gradient":
+                        {
+                            let i;
+                            let k;
+                            let j;
+                            let key;
+                            for (i = 0; i < slice.length; i++) {
+                                if (slice[i].typ == EnumToken.ColorTokenType ||
+                                    slice[i].typ === EnumToken.CommaTokenType) {
+                                    break;
+                                }
+                                if (slice[i].typ == EnumToken.IdenTokenType &&
+                                    equalsIgnoreCase(slice[i].val, "to")) {
+                                    k = i + 1;
+                                    while (k < slice.length &&
+                                        (slice[k].typ === EnumToken.WhitespaceTokenType ||
+                                            slice[k].typ === EnumToken.CommentTokenType)) {
+                                        k++;
+                                    }
+                                    if (k < slice.length && slice[k].typ === EnumToken.IdenTokenType) {
+                                        // convert keyword to angle
+                                        key = slice[k].val.toLowerCase();
+                                        switch (key) {
+                                            case "right":
+                                                slice.splice(i, k - i + 1, {
+                                                    typ: EnumToken.AngleTokenType,
+                                                    val: 90,
+                                                });
+                                                break;
+                                            case "left":
+                                                slice.splice(i, k - i + 1, {
+                                                    typ: EnumToken.AngleTokenType,
+                                                    val: 270,
+                                                });
+                                                break;
+                                            case "top":
+                                            case "bottom":
+                                                j = k + 1;
+                                                while (j < slice.length &&
+                                                    (slice[j].typ === EnumToken.WhitespaceTokenType ||
+                                                        slice[j].typ === EnumToken.CommentTokenType)) {
+                                                    j++;
+                                                }
+                                                if (j < slice.length && slice[j].typ !== EnumToken.CommaTokenType) {
+                                                    i = j - 1;
+                                                    break;
+                                                }
+                                                // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/gradient/linear-gradient#:~:text=If%20unspecified%2C%20it%20defaults%20to%20to%20bottom
+                                                if (key === "bottom") {
+                                                    // to bottom -> 180deg is the default angle and will be removed
+                                                    while (k < slice.length &&
+                                                        slice[k].typ != EnumToken.CommaTokenType) {
+                                                        k++;
+                                                    }
+                                                    slice.splice(i, k - i + 1);
+                                                    i--;
+                                                    continue;
+                                                }
+                                                slice.splice(i, k - i + 1, {
+                                                    typ: EnumToken.AngleTokenType,
+                                                    val: key === "top" ? 0 : 180,
+                                                });
+                                                i--;
+                                                break;
+                                        }
+                                    }
+                                }
+                                else if (slice[i].typ == EnumToken.AngleTokenType) {
+                                    if ((180 - toDegrees(slice[i]).val) % 360 === 0) {
+                                        k = i + 1;
+                                        while (k < slice.length && slice[k].typ !== EnumToken.CommaTokenType) {
+                                            k++;
+                                        }
+                                        slice.splice(i, k - i + 1);
+                                    }
+                                }
+                            }
+                            if (slice[i]?.typ === EnumToken.CommaTokenType) {
+                                i++;
+                                while (i < slice.length &&
+                                    (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                                        slice[i].typ === EnumToken.CommentTokenType)) {
+                                    i++;
+                                }
+                            }
+                            if (slice[i]?.typ === EnumToken.ColorTokenType) {
+                                slice.push(...reduceColorStops(slice.splice(i, slice.length - i)));
+                            }
+                        }
+                        break;
+                    case "radial-gradient":
+                    case "repeating-radial-gradient":
+                        {
+                            let i = 0;
+                            while (i < slice.length &&
+                                (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                                    slice[i].typ === EnumToken.CommentTokenType)) {
+                                i++;
+                            }
+                            const positions = [];
+                            const form = [];
+                            const size = [];
+                            const colorSpaceDef = [];
+                            if (slice[i]?.typ === EnumToken.IdenTokenType) {
+                                if (equalsIgnoreCase(slice[i].val, "farthest-corner") ||
+                                    equalsIgnoreCase(slice[i].val, "ellipse")) {
+                                    i++;
+                                }
+                                else if (equalsIgnoreCase(slice[i].val, "closest-side") ||
+                                    equalsIgnoreCase(slice[i].val, "closest-corner") ||
+                                    equalsIgnoreCase(slice[i].val, "farthest-side")) {
+                                    size.push(slice[i++]);
+                                }
+                                else if (equalsIgnoreCase(slice[i].val, "circle")) {
+                                    form.push(slice[i++]);
+                                }
+                                while (slice[i]?.typ === EnumToken.WhitespaceTokenType ||
+                                    slice[i]?.typ === EnumToken.CommentTokenType) {
+                                    i++;
+                                }
+                            }
+                            if (slice[i]?.typ === EnumToken.IdenTokenType) {
+                                if (equalsIgnoreCase(slice[i].val, "farthest-corner") ||
+                                    equalsIgnoreCase(slice[i].val, "ellipse")) {
+                                    i++;
+                                }
+                                else if (equalsIgnoreCase(slice[i].val, "closest-side") ||
+                                    equalsIgnoreCase(slice[i].val, "closest-corner") ||
+                                    equalsIgnoreCase(slice[i].val, "farthest-side")) {
+                                    size.push(slice[i++]);
+                                }
+                                else if (equalsIgnoreCase(slice[i].val, "circle")) {
+                                    form.push(slice[i++]);
+                                }
+                                while (slice[i]?.typ === EnumToken.WhitespaceTokenType ||
+                                    slice[i]?.typ === EnumToken.CommentTokenType) {
+                                    i++;
+                                }
+                            }
+                            if (slice[i]?.typ === EnumToken.IdenTokenType &&
+                                equalsIgnoreCase(slice[i].val, "at")) {
+                                i++;
+                            }
+                            while (slice[i]?.typ === EnumToken.WhitespaceTokenType ||
+                                slice[i]?.typ === EnumToken.CommentTokenType) {
+                                i++;
+                            }
+                            if (slice[i]?.typ === EnumToken.PercentageTokenType ||
+                                (slice[i]?.typ === EnumToken.NumberTokenType && 0 === slice[i].val) ||
+                                (slice[i]?.typ === EnumToken.IdenTokenType &&
+                                    (equalsIgnoreCase(slice[i].val, "center") ||
+                                        equalsIgnoreCase(slice[i].val, "top") ||
+                                        equalsIgnoreCase(slice[i].val, "bottom") ||
+                                        equalsIgnoreCase(slice[i].val, "left") ||
+                                        equalsIgnoreCase(slice[i].val, "right")))) {
+                                do {
+                                    if (slice[i]?.typ === EnumToken.IdenTokenType &&
+                                        "in" === slice[i].val) {
+                                        break;
+                                    }
+                                    positions.push(slice[i]);
+                                    i++;
+                                } while (slice[i]?.typ !== EnumToken.CommaTokenType);
+                            }
+                            while (slice[i]?.typ !== EnumToken.CommaTokenType) {
+                                colorSpaceDef.push(slice[i++]);
+                            }
+                            if (slice[i]?.typ === EnumToken.CommaTokenType) {
+                                i++;
+                            }
+                            if (positions.length > 0) {
+                                let k;
+                                let position1 = "";
+                                let position2 = "";
+                                for (k = 0; k < positions.length; k++) {
+                                    if (positions[k].typ === EnumToken.IdenTokenType) {
+                                        if (position1.length === 0) {
+                                            position1 = positions[k].val;
+                                        }
+                                        else {
+                                            position2 = positions[k].val;
+                                        }
+                                    }
+                                    else if (positions[k].typ === EnumToken.PercentageTokenType ||
+                                        positions[k].typ === EnumToken.NumberTokenType) {
+                                        if (position1.length === 0) {
+                                            position1 = positions[k].val + "%";
+                                        }
+                                        else {
+                                            position2 = positions[k].val + "%";
+                                        }
+                                    }
+                                    if (position2.length > 0) {
+                                        break;
+                                    }
+                                }
+                                if (position1.length > 0) {
+                                    let key = `${position1} ${position2}`.trim();
+                                    if (key === "50% 50%" ||
+                                        key === "center center" ||
+                                        key === "50%" ||
+                                        key === "center") {
+                                        positions.length = 0;
+                                    }
+                                    else if (key === "0% 0%" ||
+                                        key === "0 0" ||
+                                        key === "top left" ||
+                                        key === "left top") {
+                                        positions.splice(0, positions.length, {
+                                            typ: EnumToken.PercentageTokenType,
+                                            val: 0,
+                                        });
+                                    }
+                                    else if (key === "50% 0%" ||
+                                        key === "50% 0" ||
+                                        key === "center top" ||
+                                        key === "top center") {
+                                        positions.splice(0, positions.length, {
+                                            typ: EnumToken.IdenTokenType,
+                                            val: "top",
+                                        });
+                                    }
+                                    else if (key === "top right" || key === "right top") {
+                                        positions.splice(0, positions.length, {
+                                            typ: EnumToken.PercentageTokenType,
+                                            val: 100,
+                                        }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: 0 });
+                                    }
+                                    else if (key === "0 50%" ||
+                                        key === "0% 50%" ||
+                                        key === "left center" ||
+                                        key === "center left") {
+                                        positions.splice(0, positions.length, {
+                                            typ: EnumToken.IdenTokenType,
+                                            val: "left",
+                                        });
+                                    }
+                                    else if (key === "100% 50%" || key === "right center" || key === "center right") {
+                                        positions.splice(0, positions.length, {
+                                            typ: EnumToken.IdenTokenType,
+                                            val: "right",
+                                        });
+                                    }
+                                    else if (key === "0 100%" ||
+                                        key === "0% 100%" ||
+                                        key === "left bottom" ||
+                                        key === "bottom left") {
+                                        positions.splice(0, positions.length, {
+                                            typ: EnumToken.IdenTokenType,
+                                            val: "bottom",
+                                        });
+                                    }
+                                    else if (key === "50% 100%" ||
+                                        key === "center bottom" ||
+                                        key === "bottom center") {
+                                        positions.splice(0, positions.length, {
+                                            typ: EnumToken.IdenTokenType,
+                                            val: "bottom",
+                                        });
+                                    }
+                                    else if (key === "100% 100%" ||
+                                        key === "right bottom" ||
+                                        key === "bottom right") {
+                                        positions.splice(0, positions.length, {
+                                            typ: EnumToken.PercentageTokenType,
+                                            val: 100,
+                                        });
+                                    }
+                                    else if (position1 === position2) {
+                                        positions.splice(0, positions.length, positions[k]);
+                                    }
+                                }
+                            }
+                            const result = [];
+                            if (form.length > 0) {
+                                result.push(...form);
+                            }
+                            if (size.length > 0) {
+                                if (result.length > 0) {
+                                    result.push({ typ: EnumToken.WhitespaceTokenType });
+                                }
+                                result.push(...size);
+                            }
+                            if (positions.length > 0) {
+                                if (result.length > 0) {
+                                    result.push({ typ: EnumToken.WhitespaceTokenType });
+                                }
+                                result.push({ typ: EnumToken.IdenTokenType, val: "at" }, { typ: EnumToken.WhitespaceTokenType }, ...positions);
+                            }
+                            if (colorSpaceDef.length > 0) {
+                                if (result.length > 0) {
+                                    result.push({ typ: EnumToken.WhitespaceTokenType });
+                                }
+                                result.push(...colorSpaceDef);
+                            }
+                            if (result.length > 0) {
+                                result.push({ typ: EnumToken.CommaTokenType });
+                            }
+                            result.push(...reduceColorStops(slice.slice(i)));
+                            slice.length = 0;
+                            slice.push(...result);
+                        }
+                        break;
+                    case "conic-gradient":
+                    case "repeating-conic-gradient":
+                        {
+                            let i = 0;
+                            const angles = [];
+                            const positions = [];
+                            const colorSpaceDef = [];
+                            while (i < slice.length &&
+                                (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                                    slice[i].typ === EnumToken.CommentTokenType)) {
+                                i++;
+                            }
+                            if (slice[i]?.typ === EnumToken.IdenTokenType &&
+                                equalsIgnoreCase(slice[i].val, "from")) {
+                                angles.push(slice[i++]);
+                                while (i < slice.length &&
+                                    (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                                        slice[i].typ === EnumToken.CommentTokenType)) {
+                                    angles.push(slice[i++]);
+                                }
+                                if ((slice[i]?.typ === EnumToken.NumberTokenType ||
+                                    slice[i]?.typ === EnumToken.AngleTokenType) &&
+                                    0 === toDegrees(slice[i]).val) {
+                                    angles.length = 0;
+                                    i++;
+                                }
+                                else if (slice[i]?.typ !== EnumToken.CommaTokenType &&
+                                    slice[i].typ != EnumToken.IdenTokenType) {
+                                    angles.push(slice[i++]);
+                                }
+                                while (i < slice.length &&
+                                    (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                                        slice[i].typ === EnumToken.CommentTokenType)) {
+                                    i++;
+                                }
+                            }
+                            if (slice[i]?.typ === EnumToken.IdenTokenType &&
+                                equalsIgnoreCase(slice[i].val, "at")) {
+                                i++;
+                                while (i < slice.length &&
+                                    (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                                        slice[i].typ === EnumToken.CommentTokenType)) {
+                                    i++;
+                                }
+                                let position1 = "";
+                                let position2 = "";
+                                if (slice[i]?.typ === EnumToken.IdenTokenType &&
+                                    !equalsIgnoreCase("in", slice[i].val)) {
+                                    position1 = slice[i].val;
+                                    positions.push(slice[i++]);
+                                }
+                                else if (slice[i]?.typ === EnumToken.PercentageTokenType ||
+                                    slice[i]?.typ === EnumToken.NumberTokenType) {
+                                    position1 = slice[i].val + "%";
+                                    positions.push(slice[i++]);
+                                }
+                                while (i < slice.length &&
+                                    (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                                        slice[i].typ === EnumToken.CommentTokenType)) {
+                                    positions.push(slice[i++]);
+                                }
+                                if (slice[i]?.typ === EnumToken.IdenTokenType &&
+                                    !equalsIgnoreCase("in", slice[i].val)) {
+                                    position2 = slice[i].val;
+                                    positions.push(slice[i++]);
+                                }
+                                else if (slice[i]?.typ === EnumToken.PercentageTokenType ||
+                                    slice[i]?.typ === EnumToken.NumberTokenType) {
+                                    position2 = slice[i].val + "%";
+                                    positions.push(slice[i++]);
+                                }
+                                while (i < slice.length &&
+                                    (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                                        slice[i].typ === EnumToken.CommentTokenType)) {
+                                    i++;
+                                }
+                                if (position1.length > 0) {
+                                    reducegradientBackgroundPosition(positions, `${position1} ${position2}`.trim());
+                                }
+                            }
+                            while (i < slice.length &&
+                                (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                                    slice[i].typ === EnumToken.CommentTokenType)) {
+                                i++;
+                            }
+                            if (slice[i]?.typ === EnumToken.IdenTokenType &&
+                                equalsIgnoreCase("in", slice[i].val)) {
+                                while (i < slice.length && slice[i].typ !== EnumToken.CommaTokenType) {
+                                    colorSpaceDef.push(slice[i++]);
+                                }
+                            }
+                            if (slice[i]?.typ === EnumToken.CommaTokenType) {
+                                i++;
+                            }
+                            const result = [];
+                            if (angles.length > 0) {
+                                result.push(...angles, { typ: EnumToken.CommaTokenType });
+                            }
+                            if (positions.length > 0 || colorSpaceDef.length > 0) {
+                                if (positions.length > 0) {
+                                    result.push({ typ: EnumToken.IdenTokenType, val: "at" }, { typ: EnumToken.WhitespaceTokenType }, ...positions);
+                                }
+                                if (colorSpaceDef.length > 0) {
+                                    if (result.length > 0) {
+                                        result.push({ typ: EnumToken.WhitespaceTokenType });
+                                    }
+                                    result.push(...colorSpaceDef);
+                                }
+                                result.push({ typ: EnumToken.CommaTokenType });
+                            }
+                            result.push(...reduceConicColorStops(slice.slice(i)));
+                            slice.length = 0;
+                            slice.push(...result);
+                        }
+                        break;
+                }
+                return token.val + "(" + slice.reduce(reducer, "") + ")";
+            }
         case EnumToken.TimingFunctionTokenType:
         case EnumToken.PseudoClassFuncTokenType:
         case EnumToken.WhenElseFunctionTokenType:
@@ -499,7 +940,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 return (token.val +
                     "(" +
                     token.chi.reduce((acc, curr) => acc +
-                        renderToken(curr, token.typ == EnumToken.FunctionTokenType ? { minify: false } : options, cache, reducer), "") +
+                        renderValue(curr, token.typ == EnumToken.FunctionTokenType ? { minify: false } : options, cache, reducer), "") +
                     ")");
             }
             return (
@@ -508,22 +949,22 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 token.chi.reduce(reducer, "") +
                 ")");
         case EnumToken.MatchExpressionTokenType:
-            return (renderToken(token.l, options, cache, reducer, errors) +
-                renderToken(token.op, options, cache, reducer, errors) +
-                renderToken(token.r, options, cache, reducer, errors) +
+            return (renderValue(token.l, options, cache, reducer, errors) +
+                renderValue(token.op, options, cache, reducer, errors) +
+                renderValue(token.r, options, cache, reducer, errors) +
                 (token.attr ? " " + token.attr : ""));
         case EnumToken.NameSpaceAttributeTokenType:
             return ((token.l == null
                 ? ""
-                : renderToken(token.l, options, cache, reducer, errors)) +
+                : renderValue(token.l, options, cache, reducer, errors)) +
                 "|" +
-                renderToken(token.r, options, cache, reducer, errors));
+                renderValue(token.r, options, cache, reducer, errors));
         case EnumToken.ComposesSelectorNodeType:
-            return (token.l.reduce((acc, curr) => acc + renderToken(curr, options, cache), "") +
+            return (token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache), "") +
                 (token.r == null
                     ? ""
                     : " from " +
-                        renderToken(token.r, options, cache, reducer, errors)));
+                        renderValue(token.r, options, cache, reducer, errors)));
         case EnumToken.BlockStartTokenType:
             return "{";
         case EnumToken.BlockEndTokenType:
@@ -591,7 +1032,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.FrequencyTokenType:
         case EnumToken.ResolutionTokenType:
             let val = token.val.typ == EnumToken.FractionTokenType
-                ? renderToken(token.val, options, cache)
+                ? renderValue(token.val, options, cache)
                 : minifyNumber(token.val);
             let unit = token.unit;
             if (token.typ == EnumToken.AngleTokenType && !val.includes("/")) {
@@ -670,12 +1111,12 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.PercentageTokenType:
             const uni = token.typ == EnumToken.PercentageTokenType ? "%" : "fr";
             const perc = token.val.typ == EnumToken.FractionTokenType
-                ? renderToken(token.val, options, cache)
+                ? renderValue(token.val, options, cache)
                 : minifyNumber(token.val);
             return options.minify && perc == "0" ? "0" : perc.includes("/") ? perc.replace("/", uni + "/") : perc + uni;
         case EnumToken.NumberTokenType:
             return token.val.typ == EnumToken.FractionTokenType
-                ? renderToken(token.val, options, cache)
+                ? renderValue(token.val, options, cache)
                 : minifyNumber(token.val);
         case EnumToken.AtRuleTokenType:
             return "@" + token.nam;
@@ -705,36 +1146,37 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             return "&";
         case EnumToken.InvalidAttrTokenType:
             return ("[" +
-                token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), ""));
+                token.chi.reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
         case EnumToken.InvalidClassSelectorTokenType:
             return token.val;
         case EnumToken.SupportsQueryUnaryConditionTokenType:
         case EnumToken.WhenElseUnaryConditionTokenType:
-            return (renderToken(token.l, options, cache, reducer, errors) +
+            return (renderValue(token.l, options, cache, reducer, errors) +
                 " " +
-                token.r.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer, errors), ""));
+                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer, errors), ""));
         case EnumToken.SupportsQueryConditionTokenType:
         case EnumToken.WhenElseQueryConditionTokenType:
-            return (token.l.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer, errors), "") +
+            return (token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer, errors), "") +
                 " " +
-                renderToken(token.op, options, cache, reducer, errors) +
+                renderValue(token.op, options, cache, reducer, errors) +
                 " " +
-                token.r.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer, errors), ""));
+                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer, errors), ""));
         case EnumToken.IfConditionTokenType:
-            return token.l.length == 0 ? '' : (token.l.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer, errors), "") +
-                ':' +
-                token.r.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer, errors), ""));
+            return token.l.length == 0
+                ? ""
+                : token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer, errors), "") +
+                    ":" +
+                    token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer, errors), "");
         case EnumToken.IfElseConditionTokenType:
-            return (renderToken(token.l) +
-                renderToken(token.r));
+            return renderValue(token.l) + renderValue(token.r);
         case EnumToken.DeclarationNodeType:
             return (token.nam +
                 ":" +
-                (options.minify ? filterValues(token.val) : token.val).reduce((acc, curr) => acc + renderToken(curr, options, cache), ""));
+                (options.minify ? filterValues(token.val) : token.val).reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
         case EnumToken.MediaQueryUnaryFeatureTokenType:
-            return (renderToken(token.l, options, cache, reducer, errors) +
+            return (renderValue(token.l, options, cache, reducer, errors) +
                 " " +
-                token.r.reduce((acc, curr) => acc + renderToken(curr, options, cache), ""));
+                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
         case EnumToken.MediaQueryConditionTokenType: {
             const indent = token.op.typ == EnumToken.LtTokenType ||
                 token.op.typ == EnumToken.GtTokenType ||
@@ -744,18 +1186,18 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 token.op.typ == EnumToken.GteTokenType
                 ? ""
                 : " ";
-            return (token.l.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer, errors), "") +
+            return (token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer, errors), "") +
                 indent +
-                renderToken(token.op, options, cache, reducer, errors) +
+                renderValue(token.op, options, cache, reducer, errors) +
                 indent +
-                token.r.reduce((acc, curr) => acc + renderToken(curr, options, cache), ""));
+                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
         }
         case EnumToken.MediaRangeQueryTokenType:
-            return (token.l.reduce((acc, curr) => acc + renderToken(curr, options, cache), "") +
-                renderToken(token.op1) +
-                token.val.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer, errors), "") +
-                renderToken(token.op2) +
-                token.r.reduce((acc, curr) => acc + renderToken(curr, options, cache), ""));
+            return (token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache), "") +
+                renderValue(token.op1) +
+                token.val.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer, errors), "") +
+                renderValue(token.op2) +
+                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
         case EnumToken.MediaFeatureTokenType:
             return token.val;
         case EnumToken.NotTokenType:
@@ -803,4 +1245,4 @@ function filterValues(values) {
     return values;
 }
 
-export { doRender, filterValues, renderToken };
+export { doRender, filterValues, renderValue };

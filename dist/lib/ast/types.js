@@ -1,5 +1,5 @@
 /**
- * syntax validation enum
+ * Syntax validation enum
  */
 var SyntaxValidationResult;
 (function (SyntaxValidationResult) {
@@ -11,7 +11,46 @@ var SyntaxValidationResult;
     SyntaxValidationResult[SyntaxValidationResult["Lenient"] = 2] = "Lenient";
 })(SyntaxValidationResult || (SyntaxValidationResult = {}));
 /**
- * enum of validation levels
+ * Enum of node statuses
+ */
+var EnumAstNodeStatus;
+(function (EnumAstNodeStatus) {
+    /**
+     * Node passed validation
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["Validated"] = 0] = "Validated";
+    /**
+     * Node is invalid
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["Invalid"] = 1] = "Invalid";
+    /**
+     * node is not validated
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["Unvalidated"] = 2] = "Unvalidated";
+    /**
+     * Node did not pass validation, but is preserved.
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["ValidationFailed"] = 3] = "ValidationFailed";
+    /**
+     * Parsing the node is not supported yet or the node syntax definition does not exist.
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["Unknown"] = 4] = "Unknown";
+    /**
+     * Failed to parse the node.
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["Unparsed"] = 5] = "Unparsed";
+    /**
+     * Node is disallowed in the context
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["Disallowed"] = 6] = "Disallowed";
+    /**
+     * Node is malformed
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["Malformed"] = 7] = "Malformed";
+})(EnumAstNodeStatus || (EnumAstNodeStatus = {}));
+/**
+ * Enum of validation levels
+ * @deprecated
  */
 var ValidationLevel;
 (function (ValidationLevel) {
@@ -39,9 +78,13 @@ var ValidationLevel;
      * validate selectors, at-rules and declarations
      */
     ValidationLevel[ValidationLevel["All"] = 7] = "All";
+    /**
+     * Report only. Apply validation and report nodes that are marked as invalid
+     */
+    ValidationLevel[ValidationLevel["ReportOnly"] = 8] = "ReportOnly";
 })(ValidationLevel || (ValidationLevel = {}));
 /**
- * enum of all token types
+ * Enum of all token types
  */
 var EnumToken;
 (function (EnumToken) {
@@ -372,7 +415,8 @@ var EnumToken;
      */
     EnumToken[EnumToken["NestingSelectorTokenType"] = 80] = "NestingSelectorTokenType";
     /**
-     * invalid rule token type
+     * Invalid rule token type
+     * @deprecated
      */
     EnumToken[EnumToken["InvalidRuleNodeType"] = 81] = "InvalidRuleNodeType";
     /**
@@ -384,7 +428,8 @@ var EnumToken;
      */
     EnumToken[EnumToken["InvalidAttrTokenType"] = 83] = "InvalidAttrTokenType";
     /**
-     * invalid at rule token type
+     * Invalid at rule token type
+     * @deprecated
      */
     EnumToken[EnumToken["InvalidAtRuleNodeType"] = 84] = "InvalidAtRuleNodeType";
     /**
@@ -424,7 +469,8 @@ var EnumToken;
      */
     EnumToken[EnumToken["KeyframesAtRuleNodeType"] = 93] = "KeyframesAtRuleNodeType";
     /**
-     * invalid declaration node type
+     * invalid declaration node type.
+     * @deprecated
      */
     EnumToken[EnumToken["InvalidDeclarationNodeType"] = 94] = "InvalidDeclarationNodeType";
     /* css module nodes */
@@ -721,7 +767,7 @@ var EnumToken;
     EnumToken[EnumToken["TimelineFunction"] = 16] = "TimelineFunction";
 })(EnumToken || (EnumToken = {}));
 /**
- * supported color types enum
+ * Supported color types enum
  */
 var ColorType;
 (function (ColorType) {
@@ -826,6 +872,10 @@ var ColorType;
      */
     ColorType[ColorType["CUSTOM_COLOR"] = 24] = "CUSTOM_COLOR";
     /**
+     * alpha() color function
+     */
+    ColorType[ColorType["ALPHA"] = 25] = "ALPHA";
+    /**
      * alias for rgba
      */
     ColorType[ColorType["RGB"] = 4] = "RGB";
@@ -842,6 +892,9 @@ var ColorType;
      */
     ColorType[ColorType["DEVICE_CMYK"] = 7] = "DEVICE_CMYK";
 })(ColorType || (ColorType = {}));
+/**
+ * Supported module case transform
+ */
 var ModuleCaseTransformEnum;
 (function (ModuleCaseTransformEnum) {
     /**
@@ -865,6 +918,9 @@ var ModuleCaseTransformEnum;
      */
     ModuleCaseTransformEnum[ModuleCaseTransformEnum["DashCaseOnly"] = 16] = "DashCaseOnly";
 })(ModuleCaseTransformEnum || (ModuleCaseTransformEnum = {}));
+/**
+ * Supported module scope
+ */
 var ModuleScopeEnumOptions;
 (function (ModuleScopeEnumOptions) {
     /**
@@ -905,6 +961,11 @@ var ModuleScopeEnumOptions;
     ModuleScopeEnumOptions[ModuleScopeEnumOptions["Shortest"] = 512] = "Shortest";
 })(ModuleScopeEnumOptions || (ModuleScopeEnumOptions = {}));
 // https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Values_and_units#absolute_length_units
+/**
+ * Convert length to px
+ * @param value
+ * @returns
+ */
 function length2Px(value) {
     let result = null;
     if (value.typ == EnumToken.NumberTokenType) {
@@ -965,4 +1026,4 @@ function minifyNumber(val) {
     return val;
 }
 
-export { ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SyntaxValidationResult, ValidationLevel, length2Px, minifyNumber };
+export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SyntaxValidationResult, ValidationLevel, length2Px, minifyNumber };

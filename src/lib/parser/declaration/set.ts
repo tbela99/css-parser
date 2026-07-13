@@ -9,7 +9,7 @@ import type {
     WhitespaceToken,
 } from "../../../@types/index.d.ts";
 import { eq } from "../utils/eq.ts";
-import { EnumToken } from "../../ast/types.ts";
+import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import { isLength } from "../../syntax/syntax.ts";
 
 function dedup(values: Token[][]): Token[][] {
@@ -53,7 +53,7 @@ export class PropertySet {
         this.declarations = new Map<string, AstDeclaration>();
     }
 
-    add(declaration: AstDeclaration) {
+    add(declaration: AstDeclaration): this {
         if (declaration.nam == this.config.shorthand) {
             this.declarations = new Map<string, AstDeclaration>();
         } else {
@@ -66,7 +66,7 @@ export class PropertySet {
                 // @ts-ignore
                 for (let token of this.declarations.get(this.config.shorthand).val) {
                     if (
-                    // @ts-expect-error
+                        // @ts-expect-error
                         this.config.types.some((t) => token.typ == EnumToken[t]) ||
                         (token.typ == EnumToken.NumberTokenType &&
                             (token as NumberToken).val == 0 &&

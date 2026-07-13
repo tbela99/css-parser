@@ -1,6 +1,8 @@
 import { EnumToken } from "../ast/types.ts";
 import { config } from "../validation/json.ts";
 
+export const regMatchLinearGradient = /^-((webkit)|o|moz)(-repeating)?-linear-gradient$/i;
+export const regMatchRadialGradient = /^-((webkit)|o|moz)(-repeating)?-radial-gradient$/i;
 export const mFLT = new Set([EnumToken.LtTokenType, EnumToken.LteTokenType]);
 export const mFGT = new Set([EnumToken.GtTokenType, EnumToken.GteTokenType]);
 
@@ -29,9 +31,26 @@ export const tokensfuncDefMap = new Map([
 ]) as Map<EnumToken, EnumToken>;
 
 export const tokensfuncSet: Set<EnumToken> = new Set(tokensfuncDefMap.values());
-
+/**
+ * Epsilon
+ */
+export const epsilon = 1e-5;
+/**
+ * Color distance precision
+ */
+export const colorDistancePrecision = epsilon;
+/**
+ * Color precision
+ */
 export const colorPrecision = 6;
+/**
+ * Angle precision
+ */
 export const anglePrecision = 0.001;
+
+/**
+ * Color range definitions
+ */
 export const colorRange = {
     lab: {
         l: [0, 100],
@@ -156,18 +175,27 @@ export const colorsFunc: string[] = [
     "lch",
     "light-dark",
     "contrast-color",
+    "alpha",
 ];
 export const imageFunc: string[] = [
     "linear-gradient",
     "radial-gradient",
     "repeating-linear-gradient",
     "repeating-radial-gradient",
+    "repeating-conic-gradient",
     "conic-gradient",
     "image",
     "image-set",
     "element",
     "cross-fade",
     "paint",
+    "-o-linear-gradient",
+    "-moz-linear-gradient",
+    "-webkit-linear-gradient",
+    "-webkit-repeating-linear-gradient",
+    "-webkit-gradient",
+    "-webkit-radial-gradient",
+    "-webkit-repeating-radial-gradient",
 ];
 export const transformFunctions: string[] = [
     "translate",

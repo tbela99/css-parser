@@ -17,7 +17,7 @@ import { definedPropertySettings, mFGT, mFLT } from "../../syntax/constants.ts";
 import {
     createValidationContext,
     isStyleRangeValue as isStyleFeatureValue,
-    matchAllSyntax,
+    matchAllSyntaxes,
     trimArray,
 } from "../../validation/match.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
@@ -61,7 +61,7 @@ export function parseAtRuleContainerQueryList(
         [[]] as Token[][],
     );
 
-    const result: ValidationMatch = matchAllSyntax(
+    const result: ValidationMatch = matchAllSyntaxes(
         syntax as ValidationFunctionToken[],
         createValidationContext(stream),
         options,

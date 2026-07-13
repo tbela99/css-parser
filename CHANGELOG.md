@@ -1,7 +1,198 @@
 # Changelog
 
-## v1.4.3
+## v1.4.4
 
+### Validation changes
+
+- [x] Added the `state` and `errors` properties to nodes to expose their validation status and any associated validation errors.
+- [x] Nodes that fail validation are no longer discarded. Nodes are discarded only if they are invalid, unparsed, or malformed. Unknown nodes are discarded when lenient parsing is disabled.
+
+### Color
+
+- [x] `alpha()`: Added support for minifying the CSS Color 5 `alpha()` color function.
+
+```ts
+
+import {transform} from '@tbela99/css-parser';
+
+const css = `
+
+:root {
+--mycolor:  oklch(60% 0.25 315 / 0.8);
+}
+    .s {
+    
+    color:
+ alpha(from var(--mycolor)  / calc(alpha * 0.5));
+
+`;
+
+const result = await transform(css, {
+                    beautify: true,
+                    inlineCssVariables: true,
+                });
+
+console.debug(result.code);
+
+```
+
+result:
+
+```css
+.s {
+ color: #b538e366
+}
+```
+
+- [x] `color-mix()`: Implemented support for the updated `color-mix()` syntax defined in https://www.w3.org/TR/css-values-5/#color-mix
+
+
+```ts
+
+import {transform} from '@tbela99/css-parser';
+
+const css = `
+.hsl { color: color-mix(firebrick, goldenrod); }
+`;
+
+const result = await transform(css, {
+                    beautify: true,
+                    convertColor: ColorType.OKLAB
+                });
+
+console.debug(result.code);
+
+```
+
+result:
+
+```css
+.hsl {
+ color: oklab(.624172 .087878 .113592)
+}
+```
+
+### Webkit gradient prefix removal
+
+- [x] Convert -webkit-* gradient functions
+  - [x] -webkit-gradient() to:
+    - [x] linear-gradient()
+    - [ ] radial-gradient() - not supported ⚠️
+  - [x] -webkit-linear-gradient()
+  - [x] -webkit-repeating-linear-gradient()
+  - [x] -webkit-radial-gradient()
+  - [x] -webkit-repeating-radial-gradient()  
+  
+### CSS gradient minification
+
+- [x] Minify gradient functions
+  - [x] linear-gradient()
+  - [x] radial-gradient()
+  - [x] conic-gradient()
+  - [x] repeating-linear-gradient()
+  - [x] repeating-radial-gradient()
+  - [x] repeating-conic-gradient()
+
+### Other changes
+
+- [x] Minify transform-origin property
+- [x] Changing oklab distance threshold to `0.00001` according to https://drafts.csswg.org/css-color-4/#comparing-color-values
+  
+### Bug fixes
+- [x] Fix path resolution on Windows
+- [x] Do not minify supports() arguments
+  
+CSS incorrectly parsed:
+
+```css
+body {
+  background-color: if(
+    supports(color: oklch(0.7 0.185 232)): oklch(0.7 0.185 232);
+    else: #00adf3;
+  );
+  
+  &::after {
+    content: if(
+    supports(color: oklch(0.7 0.185 232)): "Your browser supports OKLCH";
+    else: "Your browser does not support OKLCH";
+    );
+  }
+}
+```
+
+result:
+
+```css
+body {
+ background-color: if(supports(color:#00aefc):#00aefc;else:#00adf3);
+ &:after {
+  content: if(supports(color:#00aefc):"Your browser supports OKLCH";else:"Your browser does not support OKLCH")
+ }
+}
+```
+
+instead of:
+
+```css
+body {
+ background-color: #00adf3;
+ @supports (color:oklch(.7 .185 232)) {
+  background-color: #00aefc
+ }
+ &:after {
+  content: "Your browser does not support OKLCH";
+  @supports (color:oklch(.7 .185 232)) {
+   content: "Your browser supports OKLCH"
+  }
+ }
+}
+```
+
+- [x] Incorrectly parse selector when removePrefix and css module settings are enabled
+
+```css
+*,:before,:after {
+ box-sizing: border-box
+}
+```
+is parsed and rendered as:
+
+```css
+,,*:before:after {
+ box-sizing: border-box
+}
+```
+
+instead of:
+
+```css
+*,:before,:after {
+ box-sizing: border-box
+}
+```
+
+### Deprecation
+
+#### Loading as commonjs module
+- [x] Deprecate commonjs entry point. It will be removed in a future release.
+
+#### Functions
+- [x] Deprecate `parseFile()`. Use `parse({file, asStream, ...options})` instead.
+- [x] Deprecate `transformFile()`. Use `transform({file, asStream, ...options})` instead
+
+#### Enums
+- [x] Deprecate using `ValidationLevel` to configure parsing validation settings. Use `boolean` values instead.
+- [x] Deprecate invalid `EnumToken` node types. There are no longer used.
+- [x] `EnumToken.InvalidRuleNodeType`
+- [x] `EnumToken.InvalidAtRuleNodeType`
+- [x] `EnumToken.InvalidDeclarationNodeType`
+
+#### Interfaces
+- [x] `AstInvalidRule`
+- [x] `AstInvalidDeclaration`
+- [x] `AstInvalidAtRule`
+
+## v1.4.3
 
 ### CSS Modules
 
@@ -14,7 +205,6 @@ result = await transform(css, {
     beautify: true,
     module: {scoped: ModuleScopeEnumOptions.Shortest
     }
-
 });
 
 console.log(result.code);

@@ -489,15 +489,15 @@ button {
             return transform(nesting1, {
                 beautify: true, expandIfSyntax: true
             }).then((result) => expect(result.code).equals(`button {
- background: linear-gradient(to bottom,#fff,#ccc);
+ background: linear-gradient(#fff,#ccc);
  @media (min-width:768px) {
-  background: linear-gradient(to right,#fff,#ccc);
+  background: linear-gradient(90deg,#fff,#ccc);
   @container style(--dark-mode) {
-   background: linear-gradient(to right,#333,#000)
+   background: linear-gradient(90deg,#333,#000)
   }
  }
  @container style(--dark-mode) {
-  background: linear-gradient(to bottom,#333,#000)
+  background: linear-gradient(#333,#000)
  }
 }`));
         });
@@ -528,6 +528,37 @@ div-4 {
  }
  @media (min-width:768px) {
   background: light-dark(#fff,#fff)
+ }
+}`));
+        });
+        
+        
+        it('if(supports()) #22', function () {
+            const nesting1 = `
+
+body {
+  background-color: if(
+    supports(color: oklch(0.7 0.185 232)): oklch(0.7 0.185 232);
+    else: #00adf3;
+  );
+  
+  &::after {
+    content: if(
+    supports(color: oklch(0.7 0.185 232)): "Your browser supports OKLCH";
+    else: "Your browser does not support OKLCH";
+    );
+  }
+}
+
+`;
+            return transform(nesting1, {
+                beautify: true,
+                removePrefix: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`body {
+ background-color: if(supports(color:oklch(.7 .185 232)):#00aefc;else:#00adf3);
+ &:after {
+  content: if(supports(color:oklch(.7 .185 232)):"Your browser supports OKLCH";else:"Your browser does not support OKLCH")
  }
 }`));
         });

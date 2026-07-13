@@ -1,6 +1,6 @@
 import { e, k, D50 } from '../constants.js';
-import { getComponents } from './utils/components.js';
-import { srgb2xyz_d50, XYZ_D50_to_D65 } from './xyz.js';
+import { getColorComponents } from './utils/components.js';
+import { srgb2xyz_d65, XYZ_D50_to_D65 } from './xyz.js';
 import { oklch2srgbvalues, cmyk2srgbvalues, hwb2srgbvalues, hsl2srgb, rgb2srgb, hex2srgbvalues, xyz2srgb } from './srgb.js';
 import { getLCHComponents } from './lch.js';
 import { getOKLABComponents, OKLab_to_XYZ } from './oklab.js';
@@ -77,7 +77,7 @@ function labToken(values) {
     if (values.length == 4) {
         chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
             typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100,
+            val: toPrecisionValue(values[3], 2) * 100,
         });
     }
     return {
@@ -151,7 +151,7 @@ function color2labvalues(token) {
 }
 function srgb2labvalues(r, g, b, a) {
     // @ts-ignore */
-    const result = xyz2lab(...srgb2xyz_d50(r, g, b));
+    const result = xyz2lab(...srgb2xyz_d65(r, g, b));
     // Fixes achromatic RGB colors having a _slight_ chroma due to floating-point errors
     // and approximated computations in sRGB <-> CIELab.
     // See: https://github.com/d3/d3-color/pull/46
@@ -192,7 +192,7 @@ function lchvalues2labvalues(l, c, h, a = null) {
     return result;
 }
 function getLABComponents(token) {
-    const components = getComponents(token);
+    const components = getColorComponents(token);
     if (components == null) {
         return null;
     }

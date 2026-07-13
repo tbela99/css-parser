@@ -1,5 +1,5 @@
 import type { ColorToken, NumberToken, PercentageToken, Token } from "../../../@types/index.d.ts";
-import { getComponents } from "./utils/components.ts";
+import { getColorComponents } from "./utils/components.ts";
 import { color2srgbvalues, getAngle, getNumber, toPrecisionAngle, toPrecisionValue } from "./color.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
 import { labvalues2lchvalues } from "./lch.ts";
@@ -116,7 +116,7 @@ function oklchToken(values: number[]): ColorToken | null {
             { typ: EnumToken.LiteralTokenType, val: "/" },
             {
                 typ: EnumToken.PercentageTokenType,
-                val: values[3] * 100,
+                val: toPrecisionValue(values[3], 2) * 100,
             },
         );
     }
@@ -201,7 +201,7 @@ export function srgb2oklch(r: number, g: number, blue: number, alpha: number | n
 }
 
 export function getOKLCHComponents(token: ColorToken): number[] | null {
-    const components: Token[] | null = getComponents(token);
+    const components: Token[] | null = getColorComponents(token);
 
     if (components == null) {
         return null;

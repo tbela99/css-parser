@@ -1,0 +1,9 @@
+
+/* import your colors... */
+@value colors: "./colors.css";
+@value blue, red, green from colors;
+
+.button {
+  color: blue;
+  display: inline-block;
+}

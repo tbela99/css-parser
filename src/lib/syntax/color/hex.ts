@@ -2,7 +2,7 @@ import type { ColorToken, NumberToken, PercentageToken } from "../../../@types/i
 import { ColorType, EnumToken } from "../../ast/types.ts";
 import { color2srgbvalues, getNumber } from "./color.ts";
 import { cmyk2rgbvalues, hsl2rgbvalues, hwb2rgbvalues, srgb2rgb } from "./rgb.ts";
-import { getComponents } from "./utils/components.ts";
+import { getColorComponents } from "./utils/components.ts";
 import { lab2srgbvalues, lch2srgbvalues, oklab2srgbvalues, oklch2srgbvalues } from "./srgb.ts";
 import { COLORS_NAMES, NAMES_COLORS } from "../constants.ts";
 
@@ -151,7 +151,7 @@ export function rgb2hexvalues(token: ColorToken): string | null {
     let t: NumberToken | PercentageToken;
 
     // @ts-ignore
-    const components: number[] = getComponents(token);
+    const components: number[] = getColorComponents(token);
 
     if (components == null || components.length < 3) {
         return null;

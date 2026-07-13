@@ -1,14 +1,8 @@
 import { EnumToken } from '../../ast/types.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { getSyntaxRule } from '../../validation/config.js';
-import { trimArray, matchAllSyntax, createValidationContext } from '../../validation/match.js';
+import { trimArray, matchAllSyntaxes, createValidationContext } from '../../validation/match.js';
 
-// export const mediaQueryConditionEnum: Set<EnumToken> = new Set([
-//     EnumToken.ParensTokenType,
-//     EnumToken.IdenTokenType,
-//     EnumToken.MediaQueryConditionTokenType,
-//     EnumToken.MediaQueryUnaryFeatureTokenType,
-// ]);
 function matchAtRuleSyntax(atRule, stream, options) {
     const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + atRule.nam);
     const syntax = syntaxRules?.getPreludeRules()?.slice?.(1);
@@ -30,7 +24,7 @@ function matchAtRuleSyntax(atRule, stream, options) {
         }
         return { success: true, errors: [] };
     }
-    const { success, errors} = matchAllSyntax(syntax, createValidationContext(stream), options);
+    const { success, errors} = matchAllSyntaxes(syntax, createValidationContext(stream), options);
     return { success, errors };
 }
 

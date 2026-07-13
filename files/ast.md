@@ -1,23 +1,31 @@
 ---
-title: Ast
+title: Ast Manipulation
 group: Documents
 category: Guides
 ---
 
 ## Ast node types
 
-the ast root node returned by the parser is always a [AstStyleSheet](../docs/interfaces/node.AstStyleSheet.html) node.
-the other node types
-are [AstRule](../docs/interfaces/node.AstRule.html), [AstAtRule](../docs/interfaces/node.AstAtRule.html), [AstDeclaration](../docs/interfaces/node.AstDeclaration.html), [AstComment](../docs/interfaces/node.AstComment.html), [AstInvalidRule](../docs/interfaces/node.AstInvalidRule.html), [AstInvalidAtRule](../docs/interfaces/node.AstInvalidAtRule.html), [AstInvalidDeclaration](../docs/interfaces/node.AstInvalidDeclaration.html)
+The ast root node returned by the parser is always a [AstStyleSheet](../docs/interfaces/node.AstStyleSheet.html) node.
+The other node types
+are [AstRule](../docs/interfaces/node.AstRule.html), [AstAtRule](../docs/interfaces/node.AstAtRule.html), [AstKeyframesAtRule](../docs/interfaces/node.AstKeyframesAtRule.html), [AstKeyframesRule](../docs/interfaces/node.AstKeyframesRule.html), [AstDeclaration](../docs/interfaces/node.AstDeclaration.html), [AstComment](../docs/interfaces/node.AstComment.html).
 
-## Ast node attributes
+Common properties are:
+- typ: [EnumToken](../enums/node.EnumToken.html). The node type
+- state: [EnumAstNodeStatus](../enums/node.EnumAstNodeStatus.html). The node's validation state
+- errors: the node validation errors.
 
-### Ast rule attributes
+The full list of tokens is available [here](../interfaces/node.BaseToken.html).
 
-[Ast rule](../docs/interfaces/node.AstRule.html) _tokens_ attribute is an array
-of [Token](../docs/types/node.Token.html) representing the parsed selector.
-the _sel_ attribute string that contains the rule's selector.
-modifying the sel attribute does not affect the tokens attribute, and similarly, changes to the tokens attribute do not
+## Ast node values
+
+Nodes values are parsed as an array of tokens accessed through the `val` for AstDeclaration and `tokens` property for the other node types.
+
+### Ast rule value
+
+[Ast rule](../docs/interfaces/node.AstRule.html) value is the selector parsed as the  _tokens_ pwhich is an array of [Token](../docs/types/node.Token.html) .
+The _sel_ attribute is the string representation of the node selector.
+Modifying the sel attribute does not affect the tokens attribute, and similarly, changes to the tokens attribute do not
 update the sel attribute.
 
 ```ts
@@ -52,13 +60,13 @@ console.debug(result.code);
 // .foo,.bar,.fubar{height:calc(40px/3);width:3px}
 ```
 
-### Ast at-rule attributes
+### Ast at-rule value
 
-[Ast at-rule](../docs/interfaces/node.AstAtRule.html) _tokens_ attribute is either null or an array
-of [Token](../docs/types/node.Token.html) representing the parsed prelude.
-the _val_ attribute string that contains the at-rule's prelude.
+[Ast at-rule](../docs/interfaces/node.AstAtRule.html) _tokens_ is either null or an array
+of [Token](../docs/types/node.Token.html) representing the node's prelude.
+The _val_ attribute is the string representation of the node's value.
 
-modifying the _val_ attribute does not affect the _tokens_ attribute, and similarly, changes to the _tokens_ attribute do not
+Modifying the _val_ attribute does not affect the _tokens_ attribute, and similarly, changes to the _tokens_ attribute do not
 update the _val_ attribute.
 
 ```ts
@@ -96,7 +104,7 @@ console.debug(result.code);
 // .foo{height:calc(40px/3)}
 ```
 
-### Ast declaration attributes
+### Ast declaration value
 
 [Ast declaration](../docs/interfaces/node.AstDeclaration.html) _nam_ attribute is the declaration name. the _val_
 attribute is an array of [Token](../docs/types/node.Token.html) representing the declaration's value.
@@ -150,10 +158,12 @@ console.debug(result.code);
 
 // .foo{height:calc(40px/3);width:3px}.selector{color:#0880b0}
 ```
+## Ast Traversal
 
-## Ast traversal
 
-ast traversal is achieved using [walk()](../docs/functions/node.walk.html)
+### walk()
+
+Ast traversal is achieved using [walk()](../docs/functions/node.walk.html)
 
 ```ts
 
@@ -179,7 +189,7 @@ for (const {node, parent, root} of walk(ast)) {
 }
 ```
 
-ast traversal can be controlled using a [filter](../docs/media/node.walk.html#walk) function. the filter function returns a value of type [WalkerOption](../docs/types/node.WalkerOption.html).
+Ast traversal can be controlled using a [filter](../docs/media/node.walk.html#walk) function. the filter function returns a value of type [WalkerOption](../docs/types/node.WalkerOption.html).
 if the filter function returns new nodes, those will also be visited.
 
 ```ts
@@ -225,9 +235,8 @@ for (const {node} of walk(result.ast, filter)) {
 
 ```
 
-### Ast node values traversal
-
-the function [walkValues()](../docs/functions/node.walkValues.html) is used to walk the node attribute's tokens.
+### walkValues()
+The [`walkValues()`](../docs/functions/node.walkValues.html) function traverses the value tokens of a node, allowing you to inspect or modify each token during traversal.
 
 ```ts
 
@@ -267,5 +276,144 @@ for (const {value} of walkValues(declaration.val, null, null,true)) {
 // [ "Iden", "from" ]
 ```
 
+### find()
+
+Searches the AST and returns the first node that matches the specified criteria.
+  
+ ```ts
+  // find the first ast declaration node which name is 'aspect-ratio'
+import { find, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+ // find declaration which contain a '30px'
+  const nodeMatcher = (node: AstNode) =>
+      return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio'; 
+
+     const result  = await transform(css);     
+     const node = find(result.ast, nodeMatcher);
+
+     console.log({node});
+ 
+```
+
+### findByValue()
+
+Searches the AST by traversing each node's value tokens and returns the first node with a matching value token.
+  
+ ```ts
+// find the first ast node which contains the length token '30px'
+import { findByValue, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+ // find declaration which contains the length token '30px'
+  const nodeMatcher = (value: Token) =>
+      return value.typ == EnumToken.LengthTokenType && (value as LengthToken).val == 30 && (value as LengthToken).unit == 'px' ; 
+
+     const result  = await transform(css);     
+     const { node, value } = findByValue(result.ast, nodeMatcher) ?? {};
+
+     console.log({node, value});
+ 
+```
+
+### findAll()
+
+Searches the AST and returns all nodes that match the specified criteria.
+  
+ ```ts
+ // find the first ast declaration node which name is 'aspect-ratio'
+import { findAll, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+ // find declaration which contain a '30px'
+  const nodeMatcher = (node: AstNode) =>
+      return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio'; 
+
+     const result  = await transform(css);     
+     const nodes = findAll(result.ast, nodeMatcher);
+
+     console.log({nodes});
+ 
+```
+
+### findLast()
+
+Search the ast tree and return the last node matching the specified criteria.
+  
+ ```ts
+ *  // find the first ast declaration node which name is 'aspect-ratio'
+import { findLast, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+ * const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+ // find declaration which contain a '30px'
+  const nodeMatcher = (node: AstNode) =>
+      return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio'; 
+
+     const result  = await transform(css);     
+     const node = findLast(result.ast, nodeMatcher);
+
+     console.log({node});
+```
+
+### findValue()
+
+Find the node's value token of the specified ast node that matches the specified criteria.
+  
+ ```ts
+// find the first ast declaration node which name is 'aspect-ratio'
+import { findValue, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+ // find declaration which contain a '30px'
+  const nodeMatcher = (node: AstNode) =>
+      return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio'; 
+
+     const result  = await transform(css);     
+     const found = findValue(result.ast.chi[0], nodeMatcher);
+
+     console.log({found}); // 'button' token of the selector
+  
+```
+
 ------
-[← Custom Transform](./transform.md) | [Validation →](./validation.md) 
+[← Custom Transform](./transform.md) | [Utility Functions →](./utilities.md)

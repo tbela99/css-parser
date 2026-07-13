@@ -1,12 +1,20 @@
-import {EnumToken} from "../lib/ast/types.ts";
+import { EnumToken } from "../lib/ast/types.ts";
 
 export interface PropertyType {
-
     shorthand: string;
 }
 
-export interface ShorthandPropertyType {
+export interface SinglePropertyType {
+        typ: keyof EnumToken;
+        val: string | number;
+}
 
+export interface SinglePropertyTypeMapping {
+    pattern?: string[][];
+    mapping: Record<string, SinglePropertyType>;
+}
+
+export interface ShorthandPropertyType {
     shorthand: string;
     map?: string;
     properties: string[];
@@ -14,22 +22,20 @@ export interface ShorthandPropertyType {
     multiple: boolean;
     separator: {
         typ: keyof EnumToken;
-        val: string
+        val: string;
     };
     valueSeparator?: {
         typ: keyof EnumToken;
-        val: string
+        val: string;
     };
     keywords: string[];
 }
 
 export interface PropertySetType {
-
     [key: string]: PropertyType | ShorthandPropertyType;
 }
 
 export interface PropertyMapType {
-
     default: string[];
     types: string[];
     keywords: string[];
@@ -37,23 +43,21 @@ export interface PropertyMapType {
     multiple?: boolean;
     prefix?: {
         typ: keyof EnumToken;
-        val: string
+        val: string;
     };
     previous?: string;
     separator?: {
-
         typ: keyof EnumToken;
     };
     constraints?: {
         [key: string]: {
             [key: string]: any;
-        }
+        };
     };
-    mapping?: Record<string, string>
+    mapping?: Record<string, string>;
 }
 
 export interface ShorthandMapType {
-
     shorthand: string;
     pattern: string;
     keywords: string[];
@@ -61,10 +65,10 @@ export interface ShorthandMapType {
     mapping?: Record<string, string>;
     multiple?: boolean;
     separator?: { typ: keyof EnumToken; val?: string };
-    set?: Record<string, string[]>
+    set?: Record<string, string[]>;
     properties: {
         [property: string]: PropertyMapType;
-    }
+    };
 }
 
 export interface ShorthandProperties {

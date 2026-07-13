@@ -2,7 +2,7 @@ import { splitRule } from './minify.js';
 import { combinators } from '../syntax/constants.js';
 import { parseString } from '../parser/parse.js';
 import { walkValues } from './walk.js';
-import { renderToken } from '../renderer/render.js';
+import { renderValue } from '../renderer/render.js';
 import { EnumToken } from './types.js';
 
 /**
@@ -229,7 +229,7 @@ function replaceCompound(input, replace) {
             });
         }
     }
-    return tokens.reduce((acc, curr) => acc + renderToken(curr), "");
+    return tokens.reduce((acc, curr) => acc + renderValue(curr), "");
 }
 function replaceCompoundLiteral(selector, replace) {
     const tokens = [""];

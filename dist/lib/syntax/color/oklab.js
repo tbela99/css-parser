@@ -1,4 +1,4 @@
-import { getComponents } from './utils/components.js';
+import { getColorComponents } from './utils/components.js';
 import { multiplyMatrices } from './utils/matrix.js';
 import { srgb2lsrgbvalues, lch2srgbvalues, lab2srgbvalues, cmyk2srgbvalues, hwb2srgbvalues, hsl2srgb, rgb2srgb, hex2srgbvalues, lsrgb2srgbvalues } from './srgb.js';
 import { color2srgbvalues, toPrecisionValue, getNumber } from './color.js';
@@ -78,7 +78,7 @@ function oklabToken(values) {
     if (values.length == 4) {
         chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
             typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100,
+            val: toPrecisionValue(values[3], 2) * 100,
         });
     }
     return {
@@ -155,7 +155,7 @@ function srgb2oklab(r, g, blue, alpha) {
     return alpha == null || alpha == 1 ? [l, a, b] : [l, a, b, alpha];
 }
 function getOKLABComponents(token) {
-    const components = getComponents(token);
+    const components = getColorComponents(token);
     if (components == null || components.length < 3) {
         return null;
     }

@@ -1,5 +1,5 @@
 import { eq } from '../parser/utils/eq.js';
-import { renderToken, doRender } from '../renderer/render.js';
+import { renderValue, doRender } from '../renderer/render.js';
 import * as index from './features/index.js';
 import { walkValues } from './walk.js';
 import { EnumToken } from './types.js';
@@ -7,7 +7,7 @@ import { isWhiteSpace, isIdent, isFunction, isIdentStart } from '../syntax/synta
 import { FeatureWalkMode } from './features/type.js';
 import { trimArray } from '../validation/match.js';
 import { definedPropertySettings, combinators } from '../syntax/constants.js';
-import { replaceToken } from '../parser/utils/token.js';
+import { replaceNodeOrValue } from '../parser/utils/token.js';
 import { parseString } from '../parser/parse.js';
 import { tokenize } from '../parser/tokenize.js';
 import { replaceCompound } from './expand.js';
@@ -22,7 +22,7 @@ const rules = [
 // @ts-ignore
 const features = Object.values(index).sort((a, b) => a.ordering - b.ordering);
 /**
- * apply minification rules to the ast tree
+ * Apply minification rules to the ast tree
  * @param ast
  * @param options
  * @param recursive
@@ -87,7 +87,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
             }
             if (replacement != parent && parent.parent != null) {
                 // @ts-ignore
-                replaceToken(parent.parent, parent, replacement);
+                replaceNodeOrValue(parent.parent, parent, replacement);
             }
             if ("chi" in replacement) {
                 // @ts-ignore
@@ -127,7 +127,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
         }
         if (replacement != null && replacement != parent && parent.parent != null) {
             // @ts-ignore
-            replaceToken(parent.parent, parent, replacement);
+            replaceNodeOrValue(parent.parent, parent, replacement);
         }
         if ("chi" in replacement) {
             for (const node of replacement.chi) {
@@ -162,7 +162,7 @@ function transformAtRuleMediaPrelude(values) {
                     values[values.indexOf(value)] = value.l;
                 }
                 else {
-                    replaceToken(parent, value, value.l);
+                    replaceNodeOrValue(parent, value, value.l);
                     // @ts-ignore
                     value = value.l;
                 }
@@ -218,7 +218,7 @@ function transformAtRuleMediaPrelude(values) {
                     // @ts-expect-error
                     const p = parents?.[parents?.indexOf?.(parent) + 1];
                     if (p != null) {
-                        replaceToken(p, parent, replacement);
+                        replaceNodeOrValue(p, parent, replacement);
                     }
                     else {
                         values.splice(values.indexOf(parent), 1, replacement);
@@ -232,7 +232,7 @@ function transformAtRuleMediaPrelude(values) {
     return { hasUpdates, values: trimArray(values) };
 }
 /**
- * minify at-rule media
+ * Minify at-rule media
  * - remove redundant tokens
  * - generate range queries
  * @param ast
@@ -262,7 +262,7 @@ function minifyAtRuleMedia(tokens) {
         if (result.hasUpdates) {
             hasUpdates = true;
         }
-        acc.set(values.reduce((acc, t) => acc + renderToken(t), ""), result.values);
+        acc.set(values.reduce((acc, t) => acc + renderValue(t), ""), result.values);
         return acc;
     }, new Map());
     if (sections.has("all")) {
@@ -284,7 +284,7 @@ function minifyAtRuleMedia(tokens) {
     return tokens;
 }
 /**
- * reduce selectors
+ * Reduce selectors
  * @param acc
  * @param curr
  *
@@ -301,7 +301,7 @@ function reduce(acc, curr) {
     return acc;
 }
 /**
- * apply minification rules to the ast tree
+ * Apply minification rules to the ast tree
  * @param ast
  * @param options
  * @param recursive
@@ -330,14 +330,10 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
         let node = null;
         let nodeIndex = -1;
         for (; i < ast.chi.length; i++) {
-            if (ast.chi[i].typ === EnumToken.CommentNodeType ||
-                ast.chi[i].typ === EnumToken.InvalidRuleNodeType ||
-                ast.chi[i].typ === EnumToken.InvalidRuleNodeType) {
+            if (ast.chi[i].typ === EnumToken.CommentNodeType) {
                 continue;
             }
-            while (previous?.typ === EnumToken.CommentNodeType ||
-                previous?.typ === EnumToken.InvalidRuleNodeType ||
-                previous?.typ === EnumToken.InvalidRuleNodeType) {
+            while (previous?.typ === EnumToken.CommentNodeType) {
                 previous = ast.chi[--nodeIndex];
                 continue;
             }
@@ -399,12 +395,11 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                         (index + 3 < arr.length ||
                                             arr[index + 2]?.typ === EnumToken.WhitespaceTokenType))
                                     ? ""
-                                    : renderToken(curr)), "");
+                                    : renderValue(curr)), "");
                         }
                     }
                     if (["all", "", null].includes(node.val)) {
-                        ast.chi?.splice(i, 1, ...node.chi);
-                        i--;
+                        ast.chi?.splice(i--, 1, ...node.chi);
                         continue;
                     }
                 }
@@ -428,7 +423,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                     arr[index + 1]?.typ === EnumToken.CommentTokenType &&
                                     (index + 3 < arr.length || arr[index + 2].typ === EnumToken.WhitespaceTokenType))
                                 ? ""
-                                : renderToken(curr)), "");
+                                : renderValue(curr)), "");
                     }
                 }
                 if (previous?.typ == EnumToken.AtRuleNodeType &&
@@ -671,7 +666,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                             }
                         }
                     }
-                    if (recursive && previous != node) {
+                    if (recursive && previous != null && previous != node) {
                         if (!hasDeclaration(previous)) {
                             doMinify(previous, options, recursive, errors, nestingContent, context);
                         }
@@ -705,7 +700,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
     return ast;
 }
 /**
- * check if a rule has a declaration
+ * Check if a rule has a declaration
  * @param node
  *
  * @private
@@ -723,7 +718,7 @@ function hasDeclaration(node) {
     return true;
 }
 /**
- * optimize selector
+ * Optimize selector
  * @param selector
  *
  * @private
@@ -829,7 +824,7 @@ function optimizeSelector(selector) {
     };
 }
 /**
- * split selector string
+ * Split selector string
  * @param buffer
  *
  * @internal
@@ -928,7 +923,7 @@ function splitRule(buffer) {
     return result;
 }
 /**
- * reduce selector
+ * Reduce selector
  * @param acc
  * @param curr
  *
@@ -986,7 +981,7 @@ function reduceSelector(acc, curr) {
     return acc;
 }
 /**
- * match selectors
+ * Match selectors
  * @param selector1
  * @param selector2
  *
@@ -1092,7 +1087,7 @@ function matchSelectors(selector1, selector2) {
         };
 }
 /**
- * fix selector
+ * Fix selector
  * @param node
  *
  * @private
@@ -1111,11 +1106,11 @@ function fixSelector(node) {
                 }
             }
         }
-        node.sel = attributes.reduce((acc, curr) => acc + renderToken(curr), "");
+        node.sel = attributes.reduce((acc, curr) => acc + renderValue(curr), "");
     }
 }
 /**
- * wrap nodes
+ * Wrap nodes
  * @param previous
  * @param node
  * @param match
@@ -1159,7 +1154,7 @@ function wrapNodes(previous, node, match, ast, reducer, i, nodeIndex) {
     return wrapper;
 }
 /**
- * diff nodes
+ * Diff nodes
  * @param n1
  * @param n2
  * @param reducer
@@ -1323,7 +1318,7 @@ function diff(n1, n2, reducer, options = {}) {
     return { result, node1: exchanged ? node2 : node1, node2: exchanged ? node1 : node2 };
 }
 /**
- * reduce rule selector
+ * Reduce rule selector
  * @param node
  *
  * @private
@@ -1370,4 +1365,4 @@ function reduceRuleSelector(node) {
     }
 }
 
-export { minify, splitRule };
+export { minify, optimizeSelector, splitRule };

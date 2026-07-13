@@ -1,4 +1,4 @@
-import { getComponents } from './utils/components.js';
+import { getColorComponents } from './utils/components.js';
 import { color2srgbvalues, toPrecisionAngle, toPrecisionValue, getNumber, getAngle } from './color.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import { srgb2labvalues, xyz2lab, oklch2labvalues, oklab2labvalues, getLABComponents, hwb2labvalues, hsl2labvalues, rgb2labvalues, hex2labvalues } from './lab.js';
@@ -72,12 +72,12 @@ function lchToken(values) {
     const chi = [
         { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
         { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[1]) },
-        { typ: EnumToken.NumberTokenType, val: values[2] },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionAngle(values[2]) },
     ];
     if (values.length == 4) {
         chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
             typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100,
+            val: toPrecisionValue(values[3], 2) * 100,
         });
     }
     return {
@@ -159,7 +159,7 @@ function xyz2lchvalues(x, y, z, alpha) {
     return alpha == null || alpha == 1 ? lch : lch.concat(alpha);
 }
 function getLCHComponents(token) {
-    const components = getComponents(token);
+    const components = getColorComponents(token);
     if (components == null) {
         return null;
     }

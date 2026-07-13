@@ -127,13 +127,13 @@ export function run(describe, expect, it, transform, parse, render) {
                         },
                         {
                             typ: EnumToken.NumberTokenType,
-                            val: "0.2050219599912612"
+                            val: .203802 
                         }, {
                             typ: EnumToken.NumberTokenType,
-                            val: "0.11273398825257439"
+                            val: .112112 
                         }, {
                             typ: EnumToken.NumberTokenType,
-                            val: ".019252589983419124"
+                            val: .019214
                         },
                         {
                             typ: EnumToken.LiteralTokenType,
@@ -271,13 +271,13 @@ export function run(describe, expect, it, transform, parse, render) {
                         },
                         {
                             typ: EnumToken.NumberTokenType,
-                            val: "0.2050219599912612"
+                            val: .205039 
                         }, {
                             typ: EnumToken.NumberTokenType,
-                            val: "0.11273398825257439"
+                            val: .112739 
                         }, {
                             typ: EnumToken.NumberTokenType,
-                            val: ".019252589983419124"
+                            val: .019248
                         },
                         {
                             typ: EnumToken.LiteralTokenType,
@@ -285,7 +285,7 @@ export function run(describe, expect, it, transform, parse, render) {
                         },
                         {
                             typ: EnumToken.PercentageTokenType,
-                            val: "50"
+                            val: 50
                         }
                     ],
                     kin: ColorType.COLOR
@@ -307,13 +307,13 @@ export function run(describe, expect, it, transform, parse, render) {
                         },
                         {
                             typ: EnumToken.NumberTokenType,
-                            val: "0.2050219599912612"
+                            val: 0.204998
                         }, {
                             typ: EnumToken.NumberTokenType,
-                            val: "0.11273398825257439"
+                            val: 0.112726
                         }, {
                             typ: EnumToken.NumberTokenType,
-                            val: ".019252589983419124"
+                            val: 0.019261
                         },
                         {
                             typ: EnumToken.LiteralTokenType,
@@ -321,7 +321,7 @@ export function run(describe, expect, it, transform, parse, render) {
                         },
                         {
                             typ: EnumToken.PercentageTokenType,
-                            val: "50"
+                            val: 50
                         }
                     ],
                     kin: ColorType.COLOR
@@ -343,13 +343,13 @@ export function run(describe, expect, it, transform, parse, render) {
                         },
                         {
                             typ: EnumToken.NumberTokenType,
-                            val: "0.2050219599912612"
+                            val: .205015 
                         }, {
                             typ: EnumToken.NumberTokenType,
-                            val: "0.11273398825257439"
+                            val: .112685
                         }, {
                             typ: EnumToken.NumberTokenType,
-                            val: ".019252589983419124"
+                            val:  .019233
                         },
                         {
                             typ: EnumToken.LiteralTokenType,
@@ -357,7 +357,7 @@ export function run(describe, expect, it, transform, parse, render) {
                         },
                         {
                             typ: EnumToken.PercentageTokenType,
-                            val: "50"
+                            val: 50
                         }
                     ],
                     kin: ColorType.COLOR
@@ -415,13 +415,13 @@ export function run(describe, expect, it, transform, parse, render) {
                         },
                         {
                             typ: EnumToken.NumberTokenType,
-                            val: "0.2050219599912612"
+                            val: .205015
                         }, {
                             typ: EnumToken.NumberTokenType,
-                            val: "0.11273398825257439"
+                            val: .112685
                         }, {
                             typ: EnumToken.NumberTokenType,
-                            val: ".019252589983419124"
+                            val: .019233
                         },
                         {
                             typ: EnumToken.LiteralTokenType,
@@ -429,7 +429,7 @@ export function run(describe, expect, it, transform, parse, render) {
                         },
                         {
                             typ: EnumToken.PercentageTokenType,
-                            val: "50"
+                            val: 50
                         }
                     ],
                     kin: ColorType.COLOR

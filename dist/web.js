@@ -1,9 +1,9 @@
 import { doParse } from './lib/parser/parse.js';
 export { parseDeclarations, parseString } from './lib/parser/parse.js';
 import { doRender } from './lib/renderer/render.js';
-export { renderToken } from './lib/renderer/render.js';
+export { renderValue as renderToken } from './lib/renderer/render.js';
 import { ModuleScopeEnumOptions } from './lib/ast/types.js';
-export { ColorType, EnumToken, ModuleCaseTransformEnum, ValidationLevel } from './lib/ast/types.js';
+export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ValidationLevel } from './lib/ast/types.js';
 import { tokenizeStream, tokenize } from './lib/parser/tokenize.js';
 import { matchUrl, resolve, dirname } from './lib/fs/resolve.js';
 import { ResponseType } from './types.js';
@@ -14,11 +14,12 @@ export { convertColor } from './lib/syntax/color/color.js';
 export { isOkLabClose, okLabDistance } from './lib/syntax/color/utils/distance.js';
 export { find, findAll, findByValue, findLast } from './lib/ast/find.js';
 export { cloneNode } from './lib/ast/clone.js';
+export { replaceNodeOrValue } from './lib/parser/utils/token.js';
 export { SourceMap } from './lib/renderer/sourcemap/sourcemap.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 
 /**
- * load file or url
+ * Load file or url
  * @param url
  * @param currentDirectory
  * @param responseType
@@ -34,7 +35,10 @@ async function load(url, currentDirectory = ".", responseType = false) {
         responseType = responseType ? ResponseType.ReadableStream : ResponseType.Text;
     }
     let t;
-    if (matchUrl.test(url)) {
+    if (typeof url == "object") {
+        t = new URL(url.absolute, self.origin);
+    }
+    else if (matchUrl.test(url)) {
         t = new URL(url);
     }
     else if (currentDirectory != null && matchUrl.test(currentDirectory)) {
@@ -55,7 +59,7 @@ async function load(url, currentDirectory = ".", responseType = false) {
     });
 }
 /**
- * render the ast tree
+ * Render the ast tree
  * @param data
  * @param options
  * @param mapping
@@ -93,11 +97,12 @@ function render(data, options = {}, mapping) {
     }), mapping);
 }
 /**
- * parse css file
+ * Parse css file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
  *
+ * @deprecated
  * @throws Error file not found
  *
  * Example:
@@ -116,10 +121,11 @@ function render(data, options = {}, mapping) {
  * ```
  */
 async function parseFile(file, options = {}, asStream = false) {
-    return Promise.resolve((options.load ?? load)(file, ".", asStream)).then((stream) => parse(stream, { src: file, ...options }));
+    console.warn("DeprecationWarning: parseFile is deprecated, use parse instead as parse({file, asStream, ...options})");
+    return parse({ file, asStream, ...options });
 }
 /**
- * parse css
+ * Parse css
  * @param stream
  * @param options
  *
@@ -146,7 +152,25 @@ async function parseFile(file, options = {}, asStream = false) {
  *  console.log(result.ast);
  * ```
  */
-async function parse(stream, options = {}) {
+async function parse(...args) {
+    let options;
+    let stream;
+    if (typeof args[0] === "string" || args[0] instanceof ReadableStream) {
+        stream = args[0];
+        options = args[1];
+    }
+    else {
+        // @ts-expect-error
+        const { file, input, ...opt } = args[0];
+        options = opt;
+        if (file != null) {
+            return Promise.resolve((options.load ?? load)(file, ".", options.asStream ?? false)).then((stream) => parse(stream, { src: options.file, ...options }));
+        }
+        else {
+            stream = input;
+        }
+    }
+    options ??= {};
     options.parseInfo = {
         stream,
         buffer: "",
@@ -169,31 +193,37 @@ async function parse(stream, options = {}) {
     });
 }
 /**
- * transform css file
+ * Transform css file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
  *
+ * @deprecated
  * Example:
  *
  * ```ts
  *
- * import {transformFile} from '@tbela99/css-parser/web';
+ * import {transform} from '@tbela99/css-parser/web';
  *
- * // remote file
- * let result = await transformFile('https://docs.deno.com/styles.css');
+ *  // remote file
+ * let result = await transform({file: 'https://docs.deno.com/styles.css'});
  * console.log(result.code);
  *
  * // local file
- * result = await transformFile('./css/styles.css');
+ * result = await transform({file: './css/styles.css'});
  * console.log(result.code);
  * ```
  */
 async function transformFile(file, options = {}, asStream = false) {
-    return Promise.resolve((options.load ?? load)(file, ".", asStream)).then((stream) => transform(stream, { src: file, ...options }));
+    console.error("DeprecationWarning: transformFile is deprecated, use transform instead as transform({file, asStream, ...options})");
+    return transform({
+        file,
+        asStream,
+        ...options,
+    });
 }
 /**
- * transform css
+ * Transform css
  * @param css
  * @param options
  *
@@ -214,10 +244,27 @@ async function transformFile(file, options = {}, asStream = false) {
  *  console.log(result.code);
  * ```
  */
-async function transform(css, options = {}) {
+async function transform(...args) {
+    let options;
+    let stream;
+    if (typeof args[0] === "string" || args[0] instanceof ReadableStream) {
+        stream = args[0];
+        options = args[1];
+    }
+    else {
+        // @ts-expect-error
+        const { file, input, ...opt } = args[0];
+        options = opt;
+        if (file != null) {
+            return Promise.resolve((options.load ?? load)(file, ".", options.asStream ?? false)).then((stream) => transform(stream, { src: options.file, ...options }));
+        }
+        else {
+            stream = input;
+        }
+    }
     options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
     const startTime = performance.now();
-    return parse(css, options).then((parseResult) => {
+    return parse(stream, options).then((parseResult) => {
         let mapping = null;
         let importMapping = null;
         if (typeof options.module == "number" && options.module & ModuleScopeEnumOptions.ICSS) {

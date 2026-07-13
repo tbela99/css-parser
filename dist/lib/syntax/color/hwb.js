@@ -1,5 +1,5 @@
 import { hsl2hsv } from './hsv.js';
-import { getComponents } from './utils/components.js';
+import { getColorComponents } from './utils/components.js';
 import { color2srgbvalues, toPrecisionAngle, toPrecisionValue, getAngle, getNumber } from './color.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import { cmyk2srgbvalues, lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues } from './srgb.js';
@@ -63,14 +63,14 @@ function color2hwbToken(token) {
 function hwbToken(values) {
     values[0] = toPrecisionAngle(values[0] * 360);
     const chi = [
-        { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(values[1]) * 100 },
-        { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(values[2]) * 100 },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionAngle(values[0]) },
+        { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(values[1] * 100) },
+        { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(values[2] * 100) },
     ];
     if (values.length == 4) {
         chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
             typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100,
+            val: toPrecisionValue(values[3], 2) * 100
         });
     }
     return {
@@ -82,7 +82,7 @@ function hwbToken(values) {
 }
 function rgb2hwbvalues(token) {
     // @ts-ignore
-    return srgb2hwb(...getComponents(token).map((t, index) => {
+    return srgb2hwb(...getColorComponents(token).map((t, index) => {
         if (index == 3) {
             return getNumber(t);
         }
@@ -95,7 +95,7 @@ function cmyk2hwbvalues(token) {
 }
 function hsl2hwbvalues(token) {
     // @ts-ignore
-    return hslvalues2hwbvalues(...getComponents(token).map((t, index) => {
+    return hslvalues2hwbvalues(...getColorComponents(token).map((t, index) => {
         if (index == 3 && t.typ == EnumToken.IdenTokenType && t.val == "none") {
             return 1;
         }

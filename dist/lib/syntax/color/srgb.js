@@ -1,4 +1,4 @@
-import { getComponents } from './utils/components.js';
+import { getColorComponents } from './utils/components.js';
 import { color2srgbvalues, getNumber, getAngle } from './color.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import { Lab_to_sRGB, getLABComponents, lchvalues2labvalues } from './lab.js';
@@ -43,7 +43,7 @@ function srgbvalues(token) {
     return null;
 }
 function rgb2srgb(token) {
-    return (getComponents(token)?.map?.((t, index) => index == 3
+    return (getColorComponents(token)?.map?.((t, index) => index == 3
         ? t.typ == EnumToken.IdenTokenType && t.val == "none"
             ? 1
             : getNumber(t)
@@ -52,7 +52,7 @@ function rgb2srgb(token) {
             255) ?? null);
 }
 function rgb2srgbvalues(token) {
-    return (getComponents(token)?.map?.((t, index) => index == 3
+    return (getColorComponents(token)?.map?.((t, index) => index == 3
         ? getNumber(t)
         : getNumber(t) / 255) ?? null);
 }
@@ -95,7 +95,7 @@ function hsl2srgb(token) {
     return hslvalues2srgbvalues(h, s, l, a);
 }
 function cmyk2srgbvalues(token) {
-    const components = getComponents(token);
+    const components = getColorComponents(token);
     if (components == null) {
         return null;
     }
@@ -149,7 +149,7 @@ function oklch2srgbvalues(token) {
     return rgb;
 }
 function hslvalues(token) {
-    const components = getComponents(token);
+    const components = getColorComponents(token);
     if (components == null) {
         return null;
     }

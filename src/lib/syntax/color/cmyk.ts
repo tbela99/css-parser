@@ -125,7 +125,7 @@ function cmyktoken(values: number[]): ColorToken {
                           {
                               typ: EnumToken.PercentageTokenType,
                               // @ts-ignore
-                              val: toPrecisionValue(curr) * 100,
+                              val: toPrecisionValue(curr * 100),
                           } as Token,
                       ]
                     : [
@@ -136,7 +136,7 @@ function cmyktoken(values: number[]): ColorToken {
                           } as Token,
                           {
                               typ: EnumToken.PercentageTokenType,
-                              val: toPrecisionValue(curr) * 100,
+                              val: toPrecisionValue(curr, 2) * 100,
                           } as Token,
                       ],
             [] as Token[],

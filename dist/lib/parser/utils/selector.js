@@ -1,10 +1,10 @@
-import { EnumToken } from '../../ast/types.js';
-import { renderToken } from '../../renderer/render.js';
+import { EnumToken, EnumAstNodeStatus } from '../../ast/types.js';
+import { renderValue } from '../../renderer/render.js';
 import { definedPropertySettings, tokensfuncDefMap, combinators } from '../../syntax/constants.js';
 import { pseudoElements, isIdent, isHash } from '../../syntax/syntax.js';
-import { getParsedSyntax, getSyntaxConfig } from '../../validation/config.js';
-import { matchAllSyntax, createValidationContext, trimArray, matchSelectorSyntax } from '../../validation/match.js';
-import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
+import { getParsedSyntax, getSyntaxRule, getSyntaxConfig } from '../../validation/config.js';
+import { matchAllSyntaxes, createValidationContext, trimArray, matchSelectorSyntax } from '../../validation/match.js';
+import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from '../../validation/parser/typedef.js';
 import { splitTokenList } from '../../validation/utils/list.js';
 import { trimWhiteSpace } from '../parse.js';
 
@@ -13,7 +13,7 @@ import { trimWhiteSpace } from '../parse.js';
  */
 function parseSelector(tokens, context, options, errors) {
     if (context?.typ === EnumToken.KeyframesAtRuleNodeType) {
-        const result = matchAllSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "keyframe-selectors"), createValidationContext(tokens), options);
+        const result = matchAllSyntaxes(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "keyframe-selectors"), createValidationContext(tokens), options);
         const parts = splitTokenList(tokens);
         for (const part of parts) {
             trimArray(part);
@@ -52,15 +52,23 @@ function parseSelector(tokens, context, options, errors) {
             return acc;
         }, []));
         return Object.defineProperties({
-            typ: result.success ? EnumToken.KeyFramesRuleNodeType : EnumToken.InvalidRuleNodeType,
+            typ: EnumToken.KeyFramesRuleNodeType,
             sel: [
                 ...splitTokenList(trimArray(tokens)).reduce((acc, curr) => {
-                    acc.add(curr.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), ""));
+                    acc.add(curr.reduce((acc, curr) => acc + renderValue(curr, { minify: false }), ""));
                     return acc;
                 }, new Set()),
             ].join(),
             chi: [],
         }, {
+            state: {
+                ...definedPropertySettings,
+                value: result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid,
+            },
+            errors: {
+                ...definedPropertySettings,
+                value: result.errors,
+            },
             tokens: { ...definedPropertySettings, value: tokens.length === 0 ? null : tokens },
             loc: {
                 ...definedPropertySettings,
@@ -73,11 +81,33 @@ function parseSelector(tokens, context, options, errors) {
     }
     const stack = [];
     const uniq = new Map();
+    let allowed = true;
     let i = 0;
     let index;
     let parent = context;
     let nested = false;
     let val;
+    if (context?.typ !== EnumToken.StyleSheetNodeType && context?.typ !== EnumToken.RuleNodeType) {
+        allowed = false;
+        if (context?.typ === EnumToken.AtRuleNodeType) {
+            const syntaxRule = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + context.nam);
+            allowed = syntaxRule?.acceptAnyRule ?? false;
+            if (!allowed) {
+                const rules = syntaxRule?.getBlockRules?.();
+                if (rules != null) {
+                    for (const rule of rules) {
+                        if (ValidationTokenEnum.PropertyType === rule.typ) {
+                            if ("block-contents" === rule.val ||
+                                "rule-list" === rule.val) {
+                                allowed = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     do {
         if (parent?.typ === EnumToken.AtRuleNodeType && "media" === parent.nam) {
             parent = parent.parent;
@@ -190,7 +220,7 @@ function parseSelector(tokens, context, options, errors) {
                         if (tokensfuncDefMap.has(func.typ)) {
                             // @ts-expect-error
                             func.typ = tokensfuncDefMap.get(func.typ);
-                            func.chi = tokens.splice(index + 1, i - index - 1);
+                            func.chi = trimArray(tokens.splice(index + 1, i - index - 1));
                         }
                         if (result.success && options.minify) {
                             // parse an+b
@@ -419,7 +449,7 @@ function parseSelector(tokens, context, options, errors) {
         }
     }
     return Object.defineProperties({
-        typ: result.success ? EnumToken.RuleNodeType : EnumToken.InvalidRuleNodeType,
+        typ: EnumToken.RuleNodeType,
         sel: [
             ...tokens
                 .reduce((acc, curr, index, array) => {
@@ -434,7 +464,7 @@ function parseSelector(tokens, context, options, errors) {
                         return acc;
                     }
                 }
-                let t = renderToken(curr, { minify: false });
+                let t = renderValue(curr, { minify: false });
                 if (t == ",") {
                     acc.push([]);
                 }
@@ -462,6 +492,18 @@ function parseSelector(tokens, context, options, errors) {
         ].join(","),
         chi: [],
     }, {
+        state: {
+            ...definedPropertySettings,
+            value: result.success && allowed
+                ? EnumAstNodeStatus.Validated
+                : allowed
+                    ? EnumAstNodeStatus.Invalid
+                    : EnumAstNodeStatus.Disallowed,
+        },
+        errors: {
+            ...definedPropertySettings,
+            value: result.success ? [] : result.errors,
+        },
         tokens: { ...definedPropertySettings, value: tokens },
         loc: {
             ...definedPropertySettings,

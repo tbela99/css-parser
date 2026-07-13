@@ -1,7 +1,7 @@
-import { EnumToken } from '../types.js';
+import { EnumToken, EnumAstNodeStatus } from '../types.js';
 import { consumeWhitespace } from '../../validation/utils/whitespace.js';
 import { compute } from '../transform/compute.js';
-import { filterValues, renderToken } from '../../renderer/render.js';
+import { filterValues, renderValue } from '../../renderer/render.js';
 import { minifyTransformFunctions, eqMatrix } from '../transform/minify.js';
 import { FeatureWalkMode } from './type.js';
 
@@ -30,6 +30,9 @@ class TransformCssFeature {
         for (; i < ast.chi.length; i++) {
             // @ts-ignore
             node = ast.chi[i];
+            if (node.state == EnumAstNodeStatus.Invalid || node.state == EnumAstNodeStatus.ValidationFailed) {
+                continue;
+            }
             if (node.typ != EnumToken.DeclarationNodeType ||
                 !node.nam.match(/^(-[a-z]+-)?transform$/)) {
                 continue;
@@ -57,9 +60,9 @@ class TransformCssFeature {
             if (eqMatrix(matrix, minified)) {
                 r.push(minified);
             }
-            const l = renderToken(matrix).length;
+            const l = renderValue(matrix).length;
             node.val = r.reduce((acc, curr) => {
-                if (curr.reduce((acc, t) => acc + renderToken(t), "").length < l) {
+                if (curr.reduce((acc, t) => acc + renderValue(t), "").length < l) {
                     return curr;
                 }
                 return acc;

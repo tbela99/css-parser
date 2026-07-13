@@ -17,28 +17,30 @@ const trimSpaceAfter = new Set([
     EnumToken.SupportsQueryUnaryConditionTokenType,
 ]);
 /**
- * replace token in its parent node
+ * Replace token in its parent node
  * @param parent
- * @param value
+ * @param node
  * @param replacement
+ * @throws TypeError replacement is null
+ * @throws ReferenceError node not found in parent
  */
-function replaceToken(parent, value, replacement) {
+function replaceNodeOrValue(parent, node, replacement) {
     if (replacement == null || (Array.isArray(replacement) && replacement.length === 0)) {
         throw new TypeError(`replacement is null`);
     }
     for (const node of Array.isArray(replacement) ? replacement : [replacement]) {
-        if ("parent" in value && value.parent != node.parent) {
+        if ("parent" in node && node.parent != node.parent) {
             Object.defineProperty(node, "parent", {
                 ...definedPropertySettings,
-                value: value.parent,
+                value: node.parent,
             });
         }
     }
     if (parent.typ == EnumToken.BinaryExpressionTokenType) {
-        if (parent.l == value) {
+        if (parent.l == node) {
             parent.l = replacement;
         }
-        else if (parent.r == value) {
+        else if (parent.r == node) {
             parent.r = replacement;
         }
         else {
@@ -51,16 +53,16 @@ function replaceToken(parent, value, replacement) {
             : (parent.chi ?? parent);
         if (Array.isArray(target)) {
             // @ts-ignore
-            const index = target.indexOf(value);
+            const index = target.indexOf(node);
             if (index == -1) {
                 throw new ReferenceError("Node not found");
             }
             target.splice(index, 1, ...(Array.isArray(replacement) ? replacement : [replacement]));
         }
-        else if ("l" in target && target.l == value) {
+        else if ("l" in target && target.l == node) {
             target.l = replacement;
         }
-        else if ("r" in target && target.r == value) {
+        else if ("r" in target && target.r == node) {
             target.r = replacement;
         }
         else {
@@ -99,4 +101,4 @@ function trimWhiteSpaceTokens(tokens) {
     return tokens;
 }
 
-export { replaceToken, trimWhiteSpaceTokens };
+export { replaceNodeOrValue, trimWhiteSpaceTokens };

@@ -15,9 +15,9 @@ import type {
 import { EnumToken } from "../types.ts";
 import { WalkerEvent, WalkerOptionEnum, walkValues } from "../walk.ts";
 import { evaluate } from "../math/expression.ts";
-import { renderToken } from "../../renderer/render.ts";
+import { renderValue } from "../../renderer/render.ts";
 import { FeatureWalkMode } from "./type.ts";
-import { mathFuncs } from "../../syntax/constants.ts";
+import { mathFuncs, tokensfuncSet } from "../../syntax/constants.ts";
 
 export class ComputeCalcExpressionFeature {
     public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
@@ -77,6 +77,7 @@ export class ComputeCalcExpressionFeature {
                                 EnumToken.MathFunctionTokenType,
                                 EnumToken.ColorTokenType,
                                 EnumToken.DeclarationNodeType,
+                                EnumToken.ImageFunc,
                                 EnumToken.RuleNodeType,
                                 EnumToken.AtRuleNodeType,
                                 EnumToken.StyleSheetNodeType,
@@ -103,10 +104,10 @@ export class ComputeCalcExpressionFeature {
                         // @ts-ignore
                         const key = "chi" in node ? "chi" : "val";
 
-                        const str1: string = renderToken({ ...node, [key]: slice } as Token);
-                        const str2: string = renderToken(node as Token); // values.reduce((acc: string, curr: Token): string => acc + renderToken(curr), '');
+                        const str1: string = renderValue({ ...node, [key]: slice } as Token);
+                        const str2: string = renderValue(node as Token); // values.reduce((acc: string, curr: Token): string => acc + renderValue(curr), '');
 
-                        if (str1.length <= str2.length) {
+                        if (str1.length < str2.length) {
                             // @ts-ignore
                             node[key] = slice;
                         }
@@ -117,81 +118,88 @@ export class ComputeCalcExpressionFeature {
                     return null;
                 },
             })) {
-                if (
-                    value != null &&
-                    (value.typ === EnumToken.MathFunctionTokenType ||
-                        (value.typ == EnumToken.FunctionTokenType && mathFuncs.includes((value as FunctionToken).val)))
-                ) {
+                if (value != null && tokensfuncSet.has(value.typ)) {
                     if (!set.has(value as FunctionToken)) {
                         set.add(value);
 
                         if (parent != null) {
-                            // @ts-ignore
-                            const cp: Token[] =
-                                (value.typ === EnumToken.MathFunctionTokenType ||
-                                    (value.typ == EnumToken.FunctionTokenType &&
-                                        mathFuncs.includes((value as FunctionToken).val))) &&
-                                (value as FunctionToken).val != "calc"
-                                    ? [value]
-                                    : value.typ == EnumToken.DeclarationNodeType
-                                      ? (<AstDeclaration>value).val
-                                      : (value as FunctionToken).chi;
-                            const values: Token[] = evaluate(cp);
+                            const shouldEvaluate: boolean =
+                                value.typ === EnumToken.MathFunctionTokenType ||
+                                (value.typ == EnumToken.FunctionTokenType &&
+                                    mathFuncs.includes((value as FunctionToken).val));
 
-                            // fix a + -b to a - b
-                            for (const { value } of walkValues(values)) {
-                                if (
-                                    value.typ === EnumToken.BinaryExpressionTokenType &&
-                                    (value as BinaryExpressionToken).op === EnumToken.Add &&
-                                    Math.sign(((value as BinaryExpressionToken).r as NumberToken).val as number) == -1
-                                ) {
-                                    (value as BinaryExpressionToken).op = EnumToken.Sub;
-                                    // @ts-expect-error
-                                    ((value as BinaryExpressionToken).r as NumberToken | DimensionToken).val *= -1;
-                                }
-                            }
+                            if (shouldEvaluate) {
+                                // @ts-ignore
+                                const cp: Token[] =
+                                    (value as FunctionToken).val != "calc"
+                                        ? [value]
+                                        : value.typ == EnumToken.DeclarationNodeType
+                                          ? (<AstDeclaration>value).val
+                                          : (value as FunctionToken).chi;
 
-                            // @ts-ignore
-                            const children: Token[] =
-                                parent.typ == EnumToken.DeclarationNodeType ? (<AstDeclaration>parent).val : parent.chi;
+                                const values: Token[] = evaluate(cp);
 
-                            if (values.length == 1 && values[0].typ != EnumToken.BinaryExpressionTokenType) {
-                                for (let i = 0; i < children.length; i++) {
-                                    if (children[i] == value) {
-                                        children.splice(
-                                            i,
-                                            1,
-                                            !(
-                                                parent.typ === EnumToken.MathFunctionTokenType ||
-                                                (parent.typ == EnumToken.FunctionTokenType &&
-                                                    (parent as FunctionToken).val == "calc")
-                                            ) &&
-                                                typeof (values[0] as NumberToken).val != "number" &&
-                                                !(
-                                                    values[0].typ == EnumToken.MathFunctionTokenType ||
-                                                    (values[0].typ == EnumToken.FunctionTokenType &&
-                                                        mathFuncs.includes((values[0] as FunctionToken).val))
-                                                )
-                                                ? {
-                                                      typ: EnumToken.MathFunctionTokenType,
-                                                      val: "calc",
-                                                      chi: values,
-                                                  }
-                                                : values[0],
-                                        );
-                                        break;
+                                // fix a + -b to a - b
+                                for (const { value, parent: p } of walkValues(values)) {
+                                    if (value.typ === EnumToken.BinaryExpressionTokenType) {
+                                        if (
+                                            (value as BinaryExpressionToken).op === EnumToken.Add &&
+                                            Math.sign(
+                                                ((value as BinaryExpressionToken).r as NumberToken).val as number,
+                                            ) == -1
+                                        ) {
+                                            (value as BinaryExpressionToken).op = EnumToken.Sub;
+                                            // @ts-expect-error
+                                            ((value as BinaryExpressionToken).r as NumberToken | DimensionToken).val *=
+                                                -1;
+                                        }
                                     }
                                 }
-                            } else {
-                                for (let i = 0; i < children.length; i++) {
-                                    if (children[i] == value) {
-                                        children.splice(i, 1, {
-                                            typ: EnumToken.MathFunctionTokenType,
-                                            val: "calc",
-                                            chi: values,
-                                        });
 
-                                        break;
+                                // @ts-ignore
+                                const children: Token[] =
+                                    parent.typ == EnumToken.DeclarationNodeType
+                                        ? (<AstDeclaration>parent).val
+                                        : parent.chi;
+
+                                if (values.length == 1 && values[0].typ != EnumToken.BinaryExpressionTokenType) {
+                                    for (let i = 0; i < children.length; i++) {
+                                        if (children[i] == value) {
+                                            children.splice(
+                                                i,
+                                                1,
+                                                !(
+                                                    parent.typ === EnumToken.MathFunctionTokenType ||
+                                                    (parent.typ == EnumToken.FunctionTokenType &&
+                                                        (parent as FunctionToken).val == "calc")
+                                                ) &&
+                                                    typeof (values[0] as NumberToken).val != "number" &&
+                                                    !(
+                                                        values[0].typ == EnumToken.MathFunctionTokenType ||
+                                                        (values[0].typ == EnumToken.FunctionTokenType &&
+                                                            mathFuncs.includes((values[0] as FunctionToken).val))
+                                                    )
+                                                    ? {
+                                                          typ: EnumToken.MathFunctionTokenType,
+                                                          val: "calc",
+                                                          chi: values,
+                                                      }
+                                                    : values[0],
+                                            );
+                                            break;
+                                        }
+                                    }
+                                } else {
+                                    for (let i = 0; i < children.length; i++) {
+                                        if (children[i] == value) {
+                                            children.splice(i, 1, {
+                                                typ: EnumToken.MathFunctionTokenType,
+                                                val: "calc",
+                                                chi: values,
+                                            });
+
+                                            break;
+                                        }
                                     }
                                 }
                             }

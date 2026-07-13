@@ -1,5 +1,5 @@
 import type { ColorToken, NumberToken, PercentageToken, Token } from "../../../@types/index.d.ts";
-import { getComponents } from "./utils/components.ts";
+import { getColorComponents } from "./utils/components.ts";
 import { color2srgbvalues, getAngle, getNumber, toPrecisionAngle, toPrecisionValue } from "./color.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
 import {
@@ -111,7 +111,7 @@ function lchToken(values: number[]): ColorToken | null {
     const chi: Token[] = <Token[]>[
         { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
         { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[1]) },
-        { typ: EnumToken.NumberTokenType, val: values[2] },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionAngle(values[2]) },
     ];
 
     if (values.length == 4) {
@@ -119,7 +119,7 @@ function lchToken(values: number[]): ColorToken | null {
             { typ: EnumToken.LiteralTokenType, val: "/" },
             {
                 typ: EnumToken.PercentageTokenType,
-                val: values[3] * 100,
+                val: toPrecisionValue(values[3], 2) * 100,
             },
         );
     }
@@ -226,7 +226,7 @@ export function xyz2lchvalues(x: number, y: number, z: number, alpha?: number): 
 }
 
 export function getLCHComponents(token: ColorToken): number[] | null {
-    const components: Token[] | null = getComponents(token);
+    const components: Token[] | null = getColorComponents(token);
 
     if (components == null) {
         return null;

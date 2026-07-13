@@ -86,8 +86,8 @@ const getSyntaxRule = memoize((group, key) => {
         }
     }
     return {
-        acceptAnyDeclarations: node.syntax.includes("<declaration-list>"),
-        acceptAnyRules: node.syntax.includes("<group-rule-body>") ||
+        acceptAnyDeclaration: node.syntax.includes("<declaration-list>"),
+        acceptAnyRule: node.syntax.includes("<group-rule-body>") ||
             node.syntax.includes("<stylesheet>"),
         getPreludeRules: () => prelude,
         getBlockRules: () => (block == null || block.length === 0 ? null : block),

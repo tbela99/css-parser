@@ -7,7 +7,7 @@ import type {
     PercentageToken,
     Token,
 } from "../../../@types/index.d.ts";
-import { getComponents } from "./utils/components.ts";
+import { getColorComponents } from "./utils/components.ts";
 import { color2srgbvalues, getAngle, getNumber, toPrecisionAngle, toPrecisionValue } from "./color.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
 import { cmyk2srgbvalues, lab2srgbvalues, lch2srgbvalues, oklab2srgbvalues, oklch2srgbvalues } from "./srgb.ts";
@@ -96,9 +96,9 @@ export function hwbToken(values: number[]): ColorToken {
     values[0] = toPrecisionAngle(values[0] * 360);
 
     const chi: Token[] = <Token[]>[
-        { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(values[1]) * 100 },
-        { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(values[2]) * 100 },
+        { typ: EnumToken.NumberTokenType, val: toPrecisionAngle(values[0]) },
+        { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(values[1] * 100) },
+        { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(values[2] * 100) },
     ];
 
     if (values.length == 4) {
@@ -106,7 +106,7 @@ export function hwbToken(values: number[]): ColorToken {
             { typ: EnumToken.LiteralTokenType, val: "/" },
             {
                 typ: EnumToken.PercentageTokenType,
-                val: values[3] * 100,
+                val: toPrecisionValue(values[3], 2) * 100
             },
         );
     }
@@ -122,7 +122,7 @@ export function hwbToken(values: number[]): ColorToken {
 export function rgb2hwbvalues(token: ColorToken): number[] {
     // @ts-ignore
     return srgb2hwb(
-        ...(getComponents(token)!.map((t: Token, index: number): number => {
+        ...(getColorComponents(token)!.map((t: Token, index: number): number => {
             if (index == 3) {
                 return getNumber(<IdentToken | NumberToken | PercentageToken>t);
             }
@@ -140,7 +140,7 @@ export function cmyk2hwbvalues(token: ColorToken): number[] {
 export function hsl2hwbvalues(token: ColorToken): number[] {
     // @ts-ignore
     return hslvalues2hwbvalues(
-        ...(getComponents(token)!.map((t: Token, index: number) => {
+        ...(getColorComponents(token)!.map((t: Token, index: number) => {
             if (index == 3 && t.typ == EnumToken.IdenTokenType && (t as IdentToken).val == "none") {
                 return 1;
             }
