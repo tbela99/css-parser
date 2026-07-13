@@ -44,6 +44,7 @@ $ deno add @tbela99/css-parser
 ## Syntax lowering
 CSS-Parser can transform these modern CSS features into lower-level CSS syntax:
 * **Nested CSS transpilation** to legacy-compatible syntax.
+* **`if()` function transpilation** for broader browser compatibility.
 * **`color-mix()` function conversion** convert new color-mix() syntax to any of the supported colors.
   
 ## Benchmark

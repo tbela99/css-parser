@@ -30131,8 +30131,6 @@
         if (options.resolveImport) {
             options.resolveUrls = true;
         }
-        // turn off expandIfSyntax for now
-        options.expandIfSyntax = false;
         const startTime = performance.now();
         const errors = [];
         const src = options.src;
