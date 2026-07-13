@@ -88,7 +88,7 @@ function cmyktoken(values) {
                 {
                     typ: EnumToken.PercentageTokenType,
                     // @ts-ignore
-                    val: toPrecisionValue(curr) * 100,
+                    val: toPrecisionValue(curr * 100),
                 },
             ]
             : [
@@ -99,7 +99,7 @@ function cmyktoken(values) {
                 },
                 {
                     typ: EnumToken.PercentageTokenType,
-                    val: toPrecisionValue(curr) * 100,
+                    val: toPrecisionValue(curr, 2) * 100,
                 },
             ], []),
         kin: ColorType.DEVICE_CMYK,

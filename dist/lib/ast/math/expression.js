@@ -134,7 +134,7 @@ function doEvaluate(l, r, op) {
             return defaultReturn;
         }
     }
-    let typ = l.typ == EnumToken.NumberTokenType
+    let typ = l.typ == EnumToken.NumberTokenType || l.typ === EnumToken.IdenTokenType
         ? r.typ
         : r.typ == EnumToken.NumberTokenType
             ? l.typ
@@ -143,9 +143,10 @@ function doEvaluate(l, r, op) {
                 : l.typ;
     // @ts-expect-error
     let v1 = l.val?.typ == EnumToken.FractionTokenType ? l.val : getValue(l);
-    let v2 = 
-    // @ts-expect-error
-    r.val?.typ == EnumToken.FractionTokenType ? r.val : getValue(r);
+    let v2 = r.val?.typ == EnumToken.FractionTokenType
+        ? // @ts-expect-error
+            r.val
+        : getValue(r);
     if (op == EnumToken.Mul) {
         if (l.typ != EnumToken.NumberTokenType && r.typ != EnumToken.NumberTokenType) {
             if (typeof v1 == "number" && l.typ == EnumToken.PercentageTokenType) {
@@ -167,7 +168,7 @@ function doEvaluate(l, r, op) {
     // @ts-ignore
     const val = compute(v1, v2, op);
     const token = {
-        ...(l.typ == EnumToken.NumberTokenType ? r : l),
+        ...(l.typ === EnumToken.NumberTokenType || l.typ === EnumToken.IdenTokenType ? r : l),
         typ,
         val /* : typeof val == 'number' ? minifyNumber(val) : val */,
     };
@@ -202,8 +203,8 @@ function evaluateFunc(token) {
             // @ts-ignore
             let val = value[0].typ == EnumToken.NumberTokenType
                 ? +value[0].val
-                // @ts-expect-error
-                : value[0].l.val / value[0].r.val;
+                : // @ts-expect-error
+                    value[0].l.val / value[0].r.val;
             return [
                 {
                     typ: EnumToken.NumberTokenType,
@@ -451,12 +452,15 @@ function factor(tokens, ops) {
         }
         isOp = opList.includes(tokens[i].typ === EnumToken.Plus ? EnumToken.Add : tokens[i].typ);
         if (isOp ||
+            tokens[i].typ === EnumToken.Star ||
             // @ts-ignore
             (tokens[i].typ == EnumToken.LiteralTokenType && ops.includes(tokens[i].val))) {
             tokens.splice(i - 1, 3, {
                 typ: EnumToken.BinaryExpressionTokenType,
                 op: isOp
-                    ? (tokens[i].typ === EnumToken.Plus ? EnumToken.Add : tokens[i].typ)
+                    ? tokens[i].typ === EnumToken.Plus
+                        ? EnumToken.Add
+                        : tokens[i].typ
                     : getArithmeticOperation(tokens[i].val),
                 l: factorToken(tokens[i - 1]),
                 r: factorToken(tokens[i + 1]),

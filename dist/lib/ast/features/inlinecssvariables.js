@@ -1,6 +1,6 @@
 import { EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
-import { renderToken } from '../../renderer/render.js';
+import { renderValue } from '../../renderer/render.js';
 import { splitRule } from '../minify.js';
 import { FeatureWalkMode } from './type.js';
 import { mathFuncs } from '../../syntax/constants.js';
@@ -135,7 +135,7 @@ class InlineCssVariablesFeature {
                             // @ts-ignore
                             parent.chi.splice(i, 1, {
                                 typ: EnumToken.CommentTokenType,
-                                val: `/* ${info.node.nam}: ${info.values.reduce((acc, curr) => acc + renderToken(curr, { convertColor: false }), "")} */`,
+                                val: `/* ${info.node.nam}: ${info.values.reduce((acc, curr) => acc + renderValue(curr, { convertColor: false }), "")} */`,
                             });
                             break;
                         }

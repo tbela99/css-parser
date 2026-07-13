@@ -6,11 +6,11 @@ category: Guides
 
 ## Custom transform
 
-visitors are used to alter the ast tree produced by the parser. for more information about the visitor object see the [typescript definition](../docs/interfaces/node.VisitorNodeMap.html)
+Visitors are used to transform the ast tree produced by the parser. For more information about the visitor object see the [typescript definition](../docs/interfaces/node.VisitorNodeMap.html)
 
-## Visitors order
+## Visitors execution order
 
-visitors can be called when the node is entered, visited or left.
+Visitors can be called when the node is entered, visited or left.
 
 ```ts
 
@@ -126,7 +126,7 @@ console.debug(result.code);
 
 ```
 
-## At rule visitor
+## At-rule visitor
 
 Example: change media at-rule prelude
 
@@ -304,11 +304,11 @@ console.debug(await transform(css, options));
 
 ### KeyframesRule visitor
 
-keyframes rule visitor is called on each keyframes rule node.
+Keyframes rule visitor is called on each keyframes rule node.
 
 ### KeyframesAtRule visitor
 
-the keyframes at-rule visitor is called on each keyframes at-rule node. the visitor can be a function or an object with a property named after the keyframes at-rule prelude.
+The keyframes at-rule visitor is called on each keyframes at-rule node. The visitor can be a function or an object with a property named after the keyframes at-rule prelude.
 
 ```ts
 
@@ -359,7 +359,7 @@ const result = await transform(css, {
 
 ### Value visitor
 
-the value visitor is called on each token of the selector node, declaration value and the at-rule prelude, etc.
+The value visitor is called on each token of the selector node, declaration value and the at-rule prelude, etc.
 
 ```ts
 
@@ -378,7 +378,7 @@ const options: ParserOptions = {
 ```
 ### Generic visitor
 
-generic token visitor is a function whose name is a keyof [EnumToken](../docs/enums/node.EnumToken.html). it is called for every token of the specified type.
+Generic token visitor is a function whose name is a keyof [EnumToken](../docs/enums/node.EnumToken.html). it is called for every token of the specified type.
 
 ```ts
 
@@ -424,7 +424,7 @@ console.debug(await transform(css, options));
 
 ### Example of visitor that inlines images
 
-a visitor that inlines all images under a specific size
+A visitor that inlines all images under a specific size
 
 ```ts
 import {
@@ -511,4 +511,4 @@ console.error(result.code);
 ```
 
 ------
-[← Minification](./minification.md) | [Ast →](./ast.md) 
+[← Minification](./minification.md) | [Ast Manipulation →](./ast.md) 

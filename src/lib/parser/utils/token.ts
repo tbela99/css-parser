@@ -33,12 +33,14 @@ const trimSpaceAfter: Set<EnumToken> = new Set([
     EnumToken.SupportsQueryUnaryConditionTokenType,
 ]);
 /**
- * replace token in its parent node
+ * Replace token in its parent node
  * @param parent
- * @param value
+ * @param node
  * @param replacement
+ * @throws TypeError replacement is null
+ * @throws ReferenceError node not found in parent
  */
-export function replaceToken(
+export function replaceNodeOrValue(
     parent:
         | BinaryExpressionToken
         | (AstNode &
@@ -48,7 +50,7 @@ export function replaceToken(
                         val: Token[];
                     }
               )),
-    value: Token,
+    node: Token,
     replacement: Token | Token[],
 ): boolean {
     if (replacement == null || (Array.isArray(replacement) && replacement.length === 0)) {
@@ -56,18 +58,18 @@ export function replaceToken(
     }
 
     for (const node of Array.isArray(replacement) ? replacement : [replacement]) {
-        if ("parent" in value && value.parent != node.parent) {
+        if ("parent" in node && node.parent != node.parent) {
             Object.defineProperty(node, "parent", {
                 ...definedPropertySettings,
-                value: value.parent,
+                value: node.parent,
             });
         }
     }
 
     if (parent.typ == EnumToken.BinaryExpressionTokenType) {
-        if ((parent as BinaryExpressionToken).l == value) {
+        if ((parent as BinaryExpressionToken).l == node) {
             (parent as BinaryExpressionToken).l = replacement as Token;
-        } else if ((parent as BinaryExpressionToken).r == value) {
+        } else if ((parent as BinaryExpressionToken).r == node) {
             (parent as BinaryExpressionToken).r = replacement as Token;
         } else {
             throw new ReferenceError("Node not found");
@@ -89,16 +91,16 @@ export function replaceToken(
 
         if (Array.isArray(target)) {
             // @ts-ignore
-            const index: number = target.indexOf(value);
+            const index: number = target.indexOf(node);
 
             if (index == -1) {
                 throw new ReferenceError("Node not found");
             }
 
             target.splice(index, 1, ...(Array.isArray(replacement) ? replacement : [replacement]));
-        } else if ("l" in target && (target as BinaryExpressionToken | MediaQueryConditionToken).l == value) {
+        } else if ("l" in target && (target as BinaryExpressionToken | MediaQueryConditionToken).l == node) {
             (target as BinaryExpressionToken | MediaQueryConditionToken).l = replacement as Token;
-        } else if ("r" in target && (target as BinaryExpressionToken | MediaQueryConditionToken).r == value) {
+        } else if ("r" in target && (target as BinaryExpressionToken | MediaQueryConditionToken).r == node) {
             (target as BinaryExpressionToken | MediaQueryConditionToken).r = replacement as Token;
         } else {
             throw new ReferenceError("Node not found");

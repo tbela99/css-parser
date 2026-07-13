@@ -414,7 +414,7 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 `).then((result) => expect(result.code).equals(``));
         });
 
-        it('import #28', function () {
+        it('import #29', function () {
             return transform(`
 
 @import "theme.css" layer("bar");
@@ -945,9 +945,7 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
                 validation: true
             }).then((result) => expect(result.code).equals(`@font-feature-values Bongo {
  @swash {
-  ornate: 1
- }
- @swash {
+  ornate: 1;
   double-loops: 1;
   flowing: -1
  }
@@ -1329,6 +1327,74 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
             }).then((result) => expect(result.code).equals(`@media (width>=1074px) {
  h1 {
   color: Highlight
+ }
+}`));
+        });
+        
+        
+
+        it('do not minify supports() arguments #58', function () {
+            return transform(`
+
+body {
+  background-color: if(
+    supports(color: oklch(0.7 0.185 232)): oklch(0.7 0.185 232);
+    else: #00adf3;
+  );
+  
+  &::after {
+    content: if(
+    supports(color: oklch(0.7 0.185 232)): "Your browser supports OKLCH";
+    else: "Your browser does not support OKLCH";
+    );
+  }
+}
+
+  `, {
+                beautify: true,
+                expandIfSyntax: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`body {
+ background-color: #00adf3;
+ @supports (color:oklch(.7 .185 232)) {
+  background-color: #00aefc
+ }
+ &:after {
+  content: "Your browser does not support OKLCH";
+  @supports (color:oklch(.7 .185 232)) {
+   content: "Your browser supports OKLCH"
+  }
+ }
+}`));
+        });
+        
+        
+        
+
+        it('do not minify supports() arguments #59', function () {
+            return transform(`
+
+body {
+  background-color: if(
+    supports(color: oklch(0.7 0.185 232)): oklch(0.7 0.185 232);
+    else: #00adf3;
+  );
+  
+  &::after {
+    content: if(
+    supports(color: oklch(0.7 0.185 232)): "Your browser supports OKLCH";
+    else: "Your browser does not support OKLCH";
+    );
+  }
+}
+
+  `, {
+                beautify: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`body {
+ background-color: if(supports(color:oklch(.7 .185 232)):#00aefc;else:#00adf3);
+ &:after {
+  content: if(supports(color:oklch(.7 .185 232)):"Your browser supports OKLCH";else:"Your browser does not support OKLCH")
  }
 }`));
         });

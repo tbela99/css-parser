@@ -13,7 +13,7 @@ import { eq } from "../utils/eq.ts";
 import { getConfig } from "../utils/config.ts";
 import { matchType } from "../utils/type.ts";
 import { EnumToken } from "../../ast/types.ts";
-import { renderToken } from "../../renderer/render.ts";
+import { renderValue } from "../../renderer/render.ts";
 import { parseString } from "../parse.ts";
 import { PropertySet } from "./set.ts";
 
@@ -290,7 +290,7 @@ export class PropertyMap {
                               } as Token);
                     // @ts-ignore
                     const separator: string = this.config.separator
-                        ? renderToken({
+                        ? renderValue({
                               ...this.config.separator,
                               typ: EnumToken[this.config.separator.typ as keyof typeof EnumToken] as EnumToken,
                           } as Token)
@@ -304,7 +304,7 @@ export class PropertyMap {
                         t = declaration.val[i];
 
                         if (!cache.has(t)) {
-                            cache.set(t, renderToken(t, { minify: true }));
+                            cache.set(t, renderValue(t, { minify: true }));
                         }
 
                         if (t.typ == typ && separator == <string>cache.get(t)) {
@@ -579,7 +579,7 @@ export class PropertyMap {
                                     props.default.includes(
                                         curr[1][i]
                                             .reduce(
-                                                (acc: string, curr: Token): string => acc + renderToken(curr) + " ",
+                                                (acc: string, curr: Token): string => acc + renderValue(curr) + " ",
                                                 "",
                                             )
                                             .trimEnd(),
@@ -720,7 +720,7 @@ export class PropertyMap {
                     const val: string = values.reduce(
                         (acc: string, curr: Token): string =>
                             acc +
-                            renderToken(curr, {
+                            renderValue(curr, {
                                 removeComments: true,
                                 minify: true,
                             }),

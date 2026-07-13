@@ -6,8 +6,8 @@ import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from "./parser/typedef
 import { memoize } from "../parser/utils/cache.ts";
 
 export interface ValidationSyntaxRule {
-    acceptAnyDeclarations: boolean;
-    acceptAnyRules: boolean;
+    acceptAnyDeclaration: boolean;
+    acceptAnyRule: boolean;
     getRules: () => ValidationToken[];
     getBlockRules: () => ValidationToken[] | null;
     getPreludeRules: () => ValidationToken[] | null;
@@ -48,7 +48,7 @@ export const getSyntax = memoize((group: ValidationSyntaxGroupEnum, key: string 
 
     // @ts-expect-error
     return obj?.syntax ?? null;
-});
+}) as (group: ValidationSyntaxGroupEnum, key: string | string[]) => null | string;
 
 function findNode(
     group: ValidationSyntaxGroupEnum,
@@ -110,7 +110,7 @@ export const getParsedSyntax = memoize(
 
         return parsedSyntaxes.get(index) as ValidationToken[];
     },
-);
+) as (group: ValidationSyntaxGroupEnum, key: string | string[]) => null | ValidationToken[];
 
 export const getSyntaxRule = memoize(
     (group: ValidationSyntaxGroupEnum, key: string | string[]): ValidationSyntaxRule | null => {
@@ -168,8 +168,8 @@ export const getSyntaxRule = memoize(
         }
 
         return {
-            acceptAnyDeclarations: (node as ValidationSyntaxNode).syntax.includes("<declaration-list>"),
-            acceptAnyRules:
+            acceptAnyDeclaration: (node as ValidationSyntaxNode).syntax.includes("<declaration-list>"),
+            acceptAnyRule:
                 (node as ValidationSyntaxNode).syntax.includes("<group-rule-body>") ||
                 (node as ValidationSyntaxNode).syntax.includes("<stylesheet>"),
             getPreludeRules: () => prelude,
@@ -178,4 +178,4 @@ export const getSyntaxRule = memoize(
             getPropertyDescriptors: () => propertyDescriptors,
         };
     },
-);
+) as (group: ValidationSyntaxGroupEnum, key: string | string[]) => ValidationSyntaxRule | null;

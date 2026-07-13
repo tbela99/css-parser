@@ -1,4 +1,5 @@
-const epsilon = 1e-5;
+import { epsilon } from '../../syntax/constants.js';
+
 function identity() {
     return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 }
@@ -240,4 +241,4 @@ function is2DMatrix(matrix) {
         matrix[15] === 1;
 }
 
-export { decompose, epsilon, identity, is2DMatrix, multiply, round, toZero };
+export { decompose, identity, is2DMatrix, multiply, round, toZero };

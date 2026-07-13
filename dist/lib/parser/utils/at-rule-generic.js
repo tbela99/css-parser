@@ -2,7 +2,7 @@ import { EnumToken } from '../../ast/types.js';
 import { tokensfuncDefMap } from '../../syntax/constants.js';
 import { equalsIgnoreCase } from './text.js';
 
-function matchGenericSyntax(atRule, stream, options) {
+function matchGenericSyntax(stream) {
     const stack = [];
     let i = 0;
     let success = true;

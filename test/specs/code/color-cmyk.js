@@ -13,12 +13,12 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'device-cmyk',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
-                    {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
-                    {typ: EnumToken.PercentageTokenType, val: '29.803921568627455'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 81.005587 },
+                    {typ: EnumToken.PercentageTokenType, val: 81.005587},
+                    {typ: EnumToken.PercentageTokenType, val: 29.803922},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.DEVICE_CMYK
             })).equals(true));
@@ -32,12 +32,12 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'device-cmyk',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
-                    {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
-                    {typ: EnumToken.PercentageTokenType, val: '29.803921568627455'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 81.005587 },
+                    {typ: EnumToken.PercentageTokenType, val: 81.005587},
+                    {typ: EnumToken.PercentageTokenType, val: 29.803922},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.DEVICE_CMYK
             })).equals(true));
@@ -51,12 +51,12 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'device-cmyk',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
-                    {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
-                    {typ: EnumToken.PercentageTokenType, val: '29.803921568627455'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 81.005587 },
+                    {typ: EnumToken.PercentageTokenType, val: 81.005587},
+                    {typ: EnumToken.PercentageTokenType, val: 29.803922},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.DEVICE_CMYK
             })).equals(true));
@@ -70,12 +70,12 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'device-cmyk',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
-                    {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
-                    {typ: EnumToken.PercentageTokenType, val: '29.803921568627455'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 80.952381 },
+                    {typ: EnumToken.PercentageTokenType, val: 80.952381},
+                    {typ: EnumToken.PercentageTokenType, val: 30},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.DEVICE_CMYK
             })).equals(true));
@@ -89,12 +89,12 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'device-cmyk',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
-                    {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
-                    {typ: EnumToken.PercentageTokenType, val: '29.803921568627455'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 81.005587 },
+                    {typ: EnumToken.PercentageTokenType, val: 81.005587},
+                    {typ: EnumToken.PercentageTokenType, val: 29.803922},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.DEVICE_CMYK
             })).equals(true));
@@ -108,12 +108,12 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'device-cmyk',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
-                    {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
-                    {typ: EnumToken.PercentageTokenType, val: '29.803921568627455'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 81.005587 },
+                    {typ: EnumToken.PercentageTokenType, val: 81.005587},
+                    {typ: EnumToken.PercentageTokenType, val: 29.803922},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.DEVICE_CMYK
             })).equals(true));
@@ -127,12 +127,12 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'device-cmyk',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
-                    {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
-                    {typ: EnumToken.PercentageTokenType, val: '29.803921568627455'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 81.005587 },
+                    {typ: EnumToken.PercentageTokenType, val: 81.005587},
+                    {typ: EnumToken.PercentageTokenType, val: 29.803922},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.DEVICE_CMYK
             })).equals(true));
@@ -146,12 +146,12 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'device-cmyk',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
-                    {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
-                    {typ: EnumToken.PercentageTokenType, val: '29.803921568627455'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 81.011309 },
+                    {typ: EnumToken.PercentageTokenType, val: 81.011309},
+                    {typ: EnumToken.PercentageTokenType, val: 29.80062},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.DEVICE_CMYK
             })).equals(true));
@@ -165,12 +165,12 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'device-cmyk',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
-                    {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
-                    {typ: EnumToken.PercentageTokenType, val: '29.803921568627455'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 80.998477 },
+                    {typ: EnumToken.PercentageTokenType, val: 80.996439},
+                    {typ: EnumToken.PercentageTokenType, val: 29.808619},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.DEVICE_CMYK
             })).equals(true));
@@ -184,12 +184,12 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'device-cmyk',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
                     {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
                     {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
                     {typ: EnumToken.PercentageTokenType, val: '29.803921568627455'},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.DEVICE_CMYK
             })).equals(true));
@@ -203,12 +203,12 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'device-cmyk',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
                     {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
                     {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
                     {typ: EnumToken.PercentageTokenType, val: '29.803921568627455'},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.DEVICE_CMYK
             })).equals(true));
@@ -222,12 +222,12 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'device-cmyk',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
                     {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
                     {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
                     {typ: EnumToken.PercentageTokenType, val: '29.803921568627455'},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.DEVICE_CMYK
             })).equals(true));
@@ -241,12 +241,12 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'device-cmyk',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
                     {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
                     {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
                     {typ: EnumToken.PercentageTokenType, val: '29.803921568627455'},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.DEVICE_CMYK
             })).equals(true));
@@ -260,12 +260,12 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'device-cmyk',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
                     {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
                     {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
                     {typ: EnumToken.PercentageTokenType, val: '29.803921568627455'},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.DEVICE_CMYK
             })).equals(true));
@@ -279,12 +279,12 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'device-cmyk',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
                     {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
                     {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
                     {typ: EnumToken.PercentageTokenType, val: '29.803921568627455'},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.DEVICE_CMYK
             })).equals(true));
@@ -298,12 +298,12 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'device-cmyk',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
                     {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
                     {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
                     {typ: EnumToken.PercentageTokenType, val: '29.803921568627455'},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.DEVICE_CMYK
             })).equals(true));
@@ -317,12 +317,12 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'device-cmyk',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
                     {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
                     {typ: EnumToken.PercentageTokenType, val: '81.00558659217877'},
                     {typ: EnumToken.PercentageTokenType, val: '29.803921568627455'},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.DEVICE_CMYK
             })).equals(true));

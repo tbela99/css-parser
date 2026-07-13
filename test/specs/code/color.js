@@ -1,5 +1,5 @@
 
-export function run(describe, expect, it, transform, parse, render) {
+export function run(describe, expect, it, transform, parse, render, dirname, readFile, resolve, ColorType) {
 
     describe('Parse color', function () {
 
@@ -809,7 +809,7 @@ color: oklch(from hsl(346.1 100% 50%) l c h)  ;
 .selector {
 color: oklch(from hwb(346 0 0) l c h)  ;
 `).then(result => expect(render(result.ast, {beautify: true}).code).equals(`.selector {
- color: #ff003c
+ color: #ff003b
 }`));
     });
 
@@ -845,7 +845,7 @@ color: oklch(from oklab(100% 0.4 0.4) l c h)  ;
 .selector {
 color: color-mix(in srgb, rgb(100% 0% 0% / 0.7) 25%, rgb(0% 100% 0% / 0.2))  ;
 `).then(result => expect(render(result.ast, {beautify: true}).code).equals(`.selector {
- color: #89760053
+ color: #89760054
 }`));
     });
 
@@ -1278,7 +1278,9 @@ color: light-dark(rgb(0 0 0), rgb(255 255 255));
         return transform(`
  
 a {color:lch(from slateblue calc(l + 10%) c h) ;
-`, {minify: false, validation: true}).then(result => expect(result.code).equals(``));
+`, {minify: false, validation: true}).then(result => expect(result.code).equals(`a {
+ color: lch(from #6a5acd calc(l + 10%) c h)
+}`));
     });
 
     it('percentage in calc() #129', function () {
@@ -1417,6 +1419,50 @@ color: lch(from slateblue calc(l * sin(pi / 4)) c h);
                 validation: true,
         }).then(result => expect(result.code).equals(`a {
  box-shadow: 0 20px 25px -5px #0000001a,0 10px 10px -5px #0000000a
+}`));
+    });
+
+    it('color OkLcH #136', function () {
+        return transform(`
+
+  a {
+  color: OkLcH(from peru  l    c  h);
+
+
+`, {
+                beautify: true,  
+                validation: true,
+        }).then(result => expect(result.code).equals(`a {
+ color: peru
+}`));
+    });
+
+    it('color hwb #137', function () {
+        return transform(`
+.foo {
+    color: hwb(from peru  h   w  calc(l * 0.5));
+
+}
+`, {
+                beautify: true,  
+                validation: true,
+        }).then(result => expect(result.code).equals(`.foo {
+ color: hwb(from peru h w calc(l*.5))
+}`));
+    });
+
+    it('color hwb #138', function () {
+        return transform(`
+   .foo {
+    color: rgba(255, 255, 255, 0.15);
+
+}
+`, {
+                beautify: true,  
+                validation: true,
+                convertColor: ColorType.RGB
+        }).then(result => expect(result.code).equals(`.foo {
+ color: rgb(255 255 255/.15)
 }`));
     });
 }

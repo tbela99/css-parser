@@ -1,6 +1,7 @@
 import { EnumToken, ColorType } from '../ast/types.js';
 import { definedPropertySettings, wildCardFuncs, whenElseFunc, transformFunctions, mathFuncs, colorsFunc, timingFunc, supportFunc, generalEnclosedFunc, timelineFunc, imageFunc, gridTemplateFunc, urlFunc, containerFunc } from '../syntax/constants.js';
-import { isDigit, isPseudo, isIdent, isNumber, isWhiteSpace, isNewLine, isHexColor, isHash, isPercentage, parseDimension } from '../syntax/syntax.js';
+import { isDigit, isPseudo, isIdent, isWhiteSpace, isNumber, isNewLine, isHexColor, isHash, isPercentage, parseDimension } from '../syntax/syntax.js';
+import { equalsIgnoreCase } from './utils/text.js';
 
 const SymbolsMapTokens = {
     "+": EnumToken.Plus,
@@ -140,6 +141,10 @@ function consumeString(quoteStr, buffer, parseInfo) {
     buffer += quoteStr;
     while ((value = parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset + 1))) {
         if (value == "\\") {
+            if ("\\" == parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset + 2)) {
+                buffer += next(parseInfo, 2);
+                continue;
+            }
             const sequence = peek(parseInfo, 6);
             let escapeSequence = "";
             let codepoint;
@@ -205,6 +210,51 @@ function getTokenType(val, hint) {
     let token = null;
     let dimension;
     if (hint != null) {
+        let searchArray = null;
+        switch (hint) {
+            case EnumToken.TransformFunctionTokenDefType:
+                searchArray = transformFunctions;
+                break;
+            case EnumToken.ColorFunctionTokenDefType:
+                searchArray = colorsFunc;
+                break;
+            case EnumToken.ContainerFunctionTokenDefType:
+                searchArray = containerFunc;
+                break;
+            case EnumToken.UrlFunctionTokenDefType:
+                searchArray = urlFunc;
+                break;
+            case EnumToken.GridTemplateFuncTokenDefType:
+                searchArray = gridTemplateFunc;
+                break;
+            case EnumToken.ImageFunctionTokenDefType:
+                searchArray = imageFunc;
+                break;
+            case EnumToken.TimelineFunctionTokenDefType:
+                searchArray = timelineFunc;
+                break;
+            case EnumToken.GeneralEnclosedFunctionTokenDefType:
+                searchArray = generalEnclosedFunc;
+                break;
+            case EnumToken.SupportsFunctionTokenDefType:
+                searchArray = supportFunc;
+                break;
+            case EnumToken.TimingFunctionTokenDefType:
+                searchArray = timingFunc;
+                break;
+            case EnumToken.MathFunctionTokenDefType:
+                searchArray = mathFuncs;
+                break;
+            case EnumToken.WhenElseFunctionTokenDefType:
+                searchArray = whenElseFunc;
+                break;
+            case EnumToken.WildCardFunctionTokenDefType:
+                searchArray = wildCardFuncs;
+                break;
+        }
+        if (searchArray != null) {
+            val = searchArray.find((v) => equalsIgnoreCase(v, val));
+        }
         token = hintsEnum.has(hint) ? { typ: hint } : { typ: hint, val };
     }
     else {
@@ -334,7 +384,7 @@ function next(parseInfo, count = 1) {
     return char;
 }
 /**
- * tokenize css string
+ * Tokenize css string
  * @param parseInfo
  * @param yieldEOFToken
  */
@@ -408,10 +458,66 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                         break;
                     }
                     else if (isIdent(buffer)) {
-                        result.push(yieldResult(buffer, parseInfo, buffer.startsWith("--")
+                        const hint = buffer.startsWith("--")
                             ? EnumToken.CustomFunctionTokenDefType
-                            : (SymbolsMapTokens[buffer.toLowerCase() + "("] ?? EnumToken.FunctionTokenDefType)));
+                            : (SymbolsMapTokens[buffer.toLowerCase() + "("] ?? EnumToken.FunctionTokenDefType);
+                        result.push(yieldResult(buffer, parseInfo, hint));
                         buffer = "";
+                        if (hint === EnumToken.UrlFunctionTokenDefType) {
+                            value = peek(parseInfo);
+                            // consume an <url>
+                            while (isWhiteSpace((charCode = value.charCodeAt(0)))) {
+                                buffer += next(parseInfo);
+                                value = peek(parseInfo);
+                                charCode = value.charCodeAt(0);
+                                if (value === "/" && match(parseInfo, "/*")) {
+                                    if (buffer.length > 0) {
+                                        result.push(yieldResult(buffer, parseInfo));
+                                        buffer = "";
+                                    }
+                                    buffer += next(parseInfo, 2);
+                                    while ((value = next(parseInfo))) {
+                                        if (value == "*") {
+                                            buffer += value;
+                                            if (match(parseInfo, "/")) {
+                                                result.push(yieldResult(buffer + next(parseInfo), parseInfo, EnumToken.CommentTokenType));
+                                                buffer = "";
+                                                break;
+                                            }
+                                        }
+                                        else {
+                                            buffer += value;
+                                        }
+                                    }
+                                    if (buffer.length > 0) {
+                                        result.push(yieldResult(buffer, parseInfo, EnumToken.BadCommentTokenType));
+                                        buffer = "";
+                                    }
+                                    value = peek(parseInfo);
+                                    charCode = value.charCodeAt(0);
+                                }
+                            }
+                            if (buffer.length > 0) {
+                                result.push(yieldResult(buffer, parseInfo, EnumToken.WhitespaceTokenType));
+                                buffer = "";
+                            }
+                            if (value === ")" || value === '"' || value === "'") {
+                                break;
+                            }
+                            do {
+                                buffer += next(parseInfo);
+                                value = peek(parseInfo);
+                                charCode = value.charCodeAt(0);
+                            } while (value !== ")" &&
+                                !isWhiteSpace(charCode) &&
+                                !(value === "/" && match(parseInfo, "/*")));
+                            if (buffer.length > 0) {
+                                result.push(yieldResult(buffer, parseInfo, peek(parseInfo) === ""
+                                    ? EnumToken.BadUrlTokenType
+                                    : EnumToken.UrlTokenTokenType));
+                                buffer = "";
+                            }
+                        }
                         break;
                     }
                 }

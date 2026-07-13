@@ -1503,9 +1503,50 @@ var map = {
 		shorthand: "background"
 	}
 };
+var property = {
+	"transform-origin": {
+		pattern: [
+			[
+				"left|center|right",
+				"top|center|bottom",
+				"<length>"
+			],
+			[
+				"left|center|right",
+				"top|center|bottom"
+			],
+			[
+				"center|left|right|center|top|bottom|<length>"
+			]
+		],
+		mapping: {
+			center: {
+				typ: "Perc",
+				val: 50
+			},
+			left: {
+				typ: "Perc",
+				val: 0
+			},
+			right: {
+				typ: "Perc",
+				val: 100
+			},
+			top: {
+				typ: "Perc",
+				val: 0
+			},
+			bottom: {
+				typ: "Perc",
+				val: 100
+			}
+		}
+	}
+};
 var config = {
 	properties: properties,
-	map: map
+	map: map,
+	property: property
 };
 
-export { config as default, map, properties };
+export { config as default, map, properties, property };

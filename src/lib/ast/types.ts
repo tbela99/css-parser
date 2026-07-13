@@ -1,7 +1,7 @@
-import type { LengthToken, NumberToken } from "../../@types";
+import type { LengthToken, NumberToken } from "../../@types/token.d.ts";
 
 /**
- * syntax validation enum
+ * Syntax validation enum
  */
 export enum SyntaxValidationResult {
     /** valid syntax */
@@ -13,7 +13,46 @@ export enum SyntaxValidationResult {
 }
 
 /**
- * enum of validation levels
+ * Enum of node statuses
+ */
+export enum EnumAstNodeStatus {
+    /**
+     * Node passed validation
+     */
+    Validated,
+    /**
+     * Node is invalid
+     */
+    Invalid,
+    /**
+     * node is not validated
+     */
+    Unvalidated,
+    /**
+     * Node did not pass validation, but is preserved.
+     */
+    ValidationFailed,
+    /**
+     * Parsing the node is not supported yet or the node syntax definition does not exist.
+     */
+    Unknown,
+    /**
+     * Failed to parse the node.
+     */
+    Unparsed,
+    /**
+     * Node is disallowed in the context
+     */
+    Disallowed,
+    /**
+     * Node is malformed
+     */
+    Malformed,
+}
+
+/**
+ * Enum of validation levels
+ * @deprecated
  */
 export enum ValidationLevel {
     /**
@@ -41,10 +80,15 @@ export enum ValidationLevel {
      * validate selectors, at-rules and declarations
      */
     All = Selector | AtRule | Declaration, // selectors + at-rules + declarations
+
+    /**
+     * Report only. Apply validation and report nodes that are marked as invalid
+     */
+    ReportOnly = 0x8,
 }
 
 /**
- * enum of all token types
+ * Enum of all token types
  */
 export enum EnumToken {
     /**
@@ -374,7 +418,8 @@ export enum EnumToken {
      */
     NestingSelectorTokenType, // &
     /**
-     * invalid rule token type
+     * Invalid rule token type
+     * @deprecated
      */
     InvalidRuleNodeType,
     /**
@@ -386,7 +431,8 @@ export enum EnumToken {
      */
     InvalidAttrTokenType,
     /**
-     * invalid at rule token type
+     * Invalid at rule token type
+     * @deprecated
      */
     InvalidAtRuleNodeType,
     /**
@@ -427,7 +473,8 @@ export enum EnumToken {
      */
     KeyframesAtRuleNodeType,
     /**
-     * invalid declaration node type
+     * invalid declaration node type.
+     * @deprecated
      */
     InvalidDeclarationNodeType,
 
@@ -762,7 +809,7 @@ export enum EnumToken {
 }
 
 /**
- * supported color types enum
+ * Supported color types enum
  */
 export enum ColorType {
     /**
@@ -798,7 +845,7 @@ export enum ColorType {
      */
     CMYK,
     /**
-     * colors using oklab 
+     * colors using oklab
      * */
     OKLAB,
     /**
@@ -826,27 +873,27 @@ export enum ColorType {
      */
     PROPHOTO_RGB,
     /**
-     * color using a98-rgb 
+     * color using a98-rgb
      */
     A98_RGB,
     /**
-     * color using rec2020 
+     * color using rec2020
      */
     REC2020,
     /**
-     * color using display-p3 
+     * color using display-p3
      */
     DISPLAY_P3,
     /**
-     * color using srgb-linear 
+     * color using srgb-linear
      */
     SRGB_LINEAR,
     /**
-     * color using xyz-d50 
+     * color using xyz-d50
      */
     XYZ_D50,
     /**
-     * color using xyz-d65 
+     * color using xyz-d65
      */
     XYZ_D65,
     /**
@@ -866,6 +913,10 @@ export enum ColorType {
      */
     CUSTOM_COLOR,
     /**
+     * alpha() color function
+     */
+    ALPHA,
+    /**
      * alias for rgba
      */
     RGB = RGBA,
@@ -883,6 +934,9 @@ export enum ColorType {
     DEVICE_CMYK = CMYK,
 }
 
+/**
+ * Supported module case transform
+ */
 export enum ModuleCaseTransformEnum {
     /**
      * export class names as-is
@@ -906,6 +960,9 @@ export enum ModuleCaseTransformEnum {
     DashCaseOnly = 0x10,
 }
 
+/**
+ * Supported module scope
+ */
 export enum ModuleScopeEnumOptions {
     /**
      * use the global scope
@@ -947,6 +1004,11 @@ export enum ModuleScopeEnumOptions {
 }
 
 // https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Values_and_units#absolute_length_units
+/**
+ * Convert length to px
+ * @param value
+ * @returns
+ */
 export function length2Px(value: LengthToken | NumberToken): number | null {
     let result: number | null = null;
     if (value.typ == EnumToken.NumberTokenType) {
@@ -985,6 +1047,7 @@ export function length2Px(value: LengthToken | NumberToken): number | null {
 
     return isNaN(result as number) ? null : result;
 }
+
 /**
  * minify number
  * @param val

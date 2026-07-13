@@ -1,7 +1,7 @@
 import { EnumToken, ColorType } from '../../ast/types.js';
 import { color2srgbvalues, getNumber } from './color.js';
 import { srgb2rgb, cmyk2rgbvalues, hwb2rgbvalues, hsl2rgbvalues } from './rgb.js';
-import { getComponents } from './utils/components.js';
+import { getColorComponents } from './utils/components.js';
 import { lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues } from './srgb.js';
 import { COLORS_NAMES, NAMES_COLORS } from '../constants.js';
 
@@ -112,7 +112,7 @@ function rgb2hexvalues(token) {
     let value = "#";
     let t;
     // @ts-ignore
-    const components = getComponents(token);
+    const components = getColorComponents(token);
     if (components == null || components.length < 3) {
         return null;
     }

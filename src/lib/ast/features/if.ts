@@ -7,14 +7,15 @@ import type {
     IfConditionToken,
     IfElseConditionToken,
     ParserOptions,
+    RenderOptions,
     Token,
 } from "../../../@types/index.d.ts";
 import { EnumToken } from "../types.ts";
-import { renderToken } from "../../renderer/render.ts";
+import { renderValue } from "../../renderer/render.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { definedPropertySettings } from "../../syntax/constants.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
-import { replaceToken } from "../../parser/utils/token.ts";
+import { replaceNodeOrValue } from "../../parser/utils/token.ts";
 import { cloneNode } from "../../ast/clone.ts";
 import { trimArray } from "../../validation/match.ts";
 import { findByValue } from "../find.ts";
@@ -57,7 +58,7 @@ function substituteIfElseNode(
 
             //
             if (target.typ === EnumToken.IdenTokenType && equalsIgnoreCase("else", (target as IdentToken).val)) {
-                replaceToken(
+                replaceNodeOrValue(
                     nodeMap.get(targetParentWrapper),
                     nodeMap.get(targetWrapper),
                     ((node as IfElseConditionToken).r as IfConditionToken).r.at(-1)?.typ ===
@@ -91,7 +92,7 @@ function substituteIfElseNode(
                                         );
 
                                         if (eq(left, leftSide)) {
-                                            replaceToken(
+                                            replaceNodeOrValue(
                                                 nodeMap.get(targetParentWrapper),
                                                 nodeMap.get((targetParentWrapper as FunctionToken).chi[i]),
                                                 (
@@ -124,7 +125,7 @@ function substituteIfElseNode(
         }
 
         if (replaceRight) {
-            replaceToken(
+            replaceNodeOrValue(
                 nodeMap.get(targetParentWrapper),
                 nodeMap.get(targetWrapper),
                 (node as IfElseConditionToken).r,
@@ -134,10 +135,13 @@ function substituteIfElseNode(
         result.push(clonedDeclaration);
 
         nodeMap.clear();
-
         clonedDeclaration = cloneNode(declaration, true, nodeMap) as AstDeclaration;
 
-        replaceToken(nodeMap.get(targetParentWrapper), nodeMap.get(targetWrapper), (node as IfElseConditionToken).l);
+        replaceNodeOrValue(
+            nodeMap.get(targetParentWrapper),
+            nodeMap.get(targetWrapper),
+            (node as IfElseConditionToken).l,
+        );
         result.push(clonedDeclaration);
     } else if (node.typ === EnumToken.IfConditionTokenType) {
         const left = (node as IfConditionToken).l.find(
@@ -151,7 +155,7 @@ function substituteIfElseNode(
         if (left.typ === EnumToken.IdenTokenType && equalsIgnoreCase("else", (left as IdentToken).val)) {
             clonedDeclaration = cloneNode(declaration, true, nodeMap) as AstDeclaration;
 
-            replaceToken(
+            replaceNodeOrValue(
                 nodeMap.get(parentWrapper),
                 nodeMap.get(targetWrapper.typ === EnumToken.DeclarationNodeType ? node : targetWrapper),
                 node.r.at(-1)?.typ === EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r,
@@ -170,11 +174,17 @@ function substituteIfElseNode(
                 value: [{ typ: EnumToken.ParensTokenType, chi: (left as FunctionToken).chi.slice() }],
             });
 
-            atRule.val = atRule.tokens!.reduce((acc: string, curr: Token) => acc + renderToken(curr), "");
+            const minify: boolean = atRule.nam !== "supports";
+            const options: RenderOptions = {
+                minify,
+                convertColor: minify,
+            };
+
+            atRule.val = atRule.tokens!.reduce((acc: string, curr: Token) => acc + renderValue(curr, options), "");
 
             clonedDeclaration = cloneNode(declaration, true, nodeMap) as AstDeclaration;
 
-            replaceToken(
+            replaceNodeOrValue(
                 nodeMap.get(targetWrapper),
                 nodeMap.get(node),
                 node.r.at(-1)?.typ === EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r,
@@ -195,11 +205,11 @@ function substituteIfElseNode(
             }) as AstAtRule;
 
             Object.defineProperty(atRule, "tokens", { ...definedPropertySettings, value: [left] });
-            atRule.val = atRule.tokens!.reduce((acc: string, curr: Token) => acc + renderToken(curr), "");
+            atRule.val = atRule.tokens!.reduce((acc: string, curr: Token) => acc + renderValue(curr), "");
 
             clonedDeclaration = cloneNode(declaration, true, nodeMap) as AstDeclaration;
 
-            replaceToken(
+            replaceNodeOrValue(
                 nodeMap.get(
                     targetWrapper.typ === EnumToken.WildCardFunctionTokenType ? targetParentWrapper : targetWrapper,
                 ),
@@ -218,7 +228,7 @@ function substituteIfElseNode(
     } else if (wrapper.typ === EnumToken.WildCardFunctionTokenType) {
         clonedDeclaration = cloneNode(declaration, true, nodeMap) as AstDeclaration;
 
-        replaceToken(nodeMap.get(parentWrapper), nodeMap.get(wrapper), node);
+        replaceNodeOrValue(nodeMap.get(parentWrapper), nodeMap.get(wrapper), node);
 
         result.push(clonedDeclaration);
     }
@@ -285,7 +295,7 @@ function processNode(declarationNode: AstDeclaration, cache: Set<AstNode>): AstN
     }
 
     if (result.length > 0) {
-        replaceToken(declarationNode.parent, declarationNode, result);
+        replaceNodeOrValue(declarationNode.parent, declarationNode, result);
     }
     // else remove node?
     return result;
@@ -310,12 +320,11 @@ export class ExpandIfFeature {
     }
 
     run(declaration: AstDeclaration): AstNode | null {
-        const cache = new Set<AstNode>();
-        const result = processNode(declaration, cache);
+        processNode(declaration, new Set<AstNode>());
 
         let i: number;
 
-        for (const n of result) {
+        for (const n of declaration.parent.chi) {
             for (const { node } of walk(n)) {
                 if (node.typ === EnumToken.AtRuleNodeType && Array.isArray(node.chi)) {
                     for (i = 0; i < (node as AstAtRule).chi!.length; i++) {
@@ -327,6 +336,7 @@ export class ExpandIfFeature {
                         ) {
                             (node as AstAtRule).chi![i]!.chi.push(...(node as AstAtRule).chi![i + 1]!.chi);
                             (node as AstAtRule).chi!.splice(i + 1, 1);
+                            i--;
                         }
                     }
 
@@ -337,6 +347,7 @@ export class ExpandIfFeature {
                             (node as AstAtRule).chi![i]!.val === (node as AstAtRule).val
                         ) {
                             (node as AstAtRule).chi!.splice(i, 1, ...(node as AstAtRule).chi![i]!.chi);
+                            i--;
                         }
                     }
                 }

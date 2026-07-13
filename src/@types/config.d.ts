@@ -1,55 +1,64 @@
-
 // generated from config.json at https://app.quicktype.io/?l=ts
-
+import type { SinglePropertyTypeMapping } from "./index.d.ts";
 /**
  * @private
  */
 export declare interface PropertiesConfig {
+    /**
+     * shorthand property minification rules
+     */
     properties: PropertiesConfigProperties;
-    map:        Map;
+    /**
+     * shorthand property minification rules
+     */
+    map: Map;
+    /**
+     * single property minification rules
+     */
+    property: Record<string, SinglePropertyTypeMapping>;
 }
 
 /**
  * @private
  */
 export interface Map {
-    border:                  Border;
-    "border-color":          BackgroundPositionClass;
-    "border-style":          BackgroundPositionClass;
-    "border-width":          BackgroundPositionClass;
-    outline:                 Outline;
-    "outline-color":         BackgroundPositionClass;
-    "outline-style":         BackgroundPositionClass;
-    "outline-width":         BackgroundPositionClass;
-    font:                    Font;
-    "font-weight":           BackgroundPositionClass;
-    "font-style":            BackgroundPositionClass;
-    "font-size":             BackgroundPositionClass;
-    "line-height":           BackgroundPositionClass;
-    "font-stretch":          BackgroundPositionClass;
-    "font-variant":          BackgroundPositionClass;
-    "font-family":           BackgroundPositionClass;
-    background:              Background;
-    "background-repeat":     BackgroundPositionClass;
-    "background-color":      BackgroundPositionClass;
-    "background-image":      BackgroundPositionClass;
+    border: Border;
+    "border-color": BackgroundPositionClass;
+    "border-style": BackgroundPositionClass;
+    "border-width": BackgroundPositionClass;
+    outline: Outline;
+    "outline-color": BackgroundPositionClass;
+    "outline-style": BackgroundPositionClass;
+    "outline-width": BackgroundPositionClass;
+    font: Font;
+    "font-weight": BackgroundPositionClass;
+    "font-style": BackgroundPositionClass;
+    "font-size": BackgroundPositionClass;
+    "line-height": BackgroundPositionClass;
+    "font-stretch": BackgroundPositionClass;
+    "font-variant": BackgroundPositionClass;
+    "font-family": BackgroundPositionClass;
+    background: Background;
+    "background-repeat": BackgroundPositionClass;
+    "background-color": BackgroundPositionClass;
+    "background-image": BackgroundPositionClass;
     "background-attachment": BackgroundPositionClass;
-    "background-clip":       BackgroundPositionClass;
-    "background-origin":     BackgroundPositionClass;
-    "background-position":   BackgroundPositionClass;
-    "background-size":       BackgroundPositionClass;
+    "background-clip": BackgroundPositionClass;
+    "background-origin": BackgroundPositionClass;
+    "background-position": BackgroundPositionClass;
+    "background-size": BackgroundPositionClass;
 }
 
 /**
  * @private
  */
 export interface Background {
-    shorthand:  string;
-    pattern:    string;
-    keywords:   string[];
-    default:    any[];
-    multiple:   boolean;
-    separator:  Separator;
+    shorthand: string;
+    pattern: string;
+    keywords: string[];
+    default: any[];
+    multiple: boolean;
+    separator: Separator;
     properties: BackgroundProperties;
 }
 
@@ -57,25 +66,25 @@ export interface Background {
  * @private
  */
 export interface BackgroundProperties {
-    "background-repeat":     BackgroundRepeat;
-    "background-color":      PurpleBackgroundAttachment;
-    "background-image":      PurpleBackgroundAttachment;
+    "background-repeat": BackgroundRepeat;
+    "background-color": PurpleBackgroundAttachment;
+    "background-image": PurpleBackgroundAttachment;
     "background-attachment": PurpleBackgroundAttachment;
-    "background-clip":       PurpleBackgroundAttachment;
-    "background-origin":     PurpleBackgroundAttachment;
-    "background-position":   BackgroundPosition;
-    "background-size":       BackgroundSize;
+    "background-clip": PurpleBackgroundAttachment;
+    "background-origin": PurpleBackgroundAttachment;
+    "background-position": BackgroundPosition;
+    "background-size": BackgroundSize;
 }
 
 /**
  * @private
  */
 export interface PurpleBackgroundAttachment {
-    types:     string[];
-    default:   string[];
-    keywords:  string[];
+    types: string[];
+    default: string[];
+    keywords: string[];
     required?: boolean;
-    mapping?:  BackgroundAttachmentMapping;
+    mapping?: BackgroundAttachmentMapping;
 }
 
 /**
@@ -84,24 +93,24 @@ export interface PurpleBackgroundAttachment {
 export interface BackgroundAttachmentMapping {
     "ultra-condensed": string;
     "extra-condensed": string;
-    condensed:         string;
-    "semi-condensed":  string;
-    normal:            string;
-    "semi-expanded":   string;
-    expanded:          string;
-    "extra-expanded":  string;
-    "ultra-expanded":  string;
+    condensed: string;
+    "semi-condensed": string;
+    normal: string;
+    "semi-expanded": string;
+    expanded: string;
+    "extra-expanded": string;
+    "ultra-expanded": string;
 }
 
 /**
  * @private
  */
 export interface BackgroundPosition {
-    multiple:    boolean;
-    types:       string[];
-    default:     string[];
-    keywords:    string[];
-    mapping:     BackgroundPositionMapping;
+    multiple: boolean;
+    types: string[];
+    default: string[];
+    keywords: string[];
+    mapping: BackgroundPositionMapping;
     constraints: BackgroundPositionConstraints;
 }
 
@@ -123,33 +132,33 @@ export interface ConstraintsMapping {
  * @private
  */
 export interface BackgroundPositionMapping {
-    left:   string;
-    top:    string;
+    left: string;
+    top: string;
     center: string;
     bottom: string;
-    right:  string;
+    right: string;
 }
 
 /**
  * @private
  */
 export interface BackgroundRepeat {
-    types:    any[];
-    default:  string[];
+    types: any[];
+    default: string[];
     multiple: boolean;
     keywords: string[];
-    mapping:  BackgroundRepeatMapping;
+    mapping: BackgroundRepeatMapping;
 }
 
 /**
  * @private
  */
 export interface BackgroundRepeatMapping {
-    "repeat no-repeat":    string;
-    "no-repeat repeat":    string;
-    "repeat repeat":       string;
-    "space space":         string;
-    "round round":         string;
+    "repeat no-repeat": string;
+    "no-repeat repeat": string;
+    "repeat repeat": string;
+    "space space": string;
+    "round round": string;
     "no-repeat no-repeat": string;
 }
 
@@ -159,11 +168,11 @@ export interface BackgroundRepeatMapping {
 export interface BackgroundSize {
     multiple: boolean;
     previous: string;
-    prefix:   Prefix;
-    types:    string[];
-    default:  string[];
+    prefix: Prefix;
+    types: string[];
+    default: string[];
     keywords: string[];
-    mapping:  BackgroundSizeMapping;
+    mapping: BackgroundSizeMapping;
 }
 
 /**
@@ -199,10 +208,10 @@ export interface BackgroundPositionClass {
  * @private
  */
 export interface Border {
-    shorthand:  string;
-    pattern:    string;
-    keywords:   string[];
-    default:    string[];
+    shorthand: string;
+    pattern: string;
+    keywords: string[];
+    default: string[];
     properties: BorderProperties;
 }
 
@@ -218,17 +227,16 @@ export interface BorderProperties {
 /**
  * @private
  */
-export interface BorderColorClass {
-}
+export interface BorderColorClass {}
 
 /**
  * @private
  */
 export interface Font {
-    shorthand:  string;
-    pattern:    string;
-    keywords:   string[];
-    default:    any[];
+    shorthand: string;
+    pattern: string;
+    keywords: string[];
+    default: any[];
     properties: FontProperties;
 }
 
@@ -236,24 +244,24 @@ export interface Font {
  * @private
  */
 export interface FontProperties {
-    "font-weight":  FontWeight;
-    "font-style":   PurpleBackgroundAttachment;
-    "font-size":    PurpleBackgroundAttachment;
-    "line-height":  LineHeight;
+    "font-weight": FontWeight;
+    "font-style": PurpleBackgroundAttachment;
+    "font-size": PurpleBackgroundAttachment;
+    "line-height": LineHeight;
     "font-stretch": PurpleBackgroundAttachment;
     "font-variant": PurpleBackgroundAttachment;
-    "font-family":  FontFamily;
+    "font-family": FontFamily;
 }
 
 /**
  * @private
  */
 export interface FontFamily {
-    types:     string[];
-    default:   any[];
-    keywords:  string[];
-    required:  boolean;
-    multiple:  boolean;
+    types: string[];
+    default: any[];
+    keywords: string[];
+    required: boolean;
+    multiple: boolean;
     separator: Separator;
 }
 
@@ -261,11 +269,11 @@ export interface FontFamily {
  * @private
  */
 export interface FontWeight {
-    types:       string[];
-    default:     string[];
-    keywords:    string[];
+    types: string[];
+    default: string[];
+    keywords: string[];
     constraints: FontWeightConstraints;
-    mapping:     FontWeightMapping;
+    mapping: FontWeightMapping;
 }
 
 /**
@@ -287,21 +295,21 @@ export interface Value {
  * @private
  */
 export interface FontWeightMapping {
-    thin:          string;
-    hairline:      string;
+    thin: string;
+    hairline: string;
     "extra light": string;
     "ultra light": string;
-    light:         string;
-    normal:        string;
-    regular:       string;
-    medium:        string;
-    "semi bold":   string;
-    "demi bold":   string;
-    bold:          string;
-    "extra bold":  string;
-    "ultra bold":  string;
-    black:         string;
-    heavy:         string;
+    light: string;
+    normal: string;
+    regular: string;
+    medium: string;
+    "semi bold": string;
+    "demi bold": string;
+    bold: string;
+    "extra bold": string;
+    "ultra bold": string;
+    black: string;
+    heavy: string;
     "extra black": string;
     "ultra black": string;
 }
@@ -310,21 +318,21 @@ export interface FontWeightMapping {
  * @private
  */
 export interface LineHeight {
-    types:    string[];
-    default:  string[];
+    types: string[];
+    default: string[];
     keywords: string[];
     previous: string;
-    prefix:   Prefix;
+    prefix: Prefix;
 }
 
 /**
  * @private
  */
 export interface Outline {
-    shorthand:  string;
-    pattern:    string;
-    keywords:   string[];
-    default:    string[];
+    shorthand: string;
+    pattern: string;
+    keywords: string[];
+    default: string[];
     properties: OutlineProperties;
 }
 
@@ -341,62 +349,62 @@ export interface OutlineProperties {
  * @private
  */
 export interface PropertiesConfigProperties {
-    inset:                        BorderRadius;
-    top:                          BackgroundPositionClass;
-    right:                        BackgroundPositionClass;
-    bottom:                       BackgroundPositionClass;
-    left:                         BackgroundPositionClass;
-    margin:                       BorderRadius;
-    "margin-top":                 BackgroundPositionClass;
-    "margin-right":               BackgroundPositionClass;
-    "margin-bottom":              BackgroundPositionClass;
-    "margin-left":                BackgroundPositionClass;
-    padding:                      BorderColor;
-    "padding-top":                BackgroundPositionClass;
-    "padding-right":              BackgroundPositionClass;
-    "padding-bottom":             BackgroundPositionClass;
-    "padding-left":               BackgroundPositionClass;
-    "border-radius":              BorderRadius;
-    "border-top-left-radius":     BackgroundPositionClass;
-    "border-top-right-radius":    BackgroundPositionClass;
+    inset: BorderRadius;
+    top: BackgroundPositionClass;
+    right: BackgroundPositionClass;
+    bottom: BackgroundPositionClass;
+    left: BackgroundPositionClass;
+    margin: BorderRadius;
+    "margin-top": BackgroundPositionClass;
+    "margin-right": BackgroundPositionClass;
+    "margin-bottom": BackgroundPositionClass;
+    "margin-left": BackgroundPositionClass;
+    padding: BorderColor;
+    "padding-top": BackgroundPositionClass;
+    "padding-right": BackgroundPositionClass;
+    "padding-bottom": BackgroundPositionClass;
+    "padding-left": BackgroundPositionClass;
+    "border-radius": BorderRadius;
+    "border-top-left-radius": BackgroundPositionClass;
+    "border-top-right-radius": BackgroundPositionClass;
     "border-bottom-right-radius": BackgroundPositionClass;
-    "border-bottom-left-radius":  BackgroundPositionClass;
-    "border-width":               BorderColor;
-    "border-top-width":           BackgroundPositionClass;
-    "border-right-width":         BackgroundPositionClass;
-    "border-bottom-width":        BackgroundPositionClass;
-    "border-left-width":          BackgroundPositionClass;
-    "border-style":               BorderColor;
-    "border-top-style":           BackgroundPositionClass;
-    "border-right-style":         BackgroundPositionClass;
-    "border-bottom-style":        BackgroundPositionClass;
-    "border-left-style":          BackgroundPositionClass;
-    "border-color":               BorderColor;
-    "border-top-color":           BackgroundPositionClass;
-    "border-right-color":         BackgroundPositionClass;
-    "border-bottom-color":        BackgroundPositionClass;
-    "border-left-color":          BackgroundPositionClass;
+    "border-bottom-left-radius": BackgroundPositionClass;
+    "border-width": BorderColor;
+    "border-top-width": BackgroundPositionClass;
+    "border-right-width": BackgroundPositionClass;
+    "border-bottom-width": BackgroundPositionClass;
+    "border-left-width": BackgroundPositionClass;
+    "border-style": BorderColor;
+    "border-top-style": BackgroundPositionClass;
+    "border-right-style": BackgroundPositionClass;
+    "border-bottom-style": BackgroundPositionClass;
+    "border-left-style": BackgroundPositionClass;
+    "border-color": BorderColor;
+    "border-top-color": BackgroundPositionClass;
+    "border-right-color": BackgroundPositionClass;
+    "border-bottom-color": BackgroundPositionClass;
+    "border-left-color": BackgroundPositionClass;
 }
 
 /**
  * @private
  */
 export interface BorderColor {
-    shorthand:  string;
-    map?:       string;
+    shorthand: string;
+    map?: string;
     properties: string[];
-    types:      string[];
-    keywords:   string[];
+    types: string[];
+    keywords: string[];
 }
 
 /**
  * @private
  */
 export interface BorderRadius {
-    shorthand:  string;
+    shorthand: string;
     properties: string[];
-    types:      string[];
-    multiple:   boolean;
-    separator:  null | string;
-    keywords:   string[];
+    types: string[];
+    multiple: boolean;
+    separator: null | string;
+    keywords: string[];
 }

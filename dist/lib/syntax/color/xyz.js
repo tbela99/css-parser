@@ -39,7 +39,7 @@ function srgb2xyz(r, g, b, alpha) {
     return rgb;
 }
 // xyz d50
-function srgb2xyz_d50(r, g, b, alpha) {
+function srgb2xyz_d65(r, g, b, alpha) {
     // xyx d65
     // @ts-ignore
     let rgb = XYZ_D65_to_D50(...srgb2xyz(r, g, b));
@@ -49,4 +49,4 @@ function srgb2xyz_d50(r, g, b, alpha) {
     return rgb;
 }
 
-export { XYZ_D50_to_D65, XYZ_to_lin_sRGB, srgb2xyz, srgb2xyz_d50 };
+export { XYZ_D50_to_D65, XYZ_to_lin_sRGB, srgb2xyz, srgb2xyz_d65 };

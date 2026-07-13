@@ -1,6 +1,5 @@
+import { epsilon } from "../../syntax/constants.ts";
 import type {DecomposedMatrix3D, Matrix, Point} from "./type.d.ts";
-
-export const epsilon = 1e-5;
 
 export function identity(): Matrix {
 

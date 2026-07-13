@@ -300,15 +300,15 @@ export function run(describe, expect, it, transform, parse, render) {
                 convertColor: ColorType.OKLAB
             }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
                 typ: EnumToken.ColorTokenType,
-                val: 'oklab',
+                val: 'oklch',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '.49863253097209403'},
-                    {typ: EnumToken.NumberTokenType, val: '.16117650019451524'},
-                    {typ: EnumToken.NumberTokenType, val: '.08155524287358212'},
+                    {typ: EnumToken.NumberTokenType, val: .497702  },
+                    {typ: EnumToken.NumberTokenType, val: .180163},
+                    {typ: EnumToken.NumberTokenType, val: 26.827138},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
-                kin: ColorType.OKLAB
+                kin: ColorType.OKLCH
             })).equals(true));
         });
     });

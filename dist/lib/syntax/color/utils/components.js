@@ -3,8 +3,9 @@ import { walkValues } from '../../../ast/walk.js';
 import { COLORS_NAMES } from '../../constants.js';
 import { expandHexValue } from '../hex.js';
 import { isColor, parseColor } from '../../syntax.js';
+import { equalsIgnoreCase } from '../../../parser/utils/text.js';
 
-function getComponents(token) {
+function getColorComponents(token) {
     if (token.typ === EnumToken.IdenTokenType) {
         if (isColor(token)) {
             parseColor(token);
@@ -14,6 +15,9 @@ function getComponents(token) {
         }
     }
     if (token.kin == ColorType.HEX || token.kin == ColorType.LIT) {
+        if (equalsIgnoreCase('currentcolor', token.val)) {
+            return null;
+        }
         const value = expandHexValue(token.kin == ColorType.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
         // @ts-ignore
         return value
@@ -51,7 +55,7 @@ function getComponents(token) {
                 }
             }
         }
-        if (child.typ == EnumToken.ColorTokenType && "currentcolor" === child.val.toLowerCase()) {
+        if (child.typ == EnumToken.ColorTokenType && equalsIgnoreCase("currentcolor", child.val)) {
             return null;
         }
         result.push(child);
@@ -59,4 +63,4 @@ function getComponents(token) {
     return result;
 }
 
-export { getComponents };
+export { getColorComponents };

@@ -1,7 +1,7 @@
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // srgb-linear -> srgb
 // 0 <= r, g, b <= 1
-import { getComponents } from "./utils/components.ts";
+import { getColorComponents } from "./utils/components.ts";
 import type {
     ColorToken,
     DimensionToken,
@@ -63,7 +63,7 @@ export function srgbvalues(token: ColorToken | IdentToken): number[] | null {
 
 export function rgb2srgb(token: ColorToken): number[] | null {
     return (
-        getComponents(token)?.map?.((t: Token, index: number): number =>
+        getColorComponents(token)?.map?.((t: Token, index: number): number =>
             index == 3
                 ? t.typ == EnumToken.IdenTokenType && (t as IdentToken).val == "none"
                     ? 1
@@ -77,7 +77,7 @@ export function rgb2srgb(token: ColorToken): number[] | null {
 
 export function rgb2srgbvalues(token: ColorToken): number[] | null {
     return (
-        getComponents(token)?.map?.((t: Token, index: number): number =>
+        getColorComponents(token)?.map?.((t: Token, index: number): number =>
             index == 3
                 ? getNumber(<IdentToken | NumberToken | PercentageToken>t)
                 : getNumber(<IdentToken | NumberToken | PercentageToken>t) / 255,
@@ -150,7 +150,7 @@ export function hsl2srgb(token: ColorToken): number[] | null {
 }
 
 export function cmyk2srgbvalues(token: ColorToken): number[] | null {
-    const components: Token[] | null = getComponents(token);
+    const components: Token[] | null = getColorComponents(token);
 
     if (components == null) {
         return null;
@@ -227,7 +227,7 @@ export function oklch2srgbvalues(token: ColorToken): number[] | null {
 }
 
 export function hslvalues(token: ColorToken): { h: number; s: number; l: number; a?: number | null } | null {
-    const components: Token[] | null = getComponents(token);
+    const components: Token[] | null = getColorComponents(token);
 
     if (components == null) {
         return null;

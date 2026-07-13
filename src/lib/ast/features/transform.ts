@@ -7,10 +7,10 @@ import type {
     ParserOptions,
     Token,
 } from "../../../@types/index.d.ts";
-import { EnumToken } from "../types.ts";
+import { EnumAstNodeStatus, EnumToken } from "../types.ts";
 import { consumeWhitespace } from "../../validation/utils/whitespace.ts";
 import { compute } from "../transform/compute.ts";
-import { filterValues, renderToken } from "../../renderer/render.ts";
+import { filterValues, renderValue } from "../../renderer/render.ts";
 import { eqMatrix, minifyTransformFunctions } from "../transform/minify.ts";
 import { FeatureWalkMode } from "./type.ts";
 
@@ -45,6 +45,10 @@ export class TransformCssFeature {
         for (; i < ast.chi.length; i++) {
             // @ts-ignore
             node = ast.chi[i] as AstNode | AstDeclaration;
+
+            if (node.state == EnumAstNodeStatus.Invalid || node.state == EnumAstNodeStatus.ValidationFailed) {
+                continue;
+            }
 
             if (
                 node.typ != EnumToken.DeclarationNodeType ||
@@ -85,11 +89,11 @@ export class TransformCssFeature {
                 r.push(minified);
             }
 
-            const l: number = renderToken(matrix).length;
+            const l: number = renderValue(matrix).length;
 
             (node as AstDeclaration).val = r.reduce(
                 (acc: Token[], curr: Token[]): Token[] => {
-                    if (curr.reduce((acc: string, t: Token) => acc + renderToken(t), "").length < l) {
+                    if (curr.reduce((acc: string, t: Token) => acc + renderValue(t), "").length < l) {
                         return curr;
                     }
 

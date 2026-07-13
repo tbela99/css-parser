@@ -74,6 +74,9 @@ export enum ValidationTokenEnum {
     Colon,
 }
 
+/**
+ * Keys of the validation config object
+ */
 export enum ValidationSyntaxGroupEnum {
     Declarations = "declarations",
     Functions = "functions",
@@ -85,6 +88,9 @@ export enum ValidationSyntaxGroupEnum {
     mediaFeatures = "mediaFeatures",
 }
 
+/**
+ * Types of media features
+ */
 export enum MediaFeatureType {
     BooleanType = "boolean",
     IntergerType = "integer",

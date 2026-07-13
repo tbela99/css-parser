@@ -14,14 +14,15 @@ export function run(describe, expect, it, transform, parse, render) {
                     typ: EnumToken.ColorTokenType,
                     val: 'hwb',
                     chi: [
-                        {typ: EnumToken.NumberTokenType, val: '0'},
-                        {typ: EnumToken.PercentageTokenType, val: '13.333333333333334'},
-                        {typ: EnumToken.PercentageTokenType, val: '30'},
+                        {typ: EnumToken.NumberTokenType, val: 0},
+                        {typ: EnumToken.PercentageTokenType, val: 13.333333},
+                        {typ: EnumToken.PercentageTokenType, val: 30},
                         {typ: EnumToken.LiteralTokenType, val: '/'},
-                        {typ: EnumToken.PercentageTokenType, val: '50'}
+                        {typ: EnumToken.PercentageTokenType, val: 50}
                     ],
                     kin: ColorType.HWB
-                })).equals(true)
+                },
+            .1)).equals(true)
             );
         });
 
@@ -33,11 +34,11 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '13.333333333333334'},
-                    {typ: EnumToken.PercentageTokenType, val: '30'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 13.333333},
+                    {typ: EnumToken.PercentageTokenType, val: 29.803922},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.HWB
             })).equals(true));
@@ -51,11 +52,11 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '13.333333333333334'},
-                    {typ: EnumToken.PercentageTokenType, val: '30'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 13.3},
+                    {typ: EnumToken.PercentageTokenType, val: 30},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.HWB
             })).equals(true));
@@ -69,14 +70,15 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '13.333333333333334'},
-                    {typ: EnumToken.PercentageTokenType, val: '30'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 13.333333},
+                    {typ: EnumToken.PercentageTokenType, val: 30},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.HWB
-            })).equals(true));
+            },
+        .1)).equals(true));
         });
 
         it('srgb to hwb #5', function () {
@@ -87,14 +89,15 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '13.333333333333334'},
-                    {typ: EnumToken.PercentageTokenType, val: '30'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 13.333333},
+                    {typ: EnumToken.PercentageTokenType, val: 30},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.HWB
-            })).equals(true));
+            },
+        .1)).equals(true));
         });
 
         it('srgb-linear to hwb #6', function () {
@@ -105,14 +108,15 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '13.333333333333334'},
-                    {typ: EnumToken.PercentageTokenType, val: '30'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 13.333333},
+                    {typ: EnumToken.PercentageTokenType, val: 30},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.HWB
-            })).equals(true));
+            },
+        .1)).equals(true));
         });
 
         it('display-p3 to hwb #7', function () {
@@ -123,14 +127,15 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '13.333333333333334'},
-                    {typ: EnumToken.PercentageTokenType, val: '30'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 13.333333},
+                    {typ: EnumToken.PercentageTokenType, val: 30},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.HWB
-            })).equals(true));
+            },
+        .1)).equals(true));
         });
 
         it('a98-rgb to hwb #8', function () {
@@ -141,14 +146,15 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '13.333333333333334'},
-                    {typ: EnumToken.PercentageTokenType, val: '30'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 13.329943},
+                    {typ: EnumToken.PercentageTokenType, val: 30},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.HWB
-            })).equals(true));
+            },
+        .1)).equals(true));
         });
 
         it('photo-rgb to hwb #9', function () {
@@ -159,14 +165,15 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '13.333333333333334'},
-                    {typ: EnumToken.PercentageTokenType, val: '30'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 13.333329},
+                    {typ: EnumToken.PercentageTokenType, val: 30},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.HWB
-            })).equals(true));
+            },
+        .1)).equals(true));
         });
 
         it('rec2020 to hwb #10', function () {
@@ -177,14 +184,15 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '13.333333333333334'},
-                    {typ: EnumToken.PercentageTokenType, val: '30'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 13.333329},
+                    {typ: EnumToken.PercentageTokenType, val: 30},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.HWB
-            })).equals(true));
+            },
+        .1)).equals(true));
         });
 
         it('xyz to hwb #11', function () {
@@ -195,14 +203,15 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '13.333333333333334'},
-                    {typ: EnumToken.PercentageTokenType, val: '30'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 13.333333},
+                    {typ: EnumToken.PercentageTokenType, val: 30},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.HWB
-            })).equals(true));
+            },
+        .1)).equals(true));
         });
 
         it('xyz-d50 to hwb #12', function () {
@@ -213,14 +222,15 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '13.333333333333334'},
-                    {typ: EnumToken.PercentageTokenType, val: '30'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 13.333329},
+                    {typ: EnumToken.PercentageTokenType, val: 30},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.HWB
-            })).equals(true));
+            },
+        .1)).equals(true));
         });
 
         it('xyz-d65 to hwb #13', function () {
@@ -231,14 +241,15 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '13.333333333333334'},
-                    {typ: EnumToken.PercentageTokenType, val: '30'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 13.333333},
+                    {typ: EnumToken.PercentageTokenType, val: 30},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.HWB
-            })).equals(true));
+            },
+        .1)).equals(true));
         });
 
         it('oklab to hwb #14', function () {
@@ -249,14 +260,15 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '13.333333333333334'},
-                    {typ: EnumToken.PercentageTokenType, val: '30'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 13.333333},
+                    {typ: EnumToken.PercentageTokenType, val: 30},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.HWB
-            })).equals(true));
+            },
+        .1)).equals(true));
         });
 
         it('oklch to hwb #15', function () {
@@ -267,14 +279,15 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '13.333333333333334'},
-                    {typ: EnumToken.PercentageTokenType, val: '30'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 13.333323},
+                    {typ: EnumToken.PercentageTokenType, val: 30},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.HWB
-            })).equals(true));
+            },
+        .1)).equals(true));
         });
 
         it('lab to hwb #16', function () {
@@ -285,14 +298,15 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '13.333333333333334'},
-                    {typ: EnumToken.PercentageTokenType, val: '30'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 13.333322},
+                    {typ: EnumToken.PercentageTokenType, val: 30},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.HWB
-            })).equals(true));
+            },
+        .1)).equals(true));
         });
 
         it('lch to hwb #17', function () {
@@ -303,14 +317,15 @@ export function run(describe, expect, it, transform, parse, render) {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '0'},
-                    {typ: EnumToken.PercentageTokenType, val: '13.333333333333334'},
-                    {typ: EnumToken.PercentageTokenType, val: '30'},
+                    {typ: EnumToken.NumberTokenType, val: 0},
+                    {typ: EnumToken.PercentageTokenType, val: 13.333322},
+                    {typ: EnumToken.PercentageTokenType, val: 30},
                     {typ: EnumToken.LiteralTokenType, val: '/'},
-                    {typ: EnumToken.PercentageTokenType, val: '50'}
+                    {typ: EnumToken.PercentageTokenType, val: 50}
                 ],
                 kin: ColorType.HWB
-            })).equals(true));
+            },
+        .1)).equals(true));
         });
     });
 }

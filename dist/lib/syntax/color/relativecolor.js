@@ -1,10 +1,22 @@
 import { convertColor, getNumber } from './color.js';
-import { ColorType, EnumToken } from '../../ast/types.js';
+import { EnumToken, ColorType } from '../../ast/types.js';
 import { walkValues } from '../../ast/walk.js';
 import { evaluateFunc, evaluate } from '../../ast/math/expression.js';
-import { colorRange, mathFuncs } from '../constants.js';
+import { colorsFunc, colorFuncColorSpace, colorRange, mathFuncs } from '../constants.js';
+import { equalsIgnoreCase } from '../../parser/utils/text.js';
+import { getColorComponents } from './utils/components.js';
 
-function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
+/**
+ * Parse relative color components
+ * @param relativeKeys
+ * @param original
+ * @param rExp
+ * @param gExp
+ * @param bExp
+ * @param aExp
+ * @returns
+ */
+function parseRelativeColorComponents(relativeKeys, original, rExp, gExp, bExp, aExp) {
     let r;
     let g;
     let b;
@@ -14,9 +26,68 @@ function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
     // colorFuncColorSpace x,y,z or r,g,b
     const names = relativeKeys.startsWith("xyz")
         ? "xyz"
-        : ["srgb", "srgb-linear", "display-p3", "a98-rgb", "prophoto-rgb", "rec2020", "rgb"].includes(relativeKeys.toLowerCase())
+        : ["srgb", "srgb-linear", "display-p3", "a98-rgb", "prophoto-rgb", "rec2020", "rgb"].some((t) => equalsIgnoreCase(t, relativeKeys))
             ? "rgb"
             : relativeKeys.slice(-3);
+    const allComponents = [rExp, gExp, bExp, aExp];
+    const components = getColorComponents(original);
+    const validKeys = names.split("");
+    let val = "";
+    if (components != null) {
+        allComponents.push(...components);
+    }
+    // ensure all components are valid for the color space
+    for (const component of allComponents) {
+        if (component == null) {
+            continue;
+        }
+        if (component.typ == EnumToken.IdenTokenType) {
+            val = component.val.toLowerCase();
+            if (
+            // @ts-expect-error
+            typeof Math[val.toUpperCase()] !== "number" &&
+                val != "in" &&
+                val != "hue" &&
+                val != "from" &&
+                val != "alpha" &&
+                val != "none" &&
+                val != "shorter" &&
+                val != "longer" &&
+                val != "increasing" &&
+                val != "decreasing" &&
+                !colorsFunc.includes(val) &&
+                !colorFuncColorSpace.includes(val) &&
+                !validKeys.includes(val)) {
+                return null;
+            }
+            continue;
+        }
+        if (component.typ === EnumToken.MathFunctionTokenType &&
+            equalsIgnoreCase("calc", component.val)) {
+            for (const { value } of walkValues(component.chi)) {
+                if (value.typ == EnumToken.IdenTokenType) {
+                    val = value.val.toLowerCase();
+                    if (
+                    // @ts-expect-error
+                    typeof Math[val.toUpperCase()] !== "number" &&
+                        val != "in" &&
+                        val != "hue" &&
+                        val != "from" &&
+                        val != "alpha" &&
+                        val != "none" &&
+                        val != "shorter" &&
+                        val != "longer" &&
+                        val != "increasing" &&
+                        val != "decreasing" &&
+                        !colorsFunc.includes(val) &&
+                        !colorFuncColorSpace.includes(val) &&
+                        !validKeys.includes(val)) {
+                        return null;
+                    }
+                }
+            }
+        }
+    }
     const converted = (convertColor(original, ColorType[relativeKeys.toUpperCase().replaceAll("-", "_")]));
     if (converted == null) {
         return null;
@@ -62,21 +133,29 @@ function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
                 }
                 : aExp),
     };
-    const result = computeComponentValue(keys, converted, values);
+    const result = computeComponentValue(keys, values);
     if (result?.alpha?.typ == EnumToken.NumberTokenType && result.alpha.val === 1) {
         const { alpha, ...components } = result;
         return components;
     }
     return result;
-    // return computeComponentValue(keys, converted, values);
 }
+/**
+ * Get token numeric value
+ * @param t
+ * @param converted
+ * @param component
+ * @returns
+ */
 function getValue(t, converted, component) {
     if (t.typ == EnumToken.PercentageTokenType) {
         let value = getNumber(t);
-        let colorSpace = ColorType[converted.kin].toLowerCase().replaceAll("-", "_");
-        if (colorSpace in colorRange) {
-            // @ts-ignore
-            value *= colorRange[colorSpace][component].at(-1);
+        if (converted != null) {
+            let colorSpace = ColorType[converted.kin].toLowerCase().replaceAll("-", "_");
+            if (colorSpace in colorRange) {
+                // @ts-ignore
+                value *= colorRange[colorSpace][component].at(-1);
+            }
         }
         return {
             typ: EnumToken.NumberTokenType,
@@ -85,7 +164,13 @@ function getValue(t, converted, component) {
     }
     return t;
 }
-function computeComponentValue(expr, converted, values) {
+/**
+ * Compute component value
+ * @param expr
+ * @param values
+ * @returns
+ */
+function computeComponentValue(expr, values) {
     for (const object of [values, expr]) {
         if ("h" in object) {
             // normalize hue
@@ -155,4 +240,4 @@ function replaceValue(parent, value, newValue) {
     }
 }
 
-export { parseRelativeColor, replaceValue };
+export { parseRelativeColorComponents, replaceValue };

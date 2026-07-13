@@ -1,7 +1,12 @@
-import { isColor, isIdent, isIdentColor, isIdentStart, parseColor } from "../syntax/syntax.ts";
+import { isColor, isIdentColor, parseColor } from "../syntax/syntax.ts";
 import { camelize, dasherize, equalsIgnoreCase } from "./utils/text.ts";
-import { renderToken } from "../renderer/render.ts";
-import { EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ValidationLevel } from "../ast/types.ts";
+import { renderValue } from "../renderer/render.ts";
+import {
+    EnumAstNodeStatus,
+    EnumToken,
+    ModuleCaseTransformEnum,
+    ModuleScopeEnumOptions
+} from "../ast/types.ts";
 import { minify } from "../ast/minify.ts";
 import { expand } from "../ast/expand.ts";
 import { walk, WalkerEvent, walkValues } from "../ast/walk.ts";
@@ -10,8 +15,6 @@ import type {
     AstAtRule,
     AstComment,
     AstDeclaration,
-    AstInvalidAtRule,
-    AstInvalidRule,
     AstKeyFrameRule,
     AstKeyframesAtRule,
     AstKeyframesRule,
@@ -21,81 +24,58 @@ import type {
     AstStyleSheet,
     AtRuleToken,
     AttrStartToken,
-    AttrToken,
     ClassSelectorToken,
     ComposesSelectorToken,
-    ContainMatchToken,
     CssVariableImportTokenType,
     CssVariableMapTokenType,
     CssVariableToken,
     DashedIdentToken,
-    DashMatchToken,
-    EndMatchToken,
-    EqualMatchToken,
     ErrorDescription,
     FunctionToken,
-    FunctionURLToken,
     GenericVisitorAstNodeHandlerMap,
     GenericVisitorHandler,
     GenericVisitorResult,
     IdentToken,
-    IncludeMatchToken,
-    LiteralToken,
     LoadResult,
     Location,
-    MatchExpressionToken,
     MediaQueryConditionToken,
     ModuleOptions,
-    NameSpaceAttributeToken,
-    ParensToken,
     ParseInfo,
     ParseResult,
     ParseResultStats,
     ParserOptions,
-    ParseTokenOptions,
     PseudoClassFunctionToken,
     PseudoClassToken,
-    StartMatchToken,
     StringToken,
     Token,
     TokenizeResult,
     UrlToken,
     WhitespaceToken,
 } from "../../@types/index.d.ts";
-import {
-    definedPropertySettings,
-    funcLike,
-    mathFuncs,
-    pageMarginBoxType,
-    tokensfuncDefMap,
-} from "../syntax/constants.ts";
-import { splitTokenList } from "../validation/utils/list.ts";
-import { buildExpression } from "../ast/math/expression.ts";
+import { definedPropertySettings, pageMarginBoxType, tokensfuncDefMap, tokensfuncSet } from "../syntax/constants.ts";
 import { hash, hashAlgorithms } from "../parser/utils/hash.ts";
 import { parseSelector } from "./utils/selector.ts";
 import { parseDeclaration } from "./utils/declaration.ts";
 import { getSyntaxRule } from "../validation/config.ts";
-import { createValidationContext, matchAllSyntax, matchSelectorSyntax, trimArray } from "../validation/match.ts";
+import { createValidationContext, matchAllSyntaxes, matchSelectorSyntax, trimArray } from "../validation/match.ts";
 import { ValidationSyntaxGroupEnum } from "../validation/parser/typedef.ts";
 import type { ValidationToken } from "../validation/parser/types.d.ts";
 import { matchAtRuleImportSyntax } from "./utils/at-rule-import.ts";
 import type { ValidationMatch } from "../validation/types.d.ts";
 import { matchAtRuleWhenElseSyntax } from "./utils/at-rule-when-else.ts";
-import { urlTokenMatcher } from "../syntax/constants.ts";
 import { parseAtRuleSupportSyntax } from "./utils/at-rule-support.ts";
-import { replaceToken, trimWhiteSpaceTokens } from "./utils/token.ts";
+import { replaceNodeOrValue, trimWhiteSpaceTokens } from "./utils/token.ts";
 import { parseAtRuleContainerQueryList } from "./utils/at-rule-container.ts";
 import { parseMediaqueryList } from "./utils/at-rule-media.ts";
 import { matchAtRuleSyntax } from "./utils/at-rule.ts";
-import { parseAtRulePage } from "./utils/at-rule-page.ts";
 import { parseAtRuleFontFeatureValues } from "./utils/at-rule-font-feature-values.ts";
 import { matchGenericSyntax } from "./utils/at-rule-generic.ts";
 import { memoize } from "./utils/cache.ts";
 
 function renderTokens(tokens: Token[] | null | undefined, options?: any): string {
     if (tokens == null || tokens.length === 0) return "";
-    if (options != null) return tokens.map((t) => renderToken(t, options)).join("");
-    return tokens.map((t) => renderToken(t)).join("");
+    if (options != null) return tokens.map((t) => renderValue(t, options)).join("");
+    return tokens.map((t) => renderValue(t)).join("");
 }
 
 declare type T = AstDeclaration | AstAtRule | AstRule | AstKeyframesRule | AstKeyframesAtRule;
@@ -125,7 +105,7 @@ const forbiddenStartCharacters: number[] = ["0", "1", "2", "3", "4", "5", "6", "
 );
 
 /**
- * short-scoped name generator.
+ * Short-scoped name generator.
  *
  * @param localName
  * @param filePath
@@ -159,7 +139,7 @@ function reject(reason?: any) {
 }
 
 /**
- * transform case of key name
+ * Transform case of key name
  * @param key
  * @param how
  *
@@ -178,10 +158,10 @@ export const getKeyName = memoize((key: string, how: ModuleCaseTransformEnum): s
     }
 
     return key;
-});
+}) as (key: string, how: ModuleCaseTransformEnum) => string;
 
 /**
- * generate scoped name
+ * Generate scoped name
  * @param localName
  * @param filePath
  * @param pattern
@@ -313,10 +293,10 @@ export const generateScopedName = memoize(
         // if leading char is digit, prefix underscore (very rare)
         return (/^[0-9]/.test(result) ? "_" : "") + result;
     },
-);
+) as (localName: string, filePath: string, pattern: string, hashLength?: number) => Promise<string>;
 
 /**
- * parse css string
+ * Parse css string
  * @param iter
  * @param options
  *
@@ -350,13 +330,13 @@ export async function doParse(
         inlineCssVariables: false,
         setParent: true,
         removePrefix: false,
-        validation: ValidationLevel.Default,
+        validation: false,
         lenient: true,
         ...options,
     };
 
-    if (typeof options.validation == "boolean") {
-        options.validation = options.validation ? ValidationLevel.All : ValidationLevel.None;
+    if (typeof options.validation !== "boolean") {
+        options.validation = !!options.validation;
     }
 
     if (options.module) {
@@ -388,13 +368,15 @@ export async function doParse(
         imports: [],
     };
 
+    const invalidNodes: Array<AstNode> = [];
+
     let ast: AstStyleSheet = {
         typ: EnumToken.StyleSheetNodeType,
         chi: [],
     };
 
     let tokens: Token[] = [];
-    let context: AstRuleList | AstInvalidAtRule | AstInvalidRule = ast;
+    let context: AstRuleList = ast;
 
     if (options.sourcemap) {
         ast.loc = {
@@ -436,7 +418,6 @@ export async function doParse(
         | AstRule
         | AstKeyFrameRule
         | AstKeyframesAtRule
-        | AstInvalidRule
         | AstDeclaration
         | AstComment
         | null;
@@ -593,7 +574,6 @@ export async function doParse(
             : // @ts-expect-error
               ((iter as Iterator<TokenizeResult>).next().value as TokenizeResult))
     ) {
-
         stats.bytesIn = item.bytesIn;
         stats.tokensCount++;
 
@@ -633,11 +613,11 @@ export async function doParse(
                     item.token.typ === EnumToken.BlockStartTokenType)) ||
             item.token.typ === EnumToken.EOFTokenType
         ) {
-            node = parseNode(tokens, context, options as ParserOptions, errors, stats);
+            node = parseNode(tokens, context, options as ParserOptions, errors, stats, invalidNodes);
 
             if (node != null) {
                 if ("chi" in node) {
-                    stack.push(node as AstAtRule | AstRule | AstKeyFrameRule | AstInvalidRule);
+                    stack.push(node as AstAtRule | AstRule | AstKeyFrameRule );
                     context = node as AstRuleList;
                 } else if (node.typ == EnumToken.AtRuleNodeType && (node as AstAtRule).nam === "import") {
                     imports.push(node);
@@ -681,7 +661,7 @@ export async function doParse(
 
             tokens = [];
         } else if (item.token.typ === EnumToken.BlockEndTokenType) {
-            parseNode(tokens, context, options as ParserOptions, errors, stats);
+            parseNode(tokens, context, options as ParserOptions, errors, stats, invalidNodes);
 
             if (context.loc != null) {
                 context.loc.end = item.token.loc!.end;
@@ -704,7 +684,7 @@ export async function doParse(
     }
 
     if (tokens.length > 0) {
-        node = parseNode(tokens, context, options as ParserOptions, errors, stats);
+        node = parseNode(tokens, context, options as ParserOptions, errors, stats, invalidNodes);
 
         if (node != null) {
             if (node.typ == EnumToken.AtRuleNodeType && "import" === (node as AstAtRule).val) {
@@ -716,18 +696,20 @@ export async function doParse(
                 context = node as AstRuleList;
             }
         }
-
     }
 
     if (imports.length > 0 && options.resolveImport) {
         await Promise.all(
             imports.map(async (node: AstAtRule) => {
+                if (node.state !== EnumAstNodeStatus.Validated) {
+                    return;
+                }
+
                 const token = (node.tokens as Token[])[0] as UrlToken | StringToken;
                 const url: string = token.typ == EnumToken.StringTokenType ? token.val.slice(1, -1) : token.val;
 
                 try {
-
-                    const result = options.load!(url, <string>options.src) as LoadResult;
+                    const result = options.load!(url, options.src || (options.cwd as string)) as LoadResult;
                     const stream =
                         result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                             ? await result
@@ -737,7 +719,7 @@ export async function doParse(
                             ? tokenizeStream(stream)
                             : tokenize({
                                   stream,
-                                  src: options.resolve!(url, options.src || options.cwd as string).relative,
+                                  src: options.resolve!(url, options.src || (options.cwd as string)).relative,
                                   buffer: "",
                                   offset: 0,
                                   position: { ind: 0, lin: 1, col: 1 },
@@ -746,7 +728,7 @@ export async function doParse(
                         Object.assign({}, options, {
                             minify: false,
                             setParent: false,
-                            src: options.resolve!(url, options.src || options.cwd as string).relative,
+                            src: options.resolve!(url, options.src || (options.cwd as string)).relative,
                         }) as ParserOptions,
                     );
 
@@ -765,43 +747,10 @@ export async function doParse(
         );
     }
 
-    while (stack.length > 0 && context != ast) {
-        const previousNode: AstAtRule | AstRule = stack.pop() as AstAtRule | AstRule;
-        context = (stack[stack.length - 1] ?? ast) as AstRuleList;
-
-        // remove empty nodes
-        if (
-            options.removeEmpty &&
-            previousNode != null &&
-            previousNode.chi!.length == 0 &&
-            context.chi![context.chi!.length - 1] == previousNode
-        ) {
-            context.chi!.pop();
-            continue;
-        }
-
-        // remove invalid nodes
-        if (
-            !options.lenient &&
-            previousNode?.parent != null &&
-            // @ts-expect-error
-            (previousNode!.typ == EnumToken.InvalidRuleNodeType || previousNode!.typ == EnumToken.InvalidAtRuleNodeType)
-        ) {
-            for (let i = context.chi!.length - 1; i >= 0; i--) {
-                if (context.chi![i] == previousNode) {
-                    context.chi!.splice(i, 1);
-                    break;
-                }
-            }
-        }
-
-        break;
-    }
-
     const endParseTime: number = performance.now();
 
     if (options.expandNestingRules) {
-        ast = <AstStyleSheet>expand(ast);
+        ast = expand(ast) as AstStyleSheet;
     }
 
     let replacement: GenericVisitorResult<T>;
@@ -916,7 +865,7 @@ export async function doParse(
                     }
 
                     if (node != result.node) {
-                        replaceToken(
+                        replaceNodeOrValue(
                             result.parent as AstRule | AstAtRule | AstKeyframesAtRule | AstKeyFrameRule | AstStyleSheet,
                             result.node,
                             node,
@@ -999,7 +948,7 @@ export async function doParse(
                     // @ts-ignore
                     if (node != result.node) {
                         // @ts-ignore
-                        replaceToken(result.parent, result.node, node);
+                        replaceNodeOrValue(result.parent, result.node, node);
                     }
                 } else if (valuesHandlers!.size > 0) {
                     let node: Token | AstNode | null = null;
@@ -1044,7 +993,7 @@ export async function doParse(
 
                     if (node != result.node) {
                         // @ts-ignore
-                        replaceToken(result.parent, value, node);
+                        replaceNodeOrValue(result.parent, value, node);
                     }
 
                     const tokens: Token[] = Array.isArray(result.node.tokens) ? (result.node.tokens as Token[]) : [];
@@ -1098,12 +1047,63 @@ export async function doParse(
 
                         if (node != value) {
                             // @ts-ignore
-                            replaceToken(parent, value, node);
+                            replaceNodeOrValue(parent, value, node);
                         }
                     }
                 }
             }
         }
+    }
+    
+    if (invalidNodes.length > 0) {
+        let k: number = invalidNodes.length;
+
+        while (k-- > 0) {
+
+            if (invalidNodes[k].state == EnumAstNodeStatus.Validated || invalidNodes[k].state == EnumAstNodeStatus.Unvalidated || invalidNodes[k].state == EnumAstNodeStatus.ValidationFailed) {
+                
+                continue;
+            }
+
+            if (options.lenient && invalidNodes[k].state == EnumAstNodeStatus.Unknown) {
+                continue;
+            }
+
+            invalidNodes[k].parent!.chi.splice(invalidNodes[k].parent!.chi.indexOf(invalidNodes[k]), 1);
+        }
+    }
+
+    while (stack.length > 0 && context != ast) {
+        const previousNode: AstAtRule | AstRule = stack.pop() as AstAtRule | AstRule;
+        context = (stack[stack.length - 1] ?? ast) as AstRuleList;
+
+        // remove empty nodes
+        if (
+            options.removeEmpty &&
+            previousNode != null &&
+            previousNode.chi!.length == 0 &&
+            context.chi![context.chi!.length - 1] == previousNode
+        ) {
+            context.chi!.pop();
+            continue;
+        }
+
+        // remove invalid nodes
+        if (
+            !options.lenient &&
+            previousNode?.parent != null &&
+            // @ts-expect-error
+            (previousNode!.typ == EnumToken.InvalidRuleNodeType || previousNode!.typ == EnumToken.InvalidAtRuleNodeType)
+        ) {
+            for (let i = context.chi!.length - 1; i >= 0; i--) {
+                if (context.chi![i] == previousNode) {
+                    context.chi!.splice(i, 1);
+                    break;
+                }
+            }
+        }
+
+        break;
     }
 
     if (options.minify) {
@@ -1215,7 +1215,7 @@ export async function doParse(
                     ) as StringToken
                 ).val.slice(1, -1);
                 const src = options.resolve!(url, options.dirname!(options.src as string), options.cwd);
-                const result = options.load!(url, <string>options.src) as LoadResult;
+                const result = options.load!(src, "") as LoadResult;
                 const stream =
                     result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                         ? await result
@@ -1326,7 +1326,6 @@ export async function doParse(
 
                     for (const token of node.val) {
                         if (token.typ == EnumToken.ComposesSelectorNodeType) {
-                            
                             tokens.push(token as ComposesSelectorToken);
                         }
                     }
@@ -1339,7 +1338,6 @@ export async function doParse(
                     }
 
                     if (/* !isValid || */ tokens.length == 0) {
-
                         errors.push({
                             action: "drop",
                             message: `composes is empty`,
@@ -1408,7 +1406,7 @@ export async function doParse(
                         else if (token.r.typ == EnumToken.String) {
                             const url: string = (token.r as StringToken).val.slice(1, -1);
                             const src = options.resolve!(url, options.dirname!(options.src as string), options.cwd);
-                            const result = options.load!(url, <string>options.src) as LoadResult;
+                            const result = options.load!(src, "") as LoadResult;
                             const stream =
                                 result instanceof Promise ||
                                 Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
@@ -1600,9 +1598,7 @@ export async function doParse(
                 } else if (node.nam == "grid-template-areas" || node.nam == "grid-template") {
                     for (let i = 0; i < node.val.length; i++) {
                         if (node.val[i].typ == EnumToken.String) {
-                            const tokens = parseString((node.val[i] as StringToken).val.slice(1, -1), {
-                                location: true,
-                            });
+                            const tokens = parseString((node.val[i] as StringToken).val.slice(1, -1));
 
                             for (const { value } of walkValues(tokens)) {
                                 if (
@@ -1720,12 +1716,12 @@ export async function doParse(
                         (value.typ == EnumToken.IdenTokenType || isIdentColor(value)) &&
                         (value as IdentToken).val in importedCssVariables
                     ) {
-                        replaceToken(parent, value, importedCssVariables[(value as IdentToken).val].val);
+                        replaceNodeOrValue(parent, value, importedCssVariables[(value as IdentToken).val].val);
                     }
                 }
             } else if (node.typ == EnumToken.RuleNodeType) {
                 if (node.tokens == null) {
-                    const tokens = parseString(node.sel, { location: true });
+                    const tokens = parseString(node.sel);
                     matchSelectorSyntax(tokens, [] as ErrorDescription[], options);
 
                     Object.defineProperty(node, "tokens", {
@@ -1884,7 +1880,7 @@ export async function doParse(
                 node.sel = "";
 
                 for (const token of node.tokens! as Token[]) {
-                    node.sel += renderToken(token);
+                    node.sel += renderValue(token);
                 }
             } else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframesAtRuleNodeType) {
                 const val: string = node.nam.toLowerCase();
@@ -2001,7 +1997,8 @@ function parseNode(
     options: ParserOptions,
     errors: ErrorDescription[],
     stats: ParseResultStats,
-): AstRule | AstAtRule | AstKeyFrameRule | AstKeyframesAtRule | AstInvalidRule | AstDeclaration | AstComment | null {
+    invalidNodes: AstNode[],
+): AstRule | AstAtRule | AstKeyFrameRule | AstKeyframesAtRule | AstDeclaration | AstComment | null {
     let i: number = 0;
 
     if (tokens.at(-1)?.typ === EnumToken.EOFTokenType) {
@@ -2022,6 +2019,17 @@ function parseNode(
         }
 
         if (matchCount > 0) {
+            let k: number = tokens.length;
+
+            while (
+                k-- > 0 &&
+                (tokens[k].typ === EnumToken.WhitespaceTokenType || tokens[k].typ === EnumToken.CommentTokenType)
+            );
+
+            if (tokens[k]?.typ == EnumToken.SemiColonTokenType) {
+                matchCount = 0;
+            }
+
             while (matchCount > 0) {
                 position = {
                     ...position,
@@ -2072,6 +2080,7 @@ function parseNode(
 
     if (i > 0) {
         context.chi!.push(...(tokens.splice(0, i) as AstNode[]).filter((n) => n.typ !== EnumToken.WhitespaceTokenType));
+        i = 0;
     }
 
     for (; i < tokens.length; i++) {
@@ -2101,7 +2110,7 @@ function parseNode(
         return null;
     }
 
-    let delim: Token = <Token>tokens.at(-1);
+    let delim: Token = tokens.at(-1) as Token;
 
     if (
         delim.typ == EnumToken.SemiColonTokenType ||
@@ -2142,11 +2151,20 @@ function parseNode(
             return null;
         }
 
+        if (
+            (node as AstNode).state == EnumAstNodeStatus.Invalid ||
+            (node as AstNode).state == EnumAstNodeStatus.Disallowed ||
+            (node as AstNode).state == EnumAstNodeStatus.Unknown ||
+            (node as AstNode).state == EnumAstNodeStatus.Unparsed ||
+            (node as AstNode).state == EnumAstNodeStatus.Malformed
+        ) {
+            invalidNodes.push(node);
+        }
+
         stats.nodesCount++;
         context.chi!.push(node);
         // @ts-expect-error
         return Object.defineProperty(node, "parent", { ...definedPropertySettings, value: context });
-
     } else {
         stats.nodesCount++;
 
@@ -2157,14 +2175,23 @@ function parseNode(
             context.chi!.push(node);
             Object.defineProperty(node, "parent", { ...definedPropertySettings, value: context });
 
+            if (
+                (node as AstNode).state == EnumAstNodeStatus.Invalid ||
+                (node as AstNode).state == EnumAstNodeStatus.Disallowed ||
+                (node as AstNode).state == EnumAstNodeStatus.Unknown ||
+                (node as AstNode).state == EnumAstNodeStatus.Unparsed ||
+                (node as AstNode).state == EnumAstNodeStatus.Malformed
+            ) {
+                invalidNodes.push(node);
+            }
+
             return node;
         } else {
             const node = parseDeclaration(tokens, context as AstRule | AstAtRule, options, errors);
             Object.defineProperty(node, "parent", { ...definedPropertySettings, value: context });
 
             if (context.typ === EnumToken.StyleSheetNodeType && node.typ === EnumToken.DeclarationNodeType) {
-                // @ts-expect-error
-                node.typ = EnumToken.InvalidDeclarationNodeType;
+                node.state = EnumAstNodeStatus.Invalid;
 
                 errors.push({
                     message: "<declaration> not allowed in <stylesheet>",
@@ -2175,14 +2202,24 @@ function parseNode(
             } else if (options.lenient || node.typ === EnumToken.DeclarationNodeType) {
                 context.chi!.push(node);
             }
+
+            if (
+                (node as AstNode).state == EnumAstNodeStatus.Invalid ||
+                (node as AstNode).state == EnumAstNodeStatus.Disallowed ||
+                (node as AstNode).state == EnumAstNodeStatus.Unknown ||
+                (node as AstNode).state == EnumAstNodeStatus.Unparsed ||
+                (node as AstNode).state == EnumAstNodeStatus.Malformed
+            ) {
+                invalidNodes.push(node);
+            }
         }
     }
 
     return null;
 }
 
-/**mjgvgyikjkml,kmbm b8790u89y70
-vbbnkit;;;jmjhyg77 * @param options
+/**
+ * @param options
  * @param errors
  * @param parseAsBlock
  */
@@ -2193,9 +2230,7 @@ export function parseAtRule(
     options: ParserOptions,
     errors: ErrorDescription[],
     parseAsBlock: boolean | null = null,
-): AstAtRule | AstInvalidAtRule | CssVariableImportTokenType | CssVariableToken | null {
-    // const rules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + (stream[0] as AtRuleToken).nam);
-
+): AstAtRule | CssVariableImportTokenType | CssVariableToken | null {
     let success: boolean = true;
     let atRuleName = (stream[0] as AtRuleToken).nam;
 
@@ -2209,22 +2244,35 @@ export function parseAtRule(
     const blockAllowed: boolean = syntaxRules?.getBlockRules() != null;
 
     if (syntaxRules == null) {
-        if (!options.lenient) {
-            errors.push({
-                action: "drop",
-                node: atRule,
-                location: atRule.loc,
-                message: "unknown at-rule",
-            });
+        // if (!options.lenient) {
+        errors.push({
+            action: "drop",
+            node: atRule,
+            location: atRule.loc,
+            message: "unknown at-rule",
+        });
 
-            // @ts-expect-error
-            return {
-                ...atRule,
-                typ: EnumToken.InvalidRuleNodeType,
+        const result = matchGenericSyntax(stream);
+
+        // @ts-expect-error
+        return Object.defineProperties(
+            Object.assign(atRule, {
+                typ: EnumToken.AtRuleNodeType,
                 val: renderTokens(trimArray(stream), options),
                 ...(parseAsBlock ? { chi: [] } : {}),
-            } as AstInvalidAtRule;
-        }
+            }),
+            {
+                state: {
+                    ...definedPropertySettings,
+                    value: result.success ? EnumAstNodeStatus.Unknown : EnumAstNodeStatus.Invalid,
+                },
+                errors: {
+                    ...definedPropertySettings,
+                    value: result.success ? [errors[errors.length - 1]] : [errors[errors.length - 1], ...result.errors],
+                },
+            },
+        ) as AstAtRule;
+        // }
     } else if (
         context.typ === EnumToken.AtRuleNodeType &&
         "page" === (context as AstAtRule).nam &&
@@ -2239,12 +2287,23 @@ export function parseAtRule(
             });
 
             // @ts-expect-error
-            return {
-                ...atRule,
-                typ: EnumToken.InvalidRuleNodeType,
-                val: renderTokens(trimArray(stream), options),
-                ...(parseAsBlock ? { chi: [] } : {}),
-            } as AstInvalidAtRule;
+            return Object.defineProperties(
+                Object.assign(atRule, {
+                    typ: EnumToken.AtRuleNodeType,
+                    val: renderTokens(trimArray(stream), options),
+                    ...(parseAsBlock ? { chi: [] } : {}),
+                }),
+                {
+                    state: {
+                        ...definedPropertySettings,
+                        value: EnumAstNodeStatus.Invalid,
+                    },
+                    errors: {
+                        ...definedPropertySettings,
+                        value: [errors[errors.length - 1]],
+                    },
+                },
+            ) as AstAtRule;
         }
         const token =
             stream.find((t) => t.typ != EnumToken.WhitespaceTokenType && t.typ === EnumToken.CommentTokenType) ?? null;
@@ -2257,12 +2316,23 @@ export function parseAtRule(
             });
 
             // @ts-expect-error
-            return {
-                ...atRule,
-                typ: EnumToken.InvalidRuleNodeType,
-                val: renderTokens(trimArray(stream), options),
-                ...(parseAsBlock ? { chi: [] } : {}),
-            } as AstInvalidAtRule;
+            return Object.defineProperties(
+                Object.assign(atRule, {
+                    typ: EnumToken.AtRuleNodeType,
+                    val: renderTokens(trimArray(stream), options),
+                    ...(parseAsBlock ? { chi: [] } : {}),
+                }),
+                {
+                    state: {
+                        ...definedPropertySettings,
+                        value: EnumAstNodeStatus.Invalid,
+                    },
+                    errors: {
+                        ...definedPropertySettings,
+                        value: [errors[errors.length - 1]],
+                    },
+                },
+            ) as AstAtRule;
         }
     }
 
@@ -2280,12 +2350,23 @@ export function parseAtRule(
         });
 
         // @ts-expect-error
-        return {
-            ...atRule,
-            typ: EnumToken.InvalidRuleNodeType,
-            val: renderTokens(trimArray(stream), options),
-            ...(parseAsBlock ? { chi: [] } : {}),
-        } as AstInvalidAtRule;
+        return Object.defineProperties(
+            Object.assign(atRule, {
+                typ: EnumToken.AtRuleNodeType,
+                val: renderTokens(trimArray(stream), options),
+                ...(parseAsBlock ? { chi: [] } : {}),
+            }),
+            {
+                state: {
+                    ...definedPropertySettings,
+                    value: EnumAstNodeStatus.Invalid,
+                },
+                errors: {
+                    ...definedPropertySettings,
+                    value: [errors[errors.length - 1]],
+                },
+            },
+        ) as AstAtRule;
     }
 
     switch (atRuleName) {
@@ -2324,7 +2405,32 @@ export function parseAtRule(
                 });
             }
 
-            if (success && options.removeCharset) {
+            if (!success) {
+                // @ts-expect-error
+                return Object.defineProperties(
+                    Object.assign(atRule, {
+                        typ: success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
+                        val: renderTokens(trimArray(stream), options),
+                    }),
+                    {
+                        state: {
+                            ...definedPropertySettings,
+                            value: EnumAstNodeStatus.Invalid,
+                        },
+                        errors: {
+                            ...definedPropertySettings,
+                            value: [errors[errors.length - 1]],
+                        },
+                        loc: {
+                            ...definedPropertySettings,
+                            value: { ...atRule.loc, end: (stream.at(-1)! ?? atRule).loc!.end },
+                        },
+                        tokens: { ...definedPropertySettings, value: stream },
+                    },
+                ) as AstAtRule;
+            }
+
+            if (options.removeCharset) {
                 return null;
             }
 
@@ -2335,13 +2441,21 @@ export function parseAtRule(
                     val: renderTokens(trimArray(stream), options),
                 }),
                 {
+                    state: {
+                        ...definedPropertySettings,
+                        value: EnumAstNodeStatus.Validated,
+                    },
+                    errors: {
+                        ...definedPropertySettings,
+                        value: [],
+                    },
                     loc: {
                         ...definedPropertySettings,
                         value: { ...atRule.loc, end: (stream.at(-1)! ?? atRule).loc!.end },
                     },
                     tokens: { ...definedPropertySettings, value: stream },
                 },
-            ) as AstAtRule | AstInvalidAtRule;
+            ) as AstAtRule;
         }
 
         case "font-feature-values": {
@@ -2354,11 +2468,19 @@ export function parseAtRule(
             // @ts-expect-error
             return Object.defineProperties(
                 Object.assign(atRule, {
-                    typ: result.success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
+                    typ: EnumToken.AtRuleNodeType,
                     val: renderTokens(trimWhiteSpaceTokens(stream), options),
                     chi: [] as Token[],
                 }),
                 {
+                    state: {
+                        ...definedPropertySettings,
+                        value: result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid,
+                    },
+                    errors: {
+                        ...definedPropertySettings,
+                        value: result.success ? [] : result.errors,
+                    },
                     loc: {
                         ...definedPropertySettings,
                         value: { ...atRule.loc, end: (stream.at(-1)! ?? atRule).loc!.end },
@@ -2403,11 +2525,19 @@ export function parseAtRule(
             // @ts-expect-error
             return Object.defineProperties(
                 Object.assign(atRule, {
-                    typ: success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
+                    typ: EnumToken.AtRuleNodeType,
                     val: renderTokens(trimWhiteSpaceTokens(stream), options),
                     chi: [] as Token[],
                 }),
                 {
+                    state: {
+                        ...definedPropertySettings,
+                        value: success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid,
+                    },
+                    errors: {
+                        ...definedPropertySettings,
+                        value: [errors[errors.length - 1]],
+                    },
                     loc: {
                         ...definedPropertySettings,
                         value: { ...atRule.loc, end: (stream.at(-1)! ?? atRule).loc!.end },
@@ -2427,11 +2557,19 @@ export function parseAtRule(
             // @ts-expect-error
             return Object.defineProperties(
                 Object.assign(atRule, {
-                    typ: result.success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
+                    typ: EnumToken.AtRuleNodeType,
                     val: renderTokens(trimWhiteSpaceTokens(stream), options),
                     chi: [] as Token[],
                 }),
                 {
+                    state: {
+                        ...definedPropertySettings,
+                        value: result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid,
+                    },
+                    errors: {
+                        ...definedPropertySettings,
+                        value: result.success ? [] : result.errors,
+                    },
                     loc: {
                         ...definedPropertySettings,
                         value: { ...atRule.loc, end: (stream.at(-1)! ?? atRule).loc!.end },
@@ -2442,7 +2580,7 @@ export function parseAtRule(
         }
         case "custom-media": {
             const tokens = trimArray(stream.slice(1));
-            const result = matchAllSyntax(syntax, createValidationContext(tokens), options);
+            const result = matchAllSyntaxes(syntax, createValidationContext(tokens), options);
 
             if (result.errors.length > 0) {
                 errors.push(...result.errors);
@@ -2454,10 +2592,18 @@ export function parseAtRule(
             // @ts-expect-error
             return Object.defineProperties(
                 Object.assign(atRule, {
-                    typ: result.success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
+                    typ: EnumToken.AtRuleNodeType,
                     val: renderTokens(trimWhiteSpaceTokens(tokens), options),
                 }),
                 {
+                    state: {
+                        ...definedPropertySettings,
+                        value: success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.ValidationFailed,
+                    },
+                    errors: {
+                        ...definedPropertySettings,
+                        value: result.success ? [] : result.errors,
+                    },
                     loc: {
                         ...definedPropertySettings,
                         value: { ...atRule.loc, end: (tokens.at(-1)! ?? atRule).loc!.end },
@@ -2467,8 +2613,6 @@ export function parseAtRule(
             ) as AstKeyframesAtRule;
         }
         case "keyframes": {
-
-            
             const tokens = trimArray(stream.slice(1));
             const filtered: Token[] = stream.filter(
                 (t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType,
@@ -2495,11 +2639,19 @@ export function parseAtRule(
             // @ts-expect-error
             return Object.defineProperties(
                 Object.assign(atRule, {
-                    typ: success ? EnumToken.KeyframesAtRuleNodeType : EnumToken.InvalidRuleNodeType,
+                    typ: EnumToken.KeyframesAtRuleNodeType,
                     val: renderTokens(tokens, options),
                     chi: [] as Array<AstKeyframesRule | AstComment>,
                 }),
                 {
+                    state: {
+                        ...definedPropertySettings,
+                        value: success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid,
+                    },
+                    errors: {
+                        ...definedPropertySettings,
+                        value: success ? [] : errors[errors.length - 1],
+                    },
                     loc: {
                         ...definedPropertySettings,
                         value: { ...atRule.loc, end: (tokens.at(-1)! ?? atRule).loc!.end },
@@ -2510,7 +2662,7 @@ export function parseAtRule(
         }
 
         case "namespace": {
-            const result: ValidationMatch = matchAllSyntax(
+            const result: ValidationMatch = matchAllSyntaxes(
                 syntax as ValidationToken[],
                 createValidationContext(stream),
                 options,
@@ -2519,6 +2671,9 @@ export function parseAtRule(
             if (!result.success) {
                 errors.push(...result.errors);
             }
+            // else {
+            //     parseUrlToken(stream);
+            // }
 
             const valid: boolean = blockAllowed === parseAsBlock && result.success;
 
@@ -2555,7 +2710,7 @@ export function parseAtRule(
             // @ts-expect-error
             return Object.defineProperties(
                 Object.assign(atRule, {
-                    typ: valid ? EnumToken.AtRuleNodeType : EnumToken.InvalidAtRuleNodeType,
+                    typ: EnumToken.AtRuleNodeType,
                     val: trimArray(stream).reduce(
                         (acc, t, index) =>
                             acc +
@@ -2564,19 +2719,27 @@ export function parseAtRule(
                                 stream[index + 1]?.typ === EnumToken.CommentTokenType &&
                                 (stream.length < index + 3 || stream[index + 2]?.typ === EnumToken.WhitespaceTokenType))
                                 ? ""
-                                : renderToken(t, options)),
+                                : renderValue(t, options)),
                         "",
                     ),
                     ...(parseAsBlock ? { chi: [] } : {}),
                 }),
                 {
+                    state: {
+                        ...definedPropertySettings,
+                        value: valid ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid,
+                    },
+                    errors: {
+                        ...definedPropertySettings,
+                        value: valid ? [] : result.errors,
+                    },
                     tokens: { ...definedPropertySettings, value: stream.slice() },
                     loc: {
                         ...definedPropertySettings,
                         value: { ...atRule.loc, end: { ...(stream.at(-1)?.loc?.end ?? atRule.loc!.end) } },
                     },
                 },
-            ) as AstInvalidAtRule | AstAtRule;
+            ) as AstAtRule;
         }
 
         case "import": {
@@ -2587,7 +2750,9 @@ export function parseAtRule(
             } else {
                 if (
                     stream[0]?.typ == EnumToken.UrlFunctionTokenType &&
-                    (stream[0] as FunctionToken).chi.some((t) => t.typ == EnumToken.StringTokenType)
+                    (stream[0] as FunctionToken).chi.some(
+                        (t) => t.typ == EnumToken.StringTokenType || t.typ == EnumToken.UrlTokenTokenType,
+                    )
                 ) {
                     stream.splice(0, 1, ...(stream[0] as FunctionToken).chi);
                 }
@@ -2596,7 +2761,7 @@ export function parseAtRule(
             // @ts-expect-error
             return Object.defineProperties(
                 Object.assign(atRule, {
-                    typ: result.success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
+                    typ: EnumToken.AtRuleNodeType,
                     val: stream.reduce(
                         (acc, t, index) =>
                             acc +
@@ -2605,11 +2770,19 @@ export function parseAtRule(
                                 stream[index + 1]?.typ === EnumToken.CommentTokenType &&
                                 (stream.length < index + 3 || stream[index + 2]?.typ === EnumToken.WhitespaceTokenType))
                                 ? ""
-                                : renderToken(t, options)),
+                                : renderValue(t, options)),
                         "",
                     ),
                 }),
                 {
+                    state: {
+                        ...definedPropertySettings,
+                        value: result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid,
+                    },
+                    errors: {
+                        ...definedPropertySettings,
+                        value: result.success ? [] : result.errors,
+                    },
                     tokens: { ...definedPropertySettings, value: stream.slice() },
                     loc: {
                         ...definedPropertySettings,
@@ -2633,7 +2806,7 @@ export function parseAtRule(
                 errors.push(...result.errors);
             }
 
-            let success: boolean = true;
+            let success: boolean = result.success;
 
             if (atRule.nam === "else") {
                 const siblings = (context as AstAtRule | AstStyleSheet).chi as AstNode[];
@@ -2691,11 +2864,19 @@ export function parseAtRule(
             // @ts-expect-error
             return Object.defineProperties(
                 Object.assign(atRule, {
-                    typ: success && result.success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
+                    typ: EnumToken.AtRuleNodeType,
                     val: renderTokens(stream, options),
                     chi: [],
                 }),
                 {
+                    state: {
+                        ...definedPropertySettings,
+                        value: success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid,
+                    },
+                    errors: {
+                        ...definedPropertySettings,
+                        value: result.success ? [] : [errors[errors.length - 1]].concat(result.errors),
+                    },
                     tokens: { ...definedPropertySettings, value: stream.slice() },
                     loc: {
                         ...definedPropertySettings,
@@ -2716,21 +2897,28 @@ export function parseAtRule(
             // @ts-expect-error
             return Object.defineProperties(
                 Object.assign(atRule, {
-                    typ: result.success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
+                    typ: EnumToken.AtRuleNodeType,
                     val: renderTokens(stream, options),
-                    chi: [],
+                    chi: [] as AstNode[],
                 }),
                 {
+                    state: {
+                        ...definedPropertySettings,
+                        value: result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid,
+                    },
+                    errors: {
+                        ...definedPropertySettings,
+                        value: result.success ? [] : result.errors,
+                    },
                     tokens: { ...definedPropertySettings, value: stream.slice() },
                     loc: {
                         ...definedPropertySettings,
                         value: { ...atRule.loc, end: { ...(stream.at(-1)?.loc?.end ?? atRule.loc!.end) } },
                     },
                 },
-            ) as AstAtRule | AstInvalidAtRule;
+            ) as AstAtRule;
         }
         case "scope": {
-
             let context = createValidationContext(trimArray(stream));
 
             let success: boolean = true;
@@ -2832,39 +3020,53 @@ export function parseAtRule(
             // @ts-expect-error
             return Object.defineProperties(
                 Object.assign(atRule, {
-                    typ: success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
+                    typ: EnumToken.AtRuleNodeType,
                     val: renderTokens(stream, options),
                     chi: [],
                 }),
                 {
+                    state: {
+                        ...definedPropertySettings,
+                        value: success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid,
+                    },
+                    errors: {
+                        ...definedPropertySettings,
+                        value: success ? [] : [errors[errors.length - 1]],
+                    },
                     tokens: { ...definedPropertySettings, value: stream.slice() },
                     loc: {
                         ...definedPropertySettings,
                         value: { ...atRule.loc, end: { ...(stream.at(-1)?.loc?.end ?? atRule.loc!.end) } },
                     },
                 },
-            ) as AstAtRule | AstInvalidAtRule;
+            ) as AstAtRule ;
         }
         case "page": {
             trimArray(stream);
 
-            const result = parseAtRulePage(atRule, stream, options, errors);
-
             // @ts-expect-error
             return Object.defineProperties(
                 Object.assign(atRule, {
-                    typ: success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
+                    typ: EnumToken.AtRuleNodeType,
                     val: renderTokens(stream, options),
-                    chi: [],
+                    chi: [] as AstNode[],
                 }),
                 {
+                    state: {
+                        ...definedPropertySettings,
+                        value: success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid,
+                    },
+                    errors: {
+                        ...definedPropertySettings,
+                        value: success ? [] : [errors[errors.length - 1]],
+                    },
                     tokens: { ...definedPropertySettings, value: stream.slice() },
                     loc: {
                         ...definedPropertySettings,
                         value: { ...atRule.loc, end: { ...(stream.at(-1)?.loc?.end ?? atRule.loc!.end) } },
                     },
                 },
-            ) as AstAtRule | AstInvalidAtRule;
+            ) as AstAtRule;
         }
         case "top-left-corner":
         case "top-left":
@@ -2912,18 +3114,26 @@ export function parseAtRule(
             // @ts-expect-error
             return Object.defineProperties(
                 Object.assign(atRule, {
-                    typ: success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
+                    typ: EnumToken.AtRuleNodeType,
                     val: renderTokens(stream, options),
-                    chi: [],
+                    chi: [] as AstNode[],
                 }),
                 {
+                    state: {
+                        ...definedPropertySettings,
+                        value: success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid,
+                    },
+                    errors: {
+                        ...definedPropertySettings,
+                        value: success ? [] : [errors[errors.length - 1]],
+                    },
                     tokens: { ...definedPropertySettings, value: stream.slice() },
                     loc: {
                         ...definedPropertySettings,
                         value: { ...atRule.loc, end: { ...(stream.at(-1)?.loc?.end ?? atRule.loc!.end) } },
                     },
                 },
-            ) as AstAtRule | AstInvalidAtRule;
+            ) as AstAtRule;
         }
 
         case "value": {
@@ -2931,7 +3141,6 @@ export function parseAtRule(
             let isVarDeclaration: boolean = false;
 
             for (; index < stream.length; index++) {
-
                 if (stream[index].typ == EnumToken.PseudoClassTokenType) {
                     Object.assign(stream[index], {
                         typ: EnumToken.IdenTokenType,
@@ -2970,7 +3179,7 @@ export function parseAtRule(
             // @value <ident>: <string>; // import from file as alias
             // @value id : <declaration-value>; // variable declaration
             // @value <ident># from <ident>; // import variables from alias
-            let result = matchAllSyntax(
+            let result = matchAllSyntaxes(
                 syntaxRules?.getPreludeRules()?.slice?.(1) as ValidationToken[],
                 createValidationContext(stream),
                 options,
@@ -2979,17 +3188,26 @@ export function parseAtRule(
             if (!result.success) {
                 errors.push(...result.errors);
 
-                return Object.defineProperty(
+                return Object.defineProperties(
                     {
-                        typ: EnumToken.InvalidAtRuleNodeType,
+                        typ: EnumToken.AtRuleNodeType,
                         val: renderTokens(stream, options),
                     },
-                    "loc",
                     {
-                        ...definedPropertySettings,
-                        value: { ...atRule.loc, end: { ...(stream.at(-1)?.loc?.end ?? atRule.loc!.end) } },
+                        state: {
+                            ...definedPropertySettings,
+                            value: EnumAstNodeStatus.Invalid,
+                        },
+                        errors: {
+                            ...definedPropertySettings,
+                            value: result.errors,
+                        },
+                        loc: {
+                            ...definedPropertySettings,
+                            value: { ...atRule.loc, end: { ...(stream.at(-1)?.loc?.end ?? atRule.loc!.end) } },
+                        },
                     },
-                ) as AstInvalidAtRule;
+                ) as AstAtRule;
             }
 
             if (isVarDeclaration) {
@@ -3000,19 +3218,35 @@ export function parseAtRule(
 
                 if (value.length == 1 && value[0].typ == EnumToken.StringTokenType) {
                     // import from file as alias
-                    return {
-                        typ: EnumToken.CssVariableImportTokenType,
-                        nam: (nam as IdentToken).val,
-                        val: value,
-                    } as CssVariableImportTokenType;
+                    return Object.defineProperties(
+                        {
+                            typ: EnumToken.CssVariableImportTokenType,
+                            nam: (nam as IdentToken).val,
+                            val: value,
+                        },
+                        {
+                            loc: {
+                                ...definedPropertySettings,
+                                value: { ...atRule.loc, end: { ...(stream.at(-1)?.loc?.end ?? atRule.loc!.end) } },
+                            },
+                        },
+                    ) as CssVariableImportTokenType;
                 }
 
                 // import variables from alias
-                return {
-                    typ: EnumToken.CssVariableTokenType,
-                    nam: (nam as IdentToken).val,
-                    val: value,
-                } as CssVariableToken;
+                return Object.defineProperties(
+                    {
+                        typ: EnumToken.CssVariableTokenType,
+                        nam: (nam as IdentToken).val,
+                        val: value,
+                    },
+                    {
+                        loc: {
+                            ...definedPropertySettings,
+                            value: { ...atRule.loc, end: { ...(stream.at(-1)?.loc?.end ?? atRule.loc!.end) } },
+                        },
+                    },
+                ) as CssVariableToken;
             }
 
             // @ts-expect-error
@@ -3042,13 +3276,20 @@ export function parseAtRule(
                 // check commas , or ,,
                 // check colon :
                 // check or and and
-                result = matchGenericSyntax(atRule, stream, options);
+                result = matchGenericSyntax(stream);
 
                 if (result.errors.length > 0) {
                     errors.push(...result.errors);
                 }
             } else {
                 result = matchAtRuleSyntax(atRule, stream, options);
+
+                if (result.errors.length > 0) {
+                    errors.push(...result.errors);
+                }
+                // else if (atRuleName === "document") {
+                //     parseUrlToken(stream);
+                // }
 
                 if (result.success) {
                     let i: number = 0;
@@ -3080,24 +3321,32 @@ export function parseAtRule(
             // @ts-expect-error
             return Object.defineProperties(
                 Object.assign(atRule, {
-                    typ: result.success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
+                    typ: EnumToken.AtRuleNodeType,
                     val: renderTokens(trimWhiteSpaceTokens(stream), options),
                     ...(parseAsBlock ? { chi: [] } : {}),
                 }),
                 {
+                    state: {
+                        ...definedPropertySettings,
+                        value: result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid,
+                    },
+                    errors: {
+                        ...definedPropertySettings,
+                        value: result.errors,
+                    },
                     tokens: { ...definedPropertySettings, value: stream.slice() },
                     loc: {
                         ...definedPropertySettings,
                         value: { ...atRule.loc, end: { ...(stream.at(-1)?.loc?.end ?? atRule.loc!.end) } },
                     },
                 },
-            ) as AstInvalidAtRule;
+            ) as AstAtRule;
         }
     }
 }
 
 /**
- * parse a string as an array of declaration nodes
+ * Parse a string as an array of declaration nodes
  * @param declaration
  *
  * Example:
@@ -3121,18 +3370,19 @@ export async function parseDeclarations(declaration: string): Promise<Array<AstD
         return (result.ast.chi[0] as AstRule).chi.filter(
             (t) =>
                 t.typ == EnumToken.DeclarationNodeType ||
-                t.typ == EnumToken.CommentNodeType ||
-                t.typ == EnumToken.InvalidDeclarationNodeType,
+                t.typ == EnumToken.CommentNodeType
         ) as Array<AstDeclaration | AstComment>;
     });
 }
 
 /**
- * parse css string and return an array of tokens
+ * Parse css string and return an array of tokens
  * @param src
  * @param options
- *
- * @private
+ *    - parseColor: parse identifiers as colors
+ *    - src: source url used for source map
+ * @param errors capture parse errors in the provided array
+
  *
  * Example:
  *
@@ -3143,14 +3393,18 @@ export async function parseDeclarations(declaration: string): Promise<Array<AstD
  * let tokens = parseString('body { color: red; }');
  * console.log(tokens);
  *
- *  tokens = parseString('#c322c980');
+ * tokens = parseString('#c322c980');
  * console.log(tokens);
  * ```
  */
-export function parseString(src: string, options: { location: boolean; src?: string } = { location: false }): Token[] {
+export function parseString(
+    src: string,
+    options: { src?: string; parseColor?: boolean } | null = { parseColor: true },
+    errors?: ErrorDescription[],
+): Token[] {
     const parseInfo: ParseInfo = {
         stream: src,
-        src: options.src ?? "",
+        src: options?.src ?? "",
         buffer: "",
         offset: 0,
         time: 0,
@@ -3158,16 +3412,29 @@ export function parseString(src: string, options: { location: boolean; src?: str
         currentPosition: { ind: -1, lin: 1, col: 0 },
     };
 
-    return parseTokens(
+    const result = parseTokens(
         [...tokenize(parseInfo)].map((t) => t.token),
-        { sourcemap: options.location },
-    ).slice(0, -1);
+        options,
+        errors,
+    );
+
+    // remove EOF token
+    result.pop();
+
+    if (result.at(-1)?.typ === EnumToken.WhitespaceTokenType) {
+        result.pop();
+    }
+
+    return result;
 }
 
 /**
- * parse function tokens in a token array
+ * Parse function tokens in a token array
  * @param tokens
  * @param options
+ *    - parseColor: parse identifiers as colors
+ * @param errors parse errors
+ *
  *
  * Example:
  *
@@ -3184,78 +3451,190 @@ export function parseString(src: string, options: { location: boolean; src?: str
  *
  * @private
  */
-export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): Token[] {
-    for (let i = 0; i < tokens.length; i++) {
-        const t: Token = tokens[i];
+export function parseTokens(
+    tokens: Token[],
+    options?: { parseColor?: boolean } | null,
+    errors?: ErrorDescription[],
+): Token[] {
+    const stack: Token[] = [];
 
-        if (t.typ == EnumToken.IdenTokenType && (t as IdentToken).val == "from" && i > 0) {
-            const left: Token[] = [];
-            const right: Token[] = [];
+    let i: number = 0;
+    let index: number;
+    let t: Token;
 
-            let foundLeft: number = 0;
-            let foundRight: number = 0;
-            let k: number = i;
-            let l: number = i;
+    options ??= { parseColor: true };
 
-            while (k > 0) {
-                if (
-                    tokens[k - 1].typ == EnumToken.CommentTokenType ||
-                    tokens[k - 1].typ == EnumToken.WhitespaceTokenType
-                ) {
-                    left.push(tokens[--k]);
-                    continue;
-                }
+    for (; i < tokens.length; i++) {
+        t = tokens[i];
 
-                if (
-                    tokens[k - 1].typ == EnumToken.IdenTokenType ||
-                    tokens[k - 1].typ == EnumToken.DashedIdenTokenType
-                ) {
-                    foundLeft++;
-                    left.push(tokens[--k]);
-                    continue;
-                }
-
-                break;
+        if (t.typ === EnumToken.FunctionTokenDefType) {
+            if (
+                tokens[i - 1]?.typ === EnumToken.ColonTokenType ||
+                tokens[i - 1]?.typ === EnumToken.DoubleColonTokenType
+            ) {
+                t = Object.assign(tokens[i - 1], {
+                    typ: EnumToken.PseudoClassFunctionTokenDefType,
+                    val:
+                        (tokens[i - 1].typ === EnumToken.ColonTokenType ? ":" : "::") +
+                        (tokens[i] as FunctionToken).val,
+                });
+                t.loc!.end = tokens[i].loc!.end;
+                tokens.splice(i--, 1);
             }
+        }
 
-            while (++l < tokens.length) {
-                if (tokens[l].typ == EnumToken.CommentTokenType || tokens[l].typ == EnumToken.WhitespaceTokenType) {
-                    right.push(tokens[l]);
-                    continue;
-                }
+        if (
+            t.typ === EnumToken.AttrStartTokenType ||
+            t.typ === EnumToken.StartParensTokenType ||
+            tokensfuncDefMap.has(t.typ)
+        ) {
+            stack.push(t);
+            continue;
+        }
 
-                if (tokens[l].typ == EnumToken.IdenTokenType || tokens[l].typ == EnumToken.StringTokenType) {
-                    foundRight++;
-                    right.push(tokens[l]);
-                    continue;
-                }
-
-                break;
-            }
-
-            if (foundLeft > 0 && foundRight == 1) {
-                while (left?.[0].typ == EnumToken.WhitespaceTokenType) {
-                    left.shift();
-                }
-
-                while (left.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
-                    left.pop();
-                }
-
-                tokens.splice(k, l - k + 1, {
-                    typ: EnumToken.ComposesSelectorNodeType,
-                    l: left,
-                    r: right.reduce((a: Token | null, b: Token) => {
-                        return a == null
-                            ? b
-                            : b.typ == EnumToken.IdenTokenType || b.typ == EnumToken.StringTokenType
-                              ? b
-                              : a;
-                    }, null),
+        if (t.typ === EnumToken.EndParensTokenType) {
+            if (
+                stack.length === 0 ||
+                (stack.at(-1)?.typ !== EnumToken.StartParensTokenType && !tokensfuncDefMap.has(stack.at(-1)?.typ))
+            ) {
+                // unbalanced parens
+                const node: Token = stack.at(-1) as Token;
+                errors?.push?.({
+                    action: "drop",
+                    message: `Unbalanced token ')' at ${node.loc!.src}:${node.loc!.sta.lin}:${node.loc!.sta.col}`,
+                    node,
+                    location: node.loc,
                 });
 
-                i = k;
+                // return [];
                 continue;
+            }
+
+            tokens.splice(i, 1);
+            index = tokens.indexOf(stack.at(-1)!);
+
+            Object.assign(tokens[index], {
+                typ:
+                    tokens[index].typ === EnumToken.StartParensTokenType
+                        ? EnumToken.ParensTokenType
+                        : (tokensfuncDefMap.get(tokens[index].typ) as EnumToken),
+                chi: trimArray(tokens.splice(index + 1, i - index - 1)),
+            });
+            i = index;
+
+            if (tokens[index].typ === EnumToken.ColorTokenType && options?.parseColor) {
+
+                parseColor(tokens[index]);
+            }
+
+            stack.pop();
+            continue;
+        }
+
+        if (t.typ === EnumToken.AttrEndTokenType) {
+            if (stack.at(-1)?.typ !== EnumToken.AttrStartTokenType) {
+                // unbalanced
+                const node: Token = stack.at(-1) as Token;
+
+                errors?.push?.({
+                    action: "drop",
+                    message: `Unbalanced token ']' at ${node.loc!.src}:${node.loc!.sta.lin}:${node.loc!.sta.col}`,
+                    node,
+                    location: node.loc,
+                });
+                // return [];
+                continue;
+            }
+
+            index = tokens.indexOf(stack.at(-1)!);
+            const attr = stack.at(-1) as AttrStartToken;
+
+            attr.loc!.end = t.loc!.end;
+
+            tokens.splice(i, 1);
+            Object.assign(attr, {
+                typ: EnumToken.AttrTokenType,
+                chi: tokens.splice(index + 1, i - index - 1),
+            });
+
+            tokens[index] = attr;
+            i = index;
+            stack.pop();
+            continue;
+        }
+
+        if (t.typ == EnumToken.IdenTokenType) {
+            if ((t as IdentToken).val == "from" && i > 0) {
+                const left: Token[] = [];
+                const right: Token[] = [];
+
+                let foundLeft: number = 0;
+                let foundRight: number = 0;
+                let k: number = i;
+                let l: number = i;
+
+                while (k > 0) {
+                    if (
+                        tokens[k - 1].typ == EnumToken.CommentTokenType ||
+                        tokens[k - 1].typ == EnumToken.WhitespaceTokenType
+                    ) {
+                        left.push(tokens[--k]);
+                        continue;
+                    }
+
+                    if (
+                        tokens[k - 1].typ == EnumToken.IdenTokenType ||
+                        tokens[k - 1].typ == EnumToken.DashedIdenTokenType
+                    ) {
+                        foundLeft++;
+                        left.push(tokens[--k]);
+                        continue;
+                    }
+
+                    break;
+                }
+
+                while (++l < tokens.length) {
+                    if (tokens[l].typ == EnumToken.CommentTokenType || tokens[l].typ == EnumToken.WhitespaceTokenType) {
+                        right.push(tokens[l]);
+                        continue;
+                    }
+
+                    if (tokens[l].typ == EnumToken.IdenTokenType || tokens[l].typ == EnumToken.StringTokenType) {
+                        foundRight++;
+                        right.push(tokens[l]);
+                        continue;
+                    }
+
+                    break;
+                }
+
+                if (foundLeft > 0 && foundRight == 1) {
+                    while (left?.[0].typ == EnumToken.WhitespaceTokenType) {
+                        left.shift();
+                    }
+
+                    while (left.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
+                        left.pop();
+                    }
+
+                    tokens.splice(k, l - k + 1, {
+                        typ: EnumToken.ComposesSelectorNodeType,
+                        l: left,
+                        r: right.reduce((a: Token | null, b: Token) => {
+                            return a == null
+                                ? b
+                                : b.typ == EnumToken.IdenTokenType || b.typ == EnumToken.StringTokenType
+                                  ? b
+                                  : a;
+                        }, null),
+                    });
+
+                    i = k;
+                    continue;
+                }
+            } else if (options?.parseColor && isColor(t)) {
+                parseColor(t);
             }
         }
 
@@ -3282,7 +3661,7 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                 if (typ == EnumToken.FunctionTokenType) {
                     tokens[i + 1].typ = EnumToken.PseudoClassFuncTokenType;
                 } else if (typ == EnumToken.IdenTokenType) {
-                    (<PseudoClassToken>tokens[i + 1]).val = ":" + (<PseudoClassToken>tokens[i + 1]).val;
+                    (tokens[i + 1] as PseudoClassToken).val = ":" + (tokens[i + 1] as PseudoClassToken).val;
                     tokens[i + 1].typ = EnumToken.PseudoClassTokenType;
                 }
 
@@ -3291,378 +3670,31 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                     i--;
                 }
             }
-
-            continue;
         }
 
-        if (t.typ == EnumToken.AttrStartTokenType) {
-            let k: number = i;
-            let inAttr: number = 1;
-
-            while (++k < tokens.length) {
-                if (tokens[k].typ == EnumToken.AttrEndTokenType) {
-                    inAttr--;
-                } else if (tokens[k].typ == EnumToken.AttrStartTokenType) {
-                    inAttr++;
-                }
-                if (inAttr == 0) {
-                    break;
-                }
+        if (t.typ === EnumToken.CommaTokenType) {
+            if (tokens[i + 1]?.typ === EnumToken.WhitespaceTokenType) {
+                tokens.splice(i + 1, 1);
             }
 
-            const attr: AttrToken = Object.assign(t, {
-                typ: inAttr == 0 ? EnumToken.AttrTokenType : EnumToken.InvalidAttrTokenType,
-                chi: tokens.splice(i + 1, k - i),
-            } as AttrToken) as AttrToken;
-
-            // @ts-ignore
-            if (attr.chi.at(-1).typ == EnumToken.AttrEndTokenType) {
-                // @ts-ignore
-                attr.chi.pop();
-            }
-
-            // @ts-ignore
-            if (attr.chi.length > 1) {
-                // @ts-ignore
-                parseTokens(attr.chi, (t as AttrToken).typ, options);
-            }
-
-            let m: number = (<Token[]>attr.chi).length;
-            let val: Token;
-
-            for (m = 0; m < (<Token[]>attr.chi).length; m++) {
-                val = (<Token[]>attr.chi)[m];
-
-                if (val.typ == EnumToken.StringTokenType) {
-                    const slice = (val as StringToken).val.slice(1, -1);
-                    if (
-                        (slice.charAt(0) != "-" || (slice.charAt(0) == "-" && isIdentStart(slice.charCodeAt(1)))) &&
-                        isIdent(slice)
-                    ) {
-                        Object.assign(val, { typ: EnumToken.IdenTokenType, val: slice });
-                    }
-                } else if (val.typ == EnumToken.LiteralTokenType && (val as LiteralToken).val == "|") {
-                    let upper: number = m;
-                    let lower: number = m;
-
-                    while (++upper < (<Token[]>attr.chi).length) {
-                        if ((<Token[]>attr.chi)[upper].typ == EnumToken.CommentTokenType) {
-                            continue;
-                        }
-
-                        break;
-                    }
-
-                    while (lower-- > 0) {
-                        if ((<Token[]>attr.chi)[lower].typ == EnumToken.CommentTokenType) {
-                            continue;
-                        }
-
-                        break;
-                    }
-
-                    // @ts-ignore
-                    (<Token[]>attr.chi)[m] = <NameSpaceAttributeToken>{
-                        typ: EnumToken.NameSpaceAttributeTokenType,
-                        l: (<Token[]>attr.chi)[lower],
-                        r: (<Token[]>attr.chi)[upper],
-                    };
-
-                    (<Token[]>attr.chi).splice(upper, 1);
-
-                    if (lower >= 0) {
-                        (<Token[]>attr.chi).splice(lower, 1);
-                        m--;
-                    }
-                } else if (
-                    [
-                        EnumToken.DashMatchTokenType,
-                        EnumToken.StartMatchTokenType,
-                        EnumToken.ContainMatchTokenType,
-                        EnumToken.EndMatchTokenType,
-                        EnumToken.IncludeMatchTokenType,
-                        EnumToken.DelimTokenType,
-                    ].includes((<Token[]>attr.chi)[m].typ)
-                ) {
-                    let upper: number = m;
-                    let lower: number = m;
-
-                    while (++upper < (<Token[]>attr.chi).length) {
-                        if ((<Token[]>attr.chi)[upper].typ == EnumToken.CommentTokenType) {
-                            continue;
-                        }
-
-                        break;
-                    }
-
-                    while (lower-- > 0) {
-                        if ((<Token[]>attr.chi)[lower].typ == EnumToken.CommentTokenType) {
-                            continue;
-                        }
-
-                        break;
-                    }
-
-                    val = (<Token[]>attr.chi)[lower];
-
-                    if (val.typ == EnumToken.StringTokenType) {
-                        const slice: string = (val as StringToken).val.slice(1, -1);
-                        if (
-                            (slice.charAt(0) != "-" || (slice.charAt(0) == "-" && isIdentStart(slice.charCodeAt(1)))) &&
-                            isIdent(slice)
-                        ) {
-                            Object.assign(val, { typ: EnumToken.IdenTokenType, val: slice });
-                        }
-                    }
-
-                    val = (<Token[]>attr.chi)[upper];
-
-                    if (val.typ == EnumToken.StringTokenType) {
-                        const slice: string = (val as StringToken).val.slice(1, -1);
-                        if (
-                            (slice.charAt(0) != "-" || (slice.charAt(0) == "-" && isIdentStart(slice.charCodeAt(1)))) &&
-                            isIdent(slice)
-                        ) {
-                            Object.assign(val, { typ: EnumToken.IdenTokenType, val: slice });
-                        }
-                    }
-
-                    // @ts-ignore
-                    const typ = <
-                        | EnumToken.DashMatchTokenType
-                        | EnumToken.StartMatchTokenType
-                        | EnumToken.ContainMatchTokenType
-                        | EnumToken.EndMatchTokenType
-                        | EnumToken.IncludeMatchTokenType
-                    >(<
-                        | DashMatchToken
-                        | StartMatchToken
-                        | ContainMatchToken
-                        | EndMatchToken
-                        | IncludeMatchToken
-                        | EqualMatchToken
-                    >(<Token[]>(t as AttrStartToken).chi)[m]).typ;
-
-                    // @ts-ignore
-                    (<Token[]>(t as AttrStartToken).chi)[m] = <MatchExpressionToken>{
-                        typ: EnumToken.MatchExpressionTokenType,
-                        op: {
-                            // @ts-ignore
-                            typ: typ == EnumToken.DelimTokenType ? EnumToken.EqualMatchTokenType : typ,
-                        },
-                        l: (<Token[]>(t as AttrStartToken).chi)[lower],
-                        r: (<Token[]>(t as AttrStartToken).chi)[upper],
-                    };
-
-                    if (isIdentColor(((<Token[]>(t as AttrStartToken).chi)[m] as MatchExpressionToken).l)) {
-                        ((<Token[]>(t as AttrStartToken).chi)[m] as MatchExpressionToken).l.typ =
-                            EnumToken.IdenTokenType;
-                    }
-
-                    if (isIdentColor(((<Token[]>(t as AttrStartToken).chi)[m] as MatchExpressionToken).r)) {
-                        ((<Token[]>(t as AttrStartToken).chi)[m] as MatchExpressionToken).r.typ =
-                            EnumToken.IdenTokenType;
-                    }
-
-                    (<Token[]>(t as AttrStartToken).chi).splice(upper, 1);
-                    (<Token[]>(t as AttrStartToken).chi).splice(lower, 1);
-
-                    upper = m;
-                    m--;
-
-                    while (
-                        upper < ((t as AttrStartToken).chi as Token[]).length &&
-                        (<Token[]>(t as AttrStartToken).chi)[upper].typ == EnumToken.WhitespaceTokenType
-                    ) {
-                        upper++;
-                    }
-
-                    if (
-                        upper < ((t as AttrStartToken).chi as Token[]).length &&
-                        (<Token[]>(t as AttrStartToken).chi)[upper].typ == EnumToken.IdenTokenType &&
-                        ["i", "s"].includes((<IdentToken>(<Token[]>(t as AttrStartToken).chi)[upper]).val.toLowerCase())
-                    ) {
-                        (<MatchExpressionToken>(<Token[]>(t as AttrStartToken).chi)[m]).attr = <"i" | "s">(
-                            (<IdentToken>(<Token[]>(t as AttrStartToken).chi)[upper]).val
-                        );
-                        (<Token[]>(t as AttrStartToken).chi).splice(upper, 1);
-                    }
-                }
-            }
-
-            m = (<Token[]>(t as AttrStartToken).chi).length;
-
-            while ((<Token[]>(t as AttrStartToken).chi).at(-1)?.typ == EnumToken.WhitespaceTokenType) {
-                (<Token[]>(t as AttrStartToken).chi).pop();
-            }
-
-            continue;
-        }
-
-        if (funcLike.includes(t.typ)) {
-            let parens: number = 1;
-            let k: number = i;
-
-            while (++k < tokens.length) {
-                if (tokens[k].typ == EnumToken.ColonTokenType) {
-                    const typ = tokens[k + 1]?.typ;
-                    if (typ != null) {
-                        if (typ == EnumToken.IdenTokenType) {
-                            tokens[k + 1].typ = EnumToken.PseudoClassTokenType;
-                            (<PseudoClassToken>tokens[k + 1]).val = ":" + (<PseudoClassToken>tokens[k + 1]).val;
-                        } else if (typ == EnumToken.FunctionTokenType) {
-                            (<PseudoClassFunctionToken>tokens[k + 1]).typ = EnumToken.PseudoClassFuncTokenType;
-                            (<PseudoClassFunctionToken>tokens[k + 1]).val =
-                                ":" + (<PseudoClassFunctionToken>tokens[k + 1]).val;
-                        }
-                        if (typ == EnumToken.FunctionTokenType || typ == EnumToken.IdenTokenType) {
-                            tokens.splice(k, 1);
-                            k--;
-                            continue;
-                        }
-                    }
-                }
-
-                if (funcLike.includes(tokens[k].typ)) {
-                    parens++;
-                } else if (tokens[k].typ == EnumToken.EndParensTokenType) {
-                    parens--;
-                }
-
-                if (parens == 0) {
-                    break;
-                }
-            }
-
-            // @ts-ignore
-            t.chi = tokens.splice(i + 1, k - i);
-
-            // @ts-ignore
-            if (t.chi.at(-1)?.typ == EnumToken.EndParensTokenType) {
-                // @ts-ignore
-                t.chi.pop();
-            }
-
-            // @ts-ignore
-            if (t.chi.length > 0) {
-                // @ts-ignore
-                parseTokens(t.chi, options);
-            }
-
-            if (t.typ == EnumToken.FunctionTokenType && mathFuncs.includes((<FunctionToken>t).val)) {
-                for (const { value, parent } of walkValues((<FunctionToken>t).chi)) {
-                    if (value.typ == EnumToken.WhitespaceTokenType) {
-                        const p = <FunctionToken | ParensToken>(parent ?? t);
-
-                        for (let i = 0; i < p.chi.length; i++) {
-                            // @ts-ignore
-                            if ((<FunctionToken | ParensToken>p).chi[i] == value) {
-                                // @ts-ignore
-                                p.chi.splice(i, 1);
-                                i--;
-                                break;
-                            }
-                        }
-                    } else if (
-                        value.typ == EnumToken.LiteralTokenType &&
-                        ["+", "-", "/", "*"].includes((<LiteralToken>value).val)
-                    ) {
-                        // @ts-ignore
-                        value.typ =
-                            (<LiteralToken>value).val === "+"
-                                ? EnumToken.Add
-                                : (<LiteralToken>value).val === "-"
-                                  ? EnumToken.Sub
-                                  : (<LiteralToken>value).val === "*"
-                                    ? EnumToken.Mul
-                                    : EnumToken.Div;
-
-                        // @ts-ignore
-                        delete value.val;
-                    }
-                }
-
-                (t as FunctionToken).chi = splitTokenList((t as FunctionToken).chi).reduce(
-                    (acc: Token[], t: Token[]): Token[] => {
-                        if (acc.length > 0) {
-                            acc.push({ typ: EnumToken.CommaTokenType });
-                        }
-
-                        acc.push(buildExpression(t));
-                        return acc;
-                    },
-                    [],
-                );
-            } else if (
-                t.typ == EnumToken.FunctionTokenType &&
-                ["minmax", "fit-content", "repeat"].includes((<FunctionToken>t).val)
-            ) {
-                // @ts-ignore
-                t.typ = EnumToken.GridTemplateFuncTokenType;
-            } else if (t.typ == EnumToken.StartParensTokenType) {
-                // @ts-ignore
-                t.typ = EnumToken.ParensTokenType;
-            }
-
-            // @ts-ignore
-            if (options.parseColor && t.typ == EnumToken.FunctionTokenType && isColor(t)) {
-                parseColor(t);
-                continue;
-            }
-
-            if (t.typ == EnumToken.UrlFunctionTokenType) {
-                // @ts-ignore
-                if ((t as FunctionURLToken).chi[0]?.typ == EnumToken.StringTokenType) {
-                    // @ts-ignore
-                    const value = t.chi[0].val.slice(1, -1);
-
-                    // @ts-ignore
-                    if ((t as FunctionURLToken).chi[0].val.slice(1, 5) != "data:" && urlTokenMatcher.test(value)) {
-                        // @ts-ignore
-                        (t as FunctionURLToken).chi[0].typ = EnumToken.UrlTokenTokenType;
-
-                        // @ts-ignore
-                        (t as FunctionURLToken).chi[0].val =
-                            options.src !== "" && options.resolveUrls
-                                ? options.resolve!(value, options.src as string)?.absolute
-                                : value;
-                    }
-                }
-
-                if ((t as FunctionURLToken).chi[0]?.typ == EnumToken.UrlTokenTokenType) {
-                    if (options.src !== "" && options.resolveUrls) {
-                        // @ts-ignore
-                        (t as FunctionURLToken).chi[0].val = options.resolve(
-                            (t as FunctionURLToken).chi[0].val,
-                            options.src as string,
-                            options.cwd,
-                        ).relative;
-                    }
-                }
-            }
-
-            // @ts-ignore
-            if (t.chi.length > 0) {
-                if (
-                    t.typ == EnumToken.PseudoClassFuncTokenType &&
-                    (t as PseudoClassFunctionToken).val === ":is" &&
-                    options.minify
-                ) {
-                    const count: number = (t as PseudoClassFunctionToken).chi.filter(
-                        (t: Token): boolean => t.typ != EnumToken.CommentTokenType,
-                    ).length;
-                    if (
-                        count == 1 ||
-                        (i == 0 && (tokens[i + 1]?.typ == EnumToken.CommaTokenType || tokens.length == i + 1)) ||
-                        (tokens[i - 1]?.typ == EnumToken.CommaTokenType &&
-                            (tokens[i + 1]?.typ == EnumToken.CommaTokenType || tokens.length == i + 1))
-                    ) {
-                        tokens.splice(i, 1, ...(t as PseudoClassFunctionToken).chi);
-                        i = Math.max(0, i - (t as PseudoClassFunctionToken).chi.length);
-                    }
-                }
+            if (tokens[i - 1]?.typ === EnumToken.WhitespaceTokenType) {
+                tokens.splice(i - 1, 1);
+                i--;
             }
         }
+    }
+
+    if (stack.length > 0) {
+        const node: Token = stack.at(-1) as Token;
+
+        errors?.push?.({
+            action: "drop",
+            message: `Unbalanced token. Expecting ${node.typ === EnumToken.AttrStartTokenType ? "']'" : ")"}'`,
+            node,
+            location: node.loc,
+        });
+
+        // return [];
     }
 
     return tokens;

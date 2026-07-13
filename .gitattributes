@@ -28,5 +28,9 @@
 # do not replace lf by crlf
 *.css text
 *.json text
+*.css text
+*.js text
+*.ts text
+*.sh text
 text eol=lf
 

@@ -21,7 +21,7 @@ import {
     getMFInfo,
     isMFName,
     isMFValue,
-    matchAllSyntax,
+    matchAllSyntaxes,
     trimArray,
 } from "../../validation/match.ts";
 import { MediaFeatureType, ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
@@ -298,7 +298,7 @@ export function parseMediaqueryList(
 
                             tokens.length = index + 1;
 
-                            const result: ValidationMatch = matchAllSyntax(
+                            const result: ValidationMatch = matchAllSyntaxes(
                                 (
                                     getParsedSyntax(
                                         ValidationSyntaxGroupEnum.Syntaxes,

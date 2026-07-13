@@ -1,33 +1,33 @@
 import { ColorType, EnumToken } from '../../ast/types.js';
-import { color2RgbToken, lch2RgbToken, lab2RgbToken, oklch2RgbToken, oklab2RgbToken, cmyk2RgbToken, hwb2RgbToken, hsl2RgbToken, hex2RgbToken, cmyk2rgbvalues } from './rgb.js';
+import { color2RgbToken, lch2RgbToken, lab2RgbToken, oklch2RgbToken, oklab2RgbToken, cmyk2RgbToken, hwb2RgbToken, hsl2RgbToken, hex2RgbToken } from './rgb.js';
 import { color2HslToken, lch2HslToken, lab2HslToken, oklch2HslToken, oklab2HslToken, cmyk2HslToken, hwb2HslToken, hex2HslToken, rgb2HslToken } from './hsl.js';
 import { color2hwbToken, cmyk2hwbToken, lch2hwbToken, lab2hwbToken, oklch2hwbToken, oklab2hwbToken, hsl2hwbToken, rgb2hwbToken } from './hwb.js';
 import { color2labToken, oklch2labToken, oklab2labToken, lch2labToken, cmyk2labToken, hwb2labToken, hsl2labToken, rgb2labToken, hex2labToken } from './lab.js';
 import { color2lchToken, oklch2lchToken, oklab2lchToken, lab2lchToken, cmyk2lchToken, hwb2lchToken, hsl2lchToken, rgb2lchToken, hex2lchToken } from './lch.js';
 import { color2oklabToken, oklch2oklabToken, lch2oklabToken, lab2oklabToken, cmyk2oklabToken, hwb2oklabToken, hsl2oklabToken, rgb2oklabToken, hex2oklabToken } from './oklab.js';
 import { color2oklchToken, lch2oklchToken, oklab2oklchToken, lab2oklchToken, cmyk2oklchToken, hwb2oklchToken, hsl2oklchToken, rgb2oklchToken, hex2oklchToken } from './oklch.js';
-import { getComponents } from './utils/components.js';
-import { oklch2srgbvalues, lch2srgbvalues, oklab2srgbvalues, lab2srgbvalues, hwb2srgbvalues, hsl2srgb, rgb2srgb, hex2srgbvalues, xyz2srgb, lsrgb2srgbvalues, srgb2lsrgbvalues } from './srgb.js';
+import { getColorComponents } from './utils/components.js';
+import { oklch2srgbvalues, lch2srgbvalues, oklab2srgbvalues, lab2srgbvalues, cmyk2srgbvalues, hwb2srgbvalues, hsl2srgb, rgb2srgb, hex2srgbvalues, xyz2srgb, lsrgb2srgbvalues, srgb2lsrgbvalues } from './srgb.js';
 import { prophotorgb2srgbvalues, srgb2prophotorgbvalues } from './prophotorgb.js';
 import { rec20202srgb, srgb2rec2020values } from './rec2020.js';
-import { srgb2xyz_d50, srgb2xyz } from './xyz.js';
+import { srgb2xyz_d65, srgb2xyz } from './xyz.js';
 import { p32srgbvalues, srgb2p3values } from './p3.js';
 import { xyzd502srgb } from './xyzd50.js';
 import { colorMix } from './color-mix.js';
 import { reduceHexValue, rgb2HexToken, color2HexToken, lch2HexToken, lab2HexToken, oklch2HexToken, oklab2HexToken, cmyk2HexToken, hwb2HexToken, hsl2HexToken } from './hex.js';
-import { parseRelativeColor } from './relativecolor.js';
+import { parseRelativeColorComponents } from './relativecolor.js';
 import { isIdentColor } from '../syntax.js';
 import { color2cmykToken, lch2cmykToken, lab2cmykToken, oklch2cmykToken, oklab2cmyk, hwb2cmykToken, hsl2cmykToken, rgb2cmykToken } from './cmyk.js';
 import { a98rgb2srgbvalues, srgb2a98values } from './a98rgb.js';
-import { epsilon } from '../../ast/transform/utils.js';
-import { definedPropertySettings, colorFuncColorSpace, colorPrecision, anglePrecision } from '../constants.js';
+import { definedPropertySettings, colorPrecision, colorFuncColorSpace, epsilon, anglePrecision } from '../constants.js';
+import { trimArray } from '../../validation/match.js';
+import { alpha } from './alpha.js';
+import { equalsIgnoreCase } from '../../parser/utils/text.js';
 
 /**
  * Converts a color to another color space
  * @param token
  * @param to
- *
- * @private
  *
  * ```ts
  *
@@ -42,6 +42,17 @@ function convertColor(token, to) {
         (isIdentColor(token) && "currentcolor" == token.val.toLowerCase())) {
         return token;
     }
+    if (token.kin == ColorType.ALPHA) {
+        const args = token.chi.filter((token) => token.typ !== EnumToken.WhitespaceTokenType && token.typ !== EnumToken.CommentTokenType);
+        if (args.at(-2)?.typ === EnumToken.LiteralTokenType && "/" === args.at(-2)?.val) {
+            args.splice(args.length - 2, 1);
+        }
+        // @ts-expect-error
+        token = alpha(...trimArray(args.slice(1)));
+        if (token == null) {
+            return null;
+        }
+    }
     if (token.kin == ColorType.COLOR_MIX && to != ColorType.COLOR_MIX) {
         const children = token.chi.reduce((acc, t) => {
             if (t.typ === EnumToken.CommaTokenType) {
@@ -52,19 +63,19 @@ function convertColor(token, to) {
             }
             return acc;
         }, [[]]);
-        token = colorMix(children[0][1], children[0][2], children[1][0], children[1][1], children[2][0], children[2][1]);
+        token = colorMix(...children.flat(2));
         if (token == null) {
             return null;
         }
     }
     if (token.cal == "rel" &&
-        ["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch", "color"].includes(token.val.toLowerCase())) {
-        const chi = getComponents(token);
+        ["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch", "color"].some((t) => equalsIgnoreCase(t, token.val))) {
+        const chi = getColorComponents(token);
         const offset = token.val == "color" ? 2 : 1;
         if (chi != null) {
             // @ts-ignore
             const color = chi[1];
-            const components = parseRelativeColor(token.val.toLowerCase() == "color"
+            const components = parseRelativeColorComponents(equalsIgnoreCase(token.val, "color")
                 ? chi[offset].val
                 : token.val, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
             if (components == null) {
@@ -384,7 +395,7 @@ function hwb2colorToken(token, to) {
     return values2colortoken(values, to);
 }
 function cmyk2colorToken(token, to) {
-    const values = cmyk2rgbvalues(token);
+    const values = cmyk2srgbvalues(token);
     if (values == null) {
         return null;
     }
@@ -458,22 +469,16 @@ function srgb2srgbcolorspace(val, to) {
             break;
         case ColorType.XYZ_D50:
             // @ts-ignore
-            values.push(...srgb2xyz_d50(...val));
+            values.push(...srgb2xyz_d65(...val));
             break;
     }
     return values;
 }
 function minmax(value, min, max) {
-    if (value < min) {
-        return min;
-    }
-    if (value > max) {
-        return max;
-    }
-    return value;
+    return value < min ? min : value > max ? max : value;
 }
 function color2srgbvalues(token) {
-    const components = getComponents(token);
+    const components = getColorComponents(token);
     if (components == null) {
         return null;
     }
@@ -510,6 +515,9 @@ function color2srgbvalues(token) {
             values = xyzd502srgb(...values);
             break;
     }
+    if (values.length == 4) {
+        values[3] = toPrecisionValue(values[3], 2);
+    }
     return values;
 }
 function values2colortoken(values, to) {
@@ -522,7 +530,7 @@ function values2colortoken(values, to) {
     if (values.length == 4) {
         chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
             typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100,
+            val: toPrecisionValue(values[3], 2) * 100,
         });
     }
     const colorSpace = ColorType[to].toLowerCase().replaceAll("_", "-");
@@ -586,12 +594,13 @@ function getAngle(token) {
     // @ts-ignore
     return token.val / 360;
 }
-function toPrecisionValue(value) {
-    value = +value.toFixed(colorPrecision);
+function toPrecisionValue(value, precision = colorPrecision) {
+    const div = Math.pow(10, precision);
+    value = Math.round(value * div) / div;
     return Math.abs(value) < epsilon ? 0 : value;
 }
-function toPrecisionAngle(angle) {
-    angle = +angle.toPrecision(colorPrecision);
+function toPrecisionAngle(angle, precision = colorPrecision) {
+    angle = toPrecisionValue(angle, precision);
     if (Math.abs(angle) >= 360) {
         angle %= 360;
     }

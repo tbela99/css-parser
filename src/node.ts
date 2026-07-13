@@ -2,6 +2,8 @@ import type {
     AstNode,
     LoadResult,
     ParseInfo,
+    ParseInputFileOptions,
+    ParseInputStreamOptions,
     ParseResult,
     ParserOptions,
     RenderOptions,
@@ -19,6 +21,7 @@ import { ModuleScopeEnumOptions } from "./lib/ast/types.ts";
 import { tokenize, tokenizeStream } from "./lib/parser/tokenize.ts";
 import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
 import { ResponseType } from "./types.ts";
+import { deprecate } from "util";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -40,16 +43,18 @@ export { minify } from "./lib/ast/minify.ts";
 export { expand } from "./lib/ast/expand.ts";
 export { walk, walkValues, WalkerEvent, WalkerOptionEnum } from "./lib/ast/walk.ts";
 export { parseString } from "./lib/parser/parse.ts";
-export { renderToken } from "./lib/renderer/render.ts";
+export { renderValue as renderToken } from "./lib/renderer/render.ts";
 export { convertColor } from "./lib/syntax/color/color.ts";
 export { isOkLabClose, okLabDistance } from "./lib/syntax/color/utils/distance.ts";
 export { parseDeclarations } from "./lib/parser/parse.ts";
 export { find, findLast, findByValue, findAll } from "./lib/ast/find.ts";
 export { cloneNode } from "./lib/ast/clone.ts";
+export { replaceNodeOrValue } from "./lib/parser/utils/token.ts";
 export {
     EnumToken,
     ColorType,
     ValidationLevel,
+    EnumAstNodeStatus,
     ModuleScopeEnumOptions,
     ModuleCaseTransformEnum,
 } from "./lib/ast/types.ts";
@@ -60,7 +65,7 @@ export { FeatureWalkMode } from "./lib/ast/features/type.ts";
 export { dirname, resolve, ResponseType };
 
 /**
- * load file or url
+ * Load file or url
  * @param url
  * @param currentDirectory
  * @param responseType
@@ -72,11 +77,11 @@ export { dirname, resolve, ResponseType };
  * ```
  */
 export async function load(
-    url: string,
+    url: string | { absolute: string; relative: string },
     currentDirectory: string = ".",
     responseType: boolean | ResponseType = false,
 ): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>> {
-    const resolved = resolve(url, currentDirectory);
+    const resolved = typeof url == "string" ? resolve(url, currentDirectory) : url;
 
     if (typeof responseType == "boolean") {
         responseType = responseType ? ResponseType.ReadableStream : ResponseType.Text;
@@ -127,7 +132,7 @@ export async function load(
 }
 
 /**
- * render the ast tree
+ * Render the ast tree
  * @param data
  * @param options
  * @param mapping
@@ -167,11 +172,12 @@ export function render(
 }
 
 /**
- * parse css file
+ * Parse css file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
  *
+ * @deprecated
  * @throws Error file not found
  *
  * Example:
@@ -189,24 +195,23 @@ export function render(
  * console.log(result.ast);
  * ```
  */
-export async function parseFile(
-    file: string,
-    options: ParserOptions = {},
-    asStream: boolean = false,
-): Promise<ParseResult> {
-    return Promise.resolve(
-        ((options.load ?? load) as (file: string, currentFile: string, asStream: boolean) => LoadResult)(
-            file,
-            ".",
-            asStream,
-        ),
-    ).then((stream) => parse(stream, { src: file, ...options }));
-}
+
+export const parseFile = deprecate(
+    async (file: string, options: ParserOptions = {}, asStream: boolean = false) =>
+        parse({ file, asStream, ...options }),
+    "parseFile is deprecated, use parse instead as parse({file, asStream, ...options})",
+) as (file: string, options?: ParserOptions, asStream?: boolean) => Promise<ParseResult>;
+
+export async function parse(stream: string | ReadableStream<Uint8Array>, options?: ParserOptions): Promise<ParseResult>;
+export async function parse(options: ParseInputFileOptions & ParserOptions): Promise<ParseResult>;
+export async function parse(options: ParseInputStreamOptions & ParserOptions): Promise<ParseResult>;
 
 /**
- * parse css
+ * Parse css
  * @param stream
  * @param options
+ *
+ * @throws Error file not found
  *
  * Example:
  *
@@ -248,9 +253,35 @@ export async function parseFile(
  */
 
 export async function parse(
-    stream: string | ReadableStream<Uint8Array>,
-    options: ParserOptions = {},
+    ...args:
+        | [stream: string | ReadableStream<Uint8Array>, options?: ParserOptions]
+        | [options: (ParseInputFileOptions | ParseInputStreamOptions) & ParserOptions]
 ): Promise<ParseResult> {
+    let options: ((ParseInputFileOptions | ParseInputStreamOptions) & ParserOptions) | ParserOptions;
+    let stream: string | ReadableStream<Uint8Array>;
+
+    if (typeof args[0] === "string" || args[0] instanceof ReadableStream) {
+        stream = args[0];
+        options = args[1] as ParserOptions;
+    } else {
+        // @ts-expect-error
+        const { file, input, ...opt } = args[0] as (ParseInputFileOptions | ParseInputStreamOptions) & TransformOptions;
+
+        options = opt;
+        if (file != null) {
+            return Promise.resolve(
+                ((options.load ?? load) as (file: string, currentFile: string, asStream: boolean) => LoadResult)(
+                    file,
+                    ".",
+                    (options as ParseInputFileOptions).asStream ?? false,
+                ),
+            ).then((stream: string | ReadableStream<Uint8Array>) => parse(stream, { src: file, ...options }));
+        } else {
+            stream = input;
+        }
+    }
+
+    options ??= {};
     options.parseInfo = {
         stream,
         buffer: "",
@@ -276,44 +307,50 @@ export async function parse(
 }
 
 /**
- * transform css file
+ * Transform css file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
  *
+ * @deprecated Use transform() instead.
  * @throws Error file not found
  *
  * Example:
  *
  * ```ts
  *
- *  import {transformFile} from '@tbela99/css-parser';
+ *  import {transform} from '@tbela99/css-parser';
  *
  *  // remote file
- * let result = await transformFile('https://docs.deno.com/styles.css');
+ * let result = await transform({file: 'https://docs.deno.com/styles.css'});
  * console.log(result.code);
  *
  * // local file
- * result = await transformFile('./css/styles.css');
+ * result = await transform({file: './css/styles.css'});
  * console.log(result.code);
  * ```
  */
-export async function transformFile(
-    file: string,
-    options: TransformOptions = {},
-    asStream: boolean = false,
-): Promise<TransformResult> {
-    return Promise.resolve(
-        ((options.load ?? load) as (file: string, currentFile: string, asStream: boolean) => LoadResult)(
+
+export const transformFile = deprecate(
+    async (file: string, options: TransformOptions = {}, asStream: boolean = false) =>
+        transform({
             file,
-            ".",
             asStream,
-        ),
-    ).then((stream) => transform(stream, { src: file, ...options }));
-}
+            ...options,
+        }),
+    "transformFile is deprecated, use transform instead as transform({file, asStream, ...options})",
+) as (file: string, options?: TransformOptions, asStream?: boolean) => Promise<TransformResult>;
+
+export async function transform(
+    css: string | ReadableStream<Uint8Array>,
+    options: TransformOptions,
+): Promise<TransformResult>;
+
+export async function transform(options: ParseInputFileOptions & TransformOptions): Promise<TransformResult>;
+export async function transform(options: ParseInputStreamOptions & TransformOptions): Promise<TransformResult>;
 
 /**
- * transform css
+ * Transform css
  * @param css
  * @param options
  *
@@ -356,13 +393,39 @@ export async function transformFile(
  * ```
  */
 export async function transform(
-    css: string | ReadableStream<Uint8Array>,
-    options: TransformOptions = {},
+    ...args:
+        | [string | ReadableStream<Uint8Array>, TransformOptions]
+        | [(ParseInputFileOptions | ParseInputStreamOptions) & TransformOptions]
 ): Promise<TransformResult> {
+    let options: ((ParseInputFileOptions | ParseInputStreamOptions) & TransformOptions) | TransformOptions;
+    let stream: string | ReadableStream<Uint8Array>;
+
+    if (typeof args[0] === "string" || args[0] instanceof ReadableStream) {
+        stream = args[0];
+        options = args[1] as ParserOptions;
+    } else {
+        // @ts-expect-error
+        const { file, input, ...opt } = args[0] as (ParseInputFileOptions | ParseInputStreamOptions) & TransformOptions;
+
+        options = opt;
+        if (file != null) {
+            return Promise.resolve(
+                ((options.load ?? load) as (file: string, currentFile: string, asStream: boolean) => LoadResult)(
+                    file,
+                    ".",
+                    (options as ParseInputFileOptions).asStream ?? false,
+                ),
+            ).then((stream: string | ReadableStream<Uint8Array>) => transform(stream, { src: file, ...options }));
+        } else {
+            stream = input;
+        }
+    }
+
+    options ??= {};
     options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
 
     const startTime: number = performance.now();
-    return parse(css, options).then((parseResult: ParseResult) => {
+    return parse(stream, options).then((parseResult: ParseResult) => {
         let mapping: Record<string, string> | null = null;
         let importMapping: Record<string, Record<string, string>> | null = null;
 

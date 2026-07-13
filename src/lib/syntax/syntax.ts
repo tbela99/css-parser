@@ -19,9 +19,18 @@ import type {
     TimeToken,
     Token,
 } from "../../@types/index.d.ts";
+import { isOkLabClose } from "../../node.ts";
 import { ColorType, EnumToken } from "../ast/types.ts";
 import { WalkerOptionEnum, walkValues } from "../ast/walk.ts";
+import { toDegrees } from "../parser/utils/angle.ts";
 import { equalsIgnoreCase } from "../parser/utils/text.ts";
+import { getParsedSyntax } from "../validation/config.ts";
+import { createValidationContext, matchAllSyntaxes, trimArray } from "../validation/match.ts";
+import { ValidationSyntaxGroupEnum } from "../validation/parser/typedef.ts";
+import type { ValidationFunctionToken } from "../validation/parser/types.d.ts";
+import { splitTokenList } from "../validation/utils/list.ts";
+import { getColorSpace } from "./color/utils/colorspace.ts";
+import { getColorComponents } from "./color/utils/components.ts";
 import {
     colorsFunc,
     systemColors,
@@ -29,6 +38,7 @@ import {
     nonStandardColors,
     COLORS_NAMES,
     mathFuncs,
+    colorFuncColorSpace,
 } from "./constants.ts";
 
 // '\\'
@@ -565,6 +575,214 @@ export function isColorspace(token: Token): boolean {
     ].includes((token as IdentToken).val.toLowerCase());
 }
 
+export function reduceColorStops(stops: Token[]) {
+    const parts = splitTokenList(stops);
+    const n = parts.length == 1 ? 1 : parts.length - 1;
+
+    let j: number;
+    let i: number;
+    let k: number = -1;
+    let updated: boolean = false;
+
+    for (i = 0; i < parts.length; i++) {
+        k++;
+
+        if (parts[i].length != 3) {
+            continue;
+        }
+
+        if (i > 0 && isOkLabClose(parts[i - 1][0] as ColorToken, parts[i][0] as ColorToken)) {
+            if (parts[i - 1].length == 1) {
+                parts[i - 1].push(
+                    { typ: EnumToken.WhitespaceTokenType },
+                    { typ: EnumToken.PercentageTokenType, val: ((k - 1) * 100) / n },
+                );
+            }
+
+            parts[i - 1].push(...parts[i].slice(1));
+            parts.splice(i--, 1);
+            updated = true;
+            continue;
+        }
+
+        for (j = 0; j < parts[i].length; j++) {
+            if (
+                (parts[i][j].typ == EnumToken.LengthTokenType && 0 == (parts[i][j] as LengthToken).val) ||
+                parts[i][j].typ == EnumToken.NumberTokenType ||
+                parts[i][j].typ == EnumToken.PercentageTokenType
+            ) {
+                if ((parts[i][j] as NumberToken | PercentageToken | LengthToken).val === (k * 100) / n) {
+                    parts[i].length = j;
+                    trimArray(parts[i]);
+                    updated = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (updated) {
+        stops.length = 0;
+
+        for (j = 0; j < parts.length; j++) {
+            if (stops.length > 0) {
+                stops.push({ typ: EnumToken.CommaTokenType });
+            }
+            stops.push(...parts[j]);
+        }
+    }
+
+    return stops;
+}
+
+/**
+ * Reduce background-position values.
+ * @param positions
+ * @param position
+ */
+export function reducegradientBackgroundPosition(positions: Token[], position: string): void {
+    switch (position) {
+        case "50%":
+        case "50% 50%":
+        case "center":
+        case "center center":
+            positions.length = 0;
+            break;
+        case "0 50%":
+        case "0% 50%":
+        case "left":
+        case "left center":
+        case "center left":
+            positions.length = 2;
+            positions.push({ typ: EnumToken.PercentageTokenType, val: 0 });
+            break;
+        case "50% 0":
+        case "50% 0%":
+        case "top center":
+        case "center top":
+            positions.length = 2;
+            positions.push({ typ: EnumToken.IdenTokenType, val: "top" });
+            break;
+        case "bottom":
+        case "50% 100%":
+        case "bottom center":
+        case "center bottom":
+            positions.length = 2;
+            positions.push({ typ: EnumToken.IdenTokenType, val: "bottom" });
+            break;
+        case "left":
+        case "0 50%":
+        case "0% 50%":
+        case "left center":
+        case "center left":
+            positions.length = 2;
+            positions.push({ typ: EnumToken.PercentageTokenType, val: 0 });
+            break;
+        case "100% 50%":
+        case "right":
+        case "right center":
+        case "center right":
+            positions.length = 2;
+            positions.push({ typ: EnumToken.PercentageTokenType, val: 100 });
+            break;
+        case "bottom left":
+        case "left bottom":
+            positions.length = 2;
+            positions.push(
+                { typ: EnumToken.PercentageTokenType, val: 0 },
+                { typ: EnumToken.WhitespaceTokenType },
+                { typ: EnumToken.PercentageTokenType, val: 100 },
+            );
+            break;
+        case "bottom right":
+        case "right bottom":
+            positions.length = 2;
+            positions.push(
+                { typ: EnumToken.PercentageTokenType, val: 100 },
+                { typ: EnumToken.WhitespaceTokenType },
+                { typ: EnumToken.PercentageTokenType, val: 100 },
+            );
+            break;
+        case "top left":
+        case "left top":
+            positions.length = 2;
+            positions.push(
+                { typ: EnumToken.PercentageTokenType, val: 0 },
+                { typ: EnumToken.WhitespaceTokenType },
+                { typ: EnumToken.PercentageTokenType, val: 0 },
+            );
+            break;
+        case "top right":
+        case "right top":
+            positions.length = 2;
+            positions.push(
+                { typ: EnumToken.PercentageTokenType, val: 100 },
+                { typ: EnumToken.WhitespaceTokenType },
+                { typ: EnumToken.PercentageTokenType, val: 0 },
+            );
+            break;
+    }
+}
+
+export function reduceConicColorStops(stops: Token[]) {
+    const parts = splitTokenList(stops);
+    const n = parts.length == 1 ? 1 : parts.length - 1;
+
+    let j: number;
+    let i: number;
+    let k: number = -1;
+    let updated: boolean = false;
+
+    for (i = 0; i < parts.length; i++) {
+        k++;
+
+        if (parts[i].length != 3) {
+            continue;
+        }
+
+        if (i > 0 && isOkLabClose(parts[i - 1][0] as ColorToken, parts[i][0] as ColorToken)) {
+            if (parts[i - 1].length == 1) {
+                parts[i - 1].push(
+                    { typ: EnumToken.WhitespaceTokenType },
+                    { typ: EnumToken.AngleTokenType, val: ((k - 1) * 100) / n, unit: "deg" },
+                );
+            }
+
+            parts[i - 1].push(...parts[i].slice(1));
+            parts.splice(i--, 1);
+            updated = true;
+            continue;
+        }
+
+        for (j = 0; j < parts[i].length; j++) {
+            if (
+                (parts[i][j].typ == EnumToken.NumberTokenType && 0 == (parts[i][j] as NumberToken).val) ||
+                parts[i][j].typ == EnumToken.AngleTokenType
+            ) {
+                if (toDegrees(parts[i][j] as AngleToken).val === (k * 360) / n) {
+                    parts[i].length = j;
+                    trimArray(parts[i]);
+                    updated = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (updated) {
+        stops.length = 0;
+
+        for (j = 0; j < parts.length; j++) {
+            if (stops.length > 0) {
+                stops.push({ typ: EnumToken.CommaTokenType });
+            }
+            stops.push(...parts[j]);
+        }
+    }
+
+    return stops;
+}
+
 export function isRectangularOrthogonalColorspace(token: Token): boolean {
     if (token.typ != EnumToken.IdenTokenType) {
         return false;
@@ -582,7 +800,7 @@ export function isRectangularOrthogonalColorspace(token: Token): boolean {
         "xyz",
         "xyz-d50",
         "xyz-d65",
-    ].includes((token as IdentToken).val.toLowerCase());
+    ].some((t) => equalsIgnoreCase(t, (token as IdentToken).val));
 }
 
 export function isPolarColorspace(token: Token): boolean {
@@ -590,7 +808,7 @@ export function isPolarColorspace(token: Token): boolean {
         return false;
     }
 
-    return ["hsl", "hwb", "lch", "oklch"].includes((token as IdentToken).val);
+    return ["hsl", "hwb", "lch", "oklch"].some((t) => equalsIgnoreCase(t, (token as IdentToken).val));
 }
 
 export function isHueInterpolationMethod(token: Token | Token[]): boolean {
@@ -603,8 +821,9 @@ export function isHueInterpolationMethod(token: Token | Token[]): boolean {
     }
 
     return (
-        ["shorter", "longer", "increasing", "decreasing"].includes((token[0] as IdentToken).val?.toLowerCase?.()) &&
-        "hue" === (token[1] as IdentToken).val?.toLowerCase?.()
+        ["shorter", "longer", "increasing", "decreasing"].some((t) =>
+            equalsIgnoreCase(t, (token[0] as IdentToken).val ?? ""),
+        ) && "hue" === (token[1] as IdentToken).val?.toLowerCase?.()
     );
 }
 
@@ -662,7 +881,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
             // @ts-ignore
             if ((token as ColorToken).val === "light-dark") {
                 // @ts-ignore
-                const children: Token[] = (<Token[]>(token as ColorToken).chi).filter((t: Token) =>
+                const children: Token[] = ((token as ColorToken).chi as Token[]).filter((t: Token) =>
                     [
                         EnumToken.IdenTokenType,
                         EnumToken.NumberTokenType,
@@ -690,6 +909,84 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
 
             // adding numbers and percentages is disallowed
             // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/lch#defining_relative_color_output_channel_components:~:text=Adding%20a%20%3Cpercentage%3E%20to%20a%20%3Cnumber%3E%2C%20for%20example%2C%20doesn%27t%20work
+
+            const components = getColorComponents(token as ColorToken);
+
+            if (components !== null) {
+                const colorSpace = getColorSpace(token as ColorToken)?.split?.("") as string[] | null;
+
+                if (colorSpace != null) {
+                    for (const value of components) {
+                        if (value.typ === EnumToken.IdenTokenType) {
+                            const val = (value as IdentToken).val.toLowerCase();
+
+                            if (
+                                // @ts-expect-error
+                                typeof Math[val.toUpperCase()] !== "number" &&
+                                val != "in" &&
+                                val != "hue" &&
+                                val != "from" &&
+                                val != "alpha" &&
+                                val != "none" &&
+                                val != "shorter" &&
+                                val != "longer" &&
+                                val != "increasing" &&
+                                val != "decreasing" &&
+                                !colorsFunc.includes(val) &&
+                                !colorSpace.includes(val) &&
+                                !colorFuncColorSpace.includes(val)
+                            ) {
+                                errors?.push({
+                                    action: "drop",
+                                    message: `Unexpected constant '${val}'`,
+                                    node: value,
+                                    location: value.loc,
+                                });
+
+                                return false;
+                            }
+                        } else if (
+                            value.typ === EnumToken.MathFunctionTokenType &&
+                            equalsIgnoreCase("calc", (value as FunctionToken).val)
+                        ) {
+                            let val: string;
+                            for (const v of walkValues((value as FunctionToken).chi)) {
+                                if (v.value.typ === EnumToken.IdenTokenType) {
+                                    val = (v.value as IdentToken).val.toLowerCase();
+
+                                    if (
+                                        // @ts-expect-error
+                                        typeof Math[val.toUpperCase()] !== "number" &&
+                                        val != "in" &&
+                                        val != "hue" &&
+                                        val != "from" &&
+                                        val != "alpha" &&
+                                        val != "none" &&
+                                        val != "shorter" &&
+                                        val != "longer" &&
+                                        val != "increasing" &&
+                                        val != "decreasing" &&
+                                        !colorsFunc.includes(val) &&
+                                        !colorSpace.includes(val) &&
+                                        !colorFuncColorSpace.includes(val)
+                                    ) {
+                                        // console.debug({ val });
+
+                                        errors?.push({
+                                            action: "drop",
+                                            message: `Unexpected constant '${val}'`,
+                                            node: v.value,
+                                            location: v.value.loc,
+                                        });
+
+                                        return false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             // @ts-ignore
             for (const { value, parent } of walkValues(token.chi, token, (value) =>
@@ -753,7 +1050,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
             // @ts-ignore
             if ((token as ColorToken).val == "color") {
                 // @ts-ignore
-                const children: Token[] = (<Token[]>(token as ColorToken).chi).filter((t: Token) =>
+                const children: Token[] = ((token as ColorToken).chi as Token[]).filter((t: Token) =>
                     [
                         EnumToken.DashedIdenTokenType,
                         EnumToken.IdenTokenType,
@@ -788,7 +1085,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                             children[i].typ == EnumToken.PercentageTokenType ||
                             isColor(children[i]) ||
                             (children[i].typ == EnumToken.IdenTokenType &&
-                                equalsIgnoreCase("none", (<IdentToken>children[i]).val))
+                                equalsIgnoreCase("none", (children[i] as IdentToken).val))
                         ) {
                             continue;
                         }
@@ -814,11 +1111,11 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                         }
 
                         if (
-                            (<IdentToken>children[i]).val != "none" &&
+                            (children[i] as IdentToken).val != "none" &&
                             !(
                                 (isRelative &&
                                     (["alpha", "r", "g", "b", "x", "y", "z"] as string[]).includes(
-                                        (<IdentToken>children[i]).val,
+                                        (children[i] as IdentToken).val,
                                     )) ||
                                 isColorspace(children[i])
                             )
@@ -835,7 +1132,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                         children[i].typ === EnumToken.FunctionTokenType ||
                         children[i].typ === EnumToken.MathFunctionTokenType
                     ) {
-                        if (!mathFuncs.includes((<FunctionToken>children[i]).val)) {
+                        if (!mathFuncs.includes((children[i] as FunctionToken).val)) {
                             return false;
                         }
                     }
@@ -846,8 +1143,8 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                 }
 
                 if (children.length == 8 || children.length == 6) {
-                    const sep: Token = <Token>children.at(-2);
-                    const alpha: Token = <Token>children.at(-1);
+                    const sep: Token = children.at(-2) as Token;
+                    const alpha: Token = children.at(-1) as Token;
                     // @ts-ignore
                     if (
                         ((children.length > 6 || !isRelative) && sep.typ != EnumToken.LiteralTokenType) ||
@@ -856,16 +1153,16 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                         return false;
                     }
 
-                    if (alpha.typ == EnumToken.IdenTokenType && (<IdentToken>alpha).val != "none") {
+                    if (alpha.typ == EnumToken.IdenTokenType && (alpha as IdentToken).val != "none") {
                         return false;
                     } else {
                         // @ts-ignore
                         if (alpha.typ == EnumToken.PercentageTokenType) {
-                            if (+(<PercentageToken>alpha).val < 0 || +(<PercentageToken>alpha).val > 100) {
+                            if (+(alpha as PercentageToken).val < 0 || +(alpha as PercentageToken).val > 100) {
                                 return false;
                             }
                         } else if (alpha.typ == EnumToken.NumberTokenType) {
-                            if (+(<NumberToken>alpha).val < 0 || +(<NumberToken>alpha).val > 1) {
+                            if (+(alpha as NumberToken).val < 0 || +(alpha as NumberToken).val > 1) {
                                 return false;
                             }
                         }
@@ -877,7 +1174,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
             // @ts-ignore
             else if ((token as ColorToken).val == "color-mix") {
                 // @ts-ignore
-                const children: Token[][] = (<Token[]>(token as ColorToken).chi).reduce(
+                const children: Token[][] = ((token as ColorToken).chi as Token[]).reduce(
                     (acc: Token[][], t: Token) => {
                         if (t.typ == EnumToken.CommaTokenType) {
                             acc.push([]);
@@ -889,59 +1186,111 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
 
                         return acc;
                     },
-                    <Token[][]>[[]],
+                    [[]] as Token[][],
                 );
 
-                if (children.length == 3) {
+                if (children.length === 0 || children[0].length === 0) {
+                    return false;
+                }
+
+                let j: number = 0;
+                let k: number = 0;
+
+                if (
+                    children[j][0].typ === EnumToken.IdenTokenType &&
+                    equalsIgnoreCase("in", (children[j][k] as IdentToken).val)
+                ) {
+                    k++;
+
+                    if (children[j][k]?.typ === EnumToken.IdenTokenType) {
+                        if (!isRectangularOrthogonalColorspace(children[j][k])) {
+                            if (isPolarColorspace(children[j][k++])) {
+                                if (k == children[j].length) {
+                                } else if (children[j][k].typ !== EnumToken.IdenTokenType) {
+                                    return false;
+                                } else if (equalsIgnoreCase("hue", (children[j][k] as IdentToken).val)) {
+                                    k++;
+                                } else {
+                                    switch ((children[j][k] as IdentToken).val) {
+                                        case "increasing":
+                                        case "decreasing":
+                                        case "longer":
+                                        case "shorter":
+                                            k++;
+                                            break;
+                                        default:
+                                            return false;
+                                    }
+
+                                    if (
+                                        children[j][k]?.typ !== EnumToken.IdenTokenType ||
+                                        !equalsIgnoreCase("hue", (children[j][k] as IdentToken).val)
+                                    ) {
+                                        return false;
+                                    }
+                                    k++;
+                                }
+                            } else {
+                                return false;
+                            }
+                        } else {
+                            k++;
+                        }
+                    } else {
+                        return false;
+                    }
+
+                    if (k != children[j].length) {
+                        return false;
+                    }
+
+                    j++;
+                }
+
+                while (j < children.length) {
+                    if (children[j].length > 2) {
+                        return false;
+                    }
+
                     if (
-                        children[0].length > 4 ||
-                        children[0][0].typ != EnumToken.IdenTokenType ||
-                        "in" !== (children[0][0] as IdentToken).val?.toLowerCase?.() ||
-                        !isColorspace(children[0][1]) ||
-                        (children[0].length >= 3 && !isHueInterpolationMethod(children[0].slice(2))) ||
-                        children[1].length > 2 ||
-                        !isColor(children[1][0]) ||
-                        (children[1].length == 2 && !isPercentageToken(children[1][1])) ||
-                        children[2].length > 2 ||
-                        (children[2].length == 2 && !isPercentageToken(children[2][1])) ||
-                        !isColor(children[2][0])
+                        !isColor(children[j][0]) &&
+                        !(
+                            children[j][0].typ == EnumToken.WildCardFunctionTokenType &&
+                            equalsIgnoreCase("calc", (children[j][0] as FunctionToken).val)
+                        )
                     ) {
                         return false;
                     }
 
-                    if (children[1].length == 2) {
-                        if (
-                            !(
-                                children[1][1].typ == EnumToken.PercentageTokenType ||
-                                (children[1][1].typ == EnumToken.NumberTokenType &&
-                                    (children[1][1] as NumberToken).val == 0)
-                            )
-                        ) {
+                    if (children[j][0].typ == EnumToken.WildCardFunctionTokenType) {
+                        const result = matchAllSyntaxes(
+                            getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "calc()") as ValidationFunctionToken[],
+                            createValidationContext([children[j][0]]),
+                            {},
+                        );
+
+                        if (!result.success) {
                             return false;
                         }
                     }
 
-                    if (children[2].length == 2) {
-                        if (
-                            !(
-                                children[2][1].typ == EnumToken.PercentageTokenType ||
-                                (children[2][1].typ == EnumToken.NumberTokenType &&
-                                    (children[2][1] as NumberToken).val == 0)
-                            )
-                        ) {
-                            return false;
-                        }
+                    if (children[j].length > 1 && !isPercentageToken(children[j][1])) {
+                        return false;
                     }
 
-                    return true;
+                    j++;
                 }
 
-                return false;
+                return true;
             } else {
                 const keywords: string[] = ["from", "none"];
 
                 // @ts-ignore
-                if (["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch"].includes((token as ColorToken).val)) {
+                if (
+                    ["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch"].some((t) =>
+                        equalsIgnoreCase(t, (token as ColorToken).val),
+                    )
+                ) {
                     // @ts-ignore
                     keywords.push("alpha", ...(token as ColorToken).val.slice(-3).split(""));
                 }
@@ -1167,18 +1516,18 @@ export function isIdentCodepoint(codepoint: number): boolean {
 export function isIdent(name: string): boolean {
     const j: number = name.length - 1;
     let i: number = 0;
-    let codepoint: number = <number>name.charCodeAt(0);
+    let codepoint: number = name.charCodeAt(0) as number;
 
     // -
     if (codepoint == 0x2d) {
-        const nextCodepoint: number = <number>name.charCodeAt(1);
+        const nextCodepoint: number = name.charCodeAt(1) as number;
 
         if (Number.isNaN(nextCodepoint)) {
             return false;
         }
 
         if (nextCodepoint == REVERSE_SOLIDUS) {
-            return name.length > 2 && !isNewLine(<number>name.charCodeAt(2));
+            return name.length > 2 && !isNewLine(name.charCodeAt(2) as number);
         }
 
         if (isDigit(nextCodepoint)) {
@@ -1212,11 +1561,11 @@ export function isIdent(name: string): boolean {
 
     while (i < j) {
         i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
-        codepoint = <number>name.charCodeAt(i);
+        codepoint = name.charCodeAt(i) as number;
 
         if (codepoint == REVERSE_SOLIDUS) {
             i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
-            codepoint = <number>name.charCodeAt(i);
+            codepoint = name.charCodeAt(i) as number;
             i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
 
             continue;
@@ -1259,7 +1608,7 @@ export function isNumber(name: string): boolean {
         return false;
     }
 
-    let codepoint: number = <number>name.charCodeAt(0);
+    let codepoint: number = name.charCodeAt(0) as number;
     let i: number = 0;
     const j: number = name.length;
 
@@ -1274,7 +1623,7 @@ export function isNumber(name: string): boolean {
 
     // consume digits
     while (i < j) {
-        codepoint = <number>name.charCodeAt(i);
+        codepoint = name.charCodeAt(i) as number;
 
         if (isDigit(codepoint)) {
             i++;
@@ -1291,13 +1640,13 @@ export function isNumber(name: string): boolean {
 
     // '.'
     if (codepoint == 0x2e) {
-        if (!isDigit(<number>name.charCodeAt(++i))) {
+        if (!isDigit(name.charCodeAt(++i) as number)) {
             return false;
         }
     }
 
     while (i < j) {
-        codepoint = <number>name.charCodeAt(i);
+        codepoint = name.charCodeAt(i) as number;
 
         if (isDigit(codepoint)) {
             i++;
@@ -1319,14 +1668,14 @@ export function isNumber(name: string): boolean {
             return false;
         }
 
-        codepoint = <number>name.charCodeAt(i + 1);
+        codepoint = name.charCodeAt(i + 1) as number;
 
         // '+' '-'
         if ([0x2b, 0x2d].includes(codepoint)) {
             i++;
         }
 
-        codepoint = <number>name.charCodeAt(i + 1);
+        codepoint = name.charCodeAt(i + 1) as number;
 
         if (!isDigit(codepoint)) {
             return false;
@@ -1334,7 +1683,7 @@ export function isNumber(name: string): boolean {
     }
 
     while (++i < j) {
-        codepoint = <number>name.charCodeAt(i);
+        codepoint = name.charCodeAt(i) as number;
 
         if (!isDigit(codepoint)) {
             return false;
@@ -1358,7 +1707,7 @@ export function parseDimension(
     let index: number = name.length;
 
     while (index--) {
-        if (isLetter(<number>name.charCodeAt(index))) {
+        if (isLetter(name.charCodeAt(index) as number)) {
             continue;
         }
 
@@ -1370,11 +1719,11 @@ export function parseDimension(
         return null;
     }
 
-    const dimension = <DimensionToken>{
+    const dimension = {
         typ: EnumToken.DimensionTokenType,
         val: +name.slice(0, index),
         unit: name.slice(index),
-    };
+    } as DimensionToken;
 
     if (Number.isNaN(dimension.val)) {
         return null;
@@ -1413,7 +1762,7 @@ export function isHexColor(name: string): boolean {
     }
 
     for (let chr of name.slice(1)) {
-        let codepoint: number = <number>chr.charCodeAt(0);
+        let codepoint: number = chr.charCodeAt(0) as number;
 
         if (
             !isDigit(codepoint) &&
