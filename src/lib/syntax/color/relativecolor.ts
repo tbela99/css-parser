@@ -76,8 +76,8 @@ export function parseRelativeColorComponents(
     const allComponents: Token[] = [rExp, gExp, bExp, aExp as Token];
     const components = getColorComponents(original);
 
-        const validKeys = names.split("");
-        let val: string = "";
+    const validKeys = names.split("");
+    let val: string = "";
 
     if (components != null) {
         allComponents.push(...components);
@@ -118,7 +118,6 @@ export function parseRelativeColorComponents(
             equalsIgnoreCase("calc", (component as FunctionToken).val)
         ) {
             for (const { value } of walkValues((component as FunctionToken).chi)) {
-
                 if (value.typ == EnumToken.IdenTokenType) {
                     val = (value as IdentToken).val.toLowerCase();
 
@@ -144,8 +143,6 @@ export function parseRelativeColorComponents(
             }
         }
     }
-
-    // console.debug({ allComponents });
 
     const converted: ColorToken = <ColorToken>(
         convertColor(original, ColorType[relativeKeys.toUpperCase().replaceAll("-", "_") as keyof typeof ColorType])

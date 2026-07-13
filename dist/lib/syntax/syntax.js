@@ -508,7 +508,6 @@ function isColor(token, errors) {
                                 !colorsFunc.includes(val) &&
                                 !colorSpace.includes(val) &&
                                 !colorFuncColorSpace.includes(val)) {
-                                // console.debug({ val });
                                 errors?.push({
                                     action: "drop",
                                     message: `Unexpected constant '${val}'`,

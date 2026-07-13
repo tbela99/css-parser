@@ -7350,7 +7350,6 @@ function parseSyntax(syntax) {
                 }
                 {
                     let index = tokens.lastIndexOf(stack.at(-1));
-                    // "fit-content( <length-percentage [0,∞]> )"
                     if ((tokens[index - 2]?.typ === ValidationTokenEnum.Keyword ||
                         tokens[index - 2]?.typ === ValidationTokenEnum.StringToken) &&
                         tokens[index - 1]?.typ === ValidationTokenEnum.Whitespace &&
@@ -15116,7 +15115,6 @@ function parseRelativeColorComponents(relativeKeys, original, rExp, gExp, bExp, 
             }
         }
     }
-    // console.debug({ allComponents });
     const converted = (convertColor(original, exports.ColorType[relativeKeys.toUpperCase().replaceAll("-", "_")]));
     if (converted == null) {
         return null;
@@ -17004,7 +17002,6 @@ function isColor(token, errors) {
                                 !colorsFunc.includes(val) &&
                                 !colorSpace.includes(val) &&
                                 !colorFuncColorSpace.includes(val)) {
-                                // console.debug({ val });
                                 errors?.push({
                                     action: "drop",
                                     message: `Unexpected constant '${val}'`,
@@ -27988,7 +27985,6 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
         switch (stream[i].typ) {
             case exports.EnumToken.EndParensTokenType:
                 {
-                    // console.debug('na', tokensfuncDefMap.has(stack.at(-1)?.typ));
                     if (stack.length === 0) {
                         return {
                             success: false,
@@ -28129,7 +28125,8 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                             k--;
                         }
                         if (stack[k]?.typ !== exports.EnumToken.ColonTokenType) {
-                            if (tokens[index].typ !== exports.EnumToken.SupportsFunctionTokenType && !equalsIgnoreCase('env', tokens[index].val)) {
+                            if (tokens[index].typ !== exports.EnumToken.SupportsFunctionTokenType &&
+                                !equalsIgnoreCase("env", tokens[index].val)) {
                                 errors.push({
                                     action: "ignore",
                                     node: tokens[index],
@@ -28154,10 +28151,8 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                                 }
                             }
                         }
-                        // console.debug({stack2: stack});
                         stack.pop();
                         tokens.pop();
-                        // console.debug({stack});
                         scopes.pop();
                         scope = scopes[scopes.length - 1];
                     }

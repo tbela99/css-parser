@@ -250,7 +250,7 @@ export function* walkValues(
     } else if (filter == null) {
         filter = {
             event: WalkerEvent.Enter,
-        }
+        };
     }
 
     let isNumeric: boolean = false;

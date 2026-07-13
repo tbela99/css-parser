@@ -473,7 +473,6 @@ function parseSyntax(syntax) {
                 }
                 {
                     let index = tokens.lastIndexOf(stack.at(-1));
-                    // "fit-content( <length-percentage [0,∞]> )"
                     if ((tokens[index - 2]?.typ === ValidationTokenEnum.Keyword ||
                         tokens[index - 2]?.typ === ValidationTokenEnum.StringToken) &&
                         tokens[index - 1]?.typ === ValidationTokenEnum.Whitespace &&

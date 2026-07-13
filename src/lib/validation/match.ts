@@ -662,7 +662,6 @@ export function matchSelectorSyntax(
                 }
 
                 if (stack.length > 0 && stack.at(-1)?.typ === EnumToken.UniversalSelectorTokenType) {
-                    
                     stack.pop();
                 }
 

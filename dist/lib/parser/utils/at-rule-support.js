@@ -139,7 +139,6 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
         switch (stream[i].typ) {
             case EnumToken.EndParensTokenType:
                 {
-                    // console.debug('na', tokensfuncDefMap.has(stack.at(-1)?.typ));
                     if (stack.length === 0) {
                         return {
                             success: false,
@@ -280,7 +279,8 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                             k--;
                         }
                         if (stack[k]?.typ !== EnumToken.ColonTokenType) {
-                            if (tokens[index].typ !== EnumToken.SupportsFunctionTokenType && !equalsIgnoreCase('env', tokens[index].val)) {
+                            if (tokens[index].typ !== EnumToken.SupportsFunctionTokenType &&
+                                !equalsIgnoreCase("env", tokens[index].val)) {
                                 errors.push({
                                     action: "ignore",
                                     node: tokens[index],
@@ -305,10 +305,8 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                                 }
                             }
                         }
-                        // console.debug({stack2: stack});
                         stack.pop();
                         tokens.pop();
-                        // console.debug({stack});
                         scopes.pop();
                         scope = scopes[scopes.length - 1];
                     }

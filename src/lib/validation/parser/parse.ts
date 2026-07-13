@@ -704,7 +704,6 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                 {
                     let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
-                    // "fit-content( <length-percentage [0,∞]> )"
                     if (
                         (tokens[index - 2]?.typ === ValidationTokenEnum.Keyword ||
                             tokens[index - 2]?.typ === ValidationTokenEnum.StringToken) &&

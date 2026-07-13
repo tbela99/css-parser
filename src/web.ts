@@ -188,7 +188,7 @@ export async function parseFile(
     options: ParserOptions = {},
     asStream: boolean = false,
 ): Promise<ParseResult> {
-    console.error(
+    console.warn(
         "DeprecationWarning: parseFile is deprecated, use parse instead as parse({file, asStream, ...options})",
     );
     return parse({ file, asStream, ...options });

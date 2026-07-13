@@ -88,7 +88,6 @@ function parseRelativeColorComponents(relativeKeys, original, rExp, gExp, bExp, 
             }
         }
     }
-    // console.debug({ allComponents });
     const converted = (convertColor(original, ColorType[relativeKeys.toUpperCase().replaceAll("-", "_")]));
     if (converted == null) {
         return null;

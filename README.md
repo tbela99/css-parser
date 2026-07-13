@@ -55,11 +55,11 @@ The [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html) evalu
 
 A sample result:
 
-| File | ligthningcss | CSS Parser |
-| --- | --- | --- |
-| tailwind.css - 2380419 bytes | 1864728 bytes | 1633251 bytes |
-| bootstrap-4.css - 200078 bytes | 153616 bytes | 144700 bytes |
-| bootstrap-5.css - 205481 bytes | 159987 bytes | 151258 bytes |
+| File                           | ligthningcss  | CSS Parser    |
+| ------------------------------ | ------------- | ------------- |
+| tailwind.css - 2380419 bytes   | 1864728 bytes | 1633251 bytes |
+| bootstrap-4.css - 200078 bytes | 153616 bytes  | 144700 bytes  |
+| bootstrap-5.css - 205481 bytes | 159987 bytes  | 151258 bytes  |
 
 On the [complete benchmark suite](https://tbela99.github.io/css-parser/benchmark/index.html), css-parser generated a total output size of 2,204,888 bytes, compared to 2,494,113 bytes for Lightning CSS and larger outputs for all other tested minifiers. 
 While some tools prioritize raw execution speed, css-parser focuses on maximizing compression while preserving stylesheet semantics, resulting in consistently smaller production bundles.
@@ -72,17 +72,18 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 
 - [Installation](https://tbela99.github.io/css-parser/docs/documents/Guide.Getting_started.html#installation)
 - [Usage](https://tbela99.github.io/css-parser/docs/documents/Guide.Usage.html)
-- [Parsing Strings](https://tbela99.github.io/css-parser/docs/documents/Guide.Usage.html#parsing)
+  - [Parsing CSS](https://tbela99.github.io/css-parser/docs/documents/Guide.Usage.html#parsing)
   - [Parsing files](https://tbela99.github.io/css-parser/docs/documents/Guide.Usage.html#parsing-files)
   - [Parsing streams](https://tbela99.github.io/css-parser/docs/documents/Guide.Usage.html#parsing-from-a-readable-stream)
+  - [Rendering AST](https://tbela99.github.io/css-parser/docs/documents/Guide.Usage.html#rendering-ast)
   - [Transform](https://tbela99.github.io/css-parser/docs/documents/Guide.Usage.html#transform)
-- [Rendering AST](https://tbela99.github.io/css-parser/docs/documents/Guide.Usage.html#rendering-ast)
 - [Validation](https://tbela99.github.io/css-parser/docs/documents/Guide.Validation.html)
 - [CSS Modules](https://tbela99.github.io/css-parser/docs/documents/Guide.CSS_Modules.html)
 - [Minification](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html)
 - [Custom Transform](https://tbela99.github.io/css-parser/docs/documents/Guide.Custom_Transform.html)
 - [Ast Manipulation](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast_Manipulation.html)
-  - [Utility Functions](https://tbela99.github.io/css-parser/docs/documents/Guide.Utility_Functions.html)
+- [Utility Functions](https://tbela99.github.io/css-parser/docs/documents/Guide.Utility_Functions.html)
+- 
 ## AST
 
 ### Comment
@@ -185,4 +186,4 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 
 ## Performance
 
-- [x] bundle file referenced by the @import statement.
+- [x] Bundle file referenced by the @import statement.

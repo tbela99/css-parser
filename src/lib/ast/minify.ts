@@ -494,15 +494,11 @@ function doMinify(
         let nodeIndex: number = -1;
 
         for (; i < ast.chi!.length; i++) {
-            if (
-                ast.chi![i].typ === EnumToken.CommentNodeType
-            ) {
+            if (ast.chi![i].typ === EnumToken.CommentNodeType) {
                 continue;
             }
 
-            while (
-                previous?.typ === EnumToken.CommentNodeType
-            ) {
+            while (previous?.typ === EnumToken.CommentNodeType) {
                 previous = ast.chi[--nodeIndex];
                 continue;
             }

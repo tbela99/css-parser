@@ -121,7 +121,7 @@ function render(data, options = {}, mapping) {
  * ```
  */
 async function parseFile(file, options = {}, asStream = false) {
-    console.error("DeprecationWarning: parseFile is deprecated, use parse instead as parse({file, asStream, ...options})");
+    console.warn("DeprecationWarning: parseFile is deprecated, use parse instead as parse({file, asStream, ...options})");
     return parse({ file, asStream, ...options });
 }
 /**

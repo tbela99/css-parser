@@ -715,7 +715,7 @@ export function renderValue(
                     "lch",
                 ].includes(fnName);
                 const useAlpha: boolean =
-                    (hasAlpha && (token as ColorToken).chi!.length == (isLegacy? 7: 4)) ||
+                    (hasAlpha && (token as ColorToken).chi!.length == (isLegacy ? 7 : 4)) ||
                     ("color" == (token as ColorToken).val && (token as ColorToken).chi!.length == 5);
 
                 return (

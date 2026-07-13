@@ -72,7 +72,6 @@ export function parseAtRuleSupportSyntax(
     }
 
     for (; i < stream.length; i++) {
-
         tokens.push(stream[i]);
 
         if (stream[i].typ == EnumToken.ColonTokenType) {
@@ -190,9 +189,6 @@ export function parseAtRuleSupportSyntax(
         switch (stream[i].typ) {
             case EnumToken.EndParensTokenType:
                 {
-
-                    // console.debug('na', tokensfuncDefMap.has(stack.at(-1)?.typ));
-
                     if (stack.length === 0) {
                         return {
                             success: false,
@@ -351,7 +347,6 @@ export function parseAtRuleSupportSyntax(
 
                         expectAndOr = true;
                     } else if (tokensfuncDefMap.has(stack.at(-1)?.typ)) {
-                    
                         const index: number = tokens.indexOf(stack.at(-1)!);
                         tokens[index] = Object.defineProperty(
                             {
@@ -367,25 +362,24 @@ export function parseAtRuleSupportSyntax(
                         ) as FunctionToken;
 
                         if (tokens[index].typ === EnumToken.PseudoClassFuncTokenType) {
-                            
-                                // not a declaration
-                                const result = matchAllSyntaxes(
-                                    (
-                                        getParsedSyntax(
-                                            ValidationSyntaxGroupEnum.Selectors,
-                                            (tokens[index] as FunctionToken).val + "()",
-                                        ) as ValidationFunctionToken[]
-                                    )?.[0]?.chi as ValidationToken[],
-                                    createValidationContext((tokens[index] as FunctionToken).chi as Token[]),
-                                    options,
-                                );
+                            // not a declaration
+                            const result = matchAllSyntaxes(
+                                (
+                                    getParsedSyntax(
+                                        ValidationSyntaxGroupEnum.Selectors,
+                                        (tokens[index] as FunctionToken).val + "()",
+                                    ) as ValidationFunctionToken[]
+                                )?.[0]?.chi as ValidationToken[],
+                                createValidationContext((tokens[index] as FunctionToken).chi as Token[]),
+                                options,
+                            );
 
-                                if (!result.success) {
-                                    return {
-                                        success: false,
-                                        errors: result.errors,
-                                    };
-                                }
+                            if (!result.success) {
+                                return {
+                                    success: false,
+                                    errors: result.errors,
+                                };
+                            }
 
                             stack.pop();
                             tokens.pop();
@@ -400,8 +394,10 @@ export function parseAtRuleSupportSyntax(
                         }
 
                         if (stack[k]?.typ !== EnumToken.ColonTokenType) {
-                            if (tokens[index].typ !== EnumToken.SupportsFunctionTokenType && !equalsIgnoreCase('env', (tokens[index] as FunctionToken).val)) {
-
+                            if (
+                                tokens[index].typ !== EnumToken.SupportsFunctionTokenType &&
+                                !equalsIgnoreCase("env", (tokens[index] as FunctionToken).val)
+                            ) {
                                 errors.push({
                                     action: "ignore",
                                     node: tokens[index],
@@ -435,16 +431,11 @@ export function parseAtRuleSupportSyntax(
                             }
                         }
 
-                    // console.debug({stack2: stack});
-                    
                         stack.pop();
                         tokens.pop();
 
-                    // console.debug({stack});
-                    
                         scopes.pop();
                         scope = scopes[scopes.length - 1];
-                    
                     }
 
                     if (stack.at(-1)?.typ === EnumToken.NotTokenType) {
@@ -466,7 +457,6 @@ export function parseAtRuleSupportSyntax(
                     }
 
                     if (stack.at(-1)?.typ === EnumToken.AndTokenType || stack.at(-1)?.typ === EnumToken.OrTokenType) {
-
                         if (stack.length > 1 && stack.at(-2)?.typ !== EnumToken.StartParensTokenType) {
                             return {
                                 success: false,

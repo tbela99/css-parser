@@ -936,8 +936,6 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                                 !colorSpace.includes(val) &&
                                 !colorFuncColorSpace.includes(val)
                             ) {
-                                // console.debug({ val });
-
                                 errors?.push({
                                     action: "drop",
                                     message: `Unexpected constant '${val}'`,
@@ -954,7 +952,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                             let val: string;
                             for (const v of walkValues((value as FunctionToken).chi)) {
                                 if (v.value.typ === EnumToken.IdenTokenType) {
-                                     val = (v.value as IdentToken).val.toLowerCase();
+                                    val = (v.value as IdentToken).val.toLowerCase();
 
                                     if (
                                         // @ts-expect-error
