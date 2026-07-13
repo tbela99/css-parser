@@ -33,3 +33,6 @@
 /test/main.mjs
 /test/modules/
 /playground
+/deno.lock
+/scripts
+/typedoc.config.js

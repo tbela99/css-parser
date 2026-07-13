@@ -1,6 +1,6 @@
 {
   "name": "@tbela99/css-parser",
-  "version": "1.4.4-alpha9",
+  "version": "1.4.4",
   "publish": {
     "include": [
       "src",
@@ -24,7 +24,7 @@
       "package-lock.json",
       "ROADMAP.md",
       "rollup.config.js",
-      "tools",
+      "scripts",
       ".DS_Store",
       ".idea",
       "ROADMAP.md",
@@ -32,6 +32,7 @@
       "package-lock.json",
       "typedoc.json",
       "typedoc-tsconfig.jsonc",
+      "typedoc.config.js",
       "docs/",
       "files/",
       "playground/",
