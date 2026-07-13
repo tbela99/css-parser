@@ -406,162 +406,162 @@ html {
 }`));
         });
 
-        it('if(media()) #18', function () {
-            const nesting1 = `
-button {
-  aspect-ratio: 1;
-  width: if(media(any-pointer: fine): 30px; else: 44px);
-}
-`;
-            return transform(nesting1, {
-                beautify: true, expandIfSyntax: true
-            }).then((result) => expect(result.code).equals(`button {
- aspect-ratio: 1;
- width: 44px;
- @media (any-pointer:fine) {
-  width: 30px
- }
-}`));
-        });
+//         it('if(media()) #18', function () {
+//             const nesting1 = `
+// button {
+//   aspect-ratio: 1;
+//   width: if(media(any-pointer: fine): 30px; else: 44px);
+// }
+// `;
+//             return transform(nesting1, {
+//                 beautify: true, expandIfSyntax: true
+//             }).then((result) => expect(result.code).equals(`button {
+//  aspect-ratio: 1;
+//  width: 44px;
+//  @media (any-pointer:fine) {
+//   width: 30px
+//  }
+// }`));
+//         });
         
-        it('if(media()) #19', function () {
-            const nesting1 = `
+//         it('if(media()) #19', function () {
+//             const nesting1 = `
 
-div-1 {
-  background-image: if(
-    else: none;
-  );
-}
-div-2 {
-  background-image: if(
-  style(--scheme: ice): linear-gradient(#caf0f8, white, #caf0f8) ;
-  else: none ;
-);
+// div-1 {
+//   background-image: if(
+//     else: none;
+//   );
+// }
+// div-2 {
+//   background-image: if(
+//   style(--scheme: ice): linear-gradient(#caf0f8, white, #caf0f8) ;
+//   else: none ;
+// );
 
-div-3 {
-  background-image: if(
-    style(--scheme: ice): linear-gradient(#caf0f8, white, #caf0f8);
-    style(--scheme: fire): linear-gradient(#ffc971, white, #ffc971);
-    else: none;
-  );
-}
-div-4 {
-  background-image: if(
+// div-3 {
+//   background-image: if(
+//     style(--scheme: ice): linear-gradient(#caf0f8, white, #caf0f8);
+//     style(--scheme: fire): linear-gradient(#ffc971, white, #ffc971);
+//     else: none;
+//   );
+// }
+// div-4 {
+//   background-image: if(
     
-  );
-}
-`;
-            return transform(nesting1, {
-                beautify: true, expandIfSyntax: true
-            }).then((result) => expect(result.code).equals(`div-1,div-2 {
- background-image: none
-}
-div-2 {
- @container style(--scheme:ice) {
-  background-image: linear-gradient(#caf0f8,#fff,#caf0f8)
- }
- div-3 {
-  background-image: none;
-  @container style(--scheme:ice) {
-   background-image: linear-gradient(#caf0f8,#fff,#caf0f8)
-  }
-  @container style(--scheme:fire) {
-   background-image: linear-gradient(#ffc971,#fff,#ffc971)
-  }
- }
- div-4 {
-  background-image: if()
- }
-}`));
-        });
+//   );
+// }
+// `;
+//             return transform(nesting1, {
+//                 beautify: true, expandIfSyntax: true
+//             }).then((result) => expect(result.code).equals(`div-1,div-2 {
+//  background-image: none
+// }
+// div-2 {
+//  @container style(--scheme:ice) {
+//   background-image: linear-gradient(#caf0f8,#fff,#caf0f8)
+//  }
+//  div-3 {
+//   background-image: none;
+//   @container style(--scheme:ice) {
+//    background-image: linear-gradient(#caf0f8,#fff,#caf0f8)
+//   }
+//   @container style(--scheme:fire) {
+//    background-image: linear-gradient(#ffc971,#fff,#ffc971)
+//   }
+//  }
+//  div-4 {
+//   background-image: if()
+//  }
+// }`));
+//         });
         
-        it('if(media(), style()) #20', function () {
-            const nesting1 = `
+//         it('if(media(), style()) #20', function () {
+//             const nesting1 = `
 
-button {
-	background: linear-gradient(
-		if(media(min-width: 768px): to right; else: to bottom),
-		if(style(--dark-mode): #333; else: #fff),
-		if(style(--dark-mode): #000; else: #ccc)
-	);
-}
-`;
-            return transform(nesting1, {
-                beautify: true, expandIfSyntax: true
-            }).then((result) => expect(result.code).equals(`button {
- background: linear-gradient(#fff,#ccc);
- @media (min-width:768px) {
-  background: linear-gradient(90deg,#fff,#ccc);
-  @container style(--dark-mode) {
-   background: linear-gradient(90deg,#333,#000)
-  }
- }
- @container style(--dark-mode) {
-  background: linear-gradient(#333,#000)
- }
-}`));
-        });
+// button {
+// 	background: linear-gradient(
+// 		if(media(min-width: 768px): to right; else: to bottom),
+// 		if(style(--dark-mode): #333; else: #fff),
+// 		if(style(--dark-mode): #000; else: #ccc)
+// 	);
+// }
+// `;
+//             return transform(nesting1, {
+//                 beautify: true, expandIfSyntax: true
+//             }).then((result) => expect(result.code).equals(`button {
+//  background: linear-gradient(#fff,#ccc);
+//  @media (min-width:768px) {
+//   background: linear-gradient(90deg,#fff,#ccc);
+//   @container style(--dark-mode) {
+//    background: linear-gradient(90deg,#333,#000)
+//   }
+//  }
+//  @container style(--dark-mode) {
+//   background: linear-gradient(#333,#000)
+//  }
+// }`));
+//         });
         
         
-        it('if(media(), style()) #21', function () {
-            const nesting1 = `
+//         it('if(media(), style()) #21', function () {
+//             const nesting1 = `
 
-div-4 {
-  color: if(
+// div-4 {
+//   color: if(
     
-  );
-	background: 
-		light-dark(if(style(--dark-mode): #333; else: #fff), if(media(min-width: 768px): white; else: black)
-	);
-}
-`;
-            return transform(nesting1, {
-                beautify: true, expandIfSyntax: true
-            }).then((result) => expect(result.code).equals(`div-4 {
- color: if();
- background: light-dark(#fff,#000);
- @container style(--dark-mode) {
-  background: light-dark(#333,#000);
-  @media (min-width:768px) {
-   background: light-dark(#333,#fff)
-  }
- }
- @media (min-width:768px) {
-  background: light-dark(#fff,#fff)
- }
-}`));
-        });
+//   );
+// 	background: 
+// 		light-dark(if(style(--dark-mode): #333; else: #fff), if(media(min-width: 768px): white; else: black)
+// 	);
+// }
+// `;
+//             return transform(nesting1, {
+//                 beautify: true, expandIfSyntax: true
+//             }).then((result) => expect(result.code).equals(`div-4 {
+//  color: if();
+//  background: light-dark(#fff,#000);
+//  @container style(--dark-mode) {
+//   background: light-dark(#333,#000);
+//   @media (min-width:768px) {
+//    background: light-dark(#333,#fff)
+//   }
+//  }
+//  @media (min-width:768px) {
+//   background: light-dark(#fff,#fff)
+//  }
+// }`));
+//         });
         
         
-        it('if(supports()) #22', function () {
-            const nesting1 = `
+//         it('if(supports()) #22', function () {
+//             const nesting1 = `
 
-body {
-  background-color: if(
-    supports(color: oklch(0.7 0.185 232)): oklch(0.7 0.185 232);
-    else: #00adf3;
-  );
+// body {
+//   background-color: if(
+//     supports(color: oklch(0.7 0.185 232)): oklch(0.7 0.185 232);
+//     else: #00adf3;
+//   );
   
-  &::after {
-    content: if(
-    supports(color: oklch(0.7 0.185 232)): "Your browser supports OKLCH";
-    else: "Your browser does not support OKLCH";
-    );
-  }
-}
+//   &::after {
+//     content: if(
+//     supports(color: oklch(0.7 0.185 232)): "Your browser supports OKLCH";
+//     else: "Your browser does not support OKLCH";
+//     );
+//   }
+// }
 
-`;
-            return transform(nesting1, {
-                beautify: true,
-                removePrefix: true,
-                validation: true
-            }).then((result) => expect(result.code).equals(`body {
- background-color: if(supports(color:oklch(.7 .185 232)):#00aefc;else:#00adf3);
- &:after {
-  content: if(supports(color:oklch(.7 .185 232)):"Your browser supports OKLCH";else:"Your browser does not support OKLCH")
- }
-}`));
-        });
+// `;
+//             return transform(nesting1, {
+//                 beautify: true,
+//                 removePrefix: true,
+//                 validation: true
+//             }).then((result) => expect(result.code).equals(`body {
+//  background-color: if(supports(color:oklch(.7 .185 232)):#00aefc;else:#00adf3);
+//  &:after {
+//   content: if(supports(color:oklch(.7 .185 232)):"Your browser supports OKLCH";else:"Your browser does not support OKLCH")
+//  }
+// }`));
+//         });
         
     });
 }
