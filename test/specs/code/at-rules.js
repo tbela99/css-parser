@@ -1333,40 +1333,40 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
         
         
 
-//         it('do not minify supports() arguments #58', function () {
-//             return transform(`
+        it('do not minify supports() arguments #58', function () {
+            return transform(`
 
-// body {
-//   background-color: if(
-//     supports(color: oklch(0.7 0.185 232)): oklch(0.7 0.185 232);
-//     else: #00adf3;
-//   );
+body {
+  background-color: if(
+    supports(color: oklch(0.7 0.185 232)): oklch(0.7 0.185 232);
+    else: #00adf3;
+  );
   
-//   &::after {
-//     content: if(
-//     supports(color: oklch(0.7 0.185 232)): "Your browser supports OKLCH";
-//     else: "Your browser does not support OKLCH";
-//     );
-//   }
-// }
+  &::after {
+    content: if(
+    supports(color: oklch(0.7 0.185 232)): "Your browser supports OKLCH";
+    else: "Your browser does not support OKLCH";
+    );
+  }
+}
 
-//   `, {
-//                 beautify: true,
-//                 expandIfSyntax: true,
-//                 validation: true
-//             }).then((result) => expect(result.code).equals(`body {
-//  background-color: #00adf3;
-//  @supports (color:oklch(.7 .185 232)) {
-//   background-color: #00aefc
-//  }
-//  &:after {
-//   content: "Your browser does not support OKLCH";
-//   @supports (color:oklch(.7 .185 232)) {
-//    content: "Your browser supports OKLCH"
-//   }
-//  }
-// }`));
-//         });
+  `, {
+                beautify: true,
+                expandIfSyntax: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`body {
+ background-color: #00adf3;
+ @supports (color:oklch(.7 .185 232)) {
+  background-color: #00aefc
+ }
+ &:after {
+  content: "Your browser does not support OKLCH";
+  @supports (color:oklch(.7 .185 232)) {
+   content: "Your browser supports OKLCH"
+  }
+ }
+}`));
+        });
         
         
         

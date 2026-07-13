@@ -8,7 +8,6 @@ import { walkValues } from '../../ast/walk.js';
 import { equalsIgnoreCase } from './text.js';
 import { buildExpression } from '../../ast/math/expression.js';
 import { splitTokenList } from '../../validation/utils/list.js';
-import { parseTokens } from '../parse.js';
 
 /**
  *
@@ -332,29 +331,6 @@ function parseDeclaration(tokens, parent, options, errors) {
             }
             if (!doNotValidate && !result?.success && result.errors.length > 0) {
                 errors.push(...result.errors);
-            }
-            if (!doNotValidate && !(success || result.success)) {
-                return Object.defineProperties(Object.assign(name, {
-                    typ: EnumToken.DeclarationNodeType,
-                    nam: name.val,
-                    val: parseTokens(tokens),
-                }), {
-                    state: {
-                        ...definedPropertySettings,
-                        value: EnumAstNodeStatus.ValidationFailed,
-                    },
-                    errors: {
-                        ...definedPropertySettings,
-                        value: result?.errors ?? [],
-                    },
-                    loc: {
-                        ...definedPropertySettings,
-                        value: {
-                            ...name.loc,
-                            end: tokens[tokens.length - 1]?.loc.end ?? name.loc.end,
-                        },
-                    },
-                });
             }
         }
     }
