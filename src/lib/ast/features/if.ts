@@ -17,10 +17,12 @@ import { definedPropertySettings } from "../../syntax/constants.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 import { replaceNodeOrValue } from "../../parser/utils/token.ts";
 import { cloneNode } from "../../ast/clone.ts";
-import { trimArray } from "../../validation/match.ts";
+import { createValidationContext, matchAllSyntaxes, trimArray } from "../../validation/match.ts";
 import { findByValue } from "../find.ts";
-import { walk } from "../walk.ts";
+import { walk, walkValues } from "../walk.ts";
 import { eq } from "../../parser/utils/eq.ts";
+import { getParsedSyntax } from "../../validation/config.ts";
+import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 
 const nodeMatcher = (value: Token) =>
     value.typ === EnumToken.IfConditionTokenType ||
@@ -295,7 +297,69 @@ function processNode(declarationNode: AstDeclaration, cache: Set<AstNode>): AstN
     }
 
     if (result.length > 0) {
-        replaceNodeOrValue(declarationNode.parent, declarationNode, result);
+
+        let invalidTokensTypes = new Set([
+            EnumToken.WhitespaceTokenType,
+            EnumToken.SemiColonTokenType,
+            EnumToken.ColonTokenType
+        ])
+
+        for (i = 0; i < result.length; i++) {
+            if (result[i].typ === EnumToken.DeclarationNodeType) {
+                
+                for (const {value} of walkValues((result[i] as AstDeclaration).val, result[i])) {
+                    
+                    if (value.typ === EnumToken.ImageFunctionTokenType && (value as FunctionToken).val.includes('-gradient')) {
+
+                        let valid: boolean = true;
+                        let j: number
+
+                        for (j = 0; j < (value as FunctionToken).chi.length; j++) {
+                            
+                            if ((value as FunctionToken).chi[j].typ === EnumToken.IdenTokenType && 'else' == ((value as FunctionToken).chi[j] as IdentToken).val) {
+                                
+                                valid = false;
+                                break;
+                            }
+
+                            if (invalidTokensTypes.has((value as FunctionToken).chi[j].typ) && 
+                                ((value as FunctionToken).chi[j + 1]?.typ === EnumToken.CommaTokenType || j == (value as FunctionToken).chi.length - 1) &&
+                                (j == 0 || EnumToken.CommaTokenType == (value as FunctionToken).chi[j - 1]?.typ)) {
+                                
+                                valid = false;
+                                break;
+                            }
+                        }
+
+                        if (!valid) {
+                            
+                            result.splice(i--, 1);
+                            break;
+                        }
+
+                    
+                        
+                        // const res = matchAllSyntaxes(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (value as FunctionToken).val + '()'), createValidationContext((value as FunctionToken).chi), {
+                            
+                        // });
+
+                        // if (!res.success) {
+                            
+                        //     result.splice(i--, 1);
+                        //     break;
+                        // }
+                    }
+                }
+            }
+        }
+
+        // console.debug({result});
+        // throw new Error("Not implemented");
+
+        if (result.length > 0) {
+                
+            replaceNodeOrValue(declarationNode.parent, declarationNode, result);
+        }
     }
     // else remove node?
     return result;

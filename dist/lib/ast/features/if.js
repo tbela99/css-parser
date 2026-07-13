@@ -7,7 +7,7 @@ import { replaceNodeOrValue } from '../../parser/utils/token.js';
 import { cloneNode } from '../clone.js';
 import { trimArray } from '../../validation/match.js';
 import { findByValue } from '../find.js';
-import { walk } from '../walk.js';
+import { walk, walkValues } from '../walk.js';
 import { eq } from '../../parser/utils/eq.js';
 
 const nodeMatcher = (value) => value.typ === EnumToken.IfConditionTokenType ||
@@ -169,7 +169,48 @@ function processNode(declarationNode, cache) {
         }
     }
     if (result.length > 0) {
-        replaceNodeOrValue(declarationNode.parent, declarationNode, result);
+        let invalidTokensTypes = new Set([
+            EnumToken.WhitespaceTokenType,
+            EnumToken.SemiColonTokenType,
+            EnumToken.ColonTokenType
+        ]);
+        for (i = 0; i < result.length; i++) {
+            if (result[i].typ === EnumToken.DeclarationNodeType) {
+                for (const { value } of walkValues(result[i].val, result[i])) {
+                    if (value.typ === EnumToken.ImageFunctionTokenType && value.val.includes('-gradient')) {
+                        let valid = true;
+                        let j;
+                        for (j = 0; j < value.chi.length; j++) {
+                            if (value.chi[j].typ === EnumToken.IdenTokenType && 'else' == value.chi[j].val) {
+                                valid = false;
+                                break;
+                            }
+                            if (invalidTokensTypes.has(value.chi[j].typ) &&
+                                (value.chi[j + 1]?.typ === EnumToken.CommaTokenType || j == value.chi.length - 1) &&
+                                (j == 0 || EnumToken.CommaTokenType == value.chi[j - 1]?.typ)) {
+                                valid = false;
+                                break;
+                            }
+                        }
+                        if (!valid) {
+                            result.splice(i--, 1);
+                            break;
+                        }
+                        // const res = matchAllSyntaxes(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (value as FunctionToken).val + '()'), createValidationContext((value as FunctionToken).chi), {
+                        // });
+                        // if (!res.success) {
+                        //     result.splice(i--, 1);
+                        //     break;
+                        // }
+                    }
+                }
+            }
+        }
+        // console.debug({result});
+        // throw new Error("Not implemented");
+        if (result.length > 0) {
+            replaceNodeOrValue(declarationNode.parent, declarationNode, result);
+        }
     }
     // else remove node?
     return result;
