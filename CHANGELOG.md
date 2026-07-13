@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.4.5
+
+- [x] Temporarily disable if syntax expansion
+
 ## v1.4.4
 
 ### Validation changes

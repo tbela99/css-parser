@@ -351,6 +351,9 @@ export async function doParse(
         options.resolveUrls = true;
     }
 
+    // turn off expandIfSyntax for now
+    options.expandIfSyntax = false;
+
     const startTime: number = performance.now();
     const errors: ErrorDescription[] = [];
     const src: string = options.src as string;

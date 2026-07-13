@@ -21543,7 +21543,48 @@
             }
         }
         if (result.length > 0) {
-            replaceNodeOrValue(declarationNode.parent, declarationNode, result);
+            let invalidTokensTypes = new Set([
+                exports.EnumToken.WhitespaceTokenType,
+                exports.EnumToken.SemiColonTokenType,
+                exports.EnumToken.ColonTokenType
+            ]);
+            for (i = 0; i < result.length; i++) {
+                if (result[i].typ === exports.EnumToken.DeclarationNodeType) {
+                    for (const { value } of walkValues(result[i].val, result[i])) {
+                        if (value.typ === exports.EnumToken.ImageFunctionTokenType && value.val.includes('-gradient')) {
+                            let valid = true;
+                            let j;
+                            for (j = 0; j < value.chi.length; j++) {
+                                if (value.chi[j].typ === exports.EnumToken.IdenTokenType && 'else' == value.chi[j].val) {
+                                    valid = false;
+                                    break;
+                                }
+                                if (invalidTokensTypes.has(value.chi[j].typ) &&
+                                    (value.chi[j + 1]?.typ === exports.EnumToken.CommaTokenType || j == value.chi.length - 1) &&
+                                    (j == 0 || exports.EnumToken.CommaTokenType == value.chi[j - 1]?.typ)) {
+                                    valid = false;
+                                    break;
+                                }
+                            }
+                            if (!valid) {
+                                result.splice(i--, 1);
+                                break;
+                            }
+                            // const res = matchAllSyntaxes(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (value as FunctionToken).val + '()'), createValidationContext((value as FunctionToken).chi), {
+                            // });
+                            // if (!res.success) {
+                            //     result.splice(i--, 1);
+                            //     break;
+                            // }
+                        }
+                    }
+                }
+            }
+            // console.debug({result});
+            // throw new Error("Not implemented");
+            if (result.length > 0) {
+                replaceNodeOrValue(declarationNode.parent, declarationNode, result);
+            }
         }
         // else remove node?
         return result;
@@ -30090,6 +30131,8 @@
         if (options.resolveImport) {
             options.resolveUrls = true;
         }
+        // turn off expandIfSyntax for now
+        options.expandIfSyntax = false;
         const startTime = performance.now();
         const errors = [];
         const src = options.src;
