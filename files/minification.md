@@ -274,9 +274,9 @@ Output:
 }
 ```
 
-### Transform functions
+### CSS transform functions
 
-Compute CSS transform functions and preserve the shortest possible value. This feature is enabled by default. It is disabled using `{computeTransform: false}`.
+This feature is enabled by default. It computes CSS transform functions and preserve the shortest value. It is disabled using `{computeTransform: false}`.
 
 ```ts
 
@@ -306,7 +306,7 @@ Output:
 
 ### CSS values
 
-Dimension and numeric values are minified.
+Dimensions and numeric values are minified.
 
 ```ts
 
@@ -412,6 +412,8 @@ Output:
 
 ### Calc() resolution
 
+Calc() functions are evaluated.
+
 ```javascript
 
 import {parse, render} from '@tbela99/css-parser';
@@ -432,7 +434,7 @@ const prettyPrint = await parse(css).then(result => render(result.ast, {minify: 
 
 ```
 
-result
+result:
 
 ```css
 a {
@@ -447,6 +449,8 @@ a {
 ```
 
 ### CSS variable inlining and relative color
+
+This feature is disabled by default.
 
 ```javascript
 
@@ -583,7 +587,7 @@ Output:
 
 ### CSS nesting
 
-Chis feature is enabled by default. it is disabled using `{nestingRules: false}`.
+This feature is enabled by default. it is disabled using `{nestingRules: false}`.
 When enabled, css rules are automatically nested whenever possible.
 
 ```ts

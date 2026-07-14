@@ -416,4 +416,4 @@ button {
 ```
 
 ------
-[← Custom Transform](./transform.md) | [Utility Functions →](./utilities.md)
+[← Syntax Lowering](./syntax-lowering.md) | [Utility Functions →](./utilities.md)

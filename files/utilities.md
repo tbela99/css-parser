@@ -7,7 +7,7 @@ category: Guides
 # Color manipulation
 
 ```ts
-import {parseString, convertColor, getColorComponents, renderValue} from '@tbela99/css-parser';
+import {parseString, convertColor, getColorComponents, renderValue, okLabDistance, isOkLabClose} from '@tbela99/css-parser';
 import type {ColorToken} from '@tbela99/css-parser';
 
 const color = parseString(`color-mix(red, green)`)[0] as ColorToken;
@@ -67,6 +67,10 @@ const clonedAst = cloneNode(result.ast, true);
 
 The function [replaceNodeOrValue()](../functions/node.replaceNodeOrValue.html) replaced a node in the specified parent. Throws an error if the target node is not found in the parent.
 
+```ts
+replaceNodeOrValue(parent: Token, target: Token, replacement: Tokan | Token[]);
+```
+
 # Parsing utility functions
 ## Parsing CSS string
 
@@ -80,7 +84,7 @@ const css = `linear-gradient(to bottom, white, black)`;
 const values = parseString(`linear-gradient(to bottom, white, black) color-mix(red, green)`);
 
 console.debug(values[0]); // image function
-console.debug(values[2]); // color
+console.debug(values[2]); // color function
 
 // {
 //   typ: 19,
