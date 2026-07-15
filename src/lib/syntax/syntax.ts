@@ -23,6 +23,7 @@ import { isOkLabClose } from "../../node.ts";
 import { ColorType, EnumToken } from "../ast/types.ts";
 import { WalkerOptionEnum, walkValues } from "../ast/walk.ts";
 import { toDegrees } from "../parser/utils/angle.ts";
+import { memoize } from "../parser/utils/cache.ts";
 import { equalsIgnoreCase } from "../parser/utils/text.ts";
 import { getParsedSyntax } from "../validation/config.ts";
 import { createValidationContext, matchAllSyntaxes, trimArray } from "../validation/match.ts";
@@ -39,6 +40,7 @@ import {
     COLORS_NAMES,
     mathFuncs,
     colorFuncColorSpace,
+    LOC,
 } from "./constants.ts";
 
 // '\\'
@@ -91,7 +93,16 @@ export const dimensionUnits: Set<string> = new Set([
 
 // https://www.w3.org/TR/css-values-4/#math-function
 
-export const pseudoElements: string[] = [":before", ":after", ":first-line", ":first-letter"];
+export const pseudoElements: string[] = [
+    ":before",
+    ":after",
+    ":first-line",
+    ":first-letter",
+    "::before",
+    "::after",
+    "::first-line",
+    "::first-letter",
+];
 
 // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions
 // https://developer.mozilla.org/en-US/docs/Web/CSS/Mozilla_Extensions
@@ -575,6 +586,11 @@ export function isColorspace(token: Token): boolean {
     ].includes((token as IdentToken).val.toLowerCase());
 }
 
+/**
+ * Reduce color stops
+ * @param stops
+ * @returns
+ */
 export function reduceColorStops(stops: Token[]) {
     const parts = splitTokenList(stops);
     const n = parts.length == 1 ? 1 : parts.length - 1;
@@ -724,7 +740,12 @@ export function reducegradientBackgroundPosition(positions: Token[], position: s
     }
 }
 
-export function reduceConicColorStops(stops: Token[]) {
+/**
+ * Reduce conic-gradient color stops
+ * @param stops
+ * @returns
+ */
+export function reduceConicColorStops(stops: Token[]): Token[] {
     const parts = splitTokenList(stops);
     const n = parts.length == 1 ? 1 : parts.length - 1;
 
@@ -783,6 +804,11 @@ export function reduceConicColorStops(stops: Token[]) {
     return stops;
 }
 
+/**
+ * is rectangular orthogonal colorspace
+ * @param token
+ * @returns
+ */
 export function isRectangularOrthogonalColorspace(token: Token): boolean {
     if (token.typ != EnumToken.IdenTokenType) {
         return false;
@@ -803,6 +829,11 @@ export function isRectangularOrthogonalColorspace(token: Token): boolean {
     ].some((t) => equalsIgnoreCase(t, (token as IdentToken).val));
 }
 
+/**
+ * Is polar colorspace
+ * @param token
+ * @returns
+ */
 export function isPolarColorspace(token: Token): boolean {
     if (token.typ != EnumToken.IdenTokenType) {
         return false;
@@ -811,6 +842,11 @@ export function isPolarColorspace(token: Token): boolean {
     return ["hsl", "hwb", "lch", "oklch"].some((t) => equalsIgnoreCase(t, (token as IdentToken).val));
 }
 
+/**
+ * Is hue interpolation method
+ * @param token
+ * @returns
+ */
 export function isHueInterpolationMethod(token: Token | Token[]): boolean {
     if (!Array.isArray(token)) {
         return token.typ == EnumToken.IdenTokenType && "hue" === (token as IdentToken).val?.toLowerCase?.();
@@ -827,6 +863,11 @@ export function isHueInterpolationMethod(token: Token | Token[]): boolean {
     );
 }
 
+/**
+ * Is ident color
+ * @param token
+ * @returns
+ */
 export function isIdentColor(token: Token): boolean {
     return (
         token.typ == EnumToken.ColorTokenType &&
@@ -940,7 +981,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                                     action: "drop",
                                     message: `Unexpected constant '${val}'`,
                                     node: value,
-                                    location: value.loc,
+                                    location: value[LOC],
                                 });
 
                                 return false;
@@ -976,7 +1017,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                                             action: "drop",
                                             message: `Unexpected constant '${val}'`,
                                             node: v.value,
-                                            location: v.value.loc,
+                                            location: v.value[LOC],
                                         });
 
                                         return false;
@@ -1039,7 +1080,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                             action: "drop",
                             message: "adding percentage and number is not allowed",
                             node: token,
-                            location: token.loc,
+                            location: token[LOC],
                         });
 
                         return false;
@@ -1513,7 +1554,7 @@ export function isIdentCodepoint(codepoint: number): boolean {
     return codepoint == 0x2d || isDigit(codepoint) || isIdentStart(codepoint);
 }
 
-export function isIdent(name: string): boolean {
+export const isIdent = memoize(function (name: string): boolean {
     const j: number = name.length - 1;
     let i: number = 0;
     let codepoint: number = name.charCodeAt(0) as number;
@@ -1577,7 +1618,7 @@ export function isIdent(name: string): boolean {
     }
 
     return true;
-}
+}) as (name: string) => boolean;
 
 export function isNonPrintable(codepoint: number): boolean {
     // null -> backspace
@@ -1603,7 +1644,7 @@ export function isHash(name: string): boolean {
     return name.charAt(0) == "#" && isIdent(name.charAt(1));
 }
 
-export function isNumber(name: string): boolean {
+export const isNumber = memoize(function (name: string): boolean {
     if (name.length == 0) {
         return false;
     }
@@ -1691,7 +1732,7 @@ export function isNumber(name: string): boolean {
     }
 
     return true;
-}
+}) as (name: string) => boolean;
 
 export function isPercentage(name: string) {
     return name.endsWith("%") && isNumber(name.slice(0, -1));

@@ -4,7 +4,7 @@ import type {
     Token,
 } from "../../../@types/index.d.ts";
 import { EnumToken } from "../../ast/types.ts";
-import { tokensfuncDefMap } from "../../syntax/constants.ts";
+import { LOC, tokensfuncDefMap } from "../../syntax/constants.ts";
 import { equalsIgnoreCase } from "./text.ts";
 
 export function matchGenericSyntax(stream: Token[]): {
@@ -40,9 +40,9 @@ export function matchGenericSyntax(stream: Token[]): {
             ) {
                 errors.push({
                     action: "drop",
-                    message: `unexpected token ${EnumToken[token.typ]} at ${token.loc!.src}:${token.loc!.sta.lin}:${token.loc!.sta.col}`,
+                    message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${token[LOC]!.sta.col}`,
                     node: token,
-                    location: token.loc!,
+                    location: token[LOC]!,
                 });
                 success = false;
                 break;
@@ -58,8 +58,8 @@ export function matchGenericSyntax(stream: Token[]): {
                         {
                             action: "drop",
                             node: token,
-                            message: `Unexpected token ${EnumToken[token.typ]} at ${token.loc!.src}:${token.loc!.sta.lin}:${token.loc!.sta.col}`,
-                            location: token.loc!,
+                            message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${token[LOC]!.sta.col}`,
+                            location: token[LOC]!,
                         },
                     ],
                 };
@@ -72,9 +72,9 @@ export function matchGenericSyntax(stream: Token[]): {
             if (!expectAndOr || scopes.at(-1)?.has(EnumToken.OrTokenType)) {
                 errors.push({
                     action: "drop",
-                    message: `unexpected token ${EnumToken[token.typ]} at ${token.loc!.src}:${token.loc!.sta.lin}:${token.loc!.sta.col}`,
+                    message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${token[LOC]!.sta.col}`,
                     node: token,
-                    location: token.loc!,
+                    location: token[LOC]!,
                 });
                 success = false;
                 break;
@@ -91,9 +91,9 @@ export function matchGenericSyntax(stream: Token[]): {
             if (!expectAndOr || scopes.at(-1)?.has(EnumToken.AndTokenType)) {
                 errors.push({
                     action: "drop",
-                    message: `unexpected token ${EnumToken[token.typ]} at ${token.loc!.src}:${token.loc!.sta.lin}:${token.loc!.sta.col}`,
+                    message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${token[LOC]!.sta.col}`,
                     node: token,
-                    location: token.loc!,
+                    location: token[LOC]!,
                 });
                 success = false;
                 break;
@@ -110,9 +110,9 @@ export function matchGenericSyntax(stream: Token[]): {
             if (!expectComma) {
                 errors.push({
                     action: "drop",
-                    message: `unexpected token ${EnumToken[token.typ]} at ${token.loc!.src}:${token.loc!.sta.lin}:${token.loc!.sta.col}`,
+                    message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${token[LOC]!.sta.col}`,
                     node: token,
-                    location: token.loc!,
+                    location: token[LOC]!,
                 });
                 success = false;
                 break;
@@ -134,9 +134,9 @@ export function matchGenericSyntax(stream: Token[]): {
     if (stack.length > 0) {
         errors.push({
             action: "drop",
-            message: `unexpected token ${EnumToken[stack.at(-1)?.typ]} at ${stack.at(-1)?.loc?.src}:${stack.at(-1)?.loc?.sta.lin}:${stack.at(-1)?.loc?.sta.col}`,
+            message: `unexpected token ${EnumToken[stack.at(-1)?.typ]} at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
             node: stack.at(-1),
-            location: stack.at(-1)?.loc!,
+            location: stack.at(-1)?.[LOC]!,
         });
         success = false;
     }

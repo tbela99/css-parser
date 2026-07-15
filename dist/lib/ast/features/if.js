@@ -1,7 +1,7 @@
 import { EnumToken } from '../types.js';
 import { renderValue } from '../../renderer/render.js';
 import { FeatureWalkMode } from './type.js';
-import { definedPropertySettings } from '../../syntax/constants.js';
+import { PARENT, TOKENS } from '../../syntax/constants.js';
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
 import { replaceNodeOrValue } from '../../parser/utils/token.js';
 import { cloneNode } from '../clone.js';
@@ -91,23 +91,19 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
                 nam: left.val,
                 chi: [],
             });
-            Object.defineProperty(atRule, "tokens", {
-                ...definedPropertySettings,
-                value: [{ typ: EnumToken.ParensTokenType, chi: left.chi.slice() }],
-            });
+            atRule[TOKENS] = [{ typ: EnumToken.ParensTokenType, chi: left.chi.slice() }];
             const minify = atRule.nam !== "supports";
             const options = {
                 minify,
                 convertColor: minify,
             };
-            atRule.val = atRule.tokens.reduce((acc, curr) => acc + renderValue(curr, options), "");
+            atRule.val = atRule[TOKENS].reduce((acc, curr) => acc + renderValue(curr, options), "");
             clonedDeclaration = cloneNode(declaration, true, nodeMap);
             replaceNodeOrValue(nodeMap.get(targetWrapper), nodeMap.get(node), node.r.at(-1)?.typ === EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
-            clonedDeclaration.parent = atRule;
+            clonedDeclaration[PARENT] = atRule;
             atRule.chi.push(clonedDeclaration);
             result.push(atRule);
             processNode(clonedDeclaration, cache);
-            // nodeMap.clear();
         }
         else if (left.typ === EnumToken.ContainerFunctionTokenType) {
             const atRule = Object.assign(cloneNode(declaration), {
@@ -115,13 +111,13 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
                 nam: "container",
                 chi: [],
             });
-            Object.defineProperty(atRule, "tokens", { ...definedPropertySettings, value: [left] });
-            atRule.val = atRule.tokens.reduce((acc, curr) => acc + renderValue(curr), "");
+            atRule[TOKENS] = [left];
+            atRule.val = atRule[TOKENS].reduce((acc, curr) => acc + renderValue(curr), "");
             clonedDeclaration = cloneNode(declaration, true, nodeMap);
             replaceNodeOrValue(nodeMap.get(targetWrapper.typ === EnumToken.WildCardFunctionTokenType ? targetParentWrapper : targetWrapper), nodeMap.get(targetWrapper.typ === EnumToken.WildCardFunctionTokenType ? targetWrapper : node), node.r.at(-1)?.typ === EnumToken.SemiColonTokenType
                 ? trimArray(node.r.slice(0, -1))
                 : node.r);
-            clonedDeclaration.parent = atRule;
+            clonedDeclaration[PARENT] = atRule;
             atRule.chi.push(clonedDeclaration);
             result.push(atRule);
             processNode(clonedDeclaration, cache);
@@ -147,8 +143,8 @@ function processNode(declarationNode, cache) {
             continue;
         }
         if (declaration == null || node == null) {
-            while (astNode.parent != null && astNode.parent != declarationNode.parent) {
-                astNode = astNode.parent;
+            while (astNode[PARENT] != null && astNode[PARENT] != declarationNode[PARENT]) {
+                astNode = astNode[PARENT];
             }
             result.push(astNode);
             continue;
@@ -172,21 +168,24 @@ function processNode(declarationNode, cache) {
         let invalidTokensTypes = new Set([
             EnumToken.WhitespaceTokenType,
             EnumToken.SemiColonTokenType,
-            EnumToken.ColonTokenType
+            EnumToken.ColonTokenType,
         ]);
         for (i = 0; i < result.length; i++) {
             if (result[i].typ === EnumToken.DeclarationNodeType) {
                 for (const { value } of walkValues(result[i].val, result[i])) {
-                    if (value.typ === EnumToken.ImageFunctionTokenType && value.val.includes('-gradient')) {
+                    if (value.typ === EnumToken.ImageFunctionTokenType &&
+                        value.val.includes("-gradient")) {
                         let valid = true;
                         let j;
                         for (j = 0; j < value.chi.length; j++) {
-                            if (value.chi[j].typ === EnumToken.IdenTokenType && 'else' == value.chi[j].val) {
+                            if (value.chi[j].typ === EnumToken.IdenTokenType &&
+                                "else" == value.chi[j].val) {
                                 valid = false;
                                 break;
                             }
                             if (invalidTokensTypes.has(value.chi[j].typ) &&
-                                (value.chi[j + 1]?.typ === EnumToken.CommaTokenType || j == value.chi.length - 1) &&
+                                (value.chi[j + 1]?.typ === EnumToken.CommaTokenType ||
+                                    j == value.chi.length - 1) &&
                                 (j == 0 || EnumToken.CommaTokenType == value.chi[j - 1]?.typ)) {
                                 valid = false;
                                 break;
@@ -196,20 +195,12 @@ function processNode(declarationNode, cache) {
                             result.splice(i--, 1);
                             break;
                         }
-                        // const res = matchAllSyntaxes(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (value as FunctionToken).val + '()'), createValidationContext((value as FunctionToken).chi), {
-                        // });
-                        // if (!res.success) {
-                        //     result.splice(i--, 1);
-                        //     break;
-                        // }
                     }
                 }
             }
         }
-        // console.debug({result});
-        // throw new Error("Not implemented");
         if (result.length > 0) {
-            replaceNodeOrValue(declarationNode.parent, declarationNode, result);
+            replaceNodeOrValue(declarationNode[PARENT], declarationNode, result);
         }
     }
     // else remove node?
@@ -232,7 +223,7 @@ class ExpandIfFeature {
     run(declaration) {
         processNode(declaration, new Set());
         let i;
-        for (const n of declaration.parent.chi) {
+        for (const n of declaration[PARENT].chi) {
             for (const { node } of walk(n)) {
                 if (node.typ === EnumToken.AtRuleNodeType && Array.isArray(node.chi)) {
                     for (i = 0; i < node.chi.length; i++) {

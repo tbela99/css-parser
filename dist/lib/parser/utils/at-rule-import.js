@@ -2,7 +2,7 @@ import { EnumToken } from '../../ast/types.js';
 import { getSyntaxRule } from '../../validation/config.js';
 import { trimArray } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
-import { tokensfuncDefMap, definedPropertySettings } from '../../syntax/constants.js';
+import { tokensfuncDefMap, LOC } from '../../syntax/constants.js';
 import { isColor, parseColor } from '../../syntax/syntax.js';
 import { parseMediaqueryList } from './at-rule-media.js';
 import { parseAtRuleSupportSyntax } from './at-rule-support.js';
@@ -51,7 +51,7 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                             message: "Expected string or <url-token>",
                             syntax: "@import",
                             node: stream[k],
-                            location: stream[k]?.loc,
+                            location: stream[k]?.[LOC],
                         },
                     ],
                 };
@@ -69,23 +69,20 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                         syntax: "@import",
                         message: "could not match syntax <url>",
                         node: stream[0],
-                        location: stream[0].loc,
+                        location: stream[0][LOC],
                     },
                 ],
             };
         }
         const slice = stream.slice(index + 1, k);
-        tokens.push(Object.defineProperties(Object.assign({}, stream[0], {
+        // @ts-expect-error
+        stream[0][LOC] = {
+            ...stream[0][LOC],
+            end: stream[1][LOC].end,
+        };
+        tokens.push(Object.assign({
             typ: tokensfuncDefMap.get(stream[0].typ),
             chi: trimArray(slice),
-        }), {
-            loc: {
-                ...definedPropertySettings,
-                value: {
-                    ...stream[0].loc,
-                    end: stream[1].loc.end,
-                },
-            },
         }));
         index = k + 1;
     }
@@ -98,7 +95,7 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                     message: "Expected string or url()",
                     syntax: "@import",
                     node: stream[0],
-                    location: stream[0]?.loc,
+                    location: stream[0]?.[LOC],
                 },
             ],
         };
@@ -129,10 +126,10 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                 errors: [
                     {
                         action: "drop",
-                        message: `Expected <layer-name> at ${stream[index]?.loc?.src}:${stream[index]?.loc?.sta.lin}:${stream[index]?.loc?.sta.col}`,
+                        message: `Expected <layer-name> at ${stream[index]?.[LOC]?.src}:${stream[index]?.[LOC]?.sta.lin}:${stream[index]?.[LOC]?.sta.col}`,
                         syntax: "@import",
                         node: stream[index],
-                        location: stream[index]?.loc,
+                        location: stream[index]?.[LOC],
                     },
                 ],
             };
@@ -155,7 +152,7 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                             message: "Expected ')'",
                             syntax: "@import",
                             node: stream[index],
-                            location: stream[index]?.loc,
+                            location: stream[index]?.[LOC],
                         },
                     ],
                 };
@@ -174,10 +171,10 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                 errors: [
                     {
                         action: "drop",
-                        message: `Expected <layer-name> at ${stream[index]?.loc?.src}:${stream[index]?.loc?.sta.lin}:${stream[index]?.loc?.sta.col}`,
+                        message: `Expected <layer-name> at ${stream[index]?.[LOC]?.src}:${stream[index]?.[LOC]?.sta.lin}:${stream[index]?.[LOC]?.sta.col}`,
                         syntax: "@import",
                         node: stream[index],
-                        location: stream[index]?.loc,
+                        location: stream[index]?.[LOC],
                     },
                 ],
             };
@@ -215,7 +212,7 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                             message: "Expected ':'",
                             syntax: "@import",
                             node: stream[index],
-                            location: stream[index]?.loc,
+                            location: stream[index]?.[LOC],
                         },
                     ],
                 };
@@ -259,7 +256,7 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                                         message: "Expected ')'",
                                         syntax: "@import",
                                         node: stream[index],
-                                        location: stream[index]?.loc,
+                                        location: stream[index]?.[LOC],
                                     },
                                 ],
                             };
@@ -310,7 +307,7 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                         message: "unmatched ')'",
                         syntax: "@import",
                         node: stack.at(-1),
-                        location: stack.at(-1)?.loc,
+                        location: stack.at(-1)?.[LOC],
                     },
                 ],
             };
@@ -328,19 +325,15 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                 j++;
             }
             const val = trimArray(supports.chi.slice(j + 1));
-            supports.chi[i] = Object.defineProperties({
+            supports.chi[i] = {
                 typ: EnumToken.DeclarationNodeType,
                 nam: supports.chi[i].val,
                 val,
-            }, {
-                loc: {
-                    ...definedPropertySettings,
-                    value: {
-                        ...supports.chi[i].loc,
-                        end: { ...(val.at(-1) ?? supports.chi.at(-1)).loc?.end },
-                    },
+                [LOC]: {
+                    ...supports.chi[i][LOC],
+                    end: { ...(val.at(-1) ?? supports.chi.at(-1))[LOC]?.end },
                 },
-            });
+            };
             supports.chi.splice(i + 1, j - i + 1 + val.length);
             const stack = [];
             for (i = 0; i < val.length; i++) {

@@ -3,7 +3,7 @@ import { reduceHexValue } from '../syntax/color/hex.js';
 import { EnumToken, minifyNumber, ColorType } from '../ast/types.js';
 import { expand } from '../ast/expand.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
-import { colorsFunc, urlTokenMatcher, tokensfuncSet } from '../syntax/constants.js';
+import { colorsFunc, urlTokenMatcher, PARENT, tokensfuncSet, LOC } from '../syntax/constants.js';
 import { isColor, pseudoElements, reducegradientBackgroundPosition, reduceConicColorStops, reduceColorStops, parseColor } from '../syntax/syntax.js';
 import { move } from '../parser/tokenize.js';
 import { equalsIgnoreCase } from '../parser/utils/text.js';
@@ -47,13 +47,12 @@ function doRender(data, options = {}, mapping) {
     };
     if (options.withParents) {
         // @ts-ignore
-        let parent = data.parent;
-        // @ts-ignore
-        while (data.parent != null) {
+        let parent = data[PARENT];
+        while (data[PARENT] != null) {
             // @ts-ignore
-            parent = { ...data.parent, chi: [{ ...data }] };
+            parent = { ...data[PARENT], chi: [{ ...data }] };
             // @ts-ignore
-            parent.parent = data.parent.parent;
+            parent[PARENT] = data[PARENT][PARENT];
             // @ts-ignore
             data = parent;
         }
@@ -127,11 +126,11 @@ function updateSourceMap(node, options, cache, sourcemap, position, str) {
         EnumToken.KeyFramesRuleNodeType,
         EnumToken.KeyframesAtRuleNodeType,
     ].includes(node.typ)) {
-        let src = node.loc?.src ?? "";
+        let src = node[LOC]?.src ?? "";
         sourcemap.add(
         // @ts-ignore
         { src, sta: { ...position } }, {
-            ...node.loc,
+            ...node[LOC],
             // @ts-ignore
             src,
         });
@@ -182,12 +181,12 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                     return css;
                 }
                 if (css === "") {
-                    if (sourcemap != null && node.loc != null) {
+                    if (sourcemap != null && node[LOC] != null) {
                         updateSourceMap(node, options, cache, sourcemap, position, str);
                     }
                     return str;
                 }
-                if (sourcemap != null && node.loc != null) {
+                if (sourcemap != null && node[LOC] != null) {
                     move(position, options.newLine);
                     updateSourceMap(node, options, cache, sourcemap, position, str);
                 }
@@ -216,7 +215,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                         errors.push({
                             action: "ignore",
                             message: `render: invalid declaration ${JSON.stringify(node)}`,
-                            location: node.loc,
+                            location: node[LOC],
                         });
                         return "";
                     }

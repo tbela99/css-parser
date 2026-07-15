@@ -20,7 +20,7 @@ import { walkValues } from "../walk.ts";
 import { renderValue } from "../../renderer/render.ts";
 import { splitRule } from "../minify.ts";
 import { FeatureWalkMode } from "./type.ts";
-import { mathFuncs } from "../../syntax/constants.ts";
+import { mathFuncs, RAW } from "../../syntax/constants.ts";
 
 function inlineExpression(token: Token): Token[] {
     const result: Token[] = [];
@@ -122,7 +122,7 @@ export class InlineCssVariablesFeature {
         const isRoot: boolean =
             parent.typ == EnumToken.StyleSheetNodeType &&
             ast.typ == EnumToken.RuleNodeType &&
-            ((<AstRule>ast).raw ?? splitRule((ast as AstRule).sel)).some((segment) =>
+            ((<AstRule>ast)[RAW]?? splitRule((ast as AstRule).sel)).some((segment) =>
                 segment.some((s) => s == ":root" || s == "html"),
             );
         const variableScope = context.variableScope;

@@ -1,6 +1,7 @@
 import { EnumToken, ColorType } from '../ast/types.js';
 import { walkValues, WalkerOptionEnum } from '../ast/walk.js';
 import { toDegrees } from '../parser/utils/angle.js';
+import { memoize } from '../parser/utils/cache.js';
 import { equalsIgnoreCase } from '../parser/utils/text.js';
 import { getParsedSyntax } from '../validation/config.js';
 import { matchAllSyntaxes, createValidationContext, trimArray } from '../validation/match.js';
@@ -8,7 +9,7 @@ import { ValidationSyntaxGroupEnum } from '../validation/parser/typedef.js';
 import { splitTokenList } from '../validation/utils/list.js';
 import { getColorSpace } from './color/utils/colorspace.js';
 import { getColorComponents } from './color/utils/components.js';
-import { colorsFunc, systemColors, deprecatedSystemColors, nonStandardColors, COLORS_NAMES, colorFuncColorSpace, mathFuncs } from './constants.js';
+import { colorsFunc, systemColors, deprecatedSystemColors, nonStandardColors, COLORS_NAMES, colorFuncColorSpace, mathFuncs, LOC } from './constants.js';
 import { isOkLabClose } from './color/utils/distance.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
@@ -61,7 +62,16 @@ const dimensionUnits = new Set([
     "vw",
 ]);
 // https://www.w3.org/TR/css-values-4/#math-function
-const pseudoElements = [":before", ":after", ":first-line", ":first-letter"];
+const pseudoElements = [
+    ":before",
+    ":after",
+    ":first-line",
+    ":first-letter",
+    "::before",
+    "::after",
+    "::first-line",
+    "::first-letter",
+];
 // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions
 // https://developer.mozilla.org/en-US/docs/Web/CSS/Mozilla_Extensions
 const pseudoAliasMap = {
@@ -238,6 +248,11 @@ function isColorspace(token) {
         "hwb",
     ].includes(token.val.toLowerCase());
 }
+/**
+ * Reduce color stops
+ * @param stops
+ * @returns
+ */
 function reduceColorStops(stops) {
     const parts = splitTokenList(stops);
     const n = parts.length == 1 ? 1 : parts.length - 1;
@@ -355,6 +370,11 @@ function reducegradientBackgroundPosition(positions, position) {
             break;
     }
 }
+/**
+ * Reduce conic-gradient color stops
+ * @param stops
+ * @returns
+ */
 function reduceConicColorStops(stops) {
     const parts = splitTokenList(stops);
     const n = parts.length == 1 ? 1 : parts.length - 1;
@@ -399,6 +419,11 @@ function reduceConicColorStops(stops) {
     }
     return stops;
 }
+/**
+ * is rectangular orthogonal colorspace
+ * @param token
+ * @returns
+ */
 function isRectangularOrthogonalColorspace(token) {
     if (token.typ != EnumToken.IdenTokenType) {
         return false;
@@ -417,12 +442,22 @@ function isRectangularOrthogonalColorspace(token) {
         "xyz-d65",
     ].some((t) => equalsIgnoreCase(t, token.val));
 }
+/**
+ * Is polar colorspace
+ * @param token
+ * @returns
+ */
 function isPolarColorspace(token) {
     if (token.typ != EnumToken.IdenTokenType) {
         return false;
     }
     return ["hsl", "hwb", "lch", "oklch"].some((t) => equalsIgnoreCase(t, token.val));
 }
+/**
+ * Is ident color
+ * @param token
+ * @returns
+ */
 function isIdentColor(token) {
     return (token.typ == EnumToken.ColorTokenType &&
         [ColorType.SYS, ColorType.DPSYS, ColorType.LIT].includes(token.kin) &&
@@ -512,7 +547,7 @@ function isColor(token, errors) {
                                     action: "drop",
                                     message: `Unexpected constant '${val}'`,
                                     node: value,
-                                    location: value.loc,
+                                    location: value[LOC],
                                 });
                                 return false;
                             }
@@ -543,7 +578,7 @@ function isColor(token, errors) {
                                             action: "drop",
                                             message: `Unexpected constant '${val}'`,
                                             node: v.value,
-                                            location: v.value.loc,
+                                            location: v.value[LOC],
                                         });
                                         return false;
                                     }
@@ -591,7 +626,7 @@ function isColor(token, errors) {
                             action: "drop",
                             message: "adding percentage and number is not allowed",
                             node: token,
-                            location: token.loc,
+                            location: token[LOC],
                         });
                         return false;
                     }
@@ -964,7 +999,7 @@ function isIdentCodepoint(codepoint) {
     // -
     return codepoint == 0x2d || isDigit(codepoint) || isIdentStart(codepoint);
 }
-function isIdent(name) {
+const isIdent = memoize(function (name) {
     const j = name.length - 1;
     let i = 0;
     let codepoint = name.charCodeAt(0);
@@ -1013,7 +1048,7 @@ function isIdent(name) {
         }
     }
     return true;
-}
+});
 function isPseudo(name) {
     return (name.charAt(0) == ":" &&
         ((name.endsWith("(") && isIdent(name.charAt(1) == ":" ? name.slice(2, -1) : name.slice(1, -1))) ||
@@ -1022,7 +1057,7 @@ function isPseudo(name) {
 function isHash(name) {
     return name.charAt(0) == "#" && isIdent(name.charAt(1));
 }
-function isNumber(name) {
+const isNumber = memoize(function (name) {
     if (name.length == 0) {
         return false;
     }
@@ -1090,7 +1125,7 @@ function isNumber(name) {
         }
     }
     return true;
-}
+});
 function isPercentage(name) {
     return name.endsWith("%") && isNumber(name.slice(0, -1));
 }

@@ -1,12 +1,8 @@
 import { EnumToken } from '../../ast/types.js';
 import { isIdentStart, isIdent, parseDimension, isPseudo } from '../../syntax/syntax.js';
 import { ValidationTokenEnum } from './typedef.js';
+import { LOC } from '../../syntax/constants.js';
 
-const objectProperties = {
-    enumerable: false,
-    writable: true,
-    configurable: true,
-};
 const SymbolsMapTokens = {
     "&&": ValidationTokenEnum.Ampersand,
     "|": ValidationTokenEnum.Pipe,
@@ -51,49 +47,56 @@ function getTokenType(token, position, currentPosition) {
     const pos = { ...position };
     Object.assign(position, currentPosition);
     if (token === "<an+b>") {
-        return Object.defineProperty({
+        return {
             typ: ValidationTokenEnum.PropertyType,
             val: token.slice(1, -1),
-        }, "pos", { ...objectProperties, value: pos });
+            [LOC]: pos,
+        };
     }
     if (token.charAt(0) == '"' || token.charAt(0) == "'") {
-        return Object.defineProperty({
+        return {
             typ: ValidationTokenEnum.StringToken,
             val: token,
-        }, "pos", { ...objectProperties, value: pos });
+            [LOC]: pos,
+        };
     }
     if (token.match(/^\d+$/)) {
-        return Object.defineProperty({
+        return {
             typ: ValidationTokenEnum.Number,
             val: Number(token),
-        }, "pos", { ...objectProperties, value: pos });
+            [LOC]: pos,
+        };
     }
     let dimension = parseDimension(token);
     if (dimension) {
         // @ts-expect-error
-        return Object.defineProperty({
+        return {
             typ: ValidationTokenEnum.Dimension,
             unit: EnumToken[dimension.typ],
             val: dimension.val,
             unitText: dimension.unit,
-        }, "pos", { ...objectProperties, value: pos });
+            [LOC]: pos,
+        };
     }
     if (isPseudo(token)) {
-        return Object.defineProperty({
+        return {
             typ: ValidationTokenEnum.PseudoClassToken,
             val: token,
-        }, "pos", { ...objectProperties, value: pos });
+            [LOC]: pos,
+        };
     }
     if (token.startsWith("@") && isIdent(token.slice(1))) {
-        return Object.defineProperty({
+        return {
             typ: ValidationTokenEnum.AtRule,
             val: token.slice(1),
-        }, "pos", { ...objectProperties, value: pos });
+            [LOC]: pos,
+        };
     }
-    return Object.defineProperty({
+    return {
         typ: ValidationTokenEnum.Keyword,
         val: token,
-    }, "pos", { ...objectProperties, value: pos });
+        [LOC]: pos,
+    };
 }
 function trimSyntaxArray(tokens) {
     while (tokens[0]?.typ === ValidationTokenEnum.Whitespace) {
@@ -149,9 +152,10 @@ function* tokenizeSyntax(syntax, position = {
                 yield getTokenType(buffer, position, currentPosition);
                 buffer = "";
             }
-            yield Object.defineProperty({
+            yield {
                 typ: SymbolsMapTokens[chr],
-            }, "pos", { ...objectProperties, value: pos });
+                [LOC]: pos,
+            };
             continue;
         }
         if (chr === ":") {
@@ -189,9 +193,10 @@ function* tokenizeSyntax(syntax, position = {
                 yield getTokenType(buffer, position, currentPosition);
                 buffer = "";
             }
-            yield Object.defineProperty({
+            yield {
                 typ: SymbolsMapTokens[chr],
-            }, "pos", { ...objectProperties, value: pos });
+                [LOC]: pos,
+            };
             continue;
         }
         switch (chr) {
@@ -207,10 +212,11 @@ function* tokenizeSyntax(syntax, position = {
                 break;
             case ":":
                 if (isIdent(buffer)) {
-                    yield Object.defineProperty({
+                    yield {
                         typ: ValidationTokenEnum.DeclarationNameToken,
                         val: buffer,
-                    }, "pos", { ...objectProperties, value: { ...position } });
+                        [LOC]: { ...position },
+                    };
                     buffer = "";
                     move(currentPosition, chr);
                     break;
@@ -248,9 +254,10 @@ function* tokenizeSyntax(syntax, position = {
     if (buffer.length > 0) {
         yield getTokenType(buffer, position, currentPosition);
     }
-    yield Object.defineProperty({
+    yield {
         typ: ValidationTokenEnum.EOF,
-    }, "pos", { ...objectProperties, value: { ...position } });
+        [LOC]: { ...position },
+    };
 }
 function parseSyntax(syntax) {
     const stack = [];
@@ -469,7 +476,7 @@ function parseSyntax(syntax) {
                 currentToken = stack.at(-1);
                 if (currentToken?.typ !== ValidationTokenEnum.OpenBracket) {
                     console.debug(JSON.stringify(tokens, null, 1));
-                    throw new SyntaxError(`Unexpected token: ']' at line ${token.pos.lin}:${token.pos.col} `);
+                    throw new SyntaxError(`Unexpected token: ']' at line ${token[LOC].lin}:${token[LOC].col} `);
                 }
                 {
                     let index = tokens.lastIndexOf(stack.at(-1));
@@ -544,7 +551,7 @@ function parseSyntax(syntax) {
                     break;
                 }
                 if (stack.at(-1)?.typ != ValidationTokenEnum.OpenCurlyBrace) {
-                    throw new SyntaxError(`Unexpected token } as ${token.pos.lin}:${token.pos.col}`);
+                    throw new SyntaxError(`Unexpected token } as ${token[LOC].lin}:${token[LOC].col}`);
                 }
                 {
                     let index = tokens.lastIndexOf(stack.at(-1));
@@ -559,11 +566,11 @@ function parseSyntax(syntax) {
                             });
                             if (slice.length === 3) {
                                 if (slice[1].typ != ValidationTokenEnum.Comma) {
-                                    throw new SyntaxError(`Expecting ',' at ${slice[1].pos.lin}:${slice[1].pos.col}`);
+                                    throw new SyntaxError(`Expecting ',' at ${slice[1][LOC].lin}:${slice[1][LOC].col}`);
                                 }
                                 if (slice[2].typ != ValidationTokenEnum.Number &&
                                     slice[2].typ != ValidationTokenEnum.InfinityToken) {
-                                    throw new SyntaxError(`Expecting number or infinity at ${slice[2].pos.lin}:${slice[2].pos.col}`);
+                                    throw new SyntaxError(`Expecting number or infinity at ${slice[2][LOC].lin}:${slice[2][LOC].col}`);
                                 }
                                 Object.assign(tokens[index - 1], {
                                     match: {
@@ -661,7 +668,7 @@ function parseSyntax(syntax) {
         }
     }
     if (stack.length > 0) {
-        throw new SyntaxError(`Unexpected token ${ValidationTokenEnum[stack.at(-1)?.typ]} at ${stack.at(-1)?.pos.lin}:${stack.at(-1)?.pos.col}`);
+        throw new SyntaxError(`Unexpected token ${ValidationTokenEnum[stack.at(-1)?.typ]} at ${stack.at(-1)?.[LOC]?.lin}:${stack.at(-1)?.[LOC]?.col}`);
     }
     return trimSyntaxArray(tokens);
 }

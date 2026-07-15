@@ -1,5 +1,6 @@
 import { EnumToken } from './types.js';
 import { walk, walkValues } from './walk.js';
+import { TOKENS } from '../syntax/constants.js';
 
 /**
  * Search the ast tree and return the first match
@@ -78,8 +79,8 @@ function findByValue(ast, matcher) {
         if (node.typ === EnumToken.DeclarationNodeType) {
             source = node.val;
         }
-        else if (Array.isArray(node.tokens)) {
-            source = node.tokens;
+        else if (Array.isArray(node[TOKENS])) {
+            source = node[TOKENS];
         }
         if (source == null) {
             continue;

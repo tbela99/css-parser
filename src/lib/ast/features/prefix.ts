@@ -19,7 +19,7 @@ import { pseudoAliasMap } from "../../syntax/syntax.ts";
 import { splitRule } from "../minify.ts";
 import type { ValidationConfiguration } from "../../../@types/validation.d.ts";
 import { renderValue } from "../../renderer/render.ts";
-import { funcLike, regMatchLinearGradient, regMatchRadialGradient } from "../../syntax/constants.ts";
+import { funcLike, regMatchLinearGradient, regMatchRadialGradient, TOKENS } from "../../syntax/constants.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import { getSyntaxConfig } from "../../validation/config.ts";
@@ -161,8 +161,8 @@ export class ComputePrefixFeature {
                 "",
             );
 
-            if ((node as AstRule).tokens != null) {
-                replaceAstNodes((node as AstRule).tokens as Token[]);
+            if ((node as AstRule)[TOKENS] != null) {
+                replaceAstNodes((node as AstRule)[TOKENS] as Token[]);
             }
         } else if (node.typ == EnumToken.DeclarationNodeType) {
             if ((<AstDeclaration>node).nam.charAt(0) == "-") {
@@ -234,8 +234,8 @@ export class ComputePrefixFeature {
             }
 
             if (node.typ == EnumToken.AtRuleNodeType && (node as AstAtRule).val !== "") {
-                if (replaceAstNodes((node as AstAtRule).tokens as Token[])) {
-                    (node as AstAtRule).val = ((node as AstAtRule).tokens as Token[]).reduce(
+                if (replaceAstNodes((node as AstAtRule)[TOKENS] as Token[])) {
+                    (node as AstAtRule).val = ((node as AstAtRule)[TOKENS] as Token[]).reduce(
                         (acc, curr) => acc + renderValue(curr),
                         "",
                     );

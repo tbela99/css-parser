@@ -1,5 +1,5 @@
 import { EnumToken } from '../../ast/types.js';
-import { definedPropertySettings, tokensfuncSet } from '../../syntax/constants.js';
+import { PARENT, tokensfuncSet } from '../../syntax/constants.js';
 
 const trimTokenSpace = new Set([
     EnumToken.CommaTokenType,
@@ -28,12 +28,9 @@ function replaceNodeOrValue(parent, node, replacement) {
     if (replacement == null || (Array.isArray(replacement) && replacement.length === 0)) {
         throw new TypeError(`replacement is null`);
     }
-    for (const node of Array.isArray(replacement) ? replacement : [replacement]) {
-        if ("parent" in node && node.parent != node.parent) {
-            Object.defineProperty(node, "parent", {
-                ...definedPropertySettings,
-                value: node.parent,
-            });
+    for (const newNode of Array.isArray(replacement) ? replacement : [replacement]) {
+        if (newNode[PARENT] != node[PARENT]) {
+            newNode[PARENT] = node[PARENT];
         }
     }
     if (parent.typ == EnumToken.BinaryExpressionTokenType) {

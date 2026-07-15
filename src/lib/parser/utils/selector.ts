@@ -7,7 +7,6 @@ import type {
     AstStyleSheet,
     ParserOptions,
     ErrorDescription,
-    AstInvalidRule,
     AstRuleList,
     AttrStartToken,
     PseudoClassFunctionToken,
@@ -21,7 +20,16 @@ import type {
 } from "../../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import { renderValue } from "../../renderer/render.ts";
-import { combinators, definedPropertySettings, tokensfuncDefMap } from "../../syntax/constants.ts";
+import {
+    combinators,
+    definedPropertySettings,
+    ERRORS,
+    LOC,
+    PARENT,
+    STATE,
+    TOKENS,
+    tokensfuncDefMap,
+} from "../../syntax/constants.ts";
 import { isHash, isIdent, pseudoElements } from "../../syntax/syntax.ts";
 import { getParsedSyntax, getSyntaxConfig, getSyntaxRule } from "../../validation/config.ts";
 import { createValidationContext, matchAllSyntaxes, matchSelectorSyntax, trimArray } from "../../validation/match.ts";
@@ -63,32 +71,20 @@ export function parseSelector(
                         filtered[0].typ === EnumToken.IdenTokenType &&
                         "from" === (filtered[0] as IdentToken).val.toLowerCase()
                     ) {
-                        filtered[0] = Object.defineProperty(
-                            {
-                                typ: EnumToken.PercentageTokenType,
-                                val: 0,
-                            },
-                            "loc",
-                            {
-                                ...definedPropertySettings,
-                                value: filtered[0].loc,
-                            },
-                        );
+                        filtered[0] = {
+                            typ: EnumToken.PercentageTokenType,
+                            val: 0,
+                            [LOC]: filtered[0][LOC],
+                        };
                     } else if (
                         filtered[0].typ === EnumToken.PercentageTokenType &&
                         100 === (filtered[0] as PercentageToken).val
                     ) {
-                        filtered[0] = Object.defineProperty(
-                            {
-                                typ: EnumToken.IdenTokenType,
-                                val: "to",
-                            },
-                            "loc",
-                            {
-                                ...definedPropertySettings,
-                                value: filtered[0].loc,
-                            },
-                        );
+                        filtered[0] = {
+                            typ: EnumToken.IdenTokenType,
+                            val: "to",
+                            [LOC]: filtered[0][LOC],
+                        };
                     }
 
                     part.splice(0, part.length, ...filtered);
@@ -109,36 +105,23 @@ export function parseSelector(
             }, [] as Token[]),
         );
 
-        return Object.defineProperties(
-            {
-                typ: EnumToken.KeyFramesRuleNodeType,
-                sel: [
-                    ...splitTokenList(trimArray(tokens)).reduce((acc, curr: Token[]) => {
-                        acc.add(curr.reduce((acc, curr) => acc + renderValue(curr, { minify: false }), ""));
-                        return acc;
-                    }, new Set<string>()),
-                ].join(),
-                chi: [],
+        return {
+            typ: EnumToken.KeyFramesRuleNodeType,
+            sel: [
+                ...splitTokenList(trimArray(tokens)).reduce((acc, curr: Token[]) => {
+                    acc.add(curr.reduce((acc, curr) => acc + renderValue(curr, { minify: false }), ""));
+                    return acc;
+                }, new Set<string>()),
+            ].join(),
+            chi: [],
+            [LOC]: {
+                ...tokens[0][LOC],
+                end: { ...(tokens[tokens.length - 1]?.[LOC]?.end ?? tokens[0]?.[LOC]?.end) },
             },
-            {
-                state: {
-                    ...definedPropertySettings,
-                    value: result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid,
-                },
-                errors: {
-                    ...definedPropertySettings,
-                    value: result.errors,
-                },
-                tokens: { ...definedPropertySettings, value: tokens.length === 0 ? null : tokens },
-                loc: {
-                    ...definedPropertySettings,
-                    value: {
-                        ...tokens[0].loc,
-                        end: { ...(tokens[tokens.length - 1]?.loc?.end ?? tokens[0]?.loc?.end) },
-                    },
-                },
-            },
-        );
+            [TOKENS]: tokens.length === 0 ? null : tokens,
+            [STATE]: result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid,
+            [ERRORS]: result.errors,
+        } as AstKeyFrameRule;
     }
 
     const stack: Token[] = [];
@@ -181,12 +164,12 @@ export function parseSelector(
 
     do {
         if (parent?.typ === EnumToken.AtRuleNodeType && "media" === (parent as AstAtRule).nam) {
-            parent = parent.parent;
+            parent = parent[PARENT];
             continue;
         }
 
         nested = parent?.typ == EnumToken.RuleNodeType;
-        parent = parent?.parent;
+        parent = parent?.[PARENT];
     } while (!nested && parent != null);
 
     for (; i < tokens.length; i++) {
@@ -197,7 +180,7 @@ export function parseSelector(
                     val: ":" + (tokens[i + 1] as IdentToken).val,
                 });
 
-                tokens[i].loc!.end = tokens[i + 1]!.loc!.end;
+                tokens[i][LOC]!.end = tokens[i + 1]![LOC]!.end;
                 tokens.splice(i + 1, 1);
                 continue;
             }
@@ -213,7 +196,7 @@ export function parseSelector(
                     val,
                 });
 
-                tokens[i].loc!.end = tokens[i + 1]!.loc!.end;
+                tokens[i][LOC]!.end = tokens[i + 1]![LOC]!.end;
                 tokens.splice(i + 1, 1);
                 continue;
             }
@@ -227,7 +210,7 @@ export function parseSelector(
                     val: (pseudoElements.includes(val) ? "" : ":") + val,
                 });
 
-                tokens[i].loc!.end = tokens[i + 1]!.loc!.end;
+                tokens[i][LOC]!.end = tokens[i + 1]![LOC]!.end;
                 tokens.splice(i + 1, 1);
                 continue;
             }
@@ -242,7 +225,7 @@ export function parseSelector(
                     val,
                 });
 
-                tokens[i].loc!.end = tokens[i + 1]!.loc!.end;
+                tokens[i][LOC]!.end = tokens[i + 1]![LOC]!.end;
                 tokens.splice(i + 1, 1);
                 continue;
             }
@@ -278,14 +261,10 @@ export function parseSelector(
                         index = tokens.indexOf(stack.at(-1)!);
                         // @ts-expect-error
                         const { val, ...attr } = stack.at(-1) as AttrStartToken;
-
-                        Object.defineProperty(attr, "loc", {
-                            ...definedPropertySettings,
-                            value: {
-                                ...stack.at(-1)!.loc!,
-                                end: token.loc!.end,
-                            },
-                        });
+                        attr[LOC] = {
+                            ...stack.at(-1)![LOC]!,
+                            end: token[LOC]!.end,
+                        };
 
                         tokens.splice(i, 1);
                         Object.assign(attr, {
@@ -309,7 +288,7 @@ export function parseSelector(
                     if (stack.at(-1)?.typ == EnumToken.PseudoClassFunctionTokenDefType) {
                         const func = stack.at(-1) as PseudoClassFunctionToken;
                         index = tokens.indexOf(func);
-                        (stack.at(-1) as AttrStartToken).loc!.end = token.loc!.end;
+                        (stack.at(-1) as AttrStartToken)[LOC]!.end = token[LOC]!.end;
                         tokens.splice(i, 1);
 
                         if (tokensfuncDefMap.has(func.typ)) {
@@ -425,18 +404,11 @@ export function parseSelector(
                                                         });
                                                     } else {
                                                         // :first-child
-                                                        tokens[tokens.indexOf(func)] = Object.defineProperties(
-                                                            {
-                                                                typ: EnumToken.PseudoClassTokenType,
-                                                                val: ":first-child",
-                                                            },
-                                                            {
-                                                                loc: {
-                                                                    ...definedPropertySettings,
-                                                                    value: func.loc,
-                                                                },
-                                                            },
-                                                        );
+                                                        tokens[tokens.indexOf(func)] = {
+                                                            typ: EnumToken.PseudoClassTokenType,
+                                                            val: ":first-child",
+                                                            [LOC]: func[LOC],
+                                                        };
                                                     }
 
                                                     break;
@@ -514,18 +486,11 @@ export function parseSelector(
                                                 if (hasSelector) {
                                                     func.chi.splice(0, i);
                                                 } else {
-                                                    tokens[tokens.indexOf(func)] = Object.defineProperties(
-                                                        {
-                                                            typ: EnumToken.PseudoClassTokenType,
-                                                            val: ":first-child",
-                                                        },
-                                                        {
-                                                            loc: {
-                                                                ...definedPropertySettings,
-                                                                value: func.loc,
-                                                            },
-                                                        },
-                                                    );
+                                                    tokens[tokens.indexOf(func)] = {
+                                                        typ: EnumToken.PseudoClassTokenType,
+                                                        val: ":first-child",
+                                                        [LOC]: func[LOC],
+                                                    };
                                                 }
 
                                                 break;
@@ -587,83 +552,70 @@ export function parseSelector(
         }
     }
 
-    return Object.defineProperties(
-        {
-            typ: EnumToken.RuleNodeType,
-            sel: [
-                ...tokens
-                    .reduce(
-                        (acc: string[][], curr: Token, index: number, array: Token[]) => {
-                            if (curr.typ == EnumToken.CommentTokenType) {
-                                return acc;
-                            }
-
-                            if (curr.typ == EnumToken.WhitespaceTokenType) {
-                                if (
-                                    trimWhiteSpace.includes(array[index - 1]?.typ) ||
-                                    trimWhiteSpace.includes(array[index + 1]?.typ) ||
-                                    combinators.includes((<LiteralToken>array[index - 1])?.val) ||
-                                    combinators.includes((<LiteralToken>array[index + 1])?.val)
-                                ) {
-                                    return acc;
-                                }
-                            }
-
-                            let t: string = renderValue(curr, { minify: false });
-
-                            if (t == ",") {
-                                acc.push([]);
-                            } else {
-                                acc[acc.length - 1].push(t);
-                            }
+    return {
+        typ: EnumToken.RuleNodeType,
+        sel: [
+            ...tokens
+                .reduce(
+                    (acc: string[][], curr: Token, index: number, array: Token[]) => {
+                        if (curr.typ == EnumToken.CommentTokenType) {
                             return acc;
-                        },
-                        [[]],
-                    )
-                    .reduce((acc: Map<string, string[]>, curr: string[]) => {
-                        let i: number = 0;
+                        }
 
-                        for (; i < curr.length; i++) {
-                            if (i + 1 < curr.length && curr[i] == "*") {
-                                if (curr[i] == "*") {
-                                    let index: number = curr[i + 1] == " " ? 2 : 1;
-
-                                    if (![">", "~", "+"].includes(curr[index])) {
-                                        curr.splice(i, index);
-                                    }
-                                }
+                        if (curr.typ == EnumToken.WhitespaceTokenType) {
+                            if (
+                                trimWhiteSpace.includes(array[index - 1]?.typ) ||
+                                trimWhiteSpace.includes(array[index + 1]?.typ) ||
+                                combinators.includes((<LiteralToken>array[index - 1])?.val) ||
+                                combinators.includes((<LiteralToken>array[index + 1])?.val)
+                            ) {
+                                return acc;
                             }
                         }
 
-                        acc.set(curr.join(""), curr);
+                        let t: string = renderValue(curr, { minify: false });
+
+                        if (t == ",") {
+                            acc.push([]);
+                        } else {
+                            acc[acc.length - 1].push(t);
+                        }
                         return acc;
-                    }, uniq)
-                    .keys(),
-            ].join(","),
-            chi: [],
+                    },
+                    [[]],
+                )
+                .reduce((acc: Map<string, string[]>, curr: string[]) => {
+                    let i: number = 0;
+
+                    for (; i < curr.length; i++) {
+                        if (i + 1 < curr.length && curr[i] == "*") {
+                            if (curr[i] == "*") {
+                                let index: number = curr[i + 1] == " " ? 2 : 1;
+
+                                if (![">", "~", "+"].includes(curr[index])) {
+                                    curr.splice(i, index);
+                                }
+                            }
+                        }
+                    }
+
+                    acc.set(curr.join(""), curr);
+                    return acc;
+                }, uniq)
+                .keys(),
+        ].join(","),
+        chi: [],
+        [LOC]: {
+            ...tokens[0][LOC],
+            end: tokens[tokens.length - 1][LOC]!.end,
         },
-        {
-            state: {
-                ...definedPropertySettings,
-                value:
-                    result.success && allowed
-                        ? EnumAstNodeStatus.Validated
-                        : allowed
-                          ? EnumAstNodeStatus.Invalid
-                          : EnumAstNodeStatus.Disallowed,
-            },
-            errors: {
-                ...definedPropertySettings,
-                value: result.success ? [] : result.errors,
-            },
-            tokens: { ...definedPropertySettings, value: tokens },
-            loc: {
-                ...definedPropertySettings,
-                value: {
-                    ...tokens[0].loc,
-                    end: tokens[tokens.length - 1].loc!.end,
-                },
-            },
-        },
-    );
+        [TOKENS]: tokens,
+        [STATE]:
+            result.success && allowed
+                ? EnumAstNodeStatus.Validated
+                : allowed
+                  ? EnumAstNodeStatus.Invalid
+                  : EnumAstNodeStatus.Disallowed,
+        [ERRORS]: result.success ? [] : result.errors,
+    } as AstRule;
 }

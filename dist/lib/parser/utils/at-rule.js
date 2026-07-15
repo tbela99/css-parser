@@ -2,6 +2,7 @@ import { EnumToken } from '../../ast/types.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { getSyntaxRule } from '../../validation/config.js';
 import { trimArray, matchAllSyntaxes, createValidationContext } from '../../validation/match.js';
+import { LOC } from '../../syntax/constants.js';
 
 function matchAtRuleSyntax(atRule, stream, options) {
     const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + atRule.nam);
@@ -15,9 +16,9 @@ function matchAtRuleSyntax(atRule, stream, options) {
                 errors: [
                     {
                         action: "drop",
-                        message: `unexpected token ${EnumToken[filtered[0].typ]} at ${filtered[0].loc.src}:${filtered[0].loc.sta.lin}:${filtered[0].loc.sta.col}`,
+                        message: `unexpected token ${EnumToken[filtered[0].typ]} at ${filtered[0][LOC].src}:${filtered[0][LOC].sta.lin}:${filtered[0][LOC].sta.col}`,
                         node: filtered[0],
-                        location: filtered[0].loc,
+                        location: filtered[0][LOC],
                     },
                 ],
             };

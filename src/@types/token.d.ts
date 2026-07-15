@@ -5,7 +5,13 @@ import { ColorType, EnumToken, EnumAstNodeStatus } from "../lib/ast/types.ts";
  * Literal token
  */
 export declare interface LiteralToken extends BaseToken {
+    /**
+     * literal type
+     */
     typ: EnumToken.LiteralTokenType;
+    /**
+     * literal value
+     */
     val: string;
 }
 
@@ -13,7 +19,13 @@ export declare interface LiteralToken extends BaseToken {
  * Class selector token
  */
 export declare interface ClassSelectorToken extends BaseToken {
+    /**
+     * class selector type
+     */
     typ: EnumToken.ClassSelectorTokenType;
+    /**
+     * class name
+     */
     val: string;
 }
 
@@ -21,7 +33,13 @@ export declare interface ClassSelectorToken extends BaseToken {
  * Invalid class selector token
  */
 export declare interface InvalidClassSelectorToken extends BaseToken {
+    /**
+     * invalid class selector type
+     */
     typ: EnumToken.InvalidClassSelectorTokenType;
+    /**
+     * invalid class name
+     */
     val: string;
 }
 
@@ -29,6 +47,9 @@ export declare interface InvalidClassSelectorToken extends BaseToken {
  * Universal selector token
  */
 export declare interface UniversalSelectorToken extends BaseToken {
+    /**
+     * universal selector type
+     */
     typ: EnumToken.UniversalSelectorTokenType;
 }
 
@@ -36,7 +57,13 @@ export declare interface UniversalSelectorToken extends BaseToken {
  * Ident token
  */
 export declare interface IdentToken extends BaseToken {
+    /**
+     * ident type
+     */
     typ: EnumToken.IdenTokenType;
+    /**
+     * ident value
+     */
     val: string;
 }
 
@@ -44,7 +71,13 @@ export declare interface IdentToken extends BaseToken {
  * Ident list token
  */
 export declare interface IdentListToken extends BaseToken {
+    /**
+     * ident list type
+     */
     typ: EnumToken.IdenListTokenType;
+    /**
+     * ident list value
+     */
     val: string;
 }
 
@@ -52,7 +85,13 @@ export declare interface IdentListToken extends BaseToken {
  * Dashed ident token
  */
 export declare interface DashedIdentToken extends BaseToken {
+    /**
+     * ident type
+     */
     typ: EnumToken.DashedIdenTokenType;
+    /**
+     * ident value
+     */
     val: string;
 }
 
@@ -60,6 +99,9 @@ export declare interface DashedIdentToken extends BaseToken {
  * Comma token
  */
 export declare interface CommaToken extends BaseToken {
+    /**
+     * comma type
+     */
     typ: EnumToken.CommaTokenType;
 }
 
@@ -67,6 +109,9 @@ export declare interface CommaToken extends BaseToken {
  * Colon token
  */
 export declare interface ColonToken extends BaseToken {
+    /**
+     * colon type ':'
+     */
     typ: EnumToken.ColonTokenType;
 }
 
@@ -74,6 +119,9 @@ export declare interface ColonToken extends BaseToken {
  * Double colon token
  */
 export declare interface DoubleColonToken extends BaseToken {
+    /**
+     * double colon type '::'
+     */
     typ: EnumToken.DoubleColonTokenType;
 }
 
@@ -81,6 +129,9 @@ export declare interface DoubleColonToken extends BaseToken {
  * Semicolon token
  */
 export declare interface SemiColonToken extends BaseToken {
+    /**
+     * semicolon type
+     */
     typ: EnumToken.SemiColonTokenType;
 }
 
@@ -88,6 +139,9 @@ export declare interface SemiColonToken extends BaseToken {
  * Nesting selector token
  */
 export declare interface NestingSelectorToken extends BaseToken {
+    /**
+     * nesting selector type
+     */
     typ: EnumToken.NestingSelectorTokenType;
 }
 
@@ -95,8 +149,17 @@ export declare interface NestingSelectorToken extends BaseToken {
  * Number token
  */
 export declare interface NumberToken extends BaseToken {
+    /**
+     * number type
+     */
     typ: EnumToken.NumberTokenType;
+    /**
+     * number sign
+     */
     sign?: "-" | "+";
+    /**
+     * number value
+     */
     val: number | FractionToken;
 }
 
@@ -104,8 +167,17 @@ export declare interface NumberToken extends BaseToken {
  * At rule token
  */
 export declare interface AtRuleToken extends BaseToken {
+    /**
+     * at rule type
+     */
     typ: EnumToken.AtRuleTokenType;
+    /**
+     * at rule name
+     */
     nam: string;
+    /**
+     * at rule value
+     */
     val?: string;
 }
 
@@ -113,7 +185,13 @@ export declare interface AtRuleToken extends BaseToken {
  * Percentage token
  */
 export declare interface PercentageToken extends BaseToken {
+    /**
+     * percentage type
+     */
     typ: EnumToken.PercentageTokenType;
+    /**
+     * percentage value
+     */
     val: number | FractionToken;
 }
 
@@ -121,7 +199,13 @@ export declare interface PercentageToken extends BaseToken {
  * Flex token
  */
 export declare interface FlexToken extends BaseToken {
+    /**
+     * flex type
+     */
     typ: EnumToken.FlexTokenType;
+    /**
+     * flex value
+     */
     val: number | FractionToken;
 }
 
@@ -129,6 +213,9 @@ export declare interface FlexToken extends BaseToken {
  * Function token
  */
 export declare interface FunctionToken extends BaseToken {
+    /**
+     * function type
+     */
     typ:
         | EnumToken.FunctionTokenType
         | EnumToken.UrlFunctionTokenType
@@ -141,6 +228,9 @@ export declare interface FunctionToken extends BaseToken {
         | EnumToken.PseudoClassFunctionTokenType
         | EnumToken.TransformFunctionTokenType;
     val: string;
+    /**
+     * function children
+     */
     chi: Token[];
 }
 
@@ -148,8 +238,17 @@ export declare interface FunctionToken extends BaseToken {
  * Grid template function token
  */
 export declare interface GridTemplateFuncToken extends BaseToken {
+    /**
+     * function type
+     */
     typ: EnumToken.GridTemplateFuncTokenType;
+    /**
+     * function name
+     */
     val: string;
+    /**
+     * function children
+     */
     chi: Token[];
 }
 
@@ -157,8 +256,17 @@ export declare interface GridTemplateFuncToken extends BaseToken {
  * Function URL token
  */
 export declare interface FunctionURLToken extends BaseToken {
+    /**
+     * function type
+     */
     typ: EnumToken.UrlFunctionTokenType;
+    /**
+     * function name
+     */
     val: "url";
+    /**
+     * function children
+     */
     chi: Array<UrlToken | StringToken | CommentToken>;
 }
 
@@ -166,7 +274,13 @@ export declare interface FunctionURLToken extends BaseToken {
  * Function image token
  */
 export declare interface FunctionImageToken extends BaseToken {
+    /**
+     * function type
+     */
     typ: EnumToken.ImageFunctionTokenType;
+    /**
+     * function name
+     */
     val:
         | "linear-gradient"
         | "radial-gradient"
@@ -177,6 +291,9 @@ export declare interface FunctionImageToken extends BaseToken {
         | "image-set"
         | "element"
         | "cross-fade";
+    /**
+     * function children
+     */
     chi: Array<UrlToken | CommentToken>;
 }
 
@@ -470,7 +587,13 @@ export declare interface PseudoClassToken extends BaseToken {
  * Pseudo element token
  */
 export declare interface PseudoElementToken extends BaseToken {
+    /**
+     * Pseudo element
+     */
     typ: EnumToken.PseudoElementTokenType;
+    /**
+     * Pseudo element
+     */
     val: string;
 }
 
@@ -478,7 +601,13 @@ export declare interface PseudoElementToken extends BaseToken {
  * Pseudo page token
  */
 export declare interface PseudoPageToken extends BaseToken {
+    /**
+     * Pseudo page
+     */
     typ: EnumToken.PseudoPageTokenType;
+    /**
+     * Pseudo page
+     */
     val: string;
 }
 
@@ -486,8 +615,17 @@ export declare interface PseudoPageToken extends BaseToken {
  * Pseudo class function token
  */
 export declare interface PseudoClassFunctionToken extends BaseToken {
+    /**
+     * Pseudo class function
+     */
     typ: EnumToken.PseudoClassFuncTokenType;
+    /**
+     * Pseudo class function
+     */
     val: string;
+    /**
+     * Pseudo class function
+     */
     chi: Token[];
 }
 
@@ -495,6 +633,9 @@ export declare interface PseudoClassFunctionToken extends BaseToken {
  * Delim token
  */
 export declare interface DelimToken extends BaseToken {
+    /**
+     * Delimiter token type
+     */
     typ: EnumToken.DelimTokenType;
 }
 
@@ -502,7 +643,13 @@ export declare interface DelimToken extends BaseToken {
  * Bad URL token
  */
 export declare interface BadUrlToken extends BaseToken {
+    /**
+     * Bad URL
+     */
     typ: EnumToken.BadUrlTokenType;
+    /**
+     * Bad URL
+     */
     val: string;
 }
 
@@ -510,7 +657,13 @@ export declare interface BadUrlToken extends BaseToken {
  * URL token
  */
 export declare interface UrlToken extends BaseToken {
+    /**
+     * URL
+     */
     typ: EnumToken.UrlTokenTokenType;
+    /**
+     * URL token
+     */
     val: string;
 }
 
@@ -518,6 +671,9 @@ export declare interface UrlToken extends BaseToken {
  * EOF token
  */
 export declare interface EOFToken extends BaseToken {
+    /**
+     * End of file
+     */
     typ: EnumToken.EOFTokenType;
 }
 
@@ -525,6 +681,9 @@ export declare interface EOFToken extends BaseToken {
  * Important token
  */
 export declare interface ImportantToken extends BaseToken {
+    /**
+     * Important
+     */
     typ: EnumToken.ImportantTokenType;
 }
 
@@ -532,11 +691,25 @@ export declare interface ImportantToken extends BaseToken {
  * Color token
  */
 export declare interface ColorToken extends BaseToken {
+    /**
+     * Color type
+     */
     typ: EnumToken.ColorTokenType;
+    /**
+     * Color value or color function name
+     */
     val: string;
+    /**
+     * Color kind
+     */
     kin: ColorType;
+    /**
+     * Color components
+     */
     chi?: Token[];
-    /* calculated */
+    /**
+     * Whether the color is relative, color-mix or color
+     * */
     cal?: "rel" | "mix" | "col";
 }
 
@@ -544,7 +717,13 @@ export declare interface ColorToken extends BaseToken {
  * Attribute token
  */
 export declare interface AttrToken extends BaseToken {
+    /**
+     * Attribute type
+     */
     typ: EnumToken.AttrTokenType;
+    /**
+     * Children
+     */
     chi: Token[];
 }
 
@@ -552,7 +731,13 @@ export declare interface AttrToken extends BaseToken {
  * Invalid attribute token
  */
 export declare interface InvalidAttrToken extends BaseToken {
+    /**
+     * Attribute type
+     */
     typ: EnumToken.InvalidAttrTokenType;
+    /**
+     * Children
+     */
     chi: Token[];
 }
 

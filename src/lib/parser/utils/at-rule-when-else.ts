@@ -1,7 +1,6 @@
 import type {
+    Location,
     AstAtRule,
-    AstRule,
-    AstStyleSheet,
     AtRuleToken,
     ErrorDescription,
     FunctionToken,
@@ -12,12 +11,12 @@ import type {
     SupportsQueryUnaryConditionToken,
     Token,
     WhenElseQueryConditionToken,
-    WhenElseUnaryConditionToken,
+    WhenElseUnaryConditionToken
 } from "../../../@types/index.d.ts";
 import { EnumToken } from "../../ast/types.ts";
 import { renderValue } from "../../renderer/render.ts";
 import { trimArray } from "../../validation/match.ts";
-import { definedPropertySettings, tokensfuncDefMap, tokensfuncSet } from "../../syntax/constants.ts";
+import { definedPropertySettings, LOC, tokensfuncDefMap, tokensfuncSet } from "../../syntax/constants.ts";
 import { parseMediaqueryList } from "./at-rule-media.ts";
 import { parseAtRuleSupportSyntax } from "./at-rule-support.ts";
 import { equalsIgnoreCase } from "./text.ts";
@@ -62,8 +61,8 @@ export function matchAtRuleWhenElseSyntax(
                       {
                           action: "drop",
                           node: stream[i],
-                          location: stream[i]?.loc,
-                          message: `expecting '<boolean-condition>' at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                          location: stream[i]?.[LOC],
+                          message: `expecting '<boolean-condition>' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                       },
                   ],
         };
@@ -85,8 +84,8 @@ export function matchAtRuleWhenElseSyntax(
                 {
                     action: "drop",
                     node: stream[i],
-                    location: stream[i]?.loc,
-                    message: `expecting '<boolean-condition>' at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                    location: stream[i]?.[LOC],
+                    message: `expecting '<boolean-condition>' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                 },
             ],
         };
@@ -125,8 +124,8 @@ export function matchAtRuleWhenElseSyntax(
                             {
                                 action: "drop",
                                 node: stream[k],
-                                message: `expecting 'and' or 'or' at ${stream[k]?.loc?.src}:${stream[k]?.loc?.sta.lin}:${stream[k]?.loc?.sta.col}`,
-                                location: stream[k].loc,
+                                message: `expecting 'and' or 'or' at ${stream[k]?.[LOC]?.src}:${stream[k]?.[LOC]?.sta.lin}:${stream[k]?.[LOC]?.sta.col}`,
+                                location: stream[k][LOC],
                             },
                         ],
                     };
@@ -146,7 +145,7 @@ export function matchAtRuleWhenElseSyntax(
                                 {
                                     action: "drop",
                                     node: stream[i],
-                                    message: `unmatched ')' at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                    message: `unmatched ')' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                 },
                             ],
                         };
@@ -177,24 +176,18 @@ export function matchAtRuleWhenElseSyntax(
                                     {
                                         action: "drop",
                                         node: token,
-                                        location: token.loc,
-                                        message: `expecting '<boolean-condition"}>' at ${token?.loc?.src}:${token?.loc?.sta.lin}:${token?.loc?.sta.col}`,
+                                        location: token[LOC],
+                                        message: `expecting '<boolean-condition"}>' at ${token?.[LOC]?.src}:${token?.[LOC]?.sta.lin}:${token?.[LOC]?.sta.col}`,
                                     },
                                 ],
                             };
                         }
 
-                        tokens[index] = Object.defineProperty(
-                            {
+                        tokens[index] = {
                                 typ: EnumToken.ParensTokenType,
                                 chi: slice,
-                            },
-                            "loc",
-                            {
-                                ...definedPropertySettings,
-                                value: { ...stack.at(-1)!.loc, end: { ...stream[i]?.loc?.end } },
-                            },
-                        );
+                                [LOC]: { ...stack.at(-1)![LOC], end: { ...stream[i]?.[LOC]?.end } } as Location
+                            };
 
                         stack.pop();
                         tokens.pop();
@@ -206,18 +199,12 @@ export function matchAtRuleWhenElseSyntax(
 
                     if (stack.at(-1)?.typ === EnumToken.NotTokenType || stack.at(-1)?.typ === EnumToken.OnlyTokenType) {
                         const index: number = tokens.indexOf(stack.at(-1)!);
-                        tokens[index] = Object.defineProperty(
-                            {
+                        tokens[index] = {
                                 typ: EnumToken.SupportsQueryUnaryConditionTokenType,
                                 l: stack.at(-1),
                                 r: trimArray(tokens.splice(index + 1, i - index - 1)),
-                            },
-                            "loc",
-                            {
-                                ...definedPropertySettings,
-                                value: { ...stack.at(-1)!.loc, end: { ...stream[i]?.loc?.end } },
-                            },
-                        ) as SupportsQueryUnaryConditionToken;
+                                [LOC]: { ...stack.at(-1)![LOC], end: { ...stream[i]?.[LOC]?.end } }
+                            }  as SupportsQueryUnaryConditionToken;
 
                         stack.pop();
                     }
@@ -231,7 +218,7 @@ export function matchAtRuleWhenElseSyntax(
                                     {
                                         action: "drop",
                                         node: stack.at(-2),
-                                        message: `expecting '(' at ${stack.at(-2)?.loc?.src}:${stack.at(-2)?.loc?.sta.lin}:${stack.at(-2)?.loc?.sta.col}`,
+                                        message: `expecting '(' at ${stack.at(-2)?.[LOC]?.src}:${stack.at(-2)?.[LOC]?.sta.lin}:${stack.at(-2)?.[LOC]?.sta.col}`,
                                     },
                                 ],
                             };
@@ -254,25 +241,19 @@ export function matchAtRuleWhenElseSyntax(
                                     {
                                         action: "drop",
                                         node: stack.at(-1),
-                                        message: `unexpected token after 'not' expression at ${stack.at(-1)?.loc?.src}:${stack.at(-1)?.loc?.sta.lin}:${stack.at(-1)?.loc?.sta.col}`,
+                                        message: `unexpected token after 'not' expression at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
                                     },
                                 ],
                             };
                         }
 
-                        tokens[index2] = Object.defineProperty(
-                            {
+                        tokens[index2] =    {
                                 typ: EnumToken.SupportsQueryConditionTokenType,
                                 op: stack.at(-1)!,
                                 l: left,
                                 r: trimArray(tokens.slice(index + 1)),
-                            },
-                            "loc",
-                            {
-                                ...definedPropertySettings,
-                                value: { ...stack.at(-1)!.loc, end: { ...stream[i]?.loc?.end } },
-                            },
-                        ) as SupportsQueryConditionToken;
+                                [LOC]: { ...stack.at(-1)![LOC], end: { ...stream[i]?.[LOC]?.end } }
+                            } as SupportsQueryConditionToken;
                         tokens.length = index2 + 1;
                         stack.pop();
                     }
@@ -298,7 +279,7 @@ export function matchAtRuleWhenElseSyntax(
                                 errors: [
                                     {
                                         action: "drop",
-                                        message: `mixing <and> and <or> at the same level is not allowed at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                        message: `mixing <and> and <or> at the same level is not allowed at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                     },
                                 ],
                             };
@@ -310,7 +291,7 @@ export function matchAtRuleWhenElseSyntax(
                                 errors: [
                                     {
                                         action: "drop",
-                                        message: `<or> is not allowed outside of a parenthesis at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                        message: `<or> is not allowed outside of a parenthesis at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                     },
                                 ],
                             };
@@ -351,10 +332,8 @@ export function matchAtRuleWhenElseSyntax(
                     const slice = stream.slice(i, j + 1);
                     const funcName: string = (stream[i] as FunctionToken).val.toLowerCase();
                     const tokenList = [
-                        Object.defineProperty({ typ: EnumToken.StartParensTokenType }, "loc", {
-                            ...definedPropertySettings,
-                            value: { ...stream[i].loc, end: { ...stream[j]?.loc?.end } },
-                        }),
+                        { typ: EnumToken.StartParensTokenType, [LOC]: { ...stream[i][LOC], end: { ...stream[j]?.[LOC]?.end } } },
+                        // @ts-expect-error
                     ].concat(slice.slice(1)) as Token[];
 
                     if ("media" === funcName) {
@@ -379,41 +358,30 @@ export function matchAtRuleWhenElseSyntax(
                     } else {
                         errors.push({
                             action: "ignore",
-                            message: `unknown <boolean-condition> function '${funcName}' at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                            message: `unknown <boolean-condition> function '${funcName}' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                             node: stream[i],
-                            location: stream[i].loc,
+                            location: stream[i][LOC],
                         });
                     }
 
-                    Object.defineProperty(
-                        Object.assign(stream[i], {
+                    stream[i][LOC] = { ...stream[i][LOC], end: { ...stream[j]?.[LOC]?.end } } as Location;
+                    
+                    Object.assign(stream[i], {
                             typ: tokensfuncDefMap.get(stream[i].typ)!,
                             chi:
                                 stream[i].typ === EnumToken.SupportsFunctionTokenDefType
                                     ? trimArray(slice.slice(1, -1))
                                     : (tokenList[0] as ParensToken).chi,
-                        }),
-                        "loc",
-                        {
-                            ...definedPropertySettings,
-                            value: { ...stream[i].loc, end: { ...stream[j]?.loc?.end } },
-                        },
-                    );
+                        });
 
                     if (stack.at(-1)?.typ === EnumToken.NotTokenType || stack.at(-1)?.typ === EnumToken.OnlyTokenType) {
                         const index: number = tokens.indexOf(stack.at(-1)!);
-                        tokens[index] = Object.defineProperty(
-                            {
+                        tokens[index] = {
                                 typ: EnumToken.WhenElseUnaryConditionTokenType,
                                 l: stack.at(-1)!,
                                 r: trimArray(tokens.slice(index + 1)),
-                            },
-                            "loc",
-                            {
-                                ...definedPropertySettings,
-                                value: { ...stack.at(-1)!.loc, end: { ...stream[i]?.loc?.end } },
-                            },
-                        ) as WhenElseUnaryConditionToken;
+                                [LOC]: { ...stack.at(-1)![LOC], end: { ...stream[i]?.[LOC]?.end } },
+                            } as WhenElseUnaryConditionToken;
                         tokens.length = index + 1;
                         stack.pop();
                     }
@@ -422,19 +390,13 @@ export function matchAtRuleWhenElseSyntax(
                         const index: number = tokens.indexOf(stack.at(-1)!);
                         const index2: number = stack.length > 1 ? tokens.indexOf(stack.at(-2)!) + 1 : 0;
 
-                        tokens[index2] = Object.defineProperty(
-                            {
+                        tokens[index2] =  {
                                 typ: EnumToken.WhenElseQueryConditionTokenType,
                                 op: stack.at(-1)!,
                                 l: trimArray(tokens.slice(index2, index)),
                                 r: trimArray(tokens.slice(index + 1)),
-                            },
-                            "loc",
-                            {
-                                ...definedPropertySettings,
-                                value: { ...stack.at(-1)!.loc, end: { ...stream[i]?.loc?.end } },
-                            },
-                        ) as WhenElseQueryConditionToken;
+                                [LOC]: { ...stack.at(-1)![LOC], end: { ...stream[i]?.[LOC]?.end } }
+                            }  as WhenElseQueryConditionToken;
                         tokens.length = index2 + 1;
                         stack.pop();
                     }
@@ -462,9 +424,9 @@ export function matchAtRuleWhenElseSyntax(
                 {
                     action: "drop",
                     node: stack.at(-1),
-                    message: `unmatched token '${renderValue(stack.at(-1) as Token)}' at ${stack.at(-1)!.loc!.src}:${
-                        stack.at(-1)!.loc!.sta.lin
-                    }:${stack.at(-1)!.loc!.sta.col}`,
+                    message: `unmatched token '${renderValue(stack.at(-1) as Token)}' at ${stack.at(-1)![LOC]!.src}:${
+                        stack.at(-1)![LOC]!.sta.lin
+                    }:${stack.at(-1)![LOC]!.sta.col}`,
                 },
             ],
         };

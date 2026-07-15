@@ -1,6 +1,6 @@
 import { EnumToken, ColorType } from '../ast/types.js';
-import { definedPropertySettings, wildCardFuncs, whenElseFunc, transformFunctions, mathFuncs, colorsFunc, timingFunc, supportFunc, generalEnclosedFunc, timelineFunc, imageFunc, gridTemplateFunc, urlFunc, containerFunc } from '../syntax/constants.js';
-import { isDigit, isPseudo, isIdent, isWhiteSpace, isNumber, isNewLine, isHexColor, isHash, isPercentage, parseDimension } from '../syntax/syntax.js';
+import { LOC, wildCardFuncs, whenElseFunc, transformFunctions, mathFuncs, colorsFunc, timingFunc, supportFunc, generalEnclosedFunc, timelineFunc, imageFunc, gridTemplateFunc, urlFunc, containerFunc } from '../syntax/constants.js';
+import { isDigit, isPseudo, isIdent, isWhiteSpace, isNumber, isHexColor, isHash, isPercentage, parseDimension, isNewLine, pseudoElements } from '../syntax/syntax.js';
 import { equalsIgnoreCase } from './utils/text.js';
 
 const SymbolsMapTokens = {
@@ -34,6 +34,10 @@ const SymbolsMapTokens = {
     "\r": EnumToken.Whitespace,
     "\n": EnumToken.Whitespace,
     "\f": EnumToken.Whitespace,
+    ...pseudoElements.reduce((acc, curr) => {
+        acc[curr] = EnumToken.PseudoElementTokenType;
+        return acc;
+    }, Object.create(null)),
     ...containerFunc.reduce((acc, curr) => {
         acc[curr + "("] = EnumToken.ContainerFunctionTokenDefType;
         return acc;
@@ -206,7 +210,7 @@ function consumeString(quoteStr, buffer, parseInfo) {
     result.push(yieldResult(buffer + quote, parseInfo, EnumToken.StringTokenType));
     return result;
 }
-function getTokenType(val, hint) {
+function yieldResult(val, parseInfo, hint) {
     let token = null;
     let dimension;
     if (hint != null) {
@@ -259,19 +263,20 @@ function getTokenType(val, hint) {
     }
     else {
         let slice = val.slice(1);
-        if (val.charAt(0) == "@" && isIdent(slice)) {
+        const chr = val.charAt(0);
+        if (chr == "@" && isIdent(slice)) {
             token = {
                 typ: EnumToken.AtRuleTokenType,
                 nam: slice,
             };
         }
-        else if (val.charAt(0) == "." && isIdent(slice)) {
+        else if (chr == "." && isIdent(slice)) {
             token = {
                 typ: EnumToken.ClassSelectorTokenType,
                 val,
             };
         }
-        else if (val.charAt(0) == "#") {
+        else if (chr == "#") {
             if (isHexColor(val)) {
                 token = {
                     typ: EnumToken.ColorTokenType,
@@ -286,7 +291,7 @@ function getTokenType(val, hint) {
                 };
             }
         }
-        else if ("\"'".includes(val.charAt(0))) {
+        else if ("\"'".includes(chr)) {
             token = {
                 typ: EnumToken.UnclosedStringTokenType,
                 val: val,
@@ -327,19 +332,12 @@ function getTokenType(val, hint) {
             val,
         };
     }
-    return token;
-}
-function yieldResult(val, parseInfo, hint) {
-    const token = getTokenType(val, hint);
-    Object.defineProperty(token, "loc", {
-        ...definedPropertySettings,
-        enumerable: false,
-        value: {
-            src: parseInfo.src,
-            sta: { ...parseInfo.position },
-            end: { ...parseInfo.currentPosition },
-        },
-    });
+    // return token;
+    token[LOC] = {
+        src: parseInfo.src,
+        sta: { ...parseInfo.position },
+        end: { ...parseInfo.currentPosition },
+    };
     parseInfo.position.ind = parseInfo.currentPosition.ind;
     parseInfo.position.lin = parseInfo.currentPosition.lin;
     parseInfo.position.col = parseInfo.currentPosition.col;
@@ -859,4 +857,4 @@ function move(position, str) {
     }
 }
 
-export { SymbolsMapTokens, TokenMap, consumeString, getTokenType, hintsEnum, match, move, next, peek, tokenize, tokenizeStream, yieldResult };
+export { SymbolsMapTokens, TokenMap, consumeString, hintsEnum, match, move, next, peek, tokenize, tokenizeStream, yieldResult };

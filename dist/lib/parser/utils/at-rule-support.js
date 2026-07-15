@@ -1,6 +1,6 @@
 import { EnumToken, ValidationLevel } from '../../ast/types.js';
 import { renderValue } from '../../renderer/render.js';
-import { tokensfuncDefMap, trimTokenSpace, tokensfuncSet, definedPropertySettings } from '../../syntax/constants.js';
+import { tokensfuncDefMap, LOC, trimTokenSpace, tokensfuncSet } from '../../syntax/constants.js';
 import { getSyntaxConfig, getParsedSyntax } from '../../validation/config.js';
 import { matchAllSyntaxes, createValidationContext, trimArray } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
@@ -40,7 +40,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                 {
                     action: "drop",
                     node: stream[i],
-                    message: `expecting '<supports-condition>' at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                    message: `expecting '<supports-condition>' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                 },
             ],
         };
@@ -49,11 +49,14 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
         tokens.push(stream[i]);
         if (stream[i].typ == EnumToken.ColonTokenType) {
             if (stream[i + 1]?.typ == EnumToken.IdenTokenType) {
+                const val = stream[i + 1].val;
                 Object.assign(stream[i], {
-                    typ: EnumToken.PseudoElementTokenType,
-                    val: ":" + stream[i + 1].val,
+                    typ: pseudoElements.includes(val)
+                        ? EnumToken.PseudoElementTokenType
+                        : EnumToken.PseudoClassTokenType,
+                    val: ":" + val,
                 });
-                stream[i].loc.end = stream[i + 1].loc.end;
+                stream[i][LOC].end = stream[i + 1][LOC].end;
                 stream.splice(i + 1, 1);
                 continue;
             }
@@ -66,7 +69,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                     val,
                 });
                 stack.push(stream[i]);
-                stream[i].loc.end = stream[i + 1].loc.end;
+                stream[i][LOC].end = stream[i + 1][LOC].end;
                 stream.splice(i + 1, 1);
                 continue;
             }
@@ -78,7 +81,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                     typ: EnumToken.PseudoClassTokenType,
                     val: (pseudoElements.includes(val) ? "" : ":") + val,
                 });
-                stream[i].loc.end = stream[i + 1].loc.end;
+                stream[i][LOC].end = stream[i + 1][LOC].end;
                 stream.splice(i + 1, 1);
                 continue;
             }
@@ -91,7 +94,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                     val,
                 });
                 stack.push(stream[i]);
-                stream[i].loc.end = stream[i + 1].loc.end;
+                stream[i][LOC].end = stream[i + 1][LOC].end;
                 stream.splice(i + 1, 1);
                 continue;
             }
@@ -123,7 +126,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                             {
                                 action: "drop",
                                 node: stream[k],
-                                message: `expecting 'and' or 'or' at ${stream[k]?.loc?.src}:${stream[k]?.loc?.sta.lin}:${stream[k]?.loc?.sta.col}`,
+                                message: `expecting 'and' or 'or' at ${stream[k]?.[LOC]?.src}:${stream[k]?.[LOC]?.sta.lin}:${stream[k]?.[LOC]?.sta.col}`,
                             },
                         ],
                     };
@@ -146,7 +149,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                                 {
                                     action: "drop",
                                     node: stream[i],
-                                    message: `unmatched ')' at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                    message: `unmatched ')' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                 },
                             ],
                         };
@@ -157,11 +160,14 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                             // expecting ident or dashed ident
                             if (tokens[index + 1]?.typ == EnumToken.IdenTokenType ||
                                 tokens[index + 1]?.typ == EnumToken.DashedIdenTokenType) {
+                                const val = tokens[index + 1].val;
                                 Object.assign(tokens[index], {
-                                    typ: EnumToken.PseudoElementTokenType,
-                                    val: ":" + tokens[index + 1].val,
+                                    typ: pseudoElements.includes(val)
+                                        ? EnumToken.PseudoElementTokenType
+                                        : EnumToken.PseudoClassTokenType,
+                                    val: ":" + val,
                                 });
-                                tokens[index].loc.end = tokens[index + 1].loc.end;
+                                tokens[index][LOC].end = tokens[index + 1][LOC].end;
                                 tokens.splice(index + 1, 1);
                                 stack.pop();
                                 const index2 = tokens.indexOf(stack[stack.length - 1]);
@@ -177,7 +183,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                                     typ: tokensfuncDefMap.get(tokens[index2].typ),
                                     chi: tokens.splice(index2 + 1, tokens.length - index2 - 1),
                                 });
-                                tokens[index2].loc.end = stream[i].loc.end;
+                                tokens[index2][LOC].end = stream[i][LOC].end;
                                 stack.pop();
                                 break;
                             }
@@ -189,7 +195,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                                     {
                                         action: "drop",
                                         node: stream[i],
-                                        message: `unmatched ')' at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                        message: `unmatched ')' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                     },
                                 ],
                             };
@@ -205,7 +211,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                                     {
                                         action: "drop",
                                         node: declaration,
-                                        message: `invalid declaration at ${declaration?.loc?.src}:${declaration?.loc?.sta.lin}:${declaration?.loc?.sta.col}`,
+                                        message: `invalid declaration at ${declaration?.[LOC]?.src}:${declaration?.[LOC]?.sta.lin}:${declaration?.[LOC]?.sta.col}`,
                                     },
                                 ],
                             };
@@ -232,18 +238,16 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                                     {
                                         action: "drop",
                                         node: token,
-                                        message: `expecting '<${filtered[0]?.typ === EnumToken.IdenTokenType ? "supports-condition-name" : "supports-condition"}>' at ${token?.loc?.src}:${token?.loc?.sta.lin}:${token?.loc?.sta.col}`,
+                                        message: `expecting '<${filtered[0]?.typ === EnumToken.IdenTokenType ? "supports-condition-name" : "supports-condition"}>' at ${token?.[LOC]?.src}:${token?.[LOC]?.sta.lin}:${token?.[LOC]?.sta.col}`,
                                     },
                                 ],
                             };
                         }
-                        tokens[index] = Object.defineProperty({
+                        tokens[index] = {
                             typ: EnumToken.ParensTokenType,
                             chi: slice,
-                        }, "loc", {
-                            ...definedPropertySettings,
-                            value: { ...stack.at(-1).loc, end: { ...stream[i]?.loc?.end } },
-                        });
+                            [LOC]: { ...stack.at(-1)[LOC], end: { ...stream[i]?.[LOC]?.end } },
+                        };
                         stack.pop();
                         tokens.pop();
                         scopes.pop();
@@ -252,14 +256,12 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                     }
                     else if (tokensfuncDefMap.has(stack.at(-1)?.typ)) {
                         const index = tokens.indexOf(stack.at(-1));
-                        tokens[index] = Object.defineProperty({
+                        tokens[index] = {
                             typ: tokensfuncDefMap.get(stack.at(-1)?.typ),
                             val: stack.at(-1).val,
                             chi: trimArray(tokens.splice(index + 1, tokens.length - index - 2)),
-                        }, "loc", {
-                            ...definedPropertySettings,
-                            value: { ...stack.at(-1).loc, end: { ...stream[i]?.loc?.end } },
-                        });
+                            [LOC]: { ...stack.at(-1)[LOC], end: { ...stream[i]?.[LOC]?.end } },
+                        };
                         if (tokens[index].typ === EnumToken.PseudoClassFuncTokenType) {
                             // not a declaration
                             const result = matchAllSyntaxes(getParsedSyntax(ValidationSyntaxGroupEnum.Selectors, tokens[index].val + "()")?.[0]?.chi, createValidationContext(tokens[index].chi), options);
@@ -284,7 +286,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                                 errors.push({
                                     action: "ignore",
                                     node: tokens[index],
-                                    message: `expecting <supports-selector-fn>, <supports-env-fn>, <font-tech()>, <font-format()>, <at-rule()> or <named-feature()> at ${tokens[index]?.loc?.src}:${tokens[index]?.loc?.sta.lin}:${tokens[index]?.loc?.sta.col}`,
+                                    message: `expecting <supports-selector-fn>, <supports-env-fn>, <font-tech()>, <font-format()>, <at-rule()> or <named-feature()> at ${tokens[index]?.[LOC]?.src}:${tokens[index]?.[LOC]?.sta.lin}:${tokens[index]?.[LOC]?.sta.col}`,
                                 });
                             }
                             else {
@@ -294,7 +296,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                                     errors.push(...result.errors, {
                                         action: "ignore",
                                         node: tokens[index],
-                                        message: `missing syntax for function '${tokens[index].val}()' at ${tokens[index]?.loc?.src}:${tokens[index]?.loc?.sta.lin}:${tokens[index]?.loc?.sta.col}`,
+                                        message: `missing syntax for function '${tokens[index].val}()' at ${tokens[index]?.[LOC]?.src}:${tokens[index]?.[LOC]?.sta.lin}:${tokens[index]?.[LOC]?.sta.col}`,
                                     });
                                 }
                                 else if (!result.success) {
@@ -312,14 +314,12 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                     }
                     if (stack.at(-1)?.typ === EnumToken.NotTokenType) {
                         const index = tokens.indexOf(stack.at(-1));
-                        tokens[index] = Object.defineProperty({
+                        tokens[index] = {
                             typ: EnumToken.SupportsQueryUnaryConditionTokenType,
                             l: stack.at(-1),
                             r: trimArray(tokens.splice(index + 1, i - index - 1)),
-                        }, "loc", {
-                            ...definedPropertySettings,
-                            value: { ...stack.at(-1).loc, end: { ...stream[i]?.loc?.end } },
-                        });
+                            [LOC]: { ...stack.at(-1)[LOC], end: { ...stream[i]?.[LOC]?.end } },
+                        };
                         stack.pop();
                     }
                     if (stack.at(-1)?.typ === EnumToken.AndTokenType || stack.at(-1)?.typ === EnumToken.OrTokenType) {
@@ -330,7 +330,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                                     {
                                         action: "drop",
                                         node: stack.at(-2),
-                                        message: `expecting '(' at ${stack.at(-2)?.loc?.src}:${stack.at(-2)?.loc?.sta.lin}:${stack.at(-2)?.loc?.sta.col}`,
+                                        message: `expecting '(' at ${stack.at(-2)?.[LOC]?.src}:${stack.at(-2)?.[LOC]?.sta.lin}:${stack.at(-2)?.[LOC]?.sta.col}`,
                                     },
                                 ],
                             };
@@ -347,20 +347,18 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                                     {
                                         action: "drop",
                                         node: stack.at(-1),
-                                        message: `unexpected token after 'not' expression at ${stack.at(-1)?.loc?.src}:${stack.at(-1)?.loc?.sta.lin}:${stack.at(-1)?.loc?.sta.col}`,
+                                        message: `unexpected token after 'not' expression at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
                                     },
                                 ],
                             };
                         }
-                        tokens[index2] = Object.defineProperty({
+                        tokens[index2] = {
                             typ: EnumToken.SupportsQueryConditionTokenType,
                             op: stack.at(-1),
                             l: left,
                             r: trimArray(tokens.slice(index + 1)),
-                        }, "loc", {
-                            ...definedPropertySettings,
-                            value: { ...stack.at(-1).loc, end: { ...stream[i]?.loc?.end } },
-                        });
+                            [LOC]: { ...stack.at(-1)[LOC], end: { ...stream[i]?.[LOC]?.end } },
+                        };
                         tokens.length = index2 + 1;
                         stack.pop();
                     }
@@ -384,7 +382,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                                 errors: [
                                     {
                                         action: "drop",
-                                        message: `mixing <and> and <or> at the same level is not allowed at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                        message: `mixing <and> and <or> at the same level is not allowed at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                     },
                                 ],
                             };
@@ -395,7 +393,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                                 errors: [
                                     {
                                         action: "drop",
-                                        message: `<or> is not allowed outside of a parenthesis at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                        message: `<or> is not allowed outside of a parenthesis at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                     },
                                 ],
                             };
@@ -418,7 +416,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                 {
                     action: "drop",
                     node: stack.at(-1),
-                    message: `unmatched token '${renderValue(stack.at(-1))}' at ${stack.at(-1).loc.src}:${stack.at(-1).loc.sta.lin}:${stack.at(-1).loc.sta.col}`,
+                    message: `unmatched token '${renderValue(stack.at(-1))}' at ${stack.at(-1)[LOC].src}:${stack.at(-1)[LOC].sta.lin}:${stack.at(-1)[LOC].sta.col}`,
                 },
             ],
         };

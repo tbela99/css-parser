@@ -1,5 +1,5 @@
 import { EnumToken } from '../../ast/types.js';
-import { tokensfuncDefMap, mFLT, mFGT, definedPropertySettings } from '../../syntax/constants.js';
+import { tokensfuncDefMap, LOC, mFLT, mFGT } from '../../syntax/constants.js';
 import { matchAllSyntaxes, createValidationContext, trimArray, isStyleRangeValue } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { getSyntaxRule } from '../../validation/config.js';
@@ -56,8 +56,8 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                         {
                             action: "drop",
                             node: context,
-                            location: context.loc,
-                            message: `expecting <container-condition> at ${context.loc?.src}:${context?.loc?.sta.lin}:${context.loc?.sta.col}`,
+                            location: context[LOC],
+                            message: `expecting <container-condition> at ${context[LOC]?.src}:${context?.[LOC]?.sta.lin}:${context[LOC]?.sta.col}`,
                         },
                     ],
                 };
@@ -77,8 +77,8 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                         {
                             action: "drop",
                             node: stream[i],
-                            location: stream[i]?.loc ?? context.loc,
-                            message: `expecting <container-condition> at ${(stream[i] ?? context)?.loc?.src}:${(stream[i] ?? context)?.loc?.sta.lin}:${(stream[i] ?? context)?.loc?.sta.col}`,
+                            location: stream[i]?.[LOC] ?? context[LOC],
+                            message: `expecting <container-condition> at ${(stream[i] ?? context)?.[LOC]?.src}:${(stream[i] ?? context)?.[LOC]?.sta.lin}:${(stream[i] ?? context)?.[LOC]?.sta.col}`,
                         },
                     ],
                 };
@@ -97,8 +97,8 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                             {
                                 action: "drop",
                                 node: stream[i],
-                                location: stream[i]?.loc,
-                                message: `unexpected token at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                location: stream[i]?.[LOC],
+                                message: `unexpected token at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                             },
                         ],
                     };
@@ -126,7 +126,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                         errors.push({
                             action: "drop",
                             node: stream[i],
-                            message: `expecting <and>, <or> or comma  at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                            message: `expecting <and>, <or> or comma  at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                         });
                         break;
                     }
@@ -172,7 +172,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                                     errors.push({
                                         action: "drop",
                                         node: stream[i],
-                                        message: `<or> is not allowed outside of parentheses ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                        message: `<or> is not allowed outside of parentheses ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                     });
                                     break;
                                 }
@@ -181,7 +181,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                                     errors.push({
                                         action: "drop",
                                         node: stream[i],
-                                        message: `cannot mix <and> and <or> at the same level at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                        message: `cannot mix <and> and <or> at the same level at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                     });
                                     break;
                                 }
@@ -193,8 +193,8 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                                 errors.push({
                                     action: "drop",
                                     node: stream[i],
-                                    location: stream[i]?.loc,
-                                    message: `unexpected <ident> at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                    location: stream[i]?.[LOC],
+                                    message: `unexpected <ident> at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                 });
                                 return {
                                     success,
@@ -215,7 +215,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                                     errors.push({
                                         action: "drop",
                                         node: stream[i],
-                                        message: `unmatched '(' at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                        message: `unmatched '(' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                     });
                                     break;
                                 }
@@ -224,7 +224,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                                     errors.push({
                                         action: "drop",
                                         node: stack.at(-1),
-                                        message: `expected <mf-lt> at ${stack.at(-1)?.loc?.src}:${stack.at(-1)?.loc?.sta.lin}:${stack.at(-1)?.loc?.sta.col}`,
+                                        message: `expected <mf-lt> at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
                                     });
                                     break;
                                 }
@@ -233,7 +233,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                                     errors.push({
                                         action: "drop",
                                         node: stream[i],
-                                        message: `expected <mf-gt> at ${stack.at(-1)?.loc?.src}:${stack.at(-1)?.loc?.sta.lin}:${stack.at(-1)?.loc?.sta.col}`,
+                                        message: `expected <mf-gt> at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
                                     });
                                     break;
                                 }
@@ -251,7 +251,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                                     errors.push({
                                         action: "drop",
                                         node: left[0],
-                                        message: `expected <style-feature-value> at ${left[0]?.loc?.src}:${left[0]?.loc?.sta.lin}:${left[0]?.loc?.sta.col}`,
+                                        message: `expected <style-feature-value> at ${left[0]?.[LOC]?.src}:${left[0]?.[LOC]?.sta.lin}:${left[0]?.[LOC]?.sta.col}`,
                                     });
                                     break;
                                 }
@@ -260,7 +260,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                                     errors.push({
                                         action: "drop",
                                         node: right[0],
-                                        message: `expected <style-feature-value> at ${right[0]?.loc?.src}:${right[0]?.loc?.sta.lin}:${right[0]?.loc?.sta.col}`,
+                                        message: `expected <style-feature-value> at ${right[0]?.[LOC]?.src}:${right[0]?.[LOC]?.sta.lin}:${right[0]?.[LOC]?.sta.col}`,
                                     });
                                     break;
                                 }
@@ -269,19 +269,17 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                                     errors.push({
                                         action: "drop",
                                         node: names[0],
-                                        message: `expected <style-feature-value> at ${names[0]?.loc?.src}:${names[0]?.loc?.sta.lin}:${names[0]?.loc?.sta.col}`,
+                                        message: `expected <style-feature-value> at ${names[0]?.[LOC]?.src}:${names[0]?.[LOC]?.sta.lin}:${names[0]?.[LOC]?.sta.col}`,
                                     });
                                     break;
                                 }
-                                tokens.splice(index3 + 1, tokens.length - index3 - 2, Object.defineProperty({
+                                tokens.splice(index3 + 1, tokens.length - index3 - 2, {
                                     typ: EnumToken.ContainerStyleRangeTokenType,
                                     l: left,
                                     op: names,
                                     r: right,
-                                }, "loc", {
-                                    ...definedPropertySettings,
-                                    value: { ...left[0].loc, end: right.at(-1).loc.end },
-                                }));
+                                    [LOC]: { ...left[0][LOC], end: right.at(-1)[LOC].end },
+                                });
                                 // check <style()> or <scroll-state()>
                                 stack.pop();
                                 stack.pop();
@@ -291,8 +289,8 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                                 errors.push({
                                     action: "drop",
                                     node: stream[i],
-                                    location: stream[i]?.loc,
-                                    message: `expected '(' at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                    location: stream[i]?.[LOC],
+                                    message: `expected '(' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                 });
                                 break;
                             }
@@ -309,8 +307,8 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                                 errors.push({
                                     action: "drop",
                                     node: stream[i],
-                                    location: stream[i]?.loc,
-                                    message: `unmatched2 ')' at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                    location: stream[i]?.[LOC],
+                                    message: `unmatched2 ')' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                 });
                                 break;
                             }
@@ -322,33 +320,29 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                                 stack.at(-1)?.typ !== EnumToken.DelimTokenType) {
                                 names.filter((n) => n.typ !== EnumToken.WhitespaceTokenType && n.typ !== EnumToken.CommentTokenType);
                             }
-                            tokens.splice(index3 + 1, tokens.length - index3 - 2, Object.defineProperty({
+                            tokens.splice(index3 + 1, tokens.length - index3 - 2, {
                                 typ: EnumToken.MediaQueryConditionTokenType,
                                 l: names,
                                 op: stack.pop(),
                                 r: values,
-                            }, "loc", {
-                                ...definedPropertySettings,
-                                value: { ...names[0].loc, end: values.at(-1).loc.end },
-                            }));
+                                [LOC]: { ...names[0][LOC], end: values.at(-1)[LOC].end },
+                            });
                             // check <style()> or <scroll-state()>
                         }
                         if (tokensfuncDefMap.has(stack.at(-1)?.typ)) {
                             const index = tokens.indexOf(stack.at(-1));
-                            Object.defineProperty(Object.assign(tokens[index], {
+                            Object.assign(tokens[index], {
                                 typ: tokensfuncDefMap.get(stack.at(-1)?.typ),
                                 chi: trimArray(tokens.slice(index + 1, tokens.length - 1)),
-                            }), "loc", {
-                                ...definedPropertySettings,
-                                value: { ...tokens[index].loc, end: stream[i].loc.end },
                             });
+                            tokens[index][LOC] = { ...tokens[index][LOC], end: stream[i][LOC].end };
                             if (tokens[index].chi.every((t) => t.typ === EnumToken.WhitespaceTokenType || t.typ === EnumToken.CommentTokenType)) {
                                 success = false;
                                 errors.push({
                                     action: "drop",
                                     node: stream[i],
-                                    location: stream[i]?.loc,
-                                    message: `expecting '<${tokens[index].val}-query>' at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                    location: stream[i]?.[LOC],
+                                    message: `expecting '<${tokens[index].val}-query>' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                 });
                                 break;
                             }
@@ -362,20 +356,18 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                         }
                         else {
                             const index = tokens.indexOf(stack.at(-1));
-                            tokens[index] = Object.defineProperty({
+                            tokens[index] = {
                                 typ: EnumToken.ParensTokenType,
                                 chi: tokens.slice(index + 1, tokens.length - 1),
-                            }, "loc", {
-                                ...definedPropertySettings,
-                                value: { ...tokens[index].loc, end: stream[i].loc.end },
-                            });
+                                [LOC]: { ...tokens[index][LOC], end: stream[i][LOC].end },
+                            };
                             if (tokens[index].chi.every((t) => t.typ === EnumToken.WhitespaceTokenType || t.typ === EnumToken.CommentTokenType)) {
                                 success = false;
                                 errors.push({
                                     action: "drop",
                                     node: stream[i],
-                                    location: stream[i]?.loc,
-                                    message: `expecting '<query-in-parens>' at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                    location: stream[i]?.[LOC],
+                                    message: `expecting '<query-in-parens>' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                 });
                                 break;
                             }
@@ -396,22 +388,20 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                                     errors.push({
                                         action: "drop",
                                         node: tokens[k],
-                                        location: tokens[k]?.loc,
-                                        message: `unexpected token 'not' at ${tokens[k]?.loc?.src}:${tokens[k]?.loc?.sta.lin}:${tokens[k]?.loc?.sta.col}`,
+                                        location: tokens[k]?.[LOC],
+                                        message: `unexpected token 'not' at ${tokens[k]?.[LOC]?.src}:${tokens[k]?.[LOC]?.sta.lin}:${tokens[k]?.[LOC]?.sta.col}`,
                                     });
                                     break;
                                 }
                             }
                             const index = tokens.indexOf(stack.at(-1));
                             const slice = trimArray(tokens.slice(index + 1));
-                            tokens[index] = Object.defineProperty({
+                            tokens[index] = {
                                 typ: EnumToken.MediaQueryUnaryFeatureTokenType,
                                 l: stack.pop(),
                                 r: slice,
-                            }, "loc", {
-                                ...definedPropertySettings,
-                                value: { ...tokens[index].loc, end: slice.at(-1).loc.end },
-                            });
+                                [LOC]: { ...tokens[index][LOC], end: slice.at(-1)[LOC].end }
+                            };
                             tokens.length = index + 1;
                         }
                         if (stack.at(-1)?.typ === EnumToken.AndTokenType ||
@@ -425,15 +415,13 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                             }
                             const left = trimArray(tokens.slice(l, index));
                             const right = trimArray(tokens.slice(index + 1));
-                            tokens[l] = Object.defineProperty({
+                            tokens[l] = {
                                 typ: EnumToken.MediaQueryConditionTokenType,
                                 op: stack.pop(),
                                 l: left,
                                 r: right,
-                            }, "loc", {
-                                ...definedPropertySettings,
-                                value: { ...left[0].loc, end: right.at(-1).loc.end },
-                            });
+                                [LOC]: { ...left[0][LOC], end: right.at(-1)[LOC].end },
+                            };
                             tokens.length = l + 1;
                             expectAndOr = true;
                         }
@@ -454,7 +442,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                 errors.push({
                     action: "drop",
                     node: stack.at(-1),
-                    message: `unmatched token '${EnumToken[stack.at(-1)?.typ]}' at ${stack.at(-1)?.loc?.src}:${stack.at(-1)?.loc?.sta.lin}:${stack.at(-1)?.loc?.sta.col}`,
+                    message: `unmatched token '${EnumToken[stack.at(-1)?.typ]}' at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
                 });
             }
             if (!success) {

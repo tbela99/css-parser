@@ -1,7 +1,7 @@
 import { EnumToken } from '../../ast/types.js';
 import { evaluate } from '../../ast/math/expression.js';
 import { gcd } from '../../ast/math/math.js';
-import { tokensfuncDefMap, mediaTypes, definedPropertySettings, mFLT, mFGT } from '../../syntax/constants.js';
+import { tokensfuncDefMap, mediaTypes, LOC, mFLT, mFGT } from '../../syntax/constants.js';
 import { trimArray, matchAllSyntaxes, createValidationContext, getMFInfo, isMFValue, isMFName } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum, MediaFeatureType } from '../../validation/parser/typedef.js';
 import { getParsedSyntax } from '../../validation/config.js';
@@ -66,15 +66,16 @@ function parseMediaqueryList(stream, options) {
                             errors.push({
                                 action: "drop",
                                 node: stream[i],
-                                message: `expecting '<media-type>' at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                message: `expecting '<media-type>' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                             });
                             continue;
                         }
                         const index = tokens.indexOf(stack[stack.length - 1]);
-                        tokens[index] = Object.defineProperty(Object.assign(tokens[index], {
+                        tokens[index][LOC] = { ...tokens[index][LOC], end: stream[i][LOC].end };
+                        tokens[index] = Object.assign(tokens[index], {
                             typ: val === "not" ? EnumToken.NotTokenType : EnumToken.OnlyTokenType,
                             val: stream[i],
-                        }), "loc", { ...definedPropertySettings, value: { ...tokens[index].loc, end: stream[i].loc.end } });
+                        });
                         tokens.length = index + 1;
                         i++;
                         // expect end of stream | and | or | not
@@ -100,7 +101,7 @@ function parseMediaqueryList(stream, options) {
                                 errors.push({
                                     action: "drop",
                                     node: stream[i],
-                                    message: `expecting 'and' or 'or' at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                    message: `expecting 'and' or 'or' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                 });
                             }
                         }
@@ -113,9 +114,9 @@ function parseMediaqueryList(stream, options) {
                         success = false;
                         errors.push({
                             action: "drop",
-                            message: `expecting '<media-type>' at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                            message: `expecting '<media-type>' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                             node: stream[i],
-                            location: stream[i].loc,
+                            location: stream[i][LOC],
                         });
                     }
                 }
@@ -123,9 +124,9 @@ function parseMediaqueryList(stream, options) {
                     success = false;
                     errors.push({
                         action: "drop",
-                        message: `expecting '(' at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                        message: `expecting '(' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                         node: stream[i],
-                        location: stream[i].loc,
+                        location: stream[i][LOC],
                     });
                 }
             }
@@ -148,7 +149,7 @@ function parseMediaqueryList(stream, options) {
                         errors.push({
                             action: "drop",
                             node: stream[i],
-                            message: `expecting <and>, <or> or comma  at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                            message: `expecting <and>, <or> or comma  at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                         });
                         break;
                     }
@@ -194,7 +195,7 @@ function parseMediaqueryList(stream, options) {
                                     errors.push({
                                         action: "drop",
                                         node: stream[i],
-                                        message: `<or> is not allowed outside of parentheses ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                        message: `<or> is not allowed outside of parentheses ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                     });
                                     break;
                                 }
@@ -203,7 +204,7 @@ function parseMediaqueryList(stream, options) {
                                     errors.push({
                                         action: "drop",
                                         node: stream[i],
-                                        message: `cannot mix <and> and <or> at the same level at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                        message: `cannot mix <and> and <or> at the same level at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                     });
                                 }
                                 currentScope.add(stream[i].typ);
@@ -214,12 +215,10 @@ function parseMediaqueryList(stream, options) {
                     case EnumToken.EndParensTokenType:
                         if (tokensfuncDefMap.has(stack.at(-1)?.typ)) {
                             const index = tokens.indexOf(stack.at(-1));
-                            Object.defineProperty(Object.assign(tokens[index], {
+                            tokens[index][LOC] = { ...tokens[index][LOC], end: stream[i][LOC].end };
+                            Object.assign(tokens[index], {
                                 typ: tokensfuncDefMap.get(stack.at(-1)?.typ),
                                 chi: trimArray(tokens.slice(index + 1, tokens.length - 1)),
-                            }), "loc", {
-                                ...definedPropertySettings,
-                                value: { ...tokens[index].loc, end: stream[i].loc.end },
                             });
                             tokens.length = index + 1;
                             const result = matchAllSyntaxes(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, tokens[index].val + "()")?.[0]?.chi, createValidationContext(tokens[index].chi), options);
@@ -243,7 +242,7 @@ function parseMediaqueryList(stream, options) {
                                     errors.push({
                                         action: "drop",
                                         node: stream[i],
-                                        message: `unmatched '(' at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                        message: `unmatched '(' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                     });
                                     break;
                                 }
@@ -252,7 +251,7 @@ function parseMediaqueryList(stream, options) {
                                     errors.push({
                                         action: "drop",
                                         node: stack.at(-1),
-                                        message: `expected <mf-lt> at ${stack.at(-1)?.loc?.src}:${stack.at(-1)?.loc?.sta.lin}:${stack.at(-1)?.loc?.sta.col}`,
+                                        message: `expected <mf-lt> at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
                                     });
                                     break;
                                 }
@@ -261,7 +260,7 @@ function parseMediaqueryList(stream, options) {
                                     errors.push({
                                         action: "drop",
                                         node: stream[i],
-                                        message: `expected <mf-gt> at ${stack.at(-1)?.loc?.src}:${stack.at(-1)?.loc?.sta.lin}:${stack.at(-1)?.loc?.sta.col}`,
+                                        message: `expected <mf-gt> at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
                                     });
                                     break;
                                 }
@@ -279,7 +278,7 @@ function parseMediaqueryList(stream, options) {
                                     errors.push({
                                         action: "drop",
                                         node: stream[i],
-                                        message: `expected <mf-name>> at ${filteredNames[0]?.loc?.src}:${filteredNames[0]?.loc?.sta.lin}:${filteredNames[0]?.loc?.sta.col}`,
+                                        message: `expected <mf-name>> at ${filteredNames[0]?.[LOC]?.src}:${filteredNames[0]?.[LOC]?.sta.lin}:${filteredNames[0]?.[LOC]?.sta.col}`,
                                     });
                                     break;
                                 }
@@ -302,10 +301,7 @@ function parseMediaqueryList(stream, options) {
                                                                 continue;
                                                             }
                                                         }
-                                                        Object.defineProperty(value[0], "loc", {
-                                                            ...definedPropertySettings,
-                                                            value: val[l].loc,
-                                                        });
+                                                        value[0][LOC] = val[l][LOC];
                                                         val[l] = value[0];
                                                     }
                                                 }
@@ -319,7 +315,7 @@ function parseMediaqueryList(stream, options) {
                                     errors.push({
                                         action: "drop",
                                         node: left[0] ?? prevToken,
-                                        message: `${isValidMFValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"} at ${(left[0] ?? prevToken)?.loc?.src}:${(left[0] ?? prevToken)?.loc?.sta.lin}:${(left[0] ?? prevToken)?.loc?.sta.col}`,
+                                        message: `${isValidMFValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"} at ${(left[0] ?? prevToken)?.[LOC]?.src}:${(left[0] ?? prevToken)?.[LOC]?.sta.lin}:${(left[0] ?? prevToken)?.[LOC]?.sta.col}`,
                                     });
                                     break;
                                 }
@@ -329,8 +325,8 @@ function parseMediaqueryList(stream, options) {
                                     errors.push({
                                         action: "drop",
                                         node: right[0] ?? stream[i],
-                                        location: (right[0] ?? stream[i])?.loc,
-                                        message: `${isValidMFValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"} at ${(right[0] ?? stream[i])?.loc?.src}:${(right[0] ?? stream[i])?.loc?.sta.lin}:${(left[0] ?? stream[i])?.loc?.sta.col}`,
+                                        location: (right[0] ?? stream[i])?.[LOC],
+                                        message: `${isValidMFValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"} at ${(right[0] ?? stream[i])?.[LOC]?.src}:${(right[0] ?? stream[i])?.[LOC]?.sta.lin}:${(left[0] ?? stream[i])?.[LOC]?.sta.col}`,
                                     });
                                     break;
                                 }
@@ -352,17 +348,15 @@ function parseMediaqueryList(stream, options) {
                                         }
                                     }
                                 }
-                                tokens.splice(index3 + 1, tokens.length - index3 - 2, Object.defineProperty({
+                                tokens.splice(index3 + 1, tokens.length - index3 - 2, {
                                     typ: EnumToken.MediaRangeQueryTokenType,
                                     l: left,
                                     val: filteredNames,
                                     op1: prevToken,
                                     op2: stack.at(-1),
                                     r: right,
-                                }, "loc", {
-                                    ...definedPropertySettings,
-                                    value: { ...left[0].loc, end: right.at(-1).loc.end },
-                                }));
+                                    [LOC]: { ...left[0][LOC], end: right.at(-1)[LOC].end },
+                                });
                                 stack.pop();
                                 stack.pop();
                             }
@@ -371,8 +365,8 @@ function parseMediaqueryList(stream, options) {
                                 errors.push({
                                     action: "drop",
                                     node: stream[i],
-                                    location: stream[i]?.loc,
-                                    message: `expected '(' at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                    location: stream[i]?.[LOC],
+                                    message: `expected '(' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                 });
                                 break;
                             }
@@ -386,8 +380,8 @@ function parseMediaqueryList(stream, options) {
                                 errors.push({
                                     action: "drop",
                                     node: stream[i],
-                                    location: stream[i]?.loc,
-                                    message: `expected '(' at ${(stack[stack.length - 2] ?? tokens[0])?.loc?.src}:${(stack[stack.length - 2] ?? tokens[0])?.loc?.sta.lin}:${(stack[stack.length - 2] ?? tokens[0])?.loc?.sta.col}`,
+                                    location: stream[i]?.[LOC],
+                                    message: `expected '(' at ${(stack[stack.length - 2] ?? tokens[0])?.[LOC]?.src}:${(stack[stack.length - 2] ?? tokens[0])?.[LOC]?.sta.lin}:${(stack[stack.length - 2] ?? tokens[0])?.[LOC]?.sta.col}`,
                                 });
                                 break;
                             }
@@ -412,8 +406,8 @@ function parseMediaqueryList(stream, options) {
                                 errors.push({
                                     action: "drop",
                                     node: names[0] ?? stack.at(-1),
-                                    location: names[0]?.loc,
-                                    message: `expected <mf-name> at ${(names[0] ?? stack.at(-1))?.loc?.src}:${(names[0] ?? stack.at(-1))?.loc?.sta.lin}:${(names[0] ?? stack.at(-1))?.loc?.sta.col}`,
+                                    location: names[0]?.[LOC],
+                                    message: `expected <mf-name> at ${(names[0] ?? stack.at(-1))?.[LOC]?.src}:${(names[0] ?? stack.at(-1))?.[LOC]?.sta.lin}:${(names[0] ?? stack.at(-1))?.[LOC]?.sta.col}`,
                                 });
                                 break;
                             }
@@ -423,8 +417,8 @@ function parseMediaqueryList(stream, options) {
                                 errors.push({
                                     action: "drop",
                                     node: names[0] ?? stack.at(-1),
-                                    location: names[0]?.loc ?? stack.at(-1)?.loc,
-                                    message: `expected <mf-name> at ${names[0]?.loc?.src}:${names[0]?.loc?.sta.lin}:${names[0]?.loc?.sta.col}`,
+                                    location: names[0]?.[LOC] ?? stack.at(-1)?.[LOC],
+                                    message: `expected <mf-name> at ${names[0]?.[LOC]?.src}:${names[0]?.[LOC]?.sta.lin}:${names[0]?.[LOC]?.sta.col}`,
                                 });
                                 break;
                             }
@@ -446,10 +440,7 @@ function parseMediaqueryList(stream, options) {
                                                         continue;
                                                     }
                                                 }
-                                                Object.defineProperty(value[0], "loc", {
-                                                    ...definedPropertySettings,
-                                                    value: val[l].loc,
-                                                });
+                                                value[0][LOC] = val[l][LOC];
                                                 val[l] = value[0];
                                             }
                                         }
@@ -465,8 +456,8 @@ function parseMediaqueryList(stream, options) {
                                 errors.push({
                                     action: "drop",
                                     node: arr[0],
-                                    location: arr[0]?.loc,
-                                    message: `${mfValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"} at ${arr[0]?.loc?.src}:${arr[0]?.loc?.sta.lin}:${arr[0]?.loc?.sta.col}`,
+                                    location: arr[0]?.[LOC],
+                                    message: `${mfValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"} at ${arr[0]?.[LOC]?.src}:${arr[0]?.[LOC]?.sta.lin}:${arr[0]?.[LOC]?.sta.col}`,
                                 });
                                 break;
                             }
@@ -486,35 +477,33 @@ function parseMediaqueryList(stream, options) {
                                     val.splice(0, val.length, ...filteredValues);
                                 }
                             }
-                            tokens.splice(index3 + 1, tokens.length - index3 - 2, Object.defineProperty({
+                            tokens.splice(index3 + 1, tokens.length - index3 - 2, {
                                 typ: EnumToken.MediaQueryConditionTokenType,
                                 l: names,
                                 op: stack.pop(),
                                 r: values,
-                            }, "loc", {
-                                ...definedPropertySettings,
-                                value: { ...names[0].loc, end: values.at(-1).loc.end },
-                            }));
+                                // @ts-expect-error
+                                [LOC]: { ...names[0][LOC], end: values.at(-1)[LOC].end },
+                            });
                         }
                         if (stack.length === 0) {
                             success = false;
                             errors.push({
                                 action: "drop",
                                 node: stream[i],
-                                location: stream[i]?.loc,
-                                message: `unmatched ')' at ${stream[i]?.loc?.src}:${stream[i]?.loc?.sta.lin}:${stream[i]?.loc?.sta.col}`,
+                                location: stream[i]?.[LOC],
+                                message: `unmatched ')' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                             });
                             break;
                         }
                         {
                             const index = tokens.indexOf(stack.at(-1));
-                            tokens[index] = Object.defineProperty({
+                            tokens[index] = {
                                 typ: EnumToken.ParensTokenType,
                                 chi: tokens.slice(index + 1, tokens.length - 1),
-                            }, "loc", {
-                                ...definedPropertySettings,
-                                value: { ...tokens[index].loc, end: stream[i].loc.end },
-                            });
+                                // @ts-expect-error
+                                [LOC]: { ...tokens[index][LOC], end: stream[i][LOC].end },
+                            };
                             tokens.length = index + 1;
                             scopes.pop();
                             currentScope = scopes.at(-1);
@@ -523,14 +512,13 @@ function parseMediaqueryList(stream, options) {
                                 stack.at(-1)?.typ === EnumToken.OnlyTokenType) {
                                 const index = tokens.indexOf(stack.at(-1));
                                 const slice = trimArray(tokens.slice(index + 1));
-                                tokens[index] = Object.defineProperty({
+                                tokens[index] = {
                                     typ: EnumToken.MediaQueryUnaryFeatureTokenType,
                                     l: stack.pop(),
                                     r: slice,
-                                }, "loc", {
-                                    ...definedPropertySettings,
-                                    value: { ...tokens[index].loc, end: slice.at(-1).loc.end },
-                                });
+                                    // @ts-expect-error
+                                    [LOC]: { ...tokens[index][LOC], end: slice.at(-1)[LOC].end },
+                                };
                                 tokens.length = index + 1;
                             }
                             if (stack.at(-1)?.typ === EnumToken.AndTokenType ||
@@ -544,15 +532,13 @@ function parseMediaqueryList(stream, options) {
                                 }
                                 const left = trimArray(tokens.slice(l, index));
                                 const right = trimArray(tokens.slice(index + 1));
-                                tokens[l] = Object.defineProperty({
+                                tokens[l] = {
                                     typ: EnumToken.MediaQueryConditionTokenType,
                                     op: stack.pop(),
                                     l: left,
                                     r: right,
-                                }, "loc", {
-                                    ...definedPropertySettings,
-                                    value: { ...left[0].loc, end: right.at(-1).loc.end },
-                                });
+                                    [LOC]: { ...left[0][LOC], end: right.at(-1)[LOC].end },
+                                };
                                 tokens.length = l + 1;
                                 expectAndOrComma = true;
                             }
@@ -568,8 +554,8 @@ function parseMediaqueryList(stream, options) {
                 errors.push({
                     action: "drop",
                     node: stack.at(-1),
-                    location: stack.at(-1)?.loc,
-                    message: `unmatched token '${EnumToken[stack.at(-1)?.typ]}' at ${stack.at(-1)?.loc?.src}:${stack.at(-1)?.loc?.sta.lin}:${stack.at(-1)?.loc?.sta.col}`,
+                    location: stack.at(-1)?.[LOC],
+                    message: `unmatched token '${EnumToken[stack.at(-1)?.typ]}' at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
                 });
             }
             if (!success) {

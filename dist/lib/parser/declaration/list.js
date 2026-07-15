@@ -6,7 +6,7 @@ import { EnumToken, EnumAstNodeStatus } from '../../ast/types.js';
 import { getParsedSyntax } from '../../validation/config.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { matchAllSyntaxes, createValidationContext } from '../../validation/match.js';
-import { definedPropertySettings } from '../../syntax/constants.js';
+import { STATE } from '../../syntax/constants.js';
 
 const config = getConfig();
 class PropertyList {
@@ -32,9 +32,9 @@ class PropertyList {
                 declaration.typ != EnumToken.DeclarationNodeType
                     ? null
                     : declaration.nam.toLowerCase();
-            if (declaration.state == EnumAstNodeStatus.Invalid ||
-                declaration.state == EnumAstNodeStatus.Unknown ||
-                declaration.state == EnumAstNodeStatus.ValidationFailed ||
+            if (declaration[STATE] == EnumAstNodeStatus.Invalid ||
+                declaration[STATE] == EnumAstNodeStatus.Unknown ||
+                declaration[STATE] == EnumAstNodeStatus.ValidationFailed ||
                 declaration.typ != EnumToken.DeclarationNodeType ||
                 "composes" === name ||
                 (typeof this.options.removeDuplicateDeclarations === "string" &&
@@ -49,18 +49,15 @@ class PropertyList {
                 this.declarations.set(declaration.nam, declaration);
                 continue;
             }
-            if (declaration.state == EnumAstNodeStatus.Unvalidated) {
+            if (declaration[STATE] == EnumAstNodeStatus.Unvalidated) {
                 syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, declaration.nam.toLowerCase());
                 if (syntaxRules != null) {
                     result = matchAllSyntaxes(syntaxRules, createValidationContext(declaration.val), this.options);
-                    Object.defineProperty(declaration, "state", {
-                        ...definedPropertySettings,
-                        value: result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.ValidationFailed,
-                    });
+                    declaration[STATE] = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.ValidationFailed;
                 }
             }
             // do not compute shorthand for invalid declarations
-            if (declaration.state !== EnumAstNodeStatus.Validated) {
+            if (declaration[STATE] !== EnumAstNodeStatus.Validated) {
                 this.declarations.set(declaration.nam, declaration);
                 return this;
             }

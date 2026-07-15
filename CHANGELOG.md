@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.4.5
+
+- [x] Fix performance regression 
+
 ## v1.4.6
 
 - [x] Fix if syntax expansion regression bug #134

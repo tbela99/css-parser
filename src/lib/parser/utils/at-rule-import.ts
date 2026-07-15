@@ -1,5 +1,6 @@
 import type {
     AstAtRule,
+    AstDeclaration,
     AstRule,
     AstStyleSheet,
     AtRuleToken,
@@ -14,7 +15,7 @@ import { getSyntaxRule } from "../../validation/config.ts";
 import { trimArray } from "../../validation/match.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";
-import { tokensfuncDefMap } from "../../syntax/constants.ts";
+import { LOC, tokensfuncDefMap } from "../../syntax/constants.ts";
 import { definedPropertySettings } from "../../syntax/constants.ts";
 import { isColor, parseColor } from "../../syntax/syntax.ts";
 import { parseMediaqueryList } from "./at-rule-media.ts";
@@ -74,7 +75,7 @@ export function matchAtRuleImportSyntax(
                             message: "Expected string or <url-token>",
                             syntax: "@import",
                             node: stream[k],
-                            location: stream[k]?.loc,
+                            location: stream[k]?.[LOC],
                         } as ErrorDescription,
                     ],
                 };
@@ -94,29 +95,25 @@ export function matchAtRuleImportSyntax(
                         syntax: "@import",
                         message: "could not match syntax <url>",
                         node: stream[0],
-                        location: stream[0].loc,
+                        location: stream[0][LOC],
                     },
                 ],
             };
         }
 
         const slice: Token[] = stream.slice(index + 1, k);
+
+        // @ts-expect-error
+        stream[0][LOC] = {
+            ...stream[0][LOC],
+            end: stream[1][LOC]!.end,
+        };
+
         tokens.push(
-            Object.defineProperties(
-                Object.assign({}, stream[0], {
-                    typ: tokensfuncDefMap.get(stream[0].typ),
-                    chi: trimArray(slice),
-                }),
-                {
-                    loc: {
-                        ...definedPropertySettings,
-                        value: {
-                            ...stream[0].loc,
-                            end: stream[1].loc!.end,
-                        },
-                    },
-                },
-            ),
+            Object.assign({
+                typ: tokensfuncDefMap.get(stream[0].typ),
+                chi: trimArray(slice),
+            }),
         );
 
         index = k + 1;
@@ -129,7 +126,7 @@ export function matchAtRuleImportSyntax(
                     message: "Expected string or url()",
                     syntax: "@import",
                     node: stream[0],
-                    location: stream[0]?.loc,
+                    location: stream[0]?.[LOC],
                 } as ErrorDescription,
             ],
         };
@@ -172,10 +169,10 @@ export function matchAtRuleImportSyntax(
                 errors: [
                     {
                         action: "drop",
-                        message: `Expected <layer-name> at ${stream[index]?.loc?.src}:${stream[index]?.loc?.sta.lin}:${stream[index]?.loc?.sta.col}`,
+                        message: `Expected <layer-name> at ${stream[index]?.[LOC]?.src}:${stream[index]?.[LOC]?.sta.lin}:${stream[index]?.[LOC]?.sta.col}`,
                         syntax: "@import",
                         node: stream[index],
-                        location: stream[index]?.loc,
+                        location: stream[index]?.[LOC],
                     } as ErrorDescription,
                 ],
             };
@@ -202,7 +199,7 @@ export function matchAtRuleImportSyntax(
                             message: "Expected ')'",
                             syntax: "@import",
                             node: stream[index],
-                            location: stream[index]?.loc,
+                            location: stream[index]?.[LOC],
                         } as ErrorDescription,
                     ],
                 };
@@ -223,10 +220,10 @@ export function matchAtRuleImportSyntax(
                 errors: [
                     {
                         action: "drop",
-                        message: `Expected <layer-name> at ${stream[index]?.loc?.src}:${stream[index]?.loc?.sta.lin}:${stream[index]?.loc?.sta.col}`,
+                        message: `Expected <layer-name> at ${stream[index]?.[LOC]?.src}:${stream[index]?.[LOC]?.sta.lin}:${stream[index]?.[LOC]?.sta.col}`,
                         syntax: "@import",
                         node: stream[index],
-                        location: stream[index]?.loc,
+                        location: stream[index]?.[LOC],
                     } as ErrorDescription,
                 ],
             };
@@ -279,7 +276,7 @@ export function matchAtRuleImportSyntax(
                             message: "Expected ':'",
                             syntax: "@import",
                             node: stream[index],
-                            location: stream[index]?.loc,
+                            location: stream[index]?.[LOC],
                         } as ErrorDescription,
                     ],
                 };
@@ -330,7 +327,7 @@ export function matchAtRuleImportSyntax(
                                         message: "Expected ')'",
                                         syntax: "@import",
                                         node: stream[index],
-                                        location: stream[index]?.loc,
+                                        location: stream[index]?.[LOC],
                                     } as ErrorDescription,
                                 ],
                             };
@@ -359,7 +356,6 @@ export function matchAtRuleImportSyntax(
             while (index < stream.length && matchCount > 0) {
                 if (stream[index]?.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(stream[index]?.typ)) {
                     matchCount++;
-
                 } else if (stream[index]?.typ === EnumToken.EndParensTokenType) {
                     matchCount--;
                     if (matchCount === 0) {
@@ -390,7 +386,7 @@ export function matchAtRuleImportSyntax(
                         message: "unmatched ')'",
                         syntax: "@import",
                         node: stack.at(-1),
-                        location: stack.at(-1)?.loc,
+                        location: stack.at(-1)?.[LOC],
                     } as ErrorDescription,
                 ],
             };
@@ -413,22 +409,15 @@ export function matchAtRuleImportSyntax(
             }
 
             const val = trimArray(supports.chi.slice(j + 1));
-            supports.chi[i] = Object.defineProperties(
-                {
-                    typ: EnumToken.DeclarationNodeType,
-                    nam: (supports.chi[i] as IdentToken).val,
-                    val,
+            supports.chi[i] = {
+                typ: EnumToken.DeclarationNodeType,
+                nam: (supports.chi[i] as IdentToken).val,
+                val,
+                [LOC]: {
+                    ...supports.chi[i][LOC],
+                    end: { ...(val.at(-1) ?? (supports.chi.at(-1) as Token))[LOC]?.end },
                 },
-                {
-                    loc: {
-                        ...definedPropertySettings,
-                        value: {
-                            ...supports.chi[i].loc,
-                            end: { ...(val.at(-1) ?? (supports.chi.at(-1) as Token)).loc?.end },
-                        },
-                    },
-                },
-            );
+            } as AstDeclaration;
 
             supports.chi.splice(i + 1, j - i + 1 + val.length);
             const stack = [] as Token[];

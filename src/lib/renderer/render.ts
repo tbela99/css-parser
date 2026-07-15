@@ -59,7 +59,7 @@ import { reduceHexValue } from "../syntax/color/hex.ts";
 import { ColorType, EnumToken, minifyNumber } from "../ast/types.ts";
 import { expand } from "../ast/expand.ts";
 import { SourceMap } from "./sourcemap/sourcemap.ts";
-import { colorsFunc, tokensfuncSet, urlTokenMatcher } from "../syntax/constants.ts";
+import { colorsFunc, LOC, PARENT, tokensfuncSet, urlTokenMatcher } from "../syntax/constants.ts";
 import {
     isColor,
     parseColor,
@@ -120,15 +120,14 @@ export function doRender(
 
     if (options.withParents) {
         // @ts-ignore
-        let parent: AstNode = data.parent;
+        let parent: AstNode = data[PARENT];
 
-        // @ts-ignore
-        while (data.parent != null) {
+        while (data[PARENT] != null) {
             // @ts-ignore
-            parent = { ...data.parent, chi: [{ ...data }] };
+            parent = { ...data[PARENT], chi: [{ ...data }] };
 
             // @ts-ignore
-            parent.parent = data.parent.parent;
+            parent[PARENT] = data[PARENT][PARENT];
 
             // @ts-ignore
             data = parent;
@@ -250,13 +249,13 @@ function updateSourceMap(
             EnumToken.KeyframesAtRuleNodeType,
         ].includes(node.typ)
     ) {
-        let src: string = (<Location>node.loc)?.src ?? "";
+        let src: string = (<Location>node[LOC])?.src ?? "";
 
         sourcemap.add(
             // @ts-ignore
             { src, sta: { ...position } },
             {
-                ...(<Location>node.loc),
+                ...(<Location>node[LOC]),
                 // @ts-ignore
                 src,
             },
@@ -341,14 +340,14 @@ function renderAstNode(
                 }
 
                 if (css === "") {
-                    if (sourcemap != null && node.loc != null) {
+                    if (sourcemap != null && node[LOC] != null) {
                         updateSourceMap(node, options, cache, sourcemap, position, str);
                     }
 
                     return str;
                 }
 
-                if (sourcemap != null && node.loc != null) {
+                if (sourcemap != null && node[LOC] != null) {
                     move(position, <string>options.newLine);
                     updateSourceMap(node, options, cache, sourcemap, position, str);
                 }
@@ -382,7 +381,7 @@ function renderAstNode(
                         errors.push(<ErrorDescription>{
                             action: "ignore",
                             message: `render: invalid declaration ${JSON.stringify(node)}`,
-                            location: node.loc,
+                            location: node[LOC],
                         });
                         return "";
                     }

@@ -20,10 +20,10 @@ import { ColorType, EnumToken } from "../ast/types.ts";
 import {
     colorsFunc,
     containerFunc,
-    definedPropertySettings,
     generalEnclosedFunc,
     gridTemplateFunc,
     imageFunc,
+    LOC,
     mathFuncs,
     supportFunc,
     timelineFunc,
@@ -44,6 +44,7 @@ import {
     isPseudo,
     isWhiteSpace,
     parseDimension,
+    pseudoElements,
 } from "../syntax/syntax.ts";
 import { equalsIgnoreCase } from "./utils/text.ts";
 
@@ -78,6 +79,10 @@ export const SymbolsMapTokens: Record<string, EnumToken> = {
     "\r": EnumToken.Whitespace,
     "\n": EnumToken.Whitespace,
     "\f": EnumToken.Whitespace,
+    ...pseudoElements.reduce((acc, curr: string) => {
+        acc[curr] = EnumToken.PseudoElementTokenType;
+        return acc;
+    }, Object.create(null)),
     ...containerFunc.reduce((acc, curr: string) => {
         acc[curr + "("] = EnumToken.ContainerFunctionTokenDefType;
         return acc;
@@ -286,7 +291,7 @@ export function consumeString(quoteStr: '"' | "'", buffer: string, parseInfo: Pa
     return result;
 }
 
-export function getTokenType(val: string, hint?: EnumToken): Token {
+export function yieldResult(val: string, parseInfo: ParseInfo, hint?: EnumToken): TokenizeResult {
     let token: Token | null = null;
     let dimension:
         | DimensionToken
@@ -350,18 +355,19 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
         token = hintsEnum.has(hint) ? ({ typ: hint } as Token) : ({ typ: hint, val } as Token);
     } else {
         let slice: string = val.slice(1);
+        const chr: string = val.charAt(0);
 
-        if (val.charAt(0) == "@" && isIdent(slice)) {
+        if (chr == "@" && isIdent(slice)) {
             token = {
                 typ: EnumToken.AtRuleTokenType,
                 nam: slice,
             } as Token;
-        } else if (val.charAt(0) == "." && isIdent(slice)) {
+        } else if (chr == "." && isIdent(slice)) {
             token = {
                 typ: EnumToken.ClassSelectorTokenType,
                 val,
             };
-        } else if (val.charAt(0) == "#") {
+        } else if (chr == "#") {
             if (isHexColor(val)) {
                 token = <ColorToken>{
                     typ: EnumToken.ColorTokenType,
@@ -374,7 +380,7 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
                     val: val,
                 };
             }
-        } else if ("\"'".includes(val.charAt(0))) {
+        } else if ("\"'".includes(chr)) {
             token = <UnclosedStringToken>{
                 typ: EnumToken.UnclosedStringTokenType,
                 val: val,
@@ -413,21 +419,13 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
         };
     }
 
-    return token;
-}
+    // return token;
+    token[LOC] = {
+        src: parseInfo.src,
+        sta: { ...parseInfo.position },
+        end: { ...parseInfo.currentPosition },
+    };
 
-export function yieldResult(val: string, parseInfo: ParseInfo, hint?: EnumToken): TokenizeResult {
-    const token: Token = getTokenType(val, hint) as Token;
-
-    Object.defineProperty(token, "loc", {
-        ...definedPropertySettings,
-        enumerable: false,
-        value: {
-            src: parseInfo.src,
-            sta: { ...parseInfo.position },
-            end: { ...parseInfo.currentPosition },
-        },
-    });
     parseInfo.position.ind = parseInfo.currentPosition.ind;
     parseInfo.position.lin = parseInfo.currentPosition.lin;
     parseInfo.position.col = parseInfo.currentPosition.col;
