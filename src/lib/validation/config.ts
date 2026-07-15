@@ -8,7 +8,7 @@ import { memoize } from "../parser/utils/cache.ts";
 export interface ValidationSyntaxRule {
     acceptAnyDeclaration: boolean;
     acceptAnyRule: boolean;
-    getRules: () => ValidationToken[];
+    // getRules: () => ValidationToken[];
     getBlockRules: () => ValidationToken[] | null;
     getPreludeRules: () => ValidationToken[] | null;
     getPropertyDescriptors: () => Record<string, ValidationToken[]> | null;
@@ -52,7 +52,7 @@ export const getSyntax = memoize((group: ValidationSyntaxGroupEnum, key: string 
 
 function findNode(
     group: ValidationSyntaxGroupEnum,
-    key: string | string[],
+    key: string 
 ): Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode> | ValidationSyntaxNode | null {
     // @ts-expect-error
     let obj: Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode> | ValidationSyntaxNode = config[group] as Record<
@@ -60,13 +60,13 @@ function findNode(
         ValidationSyntaxNode
     >;
 
-    const keys: string[] = Array.isArray(key) ? key : [key];
+    // const keys: string[] = Array.isArray(key) ? key : [key];
 
-    for (let i = 0; i < keys.length; i++) {
-        key = keys[i];
+    // for (let i = 0; i < keys.length; i++) {
+    //     key = keys[i];
 
         if (!(key in obj)) {
-            if ((i == 0 && key.charAt(0) == "@") || key.charAt(0) == "-") {
+            if (key.charAt(0) == "@" || key.charAt(0) == "-") {
                 const matches: RegExpMatchArray = key.match(/^(@?)(-[a-zA-Z]+)-(.*?)$/) as RegExpMatchArray;
 
                 if (matches != null) {
@@ -81,13 +81,13 @@ function findNode(
 
         // @ts-expect-error
         obj = obj[key] as ValidationSyntaxNode | Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode>;
-    }
+    // }
 
     return obj;
 }
 
 export const getParsedSyntax = memoize(
-    (group: ValidationSyntaxGroupEnum, key: string | string[]): null | ValidationToken[] => {
+    (group: ValidationSyntaxGroupEnum, key: string): null | ValidationToken[] => {
         // @ts-expect-error
         const obj: Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode> | ValidationSyntaxNode = findNode(
             group,
@@ -98,8 +98,7 @@ export const getParsedSyntax = memoize(
             return null;
         }
 
-        const keys: string[] = Array.isArray(key) ? key : [key];
-        const index: string = group + "." + keys.join(".");
+        const index: string = group + "." + key;
 
         if (!parsedSyntaxes.has(index)) {
             const syntax: ValidationToken[] = Object.freeze(
@@ -110,10 +109,10 @@ export const getParsedSyntax = memoize(
 
         return parsedSyntaxes.get(index) as ValidationToken[];
     },
-) as (group: ValidationSyntaxGroupEnum, key: string | string[]) => null | ValidationToken[];
+) as (group: ValidationSyntaxGroupEnum, key: string) => null | ValidationToken[];
 
 export const getSyntaxRule = memoize(
-    (group: ValidationSyntaxGroupEnum, key: string | string[]): ValidationSyntaxRule | null => {
+    (group: ValidationSyntaxGroupEnum, key: string): ValidationSyntaxRule | null => {
         const node = findNode(group, key);
 
         if (node == null) {
@@ -174,8 +173,8 @@ export const getSyntaxRule = memoize(
                 (node as ValidationSyntaxNode).syntax.includes("<stylesheet>"),
             getPreludeRules: () => prelude,
             getBlockRules: () => (block == null || block.length === 0 ? null : block),
-            getRules: () => syntaxRules,
+            // getRules: () => syntaxRules,
             getPropertyDescriptors: () => propertyDescriptors,
         };
     },
-) as (group: ValidationSyntaxGroupEnum, key: string | string[]) => ValidationSyntaxRule | null;
+) as (group: ValidationSyntaxGroupEnum, key: string) => ValidationSyntaxRule | null;

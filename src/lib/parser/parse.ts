@@ -47,16 +47,7 @@ import type {
     UrlToken,
     WhitespaceToken,
 } from "../../@types/index.d.ts";
-import {
-    definedPropertySettings,
-    ERRORS,
-    LOC,
-    pageMarginBoxType,
-    PARENT,
-    STATE,
-    TOKENS,
-    tokensfuncDefMap,
-} from "../syntax/constants.ts";
+import { ERRORS, LOC, pageMarginBoxType, PARENT, STATE, TOKENS, tokensfuncDefMap } from "../syntax/constants.ts";
 import { hash, hashAlgorithms } from "../parser/utils/hash.ts";
 import { parseSelector } from "./utils/selector.ts";
 import { parseDeclaration } from "./utils/declaration.ts";
@@ -2220,6 +2211,8 @@ export function parseAtRule(
 
         const result = matchGenericSyntax(stream);
 
+        console.debug(result.errors);
+
         atRule[TOKENS] = parseTokens(stream);
         atRule[STATE] = result.success ? EnumAstNodeStatus.Unknown : EnumAstNodeStatus.Invalid;
         atRule[ERRORS] = result.success ? [errors[errors.length - 1]] : [errors[errors.length - 1], ...result.errors];
@@ -2841,11 +2834,10 @@ export function parseAtRule(
 
             // @ts-expect-error
             return Object.assign(atRule, {
-                    typ: EnumToken.AtRuleNodeType,
-                    val: renderTokens(stream, options),
-                    chi: [] as AstNode[],
-                }
-            ) as AstAtRule;
+                typ: EnumToken.AtRuleNodeType,
+                val: renderTokens(stream, options),
+                chi: [] as AstNode[],
+            }) as AstAtRule;
         }
         case "top-left-corner":
         case "top-left":
@@ -2897,11 +2889,10 @@ export function parseAtRule(
 
             // @ts-expect-error
             return Object.assign(atRule, {
-                    typ: EnumToken.AtRuleNodeType,
-                    val: renderTokens(stream, options),
-                    chi: [] as AstNode[],
-                }
-            ) as AstAtRule;
+                typ: EnumToken.AtRuleNodeType,
+                val: renderTokens(stream, options),
+                chi: [] as AstNode[],
+            }) as AstAtRule;
         }
 
         case "value": {
@@ -2942,23 +2933,23 @@ export function parseAtRule(
                 createValidationContext(stream),
                 options,
             );
-atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
+            atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = success ? [] : [errors[errors.length - 1]];
 
             if (!result.success) {
                 errors.push(...result.errors);
 
                 return {
-                        typ: EnumToken.AtRuleNodeType,
-                        val: renderTokens(stream, options),
-                        [LOC]: {
-                            ...atRule[LOC],
-                            end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC]!.end) },
-                        } as Location,
-                        [TOKENS]: stream,
-                        [STATE]: EnumAstNodeStatus.Invalid,
-                        [ERRORS]: result.errors,
-                    }  as AstAtRule;
+                    typ: EnumToken.AtRuleNodeType,
+                    val: renderTokens(stream, options),
+                    [LOC]: {
+                        ...atRule[LOC],
+                        end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC]!.end) },
+                    } as Location,
+                    [TOKENS]: stream,
+                    [STATE]: EnumAstNodeStatus.Invalid,
+                    [ERRORS]: result.errors,
+                } as AstAtRule;
             }
 
             if (isVarDeclaration) {
@@ -2996,7 +2987,7 @@ atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invali
             }
 
             atRule[LOC] = { ...atRule[LOC], end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC]!.end) } } as Location;
-            atRule[STATE] = EnumAstNodeStatus.Validated ;
+            atRule[STATE] = EnumAstNodeStatus.Validated;
             atRule[ERRORS] = [];
 
             // @ts-expect-error
@@ -3066,11 +3057,10 @@ atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invali
 
             // @ts-expect-error
             return Object.assign(atRule, {
-                    typ: EnumToken.AtRuleNodeType,
-                    val: renderTokens(trimWhiteSpaceTokens(stream), options),
-                    ...(parseAsBlock ? { chi: [] } : {}),
-                }
-            ) as AstAtRule;
+                typ: EnumToken.AtRuleNodeType,
+                val: renderTokens(trimWhiteSpaceTokens(stream), options),
+                ...(parseAsBlock ? { chi: [] } : {}),
+            }) as AstAtRule;
         }
     }
 }

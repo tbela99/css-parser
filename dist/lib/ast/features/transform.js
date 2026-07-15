@@ -1,5 +1,4 @@
 import { EnumToken, EnumAstNodeStatus } from '../types.js';
-import { consumeWhitespace } from '../../validation/utils/whitespace.js';
 import { compute } from '../transform/compute.js';
 import { filterValues, renderValue } from '../../renderer/render.js';
 import { minifyTransformFunctions, eqMatrix } from '../transform/minify.js';
@@ -44,7 +43,7 @@ class TransformCssFeature {
                     ? minifyTransformFunctions(child)
                     : child);
             }
-            consumeWhitespace(children);
+            // consumeWhitespace(children);
             let { matrix, cumulative, minified } = compute(children) ?? {
                 matrix: null,
                 cumulative: null,

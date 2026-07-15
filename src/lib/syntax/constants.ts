@@ -497,5 +497,4 @@ export const trimTokenSpace: Set<EnumToken> = new Set([
     EnumToken.SupportsQueryConditionTokenType,
     EnumToken.SupportsQueryUnaryConditionTokenType,
 ]);
-export const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
 export const combinators: string[] = ["+", ">", "~", "||", "|"];

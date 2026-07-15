@@ -28,7 +28,7 @@ import { EnumToken } from "./types.ts";
 import { isFunction, isIdent, isIdentStart, isWhiteSpace } from "../syntax/syntax.ts";
 import { FeatureWalkMode } from "./features/type.ts";
 import { trimArray } from "../validation/match.ts";
-import { combinators, definedPropertySettings, LOC, OPTIMIZED, PARENT, RAW, TOKENS } from "../syntax/constants.ts";
+import { combinators, LOC, OPTIMIZED, PARENT, RAW, TOKENS } from "../syntax/constants.ts";
 import { replaceNodeOrValue } from "../parser/utils/token.ts";
 import { parseString } from "../parser/parse.ts";
 import { tokenize } from "../parser/tokenize.ts";
@@ -1514,10 +1514,10 @@ function wrapNodes(
     // @ts-ignore
     let nSel: string = match.selector2.reduce(reducer, []).join(",");
 
-    // @ts-ignore
     const wrapper = {
         ...previous,
         chi: [],
+        // @ts-ignore
         sel: match.match.reduce(reducer, []).join(","),
         [RAW]: match.match.map((t) => t.slice()),
     } as AstRule;

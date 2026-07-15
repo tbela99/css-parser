@@ -8,7 +8,6 @@ import type {
     Token,
 } from "../../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../types.ts";
-import { consumeWhitespace } from "../../validation/utils/whitespace.ts";
 import { compute } from "../transform/compute.ts";
 import { filterValues, renderValue } from "../../renderer/render.ts";
 import { eqMatrix, minifyTransformFunctions } from "../transform/minify.ts";
@@ -67,7 +66,7 @@ export class TransformCssFeature {
                 );
             }
 
-            consumeWhitespace(children);
+            // consumeWhitespace(children);
 
             let { matrix, cumulative, minified } = compute(children as Token[]) ?? {
                 matrix: null,

@@ -19,11 +19,12 @@ children:
 - [Getting started](./getting-started.md)
 - [Usage](./usage.md)
 - [Validation](./validation.md)
-- [CSS module](./css-module.md)
+- [CSS Modules](./css-module.md)
 - [Minification](./minification.md)
 - [Custom Transform](./transform.md)
 - [Syntax Lowering](./syntax-lowering.md)
-- [Ast traversal](ast.md)
+- [Ast Manipulation](./ast.md)
+- [Utility Functions](./utilities.md)
 
 ## Modules
 

@@ -53,7 +53,9 @@ class PropertyList {
                 syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, declaration.nam.toLowerCase());
                 if (syntaxRules != null) {
                     result = matchAllSyntaxes(syntaxRules, createValidationContext(declaration.val), this.options);
-                    declaration[STATE] = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.ValidationFailed;
+                    declaration[STATE] = result.success
+                        ? EnumAstNodeStatus.Validated
+                        : EnumAstNodeStatus.ValidationFailed;
                 }
             }
             // do not compute shorthand for invalid declarations

@@ -1,5 +1,5 @@
 import { EnumToken } from "../lib/ast/types.ts";
-import { LOC, PARENT, TOKENS, STATE, ERRORS } from "../lib/syntax/constants.ts";
+import { LOC, PARENT, TOKENS, STATE, ERRORS, RAW, OPTIMIZED } from "../lib/syntax/constants.ts";
 import type { Token } from "./token.d.ts";
 
 /**
@@ -48,29 +48,43 @@ export declare interface BaseToken {
     typ: EnumToken;
     /**
      * location info
+     * @private
      */
     [LOC]?: Location;
     /**
      * parent node
+     * @private
      */
     [PARENT]?: AstNode;
     /**
      * prelude or selector tokens
+     * @private
      */
     [TOKENS]?: Token[] | null;
     /**
      * node state
+     * @private
      */
     [STATE]?: EnumAstNodeStatus;
     /**
      * node syntax errors
+     * @private
      */
     [ERRORS]?: ErrorDescription[];
     /**
      * property name
+     * @private
      */
     [PROPERTYNAME]?: string;
+    /**
+     * raw selector
+     * @private
+     */
     [RAW]?: string[][] | null;
+    /**
+     * optimized selector
+     * @private
+     */
     [OPTIMIZED]?: OptimizedSelector | null;
     /**
      * parent node
@@ -413,9 +427,9 @@ export declare type AstNode =
     | CssVariableToken
     | CssVariableImportTokenType;
 
-    /**
-     * token search result
-     */
+/**
+ * token search result
+ */
 export interface TokenSearchResult {
     /**
      * node

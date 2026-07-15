@@ -215,6 +215,163 @@ color:
                 preserveLicense: true
             }).code).equals(``));
         });
+        
+
+        it('bad selector #13', async function () {
+            const css = `
+      
+  a:hover {
+    color: light-dark(#000, #fff, none);
+  }
+
+`;
+
+            return transform(css, {
+                beautify: true
+            }).then(result => expect(result.code).equals(`a:hover {
+ color: light-dark(#000,#fff,none)
+}`));
+        });
+        
+        it('bad selector #14', async function () {
+            const css = `
+      
+  a:hover {
+    color: color-mix(in oklabor, #000, #fff, none);
+  }
+
+`;
+
+            return transform(css, {
+                beautify: true
+            }).then(result => expect(result.code).equals(`a:hover {
+ color: color-mix(in oklabor,#000,#fff,none)
+}`));
+        });
+        
+        it('bad selector #15', async function () {
+            const css = `
+      
+  a:hover {
+    color: color(--swopc  )
+  }
+
+`;
+
+            return transform(css, {
+                beautify: true
+            }).then(result => expect(result.code).equals(`a:hover {
+ color: color(--swopc)
+}`));
+        });
+        
+        it('generic at-rule #16', async function () {
+            const css = `
+      
+    @unknown a and b and (v or c or k) and media(min-width: 800px), k {
+        color: color-mix(firebrick, goldenrod);
+    }
+`;
+
+            return transform(css, {
+                beautify: true
+            }).then(result => expect(result.code).equals(`@unknown a and b and (v or c or k) and media(min-width: 800px),k {
+ color: #c96a24
+}`));
+        });
+        
+        it('generic at-rule #17', async function () {
+            const css = `
+      
+    @unknown a and b and (v or c or k) and media(min-width: 800px), k, {
+        color: color-mix(firebrick, goldenrod);
+    }
+`;
+
+            return transform(css, {
+                beautify: true
+            }).then(result => expect(result.code).equals(``));
+        });
+
+        it('generic at-rule #18', async function () {
+            const css = `
+      
+    @unknown a and b and (v or c or k) and media(min-width: 800px), k( {
+        color: color-mix(firebrick, goldenrod);
+    }
+`;
+
+            return transform(css, {
+                beautify: true
+            }).then(result => expect(result.code).equals(``));
+        });
+        
+
+        it('generic at-rule #19', async function () {
+            const css = `
+      
+    @unknown a and b and (v or c or k) and media(min-width: 800px), ,( {
+        color: color-mix(firebrick, goldenrod);
+    }
+`;
+
+            return transform(css, {
+                beautify: true
+            }).then(result => expect(result.code).equals(``));
+        });
+        
+        it('generic at-rule #20', async function () {
+            const css = `
+      
+    @unknown a and b or k {
+        color: color-mix(firebrick, goldenrod);
+    }
+`;
+
+            return transform(css, {
+                beautify: true
+            }).then(result => expect(result.code).equals(``));
+        });
+        
+        it('generic at-rule #21', async function () {
+            const css = `
+      
+    @unknown a or b and k {
+        color: color-mix(firebrick, goldenrod);
+    }
+`;
+
+            return transform(css, {
+                beautify: true
+            }).then(result => expect(result.code).equals(``));
+        });
+        
+        it('generic at-rule #21', async function () {
+            const css = `
+      
+    @unknown a ) {
+        color: color-mix(firebrick, goldenrod);
+    }
+`;
+
+            return transform(css, {
+                beautify: true
+            }).then(result => expect(result.code).equals(``));
+        });
+        
+        it('generic at-rule #21', async function () {
+            const css = `
+      
+    @unknown a and ) {
+        color: color-mix(firebrick, goldenrod);
+    }
+`;
+
+            return transform(css, {
+                beautify: true
+            }).then(result => expect(result.code).equals(``));
+        });
+        
     });
 
 }

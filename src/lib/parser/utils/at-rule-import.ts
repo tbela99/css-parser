@@ -16,7 +16,6 @@ import { trimArray } from "../../validation/match.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";
 import { LOC, tokensfuncDefMap } from "../../syntax/constants.ts";
-import { definedPropertySettings } from "../../syntax/constants.ts";
 import { isColor, parseColor } from "../../syntax/syntax.ts";
 import { parseMediaqueryList } from "./at-rule-media.ts";
 import { parseAtRuleSupportSyntax } from "./at-rule-support.ts";
@@ -52,54 +51,55 @@ export function matchAtRuleImportSyntax(
 
         let matchCount = 0;
         let k = 0;
-        let stringCount = 0;
-        let urlTokenCount = 0;
+        // let stringCount = 0;
 
         for (; k < stream.length; k++) {
             if (stream[k]?.typ === EnumToken.EndParensTokenType) {
                 matchCount--;
             } else if (stream[k]?.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(stream[k]?.typ)) {
                 matchCount++;
-            } else if (stream[k]?.typ === EnumToken.StringTokenType) {
-                stringCount++;
-            } else if (stream[k]?.typ === EnumToken.UrlFunctionTokenDefType) {
-                urlTokenCount++;
-            } else if (
-                !(stream[k]?.typ === EnumToken.WhitespaceTokenType || stream[k]?.typ === EnumToken.CommentTokenType)
-            ) {
-                return {
-                    success: false,
-                    errors: [
-                        {
-                            action: "drop",
-                            message: "Expected string or <url-token>",
-                            syntax: "@import",
-                            node: stream[k],
-                            location: stream[k]?.[LOC],
-                        } as ErrorDescription,
-                    ],
-                };
-            }
+            } 
+            // else if (stream[k]?.typ === EnumToken.StringTokenType) {
+            //     stringCount++;
+            // } 
+            // else if (stream[k]?.typ === EnumToken.UrlFunctionTokenDefType) {
+            //     urlTokenCount++;
+            // } else if (
+            //     !(stream[k]?.typ === EnumToken.WhitespaceTokenType || stream[k]?.typ === EnumToken.CommentTokenType)
+            // ) {
+            //     return {
+            //         success: false,
+            //         errors: [
+            //             {
+            //                 action: "drop",
+            //                 message: "Expected string or <url-token>",
+            //                 syntax: "@import",
+            //                 node: stream[k],
+            //                 location: stream[k]?.[LOC],
+            //             } as ErrorDescription,
+            //         ],
+            //     };
+            // }
 
             if (matchCount === 0) {
                 break;
             }
         }
 
-        if (stringCount + urlTokenCount != 1) {
-            return {
-                success: false,
-                errors: [
-                    {
-                        action: "drop",
-                        syntax: "@import",
-                        message: "could not match syntax <url>",
-                        node: stream[0],
-                        location: stream[0][LOC],
-                    },
-                ],
-            };
-        }
+        // if (stringCount + urlTokenCount != 1) {
+        //     return {
+        //         success: false,
+        //         errors: [
+        //             {
+        //                 action: "drop",
+        //                 syntax: "@import",
+        //                 message: "could not match syntax <url>",
+        //                 node: stream[0],
+        //                 location: stream[0][LOC],
+        //             },
+        //         ],
+        //     };
+        // }
 
         const slice: Token[] = stream.slice(index + 1, k);
 
@@ -152,12 +152,12 @@ export function matchAtRuleImportSyntax(
         stack.push(stream[index] as Token);
         tokens.push(stream[index++] as Token);
 
-        while (
-            stream[index]?.typ === EnumToken.WhitespaceTokenType ||
-            stream[index]?.typ === EnumToken.CommentTokenType
-        ) {
-            tokens.push(stream[index++] as Token);
-        }
+        // while (
+        //     stream[index]?.typ === EnumToken.WhitespaceTokenType ||
+        //     stream[index]?.typ === EnumToken.CommentTokenType
+        // ) {
+        //     tokens.push(stream[index++] as Token);
+        // }
 
         // <layer-name">
         if (stream[index]?.typ === EnumToken.EndParensTokenType) {
@@ -183,27 +183,27 @@ export function matchAtRuleImportSyntax(
                 tokens.push(stream[index++] as Token);
             }
 
-            while (
-                stream[index]?.typ == EnumToken.WhitespaceTokenType ||
-                stream[index]?.typ == EnumToken.CommentTokenType
-            ) {
-                tokens.push(stream[index++] as Token);
-            }
+            // while (
+            //     stream[index]?.typ == EnumToken.WhitespaceTokenType ||
+            //     stream[index]?.typ == EnumToken.CommentTokenType
+            // ) {
+            //     tokens.push(stream[index++] as Token);
+            // }
 
-            if (stream[index]?.typ !== EnumToken.EndParensTokenType) {
-                return {
-                    success: false,
-                    errors: [
-                        {
-                            action: "drop",
-                            message: "Expected ')'",
-                            syntax: "@import",
-                            node: stream[index],
-                            location: stream[index]?.[LOC],
-                        } as ErrorDescription,
-                    ],
-                };
-            }
+            // if (stream[index]?.typ !== EnumToken.EndParensTokenType) {
+            //     return {
+            //         success: false,
+            //         errors: [
+            //             {
+            //                 action: "drop",
+            //                 message: "Expected ')'",
+            //                 syntax: "@import",
+            //                 node: stream[index],
+            //                 location: stream[index]?.[LOC],
+            //             } as ErrorDescription,
+            //         ],
+            //     };
+            // }
 
             i = tokens.indexOf(stack.at(-1) as Token);
             tokens.splice(index, 1);
@@ -246,112 +246,112 @@ export function matchAtRuleImportSyntax(
         matchCount = 1;
         let isDecl: boolean = false;
 
-        while (
-            stream[index]?.typ === EnumToken.WhitespaceTokenType ||
-            stream[index]?.typ === EnumToken.CommentTokenType
-        ) {
-            tokens.push(stream[index++] as Token);
-        }
+        // while (
+        //     stream[index]?.typ === EnumToken.WhitespaceTokenType ||
+        //     stream[index]?.typ === EnumToken.CommentTokenType
+        // ) {
+        //     tokens.push(stream[index++] as Token);
+        // }
 
         // <declaration>
-        if (
-            stream[index]?.typ === EnumToken.IdenTokenType &&
-            !["and", "or", "not", "only"].includes((stream[index] as IdentToken).val.toLowerCase())
-        ) {
-            tokens.push(stream[index++] as Token);
+        // if (
+        //     stream[index]?.typ === EnumToken.IdenTokenType &&
+        //     !["and", "or", "not", "only"].includes((stream[index] as IdentToken).val.toLowerCase())
+        // ) {
+        //     tokens.push(stream[index++] as Token);
 
-            while (
-                stream[index]?.typ === EnumToken.WhitespaceTokenType ||
-                stream[index]?.typ === EnumToken.CommentTokenType
-            ) {
-                tokens.push(stream[index++] as Token);
-            }
+        //     while (
+        //         stream[index]?.typ === EnumToken.WhitespaceTokenType ||
+        //         stream[index]?.typ === EnumToken.CommentTokenType
+        //     ) {
+        //         tokens.push(stream[index++] as Token);
+        //     }
 
-            if (stream[index]?.typ !== EnumToken.ColonTokenType) {
-                return {
-                    success: false,
-                    errors: [
-                        {
-                            action: "drop",
-                            message: "Expected ':'",
-                            syntax: "@import",
-                            node: stream[index],
-                            location: stream[index]?.[LOC],
-                        } as ErrorDescription,
-                    ],
-                };
-            } else {
-                isDecl = true;
-                tokens.push(stream[index++] as Token);
+        //     if (stream[index]?.typ !== EnumToken.ColonTokenType) {
+        //         return {
+        //             success: false,
+        //             errors: [
+        //                 {
+        //                     action: "drop",
+        //                     message: "Expected ':'",
+        //                     syntax: "@import",
+        //                     node: stream[index],
+        //                     location: stream[index]?.[LOC],
+        //                 } as ErrorDescription,
+        //             ],
+        //         };
+        //     } else {
+        //         isDecl = true;
+        //         tokens.push(stream[index++] as Token);
 
-                // match the next ')'
-                while (index < stream.length && matchCount > 0) {
-                    if (
-                        stream[index]?.typ === EnumToken.StartParensTokenType ||
-                        tokensfuncDefMap.has(stream[index]?.typ)
-                    ) {
-                        matchCount++;
-                        // stack.push(stream[index] as Token);
-                    } else if (stream[index]?.typ === EnumToken.EndParensTokenType) {
-                        matchCount--;
+        //         // match the next ')'
+        //         while (index < stream.length && matchCount > 0) {
+        //             if (
+        //                 stream[index]?.typ === EnumToken.StartParensTokenType ||
+        //                 tokensfuncDefMap.has(stream[index]?.typ)
+        //             ) {
+        //                 matchCount++;
+        //                 // stack.push(stream[index] as Token);
+        //             } else if (stream[index]?.typ === EnumToken.EndParensTokenType) {
+        //                 matchCount--;
 
-                        if (matchCount === 0) {
-                            i = tokens.indexOf(stack.at(-1) as Token);
-                            tokens.splice(index, 1);
+        //                 if (matchCount === 0) {
+        //                     i = tokens.indexOf(stack.at(-1) as Token);
+        //                     tokens.splice(index, 1);
 
-                            Object.assign(stack.at(-1) as Token, {
-                                typ: tokensfuncDefMap.get((stack.at(-1) as Token).typ),
-                                chi: trimArray(tokens.splice(i + 1, index++ - i - 1)),
-                            });
+        //                     Object.assign(stack.at(-1) as Token, {
+        //                         typ: tokensfuncDefMap.get((stack.at(-1) as Token).typ),
+        //                         chi: trimArray(tokens.splice(i + 1, index++ - i - 1)),
+        //                     });
 
-                            stack.pop();
-                            break;
-                        }
-                    } else if (stream[index]?.typ === EnumToken.ImportantTokenType) {
-                        tokens.push(stream[index++] as Token);
+        //                     stack.pop();
+        //                     break;
+        //                 }
+        //             } else if (stream[index]?.typ === EnumToken.ImportantTokenType) {
+        //                 tokens.push(stream[index++] as Token);
 
-                        while (
-                            stream[index]?.typ === EnumToken.WhitespaceTokenType ||
-                            stream[index]?.typ === EnumToken.CommentTokenType
-                        ) {
-                            tokens.push(stream[index++] as Token);
-                        }
+        //                 while (
+        //                     stream[index]?.typ === EnumToken.WhitespaceTokenType ||
+        //                     stream[index]?.typ === EnumToken.CommentTokenType
+        //                 ) {
+        //                     tokens.push(stream[index++] as Token);
+        //                 }
 
-                        // next token is ')'
-                        if (stream[index]?.typ !== EnumToken.EndParensTokenType) {
-                            return {
-                                success: false,
-                                errors: [
-                                    {
-                                        action: "drop",
-                                        message: "Expected ')'",
-                                        syntax: "@import",
-                                        node: stream[index],
-                                        location: stream[index]?.[LOC],
-                                    } as ErrorDescription,
-                                ],
-                            };
-                        }
+        //                 // next token is ')'
+        //                 if (stream[index]?.typ !== EnumToken.EndParensTokenType) {
+        //                     return {
+        //                         success: false,
+        //                         errors: [
+        //                             {
+        //                                 action: "drop",
+        //                                 message: "Expected ')'",
+        //                                 syntax: "@import",
+        //                                 node: stream[index],
+        //                                 location: stream[index]?.[LOC],
+        //                             } as ErrorDescription,
+        //                         ],
+        //                     };
+        //                 }
 
-                        matchCount--;
-                        i = tokens.indexOf(stack.at(-1) as Token);
-                        tokens.splice(index, 1);
+        //                 matchCount--;
+        //                 i = tokens.indexOf(stack.at(-1) as Token);
+        //                 tokens.splice(index, 1);
 
-                        Object.assign(stack.at(-1) as Token, {
-                            typ: tokensfuncDefMap.get((stack.at(-1) as Token).typ),
-                            chi: trimArray(tokens.splice(i + 1, index++ - i - 1)),
-                        });
+        //                 Object.assign(stack.at(-1) as Token, {
+        //                     typ: tokensfuncDefMap.get((stack.at(-1) as Token).typ),
+        //                     chi: trimArray(tokens.splice(i + 1, index++ - i - 1)),
+        //                 });
 
-                        stack.pop();
-                        break;
-                    }
+        //                 stack.pop();
+        //                 break;
+        //             }
 
-                    tokens.push(stream[index++] as Token);
-                }
-            }
-        }
+        //             tokens.push(stream[index++] as Token);
+        //         }
+        //     }
+        // }
         // <supports-condition>
-        else {
+        // else {
             // match the next ')'
             while (index < stream.length && matchCount > 0) {
                 if (stream[index]?.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(stream[index]?.typ)) {
@@ -375,22 +375,22 @@ export function matchAtRuleImportSyntax(
 
                 tokens.push(stream[index++] as Token);
             }
-        }
+        // }
 
-        if (matchCount > 0) {
-            return {
-                success: false,
-                errors: [
-                    {
-                        action: "drop",
-                        message: "unmatched ')'",
-                        syntax: "@import",
-                        node: stack.at(-1),
-                        location: stack.at(-1)?.[LOC],
-                    } as ErrorDescription,
-                ],
-            };
-        }
+        // if (matchCount > 0) {
+        //     return {
+        //         success: false,
+        //         errors: [
+        //             {
+        //                 action: "drop",
+        //                 message: "unmatched ')'",
+        //                 syntax: "@import",
+        //                 node: stack.at(-1),
+        //                 location: stack.at(-1)?.[LOC],
+        //             } as ErrorDescription,
+        //         ],
+        //     };
+        // }
 
         // support() is the last item in tokens array
         if (isDecl) {

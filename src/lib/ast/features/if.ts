@@ -13,7 +13,7 @@ import type {
 import { EnumToken } from "../types.ts";
 import { renderValue } from "../../renderer/render.ts";
 import { FeatureWalkMode } from "./type.ts";
-import { definedPropertySettings, PARENT, TOKENS } from "../../syntax/constants.ts";
+import { PARENT, TOKENS } from "../../syntax/constants.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 import { replaceNodeOrValue } from "../../parser/utils/token.ts";
 import { cloneNode } from "../../ast/clone.ts";

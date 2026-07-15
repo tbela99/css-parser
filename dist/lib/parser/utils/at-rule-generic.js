@@ -23,7 +23,7 @@ function matchGenericSyntax(stream) {
         }
         if (token.typ === EnumToken.EndParensTokenType) {
             if (stack.length === 0 ||
-                (stack.at(-1)?.typ !== EnumToken.ParensTokenType && !tokensfuncDefMap.has(stack.at(-1)?.typ))) {
+                (stack.at(-1)?.typ !== EnumToken.StartParensTokenType && !tokensfuncDefMap.has(stack.at(-1)?.typ))) {
                 errors.push({
                     action: "drop",
                     message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC].src}:${token[LOC].sta.lin}:${token[LOC].sta.col}`,
@@ -35,19 +35,19 @@ function matchGenericSyntax(stream) {
             }
             stack.pop();
             scopes.pop();
-            if (scopes.length === 0) {
-                return {
-                    success: false,
-                    errors: [
-                        {
-                            action: "drop",
-                            node: token,
-                            message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC].src}:${token[LOC].sta.lin}:${token[LOC].sta.col}`,
-                            location: token[LOC],
-                        },
-                    ],
-                };
-            }
+            // if (scopes.length === 0) {
+            //     return {
+            //         success: false,
+            //         errors: [
+            //             {
+            //                 action: "drop",
+            //                 node: token,
+            //                 message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${token[LOC]!.sta.col}`,
+            //                 location: token[LOC]!,
+            //             },
+            //         ],
+            //     };
+            // }
             continue;
         }
         if (token.typ === EnumToken.IdenTokenType && equalsIgnoreCase("and", token.val)) {

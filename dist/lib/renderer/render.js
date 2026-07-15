@@ -1,9 +1,9 @@
-import { convertColor, getAngle } from '../syntax/color/color.js';
+import { convertColor, toPrecisionAngle, getAngle } from '../syntax/color/color.js';
 import { reduceHexValue } from '../syntax/color/hex.js';
 import { EnumToken, minifyNumber, ColorType } from '../ast/types.js';
 import { expand } from '../ast/expand.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
-import { colorsFunc, urlTokenMatcher, PARENT, tokensfuncSet, LOC } from '../syntax/constants.js';
+import { colorsFunc, urlTokenMatcher, PARENT, tokensfuncSet, LOC, colorPrecision } from '../syntax/constants.js';
 import { isColor, pseudoElements, reducegradientBackgroundPosition, reduceConicColorStops, reduceColorStops, parseColor } from '../syntax/syntax.js';
 import { move } from '../parser/tokenize.js';
 import { equalsIgnoreCase } from '../parser/utils/text.js';
@@ -896,13 +896,18 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                                 i++;
                             }
                             const result = [];
+                            if (positions.length > 0) {
+                                if (positions.length > 0) {
+                                    if (angles.length > 0) {
+                                        angles.push({ typ: EnumToken.WhitespaceTokenType });
+                                    }
+                                    angles.push({ typ: EnumToken.IdenTokenType, val: "at" }, { typ: EnumToken.WhitespaceTokenType }, ...positions);
+                                }
+                            }
                             if (angles.length > 0) {
                                 result.push(...angles, { typ: EnumToken.CommaTokenType });
                             }
-                            if (positions.length > 0 || colorSpaceDef.length > 0) {
-                                if (positions.length > 0) {
-                                    result.push({ typ: EnumToken.IdenTokenType, val: "at" }, { typ: EnumToken.WhitespaceTokenType }, ...positions);
-                                }
+                            if (colorSpaceDef.length > 0) {
                                 if (colorSpaceDef.length > 0) {
                                     if (result.length > 0) {
                                         result.push({ typ: EnumToken.WhitespaceTokenType });
@@ -1044,7 +1049,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                     }
                     switch (u) {
                         case "turn":
-                            v = minifyNumber(angle);
+                            v = minifyNumber(toPrecisionAngle(angle, colorPrecision, false));
                             if (v.length + 4 < value.length) {
                                 val = v;
                                 unit = u;
@@ -1052,7 +1057,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                             }
                             break;
                         case "deg":
-                            v = minifyNumber(angle * 360);
+                            v = minifyNumber(toPrecisionAngle(angle * 360, colorPrecision, false));
                             if (v.length + 3 < value.length) {
                                 val = v;
                                 unit = u;
@@ -1060,7 +1065,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                             }
                             break;
                         case "rad":
-                            v = minifyNumber(angle * (2 * Math.PI));
+                            v = minifyNumber(toPrecisionAngle(angle * (2 * Math.PI), colorPrecision, false));
                             if (v.length + 3 < value.length) {
                                 val = v;
                                 unit = u;
@@ -1068,7 +1073,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                             }
                             break;
                         case "grad":
-                            v = minifyNumber(angle * 400);
+                            v = minifyNumber(toPrecisionAngle(angle * 400, colorPrecision, false));
                             if (v.length + 4 < value.length) {
                                 val = v;
                                 unit = u;
@@ -1208,7 +1213,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.OrTokenType:
             return "or";
         case EnumToken.InvalidMediaQueryTokenType:
-        case EnumToken.InvalidDeclarationNodeType:
+        // case EnumToken.InvalidDeclarationNodeType:
         case EnumToken.InvalidCommentTokenType:
         case EnumToken.BadCommentTokenType:
         case EnumToken.BadCdoTokenType:

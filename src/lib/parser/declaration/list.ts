@@ -20,7 +20,7 @@ import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import type { ValidationMatch } from "../../validation/types.js";
 import { createValidationContext, matchAllSyntaxes } from "../../validation/match.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";
-import { definedPropertySettings, STATE } from "../../syntax/constants.ts";
+import { STATE } from "../../syntax/constants.ts";
 
 const config: PropertiesConfig = getConfig();
 
@@ -82,7 +82,9 @@ export class PropertyList {
 
                 if (syntaxRules != null) {
                     result = matchAllSyntaxes(syntaxRules, createValidationContext(declaration.val), this.options);
-                    declaration[STATE] = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.ValidationFailed;
+                    declaration[STATE] = result.success
+                        ? EnumAstNodeStatus.Validated
+                        : EnumAstNodeStatus.ValidationFailed;
                 }
             }
 

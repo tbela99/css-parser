@@ -1,4 +1,7 @@
 
+import {okLabDistance} from "../../../dist/lib/syntax/color/utils/distance.js";
+import {parseString} from "../../../dist/lib/parser/parse.js";
+
 export function run(describe, expect, it, transform, parse, render, dirname, readFile, resolve, ColorType) {
 
     describe('Parse color', function () {
@@ -1464,5 +1467,21 @@ color: lch(from slateblue calc(l * sin(pi / 4)) c h);
         }).then(result => expect(result.code).equals(`.foo {
  color: rgb(255 255 255/.15)
 }`));
+    });
+
+    it('color distance #139', function () {
+        return expect(okLabDistance(parseString('color(srgb .651595 .412381 .000822)')[0], parseString('color-mix(red, green)')[0])).equals(0);
+    });
+
+    it('color distance #140', function () {
+        return expect(okLabDistance(parseString('currentColor')[0], parseString('color-mix(red, green)')[0])).equals(null);
+    });
+
+    it('color distance #141', function () {
+        return expect(okLabDistance(parseString('color(srgb .651595 .412381 .000822)')[0], parseString('currentcolor')[0])).equals(null);
+    });
+    
+    it('color distance #142', function () {
+        return expect(okLabDistance(parseString('color(srgb .651595 .412381 .000822)')[0], parseString('color-mix(red, var(--color))')[0])).equals(null);
     });
 }

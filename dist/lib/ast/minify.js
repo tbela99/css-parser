@@ -1116,10 +1116,10 @@ function wrapNodes(previous, node, match, ast, reducer, i, nodeIndex) {
     let pSel = match.selector1.reduce(reducer, []).join(",");
     // @ts-ignore
     let nSel = match.selector2.reduce(reducer, []).join(",");
-    // @ts-ignore
     const wrapper = {
         ...previous,
         chi: [],
+        // @ts-ignore
         sel: match.match.reduce(reducer, []).join(","),
         [RAW]: match.match.map((t) => t.slice()),
     };

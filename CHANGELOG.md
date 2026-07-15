@@ -3,6 +3,7 @@
 ## v1.4.5
 
 - [x] Fix performance regression 
+- [x] fix conic-gradient() minification bug
 
 ## v1.4.6
 

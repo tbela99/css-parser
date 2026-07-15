@@ -53,13 +53,13 @@ import type {
     WhenElseQueryConditionToken,
     WhenElseUnaryConditionToken,
 } from "../../@types/index.d.ts";
-import { convertColor } from "../syntax/color/color.ts";
+import { convertColor, toPrecisionAngle } from "../syntax/color/color.ts";
 import { getAngle } from "../syntax/color/color.ts";
 import { reduceHexValue } from "../syntax/color/hex.ts";
 import { ColorType, EnumToken, minifyNumber } from "../ast/types.ts";
 import { expand } from "../ast/expand.ts";
 import { SourceMap } from "./sourcemap/sourcemap.ts";
-import { colorsFunc, LOC, PARENT, tokensfuncSet, urlTokenMatcher } from "../syntax/constants.ts";
+import { anglePrecision, colorPrecision, colorsFunc, LOC, PARENT, tokensfuncSet, urlTokenMatcher } from "../syntax/constants.ts";
 import {
     isColor,
     parseColor,
@@ -1315,19 +1315,25 @@ export function renderValue(
 
                             const result: Token[] = [];
 
-                            if (angles.length > 0) {
-                                result.push(...angles, { typ: EnumToken.CommaTokenType });
-                            }
-
-                            if (positions.length > 0 || colorSpaceDef.length > 0) {
+                            if (positions.length > 0) {
                                 if (positions.length > 0) {
-                                    result.push(
+                                    if (angles.length > 0) {
+                                        angles.push({ typ: EnumToken.WhitespaceTokenType });
+                                    }
+
+                                    angles.push(
                                         { typ: EnumToken.IdenTokenType, val: "at" },
                                         { typ: EnumToken.WhitespaceTokenType },
                                         ...positions,
                                     );
                                 }
+                            }
 
+                            if (angles.length > 0) {
+                                result.push(...angles, { typ: EnumToken.CommaTokenType });
+                            }
+
+                            if (colorSpaceDef.length > 0) {
                                 if (colorSpaceDef.length > 0) {
                                     if (result.length > 0) {
                                         result.push({ typ: EnumToken.WhitespaceTokenType });
@@ -1537,7 +1543,7 @@ export function renderValue(
 
                     switch (u) {
                         case "turn":
-                            v = minifyNumber(angle);
+                            v = minifyNumber(toPrecisionAngle(angle, colorPrecision, false));
 
                             if (v.length + 4 < value.length) {
                                 val = v;
@@ -1548,7 +1554,7 @@ export function renderValue(
                             break;
 
                         case "deg":
-                            v = minifyNumber(angle * 360);
+                            v = minifyNumber(toPrecisionAngle(angle * 360, colorPrecision, false));
 
                             if (v.length + 3 < value.length) {
                                 val = v;
@@ -1559,7 +1565,7 @@ export function renderValue(
                             break;
 
                         case "rad":
-                            v = minifyNumber(angle * (2 * Math.PI));
+                            v = minifyNumber(toPrecisionAngle(angle * (2 * Math.PI), colorPrecision, false));
 
                             if (v.length + 3 < value.length) {
                                 val = v;
@@ -1570,7 +1576,7 @@ export function renderValue(
                             break;
 
                         case "grad":
-                            v = minifyNumber(angle * 400);
+                            v = minifyNumber(toPrecisionAngle(angle * 400, colorPrecision, false));
 
                             if (v.length + 4 < value.length) {
                                 val = v;
@@ -1826,7 +1832,7 @@ export function renderValue(
             return "or";
 
         case EnumToken.InvalidMediaQueryTokenType:
-        case EnumToken.InvalidDeclarationNodeType:
+        // case EnumToken.InvalidDeclarationNodeType:
         case EnumToken.InvalidCommentTokenType:
         case EnumToken.BadCommentTokenType:
         case EnumToken.BadCdoTokenType:

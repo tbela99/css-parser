@@ -2116,10 +2116,12 @@ declare enum ModuleScopeEnumOptions {
 }
 
 declare const LOC: unique symbol;
+declare const RAW: unique symbol;
 declare const STATE: unique symbol;
 declare const ERRORS: unique symbol;
 declare const TOKENS: unique symbol;
 declare const PARENT: unique symbol;
+declare const OPTIMIZED: unique symbol;
 
 /**
  * Position
@@ -2167,29 +2169,43 @@ export declare interface BaseToken {
     typ: EnumToken;
     /**
      * location info
+     * @private
      */
     [LOC]?: Location;
     /**
      * parent node
+     * @private
      */
     [PARENT]?: AstNode$1;
     /**
      * prelude or selector tokens
+     * @private
      */
     [TOKENS]?: Token$1[] | null;
     /**
      * node state
+     * @private
      */
     [STATE]?: EnumAstNodeStatus;
     /**
      * node syntax errors
+     * @private
      */
     [ERRORS]?: ErrorDescription[];
     /**
      * property name
+     * @private
      */
     [PROPERTYNAME]?: string;
+    /**
+     * raw selector
+     * @private
+     */
     [RAW]?: string[][] | null;
+    /**
+     * optimized selector
+     * @private
+     */
     [OPTIMIZED]?: OptimizedSelector | null;
     /**
      * parent node
@@ -2532,9 +2548,9 @@ export declare type AstNode$1 =
     | CssVariableToken
     | CssVariableImportTokenType;
 
-    /**
-     * token search result
-     */
+/**
+ * token search result
+ */
 interface TokenSearchResult {
     /**
      * node

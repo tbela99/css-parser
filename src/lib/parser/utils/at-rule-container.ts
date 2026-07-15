@@ -1,22 +1,19 @@
 import type {
     AstAtRule,
     AtRuleToken,
-    ContainerStyleRangeToken,
     ErrorDescription,
     FunctionToken,
     IdentToken,
-    LiteralToken,
     MediaQueryConditionToken,
     ParensToken,
     ParserOptions,
     Token,
 } from "../../../@types/index.d.ts";
 import { EnumToken } from "../../ast/types.ts";
-import { definedPropertySettings, LOC, mFGT, mFLT } from "../../syntax/constants.ts";
+import { LOC, mFGT, mFLT } from "../../syntax/constants.ts";
 
 import {
     createValidationContext,
-    isStyleRangeValue as isStyleFeatureValue,
     matchAllSyntaxes,
     trimArray,
 } from "../../validation/match.ts";
@@ -25,7 +22,6 @@ import type { ValidationFunctionToken, ValidationToken } from "../../validation/
 import type { ValidationMatch } from "../../validation/types.d.ts";
 import { tokensfuncDefMap } from "../../syntax/constants.ts";
 import { getSyntaxRule } from "../../validation/config.ts";
-import { parseColor } from "../../syntax/syntax.ts";
 
 export function parseAtRuleContainerQueryList(
     stream: Token[],
@@ -95,19 +91,19 @@ export function parseAtRuleContainerQueryList(
                 tokens.push(stream[i++]);
             }
 
-            if (i >= stream.length) {
-                return {
-                    success: false,
-                    errors: [
-                        {
-                            action: "drop",
-                            node: context,
-                            location: context[LOC],
-                            message: `expecting <container-condition> at ${context[LOC]?.src}:${context?.[LOC]?.sta.lin}:${context[LOC]?.sta.col}`,
-                        },
-                    ],
-                };
-            }
+            // if (i >= stream.length) {
+            //     return {
+            //         success: false,
+            //         errors: [
+            //             {
+            //                 action: "drop",
+            //                 node: context,
+            //                 location: context[LOC],
+            //                 message: `expecting <container-condition> at ${context[LOC]?.src}:${context?.[LOC]?.sta.lin}:${context[LOC]?.sta.col}`,
+            //             },
+            //         ],
+            //     };
+            // }
 
             if (stream[i].typ === EnumToken.IdenTokenType) {
                 tokens.push(stream[i++]);
@@ -128,36 +124,36 @@ export function parseAtRuleContainerQueryList(
                         {
                             action: "drop",
                             node: stream[i],
-                            location: stream[i]?.[LOC] ?? context[LOC],
-                            message: `expecting <container-condition> at ${(stream[i] ?? context)?.[LOC]?.src}:${(stream[i] ?? context)?.[LOC]?.sta.lin}:${(stream[i] ?? context)?.[LOC]?.sta.col}`,
+                            location: stream[i]?.[LOC], // ?? context[LOC],
+                            message: `expecting <container-condition> at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                         },
                     ],
                 };
             }
 
-            if (stream[i]?.typ === EnumToken.IdenTokenType) {
-                const val: string = (stream[i] as IdentToken).val.toLowerCase();
+            // if (stream[i]?.typ === EnumToken.IdenTokenType) {
+            //     const val: string = (stream[i] as IdentToken).val.toLowerCase();
 
-                if ("not" === val) {
-                    tokens.push(stream[i]);
-                    stack.push(Object.assign(stream[i], { typ: EnumToken.NotTokenType }));
-                    i++;
-                } else if ("and" === val || "or" === val) {
-                    return {
-                        success: false,
-                        errors: [
-                            {
-                                action: "drop",
-                                node: stream[i],
-                                location: stream[i]?.[LOC],
-                                message: `unexpected token at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                            },
-                        ],
-                    };
-                } else {
-                    tokens.push(stream[i++]);
-                }
-            }
+            //     if ("not" === val) {
+            //         tokens.push(stream[i]);
+            //         stack.push(Object.assign(stream[i], { typ: EnumToken.NotTokenType }));
+            //         i++;
+            //     } else if ("and" === val || "or" === val) {
+            //         return {
+            //             success: false,
+            //             errors: [
+            //                 {
+            //                     action: "drop",
+            //                     node: stream[i],
+            //                     location: stream[i]?.[LOC],
+            //                     message: `unexpected token at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+            //                 },
+            //             ],
+            //         };
+            //     } else {
+            //         tokens.push(stream[i++]);
+            //     }
+            // }
 
             for (; i < stream.length; i++) {
                 tokens.push(stream[i]);
@@ -169,12 +165,12 @@ export function parseAtRuleContainerQueryList(
                 if (expectAndOr) {
                     let valid: boolean = true;
 
-                    if (stream[i].typ === EnumToken.IdenTokenType) {
-                        const val: string = (stream[i] as IdentToken).val.toLowerCase();
-                        valid = val === "and" || val === "or";
-                    } else {
-                        valid = stream[i].typ !== EnumToken.CommaTokenType;
-                    }
+                    // if (stream[i].typ === EnumToken.IdenTokenType) {
+                    //     const val: string = (stream[i] as IdentToken).val.toLowerCase();
+                    //     valid = val === "and" || val === "or";
+                    // } else {
+                    valid = stream[i].typ !== EnumToken.CommaTokenType;
+                    // }
 
                     if (!valid) {
                         success = false;
@@ -186,7 +182,7 @@ export function parseAtRuleContainerQueryList(
                         break;
                     }
 
-                    expectAndOr = false;
+                    // expectAndOr = false;
                 }
 
                 if (stream[i].typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(stream[i].typ)) {
@@ -196,16 +192,16 @@ export function parseAtRuleContainerQueryList(
                 }
 
                 switch (stream[i].typ) {
-                    case EnumToken.LiteralTokenType:
-                        if ((stream[i] as LiteralToken).val === "<") {
-                            stack.push(Object.assign(stream[i], { typ: EnumToken.LtTokenType }));
-                        }
+                    // case EnumToken.LiteralTokenType:
+                    //     if ((stream[i] as LiteralToken).val === "<") {
+                    //         stack.push(Object.assign(stream[i], { typ: EnumToken.LtTokenType }));
+                    //     }
 
-                        if ((stream[i] as LiteralToken).val === ">") {
-                            stack.push(Object.assign(stream[i], { typ: EnumToken.GtTokenType }));
-                        }
+                    //     if ((stream[i] as LiteralToken).val === ">") {
+                    //         stack.push(Object.assign(stream[i], { typ: EnumToken.GtTokenType }));
+                    //     }
 
-                        break;
+                    //     break;
 
                     case EnumToken.ColonTokenType:
                     case EnumToken.LtTokenType:
@@ -242,141 +238,142 @@ export function parseAtRuleContainerQueryList(
                                     break;
                                 }
 
-                                if (currentScope.has(val === "or" ? EnumToken.AndTokenType : EnumToken.OrTokenType)) {
-                                    success = false;
-                                    errors.push({
-                                        action: "drop",
-                                        node: stream[i],
-                                        message: `cannot mix <and> and <or> at the same level at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                                    });
-                                    break;
-                                }
+                                // if (currentScope.has(val === "or" ? EnumToken.AndTokenType : EnumToken.OrTokenType)) {
+                                //     success = false;
+                                //     errors.push({
+                                //         action: "drop",
+                                //         node: stream[i],
+                                //         message: `cannot mix <and> and <or> at the same level at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                                //     });
+                                //     break;
+                                // }
 
                                 currentScope.add(stream[i].typ);
                                 stack.push(stream[i]);
-                            } else if (scopes.length === 0) {
-                                success = false;
-                                errors.push({
-                                    action: "drop",
-                                    node: stream[i],
-                                    location: stream[i]?.[LOC],
-                                    message: `unexpected <ident> at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                                });
-
-                                return {
-                                    success,
-                                    errors,
-                                };
                             }
+                            // else if (scopes.length === 0) {
+                            //     success = false;
+                            //     errors.push({
+                            //         action: "drop",
+                            //         node: stream[i],
+                            //         location: stream[i]?.[LOC],
+                            //         message: `unexpected <ident> at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                            //     });
+
+                            //     return {
+                            //         success,
+                            //         errors,
+                            //     };
+                            // }
                         }
 
                         break;
 
                     case EnumToken.EndParensTokenType:
                         // feature
-                        if (mFLT.has(stack.at(-1)?.typ) || mFGT.has(stack.at(-1)?.typ)) {
-                            // <mf-lt> | <mf-gt>
-                            const index: number = tokens.indexOf(stack.at(-1)!);
-                            const prevToken: Token = stack[stack.length - 2];
+                        // if (mFLT.has(stack.at(-1)?.typ) || mFGT.has(stack.at(-1)?.typ)) {
+                        //     // <mf-lt> | <mf-gt>
+                        //     const index: number = tokens.indexOf(stack.at(-1)!);
+                        //     const prevToken: Token = stack[stack.length - 2];
 
-                            if (mFLT.has(prevToken?.typ) || mFGT.has(prevToken?.typ)) {
-                                if (stack[stack.length - 3]?.typ !== EnumToken.StartParensTokenType) {
-                                    success = false;
-                                    errors.push({
-                                        action: "drop",
-                                        node: stream[i],
-                                        message: `unmatched '(' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                                    });
-                                    break;
-                                }
+                        //     if (mFLT.has(prevToken?.typ) || mFGT.has(prevToken?.typ)) {
+                        //         if (stack[stack.length - 3]?.typ !== EnumToken.StartParensTokenType) {
+                        //             success = false;
+                        //             errors.push({
+                        //                 action: "drop",
+                        //                 node: stream[i],
+                        //                 message: `unmatched '(' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                        //             });
+                        //             break;
+                        //         }
 
-                                if (!mFLT.has(stack.at(-1)?.typ) && mFLT.has(prevToken?.typ)) {
-                                    success = false;
-                                    errors.push({
-                                        action: "drop",
-                                        node: stack.at(-1),
-                                        message: `expected <mf-lt> at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
-                                    });
+                        //         if (!mFLT.has(stack.at(-1)?.typ) && mFLT.has(prevToken?.typ)) {
+                        //             success = false;
+                        //             errors.push({
+                        //                 action: "drop",
+                        //                 node: stack.at(-1),
+                        //                 message: `expected <mf-lt> at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
+                        //             });
 
-                                    break;
-                                } else if (!mFGT.has(stack.at(-1)?.typ) && mFGT.has(prevToken?.typ)) {
-                                    success = false;
-                                    errors.push({
-                                        action: "drop",
-                                        node: stream[i],
-                                        message: `expected <mf-gt> at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
-                                    });
+                        //             break;
+                        //         } else if (!mFGT.has(stack.at(-1)?.typ) && mFGT.has(prevToken?.typ)) {
+                        //             success = false;
+                        //             errors.push({
+                        //                 action: "drop",
+                        //                 node: stream[i],
+                        //                 message: `expected <mf-gt> at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
+                        //             });
 
-                                    break;
-                                }
+                        //             break;
+                        //         }
 
-                                // <style-range>
-                                // const index: number = tokens.indexOf(stack.at(-1)!);
-                                // <mf-lt> | <mf-gt>
-                                const index2: number = tokens.indexOf(prevToken);
-                                // '('
-                                const index3: number = tokens.indexOf(stack.at(-3)!);
+                        //         // <style-range>
+                        //         // const index: number = tokens.indexOf(stack.at(-1)!);
+                        //         // <mf-lt> | <mf-gt>
+                        //         const index2: number = tokens.indexOf(prevToken);
+                        //         // '('
+                        //         const index3: number = tokens.indexOf(stack.at(-3)!);
 
-                                const left: Token[] = trimArray(tokens.slice(index3 + 1, index2));
-                                const right: Token[] = trimArray(tokens.slice(index + 1, tokens.length - 1));
-                                const names: Token[] = trimArray(tokens.slice(index2 + 1, index));
+                        //         const left: Token[] = trimArray(tokens.slice(index3 + 1, index2));
+                        //         const right: Token[] = trimArray(tokens.slice(index + 1, tokens.length - 1));
+                        //         const names: Token[] = trimArray(tokens.slice(index2 + 1, index));
 
-                                if (!isStyleFeatureValue(left)) {
-                                    success = false;
-                                    errors.push({
-                                        action: "drop",
-                                        node: left[0],
-                                        message: `expected <style-feature-value> at ${left[0]?.[LOC]?.src}:${left[0]?.[LOC]?.sta.lin}:${left[0]?.[LOC]?.sta.col}`,
-                                    });
+                        //         if (!isStyleFeatureValue(left)) {
+                        //             success = false;
+                        //             errors.push({
+                        //                 action: "drop",
+                        //                 node: left[0],
+                        //                 message: `expected <style-feature-value> at ${left[0]?.[LOC]?.src}:${left[0]?.[LOC]?.sta.lin}:${left[0]?.[LOC]?.sta.col}`,
+                        //             });
 
-                                    break;
-                                }
+                        //             break;
+                        //         }
 
-                                if (!isStyleFeatureValue(right)) {
-                                    success = false;
-                                    errors.push({
-                                        action: "drop",
-                                        node: right[0],
-                                        message: `expected <style-feature-value> at ${right[0]?.[LOC]?.src}:${right[0]?.[LOC]?.sta.lin}:${right[0]?.[LOC]?.sta.col}`,
-                                    });
+                        //         if (!isStyleFeatureValue(right)) {
+                        //             success = false;
+                        //             errors.push({
+                        //                 action: "drop",
+                        //                 node: right[0],
+                        //                 message: `expected <style-feature-value> at ${right[0]?.[LOC]?.src}:${right[0]?.[LOC]?.sta.lin}:${right[0]?.[LOC]?.sta.col}`,
+                        //             });
 
-                                    break;
-                                }
+                        //             break;
+                        //         }
 
-                                if (!isStyleFeatureValue(names)) {
-                                    success = false;
-                                    errors.push({
-                                        action: "drop",
-                                        node: names[0],
-                                        message: `expected <style-feature-value> at ${names[0]?.[LOC]?.src}:${names[0]?.[LOC]?.sta.lin}:${names[0]?.[LOC]?.sta.col}`,
-                                    });
+                        //         if (!isStyleFeatureValue(names)) {
+                        //             success = false;
+                        //             errors.push({
+                        //                 action: "drop",
+                        //                 node: names[0],
+                        //                 message: `expected <style-feature-value> at ${names[0]?.[LOC]?.src}:${names[0]?.[LOC]?.sta.lin}:${names[0]?.[LOC]?.sta.col}`,
+                        //             });
 
-                                    break;
-                                }
+                        //             break;
+                        //         }
 
-                                tokens.splice(index3 + 1, tokens.length - index3 - 2, {
-                                    typ: EnumToken.ContainerStyleRangeTokenType,
-                                    l: left,
-                                    op: names,
-                                    r: right,
-                                    [LOC]: { ...left[0][LOC]!, end: right.at(-1)![LOC]!.end },
-                                } as ContainerStyleRangeToken);
+                        //         tokens.splice(index3 + 1, tokens.length - index3 - 2, {
+                        //             typ: EnumToken.ContainerStyleRangeTokenType,
+                        //             l: left,
+                        //             op: names,
+                        //             r: right,
+                        //             [LOC]: { ...left[0][LOC]!, end: right.at(-1)![LOC]!.end },
+                        //         } as ContainerStyleRangeToken);
 
-                                // check <style()> or <scroll-state()>
+                        //         // check <style()> or <scroll-state()>
 
-                                stack.pop();
-                                stack.pop();
-                            } else if (stack[stack.length - 2]?.typ !== EnumToken.StartParensTokenType) {
-                                success = false;
-                                errors.push({
-                                    action: "drop",
-                                    node: stream[i],
-                                    location: stream[i]?.[LOC],
-                                    message: `expected '(' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                                });
-                                break;
-                            }
-                        }
+                        //         stack.pop();
+                        //         stack.pop();
+                        //     } else if (stack[stack.length - 2]?.typ !== EnumToken.StartParensTokenType) {
+                        //         success = false;
+                        //         errors.push({
+                        //             action: "drop",
+                        //             node: stream[i],
+                        //             location: stream[i]?.[LOC],
+                        //             message: `expected '(' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                        //         });
+                        //         break;
+                        //     }
+                        // }
 
                         if (
                             mFGT.has(stack.at(-1)?.typ) ||
@@ -388,23 +385,23 @@ export function parseAtRuleContainerQueryList(
                                 stack[stack.length - 2] as FunctionToken
                             ).val?.toLowerCase?.() as string;
 
-                            if (
-                                stack[stack.length - 2]?.typ !== EnumToken.StartParensTokenType &&
-                                !(
-                                    stack[stack.length - 2]?.typ === EnumToken.ContainerFunctionTokenDefType &&
-                                    ("style" === funcName || "scroll-state" === funcName)
-                                )
-                            ) {
-                                success = false;
-                                errors.push({
-                                    action: "drop",
-                                    node: stream[i],
-                                    location: stream[i]?.[LOC],
-                                    message: `unmatched2 ')' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                                });
+                            // if (
+                            //     stack[stack.length - 2]?.typ !== EnumToken.StartParensTokenType &&
+                            //     !(
+                            //         stack[stack.length - 2]?.typ === EnumToken.ContainerFunctionTokenDefType &&
+                            //         ("style" === funcName || "scroll-state" === funcName)
+                            //     )
+                            // ) {
+                            //     success = false;
+                            //     errors.push({
+                            //         action: "drop",
+                            //         node: stream[i],
+                            //         location: stream[i]?.[LOC],
+                            //         message: `unmatched2 ')' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                            //     });
 
-                                break;
-                            }
+                            //     break;
+                            // }
 
                             const index2: number = tokens.indexOf(stack.at(-1)!);
                             const index3: number = tokens.indexOf(stack.at(-2)!);
@@ -412,22 +409,22 @@ export function parseAtRuleContainerQueryList(
                             let names: Token[] = trimArray(tokens.slice(index3 + 1, index2));
                             let values: Token[] = trimArray(tokens.slice(index2 + 1, tokens.length - 1));
 
-                            if (
-                                stack.at(-1)?.typ !== EnumToken.ColonTokenType &&
-                                stack.at(-1)?.typ !== EnumToken.DelimTokenType
-                            ) {
-                                const filteredNames = names.filter(
-                                    (n) =>
-                                        n.typ !== EnumToken.WhitespaceTokenType && n.typ !== EnumToken.CommentTokenType,
-                                );
+                            // if (
+                            //     stack.at(-1)?.typ !== EnumToken.ColonTokenType &&
+                            //     stack.at(-1)?.typ !== EnumToken.DelimTokenType
+                            // ) {
+                            //     const filteredNames = names.filter(
+                            //         (n) =>
+                            //             n.typ !== EnumToken.WhitespaceTokenType && n.typ !== EnumToken.CommentTokenType,
+                            //     );
 
-                                if (
-                                    filteredNames.length !== 1 ||
-                                    (filteredNames[0].typ !== EnumToken.IdenTokenType &&
-                                        filteredNames[0].typ !== EnumToken.DashedIdenTokenType)
-                                ) {
-                                }
-                            }
+                            //     if (
+                            //         filteredNames.length !== 1 ||
+                            //         (filteredNames[0].typ !== EnumToken.IdenTokenType &&
+                            //             filteredNames[0].typ !== EnumToken.DashedIdenTokenType)
+                            //     ) {
+                            //     }
+                            // }
 
                             tokens.splice(
                                 index3 + 1,
@@ -472,9 +469,9 @@ export function parseAtRuleContainerQueryList(
 
                             tokens.length = index + 1;
 
-                            if (EnumToken.ColorTokenType === tokens[index].typ) {
-                                parseColor(tokens[index]);
-                            }
+                            // if (EnumToken.ColorTokenType === tokens[index].typ) {
+                            //     parseColor(tokens[index]);
+                            // }
 
                             stack.pop();
                             scopes.pop();
@@ -532,16 +529,16 @@ export function parseAtRuleContainerQueryList(
                                 }
                             }
 
-                            const index = tokens.indexOf(stack.at(-1)!);
-                            const slice = trimArray(tokens.slice(index + 1));
-                            tokens[index] = {
-                                    typ: EnumToken.MediaQueryUnaryFeatureTokenType,
-                                    l: stack.pop()!,
-                                    r: slice,
-                                    [LOC]: { ...tokens[index][LOC]!, end: slice.at(-1)![LOC]!.end }
-                                }
-                            
-                            tokens.length = index + 1;
+                            // const index = tokens.indexOf(stack.at(-1)!);
+                            // const slice = trimArray(tokens.slice(index + 1));
+                            // tokens[index] = {
+                            //     typ: EnumToken.MediaQueryUnaryFeatureTokenType,
+                            //     l: stack.pop()!,
+                            //     r: slice,
+                            //     [LOC]: { ...tokens[index][LOC]!, end: slice.at(-1)![LOC]!.end },
+                            // };
+
+                            // tokens.length = index + 1;
                         }
 
                         if (
@@ -577,13 +574,13 @@ export function parseAtRuleContainerQueryList(
 
                         break;
 
-                    default:
-                        if (tokensfuncDefMap.has(stream[i]?.typ)) {
-                            stack.push(stream[i]);
-                            scopes.push((currentScope = new Set()));
-                        }
+                    // default:
+                    //     if (tokensfuncDefMap.has(stream[i]?.typ)) {
+                    //         stack.push(stream[i]);
+                    //         scopes.push((currentScope = new Set()));
+                    //     }
 
-                        break;
+                    //     break;
                 }
 
                 if (!success) {
@@ -591,14 +588,14 @@ export function parseAtRuleContainerQueryList(
                 }
             }
 
-            if (success && stack.length > 0) {
-                success = false;
-                errors.push({
-                    action: "drop",
-                    node: stack.at(-1),
-                    message: `unmatched token '${EnumToken[stack.at(-1)?.typ]}' at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
-                });
-            }
+            // if (success && stack.length > 0) {
+            //     success = false;
+            //     errors.push({
+            //         action: "drop",
+            //         node: stack.at(-1),
+            //         message: `unmatched token '${EnumToken[stack.at(-1)?.typ]}' at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
+            //     });
+            // }
 
             if (!success) {
                 return {
@@ -617,9 +614,9 @@ export function parseAtRuleContainerQueryList(
         ...parts
             .filter((p) => p.length > 0 && p[0].typ !== EnumToken.InvalidMediaQueryTokenType)
             .reduce((acc, b) => {
-                if (acc.length > 0) {
-                    acc.push({ typ: EnumToken.CommaTokenType });
-                }
+                // if (acc.length > 0) {
+                //     acc.push({ typ: EnumToken.CommaTokenType });
+                // }
 
                 acc.push(...b);
 

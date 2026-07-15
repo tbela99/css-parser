@@ -133,7 +133,7 @@ import {
 } from "./cmyk.ts";
 import { a98rgb2srgbvalues, srgb2a98values } from "./a98rgb.ts";
 import { epsilon, LOC, PARENT } from "../constants.ts";
-import { colorFuncColorSpace, colorPrecision, anglePrecision, definedPropertySettings } from "../constants.ts";
+import { colorFuncColorSpace, colorPrecision, anglePrecision } from "../constants.ts";
 import { trimArray } from "../../validation/match.ts";
 import { alpha } from "./alpha.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
@@ -927,10 +927,10 @@ export function toPrecisionValue(value: number, precision: number = colorPrecisi
     return Math.abs(value) < epsilon ? 0 : value;
 }
 
-export function toPrecisionAngle(angle: number, precision: number = colorPrecision): number {
+export function toPrecisionAngle(angle: number, precision: number = colorPrecision, correctValue: boolean = true): number {
     angle = toPrecisionValue(angle, precision);
 
-    if (Math.abs(angle) >= 360) {
+    if (correctValue && Math.abs(angle) >= 360) {
         angle %= 360;
     }
 
@@ -938,7 +938,7 @@ export function toPrecisionAngle(angle: number, precision: number = colorPrecisi
         angle = 0;
     }
 
-    if (angle < 0) {
+    if (correctValue && angle < 0) {
         angle += 360;
     }
 

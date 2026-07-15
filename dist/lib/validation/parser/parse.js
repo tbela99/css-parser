@@ -134,10 +134,10 @@ function* tokenizeSyntax(syntax, position = {
         let chr = syntax.charAt(i);
         move(currentPosition, chr);
         if (chr === "<" && "an+b>" === syntax.slice(i + 1, i + 6)) {
-            if (buffer.length > 0) {
-                yield getTokenType(buffer, position, currentPosition);
-                buffer = "";
-            }
+            // if (buffer.length > 0) {
+            //     yield getTokenType(buffer, position, currentPosition);
+            //     buffer = "";
+            // }
             yield getTokenType("<an+b>", position, currentPosition);
             move(currentPosition, "an+b>");
             i += 5;
@@ -177,9 +177,7 @@ function* tokenizeSyntax(syntax, position = {
             if (SymbolsMapTokens[chr] === ValidationTokenEnum.Whitespace) {
                 let ch;
                 let k = i;
-                while ((ch = syntax.charAt(k + 1)) &&
-                    ch in SymbolsMapTokens &&
-                    SymbolsMapTokens[ch] === ValidationTokenEnum.Whitespace) {
+                while ((ch = syntax.charAt(k + 1)) && SymbolsMapTokens[ch] === ValidationTokenEnum.Whitespace) {
                     k++;
                 }
                 if (k != i) {
@@ -200,16 +198,16 @@ function* tokenizeSyntax(syntax, position = {
             continue;
         }
         switch (chr) {
-            case "\\":
-                if (buffer.length > 0) {
-                    yield getTokenType(buffer, position, currentPosition);
-                    buffer = "";
-                }
-                buffer += chr;
-                chr = syntax.charAt(++i);
-                buffer += chr;
-                move(currentPosition, chr);
-                break;
+            // case "\\":
+            //     if (buffer.length > 0) {
+            //         yield getTokenType(buffer, position, currentPosition);
+            //         buffer = "";
+            //     }
+            //     buffer += chr;
+            //     chr = syntax.charAt(++i);
+            //     buffer += chr;
+            //     move(currentPosition, chr);
+            //     break;
             case ":":
                 if (isIdent(buffer)) {
                     yield {
@@ -225,19 +223,19 @@ function* tokenizeSyntax(syntax, position = {
                 break;
             case '"':
             case "'":
-                if (buffer.length > 0) {
-                    yield getTokenType(buffer, position, currentPosition);
-                    buffer = "";
-                }
+                // if (buffer.length > 0) {
+                //     yield getTokenType(buffer, position, currentPosition);
+                //     buffer = "";
+                // }
                 buffer += chr;
                 while (i + 1 < syntax.length) {
                     chr = syntax.charAt(++i);
                     buffer += chr;
-                    if (chr == "\\") {
-                        chr = syntax.charAt(++i);
-                        buffer += chr;
-                        continue;
-                    }
+                    // if (chr == "\\") {
+                    //     chr = syntax.charAt(++i);
+                    //     buffer += chr;
+                    //     continue;
+                    // }
                     if (chr == buffer.charAt(0)) {
                         break;
                     }
@@ -325,15 +323,19 @@ function parseSyntax(syntax) {
                                 r: [],
                             }));
                         }
-                        else {
-                            stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
-                            stack.pop();
-                            stack.push(Object.assign(token, {
-                                typ: makeBinaryOp.get(token.typ),
-                                l: tokens.splice(index, 1),
-                                r: [],
-                            }));
-                        }
+                        // else {
+                        //     (stack.at(-1) as ValidationAmpersandToken).r = trimSyntaxArray(
+                        //         tokens.splice(index + 1, tokens.length - index - 2),
+                        //     );
+                        //     stack.pop();
+                        //     stack.push(
+                        //         Object.assign(token, {
+                        //             typ: makeBinaryOp.get(token!.typ),
+                        //             l: tokens.splice(index, 1),
+                        //             r: [],
+                        //         }) as ValidationAmpersandToken,
+                        //     );
+                        // }
                     }
                     else {
                         stack.push(Object.assign(token, {
@@ -397,11 +399,13 @@ function parseSyntax(syntax) {
                         stack.at(-1).val === "function-token")) {
                     stack.pop();
                 }
-                else if (stack.at(-1)?.typ === ValidationTokenEnum.PipeToken) {
-                    let index = tokens.lastIndexOf(stack.at(-1));
-                    stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
-                    stack.pop();
-                }
+                // else if ((stack.at(-1) as ValidationToken)?.typ === ValidationTokenEnum.PipeToken) {
+                //     let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
+                //     (stack.at(-1) as ValidationPipeToken).chi.push(
+                //         trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)),
+                //     );
+                //     stack.pop();
+                // }
                 else if (stack.at(-1)?.typ === ValidationTokenEnum.AmpersandToken) {
                     let index = tokens.lastIndexOf(stack.at(-1));
                     stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
@@ -474,10 +478,10 @@ function parseSyntax(syntax) {
                     break;
                 }
                 currentToken = stack.at(-1);
-                if (currentToken?.typ !== ValidationTokenEnum.OpenBracket) {
-                    console.debug(JSON.stringify(tokens, null, 1));
-                    throw new SyntaxError(`Unexpected token: ']' at line ${token[LOC].lin}:${token[LOC].col} `);
-                }
+                // if (currentToken?.typ !== ValidationTokenEnum.OpenBracket) {
+                //     console.debug(JSON.stringify(tokens, null, 1));
+                //     throw new SyntaxError(`Unexpected token: ']' at line ${token![LOC].lin}:${token![LOC].col} `);
+                // }
                 {
                     let index = tokens.lastIndexOf(stack.at(-1));
                     if ((tokens[index - 2]?.typ === ValidationTokenEnum.Keyword ||
@@ -485,17 +489,17 @@ function parseSyntax(syntax) {
                         tokens[index - 1]?.typ === ValidationTokenEnum.Whitespace &&
                         (tokens[index + 1]?.typ === ValidationTokenEnum.Number ||
                             tokens[index + 1]?.typ === ValidationTokenEnum.Dimension)) {
-                        if (tokens[index + 2]?.typ === ValidationTokenEnum.CloseBracket) {
-                            stack.pop();
-                            Object.assign(tokens[index - 2], {
-                                range: {
-                                    min: tokens[index + 1],
-                                    max: tokens[index + 1],
-                                },
-                            });
-                            tokens.splice(index - 1, 5);
-                            break;
-                        }
+                        // if (tokens[index + 2]?.typ === ValidationTokenEnum.CloseBracket) {
+                        //     stack.pop();
+                        //     Object.assign(tokens[index - 2], {
+                        //         range: {
+                        //             min: <ValidationNumberToken>tokens[index + 1],
+                        //             max: <ValidationNumberToken>tokens[index + 1],
+                        //         },
+                        //     });
+                        //     tokens.splice(index - 1, 5);
+                        //     break;
+                        // }
                         if (tokens[index + 2]?.typ === ValidationTokenEnum.Comma &&
                             (tokens[index + 3]?.typ === tokens[index + 1]?.typ ||
                                 tokens[index + 3]?.typ === ValidationTokenEnum.InfinityToken) &&
@@ -530,13 +534,15 @@ function parseSyntax(syntax) {
             // }
             case ValidationTokenEnum.CloseCurlyBrace:
                 while (true) {
-                    if (stack.at(-1).typ == ValidationTokenEnum.AmpersandToken) {
-                        let index = tokens.lastIndexOf(stack.at(-1));
-                        stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
-                        stack.pop();
-                        continue;
-                    }
-                    else if (stack.at(-1).typ == ValidationTokenEnum.ColumnToken) {
+                    // if ((stack.at(-1) as ValidationToken).typ == ValidationTokenEnum.AmpersandToken) {
+                    //     let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
+                    //     (stack.at(-1) as ValidationAmpersandToken).r = trimSyntaxArray(
+                    //         tokens.splice(index + 1, tokens.length - index - 2),
+                    //     );
+                    //     stack.pop();
+                    //     continue;
+                    // } else
+                    if (stack.at(-1).typ == ValidationTokenEnum.ColumnToken) {
                         let index = tokens.lastIndexOf(stack.at(-1));
                         stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
                         stack.pop();
@@ -550,9 +556,9 @@ function parseSyntax(syntax) {
                     }
                     break;
                 }
-                if (stack.at(-1)?.typ != ValidationTokenEnum.OpenCurlyBrace) {
-                    throw new SyntaxError(`Unexpected token } as ${token[LOC].lin}:${token[LOC].col}`);
-                }
+                // if (stack.at(-1)?.typ != ValidationTokenEnum.OpenCurlyBrace) {
+                //     throw new SyntaxError(`Unexpected token } as ${token![LOC].lin}:${token![LOC].col}`);
+                // }
                 {
                     let index = tokens.lastIndexOf(stack.at(-1));
                     const slice = tokens.slice(index + 1, -1);
@@ -565,13 +571,17 @@ function parseSyntax(syntax) {
                                 },
                             });
                             if (slice.length === 3) {
-                                if (slice[1].typ != ValidationTokenEnum.Comma) {
-                                    throw new SyntaxError(`Expecting ',' at ${slice[1][LOC].lin}:${slice[1][LOC].col}`);
-                                }
-                                if (slice[2].typ != ValidationTokenEnum.Number &&
-                                    slice[2].typ != ValidationTokenEnum.InfinityToken) {
-                                    throw new SyntaxError(`Expecting number or infinity at ${slice[2][LOC].lin}:${slice[2][LOC].col}`);
-                                }
+                                // if (slice[1].typ != ValidationTokenEnum.Comma) {
+                                //     throw new SyntaxError(`Expecting ',' at ${slice[1][LOC].lin}:${slice[1][LOC].col}`);
+                                // }
+                                // if (
+                                //     slice[2].typ != ValidationTokenEnum.Number &&
+                                //     slice[2].typ != ValidationTokenEnum.InfinityToken
+                                // ) {
+                                //     throw new SyntaxError(
+                                //         `Expecting number or infinity at ${slice[2][LOC].lin}:${slice[2][LOC].col}`,
+                                //     );
+                                // }
                                 Object.assign(tokens[index - 1], {
                                     match: {
                                         min: slice[0],
@@ -598,16 +608,16 @@ function parseSyntax(syntax) {
                 // if the previous token is a comma, we wrap them in a virtual group and mark the group as optional
                 {
                     let sliceIndex = -1;
-                    let isGroup = tokens.at(-2)?.typ == ValidationTokenEnum.Comma;
+                    let isGroup; // = tokens.at(-2)?.typ == ValidationTokenEnum.Comma;
+                    // if (isGroup) {
+                    //     sliceIndex = tokens.length - 2;
+                    // } else
+                    // {
+                    isGroup = tokens.at(-3)?.typ == ValidationTokenEnum.Comma;
                     if (isGroup) {
-                        sliceIndex = tokens.length - 2;
+                        sliceIndex = tokens.length - 3;
                     }
-                    else {
-                        isGroup = tokens.at(-3)?.typ == ValidationTokenEnum.Comma;
-                        if (isGroup) {
-                            sliceIndex = tokens.length - 3;
-                        }
-                    }
+                    // }
                     if (isGroup) {
                         tokens.splice(sliceIndex, tokens.length - sliceIndex, {
                             typ: ValidationTokenEnum.OptionalGroupToken,
@@ -623,10 +633,10 @@ function parseSyntax(syntax) {
             case ValidationTokenEnum.Comma:
                 {
                     let sliceIndex = -1;
-                    if (tokens.at(-2)?.isOptional && tokens.at(-2).typ !== ValidationTokenEnum.OptionalGroupToken) {
-                        sliceIndex = tokens.length - 2;
-                    }
-                    else if (tokens.at(-2).typ == ValidationTokenEnum.Whitespace &&
+                    // if (tokens.at(-2)?.isOptional && tokens.at(-2)!.typ !== ValidationTokenEnum.OptionalGroupToken) {
+                    //     sliceIndex = tokens.length - 2;
+                    // } else
+                    if (tokens.at(-2).typ == ValidationTokenEnum.Whitespace &&
                         tokens.at(-3)?.isOptional &&
                         tokens.at(-3).typ !== ValidationTokenEnum.OptionalGroupToken) {
                         sliceIndex = tokens.length - 3;
@@ -672,178 +682,5 @@ function parseSyntax(syntax) {
     }
     return trimSyntaxArray(tokens);
 }
-function renderSyntax(token, options = { minify: true, indent: 1 }) {
-    options.indent ??= 1;
-    let glue = options.minify ? "" : " ".repeat(options.indent);
-    switch (token.typ) {
-        case ValidationTokenEnum.InfinityToken:
-            // '∞'
-            return "\u221e";
-        case ValidationTokenEnum.Root:
-            return token.chi.reduce((acc, curr) => acc + renderSyntax(curr, options), "");
-        case ValidationTokenEnum.Whitespace:
-            return " ";
-        case ValidationTokenEnum.FunctionDefinition:
-            return "<" + token.val + "()>";
-        case ValidationTokenEnum.HashMark:
-            return "#";
-        case ValidationTokenEnum.Colon:
-            return ":";
-        case ValidationTokenEnum.Pipe:
-            return `${glue}|${glue}`;
-        case ValidationTokenEnum.Column:
-            return `${glue}||${glue}`;
-        case ValidationTokenEnum.PipeToken:
-            return token.chi.reduce((acc, curr) => acc +
-                (acc.trim().length > 0 ? `${glue}|${glue}` : "") +
-                curr.reduce((acc, curr) => acc + renderSyntax(curr, options), ""), "");
-        case ValidationTokenEnum.ColumnToken:
-            glue = `${glue}||${glue}`;
-            return token.chi.reduce((acc, curr) => acc +
-                (acc.length > 0 ? glue : "") +
-                curr.reduce((acc, curr) => acc + renderSyntax(curr, options), ""), "");
-        case ValidationTokenEnum.AmpersandToken:
-            glue = `${glue}&&${glue}`;
-            return (token.l.reduce((acc, curr) => acc + renderSyntax(curr, options), "") +
-                glue +
-                token.r.reduce((acc, curr) => acc + renderSyntax(curr, options), ""));
-        case ValidationTokenEnum.Function:
-        case ValidationTokenEnum.PseudoClassFunctionToken:
-        case ValidationTokenEnum.Parens:
-            return (token.val +
-                "(" +
-                token.chi.reduce((acc, curr) => acc + renderSyntax(curr, options), "") +
-                ")" +
-                renderAttributes(token));
-        case ValidationTokenEnum.Comma:
-            return `,${glue}`;
-        case ValidationTokenEnum.Keyword:
-            return token.val + renderAttributes(token);
-        case ValidationTokenEnum.OpenBracket:
-            return `[${glue}`;
-        case ValidationTokenEnum.Ampersand:
-            return `${glue}&&${glue}`;
-        case ValidationTokenEnum.Plus:
-            return "+";
-        case ValidationTokenEnum.QuestionMark:
-            return "?";
-        case ValidationTokenEnum.Separator:
-            return "/";
-        case ValidationTokenEnum.Bracket:
-            return (`[${glue}` +
-                token.chi.reduce((acc, curr) => acc + renderSyntax(curr, options), "") +
-                `${glue}]` +
-                renderAttributes(token));
-        case ValidationTokenEnum.PropertyType:
-        case ValidationTokenEnum.DeclarationType: {
-            const q = token.typ ===
-                ValidationTokenEnum.DeclarationType
-                ? "'"
-                : "";
-            return ("<" +
-                q +
-                token.val +
-                q +
-                (token.range == null
-                    ? ""
-                    : ` [${renderSyntax(token?.range.min)},${token?.range?.max == null
-                        ? "\u221e"
-                        : renderSyntax(token?.range.max)}]`) +
-                ">" +
-                renderAttributes(token));
-        }
-        case ValidationTokenEnum.Number:
-        case ValidationTokenEnum.PseudoClassToken:
-        case ValidationTokenEnum.StringToken:
-            return token.val + "";
-        case ValidationTokenEnum.SemiColon:
-            return ";";
-        case ValidationTokenEnum.AtRule:
-            return "@" + token.val;
-        case ValidationTokenEnum.AtRuleDefinition:
-            return ("@" +
-                token.val +
-                (token.prelude == null
-                    ? ""
-                    : " " +
-                        token.prelude.reduce((acc, curr) => acc + renderSyntax(curr, options), "")) +
-                (token.chi == null
-                    ? ""
-                    : " {\n" +
-                        token.chi.reduce((acc, curr) => acc + renderSyntax(curr, options), "")).slice(1, -1) +
-                "\n}");
-        case ValidationTokenEnum.Block:
-            return (`{${options.minify ? "" : "\n"}` +
-                token.chi.reduce((acc, t) => acc + renderSyntax(t, options), "") +
-                `${options.minify ? "" : "\n"}}`);
-        case ValidationTokenEnum.DeclarationDefinitionToken:
-            return (token.nam +
-                ": " +
-                renderSyntax(token.val, options));
-        case ValidationTokenEnum.LessThan:
-            return "<";
-        case ValidationTokenEnum.GreaterThan:
-            return ">";
-        case ValidationTokenEnum.CloseParenthesis:
-            return ")";
-        case ValidationTokenEnum.OpenParenthesis:
-            return "(";
-        case ValidationTokenEnum.DisallowWhitespace:
-            return "† ";
-        case ValidationTokenEnum.Dimension:
-            return token.val + token.unitText;
-        case ValidationTokenEnum.OpenCurlyBrace:
-            options.indent++;
-            return `{${options.minify ? "" : "\n"}}`;
-        case ValidationTokenEnum.CloseCurlyBrace:
-            options.indent--;
-            return `${options.minify ? "" : "\n"}}`;
-        case ValidationTokenEnum.DeclarationNameToken:
-            return token.val + ":";
-        case ValidationTokenEnum.OptionalGroupToken:
-            return token.chi.reduce((acc, curr, index, array) => acc +
-                (index == array.length - 1
-                    ? curr.typ === ValidationTokenEnum.Comma
-                        ? "?,"
-                        : renderSyntax(curr, options) + "?"
-                    : renderSyntax(curr, options)), "");
-        default:
-            throw new Error("Unhandled token: " + JSON.stringify({ token }, null, 1));
-    }
-}
-function renderAttributes(token) {
-    let result = "";
-    if (token.isList) {
-        result += "#";
-    }
-    if (token.isOptional) {
-        result += "?";
-    }
-    if (token.isMandatatoryGroup) {
-        result += "!";
-    }
-    if (token.isRepeatable) {
-        result += "*";
-    }
-    if (token.isRepeatableAtLeastOnce) {
-        result += "+";
-    }
-    if (token.match != null) {
-        if (token.match.max == null ||
-            token.match.max.val === token.match.min.val ||
-            Number.isNaN(token.match.max.val)) {
-            result += "{" + renderSyntax(token.match.min) + "}";
-        }
-        else {
-            result +=
-                "{" +
-                    renderSyntax(token.match.min) +
-                    "," +
-                    (Number.isFinite(token.match.max.val) ? renderSyntax(token.match.max) : "\u221e") +
-                    "}";
-        }
-    }
-    return result;
-}
 
-export { parseSyntax, renderSyntax, tokenizeSyntax, trimSyntaxArray };
+export { parseSyntax, tokenizeSyntax, trimSyntaxArray };

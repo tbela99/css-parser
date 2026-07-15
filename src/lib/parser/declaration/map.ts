@@ -818,6 +818,7 @@ export class PropertyMap {
                 let count: number = <number>map.get(patterns[i]);
 
                 if (count > 0 && matchType(values[j], this.config.properties[patterns[i]])) {
+                    // @ts-expect-error
                     values[j][PROPERTYNAME] = patterns[i];
 
                     map.set(patterns[i], --count);
@@ -835,9 +836,11 @@ export class PropertyMap {
                             let i: number = declaration.val.length;
 
                             while (i--) {
+                                // @ts-expect-error
                                 if (declaration.val[i][PROPERTYNAME] == key) {
                                     const val: Token = { ...declaration.val[i] };
 
+                                    // @ts-expect-error
                                     val[PROPERTYNAME] = v;
 
                                     declaration.val.splice(i, 0, val, { typ: EnumToken.WhitespaceTokenType });

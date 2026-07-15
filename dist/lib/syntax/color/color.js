@@ -599,15 +599,15 @@ function toPrecisionValue(value, precision = colorPrecision) {
     value = Math.round(value * div) / div;
     return Math.abs(value) < epsilon ? 0 : value;
 }
-function toPrecisionAngle(angle, precision = colorPrecision) {
+function toPrecisionAngle(angle, precision = colorPrecision, correctValue = true) {
     angle = toPrecisionValue(angle, precision);
-    if (Math.abs(angle) >= 360) {
+    if (correctValue && Math.abs(angle) >= 360) {
         angle %= 360;
     }
     if (Math.abs(angle) < anglePrecision) {
         angle = 0;
     }
-    if (angle < 0) {
+    if (correctValue && angle < 0) {
         angle += 360;
     }
     return angle;
