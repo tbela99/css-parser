@@ -4,6 +4,7 @@ import { config } from "../validation/json.ts";
 export const LOC = Symbol.for("loc");
 export const RAW = Symbol.for("raw");
 export const STATE = Symbol.for("state");
+export const ROOT = Symbol.for("root");
 export const ERRORS = Symbol.for("errors");
 export const TOKENS = Symbol.for("tokens");
 export const PARENT = Symbol.for("parent");

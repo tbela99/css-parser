@@ -637,14 +637,24 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                         ast.chi.splice(i--, 1, intersect.node1);
                                     }
                                     if (intersect.node2.chi.length == 0) {
-                                        ast.chi.splice(nodeIndex, 1, intersect.result);
+                                        if (intersect.result != null) {
+                                            ast.chi.splice(nodeIndex, 1, intersect.result);
+                                        }
+                                        else {
+                                            ast.chi.splice(nodeIndex, 1);
+                                        }
                                         i--;
                                         if (nodeIndex == i) {
                                             nodeIndex = i;
                                         }
                                     }
                                     else {
-                                        ast.chi.splice(nodeIndex, 1, intersect.result, intersect.node2);
+                                        if (intersect.result != null) {
+                                            ast.chi.splice(nodeIndex, 1, intersect.result, intersect.node2);
+                                        }
+                                        else {
+                                            ast.chi.splice(nodeIndex, 1, intersect.node2);
+                                        }
                                         i = (nodeIndex ?? 0) + 1;
                                     }
                                     if (node != ast.chi[i]) {

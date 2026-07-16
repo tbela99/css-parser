@@ -975,4 +975,23 @@ div-2 {
  box-sizing: border-box
 }`));
     });
+
+    it('wrapped function arguments #49', function () {
+        const file = `
+
+a {
+
+width: calc(-2px *sign(-1);}
+}
+.transform {
+
+font-family: random-item(--x, {Times, serif}, {Arial, sans-serif}, {Courier, monospace});
+}
+`;
+        return transform(file, {
+            beautify: true
+        }).then(result => expect(result.code).equals(`.transform {
+ font-family: random-item(--x,{Times,serif},{Arial,sans-serif},{Courier,monospace})
+}`));
+    });
 }

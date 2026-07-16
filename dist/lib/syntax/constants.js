@@ -4,6 +4,7 @@ import config from '../validation/config.json.js';
 const LOC = Symbol.for("loc");
 const RAW = Symbol.for("raw");
 const STATE = Symbol.for("state");
+const ROOT = Symbol.for("root");
 const ERRORS = Symbol.for("errors");
 const TOKENS = Symbol.for("tokens");
 const PARENT = Symbol.for("parent");
@@ -468,4 +469,4 @@ const trimTokenSpace = new Set([
 ]);
 const combinators = ["+", ">", "~", "||", "|"];
 
-export { COLORS_NAMES, D50, ERRORS, LOC, NAMES_COLORS, OPTIMIZED, PARENT, PROPERTYNAME, RAW, STATE, TOKENS, anglePrecision, colorDistancePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, deprecatedSystemColors, e, epsilon, funcLike, generalEnclosedFunc, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, regMatchLinearGradient, regMatchRadialGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };
+export { COLORS_NAMES, D50, ERRORS, LOC, NAMES_COLORS, OPTIMIZED, PARENT, PROPERTYNAME, RAW, ROOT, STATE, TOKENS, anglePrecision, colorDistancePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, deprecatedSystemColors, e, epsilon, funcLike, generalEnclosedFunc, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, regMatchLinearGradient, regMatchRadialGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };

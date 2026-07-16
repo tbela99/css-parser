@@ -1,9 +1,14 @@
 # Changelog
 
-## v1.4.5
+## v1.4.7
 
-- [x] Fix performance regression 
+- [x] Fix performance regression ~ 25% gain.
 - [x] fix conic-gradient() minification bug
+- [x] parse wrapped function arguments https://www.w3.org/TR/css-values-5/#component-functions for 
+
+```css
+font-family: random-item(--x, {Times, serif}, {Arial, sans-serif}, {Courier, monospace});
+```
 
 ## v1.4.6
 

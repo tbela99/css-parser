@@ -6928,6 +6928,7 @@ var MediaFeatureType;
 const LOC = Symbol.for("loc");
 const RAW = Symbol.for("raw");
 const STATE = Symbol.for("state");
+const ROOT = Symbol.for("root");
 const ERRORS = Symbol.for("errors");
 const TOKENS = Symbol.for("tokens");
 const PARENT = Symbol.for("parent");
@@ -23458,14 +23459,24 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                         ast.chi.splice(i--, 1, intersect.node1);
                                     }
                                     if (intersect.node2.chi.length == 0) {
-                                        ast.chi.splice(nodeIndex, 1, intersect.result);
+                                        if (intersect.result != null) {
+                                            ast.chi.splice(nodeIndex, 1, intersect.result);
+                                        }
+                                        else {
+                                            ast.chi.splice(nodeIndex, 1);
+                                        }
                                         i--;
                                         if (nodeIndex == i) {
                                             nodeIndex = i;
                                         }
                                     }
                                     else {
-                                        ast.chi.splice(nodeIndex, 1, intersect.result, intersect.node2);
+                                        if (intersect.result != null) {
+                                            ast.chi.splice(nodeIndex, 1, intersect.result, intersect.node2);
+                                        }
+                                        else {
+                                            ast.chi.splice(nodeIndex, 1, intersect.node2);
+                                        }
                                         i = (nodeIndex ?? 0) + 1;
                                     }
                                     if (node != ast.chi[i]) {
@@ -29532,6 +29543,7 @@ async function doParse(iter, options = {}) {
     };
     let tokens = [];
     let context = ast;
+    ast[ROOT] = ast;
     if (options.sourcemap) {
         ast[LOC] = {
             sta: {
@@ -29559,6 +29571,7 @@ async function doParse(iter, options = {}) {
     // @ts-ignore ignore error
     let isAsync = typeof iter[Symbol.asyncIterator] === "function";
     let parensMatch = 0;
+    let curlyBracketMatch = 0;
     if (options.visitor != null) {
         valuesHandlers = new Map();
         preValuesHandlers = new Map();
@@ -29689,11 +29702,18 @@ async function doParse(iter, options = {}) {
         else if (item.token.typ === exports.EnumToken.EndParensTokenType && parensMatch > 0) {
             parensMatch--;
         }
+        if (item.token.typ === exports.EnumToken.BlockStartTokenType) {
+            curlyBracketMatch++;
+        }
+        else if (item.token.typ === exports.EnumToken.BlockEndTokenType && curlyBracketMatch > 0) {
+            curlyBracketMatch--;
+        }
         tokens.push(item.token);
-        if ((parensMatch === 0 &&
-            (item.token.typ === exports.EnumToken.SemiColonTokenType ||
-                item.token.typ === exports.EnumToken.BlockStartTokenType)) ||
-            item.token.typ === exports.EnumToken.EOFTokenType) {
+        // console.debug([item.token, {parensMatch, curlyBracketMatch}]);
+        // if (parensMatch === 0) {
+        if (parensMatch === 0 && (item.token.typ === exports.EnumToken.SemiColonTokenType ||
+            item.token.typ === exports.EnumToken.BlockStartTokenType ||
+            item.token.typ === exports.EnumToken.EOFTokenType)) {
             node = parseNode(tokens, context, options, errors, stats, invalidNodes);
             if (node != null) {
                 if ("chi" in node) {
@@ -29738,7 +29758,7 @@ async function doParse(iter, options = {}) {
             }
             tokens = [];
         }
-        else if (item.token.typ === exports.EnumToken.BlockEndTokenType) {
+        else if ((parensMatch === 0 || curlyBracketMatch === 0) && item.token.typ === exports.EnumToken.BlockEndTokenType) {
             parseNode(tokens, context, options, errors, stats, invalidNodes);
             if (context[LOC] != null) {
                 context[LOC].end = item.token[LOC].end;
@@ -29752,7 +29772,10 @@ async function doParse(iter, options = {}) {
                 context.chi.pop();
             }
             tokens = [];
+            parensMatch = 0;
+            curlyBracketMatch = 0;
         }
+        // }
     }
     if (tokens.length > 0) {
         node = parseNode(tokens, context, options, errors, stats, invalidNodes);
@@ -30027,6 +30050,7 @@ async function doParse(iter, options = {}) {
             }
         }
     }
+    // console.debug("invalid nodes", invalidNodes);
     if (invalidNodes.length > 0) {
         let k = invalidNodes.length;
         while (k-- > 0) {
@@ -30784,6 +30808,7 @@ function parseNode(tokens, context, options, errors, stats, invalidNodes) {
                 tokens[i].typ = exports.EnumToken.InvalidCommentTokenType;
                 continue;
             }
+            tokens[i][ROOT] = context[ROOT];
             context.chi.push(tokens[i]);
             stats.nodesCount++;
         }
@@ -30827,6 +30852,7 @@ function parseNode(tokens, context, options, errors, stats, invalidNodes) {
         }
         stats.nodesCount++;
         context.chi.push(node);
+        node[ROOT] = context[ROOT];
         node[PARENT] = context;
         // @ts-ignore
         return node;
@@ -30838,6 +30864,7 @@ function parseNode(tokens, context, options, errors, stats, invalidNodes) {
             const node = parseSelector(tokens, context, options, errors);
             context.chi.push(node);
             node[PARENT] = context;
+            node[ROOT] = context[ROOT];
             if (node[STATE] == exports.EnumAstNodeStatus.Invalid ||
                 node[STATE] == exports.EnumAstNodeStatus.Disallowed ||
                 node[STATE] == exports.EnumAstNodeStatus.Unknown ||
@@ -30850,6 +30877,7 @@ function parseNode(tokens, context, options, errors, stats, invalidNodes) {
         else {
             const node = parseDeclaration(tokens, context, options, errors);
             node[PARENT] = context;
+            node[ROOT] = context[ROOT];
             if (context.typ === exports.EnumToken.StyleSheetNodeType && node.typ === exports.EnumToken.DeclarationNodeType) {
                 node[STATE] = exports.EnumAstNodeStatus.Invalid;
                 errors.push({

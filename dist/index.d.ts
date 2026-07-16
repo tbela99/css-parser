@@ -2178,6 +2178,10 @@ export declare interface BaseToken {
      */
     [PARENT]?: AstNode$1;
     /**
+     * root node
+     */
+    [ROOT]?: AstStyleSheet;
+    /**
      * prelude or selector tokens
      * @private
      */

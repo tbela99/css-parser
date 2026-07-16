@@ -1,5 +1,5 @@
 import { EnumToken } from "../lib/ast/types.ts";
-import { LOC, PARENT, TOKENS, STATE, ERRORS, RAW, OPTIMIZED } from "../lib/syntax/constants.ts";
+import { LOC, PARENT, TOKENS, STATE, ERRORS, RAW, ROOT, OPTIMIZED } from "../lib/syntax/constants.ts";
 import type { Token } from "./token.d.ts";
 
 /**
@@ -56,6 +56,10 @@ export declare interface BaseToken {
      * @private
      */
     [PARENT]?: AstNode;
+    /**
+     * root node
+     */
+    [ROOT]?: AstStyleSheet;
     /**
      * prelude or selector tokens
      * @private
