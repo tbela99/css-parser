@@ -29,7 +29,6 @@ import type {
     ValidationOptionalGroupToken,
     ValidationPipeToken,
     ValidationPropertyToken,
-    ValidationPseudoClassFunctionToken,
     ValidationStringToken,
     ValidationToken,
     ValidationValueRangeMatch,
@@ -38,7 +37,7 @@ import { MediaFeatureType, ValidationSyntaxGroupEnum, ValidationTokenEnum } from
 import type { ValidationContext, ValidationMatch } from "./types.d.ts";
 import type { ValidationConfiguration, ValidationMediaFeature } from "../../@types/validation.d.ts";
 import { funcLike, LOC, mFGT, mFLT, tokensfuncDefMap, tokensfuncSet } from "../syntax/constants.ts";
-import { isColor, isValue, pseudoElements } from "../syntax/syntax.ts";
+import { isColor } from "../syntax/syntax.ts";
 // import { isDeclarationValue } from "../parser/utils/declaration.ts";
 import { renderSyntax } from "./parser/parse.ts";
 import { equalsIgnoreCase } from "../parser/utils/text.ts";
@@ -3346,10 +3345,7 @@ function matchProperty(
             break;
         }
 
-        case "wq-name": // wq-name matches
-        // a
-        // |a
-        // *|a
+        case "wq-name": // *|a // |a // a // wq-name matches
         // a|b
 
         // if (context.peek()?.typ == EnumToken.Pipe) {

@@ -2554,9 +2554,7 @@ function matchProperty(property, context, options) {
             success = token?.typ === EnumToken.StringTokenType;
             break;
         }
-        case "wq-name": // wq-name matches
-            // a
-            // |a
+        case "wq-name": // |a // a // wq-name matches
             // *|a
             // a|b
             // if (context.peek()?.typ == EnumToken.Pipe) {

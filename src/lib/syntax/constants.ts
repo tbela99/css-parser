@@ -84,6 +84,19 @@ export const colorRange = {
     },
 };
 
+// https://www.w3.org/TR/css-values-4/#math-function
+
+export const pseudoElements: string[] = [
+    ":before",
+    ":after",
+    ":first-line",
+    ":first-letter",
+    "::before",
+    "::after",
+    "::first-line",
+    "::first-letter",
+];
+
 export const wildCardFuncs = ["var", "env", "if"];
 export const mathFuncs = [
     "minmax",
@@ -155,7 +168,7 @@ export const pageMarginBoxType: Set<string> = new Set([
 export const urlFunc: string[] = ["url"];
 export const timelineFunc: string[] = ["view", "scroll"];
 export const gridTemplateFunc: string[] = ["minmax", "fit-content", "repeat"];
-export const generalEnclosedFunc: string[] = [];
+// export const generalEnclosedFunc: string[] = [];
 export const supportFunc: string[] = ["selector", "font-tech", "font-format", "at-rule", "named-feature"];
 export const whenElseFunc: string[] = ["media", "supports"];
 export const containerFunc: string[] = ["style", "scroll-state"];

@@ -1,7 +1,7 @@
 import { EnumToken, EnumAstNodeStatus } from '../../ast/types.js';
 import { renderValue } from '../../renderer/render.js';
-import { LOC, ERRORS, STATE, TOKENS, tokensfuncDefMap, combinators, PARENT } from '../../syntax/constants.js';
-import { pseudoElements, isHash } from '../../syntax/syntax.js';
+import { LOC, ERRORS, STATE, TOKENS, pseudoElements, tokensfuncDefMap, combinators, PARENT } from '../../syntax/constants.js';
+import { isHash } from '../../syntax/syntax.js';
 import { getParsedSyntax, getSyntaxRule, getSyntaxConfig } from '../../validation/config.js';
 import { matchAllSyntaxes, createValidationContext, trimArray, matchSelectorSyntax } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from '../../validation/parser/typedef.js';

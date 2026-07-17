@@ -190,67 +190,67 @@ export function parseDeclaration(
 
     tokens = trimArray(tokens.slice(i + 1));
 
-    for (i = 0; i < tokens.length; i++) {
-        const token = tokens[i];
+    // for (i = 0; i < tokens.length; i++) {
+    // const token = tokens[i];
 
-        if (
-            token.typ == EnumToken.WhitespaceTokenType ||
-            token.typ == EnumToken.CommentTokenType ||
-            token.typ == EnumToken.InvalidCommentTokenType
-        ) {
-            continue;
-        }
+    // if (
+    //     token.typ == EnumToken.WhitespaceTokenType ||
+    //     token.typ == EnumToken.CommentTokenType ||
+    //     token.typ == EnumToken.InvalidCommentTokenType
+    // ) {
+    //     continue;
+    // }
 
-        if (tokens[i].typ === EnumToken.UrlFunctionTokenDefType) {
-            let k: number = i;
+    // if (tokens[i].typ === EnumToken.UrlFunctionTokenDefType) {
+    // let k: number = i;
 
-            while (k < tokens.length) {
-                if (
-                    tokens[++k]?.typ === EnumToken.WhitespaceTokenType ||
-                    tokens[k]?.typ === EnumToken.CommentTokenType
-                ) {
-                    continue;
-                }
+    // while (k < tokens.length) {
+    //     if (
+    //         tokens[++k]?.typ === EnumToken.WhitespaceTokenType ||
+    //         tokens[k]?.typ === EnumToken.CommentTokenType
+    //     ) {
+    //         continue;
+    //     }
 
-                if (tokens[k]?.typ !== EnumToken.EndParensTokenType) {
-                    break;
-                }
-            }
+    //     if (tokens[k]?.typ !== EnumToken.EndParensTokenType) {
+    //         break;
+    //     }
+    // }
 
-            // if (
-            //     tokens[k].typ === EnumToken.LiteralTokenType ||
-            //     tokens[k].typ === EnumToken.IdenTokenType ||
-            //     tokens[k].typ === EnumToken.DashedIdenTokenType ||
-            //     tokens[k].typ === EnumToken.HashTokenType ||
-            //     tokens[k].typ === EnumToken.ClassSelectorTokenType
-            // ) {
-            //     let j: number = k;
-            //     let val: string = (tokens[k] as LiteralToken | IdentToken | DashedIdentToken | HashToken).val;
+    // if (
+    //     tokens[k].typ === EnumToken.LiteralTokenType ||
+    //     tokens[k].typ === EnumToken.IdenTokenType ||
+    //     tokens[k].typ === EnumToken.DashedIdenTokenType ||
+    //     tokens[k].typ === EnumToken.HashTokenType ||
+    //     tokens[k].typ === EnumToken.ClassSelectorTokenType
+    // ) {
+    //     let j: number = k;
+    //     let val: string = (tokens[k] as LiteralToken | IdentToken | DashedIdentToken | HashToken).val;
 
-            //     while (j + 1 < tokens.length) {
-            //         if (
-            //             tokens[++j].typ !== EnumToken.LiteralTokenType &&
-            //             tokens[j].typ !== EnumToken.IdenTokenType &&
-            //             tokens[j].typ !== EnumToken.DashedIdenTokenType &&
-            //             tokens[j].typ !== EnumToken.HashTokenType &&
-            //             tokens[j].typ !== EnumToken.ClassSelectorTokenType
-            //         ) {
-            //             break;
-            //         }
+    //     while (j + 1 < tokens.length) {
+    //         if (
+    //             tokens[++j].typ !== EnumToken.LiteralTokenType &&
+    //             tokens[j].typ !== EnumToken.IdenTokenType &&
+    //             tokens[j].typ !== EnumToken.DashedIdenTokenType &&
+    //             tokens[j].typ !== EnumToken.HashTokenType &&
+    //             tokens[j].typ !== EnumToken.ClassSelectorTokenType
+    //         ) {
+    //             break;
+    //         }
 
-            //         val += (tokens[j] as LiteralToken | IdentToken | DashedIdentToken | HashToken).val;
-            //     }
+    //         val += (tokens[j] as LiteralToken | IdentToken | DashedIdentToken | HashToken).val;
+    //     }
 
-            //     Object.assign(tokens[k] as LiteralToken | IdentToken | DashedIdentToken | HashToken, {
-            //         typ: EnumToken.UrlTokenTokenType,
-            //         val,
-            //     });
+    //     Object.assign(tokens[k] as LiteralToken | IdentToken | DashedIdentToken | HashToken, {
+    //         typ: EnumToken.UrlTokenTokenType,
+    //         val,
+    //     });
 
-            //     tokens[k][LOC]!.end = tokens[j][LOC]!.end;
-            //     tokens.splice(k + 1, j - k - 1);
-            // }
-        }
-    }
+    //     tokens[k][LOC]!.end = tokens[j][LOC]!.end;
+    //     tokens.splice(k + 1, j - k - 1);
+    // }
+    // }
+    // }
 
     if (validate && name.typ === EnumToken.IdenTokenType) {
         if (
@@ -410,7 +410,11 @@ export function parseDeclaration(
     for (i = 0; i < tokens.length; i++) {
         token = tokens[i];
 
-        if (tokensfuncDefMap.has(token.typ) || token.typ == EnumToken.StartParensTokenType) {
+        if (
+            tokensfuncDefMap.has(token.typ) ||
+            token.typ == EnumToken.StartParensTokenType ||
+            token.typ == EnumToken.BlockStartTokenType
+        ) {
             stack.push(token);
             continue;
         }
@@ -451,6 +455,23 @@ export function parseDeclaration(
                 Object.assign(token, {
                     typ: tokensMap.get(token.typ),
                 });
+
+                break;
+
+            case EnumToken.BlockEndTokenType:
+                if (stack.at(-1)?.typ === EnumToken.BlockStartTokenType) {
+                    // stack.pop();index = tokens.indexOf(stack.at(-1)!);
+                    index = tokens.indexOf(stack.at(-1)!);
+                    tokens.splice(i, 1);
+
+                    Object.assign(tokens[index], {
+                        typ: EnumToken.WrappedValuesTokenType,
+                        chi: trimArray(tokens.splice(index + 1, i - index - 1)),
+                    });
+
+                    i = index;
+                    stack.pop();
+                }
 
                 break;
 
@@ -615,9 +636,10 @@ export function parseDeclaration(
                             });
                         }
                     }
+
+                    stack.pop();
                 }
 
-                stack.pop();
                 break;
 
             case EnumToken.IdenTokenType:
@@ -665,7 +687,7 @@ export function parseDeclaration(
     if (stack.length > 0) {
         errors.push({
             action: "drop",
-            message: "unbalanced parenthesis",
+            message: "unbalanced token",
             node: stack[stack.length - 1],
             location: stack[stack.length - 1][LOC],
         });

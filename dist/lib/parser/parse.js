@@ -435,9 +435,10 @@ async function doParse(iter, options = {}) {
         tokens.push(item.token);
         // console.debug([item.token, {parensMatch, curlyBracketMatch}]);
         // if (parensMatch === 0) {
-        if (parensMatch === 0 && (item.token.typ === EnumToken.SemiColonTokenType ||
-            item.token.typ === EnumToken.BlockStartTokenType ||
-            item.token.typ === EnumToken.EOFTokenType)) {
+        if (parensMatch === 0 &&
+            (item.token.typ === EnumToken.SemiColonTokenType ||
+                item.token.typ === EnumToken.BlockStartTokenType ||
+                item.token.typ === EnumToken.EOFTokenType)) {
             node = parseNode(tokens, context, options, errors, stats, invalidNodes);
             if (node != null) {
                 if ("chi" in node) {
@@ -1649,7 +1650,6 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             message: "unknown at-rule",
         });
         const result = matchGenericSyntax(stream);
-        console.debug(result.errors);
         atRule[TOKENS] = parseTokens(stream);
         atRule[STATE] = result.success ? EnumAstNodeStatus.Unknown : EnumAstNodeStatus.Invalid;
         atRule[ERRORS] = result.success ? [errors[errors.length - 1]] : [errors[errors.length - 1], ...result.errors];

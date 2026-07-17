@@ -86,19 +86,6 @@ export const dimensionUnits: Set<string> = new Set([
     "vw",
 ]);
 
-// https://www.w3.org/TR/css-values-4/#math-function
-
-export const pseudoElements: string[] = [
-    ":before",
-    ":after",
-    ":first-line",
-    ":first-letter",
-    "::before",
-    "::after",
-    "::first-line",
-    "::first-letter",
-];
-
 // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions
 // https://developer.mozilla.org/en-US/docs/Web/CSS/Mozilla_Extensions
 export const pseudoAliasMap: Record<string, string> = {
@@ -998,7 +985,6 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                                         !colorSpace.includes(val) &&
                                         !colorFuncColorSpace.includes(val)
                                     ) {
-                                        // console.debug({ val });
 
                                         errors?.push({
                                             action: "drop",

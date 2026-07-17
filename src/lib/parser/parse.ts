@@ -66,6 +66,7 @@ import { matchAtRuleSyntax } from "./utils/at-rule.ts";
 import { parseAtRuleFontFeatureValues } from "./utils/at-rule-font-feature-values.ts";
 import { matchGenericSyntax } from "./utils/at-rule-generic.ts";
 import { memoize } from "./utils/cache.ts";
+import { resolve } from "../fs/resolve.ts";
 
 function renderTokens(tokens: Token[] | null | undefined, options?: any): string {
     if (tokens == null || tokens.length === 0) return "";
@@ -588,12 +589,9 @@ export async function doParse(
             parensMatch--;
         }
 
-        if (item.token.typ === EnumToken.BlockStartTokenType ) {
-
+        if (item.token.typ === EnumToken.BlockStartTokenType) {
             curlyBracketMatch++;
-        }
-
-        else if (item.token.typ === EnumToken.BlockEndTokenType && curlyBracketMatch > 0) {
+        } else if (item.token.typ === EnumToken.BlockEndTokenType && curlyBracketMatch > 0) {
             curlyBracketMatch--;
         }
 
@@ -602,81 +600,82 @@ export async function doParse(
         // console.debug([item.token, {parensMatch, curlyBracketMatch}]);
 
         // if (parensMatch === 0) {
-            if (parensMatch === 0 && (
-                item.token.typ === EnumToken.SemiColonTokenType ||
+        if (
+            parensMatch === 0 &&
+            (item.token.typ === EnumToken.SemiColonTokenType ||
                 item.token.typ === EnumToken.BlockStartTokenType ||
                 item.token.typ === EnumToken.EOFTokenType)
-            ) {
-                node = parseNode(tokens, context, options as ParserOptions, errors, stats, invalidNodes);
+        ) {
+            node = parseNode(tokens, context, options as ParserOptions, errors, stats, invalidNodes);
 
-                if (node != null) {
-                    if ("chi" in node) {
-                        stack.push(node as AstAtRule | AstRule | AstKeyFrameRule);
-                        context = node as AstRuleList;
-                    } else if (node.typ == EnumToken.AtRuleNodeType && (node as AstAtRule).nam === "import") {
-                        imports.push(node);
+            if (node != null) {
+                if ("chi" in node) {
+                    stack.push(node as AstAtRule | AstRule | AstKeyFrameRule);
+                    context = node as AstRuleList;
+                } else if (node.typ == EnumToken.AtRuleNodeType && (node as AstAtRule).nam === "import") {
+                    imports.push(node);
+                }
+            } else if (item.token.typ == EnumToken.BlockStartTokenType) {
+                let inBlock: number = 1;
+                tokens = [item.token];
+
+                do {
+                    item = isAsync
+                        ? // @ts-expect-error
+                          ((await iter.next()).value as TokenizeResult)
+                        : // @ts-expect-error
+                          ((iter as Iterator<TokenizeResult>).next().value as TokenizeResult);
+
+                    if (item == null) {
+                        break;
                     }
-                } else if (item.token.typ == EnumToken.BlockStartTokenType) {
-                    let inBlock: number = 1;
-                    tokens = [item.token];
 
-                    do {
-                        item = isAsync
-                            ? // @ts-expect-error
-                              ((await iter.next()).value as TokenizeResult)
-                            : // @ts-expect-error
-                              ((iter as Iterator<TokenizeResult>).next().value as TokenizeResult);
+                    tokens.push(item.token);
 
-                        if (item == null) {
-                            break;
-                        }
-
-                        tokens.push(item.token);
-
-                        if (item.token.typ === EnumToken.BlockStartTokenType) {
-                            inBlock++;
-                        } else if (item.token.typ === EnumToken.BlockEndTokenType) {
-                            inBlock--;
-                        }
-                    } while (inBlock != 0);
-
-                    if (tokens.length > 0) {
-                        errors.push({
-                            action: "drop",
-                            message: "invalid block",
-                            location: {
-                                src,
-                                sta: tokens[0][LOC]!.sta,
-                                end: tokens[tokens.length - 1][LOC]!.end,
-                            },
-                        });
+                    if (item.token.typ === EnumToken.BlockStartTokenType) {
+                        inBlock++;
+                    } else if (item.token.typ === EnumToken.BlockEndTokenType) {
+                        inBlock--;
                     }
+                } while (inBlock != 0);
+
+                if (tokens.length > 0) {
+                    errors.push({
+                        action: "drop",
+                        message: "invalid block",
+                        location: {
+                            src,
+                            sta: tokens[0][LOC]!.sta,
+                            end: tokens[tokens.length - 1][LOC]!.end,
+                        },
+                    });
                 }
-
-                tokens = [];
-            } else if ((parensMatch === 0 || curlyBracketMatch === 0) && item.token.typ === EnumToken.BlockEndTokenType) {
-                parseNode(tokens, context, options as ParserOptions, errors, stats, invalidNodes);
-
-                if (context[LOC] != null) {
-                    context[LOC].end = item.token[LOC]!.end;
-                }
-
-                const previousNode = stack.pop() as AstRuleList;
-                context = (stack[stack.length - 1] ?? ast) as AstRuleList;
-
-                if (
-                    options.removeEmpty &&
-                    previousNode != null &&
-                    previousNode.chi!.length == 0 &&
-                    context.chi![context.chi!.length - 1] == previousNode
-                ) {
-                    context.chi!.pop();
-                }
-
-                tokens = [];
-                parensMatch = 0;
-                curlyBracketMatch = 0;
             }
+
+            tokens = [];
+        } else if ((parensMatch === 0 || curlyBracketMatch === 0) && item.token.typ === EnumToken.BlockEndTokenType) {
+            parseNode(tokens, context, options as ParserOptions, errors, stats, invalidNodes);
+
+            if (context[LOC] != null) {
+                context[LOC].end = item.token[LOC]!.end;
+            }
+
+            const previousNode = stack.pop() as AstRuleList;
+            context = (stack[stack.length - 1] ?? ast) as AstRuleList;
+
+            if (
+                options.removeEmpty &&
+                previousNode != null &&
+                previousNode.chi!.length == 0 &&
+                context.chi![context.chi!.length - 1] == previousNode
+            ) {
+                context.chi!.pop();
+            }
+
+            tokens = [];
+            parensMatch = 0;
+            curlyBracketMatch = 0;
+        }
         // }
     }
 
@@ -2233,8 +2232,6 @@ export function parseAtRule(
         });
 
         const result = matchGenericSyntax(stream);
-
-        console.debug(result.errors);
 
         atRule[TOKENS] = parseTokens(stream);
         atRule[STATE] = result.success ? EnumAstNodeStatus.Unknown : EnumAstNodeStatus.Invalid;

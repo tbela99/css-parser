@@ -11,14 +11,13 @@ import type {
     ParensToken,
 } from "../../../@types/index.d.ts";
 import { EnumToken } from "../../ast/types.ts";
-import { LOC } from "../../syntax/constants.ts";
+import { LOC, pseudoElements } from "../../syntax/constants.ts";
 import { getParsedSyntax, getSyntaxConfig } from "../../validation/config.ts";
 import { trimArray, matchAllSyntaxes, createValidationContext } from "../../validation/match.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import type { ValidationFunctionToken, ValidationToken } from "../../validation/parser/types.d.ts";
 import { tokensfuncDefMap } from "../../syntax/constants.ts";
 import { parseDeclaration } from "./declaration.ts";
-import { pseudoElements } from "../../syntax/syntax.ts";
 
 export function parseAtRuleSupportSyntax(
     stream: Token[],

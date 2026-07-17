@@ -98,10 +98,10 @@ function findByValue(ast, matcher) {
  *
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'
-import { findAll, EnumToken, transform } from "@tbela99/css-parser";
-import type { AstNode } from "@tbela99/css-parser";
+*  import { findAll, EnumToken, transform } from "@tbela99/css-parser";
+*  import type { AstNode } from "@tbela99/css-parser";
 
- * const css = `
+const css = `
 
 button {
   aspect-ratio: 1;

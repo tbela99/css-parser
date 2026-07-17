@@ -1,8 +1,6 @@
-export function run(describe, expect, it, transform, parse, render) {
-
-    describe('doParse block', function () {
-
-        it('similar rules #1', function () {
+export function run(describe, expect, it, transform, parse, render, dirname, readFile, resolve) {
+    describe("doParse block", function () {
+        it("similar rules #1", function () {
             const file = `
 .clear {
   width: 0;
@@ -15,11 +13,11 @@ export function run(describe, expect, it, transform, parse, render) {
   width: 0;
 }`;
             return transform(file, {
-                minify: true
-            }).then(result => expect(result.code).equals(`.clear,.clearfix:before{width:0;height:0}`));
+                minify: true,
+            }).then((result) => expect(result.code).equals(`.clear,.clearfix:before{width:0;height:0}`));
         });
 
-        it('similar rules #2', function () {
+        it("similar rules #2", function () {
             const file = `
 .clear {
   width: 0;
@@ -32,11 +30,11 @@ export function run(describe, expect, it, transform, parse, render) {
   width: 0;
 }`;
             return transform(file, {
-                minify: true
-            }).then(result => expect(result.code).equals(`.clear,.clearfix:before{width:0;height:0}`));
+                minify: true,
+            }).then((result) => expect(result.code).equals(`.clear,.clearfix:before{width:0;height:0}`));
         });
 
-        it('duplicated selector components #3', function () {
+        it("duplicated selector components #3", function () {
             const file = `
 
 :is(.test input[type="text"]), .test input[type="text"], :is(.test input[type="text"], a) {
@@ -46,11 +44,11 @@ border-bottom-color: gold;
 border-left-color: red;
 `;
             return transform(file, {
-                minify: true
-            }).then(result => expect(result.code).equals(`.test input[type=text],a{border-color:gold red}`));
+                minify: true,
+            }).then((result) => expect(result.code).equals(`.test input[type=text],a{border-color:gold red}`));
         });
 
-        it('merge selectors #4', function () {
+        it("merge selectors #4", function () {
             const file = `
 
 .blockquote {
@@ -89,11 +87,16 @@ border-left-color: red;
 
 `;
             return transform(file, {
-                minify: true, nestingRules: false
-            }).then(result => expect(result.code).equals(`.blockquote{margin-bottom:1rem;font-size:1.25rem}.blockquote>:last-child{margin-bottom:0}.blockquote-footer{margin-top:-1rem;margin-bottom:1rem;font-size:.875em;color:#6c757d}.blockquote-footer:before{content:"— "}.img-fluid,.img-thumbnail{max-width:100%;height:auto}.img-thumbnail{padding:.25rem;background-color:var(--bs-body-bg);border:var(--bs-border-width) solid var(--bs-border-color);border-radius:var(--bs-border-radius)}`));
+                minify: true,
+                nestingRules: false,
+            }).then((result) =>
+                expect(result.code).equals(
+                    `.blockquote{margin-bottom:1rem;font-size:1.25rem}.blockquote>:last-child{margin-bottom:0}.blockquote-footer{margin-top:-1rem;margin-bottom:1rem;font-size:.875em;color:#6c757d}.blockquote-footer:before{content:"— "}.img-fluid,.img-thumbnail{max-width:100%;height:auto}.img-thumbnail{padding:.25rem;background-color:var(--bs-body-bg);border:var(--bs-border-width) solid var(--bs-border-color);border-radius:var(--bs-border-radius)}`,
+                ),
+            );
         });
 
-        it('merge selectors #5', function () {
+        it("merge selectors #5", function () {
             const file = `
 
 .nav-pills .nav-link.active, .nav-pills .show>.nav-link {
@@ -103,11 +106,16 @@ border-left-color: red;
 
 `;
             return transform(file, {
-                minify: true, nestingRules: false
-            }).then(result => expect(result.code).equals(`.nav-pills:is(.nav-link.active,.show>.nav-link){color:var(--bs-nav-pills-link-active-color);background-color:var(--bs-nav-pills-link-active-bg)}`));
+                minify: true,
+                nestingRules: false,
+            }).then((result) =>
+                expect(result.code).equals(
+                    `.nav-pills:is(.nav-link.active,.show>.nav-link){color:var(--bs-nav-pills-link-active-color);background-color:var(--bs-nav-pills-link-active-bg)}`,
+                ),
+            );
         });
 
-        it('merge selectors #6', function () {
+        it("merge selectors #6", function () {
             const file = `
 
 .foo-bar~div .special\\{ {
@@ -119,11 +127,15 @@ content: '\\21 now\\21';
 
 \\`;
             return transform(file, {
-                minify: true
-            }).then(result => expect(result.code).equals(`.foo-bar~div .special\\{{content:'!now!'}.card{--bs-card-inner-border-radius:calc(var(--bs-border-radius) - var(--bs-border-width))}`));
+                minify: true,
+            }).then((result) =>
+                expect(result.code).equals(
+                    `.foo-bar~div .special\\{{content:'!now!'}.card{--bs-card-inner-border-radius:calc(var(--bs-border-radius) - var(--bs-border-width))}`,
+                ),
+            );
         });
 
-        it('merge selectors #7', function () {
+        it("merge selectors #7", function () {
             const file = `
 
 @media (max-width: 575.98px) and (prefers-reduced-motion: reduce) {
@@ -134,11 +146,15 @@ content: '\\21 now\\21';
 
 `;
             return transform(file, {
-                minify: true
-            }).then(result => expect(result.code).equals(`@media (max-width:575.98px) and (prefers-reduced-motion:reduce){.offcanvas-sm{transition:0s}}`));
+                minify: true,
+            }).then((result) =>
+                expect(result.code).equals(
+                    `@media (max-width:575.98px) and (prefers-reduced-motion:reduce){.offcanvas-sm{transition:0s}}`,
+                ),
+            );
         });
 
-        it('merge selectors #8', function () {
+        it("merge selectors #8", function () {
             const file = `
 
 :root .fa-flip-both, :root .fa-flip-horizontal, :root .fa-flip-vertical, :root .fa-rotate-180, :root .fa-rotate-270, :root .fa-rotate-90 {
@@ -148,21 +164,30 @@ content: '\\21 now\\21';
 
 `;
             return transform(file, {
-                minify: true, nestingRules: false
-            }).then(result => expect(result.code).equals(`:root:is(.fa-flip-both,.fa-flip-horizontal,.fa-flip-vertical,.fa-rotate-180,.fa-rotate-270,.fa-rotate-90){-webkit-filter:none;filter:none}`));
+                minify: true,
+                nestingRules: false,
+            }).then((result) =>
+                expect(result.code).equals(
+                    `:root:is(.fa-flip-both,.fa-flip-horizontal,.fa-flip-vertical,.fa-rotate-180,.fa-rotate-270,.fa-rotate-90){-webkit-filter:none;filter:none}`,
+                ),
+            );
         });
 
-        it('merge selectors #9', function () {
+        it("merge selectors #9", function () {
             const file = `
 .bs-popover-auto[data-popper-placement^=top]>.popover-arrow,.bs-popover-top>.popover-arrow{bottom:calc(-1 * (var(--bs-popover-arrow-height)) - var(--bs-popover-border-width))}
 
 `;
             return transform(file, {
-                minify: true
-            }).then(result => expect(result.code).equals(`.bs-popover-auto[data-popper-placement^=top]>.popover-arrow,.bs-popover-top>.popover-arrow{bottom:calc(-1*var(--bs-popover-arrow-height) - var(--bs-popover-border-width))}`));
+                minify: true,
+            }).then((result) =>
+                expect(result.code).equals(
+                    `.bs-popover-auto[data-popper-placement^=top]>.popover-arrow,.bs-popover-top>.popover-arrow{bottom:calc(-1*var(--bs-popover-arrow-height) - var(--bs-popover-border-width))}`,
+                ),
+            );
         });
 
-        it('merge selectors #10', function () {
+        it("merge selectors #10", function () {
             const file = `
 
 abbr[title], abbr[data-original-title], abbr>[data-original-title] {
@@ -176,11 +201,16 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
 
 `;
             return transform(file, {
-                minify: true, nestingRules: false
-            }).then(result => expect(result.code).equals(`abbr[title],abbr[data-original-title],abbr>[data-original-title]{text-decoration:underline dotted;-webkit-text-decoration:underline dotted;cursor:help;border-bottom:0;-webkit-text-decoration-skip-ink:none;text-decoration-skip-ink:none}`));
+                minify: true,
+                nestingRules: false,
+            }).then((result) =>
+                expect(result.code).equals(
+                    `abbr[title],abbr[data-original-title],abbr>[data-original-title]{text-decoration:underline dotted;-webkit-text-decoration:underline dotted;cursor:help;border-bottom:0;-webkit-text-decoration-skip-ink:none;text-decoration-skip-ink:none}`,
+                ),
+            );
         });
 
-        it('merge at-rule & escape sequence #11', function () {
+        it("merge at-rule & escape sequence #11", function () {
             const file = `
 
 @media (max-width: 767px) {.main-heading { font-size: 32px; font-weight: 300; }}
@@ -193,11 +223,15 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
 
 `;
             return transform(file, {
-                minify: true
-            }).then(result => expect(result.code).equals(`@media (max-width:767px){.main-heading{font-size:32px;font-weight:300}.section{max-width:100vw;padding-left:16px;padding-right:16px}.hero-cta-form,.sign-in-form__third-party-container,.google-sign-in-cta-widget{margin-top:0;width:100%}.babybear\\:z-0{z-index:0}.babybear\\:mr-0{margin-right:0}.babybear\\:hidden{display:none}.babybear\\:min-h-\\[0\\]{min-height:0}}`));
+                minify: true,
+            }).then((result) =>
+                expect(result.code).equals(
+                    `@media (max-width:767px){.main-heading{font-size:32px;font-weight:300}.section{max-width:100vw;padding-left:16px;padding-right:16px}.hero-cta-form,.sign-in-form__third-party-container,.google-sign-in-cta-widget{margin-top:0;width:100%}.babybear\\:z-0{z-index:0}.babybear\\:mr-0{margin-right:0}.babybear\\:hidden{display:none}.babybear\\:min-h-\\[0\\]{min-height:0}}`,
+                ),
+            );
         });
 
-        it('merge at-rule & escape sequence #12', function () {
+        it("merge at-rule & escape sequence #12", function () {
             const file = `
 
 @media (max-width: 767px) {.main-heading { font-size: 32px; font-weight: 300; }}
@@ -210,8 +244,9 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
 
 `;
             return transform(file, {
-                minify: true
-            }).then(result => expect(render(result.ast, {minify: false}).code).equals(`@media (max-width:767px) {
+                minify: true,
+            }).then((result) =>
+                expect(render(result.ast, { minify: false }).code).equals(`@media (max-width:767px) {
  .main-heading {
   font-size: 32px;
   font-weight: 300
@@ -237,10 +272,11 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
  .babybear\\:min-h-\\[0\\] {
   min-height: 0
  }
-}`));
+}`),
+            );
         });
 
-        it('comments #13', function () {
+        it("comments #13", function () {
             const file = `
 /* this is a comment */
 .nav-pills .nav-link.active, .nav-pills .show>.nav-link {
@@ -251,21 +287,24 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
 `;
             return parse(file, {
                 minify: true,
-                nestingRules: true
-            }).then(result => expect(render(result.ast, {
-                minify: false,
-                removeComments: true,
-                preserveLicense: true
-            }).code).equals(`.nav-pills {
+                nestingRules: true,
+            }).then((result) =>
+                expect(
+                    render(result.ast, {
+                        minify: false,
+                        removeComments: true,
+                        preserveLicense: true,
+                    }).code,
+                ).equals(`.nav-pills {
  .nav-link.active,.show>.nav-link {
   color: var(--bs-nav-pills-link-active-color);
   background-color: var(--bs-nav-pills-link-active-bg)
  }
-}`));
+}`),
+            );
         });
 
-
-        it('comments #14', function () {
+        it("comments #14", function () {
             const file = `
 /* this is a comment */
 .nav-pills .nav-link.active, .nav-pills .show>.nav-link {
@@ -276,20 +315,24 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
 `;
             return parse(file, {
                 minify: true,
-                nestingRules: true
-            }).then(result => expect(render(result.ast, {
-                minify: false,
-                removeComments: true,
-                preserveLicense: true
-            }).code).equals(`.nav-pills {
+                nestingRules: true,
+            }).then((result) =>
+                expect(
+                    render(result.ast, {
+                        minify: false,
+                        removeComments: true,
+                        preserveLicense: true,
+                    }).code,
+                ).equals(`.nav-pills {
  .nav-link.active,.show>.nav-link {
   color: var(--bs-nav-pills-link-active-color);
   background-color: var(--bs-nav-pills-link-active-bg)
  }
-}`));
+}`),
+            );
         });
 
-        it('comments #15', function () {
+        it("comments #15", function () {
             const file = `
 
 /* this is a comment */
@@ -302,22 +345,26 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
 `;
             return parse(file, {
                 minify: true,
-                nestingRules: true
-            }).then(result => expect(render(result.ast, {
-                minify: false,
-                removeComments: false,
-                preserveLicense: true
-            }).code).equals(`/* this is a comment */
+                nestingRules: true,
+            }).then((result) =>
+                expect(
+                    render(result.ast, {
+                        minify: false,
+                        removeComments: false,
+                        preserveLicense: true,
+                    }).code,
+                ).equals(`/* this is a comment */
 .nav-pills {
  .nav-link.active,.show>.nav-link {
   /* this is a comment */
   color: var(--bs-nav-pills-link-active-color);
   background-color: var(--bs-nav-pills-link-active-bg)
  }
-}`));
+}`),
+            );
         });
 
-        it('license comments #16', function () {
+        it("license comments #16", function () {
             const file = `
 /*! this is a comment */
 .nav-pills .nav-link.active, .nav-pills .show>.nav-link {
@@ -329,22 +376,26 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
 `;
             return parse(file, {
                 minify: true,
-                nestingRules: true
-            }).then(result => expect(render(result.ast, {
-                minify: false,
-                removeComments: false,
-                preserveLicense: true
-            }).code).equals(`/*! this is a comment */
+                nestingRules: true,
+            }).then((result) =>
+                expect(
+                    render(result.ast, {
+                        minify: false,
+                        removeComments: false,
+                        preserveLicense: true,
+                    }).code,
+                ).equals(`/*! this is a comment */
 .nav-pills {
  .nav-link.active,.show>.nav-link {
   /*! this is a comment */
   color: var(--bs-nav-pills-link-active-color);
   background-color: var(--bs-nav-pills-link-active-bg)
  }
-}`));
+}`),
+            );
         });
 
-        it('license comments #17', function () {
+        it("license comments #17", function () {
             const file = `
 /*! this is a comment */
 .nav-pills .nav-link.active, .nav-pills .show>.nav-link {
@@ -356,22 +407,26 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
 `;
             return parse(file, {
                 minify: true,
-                nestingRules: true
-            }).then(result => expect(render(result.ast, {
-                minify: false,
-                removeComments: true,
-                preserveLicense: true
-            }).code).equals(`/*! this is a comment */
+                nestingRules: true,
+            }).then((result) =>
+                expect(
+                    render(result.ast, {
+                        minify: false,
+                        removeComments: true,
+                        preserveLicense: true,
+                    }).code,
+                ).equals(`/*! this is a comment */
 .nav-pills {
  .nav-link.active,.show>.nav-link {
   /*! this is a comment */
   color: var(--bs-nav-pills-link-active-color);
   background-color: var(--bs-nav-pills-link-active-bg)
  }
-}`));
+}`),
+            );
         });
 
-        it('license comments #18', function () {
+        it("license comments #18", function () {
             const file = `
 /*! this is a comment */
 .nav-pills .nav-link.active, .nav-pills .show>.nav-link {
@@ -383,22 +438,26 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
 `;
             return parse(file, {
                 minify: true,
-                nestingRules: true
-            }).then(result => expect(render(result.ast, {
-                minify: false,
-                removeComments: true,
-                preserveLicense: true
-            }).code).equals(`/*! this is a comment */
+                nestingRules: true,
+            }).then((result) =>
+                expect(
+                    render(result.ast, {
+                        minify: false,
+                        removeComments: true,
+                        preserveLicense: true,
+                    }).code,
+                ).equals(`/*! this is a comment */
 .nav-pills {
  .nav-link.active,.show>.nav-link {
   /*! this is a comment */
   color: var(--bs-nav-pills-link-active-color);
   background-color: var(--bs-nav-pills-link-active-bg) /*! this is a comment */
  }
-}`));
+}`),
+            );
         });
 
-        it('media query #19', function () {
+        it("media query #19", function () {
             const file = `
        @media (resolution >= 2dppx) and (resolution <= 5dppx) {
 
@@ -412,12 +471,15 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
 `;
             return parse(file, {
                 minify: true,
-                nestingRules: true
-            }).then(result => expect(render(result.ast, {
-                minify: false,
-                removeComments: true,
-                preserveLicense: true
-            }).code).equals(`@media (resolution>=2x) and (resolution<=5x) {
+                nestingRules: true,
+            }).then((result) =>
+                expect(
+                    render(result.ast, {
+                        minify: false,
+                        removeComments: true,
+                        preserveLicense: true,
+                    }).code,
+                ).equals(`@media (resolution>=2x) and (resolution<=5x) {
  /*! this is a comment */
  .nav-pills {
   .nav-link.active,.show>.nav-link {
@@ -426,10 +488,11 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
    background-color: var(--bs-nav-pills-link-active-bg) /*! this is a comment */
   }
  }
-}`));
+}`),
+            );
         });
 
-        it('media query #20', function () {
+        it("media query #20", function () {
             const file = `
        
 @media all {.site-header .logo { 
@@ -438,22 +501,26 @@ transition: all 0s ease 0s; flex: 0 1 auto; position: relative; align-self: stre
 `;
             return parse(file, {
                 minify: true,
-                nestingRules: true
-            }).then(result => expect(render(result.ast, {
-                minify: false,
-                removeComments: true,
-                preserveLicense: true
-            }).code).equals(`.site-header .logo {
+                nestingRules: true,
+            }).then((result) =>
+                expect(
+                    render(result.ast, {
+                        minify: false,
+                        removeComments: true,
+                        preserveLicense: true,
+                    }).code,
+                ).equals(`.site-header .logo {
  transition: 0s;
  flex: initial;
  position: relative;
  align-self: stretch;
  display: flex;
  align-items: center
-}`));
+}`),
+            );
         });
 
-        it('media query #20', function () {
+        it("media query #20", function () {
             const file = `
       
 a {
@@ -467,18 +534,22 @@ overflow-y: hidden;
 `;
             return parse(file, {
                 minify: true,
-                nestingRules: true
-            }).then(result => expect(render(result.ast, {
-                minify: false,
-                removeEmpty: true,
-                removeComments: true,
-                preserveLicense: true
-            }).code).equals(`a {
+                nestingRules: true,
+            }).then((result) =>
+                expect(
+                    render(result.ast, {
+                        minify: false,
+                        removeEmpty: true,
+                        removeComments: true,
+                        preserveLicense: true,
+                    }).code,
+                ).equals(`a {
  overflow: hidden
-}`));
+}`),
+            );
         });
 
-        it('selector attributes #21', function () {
+        it("selector attributes #21", function () {
             const file = `
 
 :root || E[foo$="bar" i] {
@@ -491,20 +562,24 @@ content: '\\21 now\\21';
 \\`;
             return parse(file, {
                 minify: true,
-                nestingRules: true
-            }).then(result => expect(render(result.ast, {
-                minify: false,
-                removeComments: true,
-                preserveLicense: true
-            }).code).equals(`:root||E[foo$=bar i] {
+                nestingRules: true,
+            }).then((result) =>
+                expect(
+                    render(result.ast, {
+                        minify: false,
+                        removeComments: true,
+                        preserveLicense: true,
+                    }).code,
+                ).equals(`:root||E[foo$=bar i] {
  --preferred-width: 20px
 }
 .foo-bar~div \\\\ {
  content: '!now!'
-}`));
+}`),
+            );
         });
 
-        it('namespace selector attribute #22', function () {
+        it("namespace selector attribute #22", function () {
             const file = `
 
 @namespace foo "http://www.example.com";
@@ -515,12 +590,15 @@ content: '\\21 now\\21';
 \\`;
             return parse(file, {
                 minify: true,
-                nestingRules: true
-            }).then(result => expect(render(result.ast, {
-                minify: false,
-                removeComments: true,
-                preserveLicense: true
-            }).code).equals(`@namespace foo "http://www.example.com";
+                nestingRules: true,
+            }).then((result) =>
+                expect(
+                    render(result.ast, {
+                        minify: false,
+                        removeComments: true,
+                        preserveLicense: true,
+                    }).code,
+                ).equals(`@namespace foo "http://www.example.com";
 [foo|att=val] {
  color: blue
 }
@@ -529,11 +607,12 @@ content: '\\21 now\\21';
 }
 [|att],[att] {
  color: green
-}`));
+}`),
+            );
         });
     });
 
-    it('namespace selector attribute #23', function () {
+    it("namespace selector attribute #23", function () {
         const file = `
 
 .selector {
@@ -542,10 +621,10 @@ content: '\\21 now\\21';
 }
 
 `;
-        return transform(file).then(result => expect(result.code).equals(`.selector{background:0 0;transition:0s}`));
+        return transform(file).then((result) => expect(result.code).equals(`.selector{background:0 0;transition:0s}`));
     });
 
-    it('namespace selector attribute #24', function () {
+    it("namespace selector attribute #24", function () {
         const file = `
 
 .selector {
@@ -554,10 +633,10 @@ content: '\\21 now\\21';
 }
 
 `;
-        return transform(file).then(result => expect(result.code).equals(`.selector{background:red;transition:0s}`));
+        return transform(file).then((result) => expect(result.code).equals(`.selector{background:red;transition:0s}`));
     });
 
-    it('namespace selector attribute #25', function () {
+    it("namespace selector attribute #25", function () {
         const file = `
 
 .selector {
@@ -566,10 +645,12 @@ content: '\\21 now\\21';
 }
 
 `;
-        return transform(file).then(result => expect(result.code).equals(`.selector{background:padding-box red;transition:0s}`));
+        return transform(file).then((result) =>
+            expect(result.code).equals(`.selector{background:padding-box red;transition:0s}`),
+        );
     });
 
-    it('namespace selector attribute #26', function () {
+    it("namespace selector attribute #26", function () {
         const file = `
 
 .selector {
@@ -578,10 +659,12 @@ content: '\\21 now\\21';
 }
 
 `;
-        return transform(file).then(result => expect(result.code).equals(`.selector{background:border-box padding-box red;transition:0s}`));
+        return transform(file).then((result) =>
+            expect(result.code).equals(`.selector{background:border-box padding-box red;transition:0s}`),
+        );
     });
 
-    it('namespace selector attribute #27', function () {
+    it("namespace selector attribute #27", function () {
         const file = `
 
 .selector {
@@ -590,10 +673,12 @@ content: '\\21 now\\21';
 }
 
 `;
-        return transform(file).then(result => expect(result.code).equals(`.selector{background:border-box red;transition:0s}`));
+        return transform(file).then((result) =>
+            expect(result.code).equals(`.selector{background:border-box red;transition:0s}`),
+        );
     });
 
-    it('render with parents #28', function () {
+    it("render with parents #28", function () {
         const file = `
 
 @media screen and (min-width: 40em) {
@@ -606,10 +691,14 @@ content: '\\21 now\\21';
     }
 }
 `;
-        return parse(file).then(result => expect(render(result.ast.chi[0].chi[1].chi[1], {withParents: true}).code).equals(`@media screen and (min-width:40em){.a{width:3px}}`));
+        return parse(file).then((result) =>
+            expect(render(result.ast.chi[0].chi[1].chi[1], { withParents: true }).code).equals(
+                `@media screen and (min-width:40em){.a{width:3px}}`,
+            ),
+        );
     });
 
-    it('render without parents #29', function () {
+    it("render without parents #29", function () {
         const file = `
 
 @media screen and (min-width: 40em) {
@@ -622,10 +711,12 @@ content: '\\21 now\\21';
     }
 }
 `;
-        return parse(file).then(result => expect(render(result.ast.chi[0].chi[1].chi[1], {withParents: false}).code).equals(`width:3px`));
+        return parse(file).then((result) =>
+            expect(render(result.ast.chi[0].chi[1].chi[1], { withParents: false }).code).equals(`width:3px`),
+        );
     });
 
-    it('do not merge pseudo class selectors #30', function () {
+    it("do not merge pseudo class selectors #30", function () {
         const file = `
 
 .invisible-scrollbar::-webkit-scrollbar {
@@ -640,18 +731,20 @@ content: '\\21 now\\21';
 
 `;
         return transform(file, {
-                beautify: true,    
-                minify: true, 
-                nestingRules: false
-            }).then(result => expect(result.code).equals(`.invisible-scrollbar::-webkit-scrollbar {
+            beautify: true,
+            minify: true,
+            nestingRules: false,
+        }).then((result) =>
+            expect(result.code).equals(`.invisible-scrollbar::-webkit-scrollbar {
  display: none
 }
 .invisible-scrollbar:is(::-moz-range-thumb,:has(::-moz-range-thumb)) {
  display: none
-}`));
+}`),
+        );
     });
 
-    it('do not merge pseudo class selectors #31', function () {
+    it("do not merge pseudo class selectors #31", function () {
         const file = `
 
 .invisible-scrollbar::-moz-range-thumb {
@@ -666,10 +759,14 @@ content: '\\21 now\\21';
 }
 
 `;
-        return transform(file, {nestingRules: false}).then(result => expect(result.code).equals(`.invisible-scrollbar:is(::-moz-range-thumb,:has(::-moz-range-thumb)){display:none}`));
+        return transform(file, { nestingRules: false }).then((result) =>
+            expect(result.code).equals(
+                `.invisible-scrollbar:is(::-moz-range-thumb,:has(::-moz-range-thumb)){display:none}`,
+            ),
+        );
     });
 
-    it('do not merge pseudo class selectors #32', function () {
+    it("do not merge pseudo class selectors #32", function () {
         const file = `
 
 .invisible-scrollbar::-webkit-scrollbar {
@@ -687,10 +784,14 @@ content: '\\21 now\\21';
 }
 
 `;
-        return parse(file, {nestingRules: true}).then(result => expect(render(result.ast).code).equals(`.invisible-scrollbar{&::-webkit-scrollbar{display:none}&::-moz-range-thumb,&:has(::-moz-range-thumb){display:none}}`));
+        return parse(file, { nestingRules: true }).then((result) =>
+            expect(render(result.ast).code).equals(
+                `.invisible-scrollbar{&::-webkit-scrollbar{display:none}&::-moz-range-thumb,&:has(::-moz-range-thumb){display:none}}`,
+            ),
+        );
     });
 
-    it('compound selector #33', function () {
+    it("compound selector #33", function () {
         const file = `
 
 :root {
@@ -706,7 +807,8 @@ content: '\\21 now\\21';
     width: calc(calc(var(--preferred-width) + 1px) / 3 + 5px);
     height: calc(100% / 4);}
 `;
-        return parse(file, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`:root {
+        return parse(file, { inlineCssVariables: true }).then((result) =>
+            expect(render(result.ast, { minify: false }).code).equals(`:root {
  /* --color: green */
 }
 ._19_u :focus {
@@ -718,22 +820,25 @@ content: '\\21 now\\21';
 .foo-bar,div#flavor {
  width: 12px;
  height: 25%
-}`));
+}`),
+        );
     });
 
-    it('compound selector #34', function () {
+    it("compound selector #34", function () {
         const file = `
 
 ::selection {
   color: red;
 }
 `;
-        return parse(file, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`::selection {
+        return parse(file, { inlineCssVariables: true }).then((result) =>
+            expect(render(result.ast, { minify: false }).code).equals(`::selection {
  color: red
-}`));
+}`),
+        );
     });
 
-    it('attribute #35', function () {
+    it("attribute #35", function () {
         const file = `
 
             [data-theme="light blue"] .markdown-body, [data-theme="light grey"] .markdown-body{
@@ -744,12 +849,15 @@ content: '\\21 now\\21';
                 margin-left: 200px;
             }
 `;
-        return transform(file, {beautify: true}).then(result => expect(result.code).equals(`[data-theme="light blue"] .markdown-body,[data-theme="light grey"] .markdown-body,[data-theme="light blue"] .markdown-body p,[data-theme="light grey"] .markdown-body p {
+        return transform(file, { beautify: true }).then((result) =>
+            expect(result.code)
+                .equals(`[data-theme="light blue"] .markdown-body,[data-theme="light grey"] .markdown-body,[data-theme="light blue"] .markdown-body p,[data-theme="light grey"] .markdown-body p {
  margin-left: 200px
-}`));
+}`),
+        );
     });
 
-    it('duplicate declarations #36', function () {
+    it("duplicate declarations #36", function () {
         const file = `
 
 .table {
@@ -762,14 +870,17 @@ content: '\\21 now\\21';
 `;
         return transform(file, {
             beautify: true,
-            removeDuplicateDeclarations: ['width']}).then(result => expect(result.code).equals(`.table {
+            removeDuplicateDeclarations: ["width"],
+        }).then((result) =>
+            expect(result.code).equals(`.table {
  width: 100%;
  width: calc(100% + 40px);
  margin-left: min(100%,20px)
-}`));
+}`),
+        );
     });
 
-    it('duplicate declarations #37', function () {
+    it("duplicate declarations #37", function () {
         const file = `
 
 @media tv {
@@ -797,7 +908,9 @@ content: '\\21 now\\21';
 `;
         return transform(file, {
             beautify: true,
-            removeDuplicateDeclarations:  ['background', 'width']}).then(result => expect(result.code).equals(`@media tv {
+            removeDuplicateDeclarations: ["background", "width"],
+        }).then((result) =>
+            expect(result.code).equals(`@media tv {
  .rule {
   width: 100%;
   width: calc(100% + 40px);
@@ -809,89 +922,104 @@ content: '\\21 now\\21';
  background: -o-linear-gradient(top,#fff,#000);
  background: -webkit-gradient(linear,left top,left bottom,from(#fff),to(#000));
  background: linear-gradient(#fff,#000)
-}`));
+}`),
+        );
     });
 
-    it('duplicate declarations #38', function () {
+    it("duplicate declarations #38", function () {
         const file = `
 
 .table tr:nth-child(even){background-color: #f2f2f2;}
 `;
         return transform(file, {
-            beautify: true
-        }).then(result => expect(result.code).equals(`.table tr:nth-child(2n) {
+            beautify: true,
+        }).then((result) =>
+            expect(result.code).equals(`.table tr:nth-child(2n) {
  background-color: #f2f2f2
-}`));
+}`),
+        );
     });
 
-    it('duplicate declarations #39', function () {
+    it("duplicate declarations #39", function () {
         const file = `
 
 .table tr:nth-child(2n     +   1){background-color: #f2f2f2;}
 `;
         return transform(file, {
-            beautify: true
-        }).then(result => expect(result.code).equals(`.table tr:nth-child(odd) {
+            beautify: true,
+        }).then((result) =>
+            expect(result.code).equals(`.table tr:nth-child(odd) {
  background-color: #f2f2f2
-}`));
+}`),
+        );
     });
 
-    it('an+b #40', function () {
+    it("an+b #40", function () {
         const file = `
 .table tr:nth-child(-02n -0 of li.list-group-item){background-color: #f2f2f2;}
 `;
         return transform(file, {
-            beautify: true
-        }).then(result => expect(result.code).equals(`.table tr:nth-child(2n of li.list-group-item) {
+            beautify: true,
+        }).then((result) =>
+            expect(result.code).equals(`.table tr:nth-child(2n of li.list-group-item) {
  background-color: #f2f2f2
-}`));
+}`),
+        );
     });
 
-    it('an+b #41', function () {
+    it("an+b #41", function () {
         const file = `
 .table tr:nth-child(-02n +0 of li.list-group-item){background-color: #f2f2f2;}
 `;
         return transform(file, {
-            beautify: true
-        }).then(result => expect(result.code).equals(`.table tr:nth-child(2n of li.list-group-item) {
+            beautify: true,
+        }).then((result) =>
+            expect(result.code).equals(`.table tr:nth-child(2n of li.list-group-item) {
  background-color: #f2f2f2
-}`));
+}`),
+        );
     });
 
-    it('an+b #42', function () {
+    it("an+b #42", function () {
         const file = `
 .table tr:nth-child(-02n+0 of li.list-group-item){background-color: #f2f2f2;}
 `;
         return transform(file, {
-            beautify: true
-        }).then(result => expect(result.code).equals(`.table tr:nth-child(2n of li.list-group-item) {
+            beautify: true,
+        }).then((result) =>
+            expect(result.code).equals(`.table tr:nth-child(2n of li.list-group-item) {
  background-color: #f2f2f2
-}`));
+}`),
+        );
     });
 
-    it('an+b #43', function () {
+    it("an+b #43", function () {
         const file = `
 .table tr:nth-child(-2n+0 of li.list-group-item){background-color: #f2f2f2;}
 `;
         return transform(file, {
-            beautify: true
-        }).then(result => expect(result.code).equals(`.table tr:nth-child(2n of li.list-group-item) {
+            beautify: true,
+        }).then((result) =>
+            expect(result.code).equals(`.table tr:nth-child(2n of li.list-group-item) {
  background-color: #f2f2f2
-}`));
+}`),
+        );
     });
 
-    it('an+b #44', function () {
+    it("an+b #44", function () {
         const file = `
 .table tr:nth-child(-n+0 of li.list-group-item){background-color: #f2f2f2;}
 `;
         return transform(file, {
-            beautify: true
-        }).then(result => expect(result.code).equals(`.table tr:nth-child(n of li.list-group-item) {
+            beautify: true,
+        }).then((result) =>
+            expect(result.code).equals(`.table tr:nth-child(n of li.list-group-item) {
  background-color: #f2f2f2
-}`));
+}`),
+        );
     });
 
-    it('bg-position #45', function () {
+    it("bg-position #45", function () {
         const file = `
 
 
@@ -900,13 +1028,15 @@ content: '\\21 now\\21';
 }
 `;
         return transform(file, {
-            beautify: true
-        }).then(result => expect(result.code).equals(`.markdown-body kbd {
+            beautify: true,
+        }).then((result) =>
+            expect(result.code).equals(`.markdown-body kbd {
  background: #fff url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e")center right 1.75rem/calc(.75em + .375rem)calc(.75em + .375rem)calc(.75em + .375rem)no-repeat
-}`));
+}`),
+        );
     });
 
-    it('if() #46', function () {
+    it("if() #46", function () {
         const file = `
 
 div-1 {
@@ -934,8 +1064,9 @@ div-4 {
 }
 `;
         return transform(file, {
-            beautify: true
-        }).then(result => expect(result.code).equals(`div-1 {
+            beautify: true,
+        }).then((result) =>
+            expect(result.code).equals(`div-1 {
  background-image: if(else:none)
 }
 div-2 {
@@ -946,10 +1077,11 @@ div-2 {
  div-4 {
   background-image: if()
  }
-}`));
+}`),
+        );
     });
 
-    it('transform-origin #47', function () {
+    it("transform-origin #47", function () {
         const file = `
 
   .xl\:origin-bottom-left {
@@ -957,26 +1089,30 @@ div-2 {
   }
 `;
         return transform(file, {
-            beautify: true
-        }).then(result => expect(result.code).equals(`.xl:origin-bottom-left {
+            beautify: true,
+        }).then((result) =>
+            expect(result.code).equals(`.xl:origin-bottom-left {
  transform-origin: 0 100%
-}`));
+}`),
+        );
     });
 
-    it('transform-origin #48', function () {
+    it("transform-origin #48", function () {
         const file = `
 *,:before,:after {
  box-sizing: border-box
 }
 `;
         return transform(file, {
-            beautify: true
-        }).then(result => expect(result.code).equals(`*,:before,:after {
+            beautify: true,
+        }).then((result) =>
+            expect(result.code).equals(`*,:before,:after {
  box-sizing: border-box
-}`));
+}`),
+        );
     });
 
-    it('wrapped function arguments #49', function () {
+    it("wrapped function arguments #49", function () {
         const file = `
 
 a {
@@ -989,9 +1125,41 @@ font-family: random-item(--x, {Times, serif}, {Arial, sans-serif}, {Courier, mon
 }
 `;
         return transform(file, {
-            beautify: true
-        }).then(result => expect(result.code).equals(`.transform {
+            beautify: true,
+        }).then((result) =>
+            expect(result.code).equals(`.transform {
  font-family: random-item(--x,{Times,serif},{Arial,sans-serif},{Courier,monospace})
-}`));
+}`),
+        );
+    });
+
+    it("stream file #50", async () => {
+        const dir = resolve((import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)) + "/../..").absolute;
+        // const file = `@import '${dir}/files/css/line-awesome.css`;
+        const options = {
+            file: `${dir}/files/css/bootstrap-4.css`,
+            beautify: true,
+        };
+
+        return Promise.all([transform(options), transform({ ...options, asStream: true })]).then(
+            async ([result1, result2]) => {
+                return expect(result1.code).equals(result2.code);
+            },
+        );
+    });
+
+    it("stream file #51", async () => {
+        const dir = resolve((import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)) + "/../..").absolute;
+        // const file = `@import '${dir}/files/css/line-awesome.css`;
+        const options = {
+            file: `${dir}/files/css/tailwind.css`,
+            beautify: true,
+        };
+
+        return Promise.all([transform(options), transform({ ...options, asStream: true })]).then(
+            async ([result1, result2]) => {
+                return expect(result1.code).equals(result2.code);
+            },
+        );
     });
 }

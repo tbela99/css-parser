@@ -1,7 +1,7 @@
 {
   "name": "@tbela99/css-parser",
   "description": "CSS parser, minifier and validator for node and the browser",
-  "version": "1.4.7-alpha1",
+  "version": "1.4.7-alpha2",
   "exports": {
     ".": "./dist/node.js",
     "./node": "./dist/node.js",
@@ -21,13 +21,13 @@
     "test": "web-test-runner \"./test/**/web.spec.js\" --timeout=10000 --node-resolve --playwright --browsers chromium firefox webkit --root-dir=.; mocha --reporter-options='maxDiffSize=1801920' --timeout=10000 \"test/**/node.spec.js\"",
     "test:web": "web-test-runner \"./test/**/web.spec.js\" --timeout 30000 --node-resolve --playwright --browsers chromium firefox webkit --root-dir=.",
     "test:node": "mocha -p --reporter-options='maxDiffSize=1801920' --timeout=10000 \"test/**/node.spec.js\"",
-    "test:cov": "superc8 -x 'test/specs/**/*.js' --reporter=html --reporter=text --reporter=json-summary mocha --reporter-options='maxDiffSize=1801920' --timeout=10000 'test/**/node.spec.js'",
-    "test:web-cov": "web-test-runner -x 'test/specs/**/*.js' \"test/**/web.spec.js\" --node-resolve --playwright --browsers chromium firefox webkit --root-dir=. --coverage",
+    "test:cov": "superc8 -x 'test/specs/**/*.js' --reporter=html --reporter=text --reporter=json-summary mocha --reporter-options='maxDiffSize=1801920' -p --timeout=10000 'test/**/node.spec.js'",
+    "test:web-cov": "web-test-runner -x 'test/specs/code/*.js' --node-resolve --playwright --browsers chromium firefox webkit --root-dir=. --coverage \"test/specs/web.spec.js\"",
     "profile": "deno run --allow-read --cpu-prof --cpu-prof-flamegraph test/inspect.js",
     "config-update": "esno scripts/shorthand.ts",
     "syntax-update": "esno scripts/validation.ts",
     "debug:node": "mocha --reporter-options='maxDiffSize=1801920' --timeout=10000 \"test/**/node.spec.js\"",
-    "debug:web": "web-test-runner \"./test/**/web.spec.js\" --manual --open --node-resolve --root-dir=."
+    "debug:web": "web-test-runner \"./test/specs/web.spec.js\" --manual --open --node-resolve --root-dir=."
   },
   "repository": {
     "type": "git",

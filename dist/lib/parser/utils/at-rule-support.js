@@ -1,10 +1,9 @@
 import { EnumToken } from '../../ast/types.js';
-import { LOC, tokensfuncDefMap } from '../../syntax/constants.js';
+import { pseudoElements, LOC, tokensfuncDefMap } from '../../syntax/constants.js';
 import { getSyntaxConfig, getParsedSyntax } from '../../validation/config.js';
 import { trimArray, matchAllSyntaxes, createValidationContext } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { parseDeclaration } from './declaration.js';
-import { pseudoElements } from '../../syntax/syntax.js';
 
 function parseAtRuleSupportSyntax(stream, context, options = {}) {
     const tokens = [];

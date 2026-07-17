@@ -79,6 +79,17 @@ const colorRange = {
         b: [0, 0.4],
     },
 };
+// https://www.w3.org/TR/css-values-4/#math-function
+const pseudoElements = [
+    ":before",
+    ":after",
+    ":first-line",
+    ":first-letter",
+    "::before",
+    "::after",
+    "::first-line",
+    "::first-letter",
+];
 const wildCardFuncs = ["var", "env", "if"];
 const mathFuncs = [
     "minmax",
@@ -146,7 +157,7 @@ const pageMarginBoxType = new Set([
 const urlFunc = ["url"];
 const timelineFunc = ["view", "scroll"];
 const gridTemplateFunc = ["minmax", "fit-content", "repeat"];
-const generalEnclosedFunc = [];
+// export const generalEnclosedFunc: string[] = [];
 const supportFunc = ["selector", "font-tech", "font-format", "at-rule", "named-feature"];
 const whenElseFunc = ["media", "supports"];
 const containerFunc = ["style", "scroll-state"];
@@ -469,4 +480,4 @@ const trimTokenSpace = new Set([
 ]);
 const combinators = ["+", ">", "~", "||", "|"];
 
-export { COLORS_NAMES, D50, ERRORS, LOC, NAMES_COLORS, OPTIMIZED, PARENT, PROPERTYNAME, RAW, ROOT, STATE, TOKENS, anglePrecision, colorDistancePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, deprecatedSystemColors, e, epsilon, funcLike, generalEnclosedFunc, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, regMatchLinearGradient, regMatchRadialGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };
+export { COLORS_NAMES, D50, ERRORS, LOC, NAMES_COLORS, OPTIMIZED, PARENT, PROPERTYNAME, RAW, ROOT, STATE, TOKENS, anglePrecision, colorDistancePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, deprecatedSystemColors, e, epsilon, funcLike, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, pseudoElements, regMatchLinearGradient, regMatchRadialGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };
