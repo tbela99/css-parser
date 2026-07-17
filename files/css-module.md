@@ -15,9 +15,6 @@ For a detailed explanation of the module options, see the [module options](../do
 parse(css, {module: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions});
 transform(css, {module: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions});
 
-parseFile(css, {module: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions});
-transformFile(css, {module: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions});
-
 ```
 
 ## Scope

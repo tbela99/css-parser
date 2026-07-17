@@ -919,6 +919,14 @@ export declare interface MulToken extends BaseToken {
 }
 
 /**
+ * Wrapped values token like {Arial, Helvetica, sans-serif}
+ */
+export declare interface WrappedValuesToken extends BaseToken {
+    typ: EnumToken.WrappedValuesTokenType;
+    chi: Token[];
+}
+
+/**
  * Unary expression token
  */
 export declare interface UnaryExpression extends BaseToken {
@@ -1069,6 +1077,7 @@ export declare type Token =
     | IdentToken
     | IdentListToken
     | DashedIdentToken
+    | WrappedValuesToken
     | CommaToken
     | ColonToken
     | DoubleColonToken

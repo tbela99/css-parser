@@ -20,8 +20,8 @@ import type {
 } from "../../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import { renderValue } from "../../renderer/render.ts";
-import { combinators, ERRORS, LOC, PARENT, STATE, TOKENS, tokensfuncDefMap } from "../../syntax/constants.ts";
-import { isHash, isIdent, pseudoElements } from "../../syntax/syntax.ts";
+import { combinators, ERRORS, LOC, PARENT, pseudoElements, STATE, TOKENS, tokensfuncDefMap } from "../../syntax/constants.ts";
+import { isHash } from "../../syntax/syntax.ts";
 import { getParsedSyntax, getSyntaxConfig, getSyntaxRule } from "../../validation/config.ts";
 import { createValidationContext, matchAllSyntaxes, matchSelectorSyntax, trimArray } from "../../validation/match.ts";
 

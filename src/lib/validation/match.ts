@@ -3346,9 +3346,7 @@ function matchProperty(
             break;
         }
 
-        case "wq-name": // wq-name matches
-        // a
-        // |a
+        case "wq-name": // |a // a // wq-name matches
         // *|a
         // a|b
 

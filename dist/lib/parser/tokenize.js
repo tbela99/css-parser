@@ -1,6 +1,6 @@
 import { EnumToken, ColorType } from '../ast/types.js';
-import { LOC, wildCardFuncs, whenElseFunc, transformFunctions, mathFuncs, colorsFunc, timingFunc, supportFunc, generalEnclosedFunc, timelineFunc, imageFunc, gridTemplateFunc, urlFunc, containerFunc } from '../syntax/constants.js';
-import { isDigit, isPseudo, isIdent, isWhiteSpace, isNumber, isHexColor, isHash, isPercentage, parseDimension, isNewLine, pseudoElements } from '../syntax/syntax.js';
+import { LOC, wildCardFuncs, whenElseFunc, transformFunctions, mathFuncs, colorsFunc, timingFunc, supportFunc, timelineFunc, imageFunc, gridTemplateFunc, urlFunc, containerFunc, pseudoElements } from '../syntax/constants.js';
+import { isDigit, isPseudo, isIdent, isWhiteSpace, isNumber, isHexColor, isHash, isPercentage, parseDimension, isNewLine } from '../syntax/syntax.js';
 import { equalsIgnoreCase } from './utils/text.js';
 
 const SymbolsMapTokens = {
@@ -58,10 +58,10 @@ const SymbolsMapTokens = {
         acc[curr + "("] = EnumToken.TimelineFunctionTokenDefType;
         return acc;
     }, Object.create(null)),
-    ...generalEnclosedFunc.reduce((acc, curr) => {
-        acc[curr + "("] = EnumToken.GeneralEnclosedFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
+    // ...generalEnclosedFunc.reduce((acc, curr: string) => {
+    //     acc[curr + "("] = EnumToken.GeneralEnclosedFunctionTokenDefType;
+    //     return acc;
+    // }, Object.create(null)),
     ...supportFunc.reduce((acc, curr) => {
         acc[curr + "("] = EnumToken.SupportsFunctionTokenDefType;
         return acc;
@@ -237,9 +237,9 @@ function yieldResult(val, parseInfo, hint) {
             case EnumToken.TimelineFunctionTokenDefType:
                 searchArray = timelineFunc;
                 break;
-            case EnumToken.GeneralEnclosedFunctionTokenDefType:
-                searchArray = generalEnclosedFunc;
-                break;
+            // case EnumToken.GeneralEnclosedFunctionTokenDefType:
+            //     searchArray = generalEnclosedFunc;
+            //     break;
             case EnumToken.SupportsFunctionTokenDefType:
                 searchArray = supportFunc;
                 break;
@@ -405,6 +405,8 @@ function tokenize(parseInfo, yieldEOFToken = true) {
     let nextCharCode;
     const startTime = performance.now();
     const result = [];
+    // allow 10 characters buffer for the streaming parser to avoid incomplete tokens
+    const endPosition = parseInfo.stream.length - 10;
     parseInfo.buffer = "";
     while ((value = next(parseInfo))) {
         nextValue = parseInfo.stream.charAt(parseInfo.currentPosition.ind - parseInfo.offset + 1);
@@ -680,7 +682,9 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                 if (match(parseInfo, "important")) {
                     result.push(yieldResult(value + next(parseInfo, 9), parseInfo, EnumToken.ImportantTokenType));
                     buffer = "";
+                    break;
                 }
+                buffer += value;
                 break;
             case 47 /* TokenMap.SLASH */:
                 if (buffer.length > 0) {
@@ -791,6 +795,10 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                 buffer += value;
                 break;
         }
+        if (!yieldEOFToken &&
+            endPosition <= parseInfo.stream.length - parseInfo.currentPosition.ind + parseInfo.offset) {
+            break;
+        }
     }
     if (yieldEOFToken) {
         if (buffer.length > 0) {
@@ -824,14 +832,14 @@ async function* tokenizeStream(input, parseInfo) {
         const { done, value } = await reader.read();
         const stream = ArrayBuffer.isView(value) ? decoder.decode(value, { stream: true }) : value;
         if (!done) {
-            if (parseInfo.stream.length > 2) {
-                parseInfo.stream = parseInfo.stream.slice(-2) + stream;
-                parseInfo.offset = parseInfo.currentPosition.ind - 1;
+            if (typeof parseInfo.stream != "string") {
+                parseInfo.stream = stream;
             }
             else {
-                parseInfo.stream = stream;
-                parseInfo.offset = Math.max(0, parseInfo.currentPosition.ind);
+                parseInfo.stream = (parseInfo.stream.slice(parseInfo.currentPosition.ind - parseInfo.offset + 1) +
+                    stream);
             }
+            parseInfo.offset = parseInfo.currentPosition.ind + 1;
         }
         yield* tokenize(parseInfo, done);
         if (done) {

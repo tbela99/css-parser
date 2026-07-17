@@ -194,6 +194,14 @@ async function parse(...args) {
         }
     }
     options ??= {};
+    options.src ??= "";
+    Object.assign(options, {
+        load,
+        resolve,
+        dirname,
+        cwd: options.cwd ?? process.cwd(),
+    });
+    options.src = resolve(options.src, options.cwd).relative;
     options.parseInfo = {
         stream,
         buffer: "",
@@ -203,12 +211,7 @@ async function parse(...args) {
         position: { ind: 0, lin: 1, col: 0 },
         currentPosition: { ind: -1, lin: 1, col: 0 },
     };
-    return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), Object.assign(options, {
-        load,
-        resolve,
-        dirname,
-        cwd: options.cwd ?? process.cwd(),
-    })).then((result) => {
+    return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => {
         const { revMapping, ...res } = result;
         return res;
     });

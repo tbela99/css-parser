@@ -2,13 +2,16 @@
 
 ## v1.4.7
 
-- [x] Fix performance regression ~ 25% gain.
-- [x] fix conic-gradient() minification bug
-- [x] parse wrapped function arguments https://www.w3.org/TR/css-values-5/#component-functions for 
+### Improvements & Fixes
 
-```css
-font-family: random-item(--x, {Times, serif}, {Arial, sans-serif}, {Courier, monospace});
-```
+- [x] Fixed a performance regression, resulting in approximately **25% faster** performance.
+- [x] Fixed a `conic-gradient()` minification bug.
+- [x] Added support for parsing wrapped function arguments as defined in the CSS Values & Units Level 5 specification for component functions. 
+- [x] fix missing characters from the streaming tokenizer
+
+  ```css
+  font-family: random-item(--x,{Times,serif},{Arial,sans-serif},{Courier,monospace})
+  ```
 
 ## v1.4.6
 

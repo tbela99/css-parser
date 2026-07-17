@@ -7,7 +7,7 @@ import { trimArray } from '../validation/match.js';
 import { splitTokenList } from '../validation/utils/list.js';
 import { getColorSpace } from './color/utils/colorspace.js';
 import { getColorComponents } from './color/utils/components.js';
-import { systemColors, deprecatedSystemColors, nonStandardColors, COLORS_NAMES, colorsFunc, colorFuncColorSpace, LOC } from './constants.js';
+import { nonStandardColors, systemColors, deprecatedSystemColors, COLORS_NAMES, colorsFunc, colorFuncColorSpace, LOC } from './constants.js';
 import { isOkLabClose } from './color/utils/distance.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
@@ -59,17 +59,6 @@ const dimensionUnits = new Set([
     "vmin",
     "vw",
 ]);
-// https://www.w3.org/TR/css-values-4/#math-function
-const pseudoElements = [
-    ":before",
-    ":after",
-    ":first-line",
-    ":first-letter",
-    "::before",
-    "::after",
-    "::first-line",
-    "::first-letter",
-];
 // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions
 // https://developer.mozilla.org/en-US/docs/Web/CSS/Mozilla_Extensions
 const pseudoAliasMap = {
@@ -531,7 +520,6 @@ function isColor(token, errors) {
                                         !colorsFunc.includes(val) &&
                                         !colorSpace.includes(val) &&
                                         !colorFuncColorSpace.includes(val)) {
-                                        // console.debug({ val });
                                         errors?.push({
                                             action: "drop",
                                             message: `Unexpected constant '${val}'`,
@@ -1162,4 +1150,4 @@ function isWhiteSpace(codepoint) {
         codepoint == 0x2029);
 }
 
-export { dimensionUnits, isAngle, isColor, isDigit, isFlex, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isLetter, isNewLine, isNumber, isPercentage, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, parseColor, parseDimension, pseudoAliasMap, pseudoElements, reduceColorStops, reduceConicColorStops, reducegradientBackgroundPosition, renamedStandardProperties };
+export { dimensionUnits, isAngle, isColor, isDigit, isFlex, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isLetter, isNewLine, isNumber, isPercentage, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, parseColor, parseDimension, pseudoAliasMap, reduceColorStops, reduceConicColorStops, reducegradientBackgroundPosition, renamedStandardProperties };

@@ -132,7 +132,7 @@ import {
     rgb2cmykToken,
 } from "./cmyk.ts";
 import { a98rgb2srgbvalues, srgb2a98values } from "./a98rgb.ts";
-import { epsilon, LOC, PARENT } from "../constants.ts";
+import { epsilon, LOC } from "../constants.ts";
 import { colorFuncColorSpace, colorPrecision, anglePrecision } from "../constants.ts";
 import { trimArray } from "../../validation/match.ts";
 import { alpha } from "./alpha.ts";
