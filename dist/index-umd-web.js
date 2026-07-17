@@ -14237,8 +14237,7 @@
                 success = token?.typ === exports.EnumToken.StringTokenType;
                 break;
             }
-            case "wq-name": // |a // a // wq-name matches
-                // *|a
+            case "wq-name": // *|a // |a // a // wq-name matches
                 // a|b
                 // if (context.peek()?.typ == EnumToken.Pipe) {
                 //     const success = context.peek(1)?.typ == EnumToken.IdenTokenType;

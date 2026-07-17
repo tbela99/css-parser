@@ -10763,8 +10763,7 @@ function matchProperty(property, context, options) {
             success = token?.typ === exports.EnumToken.StringTokenType;
             break;
         }
-        case "wq-name": // |a // a // wq-name matches
-            // *|a
+        case "wq-name": // *|a // |a // a // wq-name matches
             // a|b
             // if (context.peek()?.typ == EnumToken.Pipe) {
             //     const success = context.peek(1)?.typ == EnumToken.IdenTokenType;
@@ -32329,6 +32328,7 @@ function render(data, options = {}, mapping) {
  * @param asStream load file as stream
  *
  * @deprecated
+ * @see {@link parse}
  * @throws Error file not found
  *
  * Example:
@@ -32354,7 +32354,7 @@ const parseFile = node_util.deprecate(async (file, options = {}, asStream = fals
  *
  * @throws Error file not found
  *
- * Example:
+ * Parsing a string
  *
  * ```ts
  *
@@ -32365,7 +32365,7 @@ const parseFile = node_util.deprecate(async (file, options = {}, asStream = fals
  *  console.log(result.ast);
  * ```
  *
- * Example using stream
+ * Parsing a Readable stream
  *
  * ```ts
  *
@@ -32380,7 +32380,7 @@ const parseFile = node_util.deprecate(async (file, options = {}, asStream = fals
  *  console.log(result.ast);
  * ```
  *
- * Example using fetch and readable stream
+ * Parsing a file as a ReadableStream
  *
  * ```ts
  *
@@ -32467,7 +32467,7 @@ const transformFile = node_util.deprecate(async (file, options = {}, asStream = 
  * @param css
  * @param options
  *
- * Example:
+ * Paarsing a string
  *
  * ```ts
  *
@@ -32478,7 +32478,7 @@ const transformFile = node_util.deprecate(async (file, options = {}, asStream = 
  *  console.log(result.code);
  * ```
  *
- * Example using stream
+ * Parsing a Readable stream
  *
  * ```ts
  *

@@ -112,6 +112,7 @@ function render(data, options = {}, mapping) {
  * @param asStream load file as stream
  *
  * @deprecated
+ * @see {@link parse}
  * @throws Error file not found
  *
  * Example:
@@ -137,7 +138,7 @@ const parseFile = deprecate(async (file, options = {}, asStream = false) => pars
  *
  * @throws Error file not found
  *
- * Example:
+ * Parsing a string
  *
  * ```ts
  *
@@ -148,7 +149,7 @@ const parseFile = deprecate(async (file, options = {}, asStream = false) => pars
  *  console.log(result.ast);
  * ```
  *
- * Example using stream
+ * Parsing a Readable stream
  *
  * ```ts
  *
@@ -163,7 +164,7 @@ const parseFile = deprecate(async (file, options = {}, asStream = false) => pars
  *  console.log(result.ast);
  * ```
  *
- * Example using fetch and readable stream
+ * Parsing a file as a ReadableStream
  *
  * ```ts
  *
@@ -250,7 +251,7 @@ const transformFile = deprecate(async (file, options = {}, asStream = false) => 
  * @param css
  * @param options
  *
- * Example:
+ * Paarsing a string
  *
  * ```ts
  *
@@ -261,7 +262,7 @@ const transformFile = deprecate(async (file, options = {}, asStream = false) => 
  *  console.log(result.code);
  * ```
  *
- * Example using stream
+ * Parsing a Readable stream
  *
  * ```ts
  *

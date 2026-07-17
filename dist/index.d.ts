@@ -5197,6 +5197,7 @@ declare function render(data: AstNode$1, options?: RenderOptions, mapping?: {
  * @param asStream load file as stream
  *
  * @deprecated
+ * @see {@link parse}
  * @throws Error file not found
  *
  * Example:
@@ -5215,8 +5216,126 @@ declare function render(data: AstNode$1, options?: RenderOptions, mapping?: {
  * ```
  */
 declare const parseFile: (file: string, options?: ParserOptions, asStream?: boolean) => Promise<ParseResult>;
+/**
+ * Parse css
+ * @param stream
+ * @param options
+ *
+ * @throws Error file not found
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  let result = await parse(css);
+ *  console.log(result.ast);
+ * ```
+ *
+ * parsing a Readable stream
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser';
+ * import {Readable} from "node:stream";
+ *
+ * // usage: node index.ts < styles.css or cat styles.css | node index.ts
+ *
+ *  const readableStream = Readable.toWeb(process.stdin);
+ *  let result = await parse(readableStream, {beautify: true});
+ *
+ *  console.log(result.ast);
+ * ```
+ *
+ * Example using fetch and readable stream
+ *
+ * ```ts
+ *
+ *  import {parse} from '@tbela99/css-parser';
+ *
+ *  const response = await fetch('https://docs.deno.com/styles.css');
+ *  const result = await parse(response.body, {beautify: true});
+ *
+ *  console.log(result.ast);
+ * ```
+ */
 declare function parse(stream: string | ReadableStream<Uint8Array>, options?: ParserOptions): Promise<ParseResult>;
+/**
+ * Parse css
+ * @param stream
+ * @param options
+ *
+ * @throws Error file not found
+ *
+ * Parsing a file
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser';
+ *
+ * const file = 'https://docs.deno.com/styles.css';
+ *  // css file or url
+ *  let result = await parse({file});
+ *  console.log(result.ast);
+ * ```
+ *
+ * Parsing a file as stream
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser';
+ *
+ *  const file = 'https://docs.deno.com/styles.css';
+ *  let result = await parse({file, asStream: true, beautify: true});
+ *
+ *  console.log(result.ast);
+ * ```
+ *
+ */
 declare function parse(options: ParseInputFileOptions & ParserOptions): Promise<ParseResult>;
+/**
+ * Parse css
+ * @param stream
+ * @param options
+ *
+ * Parsing a string
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  let result = await parse({input:css});
+ *  console.log(result.ast);
+ * ```
+ *
+ * Parsing a Readable stream
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser';
+ * import {Readable} from "node:stream";
+ * *
+ *  const readableStream = Readable.toWeb(process.stdin);
+ *  let result = await parse({input: readableStream, beautify: true});
+ *
+ *  console.log(result.ast);
+ * ```
+ *
+ * Parsing a file as a ReadableStream
+ *
+ * ```ts
+ *
+ *  import {parse} from '@tbela99/css-parser';
+ *
+ *  const response = await fetch('https://docs.deno.com/styles.css');
+ *  const result = await parse({input: response.body, beautify: true});
+ *
+ *  console.log(result.ast);
+ * ```
+ */
 declare function parse(options: ParseInputStreamOptions & ParserOptions): Promise<ParseResult>;
 /**
  * Transform css file
