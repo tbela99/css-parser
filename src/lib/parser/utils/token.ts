@@ -15,7 +15,7 @@ import type {
     Token,
 } from "../../../@types/token.d.ts";
 import { EnumToken } from "../../ast/types.ts";
-import { definedPropertySettings, tokensfuncSet } from "../../syntax/constants.ts";
+import { PARENT, tokensfuncSet } from "../../syntax/constants.ts";
 
 const trimTokenSpace: Set<EnumToken> = new Set([
     EnumToken.CommaTokenType,
@@ -57,12 +57,9 @@ export function replaceNodeOrValue(
         throw new TypeError(`replacement is null`);
     }
 
-    for (const node of Array.isArray(replacement) ? replacement : [replacement]) {
-        if ("parent" in node && node.parent != node.parent) {
-            Object.defineProperty(node, "parent", {
-                ...definedPropertySettings,
-                value: node.parent,
-            });
+    for (const newNode of Array.isArray(replacement) ? replacement : [replacement]) {
+        if (newNode[PARENT] != node[PARENT]) {
+            newNode[PARENT] = node[PARENT];
         }
     }
 

@@ -1,5 +1,5 @@
 import { EnumToken } from '../../ast/types.js';
-import { tokensfuncDefMap } from '../../syntax/constants.js';
+import { tokensfuncDefMap, LOC } from '../../syntax/constants.js';
 import { equalsIgnoreCase } from './text.js';
 
 function matchGenericSyntax(stream) {
@@ -23,40 +23,40 @@ function matchGenericSyntax(stream) {
         }
         if (token.typ === EnumToken.EndParensTokenType) {
             if (stack.length === 0 ||
-                (stack.at(-1)?.typ !== EnumToken.ParensTokenType && !tokensfuncDefMap.has(stack.at(-1)?.typ))) {
+                (stack.at(-1)?.typ !== EnumToken.StartParensTokenType && !tokensfuncDefMap.has(stack.at(-1)?.typ))) {
                 errors.push({
                     action: "drop",
-                    message: `unexpected token ${EnumToken[token.typ]} at ${token.loc.src}:${token.loc.sta.lin}:${token.loc.sta.col}`,
+                    message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC].src}:${token[LOC].sta.lin}:${token[LOC].sta.col}`,
                     node: token,
-                    location: token.loc,
+                    location: token[LOC],
                 });
                 success = false;
                 break;
             }
             stack.pop();
             scopes.pop();
-            if (scopes.length === 0) {
-                return {
-                    success: false,
-                    errors: [
-                        {
-                            action: "drop",
-                            node: token,
-                            message: `Unexpected token ${EnumToken[token.typ]} at ${token.loc.src}:${token.loc.sta.lin}:${token.loc.sta.col}`,
-                            location: token.loc,
-                        },
-                    ],
-                };
-            }
+            // if (scopes.length === 0) {
+            //     return {
+            //         success: false,
+            //         errors: [
+            //             {
+            //                 action: "drop",
+            //                 node: token,
+            //                 message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${token[LOC]!.sta.col}`,
+            //                 location: token[LOC]!,
+            //             },
+            //         ],
+            //     };
+            // }
             continue;
         }
         if (token.typ === EnumToken.IdenTokenType && equalsIgnoreCase("and", token.val)) {
             if (!expectAndOr || scopes.at(-1)?.has(EnumToken.OrTokenType)) {
                 errors.push({
                     action: "drop",
-                    message: `unexpected token ${EnumToken[token.typ]} at ${token.loc.src}:${token.loc.sta.lin}:${token.loc.sta.col}`,
+                    message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC].src}:${token[LOC].sta.lin}:${token[LOC].sta.col}`,
                     node: token,
-                    location: token.loc,
+                    location: token[LOC],
                 });
                 success = false;
                 break;
@@ -70,9 +70,9 @@ function matchGenericSyntax(stream) {
             if (!expectAndOr || scopes.at(-1)?.has(EnumToken.AndTokenType)) {
                 errors.push({
                     action: "drop",
-                    message: `unexpected token ${EnumToken[token.typ]} at ${token.loc.src}:${token.loc.sta.lin}:${token.loc.sta.col}`,
+                    message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC].src}:${token[LOC].sta.lin}:${token[LOC].sta.col}`,
                     node: token,
-                    location: token.loc,
+                    location: token[LOC],
                 });
                 success = false;
                 break;
@@ -86,9 +86,9 @@ function matchGenericSyntax(stream) {
             if (!expectComma) {
                 errors.push({
                     action: "drop",
-                    message: `unexpected token ${EnumToken[token.typ]} at ${token.loc.src}:${token.loc.sta.lin}:${token.loc.sta.col}`,
+                    message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC].src}:${token[LOC].sta.lin}:${token[LOC].sta.col}`,
                     node: token,
-                    location: token.loc,
+                    location: token[LOC],
                 });
                 success = false;
                 break;
@@ -106,9 +106,9 @@ function matchGenericSyntax(stream) {
     if (stack.length > 0) {
         errors.push({
             action: "drop",
-            message: `unexpected token ${EnumToken[stack.at(-1)?.typ]} at ${stack.at(-1)?.loc?.src}:${stack.at(-1)?.loc?.sta.lin}:${stack.at(-1)?.loc?.sta.col}`,
+            message: `unexpected token ${EnumToken[stack.at(-1)?.typ]} at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
             node: stack.at(-1),
-            location: stack.at(-1)?.loc,
+            location: stack.at(-1)?.[LOC],
         });
         success = false;
     }

@@ -5,6 +5,7 @@ import { EnumToken } from '../../ast/types.js';
 import { renderValue } from '../../renderer/render.js';
 import { parseString } from '../parse.js';
 import { PropertySet } from './set.js';
+import { PROPERTYNAME } from '../../syntax/constants.js';
 
 const propertiesConfig = getConfig();
 class PropertyMap {
@@ -68,7 +69,7 @@ class PropertyMap {
                             }
                             if (
                             // @ts-ignore
-                            ("propertyName" in acc[i] && acc[i].propertyName == property) ||
+                            acc[i][PROPERTYNAME] == property ||
                                 matchType(acc[i], props)) {
                                 if ("prefix" in props &&
                                     props.previous != null &&
@@ -240,15 +241,15 @@ class PropertyMap {
                         }
                         value.push(t);
                         // @ts-ignore
-                        if ("propertyName" in t) {
+                        if (t[PROPERTYNAME] != null) {
                             // @ts-ignore
-                            if (!map.has(t.propertyName)) {
+                            if (!map.has(t[PROPERTYNAME])) {
                                 // @ts-ignore
-                                map.set(t.propertyName, { t: [t], value: [cache.get(t)] });
+                                map.set(t[PROPERTYNAME], { t: [t], value: [cache.get(t)] });
                             }
                             else {
                                 // @ts-ignore
-                                const v = map.get(t.propertyName);
+                                const v = map.get(t[PROPERTYNAME]);
                                 v.t.push(t);
                                 v.value.push(cache.get(t));
                             }
@@ -383,7 +384,7 @@ class PropertyMap {
                             isShorthand = match;
                         }
                         // @ts-ignore
-                        if (("propertyName" in val && val.propertyName == property) || match) {
+                        if (val[PROPERTYNAME] == property || match) {
                             if (!(curr[0] in tokens)) {
                                 tokens[curr[0]] = [[]];
                             }
@@ -602,11 +603,8 @@ class PropertyMap {
                 }
                 let count = map.get(patterns[i]);
                 if (count > 0 && matchType(values[j], this.config.properties[patterns[i]])) {
-                    Object.defineProperty(values[j], "propertyName", {
-                        enumerable: false,
-                        writable: true,
-                        value: patterns[i],
-                    });
+                    // @ts-expect-error
+                    values[j][PROPERTYNAME] = patterns[i];
                     map.set(patterns[i], --count);
                     values.splice(j--, 1);
                 }
@@ -620,14 +618,11 @@ class PropertyMap {
                         if (map.get(v) == 1) {
                             let i = declaration.val.length;
                             while (i--) {
-                                // @ts-ignore
-                                if (declaration.val[i].propertyName == key) {
+                                // @ts-expect-error
+                                if (declaration.val[i][PROPERTYNAME] == key) {
                                     const val = { ...declaration.val[i] };
-                                    Object.defineProperty(val, "propertyName", {
-                                        enumerable: false,
-                                        writable: true,
-                                        value: v,
-                                    });
+                                    // @ts-expect-error
+                                    val[PROPERTYNAME] = v;
                                     declaration.val.splice(i, 0, val, { typ: EnumToken.WhitespaceTokenType });
                                 }
                             }

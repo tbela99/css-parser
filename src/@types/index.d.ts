@@ -325,12 +325,28 @@ export declare interface ModuleOptions {
     ) => string | Promise<string>;
 }
 
+/**
+ * Input file options
+ */
 export declare interface ParseInputFileOptions {
+    /**
+     * File path or url
+     */
     file: string;
+    /**
+     * Load file as stream
+     */
+
     asStream?: boolean;
 }
 
+/**
+ * Input options for string or stream
+ */
 export declare interface ParseInputStreamOptions {
+    /**
+     * Input string or stream
+     */
     input: string | ReadableStream<Uint8Array>;
 }
 
@@ -406,7 +422,13 @@ export declare interface ParserOptions
         currentUrl: string,
         currentWorkingDirectory?: string,
     ) => {
+        /**
+         * Absolute path
+         */
         absolute: string;
+        /**
+         * Relative path
+         */
         relative: string;
     };
 

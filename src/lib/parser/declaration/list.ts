@@ -20,7 +20,7 @@ import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import type { ValidationMatch } from "../../validation/types.js";
 import { createValidationContext, matchAllSyntaxes } from "../../validation/match.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";
-import { definedPropertySettings } from "../../syntax/constants.ts";
+import { STATE } from "../../syntax/constants.ts";
 
 const config: PropertiesConfig = getConfig();
 
@@ -52,14 +52,14 @@ export class PropertyList {
                     ? null
                     : (declaration as AstDeclaration).nam.toLowerCase();
 
-            if (declaration.state == EnumAstNodeStatus.Unvalidated) {
+            if (declaration[STATE] == EnumAstNodeStatus.Unvalidated) {
                 // validate declaration
             }
 
             if (
-                (declaration as AstDeclaration).state == EnumAstNodeStatus.Invalid ||
-                (declaration as AstDeclaration).state == EnumAstNodeStatus.Unknown ||
-                (declaration as AstDeclaration).state == EnumAstNodeStatus.ValidationFailed ||
+                (declaration as AstDeclaration)[STATE] == EnumAstNodeStatus.Invalid ||
+                (declaration as AstDeclaration)[STATE] == EnumAstNodeStatus.Unknown ||
+                (declaration as AstDeclaration)[STATE] == EnumAstNodeStatus.ValidationFailed ||
                 declaration.typ != EnumToken.DeclarationNodeType ||
                 "composes" === name ||
                 (typeof this.options.removeDuplicateDeclarations === "string" &&
@@ -77,21 +77,19 @@ export class PropertyList {
                 continue;
             }
 
-            if (declaration.state == EnumAstNodeStatus.Unvalidated) {
+            if (declaration[STATE] == EnumAstNodeStatus.Unvalidated) {
                 syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, declaration.nam.toLowerCase());
 
                 if (syntaxRules != null) {
                     result = matchAllSyntaxes(syntaxRules, createValidationContext(declaration.val), this.options);
-
-                    Object.defineProperty(declaration, "state", {
-                        ...definedPropertySettings,
-                        value: result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.ValidationFailed,
-                    });
+                    declaration[STATE] = result.success
+                        ? EnumAstNodeStatus.Validated
+                        : EnumAstNodeStatus.ValidationFailed;
                 }
             }
 
             // do not compute shorthand for invalid declarations
-            if (declaration.state !== EnumAstNodeStatus.Validated) {
+            if (declaration[STATE] !== EnumAstNodeStatus.Validated) {
                 this.declarations.set(declaration.nam, declaration);
                 return this;
             }

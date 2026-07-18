@@ -511,4 +511,4 @@ console.error(result.code);
 ```
 
 ------
-[← Minification](./minification.md) | [Ast Manipulation →](./ast.md) 
+[← Minification](./minification.md) | [Syntax Lowering →](./syntax-lowering.md) 

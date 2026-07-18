@@ -12,23 +12,23 @@ function getSyntaxConfig() {
 function findNode(group, key) {
     // @ts-expect-error
     let obj = config[group];
-    const keys = Array.isArray(key) ? key : [key];
-    for (let i = 0; i < keys.length; i++) {
-        key = keys[i];
-        if (!(key in obj)) {
-            if ((i == 0 && key.charAt(0) == "@") || key.charAt(0) == "-") {
-                const matches = key.match(/^(@?)(-[a-zA-Z]+)-(.*?)$/);
-                if (matches != null) {
-                    key = matches[1] + matches[3];
-                }
-            }
-            if (!(key in obj)) {
-                return null;
+    // const keys: string[] = Array.isArray(key) ? key : [key];
+    // for (let i = 0; i < keys.length; i++) {
+    //     key = keys[i];
+    if (!(key in obj)) {
+        if (key.charAt(0) == "@" || key.charAt(0) == "-") {
+            const matches = key.match(/^(@?)(-[a-zA-Z]+)-(.*?)$/);
+            if (matches != null) {
+                key = matches[1] + matches[3];
             }
         }
-        // @ts-expect-error
-        obj = obj[key];
+        if (!(key in obj)) {
+            return null;
+        }
     }
+    // @ts-expect-error
+    obj = obj[key];
+    // }
     return obj;
 }
 const getParsedSyntax = memoize((group, key) => {
@@ -37,8 +37,7 @@ const getParsedSyntax = memoize((group, key) => {
     if (obj == null) {
         return null;
     }
-    const keys = Array.isArray(key) ? key : [key];
-    const index = group + "." + keys.join(".");
+    const index = group + "." + key;
     if (!parsedSyntaxes.has(index)) {
         const syntax = Object.freeze(trimSyntaxArray(parseSyntax(obj.syntax)));
         parsedSyntaxes.set(index, syntax);
@@ -91,7 +90,7 @@ const getSyntaxRule = memoize((group, key) => {
             node.syntax.includes("<stylesheet>"),
         getPreludeRules: () => prelude,
         getBlockRules: () => (block == null || block.length === 0 ? null : block),
-        getRules: () => syntaxRules,
+        // getRules: () => syntaxRules,
         getPropertyDescriptors: () => propertyDescriptors,
     };
 });

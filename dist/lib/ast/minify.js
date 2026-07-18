@@ -6,7 +6,7 @@ import { EnumToken } from './types.js';
 import { isWhiteSpace, isIdent, isFunction, isIdentStart } from '../syntax/syntax.js';
 import { FeatureWalkMode } from './features/type.js';
 import { trimArray } from '../validation/match.js';
-import { definedPropertySettings, combinators } from '../syntax/constants.js';
+import { TOKENS, PARENT, OPTIMIZED, RAW, combinators, LOC } from '../syntax/constants.js';
 import { replaceNodeOrValue } from '../parser/utils/token.js';
 import { parseString } from '../parser/parse.js';
 import { tokenize } from '../parser/tokenize.js';
@@ -71,31 +71,24 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                     (feature.accept != null && !feature.accept.has(parent.typ))) {
                     continue;
                 }
-                if (rules.includes(replacement.typ) && !Array.isArray(replacement.tokens)) {
-                    Object.defineProperty(replacement, "tokens", {
-                        ...definedPropertySettings,
-                        value: parseString(replacement.typ == EnumToken.RuleNodeType ||
-                            replacement.typ === EnumToken.KeyFramesRuleNodeType
-                            ? replacement.sel
-                            : replacement.nam),
-                    });
+                if (rules.includes(replacement.typ) && !Array.isArray(replacement[TOKENS])) {
+                    replacement[TOKENS] = parseString(replacement.typ == EnumToken.RuleNodeType || replacement.typ === EnumToken.KeyFramesRuleNodeType
+                        ? replacement.sel
+                        : replacement.nam);
                 }
-                const result = feature.run(replacement, options, parent.parent ?? ast, context, FeatureWalkMode.Pre);
+                const result = feature.run(replacement, options, parent[PARENT] ?? ast, context, FeatureWalkMode.Pre);
                 if (result != null) {
                     replacement = result;
                 }
             }
-            if (replacement != parent && parent.parent != null) {
-                // @ts-ignore
-                replaceNodeOrValue(parent.parent, parent, replacement);
+            if (replacement != parent && parent[PARENT] != null) {
+                replaceNodeOrValue(parent[PARENT], parent, replacement);
             }
             if ("chi" in replacement) {
                 // @ts-ignore
                 for (const node of replacement.chi) {
-                    parents.add(Object.defineProperty(node, "parent", {
-                        ...definedPropertySettings,
-                        value: replacement,
-                    }));
+                    node[PARENT] = replacement;
+                    parents.add(node);
                 }
             }
         }
@@ -119,22 +112,20 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                     (feature.accept != null && !feature.accept.has(parent.typ))) {
                     continue;
                 }
-                const result = feature.run(replacement, options, parent.parent ?? ast, context, FeatureWalkMode.Post);
+                const result = feature.run(replacement, options, parent[PARENT] ?? ast, context, FeatureWalkMode.Post);
                 if (result != null) {
                     replacement = result;
                 }
             }
         }
-        if (replacement != null && replacement != parent && parent.parent != null) {
+        if (replacement != null && replacement != parent && parent[PARENT] != null) {
             // @ts-ignore
-            replaceNodeOrValue(parent.parent, parent, replacement);
+            replaceNodeOrValue(parent[PARENT], parent, replacement);
         }
         if ("chi" in replacement) {
             for (const node of replacement.chi) {
-                parents.add(Object.defineProperty(node, "parent", {
-                    ...definedPropertySettings,
-                    value: replacement,
-                }));
+                node[PARENT] = replacement;
+                parents.add(node);
             }
         }
     }
@@ -211,7 +202,7 @@ function transformAtRuleMediaPrelude(values) {
                                 },
                                 l: val1,
                                 r: val2,
-                                loc: value.loc,
+                                [LOC]: value[LOC],
                             },
                         ],
                     };
@@ -382,12 +373,12 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
             }
             else if (node.typ == EnumToken.AtRuleNodeType) {
                 if (node.nam == "media") {
-                    if (Array.isArray(node.tokens)) {
-                        const slice = node.tokens.slice();
+                    if (Array.isArray(node[TOKENS])) {
+                        const slice = node[TOKENS].slice();
                         minifyAtRuleMedia(slice);
-                        if (slice.length !== node.tokens.length) {
-                            node.tokens.length = 0;
-                            node.tokens.push(...slice);
+                        if (slice.length !== node[TOKENS].length) {
+                            node[TOKENS].length = 0;
+                            node[TOKENS].push(...slice);
                             node.val = slice.reduce((acc, curr, index, arr) => acc +
                                 (curr.typ === EnumToken.CommentTokenType ||
                                     (curr.typ === EnumToken.WhitespaceTokenType &&
@@ -403,21 +394,21 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                         continue;
                     }
                 }
-                else if (node.nam === "import" && Array.isArray(node.tokens)) {
+                else if (node.nam === "import" && Array.isArray(node[TOKENS])) {
                     let l = 0;
                     let token;
-                    for (; l < node.tokens.length; l++) {
-                        token = node.tokens[l];
+                    for (; l < node[TOKENS].length; l++) {
+                        token = node[TOKENS][l];
                         if (token.typ === EnumToken.ParensTokenType ||
                             token.typ === EnumToken.MediaQueryConditionTokenType ||
                             (token.typ === EnumToken.IdenTokenType && "layer" !== token.val)) {
                             break;
                         }
                     }
-                    if (l < node.tokens.length) {
-                        const slice = node.tokens?.slice(l);
-                        node.tokens.splice(l, slice.length, ...minifyAtRuleMedia(slice));
-                        node.val = trimArray(node.tokens).reduce((acc, curr, index, arr) => acc +
+                    if (l < node[TOKENS].length) {
+                        const slice = node[TOKENS]?.slice(l);
+                        node[TOKENS].splice(l, slice.length, ...minifyAtRuleMedia(slice));
+                        node.val = trimArray(node[TOKENS]).reduce((acc, curr, index, arr) => acc +
                             (curr.typ === EnumToken.CommentTokenType ||
                                 (curr.typ === EnumToken.WhitespaceTokenType &&
                                     arr[index + 1]?.typ === EnumToken.CommentTokenType &&
@@ -457,7 +448,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     if (previous?.typ == EnumToken.RuleNodeType) {
                         reduceRuleSelector(previous);
                         // @ts-ignore
-                        match = matchSelectors(previous.raw, node.raw);
+                        match = matchSelectors(previous[RAW], node[RAW]);
                         if (match != null) {
                             wrapper = wrapNodes(previous, node, match, ast, reducer, i, nodeIndex);
                             nodeIndex = i - 1;
@@ -471,7 +462,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                 break;
                             }
                             reduceRuleSelector(nextNode);
-                            match = matchSelectors(wrapper.raw, nextNode.raw);
+                            match = matchSelectors(wrapper[RAW], nextNode[RAW]);
                             if (match == null) {
                                 break;
                             }
@@ -483,51 +474,50 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                         continue;
                     }
                     // @ts-ignore
-                    else if (node.optimized != null &&
+                    else if (node[OPTIMIZED] != null &&
                         // @ts-ignore
-                        node.optimized.match &&
+                        node[OPTIMIZED].match &&
                         // @ts-ignore
-                        node.optimized.selector.length > 1) {
+                        node[OPTIMIZED].selector.length > 1) {
                         // @ts-ignore
-                        wrapper = { ...node, chi: [], sel: node.optimized.optimized[0] };
+                        wrapper = {
+                            ...node,
+                            chi: [],
+                            sel: node[OPTIMIZED].optimized[0],
+                            [RAW]: [[node[OPTIMIZED].optimized[0]]],
+                        };
                         // @ts-ignore
-                        Object.defineProperty(wrapper, "raw", {
-                            ...definedPropertySettings,
-                            // @ts-ignore
-                            value: [[node.optimized.optimized[0]]],
-                        });
+                        node.sel = node[OPTIMIZED].selector.reduce(reducer, []).join(",");
                         // @ts-ignore
-                        node.sel = node.optimized.selector.reduce(reducer, []).join(",");
-                        // @ts-ignore
-                        node.raw = node.optimized.selector.slice();
+                        node[RAW] = node[OPTIMIZED].selector.slice();
                         // @ts-ignore
                         wrapper.chi.push(node);
                         // @ts-ignore
                         ast.chi.splice(i, 1, wrapper);
                         node = wrapper;
                     }
-                    else if (node.optimized?.reducible) {
-                        if (node.optimized.optimized.length === 1) {
-                            const sel1 = node.optimized.optimized[0] +
+                    else if (node[OPTIMIZED]?.reducible) {
+                        if (node[OPTIMIZED].optimized.length === 1) {
+                            const sel1 = node[OPTIMIZED].optimized[0] +
                                 ":is(" +
-                                node.optimized.selector.reduce(reducer, []).join(",") +
+                                node[OPTIMIZED].selector.reduce(reducer, []).join(",") +
                                 ")";
-                            const sel2 = node.optimized.selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") + node.optimized.optimized[0] + curr.join(""), "");
+                            const sel2 = node[OPTIMIZED].selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") + node[OPTIMIZED].optimized[0] + curr.join(""), "");
                             node.sel = sel1.length < sel2.length ? sel1 : sel2;
                         }
-                        else if (node.optimized.optimized.length === 0) {
+                        else if (node[OPTIMIZED].optimized.length === 0) {
                             const testIdent = /^[a-zA-Z]/;
-                            node.sel = node.optimized.selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") +
+                            node.sel = node[OPTIMIZED].selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") +
                                 (nestingContent && testIdent.test(curr[0]) ? "& " : "") +
                                 curr.join(""), "");
                         }
                     }
                 }
                 // @ts-ignore
-                else if (node.optimized?.match) {
+                else if (node[OPTIMIZED]?.match) {
                     let wrap = true;
                     // @ts-ignore
-                    const selector = node.optimized.selector.reduce((acc, curr) => {
+                    const selector = node[OPTIMIZED].selector.reduce((acc, curr) => {
                         if (curr[0] == "&" && curr.length > 1) {
                             if (curr[1] == " ") {
                                 curr.splice(0, 2);
@@ -547,7 +537,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                         wrap = selector.some((s) => s[0] != "&");
                     }
                     let rule = null;
-                    const optimized = node.optimized.optimized.slice();
+                    const optimized = node[OPTIMIZED].optimized.slice();
                     if (optimized.length > 1) {
                         const check = optimized.at(-2);
                         if (!combinators.includes(check)) {
@@ -572,38 +562,38 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                         rule = selector
                             .map((s) => {
                             if (s[0] == "&") {
-                                s.splice(0, 1, ...node.optimized.optimized);
+                                s.splice(0, 1, ...node[OPTIMIZED].optimized);
                             }
                             return s.join("");
                         })
                             .join(",");
                     }
-                    let sel = wrap ? node.optimized.optimized.join("") + `:is(${rule})` : rule;
+                    let sel = wrap ? node[OPTIMIZED].optimized.join("") + `:is(${rule})` : rule;
                     if (sel.length < node.sel.length) {
                         node.sel = sel;
                     }
                 }
-                else if (node.optimized?.reducible) {
-                    if (node.optimized.optimized.length === 1) {
-                        const sel1 = node.optimized.optimized[0] +
+                else if (node[OPTIMIZED]?.reducible) {
+                    if (node[OPTIMIZED].optimized.length === 1) {
+                        const sel1 = node[OPTIMIZED].optimized[0] +
                             ":is(" +
-                            node.optimized.selector.reduce(reducer, []).join(",") +
+                            node[OPTIMIZED].selector.reduce(reducer, []).join(",") +
                             ")";
-                        const sel2 = node.optimized.selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") + node.optimized.optimized[0] + curr.join(""), "");
+                        const sel2 = node[OPTIMIZED].selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") + node[OPTIMIZED].optimized[0] + curr.join(""), "");
                         node.sel = sel1.length < sel2.length ? sel1 : sel2;
                     }
-                    else if (node.optimized.optimized.length === 0) {
+                    else if (node[OPTIMIZED].optimized.length === 0) {
                         const testIdent = /^[a-zA-Z]/;
-                        node.sel = node.optimized.selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") +
+                        node.sel = node[OPTIMIZED].selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") +
                             (nestingContent && testIdent.test(curr[0]) ? "& " : "") +
                             curr.join(""), "");
                     }
                 }
-                else if (node.optimized?.optimized.length > 0) {
-                    const sel = node.optimized.optimized.join("");
+                else if (node[OPTIMIZED]?.optimized.length > 0) {
+                    const sel = node[OPTIMIZED].optimized.join("");
                     if (sel.length < node.sel.length) {
                         node.sel = sel;
-                        node.raw = [node.optimized.optimized.slice()];
+                        node[RAW] = [node[OPTIMIZED].optimized.slice()];
                     }
                 }
                 doMinify(node, options, recursive, errors, nestingContent, context);
@@ -638,7 +628,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                             }
                             else if (node.typ == previous?.typ &&
                                 [EnumToken.KeyFramesRuleNodeType, EnumToken.RuleNodeType].includes(node.typ)) {
-                                const intersect = diff(previous, node, reducer, options);
+                                const intersect = diff(previous, node, options);
                                 if (intersect != null) {
                                     if (intersect.node1.chi.length == 0) {
                                         ast.chi.splice(i--, 1);
@@ -647,14 +637,24 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                         ast.chi.splice(i--, 1, intersect.node1);
                                     }
                                     if (intersect.node2.chi.length == 0) {
-                                        ast.chi.splice(nodeIndex, 1, intersect.result);
+                                        if (intersect.result != null) {
+                                            ast.chi.splice(nodeIndex, 1, intersect.result);
+                                        }
+                                        else {
+                                            ast.chi.splice(nodeIndex, 1);
+                                        }
                                         i--;
                                         if (nodeIndex == i) {
                                             nodeIndex = i;
                                         }
                                     }
                                     else {
-                                        ast.chi.splice(nodeIndex, 1, intersect.result, intersect.node2);
+                                        if (intersect.result != null) {
+                                            ast.chi.splice(nodeIndex, 1, intersect.result, intersect.node2);
+                                        }
+                                        else {
+                                            ast.chi.splice(nodeIndex, 1, intersect.node2);
+                                        }
                                         i = (nodeIndex ?? 0) + 1;
                                     }
                                     if (node != ast.chi[i]) {
@@ -1126,12 +1126,13 @@ function wrapNodes(previous, node, match, ast, reducer, i, nodeIndex) {
     let pSel = match.selector1.reduce(reducer, []).join(",");
     // @ts-ignore
     let nSel = match.selector2.reduce(reducer, []).join(",");
-    // @ts-ignore
-    const wrapper = { ...previous, chi: [], sel: match.match.reduce(reducer, []).join(",") };
-    Object.defineProperty(wrapper, "raw", {
-        ...definedPropertySettings,
-        value: match.match.map((t) => t.slice()),
-    });
+    const wrapper = {
+        ...previous,
+        chi: [],
+        // @ts-ignore
+        sel: match.match.reduce(reducer, []).join(","),
+        [RAW]: match.match.map((t) => t.slice()),
+    };
     if (pSel == "&" || pSel === "") {
         wrapper.chi.push(...previous.chi);
         if (nSel == "&" || nSel === "") {
@@ -1147,9 +1148,9 @@ function wrapNodes(previous, node, match, ast, reducer, i, nodeIndex) {
     ast.chi.splice(i, 1, wrapper);
     ast.chi.splice(nodeIndex, 1);
     previous.sel = pSel;
-    previous.raw = match.selector1;
+    previous[RAW] = match.selector1;
     node.sel = nSel;
-    node.raw = match.selector2;
+    node[RAW] = match.selector2;
     reduceRuleSelector(wrapper);
     return wrapper;
 }
@@ -1162,7 +1163,7 @@ function wrapNodes(previous, node, match, ast, reducer, i, nodeIndex) {
  *
  * @private
  */
-function diff(n1, n2, reducer, options = {}) {
+function diff(n1, n2, options = {}) {
     if (!("cache" in options)) {
         options.cache = new WeakMap();
     }
@@ -1177,8 +1178,8 @@ function diff(n1, n2, reducer, options = {}) {
     }
     let i = node1.chi.length;
     let j = node2.chi.length;
-    const raw1 = node1.raw;
-    const raw2 = node2.raw;
+    const raw1 = node1[RAW];
+    const raw2 = node2[RAW];
     if (raw1 != null && raw2 != null) {
         const prefixes1 = new Set();
         const prefixes2 = new Set();
@@ -1236,10 +1237,10 @@ function diff(n1, n2, reducer, options = {}) {
         options.cache.set(node2, css2);
     }
     if (raw1 != null) {
-        Object.defineProperty(node1, "raw", { ...definedPropertySettings, value: raw1 });
+        node1[RAW] = raw1;
     }
     if (raw2 != null) {
-        Object.defineProperty(node2, "raw", { ...definedPropertySettings, value: raw2 });
+        node2[RAW] = raw2;
     }
     const intersect = [];
     while (i--) {
@@ -1294,6 +1295,8 @@ function diff(n1, n2, reducer, options = {}) {
         }
     }
     if (result != null) {
+        result[TOKENS] = null;
+        result[RAW] = null;
         const optimized = optimizeSelector(splitRule(result.sel));
         if (optimized?.match) {
             const rule = optimized.selector.reduce((acc, curr) => {
@@ -1324,15 +1327,15 @@ function diff(n1, n2, reducer, options = {}) {
  * @private
  */
 function reduceRuleSelector(node) {
-    if (node.raw == null) {
-        Object.defineProperty(node, "raw", { ...definedPropertySettings, value: splitRule(node.sel) });
+    if (node[RAW] == null) {
+        node[RAW] = splitRule(node.sel);
     }
-    let optimized = optimizeSelector(node.raw.reduce((acc, curr) => {
+    let optimized = optimizeSelector(node[RAW].reduce((acc, curr) => {
         acc.push(curr.slice());
         return acc;
     }, []));
     if (optimized != null) {
-        Object.defineProperty(node, "optimized", { ...definedPropertySettings, value: optimized });
+        node[OPTIMIZED] = optimized;
     }
     if (optimized != null && optimized.match && optimized.reducible && optimized.selector.length > 1) {
         for (const selector of optimized.selector) {
@@ -1360,7 +1363,7 @@ function reduceRuleSelector(node) {
         const sel = raw[0].join("");
         if (sel.length < node.sel.length) {
             node.sel = sel;
-            Object.defineProperty(node, "raw", { ...definedPropertySettings, value: raw });
+            node[RAW] = raw;
         }
     }
 }

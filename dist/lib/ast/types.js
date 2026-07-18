@@ -568,8 +568,8 @@ var EnumToken;
     EnumToken[EnumToken["RawNodeTokenType"] = 117] = "RawNodeTokenType";
     /**
      * media query boolean token type
-     * @media not ()
-     * @media only ()
+     * at-rule media not ()
+     * at-rule media only ()
      */
     EnumToken[EnumToken["MediaQueryUnaryFeatureTokenType"] = 118] = "MediaQueryUnaryFeatureTokenType";
     /**
@@ -656,6 +656,10 @@ var EnumToken;
      * if-Else condition token
      */
     EnumToken[EnumToken["IfElseConditionTokenType"] = 139] = "IfElseConditionTokenType";
+    /**
+     * wrapped values token type like {Arial, sans-serif}
+     */
+    EnumToken[EnumToken["WrappedValuesTokenType"] = 140] = "WrappedValuesTokenType";
     /* aliases */
     /**
      * alias for time token type

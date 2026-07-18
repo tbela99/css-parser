@@ -1,6 +1,15 @@
 import { EnumToken } from '../ast/types.js';
 import config from '../validation/config.json.js';
 
+const LOC = Symbol.for("loc");
+const RAW = Symbol.for("raw");
+const STATE = Symbol.for("state");
+const ROOT = Symbol.for("root");
+const ERRORS = Symbol.for("errors");
+const TOKENS = Symbol.for("tokens");
+const PARENT = Symbol.for("parent");
+const OPTIMIZED = Symbol.for("optimized");
+const PROPERTYNAME = Symbol.for("propertyName");
 const regMatchLinearGradient = /^-((webkit)|o|moz)(-repeating)?-linear-gradient$/i;
 const regMatchRadialGradient = /^-((webkit)|o|moz)(-repeating)?-radial-gradient$/i;
 const mFLT = new Set([EnumToken.LtTokenType, EnumToken.LteTokenType]);
@@ -70,6 +79,17 @@ const colorRange = {
         b: [0, 0.4],
     },
 };
+// https://www.w3.org/TR/css-values-4/#math-function
+const pseudoElements = [
+    ":before",
+    ":after",
+    ":first-line",
+    ":first-letter",
+    "::before",
+    "::after",
+    "::first-line",
+    "::first-letter",
+];
 const wildCardFuncs = ["var", "env", "if"];
 const mathFuncs = [
     "minmax",
@@ -137,7 +157,7 @@ const pageMarginBoxType = new Set([
 const urlFunc = ["url"];
 const timelineFunc = ["view", "scroll"];
 const gridTemplateFunc = ["minmax", "fit-content", "repeat"];
-const generalEnclosedFunc = [];
+// export const generalEnclosedFunc: string[] = [];
 const supportFunc = ["selector", "font-tech", "font-format", "at-rule", "named-feature"];
 const whenElseFunc = ["media", "supports"];
 const containerFunc = ["style", "scroll-state"];
@@ -458,7 +478,6 @@ const trimTokenSpace = new Set([
     EnumToken.SupportsQueryConditionTokenType,
     EnumToken.SupportsQueryUnaryConditionTokenType,
 ]);
-const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
 const combinators = ["+", ">", "~", "||", "|"];
 
-export { COLORS_NAMES, D50, NAMES_COLORS, anglePrecision, colorDistancePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, definedPropertySettings, deprecatedSystemColors, e, epsilon, funcLike, generalEnclosedFunc, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, regMatchLinearGradient, regMatchRadialGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };
+export { COLORS_NAMES, D50, ERRORS, LOC, NAMES_COLORS, OPTIMIZED, PARENT, PROPERTYNAME, RAW, ROOT, STATE, TOKENS, anglePrecision, colorDistancePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, deprecatedSystemColors, e, epsilon, funcLike, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, pseudoElements, regMatchLinearGradient, regMatchRadialGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };

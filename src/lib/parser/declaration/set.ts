@@ -9,7 +9,7 @@ import type {
     WhitespaceToken,
 } from "../../../@types/index.d.ts";
 import { eq } from "../utils/eq.ts";
-import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
+import {  EnumToken } from "../../ast/types.ts";
 import { isLength } from "../../syntax/syntax.ts";
 
 function dedup(values: Token[][]): Token[][] {

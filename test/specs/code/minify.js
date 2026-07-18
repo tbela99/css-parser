@@ -495,6 +495,184 @@ background:  conic-gradient(white 90deg, black 0.25turn 0.5turn, white calc(2*pi
  background: conic-gradient(#fff 90deg,#000 90deg .5turn,#fff 1turn 270deg,#000 270deg)
 }`));
         });
+
+        it(' conic-gradient() #27', function () {
+
+            return transform(`
+  
+  a:hover {
+    background: conic-gradient(from 0.25turn at left center, black 0.25turn 0.5turn, white calc(2*pi * 1rad) calc(pi * 1.5rad), black 300grad);;
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`a:hover {
+ background: conic-gradient(from 90deg at 0,#000 90deg .5turn,#fff 1turn 270deg,#000 270deg)
+}`));
+        });
+
+        it(' conic-gradient() #28', function () {
+
+            return transform(`
+  
+  a:hover {
+    background: conic-gradient(from 0.25turn at top center, black 0.25turn 0.5turn, white calc(2*pi * 1rad) calc(pi * 1.5rad), black 300grad);;
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`a:hover {
+ background: conic-gradient(from 90deg at top,#000 90deg .5turn,#fff 1turn 270deg,#000 270deg)
+}`));
+        });
+
+        it(' conic-gradient() #29', function () {
+
+            return transform(`
+  
+  a:hover {
+    background: conic-gradient(from 0.25turn at bottom center, black 0.25turn 0.5turn, white calc(2*pi * 1rad) calc(pi * 1.5rad), black 300grad);;
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`a:hover {
+ background: conic-gradient(from 90deg at bottom,#000 90deg .5turn,#fff 1turn 270deg,#000 270deg)
+}`));
+        });
+
+        it(' conic-gradient() #30', function () {
+
+            return transform(`
+  
+  a:hover {
+    background: conic-gradient(from 0.25turn at right center, black 0.25turn 0.5turn, white calc(2*pi * 1rad) calc(pi * 1.5rad), black 300grad);;
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`a:hover {
+ background: conic-gradient(from 90deg at 100%,#000 90deg .5turn,#fff 1turn 270deg,#000 270deg)
+}`));
+        });
+        
+
+        it(' conic-gradient() #31', function () {
+
+            return transform(`
+  
+  a:hover {
+    background: conic-gradient(from 0.25turn at bottom left, black 0.25turn 0.5turn, white calc(2*pi * 1rad) calc(pi * 1.5rad), black 300grad);;
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`a:hover {
+ background: conic-gradient(from 90deg at 0 100%,#000 90deg .5turn,#fff 1turn 270deg,#000 270deg)
+}`));
+        });
+        
+        it(' conic-gradient() #32', function () {
+
+            return transform(`
+  
+  a:hover {
+    background: conic-gradient(from 0.25turn at bottom right, black 0.25turn 0.5turn, white calc(2*pi * 1rad) calc(pi * 1.5rad), black 300grad);;
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`a:hover {
+ background: conic-gradient(from 90deg at 100% 100%,#000 90deg .5turn,#fff 1turn 270deg,#000 270deg)
+}`));
+        });
+        
+        it(' conic-gradient() #33', function () {
+
+            return transform(`
+  
+  a:hover {
+    background: conic-gradient(from 0.25turn at top left, black 0.25turn 0.5turn, white calc(2*pi * 1rad) calc(pi * 1.5rad), black 300grad);;
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`a:hover {
+ background: conic-gradient(from 90deg at 0 0,#000 90deg .5turn,#fff 1turn 270deg,#000 270deg)
+}`));
+        });
+        
+        it(' conic-gradient() #34', function () {
+
+            return transform(`
+  
+  a:hover {
+    background: conic-gradient(from 0.25turn at top right, black 0.25turn 0.5turn, white calc(2*pi * 1rad) calc(pi * 1.5rad), black 300grad);;
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`a:hover {
+ background: conic-gradient(from 90deg at 100% 0,#000 90deg .5turn,#fff 1turn 270deg,#000 270deg)
+}`));
+        });
+        
+        it(' conic-gradient() #35', function () {
+
+            return transform(`
+  
+  a:hover {
+    background: conic-gradient(from 0.25turn at 50%, black 0.25turn 0.5turn, white calc(2*pi * 1rad) calc(pi * 1.5rad), black 300grad);;
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`a:hover {
+ background: conic-gradient(from 90deg,#000 90deg .5turn,#fff 1turn 270deg,#000 270deg)
+}`));
+        });
+        
+        it(' conic-gradient() #36', function () {
+
+            return transform(`
+  
+  a:hover {
+    background: conic-gradient(from 0.25turn at 0 50%, black 0.25turn 0.5turn, white calc(2*pi * 1rad) calc(pi * 1.5rad), black 300grad);;
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`a:hover {
+ background: conic-gradient(from 90deg at 0,#000 90deg .5turn,#fff 1turn 270deg,#000 270deg)
+}`));
+        });
+        
+        it(' conic-gradient() #37', function () {
+
+            return transform(`
+  
+  a:hover {
+    background: conic-gradient(from 0.25turn at 50% 0, black 0.25turn 0.5turn, white calc(2*pi * 1rad) calc(pi * 1.5rad), black 300grad);;
+  }
+`, {
+                beautify: true,
+                removePrefix: true,
+                pass: 2
+            }).then((result) => expect(result.code).equals(`a:hover {
+ background: conic-gradient(from 90deg at top,#000 90deg .5turn,#fff 1turn 270deg,#000 270deg)
+}`));
+        });
+        
     });
 
 }

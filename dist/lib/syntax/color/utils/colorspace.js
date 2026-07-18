@@ -7,9 +7,9 @@ import { getColorComponents } from './components.js';
  * @returns
  */
 function getColorSpace(color) {
-    if (!("chi" in color)) {
-        return "rgb";
-    }
+    // if (!("chi" in color)) {
+    //     return "rgb";
+    // }
     let name;
     const components = getColorComponents(color);
     if (components == null || components.length < 3) {

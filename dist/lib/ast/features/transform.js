@@ -1,9 +1,9 @@
 import { EnumToken, EnumAstNodeStatus } from '../types.js';
-import { consumeWhitespace } from '../../validation/utils/whitespace.js';
 import { compute } from '../transform/compute.js';
 import { filterValues, renderValue } from '../../renderer/render.js';
 import { minifyTransformFunctions, eqMatrix } from '../transform/minify.js';
 import { FeatureWalkMode } from './type.js';
+import { STATE } from '../../syntax/constants.js';
 
 class TransformCssFeature {
     accept = new Set([EnumToken.RuleNodeType, EnumToken.KeyFramesRuleNodeType]);
@@ -30,7 +30,7 @@ class TransformCssFeature {
         for (; i < ast.chi.length; i++) {
             // @ts-ignore
             node = ast.chi[i];
-            if (node.state == EnumAstNodeStatus.Invalid || node.state == EnumAstNodeStatus.ValidationFailed) {
+            if (node[STATE] == EnumAstNodeStatus.Invalid || node[STATE] == EnumAstNodeStatus.ValidationFailed) {
                 continue;
             }
             if (node.typ != EnumToken.DeclarationNodeType ||
@@ -43,7 +43,7 @@ class TransformCssFeature {
                     ? minifyTransformFunctions(child)
                     : child);
             }
-            consumeWhitespace(children);
+            // consumeWhitespace(children);
             let { matrix, cumulative, minified } = compute(children) ?? {
                 matrix: null,
                 cumulative: null,

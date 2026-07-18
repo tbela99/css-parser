@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.4.7
+
+### Improvements
+
+- [x] Added support for parsing wrapped function arguments as defined in the CSS Values & Units Level 5 specification for component functions. 
+
+  ```css
+  font-family: random-item(--x,{Times,serif},{Arial,sans-serif},{Courier,monospace})
+  ```
+### Fixes
+
+- [x] Fixed a performance regression, resulting in approximately ***25%*** performance gain.
+- [x] Fixed a `conic-gradient()` minification bug.
+- [x] Fixed missing characters by the streaming tokenizer
+- [x] `walk()` with reverse parameter enabled was reversing the node's children
+- [x] merging nodes could introduce a null reference
+  
 ## v1.4.6
 
 - [x] Fix if syntax expansion regression bug #134

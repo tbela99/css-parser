@@ -374,5 +374,5 @@ button {
 
 
 ------
-[← Getting started](./getting-started.md) | [Validation →](./Guide.Validation.html) 
+[← Getting started](./Guide.Getting_started.html) | [Validation →](./Guide.Validation.html) 
 

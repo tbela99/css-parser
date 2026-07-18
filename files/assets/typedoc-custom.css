@@ -79,7 +79,7 @@ html[data-theme="dark"] {
 }
 
 
-#function-differences + table th {
+#main-function-differences+ table td {
 
-    text-align: left;
+    text-align: center;
 }

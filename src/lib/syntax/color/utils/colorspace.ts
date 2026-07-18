@@ -8,9 +8,9 @@ import { getColorComponents } from "./components.ts";
  * @returns
  */
 export function getColorSpace(color: ColorToken) {
-    if (!("chi" in color)) {
-        return "rgb";
-    }
+    // if (!("chi" in color)) {
+    //     return "rgb";
+    // }
 
     let name: string;
 

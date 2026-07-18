@@ -22,9 +22,6 @@ function alpha(color, alpha) {
     if (color.kin === ColorType.DEVICE_CMYK) {
         return null;
     }
-    if (alpha == null) {
-        return color;
-    }
     if (color.kin === ColorType.COLOR_MIX || color.cal === "rel") {
         color = convertColor(color, getColorType(color));
         if (color == null) {
@@ -35,7 +32,7 @@ function alpha(color, alpha) {
     if (components == null) {
         return null;
     }
-    if (alpha.typ === EnumToken.IdenTokenType && equalsIgnoreCase(alpha.val, "alpha")) {
+    if (alpha?.typ === EnumToken.IdenTokenType && equalsIgnoreCase(alpha.val, "alpha")) {
         alpha = components[3] ?? {
             typ: EnumToken.NumberTokenType,
             val: 1,

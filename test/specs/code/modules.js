@@ -700,5 +700,134 @@ a span {
             });
 
         });
+        
+
+        it('module grid #20', function () {
+
+            transform(`
+.grid {
+  grid-template-areas: 'nav main';
+  grid-template-columns: [line-name1] 100px [line-name2 line-name3];
+}
+
+.nav {
+  grid-column-start: nav-start;
+  grid-column-end: nav-end;
+}
+`, {
+                module: {
+                    pattern: '[local]-[hash:base64url]'
+                }, beautify: true
+            }).then(result => {
+
+                expect(result.code).equals(`.grid-Z3JpZ {
+ grid-template-areas: 'nav-bmF2O main-bWFpb';
+ grid-template-columns: [line-name1-bGluZ] 100px [line-name2-bGluZ line-name3-bGluZ]
+}
+.nav-bmF2O {
+ grid-column-start: nav-bmF2O;
+ grid-column-end: nav-bmF2O
+}`);
+            });
+
+        });
+        
+        it('module grid #21', function () {
+
+            transform(`
+
+.grid {
+  grid-template-areas: 'nav main';
+  grid-template-columns: [line-name1] 100px [line-name2 line-name3];
+}
+
+.nav {
+  grid-column-start: nav-start;
+  grid-column-end: nav-end;
+}
+
+`, {
+                module: {
+                    pattern: '[local]-[hash:hex]'
+                }, beautify: true
+            }).then(result => {
+
+                expect(result.code).equals(`.grid-67726 {
+ grid-template-areas: 'nav-6e617 main-6d616';
+ grid-template-columns: [line-name1-6c696] 100px [line-name2-6c696 line-name3-6c696]
+}
+.nav-6e617 {
+ grid-column-start: nav-6e617;
+ grid-column-end: nav-6e617
+}`);
+            });
+
+        });
+        
+        it('module grid #22', function () {
+
+            transform(`
+
+.grid {
+  grid-template-areas: 'nav main';
+  grid-template-columns: [line-name1] 100px [line-name2 line-name3];
+}
+
+.nav {
+  grid-column-start: nav-start;
+  grid-column-end: nav-end;
+}
+
+`, {
+                module: {
+                    pattern: '[local]-[hash:bogus]'
+                }, beautify: true
+            }).then(result => {
+
+                expect(result.code).to.throw(`Unsupported hash length: 'bogus'. expecting format [hash:length] or [hash:hash-algo:length]`);
+            });
+
+        });
+        
+        
+        it('module grid #23', function () {
+
+            transform(`
+
+.grid {
+  grid-template-areas: 'nav main';
+  grid-template-columns: [line-name1] 100px [line-name2 line-name3];
+}
+
+.nav {
+  grid-column-start: nav-start;
+  grid-column-end: nav-end;
+}
+
+`, {
+                module: ModuleScopeEnumOptions.ICSS | ModuleScopeEnumOptions.Shortest, 
+                beautify: true
+            }).then(result => {
+
+                expect(result.code).equals(`:export {
+ grid: a;
+ nav: b;
+ main: c;
+ line-name1: d;
+ line-name2: e;
+ line-name3: f;
+}
+.a {
+ grid-template-areas: 'b c';
+ grid-template-columns: [d] 100px [e f]
+}
+.b {
+ grid-column-start: b;
+ grid-column-end: b
+}`);
+            });
+
+        });
+        
     });
 }

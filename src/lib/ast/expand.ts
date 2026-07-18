@@ -1,5 +1,5 @@
 import { splitRule } from "./minify.ts";
-import { combinators } from "../syntax/constants.ts";
+import { combinators, RAW } from "../syntax/constants.ts";
 import { parseString } from "../parser/parse.ts";
 import { walkValues } from "./walk.ts";
 import { renderValue } from "../renderer/render.ts";
@@ -53,7 +53,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
         for (; i < ast.chi.length; i++) {
             if (ast.chi[i].typ == EnumToken.RuleNodeType) {
-                const rule: AstRule = <AstRule>(<AstRule>ast).chi[i];
+                const rule: AstRule = (<AstRule>ast).chi[i] as AstRule;
 
                 if (!rule.sel.includes("&")) {
                     const selRule: string[][] = splitRule(rule.sel);
@@ -102,7 +102,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                         continue;
                     }
 
-                    for (const sel of rule.raw ?? splitRule(rule.sel)) {
+                    for (const sel of rule[RAW]?? splitRule(rule.sel)) {
                         const s: string = sel.join("");
 
                         if (s.includes("&") || parentSelector) {

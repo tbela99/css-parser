@@ -1,6 +1,16 @@
 import { EnumToken } from "../ast/types.ts";
 import { config } from "../validation/json.ts";
 
+export const LOC = Symbol.for("loc");
+export const RAW = Symbol.for("raw");
+export const STATE = Symbol.for("state");
+export const ROOT = Symbol.for("root");
+export const ERRORS = Symbol.for("errors");
+export const TOKENS = Symbol.for("tokens");
+export const PARENT = Symbol.for("parent");
+export const OPTIMIZED = Symbol.for("optimized");
+export const PROPERTYNAME = Symbol.for("propertyName");
+
 export const regMatchLinearGradient = /^-((webkit)|o|moz)(-repeating)?-linear-gradient$/i;
 export const regMatchRadialGradient = /^-((webkit)|o|moz)(-repeating)?-radial-gradient$/i;
 export const mFLT = new Set([EnumToken.LtTokenType, EnumToken.LteTokenType]);
@@ -74,6 +84,19 @@ export const colorRange = {
     },
 };
 
+// https://www.w3.org/TR/css-values-4/#math-function
+
+export const pseudoElements: string[] = [
+    ":before",
+    ":after",
+    ":first-line",
+    ":first-letter",
+    "::before",
+    "::after",
+    "::first-line",
+    "::first-letter",
+];
+
 export const wildCardFuncs = ["var", "env", "if"];
 export const mathFuncs = [
     "minmax",
@@ -145,7 +168,7 @@ export const pageMarginBoxType: Set<string> = new Set([
 export const urlFunc: string[] = ["url"];
 export const timelineFunc: string[] = ["view", "scroll"];
 export const gridTemplateFunc: string[] = ["minmax", "fit-content", "repeat"];
-export const generalEnclosedFunc: string[] = [];
+// export const generalEnclosedFunc: string[] = [];
 export const supportFunc: string[] = ["selector", "font-tech", "font-format", "at-rule", "named-feature"];
 export const whenElseFunc: string[] = ["media", "supports"];
 export const containerFunc: string[] = ["style", "scroll-state"];
@@ -488,5 +511,4 @@ export const trimTokenSpace: Set<EnumToken> = new Set([
     EnumToken.SupportsQueryConditionTokenType,
     EnumToken.SupportsQueryUnaryConditionTokenType,
 ]);
-export const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
 export const combinators: string[] = ["+", ">", "~", "||", "|"];

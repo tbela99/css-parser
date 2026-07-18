@@ -1,10 +1,10 @@
-import { convertColor, getAngle } from '../syntax/color/color.js';
+import { convertColor, toPrecisionAngle, getAngle } from '../syntax/color/color.js';
 import { reduceHexValue } from '../syntax/color/hex.js';
 import { EnumToken, minifyNumber, ColorType } from '../ast/types.js';
 import { expand } from '../ast/expand.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
-import { colorsFunc, urlTokenMatcher, tokensfuncSet } from '../syntax/constants.js';
-import { isColor, pseudoElements, reducegradientBackgroundPosition, reduceConicColorStops, reduceColorStops, parseColor } from '../syntax/syntax.js';
+import { pseudoElements, urlTokenMatcher, PARENT, tokensfuncSet, LOC, colorPrecision } from '../syntax/constants.js';
+import { reducegradientBackgroundPosition, reduceConicColorStops, reduceColorStops, parseColor } from '../syntax/syntax.js';
 import { move } from '../parser/tokenize.js';
 import { equalsIgnoreCase } from '../parser/utils/text.js';
 import { toDegrees } from '../parser/utils/angle.js';
@@ -47,13 +47,12 @@ function doRender(data, options = {}, mapping) {
     };
     if (options.withParents) {
         // @ts-ignore
-        let parent = data.parent;
-        // @ts-ignore
-        while (data.parent != null) {
+        let parent = data[PARENT];
+        while (data[PARENT] != null) {
             // @ts-ignore
-            parent = { ...data.parent, chi: [{ ...data }] };
+            parent = { ...data[PARENT], chi: [{ ...data }] };
             // @ts-ignore
-            parent.parent = data.parent.parent;
+            parent[PARENT] = data[PARENT][PARENT];
             // @ts-ignore
             data = parent;
         }
@@ -127,11 +126,12 @@ function updateSourceMap(node, options, cache, sourcemap, position, str) {
         EnumToken.KeyFramesRuleNodeType,
         EnumToken.KeyframesAtRuleNodeType,
     ].includes(node.typ)) {
-        let src = node.loc?.src ?? "";
+        let src = node[LOC]?.src ?? "";
+        // console.debug(src);
         sourcemap.add(
         // @ts-ignore
         { src, sta: { ...position } }, {
-            ...node.loc,
+            ...node[LOC],
             // @ts-ignore
             src,
         });
@@ -182,12 +182,12 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                     return css;
                 }
                 if (css === "") {
-                    if (sourcemap != null && node.loc != null) {
+                    if (sourcemap != null && node[LOC] != null) {
                         updateSourceMap(node, options, cache, sourcemap, position, str);
                     }
                     return str;
                 }
-                if (sourcemap != null && node.loc != null) {
+                if (sourcemap != null && node[LOC] != null) {
                     move(position, options.newLine);
                     updateSourceMap(node, options, cache, sourcemap, position, str);
                 }
@@ -211,24 +211,24 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                             : node.val;
                 }
                 else if (node.typ == EnumToken.DeclarationNodeType) {
-                    if (!node.nam.startsWith("--") && node.val.length === 0) {
-                        // @ts-ignore
-                        errors.push({
-                            action: "ignore",
-                            message: `render: invalid declaration ${JSON.stringify(node)}`,
-                            location: node.loc,
-                        });
-                        return "";
-                    }
+                    // if (!(<AstDeclaration>node).nam.startsWith("--") && (<AstDeclaration>node).val.length === 0) {
+                    //     // @ts-ignore
+                    //     errors.push(<ErrorDescription>{
+                    //         action: "ignore",
+                    //         message: `render: invalid declaration ${JSON.stringify(node)}`,
+                    //         location: node[LOC],
+                    //     });
+                    //     return "";
+                    // }
                     str = `${node.nam}:${options.indent}${(options.minify
                         ? filterValues(node.val)
                         : node.val)
                         .reduce(reducer, "")
                         .trimEnd()};`;
                 }
-                else if (node.typ == EnumToken.AtRuleNodeType && !("chi" in node)) {
-                    str = `${node.val === "" ? "" : options.indent || " "}${node.val};`;
-                }
+                // else if (node.typ == EnumToken.AtRuleNodeType && !("chi" in node)) {
+                //     str = `${(<AstAtRule>node).val === "" ? "" : options.indent || " "}${(<AstAtRule>node).val};`;
+                // } 
                 else {
                     str = renderAstNode(node, options, sourcemap, { ...position }, errors, reducer, cache, level + 1, indents);
                 }
@@ -257,22 +257,24 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                 (children === "" ? "" : indentSub + children + options.newLine) +
                 indent +
                 `}`);
-        case EnumToken.CssVariableTokenType:
-        case EnumToken.CssVariableImportTokenType:
-            return `@value ${data.val}:${options.indent}${filterValues(options.minify
-                ? data.val
-                : data.val)
-                .reduce(reducer, "")
-                .trim()};`;
-        case EnumToken.CssVariableDeclarationMapTokenType:
-            return `@value ${filterValues(data.vars)
-                .reduce((acc, curr) => acc + renderValue(curr), "")
-                .trim()} from ${filterValues(data.from)
-                .reduce((acc, curr) => acc + renderValue(curr), "")
-                .trim()};`;
-        case EnumToken.InvalidDeclarationNodeType:
-        case EnumToken.InvalidRuleNodeType:
-        case EnumToken.InvalidAtRuleNodeType:
+        // case EnumToken.CssVariableTokenType:
+        // case EnumToken.CssVariableImportTokenType:
+        //     return `@value ${(<CssVariableToken | CssVariableImportTokenType>data).val}:${options.indent}${filterValues(
+        //         options.minify
+        //             ? (<CssVariableToken | CssVariableImportTokenType>data).val
+        //             : (<CssVariableToken>data).val,
+        //     )
+        //         .reduce(reducer, "")
+        //         .trim()};`;
+        // case EnumToken.CssVariableDeclarationMapTokenType:
+        //     return `@value ${filterValues((data as CssVariableMapTokenType).vars)
+        //         .reduce((acc, curr) => acc + renderValue(curr), "")
+        //         .trim()} from ${filterValues((data as CssVariableMapTokenType).from)
+        //         .reduce((acc, curr) => acc + renderValue(curr), "")
+        //         .trim()};`;
+        // case EnumToken.InvalidDeclarationNodeType:
+        // case EnumToken.InvalidRuleNodeType:
+        // case EnumToken.InvalidAtRuleNodeType:
         default:
             return "";
     }
@@ -300,42 +302,46 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
             return acc + renderValue(curr, options, cache, reducer, errors);
         };
     }
-    if (token.typ == EnumToken.FunctionTokenType && colorsFunc.includes(token.val)) {
-        if (isColor(token)) {
-            // @ts-ignore
-            token.typ = EnumToken.ColorTokenType;
-            if (
-            // @ts-ignore
-            token.chi[0].typ == EnumToken.IdenTokenType &&
-                // @ts-ignore
-                token.chi[0].val == "from") {
-                // @ts-ignore
-                token.cal = "rel";
-            }
-            else {
-                // @ts-ignore
-                if (token.val == "color-mix" &&
-                    token.chi?.[0]?.typ == EnumToken.IdenTokenType &&
-                    (token.chi?.[0]).val == "in") {
-                    // @ts-ignore
-                    token.cal = "mix";
-                }
-                else {
-                    // @ts-ignore
-                    if (token.val == "color") {
-                        // @ts-ignore
-                        token.cal = "col";
-                    }
-                    // @ts-ignore
-                    token.chi = token.chi.filter((t) => ![
-                        EnumToken.WhitespaceTokenType,
-                        EnumToken.CommaTokenType,
-                        EnumToken.CommentTokenType,
-                    ].includes(t.typ));
-                }
-            }
-        }
-    }
+    // if (token.typ == EnumToken.FunctionTokenType && colorsFunc.includes((token as FunctionToken).val)) {
+    //     if (isColor(token)) {
+    //         // @ts-ignore
+    //         token.typ = EnumToken.ColorTokenType;
+    //         if (
+    //             // @ts-ignore
+    //             (token as ColorToken)!.chi[0]!.typ == EnumToken.IdenTokenType &&
+    //             // @ts-ignore
+    //             ((token as ColorToken)!.chi[0] as IdentToken).val == "from"
+    //         ) {
+    //             // @ts-ignore
+    //             (<ColorToken>token).cal = "rel";
+    //         } else {
+    //             // @ts-ignore
+    //             if (
+    //                 (token as ColorToken).val == "color-mix" &&
+    //                 (token as ColorToken).chi?.[0]?.typ == EnumToken.IdenTokenType &&
+    //                 ((token as ColorToken).chi?.[0] as IdentToken).val == "in"
+    //             ) {
+    //                 // @ts-ignore
+    //                 (<ColorToken>token).cal = "mix";
+    //             } else {
+    //                 // @ts-ignore
+    //                 if ((token as ColorToken).val == "color") {
+    //                     // @ts-ignore
+    //                     token.cal = "col";
+    //                 }
+    //                 // @ts-ignore
+    //                 (token as ColorToken).chi = (token as ColorToken).chi!.filter(
+    //                     (t: Token) =>
+    //                         ![
+    //                             EnumToken.WhitespaceTokenType,
+    //                             EnumToken.CommaTokenType,
+    //                             EnumToken.CommentTokenType,
+    //                         ].includes(t.typ),
+    //                 );
+    //             }
+    //         }
+    //     }
+    // }
     switch (token.typ) {
         case EnumToken.FunctionTokenDefType:
         case EnumToken.UrlFunctionTokenDefType:
@@ -399,6 +405,10 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
             return "*";
         case EnumToken.Div:
             return "/";
+        case EnumToken.WrappedValuesTokenType:
+            return ("{" +
+                token.chi.reduce((acc, curr) => acc + renderValue(curr, options, cache), "") +
+                "}");
         case EnumToken.ColorTokenType:
             if (token.kin == ColorType.LIGHT_DARK ||
                 ("chi" in token && options.convertColor === false && token.chi.length == 2)) {
@@ -569,20 +579,22 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                                 else if (slice[i].typ == EnumToken.AngleTokenType) {
                                     if ((180 - toDegrees(slice[i]).val) % 360 === 0) {
                                         k = i + 1;
-                                        while (k < slice.length && slice[k].typ !== EnumToken.CommaTokenType) {
-                                            k++;
-                                        }
+                                        // while (k < slice.length && slice[k].typ !== EnumToken.CommaTokenType) {
+                                        //     k++;
+                                        // }
                                         slice.splice(i, k - i + 1);
                                     }
                                 }
                             }
                             if (slice[i]?.typ === EnumToken.CommaTokenType) {
                                 i++;
-                                while (i < slice.length &&
-                                    (slice[i].typ === EnumToken.WhitespaceTokenType ||
-                                        slice[i].typ === EnumToken.CommentTokenType)) {
-                                    i++;
-                                }
+                                // while (
+                                //     i < slice.length &&
+                                //     (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                                //         slice[i].typ === EnumToken.CommentTokenType)
+                                // ) {
+                                //     i++;
+                                // }
                             }
                             if (slice[i]?.typ === EnumToken.ColorTokenType) {
                                 slice.push(...reduceColorStops(slice.splice(i, slice.length - i)));
@@ -593,11 +605,13 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                     case "repeating-radial-gradient":
                         {
                             let i = 0;
-                            while (i < slice.length &&
-                                (slice[i].typ === EnumToken.WhitespaceTokenType ||
-                                    slice[i].typ === EnumToken.CommentTokenType)) {
-                                i++;
-                            }
+                            // while (
+                            //     i < slice.length &&
+                            //     (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                            //         slice[i].typ === EnumToken.CommentTokenType)
+                            // ) {
+                            //     i++;
+                            // }
                             const positions = [];
                             const form = [];
                             const size = [];
@@ -809,11 +823,13 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                             const angles = [];
                             const positions = [];
                             const colorSpaceDef = [];
-                            while (i < slice.length &&
-                                (slice[i].typ === EnumToken.WhitespaceTokenType ||
-                                    slice[i].typ === EnumToken.CommentTokenType)) {
-                                i++;
-                            }
+                            // while (
+                            //     i < slice.length &&
+                            //     (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                            //         slice[i].typ === EnumToken.CommentTokenType)
+                            // ) {
+                            //     i++;
+                            // }
                             if (slice[i]?.typ === EnumToken.IdenTokenType &&
                                 equalsIgnoreCase(slice[i].val, "from")) {
                                 angles.push(slice[i++]);
@@ -897,13 +913,18 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                                 i++;
                             }
                             const result = [];
+                            if (positions.length > 0) {
+                                if (positions.length > 0) {
+                                    if (angles.length > 0) {
+                                        angles.push({ typ: EnumToken.WhitespaceTokenType });
+                                    }
+                                    angles.push({ typ: EnumToken.IdenTokenType, val: "at" }, { typ: EnumToken.WhitespaceTokenType }, ...positions);
+                                }
+                            }
                             if (angles.length > 0) {
                                 result.push(...angles, { typ: EnumToken.CommaTokenType });
                             }
-                            if (positions.length > 0 || colorSpaceDef.length > 0) {
-                                if (positions.length > 0) {
-                                    result.push({ typ: EnumToken.IdenTokenType, val: "at" }, { typ: EnumToken.WhitespaceTokenType }, ...positions);
-                                }
+                            if (colorSpaceDef.length > 0) {
                                 if (colorSpaceDef.length > 0) {
                                     if (result.length > 0) {
                                         result.push({ typ: EnumToken.WhitespaceTokenType });
@@ -948,23 +969,32 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                 "(" +
                 token.chi.reduce(reducer, "") +
                 ")");
-        case EnumToken.MatchExpressionTokenType:
-            return (renderValue(token.l, options, cache, reducer, errors) +
-                renderValue(token.op, options, cache, reducer, errors) +
-                renderValue(token.r, options, cache, reducer, errors) +
-                (token.attr ? " " + token.attr : ""));
-        case EnumToken.NameSpaceAttributeTokenType:
-            return ((token.l == null
-                ? ""
-                : renderValue(token.l, options, cache, reducer, errors)) +
-                "|" +
-                renderValue(token.r, options, cache, reducer, errors));
-        case EnumToken.ComposesSelectorNodeType:
-            return (token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache), "") +
-                (token.r == null
-                    ? ""
-                    : " from " +
-                        renderValue(token.r, options, cache, reducer, errors)));
+        // case EnumToken.MatchExpressionTokenType:
+        //     return (
+        //         renderValue((token as MatchExpressionToken).l as Token, options, cache, reducer, errors) +
+        //         renderValue((token as MatchExpressionToken).op, options, cache, reducer, errors) +
+        //         renderValue((token as MatchExpressionToken).r, options, cache, reducer, errors) +
+        //         ((token as MatchExpressionToken).attr ? " " + (token as MatchExpressionToken).attr : "")
+        //     );
+        // case EnumToken.NameSpaceAttributeTokenType:
+        //     return (
+        //         ((token as NameSpaceAttributeToken).l == null
+        //             ? ""
+        //             : renderValue((token as NameSpaceAttributeToken).l as Token, options, cache, reducer, errors)) +
+        //         "|" +
+        //         renderValue((token as NameSpaceAttributeToken).r, options, cache, reducer, errors)
+        //     );
+        // case EnumToken.ComposesSelectorNodeType:
+        //     return (
+        //         (token as ComposesSelectorToken).l.reduce(
+        //             (acc: string, curr: Token) => acc + renderValue(curr, options, cache),
+        //             "",
+        //         ) +
+        //         ((token as ComposesSelectorToken).r == null
+        //             ? ""
+        //             : " from " +
+        //               renderValue((token as ComposesSelectorToken).r as Token, options, cache, reducer, errors))
+        //     );
         case EnumToken.BlockStartTokenType:
             return "{";
         case EnumToken.BlockEndTokenType:
@@ -1045,7 +1075,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                     }
                     switch (u) {
                         case "turn":
-                            v = minifyNumber(angle);
+                            v = minifyNumber(toPrecisionAngle(angle, colorPrecision, false));
                             if (v.length + 4 < value.length) {
                                 val = v;
                                 unit = u;
@@ -1053,7 +1083,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                             }
                             break;
                         case "deg":
-                            v = minifyNumber(angle * 360);
+                            v = minifyNumber(toPrecisionAngle(angle * 360, colorPrecision, false));
                             if (v.length + 3 < value.length) {
                                 val = v;
                                 unit = u;
@@ -1061,7 +1091,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                             }
                             break;
                         case "rad":
-                            v = minifyNumber(angle * (2 * Math.PI));
+                            v = minifyNumber(toPrecisionAngle(angle * (2 * Math.PI), colorPrecision, false));
                             if (v.length + 3 < value.length) {
                                 val = v;
                                 unit = u;
@@ -1069,7 +1099,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                             }
                             break;
                         case "grad":
-                            v = minifyNumber(angle * 400);
+                            v = minifyNumber(toPrecisionAngle(angle * 400, colorPrecision, false));
                             if (v.length + 4 < value.length) {
                                 val = v;
                                 unit = u;
@@ -1209,7 +1239,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.OrTokenType:
             return "or";
         case EnumToken.InvalidMediaQueryTokenType:
-        case EnumToken.InvalidDeclarationNodeType:
+        // case EnumToken.InvalidDeclarationNodeType:
         case EnumToken.InvalidCommentTokenType:
         case EnumToken.BadCommentTokenType:
         case EnumToken.BadCdoTokenType:

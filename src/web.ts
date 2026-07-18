@@ -258,6 +258,17 @@ export async function parse(
     }
 
     options ??= {};
+    options.src ??= "";
+    Object.assign(options, {
+        load,
+        resolve,
+        dirname,
+        cwd:
+            (options.cwd ?? self.location.pathname.endsWith("/"))
+                ? self.location.pathname
+                : dirname(self.location.pathname),
+    });
+
     options.parseInfo = {
         stream,
         buffer: "",
@@ -270,15 +281,7 @@ export async function parse(
 
     return doParse(
         stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize(options.parseInfo),
-        Object.assign(options, {
-            load,
-            resolve,
-            dirname,
-            cwd:
-                (options.cwd ?? self.location.pathname.endsWith("/"))
-                    ? self.location.pathname
-                    : dirname(self.location.pathname),
-        }),
+        options,
     ).then((result) => {
         const { revMapping, ...res } = result;
         return res as ParseResult;

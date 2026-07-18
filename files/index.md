@@ -9,6 +9,7 @@ children:
     - ./css-module.md
     - ./minification.md
     - ./transform.md
+    - ./syntax-lowering.md
     - ./ast.md
     - ./utilities.md
 ---
@@ -18,10 +19,12 @@ children:
 - [Getting started](./getting-started.md)
 - [Usage](./usage.md)
 - [Validation](./validation.md)
-- [CSS module](./css-module.md)
+- [CSS Modules](./css-module.md)
 - [Minification](./minification.md)
-- [Transform](./transform.md)
-- [Ast traversal](ast.md)
+- [Custom Transform](./transform.md)
+- [Syntax Lowering](./syntax-lowering.md)
+- [Ast Manipulation](./ast.md)
+- [Utility Functions](./utilities.md)
 
 ## Modules
 
