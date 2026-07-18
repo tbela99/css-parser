@@ -77,6 +77,9 @@ function splitPath(result: string): { i: number; parts: string[] } {
     return { parts, i };
 }
 
+/**
+ * Nomalize path
+ */
 export const normalize = memoize(function (path: string) {
     let parts: string[] = [];
     let i: number = 0;
@@ -121,13 +124,13 @@ export const normalize = memoize(function (path: string) {
 export const diff = memoize(function (path1: string, path2: string) {
     let { parts } = splitPath(path1);
     const { parts: dirs } = splitPath(path2);
-    // for (const p of dirs) {
-    //     if (parts[0] == p) {
-    //         parts.shift();
-    //     } else {
-    //         parts.unshift("..");
-    //     }
-    // }
+    for (const p of dirs) {
+        if (parts[0] == p) {
+            parts.shift();
+        } else {
+            parts.unshift("..");
+        }
+    }
 
     return parts.join("/");
 });
@@ -191,20 +194,20 @@ export const resolve = memoize(function (
     //     };
     // }
 
-    let result: string = "";
+    // let result: string = "";
 
-    if (url.charAt(0) == "/") {
-        result = url;
-    } 
+    // if (url.charAt(0) == "/") {
+    //     result = url;
+    // } 
     // else if (currentDirectory.charAt(0) == "/") {
     //     result = dirname(currentDirectory) + "/" + url;
     // }
 
-    const absolute = normalize(result);
+    // const absolute = url; // normalize(result);
 
     return {
-        absolute,
-        relative: absolute === "" ? "" : diff(absolute, cwd ?? currentDirectory),
+        absolute: url,
+        relative: url === "" ? "" : diff(url, cwd ?? currentDirectory),
     };
 }) as (
     url: string,
