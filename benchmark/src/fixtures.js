@@ -6,7 +6,8 @@ const fixturesDir = fileURLToPath(new URL("../fixtures/", import.meta.url));
 
 const files = (await readdir(import.meta.dirname + '/../fixtures', { withFileTypes: true }))
 // foundation.css is crashing with esbuild
-    .filter(dirent => dirent.isFile() && dirent.name.endsWith('.css') && dirent.name !== 'foundation.css')
+// fotorama.css is crashing with lightningcss
+    .filter(dirent => dirent.isFile() && dirent.name.endsWith('.css') && dirent.name !== 'foundation.css' && dirent.name !== 'fotorama.css')
     .map(dirent => dirent.name);
 
 export const fixtures = files.map((name) => {
