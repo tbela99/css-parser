@@ -1,6 +1,5 @@
 import type { ColorToken, FunctionToken, IdentToken, NumberToken, Token } from "../../../../@types/index.d.ts";
 import { ColorType, EnumToken } from "../../../ast/types.ts";
-import { walkValues } from "../../../ast/walk.ts";
 import { COLORS_NAMES } from "../../constants.ts";
 import { expandHexValue } from "../hex.ts";
 import { isColor, parseColor } from "../../syntax.ts";
@@ -47,9 +46,9 @@ export function getColorComponents(token: ColorToken | IdentToken): Token[] | nu
             continue;
         }
 
-        if (child.typ === EnumToken.IdenTokenType && isColor(child)) {
-            parseColor(child);
-        }
+        // if (child.typ === EnumToken.IdenTokenType && isColor(child)) {
+        //     parseColor(child);
+        // }
 
         if (
             child.typ === EnumToken.FunctionTokenType ||

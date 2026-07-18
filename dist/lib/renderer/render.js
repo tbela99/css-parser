@@ -211,24 +211,24 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                             : node.val;
                 }
                 else if (node.typ == EnumToken.DeclarationNodeType) {
-                    if (!node.nam.startsWith("--") && node.val.length === 0) {
-                        // @ts-ignore
-                        errors.push({
-                            action: "ignore",
-                            message: `render: invalid declaration ${JSON.stringify(node)}`,
-                            location: node[LOC],
-                        });
-                        return "";
-                    }
+                    // if (!(<AstDeclaration>node).nam.startsWith("--") && (<AstDeclaration>node).val.length === 0) {
+                    //     // @ts-ignore
+                    //     errors.push(<ErrorDescription>{
+                    //         action: "ignore",
+                    //         message: `render: invalid declaration ${JSON.stringify(node)}`,
+                    //         location: node[LOC],
+                    //     });
+                    //     return "";
+                    // }
                     str = `${node.nam}:${options.indent}${(options.minify
                         ? filterValues(node.val)
                         : node.val)
                         .reduce(reducer, "")
                         .trimEnd()};`;
                 }
-                else if (node.typ == EnumToken.AtRuleNodeType && !("chi" in node)) {
-                    str = `${node.val === "" ? "" : options.indent || " "}${node.val};`;
-                }
+                // else if (node.typ == EnumToken.AtRuleNodeType && !("chi" in node)) {
+                //     str = `${(<AstAtRule>node).val === "" ? "" : options.indent || " "}${(<AstAtRule>node).val};`;
+                // } 
                 else {
                     str = renderAstNode(node, options, sourcemap, { ...position }, errors, reducer, cache, level + 1, indents);
                 }
@@ -579,20 +579,22 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                                 else if (slice[i].typ == EnumToken.AngleTokenType) {
                                     if ((180 - toDegrees(slice[i]).val) % 360 === 0) {
                                         k = i + 1;
-                                        while (k < slice.length && slice[k].typ !== EnumToken.CommaTokenType) {
-                                            k++;
-                                        }
+                                        // while (k < slice.length && slice[k].typ !== EnumToken.CommaTokenType) {
+                                        //     k++;
+                                        // }
                                         slice.splice(i, k - i + 1);
                                     }
                                 }
                             }
                             if (slice[i]?.typ === EnumToken.CommaTokenType) {
                                 i++;
-                                while (i < slice.length &&
-                                    (slice[i].typ === EnumToken.WhitespaceTokenType ||
-                                        slice[i].typ === EnumToken.CommentTokenType)) {
-                                    i++;
-                                }
+                                // while (
+                                //     i < slice.length &&
+                                //     (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                                //         slice[i].typ === EnumToken.CommentTokenType)
+                                // ) {
+                                //     i++;
+                                // }
                             }
                             if (slice[i]?.typ === EnumToken.ColorTokenType) {
                                 slice.push(...reduceColorStops(slice.splice(i, slice.length - i)));
@@ -603,11 +605,13 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                     case "repeating-radial-gradient":
                         {
                             let i = 0;
-                            while (i < slice.length &&
-                                (slice[i].typ === EnumToken.WhitespaceTokenType ||
-                                    slice[i].typ === EnumToken.CommentTokenType)) {
-                                i++;
-                            }
+                            // while (
+                            //     i < slice.length &&
+                            //     (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                            //         slice[i].typ === EnumToken.CommentTokenType)
+                            // ) {
+                            //     i++;
+                            // }
                             const positions = [];
                             const form = [];
                             const size = [];
@@ -819,11 +823,13 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                             const angles = [];
                             const positions = [];
                             const colorSpaceDef = [];
-                            while (i < slice.length &&
-                                (slice[i].typ === EnumToken.WhitespaceTokenType ||
-                                    slice[i].typ === EnumToken.CommentTokenType)) {
-                                i++;
-                            }
+                            // while (
+                            //     i < slice.length &&
+                            //     (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                            //         slice[i].typ === EnumToken.CommentTokenType)
+                            // ) {
+                            //     i++;
+                            // }
                             if (slice[i]?.typ === EnumToken.IdenTokenType &&
                                 equalsIgnoreCase(slice[i].val, "from")) {
                                 angles.push(slice[i++]);

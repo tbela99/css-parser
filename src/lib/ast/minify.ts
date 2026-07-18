@@ -893,7 +893,7 @@ function doMinify(
                                 node.typ == previous?.typ &&
                                 [EnumToken.KeyFramesRuleNodeType, EnumToken.RuleNodeType].includes(node.typ)
                             ) {
-                                const intersect = diff(previous as AstRule, node as AstRule, reducer, options);
+                                const intersect = diff(previous as AstRule, node as AstRule, options);
 
                                 if (intersect != null) {
                                     if (intersect.node1.chi.length == 0) {
@@ -1563,7 +1563,7 @@ function wrapNodes(
  *
  * @private
  */
-function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOptions = {}) {
+function diff(n1: AstRule, n2: AstRule, options: ParserOptions = {}) {
     if (!("cache" in options)) {
         options.cache = new WeakMap<AstNode, string>();
     }

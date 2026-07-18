@@ -789,5 +789,45 @@ a span {
 
         });
         
+        
+        it('module grid #23', function () {
+
+            transform(`
+
+.grid {
+  grid-template-areas: 'nav main';
+  grid-template-columns: [line-name1] 100px [line-name2 line-name3];
+}
+
+.nav {
+  grid-column-start: nav-start;
+  grid-column-end: nav-end;
+}
+
+`, {
+                module: ModuleScopeEnumOptions.ICSS | ModuleScopeEnumOptions.Shortest, 
+                beautify: true
+            }).then(result => {
+
+                expect(result.code).equals(`:export {
+ grid: a;
+ nav: b;
+ main: c;
+ line-name1: d;
+ line-name2: e;
+ line-name3: f;
+}
+.a {
+ grid-template-areas: 'b c';
+ grid-template-columns: [d] 100px [e f]
+}
+.b {
+ grid-column-start: b;
+ grid-column-end: b
+}`);
+            });
+
+        });
+        
     });
 }

@@ -167,7 +167,7 @@ export function* walk(node: AstNode, filter?: WalkerFilter | null, reverse?: boo
         }
 
         if ("chi" in node && (!isNumeric || ((option as number) & WalkerOptionEnum.IgnoreChildren) === 0)) {
-            parents.splice(i, 0, ...(<AstNode[]>(<AstRuleList>node).chi![reverse ? "reverse" : "slice"]()));
+            parents.splice(i, 0, ...(<AstNode[]>(<AstRuleList>node).chi![reverse ? "toReversed" : "slice"]()));
 
             for (const child of <AstNode[]>(<AstRuleList>node).chi) {
                 map.set(child, node);

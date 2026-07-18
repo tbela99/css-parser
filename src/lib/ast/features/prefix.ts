@@ -378,35 +378,36 @@ export class ComputePrefixFeature {
         let type: string = "";
         let tokens = token.chi.slice();
 
-        while (
-            i < tokens.length &&
-            (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)
-        ) {
-            i++;
-        }
+        // while (
+        //     i < tokens.length &&
+        //     (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)
+        // ) {
+        //     i++;
+        // }
 
-        if (i >= tokens.length || tokens[i].typ !== EnumToken.IdenTokenType) {
-            return;
-        }
+        // if (i >= tokens.length || tokens[i].typ !== EnumToken.IdenTokenType) {
+        //     return;
+        // }
 
         // linear or radial
         if (equalsIgnoreCase((tokens[i] as IdentToken).val, "linear")) {
             type = "linear-gradient";
             i++;
-        } else {
-            return;
-        }
+        } 
+        // else {
+        //     return;
+        // }
 
-        while (
-            i < tokens.length &&
-            (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)
-        ) {
-            i++;
-        }
+        // while (
+        //     i < tokens.length &&
+        //     (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)
+        // ) {
+        //     i++;
+        // }
 
-        if (tokens[i].typ !== EnumToken.CommaTokenType) {
-            return;
-        }
+        // if (tokens[i].typ !== EnumToken.CommaTokenType) {
+        //     return;
+        // }
 
         tokens.splice(0, i + 1);
 

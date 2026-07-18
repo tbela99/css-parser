@@ -46,7 +46,6 @@ const BadTokensTypes = [
     EnumToken.BadStringTokenType,
 ];
 let keyNameCounter = 0;
-let keyNameCache = {};
 const forbiddenStartCharacters = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].map((c) => c.charCodeAt(0));
 /**
  * Short-scoped name generator.
@@ -59,17 +58,13 @@ const forbiddenStartCharacters = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "
  * @returns string
  */
 const getShortNameGenerator = memoize((localName, filePath, pattern, hashLength = 5) => {
-    const key = `${localName}_${filePath}_${pattern}_${hashLength}`;
-    if (key in keyNameCache) {
-        return keyNameCache[key];
-    }
     let value = keyNameCounter.toString(36);
     keyNameCounter++;
     while (forbiddenStartCharacters.includes(value.charCodeAt(0))) {
         value = keyNameCounter.toString(36);
         keyNameCounter++;
     }
-    return (keyNameCache[key] = value);
+    return value;
 });
 function reject(reason) {
     throw new Error(reason ?? "Parsing aborted");
@@ -1252,19 +1247,25 @@ async function doParse(iter, options = {}) {
                 }
                 for (const { value, parent } of walkValues(node.val, node)) {
                     if (value.typ == EnumToken.DashedIdenTokenType) {
-                        if (!(value.val in mapping)) {
-                            const result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
-                                ? value.val
-                                : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                            let val = result instanceof Promise ? await result : result;
-                            mapping[value.val] =
-                                "--" +
-                                    (moduleSettings.naming & ModuleCaseTransformEnum.DashCaseOnly ||
-                                        moduleSettings.naming & ModuleCaseTransformEnum.CamelCaseOnly
-                                        ? getKeyName(val, moduleSettings.naming)
-                                        : val);
-                            revMapping[mapping[value.val]] = value.val;
-                        }
+                        // if (!((value as DashedIdentToken).val in mapping)) {
+                        //     const result =
+                        //         moduleSettings.scoped! & ModuleScopeEnumOptions.Global
+                        //             ? (value as DashedIdentToken).val
+                        //             : moduleSettings.generateScopedName!(
+                        //                   (value as DashedIdentToken).val,
+                        //                   moduleSettings.filePath as string,
+                        //                   moduleSettings.pattern as string,
+                        //                   moduleSettings.hashLength,
+                        //               );
+                        //     let val: string = result instanceof Promise ? await result : result;
+                        //     mapping[(value as DashedIdentToken).val] =
+                        //         "--" +
+                        //         (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly ||
+                        //         moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly
+                        //             ? getKeyName(val, moduleSettings.naming as ModuleCaseTransformEnum)
+                        //             : val);
+                        //     revMapping[mapping[(value as DashedIdentToken).val]] = (value as DashedIdentToken).val;
+                        // }
                         value.val = mapping[value.val];
                     }
                     else if ((value.typ == EnumToken.IdenTokenType || isIdentColor(value)) &&
@@ -1278,22 +1279,21 @@ async function doParse(iter, options = {}) {
                     const tokens = parseString(node.sel);
                     matchSelectorSyntax(tokens, [], options);
                     node[TOKENS] = trimArray(tokens);
-                    let i;
-                    const stack = [];
-                    for (i = 0; i < tokens.length; i++) {
-                        if (tokensfuncDefMap.has(tokens[i].typ)) {
-                            stack.push(tokens[i]);
-                            continue;
-                        }
-                        else if (tokens[i].typ == EnumToken.EndParensTokenType) {
-                            const func = stack.at(-1);
-                            tokens.splice(i, 1);
-                            // @ts-expect-error
-                            func.typ = tokensfuncDefMap.get(func.typ);
-                            func.chi = tokens.splice(tokens.indexOf(func) + 1, i - 1);
-                            stack.pop();
-                        }
-                    }
+                    // let i: number;
+                    // const stack: Token[] = [];
+                    // for (i = 0; i < tokens.length; i++) {
+                    //     if (tokensfuncDefMap.has(tokens[i].typ)) {
+                    //         stack.push(tokens[i]);
+                    //         continue;
+                    //     } else if (tokens[i].typ == EnumToken.EndParensTokenType) {
+                    //         const func = stack.at(-1) as PseudoClassFunctionToken;
+                    //         tokens.splice(i, 1);
+                    //         // @ts-expect-error
+                    //         func.typ = tokensfuncDefMap.get(func.typ)!;
+                    //         func.chi = tokens.splice(tokens.indexOf(func) + 1, i - 1);
+                    //         stack.pop();
+                    //     }
+                    // }
                 }
                 let hasIdOrClass = false;
                 for (const { value } of walkValues(node[TOKENS], node, 
@@ -1313,20 +1313,26 @@ async function doParse(iter, options = {}) {
                                             EnumToken.DescendantCombinatorTokenType) {
                                         parent[TOKENS].splice(index, 1);
                                     }
-                                    if (val == ":global") {
-                                        for (; index < parent[TOKENS].length; index++) {
-                                            if (parent[TOKENS][index].typ ==
-                                                EnumToken.CommaTokenType ||
-                                                ([
-                                                    EnumToken.PseudoClassFuncTokenType,
-                                                    EnumToken.PseudoClassTokenType,
-                                                ].includes(parent[TOKENS][index].typ) &&
-                                                    [":global", ":local"].includes(parent[TOKENS][index].val.toLowerCase()))) {
-                                                break;
-                                            }
-                                            global.add(parent[TOKENS][index]);
-                                        }
-                                    }
+                                    // if (val == ":global") {
+                                    //     for (; index < (parent as AstRule)[TOKENS]!.length; index++) {
+                                    //         if (
+                                    //             (parent as AstRule)[TOKENS]![index].typ ==
+                                    //                 EnumToken.CommaTokenType ||
+                                    //             ([
+                                    //                 EnumToken.PseudoClassFuncTokenType,
+                                    //                 EnumToken.PseudoClassTokenType,
+                                    //             ].includes((parent as AstRule)[TOKENS]![index].typ) &&
+                                    //                 [":global", ":local"].includes(
+                                    //                     (
+                                    //                         (parent as AstRule)[TOKENS]![index] as PseudoClassToken
+                                    //                     ).val.toLowerCase(),
+                                    //                 ))
+                                    //         ) {
+                                    //             break;
+                                    //         }
+                                    //         global.add((parent as AstRule)[TOKENS]![index]);
+                                    //     }
+                                    // }
                                 }
                                 break;
                         }
@@ -1418,23 +1424,31 @@ async function doParse(iter, options = {}) {
                     }
                     node.val = renderTokens(node[TOKENS]);
                 }
-                else {
-                    let isReplaced = false;
-                    for (const { value, parent } of walkValues(node[TOKENS], node)) {
-                        if (EnumToken.MediaQueryConditionTokenType == parent.typ &&
-                            // @ts-expect-error
-                            value != parent.l) {
-                            if ((value.typ == EnumToken.IdenTokenType || isIdentColor(value)) &&
-                                value.val in importedCssVariables) {
-                                isReplaced = true;
-                                parent.r.splice(parent.r.indexOf(value), 1, ...importedCssVariables[value.val].val);
-                            }
-                        }
-                    }
-                    if (isReplaced) {
-                        node.val = renderTokens(node[TOKENS]);
-                    }
-                }
+                // else {
+                //     let isReplaced: boolean = false;
+                //     for (const { value, parent } of walkValues(node[TOKENS], node)) {
+                //         if (
+                //             EnumToken.MediaQueryConditionTokenType == parent.typ &&
+                //             // @ts-expect-error
+                //             value != (parent as MediaQueryConditionToken).l
+                //         ) {
+                //             if (
+                //                 (value.typ == EnumToken.IdenTokenType || isIdentColor(value)) &&
+                //                 (value as IdentToken).val in importedCssVariables
+                //             ) {
+                //                 isReplaced = true;
+                //                 (parent as MediaQueryConditionToken).r.splice(
+                //                     (parent as MediaQueryConditionToken).r.indexOf(value),
+                //                     1,
+                //                     ...importedCssVariables[(value as IdentToken).val].val,
+                //                 );
+                //             }
+                //         }
+                //     }
+                //     if (isReplaced) {
+                //         node.val = renderTokens(node[TOKENS]!);
+                //     }
+                // }
             }
         }
         if (moduleSettings.naming != ModuleCaseTransformEnum.IgnoreCase) {

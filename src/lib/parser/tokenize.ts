@@ -826,7 +826,6 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
                 }
 
                 result.push(yieldResult(value, parseInfo, EnumToken.NestingSelectorTokenType));
-
                 buffer = "";
                 break;
 
@@ -846,7 +845,6 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
                 }
 
                 result.push(yieldResult(value, parseInfo, EnumToken.Pipe));
-
                 buffer = "";
                 break;
 
@@ -868,7 +866,6 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
             case TokenMap.SLASH:
                 if (buffer.length > 0) {
                     result.push(yieldResult(buffer, parseInfo));
-
                     buffer = "";
                 }
 

@@ -1,7 +1,6 @@
 import { ColorType, EnumToken } from '../../../ast/types.js';
 import { COLORS_NAMES } from '../../constants.js';
 import { expandHexValue } from '../hex.js';
-import { isColor, parseColor } from '../../syntax.js';
 import { equalsIgnoreCase } from '../../../parser/utils/text.js';
 
 function getColorComponents(token) {
@@ -35,9 +34,9 @@ function getColorComponents(token) {
         ].includes(child.typ)) {
             continue;
         }
-        if (child.typ === EnumToken.IdenTokenType && isColor(child)) {
-            parseColor(child);
-        }
+        // if (child.typ === EnumToken.IdenTokenType && isColor(child)) {
+        //     parseColor(child);
+        // }
         if (child.typ === EnumToken.FunctionTokenType ||
             child.typ === EnumToken.WildCardFunctionTokenType ||
             child.typ === EnumToken.MathFunctionTokenType) {

@@ -66,7 +66,6 @@ import { matchAtRuleSyntax } from "./utils/at-rule.ts";
 import { parseAtRuleFontFeatureValues } from "./utils/at-rule-font-feature-values.ts";
 import { matchGenericSyntax } from "./utils/at-rule-generic.ts";
 import { memoize } from "./utils/cache.ts";
-import { resolve } from "../fs/resolve.ts";
 
 function renderTokens(tokens: Token[] | null | undefined, options?: any): string {
     if (tokens == null || tokens.length === 0) return "";
@@ -94,8 +93,6 @@ const BadTokensTypes: EnumToken[] = [
 export const atRulesMap: Map<string, EnumToken> = new Map([["keyframes", EnumToken.KeyframesAtRuleNodeType]]);
 
 let keyNameCounter: number = 0;
-let keyNameCache: Record<string, string> = {};
-
 const forbiddenStartCharacters: number[] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].map((c) =>
     c.charCodeAt(0),
 );
@@ -114,10 +111,6 @@ export const getShortNameGenerator = memoize(
     (localName: string, filePath: string, pattern: string, hashLength = 5): string => {
         const key = `${localName}_${filePath}_${pattern}_${hashLength}`;
 
-        if (key in keyNameCache!) {
-            return keyNameCache![key];
-        }
-
         let value: string = keyNameCounter!.toString(36);
         keyNameCounter!++;
 
@@ -126,7 +119,7 @@ export const getShortNameGenerator = memoize(
             keyNameCounter!++;
         }
 
-        return (keyNameCache![key] = value);
+        return value;
     },
 );
 
@@ -1675,26 +1668,26 @@ export async function doParse(
 
                 for (const { value, parent } of walkValues(node.val, node)) {
                     if (value.typ == EnumToken.DashedIdenTokenType) {
-                        if (!((value as DashedIdentToken).val in mapping)) {
-                            const result =
-                                moduleSettings.scoped! & ModuleScopeEnumOptions.Global
-                                    ? (value as DashedIdentToken).val
-                                    : moduleSettings.generateScopedName!(
-                                          (value as DashedIdentToken).val,
-                                          moduleSettings.filePath as string,
-                                          moduleSettings.pattern as string,
-                                          moduleSettings.hashLength,
-                                      );
-                            let val: string = result instanceof Promise ? await result : result;
+                        // if (!((value as DashedIdentToken).val in mapping)) {
+                        //     const result =
+                        //         moduleSettings.scoped! & ModuleScopeEnumOptions.Global
+                        //             ? (value as DashedIdentToken).val
+                        //             : moduleSettings.generateScopedName!(
+                        //                   (value as DashedIdentToken).val,
+                        //                   moduleSettings.filePath as string,
+                        //                   moduleSettings.pattern as string,
+                        //                   moduleSettings.hashLength,
+                        //               );
+                        //     let val: string = result instanceof Promise ? await result : result;
 
-                            mapping[(value as DashedIdentToken).val] =
-                                "--" +
-                                (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly ||
-                                moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly
-                                    ? getKeyName(val, moduleSettings.naming as ModuleCaseTransformEnum)
-                                    : val);
-                            revMapping[mapping[(value as DashedIdentToken).val]] = (value as DashedIdentToken).val;
-                        }
+                        //     mapping[(value as DashedIdentToken).val] =
+                        //         "--" +
+                        //         (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly ||
+                        //         moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly
+                        //             ? getKeyName(val, moduleSettings.naming as ModuleCaseTransformEnum)
+                        //             : val);
+                        //     revMapping[mapping[(value as DashedIdentToken).val]] = (value as DashedIdentToken).val;
+                        // }
 
                         (value as DashedIdentToken).val = mapping[(value as DashedIdentToken).val];
                     } else if (
@@ -1711,24 +1704,24 @@ export async function doParse(
 
                     node[TOKENS] = trimArray(tokens);
 
-                    let i: number;
-                    const stack: Token[] = [];
+                    // let i: number;
+                    // const stack: Token[] = [];
 
-                    for (i = 0; i < tokens.length; i++) {
-                        if (tokensfuncDefMap.has(tokens[i].typ)) {
-                            stack.push(tokens[i]);
-                            continue;
-                        } else if (tokens[i].typ == EnumToken.EndParensTokenType) {
-                            const func = stack.at(-1) as PseudoClassFunctionToken;
+                    // for (i = 0; i < tokens.length; i++) {
+                    //     if (tokensfuncDefMap.has(tokens[i].typ)) {
+                    //         stack.push(tokens[i]);
+                    //         continue;
+                    //     } else if (tokens[i].typ == EnumToken.EndParensTokenType) {
+                    //         const func = stack.at(-1) as PseudoClassFunctionToken;
 
-                            tokens.splice(i, 1);
+                    //         tokens.splice(i, 1);
 
-                            // @ts-expect-error
-                            func.typ = tokensfuncDefMap.get(func.typ)!;
-                            func.chi = tokens.splice(tokens.indexOf(func) + 1, i - 1);
-                            stack.pop();
-                        }
-                    }
+                    //         // @ts-expect-error
+                    //         func.typ = tokensfuncDefMap.get(func.typ)!;
+                    //         func.chi = tokens.splice(tokens.indexOf(func) + 1, i - 1);
+                    //         stack.pop();
+                    //     }
+                    // }
                 }
 
                 let hasIdOrClass: boolean = false;
@@ -1759,27 +1752,27 @@ export async function doParse(
                                             (parent as AstRule)[TOKENS]!.splice(index, 1);
                                         }
 
-                                        if (val == ":global") {
-                                            for (; index < (parent as AstRule)[TOKENS]!.length; index++) {
-                                                if (
-                                                    (parent as AstRule)[TOKENS]![index].typ ==
-                                                        EnumToken.CommaTokenType ||
-                                                    ([
-                                                        EnumToken.PseudoClassFuncTokenType,
-                                                        EnumToken.PseudoClassTokenType,
-                                                    ].includes((parent as AstRule)[TOKENS]![index].typ) &&
-                                                        [":global", ":local"].includes(
-                                                            (
-                                                                (parent as AstRule)[TOKENS]![index] as PseudoClassToken
-                                                            ).val.toLowerCase(),
-                                                        ))
-                                                ) {
-                                                    break;
-                                                }
+                                        // if (val == ":global") {
+                                        //     for (; index < (parent as AstRule)[TOKENS]!.length; index++) {
+                                        //         if (
+                                        //             (parent as AstRule)[TOKENS]![index].typ ==
+                                        //                 EnumToken.CommaTokenType ||
+                                        //             ([
+                                        //                 EnumToken.PseudoClassFuncTokenType,
+                                        //                 EnumToken.PseudoClassTokenType,
+                                        //             ].includes((parent as AstRule)[TOKENS]![index].typ) &&
+                                        //                 [":global", ":local"].includes(
+                                        //                     (
+                                        //                         (parent as AstRule)[TOKENS]![index] as PseudoClassToken
+                                        //                     ).val.toLowerCase(),
+                                        //                 ))
+                                        //         ) {
+                                        //             break;
+                                        //         }
 
-                                                global.add((parent as AstRule)[TOKENS]![index]);
-                                            }
-                                        }
+                                        //         global.add((parent as AstRule)[TOKENS]![index]);
+                                        //     }
+                                        // }
                                     }
 
                                     break;
@@ -1909,33 +1902,34 @@ export async function doParse(
                     }
 
                     (node as AstAtRule).val = renderTokens(node[TOKENS]!);
-                } else {
-                    let isReplaced: boolean = false;
+                } 
+                // else {
+                //     let isReplaced: boolean = false;
 
-                    for (const { value, parent } of walkValues(node[TOKENS], node)) {
-                        if (
-                            EnumToken.MediaQueryConditionTokenType == parent.typ &&
-                            // @ts-expect-error
-                            value != (parent as MediaQueryConditionToken).l
-                        ) {
-                            if (
-                                (value.typ == EnumToken.IdenTokenType || isIdentColor(value)) &&
-                                (value as IdentToken).val in importedCssVariables
-                            ) {
-                                isReplaced = true;
-                                (parent as MediaQueryConditionToken).r.splice(
-                                    (parent as MediaQueryConditionToken).r.indexOf(value),
-                                    1,
-                                    ...importedCssVariables[(value as IdentToken).val].val,
-                                );
-                            }
-                        }
-                    }
+                //     for (const { value, parent } of walkValues(node[TOKENS], node)) {
+                //         if (
+                //             EnumToken.MediaQueryConditionTokenType == parent.typ &&
+                //             // @ts-expect-error
+                //             value != (parent as MediaQueryConditionToken).l
+                //         ) {
+                //             if (
+                //                 (value.typ == EnumToken.IdenTokenType || isIdentColor(value)) &&
+                //                 (value as IdentToken).val in importedCssVariables
+                //             ) {
+                //                 isReplaced = true;
+                //                 (parent as MediaQueryConditionToken).r.splice(
+                //                     (parent as MediaQueryConditionToken).r.indexOf(value),
+                //                     1,
+                //                     ...importedCssVariables[(value as IdentToken).val].val,
+                //                 );
+                //             }
+                //         }
+                //     }
 
-                    if (isReplaced) {
-                        node.val = renderTokens(node[TOKENS]!);
-                    }
-                }
+                //     if (isReplaced) {
+                //         node.val = renderTokens(node[TOKENS]!);
+                //     }
+                // }
             }
         }
 

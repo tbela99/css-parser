@@ -14,6 +14,8 @@
 - [x] Fixed a performance regression, resulting in approximately ***25%*** performance gain.
 - [x] Fixed a `conic-gradient()` minification bug.
 - [x] Fixed missing characters by the streaming tokenizer
+- [x] `walk()` with reverse parameter enabled was reversing the node's children
+- [x] merging nodes could introduce a null reference
   
 ## v1.4.6
 

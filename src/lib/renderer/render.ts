@@ -381,15 +381,15 @@ function renderAstNode(
                             ? ""
                             : (<AstComment>node).val;
                 } else if (node.typ == EnumToken.DeclarationNodeType) {
-                    if (!(<AstDeclaration>node).nam.startsWith("--") && (<AstDeclaration>node).val.length === 0) {
-                        // @ts-ignore
-                        errors.push(<ErrorDescription>{
-                            action: "ignore",
-                            message: `render: invalid declaration ${JSON.stringify(node)}`,
-                            location: node[LOC],
-                        });
-                        return "";
-                    }
+                    // if (!(<AstDeclaration>node).nam.startsWith("--") && (<AstDeclaration>node).val.length === 0) {
+                    //     // @ts-ignore
+                    //     errors.push(<ErrorDescription>{
+                    //         action: "ignore",
+                    //         message: `render: invalid declaration ${JSON.stringify(node)}`,
+                    //         location: node[LOC],
+                    //     });
+                    //     return "";
+                    // }
 
                     str = `${(<AstDeclaration>node).nam}:${options.indent}${(options.minify
                         ? filterValues((<AstDeclaration>node).val)
@@ -397,9 +397,11 @@ function renderAstNode(
                     )
                         .reduce(reducer, "")
                         .trimEnd()};`;
-                } else if (node.typ == EnumToken.AtRuleNodeType && !("chi" in node)) {
-                    str = `${(<AstAtRule>node).val === "" ? "" : options.indent || " "}${(<AstAtRule>node).val};`;
-                } else {
+                } 
+                // else if (node.typ == EnumToken.AtRuleNodeType && !("chi" in node)) {
+                //     str = `${(<AstAtRule>node).val === "" ? "" : options.indent || " "}${(<AstAtRule>node).val};`;
+                // } 
+                else {
                     str = renderAstNode(
                         node,
                         options,
@@ -887,9 +889,9 @@ export function renderValue(
                                     if ((180 - (toDegrees(slice[i] as AngleToken).val as number)) % 360 === 0) {
                                         k = i + 1;
 
-                                        while (k < slice.length && slice[k].typ !== EnumToken.CommaTokenType) {
-                                            k++;
-                                        }
+                                        // while (k < slice.length && slice[k].typ !== EnumToken.CommaTokenType) {
+                                        //     k++;
+                                        // }
 
                                         slice.splice(i, k - i + 1);
                                     }
@@ -898,13 +900,13 @@ export function renderValue(
 
                             if (slice[i]?.typ === EnumToken.CommaTokenType) {
                                 i++;
-                                while (
-                                    i < slice.length &&
-                                    (slice[i].typ === EnumToken.WhitespaceTokenType ||
-                                        slice[i].typ === EnumToken.CommentTokenType)
-                                ) {
-                                    i++;
-                                }
+                                // while (
+                                //     i < slice.length &&
+                                //     (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                                //         slice[i].typ === EnumToken.CommentTokenType)
+                                // ) {
+                                //     i++;
+                                // }
                             }
 
                             if (slice[i]?.typ === EnumToken.ColorTokenType) {
@@ -919,13 +921,13 @@ export function renderValue(
                         {
                             let i: number = 0;
 
-                            while (
-                                i < slice.length &&
-                                (slice[i].typ === EnumToken.WhitespaceTokenType ||
-                                    slice[i].typ === EnumToken.CommentTokenType)
-                            ) {
-                                i++;
-                            }
+                            // while (
+                            //     i < slice.length &&
+                            //     (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                            //         slice[i].typ === EnumToken.CommentTokenType)
+                            // ) {
+                            //     i++;
+                            // }
 
                             const positions: Token[] = [];
                             const form: Token[] = [];
@@ -1196,13 +1198,13 @@ export function renderValue(
                             const positions: Token[] = [];
                             const colorSpaceDef: Token[] = [];
 
-                            while (
-                                i < slice.length &&
-                                (slice[i].typ === EnumToken.WhitespaceTokenType ||
-                                    slice[i].typ === EnumToken.CommentTokenType)
-                            ) {
-                                i++;
-                            }
+                            // while (
+                            //     i < slice.length &&
+                            //     (slice[i].typ === EnumToken.WhitespaceTokenType ||
+                            //         slice[i].typ === EnumToken.CommentTokenType)
+                            // ) {
+                            //     i++;
+                            // }
 
                             if (
                                 slice[i]?.typ === EnumToken.IdenTokenType &&

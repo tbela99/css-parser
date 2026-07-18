@@ -224,6 +224,9 @@ export declare interface FunctionToken extends BaseToken {
         | EnumToken.MathFunctionTokenType
         | EnumToken.PseudoClassFunctionTokenType
         | EnumToken.TransformFunctionTokenType;
+    /**
+     * function name
+     */
     val: string;
     /**
      * function children
@@ -298,8 +301,17 @@ export declare interface FunctionImageToken extends BaseToken {
  * Timing function token
  */
 export declare interface TimingFunctionToken extends BaseToken {
+    /**
+     * timing function type
+     */
     typ: EnumToken.TimingFunctionTokenType;
+    /**
+     * timing function value
+     */
     val: string;
+    /**
+     * timing function children
+     */
     chi: Token$1[];
 }
 
@@ -307,8 +319,17 @@ export declare interface TimingFunctionToken extends BaseToken {
  * Timeline function token
  */
 export declare interface TimelineFunctionToken extends BaseToken {
+    /**
+     * timeline function type
+     */
     typ: EnumToken.TimelineFunctionTokenType;
+    /**
+     * timeline function value
+     */
     val: string;
+    /**
+     * timeline function children
+     */
     chi: Token$1[];
 }
 
@@ -316,7 +337,13 @@ export declare interface TimelineFunctionToken extends BaseToken {
  * String token
  */
 export declare interface StringToken extends BaseToken {
+    /**
+     * string type
+     */
     typ: EnumToken.StringTokenType;
+    /**
+     * string value
+     */
     val: string;
 }
 
@@ -324,7 +351,13 @@ export declare interface StringToken extends BaseToken {
  * Bad string token
  */
 export declare interface BadStringToken extends BaseToken {
+    /**
+     * bad string type
+     */
     typ: EnumToken.BadStringTokenType;
+    /**
+     * bad string value
+     */
     val: string;
 }
 
@@ -332,7 +365,13 @@ export declare interface BadStringToken extends BaseToken {
  * Unclosed string token
  */
 export declare interface UnclosedStringToken extends BaseToken {
+    /**
+     * unclosed string type
+     */
     typ: EnumToken.UnclosedStringTokenType;
+    /**
+     * unclosed string value
+     */
     val: string;
 }
 
@@ -340,8 +379,17 @@ export declare interface UnclosedStringToken extends BaseToken {
  * Dimension token
  */
 export declare interface DimensionToken extends BaseToken {
+    /**
+     * dimension type
+     */
     typ: EnumToken.DimensionTokenType;
+    /**
+     * dimension value
+     */
     val: number | FractionToken;
+    /**
+     * dimension unit
+     */
     unit: string;
 }
 
@@ -349,8 +397,17 @@ export declare interface DimensionToken extends BaseToken {
  * Length token
  */
 export declare interface LengthToken extends BaseToken {
+    /**
+     * length type
+     */
     typ: EnumToken.LengthTokenType;
+    /**
+     * length value
+     */
     val: number | FractionToken;
+    /**
+     * length unit
+     */
     unit: string;
 }
 
@@ -358,8 +415,17 @@ export declare interface LengthToken extends BaseToken {
  * Angle token
  */
 export declare interface AngleToken extends BaseToken {
+    /**
+     * angle type
+     */
     typ: EnumToken.AngleTokenType;
+    /**
+     * angle value
+     */
     val: number | FractionToken;
+    /**
+     * angle unit
+     */
     unit: string;
 }
 
@@ -367,8 +433,17 @@ export declare interface AngleToken extends BaseToken {
  * Time token
  */
 export declare interface TimeToken extends BaseToken {
+    /**
+     * time type
+     */
     typ: EnumToken.TimeTokenType;
+    /**
+     * time value
+     */
     val: number | FractionToken;
+    /**
+     * time unit    
+     */
     unit: "ms" | "s";
 }
 
@@ -376,8 +451,17 @@ export declare interface TimeToken extends BaseToken {
  * Frequency token
  */
 export declare interface FrequencyToken extends BaseToken {
+    /**
+     * frequency type
+     */
     typ: EnumToken.FrequencyTokenType;
+    /**
+     * frequency value
+     */
     val: number | FractionToken;
+    /**
+     * frequency unit
+     */
     unit: "Hz" | "Khz";
 }
 
@@ -385,8 +469,17 @@ export declare interface FrequencyToken extends BaseToken {
  * Resolution token
  */
 export declare interface ResolutionToken extends BaseToken {
+    /**
+     * resolution type
+     */
     typ: EnumToken.ResolutionTokenType;
+    /**
+     * resolution value
+     */
     val: number | FractionToken;
+    /**
+     * resolution unit
+     */
     unit: "dpi" | "dpcm" | "dppx" | "x";
 }
 
@@ -394,7 +487,13 @@ export declare interface ResolutionToken extends BaseToken {
  * Hash token
  */
 export declare interface HashToken extends BaseToken {
+    /**
+     * hash type
+     */
     typ: EnumToken.HashTokenType;
+    /**
+     * hash value
+     */
     val: string;
 }
 
@@ -402,6 +501,9 @@ export declare interface HashToken extends BaseToken {
  * Block start token
  */
 export declare interface BlockStartToken extends BaseToken {
+    /**
+     * block start type
+     */
     typ: EnumToken.BlockStartTokenType;
 }
 
@@ -409,6 +511,9 @@ export declare interface BlockStartToken extends BaseToken {
  * Block end token
  */
 export declare interface BlockEndToken extends BaseToken {
+    /**
+     * block end type    
+     */
     typ: EnumToken.BlockEndTokenType;
 }
 
@@ -416,7 +521,13 @@ export declare interface BlockEndToken extends BaseToken {
  * Attribute start token
  */
 export declare interface AttrStartToken extends BaseToken {
+    /**
+     * attribute start type
+     */
     typ: EnumToken.AttrStartTokenType;
+    /**
+     * attribute start children
+     */
     chi?: Token$1[];
 }
 
@@ -424,6 +535,9 @@ export declare interface AttrStartToken extends BaseToken {
  * Attribute end token
  */
 export declare interface AttrEndToken extends BaseToken {
+    /**
+     * attribute end type
+     */
     typ: EnumToken.AttrEndTokenType;
 }
 
@@ -431,6 +545,9 @@ export declare interface AttrEndToken extends BaseToken {
  * Parenthesis start token
  */
 export declare interface ParensStartToken extends BaseToken {
+    /**
+     * parenthesis start type
+     */
     typ: EnumToken.StartParensTokenType;
 }
 
@@ -438,6 +555,9 @@ export declare interface ParensStartToken extends BaseToken {
  * Parenthesis end token
  */
 export declare interface ParensEndToken extends BaseToken {
+    /**
+     * parenthesis end type
+     */
     typ: EnumToken.EndParensTokenType;
 }
 
@@ -445,7 +565,13 @@ export declare interface ParensEndToken extends BaseToken {
  * Parenthesis token
  */
 export declare interface ParensToken extends BaseToken {
+    /**
+     * parenthesis type
+     */
     typ: EnumToken.ParensTokenType;
+    /**
+     * parenthesis children
+     */
     chi: Token$1[];
 }
 
@@ -453,7 +579,13 @@ export declare interface ParensToken extends BaseToken {
  * Whitespace token
  */
 export declare interface WhitespaceToken extends BaseToken {
+    /**
+     * whitespace type
+     */
     typ: EnumToken.WhitespaceTokenType;
+    /**
+     * whitespace value
+     */
     val?: string;
 }
 
@@ -461,7 +593,13 @@ export declare interface WhitespaceToken extends BaseToken {
  * Comment token
  */
 export declare interface CommentToken extends BaseToken {
+    /**
+     * comment type
+     */
     typ: EnumToken.CommentTokenType;
+    /**
+     * comment value
+     */
     val: string;
 }
 
@@ -469,7 +607,13 @@ export declare interface CommentToken extends BaseToken {
  * Bad comment token
  */
 export declare interface BadCommentToken extends BaseToken {
+    /**
+     * bad comment type
+     */
     typ: EnumToken.BadCommentTokenType;
+    /**
+     * bad comment value
+     */
     val: string;
 }
 
@@ -485,7 +629,13 @@ export declare interface CDOCommentToken extends BaseToken {
  * Bad CDO comment token
  */
 export declare interface BadCDOCommentToken extends BaseToken {
+    /**
+     * bad CDO comment type
+     */
     typ: EnumToken.BadCdoTokenType;
+    /**
+     * bad CDO comment value
+     */
     val: string;
 }
 
@@ -493,6 +643,9 @@ export declare interface BadCDOCommentToken extends BaseToken {
  * Include match token
  */
 export declare interface IncludeMatchToken extends BaseToken {
+    /**
+     * include match type
+     */
     typ: EnumToken.IncludeMatchTokenType;
     // val: '~=';
 }
@@ -501,6 +654,9 @@ export declare interface IncludeMatchToken extends BaseToken {
  * Dash match token
  */
 export declare interface DashMatchToken extends BaseToken {
+    /**
+     * dash match type
+     */
     typ: EnumToken.DashMatchTokenType;
     // val: '|=';
 }
@@ -509,6 +665,9 @@ export declare interface DashMatchToken extends BaseToken {
  * Equal match token
  */
 export declare interface EqualMatchToken extends BaseToken {
+    /**
+     * equal match type
+     */
     typ: EnumToken.EqualMatchTokenType;
     // val: '|=';
 }
@@ -517,6 +676,9 @@ export declare interface EqualMatchToken extends BaseToken {
  * Start match token
  */
 export declare interface StartMatchToken extends BaseToken {
+    /**
+     * start match type
+     */
     typ: EnumToken.StartMatchTokenType;
     // val: '^=';
 }
@@ -525,6 +687,9 @@ export declare interface StartMatchToken extends BaseToken {
  * End match token
  */
 export declare interface EndMatchToken extends BaseToken {
+    /**
+     * end match type
+     */
     typ: EnumToken.EndMatchTokenType;
     // val: '|=';
 }
@@ -533,6 +698,9 @@ export declare interface EndMatchToken extends BaseToken {
  * Contain match token
  */
 export declare interface ContainMatchToken extends BaseToken {
+    /**
+     * contain match type
+     */
     typ: EnumToken.ContainMatchTokenType;
     // val: '|=';
 }
@@ -541,6 +709,9 @@ export declare interface ContainMatchToken extends BaseToken {
  * Less than token
  */
 export declare interface LessThanToken extends BaseToken {
+    /**
+     * less than type
+     */
     typ: EnumToken.LtTokenType;
 }
 
@@ -548,6 +719,9 @@ export declare interface LessThanToken extends BaseToken {
  * Less than or equal token
  */
 export declare interface LessThanOrEqualToken extends BaseToken {
+    /**
+     * less than or equal type
+     */
     typ: EnumToken.LteTokenType;
 }
 
@@ -555,6 +729,9 @@ export declare interface LessThanOrEqualToken extends BaseToken {
  * Greater than token
  */
 export declare interface GreaterThanToken extends BaseToken {
+    /**
+     * greater than type
+     */
     typ: EnumToken.GtTokenType;
 }
 
@@ -562,6 +739,9 @@ export declare interface GreaterThanToken extends BaseToken {
  * Greater than or equal token
  */
 export declare interface GreaterThanOrEqualToken extends BaseToken {
+    /**
+     * greater than or equal type
+     */
     typ: EnumToken.GteTokenType;
 }
 
@@ -569,6 +749,9 @@ export declare interface GreaterThanOrEqualToken extends BaseToken {
  * Column combinator token
  */
 export declare interface ColumnCombinatorToken extends BaseToken {
+    /**
+     * column combinator type
+     */
     typ: EnumToken.ColumnCombinatorTokenType;
 }
 
@@ -576,7 +759,13 @@ export declare interface ColumnCombinatorToken extends BaseToken {
  * Pseudo class token
  */
 export declare interface PseudoClassToken extends BaseToken {
+    /**
+     * Pseudo class
+     */
     typ: EnumToken.PseudoClassTokenType;
+    /**
+     * Pseudo class
+     */
     val: string;
 }
 
@@ -749,7 +938,13 @@ export declare interface ChildCombinatorToken extends BaseToken {
  * Media feature token
  */
 export declare interface MediaFeatureToken extends BaseToken {
+    /**
+     * Media feature type
+     */
     typ: EnumToken.MediaFeatureTokenType;
+    /**
+     * Media feature
+     */
     val: string;
 }
 
@@ -757,7 +952,13 @@ export declare interface MediaFeatureToken extends BaseToken {
  * Media feature not token
  */
 export declare interface NotToken extends BaseToken {
+    /**
+     * Media feature not type
+     */
     typ: EnumToken.NotTokenType;
+    /**
+     * Media feature
+     */
     val: Token$1;
 }
 
@@ -765,7 +966,13 @@ export declare interface NotToken extends BaseToken {
  * Media feature only token
  */
 export declare interface MediaFeatureOnlyToken extends BaseToken {
+    /**
+     * Media feature only type
+     */
     typ: EnumToken.OnlyTokenType;
+    /**
+     * Media feature
+     */
     val: Token$1;
 }
 
@@ -773,6 +980,9 @@ export declare interface MediaFeatureOnlyToken extends BaseToken {
  * Media feature and token
  */
 export declare interface AndToken extends BaseToken {
+    /**
+     * Media feature and type
+     */
     typ: EnumToken.AndTokenType;
 }
 
@@ -780,6 +990,9 @@ export declare interface AndToken extends BaseToken {
  * Media feature or token
  */
 export declare interface OrToken extends BaseToken {
+    /**
+     * Media feature or type
+     */
     typ: EnumToken.OrTokenType;
 }
 
@@ -787,40 +1000,100 @@ export declare interface OrToken extends BaseToken {
  * Media query condition token
  */
 export declare interface MediaQueryUnaryFeatureToken extends BaseToken {
+    /**
+     * Media query condition type
+     */
     typ: EnumToken.MediaQueryUnaryFeatureTokenType;
+    /**
+     * Media feature
+     */
     l: Token$1;
+    /**
+     * Media feature
+     */
     r: Token$1[];
 }
 
 export declare interface SupportsQueryUnaryConditionToken extends BaseToken {
+    /**
+     * Supports query condition type
+     */
     typ: EnumToken.SupportsQueryUnaryConditionTokenType;
+    /**
+     * Media feature
+     */
     l: Token$1;
+    /**
+     * Media feature
+     */
     r: Token$1[];
 }
 
 export declare interface SupportsQueryConditionToken extends BaseToken {
+    /**
+     * Supports query condition type
+     */
     typ: EnumToken.SupportsQueryConditionTokenType;
+    /**
+     * Media feature
+     */
     op: AndToken | OrToken;
+    /**
+     * Media feature
+     */
     l: Token$1[];
+    /**
+     * Media feature
+     */
     r: Token$1[];
 }
 
 export declare interface WhenElseQueryConditionToken extends BaseToken {
+    /**
+     * When else query condition type
+     */
     typ: EnumToken.WhenElseQueryConditionTokenType;
+    /**
+     * Media feature
+     */
     op: AndToken | OrToken;
+    /**
+     * Media feature
+     */
     l: Token$1[];
+    /**
+     * Media feature
+     */
     r: Token$1[];
 }
 
 export declare interface WhenElseUnaryConditionToken extends BaseToken {
+    /**
+     * When else query condition type
+     */
     typ: EnumToken.WhenElseUnaryConditionTokenType;
+    /**
+     * Media feature
+     */
     l: Token$1;
+    /**
+     * Media feature
+     */
     r: Token$1[];
 }
 
 export declare interface MediaQueryConditionToken extends BaseToken {
+    /**
+     * Media query condition type
+     */
     typ: EnumToken.MediaQueryConditionTokenType;
+    /**
+     * Media feature
+     */
     l: Token$1[];
+    /**
+     * Media feature
+     */
     op:
         | ColonToken
         | DelimToken
@@ -830,18 +1103,39 @@ export declare interface MediaQueryConditionToken extends BaseToken {
         | LessThanOrEqualToken
         | AndToken
         | OrToken;
+    /**
+     * Media feature
+     */
     r: Token$1[];
 }
 
 export declare interface IfConditionToken extends BaseToken {
+    /**
+     * If condition type
+     */
     typ: EnumToken.IfConditionTokenType;
+    /**
+     * condition left handle
+     */
     l: Token$1[];
+    /**
+     * condition value
+     */
     r: Token$1[];
 }
 
 export declare interface IfElseConditionToken extends BaseToken {
+    /**
+     * If else condition type
+     */
     typ: EnumToken.IfElseConditionTokenType;
+    /**
+     * condition left handle
+     */
     l: IfConditionToken;
+    /**
+     * condition value
+     */
     r: IfConditionToken;
 }
 
@@ -912,6 +1206,9 @@ export declare interface DivToken extends BaseToken {
  * Mul token
  */
 export declare interface MulToken extends BaseToken {
+    /**
+     * Type
+     */
     typ: EnumToken.Mul;
 }
 
@@ -919,7 +1216,13 @@ export declare interface MulToken extends BaseToken {
  * Wrapped values token like {Arial, Helvetica, sans-serif}
  */
 export declare interface WrappedValuesToken extends BaseToken {
+    /**
+     * Type
+     */
     typ: EnumToken.WrappedValuesTokenType;
+    /**
+     * Children
+     */
     chi: Token$1[];
 }
 
@@ -927,8 +1230,17 @@ export declare interface WrappedValuesToken extends BaseToken {
  * Unary expression token
  */
 export declare interface UnaryExpression extends BaseToken {
+    /**
+     * Type
+     */
     typ: EnumToken.UnaryExpressionTokenType;
+    /**
+     * Sign
+     */
     sign: EnumToken.Add | EnumToken.Sub;
+    /**
+     * Value
+     */
     val: UnaryExpressionNode;
 }
 
@@ -4986,7 +5298,7 @@ declare function okLabDistance(color1: ColorToken, color2: ColorToken): number |
 declare function isOkLabClose(color1: ColorToken, color2: ColorToken, threshold?: number): boolean;
 
 /**
- * Search the ast tree and return the first match
+ * Search the ast sub-tree and return the first match
  *
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'
@@ -5018,14 +5330,14 @@ button {
  */
 declare function find(ast: AstNode$1, matcher: (node: AstNode$1) => boolean): AstNode$1 | null;
 /**
- * Search the ast tree by checking each node's value token and return the first match
+ * Search the ast sub-tree by checking each node's value token and return the first match
  *
- * ```ts
- *  // find the first ast node which contains the length token '30px'
+ ```ts
+ // find the first ast node which contains the length token '30px'
 import { findByValue, EnumToken, transform } from "@tbela99/css-parser";
 import type { AstNode } from "@tbela99/css-parser";
 
- * const css = `
+ const css = `
 
 button {
   aspect-ratio: 1;
@@ -5053,7 +5365,7 @@ declare function findByValue(ast: AstNode$1, matcher: AstValueMatcher): {
     value: TokenSearchResult;
 } | null;
 /**
- * Search the ast tree and return all matches
+ * Search the ast sub-tree and return all matches
  *
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'
@@ -5066,9 +5378,12 @@ button {
   aspect-ratio: 1;
   width: if(media(any-pointer: fine): 30px; else: 44px);
 }
+button-small {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 20px; else: 30px);
+}
     `;
 
- // find declaration which contain a '30px'
   const nodeMatcher = (node: AstNode) =>
       return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio';
 
@@ -5085,7 +5400,7 @@ button {
  */
 declare function findAll(ast: AstNode$1, matcher: (node: AstNode$1) => boolean): AstNode$1[];
 /**
- * Search the ast tree and return the last match.
+ * Search the ast sub-tree and return the last match.
  *
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'
@@ -5100,7 +5415,6 @@ button {
 }
     `;
 
- // find declaration which contain a '30px'
   const nodeMatcher = (node: AstNode) =>
       return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio';
 

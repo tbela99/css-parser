@@ -274,28 +274,32 @@ class ComputePrefixFeature {
         let commaCount;
         let type = "";
         let tokens = token.chi.slice();
-        while (i < tokens.length &&
-            (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)) {
-            i++;
-        }
-        if (i >= tokens.length || tokens[i].typ !== EnumToken.IdenTokenType) {
-            return;
-        }
+        // while (
+        //     i < tokens.length &&
+        //     (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)
+        // ) {
+        //     i++;
+        // }
+        // if (i >= tokens.length || tokens[i].typ !== EnumToken.IdenTokenType) {
+        //     return;
+        // }
         // linear or radial
         if (equalsIgnoreCase(tokens[i].val, "linear")) {
             type = "linear-gradient";
             i++;
         }
-        else {
-            return;
-        }
-        while (i < tokens.length &&
-            (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)) {
-            i++;
-        }
-        if (tokens[i].typ !== EnumToken.CommaTokenType) {
-            return;
-        }
+        // else {
+        //     return;
+        // }
+        // while (
+        //     i < tokens.length &&
+        //     (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)
+        // ) {
+        //     i++;
+        // }
+        // if (tokens[i].typ !== EnumToken.CommaTokenType) {
+        //     return;
+        // }
         tokens.splice(0, i + 1);
         commaCount = 0;
         for (i = 0; i < tokens.length; i++) {
