@@ -1,0 +1,27 @@
+{
+  "name": "css-parser-minify-benchmark",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "sizes": "node src/compute-sizes.js",
+    "bench": "vitest bench --run --outputJson=results/bench-results.json",
+    "report": "node src/generate-report.js",
+    "all": "npm run sizes && npm run bench && npm run report"
+  },
+  "dependencies": {
+    "@tbela99/css-parser": "^1.4.7",
+    "clean-css": "^5.3.3",
+    "css-tree": "^3.2.1",
+    "cssnano": "^8.0.2",
+    "csso": "^5.0.5",
+    "esbuild": "^0.28.1",
+    "lightningcss": "^1.32.0",
+    "postcss": "^8.5.19",
+    "vitest": "^4.1.10"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "fsevents@2.3.3": true
+  }
+}
