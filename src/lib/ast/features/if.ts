@@ -13,16 +13,14 @@ import type {
 import { EnumToken } from "../types.ts";
 import { renderValue } from "../../renderer/render.ts";
 import { FeatureWalkMode } from "./type.ts";
-import { definedPropertySettings } from "../../syntax/constants.ts";
+import { PARENT, TOKENS } from "../../syntax/constants.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 import { replaceNodeOrValue } from "../../parser/utils/token.ts";
 import { cloneNode } from "../../ast/clone.ts";
-import { createValidationContext, matchAllSyntaxes, trimArray } from "../../validation/match.ts";
+import { trimArray } from "../../validation/match.ts";
 import { findByValue } from "../find.ts";
 import { walk, walkValues } from "../walk.ts";
 import { eq } from "../../parser/utils/eq.ts";
-import { getParsedSyntax } from "../../validation/config.ts";
-import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 
 const nodeMatcher = (value: Token) =>
     value.typ === EnumToken.IfConditionTokenType ||
@@ -54,9 +52,9 @@ function substituteIfElseNode(
                 (t) => t.typ != EnumToken.CommentTokenType && t.typ != EnumToken.WhitespaceTokenType,
             ) as Token;
 
-            if (target == null) {
-                return result;
-            }
+            // if (target == null) {
+            //     return result;
+            // }
 
             //
             if (target.typ === EnumToken.IdenTokenType && equalsIgnoreCase("else", (target as IdentToken).val)) {
@@ -126,13 +124,13 @@ function substituteIfElseNode(
             }
         }
 
-        if (replaceRight) {
-            replaceNodeOrValue(
-                nodeMap.get(targetParentWrapper),
-                nodeMap.get(targetWrapper),
-                (node as IfElseConditionToken).r,
-            );
-        }
+        // if (replaceRight) {
+        //     replaceNodeOrValue(
+        //         nodeMap.get(targetParentWrapper),
+        //         nodeMap.get(targetWrapper),
+        //         (node as IfElseConditionToken).r,
+        //     );
+        // }
 
         result.push(clonedDeclaration);
 
@@ -171,10 +169,7 @@ function substituteIfElseNode(
                 chi: [] as Token[],
             }) as AstAtRule;
 
-            Object.defineProperty(atRule, "tokens", {
-                ...definedPropertySettings,
-                value: [{ typ: EnumToken.ParensTokenType, chi: (left as FunctionToken).chi.slice() }],
-            });
+            atRule[TOKENS] = [{ typ: EnumToken.ParensTokenType, chi: (left as FunctionToken).chi.slice() }];
 
             const minify: boolean = atRule.nam !== "supports";
             const options: RenderOptions = {
@@ -182,7 +177,7 @@ function substituteIfElseNode(
                 convertColor: minify,
             };
 
-            atRule.val = atRule.tokens!.reduce((acc: string, curr: Token) => acc + renderValue(curr, options), "");
+            atRule.val = atRule[TOKENS]!.reduce((acc: string, curr: Token) => acc + renderValue(curr, options), "");
 
             clonedDeclaration = cloneNode(declaration, true, nodeMap) as AstDeclaration;
 
@@ -192,13 +187,11 @@ function substituteIfElseNode(
                 node.r.at(-1)?.typ === EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r,
             );
 
-            clonedDeclaration.parent = atRule;
+            clonedDeclaration[PARENT] = atRule;
             atRule.chi!.push(clonedDeclaration);
             result.push(atRule);
 
             processNode(clonedDeclaration, cache);
-
-            // nodeMap.clear();
         } else if (left.typ === EnumToken.ContainerFunctionTokenType) {
             const atRule = Object.assign(cloneNode(declaration), {
                 typ: EnumToken.AtRuleNodeType,
@@ -206,8 +199,8 @@ function substituteIfElseNode(
                 chi: [] as Token[],
             }) as AstAtRule;
 
-            Object.defineProperty(atRule, "tokens", { ...definedPropertySettings, value: [left] });
-            atRule.val = atRule.tokens!.reduce((acc: string, curr: Token) => acc + renderValue(curr), "");
+            atRule[TOKENS] = [left];
+            atRule.val = atRule[TOKENS]!.reduce((acc: string, curr: Token) => acc + renderValue(curr), "");
 
             clonedDeclaration = cloneNode(declaration, true, nodeMap) as AstDeclaration;
 
@@ -221,19 +214,20 @@ function substituteIfElseNode(
                     : (node as IfConditionToken).r,
             );
 
-            clonedDeclaration.parent = atRule;
+            clonedDeclaration[PARENT] = atRule;
             atRule.chi!.push(clonedDeclaration);
             result.push(atRule);
 
             processNode(clonedDeclaration, cache);
         }
-    } else if (wrapper.typ === EnumToken.WildCardFunctionTokenType) {
-        clonedDeclaration = cloneNode(declaration, true, nodeMap) as AstDeclaration;
+    } 
+    // else if (wrapper.typ === EnumToken.WildCardFunctionTokenType) {
+    //     clonedDeclaration = cloneNode(declaration, true, nodeMap) as AstDeclaration;
 
-        replaceNodeOrValue(nodeMap.get(parentWrapper), nodeMap.get(wrapper), node);
+    //     replaceNodeOrValue(nodeMap.get(parentWrapper), nodeMap.get(wrapper), node);
 
-        result.push(clonedDeclaration);
-    }
+    //     result.push(clonedDeclaration);
+    // }
 
     return result;
 }
@@ -250,14 +244,14 @@ function processNode(declarationNode: AstDeclaration, cache: Set<AstNode>): AstN
         astNode = stack[k] as AstNode;
         const { node: declaration, value: node } = findByValue(astNode, nodeMatcher) ?? {};
 
-        if (node != null && cache.has(node.node)) {
-            continue;
-        }
+        // if (node != null && cache.has(node.node)) {
+        //     continue;
+        // }
 
         if (declaration == null || node == null) {
-            while (astNode.parent != null && astNode.parent != declarationNode.parent) {
-                astNode = astNode.parent;
-            }
+            // while (astNode[PARENT] != null && astNode[PARENT] != declarationNode[PARENT]) {
+            //     astNode = astNode[PARENT];
+            // }
 
             result.push(astNode);
             continue;
@@ -265,13 +259,13 @@ function processNode(declarationNode: AstDeclaration, cache: Set<AstNode>): AstN
 
         // @ts-expect-error
         const parents = [...node.parents?.()];
-        const parentWrapper = node!.parent ?? parents.find((node) => !nodeMatcher(node));
+        const parentWrapper = node.parent ?? parents.find((node) => !nodeMatcher(node));
 
         if (node!.node!.typ === EnumToken.WildCardFunctionTokenType) {
             for (i = 0; i < (node!.node as FunctionToken).chi.length; i++) {
-                if (cache.has((node!.node as FunctionToken).chi[i])) {
-                    continue;
-                }
+                // if (cache.has((node!.node as FunctionToken).chi[i])) {
+                //     continue;
+                // }
 
                 stack.push(
                     ...substituteIfElseNode(
@@ -297,69 +291,54 @@ function processNode(declarationNode: AstDeclaration, cache: Set<AstNode>): AstN
     }
 
     if (result.length > 0) {
+        // let invalidTokensTypes = new Set([
+        //     EnumToken.WhitespaceTokenType,
+        //     EnumToken.SemiColonTokenType,
+        //     EnumToken.ColonTokenType,
+        // ]);
 
-        let invalidTokensTypes = new Set([
-            EnumToken.WhitespaceTokenType,
-            EnumToken.SemiColonTokenType,
-            EnumToken.ColonTokenType
-        ])
+        // for (i = 0; i < result.length; i++) {
+        //     if (result[i].typ === EnumToken.DeclarationNodeType) {
+        //         for (const { value } of walkValues((result[i] as AstDeclaration).val, result[i])) {
+                    // if (
+                    //     value.typ === EnumToken.ImageFunctionTokenType &&
+                    //     (value as FunctionToken).val.includes("-gradient")
+                    // ) {
+                        // let valid: boolean = true;
+                        // let j: number;
 
-        for (i = 0; i < result.length; i++) {
-            if (result[i].typ === EnumToken.DeclarationNodeType) {
-                
-                for (const {value} of walkValues((result[i] as AstDeclaration).val, result[i])) {
-                    
-                    if (value.typ === EnumToken.ImageFunctionTokenType && (value as FunctionToken).val.includes('-gradient')) {
+                        // for (j = 0; j < (value as FunctionToken).chi.length; j++) {
+                        //     if (
+                        //         (value as FunctionToken).chi[j].typ === EnumToken.IdenTokenType &&
+                        //         "else" == ((value as FunctionToken).chi[j] as IdentToken).val
+                        //     ) {
+                        //         valid = false;
+                        //         break;
+                        //     }
 
-                        let valid: boolean = true;
-                        let j: number
+                        //     if (
+                        //         invalidTokensTypes.has((value as FunctionToken).chi[j].typ) &&
+                        //         ((value as FunctionToken).chi[j + 1]?.typ === EnumToken.CommaTokenType ||
+                        //             j == (value as FunctionToken).chi.length - 1) &&
+                        //         (j == 0 || EnumToken.CommaTokenType == (value as FunctionToken).chi[j - 1]?.typ)
+                        //     ) {
+                        //         valid = false;
+                        //         break;
+                        //     }
+                        // }
 
-                        for (j = 0; j < (value as FunctionToken).chi.length; j++) {
-                            
-                            if ((value as FunctionToken).chi[j].typ === EnumToken.IdenTokenType && 'else' == ((value as FunctionToken).chi[j] as IdentToken).val) {
-                                
-                                valid = false;
-                                break;
-                            }
-
-                            if (invalidTokensTypes.has((value as FunctionToken).chi[j].typ) && 
-                                ((value as FunctionToken).chi[j + 1]?.typ === EnumToken.CommaTokenType || j == (value as FunctionToken).chi.length - 1) &&
-                                (j == 0 || EnumToken.CommaTokenType == (value as FunctionToken).chi[j - 1]?.typ)) {
-                                
-                                valid = false;
-                                break;
-                            }
-                        }
-
-                        if (!valid) {
-                            
-                            result.splice(i--, 1);
-                            break;
-                        }
-
-                    
-                        
-                        // const res = matchAllSyntaxes(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (value as FunctionToken).val + '()'), createValidationContext((value as FunctionToken).chi), {
-                            
-                        // });
-
-                        // if (!res.success) {
-                            
+                        // if (!valid) {
                         //     result.splice(i--, 1);
                         //     break;
                         // }
-                    }
-                }
-            }
-        }
+                    // }
+                // }
+        //     }
+        // }
 
-        // console.debug({result});
-        // throw new Error("Not implemented");
-
-        if (result.length > 0) {
-                
-            replaceNodeOrValue(declarationNode.parent, declarationNode, result);
-        }
+        // if (result.length > 0) {
+            replaceNodeOrValue(declarationNode[PARENT], declarationNode, result);
+        // }
     }
     // else remove node?
     return result;
@@ -388,21 +367,21 @@ export class ExpandIfFeature {
 
         let i: number;
 
-        for (const n of declaration.parent.chi) {
+        for (const n of declaration[PARENT].chi) {
             for (const { node } of walk(n)) {
                 if (node.typ === EnumToken.AtRuleNodeType && Array.isArray(node.chi)) {
-                    for (i = 0; i < (node as AstAtRule).chi!.length; i++) {
-                        if (
-                            (node as AstAtRule).chi![i]!.typ === EnumToken.AtRuleNodeType &&
-                            (node as AstAtRule).chi![i + 1]?.typ === EnumToken.AtRuleNodeType &&
-                            (node as AstAtRule).chi![i]!.nam === (node as AstAtRule).chi![i + 1]!.nam &&
-                            (node as AstAtRule).chi![i]!.val === (node as AstAtRule).chi![i + 1]!.val
-                        ) {
-                            (node as AstAtRule).chi![i]!.chi.push(...(node as AstAtRule).chi![i + 1]!.chi);
-                            (node as AstAtRule).chi!.splice(i + 1, 1);
-                            i--;
-                        }
-                    }
+                    // for (i = 0; i < (node as AstAtRule).chi!.length; i++) {
+                    //     if (
+                    //         (node as AstAtRule).chi![i]!.typ === EnumToken.AtRuleNodeType &&
+                    //         (node as AstAtRule).chi![i + 1]?.typ === EnumToken.AtRuleNodeType &&
+                    //         (node as AstAtRule).chi![i]!.nam === (node as AstAtRule).chi![i + 1]!.nam &&
+                    //         (node as AstAtRule).chi![i]!.val === (node as AstAtRule).chi![i + 1]!.val
+                    //     ) {
+                    //         (node as AstAtRule).chi![i]!.chi.push(...(node as AstAtRule).chi![i + 1]!.chi);
+                    //         (node as AstAtRule).chi!.splice(i + 1, 1);
+                    //         i--;
+                    //     }
+                    // }
 
                     for (i = 0; i < (node as AstAtRule).chi!.length; i++) {
                         if (

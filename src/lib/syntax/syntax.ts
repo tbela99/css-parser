@@ -12,7 +12,6 @@ import type {
     FunctionToken,
     IdentToken,
     LengthToken,
-    LiteralToken,
     NumberToken,
     PercentageToken,
     ResolutionToken,
@@ -23,11 +22,9 @@ import { isOkLabClose } from "../../node.ts";
 import { ColorType, EnumToken } from "../ast/types.ts";
 import { WalkerOptionEnum, walkValues } from "../ast/walk.ts";
 import { toDegrees } from "../parser/utils/angle.ts";
+import { memoize } from "../parser/utils/cache.ts";
 import { equalsIgnoreCase } from "../parser/utils/text.ts";
-import { getParsedSyntax } from "../validation/config.ts";
-import { createValidationContext, matchAllSyntaxes, trimArray } from "../validation/match.ts";
-import { ValidationSyntaxGroupEnum } from "../validation/parser/typedef.ts";
-import type { ValidationFunctionToken } from "../validation/parser/types.d.ts";
+import { trimArray } from "../validation/match.ts";
 import { splitTokenList } from "../validation/utils/list.ts";
 import { getColorSpace } from "./color/utils/colorspace.ts";
 import { getColorComponents } from "./color/utils/components.ts";
@@ -37,8 +34,8 @@ import {
     deprecatedSystemColors,
     nonStandardColors,
     COLORS_NAMES,
-    mathFuncs,
     colorFuncColorSpace,
+    LOC,
 } from "./constants.ts";
 
 // '\\'
@@ -88,10 +85,6 @@ export const dimensionUnits: Set<string> = new Set([
     "vmin",
     "vw",
 ]);
-
-// https://www.w3.org/TR/css-values-4/#math-function
-
-export const pseudoElements: string[] = [":before", ":after", ":first-line", ":first-letter"];
 
 // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions
 // https://developer.mozilla.org/en-US/docs/Web/CSS/Mozilla_Extensions
@@ -546,35 +539,40 @@ export function isFrequency(dimension: DimensionToken): boolean {
     return "unit" in dimension && ["hz", "khz"].includes(dimension.unit.toLowerCase());
 }
 
+/**
+ * Is color space
+ * @param token
+ * @returns
+ */
 export function isColorspace(token: Token): boolean {
-    if (token.typ === EnumToken.WildCardFunctionTokenType && (token as FunctionToken).val === "var") {
-        return true;
-    }
-
-    if (token.typ != EnumToken.IdenTokenType) {
-        return false;
-    }
-
-    return [
-        "srgb",
-        "srgb-linear",
-        "lab",
-        "oklab",
-        "lch",
-        "oklch",
-        "xyz",
-        "xyz-d50",
-        "xyz-d65",
-        "display-p3",
-        "a98-rgb",
-        "prophoto-rgb",
-        "rec2020",
-        "rgb",
-        "hsl",
-        "hwb",
-    ].includes((token as IdentToken).val.toLowerCase());
+    return (
+        token.typ === EnumToken.IdenTokenType &&
+        [
+            "srgb",
+            "srgb-linear",
+            "lab",
+            "oklab",
+            "lch",
+            "oklch",
+            "xyz",
+            "xyz-d50",
+            "xyz-d65",
+            "display-p3",
+            "a98-rgb",
+            "prophoto-rgb",
+            "rec2020",
+            "rgb",
+            "hsl",
+            "hwb",
+        ].includes((token as IdentToken).val.toLowerCase())
+    );
 }
 
+/**
+ * Reduce color stops
+ * @param stops
+ * @returns
+ */
 export function reduceColorStops(stops: Token[]) {
     const parts = splitTokenList(stops);
     const n = parts.length == 1 ? 1 : parts.length - 1;
@@ -648,46 +646,46 @@ export function reducegradientBackgroundPosition(positions: Token[], position: s
         case "center center":
             positions.length = 0;
             break;
-        case "0 50%":
         case "0% 50%":
+        case "0 50%":
         case "left":
         case "left center":
         case "center left":
-            positions.length = 2;
+            positions.length = 0;
             positions.push({ typ: EnumToken.PercentageTokenType, val: 0 });
             break;
-        case "50% 0":
         case "50% 0%":
+        case "50% 0":
         case "top center":
         case "center top":
-            positions.length = 2;
+            positions.length = 0;
             positions.push({ typ: EnumToken.IdenTokenType, val: "top" });
             break;
-        case "bottom":
-        case "50% 100%":
         case "bottom center":
         case "center bottom":
-            positions.length = 2;
+        case "bottom":
+        case "50% 100%":
+            positions.length = 0;
             positions.push({ typ: EnumToken.IdenTokenType, val: "bottom" });
             break;
-        case "left":
-        case "0 50%":
-        case "0% 50%":
-        case "left center":
-        case "center left":
-            positions.length = 2;
-            positions.push({ typ: EnumToken.PercentageTokenType, val: 0 });
-            break;
-        case "100% 50%":
-        case "right":
+        // case "left":
+        // case "0 50%":
+        // case "0% 50%":
+        // case "left center":
+        // case "center left":
+        //     positions.length = 0;
+        //     positions.push({ typ: EnumToken.PercentageTokenType, val: 0 });
+        //     break;
         case "right center":
         case "center right":
-            positions.length = 2;
+        case "100% 50%":
+        case "right":
+            positions.length = 0;
             positions.push({ typ: EnumToken.PercentageTokenType, val: 100 });
             break;
         case "bottom left":
         case "left bottom":
-            positions.length = 2;
+            positions.length = 0;
             positions.push(
                 { typ: EnumToken.PercentageTokenType, val: 0 },
                 { typ: EnumToken.WhitespaceTokenType },
@@ -696,7 +694,7 @@ export function reducegradientBackgroundPosition(positions: Token[], position: s
             break;
         case "bottom right":
         case "right bottom":
-            positions.length = 2;
+            positions.length = 0;
             positions.push(
                 { typ: EnumToken.PercentageTokenType, val: 100 },
                 { typ: EnumToken.WhitespaceTokenType },
@@ -705,7 +703,7 @@ export function reducegradientBackgroundPosition(positions: Token[], position: s
             break;
         case "top left":
         case "left top":
-            positions.length = 2;
+            positions.length = 0;
             positions.push(
                 { typ: EnumToken.PercentageTokenType, val: 0 },
                 { typ: EnumToken.WhitespaceTokenType },
@@ -714,7 +712,7 @@ export function reducegradientBackgroundPosition(positions: Token[], position: s
             break;
         case "top right":
         case "right top":
-            positions.length = 2;
+            positions.length = 0;
             positions.push(
                 { typ: EnumToken.PercentageTokenType, val: 100 },
                 { typ: EnumToken.WhitespaceTokenType },
@@ -724,7 +722,12 @@ export function reducegradientBackgroundPosition(positions: Token[], position: s
     }
 }
 
-export function reduceConicColorStops(stops: Token[]) {
+/**
+ * Reduce conic-gradient color stops
+ * @param stops
+ * @returns
+ */
+export function reduceConicColorStops(stops: Token[]): Token[] {
     const parts = splitTokenList(stops);
     const n = parts.length == 1 ? 1 : parts.length - 1;
 
@@ -783,34 +786,47 @@ export function reduceConicColorStops(stops: Token[]) {
     return stops;
 }
 
+/**
+ * is rectangular orthogonal colorspace
+ * @param token
+ * @returns
+ */
 export function isRectangularOrthogonalColorspace(token: Token): boolean {
-    if (token.typ != EnumToken.IdenTokenType) {
-        return false;
-    }
-
-    return [
-        "srgb",
-        "srgb-linear",
-        "display-p3",
-        "a98-rgb",
-        "prophoto-rgb",
-        "rec2020",
-        "lab",
-        "oklab",
-        "xyz",
-        "xyz-d50",
-        "xyz-d65",
-    ].some((t) => equalsIgnoreCase(t, (token as IdentToken).val));
+    return (
+        token.typ === EnumToken.IdenTokenType &&
+        [
+            "srgb",
+            "srgb-linear",
+            "display-p3",
+            "a98-rgb",
+            "prophoto-rgb",
+            "rec2020",
+            "lab",
+            "oklab",
+            "xyz",
+            "xyz-d50",
+            "xyz-d65",
+        ].some((t) => equalsIgnoreCase(t, (token as IdentToken).val))
+    );
 }
 
+/**
+ * Is polar colorspace
+ * @param token
+ * @returns
+ */
 export function isPolarColorspace(token: Token): boolean {
-    if (token.typ != EnumToken.IdenTokenType) {
-        return false;
-    }
-
-    return ["hsl", "hwb", "lch", "oklch"].some((t) => equalsIgnoreCase(t, (token as IdentToken).val));
+    return (
+        token.typ === EnumToken.IdenTokenType &&
+        ["hsl", "hwb", "lch", "oklch"].some((t) => equalsIgnoreCase(t, (token as IdentToken).val))
+    );
 }
 
+/**
+ * Is hue interpolation method
+ * @param token
+ * @returns
+ */
 export function isHueInterpolationMethod(token: Token | Token[]): boolean {
     if (!Array.isArray(token)) {
         return token.typ == EnumToken.IdenTokenType && "hue" === (token as IdentToken).val?.toLowerCase?.();
@@ -827,6 +843,11 @@ export function isHueInterpolationMethod(token: Token | Token[]): boolean {
     );
 }
 
+/**
+ * Is ident color
+ * @param token
+ * @returns
+ */
 export function isIdentColor(token: Token): boolean {
     return (
         token.typ == EnumToken.ColorTokenType &&
@@ -845,12 +866,6 @@ export function isPercentageToken(token: Token): boolean {
 export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
     if (token.typ == EnumToken.WildCardFunctionTokenType) {
         return true;
-    }
-
-    if (token.typ == EnumToken.FunctionTokenType) {
-        if (!colorsFunc.includes((token as FunctionToken).val.toLowerCase())) {
-            return false;
-        }
     }
 
     if (token.typ == EnumToken.ColorTokenType) {
@@ -873,9 +888,9 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
     let isLegacySyntax: boolean = false;
 
     if (token.typ === EnumToken.FunctionTokenType || token.typ === EnumToken.ColorTokenType) {
-        if (!colorsFunc.includes((token as FunctionToken).val.toLowerCase())) {
-            return false;
-        }
+        // if (!colorsFunc.includes((token as FunctionToken).val.toLowerCase())) {
+        //     return false;
+        // }
 
         if ((token as FunctionToken).chi.length > 0) {
             // @ts-ignore
@@ -940,7 +955,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                                     action: "drop",
                                     message: `Unexpected constant '${val}'`,
                                     node: value,
-                                    location: value.loc,
+                                    location: value[LOC],
                                 });
 
                                 return false;
@@ -970,13 +985,12 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                                         !colorSpace.includes(val) &&
                                         !colorFuncColorSpace.includes(val)
                                     ) {
-                                        // console.debug({ val });
 
                                         errors?.push({
                                             action: "drop",
                                             message: `Unexpected constant '${val}'`,
                                             node: v.value,
-                                            location: v.value.loc,
+                                            location: v.value[LOC],
                                         });
 
                                         return false;
@@ -1039,7 +1053,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                             action: "drop",
                             message: "adding percentage and number is not allowed",
                             node: token,
-                            location: token.loc,
+                            location: token[LOC],
                         });
 
                         return false;
@@ -1071,7 +1085,15 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                 }
 
                 if (children[offset]?.typ == EnumToken.DashedIdenTokenType) {
-                    if (children.length < offset + 1) {
+
+                    if (children.length <= offset + 1 ) {
+
+                        errors?.push({
+                            action: "drop",
+                            message: `Invalid color at ${token[LOC]?.src}:${token[LOC]?.sta.lin}:${token[LOC]?.sta.col}`,
+                            node: token,
+                            location: token[LOC],
+                        });
                         return false;
                     }
 
@@ -1096,46 +1118,46 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                     return true;
                 }
 
-                if (children.length < 4 || children.length > 8) {
-                    return false;
-                }
+                // if (children.length < 4 || children.length > 8) {
+                //     return false;
+                // }
 
-                if (!isRelative && !isColorspace(children[0])) {
-                    return false;
-                }
+                // if (!isRelative && !isColorspace(children[0])) {
+                //     return false;
+                // }
 
                 for (let i = 1; i < children.length - 2; i++) {
-                    if (children[i].typ == EnumToken.IdenTokenType) {
-                        if (isColor(children[i])) {
-                            continue;
-                        }
+                    // if (children[i].typ == EnumToken.IdenTokenType) {
+                    //     if (isColor(children[i])) {
+                    //         continue;
+                    //     }
 
-                        if (
-                            (children[i] as IdentToken).val != "none" &&
-                            !(
-                                (isRelative &&
-                                    (["alpha", "r", "g", "b", "x", "y", "z"] as string[]).includes(
-                                        (children[i] as IdentToken).val,
-                                    )) ||
-                                isColorspace(children[i])
-                            )
-                        ) {
-                            return false;
-                        }
-                    }
+                    //     if (
+                    //         (children[i] as IdentToken).val != "none" &&
+                    //         !(
+                    //             (isRelative &&
+                    //                 (["alpha", "r", "g", "b", "x", "y", "z"] as string[]).includes(
+                    //                     (children[i] as IdentToken).val,
+                    //                 )) ||
+                    //             isColorspace(children[i])
+                    //         )
+                    //     ) {
+                    //         return false;
+                    //     }
+                    // }
 
-                    if (children[i].typ === EnumToken.WildCardFunctionTokenType) {
-                        continue;
-                    }
+                    // if (children[i].typ === EnumToken.WildCardFunctionTokenType) {
+                    //     continue;
+                    // }
 
-                    if (
-                        children[i].typ === EnumToken.FunctionTokenType ||
-                        children[i].typ === EnumToken.MathFunctionTokenType
-                    ) {
-                        if (!mathFuncs.includes((children[i] as FunctionToken).val)) {
-                            return false;
-                        }
-                    }
+                    // if (
+                    //     children[i].typ === EnumToken.FunctionTokenType ||
+                    //     children[i].typ === EnumToken.MathFunctionTokenType
+                    // ) {
+                    //     if (!mathFuncs.includes((children[i] as FunctionToken).val)) {
+                    //         return false;
+                    //     }
+                    // }
                 }
 
                 if (children.length == 4 || (isRelative && children.length == 6)) {
@@ -1146,27 +1168,27 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                     const sep: Token = children.at(-2) as Token;
                     const alpha: Token = children.at(-1) as Token;
                     // @ts-ignore
-                    if (
-                        ((children.length > 6 || !isRelative) && sep.typ != EnumToken.LiteralTokenType) ||
-                        (sep as LiteralToken).val != "/"
-                    ) {
-                        return false;
-                    }
+                    // if (
+                    //     ((children.length > 6 || !isRelative) && sep.typ != EnumToken.LiteralTokenType) ||
+                    //     (sep as LiteralToken).val != "/"
+                    // ) {
+                    //     return false;
+                    // }
 
-                    if (alpha.typ == EnumToken.IdenTokenType && (alpha as IdentToken).val != "none") {
-                        return false;
-                    } else {
-                        // @ts-ignore
-                        if (alpha.typ == EnumToken.PercentageTokenType) {
-                            if (+(alpha as PercentageToken).val < 0 || +(alpha as PercentageToken).val > 100) {
-                                return false;
-                            }
-                        } else if (alpha.typ == EnumToken.NumberTokenType) {
-                            if (+(alpha as NumberToken).val < 0 || +(alpha as NumberToken).val > 1) {
-                                return false;
-                            }
-                        }
-                    }
+                    // if (alpha.typ == EnumToken.IdenTokenType && (alpha as IdentToken).val != "none") {
+                    //     return false;
+                    // } else {
+                    //     // @ts-ignore
+                    //     if (alpha.typ == EnumToken.PercentageTokenType) {
+                    //         if (+(alpha as PercentageToken).val < 0 || +(alpha as PercentageToken).val > 100) {
+                    //             return false;
+                    //         }
+                    //     } else if (alpha.typ == EnumToken.NumberTokenType) {
+                    //         if (+(alpha as NumberToken).val < 0 || +(alpha as NumberToken).val > 1) {
+                    //             return false;
+                    //         }
+                    //     }
+                    // }
                 }
 
                 return true;
@@ -1189,9 +1211,9 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                     [[]] as Token[][],
                 );
 
-                if (children.length === 0 || children[0].length === 0) {
-                    return false;
-                }
+                // if (children.length === 0 || children[0].length === 0) {
+                //     return false;
+                // }
 
                 let j: number = 0;
                 let k: number = 0;
@@ -1230,56 +1252,58 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                                     }
                                     k++;
                                 }
-                            } else {
-                                return false;
-                            }
+                            } 
+                            // else {
+                            //     return false;
+                            // }
                         } else {
                             k++;
                         }
-                    } else {
-                        return false;
-                    }
+                    } 
+                    // else {
+                    //     return false;
+                    // }
 
-                    if (k != children[j].length) {
-                        return false;
-                    }
-
-                    j++;
-                }
-
-                while (j < children.length) {
-                    if (children[j].length > 2) {
-                        return false;
-                    }
-
-                    if (
-                        !isColor(children[j][0]) &&
-                        !(
-                            children[j][0].typ == EnumToken.WildCardFunctionTokenType &&
-                            equalsIgnoreCase("calc", (children[j][0] as FunctionToken).val)
-                        )
-                    ) {
-                        return false;
-                    }
-
-                    if (children[j][0].typ == EnumToken.WildCardFunctionTokenType) {
-                        const result = matchAllSyntaxes(
-                            getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "calc()") as ValidationFunctionToken[],
-                            createValidationContext([children[j][0]]),
-                            {},
-                        );
-
-                        if (!result.success) {
-                            return false;
-                        }
-                    }
-
-                    if (children[j].length > 1 && !isPercentageToken(children[j][1])) {
-                        return false;
-                    }
+                    // if (k != children[j].length) {
+                    //     return false;
+                    // }
 
                     j++;
                 }
+
+                // while (j < children.length) {
+                    // if (children[j].length > 2) {
+                    //     return false;
+                    // }
+
+                    // if (
+                    //     !isColor(children[j][0]) &&
+                    //     !(
+                    //         children[j][0].typ == EnumToken.WildCardFunctionTokenType &&
+                    //         equalsIgnoreCase("calc", (children[j][0] as FunctionToken).val)
+                    //     )
+                    // ) {
+                    //     return false;
+                    // }
+
+                    // if (children[j][0].typ == EnumToken.WildCardFunctionTokenType) {
+                    //     const result = matchAllSyntaxes(
+                    //         getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "calc()") as ValidationFunctionToken[],
+                    //         createValidationContext([children[j][0]]),
+                    //         {},
+                    //     );
+
+                    //     if (!result.success) {
+                    //         return false;
+                    //     }
+                    // }
+
+                    // if (children[j].length > 1 && !isPercentageToken(children[j][1])) {
+                    //     return false;
+                    // }
+
+                //     j++;
+                // }
 
                 return true;
             } else {
@@ -1302,24 +1326,24 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                     }
 
                     if (v.typ == EnumToken.IdenTokenType) {
-                        if (isColor(v)) {
-                            continue;
-                        }
+                        // if (isColor(v)) {
+                        //     continue;
+                        // }
 
-                        if (!(keywords.includes(v.val) || v.val.toLowerCase() in COLORS_NAMES)) {
-                            return false;
-                        }
+                        // if (!(keywords.includes(v.val) || COLORS_NAMES[v.val.toLowerCase()] != null)) {
+                        //     return false;
+                        // }
 
-                        if (keywords.includes(v.val)) {
-                            if (isLegacySyntax) {
-                                return false;
-                            }
+                        // if (keywords.includes(v.val)) {
+                        //     if (isLegacySyntax) {
+                        //         return false;
+                        //     }
 
-                            // @ts-ignore
-                            if (v.val == "from" && ["rgba", "hsla"].includes((token as ColorToken).val)) {
-                                return false;
-                            }
-                        }
+                        //     // @ts-ignore
+                        //     if (v.val == "from" && ["rgba", "hsla"].includes((token as ColorToken).val)) {
+                        //         return false;
+                        //     }
+                        // }
 
                         continue;
                     }
@@ -1332,20 +1356,20 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                         continue;
                     }
 
-                    if (
-                        ![
-                            EnumToken.ColorTokenType,
-                            EnumToken.IdenTokenType,
-                            EnumToken.NumberTokenType,
-                            EnumToken.AngleTokenType,
-                            EnumToken.PercentageTokenType,
-                            EnumToken.CommaTokenType,
-                            EnumToken.WhitespaceTokenType,
-                            EnumToken.LiteralTokenType,
-                        ].includes(v.typ)
-                    ) {
-                        return false;
-                    }
+                    // if (
+                    //     ![
+                    //         EnumToken.ColorTokenType,
+                    //         EnumToken.IdenTokenType,
+                    //         EnumToken.NumberTokenType,
+                    //         EnumToken.AngleTokenType,
+                    //         EnumToken.PercentageTokenType,
+                    //         EnumToken.CommaTokenType,
+                    //         EnumToken.WhitespaceTokenType,
+                    //         EnumToken.LiteralTokenType,
+                    //     ].includes(v.typ)
+                    // ) {
+                    //     return false;
+                    // }
                 }
             }
 
@@ -1414,14 +1438,14 @@ export function parseColor(token: Token) {
             if ((token as ColorToken).val == "color") {
                 let index: number = (token as ColorToken).chi!.indexOf(tk) as number;
 
-                if ((token as ColorToken).cal == "rel") {
-                    for (let k = 0; k < (token as ColorToken).chi!.length; k++) {
-                        if (EnumToken.DashedIdenTokenType == (token as ColorToken).chi![k].typ) {
-                            index = k;
-                            break;
-                        }
-                    }
-                }
+                // if ((token as ColorToken).cal == "rel") {
+                //     for (let k = 0; k < (token as ColorToken).chi!.length; k++) {
+                //         if (EnumToken.DashedIdenTokenType == (token as ColorToken).chi![k].typ) {
+                //             index = k;
+                //             break;
+                //         }
+                //     }
+                // }
 
                 if (EnumToken.DashedIdenTokenType == (token as ColorToken)?.chi?.[index]?.typ) {
                     (token as ColorToken).kin = ColorType.CUSTOM_COLOR;
@@ -1429,59 +1453,59 @@ export function parseColor(token: Token) {
             }
         }
 
-        return token;
+        // return token;
     }
 
     // @ts-ignore
-    token.typ = EnumToken.ColorTokenType;
+    // token.typ = EnumToken.ColorTokenType;
 
-    // @ts-ignore
-    (token as ColorToken).kin = ColorType[token.val.replaceAll("-", "_").toUpperCase()];
+    // // @ts-ignore
+    // (token as ColorToken).kin = ColorType[token.val.replaceAll("-", "_").toUpperCase()];
 
-    if (!("chi" in token)) {
-        const val: string = (token as ColorToken).val.toLowerCase();
+    // if (!("chi" in token)) {
+    //     const val: string = (token as ColorToken).val.toLowerCase();
 
-        if (val == "currentcolor" || val == "transparent" || val in COLORS_NAMES) {
-            (token as ColorToken).kin = ColorType.LIT;
-        } else if (isHexColor(val)) {
-            (token as ColorToken).kin = ColorType.HEX;
-        }
+    //     if (val == "currentcolor" || val == "transparent" || val in COLORS_NAMES) {
+    //         (token as ColorToken).kin = ColorType.LIT;
+    //     } else if (isHexColor(val)) {
+    //         (token as ColorToken).kin = ColorType.HEX;
+    //     }
 
-        const tk = (token as ColorToken).chi?.find(
-            (t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType,
-        );
+    //     const tk = (token as ColorToken).chi?.find(
+    //         (t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType,
+    //     );
 
-        if (tk?.typ === EnumToken.IdenTokenType && (tk as IdentToken).val === "from") {
-            (token as ColorToken).cal = "rel";
-        } else if ((token as ColorToken).val == "color-mix" && (tk as IdentToken).val == "in") {
-            (token as ColorToken).cal = "mix";
-        } else if ((token as ColorToken).val == "color") {
-            (token as ColorToken).cal = "col";
-        }
+    //     if (tk?.typ === EnumToken.IdenTokenType && (tk as IdentToken).val === "from") {
+    //         (token as ColorToken).cal = "rel";
+    //     } else if ((token as ColorToken).val == "color-mix" && (tk as IdentToken).val == "in") {
+    //         (token as ColorToken).cal = "mix";
+    //     } else if ((token as ColorToken).val == "color") {
+    //         (token as ColorToken).cal = "col";
+    //     }
 
-        return token;
-    }
+    //     return token;
+    // }
 
-    // @ts-ignore
-    if (((token as ColorToken).chi as Token[])[0].typ == EnumToken.IdenTokenType) {
-        // @ts-ignore
-        if (((token as ColorToken).chi as Token[])[0].val == "from") {
-            // @ts-ignore
-            (token as ColorToken).cal = "rel";
-        }
+    // // @ts-ignore
+    // if (((token as ColorToken).chi as Token[])[0].typ == EnumToken.IdenTokenType) {
+    //     // @ts-ignore
+    //     if (((token as ColorToken).chi as Token[])[0].val == "from") {
+    //         // @ts-ignore
+    //         (token as ColorToken).cal = "rel";
+    //     }
 
-        // @ts-ignore
-        else if ((token as ColorToken).val == "color-mix" && ((token as ColorToken).chi as Token[])[0].val == "in") {
-            // @ts-ignore
-            (token as ColorToken).cal = "mix";
-        } else {
-            // @ts-ignore
-            if ((token as ColorToken).val == "color") {
-                // @ts-ignore
-                (token as ColorToken).cal = "col";
-            }
-        }
-    }
+    //     // @ts-ignore
+    //     else if ((token as ColorToken).val == "color-mix" && ((token as ColorToken).chi as Token[])[0].val == "in") {
+    //         // @ts-ignore
+    //         (token as ColorToken).cal = "mix";
+    //     } else {
+    //         // @ts-ignore
+    //         if ((token as ColorToken).val == "color") {
+    //             // @ts-ignore
+    //             (token as ColorToken).cal = "col";
+    //         }
+    //     }
+    // }
 
     return token;
 }
@@ -1513,7 +1537,7 @@ export function isIdentCodepoint(codepoint: number): boolean {
     return codepoint == 0x2d || isDigit(codepoint) || isIdentStart(codepoint);
 }
 
-export function isIdent(name: string): boolean {
+export const isIdent = memoize(function (name: string): boolean {
     const j: number = name.length - 1;
     let i: number = 0;
     let codepoint: number = name.charCodeAt(0) as number;
@@ -1526,9 +1550,9 @@ export function isIdent(name: string): boolean {
             return false;
         }
 
-        if (nextCodepoint == REVERSE_SOLIDUS) {
-            return name.length > 2 && !isNewLine(name.charCodeAt(2) as number);
-        }
+        // if (nextCodepoint == REVERSE_SOLIDUS) {
+        //     return name.length > 2 && !isNewLine(name.charCodeAt(2) as number);
+        // }
 
         if (isDigit(nextCodepoint)) {
             return false;
@@ -1545,18 +1569,18 @@ export function isIdent(name: string): boolean {
     if (codepoint == REVERSE_SOLIDUS) {
         codepoint = name.charCodeAt(i + 1) as number;
 
-        if (!isIdentCodepoint(codepoint)) {
-            return false;
-        }
+        // if (!isIdentCodepoint(codepoint)) {
+        //     return false;
+        // }
         i += String.fromCodePoint(codepoint).length;
 
-        if (i < j) {
-            codepoint = name.charCodeAt(i) as number;
+        // if (i < j) {
+        //     codepoint = name.charCodeAt(i) as number;
 
-            if (!isIdentCodepoint(codepoint)) {
-                return false;
-            }
-        }
+        //     if (!isIdentCodepoint(codepoint)) {
+        //         return false;
+        //     }
+        // }
     }
 
     while (i < j) {
@@ -1577,7 +1601,7 @@ export function isIdent(name: string): boolean {
     }
 
     return true;
-}
+}) as (name: string) => boolean;
 
 export function isNonPrintable(codepoint: number): boolean {
     // null -> backspace
@@ -1603,10 +1627,10 @@ export function isHash(name: string): boolean {
     return name.charAt(0) == "#" && isIdent(name.charAt(1));
 }
 
-export function isNumber(name: string): boolean {
-    if (name.length == 0) {
-        return false;
-    }
+export const isNumber = memoize(function (name: string): boolean {
+    // if (name.length == 0) {
+    //     return false;
+    // }
 
     let codepoint: number = name.charCodeAt(0) as number;
     let i: number = 0;
@@ -1664,16 +1688,16 @@ export function isNumber(name: string): boolean {
 
     // 'E' 'e'
     if (codepoint == 0x45 || codepoint == 0x65) {
-        if (i == j) {
-            return false;
-        }
+        // if (i == j) {
+        //     return false;
+        // }
 
         codepoint = name.charCodeAt(i + 1) as number;
 
         // '+' '-'
-        if ([0x2b, 0x2d].includes(codepoint)) {
-            i++;
-        }
+        // if ([0x2b, 0x2d].includes(codepoint)) {
+        //     i++;
+        // }
 
         codepoint = name.charCodeAt(i + 1) as number;
 
@@ -1682,16 +1706,16 @@ export function isNumber(name: string): boolean {
         }
     }
 
-    while (++i < j) {
-        codepoint = name.charCodeAt(i) as number;
+    // while (++i < j) {
+    //     codepoint = name.charCodeAt(i) as number;
 
-        if (!isDigit(codepoint)) {
-            return false;
-        }
-    }
+    //     if (!isDigit(codepoint)) {
+    //         return false;
+    //     }
+    // }
 
     return true;
-}
+}) as (name: string) => boolean;
 
 export function isPercentage(name: string) {
     return name.endsWith("%") && isNumber(name.slice(0, -1));

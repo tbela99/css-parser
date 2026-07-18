@@ -1,8 +1,9 @@
 import { EnumToken } from './types.js';
 import { walk, walkValues } from './walk.js';
+import { TOKENS } from '../syntax/constants.js';
 
 /**
- * Search the ast tree and return the first match
+ * Search the ast sub-tree and return the first match
  *
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'
@@ -41,14 +42,14 @@ function find(ast, matcher) {
     return null;
 }
 /**
- * Search the ast tree by checking each node's value token and return the first match
+ * Search the ast sub-tree by checking each node's value token and return the first match
  *
- * ```ts
- *  // find the first ast node which contains the length token '30px'
+ ```ts
+ // find the first ast node which contains the length token '30px'
 import { findByValue, EnumToken, transform } from "@tbela99/css-parser";
 import type { AstNode } from "@tbela99/css-parser";
 
- * const css = `
+ const css = `
 
 button {
   aspect-ratio: 1;
@@ -78,8 +79,8 @@ function findByValue(ast, matcher) {
         if (node.typ === EnumToken.DeclarationNodeType) {
             source = node.val;
         }
-        else if (Array.isArray(node.tokens)) {
-            source = node.tokens;
+        else if (Array.isArray(node[TOKENS])) {
+            source = node[TOKENS];
         }
         if (source == null) {
             continue;
@@ -93,22 +94,25 @@ function findByValue(ast, matcher) {
     return null;
 }
 /**
- * Search the ast tree and return all matches
+ * Search the ast sub-tree and return all matches
  *
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'
-import { findAll, EnumToken, transform } from "@tbela99/css-parser";
-import type { AstNode } from "@tbela99/css-parser";
+*  import { findAll, EnumToken, transform } from "@tbela99/css-parser";
+*  import type { AstNode } from "@tbela99/css-parser";
 
- * const css = `
+const css = `
 
 button {
   aspect-ratio: 1;
   width: if(media(any-pointer: fine): 30px; else: 44px);
 }
+button-small {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 20px; else: 30px);
+}
     `;
 
- // find declaration which contain a '30px'
   const nodeMatcher = (node: AstNode) =>
       return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio';
 
@@ -133,7 +137,7 @@ function findAll(ast, matcher) {
     return result;
 }
 /**
- * Search the ast tree and return the last match.
+ * Search the ast sub-tree and return the last match.
  *
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'
@@ -148,7 +152,6 @@ button {
 }
     `;
 
- // find declaration which contain a '30px'
   const nodeMatcher = (node: AstNode) =>
       return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio';
 

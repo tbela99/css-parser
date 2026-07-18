@@ -1,5 +1,5 @@
 import { splitRule } from './minify.js';
-import { combinators } from '../syntax/constants.js';
+import { combinators, RAW } from '../syntax/constants.js';
 import { parseString } from '../parser/parse.js';
 import { walkValues } from './walk.js';
 import { renderValue } from '../renderer/render.js';
@@ -77,7 +77,7 @@ function expandRule(node) {
                         ast.chi.splice(i--, 1);
                         continue;
                     }
-                    for (const sel of rule.raw ?? splitRule(rule.sel)) {
+                    for (const sel of rule[RAW] ?? splitRule(rule.sel)) {
                         const s = sel.join("");
                         if (s.includes("&") || parentSelector) {
                             if (s.indexOf("&", 1) == -1) {

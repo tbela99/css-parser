@@ -17,9 +17,8 @@ export interface ValidationContext {
     /**
      * return the next token without consuming the current one
      * @param offset
-     * @param skipWhitespace
      */
-    peek(offset?: number, skipWhitespace?: boolean): Token | null;
+    peek(offset?: number): Token | null;
 
     /**
      * return a range of tokens.
@@ -52,7 +51,7 @@ export interface ValidationContext {
     /**
      *
      */
-    last(): Token | null;
+    // last(): Token | null;
 
     /**
      * clone the validation context

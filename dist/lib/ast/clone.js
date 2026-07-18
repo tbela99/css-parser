@@ -11,36 +11,29 @@ import { EnumToken } from './types.js';
 function cloneNode(node, cloneChildren = false, cloneMap = null) {
     const checkNode = node.typ == EnumToken.DeclarationNodeType ? "val" : "chi";
     const clone = {};
-    const properties = {};
     cloneMap?.set?.(node, clone);
-    for (const [name, value] of Object.entries(Object.getOwnPropertyDescriptors(node))) {
-        // @ts-expect-error
-        if (value.value == null || typeof value.value != "object" || name == "parent") {
-            // @ts-expect-error
-            properties[name] = { ...value };
-            // @ts-expect-error
+    for (const [name, value] of Object.entries(node)) {
+        if (value == null || typeof value != "object") {
+            clone[name] = value;
         }
-        else if (Array.isArray(value.value)) {
-            // @ts-expect-error
-            properties[name] = {
-                // @ts-expect-error
-                ...value,
-                value: !cloneChildren && name == checkNode
+        else if (Array.isArray(value)) {
+            clone[name] =
+                !cloneChildren && name == checkNode
                     ? []
-                    : // @ts-expect-error
-                        value.value.map((c) => {
-                            const newObj = cloneNode(c, cloneChildren, cloneMap);
-                            cloneMap?.set?.(c, newObj);
-                            return newObj;
-                        }),
-            };
+                    : value.map((c) => {
+                        const newObj = cloneNode(c, cloneChildren, cloneMap);
+                        cloneMap?.set?.(c, newObj);
+                        return newObj;
+                    });
         }
         else {
-            // @ts-expect-error
-            properties[name] = { ...value, value: cloneNode(value.value, clone) };
+            clone[name] = { ...value };
         }
     }
-    return Object.defineProperties(clone, properties);
+    for (const symbol of Object.getOwnPropertySymbols(node)) {
+        clone[symbol] = node[symbol];
+    }
+    return clone;
 }
 
 export { cloneNode };

@@ -1399,5 +1399,82 @@ body {
 }`));
         });
         
+
+        it('boolean media queries #60', function () {
+            return transform(`
+
+@media (grid: 1) {
+  a:hover {
+    color: blue;
+  }
+}
+
+  `, {
+                beautify: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`@media (grid:1) {
+ a:hover {
+  color: blue
+ }
+}`));
+        });
+        
+        it('integer media queries #61', function () {
+            return transform(`
+
+@media (color: 1) {
+  a:hover {
+    color: blue;
+  }
+}
+
+  `, {
+                beautify: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`@media (color:1) {
+ a:hover {
+  color: blue
+ }
+}`));
+        });
+        
+        it('keyword media queries #61', function () {
+            return transform(`
+
+@media (scripting: none) {
+  a:hover {
+    color: blue;
+  }
+}
+
+  `, {
+                beautify: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`@media (scripting:none) {
+ a:hover {
+  color: blue
+ }
+}`));
+        });
+        
+        it('string media queries #61', function () {
+            return transform(`
+
+@media (-moz-os-version) {
+  a:hover {
+    color: blue;
+  }
+}
+
+  `, {
+                beautify: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`@media (-moz-os-version) {
+ a:hover {
+  color: blue
+ }
+}`));
+        });
+        
     });
     }

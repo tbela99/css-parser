@@ -2,11 +2,11 @@
 const LOWER = "abcdefghijklmnopqrstuvwxyz";
 const DIGITS = "0123456789";
 const FULL_ALPHABET = (LOWER + DIGITS).split(""); // 64 chars
-const FIRST_ALPHABET = (LOWER).split(""); // 54 chars (no digits)
+const FIRST_ALPHABET = LOWER.split(""); // 54 chars (no digits)
 /**
  * supported hash algorithms
  */
-const hashAlgorithms = ['hex', 'base64', 'base64url', 'sha1', 'sha256', 'sha384', 'sha512'];
+const hashAlgorithms = ["hex", "base64", "base64url", "sha1", "sha256", "sha384", "sha512"];
 // simple deterministic hash → number
 function hashCode(str) {
     let hash = 0;
@@ -39,15 +39,15 @@ function hashId(input, length = 6) {
  * @param input
  */
 function toHex(input) {
-    let result = '';
+    let result = "";
     if (input instanceof ArrayBuffer || ArrayBuffer.isView(input)) {
         for (const byte of Array.from(new Uint8Array(input))) {
-            result += byte.toString(16).padStart(2, '0');
+            result += byte.toString(16).padStart(2, "0");
         }
     }
     else {
         for (const char of String(input)) {
-            result += char.charCodeAt(0).toString(16).padStart(2, '0');
+            result += char.charCodeAt(0).toString(16).padStart(2, "0");
         }
     }
     return result;
@@ -62,20 +62,20 @@ async function hash(input, length = 6, algo) {
     let result;
     if (algo != null) {
         switch (algo) {
-            case 'hex':
+            case "hex":
                 return toHex(input).slice(0, length);
-            case 'base64':
-            case 'base64url':
+            case "base64url":
+            case "base64":
                 result = btoa(input);
-                if (algo == 'base64url') {
-                    result = result.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+                if (algo == "base64url") {
+                    result = result.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
                 }
                 return result.slice(0, length);
-            case 'sha1':
-            case 'sha256':
-            case 'sha384':
-            case 'sha512':
-                return toHex(await crypto.subtle.digest(algo.replace('sha', 'SHA-'), new TextEncoder().encode(input))).slice(0, length);
+            case "sha256":
+            case "sha384":
+            case "sha512":
+            case "sha1":
+                return toHex(await crypto.subtle.digest(algo.replace("sha", "SHA-"), new TextEncoder().encode(input))).slice(0, length);
             default:
                 throw new Error(`Unsupported hash algorithm: ${algo}`);
         }

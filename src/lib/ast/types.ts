@@ -593,8 +593,8 @@ export enum EnumToken {
     RawNodeTokenType,
     /**
      * media query boolean token type
-     * @media not ()
-     * @media only ()
+     * at-rule media not ()
+     * at-rule media only ()
      */
     MediaQueryUnaryFeatureTokenType,
 
@@ -695,6 +695,11 @@ export enum EnumToken {
      * if-Else condition token
      */
     IfElseConditionTokenType,
+
+    /**
+     * wrapped values token type like {Arial, sans-serif}
+     */
+    WrappedValuesTokenType,
 
     /* aliases */
 

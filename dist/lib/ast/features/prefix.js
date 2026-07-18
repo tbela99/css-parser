@@ -3,7 +3,7 @@ import { walkValues } from '../walk.js';
 import { pseudoAliasMap } from '../../syntax/syntax.js';
 import { splitRule } from '../minify.js';
 import { renderValue } from '../../renderer/render.js';
-import { funcLike, regMatchLinearGradient, regMatchRadialGradient } from '../../syntax/constants.js';
+import { TOKENS, funcLike, regMatchLinearGradient, regMatchRadialGradient } from '../../syntax/constants.js';
 import { FeatureWalkMode } from './type.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { getSyntaxConfig } from '../../validation/config.js';
@@ -110,8 +110,8 @@ class ComputePrefixFeature {
     run(node) {
         if (node.typ == EnumToken.RuleNodeType) {
             node.sel = replacePseudo(splitRule(node.sel)).reduce((acc, curr, index) => acc + (index > 0 ? "," : "") + curr.join(""), "");
-            if (node.tokens != null) {
-                replaceAstNodes(node.tokens);
+            if (node[TOKENS] != null) {
+                replaceAstNodes(node[TOKENS]);
             }
         }
         else if (node.typ == EnumToken.DeclarationNodeType) {
@@ -172,8 +172,8 @@ class ComputePrefixFeature {
                 }
             }
             if (node.typ == EnumToken.AtRuleNodeType && node.val !== "") {
-                if (replaceAstNodes(node.tokens)) {
-                    node.val = node.tokens.reduce((acc, curr) => acc + renderValue(curr), "");
+                if (replaceAstNodes(node[TOKENS])) {
+                    node.val = node[TOKENS].reduce((acc, curr) => acc + renderValue(curr), "");
                 }
             }
         }
@@ -274,28 +274,32 @@ class ComputePrefixFeature {
         let commaCount;
         let type = "";
         let tokens = token.chi.slice();
-        while (i < tokens.length &&
-            (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)) {
-            i++;
-        }
-        if (i >= tokens.length || tokens[i].typ !== EnumToken.IdenTokenType) {
-            return;
-        }
+        // while (
+        //     i < tokens.length &&
+        //     (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)
+        // ) {
+        //     i++;
+        // }
+        // if (i >= tokens.length || tokens[i].typ !== EnumToken.IdenTokenType) {
+        //     return;
+        // }
         // linear or radial
         if (equalsIgnoreCase(tokens[i].val, "linear")) {
             type = "linear-gradient";
             i++;
         }
-        else {
-            return;
-        }
-        while (i < tokens.length &&
-            (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)) {
-            i++;
-        }
-        if (tokens[i].typ !== EnumToken.CommaTokenType) {
-            return;
-        }
+        // else {
+        //     return;
+        // }
+        // while (
+        //     i < tokens.length &&
+        //     (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)
+        // ) {
+        //     i++;
+        // }
+        // if (tokens[i].typ !== EnumToken.CommaTokenType) {
+        //     return;
+        // }
         tokens.splice(0, i + 1);
         commaCount = 0;
         for (i = 0; i < tokens.length; i++) {

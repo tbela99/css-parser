@@ -1,14 +1,13 @@
 import { EnumToken, ColorType } from '../ast/types.js';
 import { walkValues, WalkerOptionEnum } from '../ast/walk.js';
 import { toDegrees } from '../parser/utils/angle.js';
+import { memoize } from '../parser/utils/cache.js';
 import { equalsIgnoreCase } from '../parser/utils/text.js';
-import { getParsedSyntax } from '../validation/config.js';
-import { matchAllSyntaxes, createValidationContext, trimArray } from '../validation/match.js';
-import { ValidationSyntaxGroupEnum } from '../validation/parser/typedef.js';
+import { trimArray } from '../validation/match.js';
 import { splitTokenList } from '../validation/utils/list.js';
 import { getColorSpace } from './color/utils/colorspace.js';
 import { getColorComponents } from './color/utils/components.js';
-import { colorsFunc, systemColors, deprecatedSystemColors, nonStandardColors, COLORS_NAMES, colorFuncColorSpace, mathFuncs } from './constants.js';
+import { nonStandardColors, systemColors, deprecatedSystemColors, COLORS_NAMES, colorsFunc, colorFuncColorSpace, LOC } from './constants.js';
 import { isOkLabClose } from './color/utils/distance.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
@@ -60,8 +59,6 @@ const dimensionUnits = new Set([
     "vmin",
     "vw",
 ]);
-// https://www.w3.org/TR/css-values-4/#math-function
-const pseudoElements = [":before", ":after", ":first-line", ":first-letter"];
 // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions
 // https://developer.mozilla.org/en-US/docs/Web/CSS/Mozilla_Extensions
 const pseudoAliasMap = {
@@ -212,32 +209,11 @@ function isTime(dimension) {
 function isFrequency(dimension) {
     return "unit" in dimension && ["hz", "khz"].includes(dimension.unit.toLowerCase());
 }
-function isColorspace(token) {
-    if (token.typ === EnumToken.WildCardFunctionTokenType && token.val === "var") {
-        return true;
-    }
-    if (token.typ != EnumToken.IdenTokenType) {
-        return false;
-    }
-    return [
-        "srgb",
-        "srgb-linear",
-        "lab",
-        "oklab",
-        "lch",
-        "oklch",
-        "xyz",
-        "xyz-d50",
-        "xyz-d65",
-        "display-p3",
-        "a98-rgb",
-        "prophoto-rgb",
-        "rec2020",
-        "rgb",
-        "hsl",
-        "hwb",
-    ].includes(token.val.toLowerCase());
-}
+/**
+ * Reduce color stops
+ * @param stops
+ * @returns
+ */
 function reduceColorStops(stops) {
     const parts = splitTokenList(stops);
     const n = parts.length == 1 ? 1 : parts.length - 1;
@@ -296,65 +272,70 @@ function reducegradientBackgroundPosition(positions, position) {
         case "center center":
             positions.length = 0;
             break;
-        case "0 50%":
         case "0% 50%":
+        case "0 50%":
         case "left":
         case "left center":
         case "center left":
-            positions.length = 2;
+            positions.length = 0;
             positions.push({ typ: EnumToken.PercentageTokenType, val: 0 });
             break;
-        case "50% 0":
         case "50% 0%":
+        case "50% 0":
         case "top center":
         case "center top":
-            positions.length = 2;
+            positions.length = 0;
             positions.push({ typ: EnumToken.IdenTokenType, val: "top" });
             break;
-        case "bottom":
-        case "50% 100%":
         case "bottom center":
         case "center bottom":
-            positions.length = 2;
+        case "bottom":
+        case "50% 100%":
+            positions.length = 0;
             positions.push({ typ: EnumToken.IdenTokenType, val: "bottom" });
             break;
-        case "left":
-        case "0 50%":
-        case "0% 50%":
-        case "left center":
-        case "center left":
-            positions.length = 2;
-            positions.push({ typ: EnumToken.PercentageTokenType, val: 0 });
-            break;
-        case "100% 50%":
-        case "right":
+        // case "left":
+        // case "0 50%":
+        // case "0% 50%":
+        // case "left center":
+        // case "center left":
+        //     positions.length = 0;
+        //     positions.push({ typ: EnumToken.PercentageTokenType, val: 0 });
+        //     break;
         case "right center":
         case "center right":
-            positions.length = 2;
+        case "100% 50%":
+        case "right":
+            positions.length = 0;
             positions.push({ typ: EnumToken.PercentageTokenType, val: 100 });
             break;
         case "bottom left":
         case "left bottom":
-            positions.length = 2;
+            positions.length = 0;
             positions.push({ typ: EnumToken.PercentageTokenType, val: 0 }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: 100 });
             break;
         case "bottom right":
         case "right bottom":
-            positions.length = 2;
+            positions.length = 0;
             positions.push({ typ: EnumToken.PercentageTokenType, val: 100 }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: 100 });
             break;
         case "top left":
         case "left top":
-            positions.length = 2;
+            positions.length = 0;
             positions.push({ typ: EnumToken.PercentageTokenType, val: 0 }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: 0 });
             break;
         case "top right":
         case "right top":
-            positions.length = 2;
+            positions.length = 0;
             positions.push({ typ: EnumToken.PercentageTokenType, val: 100 }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: 0 });
             break;
     }
 }
+/**
+ * Reduce conic-gradient color stops
+ * @param stops
+ * @returns
+ */
 function reduceConicColorStops(stops) {
     const parts = splitTokenList(stops);
     const n = parts.length == 1 ? 1 : parts.length - 1;
@@ -399,47 +380,49 @@ function reduceConicColorStops(stops) {
     }
     return stops;
 }
+/**
+ * is rectangular orthogonal colorspace
+ * @param token
+ * @returns
+ */
 function isRectangularOrthogonalColorspace(token) {
-    if (token.typ != EnumToken.IdenTokenType) {
-        return false;
-    }
-    return [
-        "srgb",
-        "srgb-linear",
-        "display-p3",
-        "a98-rgb",
-        "prophoto-rgb",
-        "rec2020",
-        "lab",
-        "oklab",
-        "xyz",
-        "xyz-d50",
-        "xyz-d65",
-    ].some((t) => equalsIgnoreCase(t, token.val));
+    return (token.typ === EnumToken.IdenTokenType &&
+        [
+            "srgb",
+            "srgb-linear",
+            "display-p3",
+            "a98-rgb",
+            "prophoto-rgb",
+            "rec2020",
+            "lab",
+            "oklab",
+            "xyz",
+            "xyz-d50",
+            "xyz-d65",
+        ].some((t) => equalsIgnoreCase(t, token.val)));
 }
+/**
+ * Is polar colorspace
+ * @param token
+ * @returns
+ */
 function isPolarColorspace(token) {
-    if (token.typ != EnumToken.IdenTokenType) {
-        return false;
-    }
-    return ["hsl", "hwb", "lch", "oklch"].some((t) => equalsIgnoreCase(t, token.val));
+    return (token.typ === EnumToken.IdenTokenType &&
+        ["hsl", "hwb", "lch", "oklch"].some((t) => equalsIgnoreCase(t, token.val)));
 }
+/**
+ * Is ident color
+ * @param token
+ * @returns
+ */
 function isIdentColor(token) {
     return (token.typ == EnumToken.ColorTokenType &&
         [ColorType.SYS, ColorType.DPSYS, ColorType.LIT].includes(token.kin) &&
         isIdent(token.val));
 }
-function isPercentageToken(token) {
-    return (token.typ == EnumToken.PercentageTokenType ||
-        (token.typ == EnumToken.NumberTokenType && token.val == 0));
-}
 function isColor(token, errors) {
     if (token.typ == EnumToken.WildCardFunctionTokenType) {
         return true;
-    }
-    if (token.typ == EnumToken.FunctionTokenType) {
-        if (!colorsFunc.includes(token.val.toLowerCase())) {
-            return false;
-        }
     }
     if (token.typ == EnumToken.ColorTokenType) {
         if ("kin" in token && !("chi" in token)) {
@@ -454,11 +437,10 @@ function isColor(token, errors) {
         // named color
         return val in COLORS_NAMES || "currentcolor" === val || "transparent" === val;
     }
-    let isLegacySyntax = false;
     if (token.typ === EnumToken.FunctionTokenType || token.typ === EnumToken.ColorTokenType) {
-        if (!colorsFunc.includes(token.val.toLowerCase())) {
-            return false;
-        }
+        // if (!colorsFunc.includes((token as FunctionToken).val.toLowerCase())) {
+        //     return false;
+        // }
         if (token.chi.length > 0) {
             // @ts-ignore
             if (token.val === "light-dark") {
@@ -512,7 +494,7 @@ function isColor(token, errors) {
                                     action: "drop",
                                     message: `Unexpected constant '${val}'`,
                                     node: value,
-                                    location: value.loc,
+                                    location: value[LOC],
                                 });
                                 return false;
                             }
@@ -538,12 +520,11 @@ function isColor(token, errors) {
                                         !colorsFunc.includes(val) &&
                                         !colorSpace.includes(val) &&
                                         !colorFuncColorSpace.includes(val)) {
-                                        // console.debug({ val });
                                         errors?.push({
                                             action: "drop",
                                             message: `Unexpected constant '${val}'`,
                                             node: v.value,
-                                            location: v.value.loc,
+                                            location: v.value[LOC],
                                         });
                                         return false;
                                     }
@@ -591,7 +572,7 @@ function isColor(token, errors) {
                             action: "drop",
                             message: "adding percentage and number is not allowed",
                             node: token,
-                            location: token.loc,
+                            location: token[LOC],
                         });
                         return false;
                     }
@@ -616,7 +597,13 @@ function isColor(token, errors) {
                     offset = 2;
                 }
                 if (children[offset]?.typ == EnumToken.DashedIdenTokenType) {
-                    if (children.length < offset + 1) {
+                    if (children.length <= offset + 1) {
+                        errors?.push({
+                            action: "drop",
+                            message: `Invalid color at ${token[LOC]?.src}:${token[LOC]?.sta.lin}:${token[LOC]?.sta.col}`,
+                            node: token,
+                            location: token[LOC],
+                        });
                         return false;
                     }
                     for (let i = offset + 1; i < children.length; i++) {
@@ -635,61 +622,33 @@ function isColor(token, errors) {
                     }
                     return true;
                 }
-                if (children.length < 4 || children.length > 8) {
-                    return false;
-                }
-                if (!isRelative && !isColorspace(children[0])) {
-                    return false;
-                }
-                for (let i = 1; i < children.length - 2; i++) {
-                    if (children[i].typ == EnumToken.IdenTokenType) {
-                        if (isColor(children[i])) {
-                            continue;
-                        }
-                        if (children[i].val != "none" &&
-                            !((isRelative &&
-                                ["alpha", "r", "g", "b", "x", "y", "z"].includes(children[i].val)) ||
-                                isColorspace(children[i]))) {
-                            return false;
-                        }
-                    }
-                    if (children[i].typ === EnumToken.WildCardFunctionTokenType) {
-                        continue;
-                    }
-                    if (children[i].typ === EnumToken.FunctionTokenType ||
-                        children[i].typ === EnumToken.MathFunctionTokenType) {
-                        if (!mathFuncs.includes(children[i].val)) {
-                            return false;
-                        }
-                    }
-                }
                 if (children.length == 4 || (isRelative && children.length == 6)) {
                     return true;
                 }
                 if (children.length == 8 || children.length == 6) {
-                    const sep = children.at(-2);
-                    const alpha = children.at(-1);
+                    children.at(-2);
+                    children.at(-1);
                     // @ts-ignore
-                    if (((children.length > 6 || !isRelative) && sep.typ != EnumToken.LiteralTokenType) ||
-                        sep.val != "/") {
-                        return false;
-                    }
-                    if (alpha.typ == EnumToken.IdenTokenType && alpha.val != "none") {
-                        return false;
-                    }
-                    else {
-                        // @ts-ignore
-                        if (alpha.typ == EnumToken.PercentageTokenType) {
-                            if (+alpha.val < 0 || +alpha.val > 100) {
-                                return false;
-                            }
-                        }
-                        else if (alpha.typ == EnumToken.NumberTokenType) {
-                            if (+alpha.val < 0 || +alpha.val > 1) {
-                                return false;
-                            }
-                        }
-                    }
+                    // if (
+                    //     ((children.length > 6 || !isRelative) && sep.typ != EnumToken.LiteralTokenType) ||
+                    //     (sep as LiteralToken).val != "/"
+                    // ) {
+                    //     return false;
+                    // }
+                    // if (alpha.typ == EnumToken.IdenTokenType && (alpha as IdentToken).val != "none") {
+                    //     return false;
+                    // } else {
+                    //     // @ts-ignore
+                    //     if (alpha.typ == EnumToken.PercentageTokenType) {
+                    //         if (+(alpha as PercentageToken).val < 0 || +(alpha as PercentageToken).val > 100) {
+                    //             return false;
+                    //         }
+                    //     } else if (alpha.typ == EnumToken.NumberTokenType) {
+                    //         if (+(alpha as NumberToken).val < 0 || +(alpha as NumberToken).val > 1) {
+                    //             return false;
+                    //         }
+                    //     }
+                    // }
                 }
                 return true;
             }
@@ -707,9 +666,9 @@ function isColor(token, errors) {
                     }
                     return acc;
                 }, [[]]);
-                if (children.length === 0 || children[0].length === 0) {
-                    return false;
-                }
+                // if (children.length === 0 || children[0].length === 0) {
+                //     return false;
+                // }
                 let j = 0;
                 let k = 0;
                 if (children[j][0].typ === EnumToken.IdenTokenType &&
@@ -743,42 +702,50 @@ function isColor(token, errors) {
                                     k++;
                                 }
                             }
-                            else {
-                                return false;
-                            }
+                            // else {
+                            //     return false;
+                            // }
                         }
                         else {
                             k++;
                         }
                     }
-                    else {
-                        return false;
-                    }
-                    if (k != children[j].length) {
-                        return false;
-                    }
+                    // else {
+                    //     return false;
+                    // }
+                    // if (k != children[j].length) {
+                    //     return false;
+                    // }
                     j++;
                 }
-                while (j < children.length) {
-                    if (children[j].length > 2) {
-                        return false;
-                    }
-                    if (!isColor(children[j][0]) &&
-                        !(children[j][0].typ == EnumToken.WildCardFunctionTokenType &&
-                            equalsIgnoreCase("calc", children[j][0].val))) {
-                        return false;
-                    }
-                    if (children[j][0].typ == EnumToken.WildCardFunctionTokenType) {
-                        const result = matchAllSyntaxes(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "calc()"), createValidationContext([children[j][0]]), {});
-                        if (!result.success) {
-                            return false;
-                        }
-                    }
-                    if (children[j].length > 1 && !isPercentageToken(children[j][1])) {
-                        return false;
-                    }
-                    j++;
-                }
+                // while (j < children.length) {
+                // if (children[j].length > 2) {
+                //     return false;
+                // }
+                // if (
+                //     !isColor(children[j][0]) &&
+                //     !(
+                //         children[j][0].typ == EnumToken.WildCardFunctionTokenType &&
+                //         equalsIgnoreCase("calc", (children[j][0] as FunctionToken).val)
+                //     )
+                // ) {
+                //     return false;
+                // }
+                // if (children[j][0].typ == EnumToken.WildCardFunctionTokenType) {
+                //     const result = matchAllSyntaxes(
+                //         getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "calc()") as ValidationFunctionToken[],
+                //         createValidationContext([children[j][0]]),
+                //         {},
+                //     );
+                //     if (!result.success) {
+                //         return false;
+                //     }
+                // }
+                // if (children[j].length > 1 && !isPercentageToken(children[j][1])) {
+                //     return false;
+                // }
+                //     j++;
+                // }
                 return true;
             }
             else {
@@ -790,25 +757,22 @@ function isColor(token, errors) {
                 }
                 // @ts-ignore
                 for (const v of token.chi) {
-                    if (v.typ == EnumToken.CommaTokenType) {
-                        isLegacySyntax = true;
-                    }
                     if (v.typ == EnumToken.IdenTokenType) {
-                        if (isColor(v)) {
-                            continue;
-                        }
-                        if (!(keywords.includes(v.val) || v.val.toLowerCase() in COLORS_NAMES)) {
-                            return false;
-                        }
-                        if (keywords.includes(v.val)) {
-                            if (isLegacySyntax) {
-                                return false;
-                            }
-                            // @ts-ignore
-                            if (v.val == "from" && ["rgba", "hsla"].includes(token.val)) {
-                                return false;
-                            }
-                        }
+                        // if (isColor(v)) {
+                        //     continue;
+                        // }
+                        // if (!(keywords.includes(v.val) || COLORS_NAMES[v.val.toLowerCase()] != null)) {
+                        //     return false;
+                        // }
+                        // if (keywords.includes(v.val)) {
+                        //     if (isLegacySyntax) {
+                        //         return false;
+                        //     }
+                        //     // @ts-ignore
+                        //     if (v.val == "from" && ["rgba", "hsla"].includes((token as ColorToken).val)) {
+                        //         return false;
+                        //     }
+                        // }
                         continue;
                     }
                     if (v.typ === EnumToken.MathFunctionTokenType ||
@@ -816,18 +780,20 @@ function isColor(token, errors) {
                         colorsFunc.includes(v.val)) {
                         continue;
                     }
-                    if (![
-                        EnumToken.ColorTokenType,
-                        EnumToken.IdenTokenType,
-                        EnumToken.NumberTokenType,
-                        EnumToken.AngleTokenType,
-                        EnumToken.PercentageTokenType,
-                        EnumToken.CommaTokenType,
-                        EnumToken.WhitespaceTokenType,
-                        EnumToken.LiteralTokenType,
-                    ].includes(v.typ)) {
-                        return false;
-                    }
+                    // if (
+                    //     ![
+                    //         EnumToken.ColorTokenType,
+                    //         EnumToken.IdenTokenType,
+                    //         EnumToken.NumberTokenType,
+                    //         EnumToken.AngleTokenType,
+                    //         EnumToken.PercentageTokenType,
+                    //         EnumToken.CommaTokenType,
+                    //         EnumToken.WhitespaceTokenType,
+                    //         EnumToken.LiteralTokenType,
+                    //     ].includes(v.typ)
+                    // ) {
+                    //     return false;
+                    // }
                 }
             }
             return true;
@@ -883,65 +849,63 @@ function parseColor(token) {
             }
             if (token.val == "color") {
                 let index = token.chi.indexOf(tk);
-                if (token.cal == "rel") {
-                    for (let k = 0; k < token.chi.length; k++) {
-                        if (EnumToken.DashedIdenTokenType == token.chi[k].typ) {
-                            index = k;
-                            break;
-                        }
-                    }
-                }
+                // if ((token as ColorToken).cal == "rel") {
+                //     for (let k = 0; k < (token as ColorToken).chi!.length; k++) {
+                //         if (EnumToken.DashedIdenTokenType == (token as ColorToken).chi![k].typ) {
+                //             index = k;
+                //             break;
+                //         }
+                //     }
+                // }
                 if (EnumToken.DashedIdenTokenType == token?.chi?.[index]?.typ) {
                     token.kin = ColorType.CUSTOM_COLOR;
                 }
             }
         }
-        return token;
+        // return token;
     }
     // @ts-ignore
-    token.typ = EnumToken.ColorTokenType;
-    // @ts-ignore
-    token.kin = ColorType[token.val.replaceAll("-", "_").toUpperCase()];
-    if (!("chi" in token)) {
-        const val = token.val.toLowerCase();
-        if (val == "currentcolor" || val == "transparent" || val in COLORS_NAMES) {
-            token.kin = ColorType.LIT;
-        }
-        else if (isHexColor(val)) {
-            token.kin = ColorType.HEX;
-        }
-        const tk = token.chi?.find((t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType);
-        if (tk?.typ === EnumToken.IdenTokenType && tk.val === "from") {
-            token.cal = "rel";
-        }
-        else if (token.val == "color-mix" && tk.val == "in") {
-            token.cal = "mix";
-        }
-        else if (token.val == "color") {
-            token.cal = "col";
-        }
-        return token;
-    }
-    // @ts-ignore
-    if (token.chi[0].typ == EnumToken.IdenTokenType) {
-        // @ts-ignore
-        if (token.chi[0].val == "from") {
-            // @ts-ignore
-            token.cal = "rel";
-        }
-        // @ts-ignore
-        else if (token.val == "color-mix" && token.chi[0].val == "in") {
-            // @ts-ignore
-            token.cal = "mix";
-        }
-        else {
-            // @ts-ignore
-            if (token.val == "color") {
-                // @ts-ignore
-                token.cal = "col";
-            }
-        }
-    }
+    // token.typ = EnumToken.ColorTokenType;
+    // // @ts-ignore
+    // (token as ColorToken).kin = ColorType[token.val.replaceAll("-", "_").toUpperCase()];
+    // if (!("chi" in token)) {
+    //     const val: string = (token as ColorToken).val.toLowerCase();
+    //     if (val == "currentcolor" || val == "transparent" || val in COLORS_NAMES) {
+    //         (token as ColorToken).kin = ColorType.LIT;
+    //     } else if (isHexColor(val)) {
+    //         (token as ColorToken).kin = ColorType.HEX;
+    //     }
+    //     const tk = (token as ColorToken).chi?.find(
+    //         (t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType,
+    //     );
+    //     if (tk?.typ === EnumToken.IdenTokenType && (tk as IdentToken).val === "from") {
+    //         (token as ColorToken).cal = "rel";
+    //     } else if ((token as ColorToken).val == "color-mix" && (tk as IdentToken).val == "in") {
+    //         (token as ColorToken).cal = "mix";
+    //     } else if ((token as ColorToken).val == "color") {
+    //         (token as ColorToken).cal = "col";
+    //     }
+    //     return token;
+    // }
+    // // @ts-ignore
+    // if (((token as ColorToken).chi as Token[])[0].typ == EnumToken.IdenTokenType) {
+    //     // @ts-ignore
+    //     if (((token as ColorToken).chi as Token[])[0].val == "from") {
+    //         // @ts-ignore
+    //         (token as ColorToken).cal = "rel";
+    //     }
+    //     // @ts-ignore
+    //     else if ((token as ColorToken).val == "color-mix" && ((token as ColorToken).chi as Token[])[0].val == "in") {
+    //         // @ts-ignore
+    //         (token as ColorToken).cal = "mix";
+    //     } else {
+    //         // @ts-ignore
+    //         if ((token as ColorToken).val == "color") {
+    //             // @ts-ignore
+    //             (token as ColorToken).cal = "col";
+    //         }
+    //     }
+    // }
     return token;
 }
 function isLetter(codepoint) {
@@ -964,7 +928,7 @@ function isIdentCodepoint(codepoint) {
     // -
     return codepoint == 0x2d || isDigit(codepoint) || isIdentStart(codepoint);
 }
-function isIdent(name) {
+const isIdent = memoize(function (name) {
     const j = name.length - 1;
     let i = 0;
     let codepoint = name.charCodeAt(0);
@@ -974,9 +938,9 @@ function isIdent(name) {
         if (Number.isNaN(nextCodepoint)) {
             return false;
         }
-        if (nextCodepoint == REVERSE_SOLIDUS) {
-            return name.length > 2 && !isNewLine(name.charCodeAt(2));
-        }
+        // if (nextCodepoint == REVERSE_SOLIDUS) {
+        //     return name.length > 2 && !isNewLine(name.charCodeAt(2) as number);
+        // }
         if (isDigit(nextCodepoint)) {
             return false;
         }
@@ -988,16 +952,16 @@ function isIdent(name) {
     }
     if (codepoint == REVERSE_SOLIDUS) {
         codepoint = name.charCodeAt(i + 1);
-        if (!isIdentCodepoint(codepoint)) {
-            return false;
-        }
+        // if (!isIdentCodepoint(codepoint)) {
+        //     return false;
+        // }
         i += String.fromCodePoint(codepoint).length;
-        if (i < j) {
-            codepoint = name.charCodeAt(i);
-            if (!isIdentCodepoint(codepoint)) {
-                return false;
-            }
-        }
+        // if (i < j) {
+        //     codepoint = name.charCodeAt(i) as number;
+        //     if (!isIdentCodepoint(codepoint)) {
+        //         return false;
+        //     }
+        // }
     }
     while (i < j) {
         i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
@@ -1013,7 +977,7 @@ function isIdent(name) {
         }
     }
     return true;
-}
+});
 function isPseudo(name) {
     return (name.charAt(0) == ":" &&
         ((name.endsWith("(") && isIdent(name.charAt(1) == ":" ? name.slice(2, -1) : name.slice(1, -1))) ||
@@ -1022,10 +986,10 @@ function isPseudo(name) {
 function isHash(name) {
     return name.charAt(0) == "#" && isIdent(name.charAt(1));
 }
-function isNumber(name) {
-    if (name.length == 0) {
-        return false;
-    }
+const isNumber = memoize(function (name) {
+    // if (name.length == 0) {
+    //     return false;
+    // }
     let codepoint = name.charCodeAt(0);
     let i = 0;
     const j = name.length;
@@ -1070,27 +1034,27 @@ function isNumber(name) {
     }
     // 'E' 'e'
     if (codepoint == 0x45 || codepoint == 0x65) {
-        if (i == j) {
-            return false;
-        }
+        // if (i == j) {
+        //     return false;
+        // }
         codepoint = name.charCodeAt(i + 1);
         // '+' '-'
-        if ([0x2b, 0x2d].includes(codepoint)) {
-            i++;
-        }
+        // if ([0x2b, 0x2d].includes(codepoint)) {
+        //     i++;
+        // }
         codepoint = name.charCodeAt(i + 1);
         if (!isDigit(codepoint)) {
             return false;
         }
     }
-    while (++i < j) {
-        codepoint = name.charCodeAt(i);
-        if (!isDigit(codepoint)) {
-            return false;
-        }
-    }
+    // while (++i < j) {
+    //     codepoint = name.charCodeAt(i) as number;
+    //     if (!isDigit(codepoint)) {
+    //         return false;
+    //     }
+    // }
     return true;
-}
+});
 function isPercentage(name) {
     return name.endsWith("%") && isNumber(name.slice(0, -1));
 }
@@ -1185,28 +1149,5 @@ function isWhiteSpace(codepoint) {
         codepoint == 0x2028 ||
         codepoint == 0x2029);
 }
-function isValue(token) {
-    if (token == null) {
-        return false;
-    }
-    return (token.typ === EnumToken.IdenTokenType ||
-        token.typ === EnumToken.DimensionTokenType ||
-        token.typ === EnumToken.LengthTokenType ||
-        token.typ === EnumToken.AngleTokenType ||
-        token.typ === EnumToken.FlexTokenType ||
-        token.typ === EnumToken.TimeTokenType ||
-        token.typ === EnumToken.ResolutionTokenType ||
-        token.typ === EnumToken.FrequencyTokenType ||
-        token.typ === EnumToken.NumberTokenType ||
-        token.typ === EnumToken.ColorTokenType ||
-        token.typ === EnumToken.FunctionTokenType ||
-        token.typ === EnumToken.UrlFunctionTokenType ||
-        token.typ === EnumToken.GridTemplateFuncTokenType ||
-        token.typ === EnumToken.ImageFunctionTokenType ||
-        token.typ === EnumToken.TimelineFunctionTokenType ||
-        token.typ === EnumToken.TimingFunctionTokenType ||
-        token.typ === EnumToken.MathFunctionTokenType ||
-        token.typ === EnumToken.TransformFunctionTokenType);
-}
 
-export { dimensionUnits, isAngle, isColor, isColorspace, isDigit, isFlex, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isLetter, isNewLine, isNumber, isPercentage, isPercentageToken, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isValue, isWhiteSpace, parseColor, parseDimension, pseudoAliasMap, pseudoElements, reduceColorStops, reduceConicColorStops, reducegradientBackgroundPosition, renamedStandardProperties };
+export { dimensionUnits, isAngle, isColor, isDigit, isFlex, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isLetter, isNewLine, isNumber, isPercentage, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, parseColor, parseDimension, pseudoAliasMap, reduceColorStops, reduceConicColorStops, reducegradientBackgroundPosition, renamedStandardProperties };

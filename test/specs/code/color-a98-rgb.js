@@ -1,5 +1,7 @@
 import {ColorType, EnumToken} from "../../../dist/lib/ast/types.js";
+import { parseString } from "../../../dist/lib/parser/parse.js";
 import {isOkLabClose} from "../../../dist/lib/syntax/color/utils/distance.js";
+import {convertColor} from "../../../dist/lib/syntax/color/color.js";
 
 export function run(describe, expect, it, transform, parse, render) {
 
@@ -582,6 +584,21 @@ export function run(describe, expect, it, transform, parse, render) {
                     kin: ColorType.COLOR
                 }
             )).equals(true));
+        });
+        
+        it('lch to a98-rgb #18', function () {
+            return expect(isOkLabClose(parseString('lch(40.03718216996103 69.23357411387173 34.75200047889167/50%)')[0],  parseString('color(a98-rgb .601473 .15253 .15253/50%)')[0]
+            )).equals(true);
+        });
+        
+        it('srgb to a98-rgb #19', function () {
+            return expect(isOkLabClose(parseString('color(srgb .701961 .133333 .133333/50%)')[0],  parseString('color(a98-rgb .601473 .15253 .15253/50%)')[0]
+            )).equals(true);
+        });
+        
+        it('srgb to a98-rgb #20', function () {
+            return expect(isOkLabClose(convertColor(parseString('color(srgb .701961 .133333 .133333/50%)')[0], ColorType.A98_RGB),  parseString('color(a98-rgb .601473 .15253 .15253/50%)')[0]
+            )).equals(true);
         });
     });
 }

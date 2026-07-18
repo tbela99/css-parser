@@ -16,17 +16,13 @@ import { evaluate } from "../../ast/math/expression.ts";
  * @param alpha
  * @returns
  */
-export function alpha(color: ColorToken, alpha?: Token): ColorToken | null {
+export function alpha(color: ColorToken, alpha: Token): ColorToken | null {
     if (alpha == null) {
         return color;
     }
 
     if (color.kin === ColorType.DEVICE_CMYK) {
         return null;
-    }
-
-    if (alpha == null) {
-        return color;
     }
 
     if (color.kin === ColorType.COLOR_MIX || color.cal === "rel") {
@@ -43,7 +39,7 @@ export function alpha(color: ColorToken, alpha?: Token): ColorToken | null {
         return null;
     }
 
-    if (alpha.typ === EnumToken.IdenTokenType && equalsIgnoreCase((alpha as IdentToken).val, "alpha")) {
+    if (alpha?.typ === EnumToken.IdenTokenType && equalsIgnoreCase((alpha as IdentToken).val, "alpha")) {
         alpha = components[3] ?? {
             typ: EnumToken.NumberTokenType,
             val: 1,

@@ -19,7 +19,7 @@ import { pseudoAliasMap } from "../../syntax/syntax.ts";
 import { splitRule } from "../minify.ts";
 import type { ValidationConfiguration } from "../../../@types/validation.d.ts";
 import { renderValue } from "../../renderer/render.ts";
-import { funcLike, regMatchLinearGradient, regMatchRadialGradient } from "../../syntax/constants.ts";
+import { funcLike, regMatchLinearGradient, regMatchRadialGradient, TOKENS } from "../../syntax/constants.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import { getSyntaxConfig } from "../../validation/config.ts";
@@ -161,8 +161,8 @@ export class ComputePrefixFeature {
                 "",
             );
 
-            if ((node as AstRule).tokens != null) {
-                replaceAstNodes((node as AstRule).tokens as Token[]);
+            if ((node as AstRule)[TOKENS] != null) {
+                replaceAstNodes((node as AstRule)[TOKENS] as Token[]);
             }
         } else if (node.typ == EnumToken.DeclarationNodeType) {
             if ((<AstDeclaration>node).nam.charAt(0) == "-") {
@@ -234,8 +234,8 @@ export class ComputePrefixFeature {
             }
 
             if (node.typ == EnumToken.AtRuleNodeType && (node as AstAtRule).val !== "") {
-                if (replaceAstNodes((node as AstAtRule).tokens as Token[])) {
-                    (node as AstAtRule).val = ((node as AstAtRule).tokens as Token[]).reduce(
+                if (replaceAstNodes((node as AstAtRule)[TOKENS] as Token[])) {
+                    (node as AstAtRule).val = ((node as AstAtRule)[TOKENS] as Token[]).reduce(
                         (acc, curr) => acc + renderValue(curr),
                         "",
                     );
@@ -378,35 +378,36 @@ export class ComputePrefixFeature {
         let type: string = "";
         let tokens = token.chi.slice();
 
-        while (
-            i < tokens.length &&
-            (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)
-        ) {
-            i++;
-        }
+        // while (
+        //     i < tokens.length &&
+        //     (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)
+        // ) {
+        //     i++;
+        // }
 
-        if (i >= tokens.length || tokens[i].typ !== EnumToken.IdenTokenType) {
-            return;
-        }
+        // if (i >= tokens.length || tokens[i].typ !== EnumToken.IdenTokenType) {
+        //     return;
+        // }
 
         // linear or radial
         if (equalsIgnoreCase((tokens[i] as IdentToken).val, "linear")) {
             type = "linear-gradient";
             i++;
-        } else {
-            return;
-        }
+        } 
+        // else {
+        //     return;
+        // }
 
-        while (
-            i < tokens.length &&
-            (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)
-        ) {
-            i++;
-        }
+        // while (
+        //     i < tokens.length &&
+        //     (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)
+        // ) {
+        //     i++;
+        // }
 
-        if (tokens[i].typ !== EnumToken.CommaTokenType) {
-            return;
-        }
+        // if (tokens[i].typ !== EnumToken.CommaTokenType) {
+        //     return;
+        // }
 
         tokens.splice(0, i + 1);
 

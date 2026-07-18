@@ -563,5 +563,26 @@ body {
 }`));
         });
         
+        
+        it('if(supports()) #23', function () {
+            const nesting1 = `
+
+div {
+  background-image: if(
+    style(--scheme: ice): linear-gradient(#caf0f8, white, #caf0f8);    
+    else: none;
+    else: green;
+  );
+}
+`;
+            return transform(nesting1, {
+                beautify: true,
+                removePrefix: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`div {
+ background-image: if(style(--scheme:ice):linear-gradient(#caf0f8,#fff,#caf0f8);else:none)
+}`));
+        });
+        
     });
 }

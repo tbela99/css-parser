@@ -1,6 +1,8 @@
 import {ColorType, EnumToken} from "../../../dist/lib/ast/types.js";
-import {isOkLabClose} from "../../../dist/lib/syntax/color/utils/distance.js";
 
+import {isOkLabClose} from "../../../dist/lib/syntax/color/utils/distance.js";
+import {convertColor} from "../../../dist/lib/syntax/color/color.js";
+import {parseString} from "../../../dist/lib/parser/parse.js";
 export function run(describe, expect, it, transform, parse, render) {
 
     describe('convert to prophoto-rgb', function () {
@@ -579,6 +581,13 @@ export function run(describe, expect, it, transform, parse, render) {
                     kin: ColorType.COLOR
                 }
             )).equals(true));
+        });
+
+
+        
+        it('srgb to photo-rgb #20', function () {
+            return expect(isOkLabClose(convertColor(parseString('color(srgb .701961 .133333 .133333/50%)')[0], ColorType.PROPHOTO_RGB),  parseString('color(a98-rgb .601473 .15253 .15253/50%)')[0]
+            )).equals(true);
         });
     });
 }

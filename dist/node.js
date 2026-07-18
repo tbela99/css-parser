@@ -1,4 +1,5 @@
 import process from 'node:process';
+import { deprecate } from 'node:util';
 import { Readable } from 'node:stream';
 import { createReadStream } from 'node:fs';
 import { lstat, readFile } from 'node:fs/promises';
@@ -11,7 +12,6 @@ export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, Valid
 import { tokenizeStream, tokenize } from './lib/parser/tokenize.js';
 import { dirname, resolve, matchUrl } from './lib/fs/resolve.js';
 import { ResponseType } from './types.js';
-import { deprecate } from 'util';
 export { minify } from './lib/ast/minify.js';
 export { expand } from './lib/ast/expand.js';
 export { WalkerEvent, WalkerOptionEnum, walk, walkValues } from './lib/ast/walk.js';
@@ -112,6 +112,7 @@ function render(data, options = {}, mapping) {
  * @param asStream load file as stream
  *
  * @deprecated
+ * @see {@link parse}
  * @throws Error file not found
  *
  * Example:
@@ -137,7 +138,7 @@ const parseFile = deprecate(async (file, options = {}, asStream = false) => pars
  *
  * @throws Error file not found
  *
- * Example:
+ * Parsing a string
  *
  * ```ts
  *
@@ -148,7 +149,7 @@ const parseFile = deprecate(async (file, options = {}, asStream = false) => pars
  *  console.log(result.ast);
  * ```
  *
- * Example using stream
+ * Parsing a Readable stream
  *
  * ```ts
  *
@@ -163,7 +164,7 @@ const parseFile = deprecate(async (file, options = {}, asStream = false) => pars
  *  console.log(result.ast);
  * ```
  *
- * Example using fetch and readable stream
+ * Parsing a file as a ReadableStream
  *
  * ```ts
  *
@@ -194,6 +195,14 @@ async function parse(...args) {
         }
     }
     options ??= {};
+    options.src ??= "";
+    Object.assign(options, {
+        load,
+        resolve,
+        dirname,
+        cwd: options.cwd ?? process.cwd(),
+    });
+    options.src = resolve(options.src, options.cwd).relative;
     options.parseInfo = {
         stream,
         buffer: "",
@@ -203,12 +212,7 @@ async function parse(...args) {
         position: { ind: 0, lin: 1, col: 0 },
         currentPosition: { ind: -1, lin: 1, col: 0 },
     };
-    return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), Object.assign(options, {
-        load,
-        resolve,
-        dirname,
-        cwd: options.cwd ?? process.cwd(),
-    })).then((result) => {
+    return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => {
         const { revMapping, ...res } = result;
         return res;
     });
@@ -247,7 +251,7 @@ const transformFile = deprecate(async (file, options = {}, asStream = false) => 
  * @param css
  * @param options
  *
- * Example:
+ * Paarsing a string
  *
  * ```ts
  *
@@ -258,7 +262,7 @@ const transformFile = deprecate(async (file, options = {}, asStream = false) => 
  *  console.log(result.code);
  * ```
  *
- * Example using stream
+ * Parsing a Readable stream
  *
  * ```ts
  *

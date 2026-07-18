@@ -1,19 +1,18 @@
 import type { ColorToken, FunctionToken, IdentToken, NumberToken, Token } from "../../../../@types/index.d.ts";
 import { ColorType, EnumToken } from "../../../ast/types.ts";
-import { walkValues } from "../../../ast/walk.ts";
 import { COLORS_NAMES } from "../../constants.ts";
 import { expandHexValue } from "../hex.ts";
 import { isColor, parseColor } from "../../syntax.ts";
 import { equalsIgnoreCase } from "../../../parser/utils/text.ts";
 
 export function getColorComponents(token: ColorToken | IdentToken): Token[] | null {
-    if (token.typ === EnumToken.IdenTokenType) {
-        if (isColor(token)) {
-            parseColor(token);
-        } else {
-            return null;
-        }
-    }
+    // if (token.typ === EnumToken.IdenTokenType) {
+    //     if (isColor(token)) {
+    //         parseColor(token);
+    //     } else {
+    //         return null;
+    //     }
+    // }
 
     if ((token as ColorToken).kin == ColorType.HEX || (token as ColorToken).kin == ColorType.LIT) {
 
@@ -47,9 +46,9 @@ export function getColorComponents(token: ColorToken | IdentToken): Token[] | nu
             continue;
         }
 
-        if (child.typ === EnumToken.IdenTokenType && isColor(child)) {
-            parseColor(child);
-        }
+        // if (child.typ === EnumToken.IdenTokenType && isColor(child)) {
+        //     parseColor(child);
+        // }
 
         if (
             child.typ === EnumToken.FunctionTokenType ||
@@ -58,16 +57,17 @@ export function getColorComponents(token: ColorToken | IdentToken): Token[] | nu
         ) {
             if ("var" == (child as FunctionToken).val.toLowerCase()) {
                 return null;
-            } else {
-                for (const { value } of walkValues((child as FunctionToken).chi)) {
-                    if (
-                        value.typ == EnumToken.WildCardFunctionTokenDefType &&
-                        "var" === (value as FunctionToken).val.toLowerCase()
-                    ) {
-                        return null;
-                    }
-                }
-            }
+            } 
+            // else {
+            //     for (const { value } of walkValues((child as FunctionToken).chi)) {
+            //         if (
+            //             value.typ == EnumToken.WildCardFunctionTokenDefType &&
+            //             "var" === (value as FunctionToken).val.toLowerCase()
+            //         ) {
+            //             return null;
+            //         }
+            //     }
+            // }
         }
 
         if (child.typ == EnumToken.ColorTokenType && equalsIgnoreCase("currentcolor", (child as ColorToken).val)) {

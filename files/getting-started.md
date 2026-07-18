@@ -12,11 +12,6 @@ It implements the [CSS Syntax Module Level 3](https://www.w3.org/TR/css-syntax-3
 
 In addition to parsing and validation, CSS-Parser provides advanced optimization and minification capabilities. According to [this benchmark](https://tbela99.github.io/css-parser/benchmark/index.html), it is the most efficient CSS minifier available, producing smaller output than competing solutions while maintaining competitive performance.
 
-
-## Online documentation
-
-For detailed guides, API references, and examples, visit the [CSS Parser](https://tbela99.github.io/css-parser/docs) documentation site.
-
 ## Playground
 
 Want to see it in action? Try the [CSS-Parser playground](https://tbela99.github.io/css-parser/playground/).
@@ -65,7 +60,7 @@ It can be imported as an umd module.
 ```html
 <script type="module">
 
-    import {transform, ColorType} from 'https://esm.sh/@tbela99/css-parser@1.4.4/web';
+    import {transform, ColorType} from 'https://esm.sh/@tbela99/css-parser@1.4.7/web';
 
     const css = `
 
@@ -103,7 +98,7 @@ It can be imported as a module in the browser.
 
 ```html
 
-<script src="https://unpkg.com/@tbela99/css-parser@1.4.4/dist/index-umd-web.js"></script>
+<script src="https://unpkg.com/@tbela99/css-parser@1.4.7/dist/index-umd-web.js"></script>
 <script>
 
     (async () => {
@@ -167,10 +162,9 @@ console.debug(result.code);
 The library exposes three entry points:
 
 - `@tbela99/css-parser` or `@tbela99/css-parser/node` which relies on node fs and fs/promises to read files
-- ~~`@tbela99/css-parser/cjs` same as the previous except it is exported as a commonjs module.~~ Loading as a commonjs module is deprecated and will be removed in a future release.
 - `@tbela99/css-parser/web` which relies on the web fetch api to read files
-
-The default file loader can be overridden via the options [ParseOptions.load](../interfaces/node.ParserOptions.html#load) of `parse()` function or [TransformOptions.load](../interfaces/node.TransformOptions.html#load) of `transform()` functions.
+- ~~`@tbela99/css-parser/cjs` same as the previous except it is exported as a commonjs module.~~ 
+> Loading as a commonjs module is deprecated and will be removed in a future release.  ⚠️
 
 ## From the web browser
 
@@ -179,7 +173,7 @@ Load as javascript module
 ```html
 <script type="module">
 
-    import {transform, ColorType} from 'https://esm.sh/@tbela99/css-parser@1.4.4/web';
+    import {transform, ColorType} from 'https://esm.sh/@tbela99/css-parser@1.4.7/web';
 
 const css = `
 
@@ -206,7 +200,7 @@ Load as an UMD module
 
 ```html
 
-<script src="https://unpkg.com/@tbela99/css-parser@1.4.4/dist/index-umd-web.js"></script>
+<script src="https://unpkg.com/@tbela99/css-parser@1.4.7/dist/index-umd-web.js"></script>
 <script>
 
     (async () => {

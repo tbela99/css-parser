@@ -144,7 +144,7 @@ function* walk(node, filter, reverse) {
             };
         }
         if ("chi" in node && (!isNumeric || (option & WalkerOptionEnum.IgnoreChildren) === 0)) {
-            parents.splice(i, 0, ...node.chi[reverse ? "reverse" : "slice"]());
+            parents.splice(i, 0, ...node.chi[reverse ? "toReversed" : "slice"]());
             for (const child of node.chi) {
                 map.set(child, node);
             }

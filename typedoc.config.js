@@ -13,7 +13,7 @@ export default {
     },
     plugin: ["typedoc-unhoax-theme", "typedoc-plugin-coverage", "typedoc-plugin-redirect"],
     redirects: {
-        "documents/Guide.html": "documents/Guide.Getting_started.html"
+        "documents/Guide.html": "documents/Guide.Getting_started.html",
     },
     coverageOutputType: "all",
     out: "docs",
@@ -57,4 +57,5 @@ export default {
     json: "docs/typedoc.json",
     customCss: "./files/assets/typedoc-custom.css",
     customJs: ["./files/assets/typedoc-custom.js"],
+    coverageLabel: "documentation",
 };

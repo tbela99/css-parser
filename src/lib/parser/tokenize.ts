@@ -20,11 +20,11 @@ import { ColorType, EnumToken } from "../ast/types.ts";
 import {
     colorsFunc,
     containerFunc,
-    definedPropertySettings,
-    generalEnclosedFunc,
     gridTemplateFunc,
     imageFunc,
+    LOC,
     mathFuncs,
+    pseudoElements,
     supportFunc,
     timelineFunc,
     timingFunc,
@@ -78,6 +78,10 @@ export const SymbolsMapTokens: Record<string, EnumToken> = {
     "\r": EnumToken.Whitespace,
     "\n": EnumToken.Whitespace,
     "\f": EnumToken.Whitespace,
+    ...pseudoElements.reduce((acc, curr: string) => {
+        acc[curr] = EnumToken.PseudoElementTokenType;
+        return acc;
+    }, Object.create(null)),
     ...containerFunc.reduce((acc, curr: string) => {
         acc[curr + "("] = EnumToken.ContainerFunctionTokenDefType;
         return acc;
@@ -98,10 +102,10 @@ export const SymbolsMapTokens: Record<string, EnumToken> = {
         acc[curr + "("] = EnumToken.TimelineFunctionTokenDefType;
         return acc;
     }, Object.create(null)),
-    ...generalEnclosedFunc.reduce((acc, curr: string) => {
-        acc[curr + "("] = EnumToken.GeneralEnclosedFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
+    // ...generalEnclosedFunc.reduce((acc, curr: string) => {
+    //     acc[curr + "("] = EnumToken.GeneralEnclosedFunctionTokenDefType;
+    //     return acc;
+    // }, Object.create(null)),
     ...supportFunc.reduce((acc, curr: string) => {
         acc[curr + "("] = EnumToken.SupportsFunctionTokenDefType;
         return acc;
@@ -286,7 +290,7 @@ export function consumeString(quoteStr: '"' | "'", buffer: string, parseInfo: Pa
     return result;
 }
 
-export function getTokenType(val: string, hint?: EnumToken): Token {
+export function yieldResult(val: string, parseInfo: ParseInfo, hint?: EnumToken): TokenizeResult {
     let token: Token | null = null;
     let dimension:
         | DimensionToken
@@ -323,9 +327,9 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
             case EnumToken.TimelineFunctionTokenDefType:
                 searchArray = timelineFunc;
                 break;
-            case EnumToken.GeneralEnclosedFunctionTokenDefType:
-                searchArray = generalEnclosedFunc;
-                break;
+            // case EnumToken.GeneralEnclosedFunctionTokenDefType:
+            //     searchArray = generalEnclosedFunc;
+            //     break;
             case EnumToken.SupportsFunctionTokenDefType:
                 searchArray = supportFunc;
                 break;
@@ -350,18 +354,19 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
         token = hintsEnum.has(hint) ? ({ typ: hint } as Token) : ({ typ: hint, val } as Token);
     } else {
         let slice: string = val.slice(1);
+        const chr: string = val.charAt(0);
 
-        if (val.charAt(0) == "@" && isIdent(slice)) {
+        if (chr == "@" && isIdent(slice)) {
             token = {
                 typ: EnumToken.AtRuleTokenType,
                 nam: slice,
             } as Token;
-        } else if (val.charAt(0) == "." && isIdent(slice)) {
+        } else if (chr == "." && isIdent(slice)) {
             token = {
                 typ: EnumToken.ClassSelectorTokenType,
                 val,
             };
-        } else if (val.charAt(0) == "#") {
+        } else if (chr == "#") {
             if (isHexColor(val)) {
                 token = <ColorToken>{
                     typ: EnumToken.ColorTokenType,
@@ -374,7 +379,7 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
                     val: val,
                 };
             }
-        } else if ("\"'".includes(val.charAt(0))) {
+        } else if ("\"'".includes(chr)) {
             token = <UnclosedStringToken>{
                 typ: EnumToken.UnclosedStringTokenType,
                 val: val,
@@ -413,21 +418,13 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
         };
     }
 
-    return token;
-}
+    // return token;
+    token[LOC] = {
+        src: parseInfo.src,
+        sta: { ...parseInfo.position },
+        end: { ...parseInfo.currentPosition },
+    };
 
-export function yieldResult(val: string, parseInfo: ParseInfo, hint?: EnumToken): TokenizeResult {
-    const token: Token = getTokenType(val, hint) as Token;
-
-    Object.defineProperty(token, "loc", {
-        ...definedPropertySettings,
-        enumerable: false,
-        value: {
-            src: parseInfo.src,
-            sta: { ...parseInfo.position },
-            end: { ...parseInfo.currentPosition },
-        },
-    });
     parseInfo.position.ind = parseInfo.currentPosition.ind;
     parseInfo.position.lin = parseInfo.currentPosition.lin;
     parseInfo.position.col = parseInfo.currentPosition.col;
@@ -511,6 +508,8 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
 
     const startTime = performance.now();
     const result: TokenizeResult[] = [];
+    // allow 10 characters buffer for the streaming parser to avoid incomplete tokens
+    const endPosition = parseInfo.stream.length - 10;
 
     parseInfo.buffer = "";
 
@@ -827,7 +826,6 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
                 }
 
                 result.push(yieldResult(value, parseInfo, EnumToken.NestingSelectorTokenType));
-
                 buffer = "";
                 break;
 
@@ -847,7 +845,6 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
                 }
 
                 result.push(yieldResult(value, parseInfo, EnumToken.Pipe));
-
                 buffer = "";
                 break;
 
@@ -860,14 +857,15 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
                 if (match(parseInfo, "important")) {
                     result.push(yieldResult(value + next(parseInfo, 9), parseInfo, EnumToken.ImportantTokenType));
                     buffer = "";
+                    break;
                 }
 
+                buffer += value;
                 break;
 
             case TokenMap.SLASH:
                 if (buffer.length > 0) {
                     result.push(yieldResult(buffer, parseInfo));
-
                     buffer = "";
                 }
 
@@ -999,6 +997,13 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
                 buffer += value;
                 break;
         }
+
+        if (
+            !yieldEOFToken &&
+            endPosition <= parseInfo.stream.length - parseInfo.currentPosition.ind + parseInfo.offset
+        ) {
+            break;
+        }
     }
 
     if (yieldEOFToken) {
@@ -1012,7 +1017,6 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
     }
 
     parseInfo.time += performance.now() - startTime;
-
     return result;
 }
 
@@ -1042,13 +1046,14 @@ export async function* tokenizeStream(
         const stream = ArrayBuffer.isView(value) ? decoder.decode(value, { stream: true }) : value;
 
         if (!done) {
-            if (parseInfo.stream.length > 2) {
-                parseInfo.stream = parseInfo.stream.slice(-2) + stream;
-                parseInfo.offset = parseInfo.currentPosition.ind - 1;
-            } else {
+            if (typeof parseInfo.stream != "string") {
                 parseInfo.stream = stream as string;
-                parseInfo.offset = Math.max(0, parseInfo.currentPosition.ind);
+            } else {
+                parseInfo.stream = (parseInfo.stream.slice(parseInfo.currentPosition.ind - parseInfo.offset + 1) +
+                    stream) as string;
             }
+
+            parseInfo.offset = parseInfo.currentPosition.ind + 1;
         }
 
         yield* tokenize(parseInfo, done);
