@@ -21,6 +21,7 @@
       "Writerside",
       "build.sh",
       "docs",
+      "benchmark",
       "package-lock.json",
       "ROADMAP.md",
       "rollup.config.js",

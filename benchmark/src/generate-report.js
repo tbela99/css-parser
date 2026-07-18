@@ -120,13 +120,7 @@ const html = `<!DOCTYPE html>
 </style>
 </head>
 <body>
-<h1>CSS Minification Benchmark (local reproduction)</h1>
-<p class="subtitle">
-  Same library set as
-  <a href="https://tbela99.github.io/css-parser/benchmark/index.html" target="_blank">the official @tbela99/css-parser benchmark</a>,
-  run locally with Vitest bench (tinybench) for timing + a separate deterministic pass for output size.
-  Each row header shows the original (pre-minification) file size; each cell shows the minified size, the size reduction, and the processing time for that library.
-</p>
+<h1>CSS Minification Benchmark</h1>
 <table>
   <thead>
     <tr><th>File</th>${headerCells}</tr>

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CSS minification benchmark results (local reproduction)</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    background: #0d1117;
+    color: #c9d1d9;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 2rem;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+  .subtitle { color: #8b949e; margin-bottom: 1.5rem; font-size: 0.9rem; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.82rem;
+  }
+  th, td {
+    border: 1px solid #30363d;
+    padding: 0.5rem 0.6rem;
+    text-align: left;
+    white-space: nowrap;
+  }
+  th {
+    background: #161b22;
+    position: sticky;
+    top: 0;
+    font-weight: 600;
+  }
+  td.file-cell { font-weight: 600; background: #11161c; }
+  .orig-size { color: #8b949e; font-weight: 400; font-size: 0.78rem; }
+  .metric { line-height: 1.5; }
+  .metric-label { color: #8b949e; font-size: 0.75rem; }
+  .metric.reduction { color: #7ee787; font-size: 0.78rem; font-weight: 600; }
+  .metric.time { color: #58a6ff; font-size: 0.78rem; }
+  tr.total-row td { background: #161b22; font-weight: 700; }
+  tr.total-row .metric.time { color: #79c0ff; }
+  tr.total-row .metric.reduction { color: #56d364; }
+  .meta {
+    margin-top: 1.5rem;
+    color: #8b949e;
+    font-size: 0.8rem;
+    white-space: pre-wrap;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  a { color: #58a6ff; }
+</style>
+</head>
+<body>
+<h1>CSS Minification Benchmark</h1>
+<table>
+  <thead>
+    <tr><th>File</th><th>clean-css - 5.3.3</th>
+<th>cssnano - 8.0.2</th>
+<th>csso - 5.0.5</th>
+<th>css-tree - 3.2.1</th>
+<th>esbuild - 0.28.1</th>
+<th>lightningcss - 1.32.0</th>
+<th>@tbela99/css-parser - 1.4.7</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="file-cell">960.css<br><span class="orig-size">original: 9,989 bytes</span></td><td>
+            <div class="metric"><span class="metric-label">final:</span> 5,772 bytes</div>
+            <div class="metric reduction">-42.2%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.81 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 5,772 bytes</div>
+            <div class="metric reduction">-42.2%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 2.60 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 5,768 bytes</div>
+            <div class="metric reduction">-42.3%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 1.32 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 5,772 bytes</div>
+            <div class="metric reduction">-42.2%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.34 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 5,773 bytes</div>
+            <div class="metric reduction">-42.2%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.56 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 5,772 bytes</div>
+            <div class="metric reduction">-42.2%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.13 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 4,522 bytes</div>
+            <div class="metric reduction">-54.7%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 1.32 ms</div>
+        </td></tr>
+<tr><td class="file-cell">animate.css<br><span class="orig-size">original: 95,374 bytes</span></td><td>
+            <div class="metric"><span class="metric-label">final:</span> 75,274 bytes</div>
+            <div class="metric reduction">-21.1%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 6.76 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 71,723 bytes</div>
+            <div class="metric reduction">-24.8%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 19.04 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 73,220 bytes</div>
+            <div class="metric reduction">-23.2%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 13.98 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 75,731 bytes</div>
+            <div class="metric reduction">-20.6%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 4.85 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 73,454 bytes</div>
+            <div class="metric reduction">-23.0%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 3.36 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 68,837 bytes</div>
+            <div class="metric reduction">-27.8%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 1.15 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 64,231 bytes</div>
+            <div class="metric reduction">-32.7%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 39.95 ms</div>
+        </td></tr>
+<tr><td class="file-cell">blueprint.css<br><span class="orig-size">original: 17,422 bytes</span></td><td>
+            <div class="metric"><span class="metric-label">final:</span> 10,794 bytes</div>
+            <div class="metric reduction">-38.0%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 1.61 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 10,696 bytes</div>
+            <div class="metric reduction">-38.6%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 9.69 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 10,677 bytes</div>
+            <div class="metric reduction">-38.7%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 3.83 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 10,785 bytes</div>
+            <div class="metric reduction">-38.1%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.77 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 10,775 bytes</div>
+            <div class="metric reduction">-38.2%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 1.02 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 10,762 bytes</div>
+            <div class="metric reduction">-38.2%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.29 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 10,948 bytes</div>
+            <div class="metric reduction">-37.2%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 4.51 ms</div>
+        </td></tr>
+<tr><td class="file-cell">bootstrap-4.css<br><span class="orig-size">original: 200,078 bytes</span></td><td>
+            <div class="metric"><span class="metric-label">final:</span> 161,971 bytes</div>
+            <div class="metric reduction">-19.0%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 18.55 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 160,616 bytes</div>
+            <div class="metric reduction">-19.7%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 94.16 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 160,160 bytes</div>
+            <div class="metric reduction">-20.0%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 34.75 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 163,307 bytes</div>
+            <div class="metric reduction">-18.4%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 10.19 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 160,755 bytes</div>
+            <div class="metric reduction">-19.7%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 7.35 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 153,616 bytes</div>
+            <div class="metric reduction">-23.2%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 3.12 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 144,703 bytes</div>
+            <div class="metric reduction">-27.7%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 56.55 ms</div>
+        </td></tr>
+<tr><td class="file-cell">bootstrap-5.css<br><span class="orig-size">original: 205,484 bytes</span></td><td>
+            <div class="metric"><span class="metric-label">final:</span> 163,827 bytes</div>
+            <div class="metric reduction">-20.3%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 19.11 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 162,325 bytes</div>
+            <div class="metric reduction">-21.0%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 95.63 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 161,486 bytes</div>
+            <div class="metric reduction">-21.4%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 34.29 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 165,616 bytes</div>
+            <div class="metric reduction">-19.4%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 9.02 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 162,024 bytes</div>
+            <div class="metric reduction">-21.2%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 7.32 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 159,987 bytes</div>
+            <div class="metric reduction">-22.1%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 3.49 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 151,261 bytes</div>
+            <div class="metric reduction">-26.4%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 55.42 ms</div>
+        </td></tr>
+<tr><td class="file-cell">font-awesome-all.css<br><span class="orig-size">original: 73,117 bytes</span></td><td>
+            <div class="metric"><span class="metric-label">final:</span> 58,568 bytes</div>
+            <div class="metric reduction">-19.9%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 6.14 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 58,929 bytes</div>
+            <div class="metric reduction">-19.4%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 27.70 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 56,024 bytes</div>
+            <div class="metric reduction">-23.4%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 13.36 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 56,085 bytes</div>
+            <div class="metric reduction">-23.3%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 3.32 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 58,980 bytes</div>
+            <div class="metric reduction">-19.3%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 3.12 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 56,049 bytes</div>
+            <div class="metric reduction">-23.3%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 1.46 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 55,636 bytes</div>
+            <div class="metric reduction">-23.9%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 34.92 ms</div>
+        </td></tr>
+<tr><td class="file-cell">font-awesome.css<br><span class="orig-size">original: 106,394 bytes</span></td><td>
+            <div class="metric"><span class="metric-label">final:</span> 82,143 bytes</div>
+            <div class="metric reduction">-22.8%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 11.02 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 73,902 bytes</div>
+            <div class="metric reduction">-30.5%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 40.01 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 73,592 bytes</div>
+            <div class="metric reduction">-30.8%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 19.56 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 84,685 bytes</div>
+            <div class="metric reduction">-20.4%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 5.07 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 76,185 bytes</div>
+            <div class="metric reduction">-28.4%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 4.87 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 70,376 bytes</div>
+            <div class="metric reduction">-33.9%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 2.41 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 69,551 bytes</div>
+            <div class="metric reduction">-34.6%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 29.84 ms</div>
+        </td></tr>
+<tr><td class="file-cell">inuit.css<br><span class="orig-size">original: 53,133 bytes</span></td><td>
+            <div class="metric"><span class="metric-label">final:</span> 18,215 bytes</div>
+            <div class="metric reduction">-65.7%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 3.42 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 18,136 bytes</div>
+            <div class="metric reduction">-65.9%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 11.61 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 17,894 bytes</div>
+            <div class="metric reduction">-66.3%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 5.15 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 18,322 bytes</div>
+            <div class="metric reduction">-65.5%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 1.58 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 18,309 bytes</div>
+            <div class="metric reduction">-65.5%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 1.62 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 17,839 bytes</div>
+            <div class="metric reduction">-66.4%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.49 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 9,727 bytes</div>
+            <div class="metric reduction">-81.7%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 7.17 ms</div>
+        </td></tr>
+<tr><td class="file-cell">normalize.css<br><span class="orig-size">original: 6,138 bytes</span></td><td>
+            <div class="metric"><span class="metric-label">final:</span> 1,815 bytes</div>
+            <div class="metric reduction">-70.4%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.35 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 1,802 bytes</div>
+            <div class="metric reduction">-70.6%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 1.82 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 1,692 bytes</div>
+            <div class="metric reduction">-72.4%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.47 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 1,851 bytes</div>
+            <div class="metric reduction">-69.8%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.13 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 1,816 bytes</div>
+            <div class="metric reduction">-70.4%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.40 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 1,751 bytes</div>
+            <div class="metric reduction">-71.5%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.05 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 1,611 bytes</div>
+            <div class="metric reduction">-73.8%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.68 ms</div>
+        </td></tr>
+<tr><td class="file-cell">pure.css<br><span class="orig-size">original: 28,843 bytes</span></td><td>
+            <div class="metric"><span class="metric-label">final:</span> 16,797 bytes</div>
+            <div class="metric reduction">-41.8%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 2.18 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 16,660 bytes</div>
+            <div class="metric reduction">-42.2%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 15.84 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 16,737 bytes</div>
+            <div class="metric reduction">-42.0%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 3.64 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 17,086 bytes</div>
+            <div class="metric reduction">-40.8%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.98 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 16,758 bytes</div>
+            <div class="metric reduction">-41.9%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 1.19 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 16,393 bytes</div>
+            <div class="metric reduction">-43.2%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.34 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 12,915 bytes</div>
+            <div class="metric reduction">-55.2%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 4.97 ms</div>
+        </td></tr>
+<tr><td class="file-cell">reset.css<br><span class="orig-size">original: 1,092 bytes</span></td><td>
+            <div class="metric"><span class="metric-label">final:</span> 773 bytes</div>
+            <div class="metric reduction">-29.2%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.12 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 773 bytes</div>
+            <div class="metric reduction">-29.2%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.83 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 747 bytes</div>
+            <div class="metric reduction">-31.6%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.53 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 773 bytes</div>
+            <div class="metric reduction">-29.2%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.07 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 774 bytes</div>
+            <div class="metric reduction">-29.1%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.32 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 773 bytes</div>
+            <div class="metric reduction">-29.2%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.03 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 747 bytes</div>
+            <div class="metric reduction">-31.6%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 0.23 ms</div>
+        </td></tr>
+<tr><td class="file-cell">tailwind.css<br><span class="orig-size">original: 2,380,419 bytes</span></td><td>
+            <div class="metric"><span class="metric-label">final:</span> 1,941,820 bytes</div>
+            <div class="metric reduction">-18.4%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 180.91 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 1,925,896 bytes</div>
+            <div class="metric reduction">-19.1%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 812.58 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 1,652,840 bytes</div>
+            <div class="metric reduction">-30.6%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 323.92 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 1,963,358 bytes</div>
+            <div class="metric reduction">-17.5%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 119.71 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 1,961,145 bytes</div>
+            <div class="metric reduction">-17.6%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 76.40 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 1,864,728 bytes</div>
+            <div class="metric reduction">-21.7%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 43.10 ms</div>
+        </td><td>
+            <div class="metric"><span class="metric-label">final:</span> 1,633,251 bytes</div>
+            <div class="metric reduction">-31.4%</div>
+            <div class="metric time"><span class="metric-label">time:</span> 549.94 ms</div>
+        </td></tr>
+
+    <tr class="total-row"><td class="file-cell">Total<br><span class="orig-size">original: 3,177,483 bytes</span></td><td>
+        <div class="metric"><span class="metric-label">final:</span> 2,537,769 bytes</div>
+        <div class="metric reduction">-20.1%</div>
+        <div class="metric time"><span class="metric-label">time:</span> 250.97 ms</div>
+    </td><td>
+        <div class="metric"><span class="metric-label">final:</span> 2,507,230 bytes</div>
+        <div class="metric reduction">-21.1%</div>
+        <div class="metric time"><span class="metric-label">time:</span> 1131.51 ms</div>
+    </td><td>
+        <div class="metric"><span class="metric-label">final:</span> 2,230,837 bytes</div>
+        <div class="metric reduction">-29.8%</div>
+        <div class="metric time"><span class="metric-label">time:</span> 454.79 ms</div>
+    </td><td>
+        <div class="metric"><span class="metric-label">final:</span> 2,563,371 bytes</div>
+        <div class="metric reduction">-19.3%</div>
+        <div class="metric time"><span class="metric-label">time:</span> 156.03 ms</div>
+    </td><td>
+        <div class="metric"><span class="metric-label">final:</span> 2,546,748 bytes</div>
+        <div class="metric reduction">-19.9%</div>
+        <div class="metric time"><span class="metric-label">time:</span> 107.54 ms</div>
+    </td><td>
+        <div class="metric"><span class="metric-label">final:</span> 2,426,883 bytes</div>
+        <div class="metric reduction">-23.6%</div>
+        <div class="metric time"><span class="metric-label">time:</span> 56.05 ms</div>
+    </td><td>
+        <div class="metric"><span class="metric-label">final:</span> 2,159,103 bytes</div>
+        <div class="metric reduction">-32.0%</div>
+        <div class="metric time"><span class="metric-label">time:</span> 785.49 ms</div>
+    </td></tr>
+
+  </tbody>
+</table>
+<div class="meta">Generated: Sat, 18 Jul 2026 22:12:54 GMT
+Node: v26.5.0
+Platform: darwin arm64
+Bench engine: Vitest bench (tinybench) -- time-boxed to 300ms per (file x library) with a 5-iteration floor
+</div>
+</body>
+</html>

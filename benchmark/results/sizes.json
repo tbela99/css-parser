@@ -1,0 +1,110 @@
+{
+  "960.css": {
+    "clean-css": 5772,
+    "cssnano": 5772,
+    "csso": 5768,
+    "css-tree": 5772,
+    "esbuild": 5773,
+    "lightningcss": 5772,
+    "css-parser": 4522
+  },
+  "animate.css": {
+    "clean-css": 75274,
+    "cssnano": 71723,
+    "csso": 73220,
+    "css-tree": 75731,
+    "esbuild": 73454,
+    "lightningcss": 68837,
+    "css-parser": 64231
+  },
+  "blueprint.css": {
+    "clean-css": 10794,
+    "cssnano": 10696,
+    "csso": 10677,
+    "css-tree": 10785,
+    "esbuild": 10775,
+    "lightningcss": 10762,
+    "css-parser": 10948
+  },
+  "bootstrap-4.css": {
+    "clean-css": 161971,
+    "cssnano": 160616,
+    "csso": 160160,
+    "css-tree": 163307,
+    "esbuild": 160755,
+    "lightningcss": 153616,
+    "css-parser": 144703
+  },
+  "bootstrap-5.css": {
+    "clean-css": 163827,
+    "cssnano": 162325,
+    "csso": 161486,
+    "css-tree": 165616,
+    "esbuild": 162024,
+    "lightningcss": 159987,
+    "css-parser": 151261
+  },
+  "font-awesome-all.css": {
+    "clean-css": 58568,
+    "cssnano": 58929,
+    "csso": 56024,
+    "css-tree": 56085,
+    "esbuild": 58980,
+    "lightningcss": 56049,
+    "css-parser": 55636
+  },
+  "font-awesome.css": {
+    "clean-css": 82143,
+    "cssnano": 73902,
+    "csso": 73592,
+    "css-tree": 84685,
+    "esbuild": 76185,
+    "lightningcss": 70376,
+    "css-parser": 69551
+  },
+  "inuit.css": {
+    "clean-css": 18215,
+    "cssnano": 18136,
+    "csso": 17894,
+    "css-tree": 18322,
+    "esbuild": 18309,
+    "lightningcss": 17839,
+    "css-parser": 9727
+  },
+  "normalize.css": {
+    "clean-css": 1815,
+    "cssnano": 1802,
+    "csso": 1692,
+    "css-tree": 1851,
+    "esbuild": 1816,
+    "lightningcss": 1751,
+    "css-parser": 1611
+  },
+  "pure.css": {
+    "clean-css": 16797,
+    "cssnano": 16660,
+    "csso": 16737,
+    "css-tree": 17086,
+    "esbuild": 16758,
+    "lightningcss": 16393,
+    "css-parser": 12915
+  },
+  "reset.css": {
+    "clean-css": 773,
+    "cssnano": 773,
+    "csso": 747,
+    "css-tree": 773,
+    "esbuild": 774,
+    "lightningcss": 773,
+    "css-parser": 747
+  },
+  "tailwind.css": {
+    "clean-css": 1941820,
+    "cssnano": 1925896,
+    "csso": 1652840,
+    "css-tree": 1963358,
+    "esbuild": 1961145,
+    "lightningcss": 1864728,
+    "css-parser": 1633251
+  }
+}

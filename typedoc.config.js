@@ -57,5 +57,4 @@ export default {
     json: "docs/typedoc.json",
     customCss: "./files/assets/typedoc-custom.css",
     customJs: ["./files/assets/typedoc-custom.js"],
-    coverageLabel: "documentation",
 };
