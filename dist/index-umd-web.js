@@ -24734,6 +24734,9 @@
         // }
         return { parts, i };
     }
+    /**
+     * Nomalize path
+     */
     const normalize = memoize(function (path) {
         let parts = [];
         let i = 0;
@@ -24771,14 +24774,15 @@
     });
     const diff = memoize(function (path1, path2) {
         let { parts } = splitPath(path1);
-        splitPath(path2);
-        // for (const p of dirs) {
-        //     if (parts[0] == p) {
-        //         parts.shift();
-        //     } else {
-        //         parts.unshift("..");
-        //     }
-        // }
+        const { parts: dirs } = splitPath(path2);
+        for (const p of dirs) {
+            if (parts[0] == p) {
+                parts.shift();
+            }
+            else {
+                parts.unshift("..");
+            }
+        }
         return parts.join("/");
     });
     /**
@@ -24826,17 +24830,17 @@
         //         relative: path,
         //     };
         // }
-        let result = "";
-        if (url.charAt(0) == "/") {
-            result = url;
-        }
+        // let result: string = "";
+        // if (url.charAt(0) == "/") {
+        //     result = url;
+        // } 
         // else if (currentDirectory.charAt(0) == "/") {
         //     result = dirname(currentDirectory) + "/" + url;
         // }
-        const absolute = normalize(result);
+        // const absolute = url; // normalize(result);
         return {
-            absolute,
-            relative: absolute === "" ? "" : diff(absolute, cwd ?? currentDirectory),
+            absolute: url,
+            relative: url === "" ? "" : diff(url, cwd ?? currentDirectory),
         };
     });
 
