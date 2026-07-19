@@ -41,9 +41,6 @@ function pkgVersion(name, pathToPkgJson) {
                 url = `https://github.com/${githubShorthand[1]}`;
             }
 
-            //   else if (!url.match(/[a-zA-Z]+:/)) {
-
-            //   }
             else {
                 url = url
                     .replace(/^git\+/, "")
@@ -51,6 +48,7 @@ function pkgVersion(name, pathToPkgJson) {
                     .replace(/^ssh:\/\/git@github\.com\//, "https://github.com/")
                     .replace(/\.git$/, "");
             }
+            
             if (!url.match(/[a-zA-Z]+:/)) {
                 url = "https://github.com/" + url;
             }
@@ -76,7 +74,7 @@ const cleanCssInstance = new CleanCSS();
 const cssnanoProcessor = postcss([cssnano]);
 
 /**
- * Every entry: { id, label, minify(css: string): Promise<string> | string }
+ * Every entry: { id, url, label, minify(css: string): Promise<string> | string }
  * `id` is used as the bench()/report column key; `label` mirrors the
  * official table's "name - version" formatting.
  */
