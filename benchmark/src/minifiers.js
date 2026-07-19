@@ -12,9 +12,54 @@ import * as csstree from "css-tree";
 import * as esbuild from "esbuild";
 import { transform as lightningTransform } from "lightningcss";
 import { transform as tbelaTransform } from "@tbela99/css-parser";
+import { type } from "node:os";
 
 function pkgVersion(name, pathToPkgJson) {
-    return JSON.parse(readFileSync(new URL(`../node_modules/${pathToPkgJson}`, import.meta.url))).version;
+    const { version, repository } = JSON.parse(
+        readFileSync(new URL(`../node_modules/${pathToPkgJson}`, import.meta.url)),
+    );
+
+    const response = {};
+
+    if (version) {
+        response.version = version;
+    }
+
+    if (repository != null) {
+        let url = null;
+
+        if (typeof repository === "string") {
+            url = repository;
+        } else if (repository.url != null) {
+            url = repository.url;
+        }
+
+        if (url != null) {
+            // github:user/repo
+            const githubShorthand = url.match(/^github:([^/]+\/[^/]+)$/);
+            if (githubShorthand) {
+                url = `https://github.com/${githubShorthand[1]}`;
+            }
+
+            //   else if (!url.match(/[a-zA-Z]+:/)) {
+
+            //   }
+            else {
+                url = url
+                    .replace(/^git\+/, "")
+                    .replace(/^git@github\.com:/, "https://github.com/")
+                    .replace(/^ssh:\/\/git@github\.com\//, "https://github.com/")
+                    .replace(/\.git$/, "");
+            }
+            if (!url.match(/[a-zA-Z]+:/)) {
+                url = "https://github.com/" + url;
+            }
+
+            response.url = url;
+        }
+    }
+
+    return response;
 }
 
 const versions = {
@@ -38,22 +83,26 @@ const cssnanoProcessor = postcss([cssnano]);
 export const minifiers = [
     {
         id: "clean-css",
-        label: `clean-css - ${versions["clean-css"]}`,
+        url: versions["clean-css"].url,
+        label: `clean-css - ${versions["clean-css"].version}`,
         minify: (css) => cleanCssInstance.minify(css).styles,
     },
     {
         id: "cssnano",
-        label: `cssnano - ${versions.cssnano}`,
+        url: versions.cssnano.url,
+        label: `cssnano - ${versions.cssnano.version}`,
         minify: async (css) => (await cssnanoProcessor.process(css, { from: undefined })).css,
     },
     {
         id: "csso",
-        label: `csso - ${versions.csso}`,
+        url: versions.csso.url,
+        label: `csso - ${versions.csso.version}`,
         minify: (css) => csso.minify(css).css,
     },
     {
         id: "css-tree",
-        label: `css-tree - ${versions["css-tree"]}`,
+        url: versions["css-tree"].url,
+        label: `css-tree - ${versions["css-tree"].version}`,
         // css-tree has no dedicated minifier API; parse+generate already
         // drops whitespace/comments, which is how the official benchmark
         // treats it too (no property-level optimization, just compact output).
@@ -61,17 +110,21 @@ export const minifiers = [
     },
     {
         id: "esbuild",
-        label: `esbuild - ${versions.esbuild}`,
+        url: versions.esbuild.url,
+        label: `esbuild - ${versions.esbuild.version}`,
         minify: async (css) => (await esbuild.transform(css, { loader: "css", minify: true })).code,
     },
     {
         id: "lightningcss",
-        label: `lightningcss - ${versions.lightningcss}`,
-        minify: (css) => lightningTransform({ filename: "style.css", code: Buffer.from(css), minify: true }).code.toString(),
+        url: versions.lightningcss.url,
+        label: `lightningcss - ${versions.lightningcss.version}`,
+        minify: (css) =>
+            lightningTransform({ filename: "style.css", code: Buffer.from(css), minify: true }).code.toString(),
     },
     {
         id: "css-parser",
-        label: `@tbela99/css-parser - ${versions["css-parser"]}`,
+        url: versions["css-parser"].url,
+        label: `@tbela99/css-parser - ${versions["css-parser"].version}`,
         minify: async (css) => (await tbelaTransform(css, { minify: true })).code,
     },
 ];

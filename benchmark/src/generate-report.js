@@ -64,16 +64,17 @@ for (const m of minifiers) {
 }
 totalRow += `</tr>\n`;
 
-const headerCells = minifiers.map((m) => `<th>${m.label}</th>`).join("\n");
+const headerCells = minifiers.map((m) => `<th>${m.url != null ? `<a href="${m.url}">${m.label}</a>` : m.label}</th>`).join("\n");
 
 const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CSS minification benchmark results (local reproduction)</title>
+<title>CSS minification benchmark results</title>
+<meta name="description" content="CSS minification benchmark results">
+<meta name="keywords" content="@tbela99/css-parser, css, minifier, benchmark">
 <style>
-  :root { color-scheme: dark; }
   body {
     background: #0d1117;
     color: #c9d1d9;
