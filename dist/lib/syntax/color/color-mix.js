@@ -6,7 +6,7 @@ import { srgb2rgb } from './rgb.js';
 import { srgb2hslvalues } from './hsl.js';
 import { srgb2hwb } from './hwb.js';
 import { srgb2labvalues } from './lab.js';
-import { srgb2p3values } from './p3.js';
+import { srgb2lp3values, srgb2p3values } from './p3.js';
 import { getColorComponents } from './utils/components.js';
 import { srgb2oklch } from './oklch.js';
 import { srgb2oklab } from './oklab.js';
@@ -126,6 +126,10 @@ function colorMix(...args) {
             case "display-p3":
                 // @ts-ignore
                 values = srgb2p3values(...values);
+                break;
+            case "display-p3-linear":
+                // @ts-ignore
+                values = srgb2lp3values(...values);
                 break;
             case "a98-rgb":
                 // @ts-ignore
@@ -350,6 +354,9 @@ function colorMix(...args) {
         case "srgb-linear":
         case "a98-rgb":
         case "rec2020":
+        case "display-p3":
+        case "display-p3-linear":
+        case "prophoto-rgb":
             // @ts-ignore
             return {
                 typ: EnumToken.ColorTokenType,

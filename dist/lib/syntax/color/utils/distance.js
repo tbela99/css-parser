@@ -22,7 +22,12 @@ function okLabDistance(color1, color2) {
     if (okLab1 == null || okLab2 == null) {
         return null;
     }
-    return Math.hypot(okLab1[0] - okLab2[0], okLab1[1] - okLab2[1], okLab1[2] - okLab2[2]);
+    const diff = [okLab1[0] - okLab2[0], okLab1[1] - okLab2[1], okLab1[2] - okLab2[2]];
+    // include alpha
+    if (okLab1[3] != null || okLab2[3] != null) {
+        diff.push((okLab1[3] ?? 1) - (okLab2[3] ?? 1));
+    }
+    return Math.hypot(...diff);
 }
 /**
  * Check if two colors are close in okLab space.

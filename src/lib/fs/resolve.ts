@@ -171,7 +171,7 @@ export const resolve = memoize(function (
         }
     }
 
-    if (currentDirectory === "" && cwd !== "") {
+    if ((currentDirectory === "" || currentDirectory === ".") && cwd !== "") {
         cwd = normalize(cwd);
 
         if (url.startsWith(cwd == "/" ? cwd : cwd + "/")) {

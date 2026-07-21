@@ -663,6 +663,7 @@ export function renderValue(
             );
 
         case EnumToken.ColorTokenType:
+
             if (
                 (token as ColorToken).kin == ColorType.LIGHT_DARK ||
                 ("chi" in token && options.convertColor === false && ((token as ColorToken).chi as Token[]).length == 2)

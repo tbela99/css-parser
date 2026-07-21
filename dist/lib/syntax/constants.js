@@ -247,6 +247,7 @@ const colorFuncColorSpace = [
     "srgb",
     "srgb-linear",
     "display-p3",
+    "display-p3-linear",
     "prophoto-rgb",
     "a98-rgb",
     "rec2020",

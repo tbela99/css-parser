@@ -21,7 +21,7 @@
     "test": "web-test-runner \"./test/**/web.spec.js\" --timeout=10000 --node-resolve --playwright --browsers chromium firefox webkit --root-dir=.; mocha --reporter-options='maxDiffSize=1801920' --timeout=10000 \"test/**/node.spec.js\"",
     "test:web": "web-test-runner \"./test/**/web.spec.js\" --timeout 30000 --node-resolve --playwright --browsers chromium firefox webkit --root-dir=.",
     "test:node": "mocha -p --reporter-options='maxDiffSize=1801920' --timeout=10000 \"test/**/node.spec.js\"",
-    "test:cov": "superc8 -x 'test/specs/**/*.js' --reporter=html --reporter=text --reporter=json-summary mocha --reporter-options='maxDiffSize=1801920' -p --timeout=10000 'test/**/node.spec.js'",
+    "test:cov": "superc8 -x 'test/specs/**/*.js' --reporter=html --reporter=text --reporter=json-summary mocha --reporter-options='maxDiffSize=1801920' -p --timeout=10000 'test/allFiles.js' 'test/**/node.spec.js'",
     "test:web-cov": "web-test-runner -x 'test/specs/code/*.js' --node-resolve --playwright --browsers chromium firefox webkit --root-dir=. --coverage \"test/specs/web.spec.js\"",
     "profile": "deno run --allow-read --cpu-prof --cpu-prof-flamegraph test/inspect.js",
     "config-update": "esno scripts/shorthand.ts",

@@ -888,6 +888,10 @@ exports.ColorType = void 0;
      */
     ColorType[ColorType["ALPHA"] = 25] = "ALPHA";
     /**
+     * color using display-p3-linear
+     */
+    ColorType[ColorType["DISPLAY_P3_LINEAR"] = 26] = "DISPLAY_P3_LINEAR";
+    /**
      * alias for rgba
      */
     ColorType[ColorType["RGB"] = 4] = "RGB";
@@ -7175,6 +7179,7 @@ const colorFuncColorSpace = [
     "srgb",
     "srgb-linear",
     "display-p3",
+    "display-p3-linear",
     "prophoto-rgb",
     "a98-rgb",
     "rec2020",
@@ -13205,6 +13210,14 @@ function srgb2p3values(r, g, b, alpha) {
     // @ts-ignore
     return lp32p3(...xyz2lp3(...srgb2xyz(r, g, b, alpha)));
 }
+function srgb2lp3values(r, g, b, alpha) {
+    // @ts-ignore
+    return xyz2lp3(...srgb2xyz(r, g, b, alpha));
+}
+function lp32srgbvalues(r, g, b, alpha) {
+    // @ts-ignore
+    return xyz2srgb(...lp32xyz(r, g, b, alpha));
+}
 function p32lp3(r, g, b, alpha) {
     // convert an array of display-p3 RGB values in the range 0.0 - 1.0
     // to linear light (un-companded) form.
@@ -13353,6 +13366,10 @@ function colorMix(...args) {
             case "display-p3":
                 // @ts-ignore
                 values = srgb2p3values(...values);
+                break;
+            case "display-p3-linear":
+                // @ts-ignore
+                values = srgb2lp3values(...values);
                 break;
             case "a98-rgb":
                 // @ts-ignore
@@ -13577,6 +13594,9 @@ function colorMix(...args) {
         case "srgb-linear":
         case "a98-rgb":
         case "rec2020":
+        case "display-p3":
+        case "display-p3-linear":
+        case "prophoto-rgb":
             // @ts-ignore
             return {
                 typ: exports.EnumToken.ColorTokenType,
@@ -14840,7 +14860,7 @@ function alpha(color, alpha) {
 function convertColor(token, to) {
     if (token.kin == exports.ColorType.SYS ||
         token.kin == exports.ColorType.DPSYS ||
-        (isIdentColor(token) && "currentcolor" == token.val.toLowerCase())) {
+        (isIdentColor(token) && "currentcolor" == token.val)) {
         return token;
     }
     if (token.kin == exports.ColorType.ALPHA) {
@@ -15251,6 +15271,10 @@ function srgb2srgbcolorspace(val, to) {
             // @ts-ignore
             values.push(...srgb2p3values(...val));
             break;
+        case exports.ColorType.DISPLAY_P3_LINEAR:
+            // @ts-ignore
+            values.push(...srgb2lp3values(...val));
+            break;
         case exports.ColorType.PROPHOTO_RGB:
             // @ts-ignore
             values.push(...srgb2prophotorgbvalues(...val));
@@ -15285,10 +15309,14 @@ function color2srgbvalues(token) {
     }
     const colorSpace = components.shift();
     let values = components.map((val) => getNumber(val));
-    switch (colorSpace.val.toLowerCase()) {
+    switch (colorSpace.val) {
         case "display-p3":
             // @ts-ignore
             values = p32srgbvalues(...values);
+            break;
+        case "display-p3-linear":
+            // @ts-ignore
+            values = lp32srgbvalues(...values);
             break;
         case "srgb-linear":
             // @ts-ignore
@@ -27405,10 +27433,11 @@ function parseMediaqueryList(stream, options) {
                             //     break;
                             // }
                         }
-                        if (mFGT.has(stack.at(-1)?.typ) ||
-                            mFLT.has(stack.at(-1)?.typ) ||
-                            stack.at(-1)?.typ === exports.EnumToken.DelimTokenType ||
-                            stack.at(-1)?.typ === exports.EnumToken.ColonTokenType) {
+                        if (stack.length > 0 &&
+                            (mFGT.has(stack.at(-1)?.typ) ||
+                                mFLT.has(stack.at(-1)?.typ) ||
+                                stack.at(-1)?.typ === exports.EnumToken.DelimTokenType ||
+                                stack.at(-1)?.typ === exports.EnumToken.ColonTokenType)) {
                             // if (stack[stack.length - 2]?.typ !== EnumToken.StartParensTokenType) {
                             //     success = false;
                             //     errors.push({
@@ -27530,16 +27559,16 @@ function parseMediaqueryList(stream, options) {
                                 [LOC]: { ...names[0][LOC], end: values.at(-1)[LOC].end },
                             });
                         }
-                        // if (stack.length === 0) {
-                        //     success = false;
-                        //     errors.push({
-                        //         action: "drop",
-                        //         node: stream[i],
-                        //         location: stream[i]?.[LOC],
-                        //         message: `unmatched ')' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                        //     });
-                        //     break;
-                        // }
+                        if (stack.length === 0) {
+                            success = false;
+                            errors.push({
+                                action: "drop",
+                                node: stream[i],
+                                location: stream[i]?.[LOC],
+                                message: `unmatched ')' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                            });
+                            break;
+                        }
                         {
                             const index = tokens.indexOf(stack.at(-1));
                             tokens[index] = {
@@ -32247,7 +32276,12 @@ function okLabDistance(color1, color2) {
     if (okLab1 == null || okLab2 == null) {
         return null;
     }
-    return Math.hypot(okLab1[0] - okLab2[0], okLab1[1] - okLab2[1], okLab1[2] - okLab2[2]);
+    const diff = [okLab1[0] - okLab2[0], okLab1[1] - okLab2[1], okLab1[2] - okLab2[2]];
+    // include alpha
+    if (okLab1[3] != null || okLab2[3] != null) {
+        diff.push((okLab1[3] ?? 1) - (okLab2[3] ?? 1));
+    }
+    return Math.hypot(...diff);
 }
 /**
  * Check if two colors are close in okLab space.

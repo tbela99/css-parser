@@ -1,5 +1,6 @@
 import {ColorType, EnumToken} from "../../../dist/lib/ast/types.js";
 import {isOkLabClose} from "../../../dist/lib/syntax/color/utils/distance.js";
+import { parseString } from "../../../dist/lib/parser/parse.js";
 
 export function run(describe, expect, transform, parse, render) {
 
@@ -543,6 +544,24 @@ export function run(describe, expect, transform, parse, render) {
                     kin: ColorType.COLOR
                 }
             )).equals(true));
+        });
+
+        it('display-p3-linear and display-p3 #18', function () {
+            return expect(isOkLabClose(parseString('color(display-p3 0.644980276448 0.191199800941 0.165770885403 / 0.501960784314)')[0], parseString('color(display-p3-linear .373594 .030429 .023424/50%)')[0]
+            )).equals(true);
+        });
+
+        it('lch to display-p3 #19', function () {
+            return transform(`
+    .hsl {
+    
+    color: color-mix(in display-p3-linear, plum 60%, #123456 50%);
+    
+    }`, {
+                beautify: true,
+            }).then(result => expect(result.code).equals(`.hsl {
+ color: #a97eb0
+}`));
         });
     });
 }
