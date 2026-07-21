@@ -7,7 +7,7 @@ import { srgb2rgb } from "./rgb.ts";
 import { srgb2hslvalues } from "./hsl.ts";
 import { srgb2hwb } from "./hwb.ts";
 import { srgb2labvalues } from "./lab.ts";
-import { srgb2p3values } from "./p3.ts";
+import { srgb2lp3values, srgb2p3values } from "./p3.ts";
 import { getColorComponents } from "./utils/components.ts";
 import { srgb2oklch } from "./oklch.ts";
 import { srgb2oklab } from "./oklab.ts";
@@ -59,8 +59,8 @@ function interpolateHue(interpolationMethod: string, h1: number, h2: number): nu
 }
 /**
  * Compute color mix
- * @param args 
- * @returns 
+ * @param args
+ * @returns
  */
 export function colorMix(...args: Token[]): ColorToken | null {
     // invalid color or custom color profile
@@ -149,6 +149,11 @@ export function colorMix(...args: Token[]): ColorToken | null {
             case "display-p3":
                 // @ts-ignore
                 values = srgb2p3values(...values);
+                break;
+
+            case "display-p3-linear":
+                // @ts-ignore
+                values = srgb2lp3values(...values);
                 break;
 
             case "a98-rgb":
@@ -447,6 +452,10 @@ export function colorMix(...args: Token[]): ColorToken | null {
         case "srgb-linear":
         case "a98-rgb":
         case "rec2020":
+        case "display-p3":
+        case "display-p3-linear":
+        case "prophoto-rgb":
+
             // @ts-ignore
             return {
                 typ: EnumToken.ColorTokenType,

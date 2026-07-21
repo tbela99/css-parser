@@ -103,7 +103,7 @@ import {
 import { prophotorgb2srgbvalues, srgb2prophotorgbvalues } from "./prophotorgb.ts";
 import { rec20202srgb, srgb2rec2020values } from "./rec2020.ts";
 import { srgb2xyz, srgb2xyz_d65 } from "./xyz.ts";
-import { p32srgbvalues, srgb2p3values } from "./p3.ts";
+import { lp32srgbvalues, p32srgbvalues, srgb2lp3values, srgb2p3values } from "./p3.ts";
 import { xyzd502srgb } from "./xyzd50.ts";
 import { colorMix } from "./color-mix.ts";
 import {
@@ -118,8 +118,8 @@ import {
     reduceHexValue,
     rgb2HexToken,
 } from "./hex.ts";
-import type { RelativeColorTypes } from "./relativecolor.ts";
-import { parseRelativeColorComponents } from "./relativecolor.ts";
+import type { RelativeColorTypes } from "./relative-color.ts";
+import { parseRelativeColorComponents } from "./relative-color.ts";
 import { isIdentColor } from "../syntax.ts";
 import {
     color2cmykToken,
@@ -154,7 +154,7 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
     if (
         token.kin == ColorType.SYS ||
         token.kin == ColorType.DPSYS ||
-        (isIdentColor(token) && "currentcolor" == token.val.toLowerCase())
+        (isIdentColor(token) && "currentcolor" == token.val)
     ) {
         return token;
     }
@@ -559,6 +559,7 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
             (ColorType[to].toLowerCase().replaceAll("_", "-") as string).toLowerCase().replaceAll("_", "-"),
         )
     ) {
+        
         switch (token.kin) {
             case ColorType.HEX:
             case ColorType.LIT:
@@ -712,6 +713,10 @@ function srgb2srgbcolorspace(val: number[], to: ColorType): number[] {
             // @ts-ignore
             values.push(...srgb2p3values(...val));
             break;
+        case ColorType.DISPLAY_P3_LINEAR:
+            // @ts-ignore
+            values.push(...srgb2lp3values(...val));
+            break;
         case ColorType.PROPHOTO_RGB:
             // @ts-ignore
             values.push(...srgb2prophotorgbvalues(...val));
@@ -757,10 +762,14 @@ export function color2srgbvalues(token: ColorToken): number[] | null {
         getNumber(val as IdentToken | NumberToken | PercentageToken | FractionToken),
     );
 
-    switch (colorSpace.val.toLowerCase()) {
+    switch (colorSpace.val) {
         case "display-p3":
             // @ts-ignore
             values = p32srgbvalues(...values);
+            break;
+        case "display-p3-linear":
+            // @ts-ignore
+            values = lp32srgbvalues(...values);
             break;
         case "srgb-linear":
             // @ts-ignore
@@ -797,6 +806,7 @@ export function color2srgbvalues(token: ColorToken): number[] | null {
 }
 
 function values2colortoken(values: number[], to: ColorType): ColorToken {
+    
     values = srgb2srgbcolorspace(values, to);
 
     const chi: Token[] = [
@@ -927,7 +937,11 @@ export function toPrecisionValue(value: number, precision: number = colorPrecisi
     return Math.abs(value) < epsilon ? 0 : value;
 }
 
-export function toPrecisionAngle(angle: number, precision: number = colorPrecision, correctValue: boolean = true): number {
+export function toPrecisionAngle(
+    angle: number,
+    precision: number = colorPrecision,
+    correctValue: boolean = true,
+): number {
     angle = toPrecisionValue(angle, precision);
 
     if (correctValue && Math.abs(angle) >= 360) {

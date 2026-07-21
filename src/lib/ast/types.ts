@@ -921,6 +921,11 @@ export enum ColorType {
      * alpha() color function
      */
     ALPHA,
+
+    /**
+     * color using display-p3-linear
+     */
+    DISPLAY_P3_LINEAR,
     /**
      * alias for rgba
      */

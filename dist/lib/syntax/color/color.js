@@ -11,11 +11,11 @@ import { oklch2srgbvalues, lch2srgbvalues, oklab2srgbvalues, lab2srgbvalues, cmy
 import { prophotorgb2srgbvalues, srgb2prophotorgbvalues } from './prophotorgb.js';
 import { rec20202srgb, srgb2rec2020values } from './rec2020.js';
 import { srgb2xyz_d65, srgb2xyz } from './xyz.js';
-import { p32srgbvalues, srgb2p3values } from './p3.js';
+import { lp32srgbvalues, p32srgbvalues, srgb2lp3values, srgb2p3values } from './p3.js';
 import { xyzd502srgb } from './xyzd50.js';
 import { colorMix } from './color-mix.js';
 import { reduceHexValue, rgb2HexToken, color2HexToken, lch2HexToken, lab2HexToken, oklch2HexToken, oklab2HexToken, cmyk2HexToken, hwb2HexToken, hsl2HexToken } from './hex.js';
-import { parseRelativeColorComponents } from './relativecolor.js';
+import { parseRelativeColorComponents } from './relative-color.js';
 import { isIdentColor } from '../syntax.js';
 import { color2cmykToken, lch2cmykToken, lab2cmykToken, oklch2cmykToken, oklab2cmyk, hwb2cmykToken, hsl2cmykToken, rgb2cmykToken } from './cmyk.js';
 import { a98rgb2srgbvalues, srgb2a98values } from './a98rgb.js';
@@ -39,7 +39,7 @@ import { equalsIgnoreCase } from '../../parser/utils/text.js';
 function convertColor(token, to) {
     if (token.kin == ColorType.SYS ||
         token.kin == ColorType.DPSYS ||
-        (isIdentColor(token) && "currentcolor" == token.val.toLowerCase())) {
+        (isIdentColor(token) && "currentcolor" == token.val)) {
         return token;
     }
     if (token.kin == ColorType.ALPHA) {
@@ -450,6 +450,10 @@ function srgb2srgbcolorspace(val, to) {
             // @ts-ignore
             values.push(...srgb2p3values(...val));
             break;
+        case ColorType.DISPLAY_P3_LINEAR:
+            // @ts-ignore
+            values.push(...srgb2lp3values(...val));
+            break;
         case ColorType.PROPHOTO_RGB:
             // @ts-ignore
             values.push(...srgb2prophotorgbvalues(...val));
@@ -484,10 +488,14 @@ function color2srgbvalues(token) {
     }
     const colorSpace = components.shift();
     let values = components.map((val) => getNumber(val));
-    switch (colorSpace.val.toLowerCase()) {
+    switch (colorSpace.val) {
         case "display-p3":
             // @ts-ignore
             values = p32srgbvalues(...values);
+            break;
+        case "display-p3-linear":
+            // @ts-ignore
+            values = lp32srgbvalues(...values);
             break;
         case "srgb-linear":
             // @ts-ignore

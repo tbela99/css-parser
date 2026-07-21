@@ -12,6 +12,16 @@ export function srgb2p3values(r: number, g: number, b: number, alpha?: number) {
     return lp32p3(...xyz2lp3(...srgb2xyz(r, g, b, alpha)));
 }
 
+export function srgb2lp3values(r: number, g: number, b: number, alpha?: number) {
+    // @ts-ignore
+    return xyz2lp3(...srgb2xyz(r, g, b, alpha));
+}
+
+export function lp32srgbvalues(r: number, g: number, b: number, alpha?: number) {
+    // @ts-ignore
+    return xyz2srgb(...lp32xyz(r, g, b, alpha));
+}
+
 export function p32lp3(r: number, g: number, b: number, alpha?: number) {
     // convert an array of display-p3 RGB values in the range 0.0 - 1.0
     // to linear light (un-companded) form.

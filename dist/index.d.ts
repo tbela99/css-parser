@@ -2357,6 +2357,10 @@ declare enum ColorType$1 {
      */
     ALPHA = 25,
     /**
+     * color using display-p3-linear
+     */
+    DISPLAY_P3_LINEAR = 26,
+    /**
      * alias for rgba
      */
     RGB = 4,

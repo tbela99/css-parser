@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.4.8
+
+### Improvements
+
+- [x] support display-p3-linear color space. 
+
 ## v1.4.7
 
 ### Improvements
