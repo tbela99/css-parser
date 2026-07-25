@@ -16,7 +16,7 @@ import { COLORS_NAMES } from "../constants.ts";
 
 export function srgb2rgb(value: number): number {
 
-    return minmax(Math.round(toPrecisionValue(value * 255)), 0, 255);
+    return minmax(Math.round(value * 255), 0, 255);
 }
 
 export function hex2RgbToken(token: ColorToken): ColorToken | null {

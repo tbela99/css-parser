@@ -12560,7 +12560,7 @@ function lsrgb2srgbvalues(r, g, b, alpha = null) {
 }
 
 function srgb2rgb(value) {
-    return minmax(Math.round(toPrecisionValue(value * 255)), 0, 255);
+    return minmax(Math.round(value * 255), 0, 255);
 }
 function hex2RgbToken(token) {
     return rgb2RgbToken(hex2rgbvalues(token));
@@ -15509,7 +15509,7 @@ function color2HexToken(token) {
     if (value == null) {
         return null;
     }
-    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr + +Number.EPSILON).toString(16).padStart(2, "0"), "#"));
+    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr + Number.EPSILON).toString(16).padStart(2, "0"), "#"));
 }
 function oklab2HexToken(token) {
     let value = oklab2srgbvalues(token);
