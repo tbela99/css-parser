@@ -1,6 +1,6 @@
 {
   "name": "@tbela99/css-parser",
-  "version": "1.4.7",
+  "version": "1.4.8",
   "publish": {
     "include": [
       "src",
@@ -37,6 +37,7 @@
       "docs/",
       "files/",
       "playground/",
+      "benchmark/",
       ".nyc_output",
       ".repl_history",
       "bun.lock",

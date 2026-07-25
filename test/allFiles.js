@@ -1,5 +1,5 @@
 import {readdir} from "node:fs/promises";
-import {load, transform} from "../src/node.ts";
+import {load, transform} from "../dist/node.js";
 
 const baseDir = import.meta.dirname + '/files/css/';
 const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'], e = Math.floor(Math.log(this) / Math.log(1024));

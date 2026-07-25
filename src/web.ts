@@ -246,7 +246,7 @@ export async function parse(
             return Promise.resolve(
                 ((options.load ?? load) as (file: string, currentFile: string, asStream: boolean) => LoadResult)(
                     file,
-                    ".",
+                    "",
                     (options as ParseInputFileOptions).asStream ?? false,
                 ),
             ).then((stream: string | ReadableStream<Uint8Array>) =>
@@ -376,7 +376,7 @@ export async function transform(
             return Promise.resolve(
                 ((options.load ?? load) as (file: string, currentFile: string, asStream: boolean) => LoadResult)(
                     file,
-                    ".",
+                    "",
                     (options as ParseInputFileOptions).asStream ?? false,
                 ),
             ).then((stream: string | ReadableStream<Uint8Array>) =>

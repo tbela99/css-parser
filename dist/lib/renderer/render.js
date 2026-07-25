@@ -1,4 +1,4 @@
-import { convertColor, toPrecisionAngle, getAngle } from '../syntax/color/color.js';
+import { convertColor, toPrecisionAngle, toPrecisionValue, getAngle } from '../syntax/color/color.js';
 import { reduceHexValue } from '../syntax/color/hex.js';
 import { EnumToken, minifyNumber, ColorType } from '../ast/types.js';
 import { expand } from '../ast/expand.js';
@@ -1136,7 +1136,8 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
             if (token.typ == EnumToken.ResolutionTokenType && unit == "dppx") {
                 unit = "x";
             }
-            return val.includes("/") ? val.replace("/", unit + "/") : val + unit;
+            // @ts-ignore
+            return val.includes("/") ? val.replace("/", unit + "/") : minifyNumber(toPrecisionValue(val)) + unit;
         case EnumToken.FlexTokenType:
         case EnumToken.PercentageTokenType:
             const uni = token.typ == EnumToken.PercentageTokenType ? "%" : "fr";

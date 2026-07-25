@@ -8,7 +8,7 @@ import type {
     ParensToken,
     PercentageToken,
     Token,
-} from "../../../@types/index.d.ts";
+} from "../../../@types/index.js";
 import { convertColor, getNumber } from "./color.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
 import { walkValues } from "../../ast/walk.ts";

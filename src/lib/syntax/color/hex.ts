@@ -93,7 +93,7 @@ export function color2HexToken(token: ColorToken): ColorToken | null {
         return null;
     }
 
-    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
+    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr + Number.EPSILON).toString(16).padStart(2, "0"), "#"));
 }
 
 export function oklab2HexToken(token: ColorToken): ColorToken | null {
