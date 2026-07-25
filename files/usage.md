@@ -201,6 +201,7 @@ That behavior can be changed by passing the desired color type to the convertCol
 - ColorType.SRGB
 - ColorType.SRGB_LINEAR
 - ColorType.DISPLAY_P3
+- ColorType.DISPLAY_P3_LINEAR
 - ColorType.PROPHOTO_RGB
 - ColorType.A98_RGB
 - ColorType.REC2020

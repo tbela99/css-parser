@@ -880,6 +880,10 @@ var ColorType;
      */
     ColorType[ColorType["ALPHA"] = 25] = "ALPHA";
     /**
+     * color using display-p3-linear
+     */
+    ColorType[ColorType["DISPLAY_P3_LINEAR"] = 26] = "DISPLAY_P3_LINEAR";
+    /**
      * alias for rgba
      */
     ColorType[ColorType["RGB"] = 4] = "RGB";

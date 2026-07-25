@@ -188,7 +188,7 @@ async function parse(...args) {
         const { file, input, ...opt } = args[0];
         options = opt;
         if (file != null) {
-            return Promise.resolve((options.load ?? load)(file, ".", options.asStream ?? false)).then((stream) => parse(stream, { src: file, ...options }));
+            return Promise.resolve((options.load ?? load)(file, "", options.asStream ?? false)).then((stream) => parse(stream, { src: file, ...options }));
         }
         else {
             stream = input;
@@ -301,7 +301,7 @@ async function transform(...args) {
         const { file, input, ...opt } = args[0];
         options = opt;
         if (file != null) {
-            return Promise.resolve((options.load ?? load)(file, ".", options.asStream ?? false)).then((stream) => transform(stream, { src: file, ...options }));
+            return Promise.resolve((options.load ?? load)(file, "", options.asStream ?? false)).then((stream) => transform(stream, { src: file, ...options }));
         }
         else {
             stream = input;

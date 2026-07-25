@@ -387,19 +387,7 @@ function reduceConicColorStops(stops) {
  */
 function isRectangularOrthogonalColorspace(token) {
     return (token.typ === EnumToken.IdenTokenType &&
-        [
-            "srgb",
-            "srgb-linear",
-            "display-p3",
-            "a98-rgb",
-            "prophoto-rgb",
-            "rec2020",
-            "lab",
-            "oklab",
-            "xyz",
-            "xyz-d50",
-            "xyz-d65",
-        ].some((t) => equalsIgnoreCase(t, token.val)));
+        colorFuncColorSpace.some((t) => equalsIgnoreCase(t, token.val)));
 }
 /**
  * Is polar colorspace

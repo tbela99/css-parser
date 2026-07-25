@@ -10,6 +10,14 @@ function srgb2p3values(r, g, b, alpha) {
     // @ts-ignore
     return lp32p3(...xyz2lp3(...srgb2xyz(r, g, b, alpha)));
 }
+function srgb2lp3values(r, g, b, alpha) {
+    // @ts-ignore
+    return xyz2lp3(...srgb2xyz(r, g, b, alpha));
+}
+function lp32srgbvalues(r, g, b, alpha) {
+    // @ts-ignore
+    return xyz2srgb(...lp32xyz(r, g, b, alpha));
+}
 function p32lp3(r, g, b, alpha) {
     // convert an array of display-p3 RGB values in the range 0.0 - 1.0
     // to linear light (un-companded) form.
@@ -49,4 +57,4 @@ function xyz2lp3(x, y, z, alpha) {
     return result;
 }
 
-export { lp32p3, lp32xyz, p32lp3, p32srgbvalues, srgb2p3values, xyz2lp3 };
+export { lp32p3, lp32srgbvalues, lp32xyz, p32lp3, p32srgbvalues, srgb2lp3values, srgb2p3values, xyz2lp3 };

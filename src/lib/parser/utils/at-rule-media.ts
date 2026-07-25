@@ -490,10 +490,12 @@ export function parseMediaqueryList(
                         }
 
                         if (
+                            stack.length > 0 &&
+                            (
                             mFGT.has(stack.at(-1)?.typ) ||
                             mFLT.has(stack.at(-1)?.typ) ||
                             stack.at(-1)?.typ === EnumToken.DelimTokenType ||
-                            stack.at(-1)?.typ === EnumToken.ColonTokenType
+                            stack.at(-1)?.typ === EnumToken.ColonTokenType)
                         ) {
                             // if (stack[stack.length - 2]?.typ !== EnumToken.StartParensTokenType) {
                             //     success = false;
@@ -658,19 +660,20 @@ export function parseMediaqueryList(
                             });
                         }
 
-                        // if (stack.length === 0) {
-                        //     success = false;
-                        //     errors.push({
-                        //         action: "drop",
-                        //         node: stream[i],
-                        //         location: stream[i]?.[LOC],
-                        //         message: `unmatched ')' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                        //     });
+                        if (stack.length === 0) {
+                            success = false;
+                            errors.push({
+                                action: "drop",
+                                node: stream[i],
+                                location: stream[i]?.[LOC],
+                                message: `unmatched ')' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                            });
 
-                        //     break;
-                        // }
+                            break;
+                        }
 
                         {
+
                             const index: number = tokens.indexOf(stack.at(-1)!);
 
                             tokens[index] = {
