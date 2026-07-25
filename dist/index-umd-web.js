@@ -24563,7 +24563,8 @@
                 if (token.typ == exports.EnumToken.ResolutionTokenType && unit == "dppx") {
                     unit = "x";
                 }
-                return val.includes("/") ? val.replace("/", unit + "/") : val + unit;
+                // @ts-ignore
+                return val.includes("/") ? val.replace("/", unit + "/") : minifyNumber(toPrecisionValue(val)) + unit;
             case exports.EnumToken.FlexTokenType:
             case exports.EnumToken.PercentageTokenType:
                 const uni = token.typ == exports.EnumToken.PercentageTokenType ? "%" : "fr";

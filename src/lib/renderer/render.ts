@@ -29,12 +29,10 @@ import type {
     ListToken,
     LiteralToken,
     Location,
-    MatchExpressionToken,
     MediaFeatureToken,
     MediaQueryConditionToken,
     MediaQueryUnaryFeatureToken,
     MediaRangeQueryToken,
-    NameSpaceAttributeToken,
     NumberToken,
     PercentageToken,
     Position,
@@ -48,9 +46,9 @@ import type {
     Token,
     WhenElseQueryConditionToken,
     WhenElseUnaryConditionToken,
-    WrappedValuesToken,
+    WrappedValuesToken
 } from "../../@types/index.d.ts";
-import { convertColor, toPrecisionAngle } from "../syntax/color/color.ts";
+import { convertColor, toPrecisionAngle, toPrecisionValue } from "../syntax/color/color.ts";
 import { getAngle } from "../syntax/color/color.ts";
 import { reduceHexValue } from "../syntax/color/hex.ts";
 import { ColorType, EnumToken, minifyNumber } from "../ast/types.ts";
@@ -65,11 +63,10 @@ import {
     urlTokenMatcher,
 } from "../syntax/constants.ts";
 import {
-    isColor,
     parseColor,
     reducegradientBackgroundPosition,
     reduceColorStops,
-    reduceConicColorStops,
+    reduceConicColorStops
 } from "../syntax/syntax.ts";
 import { move } from "../parser/tokenize.ts";
 import { equalsIgnoreCase } from "../parser/utils/text.ts";
@@ -1643,7 +1640,8 @@ export function renderValue(
                 unit = "x";
             }
 
-            return val.includes("/") ? val.replace("/", unit + "/") : val + unit;
+            // @ts-ignore
+            return val.includes("/") ? val.replace("/", unit + "/") : minifyNumber(toPrecisionValue(val)) + unit;
 
         case EnumToken.FlexTokenType:
         case EnumToken.PercentageTokenType:

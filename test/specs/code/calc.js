@@ -121,7 +121,7 @@ a {
 
 width: calc(100px * sin(pi / 4))
 
-`).then(result => expect(result.code).equals(`a{width:70.71067811865474px}`));
+`).then(result => expect(result.code).equals(`a{width:70.710678px}`));
         });
 
         it('mod() #12', function () {
@@ -319,7 +319,7 @@ a {
 width: calc(100px * exp(-1));}
 }
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
- width: 36.787944117144235px
+ width: 36.787944px
 }`));
         });
 
