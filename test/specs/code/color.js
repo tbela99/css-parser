@@ -323,7 +323,7 @@ color: color( srgb-linear  0.21404 0.21404 0.21404 )
 .selector {
 color: color(display-p3 0.5 .5 .5);
 `).then(result => expect(render(result.ast, {beautify: true}).code).equals(`.selector {
- color: #7f8080
+ color: grey
 }`));
     });
 

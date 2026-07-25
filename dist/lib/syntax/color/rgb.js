@@ -1,11 +1,11 @@
-import { color2srgbvalues, minmax } from './color.js';
+import { color2srgbvalues, minmax, toPrecisionValue } from './color.js';
 import { expandHexValue } from './hex.js';
 import { hslvalues, hslvalues2srgbvalues, lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues, cmyk2srgbvalues, hwb2srgbvalues } from './srgb.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import { COLORS_NAMES } from '../constants.js';
 
 function srgb2rgb(value) {
-    return minmax(Math.round(value * 255), 0, 255);
+    return minmax(Math.round(toPrecisionValue(value * 255)), 0, 255);
 }
 function hex2RgbToken(token) {
     return rgb2RgbToken(hex2rgbvalues(token));

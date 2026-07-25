@@ -263,6 +263,8 @@ export const colorFuncColorSpace: string[] = [
     "prophoto-rgb",
     "a98-rgb",
     "rec2020",
+    "lab",
+    "oklab",
     "xyz",
     "xyz-d65",
     "xyz-d50",

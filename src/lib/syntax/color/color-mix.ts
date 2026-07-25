@@ -7,7 +7,7 @@ import { srgb2rgb } from "./rgb.ts";
 import { srgb2hslvalues } from "./hsl.ts";
 import { srgb2hwb } from "./hwb.ts";
 import { srgb2labvalues } from "./lab.ts";
-import { srgb2lp3values, srgb2p3values } from "./p3.ts";
+import {  srgb2lp3values, srgb2p3values } from "./p3.ts";
 import { getColorComponents } from "./utils/components.ts";
 import { srgb2oklch } from "./oklch.ts";
 import { srgb2oklab } from "./oklab.ts";

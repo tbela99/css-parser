@@ -551,7 +551,7 @@ export function run(describe, expect, transform, parse, render) {
             )).equals(true);
         });
 
-        it('lch to display-p3 #19', function () {
+        it('display-p3-linear to display-p3 #19', function () {
             return transform(`
     .hsl {
     
@@ -561,6 +561,19 @@ export function run(describe, expect, transform, parse, render) {
                 beautify: true,
             }).then(result => expect(result.code).equals(`.hsl {
  color: #a97eb0
+}`));
+        });
+
+        it('display-p3 #20', function () {
+            return transform(`
+    .hsl {
+    
+    color: color-mix(in display-p3-linear,white,black);
+    
+    }`, {
+                beautify: true,
+            }).then(result => expect(result.code).equals(`.hsl {
+ color: #bcbcbc
 }`));
         });
     });

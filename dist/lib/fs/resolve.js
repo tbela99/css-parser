@@ -140,7 +140,7 @@ const resolve = memoize(function (url, currentDirectory, cwd) {
             };
         }
     }
-    if (currentDirectory === "" && cwd !== "") {
+    if ((currentDirectory === "" || currentDirectory === ".") && cwd !== "") {
         cwd = normalize(cwd);
         if (url.startsWith(cwd == "/" ? cwd : cwd + "/")) {
             const absolute = url;

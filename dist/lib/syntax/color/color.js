@@ -11,7 +11,7 @@ import { oklch2srgbvalues, lch2srgbvalues, oklab2srgbvalues, lab2srgbvalues, cmy
 import { prophotorgb2srgbvalues, srgb2prophotorgbvalues } from './prophotorgb.js';
 import { rec20202srgb, srgb2rec2020values } from './rec2020.js';
 import { srgb2xyz_d65, srgb2xyz } from './xyz.js';
-import { lp32srgbvalues, p32srgbvalues, srgb2lp3values, srgb2p3values } from './p3.js';
+import { lp32srgbvalues, p32srgbvalues, srgb2p3values } from './p3.js';
 import { xyzd502srgb } from './xyzd50.js';
 import { colorMix } from './color-mix.js';
 import { reduceHexValue, rgb2HexToken, color2HexToken, lch2HexToken, lab2HexToken, oklch2HexToken, oklab2HexToken, cmyk2HexToken, hwb2HexToken, hsl2HexToken } from './hex.js';

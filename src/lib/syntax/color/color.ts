@@ -103,7 +103,7 @@ import {
 import { prophotorgb2srgbvalues, srgb2prophotorgbvalues } from "./prophotorgb.ts";
 import { rec20202srgb, srgb2rec2020values } from "./rec2020.ts";
 import { srgb2xyz, srgb2xyz_d65 } from "./xyz.ts";
-import { lp32srgbvalues, p32srgbvalues, srgb2lp3values, srgb2p3values } from "./p3.ts";
+import { lp32srgbvalues, p32srgbvalues, srgb2p3values } from "./p3.ts";
 import { xyzd502srgb } from "./xyzd50.ts";
 import { colorMix } from "./color-mix.ts";
 import {
