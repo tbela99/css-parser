@@ -927,6 +927,15 @@ export enum ColorType {
      */
     DISPLAY_P3_LINEAR,
     /**
+     * Contrast color
+     */
+    CONTRAST_COLOR,
+    
+    /**
+     * color layers
+     */
+    COLOR_LAYERS,
+    /**
      * alias for rgba
      */
     RGB = RGBA,
