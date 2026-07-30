@@ -2361,6 +2361,14 @@ declare enum ColorType$1 {
      */
     DISPLAY_P3_LINEAR = 26,
     /**
+     * Contrast color
+     */
+    CONTRAST_COLOR = 27,
+    /**
+     * color layers
+     */
+    COLOR_LAYERS = 28,
+    /**
      * alias for rgba
      */
     RGB = 4,

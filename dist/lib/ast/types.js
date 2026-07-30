@@ -884,6 +884,14 @@ var ColorType;
      */
     ColorType[ColorType["DISPLAY_P3_LINEAR"] = 26] = "DISPLAY_P3_LINEAR";
     /**
+     * Contrast color
+     */
+    ColorType[ColorType["CONTRAST_COLOR"] = 27] = "CONTRAST_COLOR";
+    /**
+     * color layers
+     */
+    ColorType[ColorType["COLOR_LAYERS"] = 28] = "COLOR_LAYERS";
+    /**
      * alias for rgba
      */
     ColorType[ColorType["RGB"] = 4] = "RGB";

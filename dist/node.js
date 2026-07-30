@@ -1,4 +1,3 @@
-import process from 'node:process';
 import { deprecate } from 'node:util';
 import { Readable } from 'node:stream';
 import { createReadStream } from 'node:fs';
@@ -12,6 +11,7 @@ export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, Valid
 import { tokenizeStream, tokenize } from './lib/parser/tokenize.js';
 import { dirname, resolve, matchUrl } from './lib/fs/resolve.js';
 import { ResponseType } from './types.js';
+import { resolve as resolve$1 } from 'node:path';
 export { minify } from './lib/ast/minify.js';
 export { expand } from './lib/ast/expand.js';
 export { WalkerEvent, WalkerOptionEnum, walk, walkValues } from './lib/ast/walk.js';
@@ -103,7 +103,7 @@ async function load(url, currentDirectory = ".", responseType = false) {
  * ```
  */
 function render(data, options = {}, mapping) {
-    return doRender(data, Object.assign(options, { resolve, dirname, cwd: options.cwd ?? process.cwd() }), mapping);
+    return doRender(data, Object.assign(options, { resolve, dirname, cwd: options.cwd ?? resolve$1() }), mapping);
 }
 /**
  * Parse css file

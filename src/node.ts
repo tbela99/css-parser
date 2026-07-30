@@ -11,7 +11,6 @@ import type {
     TransformOptions,
     TransformResult,
 } from "./@types/index.d.ts";
-import process from "node:process";
 import { deprecate } from "node:util";
 import { Readable } from "node:stream";
 import { createReadStream } from "node:fs";
@@ -22,6 +21,7 @@ import { ModuleScopeEnumOptions } from "./lib/ast/types.ts";
 import { tokenize, tokenizeStream } from "./lib/parser/tokenize.ts";
 import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
 import { ResponseType } from "./types.ts";
+import {resolve as resolvePath} from "node:path";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -168,7 +168,7 @@ export function render(
         importMapping: Record<string, Record<string, string>> | null;
     } | null,
 ): RenderResult {
-    return doRender(data, Object.assign(options, { resolve, dirname, cwd: options.cwd ?? process.cwd() }), mapping);
+    return doRender(data, Object.assign(options, { resolve, dirname, cwd: options.cwd ?? resolvePath() }), mapping);
 }
 
 /**

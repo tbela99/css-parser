@@ -1,3 +1,4 @@
+import { isOkLabClose } from './color/utils/distance.js';
 import { EnumToken, ColorType } from '../ast/types.js';
 import { walkValues, WalkerOptionEnum } from '../ast/walk.js';
 import { toDegrees } from '../parser/utils/angle.js';
@@ -8,7 +9,6 @@ import { splitTokenList } from '../validation/utils/list.js';
 import { getColorSpace } from './color/utils/colorspace.js';
 import { getColorComponents } from './color/utils/components.js';
 import { nonStandardColors, systemColors, deprecatedSystemColors, COLORS_NAMES, colorsFunc, colorFuncColorSpace, LOC } from './constants.js';
-import { isOkLabClose } from './color/utils/distance.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token

@@ -1,5 +1,3 @@
-// https://www.w3.org/TR/CSS21/syndata.html#syntax
-// https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
 
 import type {
     AngleToken,
@@ -18,7 +16,7 @@ import type {
     TimeToken,
     Token,
 } from "../../@types/index.d.ts";
-import { isOkLabClose } from "../../node.ts";
+import { isOkLabClose } from "./color/utils/distance.ts";
 import { ColorType, EnumToken } from "../ast/types.ts";
 import { WalkerOptionEnum, walkValues } from "../ast/walk.ts";
 import { toDegrees } from "../parser/utils/angle.ts";
@@ -37,6 +35,10 @@ import {
     colorFuncColorSpace,
     LOC,
 } from "./constants.ts";
+
+// https://www.w3.org/TR/CSS21/syndata.html#syntax
+// https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
+
 
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;

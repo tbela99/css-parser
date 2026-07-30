@@ -185,9 +185,10 @@ const colorsFunc = [
     "lab",
     "oklch",
     "lch",
-    "light-dark",
-    "contrast-color",
     "alpha",
+    "light-dark",
+    "color-layers",
+    "contrast-color",
 ];
 const imageFunc = [
     "linear-gradient",
