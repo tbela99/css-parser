@@ -7,6 +7,7 @@ export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, Valid
 import { tokenizeStream, tokenize } from './lib/parser/tokenize.js';
 import { matchUrl, resolve, dirname } from './lib/fs/resolve.js';
 import { ResponseType } from './types.js';
+import { SourceFile } from './lib/parser/source.js';
 export { minify } from './lib/ast/minify.js';
 export { expand } from './lib/ast/expand.js';
 export { WalkerEvent, WalkerOptionEnum, walk, walkValues } from './lib/ast/walk.js';
@@ -172,6 +173,11 @@ async function parse(...args) {
     }
     options ??= {};
     options.src ??= "";
+    options.sourcesMap ??= [];
+    if (options.source == null) {
+        options.sourcesMap.push(new SourceFile(options.sourcesMap.length, '', []));
+        options.source = options.sourcesMap.at(-1);
+    }
     Object.assign(options, {
         load,
         resolve,

@@ -23,6 +23,7 @@ import { matchAtRuleSyntax } from './utils/at-rule.js';
 import { parseAtRuleFontFeatureValues } from './utils/at-rule-font-feature-values.js';
 import { matchGenericSyntax } from './utils/at-rule-generic.js';
 import { memoize } from './utils/cache.js';
+import { SourceFile } from './source.js';
 
 function renderTokens(tokens, options) {
     if (tokens == null || tokens.length === 0)
@@ -517,7 +518,9 @@ async function doParse(iter, options = {}) {
             const token = node[TOKENS][0];
             const url = token.typ == EnumToken.StringTokenType ? token.val.slice(1, -1) : token.val;
             try {
-                const result = options.load(url, options.src || options.cwd);
+                const src = options.resolve(url, options.src || options.cwd);
+                options.sourcesMap.push(new SourceFile(options.sourcesMap.length, '', [], src.relative));
+                const result = options.load(src);
                 const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                     ? await result
                     : result;

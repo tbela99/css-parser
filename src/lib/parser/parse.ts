@@ -66,6 +66,7 @@ import { matchAtRuleSyntax } from "./utils/at-rule.ts";
 import { parseAtRuleFontFeatureValues } from "./utils/at-rule-font-feature-values.ts";
 import { matchGenericSyntax } from "./utils/at-rule-generic.ts";
 import { memoize } from "./utils/cache.ts";
+import { SourceFile } from "./source.ts";
 
 function renderTokens(tokens: Token[] | null | undefined, options?: any): string {
     if (tokens == null || tokens.length === 0) return "";
@@ -698,7 +699,16 @@ export async function doParse(
                 const url: string = token.typ == EnumToken.StringTokenType ? token.val.slice(1, -1) : token.val;
 
                 try {
-                    const result = options.load!(url, options.src || (options.cwd as string)) as LoadResult;
+
+                    const src = options.resolve!(url, options.src || (options.cwd as string));
+
+                    options.sourcesMap!.push(
+                        new SourceFile(
+                            options.sourcesMap!.length, '', [], src.relative
+                        ),
+                    );
+                    const source: SourceFile = options.sourcesMap![options.sourcesMap!.length - 1];
+                    const result = options.load!(src) as LoadResult;
                     const stream =
                         result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                             ? await result

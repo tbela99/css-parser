@@ -3,35 +3,17 @@ import { LOC, PARENT, TOKENS, STATE, ERRORS, RAW, ROOT, OPTIMIZED } from "../lib
 import type { Token } from "./token.d.ts";
 
 /**
- * Position
- */
-export declare interface Position {
-    /**
-     * index in the source
-     */
-    ind: number;
-    /**
-     * line number
-     */
-    lin: number;
-    /**
-     * column number
-     */
-    col: number;
-}
-
-/**
  * token or node location
  */
 export declare interface Location {
     /**
      * start position
      */
-    sta: Position;
+    sta: number;
     /**
      * end position
      */
-    end: Position;
+    end: number;
     /**
      * source file
      */

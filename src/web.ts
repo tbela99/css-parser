@@ -18,6 +18,7 @@ import { ModuleScopeEnumOptions } from "./lib/ast/types.ts";
 import { tokenize, tokenizeStream } from "./lib/parser/tokenize.ts";
 import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
 import { ResponseType } from "./types.ts";
+import { SourceFile } from "./lib/parser/source.ts";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -259,6 +260,14 @@ export async function parse(
 
     options ??= {};
     options.src ??= "";
+    options.sourcesMap ??= [];
+
+    if (options.source == null) {
+
+        options.sourcesMap.push(new SourceFile(options.sourcesMap.length, '', []));
+        options.source = options.sourcesMap.at(-1) as SourceFile;
+    }
+    
     Object.assign(options, {
         load,
         resolve,

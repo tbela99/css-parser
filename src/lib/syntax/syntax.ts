@@ -1,4 +1,3 @@
-
 import type {
     AngleToken,
     BinaryExpressionToken,
@@ -35,10 +34,10 @@ import {
     colorFuncColorSpace,
     LOC,
 } from "./constants.ts";
+import { getSyntaxConfig } from "../validation/config.ts";
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
-
 
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
@@ -975,7 +974,6 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                                         !colorSpace.includes(val) &&
                                         !colorFuncColorSpace.includes(val)
                                     ) {
-
                                         errors?.push({
                                             action: "drop",
                                             message: `Unexpected constant '${val}'`,
@@ -1075,9 +1073,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                 }
 
                 if (children[offset]?.typ == EnumToken.DashedIdenTokenType) {
-
-                    if (children.length <= offset + 1 ) {
-
+                    if (children.length <= offset + 1) {
                         errors?.push({
                             action: "drop",
                             message: `Invalid color at ${token[LOC]?.src}:${token[LOC]?.sta.lin}:${token[LOC]?.sta.col}`,
@@ -1121,7 +1117,6 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                     //     if (isColor(children[i])) {
                     //         continue;
                     //     }
-
                     //     if (
                     //         (children[i] as IdentToken).val != "none" &&
                     //         !(
@@ -1135,11 +1130,9 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                     //         return false;
                     //     }
                     // }
-
                     // if (children[i].typ === EnumToken.WildCardFunctionTokenType) {
                     //     continue;
                     // }
-
                     // if (
                     //     children[i].typ === EnumToken.FunctionTokenType ||
                     //     children[i].typ === EnumToken.MathFunctionTokenType
@@ -1242,14 +1235,14 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                                     }
                                     k++;
                                 }
-                            } 
+                            }
                             // else {
                             //     return false;
                             // }
                         } else {
                             k++;
                         }
-                    } 
+                    }
                     // else {
                     //     return false;
                     // }
@@ -1262,35 +1255,35 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                 }
 
                 // while (j < children.length) {
-                    // if (children[j].length > 2) {
-                    //     return false;
-                    // }
+                // if (children[j].length > 2) {
+                //     return false;
+                // }
 
-                    // if (
-                    //     !isColor(children[j][0]) &&
-                    //     !(
-                    //         children[j][0].typ == EnumToken.WildCardFunctionTokenType &&
-                    //         equalsIgnoreCase("calc", (children[j][0] as FunctionToken).val)
-                    //     )
-                    // ) {
-                    //     return false;
-                    // }
+                // if (
+                //     !isColor(children[j][0]) &&
+                //     !(
+                //         children[j][0].typ == EnumToken.WildCardFunctionTokenType &&
+                //         equalsIgnoreCase("calc", (children[j][0] as FunctionToken).val)
+                //     )
+                // ) {
+                //     return false;
+                // }
 
-                    // if (children[j][0].typ == EnumToken.WildCardFunctionTokenType) {
-                    //     const result = matchAllSyntaxes(
-                    //         getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "calc()") as ValidationFunctionToken[],
-                    //         createValidationContext([children[j][0]]),
-                    //         {},
-                    //     );
+                // if (children[j][0].typ == EnumToken.WildCardFunctionTokenType) {
+                //     const result = matchAllSyntaxes(
+                //         getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "calc()") as ValidationFunctionToken[],
+                //         createValidationContext([children[j][0]]),
+                //         {},
+                //     );
 
-                    //     if (!result.success) {
-                    //         return false;
-                    //     }
-                    // }
+                //     if (!result.success) {
+                //         return false;
+                //     }
+                // }
 
-                    // if (children[j].length > 1 && !isPercentageToken(children[j][1])) {
-                    //     return false;
-                    // }
+                // if (children[j].length > 1 && !isPercentageToken(children[j][1])) {
+                //     return false;
+                // }
 
                 //     j++;
                 // }
@@ -1733,10 +1726,13 @@ export function parseDimension(
         return null;
     }
 
+    const unit: string = name.slice(index);
+
     const dimension = {
         typ: EnumToken.DimensionTokenType,
         val: +name.slice(0, index),
-        unit: name.slice(index),
+        // @ts-ignore
+        unit: getSyntaxConfig().units.find((u) => equalsIgnoreCase(u, unit)) || unit.toLowerCase(),
     } as DimensionToken;
 
     if (Number.isNaN(dimension.val)) {

@@ -1,12 +1,12 @@
-import type { VisitorNodeMap } from "./visitor.d.ts";
-import type { AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet, Location } from "./ast.d.ts";
-import { SourceMap } from "../lib/renderer/sourcemap/sourcemap.ts";
-import type { PropertyListOptions } from "./parse.d.ts";
-import { EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ValidationLevel } from "../lib/ast/types.ts";
-import type { CssVariableToken, Token } from "./token.d.ts";
-import { FeatureWalkMode } from "../lib/ast/features/type.ts";
-import { mathFuncs } from "../lib/syntax/constants.ts";
-import { ValidationToken } from "../lib/validation/parser/types";
+import type {VisitorNodeMap} from "./visitor.d.ts";
+import type {AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet, Location} from "./ast.d.ts";
+import {SourceMap} from "../lib/renderer/sourcemap/sourcemap.ts";
+import type {PropertyListOptions} from "./parse.d.ts";
+import {EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ValidationLevel} from "../lib/ast/types.ts";
+import type {CssVariableToken, Token} from "./token.d.ts";
+import {FeatureWalkMode} from "../lib/ast/features/type.ts";
+import {ValidationToken} from "../lib/validation/parser/types";
+import {SourceFile} from "../lib/parser/source.ts";
 
 export * from "./ast.d.ts";
 export * from "./token.d.ts";
@@ -350,11 +350,17 @@ export declare interface ParseInputStreamOptions {
     input: string | ReadableStream<Uint8Array>;
 }
 
+export declare interface ParseSourceOptions {
+
+    sourcesMap?: SourceFile[];
+    source?: SourceFile | null;
+}
+
 /**
  * Parser options
  */
 export declare interface ParserOptions
-    extends MinifyOptions, MinifyFeatureOptions, ValidationOptions, PropertyListOptions {
+    extends MinifyOptions, MinifyFeatureOptions, ValidationOptions, PropertyListOptions, ParseSourceOptions {
     /**
      * Source file to be used for sourcemap
      */
@@ -396,7 +402,7 @@ export declare interface ParserOptions
      */
     load?: (
         url: string | { absolute: string; relative: string },
-        currentDirectory: string,
+        currentDirectory?: string,
         responseType?: boolean | ResponseType,
     ) => Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
     /**

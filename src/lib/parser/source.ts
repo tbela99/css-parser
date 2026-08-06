@@ -1,81 +1,89 @@
-import { LineMap } from './linemap.js';
+import { LineMap } from "./linemap.ts";
 
 /**
  * Source file helper class
  */
-class SourceFile {
+export class SourceFile {
+
     /**
      * Source file ID
      */
-    id;
+    readonly id: number;
     /**
      * Source file content
      */
-    content;
+    private content: string;
     /**
      * Source file path
      */
-    file;
+    readonly file: string | null;
     /**
      * Line map
      */
-    lineStarts;
+    private lineStarts: LineMap;
+
     /**
      * Constructor
-     * @param id
-     * @param content
-     * @param lines
-     * @param file
+     * @param id 
+     * @param content 
+     * @param lines 
+     * @param file 
      */
-    constructor(id, content, lines, file = null) {
+    constructor(id: number, content: string, lines: number[], file: string | null = null) {
         this.id = id;
         this.content = content;
         this.file = file;
         this.lineStarts = new LineMap(lines);
     }
+
     /**
      * Update source content
-     * @param content
-     * @param lines
+     * @param content 
+     * @param lines 
      */
-    append(content) {
+    append(content: string) {
         this.content += content;
     }
-    getFileName() {
+
+    getFileName(): string | null {
+        
         return this.file;
     }
-    getText(start, length) {
+
+    getText(start: number, length: number): string {
         return this.content.slice(start, start + length);
     }
+
     /**
      * Compute line and column of the offset
-     * @param offset
-     * @returns
+     * @param offset 
+     * @returns 
      */
-    getOffsets(offset) {
+    getOffsets(offset: number): [number, number] {
         return this.lineStarts.getOffsets(offset);
     }
+
     /**
      * set line starts
-     * @param lines
+     * @param lines 
      */
-    setLineStarts(lines) {
+    setLineStarts(lines: number[]) {
         this.lineStarts.setLineStarts(lines);
     }
+
     /**
      * get line starts
-     * @returns
+     * @returns 
      */
-    getLineStarts() {
+    getLineStarts(): number[] {
         return this.lineStarts.getLineStarts();
     }
+    
     /**
      * add line start
-     * @param lineStart
+     * @param lineStart 
      */
-    addLineStart(lineStart) {
+    addLineStart(lineStart: number) {
         this.lineStarts.addLineStart(lineStart);
     }
 }
-
-export { SourceFile };

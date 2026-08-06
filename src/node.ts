@@ -11,17 +11,18 @@ import type {
     TransformOptions,
     TransformResult,
 } from "./@types/index.d.ts";
-import { deprecate } from "node:util";
-import { Readable } from "node:stream";
-import { createReadStream } from "node:fs";
-import { lstat, readFile } from "node:fs/promises";
-import { doParse } from "./lib/parser/parse.ts";
-import { doRender } from "./lib/renderer/render.ts";
-import { ModuleScopeEnumOptions } from "./lib/ast/types.ts";
-import { tokenize, tokenizeStream } from "./lib/parser/tokenize.ts";
-import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
-import { ResponseType } from "./types.ts";
+import {deprecate} from "node:util";
+import {Readable} from "node:stream";
+import {createReadStream} from "node:fs";
+import {lstat, readFile} from "node:fs/promises";
+import {doParse} from "./lib/parser/parse.ts";
+import {doRender} from "./lib/renderer/render.ts";
+import {ModuleScopeEnumOptions} from "./lib/ast/types.ts";
+import {tokenize, tokenizeStream} from "./lib/parser/tokenize.ts";
+import {dirname, matchUrl, resolve} from "./lib/fs/resolve.ts";
+import {ResponseType} from "./types.ts";
 import {resolve as resolvePath} from "node:path";
+import {SourceFile} from "./lib/parser/source.ts";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -114,6 +115,7 @@ export async function load(
             }
 
             if (responseType == ResponseType.ArrayBuffer) {
+                // @ts-expect-error
                 return readFile(resolved.absolute).then((buffer) => buffer.buffer);
             }
 
@@ -332,8 +334,7 @@ export async function parse(options: ParseInputStreamOptions & ParserOptions): P
 
 /**
  * Parse css
- * @param stream
- * @param options
+ * @param args
  *
  * @throws Error file not found
  *
@@ -385,7 +386,7 @@ export async function parse(
     let stream: string | ReadableStream<Uint8Array>;
 
     if (typeof args[0] === "string" || args[0] instanceof ReadableStream) {
-        stream = args[0];
+        stream = args[0] as string;
         options = args[1] as ParserOptions;
     } else {
         // @ts-expect-error
@@ -407,6 +408,19 @@ export async function parse(
 
     options ??= {};
     options.src ??= "";
+    options.sourcesMap ??= [];
+    options.src = resolve(options.src!, options.cwd).relative;
+
+    if (options.source == null) {
+
+        options.sourcesMap.push(new SourceFile(options.sourcesMap.length, '', [], options.src));
+        options.source = options.sourcesMap.at(-1) as SourceFile;
+    }
+
+    if (typeof stream == "string") {
+        
+        options.source.append(stream);
+    }
 
     Object.assign(options, {
         load,
@@ -415,15 +429,15 @@ export async function parse(
         cwd: options.cwd ?? process.cwd(),
     });
 
-    options.src = resolve(options.src!, options.cwd).relative;
     options.parseInfo = {
         stream,
         buffer: "",
         src: options.src ?? "",
         offset: 0,
         time: 0,
-        position: { ind: 0, lin: 1, col: 0 },
-        currentPosition: { ind: -1, lin: 1, col: 0 },
+        source: options.source,
+        position: 0,
+        currentPosition: -1,
     } as ParseInfo;
 
     return doParse(

@@ -9,6 +9,7 @@ import { splitTokenList } from '../validation/utils/list.js';
 import { getColorSpace } from './color/utils/colorspace.js';
 import { getColorComponents } from './color/utils/components.js';
 import { nonStandardColors, systemColors, deprecatedSystemColors, COLORS_NAMES, colorsFunc, colorFuncColorSpace, LOC } from './constants.js';
+import { getSyntaxConfig } from '../validation/config.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
@@ -1061,10 +1062,12 @@ function parseDimension(name) {
     if (index < 0) {
         return null;
     }
+    const unit = name.slice(index);
     const dimension = {
         typ: EnumToken.DimensionTokenType,
         val: +name.slice(0, index),
-        unit: name.slice(index),
+        // @ts-ignore
+        unit: getSyntaxConfig().units.find((u) => equalsIgnoreCase(u, unit)) || unit.toLowerCase(),
     };
     if (Number.isNaN(dimension.val)) {
         return null;

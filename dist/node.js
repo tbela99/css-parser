@@ -9,9 +9,10 @@ export { renderValue as renderToken } from './lib/renderer/render.js';
 import { ModuleScopeEnumOptions } from './lib/ast/types.js';
 export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ValidationLevel } from './lib/ast/types.js';
 import { tokenizeStream, tokenize } from './lib/parser/tokenize.js';
-import { dirname, resolve, matchUrl } from './lib/fs/resolve.js';
+import { resolve, dirname, matchUrl } from './lib/fs/resolve.js';
 import { ResponseType } from './types.js';
 import { resolve as resolve$1 } from 'node:path';
+import { SourceFile } from './lib/parser/source.js';
 export { minify } from './lib/ast/minify.js';
 export { expand } from './lib/ast/expand.js';
 export { WalkerEvent, WalkerOptionEnum, walk, walkValues } from './lib/ast/walk.js';
@@ -60,6 +61,7 @@ async function load(url, currentDirectory = ".", responseType = false) {
                 return readFile(resolved.absolute, "utf-8");
             }
             if (responseType == ResponseType.ArrayBuffer) {
+                // @ts-expect-error
                 return readFile(resolved.absolute).then((buffer) => buffer.buffer);
             }
             return Readable.toWeb(createReadStream(resolved.absolute, {
@@ -133,8 +135,7 @@ function render(data, options = {}, mapping) {
 const parseFile = deprecate(async (file, options = {}, asStream = false) => parse({ file, asStream, ...options }), "parseFile is deprecated, use parse instead as parse({file, asStream, ...options})");
 /**
  * Parse css
- * @param stream
- * @param options
+ * @param args
  *
  * @throws Error file not found
  *
@@ -196,21 +197,30 @@ async function parse(...args) {
     }
     options ??= {};
     options.src ??= "";
+    options.sourcesMap ??= [];
+    options.src = resolve(options.src, options.cwd).relative;
+    if (options.source == null) {
+        options.sourcesMap.push(new SourceFile(options.sourcesMap.length, '', [], options.src));
+        options.source = options.sourcesMap.at(-1);
+    }
+    if (typeof stream == "string") {
+        options.source.append(stream);
+    }
     Object.assign(options, {
         load,
         resolve,
         dirname,
         cwd: options.cwd ?? process.cwd(),
     });
-    options.src = resolve(options.src, options.cwd).relative;
     options.parseInfo = {
         stream,
         buffer: "",
         src: options.src ?? "",
         offset: 0,
         time: 0,
-        position: { ind: 0, lin: 1, col: 0 },
-        currentPosition: { ind: -1, lin: 1, col: 0 },
+        source: options.source,
+        position: 0,
+        currentPosition: -1,
     };
     return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => {
         const { revMapping, ...res } = result;
