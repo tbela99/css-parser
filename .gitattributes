@@ -1,20 +1,18 @@
-/test/ export-ignore
-/docs/ export-ignore
+/test/ export-ignore linguist-vendored
+/docs/ export-ignore linguist-vendored
 /typedoc.json export-ignore
-/docs/ export-ignore
 /.typedoc-tsconfig.jsonc export-ignore
 /.editorconfig export-ignore
 /build.sh export-ignore linguist-vendored
 /Writerside export-ignore linguist-vendored
-/benchmark
+/benchmark export-ignore linguist-vendored
 /tools/ export-ignore
 /happydom.ts export-ignore
 /bunfig.toml export-ignore
 /package-lock.json export-ignore
 /.gitignore export-ignore
 /.gitattributes export-ignore
-/coverage/ export-ignore
-/rollup.config.mjs export-ignore
+/coverage/ export-ignore linguist-vendored
 /tsconfig.json export-ignore
 /.github/** linguist-vendored
 # exclude all files in test/ from stats

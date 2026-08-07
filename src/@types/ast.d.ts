@@ -1,6 +1,6 @@
-import { EnumToken } from "../lib/ast/types.ts";
-import { LOC, PARENT, TOKENS, STATE, ERRORS, RAW, ROOT, OPTIMIZED } from "../lib/syntax/constants.ts";
-import type { Token } from "./token.d.ts";
+import {EnumToken} from "../lib/ast/types.ts";
+import {ERRORS, LOC, OPTIMIZED, PARENT, RAW, ROOT, STATE, TOKENS} from "../lib/syntax/constants.ts";
+import type {Token} from "./token.d.ts";
 
 /**
  * token or node location
@@ -17,7 +17,7 @@ export declare interface Location {
     /**
      * source file
      */
-    src: string;
+    src: number;
 }
 
 /**

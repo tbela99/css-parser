@@ -1,6 +1,7 @@
 import { EnumToken, ColorType } from '../ast/types.js';
 import { LOC, wildCardFuncs, whenElseFunc, transformFunctions, mathFuncs, colorsFunc, timingFunc, supportFunc, timelineFunc, imageFunc, gridTemplateFunc, urlFunc, containerFunc, pseudoElements } from '../syntax/constants.js';
 import { isDigit, isPseudo, isIdent, isWhiteSpace, isNumber, isHexColor, isHash, isPercentage, parseDimension, isNewLine } from '../syntax/syntax.js';
+import { SourceFile } from './source.js';
 import { equalsIgnoreCase } from './utils/text.js';
 
 const SymbolsMapTokens = {
@@ -137,9 +138,8 @@ var TokenMap;
 function consumeString(parseInfo) {
     const quote = next(parseInfo);
     let value;
-    let buffer = "";
+    let buffer = quote;
     const result = [];
-    buffer += quote;
     while ((value = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 1))) {
         if (value == "\\") {
             if ("\\" == parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 2)) {
@@ -208,6 +208,7 @@ function consumeString(parseInfo) {
 function yieldResult(val, parseInfo, hint) {
     let token = null;
     let dimension;
+    // console.debug(`Yield result: ${val}, ${hint}`);
     if (hint != null) {
         let searchArray = null;
         switch (hint) {
@@ -324,12 +325,12 @@ function yieldResult(val, parseInfo, hint) {
     if (token == null) {
         token = {
             typ: EnumToken.LiteralTokenType,
-            val,
+            val
         };
     }
     // return token;
     token[LOC] = {
-        src: parseInfo.src,
+        src: parseInfo.source.id,
         sta: parseInfo.position,
         end: parseInfo.currentPosition,
     };
@@ -357,15 +358,7 @@ function next(parseInfo, count = 1) {
     let char = count == 1 ? parseInfo.stream.charAt(position + 1) : parseInfo.stream.slice(position + 1, position + 1 + count);
     let i = 0;
     for (; i < char.length; i++) {
-        const codepoint = char[i].charCodeAt(0);
-        if (codepoint == 0xa ||
-            codepoint == 0xb ||
-            codepoint == 0xc ||
-            codepoint == 0xd ||
-            codepoint == 0x2028 ||
-            codepoint == 0x2029) {
-            parseInfo.source.addLineStart(position + i);
-        }
+        char[i].charCodeAt(0);
     }
     parseInfo.currentPosition += char.length;
     return char;
@@ -376,8 +369,18 @@ function next(parseInfo, count = 1) {
  * @param yieldEOFToken
  */
 function tokenize(parseInfo, yieldEOFToken = true) {
+    if (typeof parseInfo == "string") {
+        parseInfo = {
+            buffer: "",
+            stream: parseInfo,
+            source: new SourceFile(parseInfo, [], ""),
+            offset: 0,
+            time: 0,
+            position: 0,
+            currentPosition: -1,
+        };
+    }
     let value;
-    let nextValue;
     let buffer = parseInfo.buffer;
     let charCode;
     let nextCharCode;
@@ -387,9 +390,9 @@ function tokenize(parseInfo, yieldEOFToken = true) {
     const endPosition = parseInfo.stream.length - 10;
     parseInfo.buffer = "";
     while ((value = peek(parseInfo))) {
-        nextValue = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset);
         charCode = value.charCodeAt(0);
-        nextCharCode = nextValue.charCodeAt(0);
+        // nextCharCode = nextValue.charCodeAt(0);
+        // console.debug({value, buffer});
         switch (charCode) {
             case 61 /* TokenMap.EQUALS */:
                 if (buffer.length > 0) {
@@ -401,15 +404,16 @@ function tokenize(parseInfo, yieldEOFToken = true) {
             // '+' or '-'
             case 43 /* TokenMap.PLUS */:
             case 45 /* TokenMap.MINUS */:
-                if (charCode === 43 /* TokenMap.PLUS */ && !isNumber(nextValue)) {
+                next(parseInfo);
+                if (charCode === 43 /* TokenMap.PLUS */ && !isNumber(peek(parseInfo))) {
                     if (buffer.length > 0) {
                         result.push(yieldResult(buffer, parseInfo));
                         buffer = "";
                     }
-                    result.push(yieldResult(next(parseInfo), parseInfo, SymbolsMapTokens[value]));
+                    result.push(yieldResult(value, parseInfo, SymbolsMapTokens[value]));
                     break;
                 }
-                buffer += next(parseInfo);
+                buffer += value;
                 break;
             // '{'
             case 123 /* TokenMap.LEFT_BRACE */:
@@ -440,11 +444,12 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                         const hint = buffer.startsWith("--")
                             ? EnumToken.CustomFunctionTokenDefType
                             : (SymbolsMapTokens[buffer.toLowerCase() + "("] ?? EnumToken.FunctionTokenDefType);
-                        next(parseInfo);
                         result.push(yieldResult(buffer, parseInfo, hint));
+                        next(parseInfo);
                         buffer = "";
                         if (hint === EnumToken.UrlFunctionTokenDefType) {
-                            value = next(parseInfo);
+                            buffer = "";
+                            value = peek(parseInfo);
                             // consume an <url>
                             while (isWhiteSpace((charCode = value.charCodeAt(0)))) {
                                 buffer += next(parseInfo);
@@ -498,6 +503,7 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                                 buffer = "";
                             }
                         }
+                        // console.debug({value: peek(parseInfo)});
                         break;
                     }
                 }
@@ -540,11 +546,12 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                     result.push(yieldResult(buffer, parseInfo));
                     buffer = "";
                 }
-                if (nextCharCode == 58 /* TokenMap.COLON */) {
-                    result.push(yieldResult(next(parseInfo) + next(parseInfo), parseInfo, EnumToken.DoubleColonTokenType));
+                next(parseInfo);
+                if (peek(parseInfo).charCodeAt(0) == 58 /* TokenMap.COLON */) {
+                    result.push(yieldResult(value + next(parseInfo), parseInfo, EnumToken.DoubleColonTokenType));
                     break;
                 }
-                result.push(yieldResult(next(parseInfo), parseInfo, EnumToken.ColonTokenType));
+                result.push(yieldResult(value, parseInfo, EnumToken.ColonTokenType));
                 break;
             // \n \r \f \v \t space
             case 0x9:
@@ -585,8 +592,8 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                     result.push(yieldResult(buffer, parseInfo));
                     buffer = "";
                 }
-                if (nextCharCode == 61 /* TokenMap.EQUALS */) {
-                    result.push(yieldResult(next(parseInfo) + next(parseInfo), parseInfo, EnumToken.EndMatchTokenType));
+                if (match(parseInfo, "$=")) {
+                    result.push(yieldResult(next(parseInfo, 2), parseInfo, EnumToken.EndMatchTokenType));
                     break;
                 }
                 buffer += next(parseInfo);
@@ -596,7 +603,7 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                     result.push(yieldResult(buffer, parseInfo));
                     buffer = "";
                 }
-                if (nextCharCode == 61 /* TokenMap.EQUALS */) {
+                if (match(parseInfo, "~=")) {
                     result.push(yieldResult(next(parseInfo, 2), parseInfo, EnumToken.IncludeMatchTokenType));
                     break;
                 }
@@ -609,7 +616,7 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                     result.push(yieldResult(buffer, parseInfo));
                     buffer = "";
                 }
-                if (nextCharCode == 61 /* TokenMap.EQUALS */) {
+                if (match(parseInfo, "^=")) {
                     result.push(yieldResult(next(parseInfo, 2), parseInfo, EnumToken.StartMatchTokenType));
                     break;
                 }
@@ -620,7 +627,7 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                     result.push(yieldResult(buffer, parseInfo));
                     buffer = "";
                 }
-                if (nextCharCode == 61 /* TokenMap.EQUALS */) {
+                if (match(parseInfo, "*=")) {
                     result.push(yieldResult(next(parseInfo, 2), parseInfo, EnumToken.ContainMatchTokenType));
                     break;
                 }
@@ -641,11 +648,11 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                     buffer = "";
                 }
                 // '||'
-                if (nextCharCode == 124 /* TokenMap.PIPE */) {
+                if (match(parseInfo, "||")) {
                     result.push(yieldResult(next(parseInfo, 2), parseInfo, EnumToken.ColumnCombinatorTokenType));
                     break;
                 }
-                else if (nextCharCode == 61 /* TokenMap.EQUALS */) {
+                else if (match(parseInfo, "|=")) {
                     result.push(yieldResult(next(parseInfo, 2), parseInfo, EnumToken.DashMatchTokenType));
                     break;
                 }
@@ -657,19 +664,19 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                     result.push(yieldResult(buffer, parseInfo));
                     buffer = "";
                 }
-                if (match(parseInfo, "important")) {
+                if (match(parseInfo, "!important")) {
                     result.push(yieldResult(next(parseInfo, 10), parseInfo, EnumToken.ImportantTokenType));
                     buffer = "";
                     break;
                 }
-                buffer += value;
+                buffer += next(parseInfo);
                 break;
             case 47 /* TokenMap.SLASH */:
                 if (buffer.length > 0) {
                     result.push(yieldResult(buffer, parseInfo));
                     buffer = "";
                 }
-                if (!match(parseInfo, "*")) {
+                if (!match(parseInfo, "/*")) {
                     result.push(yieldResult(next(parseInfo), parseInfo, SymbolsMapTokens[value]));
                     break;
                 }
@@ -697,7 +704,7 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                     result.push(yieldResult(buffer, parseInfo));
                     buffer = "";
                 }
-                if (match(parseInfo, "=")) {
+                if (match(parseInfo, ">=")) {
                     result.push(yieldResult(next(parseInfo, 2), parseInfo, EnumToken.GteTokenType));
                     break;
                 }
@@ -709,7 +716,7 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                     result.push(yieldResult(buffer, parseInfo));
                     buffer = "";
                 }
-                if (match(parseInfo, "=")) {
+                if (match(parseInfo, "<=")) {
                     result.push(yieldResult(next(parseInfo, 2), parseInfo, EnumToken.LteTokenType));
                     break;
                 }
@@ -741,7 +748,7 @@ function tokenize(parseInfo, yieldEOFToken = true) {
             case 92 /* TokenMap.REVERSE_SOLIDUS */:
                 next(parseInfo);
                 // EOF
-                if (!(value = next(parseInfo))) {
+                if (!(peek(parseInfo))) {
                     // end of stream ignore \\
                     if (buffer.length > 0) {
                         result.push(yieldResult(buffer, parseInfo));
@@ -764,16 +771,15 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                 result.push(...consumeString(parseInfo));
                 break;
             case 46 /* TokenMap.DOT */:
-                next(parseInfo);
                 const codepoint = parseInfo.stream
-                    .charAt(parseInfo.currentPosition - parseInfo.offset + 1)
+                    .charAt(parseInfo.currentPosition - parseInfo.offset + 2)
                     .charCodeAt(0);
                 if (!isDigit(codepoint) && buffer !== "") {
                     result.push(yieldResult(buffer, parseInfo));
-                    buffer = value;
+                    buffer = next(parseInfo, 2);
                     break;
                 }
-                buffer += value;
+                buffer += next(parseInfo);
                 break;
             default:
                 buffer += next(parseInfo);
@@ -798,6 +804,7 @@ function tokenize(parseInfo, yieldEOFToken = true) {
 /**
  * tokenize readable stream
  * @param input
+ * @param parseInfo
  */
 async function* tokenizeStream(input, parseInfo) {
     const decoder = new TextDecoder("utf-8");

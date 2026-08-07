@@ -174,10 +174,6 @@ async function parse(...args) {
     options ??= {};
     options.src ??= "";
     options.sourcesMap ??= [];
-    if (options.source == null) {
-        options.sourcesMap.push(new SourceFile(options.sourcesMap.length, '', []));
-        options.source = options.sourcesMap.at(-1);
-    }
     Object.assign(options, {
         load,
         resolve,
@@ -186,14 +182,19 @@ async function parse(...args) {
             ? self.location.pathname
             : dirname(self.location.pathname),
     });
+    options.src = resolve(options.src, options.cwd).relative;
+    if (options.source == null) {
+        options.sourcesMap.push(new SourceFile('', [], options.src));
+        options.source = options.sourcesMap.at(-1);
+    }
     options.parseInfo = {
         stream,
         buffer: "",
         offset: 0,
         time: 0,
-        src: options.src ?? "",
-        position: { ind: 0, lin: 1, col: 0 },
-        currentPosition: { ind: -1, lin: 1, col: 0 },
+        source: options.source,
+        position: 0,
+        currentPosition: -1,
     };
     return doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize(options.parseInfo), options).then((result) => {
         const { revMapping, ...res } = result;

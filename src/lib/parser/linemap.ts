@@ -5,8 +5,7 @@ export class LineMap {
     /**
      * line starts
      */
-    private lineStarts: number[];
-
+    readonly lineStarts: number[];
     constructor(lines: number[]) {
         this.lineStarts = lines;
     }
@@ -17,11 +16,19 @@ export class LineMap {
      * @returns
      */
     getOffsets(offset: number): [number, number] {
+
         const line: number = this.search(offset);
-        const column: number = offset - this.lineStarts[line];
+
+        if (offset < 0 || line < 0) {
+            return [1, 1];
+        }
+
+        const column: number = offset - this.lineStarts[line] ;
+
+        console.debug(`offset: ${offset}, line: ${line}, column: ${column}`);
 
         // [line, column]
-        return [line + 1, column == 0 ? 1 : column];
+        return [line + 1, column + 1];
     }
 
     /**

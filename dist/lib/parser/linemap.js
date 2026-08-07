@@ -16,9 +16,13 @@ class LineMap {
      */
     getOffsets(offset) {
         const line = this.search(offset);
+        if (offset < 0 || line < 0) {
+            return [1, 1];
+        }
         const column = offset - this.lineStarts[line];
+        console.debug(`offset: ${offset}, line: ${line}, column: ${column}`);
         // [line, column]
-        return [line + 1, column == 0 ? 1 : column];
+        return [line + 1, column + 1];
     }
     /**
      * search the greatest index of the value less than or equal to offset

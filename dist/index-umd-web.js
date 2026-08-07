@@ -22088,6 +22088,156 @@
         TransformCssFeature: TransformCssFeature
     });
 
+    /**
+     * Compute line and column of the offset
+     */
+    class LineMap {
+        /**
+         * line starts
+         */
+        lineStarts;
+        constructor(lines) {
+            this.lineStarts = lines;
+        }
+        /**
+         * Compute line and column of the offset
+         * @param offset
+         * @returns
+         */
+        getOffsets(offset) {
+            const line = this.search(offset);
+            if (offset < 0 || line < 0) {
+                return [1, 1];
+            }
+            const column = offset - this.lineStarts[line];
+            console.debug(`offset: ${offset}, line: ${line}, column: ${column}`);
+            // [line, column]
+            return [line + 1, column + 1];
+        }
+        /**
+         * search the greatest index of the value less than or equal to offset
+         * @param offset
+         * @returns
+         */
+        search(offset) {
+            // search lineStarts using binary search
+            let start = 0;
+            let end = this.lineStarts.length - 1;
+            let mid = 0;
+            let result = -1;
+            while (start <= end) {
+                mid = start + ((end - start) >>> 1);
+                if (this.lineStarts[mid] <= offset) {
+                    result = mid;
+                    start = mid + 1;
+                }
+                else if (this.lineStarts[mid] > offset) {
+                    end = mid - 1;
+                }
+            }
+            return result;
+        }
+        /**
+         * set line starts
+         * @param lines
+         */
+        setLineStarts(lines) {
+            this.lineStarts = lines;
+        }
+        /**
+         * get line starts
+         * @returns
+         */
+        getLineStarts() {
+            return this.lineStarts;
+        }
+        /**
+         * add line start
+         */
+        addLineStart(lineStart) {
+            this.lineStarts.push(lineStart);
+        }
+    }
+
+    let sourceId = 0;
+    /**
+     * Source file helper class
+     */
+    class SourceFile {
+        /**
+         * Source file ID
+         */
+        id;
+        /**
+         * Source file path
+         */
+        file;
+        /**
+         * Line map
+         */
+        lineStarts;
+        /**
+         * Source file content
+         */
+        content;
+        /**
+         * Constructor
+         * @param id
+         * @param content
+         * @param lines
+         * @param file
+         */
+        constructor(content, lines, file = null) {
+            this.id = sourceId++;
+            this.content = content;
+            this.file = file;
+            this.lineStarts = new LineMap(lines);
+        }
+        /**
+         * Update source content
+         * @param content
+         * @param lines
+         */
+        append(content) {
+            this.content += content;
+        }
+        getFileName() {
+            return this.file;
+        }
+        getText(start, length) {
+            return this.content.slice(start, start + length);
+        }
+        /**
+         * Compute line and column of the offset
+         * @param offset
+         * @returns
+         */
+        getOffsets(offset) {
+            return this.lineStarts.getOffsets(offset);
+        }
+        /**
+         * set line starts
+         * @param lines
+         */
+        setLineStarts(lines) {
+            this.lineStarts.setLineStarts(lines);
+        }
+        /**
+         * get line starts
+         * @returns
+         */
+        getLineStarts() {
+            return this.lineStarts.getLineStarts();
+        }
+        /**
+         * add line start
+         * @param lineStart
+         */
+        addLineStart(lineStart) {
+            this.lineStarts.addLineStart(lineStart);
+        }
+    }
+
     const SymbolsMapTokens = {
         "+": exports.EnumToken.Plus,
         "=": exports.EnumToken.DelimTokenType,
@@ -22222,9 +22372,8 @@
     function consumeString(parseInfo) {
         const quote = next(parseInfo);
         let value;
-        let buffer = "";
+        let buffer = quote;
         const result = [];
-        buffer += quote;
         while ((value = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 1))) {
             if (value == "\\") {
                 if ("\\" == parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 2)) {
@@ -22293,6 +22442,7 @@
     function yieldResult(val, parseInfo, hint) {
         let token = null;
         let dimension;
+        // console.debug(`Yield result: ${val}, ${hint}`);
         if (hint != null) {
             let searchArray = null;
             switch (hint) {
@@ -22409,12 +22559,12 @@
         if (token == null) {
             token = {
                 typ: exports.EnumToken.LiteralTokenType,
-                val,
+                val
             };
         }
         // return token;
         token[LOC] = {
-            src: parseInfo.src,
+            src: parseInfo.source.id,
             sta: parseInfo.position,
             end: parseInfo.currentPosition,
         };
@@ -22442,15 +22592,7 @@
         let char = count == 1 ? parseInfo.stream.charAt(position + 1) : parseInfo.stream.slice(position + 1, position + 1 + count);
         let i = 0;
         for (; i < char.length; i++) {
-            const codepoint = char[i].charCodeAt(0);
-            if (codepoint == 0xa ||
-                codepoint == 0xb ||
-                codepoint == 0xc ||
-                codepoint == 0xd ||
-                codepoint == 0x2028 ||
-                codepoint == 0x2029) {
-                parseInfo.source.addLineStart(position + i);
-            }
+            char[i].charCodeAt(0);
         }
         parseInfo.currentPosition += char.length;
         return char;
@@ -22461,8 +22603,18 @@
      * @param yieldEOFToken
      */
     function tokenize(parseInfo, yieldEOFToken = true) {
+        if (typeof parseInfo == "string") {
+            parseInfo = {
+                buffer: "",
+                stream: parseInfo,
+                source: new SourceFile(parseInfo, [], ""),
+                offset: 0,
+                time: 0,
+                position: 0,
+                currentPosition: -1,
+            };
+        }
         let value;
-        let nextValue;
         let buffer = parseInfo.buffer;
         let charCode;
         let nextCharCode;
@@ -22472,9 +22624,9 @@
         const endPosition = parseInfo.stream.length - 10;
         parseInfo.buffer = "";
         while ((value = peek(parseInfo))) {
-            nextValue = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset);
             charCode = value.charCodeAt(0);
-            nextCharCode = nextValue.charCodeAt(0);
+            // nextCharCode = nextValue.charCodeAt(0);
+            // console.debug({value, buffer});
             switch (charCode) {
                 case 61 /* TokenMap.EQUALS */:
                     if (buffer.length > 0) {
@@ -22486,15 +22638,16 @@
                 // '+' or '-'
                 case 43 /* TokenMap.PLUS */:
                 case 45 /* TokenMap.MINUS */:
-                    if (charCode === 43 /* TokenMap.PLUS */ && !isNumber(nextValue)) {
+                    next(parseInfo);
+                    if (charCode === 43 /* TokenMap.PLUS */ && !isNumber(peek(parseInfo))) {
                         if (buffer.length > 0) {
                             result.push(yieldResult(buffer, parseInfo));
                             buffer = "";
                         }
-                        result.push(yieldResult(next(parseInfo), parseInfo, SymbolsMapTokens[value]));
+                        result.push(yieldResult(value, parseInfo, SymbolsMapTokens[value]));
                         break;
                     }
-                    buffer += next(parseInfo);
+                    buffer += value;
                     break;
                 // '{'
                 case 123 /* TokenMap.LEFT_BRACE */:
@@ -22525,11 +22678,12 @@
                             const hint = buffer.startsWith("--")
                                 ? exports.EnumToken.CustomFunctionTokenDefType
                                 : (SymbolsMapTokens[buffer.toLowerCase() + "("] ?? exports.EnumToken.FunctionTokenDefType);
-                            next(parseInfo);
                             result.push(yieldResult(buffer, parseInfo, hint));
+                            next(parseInfo);
                             buffer = "";
                             if (hint === exports.EnumToken.UrlFunctionTokenDefType) {
-                                value = next(parseInfo);
+                                buffer = "";
+                                value = peek(parseInfo);
                                 // consume an <url>
                                 while (isWhiteSpace((charCode = value.charCodeAt(0)))) {
                                     buffer += next(parseInfo);
@@ -22583,6 +22737,7 @@
                                     buffer = "";
                                 }
                             }
+                            // console.debug({value: peek(parseInfo)});
                             break;
                         }
                     }
@@ -22625,11 +22780,12 @@
                         result.push(yieldResult(buffer, parseInfo));
                         buffer = "";
                     }
-                    if (nextCharCode == 58 /* TokenMap.COLON */) {
-                        result.push(yieldResult(next(parseInfo) + next(parseInfo), parseInfo, exports.EnumToken.DoubleColonTokenType));
+                    next(parseInfo);
+                    if (peek(parseInfo).charCodeAt(0) == 58 /* TokenMap.COLON */) {
+                        result.push(yieldResult(value + next(parseInfo), parseInfo, exports.EnumToken.DoubleColonTokenType));
                         break;
                     }
-                    result.push(yieldResult(next(parseInfo), parseInfo, exports.EnumToken.ColonTokenType));
+                    result.push(yieldResult(value, parseInfo, exports.EnumToken.ColonTokenType));
                     break;
                 // \n \r \f \v \t space
                 case 0x9:
@@ -22670,8 +22826,8 @@
                         result.push(yieldResult(buffer, parseInfo));
                         buffer = "";
                     }
-                    if (nextCharCode == 61 /* TokenMap.EQUALS */) {
-                        result.push(yieldResult(next(parseInfo) + next(parseInfo), parseInfo, exports.EnumToken.EndMatchTokenType));
+                    if (match(parseInfo, "$=")) {
+                        result.push(yieldResult(next(parseInfo, 2), parseInfo, exports.EnumToken.EndMatchTokenType));
                         break;
                     }
                     buffer += next(parseInfo);
@@ -22681,7 +22837,7 @@
                         result.push(yieldResult(buffer, parseInfo));
                         buffer = "";
                     }
-                    if (nextCharCode == 61 /* TokenMap.EQUALS */) {
+                    if (match(parseInfo, "~=")) {
                         result.push(yieldResult(next(parseInfo, 2), parseInfo, exports.EnumToken.IncludeMatchTokenType));
                         break;
                     }
@@ -22694,7 +22850,7 @@
                         result.push(yieldResult(buffer, parseInfo));
                         buffer = "";
                     }
-                    if (nextCharCode == 61 /* TokenMap.EQUALS */) {
+                    if (match(parseInfo, "^=")) {
                         result.push(yieldResult(next(parseInfo, 2), parseInfo, exports.EnumToken.StartMatchTokenType));
                         break;
                     }
@@ -22705,7 +22861,7 @@
                         result.push(yieldResult(buffer, parseInfo));
                         buffer = "";
                     }
-                    if (nextCharCode == 61 /* TokenMap.EQUALS */) {
+                    if (match(parseInfo, "*=")) {
                         result.push(yieldResult(next(parseInfo, 2), parseInfo, exports.EnumToken.ContainMatchTokenType));
                         break;
                     }
@@ -22726,11 +22882,11 @@
                         buffer = "";
                     }
                     // '||'
-                    if (nextCharCode == 124 /* TokenMap.PIPE */) {
+                    if (match(parseInfo, "||")) {
                         result.push(yieldResult(next(parseInfo, 2), parseInfo, exports.EnumToken.ColumnCombinatorTokenType));
                         break;
                     }
-                    else if (nextCharCode == 61 /* TokenMap.EQUALS */) {
+                    else if (match(parseInfo, "|=")) {
                         result.push(yieldResult(next(parseInfo, 2), parseInfo, exports.EnumToken.DashMatchTokenType));
                         break;
                     }
@@ -22742,19 +22898,19 @@
                         result.push(yieldResult(buffer, parseInfo));
                         buffer = "";
                     }
-                    if (match(parseInfo, "important")) {
+                    if (match(parseInfo, "!important")) {
                         result.push(yieldResult(next(parseInfo, 10), parseInfo, exports.EnumToken.ImportantTokenType));
                         buffer = "";
                         break;
                     }
-                    buffer += value;
+                    buffer += next(parseInfo);
                     break;
                 case 47 /* TokenMap.SLASH */:
                     if (buffer.length > 0) {
                         result.push(yieldResult(buffer, parseInfo));
                         buffer = "";
                     }
-                    if (!match(parseInfo, "*")) {
+                    if (!match(parseInfo, "/*")) {
                         result.push(yieldResult(next(parseInfo), parseInfo, SymbolsMapTokens[value]));
                         break;
                     }
@@ -22782,7 +22938,7 @@
                         result.push(yieldResult(buffer, parseInfo));
                         buffer = "";
                     }
-                    if (match(parseInfo, "=")) {
+                    if (match(parseInfo, ">=")) {
                         result.push(yieldResult(next(parseInfo, 2), parseInfo, exports.EnumToken.GteTokenType));
                         break;
                     }
@@ -22794,7 +22950,7 @@
                         result.push(yieldResult(buffer, parseInfo));
                         buffer = "";
                     }
-                    if (match(parseInfo, "=")) {
+                    if (match(parseInfo, "<=")) {
                         result.push(yieldResult(next(parseInfo, 2), parseInfo, exports.EnumToken.LteTokenType));
                         break;
                     }
@@ -22826,7 +22982,7 @@
                 case 92 /* TokenMap.REVERSE_SOLIDUS */:
                     next(parseInfo);
                     // EOF
-                    if (!(value = next(parseInfo))) {
+                    if (!(peek(parseInfo))) {
                         // end of stream ignore \\
                         if (buffer.length > 0) {
                             result.push(yieldResult(buffer, parseInfo));
@@ -22849,16 +23005,15 @@
                     result.push(...consumeString(parseInfo));
                     break;
                 case 46 /* TokenMap.DOT */:
-                    next(parseInfo);
                     const codepoint = parseInfo.stream
-                        .charAt(parseInfo.currentPosition - parseInfo.offset + 1)
+                        .charAt(parseInfo.currentPosition - parseInfo.offset + 2)
                         .charCodeAt(0);
                     if (!isDigit(codepoint) && buffer !== "") {
                         result.push(yieldResult(buffer, parseInfo));
-                        buffer = value;
+                        buffer = next(parseInfo, 2);
                         break;
                     }
-                    buffer += value;
+                    buffer += next(parseInfo);
                     break;
                 default:
                     buffer += next(parseInfo);
@@ -22883,6 +23038,7 @@
     /**
      * tokenize readable stream
      * @param input
+     * @param parseInfo
      */
     async function* tokenizeStream(input, parseInfo) {
         const decoder = new TextDecoder("utf-8");
@@ -29478,151 +29634,6 @@
         return { success, errors };
     }
 
-    /**
-     * Compute line and column of the offset
-     */
-    class LineMap {
-        /**
-         * line starts
-         */
-        lineStarts;
-        constructor(lines) {
-            this.lineStarts = lines;
-        }
-        /**
-         * Compute line and column of the offset
-         * @param offset
-         * @returns
-         */
-        getOffsets(offset) {
-            const line = this.search(offset);
-            const column = offset - this.lineStarts[line];
-            // [line, column]
-            return [line + 1, column == 0 ? 1 : column];
-        }
-        /**
-         * search the greatest index of the value less than or equal to offset
-         * @param offset
-         * @returns
-         */
-        search(offset) {
-            // search lineStarts using binary search
-            let start = 0;
-            let end = this.lineStarts.length - 1;
-            let mid = 0;
-            let result = -1;
-            while (start <= end) {
-                mid = start + ((end - start) >>> 1);
-                if (this.lineStarts[mid] <= offset) {
-                    result = mid;
-                    start = mid + 1;
-                }
-                else if (this.lineStarts[mid] > offset) {
-                    end = mid - 1;
-                }
-            }
-            return result;
-        }
-        /**
-         * set line starts
-         * @param lines
-         */
-        setLineStarts(lines) {
-            this.lineStarts = lines;
-        }
-        /**
-         * get line starts
-         * @returns
-         */
-        getLineStarts() {
-            return this.lineStarts;
-        }
-        /**
-         * add line start
-         */
-        addLineStart(lineStart) {
-            this.lineStarts.push(lineStart);
-        }
-    }
-
-    /**
-     * Source file helper class
-     */
-    class SourceFile {
-        /**
-         * Source file ID
-         */
-        id;
-        /**
-         * Source file content
-         */
-        content;
-        /**
-         * Source file path
-         */
-        file;
-        /**
-         * Line map
-         */
-        lineStarts;
-        /**
-         * Constructor
-         * @param id
-         * @param content
-         * @param lines
-         * @param file
-         */
-        constructor(id, content, lines, file = null) {
-            this.id = id;
-            this.content = content;
-            this.file = file;
-            this.lineStarts = new LineMap(lines);
-        }
-        /**
-         * Update source content
-         * @param content
-         * @param lines
-         */
-        append(content) {
-            this.content += content;
-        }
-        getFileName() {
-            return this.file;
-        }
-        getText(start, length) {
-            return this.content.slice(start, start + length);
-        }
-        /**
-         * Compute line and column of the offset
-         * @param offset
-         * @returns
-         */
-        getOffsets(offset) {
-            return this.lineStarts.getOffsets(offset);
-        }
-        /**
-         * set line starts
-         * @param lines
-         */
-        setLineStarts(lines) {
-            this.lineStarts.setLineStarts(lines);
-        }
-        /**
-         * get line starts
-         * @returns
-         */
-        getLineStarts() {
-            return this.lineStarts.getLineStarts();
-        }
-        /**
-         * add line start
-         * @param lineStart
-         */
-        addLineStart(lineStart) {
-            this.lineStarts.addLineStart(lineStart);
-        }
-    }
-
     function renderTokens(tokens, options) {
         if (tokens == null || tokens.length === 0)
             return "";
@@ -30117,20 +30128,27 @@
                 const url = token.typ == exports.EnumToken.StringTokenType ? token.val.slice(1, -1) : token.val;
                 try {
                     const src = options.resolve(url, options.src || options.cwd);
-                    options.sourcesMap.push(new SourceFile(options.sourcesMap.length, '', [], src.relative));
                     const result = options.load(src);
                     const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                         ? await result
                         : result;
+                    options.sourcesMap.push(new SourceFile(typeof stream === "string" ? stream : "", [], src.relative));
+                    const source = options.sourcesMap[options.sourcesMap.length - 1];
                     const root = await doParse(stream instanceof ReadableStream
-                        ? tokenizeStream(stream)
-                        : tokenize({
-                            stream,
-                            src: options.resolve(url, options.src || options.cwd).relative,
+                        ? tokenizeStream(stream, {
                             buffer: "",
                             offset: 0,
-                            position: { ind: 0, lin: 1, col: 1 },
-                            currentPosition: { ind: -1, lin: 1, col: 0 },
+                            source,
+                            position: 0,
+                            currentPosition: -1,
+                        })
+                        : tokenize({
+                            stream,
+                            buffer: "",
+                            offset: 0,
+                            source,
+                            position: 0,
+                            currentPosition: -1,
                         }), Object.assign({}, options, {
                         minify: false,
                         setParent: false,
@@ -30495,13 +30513,16 @@
                     const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                         ? await result
                         : result;
+                    options.sourcesMap.push(new SourceFile(typeof stream === "string" ? stream : "", [], src.relative));
+                    const source = options.sourcesMap[options.sourcesMap.length - 1];
                     const parseInfo = {
                         stream,
                         buffer: "",
                         offset: 0,
                         time: 0,
-                        position: { ind: 0, lin: 1, col: 1 },
-                        currentPosition: { ind: -1, lin: 1, col: 0 },
+                        source,
+                        position: 0,
+                        currentPosition: -1,
                     };
                     const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream, parseInfo) : tokenize(parseInfo), Object.assign({}, options, {
                         minify: false,
@@ -30639,13 +30660,20 @@
                                     ? await result
                                     : result;
                                 const root = await doParse(stream instanceof ReadableStream
-                                    ? tokenizeStream(stream)
+                                    ? tokenizeStream(stream, {
+                                        buffer: "",
+                                        offset: 0,
+                                        source: new SourceFile("", [], src.relative),
+                                        position: 0,
+                                        currentPosition: -1,
+                                    })
                                     : tokenize({
                                         stream,
                                         buffer: "",
                                         offset: 0,
-                                        position: { ind: 0, lin: 1, col: 1 },
-                                        currentPosition: { ind: -1, lin: 1, col: 0 },
+                                        position: 0,
+                                        source: new SourceFile(stream, [], src.relative),
+                                        currentPosition: -1,
                                     }), Object.assign({}, options, {
                                     minify: false,
                                     setParent: false,
@@ -31301,7 +31329,7 @@
                     action: "drop",
                     node: token,
                     location: token[LOC],
-                    message: `unexpected token ${exports.EnumToken[token.typ]} at ${token[LOC].src}:${token[LOC].sta.lin}:${token[LOC].sta.col}`,
+                    message: `unexpected token ${exports.EnumToken[token.typ]} at ${token[LOC].src}:${token[LOC].sta}:${token[LOC].sta}`,
                 });
                 atRule[TOKENS] = parseTokens(stream);
                 atRule[STATE] = exports.EnumAstNodeStatus.Invalid;
@@ -31430,7 +31458,7 @@
                                 action: "drop",
                                 node: token,
                                 location: token[LOC],
-                                message: `unexpected token ${exports.EnumToken[token.typ]} at ${token[LOC].src}:${token[LOC].sta.lin}:${token[LOC].sta.col}`,
+                                message: `unexpected token ${exports.EnumToken[token.typ]} at ${token[LOC].src}:${token[LOC].sta}:${token[LOC].sta}`,
                             });
                         }
                     }
@@ -31491,7 +31519,7 @@
                         action: "drop",
                         node: atRule,
                         location: atRule[LOC],
-                        message: `expected <keyframe-name> at ${atRule[LOC].src}:${atRule[LOC].sta.lin}:${atRule[LOC].sta.col}`,
+                        message: `expected <keyframe-name> at ${atRule[LOC].src}:${atRule[LOC].sta}:${atRule[LOC].sta}`,
                     });
                     success = false;
                 }
@@ -31644,7 +31672,7 @@
                 }
                 // @ts-expect-error
                 options = { ...options, minify: false, convertColor: false };
-                atRule[LOC] = { ...atRule[LOC], end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) } };
+                atRule[LOC] = { ...atRule[LOC], end: stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end };
                 atRule[TOKENS] = stream.slice();
                 atRule[STATE] = success ? exports.EnumAstNodeStatus.Validated : exports.EnumAstNodeStatus.Invalid;
                 atRule[ERRORS] = result.success ? [] : [errors[errors.length - 1]].concat(result.errors);
@@ -31825,7 +31853,7 @@
                         }
                     }
                 }
-                atRule[LOC] = { ...atRule[LOC], end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) } };
+                atRule[LOC] = { ...atRule[LOC], end: stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end };
                 atRule[TOKENS] = stream.slice();
                 atRule[STATE] = success ? exports.EnumAstNodeStatus.Validated : exports.EnumAstNodeStatus.Invalid;
                 atRule[ERRORS] = success ? [] : [errors[errors.length - 1]];
@@ -31990,12 +32018,14 @@
      * ```
      */
     async function parseDeclarations(declaration) {
+        const stream = `.x{${declaration}}`;
         return doParse(tokenize({
-            stream: `.x{${declaration}}`,
+            stream,
             buffer: "",
             offset: 0,
-            position: { ind: 0, lin: 1, col: 1 },
-            currentPosition: { ind: -1, lin: 1, col: 0 },
+            position: 0,
+            source: new SourceFile(stream, [], ""),
+            currentPosition: -1,
         }), { setParent: false, minify: false, validation: false }).then((result) => {
             return result.ast.chi[0].chi.filter((t) => t.typ == exports.EnumToken.DeclarationNodeType || t.typ == exports.EnumToken.CommentNodeType);
         });
@@ -32025,12 +32055,12 @@
     function parseString(src, options = { parseColor: true }, errors) {
         const parseInfo = {
             stream: src,
-            src: options?.src ?? "",
             buffer: "",
             offset: 0,
             time: 0,
-            position: { ind: 0, lin: 1, col: 1 },
-            currentPosition: { ind: -1, lin: 1, col: 0 },
+            source: new SourceFile(src, [], ""),
+            position: 0,
+            currentPosition: -1,
         };
         const result = parseTokens([...tokenize(parseInfo)].map((t) => t.token), options, errors);
         // remove EOF token
@@ -32602,10 +32632,6 @@
         options ??= {};
         options.src ??= "";
         options.sourcesMap ??= [];
-        if (options.source == null) {
-            options.sourcesMap.push(new SourceFile(options.sourcesMap.length, '', []));
-            options.source = options.sourcesMap.at(-1);
-        }
         Object.assign(options, {
             load,
             resolve,
@@ -32614,14 +32640,19 @@
                 ? self.location.pathname
                 : dirname(self.location.pathname),
         });
+        options.src = resolve(options.src, options.cwd).relative;
+        if (options.source == null) {
+            options.sourcesMap.push(new SourceFile('', [], options.src));
+            options.source = options.sourcesMap.at(-1);
+        }
         options.parseInfo = {
             stream,
             buffer: "",
             offset: 0,
             time: 0,
-            src: options.src ?? "",
-            position: { ind: 0, lin: 1, col: 0 },
-            currentPosition: { ind: -1, lin: 1, col: 0 },
+            source: options.source,
+            position: 0,
+            currentPosition: -1,
         };
         return doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize(options.parseInfo), options).then((result) => {
             const { revMapping, ...res } = result;

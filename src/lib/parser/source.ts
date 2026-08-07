@@ -1,4 +1,6 @@
-import { LineMap } from "./linemap.ts";
+import {LineMap} from "./linemap.ts";
+
+let sourceId: number = 0;
 
 /**
  * Source file helper class
@@ -10,17 +12,17 @@ export class SourceFile {
      */
     readonly id: number;
     /**
-     * Source file content
-     */
-    private content: string;
-    /**
      * Source file path
      */
     readonly file: string | null;
     /**
      * Line map
      */
-    private lineStarts: LineMap;
+    readonly lineStarts: LineMap;
+    /**
+     * Source file content
+     */
+    private content: string;
 
     /**
      * Constructor
@@ -29,8 +31,8 @@ export class SourceFile {
      * @param lines 
      * @param file 
      */
-    constructor(id: number, content: string, lines: number[], file: string | null = null) {
-        this.id = id;
+    constructor(content: string, lines: number[], file: string | null = null) {
+        this.id = sourceId++;
         this.content = content;
         this.file = file;
         this.lineStarts = new LineMap(lines);

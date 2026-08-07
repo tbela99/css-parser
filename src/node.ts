@@ -115,7 +115,6 @@ export async function load(
             }
 
             if (responseType == ResponseType.ArrayBuffer) {
-                // @ts-expect-error
                 return readFile(resolved.absolute).then((buffer) => buffer.buffer);
             }
 
@@ -409,18 +408,6 @@ export async function parse(
     options ??= {};
     options.src ??= "";
     options.sourcesMap ??= [];
-    options.src = resolve(options.src!, options.cwd).relative;
-
-    if (options.source == null) {
-
-        options.sourcesMap.push(new SourceFile(options.sourcesMap.length, '', [], options.src));
-        options.source = options.sourcesMap.at(-1) as SourceFile;
-    }
-
-    if (typeof stream == "string") {
-        
-        options.source.append(stream);
-    }
 
     Object.assign(options, {
         load,
@@ -428,6 +415,19 @@ export async function parse(
         dirname,
         cwd: options.cwd ?? process.cwd(),
     });
+    
+    options.src = resolve(options.src!, options.cwd).relative;
+
+    if (options.source == null) {
+
+        options.sourcesMap.push(new SourceFile('', [], options.src));
+        options.source = options.sourcesMap.at(-1) as SourceFile;
+    }
+
+    if (typeof stream == "string") {
+        
+        options.source.append(stream);
+    }
 
     options.parseInfo = {
         stream,

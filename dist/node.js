@@ -9,7 +9,7 @@ export { renderValue as renderToken } from './lib/renderer/render.js';
 import { ModuleScopeEnumOptions } from './lib/ast/types.js';
 export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ValidationLevel } from './lib/ast/types.js';
 import { tokenizeStream, tokenize } from './lib/parser/tokenize.js';
-import { resolve, dirname, matchUrl } from './lib/fs/resolve.js';
+import { dirname, resolve, matchUrl } from './lib/fs/resolve.js';
 import { ResponseType } from './types.js';
 import { resolve as resolve$1 } from 'node:path';
 import { SourceFile } from './lib/parser/source.js';
@@ -61,7 +61,6 @@ async function load(url, currentDirectory = ".", responseType = false) {
                 return readFile(resolved.absolute, "utf-8");
             }
             if (responseType == ResponseType.ArrayBuffer) {
-                // @ts-expect-error
                 return readFile(resolved.absolute).then((buffer) => buffer.buffer);
             }
             return Readable.toWeb(createReadStream(resolved.absolute, {
@@ -198,20 +197,20 @@ async function parse(...args) {
     options ??= {};
     options.src ??= "";
     options.sourcesMap ??= [];
-    options.src = resolve(options.src, options.cwd).relative;
-    if (options.source == null) {
-        options.sourcesMap.push(new SourceFile(options.sourcesMap.length, '', [], options.src));
-        options.source = options.sourcesMap.at(-1);
-    }
-    if (typeof stream == "string") {
-        options.source.append(stream);
-    }
     Object.assign(options, {
         load,
         resolve,
         dirname,
         cwd: options.cwd ?? process.cwd(),
     });
+    options.src = resolve(options.src, options.cwd).relative;
+    if (options.source == null) {
+        options.sourcesMap.push(new SourceFile('', [], options.src));
+        options.source = options.sourcesMap.at(-1);
+    }
+    if (typeof stream == "string") {
+        options.source.append(stream);
+    }
     options.parseInfo = {
         stream,
         buffer: "",

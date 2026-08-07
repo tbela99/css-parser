@@ -1,5 +1,6 @@
 import { LineMap } from './linemap.js';
 
+let sourceId = 0;
 /**
  * Source file helper class
  */
@@ -9,10 +10,6 @@ class SourceFile {
      */
     id;
     /**
-     * Source file content
-     */
-    content;
-    /**
      * Source file path
      */
     file;
@@ -21,14 +18,18 @@ class SourceFile {
      */
     lineStarts;
     /**
+     * Source file content
+     */
+    content;
+    /**
      * Constructor
      * @param id
      * @param content
      * @param lines
      * @param file
      */
-    constructor(id, content, lines, file = null) {
-        this.id = id;
+    constructor(content, lines, file = null) {
+        this.id = sourceId++;
         this.content = content;
         this.file = file;
         this.lineStarts = new LineMap(lines);

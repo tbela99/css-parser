@@ -2476,7 +2476,7 @@ export declare interface Location {
     /**
      * source file
      */
-    src: string;
+    src: number;
 }
 
 /**
@@ -3367,6 +3367,43 @@ declare class SourceMap {
 }
 
 /**
+ * Compute line and column of the offset
+ */
+declare class LineMap {
+    /**
+     * line starts
+     */
+    readonly lineStarts: number[];
+    constructor(lines: number[]);
+    /**
+     * Compute line and column of the offset
+     * @param offset
+     * @returns
+     */
+    getOffsets(offset: number): [number, number];
+    /**
+     * search the greatest index of the value less than or equal to offset
+     * @param offset
+     * @returns
+     */
+    search(offset: number): number;
+    /**
+     * set line starts
+     * @param lines
+     */
+    setLineStarts(lines: number[]): void;
+    /**
+     * get line starts
+     * @returns
+     */
+    getLineStarts(): number[];
+    /**
+     * add line start
+     */
+    addLineStart(lineStart: number): void;
+}
+
+/**
  * Source file helper class
  */
 declare class SourceFile {
@@ -3375,17 +3412,17 @@ declare class SourceFile {
      */
     readonly id: number;
     /**
-     * Source file content
-     */
-    private content;
-    /**
      * Source file path
      */
     readonly file: string | null;
     /**
      * Line map
      */
-    private lineStarts;
+    readonly lineStarts: LineMap;
+    /**
+     * Source file content
+     */
+    private content;
     /**
      * Constructor
      * @param id
@@ -3393,7 +3430,7 @@ declare class SourceFile {
      * @param lines
      * @param file
      */
-    constructor(id: number, content: string, lines: number[], file?: string | null);
+    constructor(content: string, lines: number[], file?: string | null);
     /**
      * Update source content
      * @param content
@@ -3435,11 +3472,6 @@ export declare interface PropertyListOptions {
  * parse info
  */
 export declare interface ParseInfo$1 {
-
-    /**
-     * source file or url
-     */
-    src: string;
 
     /**
      * read buffer

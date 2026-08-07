@@ -41,6 +41,7 @@ import type {
     ParserOptions,
     PseudoClassFunctionToken,
     PseudoClassToken,
+    ResolvedPath,
     StringToken,
     Token,
     TokenizeResult,
@@ -699,30 +700,33 @@ export async function doParse(
                 const url: string = token.typ == EnumToken.StringTokenType ? token.val.slice(1, -1) : token.val;
 
                 try {
-
-                    const src = options.resolve!(url, options.src || (options.cwd as string));
-
-                    options.sourcesMap!.push(
-                        new SourceFile(
-                            options.sourcesMap!.length, '', [], src.relative
-                        ),
-                    );
-                    const source: SourceFile = options.sourcesMap![options.sourcesMap!.length - 1];
+                    const src = options.resolve!(url, options.src || (options.cwd as string)) as ResolvedPath;
                     const result = options.load!(src) as LoadResult;
                     const stream =
                         result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                             ? await result
                             : result;
+
+                    options.sourcesMap!.push(
+                        new SourceFile(typeof stream === "string" ? stream : "", [], src.relative),
+                    );
+                    const source: SourceFile = options.sourcesMap![options.sourcesMap!.length - 1];
                     const root: ParseResult = await doParse(
                         stream instanceof ReadableStream
-                            ? tokenizeStream(stream)
-                            : tokenize({
-                                  stream,
-                                  src: options.resolve!(url, options.src || (options.cwd as string)).relative,
+                            ? tokenizeStream(stream, {
                                   buffer: "",
                                   offset: 0,
-                                  position: { ind: 0, lin: 1, col: 1 },
-                                  currentPosition: { ind: -1, lin: 1, col: 0 },
+                                  source,
+                                  position: 0,
+                                  currentPosition: -1,
+                              } as ParseInfo)
+                            : tokenize({
+                                  stream,
+                                  buffer: "",
+                                  offset: 0,
+                                  source,
+                                  position: 0,
+                                  currentPosition: -1,
                               } as ParseInfo),
                         Object.assign({}, options, {
                             minify: false,
@@ -1208,14 +1212,19 @@ export async function doParse(
                     result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                         ? await result
                         : result;
-
+options.sourcesMap!.push(
+                        new SourceFile(typeof stream === "string" ? stream : "", [], src.relative),
+                    );
+                    const source: SourceFile = options.sourcesMap![options.sourcesMap!.length - 1];
+                    
                 const parseInfo: ParseInfo = {
                     stream,
                     buffer: "",
                     offset: 0,
                     time: 0,
-                    position: { ind: 0, lin: 1, col: 1 },
-                    currentPosition: { ind: -1, lin: 1, col: 0 },
+                    source,
+                    position: 0,
+                    currentPosition: -1,
                 } as ParseInfo;
 
                 const root: ParseResult = await doParse(
@@ -1402,13 +1411,20 @@ export async function doParse(
                                     : result;
                             const root: ParseResult = await doParse(
                                 stream instanceof ReadableStream
-                                    ? tokenizeStream(stream)
+                                    ? tokenizeStream(stream, {
+                                          buffer: "",
+                                          offset: 0,
+                                          source: new SourceFile("", [], src.relative),
+                                          position: 0,
+                                          currentPosition: -1,
+                                      } as ParseInfo)
                                     : tokenize({
                                           stream,
                                           buffer: "",
                                           offset: 0,
-                                          position: { ind: 0, lin: 1, col: 1 },
-                                          currentPosition: { ind: -1, lin: 1, col: 0 },
+                                          position: 0,
+                                          source: new SourceFile(stream, [], src.relative),
+                                          currentPosition: -1,
                                       } as ParseInfo),
                                 Object.assign({}, options, {
                                     minify: false,
@@ -1912,7 +1928,7 @@ export async function doParse(
                     }
 
                     (node as AstAtRule).val = renderTokens(node[TOKENS]!);
-                } 
+                }
                 // else {
                 //     let isReplaced: boolean = false;
 
@@ -2279,7 +2295,7 @@ export function parseAtRule(
                 action: "drop",
                 node: token,
                 location: token[LOC],
-                message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${token[LOC]!.sta.col}`,
+                message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta}:${token[LOC]!.sta}`,
             });
 
             atRule[TOKENS] = parseTokens(stream);
@@ -2431,7 +2447,7 @@ export function parseAtRule(
                             action: "drop",
                             node: token,
                             location: token[LOC],
-                            message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${token[LOC]!.sta.col}`,
+                            message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta}:${token[LOC]!.sta}`,
                         });
                     }
                 }
@@ -2507,7 +2523,7 @@ export function parseAtRule(
                     action: "drop",
                     node: atRule,
                     location: atRule[LOC],
-                    message: `expected <keyframe-name> at ${atRule[LOC]!.src}:${atRule[LOC]!.sta!.lin!}:${atRule[LOC]!.sta!.col!}`,
+                    message: `expected <keyframe-name> at ${atRule[LOC]!.src}:${atRule[LOC]!.sta!}:${atRule[LOC]!.sta!}`,
                 });
                 success = false;
             }
@@ -2704,7 +2720,7 @@ export function parseAtRule(
             // @ts-expect-error
             options = { ...options, minify: false, convertColor: false };
 
-            atRule[LOC] = { ...atRule[LOC], end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC]!.end) } } as Location;
+            atRule[LOC] = { ...atRule[LOC], end: stream.at(-1)?.[LOC]?.end ?? atRule[LOC]!.end } as Location;
             atRule[TOKENS] = stream.slice();
             atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = result.success ? [] : [errors[errors.length - 1]].concat(result.errors);
@@ -2906,7 +2922,7 @@ export function parseAtRule(
                 }
             }
 
-            atRule[LOC] = { ...atRule[LOC], end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC]!.end) } } as Location;
+            atRule[LOC] = { ...atRule[LOC], end: stream.at(-1)?.[LOC]?.end ?? atRule[LOC]!.end } as Location;
             atRule[TOKENS] = stream.slice();
             atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = success ? [] : [errors[errors.length - 1]];
@@ -3101,13 +3117,15 @@ export function parseAtRule(
  * ```
  */
 export async function parseDeclarations(declaration: string): Promise<Array<AstDeclaration | AstComment>> {
+    const stream: string = `.x{${declaration}}`;
     return doParse(
         tokenize({
-            stream: `.x{${declaration}}`,
+            stream,
             buffer: "",
             offset: 0,
-            position: { ind: 0, lin: 1, col: 1 },
-            currentPosition: { ind: -1, lin: 1, col: 0 },
+            position: 0,
+            source: new SourceFile(stream, [], ""),
+            currentPosition: -1,
         } as ParseInfo),
         { setParent: false, minify: false, validation: false },
     ).then((result) => {
@@ -3146,12 +3164,12 @@ export function parseString(
 ): Token[] {
     const parseInfo: ParseInfo = {
         stream: src,
-        src: options?.src ?? "",
         buffer: "",
         offset: 0,
         time: 0,
-        position: { ind: 0, lin: 1, col: 1 },
-        currentPosition: { ind: -1, lin: 1, col: 0 },
+        source: new SourceFile(src, [], ""),
+        position: 0,
+        currentPosition: -1,
     };
 
     const result = parseTokens(
