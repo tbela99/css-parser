@@ -261,7 +261,7 @@ export async function parse(
     options ??= {};
     options.src ??= "";
     options.sourcesMap ??= [];
-    
+
     Object.assign(options, {
         load,
         resolve,
@@ -275,8 +275,7 @@ export async function parse(
     options.src = resolve(options.src!, options.cwd).relative;
 
     if (options.source == null) {
-
-        options.sourcesMap.push(new SourceFile( '', [], options.src));
+        options.sourcesMap.push(new SourceFile(typeof stream === "string" ? stream : "", [], options.src));
         options.source = options.sourcesMap.at(-1) as SourceFile;
     }
 
@@ -291,7 +290,7 @@ export async function parse(
     } as ParseInfo;
 
     return doParse(
-        stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize(options.parseInfo),
+        stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo),
         options,
     ).then((result) => {
         const { revMapping, ...res } = result;

@@ -1,7 +1,10 @@
 import {dirname, parse, render, resolve, transform} from '../../dist/web.js';
 import {ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions} from '../../dist/lib/ast/types.js';
-import {expect} from "@esm-bundle/chai";
+import {expect, use} from "chai";
 import * as tests from './code/index.js';
+import chaiAsPromised from 'chai-as-promised';
+
+use(chaiAsPromised);
 
 
 async function readFile(path) {

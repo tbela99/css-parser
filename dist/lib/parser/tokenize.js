@@ -325,12 +325,12 @@ function yieldResult(val, parseInfo, hint) {
     if (token == null) {
         token = {
             typ: EnumToken.LiteralTokenType,
-            val
+            val,
         };
     }
     // return token;
     token[LOC] = {
-        src: parseInfo.source.id,
+        srcId: parseInfo.source.id,
         sta: parseInfo.position,
         end: parseInfo.currentPosition,
     };
@@ -357,8 +357,22 @@ function next(parseInfo, count = 1) {
     let position = parseInfo.currentPosition - parseInfo.offset;
     let char = count == 1 ? parseInfo.stream.charAt(position + 1) : parseInfo.stream.slice(position + 1, position + 1 + count);
     let i = 0;
+    let codepoint;
     for (; i < char.length; i++) {
-        char[i].charCodeAt(0);
+        codepoint = char[i].charCodeAt(0);
+        if (codepoint == 0xa || // \n
+            codepoint == 0xb || // \v
+            codepoint == 0xc || // \f
+            codepoint == 0xd || // \r
+            codepoint == 0x2028 || // \u2028
+            codepoint == 0x2029 // \u2029
+        ) {
+            // \r\n
+            if (codepoint == 0xa && i > 0 && char.charCodeAt(i - 1) == 0xd) ;
+            else {
+                parseInfo.source.lineStarts.lineStarts.push(position + i);
+            }
+        }
     }
     parseInfo.currentPosition += char.length;
     return char;
@@ -829,22 +843,5 @@ async function* tokenizeStream(input, parseInfo) {
         }
     }
 }
-/**
- * Update position
- * @param position
- * @param str
- */
-function move(position, str) {
-    let i = 0;
-    for (; i < str.length; i++) {
-        if (isNewLine(str[i].charCodeAt(0))) {
-            position.lin++;
-            position.col = 0;
-        }
-        else {
-            position.col++;
-        }
-    }
-}
 
-export { SymbolsMapTokens, TokenMap, consumeString, hintsEnum, match, move, next, peek, tokenize, tokenizeStream, yieldResult };
+export { SymbolsMapTokens, TokenMap, consumeString, hintsEnum, match, next, peek, tokenize, tokenizeStream, yieldResult };

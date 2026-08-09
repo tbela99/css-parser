@@ -45,6 +45,38 @@ export function hashId(input: string, length: number = 6): string {
 }
 
 /**
+ * Object to string
+ * @param input
+ * @returns
+ */
+function toSortedString(input: any): string {
+    if (input == null) {
+        return "null";
+    }
+
+    if (typeof input !== "object") {
+        return String(input);
+    }
+    if (Array.isArray(input)) {
+        return JSON.stringify(input.map(toSortedString));
+    }
+
+    return `{${Object.keys(input)
+        .sort()
+        .map((k) => `${k}:${toSortedString(input[k])}`)
+        .join(",")}}`;
+}
+
+/**
+ * Object hash
+ * @param object
+ * @returns
+ */
+export function objectHash(object: any) {
+    return hashId(toSortedString(object));
+}
+
+/**
  * convert input to hex
  * @param input
  */

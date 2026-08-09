@@ -66,6 +66,7 @@ function replaceNodeOrValue(parent, node, replacement) {
             throw new ReferenceError("Node not found");
         }
     }
+    node[PARENT] = null;
     return true;
 }
 function trimWhiteSpaceTokens(tokens) {

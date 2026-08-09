@@ -28,14 +28,13 @@ import type {
     LengthToken,
     ListToken,
     LiteralToken,
-    Location,
+    SourceLocation,
     MediaFeatureToken,
     MediaQueryConditionToken,
     MediaQueryUnaryFeatureToken,
     MediaRangeQueryToken,
     NumberToken,
     PercentageToken,
-    Position,
     PseudoElementToken,
     PseudoPageToken,
     RenderOptions,
@@ -46,7 +45,7 @@ import type {
     Token,
     WhenElseQueryConditionToken,
     WhenElseUnaryConditionToken,
-    WrappedValuesToken
+    WrappedValuesToken,
 } from "../../@types/index.d.ts";
 import { convertColor, toPrecisionAngle, toPrecisionValue } from "../syntax/color/color.ts";
 import { getAngle } from "../syntax/color/color.ts";
@@ -54,23 +53,19 @@ import { reduceHexValue } from "../syntax/color/hex.ts";
 import { ColorType, EnumToken, minifyNumber } from "../ast/types.ts";
 import { expand } from "../ast/expand.ts";
 import { SourceMap } from "./sourcemap/sourcemap.ts";
-import {
-    colorPrecision,
-    LOC,
-    PARENT,
-    pseudoElements,
-    tokensfuncSet,
-    urlTokenMatcher,
-} from "../syntax/constants.ts";
+import { colorPrecision, LOC, PARENT, pseudoElements, tokensfuncSet, urlTokenMatcher } from "../syntax/constants.ts";
 import {
     parseColor,
     reducegradientBackgroundPosition,
     reduceColorStops,
-    reduceConicColorStops
+    reduceConicColorStops,
+    isNewLine,
 } from "../syntax/syntax.ts";
-import { move } from "../parser/tokenize.ts";
 import { equalsIgnoreCase } from "../parser/utils/text.ts";
 import { toDegrees } from "../parser/utils/angle.ts";
+import { Position } from "../validation/parser/types.js";
+import { LineMap as LinesMap } from "../parser/linesmap.ts";
+import { dirname } from "../fs/resolve.ts";
 
 /**
  * render ast
@@ -141,11 +136,12 @@ export function doRender(
         [key: string]: any;
     } = Object.create(null);
 
-    const position = {
-        ind: 0,
-        lin: 1,
-        col: 1,
-    } as Position;
+    const sourceLocation = {
+        srcId: 0,
+        sta: 0,
+        end: 0,
+    } as SourceLocation;
+    const linesMap = new LinesMap([]);
 
     let code: string = "";
 
@@ -165,7 +161,7 @@ export function doRender(
                 acc + (acc.length > 0 ? options.newLine : "") + `${options.indent}${k}:${options.indent}${v};`,
             "",
         )}${options.newLine}}${options.newLine}`;
-        move(position, code);
+        move(sourceLocation, linesMap, code);
     }
 
     const result: RenderResult = {
@@ -181,7 +177,8 @@ export function doRender(
                     : data,
                 options,
                 sourcemap,
-                position,
+                sourceLocation,
+                linesMap,
                 errors,
                 function reducer(acc: string, curr: Token): string {
                     if (curr.typ == EnumToken.CommentTokenType && options.removeComments) {
@@ -211,9 +208,7 @@ export function doRender(
         result.map = sourcemap;
 
         if (options.sourcemap === "inline") {
-            result.code += `\n/*# sourceMappingURL=data:application/json,${encodeURIComponent(
-                JSON.stringify(result.map),
-            )} */`;
+            result.code += `\n/*# sourceMappingURL=${result.map.toUrl()} */`;
         }
     }
 
@@ -238,7 +233,8 @@ function updateSourceMap(
         [p: string]: any;
     },
     sourcemap: SourceMap,
-    position: Position,
+    sourceLocation: SourceLocation,
+    linesMap: LinesMap,
     str: string,
 ) {
     if (
@@ -249,22 +245,60 @@ function updateSourceMap(
             EnumToken.KeyframesAtRuleNodeType,
         ].includes(node.typ)
     ) {
-        let src: string = (<Location>node[LOC])?.src ?? "";
+        let srcId: number = (<SourceLocation>node[LOC])?.srcId ?? 0;
 
-        // console.debug(src);
+        let sourceFileName: string | null = (options.sourcesMap?.[srcId].getFileName() as string) || null;
 
+        if (sourceFileName != null && options.output != null) {
+            sourceFileName = options.resolve!(sourceFileName, dirname(options.output)).relative as string;
+        }
+
+        // @ts-ignore
         sourcemap.add(
+            ...linesMap.getOffsets(sourceLocation.end),
+            srcId,
             // @ts-ignore
-            { src, sta: { ...position } },
-            {
-                ...(<Location>node[LOC]),
-                // @ts-ignore
-                src,
-            },
+            ...(options.sourcesMap?.[srcId]?.getOffsets(sourceLocation.sta) as [number, number]),
+            sourceFileName as string,
+            options.sourcesMap?.[srcId]?.getContent() as string,
         );
     }
 
-    move(position, str);
+    move(sourceLocation, linesMap, str);
+}
+
+/**
+ * Update position
+ * @param position
+ * @param str
+ */
+export function move(sourceLocation: SourceLocation, linesMap: LinesMap, str: string) {
+    let i: number = 0;
+    let codepoint: number;
+    let char: string;
+
+    for (; i < str.length; i++) {
+        char = str.charAt(i);
+        codepoint = char.charCodeAt(0);
+        sourceLocation.end += char.length;
+
+        if (
+            codepoint == 0xa || // \n
+            codepoint == 0xb || // \v
+            codepoint == 0xc || // \f
+            codepoint == 0xd || // \r
+            codepoint == 0x2028 || // \u2028
+            codepoint == 0x2029 // \u2029
+        ) {
+            if (codepoint == 0xd && i + 1 < str.length && str.charCodeAt(i + 1) == 0xa) {
+                // defer CRLF to the LF step so the next line starts after both characters
+            } else if (codepoint == 0xa && i > 0 && str.charCodeAt(i - 1) == 0xd) {
+                // nope
+            } else {
+                linesMap.addLineStart(sourceLocation.end);
+            }
+        }
+    }
 }
 
 /**
@@ -285,7 +319,8 @@ function renderAstNode(
     data: AstNode,
     options: RenderOptions,
     sourcemap: SourceMap | null,
-    position: Position,
+    sourceLocation: SourceLocation,
+    linesMap: LinesMap,
     errors: ErrorDescription[],
     reducer: (acc: string, curr: Token) => string,
     cache: {
@@ -325,11 +360,14 @@ function renderAstNode(
 
         case EnumToken.StyleSheetNodeType:
             return (<AstStyleSheet>data).chi.reduce((css: string, node: AstRuleList | AstComment) => {
+                const hasPreviousContent = css !== "";
+
                 const str: string = renderAstNode(
                     node,
                     options,
                     sourcemap,
-                    { ...position },
+                    sourceLocation,
+                    linesMap,
                     errors,
                     reducer,
                     cache,
@@ -341,17 +379,20 @@ function renderAstNode(
                     return css;
                 }
 
-                if (css === "") {
-                    if (sourcemap != null && node[LOC] != null) {
-                        updateSourceMap(node, options, cache, sourcemap, position, str);
-                    }
-
-                    return str;
+                if (sourcemap != null && node[LOC] != null) {
+                    updateSourceMap(
+                        node,
+                        options,
+                        cache,
+                        sourcemap,
+                        sourceLocation,
+                        linesMap,
+                        (hasPreviousContent ? options.newLine : "") + str,
+                    );
                 }
 
-                if (sourcemap != null && node[LOC] != null) {
-                    move(position, <string>options.newLine);
-                    updateSourceMap(node, options, cache, sourcemap, position, str);
+                if (!hasPreviousContent) {
+                    return str;
                 }
 
                 return `${css}${options.newLine}${str}`;
@@ -394,16 +435,17 @@ function renderAstNode(
                     )
                         .reduce(reducer, "")
                         .trimEnd()};`;
-                } 
+                }
                 // else if (node.typ == EnumToken.AtRuleNodeType && !("chi" in node)) {
                 //     str = `${(<AstAtRule>node).val === "" ? "" : options.indent || " "}${(<AstAtRule>node).val};`;
-                // } 
+                // }
                 else {
                     str = renderAstNode(
                         node,
                         options,
                         sourcemap,
-                        { ...position },
+                        sourceLocation,
+                        linesMap,
                         errors,
                         reducer,
                         cache,
@@ -431,24 +473,32 @@ function renderAstNode(
                 children = children.slice(0, -1);
             }
 
-            if ([EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ)) {
-                return (
-                    `@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === "" ? "" : options.indent || " "}${
-                        (<AstAtRule>data).val
-                    }${options.indent}{${options.newLine}` +
-                    (children === "" ? "" : indentSub + children + options.newLine) +
-                    indent +
-                    `}`
+            const rendered = [EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ)
+                ? `@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === "" ? "" : options.indent || " "}${
+                      (<AstAtRule>data).val
+                  }${options.indent}{${options.newLine}` +
+                  (children === "" ? "" : indentSub + children + options.newLine) +
+                  indent +
+                  `}`
+                : (<AstRule>data).sel +
+                  `${options.indent}{${options.newLine}` +
+                  (children === "" ? "" : indentSub + children + options.newLine) +
+                  indent +
+                  `}`;
+
+            if (sourcemap != null && data[LOC] != null) {
+                updateSourceMap(
+                    data as AstRuleList,
+                    options,
+                    cache,
+                    sourcemap,
+                    { ...sourceLocation },
+                    linesMap.clone(),
+                    rendered,
                 );
             }
 
-            return (
-                (<AstRule>data).sel +
-                `${options.indent}{${options.newLine}` +
-                (children === "" ? "" : indentSub + children + options.newLine) +
-                indent +
-                `}`
-            );
+            return rendered;
 
         // case EnumToken.CssVariableTokenType:
         // case EnumToken.CssVariableImportTokenType:
@@ -660,7 +710,6 @@ export function renderValue(
             );
 
         case EnumToken.ColorTokenType:
-
             if (
                 (token as ColorToken).kin == ColorType.LIGHT_DARK ||
                 ("chi" in token && options.convertColor === false && ((token as ColorToken).chi as Token[]).length == 2)

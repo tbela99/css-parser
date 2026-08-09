@@ -184,7 +184,7 @@ async function parse(...args) {
     });
     options.src = resolve(options.src, options.cwd).relative;
     if (options.source == null) {
-        options.sourcesMap.push(new SourceFile('', [], options.src));
+        options.sourcesMap.push(new SourceFile(typeof stream === "string" ? stream : "", [], options.src));
         options.source = options.sourcesMap.at(-1);
     }
     options.parseInfo = {
@@ -196,7 +196,7 @@ async function parse(...args) {
         position: 0,
         currentPosition: -1,
     };
-    return doParse(stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize(options.parseInfo), options).then((result) => {
+    return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => {
         const { revMapping, ...res } = result;
         return res;
     });

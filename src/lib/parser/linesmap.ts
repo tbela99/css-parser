@@ -6,7 +6,16 @@ export class LineMap {
      * line starts
      */
     readonly lineStarts: number[];
+
+    /**
+     * Constructor
+     * @param lines
+     */
     constructor(lines: number[]) {
+        if (lines.length === 0) {
+            lines.push(0);
+        }
+
         this.lineStarts = lines;
     }
 
@@ -16,19 +25,16 @@ export class LineMap {
      * @returns
      */
     getOffsets(offset: number): [number, number] {
-
         const line: number = this.search(offset);
 
         if (offset < 0 || line < 0) {
             return [1, 1];
         }
 
-        const column: number = offset - this.lineStarts[line] ;
-
-        console.debug(`offset: ${offset}, line: ${line}, column: ${column}`);
+        const column: number = offset - this.lineStarts[line];
 
         // [line, column]
-        return [line + 1, column + 1];
+        return [line + 1, column === 0 ? 1 : column];
     }
 
     /**
@@ -57,14 +63,6 @@ export class LineMap {
     }
 
     /**
-     * set line starts
-     * @param lines
-     */
-    setLineStarts(lines: number[]) {
-        this.lineStarts = lines;
-    }
-
-    /**
      * get line starts
      * @returns
      */
@@ -77,5 +75,13 @@ export class LineMap {
      */
     addLineStart(lineStart: number) {
         this.lineStarts.push(lineStart);
+    }
+
+    /**
+     * clone the linemap
+     * @returns
+     */
+    clone() {
+        return new LineMap(this.lineStarts.slice());
     }
 }

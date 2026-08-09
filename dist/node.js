@@ -205,11 +205,8 @@ async function parse(...args) {
     });
     options.src = resolve(options.src, options.cwd).relative;
     if (options.source == null) {
-        options.sourcesMap.push(new SourceFile('', [], options.src));
+        options.sourcesMap.push(new SourceFile(typeof stream == "string" ? stream : "", [], options.src));
         options.source = options.sourcesMap.at(-1);
-    }
-    if (typeof stream == "string") {
-        options.source.append(stream);
     }
     options.parseInfo = {
         stream,

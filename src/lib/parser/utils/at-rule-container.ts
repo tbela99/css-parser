@@ -125,7 +125,7 @@ export function parseAtRuleContainerQueryList(
                             action: "drop",
                             node: stream[i],
                             location: stream[i]?.[LOC], // ?? context[LOC],
-                            message: `expecting <container-condition> at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                            message: `expecting <container-condition> at ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                         },
                     ],
                 };
@@ -177,7 +177,7 @@ export function parseAtRuleContainerQueryList(
                         errors.push({
                             action: "drop",
                             node: stream[i],
-                            message: `expecting <and>, <or> or comma  at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                            message: `expecting <and>, <or> or comma  at ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                         });
                         break;
                     }
@@ -232,7 +232,7 @@ export function parseAtRuleContainerQueryList(
                                     errors.push({
                                         action: "drop",
                                         node: stream[i],
-                                        message: `<or> is not allowed outside of parentheses ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                                        message: `<or> is not allowed outside of parentheses ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                     });
 
                                     break;
@@ -462,7 +462,7 @@ export function parseAtRuleContainerQueryList(
                                     action: "drop",
                                     node: stream[i],
                                     location: stream[i]?.[LOC],
-                                    message: `expecting '<${(tokens[index] as FunctionToken).val}-query>' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                                    message: `expecting '<${(tokens[index] as FunctionToken).val}-query>' at ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                 });
                                 break;
                             }
@@ -495,7 +495,7 @@ export function parseAtRuleContainerQueryList(
                                     action: "drop",
                                     node: stream[i],
                                     location: stream[i]?.[LOC],
-                                    message: `expecting '<query-in-parens>' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                                    message: `expecting '<query-in-parens>' at ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                 });
                                 break;
                             }
@@ -523,7 +523,7 @@ export function parseAtRuleContainerQueryList(
                                         action: "drop",
                                         node: tokens[k],
                                         location: tokens[k]?.[LOC],
-                                        message: `unexpected token 'not' at ${tokens[k]?.[LOC]?.src}:${tokens[k]?.[LOC]?.sta.lin}:${tokens[k]?.[LOC]?.sta.col}`,
+                                        message: `unexpected token 'not' at ${tokens[k]?.[LOC]?.srcId}:${tokens[k]?.[LOC]?.sta.lin}:${tokens[k]?.[LOC]?.sta.col}`,
                                     });
                                     break;
                                 }

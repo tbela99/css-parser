@@ -276,7 +276,7 @@ async function doParse(iter, options = {}) {
                 lin: 1,
                 col: 1,
             },
-            src: "",
+            srcId: "",
         };
     }
     let valuesHandlers;
@@ -470,7 +470,7 @@ async function doParse(iter, options = {}) {
                         action: "drop",
                         message: "invalid block",
                         location: {
-                            src,
+                            srcId: src,
                             sta: tokens[0][LOC].sta,
                             end: tokens[tokens.length - 1][LOC].end,
                         },
@@ -525,22 +525,15 @@ async function doParse(iter, options = {}) {
                     : result;
                 options.sourcesMap.push(new SourceFile(typeof stream === "string" ? stream : "", [], src.relative));
                 const source = options.sourcesMap[options.sourcesMap.length - 1];
-                const root = await doParse(stream instanceof ReadableStream
-                    ? tokenizeStream(stream, {
-                        buffer: "",
-                        offset: 0,
-                        source,
-                        position: 0,
-                        currentPosition: -1,
-                    })
-                    : tokenize({
-                        stream,
-                        buffer: "",
-                        offset: 0,
-                        source,
-                        position: 0,
-                        currentPosition: -1,
-                    }), Object.assign({}, options, {
+                const parseInfo = {
+                    stream,
+                    buffer: "",
+                    offset: 0,
+                    source,
+                    position: 0,
+                    currentPosition: -1,
+                };
+                const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream, parseInfo) : tokenize(parseInfo), Object.assign({}, options, {
                     minify: false,
                     setParent: false,
                     src: options.resolve(url, options.src || options.cwd).relative,
@@ -780,19 +773,25 @@ async function doParse(iter, options = {}) {
             }
         }
     }
-    // console.debug("invalid nodes", invalidNodes);
     if (invalidNodes.length > 0) {
-        let k = invalidNodes.length;
-        while (k-- > 0) {
-            if (invalidNodes[k][STATE] == EnumAstNodeStatus.Validated ||
-                invalidNodes[k][STATE] == EnumAstNodeStatus.Unvalidated ||
-                invalidNodes[k][STATE] == EnumAstNodeStatus.ValidationFailed) {
+        let count = invalidNodes.length;
+        for (const { node, parent } of walk(ast)) {
+            if (options.lenient && node[STATE] == EnumAstNodeStatus.Unknown) {
                 continue;
             }
-            if (options.lenient && invalidNodes[k][STATE] == EnumAstNodeStatus.Unknown) {
-                continue;
+            if (node[STATE] === EnumAstNodeStatus.Invalid ||
+                node[STATE] === EnumAstNodeStatus.Unknown ||
+                node[STATE] === EnumAstNodeStatus.Unparsed ||
+                node[STATE] === EnumAstNodeStatus.Malformed ||
+                node[STATE] === EnumAstNodeStatus.Disallowed) {
+                // @ts-ignore
+                parent.chi.splice(parent.chi.indexOf(node), 1);
+                node[PARENT] = null;
+                count--;
+                if (count == 0) {
+                    break;
+                }
             }
-            invalidNodes[k][PARENT].chi.splice(invalidNodes[k][PARENT].chi.indexOf(invalidNodes[k]), 1);
         }
     }
     while (stack.length > 0 && context != ast) {
@@ -916,6 +915,7 @@ async function doParse(iter, options = {}) {
                     currentPosition: -1,
                 };
                 const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream, parseInfo) : tokenize(parseInfo), Object.assign({}, options, {
+                    source,
                     minify: false,
                     setParent: false,
                     src: src.relative,
@@ -981,19 +981,19 @@ async function doParse(iter, options = {}) {
                     node.nam = mapping[node.nam];
                 }
                 if (equalsIgnoreCase("composes", node.nam)) {
-                    const tokens = [];
+                    const composeSelectors = [];
                     // let isValid: boolean = true;
                     for (const token of node.val) {
                         if (token.typ == EnumToken.ComposesSelectorNodeType) {
-                            tokens.push(token);
+                            composeSelectors.push(token);
                         }
                     }
                     // find parent rule
-                    let parentRule = node[PARENT];
+                    let parentRule = parent;
                     while (parentRule != null && parentRule.typ != EnumToken.RuleNodeType) {
                         parentRule = parentRule[PARENT];
                     }
-                    if ( /* !isValid || */tokens.length == 0) {
+                    if ( /* !isValid || */composeSelectors.length == 0) {
                         errors.push({
                             action: "drop",
                             message: `composes is empty`,
@@ -1002,7 +1002,7 @@ async function doParse(iter, options = {}) {
                         parentRule.chi.splice(parentRule.chi.indexOf(node), 1);
                         continue;
                     }
-                    for (const token of tokens) {
+                    for (const token of composeSelectors) {
                         // composes: a b c;
                         if (token.r == null) {
                             for (const rule of token.l) {
@@ -1144,7 +1144,7 @@ async function doParse(iter, options = {}) {
                             }
                         }
                     }
-                    parentRule.chi.splice(parentRule.chi.indexOf(node), 1);
+                    parent.chi.splice(parent.chi.indexOf(node), 1);
                 }
                 if (node.typ == EnumToken.DeclarationNodeType &&
                     [
@@ -1295,26 +1295,11 @@ async function doParse(iter, options = {}) {
                 }
             }
             else if (node.typ == EnumToken.RuleNodeType) {
-                if (node[TOKENS] == null) {
-                    const tokens = parseString(node.sel);
-                    matchSelectorSyntax(tokens, [], options);
-                    node[TOKENS] = trimArray(tokens);
-                    // let i: number;
-                    // const stack: Token[] = [];
-                    // for (i = 0; i < tokens.length; i++) {
-                    //     if (tokensfuncDefMap.has(tokens[i].typ)) {
-                    //         stack.push(tokens[i]);
-                    //         continue;
-                    //     } else if (tokens[i].typ == EnumToken.EndParensTokenType) {
-                    //         const func = stack.at(-1) as PseudoClassFunctionToken;
-                    //         tokens.splice(i, 1);
-                    //         // @ts-expect-error
-                    //         func.typ = tokensfuncDefMap.get(func.typ)!;
-                    //         func.chi = tokens.splice(tokens.indexOf(func) + 1, i - 1);
-                    //         stack.pop();
-                    //     }
-                    // }
-                }
+                // if (node[TOKENS] == null) {
+                const tokens = parseString(node.sel);
+                matchSelectorSyntax(tokens, [], options);
+                node[TOKENS] = trimArray(tokens);
+                // }
                 let hasIdOrClass = false;
                 for (const { value } of walkValues(node[TOKENS], node, 
                 // @ts-ignore
@@ -1720,7 +1705,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                 action: "drop",
                 node: token,
                 location: token[LOC],
-                message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC].src}:${token[LOC].sta}:${token[LOC].sta}`,
+                message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC].srcId}:${token[LOC].sta}:${token[LOC].sta}`,
             });
             atRule[TOKENS] = parseTokens(stream);
             atRule[STATE] = EnumAstNodeStatus.Invalid;
@@ -1849,7 +1834,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                             action: "drop",
                             node: token,
                             location: token[LOC],
-                            message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC].src}:${token[LOC].sta}:${token[LOC].sta}`,
+                            message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC].srcId}:${token[LOC].sta}:${token[LOC].sta}`,
                         });
                     }
                 }
@@ -1910,7 +1895,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                     action: "drop",
                     node: atRule,
                     location: atRule[LOC],
-                    message: `expected <keyframe-name> at ${atRule[LOC].src}:${atRule[LOC].sta}:${atRule[LOC].sta}`,
+                    message: `expected <keyframe-name> at ${atRule[LOC].srcId}:${atRule[LOC].sta}:${atRule[LOC].sta}`,
                 });
                 success = false;
             }
@@ -1961,7 +1946,10 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             }
             // @ts-expect-error
             options = { ...options, convertColor: false };
-            atRule[LOC] = { ...atRule[LOC], end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) } };
+            atRule[LOC] = {
+                ...atRule[LOC],
+                end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
+            };
             atRule[TOKENS] = stream.slice();
             atRule[STATE] = valid ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = valid ? [] : result.errors;
@@ -1989,7 +1977,10 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                     stream.splice(0, 1, ...stream[0].chi);
                 }
             }
-            atRule[LOC] = { ...atRule[LOC], end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) } };
+            atRule[LOC] = {
+                ...atRule[LOC],
+                end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
+            };
             atRule[TOKENS] = stream.slice();
             atRule[STATE] = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = result.success ? [] : result.errors;
@@ -2080,7 +2071,10 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             if (result.errors.length > 0) {
                 errors.push(...result.errors);
             }
-            atRule[LOC] = { ...atRule[LOC], end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) } };
+            atRule[LOC] = {
+                ...atRule[LOC],
+                end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
+            };
             atRule[TOKENS] = stream.slice();
             atRule[STATE] = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = result.success ? [] : result.errors;
@@ -2180,7 +2174,10 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                     }
                 }
             }
-            atRule[LOC] = { ...atRule[LOC], end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) } };
+            atRule[LOC] = {
+                ...atRule[LOC],
+                end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
+            };
             atRule[TOKENS] = stream.slice();
             atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = success ? [] : [errors[errors.length - 1]];
@@ -2193,7 +2190,10 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
         }
         case "page": {
             trimArray(stream);
-            atRule[LOC] = { ...atRule[LOC], end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) } };
+            atRule[LOC] = {
+                ...atRule[LOC],
+                end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
+            };
             atRule[TOKENS] = stream.slice();
             atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = success ? [] : [errors[errors.length - 1]];
@@ -2324,13 +2324,19 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                     typ: EnumToken.CssVariableTokenType,
                     nam: nam.val,
                     val: value,
-                    [LOC]: { ...atRule[LOC], end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) } },
+                    [LOC]: {
+                        ...atRule[LOC],
+                        end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
+                    },
                     [TOKENS]: stream,
                     [STATE]: EnumAstNodeStatus.Validated,
                     [ERRORS]: [],
                 };
             }
-            atRule[LOC] = { ...atRule[LOC], end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) } };
+            atRule[LOC] = {
+                ...atRule[LOC],
+                end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
+            };
             atRule[STATE] = EnumAstNodeStatus.Validated;
             atRule[ERRORS] = [];
             // @ts-expect-error
@@ -2384,7 +2390,10 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                     }
                 }
             }
-            atRule[LOC] = { ...atRule[LOC], end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) } };
+            atRule[LOC] = {
+                ...atRule[LOC],
+                end: stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end,
+            };
             atRule[TOKENS] = stream.slice();
             atRule[STATE] = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = result.errors;
@@ -2517,7 +2526,7 @@ function parseTokens(tokens, options, errors) {
                 const node = stack.at(-1);
                 errors?.push?.({
                     action: "drop",
-                    message: `Unbalanced token ')' at ${node[LOC].src}:${node[LOC].sta.lin}:${node[LOC].sta.col}`,
+                    message: `Unbalanced token ')' at ${node[LOC].srcId}:${node[LOC].sta.lin}:${node[LOC].sta.col}`,
                     node,
                     location: node[LOC],
                 });
@@ -2545,7 +2554,7 @@ function parseTokens(tokens, options, errors) {
                 const node = stack.at(-1);
                 errors?.push?.({
                     action: "drop",
-                    message: `Unbalanced token ']' at ${node[LOC].src}:${node[LOC].sta.lin}:${node[LOC].sta.col}`,
+                    message: `Unbalanced token ']' at ${node[LOC].srcId}:${node[LOC].sta.lin}:${node[LOC].sta.col}`,
                     node,
                     location: node[LOC],
                 });

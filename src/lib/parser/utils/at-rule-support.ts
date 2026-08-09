@@ -514,12 +514,16 @@ export function parseAtRuleSupportSyntax(
                         // }
 
                         if ("or" === val && scopes.length === 1) {
+
+                            const fileName = options.source!.getFileName() ?? '';
+                            const [line, column] = options.source!.getOffsets(stream[i]?.[LOC]?.sta!);
                             return {
                                 success: false,
                                 errors: [
                                     {
                                         action: "drop",
-                                        message: `<or> is not allowed outside of a parenthesis at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                                        message: `<or> is not allowed outside of a parenthesis at ${fileName}:${line}:${column}`,
+                                        location: [fileName, line, column],
                                     },
                                 ],
                             };

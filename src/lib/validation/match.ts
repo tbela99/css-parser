@@ -519,7 +519,7 @@ export function matchSelectorSyntax(
                         errors: [
                             {
                                 action: "drop",
-                                message: `Unexpected token ${EnumToken[stream[i].typ]} at ${stream[i][LOC]!.src}:${stream[i][LOC]!.sta.lin}:${
+                                message: `Unexpected token ${EnumToken[stream[i].typ]} at ${stream[i][LOC]!.srcId}:${stream[i][LOC]!.sta.lin}:${
                                     stream[i][LOC]!.sta.col
                                 }`,
                                 node: stream[i],
@@ -611,7 +611,7 @@ export function matchSelectorSyntax(
                         errors: [
                             {
                                 action: "drop",
-                                message: `Nesting selector is not allowed at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${
+                                message: `Nesting selector is not allowed at ${token[LOC]!.srcId}:${token[LOC]!.sta.lin}:${
                                     token[LOC]!.sta.col
                                 }`,
                                 node: token,
@@ -673,7 +673,7 @@ export function matchSelectorSyntax(
                         errors: [
                             {
                                 action: "drop",
-                                message: `Unexpected combinator ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${
+                                message: `Unexpected combinator ${EnumToken[token.typ]} at ${token[LOC]!.srcId}:${token[LOC]!.sta.lin}:${
                                     token[LOC]!.sta.col
                                 }`,
                                 node: token,
@@ -816,7 +816,7 @@ export function matchSelectorSyntax(
                         errors: [
                             {
                                 action: "drop",
-                                message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${
+                                message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.srcId}:${token[LOC]!.sta.lin}:${
                                     token[LOC]!.sta.col
                                 }`,
                                 node: token,
@@ -1026,7 +1026,7 @@ export function matchSelectorSyntax(
                             errors: [
                                 {
                                     action: "drop",
-                                    message: `Unexpected token ${EnumToken[slice[0].typ]} at ${slice[0][LOC]!.src}:${slice[0][LOC]!.sta.lin}:${
+                                    message: `Unexpected token ${EnumToken[slice[0].typ]} at ${slice[0][LOC]!.srcId}:${slice[0][LOC]!.sta.lin}:${
                                         slice[0][LOC]!.sta.col
                                     }`,
                                     node: slice[0],
@@ -1152,7 +1152,7 @@ export function matchSelectorSyntax(
                     errors: [
                         {
                             action: "drop",
-                            message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${
+                            message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.srcId}:${token[LOC]!.sta.lin}:${
                                 token[LOC]!.sta.col
                             }`,
                             node: token,
@@ -1215,7 +1215,7 @@ export function matchSelectorSyntax(
                     errors: [
                         {
                             action: "drop",
-                            message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${
+                            message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.srcId}:${token[LOC]!.sta.lin}:${
                                 token[LOC]!.sta.col
                             }`,
                             node: token,
@@ -1241,7 +1241,7 @@ export function matchSelectorSyntax(
                     errors: [
                         {
                             action: "drop",
-                            message: `Unsupported selector token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${
+                            message: `Unsupported selector token ${EnumToken[token.typ]} at ${token[LOC]!.srcId}:${
                                 token[LOC]!.sta.lin
                             }:${token[LOC]!.sta.col}`,
                             node: token,
@@ -1272,7 +1272,7 @@ export function matchSelectorSyntax(
             errors: [
                 {
                     action: "drop",
-                    message: `Unmatched token ${EnumToken[stack.at(-1)!.typ]} at ${stack.at(-1)![LOC]!.src}:${
+                    message: `Unmatched token ${EnumToken[stack.at(-1)!.typ]} at ${stack.at(-1)![LOC]!.srcId}:${
                         stack.at(-1)![LOC]!.sta.lin
                     }:${stack.at(-1)![LOC]!.sta.col}`,
                     node: stack.at(-1)! as Token,

@@ -1,5 +1,5 @@
 import type {
-    Location,
+    SourceLocation,
     AstAtRule,
     AtRuleToken,
     ErrorDescription,
@@ -357,7 +357,7 @@ export function matchAtRuleWhenElseSyntax(
                     //     });
                     // }
 
-                    stream[i][LOC] = { ...stream[i][LOC], end: { ...stream[j]?.[LOC]?.end } } as Location;
+                    stream[i][LOC] = { ...stream[i][LOC], end: { ...stream[j]?.[LOC]?.end } } as SourceLocation;
 
                     Object.assign(stream[i], {
                         typ: tokensfuncDefMap.get(stream[i].typ)!,

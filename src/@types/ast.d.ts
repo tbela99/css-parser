@@ -5,7 +5,7 @@ import type {Token} from "./token.d.ts";
 /**
  * token or node location
  */
-export declare interface Location {
+export declare interface SourceLocation {
     /**
      * start position
      */
@@ -17,7 +17,7 @@ export declare interface Location {
     /**
      * source file
      */
-    src: number;
+    srcId: number;
 }
 
 /**
@@ -32,7 +32,7 @@ export declare interface BaseToken {
      * location info
      * @private
      */
-    [LOC]?: Location;
+    [LOC]?: SourceLocation;
     /**
      * parent node
      * @private

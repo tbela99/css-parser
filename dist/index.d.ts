@@ -2464,7 +2464,7 @@ declare const OPTIMIZED: unique symbol;
 /**
  * token or node location
  */
-export declare interface Location {
+export declare interface SourceLocation {
     /**
      * start position
      */
@@ -2476,7 +2476,7 @@ export declare interface Location {
     /**
      * source file
      */
-    src: number;
+    srcId: number;
 }
 
 /**
@@ -2491,7 +2491,7 @@ export declare interface BaseToken {
      * location info
      * @private
      */
-    [LOC]?: Location;
+    [LOC]?: SourceLocation;
     /**
      * parent node
      * @private
@@ -3345,17 +3345,41 @@ export declare interface VisitorNodeMap {
  * @internal
  */
 declare class SourceMap {
-    #private;
     /**
      * Last location
      */
-    lastLocation: Location | null;
+    private lastLocation;
+    /**
+     * Version
+     * @private
+     */
+    private version;
+    /**
+     * Sources map
+     * @private
+     */
+    private sourcesMap;
+    /**
+     * Sources
+     * @private
+     */
+    private sources;
+    /**
+     * Map
+     * @private
+     */
+    private map;
+    /**
+     * Line
+     * @private
+     */
+    private line;
     /**
      * Add a location
      * @param source
      * @param original
      */
-    add(source: Location, original: Location): void;
+    add(newLine: number, newColumn: number, srcId: number, ln: number, col: number, sourceFileName: string, sourceContent: string): void;
     /**
      * Convert to URL encoded string
      */
@@ -3374,6 +3398,10 @@ declare class LineMap {
      * line starts
      */
     readonly lineStarts: number[];
+    /**
+     * Constructor
+     * @param lines
+     */
     constructor(lines: number[]);
     /**
      * Compute line and column of the offset
@@ -3388,11 +3416,6 @@ declare class LineMap {
      */
     search(offset: number): number;
     /**
-     * set line starts
-     * @param lines
-     */
-    setLineStarts(lines: number[]): void;
-    /**
      * get line starts
      * @returns
      */
@@ -3401,6 +3424,11 @@ declare class LineMap {
      * add line start
      */
     addLineStart(lineStart: number): void;
+    /**
+     * clone the linemap
+     * @returns
+     */
+    clone(): LineMap;
 }
 
 /**
@@ -3437,7 +3465,22 @@ declare class SourceFile {
      * @param lines
      */
     append(content: string): void;
+    /**
+     * get file name
+     * @returns
+     */
     getFileName(): string | null;
+    /**
+     * get content
+     * @returns
+     */
+    getContent(): string;
+    /**
+     * get text
+     * @param start
+     * @param length
+     * @returns
+     */
     getText(start: number, length: number): string;
     /**
      * Compute line and column of the offset
@@ -3445,11 +3488,6 @@ declare class SourceFile {
      * @returns
      */
     getOffsets(offset: number): [number, number];
-    /**
-     * set line starts
-     * @param lines
-     */
-    setLineStarts(lines: number[]): void;
     /**
      * get line starts
      * @returns
@@ -4307,7 +4345,7 @@ export declare interface ErrorDescription$1 {
     /**
      * Error location
      */
-    location?: Location;
+    location?: [string, number, number];
     /**
      * Error object
      */
@@ -4899,6 +4937,12 @@ export declare interface RenderOptions {
      * @internal
      */
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => ResolvedPath;
+
+    /**
+     * Source map
+     * @internal
+     */
+    sourcesMap?: SourceFile[];
 }
 
 /**
@@ -5169,7 +5213,7 @@ export declare interface SourceMapObject {
     /**
      * Source files
      */
-    sources?: string[];
+    sources?: Array<string | null>;
     /**
      * Source files content
      */
@@ -5420,7 +5464,7 @@ button {
  * @param matcher
  * @returns
  */
-declare function find(ast: AstNode$1, matcher: (node: AstNode$1) => boolean): AstNode$1 | null;
+declare function find(ast: AstNode$1, matcher: (node: AstNode$1, parent?: AstNode$1 | null) => boolean): AstNode$1 | null;
 /**
  * Search the ast sub-tree by checking each node's value token and return the first match
  *
@@ -5490,7 +5534,7 @@ button-small {
  * @param matcher
  * @returns
  */
-declare function findAll(ast: AstNode$1, matcher: (node: AstNode$1) => boolean): AstNode$1[];
+declare function findAll(ast: AstNode$1, matcher: (node: AstNode$1, parent?: AstNode$1 | null) => boolean): AstNode$1[];
 /**
  * Search the ast sub-tree and return the last match.
  *
@@ -5521,7 +5565,7 @@ button {
  * @param matcher
  * @returns
  */
-declare function findLast(ast: AstNode$1, matcher: (node: AstNode$1) => boolean): AstNode$1 | null;
+declare function findLast(ast: AstNode$1, matcher: (node: AstNode$1, parent?: AstNode$1 | null) => boolean): AstNode$1 | null;
 
 /**
  *
@@ -5773,4 +5817,4 @@ declare function transform(options: ParseInputFileOptions & TransformOptions): P
 declare function transform(options: ParseInputStreamOptions & TransformOptions): Promise<TransformResult>;
 
 export { ColorType$1 as ColorType, EnumAstNodeStatus$1 as EnumAstNodeStatus, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType$1 as ResponseType, SourceMap, ValidationLevel, WalkerEvent, WalkerOptionEnum, cloneNode, convertColor, dirname, expand, find, findAll, findByValue, findLast, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, render, renderValue as renderToken, replaceNodeOrValue, resolve, transform, transformFile, walk, walkValues };
-export type { AddToken, AndToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyFrameRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstNodeStatus, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, Context, CssVariableImportTokenType$1 as CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken$1 as CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, DoubleColonToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription$1 as ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorHandler, GenericVisitorResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InvalidAttrToken, InvalidClassSelectorToken, InvalidMediaQueryToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Location, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleOptions, MulToken, NameSpaceAttributeToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseInputFileOptions, ParseInputStreamOptions, ParseResult, ParseResultStats, ParseSourceOptions, ParseTokenOptions, ParserOptions, PercentageToken, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SinglePropertyType, SinglePropertyTypeMapping, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenSearchResult, TokenizeResult, TransformOptions, TransformResult, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, VariableScopeInfo, VisitorNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerValueFilter, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken, WrappedValuesToken };
+export type { AddToken, AndToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyFrameRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstNodeStatus, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, Context, CssVariableImportTokenType$1 as CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken$1 as CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, DoubleColonToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription$1 as ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorHandler, GenericVisitorResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InvalidAttrToken, InvalidClassSelectorToken, InvalidMediaQueryToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleOptions, MulToken, NameSpaceAttributeToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseInputFileOptions, ParseInputStreamOptions, ParseResult, ParseResultStats, ParseSourceOptions, ParseTokenOptions, ParserOptions, PercentageToken, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SinglePropertyType, SinglePropertyTypeMapping, SourceLocation, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenSearchResult, TokenizeResult, TransformOptions, TransformResult, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, VariableScopeInfo, VisitorNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerValueFilter, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken, WrappedValuesToken };

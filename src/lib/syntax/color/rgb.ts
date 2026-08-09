@@ -1,5 +1,5 @@
 import type { ColorToken, Token } from "../../../@types/index.d.ts";
-import { color2srgbvalues, minmax, toPrecisionValue } from "./color.ts";
+import { color2srgbvalues, minmax } from "./color.ts";
 import { expandHexValue } from "./hex.ts";
 import {
     cmyk2srgbvalues,

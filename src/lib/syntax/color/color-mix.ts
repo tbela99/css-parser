@@ -1,6 +1,6 @@
 import type { ColorToken, IdentToken, NumberToken, PercentageToken, Token } from "../../../@types/index.d.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
-import { getNumber, minmax, toPrecisionValue, toPrecisionAngle } from "./color.ts";
+import { getNumber, minmax } from "./color.ts";
 import { srgb2lsrgbvalues, srgbvalues } from "./srgb.ts";
 import { srgb2lch, xyz2lchvalues } from "./lch.ts";
 import { srgb2rgb } from "./rgb.ts";
@@ -442,7 +442,7 @@ export function colorMix(...args: Token[]): ColorToken | null {
                 chi: values.map((v) => {
                     return {
                         typ: EnumToken.NumberTokenType,
-                        val: toPrecisionValue(v),
+                        val: v,
                     };
                 }),
                 kin: ColorType.LCH,
@@ -465,7 +465,7 @@ export function colorMix(...args: Token[]): ColorToken | null {
                     values.map((v: number) => {
                         return {
                             typ: EnumToken.NumberTokenType,
-                            val: toPrecisionValue(v),
+                            val: v,
                         };
                     }) as Token[],
                 ) as Token[],
@@ -504,7 +504,7 @@ export function colorMix(...args: Token[]): ColorToken | null {
                 chi: values.map((v) => {
                     return {
                         typ: EnumToken.NumberTokenType,
-                        val: toPrecisionValue(v),
+                        val: v,
                     };
                 }),
                 kin: ColorType[colorSpace.toUpperCase().replaceAll("-", "_") as keyof typeof ColorType],
@@ -512,11 +512,11 @@ export function colorMix(...args: Token[]): ColorToken | null {
 
             if (colorSpace == "hsl" || colorSpace == "hwb") {
                 // @ts-ignore
-                result.chi[0] = { typ: EnumToken.AngleTokenType, val: toPrecisionAngle(result.chi[0].val * 360) };
+                result.chi[0] = { typ: EnumToken.AngleTokenType, val: result.chi[0].val * 360 };
                 // @ts-ignore
-                result.chi[1] = { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(result.chi[1].val) * 100 };
+                result.chi[1] = { typ: EnumToken.PercentageTokenType, val: result.chi[1].val * 100 };
                 // @ts-ignore
-                result.chi[2] = { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(result.chi[2].val) * 100 };
+                result.chi[2] = { typ: EnumToken.PercentageTokenType, val: result.chi[2].val * 100 };
             }
 
             return result;

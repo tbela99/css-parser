@@ -1,10 +1,24 @@
 # Changelog
 
+# v1.4.9
+
+## Improvements
+
+### Sync Api
+- [ ] added parseSync() and transformSync() with limitations : they do not support async operations such as flattening import at-rule, parse file or stream.
+
+### Sourcemap
+- [x] Embed CSS content into the sourcemap when the src file is not provided
+
+### Performance
+- [x] Implement lazy token offsets calculation
+- [x] Remove unnecessary values rounding
+
 ## v1.4.8
 
 ### Improvements
 
-- [x] support display-p3-linear color space. 
+- [x] Support display-p3-linear color space. 
 
 ## v1.4.7
 
@@ -25,11 +39,11 @@
   
 ## v1.4.6
 
-- [x] Fix if syntax expansion regression bug #134
+- [x] Fix if() syntax expansion regression bug #134
 
 ## v1.4.5
 
-- [x] Temporarily disable if syntax expansion #131
+- [x] Temporarily disable if() syntax expansion #131
 
 ## v1.4.4
 

@@ -81,13 +81,13 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                     replacement = result;
                 }
             }
-            if (replacement != parent && parent[PARENT] != null) {
+            if (replacement != null && (!Array.isArray(replacement) || replacement.length > 0) && replacement != parent && parent[PARENT] != null) {
                 replaceNodeOrValue(parent[PARENT], parent, replacement);
             }
             if ("chi" in replacement) {
                 // @ts-ignore
                 for (const node of replacement.chi) {
-                    node[PARENT] = replacement;
+                    // node[PARENT] = replacement;
                     parents.add(node);
                 }
             }
@@ -118,13 +118,13 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                 }
             }
         }
-        if (replacement != null && replacement != parent && parent[PARENT] != null) {
+        if (replacement != null && (!Array.isArray(replacement) || replacement.length > 0) && replacement != parent && parent[PARENT] != null) {
             // @ts-ignore
             replaceNodeOrValue(parent[PARENT], parent, replacement);
         }
         if ("chi" in replacement) {
             for (const node of replacement.chi) {
-                node[PARENT] = replacement;
+                // node[PARENT] = replacement;
                 parents.add(node);
             }
         }
@@ -417,6 +417,13 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                 : renderValue(curr)), "");
                     }
                 }
+                else if (ast.typ === node.typ &&
+                    ast.nam === node.nam &&
+                    ast.val === node.val) {
+                    replaceNodeOrValue(ast, node, node.chi);
+                    i--;
+                    continue;
+                }
                 if (previous?.typ == EnumToken.AtRuleNodeType &&
                     node.nam != "font-face" &&
                     previous.nam === node.nam &&
@@ -432,7 +439,10 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     ast?.chi?.splice(i--, 1);
                     continue;
                 }
-                if (!hasDeclaration(node)) {
+                // if (!hasDeclaration(node as AstAtRule)) {
+                //     doMinify(node, options, recursive, errors, nestingContent, context);
+                // }
+                if ("chi" in node) {
                     doMinify(node, options, recursive, errors, nestingContent, context);
                 }
                 previous = node;
@@ -490,6 +500,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                         node.sel = node[OPTIMIZED].selector.reduce(reducer, []).join(",");
                         // @ts-ignore
                         node[RAW] = node[OPTIMIZED].selector.slice();
+                        node[TOKENS] = null;
                         // @ts-ignore
                         wrapper.chi.push(node);
                         // @ts-ignore
@@ -504,12 +515,14 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                 ")";
                             const sel2 = node[OPTIMIZED].selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") + node[OPTIMIZED].optimized[0] + curr.join(""), "");
                             node.sel = sel1.length < sel2.length ? sel1 : sel2;
+                            node[TOKENS] = null;
                         }
                         else if (node[OPTIMIZED].optimized.length === 0) {
                             const testIdent = /^[a-zA-Z]/;
                             node.sel = node[OPTIMIZED].selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") +
                                 (nestingContent && testIdent.test(curr[0]) ? "& " : "") +
                                 curr.join(""), "");
+                            node[TOKENS] = null;
                         }
                     }
                 }
@@ -571,6 +584,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     let sel = wrap ? node[OPTIMIZED].optimized.join("") + `:is(${rule})` : rule;
                     if (sel.length < node.sel.length) {
                         node.sel = sel;
+                        node[TOKENS] = null;
                     }
                 }
                 else if (node[OPTIMIZED]?.reducible) {
@@ -581,12 +595,14 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                             ")";
                         const sel2 = node[OPTIMIZED].selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") + node[OPTIMIZED].optimized[0] + curr.join(""), "");
                         node.sel = sel1.length < sel2.length ? sel1 : sel2;
+                        node[TOKENS] = null;
                     }
                     else if (node[OPTIMIZED].optimized.length === 0) {
                         const testIdent = /^[a-zA-Z]/;
                         node.sel = node[OPTIMIZED].selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") +
                             (nestingContent && testIdent.test(curr[0]) ? "& " : "") +
                             curr.join(""), "");
+                        node[TOKENS] = null;
                     }
                 }
                 else if (node[OPTIMIZED]?.optimized.length > 0) {
@@ -594,6 +610,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     if (sel.length < node.sel.length) {
                         node.sel = sel;
                         node[RAW] = [node[OPTIMIZED].optimized.slice()];
+                        node[TOKENS] = null;
                     }
                 }
                 doMinify(node, options, recursive, errors, nestingContent, context);
@@ -1107,6 +1124,7 @@ function fixSelector(node) {
             }
         }
         node.sel = attributes.reduce((acc, curr) => acc + renderValue(curr), "");
+        node[TOKENS] = null;
     }
 }
 /**
@@ -1149,9 +1167,12 @@ function wrapNodes(previous, node, match, ast, reducer, i, nodeIndex) {
     ast.chi.splice(nodeIndex, 1);
     previous.sel = pSel;
     previous[RAW] = match.selector1;
+    previous[TOKENS] = null;
     node.sel = nSel;
     node[RAW] = match.selector2;
+    node[TOKENS] = null;
     reduceRuleSelector(wrapper);
+    wrapper[TOKENS] = null;
     return wrapper;
 }
 /**
@@ -1315,6 +1336,7 @@ function diff(n1, n2, options = {}) {
             const sel = match + ":is(" + replaceCompound(rule, match) + ")";
             if (sel.length < result.sel.length) {
                 result.sel = sel;
+                result[TOKENS] = null;
             }
         }
     }
@@ -1364,6 +1386,7 @@ function reduceRuleSelector(node) {
         if (sel.length < node.sel.length) {
             node.sel = sel;
             node[RAW] = raw;
+            node[TOKENS] = null;
         }
     }
 }

@@ -41,7 +41,7 @@ import type { ValidationPropertyToken } from "../../validation/parser/types.d.ts
 import { equalsIgnoreCase } from "./text.ts";
 import { buildExpression } from "../../ast/math/expression.ts";
 import { splitTokenList } from "../../validation/utils/list.ts";
-import type { Location } from "../../../@types/ast.d.ts";
+import type { SourceLocation } from "../../../@types/ast.d.ts";
 
 /**
  *
@@ -171,7 +171,7 @@ export function parseDeclaration(
         name[LOC] = {
             ...name[LOC],
             end: tokens[tokens.length - 1]?.[LOC]?.end ?? name[LOC]!.end,
-        } as Location;
+        } as SourceLocation;
         name[STATE] = EnumAstNodeStatus.Unparsed;
         name[ERRORS] = [
             {
@@ -364,7 +364,7 @@ export function parseDeclaration(
         name[LOC] = {
             ...name[LOC],
             end: tokens[tokens.length - 1]?.[LOC]!.end ?? name[LOC]!.end,
-        } as Location;
+        } as SourceLocation;
         name[STATE] = EnumAstNodeStatus.Invalid;
         name[ERRORS] = [errors[errors.length - 1]];
 
@@ -632,7 +632,7 @@ export function parseDeclaration(
 
                             errors.push({
                                 action: "drop",
-                                message: `invalid color at ${tokens[index][LOC]?.src}:${tokens[index][LOC]?.sta.lin}:${tokens[index][LOC]?.sta.col}`,
+                                message: `invalid color at ${tokens[index][LOC]?.srcId}:${tokens[index][LOC]?.sta.lin}:${tokens[index][LOC]?.sta.col}`,
                             });
                         }
                     }
@@ -695,7 +695,7 @@ export function parseDeclaration(
         name[LOC] = {
             ...name[LOC],
             end: tokens[tokens.length - 1][LOC]!.end,
-        } as Location;
+        } as SourceLocation;
         name[STATE] = EnumAstNodeStatus.Invalid;
         name[ERRORS] = result?.errors ?? [];
 
@@ -741,7 +741,7 @@ export function parseDeclaration(
         name[LOC] = {
             ...name[LOC],
             end: tokens[tokens.length - 1]?.[LOC]?.end ?? name[LOC]!.end,
-        } as Location;
+        } as SourceLocation;
 
         name[STATE] = EnumAstNodeStatus.Unknown;
         name[ERRORS] = result?.errors ?? [];
@@ -794,7 +794,7 @@ export function parseDeclaration(
     name[LOC] = {
         ...name[LOC],
         end: (tokens[tokens.length - 1] ?? name)[LOC]!.end,
-    } as Location;
+    } as SourceLocation;
     name[STATE] = success
         ? result == null
             ? EnumAstNodeStatus.Unvalidated

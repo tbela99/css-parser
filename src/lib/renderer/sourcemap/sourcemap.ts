@@ -1,4 +1,4 @@
-import type { Location, SourceMapObject } from "../../../@types/index.d.ts";
+import type { SourceMapObject } from "../../../@types/index.d.ts";
 import { encode } from "./lib/encode.ts";
 
 /**
@@ -9,74 +9,91 @@ export class SourceMap {
     /**
      * Last location
      */
-    lastLocation: Location | null = null;
+    private lastLocation: { ln: number; col: number } | null = null;
     /**
      * Version
      * @private
      */
-    #version: number = 3;
+    private version: number = 3;
+
+    /**
+     * Sources map
+     * @private
+     */
+    private sourcesMap: number[] = [];
+
     /**
      * Sources
      * @private
      */
-    #sources: string[] = [];
+    private sources: Array<string | null> = [];
+
     /**
      * Map
      * @private
      */
-    #map: Map<number, number[][]> = new Map();
+    private map: Map<number, number[][]> = new Map();
     /**
      * Line
      * @private
      */
-    #line: number = -1;
+    private line: number = -1;
 
     /**
      * Add a location
      * @param source
      * @param original
      */
-    add(source: Location, original: Location) {
-        if (original.src !== "") {
-            if (!this.#sources.includes(original.src)) {
-                this.#sources.push(original.src);
+    add(
+        newLine: number,
+        newColumn: number,
+        srcId: number,
+        ln: number,
+        col: number,
+        sourceFileName: string,
+        sourceContent: string,
+    ) {
+        if (!this.sourcesMap.includes(srcId)) {
+            if (sourceFileName == null && sourceContent != null) {
+                sourceFileName = "data:text/css;charset=utf-8;base64," + btoa(sourceContent);
             }
 
-            const line = source.sta.lin - 1;
-            let record: number[];
-
-            if (line > this.#line) {
-                this.#line = line;
-            }
-
-            if (!this.#map.has(line)) {
-                record = [
-                    Math.max(0, source.sta.col - 1),
-                    this.#sources.indexOf(original.src),
-                    original.sta.lin - 1,
-                    original.sta.col - 1,
-                ];
-
-                this.#map.set(line, [record]);
-            } else {
-                const arr: number[][] = <number[][]>this.#map.get(line);
-
-                record = [
-                    Math.max(0, source.sta.col - 1 - arr[0][0]),
-                    this.#sources.indexOf(original.src) - arr[0][1],
-                    original.sta.lin - 1,
-                    original.sta.col - 1,
-                ];
-                arr.push(record);
-            }
-
-            if (this.lastLocation != null) {
-                record[2] -= this.lastLocation.sta.lin - 1;
-                record[3] -= this.lastLocation.sta.col - 1;
-            }
-
-            this.lastLocation = original;
+            this.sourcesMap.push(srcId);
+            this.sources.push((sourceFileName as string) || null);
         }
+
+        const line = newLine - 1;
+        let record: number[];
+
+        if (line > this.line) {
+            this.line = line;
+        }
+
+        if (!this.map.has(line)) {
+            record = [Math.max(0, newColumn - 1), this.sourcesMap.indexOf(srcId), ln - 1, col - 1];
+
+            this.map.set(line, [record]);
+        } else {
+            const arr: number[][] = <number[][]>this.map.get(line);
+
+            record = [
+                Math.max(0, newColumn - 1 - arr[0][0]),
+                this.sourcesMap.indexOf(srcId) - arr[0][1],
+                ln - 1,
+                col - 1,
+            ];
+            arr.push(record);
+        }
+
+        if (this.lastLocation != null) {
+            record[2] -= this.lastLocation.ln - 1;
+            record[3] -= this.lastLocation.col - 1;
+        }
+
+        this.lastLocation ??= { ln, col };
+
+        this.lastLocation.ln = ln;
+        this.lastLocation.col = col;
     }
 
     /**
@@ -84,7 +101,7 @@ export class SourceMap {
      */
     toUrl(): string {
         // /*# sourceMappingURL = ${url} */
-        return `data:application/json,${encodeURIComponent(JSON.stringify(this.toJSON()))}`;
+        return `data:application/json;charset=utf-8;base64,${btoa(JSON.stringify(this.toJSON()))}`;
     }
 
     /**
@@ -95,12 +112,12 @@ export class SourceMap {
 
         let i: number = 0;
 
-        for (; i <= this.#line; i++) {
-            if (!this.#map.has(i)) {
+        for (; i <= this.line; i++) {
+            if (!this.map.has(i)) {
                 mappings.push("");
             } else {
                 mappings.push(
-                    (<number[][]>this.#map.get(i)).reduce(
+                    (<number[][]>this.map.get(i)).reduce(
                         (acc, curr) => acc + (acc === "" ? "" : ",") + encode(curr),
                         "",
                     ),
@@ -109,8 +126,8 @@ export class SourceMap {
         }
 
         return {
-            version: this.#version,
-            sources: this.#sources.slice(),
+            version: this.version,
+            sources: this.sources.slice(),
             mappings: mappings.join(";"),
         };
     }

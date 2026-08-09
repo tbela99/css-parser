@@ -15,7 +15,7 @@ import type {
     TokenizeResult,
     UnclosedStringToken,
 } from "../../@types/index.d.ts";
-import {ColorType, EnumToken} from "../ast/types.ts";
+import { ColorType, EnumToken } from "../ast/types.ts";
 import {
     colorsFunc,
     containerFunc,
@@ -44,8 +44,8 @@ import {
     isWhiteSpace,
     parseDimension,
 } from "../syntax/syntax.ts";
-import {SourceFile} from "./source.ts";
-import {equalsIgnoreCase} from "./utils/text.ts";
+import { SourceFile } from "./source.ts";
+import { equalsIgnoreCase } from "./utils/text.ts";
 
 export const SymbolsMapTokens: Record<string, EnumToken> = {
     "+": EnumToken.Plus,
@@ -407,13 +407,13 @@ export function yieldResult(val: string, parseInfo: ParseInfo, hint?: EnumToken)
     if (token == null) {
         token = {
             typ: EnumToken.LiteralTokenType,
-            val
-        }
+            val,
+        };
     }
 
     // return token;
     token[LOC] = {
-        src: parseInfo.source.id as number,
+        srcId: parseInfo.source.id as number,
         sta: parseInfo.position,
         end: parseInfo.currentPosition,
     };
@@ -450,19 +450,25 @@ export function next(parseInfo: ParseInfo, count: number = 1): string {
     let char: string =
         count == 1 ? parseInfo.stream.charAt(position + 1) : parseInfo.stream.slice(position + 1, position + 1 + count);
     let i: number = 0;
+    let codepoint: number;
 
     for (; i < char.length; i++) {
-        const codepoint: number = char[i].charCodeAt(0);
+         codepoint = char[i].charCodeAt(0);
 
         if (
-            codepoint == 0xa ||
-            codepoint == 0xb ||
-            codepoint == 0xc ||
-            codepoint == 0xd ||
-            codepoint == 0x2028 ||
-            codepoint == 0x2029
+            codepoint == 0xa || // \n
+            codepoint == 0xb || // \v
+            codepoint == 0xc || // \f
+            codepoint == 0xd || // \r
+            codepoint == 0x2028 || // \u2028
+            codepoint == 0x2029 // \u2029
         ) {
-            // parseInfo.source.lineStarts.lineStarts.push(position + i);
+            // \r\n
+            if (codepoint == 0xa && i > 0 && char.charCodeAt(i - 1) == 0xd) {
+                // nope
+            } else {
+                parseInfo.source.lineStarts.lineStarts.push(position + i);
+            }
         }
     }
 
@@ -502,7 +508,6 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
     parseInfo.buffer = "";
 
     while ((value = peek(parseInfo))) {
-
         charCode = value.charCodeAt(0);
         // nextCharCode = nextValue.charCodeAt(0);
 
@@ -773,7 +778,6 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
                 break;
 
             case TokenMap.TILDA:
-
                 if (buffer.length > 0) {
                     result.push(yieldResult(buffer, parseInfo));
                     buffer = "";
@@ -1056,24 +1060,6 @@ export async function* tokenizeStream(
 
         if (done) {
             break;
-        }
-    }
-}
-
-/**
- * Update position
- * @param position
- * @param str
- */
-export function move(position: Position, str: string) {
-    let i: number = 0;
-
-    for (; i < str.length; i++) {
-        if (isNewLine(str[i].charCodeAt(0))) {
-            position.lin++;
-            position.col = 0;
-        } else {
-            position.col++;
         }
     }
 }

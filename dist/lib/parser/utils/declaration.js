@@ -486,7 +486,7 @@ function parseDeclaration(tokens, parent, options, errors) {
                             tokens[index].typ = EnumToken.FunctionTokenType;
                             errors.push({
                                 action: "drop",
-                                message: `invalid color at ${tokens[index][LOC]?.src}:${tokens[index][LOC]?.sta.lin}:${tokens[index][LOC]?.sta.col}`,
+                                message: `invalid color at ${tokens[index][LOC]?.srcId}:${tokens[index][LOC]?.sta.lin}:${tokens[index][LOC]?.sta.col}`,
                             });
                         }
                     }

@@ -1,5 +1,8 @@
-import {LineMap} from "./linemap.ts";
+import { LineMap } from "./linesmap.ts";
 
+/**
+ * Source file ID
+ */
 let sourceId: number = 0;
 
 /**
@@ -47,11 +50,29 @@ export class SourceFile {
         this.content += content;
     }
 
+    /**
+     * get file name
+     * @returns 
+     */
     getFileName(): string | null {
         
         return this.file;
     }
 
+    /**
+     * get content
+     * @returns 
+     */
+    getContent(): string {
+        return this.content;
+    }
+
+    /**
+     * get text
+     * @param start 
+     * @param length 
+     * @returns 
+     */
     getText(start: number, length: number): string {
         return this.content.slice(start, start + length);
     }
@@ -63,14 +84,6 @@ export class SourceFile {
      */
     getOffsets(offset: number): [number, number] {
         return this.lineStarts.getOffsets(offset);
-    }
-
-    /**
-     * set line starts
-     * @param lines 
-     */
-    setLineStarts(lines: number[]) {
-        this.lineStarts.setLineStarts(lines);
     }
 
     /**

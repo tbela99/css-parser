@@ -34,8 +34,8 @@ button {
  * @returns
  */
 function find(ast, matcher) {
-    for (const { node } of walk(ast)) {
-        if (matcher(node)) {
+    for (const { node, parent } of walk(ast)) {
+        if (matcher(node, parent)) {
             return node;
         }
     }
@@ -129,8 +129,8 @@ button-small {
  */
 function findAll(ast, matcher) {
     const result = [];
-    for (const { node } of walk(ast)) {
-        if (matcher(node)) {
+    for (const { node, parent } of walk(ast)) {
+        if (matcher(node, parent)) {
             result.push(node);
         }
     }
@@ -167,8 +167,8 @@ button {
  * @returns
  */
 function findLast(ast, matcher) {
-    for (const { node } of walk(ast, null, true)) {
-        if (matcher(node)) {
+    for (const { node, parent } of walk(ast, null, true)) {
+        if (matcher(node, parent)) {
             return node;
         }
     }

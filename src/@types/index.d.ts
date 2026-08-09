@@ -1,5 +1,5 @@
 import type {VisitorNodeMap} from "./visitor.d.ts";
-import type {AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet, Location} from "./ast.d.ts";
+import type {AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet, SourceLocation} from "./ast.d.ts";
 import {SourceMap} from "../lib/renderer/sourcemap/sourcemap.ts";
 import type {PropertyListOptions} from "./parse.d.ts";
 import {EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ValidationLevel} from "../lib/ast/types.ts";
@@ -40,7 +40,7 @@ export declare interface ErrorDescription {
     /**
      * Error location
      */
-    location?: Location;
+    location?: [string, number, number];
     /**
      * Error object
      */
@@ -632,6 +632,12 @@ export declare interface RenderOptions {
      * @internal
      */
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => ResolvedPath;
+
+    /**
+     * Source map
+     * @internal
+     */
+    sourcesMap?: SourceFile[];
 }
 
 /**
@@ -902,7 +908,7 @@ export declare interface SourceMapObject {
     /**
      * Source files
      */
-    sources?: string[];
+    sources?: Array<string | null>;
     /**
      * Source files content
      */

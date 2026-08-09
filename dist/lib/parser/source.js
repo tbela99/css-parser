@@ -1,5 +1,8 @@
-import { LineMap } from './linemap.js';
+import { LineMap } from './linesmap.js';
 
+/**
+ * Source file ID
+ */
 let sourceId = 0;
 /**
  * Source file helper class
@@ -42,9 +45,26 @@ class SourceFile {
     append(content) {
         this.content += content;
     }
+    /**
+     * get file name
+     * @returns
+     */
     getFileName() {
         return this.file;
     }
+    /**
+     * get content
+     * @returns
+     */
+    getContent() {
+        return this.content;
+    }
+    /**
+     * get text
+     * @param start
+     * @param length
+     * @returns
+     */
     getText(start, length) {
         return this.content.slice(start, start + length);
     }
@@ -55,13 +75,6 @@ class SourceFile {
      */
     getOffsets(offset) {
         return this.lineStarts.getOffsets(offset);
-    }
-    /**
-     * set line starts
-     * @param lines
-     */
-    setLineStarts(lines) {
-        this.lineStarts.setLineStarts(lines);
     }
     /**
      * get line starts

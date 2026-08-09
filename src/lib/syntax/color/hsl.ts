@@ -1,6 +1,6 @@
 import { hwb2hsv } from "./hsv.ts";
 import type { ColorToken, IdentToken, NumberToken, PercentageToken, Token } from "../../../@types/index.d.ts";
-import { color2srgbvalues, getNumber, toPrecisionAngle, toPrecisionValue } from "./color.ts";
+import { color2srgbvalues, getNumber } from "./color.ts";
 import { cmyk2rgbvalues, lab2rgbvalues, lch2rgbvalues } from "./rgb.ts";
 import { getColorComponents } from "./utils/components.ts";
 import { hex2srgbvalues, hslvalues, oklab2srgbvalues, oklch2srgbvalues } from "./srgb.ts";
@@ -93,12 +93,12 @@ export function color2HslToken(token: ColorToken): ColorToken | null {
 }
 
 function hslToken(values: number[]): ColorToken {
-    values[0] = toPrecisionAngle(values[0] * 360);
+    values[0] = values[0] * 360;
 
     const chi: Token[] = <Token[]>[
-        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
-        { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(values[1]) * 100 },
-        { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(values[2]) * 100 },
+        { typ: EnumToken.NumberTokenType, val: values[0] },
+        { typ: EnumToken.PercentageTokenType, val: values[1] * 100 },
+        { typ: EnumToken.PercentageTokenType, val: values[2] * 100 },
     ];
 
     if (values.length == 4 && values[3] != 1) {
@@ -106,7 +106,7 @@ function hslToken(values: number[]): ColorToken {
             { typ: EnumToken.LiteralTokenType, val: "/" },
             {
                 typ: EnumToken.PercentageTokenType,
-                val: toPrecisionValue(values[3], 2) * 100,
+                val: values[3] * 100,
             },
         );
     }

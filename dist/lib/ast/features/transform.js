@@ -8,7 +8,7 @@ import { STATE } from '../../syntax/constants.js';
 class TransformCssFeature {
     accept = new Set([EnumToken.RuleNodeType, EnumToken.KeyFramesRuleNodeType]);
     get ordering() {
-        return 4;
+        return 3;
     }
     get processMode() {
         return FeatureWalkMode.Post;

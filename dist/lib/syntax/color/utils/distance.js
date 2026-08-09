@@ -1,4 +1,4 @@
-import { convertColor } from '../color.js';
+import { convertColor, toPrecisionValue } from '../color.js';
 import { getOKLABComponents } from '../oklab.js';
 import { ColorType } from '../../../ast/types.js';
 import { colorDistancePrecision } from '../../constants.js';
@@ -27,7 +27,7 @@ function okLabDistance(color1, color2) {
     if (okLab1[3] != null || okLab2[3] != null) {
         diff.push((okLab1[3] ?? 1) - (okLab2[3] ?? 1));
     }
-    return Math.hypot(...diff);
+    return toPrecisionValue(Math.hypot(...diff));
 }
 /**
  * Check if two colors are close in okLab space.

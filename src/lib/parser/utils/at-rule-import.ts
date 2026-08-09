@@ -169,7 +169,7 @@ export function matchAtRuleImportSyntax(
                 errors: [
                     {
                         action: "drop",
-                        message: `Expected <layer-name> at ${stream[index]?.[LOC]?.src}:${stream[index]?.[LOC]?.sta.lin}:${stream[index]?.[LOC]?.sta.col}`,
+                        message: `Expected <layer-name> at ${stream[index]?.[LOC]?.srcId}:${stream[index]?.[LOC]?.sta.lin}:${stream[index]?.[LOC]?.sta.col}`,
                         syntax: "@import",
                         node: stream[index],
                         location: stream[index]?.[LOC],
@@ -220,7 +220,7 @@ export function matchAtRuleImportSyntax(
                 errors: [
                     {
                         action: "drop",
-                        message: `Expected <layer-name> at ${stream[index]?.[LOC]?.src}:${stream[index]?.[LOC]?.sta.lin}:${stream[index]?.[LOC]?.sta.col}`,
+                        message: `Expected <layer-name> at ${stream[index]?.[LOC]?.srcId}:${stream[index]?.[LOC]?.sta.lin}:${stream[index]?.[LOC]?.sta.col}`,
                         syntax: "@import",
                         node: stream[index],
                         location: stream[index]?.[LOC],

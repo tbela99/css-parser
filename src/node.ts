@@ -11,18 +11,18 @@ import type {
     TransformOptions,
     TransformResult,
 } from "./@types/index.d.ts";
-import {deprecate} from "node:util";
-import {Readable} from "node:stream";
-import {createReadStream} from "node:fs";
-import {lstat, readFile} from "node:fs/promises";
-import {doParse} from "./lib/parser/parse.ts";
-import {doRender} from "./lib/renderer/render.ts";
-import {ModuleScopeEnumOptions} from "./lib/ast/types.ts";
-import {tokenize, tokenizeStream} from "./lib/parser/tokenize.ts";
-import {dirname, matchUrl, resolve} from "./lib/fs/resolve.ts";
-import {ResponseType} from "./types.ts";
-import {resolve as resolvePath} from "node:path";
-import {SourceFile} from "./lib/parser/source.ts";
+import { deprecate } from "node:util";
+import { Readable } from "node:stream";
+import { createReadStream } from "node:fs";
+import { lstat, readFile } from "node:fs/promises";
+import { doParse } from "./lib/parser/parse.ts";
+import { doRender } from "./lib/renderer/render.ts";
+import { ModuleScopeEnumOptions } from "./lib/ast/types.ts";
+import { tokenize, tokenizeStream } from "./lib/parser/tokenize.ts";
+import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
+import { ResponseType } from "./types.ts";
+import { resolve as resolvePath } from "node:path";
+import { SourceFile } from "./lib/parser/source.ts";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -264,7 +264,7 @@ export async function parse(stream: string | ReadableStream<Uint8Array>, options
  * ```ts
  *
  * import {parse} from '@tbela99/css-parser';
- * 
+ *
  * const file = 'https://docs.deno.com/styles.css';
  *  // css file or url
  *  let result = await parse({file});
@@ -415,18 +415,12 @@ export async function parse(
         dirname,
         cwd: options.cwd ?? process.cwd(),
     });
-    
+
     options.src = resolve(options.src!, options.cwd).relative;
 
     if (options.source == null) {
-
-        options.sourcesMap.push(new SourceFile('', [], options.src));
+        options.sourcesMap.push(new SourceFile(typeof stream == "string" ? stream : "", [], options.src));
         options.source = options.sourcesMap.at(-1) as SourceFile;
-    }
-
-    if (typeof stream == "string") {
-        
-        options.source.append(stream);
     }
 
     options.parseInfo = {

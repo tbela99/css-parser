@@ -156,7 +156,7 @@ export function parseMediaqueryList(
                         success = false;
                         errors.push({
                             action: "drop",
-                            message: `expecting '<media-type>' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                            message: `expecting '<media-type>' at ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                             node: stream[i],
                             location: stream[i][LOC]!,
                         });
@@ -165,7 +165,7 @@ export function parseMediaqueryList(
                     success = false;
                     errors.push({
                         action: "drop",
-                        message: `expecting '(' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                        message: `expecting '(' at ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                         node: stream[i],
                         location: stream[i][LOC]!,
                     });
@@ -250,7 +250,7 @@ export function parseMediaqueryList(
                                     errors.push({
                                         action: "drop",
                                         node: stream[i],
-                                        message: `<or> is not allowed outside of parentheses ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                                        message: `<or> is not allowed outside of parentheses ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                     });
 
                                     break;
@@ -261,7 +261,7 @@ export function parseMediaqueryList(
                                     errors.push({
                                         action: "drop",
                                         node: stream[i],
-                                        message: `cannot mix <and> and <or> at the same level at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                                        message: `cannot mix <and> and <or> at the same level at ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                                     });
                                 }
 
@@ -617,7 +617,7 @@ export function parseMediaqueryList(
                                     action: "drop",
                                     node: arr[0],
                                     location: arr[0]?.[LOC],
-                                    message: `${mfValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"} at ${arr[0]?.[LOC]?.src}:${arr[0]?.[LOC]?.sta.lin}:${arr[0]?.[LOC]?.sta.col}`,
+                                    message: `${mfValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"} at ${arr[0]?.[LOC]?.srcId}:${arr[0]?.[LOC]?.sta.lin}:${arr[0]?.[LOC]?.sta.col}`,
                                 });
 
                                 break;
@@ -666,7 +666,7 @@ export function parseMediaqueryList(
                                 action: "drop",
                                 node: stream[i],
                                 location: stream[i]?.[LOC],
-                                message: `unmatched ')' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                                message: `unmatched ')' at ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
                             });
 
                             break;

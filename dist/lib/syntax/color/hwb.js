@@ -1,6 +1,6 @@
 import { hsl2hsv } from './hsv.js';
 import { getColorComponents } from './utils/components.js';
-import { color2srgbvalues, toPrecisionAngle, toPrecisionValue, getAngle, getNumber } from './color.js';
+import { color2srgbvalues, getAngle, getNumber } from './color.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import { cmyk2srgbvalues, lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues } from './srgb.js';
 
@@ -61,16 +61,16 @@ function color2hwbToken(token) {
     return hwbToken(values);
 }
 function hwbToken(values) {
-    values[0] = toPrecisionAngle(values[0] * 360);
+    values[0] = values[0] * 360;
     const chi = [
-        { typ: EnumToken.NumberTokenType, val: toPrecisionAngle(values[0]) },
-        { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(values[1] * 100) },
-        { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(values[2] * 100) },
+        { typ: EnumToken.NumberTokenType, val: values[0] },
+        { typ: EnumToken.PercentageTokenType, val: values[1] * 100 },
+        { typ: EnumToken.PercentageTokenType, val: values[2] * 100 },
     ];
     if (values.length == 4) {
         chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
             typ: EnumToken.PercentageTokenType,
-            val: toPrecisionValue(values[3], 2) * 100
+            val: values[3] * 100
         });
     }
     return {

@@ -1076,7 +1076,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                     if (children.length <= offset + 1) {
                         errors?.push({
                             action: "drop",
-                            message: `Invalid color at ${token[LOC]?.src}:${token[LOC]?.sta.lin}:${token[LOC]?.sta.col}`,
+                            message: `Invalid color at ${token[LOC]?.srcId}:${token[LOC]?.sta.lin}:${token[LOC]?.sta.col}`,
                             node: token,
                             location: token[LOC],
                         });

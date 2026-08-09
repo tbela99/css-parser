@@ -393,7 +393,7 @@ export class ComputePrefixFeature {
         if (equalsIgnoreCase((tokens[i] as IdentToken).val, "linear")) {
             type = "linear-gradient";
             i++;
-        } 
+        }
         // else {
         //     return;
         // }
