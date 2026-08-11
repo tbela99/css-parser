@@ -944,7 +944,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                                     action: "drop",
                                     message: `Unexpected constant '${val}'`,
                                     node: value,
-                                    location: value[LOC],
+                                    // location: options.source!.getSourLocation(value[LOC]!.sta),
                                 });
 
                                 return false;
@@ -978,7 +978,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                                             action: "drop",
                                             message: `Unexpected constant '${val}'`,
                                             node: v.value,
-                                            location: v.value[LOC],
+                                            // location: options.source!.getSourLocation(v.value[LOC]!.sta),
                                         });
 
                                         return false;
@@ -1041,7 +1041,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                             action: "drop",
                             message: "adding percentage and number is not allowed",
                             node: token,
-                            location: token[LOC],
+                            // location: options.source!.getSourLocation(token[LOC]!.sta),
                         });
 
                         return false;
@@ -1076,9 +1076,9 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                     if (children.length <= offset + 1) {
                         errors?.push({
                             action: "drop",
-                            message: `Invalid color at ${token[LOC]?.srcId}:${token[LOC]?.sta.lin}:${token[LOC]?.sta.col}`,
+                            message: `Invalid color`,
                             node: token,
-                            location: token[LOC],
+                            // location: options.source!.getSourLocation(token[LOC]!.sta),
                         });
                         return false;
                     }

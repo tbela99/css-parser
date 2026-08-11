@@ -6,15 +6,19 @@ category: Guides
 
 ## Main function differences
 
-| Function | Parses CSS | Generates CSS Output |
-|----------|------------|----------------------|
-| `parse()` | ✅ | ❌ |
-| `render()` | ❌ | ✅
-| `transform()` | ✅ | ✅ |
+| Function | Parses CSS | Async |  CSS Output |
+|----------|------------|------|----------|
+| `parse()` | ✅ | ✅ | ✅ | ❌|
+| `parseSync()` | ✅ | ❌ | ❌ |
+| `transform()` | ✅ | ✅  | ✅ |
+| `transformSync()` | ✅ | ❌ | ✅ |
+| `render()` | ❌ | ❌ | ✅ |
 
-> **Note:** `parse()` only produce the AST and does not generate CSS output.
+> **Note:** `parse()` and `parseSync()` only produce the AST and does not generate CSS output.
 
-By contrast, `transform()` parses the CSS **and** generates the transformed CSS text. This is useful when you want the rendered CSS directly without performing a separate AST rendering step.
+By contrast, `transform()` and `transformSync()` parses the CSS **and** generates the transformed CSS text. This is useful when you want the rendered CSS directly without performing a separate AST rendering step.
+
+### Usage
 
 ```ts
 import {parse, render} from '@tbela99/css-parser';
@@ -372,6 +376,28 @@ button {
  }
 }
 ```
+
+## Difference Between Sync and Async APIs
+
+The following features are **not supported by `parseSync()` and `transformSync()`**.
+
+### Unsupported Parsing Features
+
+* Flattening `@import` at-rules is not supported.
+* The file loader `ParserOptions.load()` is not available.
+* Parsing from a stream is not supported.
+* Parsing with a file as the input parameter is not supported.
+
+### Unsupported CSS Module Features
+
+* The `pattern` parameter does not support the following algorithms:
+
+  * `sha1`
+  * `sha256`
+  * `sha384`
+  * `sha512`
+* CSS `composes` does not support composing from a file.
+* Importing CSS variables using `@value` is not supported.
 
 
 ------

@@ -1,5 +1,5 @@
 import { LineMap } from "./linesmap.ts";
-
+import type {SourceLocation} from "../../@types/ast.d.ts";
 /**
  * Source file ID
  */
@@ -84,6 +84,15 @@ export class SourceFile {
      */
     getOffsets(offset: number): [number, number] {
         return this.lineStarts.getOffsets(offset);
+    }
+
+    /**
+     * get source location
+     * @param offset 
+     * @returns 
+     */
+    getSourceLocation(offset: number): [string | null, number, number] {
+        return [this.file, ...  this.getOffsets(offset)];
     }
 
     /**

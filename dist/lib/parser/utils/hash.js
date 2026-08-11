@@ -110,5 +110,30 @@ async function hash(input, length = 6, algo) {
     }
     return hashId(input, length);
 }
+/**
+ * generate a hash
+ * @param input
+ * @param length
+ * @param algo
+ */
+function syncHash(input, length = 6, algo) {
+    let result;
+    if (algo != null) {
+        switch (algo) {
+            case "hex":
+                return toHex(input).slice(0, length);
+            case "base64url":
+            case "base64":
+                result = btoa(input);
+                if (algo == "base64url") {
+                    result = result.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+                }
+                return result.slice(0, length);
+            default:
+                throw new Error(`Unsupported hash algorithm: ${algo}`);
+        }
+    }
+    return hashId(input, length);
+}
 
-export { DIGITS, FIRST_ALPHABET, FULL_ALPHABET, LOWER, hash, hashAlgorithms, hashId, objectHash };
+export { DIGITS, FIRST_ALPHABET, FULL_ALPHABET, LOWER, hash, hashAlgorithms, hashId, objectHash, syncHash };

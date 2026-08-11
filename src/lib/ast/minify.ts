@@ -156,7 +156,12 @@ export function minify(
                 }
             }
 
-            if (replacement != null && (!Array.isArray(replacement) || replacement.length > 0) && replacement != parent && parent[PARENT] != null) {
+            if (
+                replacement != null &&
+                (!Array.isArray(replacement) || replacement.length > 0) &&
+                replacement != parent &&
+                parent[PARENT] != null
+            ) {
                 replaceNodeOrValue(parent[PARENT] as AstRule | AstAtRule | AstStyleSheet, parent, replacement);
             }
 
@@ -190,7 +195,6 @@ export function minify(
 
         if (postprocess) {
             for (const feature of options.features as MinifyFeature[]) {
-
                 if (
                     (feature.processMode & FeatureWalkMode.Post) === 0 ||
                     (feature.accept != null && !feature.accept.has(parent.typ))
@@ -212,7 +216,12 @@ export function minify(
             }
         }
 
-        if (replacement != null && (!Array.isArray(replacement) || replacement.length > 0) && replacement != parent && parent[PARENT] != null) {
+        if (
+            replacement != null &&
+            (!Array.isArray(replacement) || replacement.length > 0) &&
+            replacement != parent &&
+            parent[PARENT] != null
+        ) {
             // @ts-ignore
             replaceNodeOrValue(parent[PARENT], parent, replacement);
         }
@@ -829,8 +838,8 @@ function doMinify(
                     let sel: string = wrap ? (node as AstRule)![OPTIMIZED]!.optimized.join("") + `:is(${rule})` : rule;
 
                     if (sel.length < (<AstRule>node).sel.length) {
-                        ( node as AstRule).sel = sel;
-                        ( node as AstRule)[TOKENS] = null;
+                        (node as AstRule).sel = sel;
+                        (node as AstRule)[TOKENS] = null;
                     }
                 } else if (node[OPTIMIZED]?.reducible) {
                     if (node[OPTIMIZED].optimized.length === 1) {

@@ -1,12 +1,12 @@
-import type {VisitorNodeMap} from "./visitor.d.ts";
-import type {AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet, SourceLocation} from "./ast.d.ts";
-import {SourceMap} from "../lib/renderer/sourcemap/sourcemap.ts";
-import type {PropertyListOptions} from "./parse.d.ts";
-import {EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ValidationLevel} from "../lib/ast/types.ts";
-import type {CssVariableToken, Token} from "./token.d.ts";
-import {FeatureWalkMode} from "../lib/ast/features/type.ts";
-import {ValidationToken} from "../lib/validation/parser/types";
-import {SourceFile} from "../lib/parser/source.ts";
+import type { VisitorSyncNodeMap, VisitorNodeMap } from "./visitor.d.ts";
+import type { AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet, SourceLocation } from "./ast.d.ts";
+import { SourceMap } from "../lib/renderer/sourcemap/sourcemap.ts";
+import type { PropertyListOptions } from "./parse.d.ts";
+import { EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ValidationLevel } from "../lib/ast/types.ts";
+import type { CssVariableToken, Token } from "./token.d.ts";
+import { FeatureWalkMode } from "../lib/ast/features/type.ts";
+import { ValidationToken } from "../lib/validation/parser/types";
+import { SourceFile } from "../lib/parser/source.ts";
 
 export * from "./ast.d.ts";
 export * from "./token.d.ts";
@@ -40,7 +40,7 @@ export declare interface ErrorDescription {
     /**
      * Error location
      */
-    location?: [string, number, number];
+    location?: [string | null, number, number];
     /**
      * Error object
      */
@@ -206,7 +206,7 @@ export declare type LoadResult =
 /**
  * CSS module parser options
  */
-export declare interface ModuleOptions {
+export declare interface ModuleSyncOptions {
     /**
      * Use local scope vs global scope
      */
@@ -222,6 +222,101 @@ export declare interface ModuleOptions {
      */
     hashLength?: number;
 
+    /**
+     * The pattern used to generate scoped names. the supported placeholders are:
+     * - name: the file base name without the extension
+     * - hash: the file path hash
+     * - local: the local name
+     * - path: the file path
+     * - folder: the folder name
+     * - ext: the file extension
+     *
+     * the pattern can optionally have a maximum number of characters:
+     * ```
+     * pattern: '[local:2]-[hash:5]'
+     * ```
+     * the hash pattern can take an algorithm, a maximum number of characters or both:
+     * ```
+     * pattern: '[local]-[hash:base64:5]'
+     * ```
+     * or
+     * ```
+     * pattern: '[local]-[hash:5]'
+     * ```
+     * or
+     * ```
+     * pattern: '[local]-[hash:sha1]'
+     * ```
+     *
+     * supported hash algorithms are:
+     * - base64
+     * - hex
+     * - base64url
+     *
+     * ```typescript
+     *
+     * import {transform, ModuleCaseTransformEnum} from '@tbela99/css-parser';
+     * import type {TransformResult} from '@tbela99/css-parser';
+     * css = `
+     * :local(.className) {
+     *   background: red;
+     *   color: yellow;
+     * }
+     *
+     * :local(.subClass) {
+     *   composes: className;
+     *   background: blue;
+     * }
+     * `;
+     *
+     * let result: TransformResult = await transform(css, {
+     *
+     *     beautify:true,
+     *     module: {
+     *         pattern: '[local]-[hash:sha256]'
+     *     }
+     *
+     * });
+     *
+     * console.log(result.code);
+     * ```
+     * generated css
+     *
+     * ```css
+     * .className-b629f {
+     *  background: red;
+     *  color: #ff0
+     * }
+     * .subClass-a0c35 {
+     *  background: blue
+     * }
+     * ```
+     */
+    pattern?: string;
+
+    /**
+     * optional. function change the case of the scoped name and the class mapping
+     *
+     * - {@link ModuleCaseTransformEnum.IgnoreCase}: do not change case
+     * - {@link ModuleCaseTransformEnum.CamelCase}: camelCase {@link ParseResult.mapping} key name
+     * - {@link ModuleCaseTransformEnum.CamelCaseOnly}: camelCase {@link ParseResult.mapping} key name and the scoped class name
+     * - {@link ModuleCaseTransformEnum.DashCase}: dashCase {@link ParseResult.mapping} key name
+     * - {@link ModuleCaseTransformEnum.DashCaseOnly}: dashCase {@link ParseResult.mapping} key name and the scoped class name
+     *
+     */
+    naming?: ModuleCaseTransformEnum;
+
+    /**
+     * Function to generate scoped name
+     * @param localName
+     * @param filePath
+     * @param pattern see {@link ModuleSyncOptions.pattern}
+     * @param hashLength
+     */
+    generateScopedName?: (localName: string, filePath: string, pattern: string, hashLength?: number) => string;
+}
+
+export declare interface ModuleAsyncOptions extends ModuleSyncOptions {
     /**
      * The pattern used to generate scoped names. the supported placeholders are:
      * - name: the file base name without the extension
@@ -299,22 +394,10 @@ export declare interface ModuleOptions {
     pattern?: string;
 
     /**
-     * optional. function change the case of the scoped name and the class mapping
-     *
-     * - {@link ModuleCaseTransformEnum.IgnoreCase}: do not change case
-     * - {@link ModuleCaseTransformEnum.CamelCase}: camelCase {@link ParseResult.mapping} key name
-     * - {@link ModuleCaseTransformEnum.CamelCaseOnly}: camelCase {@link ParseResult.mapping} key name and the scoped class name
-     * - {@link ModuleCaseTransformEnum.DashCase}: dashCase {@link ParseResult.mapping} key name
-     * - {@link ModuleCaseTransformEnum.DashCaseOnly}: dashCase {@link ParseResult.mapping} key name and the scoped class name
-     *
-     */
-    naming?: ModuleCaseTransformEnum;
-
-    /**
      * Function to generate scoped name
      * @param localName
      * @param filePath
-     * @param pattern see {@link ModuleOptions.pattern}
+     * @param pattern see {@link ModuleSyncOptions.pattern}
      * @param hashLength
      */
     generateScopedName?: (
@@ -343,6 +426,15 @@ export declare interface ParseInputFileOptions {
 /**
  * Input options for string or stream
  */
+export declare interface ParseInputOptions {
+    /**
+     * Input string or stream
+     */
+    input: string;
+}
+/**
+ * Input options for string or stream
+ */
 export declare interface ParseInputStreamOptions {
     /**
      * Input string or stream
@@ -351,15 +443,11 @@ export declare interface ParseInputStreamOptions {
 }
 
 export declare interface ParseSourceOptions {
-
     sourcesMap?: SourceFile[];
     source?: SourceFile | null;
 }
 
-/**
- * Parser options
- */
-export declare interface ParserOptions
+export declare interface ParserSyncOptions
     extends MinifyOptions, MinifyFeatureOptions, ValidationOptions, PropertyListOptions, ParseSourceOptions {
     /**
      * Source file to be used for sourcemap
@@ -373,10 +461,6 @@ export declare interface ParserOptions
      * Remove at-rule charset
      */
     removeCharset?: boolean;
-    /**
-     * Resolve import
-     */
-    resolveImport?: boolean;
     /**
      * Current working directory
      *
@@ -393,18 +477,6 @@ export declare interface ParserOptions
      */
     expandIfSyntax?: boolean;
 
-    /**
-     * Custom URL and file loader.
-     * @param url
-     * @param currentDirectory
-     * @param responseType
-     *
-     */
-    load?: (
-        url: string | { absolute: string; relative: string },
-        currentDirectory?: string,
-        responseType?: boolean | ResponseType,
-    ) => Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
     /**
      * Get directory name
      * @param path
@@ -440,9 +512,9 @@ export declare interface ParserOptions
 
     /**
      * Node visitor
-     * {@link VisitorNodeMap | VisitorNodeMap[]}
+     * {@link VisitorSyncNodeMap | VisitorSyncNodeMap[]}
      */
-    visitor?: VisitorNodeMap | VisitorNodeMap[];
+    visitor?: VisitorSyncNodeMap | VisitorSyncNodeMap[];
     /**
      * Abort signal
      *
@@ -472,13 +544,42 @@ export declare interface ParserOptions
     /**
      * CSS modules options
      */
-    module?: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions;
+    module?: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleSyncOptions;
 
     /**
      * Tokenizing info
      * @private
      */
     parseInfo?: ParseInfo;
+}
+
+/**
+ * Parser options
+ */
+export declare interface ParserOptions extends ParserSyncOptions, ModuleAsyncOptions {
+    /**
+     * Resolve import
+     */
+    resolveImport?: boolean;
+
+    /**
+     * Custom URL and file loader.
+     * @param url
+     * @param currentDirectory
+     * @param responseType
+     *
+     */
+    load?: (
+        url: string | { absolute: string; relative: string },
+        currentDirectory?: string,
+        responseType?: boolean | ResponseType,
+    ) => Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
+
+    /**
+     * Node visitor
+     * {@link VisitorNodeMap | VisitorNodeMap[]}
+     */
+    visitor?: VisitorNodeMap | VisitorNodeMap[];
 }
 
 /**
@@ -639,6 +740,11 @@ export declare interface RenderOptions {
      */
     sourcesMap?: SourceFile[];
 }
+
+/**
+ * Transform options
+ */
+export declare interface TransformSyncOptions extends ParserSyncOptions, RenderOptions {}
 
 /**
  * Transform options

@@ -1,9 +1,9 @@
-import type { ErrorDescription, IdentToken, Token } from "../../../@types/index.d.ts";
+import type { ErrorDescription, IdentToken, ParserOptions, Token } from "../../../@types/index.d.ts";
 import { EnumToken } from "../../ast/types.ts";
 import { LOC, tokensfuncDefMap } from "../../syntax/constants.ts";
 import { equalsIgnoreCase } from "./text.ts";
 
-export function matchGenericSyntax(stream: Token[]): {
+export function matchGenericSyntax(stream: Token[], options: ParserOptions): {
     success: boolean;
     errors: ErrorDescription[];
 } {
@@ -36,9 +36,9 @@ export function matchGenericSyntax(stream: Token[]): {
             ) {
                 errors.push({
                     action: "drop",
-                    message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.srcId}:${token[LOC]!.sta.lin}:${token[LOC]!.sta.col}`,
+                    message: `unexpected token ${EnumToken[token.typ]}`,
                     node: token,
-                    location: token[LOC]!,
+                    location: options.source!.getSourceLocation(token[LOC]!.sta),
                 });
                 success = false;
                 break;
@@ -47,20 +47,6 @@ export function matchGenericSyntax(stream: Token[]): {
             stack.pop();
             scopes.pop();
 
-            // if (scopes.length === 0) {
-            //     return {
-            //         success: false,
-            //         errors: [
-            //             {
-            //                 action: "drop",
-            //                 node: token,
-            //                 message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${token[LOC]!.sta.col}`,
-            //                 location: token[LOC]!,
-            //             },
-            //         ],
-            //     };
-            // }
-
             continue;
         }
 
@@ -68,9 +54,9 @@ export function matchGenericSyntax(stream: Token[]): {
             if (!expectAndOr || scopes.at(-1)?.has(EnumToken.OrTokenType)) {
                 errors.push({
                     action: "drop",
-                    message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.srcId}:${token[LOC]!.sta.lin}:${token[LOC]!.sta.col}`,
+                    message: `unexpected token ${EnumToken[token.typ]}`,
                     node: token,
-                    location: token[LOC]!,
+                    location: options.source!.getSourceLocation(token[LOC]!.sta),
                 });
                 success = false;
                 break;
@@ -87,9 +73,9 @@ export function matchGenericSyntax(stream: Token[]): {
             if (!expectAndOr || scopes.at(-1)?.has(EnumToken.AndTokenType)) {
                 errors.push({
                     action: "drop",
-                    message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.srcId}:${token[LOC]!.sta.lin}:${token[LOC]!.sta.col}`,
+                    message: `unexpected token ${EnumToken[token.typ]}`,
                     node: token,
-                    location: token[LOC]!,
+                    location: options.source!.getSourceLocation(token[LOC]!.sta),
                 });
                 success = false;
                 break;
@@ -106,9 +92,9 @@ export function matchGenericSyntax(stream: Token[]): {
             if (!expectComma) {
                 errors.push({
                     action: "drop",
-                    message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.srcId}:${token[LOC]!.sta.lin}:${token[LOC]!.sta.col}`,
+                    message: `unexpected token ${EnumToken[token.typ]}`,
                     node: token,
-                    location: token[LOC]!,
+                    location: options.source!.getSourceLocation(token[LOC]!.sta),
                 });
                 success = false;
                 break;
@@ -130,9 +116,10 @@ export function matchGenericSyntax(stream: Token[]): {
     if (stack.length > 0) {
         errors.push({
             action: "drop",
-            message: `unexpected token ${EnumToken[stack.at(-1)?.typ]} at ${stack.at(-1)?.[LOC]?.srcId}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
+            message: `unexpected token ${EnumToken[stack.at(-1)?.typ]}`,
             node: stack.at(-1),
-            location: stack.at(-1)?.[LOC]!,
+            // @ts-expect-error
+            location: options.source!.getSourceLocation(stack.at(-1)?.[LOC]!.sta),
         });
         success = false;
     }

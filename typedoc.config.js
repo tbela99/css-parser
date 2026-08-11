@@ -12,11 +12,12 @@ export default {
         "llm.txt": "https://github.com/tbela99/css-parser/docs/llms.txt",
         GitHub: "https://github.com/tbela99/css-parser",
     },
+    highlightLanguages: ["ts", "css", "javascript", "json", 'html', 'shell'],
     plugin: ["typedoc-unhoax-theme", "typedoc-plugin-coverage", "typedoc-plugin-redirect", "typedoc-plugin-llms-txt"],
     redirects: {
         "documents/Guide.html": "documents/Guide.Getting_started.html",
     },
-    llmsTxtTemplate: './files/llms.txt',
+    llmsTxtTemplate: "./files/llms.txt",
     coverageOutputType: "all",
     out: "docs",
     // Inject the checkbox parser into TypeDoc's markdown engine

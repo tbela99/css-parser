@@ -8,7 +8,7 @@ import { trimArray } from '../validation/match.js';
 import { splitTokenList } from '../validation/utils/list.js';
 import { getColorSpace } from './color/utils/colorspace.js';
 import { getColorComponents } from './color/utils/components.js';
-import { nonStandardColors, systemColors, deprecatedSystemColors, COLORS_NAMES, colorsFunc, colorFuncColorSpace, LOC } from './constants.js';
+import { nonStandardColors, systemColors, deprecatedSystemColors, COLORS_NAMES, colorsFunc, colorFuncColorSpace } from './constants.js';
 import { getSyntaxConfig } from '../validation/config.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
@@ -483,7 +483,7 @@ function isColor(token, errors) {
                                     action: "drop",
                                     message: `Unexpected constant '${val}'`,
                                     node: value,
-                                    location: value[LOC],
+                                    // location: options.source!.getSourLocation(value[LOC]!.sta),
                                 });
                                 return false;
                             }
@@ -513,7 +513,7 @@ function isColor(token, errors) {
                                             action: "drop",
                                             message: `Unexpected constant '${val}'`,
                                             node: v.value,
-                                            location: v.value[LOC],
+                                            // location: options.source!.getSourLocation(v.value[LOC]!.sta),
                                         });
                                         return false;
                                     }
@@ -561,7 +561,7 @@ function isColor(token, errors) {
                             action: "drop",
                             message: "adding percentage and number is not allowed",
                             node: token,
-                            location: token[LOC],
+                            // location: options.source!.getSourLocation(token[LOC]!.sta),
                         });
                         return false;
                     }
@@ -589,9 +589,9 @@ function isColor(token, errors) {
                     if (children.length <= offset + 1) {
                         errors?.push({
                             action: "drop",
-                            message: `Invalid color at ${token[LOC]?.srcId}:${token[LOC]?.sta.lin}:${token[LOC]?.sta.col}`,
+                            message: `Invalid color`,
                             node: token,
-                            location: token[LOC],
+                            // location: options.source!.getSourLocation(token[LOC]!.sta),
                         });
                         return false;
                     }

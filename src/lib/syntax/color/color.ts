@@ -559,7 +559,6 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
             (ColorType[to].toLowerCase().replaceAll("_", "-") as string).toLowerCase().replaceAll("_", "-"),
         )
     ) {
-        
         switch (token.kin) {
             case ColorType.HEX:
             case ColorType.LIT:
@@ -806,7 +805,6 @@ export function color2srgbvalues(token: ColorToken): number[] | null {
 }
 
 function values2colortoken(values: number[], to: ColorType): ColorToken {
-    
     values = srgb2srgbcolorspace(values, to);
 
     const chi: Token[] = [

@@ -81,7 +81,10 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                     replacement = result;
                 }
             }
-            if (replacement != null && (!Array.isArray(replacement) || replacement.length > 0) && replacement != parent && parent[PARENT] != null) {
+            if (replacement != null &&
+                (!Array.isArray(replacement) || replacement.length > 0) &&
+                replacement != parent &&
+                parent[PARENT] != null) {
                 replaceNodeOrValue(parent[PARENT], parent, replacement);
             }
             if ("chi" in replacement) {
@@ -118,7 +121,10 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                 }
             }
         }
-        if (replacement != null && (!Array.isArray(replacement) || replacement.length > 0) && replacement != parent && parent[PARENT] != null) {
+        if (replacement != null &&
+            (!Array.isArray(replacement) || replacement.length > 0) &&
+            replacement != parent &&
+            parent[PARENT] != null) {
             // @ts-ignore
             replaceNodeOrValue(parent[PARENT], parent, replacement);
         }

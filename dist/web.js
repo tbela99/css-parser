@@ -1,4 +1,4 @@
-import { doParse } from './lib/parser/parse.js';
+import { doParse, doParseSync } from './lib/parser/parse.js';
 export { parseDeclarations, parseString } from './lib/parser/parse.js';
 import { doRender } from './lib/renderer/render.js';
 export { renderValue as renderToken } from './lib/renderer/render.js';
@@ -124,6 +124,124 @@ function render(data, options = {}, mapping) {
 async function parseFile(file, options = {}, asStream = false) {
     console.warn("DeprecationWarning: parseFile is deprecated, use parse instead as parse({file, asStream, ...options})");
     return parse({ file, asStream, ...options });
+}
+/**
+ * Parse css
+ * @param args
+ *
+ * Parsing a string
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  let result = await parse(css, {nestingRules: true});
+ *  console.log(result.ast);
+ * ```
+ *
+ */
+function parseSync(...args) {
+    let options;
+    let stream;
+    if (typeof args[0] === "string") {
+        stream = args[0];
+        options = args[1];
+    }
+    else {
+        const { input, ...opt } = args[0];
+        options = opt;
+        stream = input;
+    }
+    options ??= {};
+    options.src ??= "";
+    options.sourcesMap ??= [];
+    Object.assign(options, {
+        resolve,
+        dirname,
+        cwd: (options.cwd ?? self.location.pathname.endsWith("/"))
+            ? self.location.pathname
+            : dirname(self.location.pathname),
+    });
+    options.src = resolve(options.src, options.cwd).relative;
+    if (options.source == null) {
+        options.sourcesMap.push(new SourceFile(typeof stream == "string" ? stream : "", [], options.src));
+        options.source = options.sourcesMap.at(-1);
+    }
+    options.parseInfo = {
+        stream,
+        buffer: "",
+        src: options.src ?? "",
+        offset: 0,
+        time: 0,
+        source: options.source,
+        position: 0,
+        currentPosition: -1,
+    };
+    const result = doParseSync(tokenize(options.parseInfo), options);
+    const { revMapping, ...res } = result;
+    return res;
+}
+/**
+ * Transform css
+ * @param css
+ * @param options
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  const result = await transform(css);
+ *  console.log(result.code);
+ * ```
+ *
+ */
+function transformSync(...args) {
+    let options;
+    let stream;
+    if (typeof args[0] === "string") {
+        stream = args[0];
+        options = args[1];
+    }
+    else {
+        const { input, ...opt } = args[0];
+        // @ts-ignore
+        options = opt;
+        stream = input;
+    }
+    options ??= {};
+    options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+    const startTime = performance.now();
+    const parseResult = parseSync(stream, options);
+    let mapping = null;
+    let importMapping = null;
+    if (typeof options.module == "number" && options.module & ModuleScopeEnumOptions.ICSS) {
+        mapping = parseResult.mapping;
+        importMapping = parseResult.importMapping;
+    }
+    else if (typeof options.module == "object" &&
+        typeof options.module.scoped == "number" &&
+        options.module.scoped & ModuleScopeEnumOptions.ICSS) {
+        mapping = parseResult.mapping;
+        importMapping = parseResult.importMapping;
+    }
+    // ast already expanded by parse
+    const rendered = render(parseResult.ast, {
+        ...options,
+        expandNestingRules: false,
+    }, mapping != null ? { mapping, importMapping } : null);
+    return {
+        ...parseResult,
+        ...rendered,
+        errors: parseResult.errors.concat(rendered.errors),
+        stats: {
+            bytesOut: rendered.code.length,
+            ...parseResult.stats,
+            render: rendered.stats.total,
+            total: `${(performance.now() - startTime).toFixed(2)}ms`,
+        },
+    };
 }
 /**
  * Parse css
@@ -305,4 +423,4 @@ async function transform(...args) {
     });
 }
 
-export { ModuleScopeEnumOptions, ResponseType, dirname, load, parse, parseFile, render, resolve, transform, transformFile };
+export { ModuleScopeEnumOptions, ResponseType, dirname, load, parse, parseFile, parseSync, render, resolve, transform, transformFile, transformSync };

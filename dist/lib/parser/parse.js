@@ -7,7 +7,7 @@ import { expand } from '../ast/expand.js';
 import { WalkerEvent, walk, walkValues } from '../ast/walk.js';
 import { tokenizeStream, tokenize } from './tokenize.js';
 import { ROOT, LOC, tokensfuncDefMap, STATE, PARENT, TOKENS, ERRORS, pageMarginBoxType } from '../syntax/constants.js';
-import { hashAlgorithms, hash } from './utils/hash.js';
+import { hashAlgorithms, hash, syncHash } from './utils/hash.js';
 import { parseSelector } from './utils/selector.js';
 import { parseDeclaration } from './utils/declaration.js';
 import { getSyntaxRule } from '../validation/config.js';
@@ -193,6 +193,1124 @@ const generateScopedName = memoize(async (localName, filePath, pattern, hashLeng
     // if leading char is digit, prefix underscore (very rare)
     return (/^[0-9]/.test(result) ? "_" : "") + result;
 });
+const generateSyncScopedName = memoize((localName, filePath, pattern, hashLength = 5) => {
+    if (localName.startsWith("--")) {
+        localName = localName.slice(2);
+    }
+    const matches = /.*?(([^/]+)\/)?([^/\\]*?)(\.([^?/]+))?([?].*)?$/.exec(filePath);
+    const folder = matches?.[2]?.replace?.(/[^A-Za-z0-9_-]/g, "_") ?? "";
+    const fileBase = matches?.[3] ?? "";
+    const ext = matches?.[5] ?? "";
+    const path = filePath.replace(/[^A-Za-z0-9_-]/g, "_");
+    // sanitize localName for safe char set (replace spaces/illegal chars)
+    const safeLocal = localName.replace(/[^A-Za-z0-9_-]/g, "_");
+    const hashString = `${localName}::${filePath}`;
+    let result = "";
+    let inParens = 0;
+    let key = "";
+    let position = 0;
+    // Compose final scoped name. Ensure the entire class doesn't start with a digit:
+    for (const char of pattern) {
+        position += char.length;
+        if (char == "[") {
+            inParens++;
+            if (inParens != 1) {
+                throw new Error(`Unexpected character: '${char} at position ${position - 1}' in pattern '${pattern}'`);
+            }
+            continue;
+        }
+        if (char == "]") {
+            inParens--;
+            if (inParens != 0) {
+                throw new Error(`Unexpected character: '${char}:${position - 1}'`);
+            }
+            let hashAlgo = null;
+            let length = null;
+            if (key.includes(":")) {
+                const parts = key.split(":");
+                if (parts.length == 2) {
+                    // @ts-ignore
+                    [key, length] = parts;
+                    // @ts-ignore
+                    if (key == "hash" && hashAlgorithms.includes(length)) {
+                        // @ts-ignore
+                        hashAlgo = length;
+                        length = null;
+                    }
+                }
+                if (parts.length == 3) {
+                    // @ts-ignore
+                    [key, hashAlgo, length] = parts;
+                }
+                if (length != null && !Number.isInteger(+length)) {
+                    throw new Error(`Unsupported hash length: '${length}'. expecting format [hash:length] or [hash:hash-algo:length]`);
+                }
+            }
+            const slice = length != null && length != fileBase.length;
+            switch (key) {
+                case "hash":
+                    result += syncHash(hashString, length ?? hashLength, hashAlgo);
+                    break;
+                case "name":
+                    // @ts-expect-error
+                    result += slice ? fileBase.slice(0, +length) : fileBase;
+                    break;
+                case "local":
+                    // @ts-expect-error
+                    result += slice ? safeLocal.slice(0, +length) : localName;
+                    break;
+                case "ext":
+                    // @ts-expect-error
+                    result += slice ? ext.slice(0, +length) : ext;
+                    break;
+                case "path":
+                    // @ts-expect-error
+                    result += slice ? path.slice(0, +length) : path;
+                    break;
+                case "folder":
+                    // @ts-expect-error
+                    result += slice ? folder.slice(0, +length) : folder;
+                    break;
+                default:
+                    throw new Error(`Unsupported key: '${key}'`);
+            }
+            key = "";
+            continue;
+        }
+        if (inParens > 0) {
+            key += char;
+        }
+        else {
+            result += char;
+        }
+    }
+    // if leading char is digit, prefix underscore (very rare)
+    return (/^[0-9]/.test(result) ? "_" : "") + result;
+});
+/**
+ * Parse css string
+ * @param iter
+ * @param options
+ *
+ * @throws Error
+ * @private
+ */
+function doParseSync(iter, options = {}) {
+    if (options.signal != null) {
+        options.signal.addEventListener("abort", reject);
+    }
+    options = {
+        src: "",
+        sourcemap: false,
+        minify: true,
+        pass: 1,
+        expandIfSyntax: false,
+        parseColor: true,
+        nestingRules: true,
+        resolveUrls: false,
+        removeCharset: true,
+        removeEmpty: true,
+        removeDuplicateDeclarations: true,
+        computeTransform: true,
+        computeShorthand: true,
+        computeCalcExpression: true,
+        inlineCssVariables: false,
+        setParent: true,
+        removePrefix: false,
+        validation: false,
+        lenient: true,
+        ...options,
+    };
+    if (typeof options.validation !== "boolean") {
+        options.validation = !!options.validation;
+    }
+    if (options.module) {
+        options.expandNestingRules = true;
+    }
+    if (options.expandNestingRules) {
+        options.nestingRules = false;
+    }
+    const startTime = performance.now();
+    const errors = [];
+    const stack = [];
+    const stats = {
+        src: options.src ?? "",
+        bytesIn: 0,
+        nodesCount: 0,
+        tokensCount: 0,
+        importedBytesIn: 0,
+        tokenize: `0ms`,
+        parse: `0ms`,
+        minify: `0ms`,
+        total: `0ms`,
+        imports: [],
+    };
+    const invalidNodes = [];
+    let ast = {
+        typ: EnumToken.StyleSheetNodeType,
+        chi: [],
+    };
+    let tokens = [];
+    let context = ast;
+    ast[ROOT] = ast;
+    ast[LOC] = {
+        sta: 0,
+        end: 0,
+        srcId: options.source.id,
+    };
+    let valuesHandlers;
+    let preValuesHandlers;
+    let postValuesHandlers;
+    let preVisitorsHandlersMap;
+    let visitorsHandlersMap;
+    let postVisitorsHandlersMap;
+    let item;
+    let node;
+    // @ts-ignore ignore error
+    let parensMatch = 0;
+    let curlyBracketMatch = 0;
+    if (options.visitor != null) {
+        valuesHandlers = new Map();
+        preValuesHandlers = new Map();
+        postValuesHandlers = new Map();
+        preVisitorsHandlersMap = new Map();
+        visitorsHandlersMap = new Map();
+        postVisitorsHandlersMap = new Map();
+        const visitors = Object.entries(options.visitor);
+        let key;
+        let value;
+        let i;
+        for (i = 0; i < visitors.length; i++) {
+            key = visitors[i][0];
+            value = visitors[i][1];
+            if (Number.isInteger(+key)) {
+                visitors.splice(i + 1, 0, ...Object.entries(value));
+                continue;
+            }
+            if (Array.isArray(value)) {
+                // @ts-ignore
+                visitors.splice(i + 1, 0, ...value.map((item) => [key, item]));
+                continue;
+            }
+            if (key in EnumToken) {
+                if (typeof value == "function") {
+                    if (!valuesHandlers.has(EnumToken[key])) {
+                        valuesHandlers.set(EnumToken[key], []);
+                    }
+                    valuesHandlers.get(EnumToken[key]).push(value);
+                }
+                else if (typeof value == "object" &&
+                    "type" in value &&
+                    "handler" in value &&
+                    value.type in WalkerEvent) {
+                    if (value.type == WalkerEvent.Enter) {
+                        if (!preValuesHandlers.has(EnumToken[key])) {
+                            preValuesHandlers.set(EnumToken[key], []);
+                        }
+                        preValuesHandlers
+                            .get(EnumToken[key])
+                            .push(value.handler);
+                    }
+                    else if (value.type == WalkerEvent.Leave) {
+                        if (!postValuesHandlers.has(EnumToken[key])) {
+                            postValuesHandlers.set(EnumToken[key], []);
+                        }
+                        postValuesHandlers
+                            .get(EnumToken[key])
+                            .push(value.handler);
+                    }
+                }
+                else {
+                    errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
+                }
+            }
+            else if (["Declaration", "Rule", "AtRule", "KeyframesRule", "KeyframesAtRule"].includes(key)) {
+                if (typeof value == "function") {
+                    if (!visitorsHandlersMap.has(key)) {
+                        visitorsHandlersMap.set(key, []);
+                    }
+                    visitorsHandlersMap
+                        .get(key)
+                        .push(value);
+                }
+                else if (typeof value == "object") {
+                    if ("type" in value && "handler" in value && value.type in WalkerEvent) {
+                        if (value.type == WalkerEvent.Enter) {
+                            if (!preVisitorsHandlersMap.has(key)) {
+                                preVisitorsHandlersMap.set(key, []);
+                            }
+                            preVisitorsHandlersMap
+                                .get(key)
+                                .push(value.handler);
+                        }
+                        else if (value.type == WalkerEvent.Leave) {
+                            if (!postVisitorsHandlersMap.has(key)) {
+                                postVisitorsHandlersMap.set(key, []);
+                            }
+                            postVisitorsHandlersMap
+                                .get(key)
+                                .push(value.handler);
+                        }
+                    }
+                    else {
+                        if (!visitorsHandlersMap.has(key)) {
+                            visitorsHandlersMap.set(key, []);
+                        }
+                        visitorsHandlersMap
+                            .get(key)
+                            .push(value);
+                    }
+                }
+                else {
+                    errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
+                }
+            }
+            else {
+                errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
+            }
+        }
+    }
+    if (Array.isArray(iter)) {
+        // @ts-expect-error
+        iter = iter[Symbol.iterator]();
+    }
+    while (
+    // @ts-expect-error
+    (item = iter.next().value)) {
+        stats.bytesIn = item.bytesIn;
+        stats.tokensCount++;
+        if (BadTokensTypes.includes(item.token.typ)) {
+            tokens.push(item.token);
+            errors.push({
+                action: "drop",
+                message: "Bad token",
+                syntax: null,
+                node: item.token,
+                location: options.source.getSourceLocation(item.token[LOC].sta),
+            });
+            // bad token
+            continue;
+        }
+        if (item.token.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(item.token.typ)) {
+            parensMatch++;
+        }
+        else if (item.token.typ === EnumToken.EndParensTokenType && parensMatch > 0) {
+            parensMatch--;
+        }
+        if (item.token.typ === EnumToken.BlockStartTokenType) {
+            curlyBracketMatch++;
+        }
+        else if (item.token.typ === EnumToken.BlockEndTokenType && curlyBracketMatch > 0) {
+            curlyBracketMatch--;
+        }
+        tokens.push(item.token);
+        // console.debug([item.token, {parensMatch, curlyBracketMatch}]);
+        // if (parensMatch === 0) {
+        if (parensMatch === 0 &&
+            (item.token.typ === EnumToken.SemiColonTokenType ||
+                item.token.typ === EnumToken.BlockStartTokenType ||
+                item.token.typ === EnumToken.EOFTokenType)) {
+            node = parseNode(tokens, context, options, errors, stats, invalidNodes);
+            if (node != null) {
+                if ("chi" in node) {
+                    stack.push(node);
+                    context = node;
+                }
+            }
+            else if (item.token.typ == EnumToken.BlockStartTokenType) {
+                let inBlock = 1;
+                tokens = [item.token];
+                do {
+                    // @ts-expect-error
+                    item = iter.next().value;
+                    if (item == null) {
+                        break;
+                    }
+                    tokens.push(item.token);
+                    if (item.token.typ === EnumToken.BlockStartTokenType) {
+                        inBlock++;
+                    }
+                    else if (item.token.typ === EnumToken.BlockEndTokenType) {
+                        inBlock--;
+                    }
+                } while (inBlock != 0);
+                if (tokens.length > 0) {
+                    errors.push({
+                        action: "drop",
+                        message: "invalid block",
+                        location: options.source.getSourceLocation(tokens[0][LOC].sta),
+                    });
+                }
+            }
+            tokens = [];
+        }
+        else if ((parensMatch === 0 || curlyBracketMatch === 0) && item.token.typ === EnumToken.BlockEndTokenType) {
+            parseNode(tokens, context, options, errors, stats, invalidNodes);
+            if (context[LOC] != null) {
+                context[LOC].end = item.token[LOC].end;
+            }
+            const previousNode = stack.pop();
+            context = (stack[stack.length - 1] ?? ast);
+            if (options.removeEmpty &&
+                previousNode != null &&
+                previousNode.chi.length == 0 &&
+                context.chi[context.chi.length - 1] == previousNode) {
+                context.chi.pop();
+            }
+            tokens = [];
+            parensMatch = 0;
+            curlyBracketMatch = 0;
+        }
+        // }
+    }
+    if (tokens.length > 0) {
+        node = parseNode(tokens, context, options, errors, stats, invalidNodes);
+        if (node != null) {
+            if ("chi" in node /* && node.typ != EnumToken.InvalidRuleNodeType */) {
+                stack.push(node);
+                context = node;
+            }
+        }
+    }
+    const endParseTime = performance.now();
+    if (options.expandNestingRules) {
+        ast = expand(ast);
+    }
+    let replacement;
+    let callable;
+    if (options.visitor != null) {
+        let parens;
+        for (const result of walk(ast)) {
+            parens = null;
+            if (valuesHandlers.size > 0 ||
+                preVisitorsHandlersMap.size > 0 ||
+                visitorsHandlersMap.size > 0 ||
+                postVisitorsHandlersMap.size > 0) {
+                if ((result.node.typ == EnumToken.DeclarationNodeType &&
+                    (preVisitorsHandlersMap.has("Declaration") ||
+                        visitorsHandlersMap.has("Declaration") ||
+                        postVisitorsHandlersMap.has("Declaration"))) ||
+                    (result.node.typ == EnumToken.AtRuleNodeType &&
+                        (preVisitorsHandlersMap.has("AtRule") ||
+                            visitorsHandlersMap.has("AtRule") ||
+                            postVisitorsHandlersMap.has("AtRule"))) ||
+                    (result.node.typ == EnumToken.KeyframesAtRuleNodeType &&
+                        (preVisitorsHandlersMap.has("KeyframesAtRule") ||
+                            visitorsHandlersMap.has("KeyframesAtRule") ||
+                            postVisitorsHandlersMap.has("KeyframesAtRule")))) {
+                    const handlers = [];
+                    const key = result.node.typ == EnumToken.DeclarationNodeType
+                        ? "Declaration"
+                        : result.node.typ == EnumToken.AtRuleNodeType
+                            ? "AtRule"
+                            : "KeyframesAtRule";
+                    if (preVisitorsHandlersMap.has(key)) {
+                        handlers.push(
+                        // @ts-expect-error
+                        ...preVisitorsHandlersMap.get(key));
+                    }
+                    if (visitorsHandlersMap.has(key)) {
+                        // @ts-ignore
+                        handlers.push(...visitorsHandlersMap.get(key));
+                    }
+                    if (postVisitorsHandlersMap.has(key)) {
+                        // @ts-ignore
+                        handlers.push(...postVisitorsHandlersMap.get(key));
+                    }
+                    let node = result.node;
+                    for (const handler of handlers) {
+                        callable =
+                            typeof handler == "function"
+                                ? handler
+                                : handler[camelize(node.typ === EnumToken.DeclarationNodeType ||
+                                    node.typ === EnumToken.AtRuleNodeType
+                                    ? node.nam
+                                    : node.val)];
+                        if (callable == null) {
+                            continue;
+                        }
+                        // @ts-expect-error
+                        replacement = callable(node, result[PARENT], ast, function* () {
+                            if (parens == null) {
+                                // @ts-expect-error
+                                parens = [...result.parents()];
+                            }
+                            yield* parens[Symbol.iterator]();
+                        });
+                        if (replacement == null) {
+                            continue;
+                        }
+                        if (replacement == null || replacement == node) {
+                            continue;
+                        }
+                        // @ts-ignore
+                        node = replacement;
+                        if (Array.isArray(node)) {
+                            break;
+                        }
+                    }
+                    if (node != result.node) {
+                        replaceNodeOrValue(result.parent, result.node, node);
+                    }
+                }
+                else if ((result.node.typ == EnumToken.RuleNodeType &&
+                    (preVisitorsHandlersMap.has("Rule") ||
+                        visitorsHandlersMap.has("Rule") ||
+                        postVisitorsHandlersMap.has("Rule"))) ||
+                    (result.node.typ == EnumToken.KeyFramesRuleNodeType &&
+                        (preVisitorsHandlersMap.has("KeyframesRule") ||
+                            visitorsHandlersMap.has("KeyframesRule") ||
+                            postVisitorsHandlersMap.has("KeyframesRule")))) {
+                    const handlers = [];
+                    const key = result.node.typ == EnumToken.RuleNodeType ? "Rule" : "KeyframesRule";
+                    if (preVisitorsHandlersMap.has(key)) {
+                        handlers.push(...preVisitorsHandlersMap.get(key));
+                    }
+                    if (visitorsHandlersMap.has(key)) {
+                        handlers.push(...visitorsHandlersMap.get(key));
+                    }
+                    if (postVisitorsHandlersMap.has(key)) {
+                        handlers.push(...postVisitorsHandlersMap.get(key));
+                    }
+                    let node = result.node;
+                    for (const callable of handlers) {
+                        replacement = callable(node, result.parent, result.root, 
+                        // @ts-expect-error
+                        function* () {
+                            if (parens == null) {
+                                // @ts-expect-error
+                                parens = [...result.parents()];
+                            }
+                            yield* parens[Symbol.iterator]();
+                        });
+                        if (replacement == null) {
+                            continue;
+                        }
+                        if (replacement == null || replacement == node) {
+                            continue;
+                        }
+                        // @ts-ignore
+                        node = replacement;
+                        //
+                        if (Array.isArray(node)) {
+                            break;
+                        }
+                    }
+                    // @ts-ignore
+                    if (node != result.node) {
+                        // @ts-ignore
+                        replaceNodeOrValue(result.parent, result.node, node);
+                    }
+                }
+                else if (valuesHandlers.size > 0) {
+                    let node = null;
+                    node = result.node;
+                    if (valuesHandlers.has(node.typ)) {
+                        for (const valueHandler of valuesHandlers.get(node.typ)) {
+                            callable = valueHandler;
+                            replacement = callable(node, result.parent, ast, 
+                            // @ts-expect-error
+                            function* () {
+                                if (parens == null) {
+                                    // @ts-expect-error
+                                    parens = [...result.parents()];
+                                }
+                                yield* parens[Symbol.iterator]();
+                            });
+                            if (replacement == null) {
+                                continue;
+                            }
+                            if (replacement != null && replacement != node) {
+                                node = replacement;
+                            }
+                        }
+                    }
+                    if (node != result.node) {
+                        // @ts-ignore
+                        replaceNodeOrValue(result[PARENT], value, node);
+                    }
+                    const tokens = Array.isArray(result.node[TOKENS]) ? result.node[TOKENS] : [];
+                    if (Array.isArray(result.node.val)) {
+                        tokens.push(...result.node.val);
+                    }
+                    if (tokens.length == 0) {
+                        continue;
+                    }
+                    for (const { value, parent, root, parents } of walkValues(tokens, result.node)) {
+                        node = value;
+                        if (valuesHandlers.has(node.typ)) {
+                            let parens = null;
+                            for (const valueHandler of valuesHandlers.get(node.typ)) {
+                                callable = valueHandler;
+                                // @ts-expect-error
+                                let result = callable(node, parent, root, function* () {
+                                    if (parens == null) {
+                                        // @ts-expect-error
+                                        parens = [...parents()];
+                                    }
+                                    yield* parens[Symbol.iterator]();
+                                });
+                                if (result == null) {
+                                    continue;
+                                }
+                                if (result != null && result != node) {
+                                    node = result;
+                                }
+                                if (Array.isArray(node)) {
+                                    break;
+                                }
+                            }
+                        }
+                        if (node != value) {
+                            // @ts-ignore
+                            replaceNodeOrValue(parent, value, node);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (invalidNodes.length > 0) {
+        let count = invalidNodes.length;
+        for (const { node, parent } of walk(ast)) {
+            if (options.lenient && node[STATE] == EnumAstNodeStatus.Unknown) {
+                continue;
+            }
+            if (node[STATE] === EnumAstNodeStatus.Invalid ||
+                node[STATE] === EnumAstNodeStatus.Unknown ||
+                node[STATE] === EnumAstNodeStatus.Unparsed ||
+                node[STATE] === EnumAstNodeStatus.Malformed ||
+                node[STATE] === EnumAstNodeStatus.Disallowed) {
+                // @ts-ignore
+                parent.chi.splice(parent.chi.indexOf(node), 1);
+                node[PARENT] = null;
+                count--;
+                if (count == 0) {
+                    break;
+                }
+            }
+        }
+    }
+    while (stack.length > 0 && context != ast) {
+        const previousNode = stack.pop();
+        context = (stack[stack.length - 1] ?? ast);
+        // remove empty nodes
+        if (options.removeEmpty &&
+            previousNode != null &&
+            previousNode.chi.length == 0 &&
+            context.chi[context.chi.length - 1] == previousNode) {
+            context.chi.pop();
+            continue;
+        }
+        break;
+    }
+    if (options.minify) {
+        if (ast.chi.length > 0) {
+            let passes = options.pass ?? 1;
+            while (passes--) {
+                minify(ast, options, true, errors, false);
+            }
+        }
+    }
+    stats.bytesIn += stats.importedBytesIn;
+    let endTime = performance.now();
+    const result = {
+        ast,
+        errors,
+        stats: {
+            ...stats,
+            parse: `${(endParseTime - startTime).toFixed(2)}ms`,
+            minify: `${(endTime - endParseTime).toFixed(2)}ms`,
+            tokenize: `${(options?.parseInfo?.time ?? 0).toFixed(2)}ms`,
+            total: `${(endTime - startTime).toFixed(2)}ms`,
+        },
+    };
+    if (options.module) {
+        const moduleSettings = {
+            hashLength: 5,
+            filePath: "",
+            scoped: ModuleScopeEnumOptions.Local,
+            naming: ModuleCaseTransformEnum.IgnoreCase,
+            pattern: "",
+            generateScopedName,
+            ...(typeof options.module != "object" ? {} : options.module),
+        };
+        const parseModuleTime = performance.now();
+        const namesMapping = {};
+        const global = new Set();
+        const processed = new Set();
+        const pattern = typeof options.module == "boolean" ? null : moduleSettings.pattern;
+        const importMapping = {};
+        const cssVariablesMap = {};
+        const importedCssVariables = {};
+        let mapping = {};
+        let revMapping = {};
+        let filePath = typeof options.module == "boolean"
+            ? options.src
+            : (moduleSettings.filePath ?? options.src);
+        filePath =
+            filePath === ""
+                ? options.src
+                : options.resolve(filePath, options.dirname(options.src), options.cwd).relative;
+        if (typeof options.module == "number") {
+            if (options.module & ModuleCaseTransformEnum.CamelCase) {
+                moduleSettings.naming = ModuleCaseTransformEnum.CamelCase;
+            }
+            else if (options.module & ModuleCaseTransformEnum.CamelCaseOnly) {
+                moduleSettings.naming = ModuleCaseTransformEnum.CamelCaseOnly;
+            }
+            else if (options.module & ModuleCaseTransformEnum.DashCase) {
+                moduleSettings.naming = ModuleCaseTransformEnum.DashCase;
+            }
+            else if (options.module & ModuleCaseTransformEnum.DashCaseOnly) {
+                moduleSettings.naming = ModuleCaseTransformEnum.DashCaseOnly;
+            }
+            if (options.module & ModuleScopeEnumOptions.Global) {
+                moduleSettings.scoped = ModuleScopeEnumOptions.Global;
+            }
+            if (options.module & ModuleScopeEnumOptions.Pure) {
+                // @ts-ignore
+                moduleSettings.scoped |= ModuleScopeEnumOptions.Pure;
+            }
+            if (options.module & ModuleScopeEnumOptions.Shortest) {
+                // @ts-ignore
+                moduleSettings.scoped |= ModuleScopeEnumOptions.Shortest;
+            }
+            if (options.module & ModuleScopeEnumOptions.ICSS) {
+                // @ts-ignore
+                moduleSettings.scoped |= ModuleScopeEnumOptions.ICSS;
+            }
+        }
+        if (typeof moduleSettings.scoped == "boolean") {
+            moduleSettings.scoped = moduleSettings.scoped
+                ? ModuleScopeEnumOptions.Local
+                : ModuleScopeEnumOptions.Global;
+        }
+        if (moduleSettings.scoped & ModuleScopeEnumOptions.Shortest) {
+            moduleSettings.generateScopedName = generateSyncScopedName;
+        }
+        moduleSettings.filePath = filePath;
+        moduleSettings.pattern =
+            pattern != null && pattern !== "" ? pattern : filePath === "" ? `[local]_[hash]` : `[local]_[hash]_[name]`;
+        for (const { node, parent } of walk(ast)) {
+            if (node.typ == EnumToken.CssVariableImportTokenType) {
+                throw new Error("css variable import not supported by parseSync() or transformSync(). use parse() or transform() instead.\nat " +
+                    options.source.getSourceLocation(node[LOC].sta).join(":"));
+            }
+            if (node.typ == EnumToken.CssVariableDeclarationMapTokenType) {
+                const from = node.from.find((t) => t.typ == EnumToken.IdenTokenType || isIdentColor(t));
+                if (!(from.val in cssVariablesMap)) {
+                    errors.push({
+                        node,
+                        message: `could not resolve @value import from '${from.val}'`,
+                        action: "drop",
+                    });
+                }
+                else {
+                    for (const token of node.vars) {
+                        if (token.typ == EnumToken.IdenTokenType || isIdentColor(token)) {
+                            if (!(token.val in cssVariablesMap[from.val])) {
+                                errors.push({
+                                    node,
+                                    message: `value '${token.val}' is not exported from '${from.val}'`,
+                                    action: "drop",
+                                });
+                                continue;
+                            }
+                            result.cssModuleVariables ??= {};
+                            result.cssModuleVariables[token.val] = importedCssVariables[token.val] = cssVariablesMap[from.val][token.val];
+                        }
+                    }
+                }
+                parent.chi.splice(parent.chi.indexOf(node), 1);
+                continue;
+            }
+            if (node.typ == EnumToken.CssVariableTokenType) {
+                if (parent?.typ == EnumToken.StyleSheetNodeType) {
+                    if (result.cssModuleVariables == null) {
+                        result.cssModuleVariables = {};
+                    }
+                    result.cssModuleVariables[node.nam] = node;
+                }
+                parent.chi.splice(parent.chi.indexOf(node), 1);
+                continue;
+            }
+            if (node.typ == EnumToken.DeclarationNodeType) {
+                if (node.nam.startsWith("--")) {
+                    if (!(node.nam in namesMapping)) {
+                        let result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
+                            ? node.nam
+                            : moduleSettings.generateScopedName(node.nam, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                        let value = result;
+                        mapping[node.nam] =
+                            "--" +
+                                (moduleSettings.naming & ModuleCaseTransformEnum.DashCaseOnly ||
+                                    moduleSettings.naming & ModuleCaseTransformEnum.CamelCaseOnly
+                                    ? getKeyName(value, moduleSettings.naming)
+                                    : value);
+                        revMapping[node.nam] = node.nam;
+                    }
+                    node.nam = mapping[node.nam];
+                }
+                if (equalsIgnoreCase("composes", node.nam)) {
+                    const composeSelectors = [];
+                    // let isValid: boolean = true;
+                    for (const token of node.val) {
+                        if (token.typ == EnumToken.ComposesSelectorNodeType) {
+                            composeSelectors.push(token);
+                        }
+                    }
+                    // find parent rule
+                    let parentRule = parent;
+                    while (parentRule != null && parentRule.typ != EnumToken.RuleNodeType) {
+                        parentRule = parentRule[PARENT];
+                    }
+                    if ( /* !isValid || */composeSelectors.length == 0) {
+                        errors.push({
+                            action: "drop",
+                            message: `composes is empty`,
+                            node,
+                        });
+                        parentRule.chi.splice(parentRule.chi.indexOf(node), 1);
+                        continue;
+                    }
+                    for (const token of composeSelectors) {
+                        // composes: a b c;
+                        if (token.r == null) {
+                            for (const rule of token.l) {
+                                if (rule.typ == EnumToken.WhitespaceTokenType ||
+                                    rule.typ == EnumToken.CommentTokenType) {
+                                    continue;
+                                }
+                                if (!(rule.val in mapping)) {
+                                    let result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
+                                        ? rule.val
+                                        : moduleSettings.generateScopedName(rule.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                    let value = result;
+                                    mapping[rule.val] =
+                                        (rule.typ == EnumToken.DashedIdenTokenType ? "--" : "") +
+                                            (moduleSettings.naming & ModuleCaseTransformEnum.DashCaseOnly ||
+                                                moduleSettings.naming & ModuleCaseTransformEnum.CamelCaseOnly
+                                                ? getKeyName(value, moduleSettings.naming)
+                                                : value);
+                                    revMapping[mapping[rule.val]] = rule.val;
+                                }
+                                if (parentRule != null) {
+                                    for (const tk of parentRule[TOKENS]) {
+                                        if (tk.typ == EnumToken.ClassSelectorTokenType) {
+                                            const val = tk.val.slice(1);
+                                            if (val in revMapping) {
+                                                const key = revMapping[val];
+                                                mapping[key] = [
+                                                    ...new Set([
+                                                        ...mapping[key].split(" "),
+                                                        mapping[rule.val],
+                                                    ]),
+                                                ].join(" ");
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // composes: a b c from 'file.css';
+                        else if (token.r.typ == EnumToken.String) {
+                            throw new Error(`composes from file is not supported using parseSync() or transformSync(). Use parse() or transform() instead.\nat ${options.source.getSourceLocation(node[LOC].sta).join(":")}`);
+                        }
+                        // composes: a b c from global;
+                        else if (token.r.typ == EnumToken.IdenTokenType) {
+                            // global
+                            if (parentRule != null) {
+                                if (equalsIgnoreCase("global", token.r.val)) {
+                                    for (const tk of parentRule[TOKENS]) {
+                                        if (tk.typ == EnumToken.ClassSelectorTokenType) {
+                                            const val = tk.val.slice(1);
+                                            if (val in revMapping) {
+                                                const key = revMapping[val];
+                                                mapping[key] = [
+                                                    ...new Set([
+                                                        ...mapping[key].split(" "),
+                                                        ...token.l.reduce((acc, curr) => {
+                                                            if (curr.typ == EnumToken.IdenTokenType) {
+                                                                acc.push(curr.val);
+                                                            }
+                                                            return acc;
+                                                        }, []),
+                                                    ]),
+                                                ].join(" ");
+                                            }
+                                        }
+                                    }
+                                }
+                                else {
+                                    errors.push({
+                                        action: "drop",
+                                        message: `composes '${token.r.val}' is not supported`,
+                                        node,
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    parent.chi.splice(parent.chi.indexOf(node), 1);
+                }
+                if (node.typ == EnumToken.DeclarationNodeType &&
+                    [
+                        "grid-column",
+                        "grid-column-start",
+                        "grid-column-end",
+                        "grid-row",
+                        "grid-row-start",
+                        "grid-row-end",
+                        "grid-template",
+                        "grid-template-columns",
+                        "grid-template-rows",
+                    ].includes(node.nam)) {
+                    for (const { value } of walkValues(node.val, node)) {
+                        if (value.typ != EnumToken.IdenTokenType) {
+                            continue;
+                        }
+                        let idenToken = value.val;
+                        let suffix = "";
+                        if (idenToken.endsWith("-start")) {
+                            suffix = "-start";
+                            idenToken = idenToken.slice(0, -6);
+                        }
+                        else if (idenToken.endsWith("-end")) {
+                            suffix = "-end";
+                            idenToken = idenToken.slice(0, -4);
+                        }
+                        if (!(idenToken in mapping)) {
+                            let result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
+                                ? idenToken
+                                : moduleSettings.generateScopedName(idenToken, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                            mapping[idenToken] = result;
+                            revMapping[result] = idenToken;
+                            if (suffix !== "") {
+                                idenToken += suffix;
+                                if (!(idenToken in mapping)) {
+                                    mapping[idenToken] = result + suffix;
+                                    revMapping[result + suffix] = idenToken;
+                                }
+                            }
+                        }
+                        value.val = mapping[idenToken];
+                    }
+                }
+                else if (node.nam == "grid-template-areas" || node.nam == "grid-template") {
+                    for (let i = 0; i < node.val.length; i++) {
+                        if (node.val[i].typ == EnumToken.String) {
+                            const tokens = parseString(node.val[i].val.slice(1, -1));
+                            for (const { value } of walkValues(tokens)) {
+                                if (value.typ == EnumToken.IdenTokenType ||
+                                    value.typ == EnumToken.DashedIdenTokenType) {
+                                    if (value.val in mapping) {
+                                        value.val = mapping[value.val];
+                                    }
+                                    else {
+                                        let result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
+                                            ? value.val
+                                            : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                        mapping[value.val] = result;
+                                        revMapping[result] = value.val;
+                                        value.val = result;
+                                    }
+                                }
+                            }
+                            node.val[i].val =
+                                node.val[i].val.charAt(0) +
+                                    renderTokens(tokens) +
+                                    node.val[i].val.charAt(node.val[i].val.length - 1);
+                        }
+                    }
+                }
+                else if (node.nam == "animation" || node.nam == "animation-name") {
+                    for (const { value } of walkValues(node.val, node)) {
+                        if (value.typ == EnumToken.IdenTokenType &&
+                            ![
+                                "none",
+                                "infinite",
+                                "normal",
+                                "reverse",
+                                "alternate",
+                                "alternate-reverse",
+                                "forwards",
+                                "backwards",
+                                "both",
+                                "running",
+                                "paused",
+                                "linear",
+                                "ease",
+                                "ease-in",
+                                "ease-out",
+                                "ease-in-out",
+                                "step-start",
+                                "step-end",
+                                "jump-start",
+                                "jump-end",
+                                "jump-none",
+                                "jump-both",
+                                "start",
+                                "end",
+                                "inherit",
+                                "initial",
+                                "unset",
+                            ].includes(value.val)) {
+                            if (!(value.val in mapping)) {
+                                const result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
+                                    ? value.val
+                                    : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                mapping[value.val] = result;
+                                revMapping[mapping[value.val]] = value.val;
+                            }
+                            value.val = mapping[value.val];
+                        }
+                    }
+                }
+                for (const { value, parent } of walkValues(node.val, node)) {
+                    if (value.typ == EnumToken.DashedIdenTokenType) {
+                        value.val = mapping[value.val];
+                    }
+                    else if ((value.typ == EnumToken.IdenTokenType || isIdentColor(value)) &&
+                        value.val in importedCssVariables) {
+                        replaceNodeOrValue(parent, value, importedCssVariables[value.val].val);
+                    }
+                }
+            }
+            else if (node.typ == EnumToken.RuleNodeType) {
+                // if (node[TOKENS] == null) {
+                const tokens = parseString(node.sel);
+                matchSelectorSyntax(tokens, [], options);
+                node[TOKENS] = trimArray(tokens);
+                // }
+                let hasIdOrClass = false;
+                for (const { value } of walkValues(node[TOKENS], node, 
+                // @ts-ignore
+                (value, parent) => {
+                    if (value.typ == EnumToken.PseudoClassTokenType ||
+                        value.typ == EnumToken.PseudoElementTokenType) {
+                        const val = value.val.toLowerCase();
+                        switch (val) {
+                            case ":local":
+                            case ":global":
+                                {
+                                    let index = parent[TOKENS].indexOf(value);
+                                    parent[TOKENS].splice(index, 1);
+                                    if (parent[TOKENS][index]?.typ == EnumToken.WhitespaceTokenType ||
+                                        parent[TOKENS][index]?.typ ==
+                                            EnumToken.DescendantCombinatorTokenType) {
+                                        parent[TOKENS].splice(index, 1);
+                                    }
+                                }
+                                break;
+                        }
+                    }
+                    else if (value.typ == EnumToken.PseudoClassFuncTokenType) {
+                        switch (value.val.toLowerCase()) {
+                            case ":global":
+                                for (const token of value.chi) {
+                                    global.add(token);
+                                }
+                            case ":local":
+                                parent[TOKENS].splice(parent[TOKENS].indexOf(value), 1, ...value.chi);
+                                break;
+                        }
+                    }
+                })) {
+                    if (value.typ == EnumToken.HashTokenType || value.typ == EnumToken.ClassSelectorTokenType) {
+                        hasIdOrClass = true;
+                    }
+                    if (processed.has(value)) {
+                        continue;
+                    }
+                    processed.add(value);
+                    if (value.typ == EnumToken.PseudoClassTokenType || value.typ == EnumToken.PseudoElementTokenType) ;
+                    else if (value.typ == EnumToken.PseudoClassFuncTokenType) ;
+                    else {
+                        if (global.has(value)) {
+                            continue;
+                        }
+                        if (value.typ == EnumToken.ClassSelectorTokenType) {
+                            const val = value.val.slice(1);
+                            if (!(val in mapping)) {
+                                const result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
+                                    ? val
+                                    : moduleSettings.generateScopedName(val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                let value = result;
+                                mapping[val] =
+                                    moduleSettings.naming & ModuleCaseTransformEnum.DashCaseOnly ||
+                                        moduleSettings.naming & ModuleCaseTransformEnum.CamelCaseOnly
+                                        ? getKeyName(value, moduleSettings.naming)
+                                        : value;
+                                revMapping[mapping[val]] = val;
+                            }
+                            value.val = "." + mapping[val];
+                        }
+                    }
+                }
+                if (moduleSettings.scoped & ModuleScopeEnumOptions.Pure) {
+                    if (!hasIdOrClass) {
+                        throw new Error(`pure module: No id or class found in selector '${node.sel}' at '${node[LOC]?.src ?? ""}':${node[LOC]?.sta?.lin ?? ""}:${node[LOC]?.sta?.col ?? ""}`);
+                    }
+                }
+                node.sel = "";
+                for (const token of node[TOKENS]) {
+                    node.sel += renderValue(token);
+                }
+            }
+            else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframesAtRuleNodeType) {
+                const val = node.nam.toLowerCase();
+                if (node[TOKENS] == null) {
+                    node[TOKENS] = parseString(node.val);
+                }
+                if (val == "property" || val == "keyframes") {
+                    const prefix = val == "property" ? "--" : "";
+                    for (const value of node[TOKENS]) {
+                        if ((prefix == "--" && value.typ == EnumToken.DashedIdenTokenType) ||
+                            (prefix == "" && value.typ == EnumToken.IdenTokenType)) {
+                            if (!(value.val in mapping)) {
+                                const result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
+                                    ? value.val
+                                    : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                let val = result;
+                                mapping[value.val] =
+                                    prefix +
+                                        (moduleSettings.naming & ModuleCaseTransformEnum.DashCaseOnly ||
+                                            moduleSettings.naming & ModuleCaseTransformEnum.CamelCaseOnly
+                                            ? getKeyName(val, moduleSettings.naming)
+                                            : val);
+                                revMapping[mapping[value.val]] = value.val;
+                            }
+                            value.val = mapping[value.val];
+                        }
+                    }
+                    node.val = renderTokens(node[TOKENS]);
+                }
+            }
+        }
+        if (moduleSettings.naming != ModuleCaseTransformEnum.IgnoreCase) {
+            revMapping = {};
+            mapping = Object.entries(mapping).reduce((acc, [key, value]) => {
+                const keyName = getKeyName(key, moduleSettings.naming);
+                acc[keyName] = value;
+                revMapping[value] = keyName;
+                return acc;
+            }, {});
+        }
+        result.mapping = mapping;
+        result.revMapping = revMapping;
+        if (moduleSettings.scoped & ModuleScopeEnumOptions.ICSS && Object.keys(importMapping).length > 0) {
+            result.importMapping = importMapping;
+        }
+        endTime = performance.now();
+        result.stats.module = `${(endTime - parseModuleTime).toFixed(2)}ms`;
+        result.stats.total = `${(endTime - startTime).toFixed(2)}ms`;
+    }
+    if (options.signal != null) {
+        options.signal.removeEventListener("abort", reject);
+    }
+    return result;
+}
 /**
  * Parse css string
  * @param iter
@@ -242,7 +1360,6 @@ async function doParse(iter, options = {}) {
     }
     const startTime = performance.now();
     const errors = [];
-    const src = options.src;
     const stack = [];
     const stats = {
         src: options.src ?? "",
@@ -264,21 +1381,11 @@ async function doParse(iter, options = {}) {
     let tokens = [];
     let context = ast;
     ast[ROOT] = ast;
-    if (options.sourcemap) {
-        ast[LOC] = {
-            sta: {
-                ind: 0,
-                lin: 1,
-                col: 1,
-            },
-            end: {
-                ind: 0,
-                lin: 1,
-                col: 1,
-            },
-            srcId: "",
-        };
-    }
+    ast[LOC] = {
+        sta: 0,
+        end: 0,
+        srcId: options.source.id,
+    };
     let valuesHandlers;
     let preValuesHandlers;
     let postValuesHandlers;
@@ -411,7 +1518,7 @@ async function doParse(iter, options = {}) {
                 message: "Bad token",
                 syntax: null,
                 node: item.token,
-                location: item.token[LOC],
+                location: options.source.getSourceLocation(item.token[LOC].sta),
             });
             // bad token
             continue;
@@ -469,11 +1576,7 @@ async function doParse(iter, options = {}) {
                     errors.push({
                         action: "drop",
                         message: "invalid block",
-                        location: {
-                            srcId: src,
-                            sta: tokens[0][LOC].sta,
-                            end: tokens[tokens.length - 1][LOC].end,
-                        },
+                        location: options.source.getSourceLocation(tokens[0][LOC].sta),
                     });
                 }
             }
@@ -619,10 +1722,7 @@ async function doParse(iter, options = {}) {
                         if (replacement == null) {
                             continue;
                         }
-                        isAsync =
-                            replacement instanceof Promise ||
-                                Object.getPrototypeOf(replacement).constructor.name == "AsyncFunction";
-                        if (replacement) {
+                        if (replacement instanceof Promise) {
                             replacement = await replacement;
                         }
                         if (replacement == null || replacement == node) {
@@ -671,10 +1771,7 @@ async function doParse(iter, options = {}) {
                         if (replacement == null) {
                             continue;
                         }
-                        isAsync =
-                            replacement instanceof Promise ||
-                                Object.getPrototypeOf(replacement).constructor.name == "AsyncFunction";
-                        if (replacement) {
+                        if (replacement instanceof Promise) {
                             replacement = await replacement;
                         }
                         if (replacement == null || replacement == node) {
@@ -711,10 +1808,7 @@ async function doParse(iter, options = {}) {
                             if (replacement == null) {
                                 continue;
                             }
-                            isAsync =
-                                replacement instanceof Promise ||
-                                    Object.getPrototypeOf(replacement).constructor.name == "AsyncFunction";
-                            if (isAsync) {
+                            if (replacement instanceof Promise) {
                                 replacement = await replacement;
                             }
                             if (replacement != null && replacement != node) {
@@ -750,10 +1844,7 @@ async function doParse(iter, options = {}) {
                                 if (result == null) {
                                     continue;
                                 }
-                                isAsync =
-                                    result instanceof Promise ||
-                                        Object.getPrototypeOf(result).constructor.name == "AsyncFunction";
-                                if (isAsync) {
+                                if (result instanceof Promise) {
                                     result = await result;
                                 }
                                 if (result != null && result != node) {
@@ -1014,6 +2105,7 @@ async function doParse(iter, options = {}) {
                                     let result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
                                         ? rule.val
                                         : moduleSettings.generateScopedName(rule.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                    // @ts-expect-error
                                     let value = result instanceof Promise ? await result : result;
                                     mapping[rule.val] =
                                         (rule.typ == EnumToken.DashedIdenTokenType ? "--" : "") +
@@ -1091,7 +2183,9 @@ async function doParse(iter, options = {}) {
                                                     const result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
                                                         ? iden.val
                                                         : moduleSettings.generateScopedName(iden.val, srcIndex, moduleSettings.pattern, moduleSettings.hashLength);
-                                                    let value = result instanceof Promise ? await result : result;
+                                                    let value = 
+                                                    // @ts-expect-error
+                                                    result instanceof Promise ? await result : result;
                                                     root.mapping[iden.val] =
                                                         moduleSettings.naming & ModuleCaseTransformEnum.DashCaseOnly ||
                                                             moduleSettings.naming & ModuleCaseTransformEnum.CamelCaseOnly
@@ -1176,6 +2270,7 @@ async function doParse(iter, options = {}) {
                             let result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
                                 ? idenToken
                                 : moduleSettings.generateScopedName(idenToken, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                            // @ts-expect-error
                             if (result instanceof Promise) {
                                 result = await result;
                             }
@@ -1206,6 +2301,7 @@ async function doParse(iter, options = {}) {
                                         let result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
                                             ? value.val
                                             : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                        // @ts-expect-error
                                         if (result instanceof Promise) {
                                             result = await result;
                                         }
@@ -1258,6 +2354,7 @@ async function doParse(iter, options = {}) {
                                 const result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
                                     ? value.val
                                     : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                // @ts-expect-error
                                 mapping[value.val] = result instanceof Promise ? await result : result;
                                 revMapping[mapping[value.val]] = value.val;
                             }
@@ -1379,6 +2476,7 @@ async function doParse(iter, options = {}) {
                                 const result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
                                     ? val
                                     : moduleSettings.generateScopedName(val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                // @ts-expect-error
                                 let value = result instanceof Promise ? await result : result;
                                 mapping[val] =
                                     moduleSettings.naming & ModuleCaseTransformEnum.DashCaseOnly ||
@@ -1415,6 +2513,7 @@ async function doParse(iter, options = {}) {
                                 const result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
                                     ? value.val
                                     : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                // @ts-expect-error
                                 let val = result instanceof Promise ? await result : result;
                                 mapping[value.val] =
                                     prefix +
@@ -1504,11 +2603,6 @@ function parseNode(tokens, context, options, errors, stats, invalidNodes) {
                 matchCount = 0;
             }
             while (matchCount > 0) {
-                position = {
-                    ...position,
-                    sta: { ...position.sta, ind: position.sta.ind + 1, col: position.sta.col + 1 },
-                    end: { ...position.end, ind: position.end.ind + 1, col: position.end.col + 1 },
-                };
                 tokens.push({
                     typ: EnumToken.EndParensTokenType,
                     [LOC]: { ...position },
@@ -1523,7 +2617,7 @@ function parseNode(tokens, context, options, errors, stats, invalidNodes) {
                 action: "drop",
                 message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
                 node: tokens[i],
-                location: tokens[i][LOC],
+                location: options.source.getSourceLocation(tokens[i][LOC].sta),
             });
             tokens[i].typ = EnumToken.InvalidCommentTokenType;
             continue;
@@ -1541,13 +2635,12 @@ function parseNode(tokens, context, options, errors, stats, invalidNodes) {
     }
     for (; i < tokens.length; i++) {
         if (tokens[i].typ == EnumToken.CommentTokenType || tokens[i].typ == EnumToken.CDOCOMMTokenType) {
-            const location = tokens[i]?.[LOC];
             if (tokens[i].typ == EnumToken.CDOCOMMTokenType && context.typ != EnumToken.StyleSheetNodeType) {
                 errors.push({
                     action: "drop",
                     message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
                     node: tokens[i],
-                    location,
+                    location: options.source.getSourceLocation(tokens[i][LOC].sta),
                 });
                 tokens[i].typ = EnumToken.InvalidCommentTokenType;
                 continue;
@@ -1628,7 +2721,7 @@ function parseNode(tokens, context, options, errors, stats, invalidNodes) {
                     message: "<declaration> not allowed in <stylesheet>",
                     action: "drop",
                     node,
-                    location: node[LOC],
+                    location: options.source.getSourceLocation(node[LOC].sta),
                 });
             }
             else if (options.lenient || node.typ === EnumToken.DeclarationNodeType) {
@@ -1665,10 +2758,10 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
         errors.push({
             action: "drop",
             node: atRule,
-            location: atRule[LOC],
+            location: options.source.getSourceLocation(atRule[LOC].sta),
             message: "unknown at-rule",
         });
-        const result = matchGenericSyntax(stream);
+        const result = matchGenericSyntax(stream, options);
         atRule[TOKENS] = parseTokens(stream);
         atRule[STATE] = result.success ? EnumAstNodeStatus.Unknown : EnumAstNodeStatus.Invalid;
         atRule[ERRORS] = result.success ? [errors[errors.length - 1]] : [errors[errors.length - 1], ...result.errors];
@@ -1686,7 +2779,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             errors.push({
                 action: "drop",
                 node: atRule,
-                location: atRule[LOC],
+                location: options.source.getSourceLocation(atRule[LOC].sta),
                 message: parseAsBlock ? "at-rule block not supported" : "at-rule block is required",
             });
             atRule[TOKENS] = parseTokens(stream);
@@ -1704,7 +2797,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             errors.push({
                 action: "drop",
                 node: token,
-                location: token[LOC],
+                location: options.source.getSourceLocation(token[LOC].sta),
                 message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC].srcId}:${token[LOC].sta}:${token[LOC].sta}`,
             });
             atRule[TOKENS] = parseTokens(stream);
@@ -1726,7 +2819,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
         errors.push({
             action: "drop",
             node: atRule,
-            location: atRule[LOC],
+            location: options.source.getSourceLocation(atRule[LOC].sta),
             message: parseAsBlock ? "at-rule block not supported" : "at-rule block is required",
         });
         atRule[TOKENS] = parseTokens(stream);
@@ -1749,7 +2842,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                 errors.push({
                     action: "drop",
                     node: stream[0] ?? atRule,
-                    location: (stream[0] ?? atRule)[LOC],
+                    location: options.source.getSourceLocation((stream[0] ?? atRule)[LOC].sta),
                     message: "expecting <space>",
                 });
             }
@@ -1758,7 +2851,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                 errors.push({
                     action: "drop",
                     node: stream[1] ?? atRule,
-                    location: (stream[1] ?? atRule)[LOC],
+                    location: options.source.getSourceLocation((stream[1] ?? atRule)[LOC].sta),
                     message: "expecting <string>",
                 });
             }
@@ -1767,7 +2860,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                 errors.push({
                     action: "drop",
                     node: stream[1] ?? atRule,
-                    location: (stream[1] ?? atRule)[LOC],
+                    location: options.source.getSourceLocation((stream[1] ?? atRule)[LOC].sta),
                     message: "expecting double-quoted string",
                 });
             }
@@ -1822,7 +2915,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                 errors.push({
                     action: "drop",
                     node: atRule,
-                    location: atRule[LOC],
+                    location: options.source.getSourceLocation(atRule[LOC].sta),
                     message: `unexpected at-rule ${atRule.nam}`,
                 });
             }
@@ -1833,7 +2926,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                         errors.push({
                             action: "drop",
                             node: token,
-                            location: token[LOC],
+                            location: options.source.getSourceLocation(token[LOC].sta),
                             message: `unexpected token ${EnumToken[token.typ]} at ${token[LOC].srcId}:${token[LOC].sta}:${token[LOC].sta}`,
                         });
                     }
@@ -1894,7 +2987,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                 errors.push({
                     action: "drop",
                     node: atRule,
-                    location: atRule[LOC],
+                    location: options.source.getSourceLocation(atRule[LOC].sta),
                     message: `expected <keyframe-name> at ${atRule[LOC].srcId}:${atRule[LOC].sta}:${atRule[LOC].sta}`,
                 });
                 success = false;
@@ -1944,12 +3037,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                     stream.splice(start - 1, end - start + 2, ...stream.slice(start, end));
                 }
             }
-            // @ts-expect-error
-            options = { ...options, convertColor: false };
-            atRule[LOC] = {
-                ...atRule[LOC],
-                end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
-            };
+            atRule[LOC].end = stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end;
             atRule[TOKENS] = stream.slice();
             atRule[STATE] = valid ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = valid ? [] : result.errors;
@@ -1977,10 +3065,8 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                     stream.splice(0, 1, ...stream[0].chi);
                 }
             }
-            atRule[LOC] = {
-                ...atRule[LOC],
-                end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
-            };
+            // @ts-expect-error
+            atRule[LOC].end = stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end;
             atRule[TOKENS] = stream.slice();
             atRule[STATE] = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = result.success ? [] : result.errors;
@@ -2038,7 +3124,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                     errors.push({
                         action: "drop",
                         node: atRule,
-                        location: atRule[LOC],
+                        location: options.source.getSourceLocation(atRule[LOC].sta),
                         message: "at-rule @when is required before @else block",
                     });
                 }
@@ -2047,7 +3133,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                     errors.push({
                         action: "drop",
                         node: atRule,
-                        location: atRule[LOC],
+                        location: options.source.getSourceLocation(atRule[LOC].sta),
                         message: "at-rule @else block is defined after last @else block",
                     });
                 }
@@ -2071,10 +3157,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             if (result.errors.length > 0) {
                 errors.push(...result.errors);
             }
-            atRule[LOC] = {
-                ...atRule[LOC],
-                end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
-            };
+            atRule[LOC].end = stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end;
             atRule[TOKENS] = stream.slice();
             atRule[STATE] = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = result.success ? [] : result.errors;
@@ -2094,7 +3177,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                 errors.push({
                     action: "drop",
                     node: range[0] ?? atRule,
-                    location: (range[0] ?? atRule)[LOC],
+                    location: options.source.getSourceLocation((range[0] ?? atRule)[LOC].sta),
                     message: "expected '(' at start of @scope block",
                 });
                 success = false;
@@ -2103,7 +3186,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                 errors.push({
                     action: "drop",
                     node: range.at(-1) ?? atRule,
-                    location: (range.at(-1) ?? atRule)[LOC],
+                    location: options.source.getSourceLocation((range.at(-1) ?? atRule)[LOC].sta),
                     message: "expected ')' at end of @scope block",
                 });
                 success = false;
@@ -2129,7 +3212,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                         errors.push({
                             action: "drop",
                             node: stream[index],
-                            location: stream[index]?.[LOC],
+                            location: options.source.getSourceLocation(stream[index]?.[LOC].sta),
                             message: "expected 'to' at end of @scope block",
                         });
                         success = false;
@@ -2142,7 +3225,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                             errors.push({
                                 action: "drop",
                                 node: stream[index],
-                                location: stream[index]?.[LOC],
+                                location: options.source.getSourceLocation(stream[index]?.[LOC].sta),
                                 message: "expected 'to' at end of @scope block",
                             });
                             success = false;
@@ -2155,7 +3238,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                                 errors.push({
                                     action: "drop",
                                     node: range.at(-1) ?? atRule,
-                                    location: (range.at(-1) ?? atRule)[LOC],
+                                    location: options.source.getSourceLocation((range.at(-1) ?? atRule)[LOC].sta),
                                     message: "expected ')' at end of @scope block",
                                 });
                                 success = false;
@@ -2174,10 +3257,8 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                     }
                 }
             }
-            atRule[LOC] = {
-                ...atRule[LOC],
-                end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
-            };
+            // @ts-expect-error
+            atRule[LOC].end = stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end;
             atRule[TOKENS] = stream.slice();
             atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = success ? [] : [errors[errors.length - 1]];
@@ -2190,10 +3271,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
         }
         case "page": {
             trimArray(stream);
-            atRule[LOC] = {
-                ...atRule[LOC],
-                end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
-            };
+            atRule[LOC].end = stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end;
             atRule[TOKENS] = stream.slice();
             atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = success ? [] : [errors[errors.length - 1]];
@@ -2224,7 +3302,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                 errors.push({
                     action: "drop",
                     node: atRule,
-                    location: atRule[LOC],
+                    location: options.source.getSourceLocation(atRule[LOC].sta),
                     message: "node is allowd only in @page rule",
                 });
             }
@@ -2237,7 +3315,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                         errors.push({
                             action: "drop",
                             node: stream[i],
-                            location: stream[i][LOC],
+                            location: options.source.getSourceLocation(stream[i][LOC].sta),
                             message: "expected whitespace or comment",
                         });
                         break;
@@ -2266,7 +3344,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                     });
                     stream.splice(index, 0, {
                         typ: EnumToken.ColonTokenType,
-                        [LOC]: { ...stream[index][LOC], end: { ...stream[index]?.[LOC]?.sta } },
+                        [LOC]: { ...stream[index][LOC], end: stream[index]?.[LOC]?.end },
                     });
                     isVarDeclaration = true;
                     break;
@@ -2294,7 +3372,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                     val: renderTokens(stream, options),
                     [LOC]: {
                         ...atRule[LOC],
-                        end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
+                        end: stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end,
                     },
                     [TOKENS]: stream,
                     [STATE]: EnumAstNodeStatus.Invalid,
@@ -2312,7 +3390,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                         val: value,
                         [LOC]: {
                             ...atRule[LOC],
-                            end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
+                            end: stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end,
                         },
                         [TOKENS]: stream,
                         [STATE]: EnumAstNodeStatus.Validated,
@@ -2326,7 +3404,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                     val: value,
                     [LOC]: {
                         ...atRule[LOC],
-                        end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
+                        end: stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end,
                     },
                     [TOKENS]: stream,
                     [STATE]: EnumAstNodeStatus.Validated,
@@ -2335,7 +3413,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             }
             atRule[LOC] = {
                 ...atRule[LOC],
-                end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
+                end: stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end,
             };
             atRule[STATE] = EnumAstNodeStatus.Validated;
             atRule[ERRORS] = [];
@@ -2354,7 +3432,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                 // check commas , or ,,
                 // check colon :
                 // check or and and
-                result = matchGenericSyntax(stream);
+                result = matchGenericSyntax(stream, options);
                 if (result.errors.length > 0) {
                     errors.push(...result.errors);
                 }
@@ -2526,9 +3604,9 @@ function parseTokens(tokens, options, errors) {
                 const node = stack.at(-1);
                 errors?.push?.({
                     action: "drop",
-                    message: `Unbalanced token ')' at ${node[LOC].srcId}:${node[LOC].sta.lin}:${node[LOC].sta.col}`,
+                    message: `Unbalanced token ')'`,
                     node,
-                    location: node[LOC],
+                    location: options.source.getSourceLocation(node[LOC].sta),
                 });
                 // return [];
                 continue;
@@ -2554,9 +3632,9 @@ function parseTokens(tokens, options, errors) {
                 const node = stack.at(-1);
                 errors?.push?.({
                     action: "drop",
-                    message: `Unbalanced token ']' at ${node[LOC].srcId}:${node[LOC].sta.lin}:${node[LOC].sta.col}`,
+                    message: `Unbalanced token ']'`,
                     node,
-                    location: node[LOC],
+                    location: options.source.getSourceLocation(node[LOC].sta),
                 });
                 // return [];
                 continue;
@@ -2679,11 +3757,11 @@ function parseTokens(tokens, options, errors) {
             action: "drop",
             message: `Unbalanced token. Expecting ${node.typ === EnumToken.AttrStartTokenType ? "']'" : ")"}'`,
             node,
-            location: node[LOC],
+            location: options.source.getSourceLocation(node[LOC].sta),
         });
         // return [];
     }
     return tokens;
 }
 
-export { doParse, generateScopedName, getKeyName, getShortNameGenerator, parseAtRule, parseDeclarations, parseString, parseTokens, trimWhiteSpace };
+export { doParse, doParseSync, generateScopedName, generateSyncScopedName, getKeyName, getShortNameGenerator, parseAtRule, parseDeclarations, parseString, parseTokens, trimWhiteSpace };

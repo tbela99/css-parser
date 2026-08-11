@@ -72,7 +72,7 @@ function toSortedString(input: any): string {
  * @param object
  * @returns
  */
-export function objectHash(object: any) {
+export function objectHash(object: any): string {
     return hashId(toSortedString(object));
 }
 
@@ -80,7 +80,7 @@ export function objectHash(object: any) {
  * convert input to hex
  * @param input
  */
-function toHex(input: ArrayBuffer | string) {
+function toHex(input: ArrayBuffer | string): string {
     let result = "";
 
     if (input instanceof ArrayBuffer || ArrayBuffer.isView(input)) {
@@ -102,7 +102,7 @@ function toHex(input: ArrayBuffer | string) {
  * @param length
  * @param algo
  */
-export async function hash(input: string, length: number = 6, algo?: string) {
+export async function hash(input: string, length: number = 6, algo?: string): Promise<string> {
     let result: string;
 
     if (algo != null) {
@@ -127,6 +127,38 @@ export async function hash(input: string, length: number = 6, algo?: string) {
                 return toHex(
                     await crypto.subtle.digest(algo.replace("sha", "SHA-"), new TextEncoder().encode(input)),
                 ).slice(0, length);
+
+            default:
+                throw new Error(`Unsupported hash algorithm: ${algo}`);
+        }
+    }
+
+    return hashId(input, length);
+}
+
+/**
+ * generate a hash
+ * @param input
+ * @param length
+ * @param algo
+ */
+export  function syncHash(input: string, length: number = 6, algo?: string): string {
+    let result: string;
+
+    if (algo != null) {
+        switch (algo) {
+            case "hex":
+                return toHex(input).slice(0, length);
+
+            case "base64url":
+            case "base64":
+                result = btoa(input);
+
+                if (algo == "base64url") {
+                    result = result.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+                }
+
+                return result.slice(0, length);
 
             default:
                 throw new Error(`Unsupported hash algorithm: ${algo}`);

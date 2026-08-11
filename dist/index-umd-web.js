@@ -9969,6 +9969,7 @@
                             // @ts-ignore
                             val: Math[nodes[0].val.toUpperCase()],
                             typ: exports.EnumToken.NumberTokenType,
+                            [LOC]: nodes[0][LOC],
                         },
                     ];
                 }
@@ -9985,10 +9986,14 @@
             }
             if (token.typ == exports.EnumToken.Sub) {
                 if (!isScalarToken(nodes[i + 1])) {
-                    token = { typ: exports.EnumToken.ListToken, chi: [nodes[i], nodes[i + 1]] };
+                    token = {
+                        typ: exports.EnumToken.ListToken,
+                        chi: [nodes[i], nodes[i + 1]],
+                        [LOC]: { ...nodes[i][LOC], end: nodes[i + 1][LOC].end },
+                    };
                 }
                 else {
-                    token = doEvaluate(nodes[i + 1], { typ: exports.EnumToken.NumberTokenType, val: -1 }, exports.EnumToken.Mul);
+                    token = doEvaluate(nodes[i + 1], { typ: exports.EnumToken.NumberTokenType, val: -1, [LOC]: nodes[i + 1][LOC] }, exports.EnumToken.Mul);
                 }
                 i++;
             }
@@ -10003,12 +10008,16 @@
             const token = curr[1].reduce((acc, curr) => doEvaluate(acc, curr, exports.EnumToken.Add));
             if (token.typ != exports.EnumToken.BinaryExpressionTokenType) {
                 if ("val" in token && +token.val < 0) {
-                    acc.push({ typ: exports.EnumToken.Sub }, { ...token, val: -token.val });
+                    acc.push({ typ: exports.EnumToken.Sub, [LOC]: token[LOC] }, {
+                        ...token,
+                        val: -token.val,
+                        [LOC]: token[LOC],
+                    });
                     return acc;
                 }
             }
             if (acc.length > 0 && curr[0] != exports.EnumToken.ListToken) {
-                acc.push({ typ: exports.EnumToken.Add });
+                acc.push({ typ: exports.EnumToken.Add, [LOC]: token[LOC] });
             }
             acc.push(token);
             return acc;
@@ -10026,6 +10035,7 @@
             op,
             l,
             r,
+            [LOC]: { ...l[LOC], end: (r?.[LOC] ?? l[LOC])?.end },
         };
         if (!isScalarToken(l) || !isScalarToken(r) || (l.typ == r.typ && "unit" in l && "unit" in r && l.unit != r.unit)) {
             return defaultReturn;
@@ -10063,15 +10073,15 @@
                 if (typeof v1 == "number" && l.typ == exports.EnumToken.PercentageTokenType) {
                     v1 = {
                         typ: exports.EnumToken.FractionTokenType,
-                        l: { typ: exports.EnumToken.NumberTokenType, val: v1 },
-                        r: { typ: exports.EnumToken.NumberTokenType, val: 100 },
+                        l: { typ: exports.EnumToken.NumberTokenType, val: v1, [LOC]: l[LOC] },
+                        r: { typ: exports.EnumToken.NumberTokenType, val: 100, [LOC]: r[LOC] },
                     };
                 }
                 else if (typeof v2 == "number" && r.typ == exports.EnumToken.PercentageTokenType) {
                     v2 = {
                         typ: exports.EnumToken.FractionTokenType,
-                        l: { typ: exports.EnumToken.NumberTokenType, val: v2 },
-                        r: { typ: exports.EnumToken.NumberTokenType, val: 100 },
+                        l: { typ: exports.EnumToken.NumberTokenType, val: v2, [LOC]: l[LOC] },
+                        r: { typ: exports.EnumToken.NumberTokenType, val: 100, [LOC]: r[LOC] },
                     };
                 }
             }
@@ -10082,6 +10092,7 @@
             ...(l.typ === exports.EnumToken.NumberTokenType || l.typ === exports.EnumToken.IdenTokenType ? r : l),
             typ,
             val /* : typeof val == 'number' ? minifyNumber(val) : val */,
+            [LOC]: { ...l[LOC], end: (r?.[LOC] ?? l?.[LOC])?.end },
         };
         if (token.typ == exports.EnumToken.IdenTokenType) {
             // @ts-ignore
@@ -10120,6 +10131,7 @@
                     {
                         typ: exports.EnumToken.NumberTokenType,
                         val: Math[token.val](val),
+                        [LOC]: value[0][LOC],
                     },
                 ];
             }
@@ -10141,6 +10153,7 @@
                     {
                         ...ref,
                         val: +Math.sqrt(value).toFixed(rem(...all)),
+                        [LOC]: token[LOC],
                     },
                 ];
             }
@@ -10169,6 +10182,7 @@
                         {
                             ...v1[0],
                             val: Math.pow(val1, val2),
+                            [LOC]: token[LOC],
                         },
                     ];
                 }
@@ -10178,6 +10192,7 @@
                             ...{},
                             ...v1[0],
                             val: Math.atan2(val1, val2),
+                            [LOC]: token[LOC],
                         },
                     ];
                 }
@@ -10185,6 +10200,7 @@
                     {
                         ...v1[0],
                         val: val2 == 0 ? val1 : val1 - Math.floor(val1 / val2) * val2,
+                        [LOC]: token[LOC],
                     },
                 ];
             }
@@ -10221,6 +10237,7 @@
                             {
                                 ...values[0],
                                 val: Math.log(val1) / Math.log(val2),
+                                [LOC]: token[LOC],
                             },
                         ];
                     }
@@ -10256,7 +10273,7 @@
                                         : Math.ceil(val / val2) * val2;
                         }
                         // @ts-ignore
-                        return [{ ...values[0], val }];
+                        return [{ ...values[0], val, [LOC]: token[LOC] }];
                     }
                 }
             }
@@ -10274,7 +10291,7 @@
                 result.push(token);
             }
             else {
-                result.push(...inlineExpression$1(token.l), { typ: token.op }, ...inlineExpression$1(token.r));
+                result.push(...inlineExpression$1(token.l), { typ: token.op, [LOC]: token[LOC] }, ...inlineExpression$1(token.r));
             }
         }
         else {
@@ -10337,7 +10354,7 @@
                 token.val == "calc")) {
             if ((token.typ == exports.EnumToken.MathFunctionTokenType || token.typ == exports.EnumToken.FunctionTokenType) &&
                 token.val == "calc") {
-                token = { ...token, typ: exports.EnumToken.ParensTokenType };
+                token = { ...token, typ: exports.EnumToken.ParensTokenType, [LOC]: token[LOC] };
                 // @ts-ignore
                 delete token.val;
             }
@@ -10375,6 +10392,7 @@
                         : getArithmeticOperation(tokens[i].val),
                     l: factorToken(tokens[i - 1]),
                     r: factorToken(tokens[i + 1]),
+                    [LOC]: { ...tokens[i - 1][LOC], end: tokens[i + 1][LOC]?.end },
                 });
                 i--;
             }
@@ -10479,16 +10497,19 @@
                 ? {
                     typ: exports.EnumToken.NumberTokenType,
                     val: 1,
+                    [LOC]: b[LOC],
                 }
                 : alpha.typ == exports.EnumToken.IdenTokenType && alpha.val == "none"
                     ? {
                         typ: exports.EnumToken.NumberTokenType,
                         val: 0,
+                        [LOC]: alpha[LOC],
                     }
                     : alpha.typ == exports.EnumToken.PercentageTokenType
                         ? {
                             typ: exports.EnumToken.NumberTokenType,
                             val: getNumber(alpha),
+                            [LOC]: alpha[LOC],
                         }
                         : alpha,
         };
@@ -10501,11 +10522,13 @@
                 ? {
                     typ: exports.EnumToken.NumberTokenType,
                     val: 1,
+                    [LOC]: bExp[LOC],
                 }
                 : aExp.typ == exports.EnumToken.IdenTokenType && aExp.val == "none"
                     ? {
                         typ: exports.EnumToken.NumberTokenType,
                         val: 0,
+                        [LOC]: aExp[LOC],
                     }
                     : aExp),
         };
@@ -10536,6 +10559,7 @@
             return {
                 typ: exports.EnumToken.NumberTokenType,
                 val: value,
+                [LOC]: t[LOC],
             };
         }
         return t;
@@ -10579,6 +10603,7 @@
                                 typ: exports.EnumToken.NumberTokenType,
                                 // @ts-ignore
                                 val: "" + Math[value.val.toUpperCase()],
+                                [LOC]: value[LOC],
                                 // @ts-ignore
                             });
                     }
@@ -11787,19 +11812,6 @@
         }
         // @ts-expect-error
         const mediaFeature = config$3.mediaFeatures[featureName];
-        // if (
-        //     tokens.length === 1 &&
-        //     tokens[0].typ === EnumToken.MathFunctionTokenType &&
-        //     (tokens[0] as FunctionToken).val === "calc"
-        // ) {
-        //     // todo: check calc tokens are of compatible types : resolution, ratio, length, integer, number?
-        //     // https://github.com/web-platform-tests/wpt/blob/master/css/mediaqueries/mq-calc-sign-function-003.html
-        //     return {
-        //         valid: true,
-        //         success:
-        //             mediaFeature.type !== MediaFeatureType.KeywordType && mediaFeature.type !== MediaFeatureType.StringType,
-        //     };
-        // }
         switch (mediaFeature.type) {
             case MediaFeatureType.BooleanType:
                 return {
@@ -11857,16 +11869,6 @@
             success: true,
         };
     }
-    // export function isStyleRangeValue(tokens: Token[]): { success: boolean; errors: ErrorDescription[] } {
-    //     const filtered: Token[] = tokens.filter(
-    //         (token) => token.typ !== EnumToken.WhitespaceTokenType && token.typ !== EnumToken.CommentTokenType,
-    //     );
-    //     const result = isDeclarationValue(tokens);
-    //     if (result.success) {
-    //         result.success = filtered.length > 0;
-    //     }
-    //     return result;
-    // }
     function createValidationContext(tokens) {
         tokens = trimArray(tokens.filter((t) => t.typ !== exports.EnumToken.CommentTokenType));
         if (tokens.at(-1)?.typ === exports.EnumToken.ImportantTokenType) {
@@ -11880,31 +11882,11 @@
                 if (this.index < 0) {
                     return null;
                 }
-                // while (
-                //     this.tokens[this.index]?.typ == EnumToken.WhitespaceTokenType ||
-                //     this.tokens[this.index]?.typ == EnumToken.CommentTokenType ||
-                //     this.tokens[this.index]?.typ == EnumToken.CDOCOMMTokenType
-                // ) {
-                //     this.index++;
-                // }
                 return this.tokens[this.index];
             },
             peek(offset = 0) {
                 let index = this.index;
                 let token = this.tokens[++index];
-                // if (!skipWhitespace) {
-                //     while (offset >= 0 && index < this.tokens.length) {
-                //         while (token != null && token.typ === EnumToken.CommentTokenType) {
-                //             token = this.tokens[++index];
-                //         }
-                //         if (offset === 0 || token == null) {
-                //             return token;
-                //         }
-                //         offset--;
-                //         token = this.tokens[++index];
-                //     }
-                //     return token;
-                // }
                 while (offset >= 0 && index < this.tokens.length) {
                     while (token?.typ == exports.EnumToken.WhitespaceTokenType ||
                         token?.typ == exports.EnumToken.CommentTokenType ||
@@ -11949,17 +11931,11 @@
                         if (close !== exports.EnumToken.EndParensTokenType && token?.typ === close) {
                             counter--;
                         }
-                        // else if (open !== EnumToken.StartParensTokenType && token?.typ === open) {
-                        //     counter++;
-                        // }
                     }
                     if (matchCount <= 0 && counter <= 0) {
                         break;
                     }
                 }
-                // if (tokens[0]?.typ === EnumToken.WhitespaceTokenType) {
-                //     tokens.shift();
-                // }
                 return tokens;
             },
             // 2
@@ -12094,9 +12070,10 @@
                             errors: [
                                 {
                                     action: "drop",
-                                    message: `Unexpected token ${exports.EnumToken[stream[i].typ]} at ${stream[i][LOC].srcId}:${stream[i][LOC].sta.lin}:${stream[i][LOC].sta.col}`,
+                                    message: `Unexpected token ${exports.EnumToken[stream[i].typ]}`,
                                     node: stream[i],
-                                    location: stream[i][LOC],
+                                    // @ts-expect-error
+                                    location: options.source.getSourceLocation(stream[i][LOC].sta),
                                 },
                             ],
                         };
@@ -12105,9 +12082,6 @@
         }
         for (; i < stream.length; i++) {
             token = stream[i];
-            // if (token.typ === EnumToken.EOF) {
-            //     break;
-            // }
             if (token.typ === exports.EnumToken.Star) {
                 token.typ = exports.EnumToken.UniversalSelectorTokenType;
             }
@@ -12127,15 +12101,7 @@
                 token.typ !== exports.EnumToken.CDOCOMMTokenType) {
                 stack.pop();
             }
-            // if (token.typ === EnumToken.LiteralTokenType && "+" === (token as LiteralToken).val) {
-            //     Object.assign(token, { typ: EnumToken.NextSiblingCombinatorTokenType });
-            //     continue;
-            // }
             switch (token.typ) {
-                // case EnumToken.InvalidCommentTokenType:
-                // case EnumToken.BadCommentTokenType:
-                // case EnumToken.BadStringTokenType:
-                //     break;
                 case exports.EnumToken.PseudoClassFuncTokenType:
                     {
                         const result = matchAllSyntaxes(getParsedSyntax(ValidationSyntaxGroupEnum.Selectors, token.val + "()")?.[0]?.chi ?? [], createValidationContext(token.chi), options);
@@ -12158,9 +12124,10 @@
                             errors: [
                                 {
                                     action: "drop",
-                                    message: `Nesting selector is not allowed at ${token[LOC].srcId}:${token[LOC].sta.lin}:${token[LOC].sta.col}`,
+                                    message: `Nesting selector is not allowed`,
                                     node: token,
-                                    location: token[LOC],
+                                    // @ts-expect-error
+                                    location: options.source.getSourceLocation(token[LOC].sta),
                                 },
                             ],
                         };
@@ -12168,21 +12135,6 @@
                     break;
                 case exports.EnumToken.Plus:
                     Object.assign(token, { typ: exports.EnumToken.NextSiblingCombinatorTokenType });
-                    // if (stack.length > 0 && nodes.includes(stack.at(-1)?.typ)) {
-                    //     return {
-                    //         success: false,
-                    //         errors: [
-                    //             {
-                    //                 action: "drop",
-                    //                 message: `Unexpected combinator ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${
-                    //                     token[LOC]!.sta.col
-                    //                 }`,
-                    //                 node: token,
-                    //                 location: token[LOC],
-                    //             },
-                    //         ],
-                    //     };
-                    // }
                     stack.push(token);
                     break;
                 case exports.EnumToken.Tilda:
@@ -12194,9 +12146,6 @@
                 case exports.EnumToken.DescendantCombinatorTokenType:
                 case exports.EnumToken.NextSiblingCombinatorTokenType:
                 case exports.EnumToken.SubsequentSiblingCombinatorTokenType:
-                    // if (tokens.at(-1)?.typ === EnumToken.WhitespaceTokenType) {
-                    //     tokens.pop();
-                    // }
                     if (stream[i + 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
                         i++;
                     }
@@ -12209,9 +12158,10 @@
                             errors: [
                                 {
                                     action: "drop",
-                                    message: `Unexpected combinator ${exports.EnumToken[token.typ]} at ${token[LOC].srcId}:${token[LOC].sta.lin}:${token[LOC].sta.col}`,
+                                    message: `Unexpected combinator ${exports.EnumToken[token.typ]}`,
                                     node: token,
-                                    location: token[LOC],
+                                    // @ts-expect-error
+                                    location: options.source.getSourceLocation(token[LOC].sta),
                                 },
                             ],
                         };
@@ -12222,21 +12172,6 @@
                     if (stack.length > 0 && stack.at(-1).typ === exports.EnumToken.UniversalSelectorTokenType) {
                         stack.pop();
                     }
-                    // if (tokens.length === 0 || stack.at(-1)?.typ == EnumToken.CommaTokenType) {
-                    //     return {
-                    //         success: false,
-                    //         errors: [
-                    //             {
-                    //                 action: "drop",
-                    //                 message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${
-                    //                     token[LOC]!.sta.col
-                    //                 }`,
-                    //                 node: token,
-                    //                 location: token[LOC],
-                    //             },
-                    //         ],
-                    //     };
-                    // }
                     stack.push(token);
                     break;
                 case exports.EnumToken.Pipe:
@@ -12247,44 +12182,14 @@
                 case exports.EnumToken.StartMatchTokenType:
                 case exports.EnumToken.EndMatchTokenType:
                 case exports.EnumToken.DashMatchTokenType:
-                    // if (
-                    //     stack.at(-1)?.typ !== EnumToken.AttrStartTokenType &&
-                    //     !(
-                    //         stack.at(-1)?.typ === EnumToken.UniversalSelectorTokenType &&
-                    //         stack.at(-2)?.typ === EnumToken.AttrStartTokenType
-                    //     )
-                    // ) {
-                    //     return {
-                    //         success: false,
-                    //         errors: [
-                    //             {
-                    //                 action: "drop",
-                    //                 message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${
-                    //                     token[LOC]!.sta.col
-                    //                 }`,
-                    //                 node: token,
-                    //                 location: token[LOC],
-                    //             },
-                    //         ],
-                    //     };
-                    // }
                     break;
-                // case EnumToken.Star:
-                //     Object.assign(token, { typ: EnumToken.UniversalSelectorTokenType });
-                //     break;
                 case exports.EnumToken.IdenTokenType:
                 case exports.EnumToken.HashTokenType:
                 case exports.EnumToken.PseudoElementTokenType:
                 case exports.EnumToken.PseudoClassTokenType:
                 case exports.EnumToken.ClassSelectorTokenType:
-                    // if (stack.at(-1)?.typ === EnumToken.CommaTokenType) {
-                    //     stack.pop();
-                    // }
                     break;
                 case exports.EnumToken.AttrStartTokenType:
-                    // if (stack.at(-1)?.typ === EnumToken.CommaTokenType) {
-                    //     stack.pop();
-                    // }
                     stack.push(token);
                     break;
                 case exports.EnumToken.AttrEndTokenType:
@@ -12297,9 +12202,10 @@
                             errors: [
                                 {
                                     action: "drop",
-                                    message: `Unexpected token ${exports.EnumToken[token.typ]} at ${token[LOC].srcId}:${token[LOC].sta.lin}:${token[LOC].sta.col}`,
+                                    message: `Unexpected token ${exports.EnumToken[token.typ]}`,
                                     node: token,
-                                    location: token[LOC],
+                                    // @ts-expect-error
+                                    location: options.source.getSourceLocation(token[LOC].sta),
                                 },
                             ],
                         };
@@ -12316,150 +12222,18 @@
                             }
                             slice.push(tokens[n]);
                         }
-                        // if (slice.length === 0) {
-                        //     return {
-                        //         success: false,
-                        //         errors: [
-                        //             {
-                        //                 action: "drop",
-                        //                 message: `Invalid selector attribute at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${
-                        //                     token[LOC]!.sta.col
-                        //                 }`,
-                        //                 node: token,
-                        //                 location: token[LOC],
-                        //             },
-                        //         ],
-                        //     };
-                        // }
                         if (slice[1]?.typ === exports.EnumToken.Pipe) {
-                            // if (
-                            //     slice[0].typ !== EnumToken.UniversalSelectorTokenType &&
-                            //     slice[0].typ !== EnumToken.Star &&
-                            //     slice[0].typ !== EnumToken.IdenTokenType
-                            // ) {
-                            //     return {
-                            //         success: false,
-                            //         errors: [
-                            //             {
-                            //                 action: "drop",
-                            //                 message: `Invalid selector attribute at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${
-                            //                     token[LOC]!.sta.col
-                            //                 }`,
-                            //                 node: token,
-                            //                 location: token[LOC],
-                            //             },
-                            //         ],
-                            //     };
-                            // }
                             slice.shift();
                         }
                         if (slice[0].typ === exports.EnumToken.Pipe) {
-                            // if (slice.length === 1) {
-                            //     return {
-                            //         success: false,
-                            //         errors: [
-                            //             {
-                            //                 action: "drop",
-                            //                 message: `Invalid selector attribute at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${
-                            //                     token[LOC]!.sta.col
-                            //                 }`,
-                            //                 node: token,
-                            //                 location: token[LOC],
-                            //             },
-                            //         ],
-                            //     };
-                            // }
-                            // if (slice[1]?.typ !== EnumToken.IdenTokenType) {
-                            //     return {
-                            //         success: false,
-                            //         errors: [
-                            //             {
-                            //                 action: "drop",
-                            //                 message: `Invalid selector attribute at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${
-                            //                     token[LOC]!.sta.col
-                            //                 }`,
-                            //                 node: token,
-                            //                 location: token[LOC],
-                            //             },
-                            //         ],
-                            //     };
-                            // }
                             slice.shift();
                         }
                         if (slice.length === 1) {
-                            // if (slice[0].typ !== EnumToken.IdenTokenType) {
-                            //     return {
-                            //         success: false,
-                            //         errors: [
-                            //             {
-                            //                 action: "drop",
-                            //                 message: `Invalid selector attribute at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${
-                            //                     token[LOC]!.sta.col
-                            //                 }`,
-                            //                 node: token,
-                            //                 location: token[LOC],
-                            //             },
-                            //         ],
-                            //     };
-                            // }
                             stack.pop();
                             break;
                         }
                         slice.shift();
-                        // if (
-                        //     slice[0].typ != EnumToken.DelimTokenType &&
-                        //     slice[0].typ !== EnumToken.DashMatchTokenType &&
-                        //     slice[0].typ !== EnumToken.EndMatchTokenType &&
-                        //     slice[0].typ !== EnumToken.IncludeMatchTokenType &&
-                        //     slice[0].typ !== EnumToken.StartMatchTokenType &&
-                        //     slice[0].typ !== EnumToken.ContainMatchTokenType
-                        // ) {
-                        //     return {
-                        //         success: false,
-                        //         errors: [
-                        //             {
-                        //                 action: "drop",
-                        //                 message: `Unexpected token ${EnumToken[slice[0].typ]} at ${slice[0][LOC]!.src}:${slice[0][LOC]!.sta.lin}:${
-                        //                     slice[0][LOC]!.sta.col
-                        //                 }`,
-                        //                 node: slice[0],
-                        //                 location: slice[0][LOC],
-                        //             },
-                        //         ],
-                        //     };
-                        // }
                         slice.shift();
-                        // if (slice.length === 0) {
-                        //     // expect iden or string
-                        //     return {
-                        //         success: false,
-                        //         errors: [
-                        //             {
-                        //                 action: "drop",
-                        //                 message: `Invalid selector attribute at ${slice[0][LOC]!.src}:${slice[0][LOC]!.sta.lin}:${
-                        //                     slice[0][LOC]!.sta.col
-                        //                 }`,
-                        //                 node: slice[0],
-                        //                 location: slice[0][LOC],
-                        //             },
-                        //         ],
-                        //     };
-                        // }
-                        // if (slice[0].typ !== EnumToken.IdenTokenType && slice[0].typ !== EnumToken.StringTokenType) {
-                        //     return {
-                        //         success: false,
-                        //         errors: [
-                        //             {
-                        //                 action: "drop",
-                        //                 message: `Unexpected token ${EnumToken[slice[0].typ]} at ${slice[0][LOC]!.src}:${slice[0][LOC]!.sta.lin}:${
-                        //                     slice[0][LOC]!.sta.col
-                        //                 }`,
-                        //                 node: slice[0],
-                        //                 location: slice[0][LOC],
-                        //             },
-                        //         ],
-                        //     };
-                        // }
                         if (slice[0]?.typ === exports.EnumToken.StringTokenType &&
                             /^[a-zA-Z0-9_-]+$/.test(slice[0].val.slice(1, -1))) {
                             Object.assign(slice[0], {
@@ -12479,9 +12253,10 @@
                                 errors: [
                                     {
                                         action: "drop",
-                                        message: `Unexpected token ${exports.EnumToken[slice[0].typ]} at ${slice[0][LOC].srcId}:${slice[0][LOC].sta.lin}:${slice[0][LOC].sta.col}`,
+                                        message: `Unexpected token ${exports.EnumToken[slice[0].typ]}`,
                                         node: slice[0],
-                                        location: slice[0][LOC],
+                                        // @ts-expect-error
+                                        location: options.source.getSourceLocation(slice[0][LOC].sta),
                                     },
                                 ],
                             };
@@ -12592,9 +12367,10 @@
                         errors: [
                             {
                                 action: "drop",
-                                message: `Unexpected token ${exports.EnumToken[token.typ]} at ${token[LOC].srcId}:${token[LOC].sta.lin}:${token[LOC].sta.col}`,
+                                message: `Unexpected token ${exports.EnumToken[token.typ]}`,
                                 node: token,
-                                location: token[LOC],
+                                // @ts-expect-error
+                                location: options.source.getSourceLocation(token[LOC].sta),
                             },
                         ],
                     };
@@ -12634,9 +12410,10 @@
                         errors: [
                             {
                                 action: "drop",
-                                message: `Unexpected token ${exports.EnumToken[token.typ]} at ${token[LOC].srcId}:${token[LOC].sta.lin}:${token[LOC].sta.col}`,
+                                message: `Unexpected token ${exports.EnumToken[token.typ]}`,
                                 node: token,
-                                location: token[LOC],
+                                // @ts-expect-error
+                                location: options.source.getSourceLocation(token[LOC].sta),
                             },
                         ],
                     };
@@ -12655,9 +12432,10 @@
                         errors: [
                             {
                                 action: "drop",
-                                message: `Unsupported selector token ${exports.EnumToken[token.typ]} at ${token[LOC].srcId}:${token[LOC].sta.lin}:${token[LOC].sta.col}`,
+                                message: `Unsupported selector token ${exports.EnumToken[token.typ]}`,
                                 node: token,
-                                location: token[LOC],
+                                // @ts-expect-error
+                                location: options.source.getSourceLocation(token[LOC].sta),
                             },
                         ],
                     };
@@ -12680,23 +12458,16 @@
                 errors: [
                     {
                         action: "drop",
-                        message: `Unmatched token ${exports.EnumToken[stack.at(-1).typ]} at ${stack.at(-1)[LOC].srcId}:${stack.at(-1)[LOC].sta.lin}:${stack.at(-1)[LOC].sta.col}`,
+                        message: `Unmatched token ${exports.EnumToken[stack.at(-1).typ]}`,
                         node: stack.at(-1),
-                        location: stack.at(-1)[LOC],
+                        // @ts-expect-error
+                        location: options.source.getSourceLocation(stack.at(-1)[LOC].sta),
                     },
                 ],
             };
         }
         stream.length = 0;
         stream.push(...tokens);
-        // if (!success && errors.length === 0) {
-        //     errors.push({
-        //         action: "drop",
-        //         message: "Invalid selector",
-        //         node: tokens[0],
-        //         location: tokens[0][LOC]!,
-        //     });
-        // }
         return { success, errors };
     }
     function matchAllSyntaxes(syntaxes, context, options) {
@@ -12704,28 +12475,6 @@
             ...options,
             visited: new Map(),
         });
-        // if (result.success && !result.context.done()) {
-        //     const node = result.context.peek() as Token;
-        //     return {
-        //         ...result,
-        //         success: false,
-        //         token: context.peek(),
-        //         errors: [
-        //             ...result.errors,
-        //             {
-        //                 action: "drop",
-        //                 message: `Unexpected token ${EnumToken[node?.typ]} at ${node![LOC]?.src}:${node![LOC]?.sta?.lin}:${
-        //                     node![LOC]?.sta?.col
-        //                 }`,
-        //                 node,
-        //                 syntax:
-        //                     result.syntaxToken ??
-        //                     syntaxes?.reduce?.((acc, b) => acc + renderSyntax(b), "")?.trim?.() ??
-        //                     null,
-        //             },
-        //         ],
-        //     };
-        // }
         if (syntaxes != null && result.success && result.syntaxToken != null) {
             const index = syntaxes.indexOf(result.syntaxToken);
             if (index != -1) {
@@ -12735,9 +12484,6 @@
                         syntaxes[i].isRepeatable) {
                         continue;
                     }
-                    // if (syntaxes[i].typ == ValidationTokenEnum.SemiColon && i === syntaxes.length - 1) {
-                    //     continue;
-                    // }
                     return {
                         ...result,
                         success: false,
@@ -12755,7 +12501,7 @@
                         message: result.errors[0]?.message || "could not match syntax",
                         node: result.token,
                         syntax: result.syntaxToken,
-                        location: result.token?.[LOC] ?? context.tokens.at(-1)?.[LOC],
+                        location: options.source.getSourceLocation((result.token?.[LOC] ?? context.tokens.at(-1)?.[LOC]).sta),
                     },
                 ]
                 : result.errors,
@@ -12790,22 +12536,6 @@
                 }
             }
         } while (tmpResult.success && !context.done());
-        // if (result?.success && match != null) {
-        //     if (count < match.min!.val || (Number.isFinite(match.max) && count > (match.max!.val as number))) {
-        //         return {
-        //             ...result,
-        //             success: false,
-        //             errors: [
-        //                 {
-        //                     action: "drop",
-        //                     message: "could not match syntax",
-        //                     node: context.peek(),
-        //                     location: context.peek()?.[LOC]!,
-        //                 },
-        //             ],
-        //         };
-        //     }
-        // }
         return result == null
             ? {
                 success: false,
@@ -12852,7 +12582,7 @@
                         action: "drop",
                         message: "could not match syntax",
                         node: context.peek(),
-                        location: context.peek()?.[LOC],
+                        // location: options.source!.getSourceLocation(context.peek()?.[LOC]!.sta),
                     },
                 ],
                 syntaxToken: null,
@@ -12929,20 +12659,6 @@
                     context.next();
                     continue;
                 }
-                // return {
-                //     ...result,
-                //     success: false,
-                //     token,
-                //     syntaxToken: syntaxes[i],
-                //     errors: [
-                //         {
-                //             action: "drop",
-                //             message: "could not match syntax",
-                //             node: context.peek(),
-                //             location: context.peek()![LOC]!,
-                //         },
-                //     ],
-                // };
             }
             // custom function token
             if (token.typ === exports.EnumToken.CustomFunctionTokenDefType) {
@@ -12993,10 +12709,6 @@
                     }
                     continue;
                 }
-                // if (isOptional) {
-                //     continue;
-                // }
-                // return result;
             }
             if (syntaxes[i].isRepeatableAtLeastOnce || syntaxes[i].isRepeatable) {
                 result = matchRepeatableSyntax(syntaxes[i], context.slice(), options);
@@ -13008,9 +12720,6 @@
                     context.update(result.context.current());
                     continue;
                 }
-                // if (isOptional) {
-                //     continue;
-                // }
                 return result;
             }
             if (syntaxes[i].isList) {
@@ -13029,27 +12738,8 @@
                         };
                     }
                     context.update(result.context.current());
-                    // let k = i + 1;
-                    // for (; k < syntaxes.length; k++) {
-                    //     if (syntaxes[k].typ !== ValidationTokenEnum.Whitespace) {
-                    //         break;
-                    //     }
-                    //     if (syntaxes[k]?.typ === ValidationTokenEnum.Comma) {
-                    //         i = k;
-                    //     }
-                    // }
                     continue;
                 }
-                // if (isOptional) {
-                //     // eat the next ','
-                //     if (
-                //         syntaxes[i + 1]?.typ === ValidationTokenEnum.Whitespace ||
-                //         syntaxes[i + 1]?.typ === ValidationTokenEnum.Comma
-                //     ) {
-                //         i++;
-                //     }
-                //     continue;
-                // }
                 return {
                     success: false,
                     valid: true,
@@ -13074,16 +12764,6 @@
                     context.update(result.context.current());
                     continue;
                 }
-                // if (isOptional) {
-                //     // eat the next ','
-                //     if (syntaxes[i + 1]?.typ === ValidationTokenEnum.Whitespace) {
-                //         i++;
-                //     }
-                //     if (syntaxes[i + 1]?.typ === ValidationTokenEnum.Comma) {
-                //         i++;
-                //     }
-                //     continue;
-                // }
                 return {
                     success: false,
                     valid: true,
@@ -13115,21 +12795,8 @@
                         success = true;
                         options.visited.get(token).delete(syntaxes[i]);
                         context.next();
-                        // if (context.done()) {
-                        //     return {
-                        //         success: true,
-                        //         valid: true,
-                        //         token: null,
-                        //         context,
-                        //         syntaxToken: syntaxes[i + 1],
-                        //         errors: [],
-                        //     };
-                        // }
                         break;
                     }
-                    // if (isOptional) {
-                    //     break;
-                    // }
                     return {
                         success: false,
                         valid: true,
@@ -13138,34 +12805,6 @@
                         syntaxToken: syntaxes[i],
                         errors: [],
                     };
-                // case ValidationTokenEnum.Colon:
-                //     if (token.typ == EnumToken.ColonTokenType) {
-                //         success = true;
-                //         (options.visited!.get(token) as Set<ValidationToken>)!.delete(syntaxes[i]);
-                //         context.next();
-                //         if (context.done()) {
-                //             return {
-                //                 success: true,
-                //                 valid: true,
-                //                 token: null,
-                //                 context,
-                //                 syntaxToken: syntaxes[i + 1],
-                //                 errors: [],
-                //             };
-                //         }
-                //         break;
-                //     }
-                //     if (isOptional) {
-                //         break;
-                //     }
-                //     return {
-                //         success: false,
-                //         valid: true,
-                //         token,
-                //         context,
-                //         syntaxToken: syntaxes[i],
-                //         errors: [],
-                //     };
                 case ValidationTokenEnum.Keyword:
                     if (token.typ == exports.EnumToken.IdenTokenType &&
                         token.val.toLowerCase() ===
@@ -13233,38 +12872,10 @@
                     }
                     break;
                 }
-                // case ValidationTokenEnum.AtRule:
-                //     if (token.typ == EnumToken.AtRuleTokenType) {
-                //         success = true;
-                //         (options.visited!.get(token) as Set<ValidationToken>)!.delete(syntaxes[i]);
-                //         context.next();
-                //         break;
-                //     }
-                //     if (isOptional) {
-                //         break;
-                //     }
-                //     return {
-                //         success: false,
-                //         valid: true,
-                //         token,
-                //         context,
-                //         syntaxToken: syntaxes[i],
-                //         errors: [],
-                //     };
                 case ValidationTokenEnum.StringToken:
-                    // if (token.typ == EnumToken.StringTokenType || token.typ == EnumToken.UrlFunctionTokenType) {
-                    //     success = true;
-                    // } else if (token.typ === EnumToken.StringTokenType) {
-                    //     success = (token as StringToken).val === (syntaxes[i] as ValidationStringToken).val.slice(1, -1);
-                    // } else
                     if (token.typ === exports.EnumToken.Add) {
                         success = syntaxes[i].val.slice(1, -1) === "+";
                     }
-                    // else if (token.typ === EnumToken.Mul) {
-                    //     success = (syntaxes[i] as ValidationStringToken).val.slice(1, -1) === "*";
-                    // } else if (token.typ === EnumToken.Div) {
-                    //     success = (syntaxes[i] as ValidationStringToken).val.slice(1, -1) === "/";
-                    // }
                     else if (token.typ === exports.EnumToken.Sub) {
                         success = syntaxes[i].val.slice(1, -1) === "-";
                     }
@@ -13289,24 +12900,6 @@
                         syntaxToken: syntaxes[i],
                         errors: [],
                     };
-                // case ValidationTokenEnum.SemiColon:
-                //     if (token.typ == EnumToken.SemiColonTokenType) {
-                //         success = true;
-                //         (options.visited!.get(token) as Set<ValidationToken>)!.delete(syntaxes[i]);
-                //         context.next();
-                //         break;
-                //     }
-                //     if (isOptional) {
-                //         break;
-                //     }
-                //     return {
-                //         success: false,
-                //         valid: true,
-                //         token,
-                //         context,
-                //         syntaxToken: syntaxes[i],
-                //         errors: [],
-                //     };
                 case ValidationTokenEnum.PropertyType:
                     result = matchProperty(syntaxes[i], context, options);
                     if (!result.success) {
@@ -13360,25 +12953,10 @@
                         if (result?.success) {
                             success = true;
                             options.visited.get(token).delete(syntaxes[i]);
-                            // if (result!.context.done()) {
-                            //     context.end();
-                            //     return {
-                            //         success: true,
-                            //         valid: true,
-                            //         token: null,
-                            //         context,
-                            //         syntaxToken: syntaxes[i + 1],
-                            //         errors: [],
-                            //     };
-                            // } else {
                             context.update(result.context.current());
-                            // }
                             break;
                         }
                     }
-                    // if (isOptional) {
-                    //     break;
-                    // }
                     return {
                         success: false,
                         valid: true,
@@ -13390,7 +12968,8 @@
                                 action: "drop",
                                 message: "could not match syntax",
                                 node: token,
-                                location: token[LOC],
+                                // @ts-ignore
+                                // location: options.source!.getSourceLocation(token[LOC]?.sta),
                                 syntax: syntaxes[i],
                             },
                         ],
@@ -13448,9 +13027,6 @@
                         }
                         break;
                     }
-                    // if (isOptional) {
-                    //     break;
-                    // }
                     return {
                         success: false,
                         valid: true,
@@ -13480,9 +13056,6 @@
                         }
                         break;
                     }
-                    // if (isOptional) {
-                    //     break;
-                    // }
                     return {
                         success: false,
                         valid: true,
@@ -13491,47 +13064,6 @@
                         syntaxToken: syntaxes[i],
                         errors: [],
                     };
-                // case ValidationTokenEnum.PseudoClassFunctionToken:
-                //     if (!((token as PseudoClassFunctionToken).val + "()" in config.selectors)) {
-                //         return {
-                //             success: false,
-                //             valid: true,
-                //             token,
-                //             context,
-                //             syntaxToken: syntaxes[i],
-                //             errors: [
-                //                 {
-                //                     action: "drop",
-                //                     message: `Unknown pseudo-class selector ${(token as PseudoClassFunctionToken).val}()`,
-                //                     node: token,
-                //                 },
-                //             ],
-                //         };
-                //     }
-                //     result = matchSyntax(
-                //         ((
-                //             getParsedSyntax(
-                //                 ValidationSyntaxGroupEnum.Selectors,
-                //                 (token as PseudoClassFunctionToken).val + "()",
-                //             ) as [ValidationPseudoClassFunctionToken]
-                //         )?.[0]?.chi as ValidationToken[]) ?? [],
-                //         createValidationContext((token as PseudoClassFunctionToken).chi),
-                //         options,
-                //     );
-                //     if (result.success) {
-                //         success = true;
-                //         (options.visited!.get(token) as Set<ValidationToken>)!.delete(syntaxes[i]);
-                //         context.next();
-                //         break;
-                //     }
-                //     return {
-                //         success: false,
-                //         valid: true,
-                //         token,
-                //         context,
-                //         syntaxToken: syntaxes[i],
-                //         errors: result.errors,
-                //     };
                 case ValidationTokenEnum.Function:
                     if ((!tokensfuncDefMap.has(token.typ) &&
                         !funcLike.includes(token.typ) &&
@@ -13555,23 +13087,6 @@
                     }
                     if (tokensfuncDefMap.has(token.typ)) {
                         const range = context.peekRange();
-                        // if (range.at(-1)?.typ !== EnumToken.EndParensTokenType) {
-                        //     const tk = range.at(-1) as Token;
-                        //     return {
-                        //         success: false,
-                        //         valid: true,
-                        //         token,
-                        //         context,
-                        //         syntaxToken: syntaxes[i],
-                        //         errors: [
-                        //             {
-                        //                 action: "drop",
-                        //                 message: `Expecting ')' at ${tk[LOC]?.src}:${tk[LOC]?.sta?.lin}:${tk[LOC]?.sta?.col}`,
-                        //                 node: token,
-                        //             },
-                        //         ],
-                        //     };
-                        // }
                         result = matchSyntax(syntaxes[i].chi, createValidationContext(range.slice(1, -1)), options);
                         if (result.success && result.context.done()) {
                             context.update(range.at(-1));
@@ -13588,9 +13103,6 @@
                             break;
                         }
                     }
-                    // if (isOptional) {
-                    //     break;
-                    // }
                     return {
                         success: false,
                         valid: true,
@@ -13599,20 +13111,6 @@
                         syntaxToken: syntaxes[i],
                         errors: result.errors,
                     };
-                // case ValidationTokenEnum.LessThan:
-                //     if (token.typ === EnumToken.LtTokenType) {
-                //         (options.visited!.get(token) as Set<ValidationToken>)!.delete(syntaxes[i]);
-                //         context.next();
-                //         break;
-                //     }
-                //     return {
-                //         success: false,
-                //         valid: true,
-                //         token,
-                //         context,
-                //         syntaxToken: syntaxes[i],
-                //         errors: [],
-                //     };
                 case ValidationTokenEnum.Separator:
                     if (token.typ === exports.EnumToken.LiteralTokenType && token.val === "/") {
                         options.visited.get(token).delete(syntaxes[i]);
@@ -13663,9 +13161,6 @@
                         context.next();
                         break;
                     }
-                    // if (isOptional) {
-                    //     break;
-                    // }
                     return {
                         success: false,
                         valid: true,
@@ -13680,9 +13175,6 @@
                         context.next();
                         break;
                     }
-                    // if (isOptional) {
-                    //     break;
-                    // }
                     return {
                         success: false,
                         valid: true,
@@ -13691,53 +13183,6 @@
                         syntaxToken: syntaxes[i],
                         errors: [],
                     };
-                // case ValidationTokenEnum.DeclarationNameToken:
-                //     result = matchSyntax(
-                //         (getParsedSyntax(
-                //             ValidationSyntaxGroupEnum.Declarations,
-                //             (syntaxes[i] as ValidationDeclarationToken).val,
-                //         ) as ValidationFunctionToken[] as ValidationToken[]) ?? [],
-                //         context.slice(),
-                //         options,
-                //     );
-                //     if (!result.success) {
-                //         return {
-                //             success: false,
-                //             valid: true,
-                //             token,
-                //             context,
-                //             syntaxToken: syntaxes[i],
-                //             errors: result.errors,
-                //         };
-                //     }
-                //     success = true;
-                //     (options.visited!.get(token) as Set<ValidationToken>)!.delete(syntaxes[i]);
-                //     if (result.context.done()) {
-                //         context.end();
-                //         return {
-                //             success,
-                //             valid: true,
-                //             token: null,
-                //             context,
-                //             syntaxToken: syntaxes[1 + i],
-                //             errors: [],
-                //         };
-                //     } else {
-                //         context.update(result.context.current() as Token);
-                //     }
-                //     break;
-                // case ValidationTokenEnum.DisallowWhitespace:
-                //     if (context.peek(0, false)?.typ === EnumToken.WhitespaceTokenType) {
-                //         return {
-                //             success: false,
-                //             valid: true,
-                //             token,
-                //             context,
-                //             syntaxToken: syntaxes[i],
-                //             errors: [],
-                //         };
-                //     }
-                //     break;
                 default:
                     throw new Error(`Unexpected syntax ${ValidationTokenEnum[syntaxes[i].typ]}`);
             }
@@ -13903,17 +13348,6 @@
             };
         }
         switch (property.val) {
-            // case "combinator":
-            //     {
-            //         const token = context.peek() as Token;
-            //         success =
-            //             token != null &&
-            //             (token.typ == EnumToken.NextSiblingCombinatorTokenType ||
-            //                 token.typ == EnumToken.ChildCombinatorTokenType ||
-            //                 token.typ == EnumToken.SubsequentSiblingCombinatorTokenType ||
-            //                 token.typ == EnumToken.ColumnCombinatorTokenType);
-            //     }
-            //     break;
             case "declaration-value":
                 {
                     // consume a declaration value
@@ -13924,41 +13358,9 @@
                     let expectToken = true;
                     let token;
                     token = context.peek();
-                    // if (token?.typ == EnumToken.WhitespaceTokenType) {
-                    //     context.next();
-                    //     token = context.peek();
-                    // }
-                    // if (token?.typ == EnumToken.CommentTokenType) {
-                    //     context.next();
-                    //     token = context.peek();
-                    // }
-                    // if (token?.typ == EnumToken.CommaTokenType) {
-                    //     context.next();
-                    //     expectToken = true;
-                    // }
                     while ((token = context.peek()) != null) {
                         if (token.typ == exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(token?.typ)) ;
-                        // if (token.typ == EnumToken.WhitespaceTokenType || token.typ == EnumToken.CommentTokenType) {
-                        //     context.next();
-                        // }
                         if (expectToken) {
-                            // if (token?.typ == EnumToken.CommaTokenType || token.typ == EnumToken.EndParensTokenType) {
-                            //     return {
-                            //         success: false,
-                            //         valid: true,
-                            //         token,
-                            //         context,
-                            //         syntaxToken: property,
-                            //         errors: [
-                            //             {
-                            //                 action: "drop",
-                            //                 message: `Unexpected token ${EnumToken[token?.typ]} at ${token![LOC]?.src}:${token![LOC]?.sta?.lin}:${token![LOC]?.sta?.col}`,
-                            //                 node: token,
-                            //                 location: token[LOC],
-                            //             },
-                            //         ],
-                            //     };
-                            // }
                             expectToken = false;
                         }
                         if (token.typ == exports.EnumToken.CommaTokenType) {
@@ -13966,48 +13368,11 @@
                         }
                         context.next();
                     }
-                    // if (stack.length > 0) {
-                    //     token = stack.at(-1) as Token;
-                    //     return {
-                    //         success: false,
-                    //         valid: true,
-                    //         token,
-                    //         context,
-                    //         syntaxToken: property,
-                    //         errors: [
-                    //             {
-                    //                 action: "drop",
-                    //                 message: `unbalanced parentheses ${EnumToken[token?.typ]} at ${token![LOC]?.src}:${token![LOC]?.sta?.lin}:${token![LOC]?.sta?.col}`,
-                    //                 node: token,
-                    //                 location: token[LOC],
-                    //             },
-                    //         ],
-                    //     };
-                    // }
                     success = !expectToken;
-                    // if (!success) {
-                    //     return {
-                    //         success: false,
-                    //         valid: true,
-                    //         token: token ?? context.current(),
-                    //         context,
-                    //         syntaxToken: property,
-                    //         errors: [],
-                    //     };
-                    // }
                 }
                 break;
             case "calc-sum": {
                 const token = context.peek();
-                // if (token?.typ === EnumToken.ParensTokenType) {
-                //     const result = matchSyntax(
-                //         (getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "calc()") as ValidationFunctionToken[])[0].chi,
-                //         createValidationContext((token as ParensToken).chi),
-                //         options,
-                //     );
-                //     success = result.success && result.context.done();
-                //     break;
-                // }
                 if (token?.typ === exports.EnumToken.BinaryExpressionTokenType) {
                     let result = matchSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "calc-sum"), createValidationContext([token.l]), options);
                     if (result.success) {
@@ -14042,16 +13407,6 @@
             case "an+b":
                 {
                     let token = context.peek();
-                    // if (token == null) {
-                    //     return {
-                    //         success: false,
-                    //         valid: true,
-                    //         token: null,
-                    //         context,
-                    //         syntaxToken: property,
-                    //         errors: [],
-                    //     };
-                    // }
                     if (token.typ === exports.EnumToken.IdenTokenType &&
                         ("even" === token.val || "odd" === token.val)) {
                         success = true;
@@ -14066,18 +13421,6 @@
                     if (token.typ === exports.EnumToken.LiteralTokenType || token.typ === exports.EnumToken.IdenTokenType) {
                         let match = /^(([+-]?[0-9]*)?n)?([+-]?[0-9]+)?$/.exec(token.val);
                         success = match != null;
-                        // if (!success) {
-                        //     success = /^(([+-]?[0-9]*)?n)?([+-])?$/.test((token as LiteralToken).val);
-                        //     if (success) {
-                        //         token = context.peek(1) as Token;
-                        //         success =
-                        //             token?.typ === EnumToken.NumberTokenType &&
-                        //             Number.isInteger((token as NumberToken).val) &&
-                        //             !(token as NumberToken).toString().includes(".") &&
-                        //             (token as NumberToken).sign == null;
-                        //         context.next();
-                        //     }
-                        // } else
                         if (match?.[3] == null) {
                             token = context.peek(1);
                             if (token?.typ === exports.EnumToken.Add ||
@@ -14090,12 +13433,6 @@
                                         !token.toString().includes(".") &&
                                         token.sign == null;
                             }
-                            // else if (token?.typ === EnumToken.NumberTokenType) {
-                            //     success =
-                            //         Number.isInteger((token as NumberToken).val) &&
-                            //         !(token as NumberToken).toString().includes(".") &&
-                            //         (token as NumberToken).sign != null;
-                            // }
                             if (success) {
                                 context.update(token);
                                 return {
@@ -14114,26 +13451,6 @@
                         success =
                             Number.isInteger(token.val) &&
                                 !token.toString().includes(".");
-                        // if (!success) {
-                        //     return {
-                        //         success: false,
-                        //         valid: true,
-                        //         token: null,
-                        //         context,
-                        //         syntaxToken: property,
-                        //         errors: [
-                        //             {
-                        //                 action: "drop",
-                        //                 message: `expecting <dimension-token>`,
-                        //                 node: token,
-                        //                 location: token[LOC],
-                        //             },
-                        //         ],
-                        //     };
-                        // }
-                        // if (token == null) {
-                        //     break;
-                        // }
                         token = context.peek(1);
                         if (token == null) {
                             break;
@@ -14166,33 +13483,6 @@
                     }
                 }
                 break;
-            // case "number-token":
-            //     {
-            //         const token = context.peek();
-            //         success =
-            //             token?.typ === EnumToken.NumberTokenType &&
-            //             !(token as DimensionToken).val.toString().includes(".") &&
-            //             Number.isInteger((token as DimensionToken).val);
-            //     }
-            //     break;
-            // case "ndashdigit-ident":
-            //     {
-            //         const token = context.peek();
-            //         success =
-            //             (token?.typ === EnumToken.IdenTokenType || token?.typ === EnumToken.LiteralTokenType) &&
-            //             /^-?n[-+]\d+$/.test((token as IdentToken | LiteralToken).val);
-            //     }
-            //     break;
-            // case "dimension-token":
-            //     {
-            //         const token = context.peek();
-            //         success =
-            //             token?.typ === EnumToken.DimensionTokenType &&
-            //             (token as DimensionToken).unit === "n" &&
-            //             !(token as DimensionToken).val.toString().includes(".") &&
-            //             Number.isInteger((token as DimensionToken).val);
-            //     }
-            //     break;
             case "quote":
             case "display-box":
             case "display-inside":
@@ -14215,29 +13505,6 @@
                             token.val.toLowerCase() in config$3.mediaFeatures;
                 }
                 break;
-            // case "mf-comparison":
-            //     {
-            //         const token = context.peek();
-            //         success =
-            //             token?.typ === EnumToken.LtTokenType ||
-            //             token?.typ === EnumToken.LteTokenType ||
-            //             token?.typ === EnumToken.GtTokenType ||
-            //             token?.typ === EnumToken.GteTokenType ||
-            //             token?.typ === EnumToken.DelimTokenType;
-            //     }
-            //     break;
-            // case "mf-gt":
-            //     {
-            //         const token = context.peek();
-            //         success = token?.typ === EnumToken.GtTokenType || token?.typ === EnumToken.GteTokenType;
-            //     }
-            //     break;
-            // case "mf-lt":
-            //     {
-            //         const token = context.peek();
-            //         success = token?.typ === EnumToken.LtTokenType || token?.typ === EnumToken.LteTokenType;
-            //     }
-            //     break;
             case "dashed-ident":
             case "extension-name":
             case "custom-property-name":
@@ -14277,68 +13544,23 @@
             }
             case "string": {
                 const token = context.peek();
-                // if (token == null) {
-                //     break;
-                // }
                 success = token?.typ === exports.EnumToken.StringTokenType;
                 break;
             }
-            case "wq-name": // *|a // |a // a // wq-name matches
-                // a|b
-                // if (context.peek()?.typ == EnumToken.Pipe) {
-                //     const success = context.peek(1)?.typ == EnumToken.IdenTokenType;
-                //     return {
-                //         success,
-                //         valid: true,
-                //         token: success ? context.update(context.peek(1) as Token).current() : context.peek(),
-                //         context,
-                //         syntaxToken: property,
-                //         errors: [],
-                //     };
-                // } else if (context.peek(1)?.typ == EnumToken.Pipe) {
-                //     const success =
-                //         context.peek()?.typ === EnumToken.Star && context.peek(2)?.typ === EnumToken.IdenTokenType;
-                //     return {
-                //         success,
-                //         valid: true,
-                //         token: success ? context.update(context.peek(2) as Token).current() : context.peek(),
-                //         context,
-                //         syntaxToken: property,
-                //         errors: [],
-                //     };
-                // } else
-                {
-                    const success = context.peek()?.typ == exports.EnumToken.IdenTokenType;
-                    return {
-                        success,
-                        valid: true,
-                        token: success ? context.next() : context.peek(),
-                        context,
-                        syntaxToken: property,
-                        errors: [],
-                    };
-                }
-            // case "id-selector":
-            //     success = context.peek()?.typ == EnumToken.HashTokenType;
-            //     break;
-            // case "class-selector":
-            //     success = context.peek()?.typ == EnumToken.ClassSelectorTokenType;
-            //     break;
-            // case "pseudo-class-selector":
-            //     {
-            //         const token = context.peek();
-            //         success =
-            //             token?.typ == EnumToken.PseudoClassTokenType ||
-            //             token?.typ == EnumToken.PseudoClassFuncTokenType ||
-            //             token?.typ == EnumToken.PseudoElementTokenType;
-            //     }
-            //     break;
+            case "wq-name": {
+                const success = context.peek()?.typ == exports.EnumToken.IdenTokenType;
+                return {
+                    success,
+                    valid: true,
+                    token: success ? context.next() : context.peek(),
+                    context,
+                    syntaxToken: property,
+                    errors: [],
+                };
+            }
             case "number":
                 {
                     const token = context.peek();
-                    // if (token == null) {
-                    //     break;
-                    // }
                     success = token?.typ == exports.EnumToken.NumberTokenType;
                 }
                 break;
@@ -16263,7 +15485,7 @@
                                         action: "drop",
                                         message: `Unexpected constant '${val}'`,
                                         node: value,
-                                        location: value[LOC],
+                                        // location: options.source!.getSourLocation(value[LOC]!.sta),
                                     });
                                     return false;
                                 }
@@ -16293,7 +15515,7 @@
                                                 action: "drop",
                                                 message: `Unexpected constant '${val}'`,
                                                 node: v.value,
-                                                location: v.value[LOC],
+                                                // location: options.source!.getSourLocation(v.value[LOC]!.sta),
                                             });
                                             return false;
                                         }
@@ -16341,7 +15563,7 @@
                                 action: "drop",
                                 message: "adding percentage and number is not allowed",
                                 node: token,
-                                location: token[LOC],
+                                // location: options.source!.getSourLocation(token[LOC]!.sta),
                             });
                             return false;
                         }
@@ -16369,9 +15591,9 @@
                         if (children.length <= offset + 1) {
                             errors?.push({
                                 action: "drop",
-                                message: `Invalid color at ${token[LOC]?.srcId}:${token[LOC]?.sta.lin}:${token[LOC]?.sta.col}`,
+                                message: `Invalid color`,
                                 node: token,
-                                location: token[LOC],
+                                // location: options.source!.getSourLocation(token[LOC]!.sta),
                             });
                             return false;
                         }
@@ -20170,6 +19392,31 @@
         }
         return hashId(input, length);
     }
+    /**
+     * generate a hash
+     * @param input
+     * @param length
+     * @param algo
+     */
+    function syncHash(input, length = 6, algo) {
+        let result;
+        if (algo != null) {
+            switch (algo) {
+                case "hex":
+                    return toHex(input).slice(0, length);
+                case "base64url":
+                case "base64":
+                    result = btoa(input);
+                    if (algo == "base64url") {
+                        result = result.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+                    }
+                    return result.slice(0, length);
+                default:
+                    throw new Error(`Unsupported hash algorithm: ${algo}`);
+            }
+        }
+        return hashId(input, length);
+    }
 
     const config = getConfig();
     class PropertyList {
@@ -20548,6 +19795,7 @@
                                                         typ: exports.EnumToken.MathFunctionTokenType,
                                                         val: "calc",
                                                         chi: values,
+                                                        [LOC]: value[LOC],
                                                     }
                                                     : values[0]);
                                                 break;
@@ -20561,6 +19809,7 @@
                                                     typ: exports.EnumToken.MathFunctionTokenType,
                                                     val: "calc",
                                                     chi: values,
+                                                    [LOC]: value[LOC],
                                                 });
                                                 break;
                                             }
@@ -22267,6 +21516,14 @@
             return this.lineStarts.getOffsets(offset);
         }
         /**
+         * get source location
+         * @param offset
+         * @returns
+         */
+        getSourceLocation(offset) {
+            return [this.file, ...this.getOffsets(offset)];
+        }
+        /**
          * get line starts
          * @returns
          */
@@ -23191,7 +22448,10 @@
                         replacement = result;
                     }
                 }
-                if (replacement != null && (!Array.isArray(replacement) || replacement.length > 0) && replacement != parent && parent[PARENT] != null) {
+                if (replacement != null &&
+                    (!Array.isArray(replacement) || replacement.length > 0) &&
+                    replacement != parent &&
+                    parent[PARENT] != null) {
                     replaceNodeOrValue(parent[PARENT], parent, replacement);
                 }
                 if ("chi" in replacement) {
@@ -23228,7 +22488,10 @@
                     }
                 }
             }
-            if (replacement != null && (!Array.isArray(replacement) || replacement.length > 0) && replacement != parent && parent[PARENT] != null) {
+            if (replacement != null &&
+                (!Array.isArray(replacement) || replacement.length > 0) &&
+                replacement != parent &&
+                parent[PARENT] != null) {
                 // @ts-ignore
                 replaceNodeOrValue(parent[PARENT], parent, replacement);
             }
@@ -26402,7 +25665,7 @@
                 chi: [],
                 [LOC]: {
                     ...tokens[0][LOC],
-                    end: { ...(tokens[tokens.length - 1]?.[LOC]?.end ?? tokens[0]?.[LOC]?.end) },
+                    end: tokens[tokens.length - 1]?.[LOC]?.end ?? tokens[0]?.[LOC]?.end
                 },
                 [TOKENS]: tokens.length === 0 ? null : tokens,
                 [STATE]: result.success ? exports.EnumAstNodeStatus.Validated : exports.EnumAstNodeStatus.Invalid,
@@ -26853,46 +26116,6 @@
         return buffer.length > 0 ? result + buffer : result;
     }
     /**
-     *
-     * @param tokens
-     * @returns
-     */
-    // export function isDeclarationValue(tokens: Token[]): { success: boolean; errors: ErrorDescription[] } {
-    //     const stack: Token[] = [];
-    //     let i: number = 0;
-    //     for (; i < tokens.length; i++) {
-    //         if (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType) {
-    //             continue;
-    //         } else if (tokensfuncDefMap.has(tokens[i].typ) || tokens[i].typ === EnumToken.StartParensTokenType) {
-    //             stack.push(tokens[i]);
-    //         } else if (tokens[i].typ === EnumToken.CommaTokenType || tokens[i].typ === EnumToken.LiteralTokenType) {
-    //             stack.push(tokens[i]);
-    //         } else if (isValue(tokens[i])) {
-    //             if (stack.at(-1)?.typ === EnumToken.LiteralTokenType) {
-    //                 stack.pop();
-    //             }
-    //         } else if (tokens[i].typ === EnumToken.EndParensTokenType) {
-    //             if (stack.at(-1)?.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(stack.at(-1)?.typ)) {
-    //                 stack.pop();
-    //             }
-    //         }
-    //     }
-    //     return {
-    //         success: stack.length === 0,
-    //         errors:
-    //             stack.length > 0
-    //                 ? [
-    //                       {
-    //                           action: "drop",
-    //                           message: `unexpected declaration value at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
-    //                           node: stack.at(-1),
-    //                           location: stack.at(-1)?.[LOC],
-    //                       },
-    //                   ]
-    //                 : [],
-    //     };
-    // }
-    /**
      * Parse declaration
      * @param tokens
      * @param parent
@@ -26939,58 +26162,6 @@
             });
         }
         tokens = trimArray(tokens.slice(i + 1));
-        // for (i = 0; i < tokens.length; i++) {
-        // const token = tokens[i];
-        // if (
-        //     token.typ == EnumToken.WhitespaceTokenType ||
-        //     token.typ == EnumToken.CommentTokenType ||
-        //     token.typ == EnumToken.InvalidCommentTokenType
-        // ) {
-        //     continue;
-        // }
-        // if (tokens[i].typ === EnumToken.UrlFunctionTokenDefType) {
-        // let k: number = i;
-        // while (k < tokens.length) {
-        //     if (
-        //         tokens[++k]?.typ === EnumToken.WhitespaceTokenType ||
-        //         tokens[k]?.typ === EnumToken.CommentTokenType
-        //     ) {
-        //         continue;
-        //     }
-        //     if (tokens[k]?.typ !== EnumToken.EndParensTokenType) {
-        //         break;
-        //     }
-        // }
-        // if (
-        //     tokens[k].typ === EnumToken.LiteralTokenType ||
-        //     tokens[k].typ === EnumToken.IdenTokenType ||
-        //     tokens[k].typ === EnumToken.DashedIdenTokenType ||
-        //     tokens[k].typ === EnumToken.HashTokenType ||
-        //     tokens[k].typ === EnumToken.ClassSelectorTokenType
-        // ) {
-        //     let j: number = k;
-        //     let val: string = (tokens[k] as LiteralToken | IdentToken | DashedIdentToken | HashToken).val;
-        //     while (j + 1 < tokens.length) {
-        //         if (
-        //             tokens[++j].typ !== EnumToken.LiteralTokenType &&
-        //             tokens[j].typ !== EnumToken.IdenTokenType &&
-        //             tokens[j].typ !== EnumToken.DashedIdenTokenType &&
-        //             tokens[j].typ !== EnumToken.HashTokenType &&
-        //             tokens[j].typ !== EnumToken.ClassSelectorTokenType
-        //         ) {
-        //             break;
-        //         }
-        //         val += (tokens[j] as LiteralToken | IdentToken | DashedIdentToken | HashToken).val;
-        //     }
-        //     Object.assign(tokens[k] as LiteralToken | IdentToken | DashedIdentToken | HashToken, {
-        //         typ: EnumToken.UrlTokenTokenType,
-        //         val,
-        //     });
-        //     tokens[k][LOC]!.end = tokens[j][LOC]!.end;
-        //     tokens.splice(k + 1, j - k - 1);
-        // }
-        // }
-        // }
         if (validate && name.typ === exports.EnumToken.IdenTokenType) {
             if (parent != null &&
                 parent.typ === exports.EnumToken.AtRuleNodeType &&
@@ -27081,7 +26252,8 @@
                 action: "drop",
                 message: "declaration value missing",
                 node: name,
-                location: name[LOC],
+                // @ts-expect-error
+                location: options.source.getSourceLocation(name[LOC].sta),
             });
             name[LOC] = {
                 ...name[LOC],
@@ -27296,7 +26468,10 @@
                                 tokens[index].typ = exports.EnumToken.FunctionTokenType;
                                 errors.push({
                                     action: "drop",
-                                    message: `invalid color at ${tokens[index][LOC]?.srcId}:${tokens[index][LOC]?.sta.lin}:${tokens[index][LOC]?.sta.col}`,
+                                    message: `invalid color`,
+                                    node: tokens[index],
+                                    // @ts-expect-error
+                                    location: options.source.getSourceLocation(tokens[index][LOC].sta),
                                 });
                             }
                         }
@@ -27348,7 +26523,8 @@
                 action: "drop",
                 message: "unbalanced token",
                 node: stack[stack.length - 1],
-                location: stack[stack.length - 1][LOC],
+                // @ts-expect-error
+                location: options.source.getSourceLocation(stack[stack.length - 1][LOC].sta),
             });
             name[LOC] = {
                 ...name[LOC],
@@ -27494,65 +26670,6 @@
                 if (i < stream.length) {
                     if (stream[i].typ === exports.EnumToken.IdenTokenType) {
                         const val = stream[i].val.toLowerCase();
-                        // if ("not" === val || "only" === val) {
-                        //     tokens.push(stream[i]);
-                        //     stack.push(stream[i]);
-                        //     i++;
-                        //     while (
-                        //         i < stream.length &&
-                        //         (stream[i]?.typ === EnumToken.WhitespaceTokenType ||
-                        //             stream[i]?.typ === EnumToken.CommentTokenType)
-                        //     ) {
-                        //         tokens.push(stream[i]);
-                        //         i++;
-                        //     }
-                        //     if (
-                        //         stream[i]?.typ !== EnumToken.IdenTokenType ||
-                        //         !mediaTypes.includes((stream[i] as IdentToken).val.toLowerCase())
-                        //     ) {
-                        //         errors.push({
-                        //             action: "drop",
-                        //             node: stream[i],
-                        //             message: `expecting '<media-type>' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                        //         });
-                        //         continue;
-                        //     }
-                        //     const index: number = tokens.indexOf(stack[stack.length - 1]);
-                        //     tokens[index][LOC] = { ...tokens[index][LOC]!, end: stream[i][LOC]!.end };
-                        //     tokens[index] = Object.assign(tokens[index], {
-                        //         typ: val === "not" ? EnumToken.NotTokenType : EnumToken.OnlyTokenType,
-                        //         val: stream[i],
-                        //     });
-                        //     tokens.length = index + 1;
-                        //     i++;
-                        //     // expect end of stream | and | or | not
-                        //     while (
-                        //         i < stream.length &&
-                        //         (stream[i]?.typ === EnumToken.WhitespaceTokenType ||
-                        //             stream[i]?.typ === EnumToken.CommentTokenType)
-                        //     ) {
-                        //         tokens.push(stream[i]);
-                        //         i++;
-                        //     }
-                        //     if (i < stream.length) {
-                        //         if (stream[i].typ === EnumToken.AndTokenType) {
-                        //             tokens.push(Object.assign(stream[i], { typ: EnumToken.AndTokenType }));
-                        //             stack.push(stream[i]);
-                        //             i++;
-                        //         } else if (stream[i].typ === EnumToken.OrTokenType) {
-                        //             tokens.push(Object.assign(stream[i], { typ: EnumToken.OrTokenType }));
-                        //             stack.push(stream[i]);
-                        //             i++;
-                        //         } else {
-                        //             success = false;
-                        //             errors.push({
-                        //                 action: "drop",
-                        //                 node: stream[i],
-                        //                 message: `expecting 'and' or 'or' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                        //             });
-                        //         }
-                        //     }
-                        // } else
                         if (mediaTypes.includes(val)) {
                             tokens.push(stream[i]);
                             i++;
@@ -27561,9 +26678,10 @@
                             success = false;
                             errors.push({
                                 action: "drop",
-                                message: `expecting '<media-type>' at ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                                message: `expecting '<media-type>'`,
                                 node: stream[i],
-                                location: stream[i][LOC],
+                                // @ts-expect-error
+                                location: options.source.getSourceLocation(stream[i][LOC].sta),
                             });
                         }
                     }
@@ -27571,9 +26689,10 @@
                         success = false;
                         errors.push({
                             action: "drop",
-                            message: `expecting '(' at ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                            message: `expecting '('`,
                             node: stream[i],
-                            location: stream[i][LOC],
+                            // @ts-expect-error
+                            location: options.source.getSourceLocation(stream[i][LOC].sta),
                         });
                     }
                 }
@@ -27586,15 +26705,6 @@
                         if (stream[i].typ === exports.EnumToken.IdenTokenType) {
                             stream[i].val.toLowerCase();
                         }
-                        // if (!valid) {
-                        //     success = false;
-                        //     errors.push({
-                        //         action: "drop",
-                        //         node: stream[i],
-                        //         message: `expecting <and>, <or> or comma  at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                        //     });
-                        //     break;
-                        // }
                         expectAndOrComma = false;
                     }
                     if (stream[i].typ === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(stream[i].typ)) {
@@ -27603,14 +26713,6 @@
                         continue;
                     }
                     switch (stream[i].typ) {
-                        // case EnumToken.LiteralTokenType:
-                        //     if ((stream[i] as LiteralToken).val === "<") {
-                        //         stack.push(Object.assign(stream[i], { typ: EnumToken.LtTokenType }));
-                        //     }
-                        //     if ((stream[i] as LiteralToken).val === ">") {
-                        //         stack.push(Object.assign(stream[i], { typ: EnumToken.GtTokenType }));
-                        //     }
-                        //     break;
                         case exports.EnumToken.ColonTokenType:
                         case exports.EnumToken.LtTokenType:
                         case exports.EnumToken.LteTokenType:
@@ -27622,12 +26724,6 @@
                         case exports.EnumToken.IdenTokenType:
                             {
                                 const val = stream[i].val.toLowerCase();
-                                // if (val === "not" || val === "only") {
-                                //     Object.assign(stream[i], {
-                                //         typ: val === "not" ? EnumToken.NotTokenType : EnumToken.OnlyTokenType,
-                                //     });
-                                //     stack.push(stream[i]);
-                                // } else
                                 if (val === "and" || val === "or") {
                                     Object.assign(stream[i], {
                                         typ: val === "and" ? exports.EnumToken.AndTokenType : exports.EnumToken.OrTokenType,
@@ -27637,7 +26733,9 @@
                                         errors.push({
                                             action: "drop",
                                             node: stream[i],
-                                            message: `<or> is not allowed outside of parentheses ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                                            message: `<or> is not allowed outside of parentheses`,
+                                            // @ts-expect-error
+                                            location: options.source.getSourceLocation(stream[i][LOC].sta),
                                         });
                                         break;
                                     }
@@ -27646,7 +26744,9 @@
                                         errors.push({
                                             action: "drop",
                                             node: stream[i],
-                                            message: `cannot mix <and> and <or> at the same level at ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                                            message: `cannot mix <and> and <or> at the same level`,
+                                            // @ts-expect-error
+                                            location: options.source.getSourceLocation(stream[i][LOC].sta),
                                         });
                                     }
                                     currentScope.add(stream[i].typ);
@@ -27679,32 +26779,6 @@
                                 const index = tokens.indexOf(stack.at(-1));
                                 const prevToken = stack[stack.length - 2];
                                 if (mFLT.has(prevToken?.typ) || mFGT.has(prevToken?.typ)) {
-                                    // if (stack[stack.length - 3]?.typ !== EnumToken.StartParensTokenType) {
-                                    //     success = false;
-                                    //     errors.push({
-                                    //         action: "drop",
-                                    //         node: stream[i],
-                                    //         message: `unmatched '(' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                                    //     });
-                                    //     break;
-                                    // }
-                                    // if (!mFLT.has(stack.at(-1)?.typ) && mFLT.has(prevToken?.typ)) {
-                                    //     success = false;
-                                    //     errors.push({
-                                    //         action: "drop",
-                                    //         node: stack.at(-1),
-                                    //         message: `expected <mf-lt> at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
-                                    //     });
-                                    //     break;
-                                    // } else if (!mFGT.has(stack.at(-1)?.typ) && mFGT.has(prevToken?.typ)) {
-                                    //     success = false;
-                                    //     errors.push({
-                                    //         action: "drop",
-                                    //         node: stream[i],
-                                    //         message: `expected <mf-gt> at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
-                                    //     });
-                                    //     break;
-                                    // }
                                     // const index: number = tokens.indexOf(stack.at(-1)!);
                                     // <mf-lt> | <mf-name>
                                     const index2 = tokens.indexOf(prevToken);
@@ -27714,15 +26788,6 @@
                                     const right = trimArray(tokens.slice(index + 1, tokens.length - 1));
                                     const names = trimArray(tokens.slice(index2 + 1, index));
                                     const filteredNames = names.filter((n) => n.typ !== exports.EnumToken.WhitespaceTokenType && n.typ !== exports.EnumToken.CommentTokenType);
-                                    // if (filteredNames.length !== 1 || filteredNames[0].typ !== EnumToken.IdenTokenType) {
-                                    //     success = false;
-                                    //     errors.push({
-                                    //         action: "drop",
-                                    //         node: stream[i],
-                                    //         message: `expected <mf-name>> at ${filteredNames[0]?.[LOC]?.src}:${filteredNames[0]?.[LOC]?.sta.lin}:${filteredNames[0]?.[LOC]?.sta.col}`,
-                                    //     });
-                                    //     break;
-                                    // }
                                     const name = filteredNames[0].val;
                                     const mfInfo = getMFInfo(name);
                                     for (const val of [left, right]) {
@@ -27735,17 +26800,6 @@
                                                         val[l].val === "calc") {
                                                         const value = evaluate([val[l]]);
                                                         if (value.length == 1) {
-                                                            // if (mfInfo?.type === MediaFeatureType.RatioType) {
-                                                            //     if (
-                                                            //         value[0].typ !== EnumToken.NumberTokenType ||
-                                                            //         !(
-                                                            //             ((value[0] as NumberToken).val as FractionToken)
-                                                            //                 ?.typ === EnumToken.FractionTokenType
-                                                            //         )
-                                                            //     ) {
-                                                            //         continue;
-                                                            //     }
-                                                            // }
                                                             value[0][LOC] = val[l][LOC];
                                                             val[l] = value[0];
                                                         }
@@ -27754,27 +26808,8 @@
                                             }
                                         }
                                     }
-                                    isMFValue(name, left, true);
-                                    // if (isValidMFValue.valid && !isValidMFValue.success) {
-                                    //     success = false;
-                                    //     errors.push({
-                                    //         action: "drop",
-                                    //         node: left[0] ?? prevToken,
-                                    //         message: `${isValidMFValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"} at ${(left[0] ?? prevToken)?.[LOC]?.src}:${(left[0] ?? prevToken)?.[LOC]?.sta.lin}:${(left[0] ?? prevToken)?.[LOC]?.sta.col}`,
-                                    //     });
-                                    //     break;
-                                    // }
-                                    isMFValue(name, right, true);
-                                    // if (isValidMFValue.valid && !isValidMFValue.success) {
-                                    //     success = false;
-                                    //     errors.push({
-                                    //         action: "drop",
-                                    //         node: right[0] ?? stream[i],
-                                    //         location: (right[0] ?? stream[i])?.[LOC],
-                                    //         message: `${isValidMFValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"} at ${(right[0] ?? stream[i])?.[LOC]?.src}:${(right[0] ?? stream[i])?.[LOC]?.sta.lin}:${(left[0] ?? stream[i])?.[LOC]?.sta.col}`,
-                                    //     });
-                                    //     break;
-                                    // }
+                                    // let isValidMFValue = isMFValue(name, left, true);
+                                    // isValidMFValue = isMFValue(name, right, true);
                                     for (const val of [left, right]) {
                                         if (mfInfo?.type === MediaFeatureType.RatioType) {
                                             const filteredValues = val.filter((n) => n.typ !== exports.EnumToken.WhitespaceTokenType &&
@@ -27805,75 +26840,18 @@
                                     stack.pop();
                                     stack.pop();
                                 }
-                                // else if (stack[stack.length - 2]?.typ !== EnumToken.StartParensTokenType) {
-                                //     success = false;
-                                //     errors.push({
-                                //         action: "drop",
-                                //         node: stream[i],
-                                //         location: stream[i]?.[LOC],
-                                //         message: `expected '(' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                                //     });
-                                //     break;
-                                // }
                             }
                             if (stack.length > 0 &&
                                 (mFGT.has(stack.at(-1)?.typ) ||
                                     mFLT.has(stack.at(-1)?.typ) ||
                                     stack.at(-1)?.typ === exports.EnumToken.DelimTokenType ||
                                     stack.at(-1)?.typ === exports.EnumToken.ColonTokenType)) {
-                                // if (stack[stack.length - 2]?.typ !== EnumToken.StartParensTokenType) {
-                                //     success = false;
-                                //     errors.push({
-                                //         action: "drop",
-                                //         node: stream[i],
-                                //         location: stream[i]?.[LOC],
-                                //         message: `expected '(' at ${(stack[stack.length - 2] ?? tokens[0])?.[LOC]?.src}:${(stack[stack.length - 2] ?? tokens[0])?.[LOC]?.sta.lin}:${(stack[stack.length - 2] ?? tokens[0])?.[LOC]?.sta.col}`,
-                                //     });
-                                //     break;
-                                // }
                                 const index2 = tokens.indexOf(stack.at(-1));
                                 const index3 = tokens.indexOf(stack.at(-2));
                                 let names = trimArray(tokens.slice(index3 + 1, index2));
                                 let values = trimArray(tokens.slice(index2 + 1, tokens.length - 1));
-                                // if (stack.at(-1)?.typ !== EnumToken.ColonTokenType) {
-                                // const filteredNames = names.filter(
-                                //     (n) =>
-                                //         n.typ !== EnumToken.WhitespaceTokenType && n.typ !== EnumToken.CommentTokenType,
-                                // );
-                                // if (
-                                //     filteredNames.length !== 1 ||
-                                //     (filteredNames[0].typ !== EnumToken.IdenTokenType &&
-                                //         filteredNames[0].typ !== EnumToken.DashedIdenTokenType)
-                                // ) {
-                                //     swapped = true;
-                                // }
-                                // }
                                 const filteredNames = (names).filter((n) => n.typ !== exports.EnumToken.WhitespaceTokenType && n.typ !== exports.EnumToken.CommentTokenType);
-                                // if (
-                                //     filteredNames.length !== 1 ||
-                                //     (filteredNames[0].typ !== EnumToken.IdenTokenType &&
-                                //         filteredNames[0].typ !== EnumToken.DashedIdenTokenType)
-                                // ) {
-                                //     success = false;
-                                //     errors.push({
-                                //         action: "drop",
-                                //         node: names[0] ?? stack.at(-1),
-                                //         location: names[0]?.[LOC],
-                                //         message: `expected <mf-name> at ${(names[0] ?? stack.at(-1))?.[LOC]?.src}:${(names[0] ?? stack.at(-1))?.[LOC]?.sta.lin}:${(names[0] ?? stack.at(-1))?.[LOC]?.sta.col}`,
-                                //     });
-                                //     break;
-                                // }
                                 const name = filteredNames[0].val;
-                                // if (!isMFName(name)) {
-                                //     success = false;
-                                //     errors.push({
-                                //         action: "drop",
-                                //         node: names[0] ?? stack.at(-1),
-                                //         location: names[0]?.[LOC] ?? stack.at(-1)?.[LOC],
-                                //         message: `expected <mf-name> at ${names[0]?.[LOC]?.src}:${names[0]?.[LOC]?.sta.lin}:${names[0]?.[LOC]?.sta.col}`,
-                                //     });
-                                //     break;
-                                // }
                                 const mfInfo = getMFInfo(name);
                                 if (options.computeCalcExpression) {
                                     if (mfInfo == null ||
@@ -27885,17 +26863,6 @@
                                                 val[l].val === "calc") {
                                                 const value = evaluate([val[l]]);
                                                 if (value.length == 1) {
-                                                    // if (mfInfo?.type === MediaFeatureType.RatioType) {
-                                                    //     if (
-                                                    //         value[0].typ !== EnumToken.NumberTokenType ||
-                                                    //         !(
-                                                    //             ((value[0] as NumberToken).val as FractionToken)?.typ ===
-                                                    //             EnumToken.FractionTokenType
-                                                    //         )
-                                                    //     ) {
-                                                    //         continue;
-                                                    //     }
-                                                    // }
                                                     value[0][LOC] = val[l][LOC];
                                                     val[l] = value[0];
                                                 }
@@ -27912,8 +26879,9 @@
                                     errors.push({
                                         action: "drop",
                                         node: arr[0],
-                                        location: arr[0]?.[LOC],
-                                        message: `${mfValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"} at ${arr[0]?.[LOC]?.srcId}:${arr[0]?.[LOC]?.sta.lin}:${arr[0]?.[LOC]?.sta.col}`,
+                                        // @ts-expect-error
+                                        location: options.source.getSourceLocation(arr[0]?.[LOC].sta),
+                                        message: `${mfValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"}`,
                                     });
                                     break;
                                 }
@@ -27947,8 +26915,9 @@
                                 errors.push({
                                     action: "drop",
                                     node: stream[i],
-                                    location: stream[i]?.[LOC],
-                                    message: `unmatched ')' at ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                                    // @ts-expect-error
+                                    location: options.source.getSourceLocation(stream[i]?.[LOC].sta),
+                                    message: `unmatched ')'`,
                                 });
                                 break;
                             }
@@ -27964,21 +26933,6 @@
                                 scopes.pop();
                                 currentScope = scopes.at(-1);
                                 stack.pop();
-                                // if (
-                                //     stack.at(-1)?.typ === EnumToken.NotTokenType ||
-                                //     stack.at(-1)?.typ === EnumToken.OnlyTokenType
-                                // ) {
-                                //     const index = tokens.indexOf(stack.at(-1)!);
-                                //     const slice = trimArray(tokens.slice(index + 1));
-                                //     tokens[index] = {
-                                //         typ: EnumToken.MediaQueryUnaryFeatureTokenType,
-                                //         l: stack.pop()!,
-                                //         r: slice,
-                                //         // @ts-expect-error
-                                //         [LOC]: { ...tokens[index][LOC]!, end: slice.at(-1)![LOC]!.end } as Location,
-                                //     };
-                                //     tokens.length = index + 1;
-                                // }
                                 if (stack.at(-1)?.typ === exports.EnumToken.AndTokenType ||
                                     stack.at(-1)?.typ === exports.EnumToken.OrTokenType) {
                                     const index = tokens.indexOf(stack.at(-1));
@@ -28007,15 +26961,6 @@
                         break;
                     }
                 }
-                // if (success && stack.length > 0) {
-                //     success = false;
-                //     errors.push({
-                //         action: "drop",
-                //         node: stack.at(-1),
-                //         location: stack.at(-1)?.[LOC],
-                //         message: `unmatched token '${EnumToken[stack.at(-1)?.typ]}' at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
-                //     });
-                // }
                 if (!success) {
                     hasErrors = true;
                     parts.splice(parts.indexOf(stream), 1);
@@ -28062,29 +27007,6 @@
             exports.EnumToken.ColumnCombinatorTokenType,
             exports.EnumToken.UniversalSelectorTokenType,
         ]);
-        // while (
-        //     i < stream.length &&
-        //     (stream[i]?.typ === EnumToken.WhitespaceTokenType || stream[i]?.typ === EnumToken.CommentTokenType)
-        // ) {
-        //     tokens.push(stream[i]);
-        //     i++;
-        // }
-        // if (
-        //     !tokensfuncDefMap.has(stream[i]?.typ) &&
-        //     stream[i]?.typ !== EnumToken.StartParensTokenType &&
-        //     !(stream[i]?.typ === EnumToken.IdenTokenType && "not" === (stream[i] as IdentToken)?.val.toLowerCase())
-        // ) {
-        //     return {
-        //         success: false,
-        //         errors: [
-        //             {
-        //                 action: "drop",
-        //                 node: stream[i],
-        //                 message: `expecting '<supports-condition>' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-        //             },
-        //         ],
-        //     };
-        // }
         for (; i < stream.length; i++) {
             tokens.push(stream[i]);
             if (stream[i].typ == exports.EnumToken.ColonTokenType) {
@@ -28114,32 +27036,6 @@
                     continue;
                 }
             }
-            // if (stream[i].typ == EnumToken.DoubleColonTokenType) {
-            //     val = ":" + (stream[i + 1] as IdentToken).val;
-            //     if (stream[i + 1]?.typ == EnumToken.IdenTokenType) {
-            //         Object.assign(stream[i], {
-            //             typ: EnumToken.PseudoClassTokenType,
-            //             val: (pseudoElements.includes(val) ? "" : ":") + val,
-            //         });
-            //         stream[i][LOC]!.end = stream[i + 1]![LOC]!.end;
-            //         stream.splice(i + 1, 1);
-            //         continue;
-            //     }
-            //     if (stream[i + 1]?.typ == EnumToken.FunctionTokenDefType) {
-            //         val = "::" + (stream[i + 1] as IdentToken).val;
-            //         Object.assign(stream[i], {
-            //             typ:
-            //                 val + "()" in getSyntaxConfig().selectors
-            //                     ? EnumToken.PseudoClassFunctionTokenDefType
-            //                     : EnumToken.FunctionTokenDefType,
-            //             val,
-            //         });
-            //         stack.push(stream[i]);
-            //         stream[i][LOC]!.end = stream[i + 1]![LOC]!.end;
-            //         stream.splice(i + 1, 1);
-            //         continue;
-            //     }
-            // }
             if (trimWhiteSpace.has(stream[i].typ)) {
                 if (tokens.at(-2)?.typ === exports.EnumToken.WhitespaceTokenType) {
                     tokens.splice(tokens.length - 2, 1);
@@ -28156,27 +27052,6 @@
                     tokens.push(stream[k]);
                     k++;
                 }
-                // if (k < stream.length) {
-                //     if (
-                //         stream[k].typ !== EnumToken.EndParensTokenType &&
-                //         !(
-                //             stream[k].typ === EnumToken.IdenTokenType &&
-                //             ("and" === (stream[k] as IdentToken)?.val.toLowerCase() ||
-                //                 "or" === (stream[k] as IdentToken)?.val.toLowerCase())
-                //         )
-                //     ) {
-                //         return {
-                //             success: false,
-                //             errors: [
-                //                 {
-                //                     action: "drop",
-                //                     node: stream[k],
-                //                     message: `expecting 'and' or 'or' at ${stream[k]?.[LOC]?.src}:${stream[k]?.[LOC]?.sta.lin}:${stream[k]?.[LOC]?.sta.col}`,
-                //                 },
-                //             ],
-                //         };
-                //     }
-                // }
                 expectAndOr = false;
             }
             if (stream[i].typ === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(stream[i].typ)) {
@@ -28187,91 +27062,11 @@
             switch (stream[i].typ) {
                 case exports.EnumToken.EndParensTokenType:
                     {
-                        // if (stack.length === 0) {
-                        //     return {
-                        //         success: false,
-                        //         errors: [
-                        //             {
-                        //                 action: "drop",
-                        //                 node: stream[i],
-                        //                 message: `unmatched ')' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                        //             },
-                        //         ],
-                        //     };
-                        // }
                         if (stack[stack.length - 1].typ === exports.EnumToken.ColonTokenType) {
-                            // if (tokensfuncDefMap.has(stack[stack.length - 2]?.typ)) {
-                            //     const index: number = tokens.indexOf(stack[stack.length - 1]);
-                            //     // expecting ident or dashed ident
-                            //     if (
-                            //         tokens[index + 1]?.typ == EnumToken.IdenTokenType ||
-                            //         tokens[index + 1]?.typ == EnumToken.DashedIdenTokenType
-                            //     ) {
-                            //         const val: string = (tokens[index + 1] as IdentToken | DashedIdentToken).val;
-                            //         Object.assign(tokens[index], {
-                            //             typ: pseudoElements.includes(val)
-                            //                 ? EnumToken.PseudoElementTokenType
-                            //                 : EnumToken.PseudoClassTokenType,
-                            //             val: ":" + val,
-                            //         });
-                            //         tokens[index][LOC]!.end = tokens[index + 1][LOC]!.end;
-                            //         tokens.splice(index + 1, 1);
-                            //         stack.pop();
-                            //         const index2: number = tokens.indexOf(stack[stack.length - 1]);
-                            //         const result = matchAllSyntaxes(
-                            //             (
-                            //                 getParsedSyntax(
-                            //                     ValidationSyntaxGroupEnum.Syntaxes,
-                            //                     (tokens[index2] as FunctionToken).val + "()",
-                            //                 ) as ValidationFunctionToken[]
-                            //             )[0]?.chi as ValidationToken[],
-                            //             createValidationContext(tokens.slice(index2 + 1, -1)),
-                            //             options,
-                            //         );
-                            //         if (!result.success) {
-                            //             return {
-                            //                 success: false,
-                            //                 errors: result.errors,
-                            //             };
-                            //         }
-                            //         tokens.pop();
-                            //         Object.assign(tokens[index2], {
-                            //             typ: tokensfuncDefMap.get(tokens[index2].typ)!,
-                            //             chi: tokens.splice(index2 + 1, tokens.length - index2 - 1),
-                            //         });
-                            //         tokens[index2][LOC]!.end = stream[i][LOC]!.end;
-                            //         stack.pop();
-                            //         break;
-                            //     }
-                            // }
-                            // if (stack[stack.length - 2]?.typ !== EnumToken.StartParensTokenType) {
-                            //     return {
-                            //         success: false,
-                            //         errors: [
-                            //             {
-                            //                 action: "drop",
-                            //                 node: stream[i],
-                            //                 message: `unmatched ')' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                            //             },
-                            //         ],
-                            //     };
-                            // }
                             // match declaration
                             const index = tokens.indexOf(stack[stack.length - 2]);
                             const slice = trimArray(tokens.splice(index + 1, tokens.length - index - 2));
                             const declaration = parseDeclaration(slice, context, { ...options, validation: false }, errors);
-                            // if (declaration.typ !== EnumToken.DeclarationNodeType) {
-                            //     return {
-                            //         success: false,
-                            //         errors: [
-                            //             {
-                            //                 action: "drop",
-                            //                 node: declaration,
-                            //                 message: `invalid declaration at ${declaration?.[LOC]?.src}:${declaration?.[LOC]?.sta.lin}:${declaration?.[LOC]?.sta.col}`,
-                            //             },
-                            //         ],
-                            //     };
-                            // }
                             tokens.splice(index + 1, 0, declaration);
                             stack.pop();
                         }
@@ -28283,30 +27078,10 @@
                             slice.filter((token) => {
                                 return (token.typ !== exports.EnumToken.WhitespaceTokenType && token.typ !== exports.EnumToken.CommentTokenType);
                             });
-                            // if (
-                            //     filtered.length !== 1 ||
-                            //     !(
-                            //         trimTokenSpace.has(filtered[0].typ) ||
-                            //         tokensfuncDefMap.has(filtered[0].typ) ||
-                            //         tokensfuncSet.has(filtered[0].typ)
-                            //     )
-                            // ) {
-                            //     const token = filtered[0] ?? slice[0] ?? stream[i];
-                            //     return {
-                            //         success: false,
-                            //         errors: [
-                            //             {
-                            //                 action: "drop",
-                            //                 node: token,
-                            //                 message: `expecting '<${filtered[0]?.typ === EnumToken.IdenTokenType ? "supports-condition-name" : "supports-condition"}>' at ${token?.[LOC]?.src}:${token?.[LOC]?.sta.lin}:${token?.[LOC]?.sta.col}`,
-                            //             },
-                            //         ],
-                            //     };
-                            // }
                             tokens[index] = {
                                 typ: exports.EnumToken.ParensTokenType,
                                 chi: slice,
-                                [LOC]: { ...stack.at(-1)[LOC], end: { ...stream[i]?.[LOC]?.end } },
+                                [LOC]: { ...stack.at(-1)[LOC], end: stream[i]?.[LOC]?.end },
                             };
                             stack.pop();
                             tokens.pop();
@@ -28320,7 +27095,7 @@
                                 typ: tokensfuncDefMap.get(stack.at(-1)?.typ),
                                 val: stack.at(-1).val,
                                 chi: trimArray(tokens.splice(index + 1, tokens.length - index - 2)),
-                                [LOC]: { ...stack.at(-1)[LOC], end: { ...stream[i]?.[LOC]?.end } },
+                                [LOC]: { ...stack.at(-1)[LOC], end: stream[i]?.[LOC]?.end },
                             };
                             if (tokens[index].typ === exports.EnumToken.PseudoClassFuncTokenType) {
                                 // not a declaration
@@ -28340,42 +27115,6 @@
                             while (tokensfuncDefMap.has(stack[k]?.typ)) {
                                 k--;
                             }
-                            // if (stack[k]?.typ !== EnumToken.ColonTokenType) {
-                            //     if (
-                            //         tokens[index].typ !== EnumToken.SupportsFunctionTokenType &&
-                            //         !equalsIgnoreCase("env", (tokens[index] as FunctionToken).val)
-                            //     ) {
-                            //         errors.push({
-                            //             action: "ignore",
-                            //             node: tokens[index],
-                            //             message: `expecting <supports-selector-fn>, <supports-env-fn>, <font-tech()>, <font-format()>, <at-rule()> or <named-feature()> at ${tokens[index]?.[LOC]?.src}:${tokens[index]?.[LOC]?.sta.lin}:${tokens[index]?.[LOC]?.sta.col}`,
-                            //         });
-                            //     } else {
-                            //         // not a declaration
-                            //         const result = matchAllSyntaxes(
-                            //             (
-                            //                 getParsedSyntax(
-                            //                     ValidationSyntaxGroupEnum.Syntaxes,
-                            //                     (tokens[index] as FunctionToken).val + "()",
-                            //                 ) as ValidationFunctionToken[]
-                            //             )?.[0]?.chi as ValidationToken[],
-                            //             createValidationContext((tokens[index] as FunctionToken).chi as Token[]),
-                            //             options,
-                            //         );
-                            //         if (!result.valid) {
-                            //             errors.push(...result.errors, {
-                            //                 action: "ignore",
-                            //                 node: tokens[index],
-                            //                 message: `missing syntax for function '${(tokens[index] as FunctionToken).val}()' at ${tokens[index]?.[LOC]?.src}:${tokens[index]?.[LOC]?.sta.lin}:${tokens[index]?.[LOC]?.sta.col}`,
-                            //             });
-                            //         } else if (!result.success) {
-                            //             return {
-                            //                 success: false,
-                            //                 errors: result.errors,
-                            //             };
-                            //         }
-                            //     }
-                            // }
                             stack.pop();
                             tokens.pop();
                             scopes.pop();
@@ -28387,46 +27126,22 @@
                                 typ: exports.EnumToken.SupportsQueryUnaryConditionTokenType,
                                 l: stack.at(-1),
                                 r: trimArray(tokens.splice(index + 1, i - index - 1)),
-                                [LOC]: { ...stack.at(-1)[LOC], end: { ...stream[i]?.[LOC]?.end } },
+                                [LOC]: { ...stack.at(-1)[LOC], end: stream[i]?.[LOC]?.end },
                             };
                             stack.pop();
                         }
                         if (stack.at(-1)?.typ === exports.EnumToken.AndTokenType || stack.at(-1)?.typ === exports.EnumToken.OrTokenType) {
-                            // if (stack.length > 1 && stack.at(-2)?.typ !== EnumToken.StartParensTokenType) {
-                            //     return {
-                            //         success: false,
-                            //         errors: [
-                            //             {
-                            //                 action: "drop",
-                            //                 node: stack.at(-2),
-                            //                 message: `expecting '(' at ${stack.at(-2)?.[LOC]?.src}:${stack.at(-2)?.[LOC]?.sta.lin}:${stack.at(-2)?.[LOC]?.sta.col}`,
-                            //             },
-                            //         ],
-                            //     };
-                            // }
                             const index = tokens.indexOf(stack.at(-1));
                             const index2 = stack.length > 1 ? tokens.indexOf(stack.at(-2)) + 1 : 0;
                             const left = trimArray(tokens.slice(index2, index));
                             left.find((t) => t.typ === exports.EnumToken.SupportsQueryUnaryConditionTokenType &&
                                 t.l.typ === exports.EnumToken.NotTokenType);
-                            // if (notToken != null) {
-                            //     return {
-                            //         success: false,
-                            //         errors: [
-                            //             {
-                            //                 action: "drop",
-                            //                 node: stack.at(-1),
-                            //                 message: `unexpected token after 'not' expression at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
-                            //             },
-                            //         ],
-                            //     };
-                            // }
                             tokens[index2] = {
                                 typ: exports.EnumToken.SupportsQueryConditionTokenType,
                                 op: stack.at(-1),
                                 l: left,
                                 r: trimArray(tokens.slice(index + 1)),
-                                [LOC]: { ...stack.at(-1)[LOC], end: { ...stream[i]?.[LOC]?.end } },
+                                [LOC]: { ...stack.at(-1)[LOC], end: stream[i]?.[LOC]?.end },
                             };
                             tokens.length = index2 + 1;
                             stack.pop();
@@ -28445,19 +27160,8 @@
                             break;
                         }
                         if ("and" === val || "or" === val) {
-                            // if (scope.has("or" === val ? EnumToken.AndTokenType : EnumToken.OrTokenType)) {
-                            //     return {
-                            //         success: false,
-                            //         errors: [
-                            //             {
-                            //                 action: "drop",
-                            //                 message: `mixing <and> and <or> at the same level is not allowed at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                            //             },
-                            //         ],
-                            //     };
-                            // }
                             if ("or" === val && scopes.length === 1) {
-                                const fileName = options.source.getFileName() ?? '';
+                                const fileName = options.source.getFileName() ?? "";
                                 const [line, column] = options.source.getOffsets(stream[i]?.[LOC]?.sta);
                                 return {
                                     success: false,
@@ -28481,18 +27185,6 @@
                     break;
             }
         }
-        // if (stack.length > 0) {
-        //     return {
-        //         success: false,
-        //         errors: [
-        //             {
-        //                 action: "drop",
-        //                 node: stack.at(-1),
-        //                 message: `unmatched token '${renderValue(stack.at(-1) as Token)}' at ${stack.at(-1)![LOC]!.src}:${stack.at(-1)![LOC]!.sta.lin}:${stack.at(-1)![LOC]!.sta.col}`,
-        //             },
-        //         ],
-        //     };
-        // }
         stream.length = 0;
         stream.push(...trimArray(tokens));
         return { success, errors };
@@ -28518,7 +27210,6 @@
             // match ending ')'
             let matchCount = 0;
             let k = 0;
-            // let stringCount = 0;
             for (; k < stream.length; k++) {
                 if (stream[k]?.typ === exports.EnumToken.EndParensTokenType) {
                     matchCount--;
@@ -28526,45 +27217,10 @@
                 else if (stream[k]?.typ === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(stream[k]?.typ)) {
                     matchCount++;
                 }
-                // else if (stream[k]?.typ === EnumToken.StringTokenType) {
-                //     stringCount++;
-                // } 
-                // else if (stream[k]?.typ === EnumToken.UrlFunctionTokenDefType) {
-                //     urlTokenCount++;
-                // } else if (
-                //     !(stream[k]?.typ === EnumToken.WhitespaceTokenType || stream[k]?.typ === EnumToken.CommentTokenType)
-                // ) {
-                //     return {
-                //         success: false,
-                //         errors: [
-                //             {
-                //                 action: "drop",
-                //                 message: "Expected string or <url-token>",
-                //                 syntax: "@import",
-                //                 node: stream[k],
-                //                 location: stream[k]?.[LOC],
-                //             } as ErrorDescription,
-                //         ],
-                //     };
-                // }
                 if (matchCount === 0) {
                     break;
                 }
             }
-            // if (stringCount + urlTokenCount != 1) {
-            //     return {
-            //         success: false,
-            //         errors: [
-            //             {
-            //                 action: "drop",
-            //                 syntax: "@import",
-            //                 message: "could not match syntax <url>",
-            //                 node: stream[0],
-            //                 location: stream[0][LOC],
-            //             },
-            //         ],
-            //     };
-            // }
             const slice = stream.slice(index + 1, k);
             // @ts-expect-error
             stream[0][LOC] = {
@@ -28604,12 +27260,6 @@
             "layer".localeCompare(stream[index].val) === 0) {
             stack.push(stream[index]);
             tokens.push(stream[index++]);
-            // while (
-            //     stream[index]?.typ === EnumToken.WhitespaceTokenType ||
-            //     stream[index]?.typ === EnumToken.CommentTokenType
-            // ) {
-            //     tokens.push(stream[index++] as Token);
-            // }
             // <layer-name">
             if (stream[index]?.typ === exports.EnumToken.EndParensTokenType) {
                 i = tokens.indexOf(stack.at(-1));
@@ -28619,10 +27269,11 @@
                     errors: [
                         {
                             action: "drop",
-                            message: `Expected <layer-name> at ${stream[index]?.[LOC]?.srcId}:${stream[index]?.[LOC]?.sta.lin}:${stream[index]?.[LOC]?.sta.col}`,
+                            message: `Expected <layer-name>`,
                             syntax: "@import",
                             node: stream[index],
-                            location: stream[index]?.[LOC],
+                            // @ts-expect-error
+                            location: options.source.getSourceLocation(stream[index]?.[LOC].sta),
                         },
                     ],
                 };
@@ -28632,26 +27283,6 @@
                 while (stream[index]?.typ == exports.EnumToken.ClassSelectorTokenType) {
                     tokens.push(stream[index++]);
                 }
-                // while (
-                //     stream[index]?.typ == EnumToken.WhitespaceTokenType ||
-                //     stream[index]?.typ == EnumToken.CommentTokenType
-                // ) {
-                //     tokens.push(stream[index++] as Token);
-                // }
-                // if (stream[index]?.typ !== EnumToken.EndParensTokenType) {
-                //     return {
-                //         success: false,
-                //         errors: [
-                //             {
-                //                 action: "drop",
-                //                 message: "Expected ')'",
-                //                 syntax: "@import",
-                //                 node: stream[index],
-                //                 location: stream[index]?.[LOC],
-                //             } as ErrorDescription,
-                //         ],
-                //     };
-                // }
                 i = tokens.indexOf(stack.at(-1));
                 tokens.splice(index, 1);
                 Object.assign(stack.at(-1), {
@@ -28666,10 +27297,11 @@
                     errors: [
                         {
                             action: "drop",
-                            message: `Expected <layer-name> at ${stream[index]?.[LOC]?.srcId}:${stream[index]?.[LOC]?.sta.lin}:${stream[index]?.[LOC]?.sta.col}`,
+                            message: `Expected <layer-name>`,
                             syntax: "@import",
                             node: stream[index],
-                            location: stream[index]?.[LOC],
+                            // @ts-expect-error
+                            location: options.source.getSourceLocation(stream[index]?.[LOC].sta),
                         },
                     ],
                 };
@@ -28685,97 +27317,6 @@
             stack.push(stream[index]);
             tokens.push(stream[index++]);
             matchCount = 1;
-            // while (
-            //     stream[index]?.typ === EnumToken.WhitespaceTokenType ||
-            //     stream[index]?.typ === EnumToken.CommentTokenType
-            // ) {
-            //     tokens.push(stream[index++] as Token);
-            // }
-            // <declaration>
-            // if (
-            //     stream[index]?.typ === EnumToken.IdenTokenType &&
-            //     !["and", "or", "not", "only"].includes((stream[index] as IdentToken).val.toLowerCase())
-            // ) {
-            //     tokens.push(stream[index++] as Token);
-            //     while (
-            //         stream[index]?.typ === EnumToken.WhitespaceTokenType ||
-            //         stream[index]?.typ === EnumToken.CommentTokenType
-            //     ) {
-            //         tokens.push(stream[index++] as Token);
-            //     }
-            //     if (stream[index]?.typ !== EnumToken.ColonTokenType) {
-            //         return {
-            //             success: false,
-            //             errors: [
-            //                 {
-            //                     action: "drop",
-            //                     message: "Expected ':'",
-            //                     syntax: "@import",
-            //                     node: stream[index],
-            //                     location: stream[index]?.[LOC],
-            //                 } as ErrorDescription,
-            //             ],
-            //         };
-            //     } else {
-            //         isDecl = true;
-            //         tokens.push(stream[index++] as Token);
-            //         // match the next ')'
-            //         while (index < stream.length && matchCount > 0) {
-            //             if (
-            //                 stream[index]?.typ === EnumToken.StartParensTokenType ||
-            //                 tokensfuncDefMap.has(stream[index]?.typ)
-            //             ) {
-            //                 matchCount++;
-            //                 // stack.push(stream[index] as Token);
-            //             } else if (stream[index]?.typ === EnumToken.EndParensTokenType) {
-            //                 matchCount--;
-            //                 if (matchCount === 0) {
-            //                     i = tokens.indexOf(stack.at(-1) as Token);
-            //                     tokens.splice(index, 1);
-            //                     Object.assign(stack.at(-1) as Token, {
-            //                         typ: tokensfuncDefMap.get((stack.at(-1) as Token).typ),
-            //                         chi: trimArray(tokens.splice(i + 1, index++ - i - 1)),
-            //                     });
-            //                     stack.pop();
-            //                     break;
-            //                 }
-            //             } else if (stream[index]?.typ === EnumToken.ImportantTokenType) {
-            //                 tokens.push(stream[index++] as Token);
-            //                 while (
-            //                     stream[index]?.typ === EnumToken.WhitespaceTokenType ||
-            //                     stream[index]?.typ === EnumToken.CommentTokenType
-            //                 ) {
-            //                     tokens.push(stream[index++] as Token);
-            //                 }
-            //                 // next token is ')'
-            //                 if (stream[index]?.typ !== EnumToken.EndParensTokenType) {
-            //                     return {
-            //                         success: false,
-            //                         errors: [
-            //                             {
-            //                                 action: "drop",
-            //                                 message: "Expected ')'",
-            //                                 syntax: "@import",
-            //                                 node: stream[index],
-            //                                 location: stream[index]?.[LOC],
-            //                             } as ErrorDescription,
-            //                         ],
-            //                     };
-            //                 }
-            //                 matchCount--;
-            //                 i = tokens.indexOf(stack.at(-1) as Token);
-            //                 tokens.splice(index, 1);
-            //                 Object.assign(stack.at(-1) as Token, {
-            //                     typ: tokensfuncDefMap.get((stack.at(-1) as Token).typ),
-            //                     chi: trimArray(tokens.splice(i + 1, index++ - i - 1)),
-            //                 });
-            //                 stack.pop();
-            //                 break;
-            //             }
-            //             tokens.push(stream[index++] as Token);
-            //         }
-            //     }
-            // }
             // <supports-condition>
             // else {
             // match the next ')'
@@ -28798,21 +27339,6 @@
                 }
                 tokens.push(stream[index++]);
             }
-            // }
-            // if (matchCount > 0) {
-            //     return {
-            //         success: false,
-            //         errors: [
-            //             {
-            //                 action: "drop",
-            //                 message: "unmatched ')'",
-            //                 syntax: "@import",
-            //                 node: stack.at(-1),
-            //                 location: stack.at(-1)?.[LOC],
-            //             } as ErrorDescription,
-            //         ],
-            //     };
-            // }
             // support() is the last item in tokens array
             {
                 const result = parseAtRuleSupportSyntax(tokens[tokens.length - 1].chi, context, options);
@@ -28850,59 +27376,9 @@
         let expectAndOr = false;
         let scope = new Set();
         const errors = [];
-        // while (
-        //     i < stream.length &&
-        //     (stream[i]?.typ === EnumToken.WhitespaceTokenType || stream[i]?.typ === EnumToken.CommentTokenType)
-        // ) {
-        //     tokens.push(stream[i]);
-        //     i++;
-        // }
-        // if (i >= stream.length) {
-        //     success = "else" === context.nam;
-        //     return {
-        //         success,
-        //         errors: success
-        //             ? []
-        //             : [
-        //                   {
-        //                       action: "drop",
-        //                       node: stream[i],
-        //                       location: stream[i]?.[LOC],
-        //                       message: `expecting '<boolean-condition>' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-        //                   },
-        //               ],
-        //     };
-        // }
-        // if (
-        //     stream[i]?.typ !== EnumToken.WhenElseFunctionTokenDefType &&
-        //     stream[i]?.typ !== EnumToken.SupportsFunctionTokenDefType &&
-        //     stream[i]?.typ !== EnumToken.StartParensTokenType &&
-        //     "val" in stream[i] &&
-        //     !(
-        //         stream[i]?.typ === EnumToken.IdenTokenType &&
-        //         (equalsIgnoreCase((stream[i] as IdentToken).val, "not") ||
-        //             equalsIgnoreCase((stream[i] as IdentToken).val, "only"))
-        //     )
-        // ) {
-        //     return {
-        //         success: false,
-        //         errors: [
-        //             {
-        //                 action: "drop",
-        //                 node: stream[i],
-        //                 location: stream[i]?.[LOC],
-        //                 message: `expecting '<boolean-condition>' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-        //             },
-        //         ],
-        //     };
-        // }
+        // const scopes: Array<Set<EnumToken>> = [scope];
         for (; i < stream.length; i++) {
             tokens.push(stream[i]);
-            // if (stream[i].typ === EnumToken.StartParensTokenType) {
-            //     stack.push(stream[i]);
-            //     scopes.push((scope = new Set()));
-            //     continue;
-            // }
             if (expectAndOr) {
                 let k = i;
                 while (k < stream.length &&
@@ -28910,173 +27386,13 @@
                     tokens.push(stream[k]);
                     k++;
                 }
-                // if (k < stream.length) {
-                //     if (
-                //         stream[k].typ !== EnumToken.EndParensTokenType &&
-                //         !(
-                //             stream[k].typ === EnumToken.IdenTokenType &&
-                //             (equalsIgnoreCase((stream[k] as IdentToken).val, "and") ||
-                //                 equalsIgnoreCase((stream[k] as IdentToken).val, "or"))
-                //         )
-                //     ) {
-                //         return {
-                //             success: false,
-                //             errors: [
-                //                 {
-                //                     action: "drop",
-                //                     node: stream[k],
-                //                     message: `expecting 'and' or 'or' at ${stream[k]?.[LOC]?.src}:${stream[k]?.[LOC]?.sta.lin}:${stream[k]?.[LOC]?.sta.col}`,
-                //                     location: stream[k][LOC],
-                //                 },
-                //             ],
-                //         };
-                //     }
-                // }
                 expectAndOr = false;
             }
             switch (stream[i].typ) {
-                // case EnumToken.EndParensTokenType:
-                //     {
-                //         if (stack.length === 0) {
-                //             return {
-                //                 success: false,
-                //                 errors: [
-                //                     {
-                //                         action: "drop",
-                //                         node: stream[i],
-                //                         message: `unmatched ')' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                //                     },
-                //                 ],
-                //             };
-                //         }
-                //         if (stack.at(-1)?.typ === EnumToken.StartParensTokenType) {
-                //             const index: number = tokens.indexOf(stack.at(-1)!);
-                //             const slice: Token[] = trimArray(tokens.splice(index + 1, tokens.length - index - 2));
-                //             const filtered: Token[] = slice.filter((token) => {
-                //                 return (
-                //                     token.typ !== EnumToken.WhitespaceTokenType && token.typ !== EnumToken.CommentTokenType
-                //                 );
-                //             });
-                //             if (
-                //                 filtered.length !== 1 ||
-                //                 !(
-                //                     validChildTypes.has(filtered[0].typ) ||
-                //                     tokensfuncDefMap.has(filtered[0].typ) ||
-                //                     tokensfuncSet.has(filtered[0].typ)
-                //                 )
-                //             ) {
-                //                 const token = filtered[0] ?? slice[0] ?? stream[i];
-                //                 return {
-                //                     success: false,
-                //                     errors: [
-                //                         {
-                //                             action: "drop",
-                //                             node: token,
-                //                             location: token[LOC],
-                //                             message: `expecting '<boolean-condition"}>' at ${token?.[LOC]?.src}:${token?.[LOC]?.sta.lin}:${token?.[LOC]?.sta.col}`,
-                //                         },
-                //                     ],
-                //                 };
-                //             }
-                //             tokens[index] = {
-                //                 typ: EnumToken.ParensTokenType,
-                //                 chi: slice,
-                //                 [LOC]: { ...stack.at(-1)![LOC], end: { ...stream[i]?.[LOC]?.end } } as Location,
-                //             };
-                //             stack.pop();
-                //             tokens.pop();
-                //             scopes.pop();
-                //             scope = scopes[scopes.length - 1];
-                //             expectAndOr = true;
-                //         }
-                //         if (stack.at(-1)?.typ === EnumToken.NotTokenType || stack.at(-1)?.typ === EnumToken.OnlyTokenType) {
-                //             const index: number = tokens.indexOf(stack.at(-1)!);
-                //             tokens[index] = {
-                //                 typ: EnumToken.SupportsQueryUnaryConditionTokenType,
-                //                 l: stack.at(-1),
-                //                 r: trimArray(tokens.splice(index + 1, i - index - 1)),
-                //                 [LOC]: { ...stack.at(-1)![LOC], end: { ...stream[i]?.[LOC]?.end } },
-                //             } as SupportsQueryUnaryConditionToken;
-                //             stack.pop();
-                //         }
-                //         if (stack.at(-1)?.typ === EnumToken.AndTokenType || stack.at(-1)?.typ === EnumToken.OrTokenType) {
-                //             if (stack.length > 1 && stack.at(-2)?.typ !== EnumToken.StartParensTokenType) {
-                //                 return {
-                //                     success: false,
-                //                     errors: [
-                //                         {
-                //                             action: "drop",
-                //                             node: stack.at(-2),
-                //                             message: `expecting '(' at ${stack.at(-2)?.[LOC]?.src}:${stack.at(-2)?.[LOC]?.sta.lin}:${stack.at(-2)?.[LOC]?.sta.col}`,
-                //                         },
-                //                     ],
-                //                 };
-                //             }
-                //             const index: number = tokens.indexOf(stack.at(-1)!);
-                //             const index2: number = stack.length > 1 ? tokens.indexOf(stack.at(-2)!) + 1 : 0;
-                //             const left: Token[] = trimArray(tokens.slice(index2, index));
-                //             const notToken = left.find(
-                //                 (t) =>
-                //                     t.typ === EnumToken.SupportsQueryUnaryConditionTokenType &&
-                //                     (t as SupportsQueryUnaryConditionToken).l.typ === EnumToken.NotTokenType,
-                //             );
-                //             if (notToken != null) {
-                //                 return {
-                //                     success: false,
-                //                     errors: [
-                //                         {
-                //                             action: "drop",
-                //                             node: stack.at(-1),
-                //                             message: `unexpected token after 'not' expression at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
-                //                         },
-                //                     ],
-                //                 };
-                //             }
-                //             tokens[index2] = {
-                //                 typ: EnumToken.SupportsQueryConditionTokenType,
-                //                 op: stack.at(-1)!,
-                //                 l: left,
-                //                 r: trimArray(tokens.slice(index + 1)),
-                //                 [LOC]: { ...stack.at(-1)![LOC], end: { ...stream[i]?.[LOC]?.end } },
-                //             } as SupportsQueryConditionToken;
-                //             tokens.length = index2 + 1;
-                //             stack.pop();
-                //         }
-                //     }
-                //     break;
                 case exports.EnumToken.IdenTokenType:
                     {
                         const val = stream[i].val.toLowerCase();
-                        // if ("not" === val || "only" === val) {
-                        //     stack.push(stream[i]);
-                        //     Object.assign(stream[i], {
-                        //         typ: "only" === val ? EnumToken.OnlyTokenType : EnumToken.NotTokenType,
-                        //     });
-                        //     break;
-                        // }
                         if ("and" === val || "or" === val) {
-                            // if (scope.has("or" === val ? EnumToken.AndTokenType : EnumToken.OrTokenType)) {
-                            //     return {
-                            //         success: false,
-                            //         errors: [
-                            //             {
-                            //                 action: "drop",
-                            //                 message: `mixing <and> and <or> at the same level is not allowed at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                            //             },
-                            //         ],
-                            //     };
-                            // }
-                            // if ("or" === val && scopes.length === 1) {
-                            //     return {
-                            //         success: false,
-                            //         errors: [
-                            //             {
-                            //                 action: "drop",
-                            //                 message: `<or> is not allowed outside of a parenthesis at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                            //             },
-                            //         ],
-                            //     };
-                            // }
                             Object.assign(stream[i], {
                                 typ: "or" === val ? exports.EnumToken.OrTokenType : exports.EnumToken.AndTokenType,
                             });
@@ -29108,7 +27424,7 @@
                         const tokenList = [
                             {
                                 typ: exports.EnumToken.StartParensTokenType,
-                                [LOC]: { ...stream[i][LOC], end: { ...stream[j]?.[LOC]?.end } },
+                                [LOC]: { ...stream[i][LOC], end: stream[j]?.[LOC]?.end },
                             },
                             // @ts-expect-error
                         ].concat(slice.slice(1));
@@ -29139,7 +27455,7 @@
                         //         location: stream[i][LOC],
                         //     });
                         // }
-                        stream[i][LOC] = { ...stream[i][LOC], end: { ...stream[j]?.[LOC]?.end } };
+                        stream[i][LOC] = { ...stream[i][LOC], end: stream[j]?.[LOC]?.end };
                         Object.assign(stream[i], {
                             typ: tokensfuncDefMap.get(stream[i].typ),
                             chi: stream[i].typ === exports.EnumToken.SupportsFunctionTokenDefType
@@ -29165,7 +27481,7 @@
                                 op: stack.at(-1),
                                 l: trimArray(tokens.slice(index2, index)),
                                 r: trimArray(tokens.slice(index + 1)),
-                                [LOC]: { ...stack.at(-1)[LOC], end: { ...stream[i]?.[LOC]?.end } },
+                                [LOC]: { ...stack.at(-1)[LOC], end: stream[i]?.[LOC]?.end },
                             };
                             tokens.length = index2 + 1;
                             stack.pop();
@@ -29267,34 +27583,12 @@
                             {
                                 action: "drop",
                                 node: stream[i],
-                                location: stream[i]?.[LOC], // ?? context[LOC],
-                                message: `expecting <container-condition> at ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                                location: options.source.getSourceLocation(stream[i]?.[LOC].sta), // ?? context[LOC],
+                                message: `expecting <container-condition>`,
                             },
                         ],
                     };
                 }
-                // if (stream[i]?.typ === EnumToken.IdenTokenType) {
-                //     const val: string = (stream[i] as IdentToken).val.toLowerCase();
-                //     if ("not" === val) {
-                //         tokens.push(stream[i]);
-                //         stack.push(Object.assign(stream[i], { typ: EnumToken.NotTokenType }));
-                //         i++;
-                //     } else if ("and" === val || "or" === val) {
-                //         return {
-                //             success: false,
-                //             errors: [
-                //                 {
-                //                     action: "drop",
-                //                     node: stream[i],
-                //                     location: stream[i]?.[LOC],
-                //                     message: `unexpected token at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                //                 },
-                //             ],
-                //         };
-                //     } else {
-                //         tokens.push(stream[i++]);
-                //     }
-                // }
                 for (; i < stream.length; i++) {
                     tokens.push(stream[i]);
                     if (stream[i].typ === exports.EnumToken.WhitespaceTokenType || stream[i].typ === exports.EnumToken.CommentTokenType) {
@@ -29313,7 +27607,8 @@
                             errors.push({
                                 action: "drop",
                                 node: stream[i],
-                                message: `expecting <and>, <or> or comma  at ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                                message: `expecting <and>, <or> or comma`,
+                                location: options.source.getSourceLocation(stream[i]?.[LOC].sta),
                             });
                             break;
                         }
@@ -29325,14 +27620,6 @@
                         continue;
                     }
                     switch (stream[i].typ) {
-                        // case EnumToken.LiteralTokenType:
-                        //     if ((stream[i] as LiteralToken).val === "<") {
-                        //         stack.push(Object.assign(stream[i], { typ: EnumToken.LtTokenType }));
-                        //     }
-                        //     if ((stream[i] as LiteralToken).val === ">") {
-                        //         stack.push(Object.assign(stream[i], { typ: EnumToken.GtTokenType }));
-                        //     }
-                        //     break;
                         case exports.EnumToken.ColonTokenType:
                         case exports.EnumToken.LtTokenType:
                         case exports.EnumToken.LteTokenType:
@@ -29358,8 +27645,8 @@
                                         success = false;
                                         errors.push({
                                             action: "drop",
-                                            node: stream[i],
-                                            message: `<or> is not allowed outside of parentheses ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                                            node: options.source.getSourceLocation(stream[i][LOC].sta),
+                                            message: `<or> is not allowed outside of parentheses`,
                                         });
                                         break;
                                     }
@@ -29541,15 +27828,12 @@
                                     errors.push({
                                         action: "drop",
                                         node: stream[i],
-                                        location: stream[i]?.[LOC],
-                                        message: `expecting '<${tokens[index].val}-query>' at ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                                        location: options.source.getSourceLocation(stream[i]?.[LOC].sta),
+                                        message: `expecting '<${tokens[index].val}-query>'`,
                                     });
                                     break;
                                 }
                                 tokens.length = index + 1;
-                                // if (EnumToken.ColorTokenType === tokens[index].typ) {
-                                //     parseColor(tokens[index]);
-                                // }
                                 stack.pop();
                                 scopes.pop();
                                 currentScope = scopes.at(-1);
@@ -29566,8 +27850,8 @@
                                     errors.push({
                                         action: "drop",
                                         node: stream[i],
-                                        location: stream[i]?.[LOC],
-                                        message: `expecting '<query-in-parens>' at ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                                        location: options.source.getSourceLocation(stream[i]?.[LOC].sta),
+                                        message: `expecting '<query-in-parens>'`,
                                     });
                                     break;
                                 }
@@ -29588,8 +27872,8 @@
                                         errors.push({
                                             action: "drop",
                                             node: tokens[k],
-                                            location: tokens[k]?.[LOC],
-                                            message: `unexpected token 'not' at ${tokens[k]?.[LOC]?.srcId}:${tokens[k]?.[LOC]?.sta.lin}:${tokens[k]?.[LOC]?.sta.col}`,
+                                            location: options.source.getSourceLocation(tokens[k]?.[LOC].sta),
+                                            message: `unexpected token 'not'`,
                                         });
                                         break;
                                     }
@@ -29708,7 +27992,7 @@
         return { success, errors };
     }
 
-    function matchGenericSyntax(stream) {
+    function matchGenericSyntax(stream, options) {
         const stack = [];
         let i = 0;
         let success = true;
@@ -29732,37 +28016,26 @@
                     (stack.at(-1)?.typ !== exports.EnumToken.StartParensTokenType && !tokensfuncDefMap.has(stack.at(-1)?.typ))) {
                     errors.push({
                         action: "drop",
-                        message: `unexpected token ${exports.EnumToken[token.typ]} at ${token[LOC].srcId}:${token[LOC].sta.lin}:${token[LOC].sta.col}`,
+                        message: `unexpected token ${exports.EnumToken[token.typ]}`,
                         node: token,
-                        location: token[LOC],
+                        // @ts-expect-error
+                        location: options.source.getSourceLocation(token[LOC].sta),
                     });
                     success = false;
                     break;
                 }
                 stack.pop();
                 scopes.pop();
-                // if (scopes.length === 0) {
-                //     return {
-                //         success: false,
-                //         errors: [
-                //             {
-                //                 action: "drop",
-                //                 node: token,
-                //                 message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${token[LOC]!.sta.col}`,
-                //                 location: token[LOC]!,
-                //             },
-                //         ],
-                //     };
-                // }
                 continue;
             }
             if (token.typ === exports.EnumToken.IdenTokenType && equalsIgnoreCase("and", token.val)) {
                 if (!expectAndOr || scopes.at(-1)?.has(exports.EnumToken.OrTokenType)) {
                     errors.push({
                         action: "drop",
-                        message: `unexpected token ${exports.EnumToken[token.typ]} at ${token[LOC].srcId}:${token[LOC].sta.lin}:${token[LOC].sta.col}`,
+                        message: `unexpected token ${exports.EnumToken[token.typ]}`,
                         node: token,
-                        location: token[LOC],
+                        // @ts-expect-error
+                        location: options.source.getSourceLocation(token[LOC].sta),
                     });
                     success = false;
                     break;
@@ -29776,9 +28049,10 @@
                 if (!expectAndOr || scopes.at(-1)?.has(exports.EnumToken.AndTokenType)) {
                     errors.push({
                         action: "drop",
-                        message: `unexpected token ${exports.EnumToken[token.typ]} at ${token[LOC].srcId}:${token[LOC].sta.lin}:${token[LOC].sta.col}`,
+                        message: `unexpected token ${exports.EnumToken[token.typ]}`,
                         node: token,
-                        location: token[LOC],
+                        // @ts-expect-error
+                        location: options.source.getSourceLocation(token[LOC].sta),
                     });
                     success = false;
                     break;
@@ -29792,9 +28066,10 @@
                 if (!expectComma) {
                     errors.push({
                         action: "drop",
-                        message: `unexpected token ${exports.EnumToken[token.typ]} at ${token[LOC].srcId}:${token[LOC].sta.lin}:${token[LOC].sta.col}`,
+                        message: `unexpected token ${exports.EnumToken[token.typ]}`,
                         node: token,
-                        location: token[LOC],
+                        // @ts-expect-error
+                        location: options.source.getSourceLocation(token[LOC].sta),
                     });
                     success = false;
                     break;
@@ -29812,9 +28087,10 @@
         if (stack.length > 0) {
             errors.push({
                 action: "drop",
-                message: `unexpected token ${exports.EnumToken[stack.at(-1)?.typ]} at ${stack.at(-1)?.[LOC]?.srcId}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
+                message: `unexpected token ${exports.EnumToken[stack.at(-1)?.typ]}`,
                 node: stack.at(-1),
-                location: stack.at(-1)?.[LOC],
+                // @ts-expect-error
+                location: options.source.getSourceLocation(stack.at(-1)?.[LOC].sta),
             });
             success = false;
         }
@@ -29989,6 +28265,1124 @@
         // if leading char is digit, prefix underscore (very rare)
         return (/^[0-9]/.test(result) ? "_" : "") + result;
     });
+    const generateSyncScopedName = memoize((localName, filePath, pattern, hashLength = 5) => {
+        if (localName.startsWith("--")) {
+            localName = localName.slice(2);
+        }
+        const matches = /.*?(([^/]+)\/)?([^/\\]*?)(\.([^?/]+))?([?].*)?$/.exec(filePath);
+        const folder = matches?.[2]?.replace?.(/[^A-Za-z0-9_-]/g, "_") ?? "";
+        const fileBase = matches?.[3] ?? "";
+        const ext = matches?.[5] ?? "";
+        const path = filePath.replace(/[^A-Za-z0-9_-]/g, "_");
+        // sanitize localName for safe char set (replace spaces/illegal chars)
+        const safeLocal = localName.replace(/[^A-Za-z0-9_-]/g, "_");
+        const hashString = `${localName}::${filePath}`;
+        let result = "";
+        let inParens = 0;
+        let key = "";
+        let position = 0;
+        // Compose final scoped name. Ensure the entire class doesn't start with a digit:
+        for (const char of pattern) {
+            position += char.length;
+            if (char == "[") {
+                inParens++;
+                if (inParens != 1) {
+                    throw new Error(`Unexpected character: '${char} at position ${position - 1}' in pattern '${pattern}'`);
+                }
+                continue;
+            }
+            if (char == "]") {
+                inParens--;
+                if (inParens != 0) {
+                    throw new Error(`Unexpected character: '${char}:${position - 1}'`);
+                }
+                let hashAlgo = null;
+                let length = null;
+                if (key.includes(":")) {
+                    const parts = key.split(":");
+                    if (parts.length == 2) {
+                        // @ts-ignore
+                        [key, length] = parts;
+                        // @ts-ignore
+                        if (key == "hash" && hashAlgorithms.includes(length)) {
+                            // @ts-ignore
+                            hashAlgo = length;
+                            length = null;
+                        }
+                    }
+                    if (parts.length == 3) {
+                        // @ts-ignore
+                        [key, hashAlgo, length] = parts;
+                    }
+                    if (length != null && !Number.isInteger(+length)) {
+                        throw new Error(`Unsupported hash length: '${length}'. expecting format [hash:length] or [hash:hash-algo:length]`);
+                    }
+                }
+                const slice = length != null && length != fileBase.length;
+                switch (key) {
+                    case "hash":
+                        result += syncHash(hashString, length ?? hashLength, hashAlgo);
+                        break;
+                    case "name":
+                        // @ts-expect-error
+                        result += slice ? fileBase.slice(0, +length) : fileBase;
+                        break;
+                    case "local":
+                        // @ts-expect-error
+                        result += slice ? safeLocal.slice(0, +length) : localName;
+                        break;
+                    case "ext":
+                        // @ts-expect-error
+                        result += slice ? ext.slice(0, +length) : ext;
+                        break;
+                    case "path":
+                        // @ts-expect-error
+                        result += slice ? path.slice(0, +length) : path;
+                        break;
+                    case "folder":
+                        // @ts-expect-error
+                        result += slice ? folder.slice(0, +length) : folder;
+                        break;
+                    default:
+                        throw new Error(`Unsupported key: '${key}'`);
+                }
+                key = "";
+                continue;
+            }
+            if (inParens > 0) {
+                key += char;
+            }
+            else {
+                result += char;
+            }
+        }
+        // if leading char is digit, prefix underscore (very rare)
+        return (/^[0-9]/.test(result) ? "_" : "") + result;
+    });
+    /**
+     * Parse css string
+     * @param iter
+     * @param options
+     *
+     * @throws Error
+     * @private
+     */
+    function doParseSync(iter, options = {}) {
+        if (options.signal != null) {
+            options.signal.addEventListener("abort", reject);
+        }
+        options = {
+            src: "",
+            sourcemap: false,
+            minify: true,
+            pass: 1,
+            expandIfSyntax: false,
+            parseColor: true,
+            nestingRules: true,
+            resolveUrls: false,
+            removeCharset: true,
+            removeEmpty: true,
+            removeDuplicateDeclarations: true,
+            computeTransform: true,
+            computeShorthand: true,
+            computeCalcExpression: true,
+            inlineCssVariables: false,
+            setParent: true,
+            removePrefix: false,
+            validation: false,
+            lenient: true,
+            ...options,
+        };
+        if (typeof options.validation !== "boolean") {
+            options.validation = !!options.validation;
+        }
+        if (options.module) {
+            options.expandNestingRules = true;
+        }
+        if (options.expandNestingRules) {
+            options.nestingRules = false;
+        }
+        const startTime = performance.now();
+        const errors = [];
+        const stack = [];
+        const stats = {
+            src: options.src ?? "",
+            bytesIn: 0,
+            nodesCount: 0,
+            tokensCount: 0,
+            importedBytesIn: 0,
+            tokenize: `0ms`,
+            parse: `0ms`,
+            minify: `0ms`,
+            total: `0ms`,
+            imports: [],
+        };
+        const invalidNodes = [];
+        let ast = {
+            typ: exports.EnumToken.StyleSheetNodeType,
+            chi: [],
+        };
+        let tokens = [];
+        let context = ast;
+        ast[ROOT] = ast;
+        ast[LOC] = {
+            sta: 0,
+            end: 0,
+            srcId: options.source.id,
+        };
+        let valuesHandlers;
+        let preValuesHandlers;
+        let postValuesHandlers;
+        let preVisitorsHandlersMap;
+        let visitorsHandlersMap;
+        let postVisitorsHandlersMap;
+        let item;
+        let node;
+        // @ts-ignore ignore error
+        let parensMatch = 0;
+        let curlyBracketMatch = 0;
+        if (options.visitor != null) {
+            valuesHandlers = new Map();
+            preValuesHandlers = new Map();
+            postValuesHandlers = new Map();
+            preVisitorsHandlersMap = new Map();
+            visitorsHandlersMap = new Map();
+            postVisitorsHandlersMap = new Map();
+            const visitors = Object.entries(options.visitor);
+            let key;
+            let value;
+            let i;
+            for (i = 0; i < visitors.length; i++) {
+                key = visitors[i][0];
+                value = visitors[i][1];
+                if (Number.isInteger(+key)) {
+                    visitors.splice(i + 1, 0, ...Object.entries(value));
+                    continue;
+                }
+                if (Array.isArray(value)) {
+                    // @ts-ignore
+                    visitors.splice(i + 1, 0, ...value.map((item) => [key, item]));
+                    continue;
+                }
+                if (key in exports.EnumToken) {
+                    if (typeof value == "function") {
+                        if (!valuesHandlers.has(exports.EnumToken[key])) {
+                            valuesHandlers.set(exports.EnumToken[key], []);
+                        }
+                        valuesHandlers.get(exports.EnumToken[key]).push(value);
+                    }
+                    else if (typeof value == "object" &&
+                        "type" in value &&
+                        "handler" in value &&
+                        value.type in exports.WalkerEvent) {
+                        if (value.type == exports.WalkerEvent.Enter) {
+                            if (!preValuesHandlers.has(exports.EnumToken[key])) {
+                                preValuesHandlers.set(exports.EnumToken[key], []);
+                            }
+                            preValuesHandlers
+                                .get(exports.EnumToken[key])
+                                .push(value.handler);
+                        }
+                        else if (value.type == exports.WalkerEvent.Leave) {
+                            if (!postValuesHandlers.has(exports.EnumToken[key])) {
+                                postValuesHandlers.set(exports.EnumToken[key], []);
+                            }
+                            postValuesHandlers
+                                .get(exports.EnumToken[key])
+                                .push(value.handler);
+                        }
+                    }
+                    else {
+                        errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
+                    }
+                }
+                else if (["Declaration", "Rule", "AtRule", "KeyframesRule", "KeyframesAtRule"].includes(key)) {
+                    if (typeof value == "function") {
+                        if (!visitorsHandlersMap.has(key)) {
+                            visitorsHandlersMap.set(key, []);
+                        }
+                        visitorsHandlersMap
+                            .get(key)
+                            .push(value);
+                    }
+                    else if (typeof value == "object") {
+                        if ("type" in value && "handler" in value && value.type in exports.WalkerEvent) {
+                            if (value.type == exports.WalkerEvent.Enter) {
+                                if (!preVisitorsHandlersMap.has(key)) {
+                                    preVisitorsHandlersMap.set(key, []);
+                                }
+                                preVisitorsHandlersMap
+                                    .get(key)
+                                    .push(value.handler);
+                            }
+                            else if (value.type == exports.WalkerEvent.Leave) {
+                                if (!postVisitorsHandlersMap.has(key)) {
+                                    postVisitorsHandlersMap.set(key, []);
+                                }
+                                postVisitorsHandlersMap
+                                    .get(key)
+                                    .push(value.handler);
+                            }
+                        }
+                        else {
+                            if (!visitorsHandlersMap.has(key)) {
+                                visitorsHandlersMap.set(key, []);
+                            }
+                            visitorsHandlersMap
+                                .get(key)
+                                .push(value);
+                        }
+                    }
+                    else {
+                        errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
+                    }
+                }
+                else {
+                    errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
+                }
+            }
+        }
+        if (Array.isArray(iter)) {
+            // @ts-expect-error
+            iter = iter[Symbol.iterator]();
+        }
+        while (
+        // @ts-expect-error
+        (item = iter.next().value)) {
+            stats.bytesIn = item.bytesIn;
+            stats.tokensCount++;
+            if (BadTokensTypes.includes(item.token.typ)) {
+                tokens.push(item.token);
+                errors.push({
+                    action: "drop",
+                    message: "Bad token",
+                    syntax: null,
+                    node: item.token,
+                    location: options.source.getSourceLocation(item.token[LOC].sta),
+                });
+                // bad token
+                continue;
+            }
+            if (item.token.typ === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(item.token.typ)) {
+                parensMatch++;
+            }
+            else if (item.token.typ === exports.EnumToken.EndParensTokenType && parensMatch > 0) {
+                parensMatch--;
+            }
+            if (item.token.typ === exports.EnumToken.BlockStartTokenType) {
+                curlyBracketMatch++;
+            }
+            else if (item.token.typ === exports.EnumToken.BlockEndTokenType && curlyBracketMatch > 0) {
+                curlyBracketMatch--;
+            }
+            tokens.push(item.token);
+            // console.debug([item.token, {parensMatch, curlyBracketMatch}]);
+            // if (parensMatch === 0) {
+            if (parensMatch === 0 &&
+                (item.token.typ === exports.EnumToken.SemiColonTokenType ||
+                    item.token.typ === exports.EnumToken.BlockStartTokenType ||
+                    item.token.typ === exports.EnumToken.EOFTokenType)) {
+                node = parseNode(tokens, context, options, errors, stats, invalidNodes);
+                if (node != null) {
+                    if ("chi" in node) {
+                        stack.push(node);
+                        context = node;
+                    }
+                }
+                else if (item.token.typ == exports.EnumToken.BlockStartTokenType) {
+                    let inBlock = 1;
+                    tokens = [item.token];
+                    do {
+                        // @ts-expect-error
+                        item = iter.next().value;
+                        if (item == null) {
+                            break;
+                        }
+                        tokens.push(item.token);
+                        if (item.token.typ === exports.EnumToken.BlockStartTokenType) {
+                            inBlock++;
+                        }
+                        else if (item.token.typ === exports.EnumToken.BlockEndTokenType) {
+                            inBlock--;
+                        }
+                    } while (inBlock != 0);
+                    if (tokens.length > 0) {
+                        errors.push({
+                            action: "drop",
+                            message: "invalid block",
+                            location: options.source.getSourceLocation(tokens[0][LOC].sta),
+                        });
+                    }
+                }
+                tokens = [];
+            }
+            else if ((parensMatch === 0 || curlyBracketMatch === 0) && item.token.typ === exports.EnumToken.BlockEndTokenType) {
+                parseNode(tokens, context, options, errors, stats, invalidNodes);
+                if (context[LOC] != null) {
+                    context[LOC].end = item.token[LOC].end;
+                }
+                const previousNode = stack.pop();
+                context = (stack[stack.length - 1] ?? ast);
+                if (options.removeEmpty &&
+                    previousNode != null &&
+                    previousNode.chi.length == 0 &&
+                    context.chi[context.chi.length - 1] == previousNode) {
+                    context.chi.pop();
+                }
+                tokens = [];
+                parensMatch = 0;
+                curlyBracketMatch = 0;
+            }
+            // }
+        }
+        if (tokens.length > 0) {
+            node = parseNode(tokens, context, options, errors, stats, invalidNodes);
+            if (node != null) {
+                if ("chi" in node /* && node.typ != EnumToken.InvalidRuleNodeType */) {
+                    stack.push(node);
+                    context = node;
+                }
+            }
+        }
+        const endParseTime = performance.now();
+        if (options.expandNestingRules) {
+            ast = expand(ast);
+        }
+        let replacement;
+        let callable;
+        if (options.visitor != null) {
+            let parens;
+            for (const result of walk(ast)) {
+                parens = null;
+                if (valuesHandlers.size > 0 ||
+                    preVisitorsHandlersMap.size > 0 ||
+                    visitorsHandlersMap.size > 0 ||
+                    postVisitorsHandlersMap.size > 0) {
+                    if ((result.node.typ == exports.EnumToken.DeclarationNodeType &&
+                        (preVisitorsHandlersMap.has("Declaration") ||
+                            visitorsHandlersMap.has("Declaration") ||
+                            postVisitorsHandlersMap.has("Declaration"))) ||
+                        (result.node.typ == exports.EnumToken.AtRuleNodeType &&
+                            (preVisitorsHandlersMap.has("AtRule") ||
+                                visitorsHandlersMap.has("AtRule") ||
+                                postVisitorsHandlersMap.has("AtRule"))) ||
+                        (result.node.typ == exports.EnumToken.KeyframesAtRuleNodeType &&
+                            (preVisitorsHandlersMap.has("KeyframesAtRule") ||
+                                visitorsHandlersMap.has("KeyframesAtRule") ||
+                                postVisitorsHandlersMap.has("KeyframesAtRule")))) {
+                        const handlers = [];
+                        const key = result.node.typ == exports.EnumToken.DeclarationNodeType
+                            ? "Declaration"
+                            : result.node.typ == exports.EnumToken.AtRuleNodeType
+                                ? "AtRule"
+                                : "KeyframesAtRule";
+                        if (preVisitorsHandlersMap.has(key)) {
+                            handlers.push(
+                            // @ts-expect-error
+                            ...preVisitorsHandlersMap.get(key));
+                        }
+                        if (visitorsHandlersMap.has(key)) {
+                            // @ts-ignore
+                            handlers.push(...visitorsHandlersMap.get(key));
+                        }
+                        if (postVisitorsHandlersMap.has(key)) {
+                            // @ts-ignore
+                            handlers.push(...postVisitorsHandlersMap.get(key));
+                        }
+                        let node = result.node;
+                        for (const handler of handlers) {
+                            callable =
+                                typeof handler == "function"
+                                    ? handler
+                                    : handler[camelize(node.typ === exports.EnumToken.DeclarationNodeType ||
+                                        node.typ === exports.EnumToken.AtRuleNodeType
+                                        ? node.nam
+                                        : node.val)];
+                            if (callable == null) {
+                                continue;
+                            }
+                            // @ts-expect-error
+                            replacement = callable(node, result[PARENT], ast, function* () {
+                                if (parens == null) {
+                                    // @ts-expect-error
+                                    parens = [...result.parents()];
+                                }
+                                yield* parens[Symbol.iterator]();
+                            });
+                            if (replacement == null) {
+                                continue;
+                            }
+                            if (replacement == null || replacement == node) {
+                                continue;
+                            }
+                            // @ts-ignore
+                            node = replacement;
+                            if (Array.isArray(node)) {
+                                break;
+                            }
+                        }
+                        if (node != result.node) {
+                            replaceNodeOrValue(result.parent, result.node, node);
+                        }
+                    }
+                    else if ((result.node.typ == exports.EnumToken.RuleNodeType &&
+                        (preVisitorsHandlersMap.has("Rule") ||
+                            visitorsHandlersMap.has("Rule") ||
+                            postVisitorsHandlersMap.has("Rule"))) ||
+                        (result.node.typ == exports.EnumToken.KeyFramesRuleNodeType &&
+                            (preVisitorsHandlersMap.has("KeyframesRule") ||
+                                visitorsHandlersMap.has("KeyframesRule") ||
+                                postVisitorsHandlersMap.has("KeyframesRule")))) {
+                        const handlers = [];
+                        const key = result.node.typ == exports.EnumToken.RuleNodeType ? "Rule" : "KeyframesRule";
+                        if (preVisitorsHandlersMap.has(key)) {
+                            handlers.push(...preVisitorsHandlersMap.get(key));
+                        }
+                        if (visitorsHandlersMap.has(key)) {
+                            handlers.push(...visitorsHandlersMap.get(key));
+                        }
+                        if (postVisitorsHandlersMap.has(key)) {
+                            handlers.push(...postVisitorsHandlersMap.get(key));
+                        }
+                        let node = result.node;
+                        for (const callable of handlers) {
+                            replacement = callable(node, result.parent, result.root, 
+                            // @ts-expect-error
+                            function* () {
+                                if (parens == null) {
+                                    // @ts-expect-error
+                                    parens = [...result.parents()];
+                                }
+                                yield* parens[Symbol.iterator]();
+                            });
+                            if (replacement == null) {
+                                continue;
+                            }
+                            if (replacement == null || replacement == node) {
+                                continue;
+                            }
+                            // @ts-ignore
+                            node = replacement;
+                            //
+                            if (Array.isArray(node)) {
+                                break;
+                            }
+                        }
+                        // @ts-ignore
+                        if (node != result.node) {
+                            // @ts-ignore
+                            replaceNodeOrValue(result.parent, result.node, node);
+                        }
+                    }
+                    else if (valuesHandlers.size > 0) {
+                        let node = null;
+                        node = result.node;
+                        if (valuesHandlers.has(node.typ)) {
+                            for (const valueHandler of valuesHandlers.get(node.typ)) {
+                                callable = valueHandler;
+                                replacement = callable(node, result.parent, ast, 
+                                // @ts-expect-error
+                                function* () {
+                                    if (parens == null) {
+                                        // @ts-expect-error
+                                        parens = [...result.parents()];
+                                    }
+                                    yield* parens[Symbol.iterator]();
+                                });
+                                if (replacement == null) {
+                                    continue;
+                                }
+                                if (replacement != null && replacement != node) {
+                                    node = replacement;
+                                }
+                            }
+                        }
+                        if (node != result.node) {
+                            // @ts-ignore
+                            replaceNodeOrValue(result[PARENT], value, node);
+                        }
+                        const tokens = Array.isArray(result.node[TOKENS]) ? result.node[TOKENS] : [];
+                        if (Array.isArray(result.node.val)) {
+                            tokens.push(...result.node.val);
+                        }
+                        if (tokens.length == 0) {
+                            continue;
+                        }
+                        for (const { value, parent, root, parents } of walkValues(tokens, result.node)) {
+                            node = value;
+                            if (valuesHandlers.has(node.typ)) {
+                                let parens = null;
+                                for (const valueHandler of valuesHandlers.get(node.typ)) {
+                                    callable = valueHandler;
+                                    // @ts-expect-error
+                                    let result = callable(node, parent, root, function* () {
+                                        if (parens == null) {
+                                            // @ts-expect-error
+                                            parens = [...parents()];
+                                        }
+                                        yield* parens[Symbol.iterator]();
+                                    });
+                                    if (result == null) {
+                                        continue;
+                                    }
+                                    if (result != null && result != node) {
+                                        node = result;
+                                    }
+                                    if (Array.isArray(node)) {
+                                        break;
+                                    }
+                                }
+                            }
+                            if (node != value) {
+                                // @ts-ignore
+                                replaceNodeOrValue(parent, value, node);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (invalidNodes.length > 0) {
+            let count = invalidNodes.length;
+            for (const { node, parent } of walk(ast)) {
+                if (options.lenient && node[STATE] == exports.EnumAstNodeStatus.Unknown) {
+                    continue;
+                }
+                if (node[STATE] === exports.EnumAstNodeStatus.Invalid ||
+                    node[STATE] === exports.EnumAstNodeStatus.Unknown ||
+                    node[STATE] === exports.EnumAstNodeStatus.Unparsed ||
+                    node[STATE] === exports.EnumAstNodeStatus.Malformed ||
+                    node[STATE] === exports.EnumAstNodeStatus.Disallowed) {
+                    // @ts-ignore
+                    parent.chi.splice(parent.chi.indexOf(node), 1);
+                    node[PARENT] = null;
+                    count--;
+                    if (count == 0) {
+                        break;
+                    }
+                }
+            }
+        }
+        while (stack.length > 0 && context != ast) {
+            const previousNode = stack.pop();
+            context = (stack[stack.length - 1] ?? ast);
+            // remove empty nodes
+            if (options.removeEmpty &&
+                previousNode != null &&
+                previousNode.chi.length == 0 &&
+                context.chi[context.chi.length - 1] == previousNode) {
+                context.chi.pop();
+                continue;
+            }
+            break;
+        }
+        if (options.minify) {
+            if (ast.chi.length > 0) {
+                let passes = options.pass ?? 1;
+                while (passes--) {
+                    minify(ast, options, true, errors, false);
+                }
+            }
+        }
+        stats.bytesIn += stats.importedBytesIn;
+        let endTime = performance.now();
+        const result = {
+            ast,
+            errors,
+            stats: {
+                ...stats,
+                parse: `${(endParseTime - startTime).toFixed(2)}ms`,
+                minify: `${(endTime - endParseTime).toFixed(2)}ms`,
+                tokenize: `${(options?.parseInfo?.time ?? 0).toFixed(2)}ms`,
+                total: `${(endTime - startTime).toFixed(2)}ms`,
+            },
+        };
+        if (options.module) {
+            const moduleSettings = {
+                hashLength: 5,
+                filePath: "",
+                scoped: exports.ModuleScopeEnumOptions.Local,
+                naming: exports.ModuleCaseTransformEnum.IgnoreCase,
+                pattern: "",
+                generateScopedName,
+                ...(typeof options.module != "object" ? {} : options.module),
+            };
+            const parseModuleTime = performance.now();
+            const namesMapping = {};
+            const global = new Set();
+            const processed = new Set();
+            const pattern = typeof options.module == "boolean" ? null : moduleSettings.pattern;
+            const importMapping = {};
+            const cssVariablesMap = {};
+            const importedCssVariables = {};
+            let mapping = {};
+            let revMapping = {};
+            let filePath = typeof options.module == "boolean"
+                ? options.src
+                : (moduleSettings.filePath ?? options.src);
+            filePath =
+                filePath === ""
+                    ? options.src
+                    : options.resolve(filePath, options.dirname(options.src), options.cwd).relative;
+            if (typeof options.module == "number") {
+                if (options.module & exports.ModuleCaseTransformEnum.CamelCase) {
+                    moduleSettings.naming = exports.ModuleCaseTransformEnum.CamelCase;
+                }
+                else if (options.module & exports.ModuleCaseTransformEnum.CamelCaseOnly) {
+                    moduleSettings.naming = exports.ModuleCaseTransformEnum.CamelCaseOnly;
+                }
+                else if (options.module & exports.ModuleCaseTransformEnum.DashCase) {
+                    moduleSettings.naming = exports.ModuleCaseTransformEnum.DashCase;
+                }
+                else if (options.module & exports.ModuleCaseTransformEnum.DashCaseOnly) {
+                    moduleSettings.naming = exports.ModuleCaseTransformEnum.DashCaseOnly;
+                }
+                if (options.module & exports.ModuleScopeEnumOptions.Global) {
+                    moduleSettings.scoped = exports.ModuleScopeEnumOptions.Global;
+                }
+                if (options.module & exports.ModuleScopeEnumOptions.Pure) {
+                    // @ts-ignore
+                    moduleSettings.scoped |= exports.ModuleScopeEnumOptions.Pure;
+                }
+                if (options.module & exports.ModuleScopeEnumOptions.Shortest) {
+                    // @ts-ignore
+                    moduleSettings.scoped |= exports.ModuleScopeEnumOptions.Shortest;
+                }
+                if (options.module & exports.ModuleScopeEnumOptions.ICSS) {
+                    // @ts-ignore
+                    moduleSettings.scoped |= exports.ModuleScopeEnumOptions.ICSS;
+                }
+            }
+            if (typeof moduleSettings.scoped == "boolean") {
+                moduleSettings.scoped = moduleSettings.scoped
+                    ? exports.ModuleScopeEnumOptions.Local
+                    : exports.ModuleScopeEnumOptions.Global;
+            }
+            if (moduleSettings.scoped & exports.ModuleScopeEnumOptions.Shortest) {
+                moduleSettings.generateScopedName = generateSyncScopedName;
+            }
+            moduleSettings.filePath = filePath;
+            moduleSettings.pattern =
+                pattern != null && pattern !== "" ? pattern : filePath === "" ? `[local]_[hash]` : `[local]_[hash]_[name]`;
+            for (const { node, parent } of walk(ast)) {
+                if (node.typ == exports.EnumToken.CssVariableImportTokenType) {
+                    throw new Error("css variable import not supported by parseSync() or transformSync(). use parse() or transform() instead.\nat " +
+                        options.source.getSourceLocation(node[LOC].sta).join(":"));
+                }
+                if (node.typ == exports.EnumToken.CssVariableDeclarationMapTokenType) {
+                    const from = node.from.find((t) => t.typ == exports.EnumToken.IdenTokenType || isIdentColor(t));
+                    if (!(from.val in cssVariablesMap)) {
+                        errors.push({
+                            node,
+                            message: `could not resolve @value import from '${from.val}'`,
+                            action: "drop",
+                        });
+                    }
+                    else {
+                        for (const token of node.vars) {
+                            if (token.typ == exports.EnumToken.IdenTokenType || isIdentColor(token)) {
+                                if (!(token.val in cssVariablesMap[from.val])) {
+                                    errors.push({
+                                        node,
+                                        message: `value '${token.val}' is not exported from '${from.val}'`,
+                                        action: "drop",
+                                    });
+                                    continue;
+                                }
+                                result.cssModuleVariables ??= {};
+                                result.cssModuleVariables[token.val] = importedCssVariables[token.val] = cssVariablesMap[from.val][token.val];
+                            }
+                        }
+                    }
+                    parent.chi.splice(parent.chi.indexOf(node), 1);
+                    continue;
+                }
+                if (node.typ == exports.EnumToken.CssVariableTokenType) {
+                    if (parent?.typ == exports.EnumToken.StyleSheetNodeType) {
+                        if (result.cssModuleVariables == null) {
+                            result.cssModuleVariables = {};
+                        }
+                        result.cssModuleVariables[node.nam] = node;
+                    }
+                    parent.chi.splice(parent.chi.indexOf(node), 1);
+                    continue;
+                }
+                if (node.typ == exports.EnumToken.DeclarationNodeType) {
+                    if (node.nam.startsWith("--")) {
+                        if (!(node.nam in namesMapping)) {
+                            let result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
+                                ? node.nam
+                                : moduleSettings.generateScopedName(node.nam, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                            let value = result;
+                            mapping[node.nam] =
+                                "--" +
+                                    (moduleSettings.naming & exports.ModuleCaseTransformEnum.DashCaseOnly ||
+                                        moduleSettings.naming & exports.ModuleCaseTransformEnum.CamelCaseOnly
+                                        ? getKeyName(value, moduleSettings.naming)
+                                        : value);
+                            revMapping[node.nam] = node.nam;
+                        }
+                        node.nam = mapping[node.nam];
+                    }
+                    if (equalsIgnoreCase("composes", node.nam)) {
+                        const composeSelectors = [];
+                        // let isValid: boolean = true;
+                        for (const token of node.val) {
+                            if (token.typ == exports.EnumToken.ComposesSelectorNodeType) {
+                                composeSelectors.push(token);
+                            }
+                        }
+                        // find parent rule
+                        let parentRule = parent;
+                        while (parentRule != null && parentRule.typ != exports.EnumToken.RuleNodeType) {
+                            parentRule = parentRule[PARENT];
+                        }
+                        if ( /* !isValid || */composeSelectors.length == 0) {
+                            errors.push({
+                                action: "drop",
+                                message: `composes is empty`,
+                                node,
+                            });
+                            parentRule.chi.splice(parentRule.chi.indexOf(node), 1);
+                            continue;
+                        }
+                        for (const token of composeSelectors) {
+                            // composes: a b c;
+                            if (token.r == null) {
+                                for (const rule of token.l) {
+                                    if (rule.typ == exports.EnumToken.WhitespaceTokenType ||
+                                        rule.typ == exports.EnumToken.CommentTokenType) {
+                                        continue;
+                                    }
+                                    if (!(rule.val in mapping)) {
+                                        let result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
+                                            ? rule.val
+                                            : moduleSettings.generateScopedName(rule.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                        let value = result;
+                                        mapping[rule.val] =
+                                            (rule.typ == exports.EnumToken.DashedIdenTokenType ? "--" : "") +
+                                                (moduleSettings.naming & exports.ModuleCaseTransformEnum.DashCaseOnly ||
+                                                    moduleSettings.naming & exports.ModuleCaseTransformEnum.CamelCaseOnly
+                                                    ? getKeyName(value, moduleSettings.naming)
+                                                    : value);
+                                        revMapping[mapping[rule.val]] = rule.val;
+                                    }
+                                    if (parentRule != null) {
+                                        for (const tk of parentRule[TOKENS]) {
+                                            if (tk.typ == exports.EnumToken.ClassSelectorTokenType) {
+                                                const val = tk.val.slice(1);
+                                                if (val in revMapping) {
+                                                    const key = revMapping[val];
+                                                    mapping[key] = [
+                                                        ...new Set([
+                                                            ...mapping[key].split(" "),
+                                                            mapping[rule.val],
+                                                        ]),
+                                                    ].join(" ");
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            // composes: a b c from 'file.css';
+                            else if (token.r.typ == exports.EnumToken.String) {
+                                throw new Error(`composes from file is not supported using parseSync() or transformSync(). Use parse() or transform() instead.\nat ${options.source.getSourceLocation(node[LOC].sta).join(":")}`);
+                            }
+                            // composes: a b c from global;
+                            else if (token.r.typ == exports.EnumToken.IdenTokenType) {
+                                // global
+                                if (parentRule != null) {
+                                    if (equalsIgnoreCase("global", token.r.val)) {
+                                        for (const tk of parentRule[TOKENS]) {
+                                            if (tk.typ == exports.EnumToken.ClassSelectorTokenType) {
+                                                const val = tk.val.slice(1);
+                                                if (val in revMapping) {
+                                                    const key = revMapping[val];
+                                                    mapping[key] = [
+                                                        ...new Set([
+                                                            ...mapping[key].split(" "),
+                                                            ...token.l.reduce((acc, curr) => {
+                                                                if (curr.typ == exports.EnumToken.IdenTokenType) {
+                                                                    acc.push(curr.val);
+                                                                }
+                                                                return acc;
+                                                            }, []),
+                                                        ]),
+                                                    ].join(" ");
+                                                }
+                                            }
+                                        }
+                                    }
+                                    else {
+                                        errors.push({
+                                            action: "drop",
+                                            message: `composes '${token.r.val}' is not supported`,
+                                            node,
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                        parent.chi.splice(parent.chi.indexOf(node), 1);
+                    }
+                    if (node.typ == exports.EnumToken.DeclarationNodeType &&
+                        [
+                            "grid-column",
+                            "grid-column-start",
+                            "grid-column-end",
+                            "grid-row",
+                            "grid-row-start",
+                            "grid-row-end",
+                            "grid-template",
+                            "grid-template-columns",
+                            "grid-template-rows",
+                        ].includes(node.nam)) {
+                        for (const { value } of walkValues(node.val, node)) {
+                            if (value.typ != exports.EnumToken.IdenTokenType) {
+                                continue;
+                            }
+                            let idenToken = value.val;
+                            let suffix = "";
+                            if (idenToken.endsWith("-start")) {
+                                suffix = "-start";
+                                idenToken = idenToken.slice(0, -6);
+                            }
+                            else if (idenToken.endsWith("-end")) {
+                                suffix = "-end";
+                                idenToken = idenToken.slice(0, -4);
+                            }
+                            if (!(idenToken in mapping)) {
+                                let result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
+                                    ? idenToken
+                                    : moduleSettings.generateScopedName(idenToken, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                mapping[idenToken] = result;
+                                revMapping[result] = idenToken;
+                                if (suffix !== "") {
+                                    idenToken += suffix;
+                                    if (!(idenToken in mapping)) {
+                                        mapping[idenToken] = result + suffix;
+                                        revMapping[result + suffix] = idenToken;
+                                    }
+                                }
+                            }
+                            value.val = mapping[idenToken];
+                        }
+                    }
+                    else if (node.nam == "grid-template-areas" || node.nam == "grid-template") {
+                        for (let i = 0; i < node.val.length; i++) {
+                            if (node.val[i].typ == exports.EnumToken.String) {
+                                const tokens = parseString(node.val[i].val.slice(1, -1));
+                                for (const { value } of walkValues(tokens)) {
+                                    if (value.typ == exports.EnumToken.IdenTokenType ||
+                                        value.typ == exports.EnumToken.DashedIdenTokenType) {
+                                        if (value.val in mapping) {
+                                            value.val = mapping[value.val];
+                                        }
+                                        else {
+                                            let result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
+                                                ? value.val
+                                                : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                            mapping[value.val] = result;
+                                            revMapping[result] = value.val;
+                                            value.val = result;
+                                        }
+                                    }
+                                }
+                                node.val[i].val =
+                                    node.val[i].val.charAt(0) +
+                                        renderTokens(tokens) +
+                                        node.val[i].val.charAt(node.val[i].val.length - 1);
+                            }
+                        }
+                    }
+                    else if (node.nam == "animation" || node.nam == "animation-name") {
+                        for (const { value } of walkValues(node.val, node)) {
+                            if (value.typ == exports.EnumToken.IdenTokenType &&
+                                ![
+                                    "none",
+                                    "infinite",
+                                    "normal",
+                                    "reverse",
+                                    "alternate",
+                                    "alternate-reverse",
+                                    "forwards",
+                                    "backwards",
+                                    "both",
+                                    "running",
+                                    "paused",
+                                    "linear",
+                                    "ease",
+                                    "ease-in",
+                                    "ease-out",
+                                    "ease-in-out",
+                                    "step-start",
+                                    "step-end",
+                                    "jump-start",
+                                    "jump-end",
+                                    "jump-none",
+                                    "jump-both",
+                                    "start",
+                                    "end",
+                                    "inherit",
+                                    "initial",
+                                    "unset",
+                                ].includes(value.val)) {
+                                if (!(value.val in mapping)) {
+                                    const result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
+                                        ? value.val
+                                        : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                    mapping[value.val] = result;
+                                    revMapping[mapping[value.val]] = value.val;
+                                }
+                                value.val = mapping[value.val];
+                            }
+                        }
+                    }
+                    for (const { value, parent } of walkValues(node.val, node)) {
+                        if (value.typ == exports.EnumToken.DashedIdenTokenType) {
+                            value.val = mapping[value.val];
+                        }
+                        else if ((value.typ == exports.EnumToken.IdenTokenType || isIdentColor(value)) &&
+                            value.val in importedCssVariables) {
+                            replaceNodeOrValue(parent, value, importedCssVariables[value.val].val);
+                        }
+                    }
+                }
+                else if (node.typ == exports.EnumToken.RuleNodeType) {
+                    // if (node[TOKENS] == null) {
+                    const tokens = parseString(node.sel);
+                    matchSelectorSyntax(tokens, [], options);
+                    node[TOKENS] = trimArray(tokens);
+                    // }
+                    let hasIdOrClass = false;
+                    for (const { value } of walkValues(node[TOKENS], node, 
+                    // @ts-ignore
+                    (value, parent) => {
+                        if (value.typ == exports.EnumToken.PseudoClassTokenType ||
+                            value.typ == exports.EnumToken.PseudoElementTokenType) {
+                            const val = value.val.toLowerCase();
+                            switch (val) {
+                                case ":local":
+                                case ":global":
+                                    {
+                                        let index = parent[TOKENS].indexOf(value);
+                                        parent[TOKENS].splice(index, 1);
+                                        if (parent[TOKENS][index]?.typ == exports.EnumToken.WhitespaceTokenType ||
+                                            parent[TOKENS][index]?.typ ==
+                                                exports.EnumToken.DescendantCombinatorTokenType) {
+                                            parent[TOKENS].splice(index, 1);
+                                        }
+                                    }
+                                    break;
+                            }
+                        }
+                        else if (value.typ == exports.EnumToken.PseudoClassFuncTokenType) {
+                            switch (value.val.toLowerCase()) {
+                                case ":global":
+                                    for (const token of value.chi) {
+                                        global.add(token);
+                                    }
+                                case ":local":
+                                    parent[TOKENS].splice(parent[TOKENS].indexOf(value), 1, ...value.chi);
+                                    break;
+                            }
+                        }
+                    })) {
+                        if (value.typ == exports.EnumToken.HashTokenType || value.typ == exports.EnumToken.ClassSelectorTokenType) {
+                            hasIdOrClass = true;
+                        }
+                        if (processed.has(value)) {
+                            continue;
+                        }
+                        processed.add(value);
+                        if (value.typ == exports.EnumToken.PseudoClassTokenType || value.typ == exports.EnumToken.PseudoElementTokenType) ;
+                        else if (value.typ == exports.EnumToken.PseudoClassFuncTokenType) ;
+                        else {
+                            if (global.has(value)) {
+                                continue;
+                            }
+                            if (value.typ == exports.EnumToken.ClassSelectorTokenType) {
+                                const val = value.val.slice(1);
+                                if (!(val in mapping)) {
+                                    const result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
+                                        ? val
+                                        : moduleSettings.generateScopedName(val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                    let value = result;
+                                    mapping[val] =
+                                        moduleSettings.naming & exports.ModuleCaseTransformEnum.DashCaseOnly ||
+                                            moduleSettings.naming & exports.ModuleCaseTransformEnum.CamelCaseOnly
+                                            ? getKeyName(value, moduleSettings.naming)
+                                            : value;
+                                    revMapping[mapping[val]] = val;
+                                }
+                                value.val = "." + mapping[val];
+                            }
+                        }
+                    }
+                    if (moduleSettings.scoped & exports.ModuleScopeEnumOptions.Pure) {
+                        if (!hasIdOrClass) {
+                            throw new Error(`pure module: No id or class found in selector '${node.sel}' at '${node[LOC]?.src ?? ""}':${node[LOC]?.sta?.lin ?? ""}:${node[LOC]?.sta?.col ?? ""}`);
+                        }
+                    }
+                    node.sel = "";
+                    for (const token of node[TOKENS]) {
+                        node.sel += renderValue(token);
+                    }
+                }
+                else if (node.typ == exports.EnumToken.AtRuleNodeType || node.typ == exports.EnumToken.KeyframesAtRuleNodeType) {
+                    const val = node.nam.toLowerCase();
+                    if (node[TOKENS] == null) {
+                        node[TOKENS] = parseString(node.val);
+                    }
+                    if (val == "property" || val == "keyframes") {
+                        const prefix = val == "property" ? "--" : "";
+                        for (const value of node[TOKENS]) {
+                            if ((prefix == "--" && value.typ == exports.EnumToken.DashedIdenTokenType) ||
+                                (prefix == "" && value.typ == exports.EnumToken.IdenTokenType)) {
+                                if (!(value.val in mapping)) {
+                                    const result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
+                                        ? value.val
+                                        : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                    let val = result;
+                                    mapping[value.val] =
+                                        prefix +
+                                            (moduleSettings.naming & exports.ModuleCaseTransformEnum.DashCaseOnly ||
+                                                moduleSettings.naming & exports.ModuleCaseTransformEnum.CamelCaseOnly
+                                                ? getKeyName(val, moduleSettings.naming)
+                                                : val);
+                                    revMapping[mapping[value.val]] = value.val;
+                                }
+                                value.val = mapping[value.val];
+                            }
+                        }
+                        node.val = renderTokens(node[TOKENS]);
+                    }
+                }
+            }
+            if (moduleSettings.naming != exports.ModuleCaseTransformEnum.IgnoreCase) {
+                revMapping = {};
+                mapping = Object.entries(mapping).reduce((acc, [key, value]) => {
+                    const keyName = getKeyName(key, moduleSettings.naming);
+                    acc[keyName] = value;
+                    revMapping[value] = keyName;
+                    return acc;
+                }, {});
+            }
+            result.mapping = mapping;
+            result.revMapping = revMapping;
+            if (moduleSettings.scoped & exports.ModuleScopeEnumOptions.ICSS && Object.keys(importMapping).length > 0) {
+                result.importMapping = importMapping;
+            }
+            endTime = performance.now();
+            result.stats.module = `${(endTime - parseModuleTime).toFixed(2)}ms`;
+            result.stats.total = `${(endTime - startTime).toFixed(2)}ms`;
+        }
+        if (options.signal != null) {
+            options.signal.removeEventListener("abort", reject);
+        }
+        return result;
+    }
     /**
      * Parse css string
      * @param iter
@@ -30038,7 +29432,6 @@
         }
         const startTime = performance.now();
         const errors = [];
-        const src = options.src;
         const stack = [];
         const stats = {
             src: options.src ?? "",
@@ -30060,21 +29453,11 @@
         let tokens = [];
         let context = ast;
         ast[ROOT] = ast;
-        if (options.sourcemap) {
-            ast[LOC] = {
-                sta: {
-                    ind: 0,
-                    lin: 1,
-                    col: 1,
-                },
-                end: {
-                    ind: 0,
-                    lin: 1,
-                    col: 1,
-                },
-                srcId: "",
-            };
-        }
+        ast[LOC] = {
+            sta: 0,
+            end: 0,
+            srcId: options.source.id,
+        };
         let valuesHandlers;
         let preValuesHandlers;
         let postValuesHandlers;
@@ -30207,7 +29590,7 @@
                     message: "Bad token",
                     syntax: null,
                     node: item.token,
-                    location: item.token[LOC],
+                    location: options.source.getSourceLocation(item.token[LOC].sta),
                 });
                 // bad token
                 continue;
@@ -30265,11 +29648,7 @@
                         errors.push({
                             action: "drop",
                             message: "invalid block",
-                            location: {
-                                srcId: src,
-                                sta: tokens[0][LOC].sta,
-                                end: tokens[tokens.length - 1][LOC].end,
-                            },
+                            location: options.source.getSourceLocation(tokens[0][LOC].sta),
                         });
                     }
                 }
@@ -30415,10 +29794,7 @@
                             if (replacement == null) {
                                 continue;
                             }
-                            isAsync =
-                                replacement instanceof Promise ||
-                                    Object.getPrototypeOf(replacement).constructor.name == "AsyncFunction";
-                            if (replacement) {
+                            if (replacement instanceof Promise) {
                                 replacement = await replacement;
                             }
                             if (replacement == null || replacement == node) {
@@ -30467,10 +29843,7 @@
                             if (replacement == null) {
                                 continue;
                             }
-                            isAsync =
-                                replacement instanceof Promise ||
-                                    Object.getPrototypeOf(replacement).constructor.name == "AsyncFunction";
-                            if (replacement) {
+                            if (replacement instanceof Promise) {
                                 replacement = await replacement;
                             }
                             if (replacement == null || replacement == node) {
@@ -30507,10 +29880,7 @@
                                 if (replacement == null) {
                                     continue;
                                 }
-                                isAsync =
-                                    replacement instanceof Promise ||
-                                        Object.getPrototypeOf(replacement).constructor.name == "AsyncFunction";
-                                if (isAsync) {
+                                if (replacement instanceof Promise) {
                                     replacement = await replacement;
                                 }
                                 if (replacement != null && replacement != node) {
@@ -30546,10 +29916,7 @@
                                     if (result == null) {
                                         continue;
                                     }
-                                    isAsync =
-                                        result instanceof Promise ||
-                                            Object.getPrototypeOf(result).constructor.name == "AsyncFunction";
-                                    if (isAsync) {
+                                    if (result instanceof Promise) {
                                         result = await result;
                                     }
                                     if (result != null && result != node) {
@@ -30810,6 +30177,7 @@
                                         let result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
                                             ? rule.val
                                             : moduleSettings.generateScopedName(rule.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                        // @ts-expect-error
                                         let value = result instanceof Promise ? await result : result;
                                         mapping[rule.val] =
                                             (rule.typ == exports.EnumToken.DashedIdenTokenType ? "--" : "") +
@@ -30887,7 +30255,9 @@
                                                         const result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
                                                             ? iden.val
                                                             : moduleSettings.generateScopedName(iden.val, srcIndex, moduleSettings.pattern, moduleSettings.hashLength);
-                                                        let value = result instanceof Promise ? await result : result;
+                                                        let value = 
+                                                        // @ts-expect-error
+                                                        result instanceof Promise ? await result : result;
                                                         root.mapping[iden.val] =
                                                             moduleSettings.naming & exports.ModuleCaseTransformEnum.DashCaseOnly ||
                                                                 moduleSettings.naming & exports.ModuleCaseTransformEnum.CamelCaseOnly
@@ -30972,6 +30342,7 @@
                                 let result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
                                     ? idenToken
                                     : moduleSettings.generateScopedName(idenToken, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                // @ts-expect-error
                                 if (result instanceof Promise) {
                                     result = await result;
                                 }
@@ -31002,6 +30373,7 @@
                                             let result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
                                                 ? value.val
                                                 : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                            // @ts-expect-error
                                             if (result instanceof Promise) {
                                                 result = await result;
                                             }
@@ -31054,6 +30426,7 @@
                                     const result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
                                         ? value.val
                                         : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                    // @ts-expect-error
                                     mapping[value.val] = result instanceof Promise ? await result : result;
                                     revMapping[mapping[value.val]] = value.val;
                                 }
@@ -31175,6 +30548,7 @@
                                     const result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
                                         ? val
                                         : moduleSettings.generateScopedName(val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                    // @ts-expect-error
                                     let value = result instanceof Promise ? await result : result;
                                     mapping[val] =
                                         moduleSettings.naming & exports.ModuleCaseTransformEnum.DashCaseOnly ||
@@ -31211,6 +30585,7 @@
                                     const result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
                                         ? value.val
                                         : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                                    // @ts-expect-error
                                     let val = result instanceof Promise ? await result : result;
                                     mapping[value.val] =
                                         prefix +
@@ -31300,11 +30675,6 @@
                     matchCount = 0;
                 }
                 while (matchCount > 0) {
-                    position = {
-                        ...position,
-                        sta: { ...position.sta, ind: position.sta.ind + 1, col: position.sta.col + 1 },
-                        end: { ...position.end, ind: position.end.ind + 1, col: position.end.col + 1 },
-                    };
                     tokens.push({
                         typ: exports.EnumToken.EndParensTokenType,
                         [LOC]: { ...position },
@@ -31319,7 +30689,7 @@
                     action: "drop",
                     message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
                     node: tokens[i],
-                    location: tokens[i][LOC],
+                    location: options.source.getSourceLocation(tokens[i][LOC].sta),
                 });
                 tokens[i].typ = exports.EnumToken.InvalidCommentTokenType;
                 continue;
@@ -31337,13 +30707,12 @@
         }
         for (; i < tokens.length; i++) {
             if (tokens[i].typ == exports.EnumToken.CommentTokenType || tokens[i].typ == exports.EnumToken.CDOCOMMTokenType) {
-                const location = tokens[i]?.[LOC];
                 if (tokens[i].typ == exports.EnumToken.CDOCOMMTokenType && context.typ != exports.EnumToken.StyleSheetNodeType) {
                     errors.push({
                         action: "drop",
                         message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
                         node: tokens[i],
-                        location,
+                        location: options.source.getSourceLocation(tokens[i][LOC].sta),
                     });
                     tokens[i].typ = exports.EnumToken.InvalidCommentTokenType;
                     continue;
@@ -31424,7 +30793,7 @@
                         message: "<declaration> not allowed in <stylesheet>",
                         action: "drop",
                         node,
-                        location: node[LOC],
+                        location: options.source.getSourceLocation(node[LOC].sta),
                     });
                 }
                 else if (options.lenient || node.typ === exports.EnumToken.DeclarationNodeType) {
@@ -31461,10 +30830,10 @@
             errors.push({
                 action: "drop",
                 node: atRule,
-                location: atRule[LOC],
+                location: options.source.getSourceLocation(atRule[LOC].sta),
                 message: "unknown at-rule",
             });
-            const result = matchGenericSyntax(stream);
+            const result = matchGenericSyntax(stream, options);
             atRule[TOKENS] = parseTokens(stream);
             atRule[STATE] = result.success ? exports.EnumAstNodeStatus.Unknown : exports.EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = result.success ? [errors[errors.length - 1]] : [errors[errors.length - 1], ...result.errors];
@@ -31482,7 +30851,7 @@
                 errors.push({
                     action: "drop",
                     node: atRule,
-                    location: atRule[LOC],
+                    location: options.source.getSourceLocation(atRule[LOC].sta),
                     message: parseAsBlock ? "at-rule block not supported" : "at-rule block is required",
                 });
                 atRule[TOKENS] = parseTokens(stream);
@@ -31500,7 +30869,7 @@
                 errors.push({
                     action: "drop",
                     node: token,
-                    location: token[LOC],
+                    location: options.source.getSourceLocation(token[LOC].sta),
                     message: `unexpected token ${exports.EnumToken[token.typ]} at ${token[LOC].srcId}:${token[LOC].sta}:${token[LOC].sta}`,
                 });
                 atRule[TOKENS] = parseTokens(stream);
@@ -31522,7 +30891,7 @@
             errors.push({
                 action: "drop",
                 node: atRule,
-                location: atRule[LOC],
+                location: options.source.getSourceLocation(atRule[LOC].sta),
                 message: parseAsBlock ? "at-rule block not supported" : "at-rule block is required",
             });
             atRule[TOKENS] = parseTokens(stream);
@@ -31545,7 +30914,7 @@
                     errors.push({
                         action: "drop",
                         node: stream[0] ?? atRule,
-                        location: (stream[0] ?? atRule)[LOC],
+                        location: options.source.getSourceLocation((stream[0] ?? atRule)[LOC].sta),
                         message: "expecting <space>",
                     });
                 }
@@ -31554,7 +30923,7 @@
                     errors.push({
                         action: "drop",
                         node: stream[1] ?? atRule,
-                        location: (stream[1] ?? atRule)[LOC],
+                        location: options.source.getSourceLocation((stream[1] ?? atRule)[LOC].sta),
                         message: "expecting <string>",
                     });
                 }
@@ -31563,7 +30932,7 @@
                     errors.push({
                         action: "drop",
                         node: stream[1] ?? atRule,
-                        location: (stream[1] ?? atRule)[LOC],
+                        location: options.source.getSourceLocation((stream[1] ?? atRule)[LOC].sta),
                         message: "expecting double-quoted string",
                     });
                 }
@@ -31618,7 +30987,7 @@
                     errors.push({
                         action: "drop",
                         node: atRule,
-                        location: atRule[LOC],
+                        location: options.source.getSourceLocation(atRule[LOC].sta),
                         message: `unexpected at-rule ${atRule.nam}`,
                     });
                 }
@@ -31629,7 +30998,7 @@
                             errors.push({
                                 action: "drop",
                                 node: token,
-                                location: token[LOC],
+                                location: options.source.getSourceLocation(token[LOC].sta),
                                 message: `unexpected token ${exports.EnumToken[token.typ]} at ${token[LOC].srcId}:${token[LOC].sta}:${token[LOC].sta}`,
                             });
                         }
@@ -31690,7 +31059,7 @@
                     errors.push({
                         action: "drop",
                         node: atRule,
-                        location: atRule[LOC],
+                        location: options.source.getSourceLocation(atRule[LOC].sta),
                         message: `expected <keyframe-name> at ${atRule[LOC].srcId}:${atRule[LOC].sta}:${atRule[LOC].sta}`,
                     });
                     success = false;
@@ -31740,12 +31109,7 @@
                         stream.splice(start - 1, end - start + 2, ...stream.slice(start, end));
                     }
                 }
-                // @ts-expect-error
-                options = { ...options, convertColor: false };
-                atRule[LOC] = {
-                    ...atRule[LOC],
-                    end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
-                };
+                atRule[LOC].end = stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end;
                 atRule[TOKENS] = stream.slice();
                 atRule[STATE] = valid ? exports.EnumAstNodeStatus.Validated : exports.EnumAstNodeStatus.Invalid;
                 atRule[ERRORS] = valid ? [] : result.errors;
@@ -31773,10 +31137,8 @@
                         stream.splice(0, 1, ...stream[0].chi);
                     }
                 }
-                atRule[LOC] = {
-                    ...atRule[LOC],
-                    end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
-                };
+                // @ts-expect-error
+                atRule[LOC].end = stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end;
                 atRule[TOKENS] = stream.slice();
                 atRule[STATE] = result.success ? exports.EnumAstNodeStatus.Validated : exports.EnumAstNodeStatus.Invalid;
                 atRule[ERRORS] = result.success ? [] : result.errors;
@@ -31834,7 +31196,7 @@
                         errors.push({
                             action: "drop",
                             node: atRule,
-                            location: atRule[LOC],
+                            location: options.source.getSourceLocation(atRule[LOC].sta),
                             message: "at-rule @when is required before @else block",
                         });
                     }
@@ -31843,7 +31205,7 @@
                         errors.push({
                             action: "drop",
                             node: atRule,
-                            location: atRule[LOC],
+                            location: options.source.getSourceLocation(atRule[LOC].sta),
                             message: "at-rule @else block is defined after last @else block",
                         });
                     }
@@ -31867,10 +31229,7 @@
                 if (result.errors.length > 0) {
                     errors.push(...result.errors);
                 }
-                atRule[LOC] = {
-                    ...atRule[LOC],
-                    end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
-                };
+                atRule[LOC].end = stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end;
                 atRule[TOKENS] = stream.slice();
                 atRule[STATE] = result.success ? exports.EnumAstNodeStatus.Validated : exports.EnumAstNodeStatus.Invalid;
                 atRule[ERRORS] = result.success ? [] : result.errors;
@@ -31890,7 +31249,7 @@
                     errors.push({
                         action: "drop",
                         node: range[0] ?? atRule,
-                        location: (range[0] ?? atRule)[LOC],
+                        location: options.source.getSourceLocation((range[0] ?? atRule)[LOC].sta),
                         message: "expected '(' at start of @scope block",
                     });
                     success = false;
@@ -31899,7 +31258,7 @@
                     errors.push({
                         action: "drop",
                         node: range.at(-1) ?? atRule,
-                        location: (range.at(-1) ?? atRule)[LOC],
+                        location: options.source.getSourceLocation((range.at(-1) ?? atRule)[LOC].sta),
                         message: "expected ')' at end of @scope block",
                     });
                     success = false;
@@ -31925,7 +31284,7 @@
                             errors.push({
                                 action: "drop",
                                 node: stream[index],
-                                location: stream[index]?.[LOC],
+                                location: options.source.getSourceLocation(stream[index]?.[LOC].sta),
                                 message: "expected 'to' at end of @scope block",
                             });
                             success = false;
@@ -31938,7 +31297,7 @@
                                 errors.push({
                                     action: "drop",
                                     node: stream[index],
-                                    location: stream[index]?.[LOC],
+                                    location: options.source.getSourceLocation(stream[index]?.[LOC].sta),
                                     message: "expected 'to' at end of @scope block",
                                 });
                                 success = false;
@@ -31951,7 +31310,7 @@
                                     errors.push({
                                         action: "drop",
                                         node: range.at(-1) ?? atRule,
-                                        location: (range.at(-1) ?? atRule)[LOC],
+                                        location: options.source.getSourceLocation((range.at(-1) ?? atRule)[LOC].sta),
                                         message: "expected ')' at end of @scope block",
                                     });
                                     success = false;
@@ -31970,10 +31329,8 @@
                         }
                     }
                 }
-                atRule[LOC] = {
-                    ...atRule[LOC],
-                    end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
-                };
+                // @ts-expect-error
+                atRule[LOC].end = stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end;
                 atRule[TOKENS] = stream.slice();
                 atRule[STATE] = success ? exports.EnumAstNodeStatus.Validated : exports.EnumAstNodeStatus.Invalid;
                 atRule[ERRORS] = success ? [] : [errors[errors.length - 1]];
@@ -31986,10 +31343,7 @@
             }
             case "page": {
                 trimArray(stream);
-                atRule[LOC] = {
-                    ...atRule[LOC],
-                    end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
-                };
+                atRule[LOC].end = stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end;
                 atRule[TOKENS] = stream.slice();
                 atRule[STATE] = success ? exports.EnumAstNodeStatus.Validated : exports.EnumAstNodeStatus.Invalid;
                 atRule[ERRORS] = success ? [] : [errors[errors.length - 1]];
@@ -32020,7 +31374,7 @@
                     errors.push({
                         action: "drop",
                         node: atRule,
-                        location: atRule[LOC],
+                        location: options.source.getSourceLocation(atRule[LOC].sta),
                         message: "node is allowd only in @page rule",
                     });
                 }
@@ -32033,7 +31387,7 @@
                             errors.push({
                                 action: "drop",
                                 node: stream[i],
-                                location: stream[i][LOC],
+                                location: options.source.getSourceLocation(stream[i][LOC].sta),
                                 message: "expected whitespace or comment",
                             });
                             break;
@@ -32062,7 +31416,7 @@
                         });
                         stream.splice(index, 0, {
                             typ: exports.EnumToken.ColonTokenType,
-                            [LOC]: { ...stream[index][LOC], end: { ...stream[index]?.[LOC]?.sta } },
+                            [LOC]: { ...stream[index][LOC], end: stream[index]?.[LOC]?.end },
                         });
                         isVarDeclaration = true;
                         break;
@@ -32090,7 +31444,7 @@
                         val: renderTokens(stream, options),
                         [LOC]: {
                             ...atRule[LOC],
-                            end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
+                            end: stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end,
                         },
                         [TOKENS]: stream,
                         [STATE]: exports.EnumAstNodeStatus.Invalid,
@@ -32108,7 +31462,7 @@
                             val: value,
                             [LOC]: {
                                 ...atRule[LOC],
-                                end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
+                                end: stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end,
                             },
                             [TOKENS]: stream,
                             [STATE]: exports.EnumAstNodeStatus.Validated,
@@ -32122,7 +31476,7 @@
                         val: value,
                         [LOC]: {
                             ...atRule[LOC],
-                            end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
+                            end: stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end,
                         },
                         [TOKENS]: stream,
                         [STATE]: exports.EnumAstNodeStatus.Validated,
@@ -32131,7 +31485,7 @@
                 }
                 atRule[LOC] = {
                     ...atRule[LOC],
-                    end: { ...(stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end) },
+                    end: stream.at(-1)?.[LOC]?.end ?? atRule[LOC].end,
                 };
                 atRule[STATE] = exports.EnumAstNodeStatus.Validated;
                 atRule[ERRORS] = [];
@@ -32150,7 +31504,7 @@
                     // check commas , or ,,
                     // check colon :
                     // check or and and
-                    result = matchGenericSyntax(stream);
+                    result = matchGenericSyntax(stream, options);
                     if (result.errors.length > 0) {
                         errors.push(...result.errors);
                     }
@@ -32322,9 +31676,9 @@
                     const node = stack.at(-1);
                     errors?.push?.({
                         action: "drop",
-                        message: `Unbalanced token ')' at ${node[LOC].srcId}:${node[LOC].sta.lin}:${node[LOC].sta.col}`,
+                        message: `Unbalanced token ')'`,
                         node,
-                        location: node[LOC],
+                        location: options.source.getSourceLocation(node[LOC].sta),
                     });
                     // return [];
                     continue;
@@ -32350,9 +31704,9 @@
                     const node = stack.at(-1);
                     errors?.push?.({
                         action: "drop",
-                        message: `Unbalanced token ']' at ${node[LOC].srcId}:${node[LOC].sta.lin}:${node[LOC].sta.col}`,
+                        message: `Unbalanced token ']'`,
                         node,
-                        location: node[LOC],
+                        location: options.source.getSourceLocation(node[LOC].sta),
                     });
                     // return [];
                     continue;
@@ -32475,7 +31829,7 @@
                 action: "drop",
                 message: `Unbalanced token. Expecting ${node.typ === exports.EnumToken.AttrStartTokenType ? "']'" : ")"}'`,
                 node,
-                location: node[LOC],
+                location: options.source.getSourceLocation(node[LOC].sta),
             });
             // return [];
         }
@@ -32606,6 +31960,124 @@
     async function parseFile(file, options = {}, asStream = false) {
         console.warn("DeprecationWarning: parseFile is deprecated, use parse instead as parse({file, asStream, ...options})");
         return parse({ file, asStream, ...options });
+    }
+    /**
+     * Parse css
+     * @param args
+     *
+     * Parsing a string
+     *
+     * ```ts
+     *
+     * import {parse} from '@tbela99/css-parser';
+     *
+     *  // css string
+     *  let result = await parse(css, {nestingRules: true});
+     *  console.log(result.ast);
+     * ```
+     *
+     */
+    function parseSync(...args) {
+        let options;
+        let stream;
+        if (typeof args[0] === "string") {
+            stream = args[0];
+            options = args[1];
+        }
+        else {
+            const { input, ...opt } = args[0];
+            options = opt;
+            stream = input;
+        }
+        options ??= {};
+        options.src ??= "";
+        options.sourcesMap ??= [];
+        Object.assign(options, {
+            resolve,
+            dirname,
+            cwd: (options.cwd ?? self.location.pathname.endsWith("/"))
+                ? self.location.pathname
+                : dirname(self.location.pathname),
+        });
+        options.src = resolve(options.src, options.cwd).relative;
+        if (options.source == null) {
+            options.sourcesMap.push(new SourceFile(typeof stream == "string" ? stream : "", [], options.src));
+            options.source = options.sourcesMap.at(-1);
+        }
+        options.parseInfo = {
+            stream,
+            buffer: "",
+            src: options.src ?? "",
+            offset: 0,
+            time: 0,
+            source: options.source,
+            position: 0,
+            currentPosition: -1,
+        };
+        const result = doParseSync(tokenize(options.parseInfo), options);
+        const { revMapping, ...res } = result;
+        return res;
+    }
+    /**
+     * Transform css
+     * @param css
+     * @param options
+     *
+     * ```ts
+     *
+     * import {transform} from '@tbela99/css-parser';
+     *
+     *  // css string
+     *  const result = await transform(css);
+     *  console.log(result.code);
+     * ```
+     *
+     */
+    function transformSync(...args) {
+        let options;
+        let stream;
+        if (typeof args[0] === "string") {
+            stream = args[0];
+            options = args[1];
+        }
+        else {
+            const { input, ...opt } = args[0];
+            // @ts-ignore
+            options = opt;
+            stream = input;
+        }
+        options ??= {};
+        options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+        const startTime = performance.now();
+        const parseResult = parseSync(stream, options);
+        let mapping = null;
+        let importMapping = null;
+        if (typeof options.module == "number" && options.module & exports.ModuleScopeEnumOptions.ICSS) {
+            mapping = parseResult.mapping;
+            importMapping = parseResult.importMapping;
+        }
+        else if (typeof options.module == "object" &&
+            typeof options.module.scoped == "number" &&
+            options.module.scoped & exports.ModuleScopeEnumOptions.ICSS) {
+            mapping = parseResult.mapping;
+            importMapping = parseResult.importMapping;
+        }
+        // ast already expanded by parse
+        const rendered = render(parseResult.ast, {
+            ...options,
+            expandNestingRules: false,
+        }, mapping != null ? { mapping, importMapping } : null);
+        return {
+            ...parseResult,
+            ...rendered,
+            errors: parseResult.errors.concat(rendered.errors),
+            stats: {
+                bytesOut: rendered.code.length,
+                ...parseResult.stats,
+                render: rendered.stats.total,
+                total: `${(performance.now() - startTime).toFixed(2)}ms`,
+            },
+        };
     }
     /**
      * Parse css
@@ -32804,12 +32276,14 @@
     exports.parseDeclarations = parseDeclarations;
     exports.parseFile = parseFile;
     exports.parseString = parseString;
+    exports.parseSync = parseSync;
     exports.render = render;
     exports.renderToken = renderValue;
     exports.replaceNodeOrValue = replaceNodeOrValue;
     exports.resolve = resolve;
     exports.transform = transform;
     exports.transformFile = transformFile;
+    exports.transformSync = transformSync;
     exports.walk = walk;
     exports.walkValues = walkValues;
 

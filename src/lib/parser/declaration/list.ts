@@ -68,7 +68,6 @@ export class PropertyList {
                 const key: string = objectHash(declaration);
 
                 if (this.declarations.has(key)) {
-                    
                     this.declarations.delete(key);
                 }
 

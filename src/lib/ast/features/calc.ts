@@ -17,7 +17,7 @@ import { WalkerEvent, WalkerOptionEnum, walkValues } from "../walk.ts";
 import { evaluate } from "../math/expression.ts";
 import { renderValue } from "../../renderer/render.ts";
 import { FeatureWalkMode } from "./type.ts";
-import { mathFuncs, tokensfuncSet } from "../../syntax/constants.ts";
+import { LOC, mathFuncs, tokensfuncSet } from "../../syntax/constants.ts";
 
 export class ComputeCalcExpressionFeature {
     public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
@@ -183,6 +183,7 @@ export class ComputeCalcExpressionFeature {
                                                           typ: EnumToken.MathFunctionTokenType,
                                                           val: "calc",
                                                           chi: values,
+                                                          [LOC]: value[LOC],
                                                       }
                                                     : values[0],
                                             );
@@ -196,6 +197,7 @@ export class ComputeCalcExpressionFeature {
                                                 typ: EnumToken.MathFunctionTokenType,
                                                 val: "calc",
                                                 chi: values,
+                                                [LOC]: value[LOC],
                                             });
 
                                             break;

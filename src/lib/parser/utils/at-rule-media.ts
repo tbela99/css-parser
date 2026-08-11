@@ -83,72 +83,6 @@ export function parseMediaqueryList(
                 if (stream[i].typ === EnumToken.IdenTokenType) {
                     const val = (stream[i] as IdentToken).val.toLowerCase();
 
-                    // if ("not" === val || "only" === val) {
-                    //     tokens.push(stream[i]);
-                    //     stack.push(stream[i]);
-                    //     i++;
-
-                    //     while (
-                    //         i < stream.length &&
-                    //         (stream[i]?.typ === EnumToken.WhitespaceTokenType ||
-                    //             stream[i]?.typ === EnumToken.CommentTokenType)
-                    //     ) {
-                    //         tokens.push(stream[i]);
-                    //         i++;
-                    //     }
-
-                    //     if (
-                    //         stream[i]?.typ !== EnumToken.IdenTokenType ||
-                    //         !mediaTypes.includes((stream[i] as IdentToken).val.toLowerCase())
-                    //     ) {
-                    //         errors.push({
-                    //             action: "drop",
-                    //             node: stream[i],
-                    //             message: `expecting '<media-type>' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                    //         });
-                    //         continue;
-                    //     }
-
-                    //     const index: number = tokens.indexOf(stack[stack.length - 1]);
-
-                    //     tokens[index][LOC] = { ...tokens[index][LOC]!, end: stream[i][LOC]!.end };
-                    //     tokens[index] = Object.assign(tokens[index], {
-                    //         typ: val === "not" ? EnumToken.NotTokenType : EnumToken.OnlyTokenType,
-                    //         val: stream[i],
-                    //     });
-
-                    //     tokens.length = index + 1;
-                    //     i++;
-
-                    //     // expect end of stream | and | or | not
-                    //     while (
-                    //         i < stream.length &&
-                    //         (stream[i]?.typ === EnumToken.WhitespaceTokenType ||
-                    //             stream[i]?.typ === EnumToken.CommentTokenType)
-                    //     ) {
-                    //         tokens.push(stream[i]);
-                    //         i++;
-                    //     }
-
-                    //     if (i < stream.length) {
-                    //         if (stream[i].typ === EnumToken.AndTokenType) {
-                    //             tokens.push(Object.assign(stream[i], { typ: EnumToken.AndTokenType }));
-                    //             stack.push(stream[i]);
-                    //             i++;
-                    //         } else if (stream[i].typ === EnumToken.OrTokenType) {
-                    //             tokens.push(Object.assign(stream[i], { typ: EnumToken.OrTokenType }));
-                    //             stack.push(stream[i]);
-                    //             i++;
-                    //         } else {
-                    //             success = false;
-                    //             errors.push({
-                    //                 action: "drop",
-                    //                 node: stream[i],
-                    //                 message: `expecting 'and' or 'or' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                    //             });
-                    //         }
-                    //     }
-                    // } else
                     if (mediaTypes.includes(val)) {
                         tokens.push(stream[i]);
                         i++;
@@ -156,18 +90,18 @@ export function parseMediaqueryList(
                         success = false;
                         errors.push({
                             action: "drop",
-                            message: `expecting '<media-type>' at ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                            message: `expecting '<media-type>'`,
                             node: stream[i],
-                            location: stream[i][LOC]!,
+                            location: options.source!.getSourceLocation(stream[i][LOC]!.sta),
                         });
                     }
                 } else if (stream[i].typ !== EnumToken.StartParensTokenType) {
                     success = false;
                     errors.push({
                         action: "drop",
-                        message: `expecting '(' at ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                        message: `expecting '('`,
                         node: stream[i],
-                        location: stream[i][LOC]!,
+                        location: options.source!.getSourceLocation(stream[i][LOC]!.sta),
                     });
                 }
             }
@@ -189,15 +123,6 @@ export function parseMediaqueryList(
                         valid = stream[i].typ !== EnumToken.CommaTokenType;
                     }
 
-                    // if (!valid) {
-                    //     success = false;
-                    //     errors.push({
-                    //         action: "drop",
-                    //         node: stream[i],
-                    //         message: `expecting <and>, <or> or comma  at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                    //     });
-                    //     break;
-                    // }
 
                     expectAndOrComma = false;
                 }
@@ -209,16 +134,7 @@ export function parseMediaqueryList(
                 }
 
                 switch (stream[i].typ) {
-                    // case EnumToken.LiteralTokenType:
-                    //     if ((stream[i] as LiteralToken).val === "<") {
-                    //         stack.push(Object.assign(stream[i], { typ: EnumToken.LtTokenType }));
-                    //     }
-
-                    //     if ((stream[i] as LiteralToken).val === ">") {
-                    //         stack.push(Object.assign(stream[i], { typ: EnumToken.GtTokenType }));
-                    //     }
-
-                    //     break;
+                   
 
                     case EnumToken.ColonTokenType:
                     case EnumToken.LtTokenType:
@@ -233,13 +149,6 @@ export function parseMediaqueryList(
                         {
                             const val: string = (stream[i] as IdentToken).val.toLowerCase();
 
-                            // if (val === "not" || val === "only") {
-                            //     Object.assign(stream[i], {
-                            //         typ: val === "not" ? EnumToken.NotTokenType : EnumToken.OnlyTokenType,
-                            //     });
-
-                            //     stack.push(stream[i]);
-                            // } else
                             if (val === "and" || val === "or") {
                                 Object.assign(stream[i], {
                                     typ: val === "and" ? EnumToken.AndTokenType : EnumToken.OrTokenType,
@@ -250,7 +159,8 @@ export function parseMediaqueryList(
                                     errors.push({
                                         action: "drop",
                                         node: stream[i],
-                                        message: `<or> is not allowed outside of parentheses ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                                        message: `<or> is not allowed outside of parentheses`,
+                                        location: options.source!.getSourceLocation(stream[i][LOC]!.sta),
                                     });
 
                                     break;
@@ -261,7 +171,8 @@ export function parseMediaqueryList(
                                     errors.push({
                                         action: "drop",
                                         node: stream[i],
-                                        message: `cannot mix <and> and <or> at the same level at ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                                        message: `cannot mix <and> and <or> at the same level`,
+                                        location: options.source!.getSourceLocation(stream[i][LOC]!.sta),
                                     });
                                 }
 
@@ -314,36 +225,7 @@ export function parseMediaqueryList(
                             const prevToken: Token = stack[stack.length - 2];
 
                             if (mFLT.has(prevToken?.typ) || mFGT.has(prevToken?.typ)) {
-                                // if (stack[stack.length - 3]?.typ !== EnumToken.StartParensTokenType) {
-                                //     success = false;
-                                //     errors.push({
-                                //         action: "drop",
-                                //         node: stream[i],
-                                //         message: `unmatched '(' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                                //     });
-                                //     break;
-                                // }
-
-                                // if (!mFLT.has(stack.at(-1)?.typ) && mFLT.has(prevToken?.typ)) {
-                                //     success = false;
-                                //     errors.push({
-                                //         action: "drop",
-                                //         node: stack.at(-1),
-                                //         message: `expected <mf-lt> at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
-                                //     });
-
-                                //     break;
-                                // } else if (!mFGT.has(stack.at(-1)?.typ) && mFGT.has(prevToken?.typ)) {
-                                //     success = false;
-                                //     errors.push({
-                                //         action: "drop",
-                                //         node: stream[i],
-                                //         message: `expected <mf-gt> at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
-                                //     });
-
-                                //     break;
-                                // }
-
+                              
                                 // const index: number = tokens.indexOf(stack.at(-1)!);
                                 // <mf-lt> | <mf-name>
                                 const index2: number = tokens.indexOf(prevToken);
@@ -359,16 +241,6 @@ export function parseMediaqueryList(
                                         n.typ !== EnumToken.WhitespaceTokenType && n.typ !== EnumToken.CommentTokenType,
                                 );
 
-                                // if (filteredNames.length !== 1 || filteredNames[0].typ !== EnumToken.IdenTokenType) {
-                                //     success = false;
-                                //     errors.push({
-                                //         action: "drop",
-                                //         node: stream[i],
-                                //         message: `expected <mf-name>> at ${filteredNames[0]?.[LOC]?.src}:${filteredNames[0]?.[LOC]?.sta.lin}:${filteredNames[0]?.[LOC]?.sta.col}`,
-                                //     });
-
-                                //     break;
-                                // }
 
                                 const name: string = (filteredNames[0] as IdentToken | DashedIdentToken).val;
                                 const mfInfo = getMFInfo(name);
@@ -388,17 +260,7 @@ export function parseMediaqueryList(
                                                     const value = evaluate([val[l]]);
 
                                                     if (value.length == 1) {
-                                                        // if (mfInfo?.type === MediaFeatureType.RatioType) {
-                                                        //     if (
-                                                        //         value[0].typ !== EnumToken.NumberTokenType ||
-                                                        //         !(
-                                                        //             ((value[0] as NumberToken).val as FractionToken)
-                                                        //                 ?.typ === EnumToken.FractionTokenType
-                                                        //         )
-                                                        //     ) {
-                                                        //         continue;
-                                                        //     }
-                                                        // }
+                                                       
                                                         value[0][LOC] = val[l][LOC];
                                                         val[l] = value[0];
                                                     }
@@ -408,32 +270,11 @@ export function parseMediaqueryList(
                                     }
                                 }
 
-                                let isValidMFValue = isMFValue(name, left, true);
+                                // let isValidMFValue = isMFValue(name, left, true);
 
-                                // if (isValidMFValue.valid && !isValidMFValue.success) {
-                                //     success = false;
-                                //     errors.push({
-                                //         action: "drop",
-                                //         node: left[0] ?? prevToken,
-                                //         message: `${isValidMFValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"} at ${(left[0] ?? prevToken)?.[LOC]?.src}:${(left[0] ?? prevToken)?.[LOC]?.sta.lin}:${(left[0] ?? prevToken)?.[LOC]?.sta.col}`,
-                                //     });
 
-                                //     break;
-                                // }
+                                // isValidMFValue = isMFValue(name, right, true);
 
-                                isValidMFValue = isMFValue(name, right, true);
-
-                                // if (isValidMFValue.valid && !isValidMFValue.success) {
-                                //     success = false;
-                                //     errors.push({
-                                //         action: "drop",
-                                //         node: right[0] ?? stream[i],
-                                //         location: (right[0] ?? stream[i])?.[LOC],
-                                //         message: `${isValidMFValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"} at ${(right[0] ?? stream[i])?.[LOC]?.src}:${(right[0] ?? stream[i])?.[LOC]?.sta.lin}:${(left[0] ?? stream[i])?.[LOC]?.sta.col}`,
-                                //     });
-
-                                //     break;
-                                // }
 
                                 for (const val of [left, right]) {
                                     if (mfInfo?.type === MediaFeatureType.RatioType) {
@@ -476,17 +317,6 @@ export function parseMediaqueryList(
                                 stack.pop();
                                 stack.pop();
                             }
-                            // else if (stack[stack.length - 2]?.typ !== EnumToken.StartParensTokenType) {
-                            //     success = false;
-                            //     errors.push({
-                            //         action: "drop",
-                            //         node: stream[i],
-                            //         location: stream[i]?.[LOC],
-                            //         message: `expected '(' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                            //     });
-
-                            //     break;
-                            // }
                         }
 
                         if (
@@ -497,17 +327,6 @@ export function parseMediaqueryList(
                             stack.at(-1)?.typ === EnumToken.DelimTokenType ||
                             stack.at(-1)?.typ === EnumToken.ColonTokenType)
                         ) {
-                            // if (stack[stack.length - 2]?.typ !== EnumToken.StartParensTokenType) {
-                            //     success = false;
-                            //     errors.push({
-                            //         action: "drop",
-                            //         node: stream[i],
-                            //         location: stream[i]?.[LOC],
-                            //         message: `expected '(' at ${(stack[stack.length - 2] ?? tokens[0])?.[LOC]?.src}:${(stack[stack.length - 2] ?? tokens[0])?.[LOC]?.sta.lin}:${(stack[stack.length - 2] ?? tokens[0])?.[LOC]?.sta.col}`,
-                            //     });
-
-                            //     break;
-                            // }
 
                             const index2: number = tokens.indexOf(stack.at(-1)!);
                             const index3: number = tokens.indexOf(stack.at(-2)!);
@@ -516,54 +335,13 @@ export function parseMediaqueryList(
                             let values: Token[] = trimArray(tokens.slice(index2 + 1, tokens.length - 1));
                             let swapped: boolean = false;
 
-                            // if (stack.at(-1)?.typ !== EnumToken.ColonTokenType) {
-                            // const filteredNames = names.filter(
-                            //     (n) =>
-                            //         n.typ !== EnumToken.WhitespaceTokenType && n.typ !== EnumToken.CommentTokenType,
-                            // );
-
-                            // if (
-                            //     filteredNames.length !== 1 ||
-                            //     (filteredNames[0].typ !== EnumToken.IdenTokenType &&
-                            //         filteredNames[0].typ !== EnumToken.DashedIdenTokenType)
-                            // ) {
-                            //     swapped = true;
-                            // }
-                            // }
 
                             const filteredNames = (swapped ? values : names).filter(
                                 (n) => n.typ !== EnumToken.WhitespaceTokenType && n.typ !== EnumToken.CommentTokenType,
                             );
 
-                            // if (
-                            //     filteredNames.length !== 1 ||
-                            //     (filteredNames[0].typ !== EnumToken.IdenTokenType &&
-                            //         filteredNames[0].typ !== EnumToken.DashedIdenTokenType)
-                            // ) {
-                            //     success = false;
-                            //     errors.push({
-                            //         action: "drop",
-                            //         node: names[0] ?? stack.at(-1),
-                            //         location: names[0]?.[LOC],
-                            //         message: `expected <mf-name> at ${(names[0] ?? stack.at(-1))?.[LOC]?.src}:${(names[0] ?? stack.at(-1))?.[LOC]?.sta.lin}:${(names[0] ?? stack.at(-1))?.[LOC]?.sta.col}`,
-                            //     });
-
-                            //     break;
-                            // }
-
                             const name: string = (filteredNames[0] as IdentToken | DashedIdentToken).val;
 
-                            // if (!isMFName(name)) {
-                            //     success = false;
-                            //     errors.push({
-                            //         action: "drop",
-                            //         node: names[0] ?? stack.at(-1),
-                            //         location: names[0]?.[LOC] ?? stack.at(-1)?.[LOC],
-                            //         message: `expected <mf-name> at ${names[0]?.[LOC]?.src}:${names[0]?.[LOC]?.sta.lin}:${names[0]?.[LOC]?.sta.col}`,
-                            //     });
-
-                            //     break;
-                            // }
 
                             const mfInfo = getMFInfo(name);
                             if (options.computeCalcExpression) {
@@ -582,18 +360,7 @@ export function parseMediaqueryList(
                                             const value = evaluate([val[l]]);
 
                                             if (value.length == 1) {
-                                                // if (mfInfo?.type === MediaFeatureType.RatioType) {
-                                                //     if (
-                                                //         value[0].typ !== EnumToken.NumberTokenType ||
-                                                //         !(
-                                                //             ((value[0] as NumberToken).val as FractionToken)?.typ ===
-                                                //             EnumToken.FractionTokenType
-                                                //         )
-                                                //     ) {
-                                                //         continue;
-                                                //     }
-                                                // }
-
+                                               
                                                 value[0][LOC] = val[l][LOC];
                                                 val[l] = value[0];
                                             }
@@ -616,8 +383,8 @@ export function parseMediaqueryList(
                                 errors.push({
                                     action: "drop",
                                     node: arr[0],
-                                    location: arr[0]?.[LOC],
-                                    message: `${mfValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"} at ${arr[0]?.[LOC]?.srcId}:${arr[0]?.[LOC]?.sta.lin}:${arr[0]?.[LOC]?.sta.col}`,
+                                    location: options.source!.getSourceLocation(arr[0]?.[LOC]!.sta),
+                                    message: `${mfValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"}`,
                                 });
 
                                 break;
@@ -665,8 +432,8 @@ export function parseMediaqueryList(
                             errors.push({
                                 action: "drop",
                                 node: stream[i],
-                                location: stream[i]?.[LOC],
-                                message: `unmatched ')' at ${stream[i]?.[LOC]?.srcId}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
+                                location: options.source!.getSourceLocation(stream[i]?.[LOC]!.sta),
+                                message: `unmatched ')'`,
                             });
 
                             break;
@@ -688,21 +455,6 @@ export function parseMediaqueryList(
                             currentScope = scopes.at(-1)!;
                             stack.pop();
 
-                            // if (
-                            //     stack.at(-1)?.typ === EnumToken.NotTokenType ||
-                            //     stack.at(-1)?.typ === EnumToken.OnlyTokenType
-                            // ) {
-                            //     const index = tokens.indexOf(stack.at(-1)!);
-                            //     const slice = trimArray(tokens.slice(index + 1));
-                            //     tokens[index] = {
-                            //         typ: EnumToken.MediaQueryUnaryFeatureTokenType,
-                            //         l: stack.pop()!,
-                            //         r: slice,
-                            //         // @ts-expect-error
-                            //         [LOC]: { ...tokens[index][LOC]!, end: slice.at(-1)![LOC]!.end } as Location,
-                            //     };
-                            //     tokens.length = index + 1;
-                            // }
 
                             if (
                                 stack.at(-1)?.typ === EnumToken.AndTokenType ||
@@ -742,16 +494,6 @@ export function parseMediaqueryList(
                     break;
                 }
             }
-
-            // if (success && stack.length > 0) {
-            //     success = false;
-            //     errors.push({
-            //         action: "drop",
-            //         node: stack.at(-1),
-            //         location: stack.at(-1)?.[LOC],
-            //         message: `unmatched token '${EnumToken[stack.at(-1)?.typ]}' at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
-            //     });
-            // }
 
             if (!success) {
                 hasErrors = true;

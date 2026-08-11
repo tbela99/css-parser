@@ -77,6 +77,14 @@ class SourceFile {
         return this.lineStarts.getOffsets(offset);
     }
     /**
+     * get source location
+     * @param offset
+     * @returns
+     */
+    getSourceLocation(offset) {
+        return [this.file, ...this.getOffsets(offset)];
+    }
+    /**
      * get line starts
      * @returns
      */

@@ -12,7 +12,7 @@ import * as csstree from "css-tree";
 import * as esbuild from "esbuild";
 import { transform as lightningTransform } from "lightningcss";
 import { transform as tbelaTransform } from "@tbela99/css-parser";
-import {transform as tbelaDevTransform} from "../../dist/node.js";
+import {transformSync as tbelaDevTransform} from "@tbela99/css-parser2";
 
 function pkgVersion(name, pathToPkgJson) {
     const { version, repository } = JSON.parse(
@@ -68,7 +68,7 @@ const versions = {
     esbuild: pkgVersion("esbuild", "esbuild/package.json"),
     lightningcss: pkgVersion("lightningcss", "lightningcss/package.json"),
     "css-parser": pkgVersion("css-parser", "@tbela99/css-parser/package.json"),
-    "css-parser-dev": pkgVersion("css-parser-dev", "../../package.json"),
+    "css-parser-dev": pkgVersion("css-parser-dev", "@tbela99/css-parser2/package.json"),
 };
 
 const cleanCssInstance = new CleanCSS();

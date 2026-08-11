@@ -2,7 +2,7 @@ import { convertColor, getNumber } from './color.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import { walkValues } from '../../ast/walk.js';
 import { evaluateFunc, evaluate } from '../../ast/math/expression.js';
-import { colorsFunc, colorFuncColorSpace, colorRange, mathFuncs } from '../constants.js';
+import { colorsFunc, colorFuncColorSpace, LOC, colorRange, mathFuncs } from '../constants.js';
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
 import { getColorComponents } from './utils/components.js';
 
@@ -103,16 +103,19 @@ function parseRelativeColorComponents(relativeKeys, original, rExp, gExp, bExp, 
             ? {
                 typ: EnumToken.NumberTokenType,
                 val: 1,
+                [LOC]: b[LOC],
             }
             : alpha.typ == EnumToken.IdenTokenType && alpha.val == "none"
                 ? {
                     typ: EnumToken.NumberTokenType,
                     val: 0,
+                    [LOC]: alpha[LOC],
                 }
                 : alpha.typ == EnumToken.PercentageTokenType
                     ? {
                         typ: EnumToken.NumberTokenType,
                         val: getNumber(alpha),
+                        [LOC]: alpha[LOC],
                     }
                     : alpha,
     };
@@ -125,11 +128,13 @@ function parseRelativeColorComponents(relativeKeys, original, rExp, gExp, bExp, 
             ? {
                 typ: EnumToken.NumberTokenType,
                 val: 1,
+                [LOC]: bExp[LOC],
             }
             : aExp.typ == EnumToken.IdenTokenType && aExp.val == "none"
                 ? {
                     typ: EnumToken.NumberTokenType,
                     val: 0,
+                    [LOC]: aExp[LOC],
                 }
                 : aExp),
     };
@@ -160,6 +165,7 @@ function getValue(t, converted, component) {
         return {
             typ: EnumToken.NumberTokenType,
             val: value,
+            [LOC]: t[LOC],
         };
     }
     return t;
@@ -203,6 +209,7 @@ function computeComponentValue(expr, values) {
                             typ: EnumToken.NumberTokenType,
                             // @ts-ignore
                             val: "" + Math[value.val.toUpperCase()],
+                            [LOC]: value[LOC],
                             // @ts-ignore
                         });
                 }

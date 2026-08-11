@@ -5,7 +5,16 @@
 ## Improvements
 
 ### Sync Api
-- [ ] added parseSync() and transformSync() with limitations : they do not support async operations such as flattening import at-rule, parse file or stream.
+- [x] Added parseSync() and transformSync() with these limitations : 
+  - [x] Unsupported parse features
+    - [x] flattened at-rule import files
+    - [x] using file loader as options.load() is forbidden
+    - [x] parse from stream
+    - [x] parse file as input parameter
+  - [x] Unsupported CSS modules features
+    - [x] pattern cannot use sha1, sha256 or sha512 algorithms
+    - [x] composes classes from file will throw an error
+    - [x] import css at-rule value from file will throw an error
 
 ### Sourcemap
 - [x] Embed CSS content into the sourcemap when the src file is not provided

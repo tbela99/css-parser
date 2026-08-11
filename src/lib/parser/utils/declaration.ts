@@ -82,49 +82,6 @@ function parseGridTemplate(template: string): string {
 }
 
 /**
- *
- * @param tokens
- * @returns
- */
-// export function isDeclarationValue(tokens: Token[]): { success: boolean; errors: ErrorDescription[] } {
-//     const stack: Token[] = [];
-//     let i: number = 0;
-
-//     for (; i < tokens.length; i++) {
-//         if (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType) {
-//             continue;
-//         } else if (tokensfuncDefMap.has(tokens[i].typ) || tokens[i].typ === EnumToken.StartParensTokenType) {
-//             stack.push(tokens[i]);
-//         } else if (tokens[i].typ === EnumToken.CommaTokenType || tokens[i].typ === EnumToken.LiteralTokenType) {
-//             stack.push(tokens[i]);
-//         } else if (isValue(tokens[i])) {
-//             if (stack.at(-1)?.typ === EnumToken.LiteralTokenType) {
-//                 stack.pop();
-//             }
-//         } else if (tokens[i].typ === EnumToken.EndParensTokenType) {
-//             if (stack.at(-1)?.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(stack.at(-1)?.typ)) {
-//                 stack.pop();
-//             }
-//         }
-//     }
-
-//     return {
-//         success: stack.length === 0,
-//         errors:
-//             stack.length > 0
-//                 ? [
-//                       {
-//                           action: "drop",
-//                           message: `unexpected declaration value at ${stack.at(-1)?.[LOC]?.src}:${stack.at(-1)?.[LOC]?.sta.lin}:${stack.at(-1)?.[LOC]?.sta.col}`,
-//                           node: stack.at(-1),
-//                           location: stack.at(-1)?.[LOC],
-//                       },
-//                   ]
-//                 : [],
-//     };
-// }
-
-/**
  * Parse declaration
  * @param tokens
  * @param parent
@@ -189,68 +146,6 @@ export function parseDeclaration(
     }
 
     tokens = trimArray(tokens.slice(i + 1));
-
-    // for (i = 0; i < tokens.length; i++) {
-    // const token = tokens[i];
-
-    // if (
-    //     token.typ == EnumToken.WhitespaceTokenType ||
-    //     token.typ == EnumToken.CommentTokenType ||
-    //     token.typ == EnumToken.InvalidCommentTokenType
-    // ) {
-    //     continue;
-    // }
-
-    // if (tokens[i].typ === EnumToken.UrlFunctionTokenDefType) {
-    // let k: number = i;
-
-    // while (k < tokens.length) {
-    //     if (
-    //         tokens[++k]?.typ === EnumToken.WhitespaceTokenType ||
-    //         tokens[k]?.typ === EnumToken.CommentTokenType
-    //     ) {
-    //         continue;
-    //     }
-
-    //     if (tokens[k]?.typ !== EnumToken.EndParensTokenType) {
-    //         break;
-    //     }
-    // }
-
-    // if (
-    //     tokens[k].typ === EnumToken.LiteralTokenType ||
-    //     tokens[k].typ === EnumToken.IdenTokenType ||
-    //     tokens[k].typ === EnumToken.DashedIdenTokenType ||
-    //     tokens[k].typ === EnumToken.HashTokenType ||
-    //     tokens[k].typ === EnumToken.ClassSelectorTokenType
-    // ) {
-    //     let j: number = k;
-    //     let val: string = (tokens[k] as LiteralToken | IdentToken | DashedIdentToken | HashToken).val;
-
-    //     while (j + 1 < tokens.length) {
-    //         if (
-    //             tokens[++j].typ !== EnumToken.LiteralTokenType &&
-    //             tokens[j].typ !== EnumToken.IdenTokenType &&
-    //             tokens[j].typ !== EnumToken.DashedIdenTokenType &&
-    //             tokens[j].typ !== EnumToken.HashTokenType &&
-    //             tokens[j].typ !== EnumToken.ClassSelectorTokenType
-    //         ) {
-    //             break;
-    //         }
-
-    //         val += (tokens[j] as LiteralToken | IdentToken | DashedIdentToken | HashToken).val;
-    //     }
-
-    //     Object.assign(tokens[k] as LiteralToken | IdentToken | DashedIdentToken | HashToken, {
-    //         typ: EnumToken.UrlTokenTokenType,
-    //         val,
-    //     });
-
-    //     tokens[k][LOC]!.end = tokens[j][LOC]!.end;
-    //     tokens.splice(k + 1, j - k - 1);
-    // }
-    // }
-    // }
 
     if (validate && name.typ === EnumToken.IdenTokenType) {
         if (
@@ -358,7 +253,7 @@ export function parseDeclaration(
             action: "drop",
             message: "declaration value missing",
             node: name,
-            location: name[LOC],
+            location: options.source!.getSourceLocation(name[LOC]!.sta),
         });
 
         name[LOC] = {
@@ -632,7 +527,9 @@ export function parseDeclaration(
 
                             errors.push({
                                 action: "drop",
-                                message: `invalid color at ${tokens[index][LOC]?.srcId}:${tokens[index][LOC]?.sta.lin}:${tokens[index][LOC]?.sta.col}`,
+                                message: `invalid color`,
+                                node: tokens[index],
+                                location: options.source!.getSourceLocation(tokens[index][LOC]!.sta),
                             });
                         }
                     }
@@ -689,7 +586,7 @@ export function parseDeclaration(
             action: "drop",
             message: "unbalanced token",
             node: stack[stack.length - 1],
-            location: stack[stack.length - 1][LOC],
+            location: options.source!.getSourceLocation(stack[stack.length - 1][LOC]!.sta),
         });
 
         name[LOC] = {
