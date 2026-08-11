@@ -247,7 +247,7 @@ function updateSourceMap(
     ) {
         let srcId: number = (<SourceLocation>node[LOC])?.srcId ?? 0;
 
-        let sourceFileName: string | null = (options.sourcesMap?.[srcId].getFileName() as string) || null;
+        let sourceFileName: string | null = (options.sourcesMap?.get(srcId)?.getFileName?.() as string) || null;
 
         if (sourceFileName != null && options.output != null) {
             sourceFileName = options.resolve!(sourceFileName, dirname(options.output)).relative as string;
@@ -258,9 +258,9 @@ function updateSourceMap(
             ...linesMap.getOffsets(sourceLocation.end),
             srcId,
             // @ts-ignore
-            ...(options.sourcesMap?.[srcId]?.getOffsets(sourceLocation.sta) as [number, number]),
+            ...(options.sourcesMap?.get(srcId)?.getOffsets(sourceLocation.sta) as [number, number]),
             sourceFileName as string,
-            options.sourcesMap?.[srcId]?.getContent() as string,
+            options.sourcesMap?.get(srcId)?.getContent?.() as string,
         );
     }
 

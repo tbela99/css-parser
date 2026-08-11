@@ -179,7 +179,6 @@ function parseDeclaration(tokens, parent, options, errors) {
             action: "drop",
             message: "declaration value missing",
             node: name,
-            // @ts-expect-error
             location: options.source.getSourceLocation(name[LOC].sta),
         });
         name[LOC] = {
@@ -397,7 +396,6 @@ function parseDeclaration(tokens, parent, options, errors) {
                                 action: "drop",
                                 message: `invalid color`,
                                 node: tokens[index],
-                                // @ts-expect-error
                                 location: options.source.getSourceLocation(tokens[index][LOC].sta),
                             });
                         }
@@ -450,7 +448,6 @@ function parseDeclaration(tokens, parent, options, errors) {
             action: "drop",
             message: "unbalanced token",
             node: stack[stack.length - 1],
-            // @ts-expect-error
             location: options.source.getSourceLocation(stack[stack.length - 1][LOC].sta),
         });
         name[LOC] = {

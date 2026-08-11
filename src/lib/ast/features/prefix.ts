@@ -1,4 +1,4 @@
-import { EnumToken } from "../types.ts";
+import { EnumAstNodeStatus, EnumToken } from "../types.ts";
 import type {
     AngleToken,
     AstAtRule,
@@ -19,7 +19,7 @@ import { pseudoAliasMap } from "../../syntax/syntax.ts";
 import { splitRule } from "../minify.ts";
 import type { ValidationConfiguration } from "../../../@types/validation.d.ts";
 import { renderValue } from "../../renderer/render.ts";
-import { funcLike, regMatchLinearGradient, regMatchRadialGradient, TOKENS } from "../../syntax/constants.ts";
+import { funcLike, regMatchLinearGradient, regMatchRadialGradient, STATE, TOKENS } from "../../syntax/constants.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import { getSyntaxConfig } from "../../validation/config.ts";
@@ -155,6 +155,14 @@ export class ComputePrefixFeature {
     }
 
     run(node: AstNode): AstNode | null {
+        if (
+            node[STATE] == EnumAstNodeStatus.Disallowed ||
+            node[STATE] == EnumAstNodeStatus.Invalid ||
+            node[STATE] == EnumAstNodeStatus.Malformed
+        ) {
+            return null;
+        }
+
         if (node.typ == EnumToken.RuleNodeType) {
             (node as AstRule).sel = replacePseudo(splitRule((node as AstRule).sel)).reduce(
                 (acc, curr, index) => acc + (index > 0 ? "," : "") + curr.join(""),

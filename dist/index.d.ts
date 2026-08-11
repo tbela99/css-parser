@@ -5041,7 +5041,7 @@ export declare interface ParseInputStreamOptions {
 }
 
 export declare interface ParseSourceOptions {
-    sourcesMap?: SourceFile[];
+    sourcesMap?: Map<number, SourceFile>;
     source?: SourceFile | null;
 }
 
@@ -5336,7 +5336,7 @@ export declare interface RenderOptions {
      * Source map
      * @internal
      */
-    sourcesMap?: SourceFile[];
+    sourcesMap?: Map<number, SourceFile>;
 }
 
 /**

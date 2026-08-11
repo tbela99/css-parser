@@ -155,7 +155,7 @@ function parseSync(...args) {
     }
     options ??= {};
     options.src ??= "";
-    options.sourcesMap ??= [];
+    options.sourcesMap ??= new Map;
     Object.assign(options, {
         resolve,
         dirname,
@@ -165,8 +165,9 @@ function parseSync(...args) {
     });
     options.src = resolve(options.src, options.cwd).relative;
     if (options.source == null) {
-        options.sourcesMap.push(new SourceFile(typeof stream == "string" ? stream : "", [], options.src));
-        options.source = options.sourcesMap.at(-1);
+        const source = new SourceFile(typeof stream == "string" ? stream : "", [], options.src);
+        options.sourcesMap.set(source.id, source);
+        options.source = source;
     }
     options.parseInfo = {
         stream,
@@ -291,7 +292,7 @@ async function parse(...args) {
     }
     options ??= {};
     options.src ??= "";
-    options.sourcesMap ??= [];
+    options.sourcesMap ??= new Map;
     Object.assign(options, {
         load,
         resolve,
@@ -302,8 +303,9 @@ async function parse(...args) {
     });
     options.src = resolve(options.src, options.cwd).relative;
     if (options.source == null) {
-        options.sourcesMap.push(new SourceFile(typeof stream === "string" ? stream : "", [], options.src));
-        options.source = options.sourcesMap.at(-1);
+        const source = new SourceFile(typeof stream === "string" ? stream : "", [], options.src);
+        options.sourcesMap.set(source.id, source);
+        options.source = source;
     }
     options.parseInfo = {
         stream,

@@ -31,13 +31,25 @@ function inverse(matrix) {
     // Create augmented matrix [matrix | identity]
     let augmented = [
         ...matrix.slice(0, 4),
-        1, 0, 0, 0,
+        1,
+        0,
+        0,
+        0,
         ...matrix.slice(4, 8),
-        0, 1, 0, 0,
+        0,
+        1,
+        0,
+        0,
         ...matrix.slice(8, 12),
-        0, 0, 1, 0,
+        0,
+        0,
+        1,
+        0,
         ...matrix.slice(12, 16),
-        0, 0, 0, 1
+        0,
+        0,
+        0,
+        1,
     ];
     // Gaussian elimination with partial pivoting
     for (let col = 0; col < 4; col++) {
@@ -52,7 +64,7 @@ function inverse(matrix) {
             }
         }
         // Check for singularity
-        if (maxVal < 1e-5) {
+        if (maxVal < epsilon) {
             return null;
         }
         // Swap rows if necessary
@@ -132,11 +144,7 @@ function decompose(original) {
     const scaleX = Math.hypot(...row0);
     const row0Norm = normalize(row0);
     const skewXY = dot(row0Norm, row1);
-    const row1Proj = [
-        row1[0] - skewXY * row0Norm[0],
-        row1[1] - skewXY * row0Norm[1],
-        row1[2] - skewXY * row0Norm[2]
-    ];
+    const row1Proj = [row1[0] - skewXY * row0Norm[0], row1[1] - skewXY * row0Norm[1], row1[2] - skewXY * row0Norm[2]];
     const scaleY = Math.hypot(...row1Proj);
     const row1Norm = normalize(row1Proj);
     const skewXZ = dot(row0Norm, row2);
@@ -144,7 +152,7 @@ function decompose(original) {
     const row2Proj = [
         row2[0] - skewXZ * row0Norm[0] - skewYZ * row1Norm[0],
         row2[1] - skewXZ * row0Norm[1] - skewYZ * row1Norm[1],
-        row2[2] - skewXZ * row0Norm[2] - skewYZ * row1Norm[2]
+        row2[2] - skewXZ * row0Norm[2] - skewYZ * row1Norm[2],
     ];
     const row2Norm = normalize(row2Proj);
     const determinant = row0[0] * cross[0] + row0[1] * cross[1] + row0[2] * cross[2];
@@ -196,7 +204,12 @@ function decompose(original) {
         qy /= q;
         qz /= q;
     }
-    const rotate = [qx, qy, qz, Object.is(qw, 0) ? 0 : 2 * Math.acos(qw) * 180 / Math.PI];
+    const rotate = [
+        qx,
+        qy,
+        qz,
+        Object.is(qw, 0) ? 0 : (2 * Math.acos(qw) * 180) / Math.PI,
+    ];
     const scale = [scaleX, scaleY, scaleZ];
     const skew = [skewXY, skewXZ, skewYZ];
     return {
@@ -204,16 +217,11 @@ function decompose(original) {
         scale,
         rotate,
         skew,
-        perspective
+        perspective,
     };
 }
 function transposeMatrix4(m) {
-    return [
-        m[0], m[4], m[8], m[12],
-        m[1], m[5], m[9], m[13],
-        m[2], m[6], m[10], m[14],
-        m[3], m[7], m[11], m[15],
-    ];
+    return [m[0], m[4], m[8], m[12], m[1], m[5], m[9], m[13], m[2], m[6], m[10], m[14], m[3], m[7], m[11], m[15]];
 }
 function toZero(v) {
     for (let i = 0; i < v.length; i++) {
@@ -229,7 +237,7 @@ function toZero(v) {
 // https://drafts.csswg.org/css-transforms-1/#2d-matrix
 function is2DMatrix(matrix) {
     // m13,m14,  m23, m24, m31, m32, m34, m43 are all 0
-    return matrix[2] === 0 &&
+    return (matrix[2] === 0 &&
         matrix[3] === 0 &&
         matrix[6] === 0 &&
         matrix[7] === 0 &&
@@ -238,7 +246,7 @@ function is2DMatrix(matrix) {
         matrix[11] === 0 &&
         matrix[14] === 0 &&
         matrix[10] === 1 &&
-        matrix[15] === 1;
+        matrix[15] === 1);
 }
 
 export { decompose, identity, is2DMatrix, multiply, round, toZero };

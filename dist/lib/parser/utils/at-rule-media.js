@@ -61,7 +61,6 @@ function parseMediaqueryList(stream, options) {
                             action: "drop",
                             message: `expecting '<media-type>'`,
                             node: stream[i],
-                            // @ts-expect-error
                             location: options.source.getSourceLocation(stream[i][LOC].sta),
                         });
                     }
@@ -72,7 +71,6 @@ function parseMediaqueryList(stream, options) {
                         action: "drop",
                         message: `expecting '('`,
                         node: stream[i],
-                        // @ts-expect-error
                         location: options.source.getSourceLocation(stream[i][LOC].sta),
                     });
                 }
@@ -115,7 +113,6 @@ function parseMediaqueryList(stream, options) {
                                         action: "drop",
                                         node: stream[i],
                                         message: `<or> is not allowed outside of parentheses`,
-                                        // @ts-expect-error
                                         location: options.source.getSourceLocation(stream[i][LOC].sta),
                                     });
                                     break;
@@ -126,7 +123,6 @@ function parseMediaqueryList(stream, options) {
                                         action: "drop",
                                         node: stream[i],
                                         message: `cannot mix <and> and <or> at the same level`,
-                                        // @ts-expect-error
                                         location: options.source.getSourceLocation(stream[i][LOC].sta),
                                     });
                                 }
@@ -260,7 +256,6 @@ function parseMediaqueryList(stream, options) {
                                 errors.push({
                                     action: "drop",
                                     node: arr[0],
-                                    // @ts-expect-error
                                     location: options.source.getSourceLocation(arr[0]?.[LOC].sta),
                                     message: `${mfValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"}`,
                                 });
@@ -296,7 +291,6 @@ function parseMediaqueryList(stream, options) {
                             errors.push({
                                 action: "drop",
                                 node: stream[i],
-                                // @ts-expect-error
                                 location: options.source.getSourceLocation(stream[i]?.[LOC].sta),
                                 message: `unmatched ')'`,
                             });

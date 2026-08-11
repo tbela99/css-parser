@@ -236,6 +236,9 @@ const generateSyncScopedName = memoize((localName, filePath, pattern, hashLength
                         // @ts-ignore
                         hashAlgo = length;
                         length = null;
+                        if (hashAlgo.startsWith("sha")) {
+                            throw new Error(`Unsupported hash algorithm: '${hashAlgo}'. Not supported by parseSync() or transformSync(). Use parse() or transform().`);
+                        }
                     }
                 }
                 if (parts.length == 3) {
@@ -1626,8 +1629,8 @@ async function doParse(iter, options = {}) {
                 const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                     ? await result
                     : result;
-                options.sourcesMap.push(new SourceFile(typeof stream === "string" ? stream : "", [], src.relative));
-                const source = options.sourcesMap[options.sourcesMap.length - 1];
+                const source = new SourceFile(typeof stream === "string" ? stream : "", [], src.relative);
+                options.sourcesMap.set(source.id, source);
                 const parseInfo = {
                     stream,
                     buffer: "",
@@ -1994,8 +1997,8 @@ async function doParse(iter, options = {}) {
                 const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                     ? await result
                     : result;
-                options.sourcesMap.push(new SourceFile(typeof stream === "string" ? stream : "", [], src.relative));
-                const source = options.sourcesMap[options.sourcesMap.length - 1];
+                const source = new SourceFile(typeof stream === "string" ? stream : "", [], src.relative);
+                options.sourcesMap.set(source.id, source);
                 const parseInfo = {
                     stream,
                     buffer: "",

@@ -4,14 +4,15 @@
 
 ## Improvements
 
-### Sync Api
-- [x] Added parseSync() and transformSync() with these limitations : 
-  - [x] Unsupported parse features
+### Provide sync Api
+- [x] Added parseSync() and transformSync() with the limitations below: 
+  Unsupported parse features
     - [x] flattened at-rule import files
     - [x] using file loader as options.load() is forbidden
     - [x] parse from stream
     - [x] parse file as input parameter
-  - [x] Unsupported CSS modules features
+  
+  Unsupported CSS modules features
     - [x] pattern cannot use sha1, sha256 or sha512 algorithms
     - [x] composes classes from file will throw an error
     - [x] import css at-rule value from file will throw an error

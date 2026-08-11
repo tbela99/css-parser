@@ -129,14 +129,14 @@ function updateSourceMap(node, options, cache, sourcemap, sourceLocation, linesM
         EnumToken.KeyframesAtRuleNodeType,
     ].includes(node.typ)) {
         let srcId = node[LOC]?.srcId ?? 0;
-        let sourceFileName = options.sourcesMap?.[srcId].getFileName() || null;
+        let sourceFileName = options.sourcesMap?.get(srcId)?.getFileName?.() || null;
         if (sourceFileName != null && options.output != null) {
             sourceFileName = options.resolve(sourceFileName, dirname(options.output)).relative;
         }
         // @ts-ignore
         sourcemap.add(...linesMap.getOffsets(sourceLocation.end), srcId, 
         // @ts-ignore
-        ...options.sourcesMap?.[srcId]?.getOffsets(sourceLocation.sta), sourceFileName, options.sourcesMap?.[srcId]?.getContent());
+        ...options.sourcesMap?.get(srcId)?.getOffsets(sourceLocation.sta), sourceFileName, options.sourcesMap?.get(srcId)?.getContent?.());
     }
     move(sourceLocation, linesMap, str);
 }

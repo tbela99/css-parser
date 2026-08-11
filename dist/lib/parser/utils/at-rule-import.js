@@ -88,7 +88,6 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                         message: `Expected <layer-name>`,
                         syntax: "@import",
                         node: stream[index],
-                        // @ts-expect-error
                         location: options.source.getSourceLocation(stream[index]?.[LOC].sta),
                     },
                 ],
@@ -116,7 +115,6 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                         message: `Expected <layer-name>`,
                         syntax: "@import",
                         node: stream[index],
-                        // @ts-expect-error
                         location: options.source.getSourceLocation(stream[index]?.[LOC].sta),
                     },
                 ],

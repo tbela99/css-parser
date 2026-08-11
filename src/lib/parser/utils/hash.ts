@@ -142,7 +142,7 @@ export async function hash(input: string, length: number = 6, algo?: string): Pr
  * @param length
  * @param algo
  */
-export  function syncHash(input: string, length: number = 6, algo?: string): string {
+export function syncHash(input: string, length: number = 6, algo?: string): string {
     let result: string;
 
     if (algo != null) {

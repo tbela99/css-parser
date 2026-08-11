@@ -16296,6 +16296,11 @@ class ComputePrefixFeature {
         }
     }
     run(node) {
+        if (node[STATE] == exports.EnumAstNodeStatus.Disallowed ||
+            node[STATE] == exports.EnumAstNodeStatus.Invalid ||
+            node[STATE] == exports.EnumAstNodeStatus.Malformed) {
+            return null;
+        }
         if (node.typ == exports.EnumToken.RuleNodeType) {
             node.sel = replacePseudo(splitRule(node.sel)).reduce((acc, curr, index) => acc + (index > 0 ? "," : "") + curr.join(""), "");
             if (node[TOKENS] != null) {
@@ -19859,13 +19864,25 @@ function inverse(matrix) {
     // Create augmented matrix [matrix | identity]
     let augmented = [
         ...matrix.slice(0, 4),
-        1, 0, 0, 0,
+        1,
+        0,
+        0,
+        0,
         ...matrix.slice(4, 8),
-        0, 1, 0, 0,
+        0,
+        1,
+        0,
+        0,
         ...matrix.slice(8, 12),
-        0, 0, 1, 0,
+        0,
+        0,
+        1,
+        0,
         ...matrix.slice(12, 16),
-        0, 0, 0, 1
+        0,
+        0,
+        0,
+        1,
     ];
     // Gaussian elimination with partial pivoting
     for (let col = 0; col < 4; col++) {
@@ -19880,7 +19897,7 @@ function inverse(matrix) {
             }
         }
         // Check for singularity
-        if (maxVal < 1e-5) {
+        if (maxVal < epsilon) {
             return null;
         }
         // Swap rows if necessary
@@ -19960,11 +19977,7 @@ function decompose(original) {
     const scaleX = Math.hypot(...row0);
     const row0Norm = normalize$1(row0);
     const skewXY = dot(row0Norm, row1);
-    const row1Proj = [
-        row1[0] - skewXY * row0Norm[0],
-        row1[1] - skewXY * row0Norm[1],
-        row1[2] - skewXY * row0Norm[2]
-    ];
+    const row1Proj = [row1[0] - skewXY * row0Norm[0], row1[1] - skewXY * row0Norm[1], row1[2] - skewXY * row0Norm[2]];
     const scaleY = Math.hypot(...row1Proj);
     const row1Norm = normalize$1(row1Proj);
     const skewXZ = dot(row0Norm, row2);
@@ -19972,7 +19985,7 @@ function decompose(original) {
     const row2Proj = [
         row2[0] - skewXZ * row0Norm[0] - skewYZ * row1Norm[0],
         row2[1] - skewXZ * row0Norm[1] - skewYZ * row1Norm[1],
-        row2[2] - skewXZ * row0Norm[2] - skewYZ * row1Norm[2]
+        row2[2] - skewXZ * row0Norm[2] - skewYZ * row1Norm[2],
     ];
     const row2Norm = normalize$1(row2Proj);
     const determinant = row0[0] * cross[0] + row0[1] * cross[1] + row0[2] * cross[2];
@@ -20024,7 +20037,12 @@ function decompose(original) {
         qy /= q;
         qz /= q;
     }
-    const rotate = [qx, qy, qz, Object.is(qw, 0) ? 0 : 2 * Math.acos(qw) * 180 / Math.PI];
+    const rotate = [
+        qx,
+        qy,
+        qz,
+        Object.is(qw, 0) ? 0 : (2 * Math.acos(qw) * 180) / Math.PI,
+    ];
     const scale = [scaleX, scaleY, scaleZ];
     const skew = [skewXY, skewXZ, skewYZ];
     return {
@@ -20032,16 +20050,11 @@ function decompose(original) {
         scale,
         rotate,
         skew,
-        perspective
+        perspective,
     };
 }
 function transposeMatrix4(m) {
-    return [
-        m[0], m[4], m[8], m[12],
-        m[1], m[5], m[9], m[13],
-        m[2], m[6], m[10], m[14],
-        m[3], m[7], m[11], m[15],
-    ];
+    return [m[0], m[4], m[8], m[12], m[1], m[5], m[9], m[13], m[2], m[6], m[10], m[14], m[3], m[7], m[11], m[15]];
 }
 function toZero(v) {
     for (let i = 0; i < v.length; i++) {
@@ -20057,7 +20070,7 @@ function toZero(v) {
 // https://drafts.csswg.org/css-transforms-1/#2d-matrix
 function is2DMatrix(matrix) {
     // m13,m14,  m23, m24, m31, m32, m34, m43 are all 0
-    return matrix[2] === 0 &&
+    return (matrix[2] === 0 &&
         matrix[3] === 0 &&
         matrix[6] === 0 &&
         matrix[7] === 0 &&
@@ -20066,7 +20079,7 @@ function is2DMatrix(matrix) {
         matrix[11] === 0 &&
         matrix[14] === 0 &&
         matrix[10] === 1 &&
-        matrix[15] === 1;
+        matrix[15] === 1);
 }
 
 function translateX(x, from) {
@@ -20643,7 +20656,7 @@ function skew(values, from) {
 function perspective(x, from) {
     const matrix = identity();
     // @ts-ignore
-    matrix[2 * 4 + 3] = typeof x == 'object' && x.val == 'none' ? 0 : x == 0 ? Number.NEGATIVE_INFINITY : -1 / x;
+    matrix[2 * 4 + 3] = typeof x == "object" && x.val == "none" ? 0 : x == 0 ? Number.NEGATIVE_INFINITY : -1 / x;
     return multiply(from, matrix);
 }
 
@@ -24441,14 +24454,14 @@ function updateSourceMap(node, options, cache, sourcemap, sourceLocation, linesM
         exports.EnumToken.KeyframesAtRuleNodeType,
     ].includes(node.typ)) {
         let srcId = node[LOC]?.srcId ?? 0;
-        let sourceFileName = options.sourcesMap?.[srcId].getFileName() || null;
+        let sourceFileName = options.sourcesMap?.get(srcId)?.getFileName?.() || null;
         if (sourceFileName != null && options.output != null) {
             sourceFileName = options.resolve(sourceFileName, dirname(options.output)).relative;
         }
         // @ts-ignore
         sourcemap.add(...linesMap.getOffsets(sourceLocation.end), srcId, 
         // @ts-ignore
-        ...options.sourcesMap?.[srcId]?.getOffsets(sourceLocation.sta), sourceFileName, options.sourcesMap?.[srcId]?.getContent());
+        ...options.sourcesMap?.get(srcId)?.getOffsets(sourceLocation.sta), sourceFileName, options.sourcesMap?.get(srcId)?.getContent?.());
     }
     move(sourceLocation, linesMap, str);
 }
@@ -26255,7 +26268,6 @@ function parseDeclaration(tokens, parent, options, errors) {
             action: "drop",
             message: "declaration value missing",
             node: name,
-            // @ts-expect-error
             location: options.source.getSourceLocation(name[LOC].sta),
         });
         name[LOC] = {
@@ -26473,7 +26485,6 @@ function parseDeclaration(tokens, parent, options, errors) {
                                 action: "drop",
                                 message: `invalid color`,
                                 node: tokens[index],
-                                // @ts-expect-error
                                 location: options.source.getSourceLocation(tokens[index][LOC].sta),
                             });
                         }
@@ -26526,7 +26537,6 @@ function parseDeclaration(tokens, parent, options, errors) {
             action: "drop",
             message: "unbalanced token",
             node: stack[stack.length - 1],
-            // @ts-expect-error
             location: options.source.getSourceLocation(stack[stack.length - 1][LOC].sta),
         });
         name[LOC] = {
@@ -26683,7 +26693,6 @@ function parseMediaqueryList(stream, options) {
                             action: "drop",
                             message: `expecting '<media-type>'`,
                             node: stream[i],
-                            // @ts-expect-error
                             location: options.source.getSourceLocation(stream[i][LOC].sta),
                         });
                     }
@@ -26694,7 +26703,6 @@ function parseMediaqueryList(stream, options) {
                         action: "drop",
                         message: `expecting '('`,
                         node: stream[i],
-                        // @ts-expect-error
                         location: options.source.getSourceLocation(stream[i][LOC].sta),
                     });
                 }
@@ -26737,7 +26745,6 @@ function parseMediaqueryList(stream, options) {
                                         action: "drop",
                                         node: stream[i],
                                         message: `<or> is not allowed outside of parentheses`,
-                                        // @ts-expect-error
                                         location: options.source.getSourceLocation(stream[i][LOC].sta),
                                     });
                                     break;
@@ -26748,7 +26755,6 @@ function parseMediaqueryList(stream, options) {
                                         action: "drop",
                                         node: stream[i],
                                         message: `cannot mix <and> and <or> at the same level`,
-                                        // @ts-expect-error
                                         location: options.source.getSourceLocation(stream[i][LOC].sta),
                                     });
                                 }
@@ -26882,7 +26888,6 @@ function parseMediaqueryList(stream, options) {
                                 errors.push({
                                     action: "drop",
                                     node: arr[0],
-                                    // @ts-expect-error
                                     location: options.source.getSourceLocation(arr[0]?.[LOC].sta),
                                     message: `${mfValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"}`,
                                 });
@@ -26918,7 +26923,6 @@ function parseMediaqueryList(stream, options) {
                             errors.push({
                                 action: "drop",
                                 node: stream[i],
-                                // @ts-expect-error
                                 location: options.source.getSourceLocation(stream[i]?.[LOC].sta),
                                 message: `unmatched ')'`,
                             });
@@ -27275,7 +27279,6 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                         message: `Expected <layer-name>`,
                         syntax: "@import",
                         node: stream[index],
-                        // @ts-expect-error
                         location: options.source.getSourceLocation(stream[index]?.[LOC].sta),
                     },
                 ],
@@ -27303,7 +27306,6 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                         message: `Expected <layer-name>`,
                         syntax: "@import",
                         node: stream[index],
-                        // @ts-expect-error
                         location: options.source.getSourceLocation(stream[index]?.[LOC].sta),
                     },
                 ],
@@ -28021,7 +28023,6 @@ function matchGenericSyntax(stream, options) {
                     action: "drop",
                     message: `unexpected token ${exports.EnumToken[token.typ]}`,
                     node: token,
-                    // @ts-expect-error
                     location: options.source.getSourceLocation(token[LOC].sta),
                 });
                 success = false;
@@ -28037,7 +28038,6 @@ function matchGenericSyntax(stream, options) {
                     action: "drop",
                     message: `unexpected token ${exports.EnumToken[token.typ]}`,
                     node: token,
-                    // @ts-expect-error
                     location: options.source.getSourceLocation(token[LOC].sta),
                 });
                 success = false;
@@ -28054,7 +28054,6 @@ function matchGenericSyntax(stream, options) {
                     action: "drop",
                     message: `unexpected token ${exports.EnumToken[token.typ]}`,
                     node: token,
-                    // @ts-expect-error
                     location: options.source.getSourceLocation(token[LOC].sta),
                 });
                 success = false;
@@ -28071,7 +28070,6 @@ function matchGenericSyntax(stream, options) {
                     action: "drop",
                     message: `unexpected token ${exports.EnumToken[token.typ]}`,
                     node: token,
-                    // @ts-expect-error
                     location: options.source.getSourceLocation(token[LOC].sta),
                 });
                 success = false;
@@ -28311,6 +28309,9 @@ const generateSyncScopedName = memoize((localName, filePath, pattern, hashLength
                         // @ts-ignore
                         hashAlgo = length;
                         length = null;
+                        if (hashAlgo.startsWith("sha")) {
+                            throw new Error(`Unsupported hash algorithm: '${hashAlgo}'. Not supported by parseSync() or transformSync(). Use parse() or transform().`);
+                        }
                     }
                 }
                 if (parts.length == 3) {
@@ -29701,8 +29702,8 @@ async function doParse(iter, options = {}) {
                 const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                     ? await result
                     : result;
-                options.sourcesMap.push(new SourceFile(typeof stream === "string" ? stream : "", [], src.relative));
-                const source = options.sourcesMap[options.sourcesMap.length - 1];
+                const source = new SourceFile(typeof stream === "string" ? stream : "", [], src.relative);
+                options.sourcesMap.set(source.id, source);
                 const parseInfo = {
                     stream,
                     buffer: "",
@@ -30069,8 +30070,8 @@ async function doParse(iter, options = {}) {
                 const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                     ? await result
                     : result;
-                options.sourcesMap.push(new SourceFile(typeof stream === "string" ? stream : "", [], src.relative));
-                const source = options.sourcesMap[options.sourcesMap.length - 1];
+                const source = new SourceFile(typeof stream === "string" ? stream : "", [], src.relative);
+                options.sourcesMap.set(source.id, source);
                 const parseInfo = {
                     stream,
                     buffer: "",
@@ -31996,7 +31997,7 @@ function parseSync(...args) {
     }
     options ??= {};
     options.src ??= "";
-    options.sourcesMap ??= [];
+    options.sourcesMap ??= new Map;
     Object.assign(options, {
         resolve,
         dirname,
@@ -32004,8 +32005,9 @@ function parseSync(...args) {
     });
     options.src = resolve(options.src, options.cwd).relative;
     if (options.source == null) {
-        options.sourcesMap.push(new SourceFile(typeof stream == "string" ? stream : "", [], options.src));
-        options.source = options.sourcesMap.at(-1);
+        const source = new SourceFile(typeof stream == "string" ? stream : "", [], options.src);
+        options.sourcesMap.set(source.id, source);
+        options.source = source;
     }
     options.parseInfo = {
         stream,
@@ -32146,7 +32148,7 @@ async function parse(...args) {
     }
     options ??= {};
     options.src ??= "";
-    options.sourcesMap ??= [];
+    options.sourcesMap ??= new Map;
     Object.assign(options, {
         load,
         resolve,
@@ -32155,8 +32157,9 @@ async function parse(...args) {
     });
     options.src = resolve(options.src, options.cwd).relative;
     if (options.source == null) {
-        options.sourcesMap.push(new SourceFile(typeof stream == "string" ? stream : "", [], options.src));
-        options.source = options.sourcesMap.at(-1);
+        const source = new SourceFile(typeof stream == "string" ? stream : "", [], options.src);
+        options.sourcesMap.set(source.id, source);
+        options.source = source;
     }
     options.parseInfo = {
         stream,

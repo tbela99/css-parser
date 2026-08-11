@@ -340,15 +340,14 @@ export const generateSyncScopedName = memoize(
 
                         // @ts-ignore
                         if (key == "hash" && hashAlgorithms.includes(length as string)) {
-
-
                             // @ts-ignore
                             hashAlgo = length;
                             length = null;
 
-                            if ((hashAlgo as string).startsWith('sha')) {
-
-                                throw new Error( `Unsupported hash algorithm: '${hashAlgo}'. Not supported by parseSync() or transformSync(). Use parse() or transform().`);
+                            if ((hashAlgo as string).startsWith("sha")) {
+                                throw new Error(
+                                    `Unsupported hash algorithm: '${hashAlgo}'. Not supported by parseSync() or transformSync(). Use parse() or transform().`,
+                                );
                             }
                         }
                     }
@@ -2182,10 +2181,8 @@ export async function doParse(
                             ? await result
                             : result;
 
-                    options.sourcesMap!.push(
-                        new SourceFile(typeof stream === "string" ? stream : "", [], src.relative),
-                    );
-                    const source: SourceFile = options.sourcesMap![options.sourcesMap!.length - 1];
+                    const source = new SourceFile(typeof stream === "string" ? stream : "", [], src.relative);
+                    options.sourcesMap!.set(source.id, source);
                     const parseInfo = {
                         stream,
                         buffer: "",
@@ -2669,8 +2666,9 @@ export async function doParse(
                     result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                         ? await result
                         : result;
-                options.sourcesMap!.push(new SourceFile(typeof stream === "string" ? stream : "", [], src.relative));
-                const source: SourceFile = options.sourcesMap![options.sourcesMap!.length - 1];
+
+                const source = new SourceFile(typeof stream === "string" ? stream : "", [], src.relative);
+                options.sourcesMap!.set(source.id, source);
 
                 const parseInfo: ParseInfo = {
                     stream,

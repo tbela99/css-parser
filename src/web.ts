@@ -273,7 +273,7 @@ export function parseSync(
 
     options ??= {};
     options.src ??= "";
-    options.sourcesMap ??= [];
+    options.sourcesMap ??= new Map;
 
     Object.assign(options, {
         resolve,
@@ -287,8 +287,9 @@ export function parseSync(
     options.src = resolve(options.src!, options.cwd).relative;
 
     if (options.source == null) {
-        options.sourcesMap.push(new SourceFile(typeof stream == "string" ? stream : "", [], options.src));
-        options.source = options.sourcesMap.at(-1) as SourceFile;
+        const source = new SourceFile(typeof stream == "string" ? stream : "", [], options.src)
+        options.sourcesMap.set(source.id, source);
+        options.source = source;
     }
 
     options.parseInfo = {
@@ -483,7 +484,7 @@ export async function parse(
 
     options ??= {};
     options.src ??= "";
-    options.sourcesMap ??= [];
+    options.sourcesMap ??= new Map;
 
     Object.assign(options, {
         load,
@@ -498,8 +499,9 @@ export async function parse(
     options.src = resolve(options.src!, options.cwd).relative;
 
     if (options.source == null) {
-        options.sourcesMap.push(new SourceFile(typeof stream === "string" ? stream : "", [], options.src));
-        options.source = options.sourcesMap.at(-1) as SourceFile;
+        const source = new SourceFile(typeof stream === "string" ? stream : "", [], options.src)
+        options.sourcesMap.set(source.id, source);
+        options.source = source;
     }
 
     options.parseInfo = {

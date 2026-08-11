@@ -6,6 +6,8 @@ category: Guides
 
 ## Main function differences
 
+The library provides sync and async function to achieve parsing, analysing and transforming CSS. The sync api is marginally faster than the async api, but with some limitations. See the [details below](#difference-between-sync-and-async-apis).
+
 | Function | Parses CSS | Async |  CSS Output |
 |----------|------------|------|----------|
 | `parse()` | ✅ | ✅ | ✅ | ❌|
@@ -376,6 +378,10 @@ button {
  }
 }
 ```
+
+## Sourcemaps
+
+CSS-Parser supports generating sourcemaps. Sourcemap file paths are resolved using the output parameter.
 
 ## Difference Between Sync and Async APIs
 

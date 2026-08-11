@@ -28,7 +28,6 @@ function matchGenericSyntax(stream, options) {
                     action: "drop",
                     message: `unexpected token ${EnumToken[token.typ]}`,
                     node: token,
-                    // @ts-expect-error
                     location: options.source.getSourceLocation(token[LOC].sta),
                 });
                 success = false;
@@ -44,7 +43,6 @@ function matchGenericSyntax(stream, options) {
                     action: "drop",
                     message: `unexpected token ${EnumToken[token.typ]}`,
                     node: token,
-                    // @ts-expect-error
                     location: options.source.getSourceLocation(token[LOC].sta),
                 });
                 success = false;
@@ -61,7 +59,6 @@ function matchGenericSyntax(stream, options) {
                     action: "drop",
                     message: `unexpected token ${EnumToken[token.typ]}`,
                     node: token,
-                    // @ts-expect-error
                     location: options.source.getSourceLocation(token[LOC].sta),
                 });
                 success = false;
@@ -78,7 +75,6 @@ function matchGenericSyntax(stream, options) {
                     action: "drop",
                     message: `unexpected token ${EnumToken[token.typ]}`,
                     node: token,
-                    // @ts-expect-error
                     location: options.source.getSourceLocation(token[LOC].sta),
                 });
                 success = false;
