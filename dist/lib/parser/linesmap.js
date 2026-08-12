@@ -6,7 +6,14 @@ class LineMap {
      * line starts
      */
     lineStarts;
+    /**
+     * Constructor
+     * @param lines
+     */
     constructor(lines) {
+        if (lines.length === 0) {
+            lines.push(0);
+        }
         this.lineStarts = lines;
     }
     /**
@@ -14,11 +21,14 @@ class LineMap {
      * @param offset
      * @returns
      */
-    position(offset) {
+    getOffsets(offset) {
         const line = this.search(offset);
+        if (offset < 0 || line < 0) {
+            return [1, 1];
+        }
         const column = offset - this.lineStarts[line];
         // [line, column]
-        return [line + 1, column == 0 ? 1 : column];
+        return [line + 1, column === 0 ? 1 : column];
     }
     /**
      * search the greatest index of the value less than or equal to offset
@@ -44,18 +54,24 @@ class LineMap {
         return result;
     }
     /**
-     * set line starts
-     * @param lines
-     */
-    setLineStarts(lines) {
-        this.lineStarts = lines;
-    }
-    /**
      * get line starts
      * @returns
      */
     getLineStarts() {
         return this.lineStarts;
+    }
+    /**
+     * add line start
+     */
+    addLineStart(lineStart) {
+        this.lineStarts.push(lineStart);
+    }
+    /**
+     * clone the linemap
+     * @returns
+     */
+    clone() {
+        return new LineMap(this.lineStarts.slice());
     }
 }
 

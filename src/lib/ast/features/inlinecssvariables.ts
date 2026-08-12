@@ -122,7 +122,7 @@ export class InlineCssVariablesFeature {
         const isRoot: boolean =
             parent.typ == EnumToken.StyleSheetNodeType &&
             ast.typ == EnumToken.RuleNodeType &&
-            ((<AstRule>ast)[RAW]?? splitRule((ast as AstRule).sel)).some((segment) =>
+            ((<AstRule>ast)[RAW] ?? splitRule((ast as AstRule).sel)).some((segment) =>
                 segment.some((s) => s == ":root" || s == "html"),
             );
         const variableScope = context.variableScope;

@@ -1,10 +1,35 @@
 # Changelog
 
+# v1.4.9
+
+## Improvements
+
+### Provide sync Api
+- [x] Added parseSync() and transformSync() with the limitations below: 
+
+  Unsupported parse features
+    - [x] flattened at-rule import files
+    - [x] using file loader as options.load() is forbidden
+    - [x] parse from stream
+    - [x] parse file as input parameter
+  
+  Unsupported CSS modules features
+    - [x] pattern cannot use sha1, sha256 or sha512 algorithms
+    - [x] composes classes from file will throw an error
+    - [x] import css at-rule value from file will throw an error
+
+### Sourcemap
+- [x] Embed CSS content into the sourcemap when the src file is not provided
+
+### Performance
+- [x] Implement lazy token offsets calculation
+- [x] Remove unnecessary values rounding
+
 ## v1.4.8
 
 ### Improvements
 
-- [x] support display-p3-linear color space. 
+- [x] Support display-p3-linear color space. 
 
 ## v1.4.7
 
@@ -25,11 +50,11 @@
   
 ## v1.4.6
 
-- [x] Fix if syntax expansion regression bug #134
+- [x] Fix if() syntax expansion regression bug #134
 
 ## v1.4.5
 
-- [x] Temporarily disable if syntax expansion #131
+- [x] Temporarily disable if() syntax expansion #131
 
 ## v1.4.4
 

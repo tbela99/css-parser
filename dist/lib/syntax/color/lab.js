@@ -4,7 +4,7 @@ import { srgb2xyz_d65, XYZ_D50_to_D65 } from './xyz.js';
 import { oklch2srgbvalues, cmyk2srgbvalues, hwb2srgbvalues, hsl2srgb, rgb2srgb, hex2srgbvalues, xyz2srgb } from './srgb.js';
 import { getLCHComponents } from './lch.js';
 import { getOKLABComponents, OKLab_to_XYZ } from './oklab.js';
-import { color2srgbvalues, toPrecisionValue, getNumber } from './color.js';
+import { color2srgbvalues, getNumber } from './color.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import { XYZ_D65_to_D50 } from './xyzd50.js';
 
@@ -70,14 +70,14 @@ function color2labToken(token) {
 }
 function labToken(values) {
     const chi = [
-        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
-        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[1]) },
-        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[2]) },
+        { typ: EnumToken.NumberTokenType, val: values[0] },
+        { typ: EnumToken.NumberTokenType, val: values[1] },
+        { typ: EnumToken.NumberTokenType, val: values[2] },
     ];
     if (values.length == 4) {
         chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
             typ: EnumToken.PercentageTokenType,
-            val: toPrecisionValue(values[3], 2) * 100,
+            val: values[3] * 100,
         });
     }
     return {

@@ -1,9 +1,9 @@
-import { EnumToken } from '../types.js';
+import { EnumAstNodeStatus, EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
 import { pseudoAliasMap } from '../../syntax/syntax.js';
 import { splitRule } from '../minify.js';
 import { renderValue } from '../../renderer/render.js';
-import { TOKENS, funcLike, regMatchLinearGradient, regMatchRadialGradient } from '../../syntax/constants.js';
+import { STATE, TOKENS, funcLike, regMatchLinearGradient, regMatchRadialGradient } from '../../syntax/constants.js';
 import { FeatureWalkMode } from './type.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { getSyntaxConfig } from '../../validation/config.js';
@@ -108,6 +108,11 @@ class ComputePrefixFeature {
         }
     }
     run(node) {
+        if (node[STATE] == EnumAstNodeStatus.Disallowed ||
+            node[STATE] == EnumAstNodeStatus.Invalid ||
+            node[STATE] == EnumAstNodeStatus.Malformed) {
+            return null;
+        }
         if (node.typ == EnumToken.RuleNodeType) {
             node.sel = replacePseudo(splitRule(node.sel)).reduce((acc, curr, index) => acc + (index > 0 ? "," : "") + curr.join(""), "");
             if (node[TOKENS] != null) {

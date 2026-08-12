@@ -7,6 +7,7 @@ import { getParsedSyntax } from '../../validation/config.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { matchAllSyntaxes, createValidationContext } from '../../validation/match.js';
 import { STATE } from '../../syntax/constants.js';
+import { objectHash } from '../utils/hash.js';
 
 const config = getConfig();
 class PropertyList {
@@ -42,7 +43,11 @@ class PropertyList {
                 (Array.isArray(this.options.removeDuplicateDeclarations)
                     ? this.options.removeDuplicateDeclarations.includes(declaration.nam)
                     : !this.options.removeDuplicateDeclarations)) {
-                this.declarations.set(Number(Math.random().toString().slice(2)).toString(36), declaration);
+                const key = objectHash(declaration);
+                if (this.declarations.has(key)) {
+                    this.declarations.delete(key);
+                }
+                this.declarations.set(key, declaration);
                 continue;
             }
             if (!this.options.computeShorthand) {

@@ -3,25 +3,30 @@ import type {
     LoadResult,
     ParseInfo,
     ParseInputFileOptions,
+    ParseInputOptions,
     ParseInputStreamOptions,
     ParseResult,
     ParserOptions,
+    ParserSyncOptions,
     RenderOptions,
     RenderResult,
     TransformOptions,
     TransformResult,
+    TransformSyncOptions,
 } from "./@types/index.d.ts";
-import process from "node:process";
 import { deprecate } from "node:util";
 import { Readable } from "node:stream";
 import { createReadStream } from "node:fs";
 import { lstat, readFile } from "node:fs/promises";
-import { doParse } from "./lib/parser/parse.ts";
+import { doParse, doParseSync } from "./lib/parser/parse.ts";
 import { doRender } from "./lib/renderer/render.ts";
 import { ModuleScopeEnumOptions } from "./lib/ast/types.ts";
 import { tokenize, tokenizeStream } from "./lib/parser/tokenize.ts";
 import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
 import { ResponseType } from "./types.ts";
+import { resolve as resolvePath } from "node:path";
+import { SourceFile } from "./lib/parser/source.ts";
+import { cwd } from "node:process";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -168,7 +173,7 @@ export function render(
         importMapping: Record<string, Record<string, string>> | null;
     } | null,
 ): RenderResult {
-    return doRender(data, Object.assign(options, { resolve, dirname, cwd: options.cwd ?? process.cwd() }), mapping);
+    return doRender(data, Object.assign(options, { resolve, dirname, cwd: options.cwd ?? resolvePath() }), mapping);
 }
 
 /**
@@ -202,6 +207,224 @@ export const parseFile = deprecate(
         parse({ file, asStream, ...options }),
     "parseFile is deprecated, use parse instead as parse({file, asStream, ...options})",
 ) as (file: string, options?: ParserOptions, asStream?: boolean) => Promise<ParseResult>;
+
+/**
+ * Parse css string
+ * @param stream
+ * @param options
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  let result = await parse(css, {nestingRules: true});
+ *  console.log(result.ast);
+ * ```
+ *
+ */
+
+export function parseSync(stream: string, options?: ParserSyncOptions): ParseResult;
+
+/**
+ * Parse css string
+ * @param stream
+ * @param options
+ *
+ * Parsing a string
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  let result = await parse({input: css, nestingRules: true});
+ *  console.log(result.ast);
+ * ```
+ *
+ */
+
+export function parseSync(options: ParseInputOptions & ParserSyncOptions): ParseResult;
+
+/**
+ * Parse css
+ * @param args
+ *
+ * Parsing a string
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  let result = await parse(css, {nestingRules: true});
+ *  console.log(result.ast);
+ * ```
+ *
+ */
+
+export function parseSync(
+    ...args: [string, ParserSyncOptions?] | [options: ParseInputOptions & ParserSyncOptions]
+): ParseResult {
+    let options: (ParseInputOptions & ParserSyncOptions) | ParserSyncOptions;
+    let stream: string;
+
+    if (typeof args[0] === "string") {
+        stream = args[0] as string;
+        options = args[1] as ParserSyncOptions;
+    } else {
+        const { input, ...opt } = args[0] as ParseInputOptions & ParserSyncOptions;
+
+        options = opt;
+        stream = input;
+    }
+
+    options ??= {};
+    options.src ??= "";
+    options.sourcesMap ??= new Map;
+
+    Object.assign(options, {
+        resolve,
+        dirname,
+        cwd: options.cwd ?? cwd(),
+    });
+
+    options.src = resolve(options.src!, options.cwd).relative;
+
+    if (options.source == null) {
+        const source = new SourceFile(typeof stream == "string" ? stream : "", [], options.src);
+        options.sourcesMap.set(source.id, source);
+        options.source = source;
+    }
+
+    options.parseInfo = {
+        stream,
+        buffer: "",
+        src: options.src ?? "",
+        offset: 0,
+        time: 0,
+        source: options.source,
+        position: 0,
+        currentPosition: -1,
+    } as ParseInfo;
+
+    const result = doParseSync(tokenize(options.parseInfo), options);
+
+    const { revMapping, ...res } = result;
+    return res as ParseResult;
+}
+
+/**
+ * Transform css
+ * @param css
+ * @param options
+ *
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  const result = await transform(css, {beautify: true});
+ *  console.log(result.code);
+ * ```
+ *
+ */
+export function transformSync(css: string, options?: TransformSyncOptions): TransformResult;
+
+/**
+ * Transform css
+ * @param options
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  const result = await transform({input: css, beautify: true});
+ *  console.log(result.code);
+ * ```
+ *
+ */
+export function transformSync(options: ParseInputOptions & TransformSyncOptions): TransformResult;
+
+/**
+ * Transform css
+ * @param css
+ * @param options
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  const result = await transform(css);
+ *  console.log(result.code);
+ * ```
+ *
+ */
+export function transformSync(
+    ...args: [string, TransformSyncOptions?] | [ParseInputOptions & TransformSyncOptions]
+): TransformResult {
+    let options: (ParseInputOptions & TransformSyncOptions) | TransformSyncOptions;
+    let stream: string;
+
+    if (typeof args[0] === "string") {
+        stream = args[0];
+        options = args[1] as ParserSyncOptions;
+    } else {
+        const { input, ...opt } = args[0] as ParseInputOptions & TransformOptions;
+
+        // @ts-ignore
+        options = opt;
+        stream = input;
+    }
+
+    options ??= {};
+    options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+
+    const startTime: number = performance.now();
+    const parseResult: ParseResult = parseSync(stream, options);
+
+    let mapping: Record<string, string> | null = null;
+    let importMapping: Record<string, Record<string, string>> | null = null;
+
+    if (typeof options.module == "number" && options.module & ModuleScopeEnumOptions.ICSS) {
+        mapping = parseResult.mapping as Record<string, string>;
+        importMapping = parseResult.importMapping as Record<string, Record<string, string>>;
+    } else if (
+        typeof options.module == "object" &&
+        typeof options.module.scoped == "number" &&
+        options.module.scoped & ModuleScopeEnumOptions.ICSS
+    ) {
+        mapping = parseResult.mapping as Record<string, string>;
+        importMapping = parseResult.importMapping as Record<string, Record<string, string>>;
+    }
+
+    // ast already expanded by parse
+    const rendered: RenderResult = render(
+        parseResult.ast,
+        {
+            ...options,
+            expandNestingRules: false,
+        },
+        mapping != null ? { mapping, importMapping } : null,
+    );
+
+    return {
+        ...parseResult,
+        ...rendered,
+        errors: parseResult.errors.concat(rendered.errors),
+        stats: {
+            bytesOut: rendered.code.length,
+            ...parseResult.stats,
+            render: rendered.stats.total,
+            total: `${(performance.now() - startTime).toFixed(2)}ms`,
+        },
+    } as TransformResult;
+}
 
 /**
  * Parse css
@@ -263,7 +486,7 @@ export async function parse(stream: string | ReadableStream<Uint8Array>, options
  * ```ts
  *
  * import {parse} from '@tbela99/css-parser';
- * 
+ *
  * const file = 'https://docs.deno.com/styles.css';
  *  // css file or url
  *  let result = await parse({file});
@@ -332,8 +555,7 @@ export async function parse(options: ParseInputStreamOptions & ParserOptions): P
 
 /**
  * Parse css
- * @param stream
- * @param options
+ * @param args
  *
  * @throws Error file not found
  *
@@ -385,11 +607,11 @@ export async function parse(
     let stream: string | ReadableStream<Uint8Array>;
 
     if (typeof args[0] === "string" || args[0] instanceof ReadableStream) {
-        stream = args[0];
+        stream = args[0] as string;
         options = args[1] as ParserOptions;
     } else {
         // @ts-expect-error
-        const { file, input, ...opt } = args[0] as (ParseInputFileOptions | ParseInputStreamOptions) & TransformOptions;
+        const { file, input, ...opt } = args[0] as (ParseInputFileOptions | ParseInputStreamOptions) & ParserOptions;
 
         options = opt;
         if (file != null) {
@@ -407,23 +629,33 @@ export async function parse(
 
     options ??= {};
     options.src ??= "";
+    options.sourcesMap ??= new Map;
 
     Object.assign(options, {
         load,
         resolve,
         dirname,
-        cwd: options.cwd ?? process.cwd(),
+        cwd: options.cwd ?? cwd(),
     });
 
     options.src = resolve(options.src!, options.cwd).relative;
+
+    if (options.source == null) {
+
+        const source = new SourceFile(typeof stream == "string" ? stream : "", [], options.src);
+        options.sourcesMap.set(source.id, source);
+        options.source = source;
+    }
+
     options.parseInfo = {
         stream,
         buffer: "",
         src: options.src ?? "",
         offset: 0,
         time: 0,
-        position: { ind: 0, lin: 1, col: 0 },
-        currentPosition: { ind: -1, lin: 1, col: 0 },
+        source: options.source,
+        position: 0,
+        currentPosition: -1,
     } as ParseInfo;
 
     return doParse(
@@ -470,12 +702,98 @@ export const transformFile = deprecate(
     "transformFile is deprecated, use transform instead as transform({file, asStream, ...options})",
 ) as (file: string, options?: TransformOptions, asStream?: boolean) => Promise<TransformResult>;
 
+/**
+ * Transform css
+ * @param css
+ * @param options
+ *
+ * Parsing a string
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  const result = await transform(css);
+ *  console.log(result.code);
+ * ```
+ *
+ * Parsing a Readable stream
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ * import {Readable} from "node:stream";
+ *
+ * // usage: node index.ts < styles.css or cat styles.css | node index.ts
+ *
+ *  const readableStream = Readable.toWeb(process.stdin);
+ *  const result = await transform(readableStream, {beautify: true});
+ *
+ *  console.log(result.code);
+ * ```
+ *
+ * Example using fetch
+ *
+ * ```ts
+ *
+ *  import {transform} from '@tbela99/css-parser';
+ *
+ *  const response = await fetch('https://docs.deno.com/styles.css');
+ *  result = await transform(response.body, {beautify: true});
+ *
+ *  console.log(result.code);
+ * ```
+ */
 export async function transform(
     css: string | ReadableStream<Uint8Array>,
-    options: TransformOptions,
+    options?: TransformOptions,
 ): Promise<TransformResult>;
 
-export async function transform(options: ParseInputFileOptions & TransformOptions): Promise<TransformResult>;
+/**
+ * Transform css
+ * @param css
+ * @param options
+ *
+ * Parsing a string
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  const result = await transform({input: css});
+ *  console.log(result.code);
+ * ```
+ *
+ * Parsing a Readable stream
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ * import {Readable} from "node:stream";
+ *
+ * // usage: node index.ts < styles.css or cat styles.css | node index.ts
+ *
+ *  const readableStream = Readable.toWeb(process.stdin);
+ *  const result = await transform( {input: readableStream, beautify: true});
+ *
+ *  console.log(result.code);
+ * ```
+ *
+ * Example using fetch
+ *
+ * ```ts
+ *
+ *  import {transform} from '@tbela99/css-parser';
+ *
+ *  const response = await fetch('https://docs.deno.com/styles.css');
+ *  result = await transform({input: response.body, beautify: true});
+ *
+ *  console.log(result.code);
+ * ```
+ */
+
 export async function transform(options: ParseInputStreamOptions & TransformOptions): Promise<TransformResult>;
 
 /**
@@ -483,7 +801,52 @@ export async function transform(options: ParseInputStreamOptions & TransformOpti
  * @param css
  * @param options
  *
- * Paarsing a string
+ * Parsing a string
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  const result = await transform({input: css});
+ *  console.log(result.code);
+ * ```
+ *
+ * Parsing a Readable stream
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ * import {Readable} from "node:stream";
+ *
+ * // usage: node index.ts < styles.css or cat styles.css | node index.ts
+ *
+ *  const readableStream = Readable.toWeb(process.stdin);
+ *  const result = await transform( {input: readableStream, beautify: true});
+ *
+ *  console.log(result.code);
+ * ```
+ *
+ * Example using fetch
+ *
+ * ```ts
+ *
+ *  import {transform} from '@tbela99/css-parser';
+ *
+ *  result = await transform({file: 'https://docs.deno.com/styles.css', beautify: true});
+ *
+ *  console.log(result.code);
+ * ```
+ */
+
+export async function transform(options: ParseInputFileOptions & TransformOptions): Promise<TransformResult>;
+
+/**
+ * Transform css
+ * @param css
+ * @param options
+ *
+ * Parsing a string
  *
  * ```ts
  *
@@ -523,7 +886,7 @@ export async function transform(options: ParseInputStreamOptions & TransformOpti
  */
 export async function transform(
     ...args:
-        | [string | ReadableStream<Uint8Array>, TransformOptions]
+        | [string | ReadableStream<Uint8Array>, TransformOptions?]
         | [(ParseInputFileOptions | ParseInputStreamOptions) & TransformOptions]
 ): Promise<TransformResult> {
     let options: ((ParseInputFileOptions | ParseInputStreamOptions) & TransformOptions) | TransformOptions;

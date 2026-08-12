@@ -252,7 +252,7 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
         if (colorSpace.val == ColorType[to].toLowerCase().replaceAll("_", "-")) {
             for (const chi of (token as ColorToken).chi as Token[]) {
                 if (chi.typ == EnumToken.NumberTokenType && typeof (chi as NumberToken).val == "number") {
-                    (chi as NumberToken).val = toPrecisionValue(getNumber(chi as NumberToken)) as number;
+                    (chi as NumberToken).val = getNumber(chi as NumberToken);
                 }
             }
 
@@ -559,7 +559,6 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
             (ColorType[to].toLowerCase().replaceAll("_", "-") as string).toLowerCase().replaceAll("_", "-"),
         )
     ) {
-        
         switch (token.kin) {
             case ColorType.HEX:
             case ColorType.LIT:
@@ -799,20 +798,19 @@ export function color2srgbvalues(token: ColorToken): number[] | null {
     }
 
     if (values.length == 4) {
-        values[3] = toPrecisionValue(values[3], 2);
+        values[3] = values[3];
     }
 
     return values;
 }
 
 function values2colortoken(values: number[], to: ColorType): ColorToken {
-    
     values = srgb2srgbcolorspace(values, to);
 
     const chi: Token[] = [
-        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
-        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[1]) },
-        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[2]) },
+        { typ: EnumToken.NumberTokenType, val: values[0] },
+        { typ: EnumToken.NumberTokenType, val: values[1] },
+        { typ: EnumToken.NumberTokenType, val: values[2] },
     ] as Token[];
 
     if (values.length == 4) {
@@ -820,7 +818,7 @@ function values2colortoken(values: number[], to: ColorType): ColorToken {
             { typ: EnumToken.LiteralTokenType, val: "/" },
             {
                 typ: EnumToken.PercentageTokenType,
-                val: toPrecisionValue(values[3], 2) * 100,
+                val: values[3] * 100,
             },
         );
     }

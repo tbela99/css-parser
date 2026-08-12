@@ -104,6 +104,7 @@ export function replaceNodeOrValue(
         }
     }
 
+    node[PARENT] = null;
     return true;
 }
 

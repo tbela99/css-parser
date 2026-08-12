@@ -80,7 +80,7 @@ table.colortable {
 
 ## CSS nesting
 
-Expanded into legacy syntax.
+Expand CSS into legacy syntax.
 
 ```ts
 import {transform} from '@tbela99/css-parser';

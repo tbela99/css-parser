@@ -12,7 +12,7 @@ import * as csstree from "css-tree";
 import * as esbuild from "esbuild";
 import { transform as lightningTransform } from "lightningcss";
 import { transform as tbelaTransform } from "@tbela99/css-parser";
-import { type } from "node:os";
+import {transformSync as tbelaDevTransform} from "@tbela99/css-parser2";
 
 function pkgVersion(name, pathToPkgJson) {
     const { version, repository } = JSON.parse(
@@ -68,6 +68,7 @@ const versions = {
     esbuild: pkgVersion("esbuild", "esbuild/package.json"),
     lightningcss: pkgVersion("lightningcss", "lightningcss/package.json"),
     "css-parser": pkgVersion("css-parser", "@tbela99/css-parser/package.json"),
+    "css-parser-dev": pkgVersion("css-parser-dev", "@tbela99/css-parser2/package.json"),
 };
 
 const cleanCssInstance = new CleanCSS();
@@ -124,5 +125,11 @@ export const minifiers = [
         url: versions["css-parser"].url,
         label: `@tbela99/css-parser - ${versions["css-parser"].version}`,
         minify: async (css) => (await tbelaTransform(css, { minify: true })).code,
+    },
+    {
+        id: "css-parser-dev",
+        url: versions["css-parser-dev"].url,
+        label: `@tbela99/css-parser-dev - ${versions["css-parser-dev"].version}`,
+        minify: async (css) => (await tbelaDevTransform(css, { minify: true })).code,
     },
 ];

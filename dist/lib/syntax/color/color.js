@@ -19,7 +19,7 @@ import { parseRelativeColorComponents } from './relative-color.js';
 import { isIdentColor } from '../syntax.js';
 import { color2cmykToken, lch2cmykToken, lab2cmykToken, oklch2cmykToken, oklab2cmyk, hwb2cmykToken, hsl2cmykToken, rgb2cmykToken } from './cmyk.js';
 import { a98rgb2srgbvalues, srgb2a98values } from './a98rgb.js';
-import { LOC, colorPrecision, colorFuncColorSpace, epsilon, anglePrecision } from '../constants.js';
+import { LOC, colorFuncColorSpace, colorPrecision, epsilon, anglePrecision } from '../constants.js';
 import { trimArray } from '../../validation/match.js';
 import { alpha } from './alpha.js';
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
@@ -102,7 +102,7 @@ function convertColor(token, to) {
         if (colorSpace.val == ColorType[to].toLowerCase().replaceAll("_", "-")) {
             for (const chi of token.chi) {
                 if (chi.typ == EnumToken.NumberTokenType && typeof chi.val == "number") {
-                    chi.val = toPrecisionValue(getNumber(chi));
+                    chi.val = getNumber(chi);
                 }
             }
             return token;
@@ -524,21 +524,21 @@ function color2srgbvalues(token) {
             break;
     }
     if (values.length == 4) {
-        values[3] = toPrecisionValue(values[3], 2);
+        values[3] = values[3];
     }
     return values;
 }
 function values2colortoken(values, to) {
     values = srgb2srgbcolorspace(values, to);
     const chi = [
-        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
-        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[1]) },
-        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[2]) },
+        { typ: EnumToken.NumberTokenType, val: values[0] },
+        { typ: EnumToken.NumberTokenType, val: values[1] },
+        { typ: EnumToken.NumberTokenType, val: values[2] },
     ];
     if (values.length == 4) {
         chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
             typ: EnumToken.PercentageTokenType,
-            val: toPrecisionValue(values[3], 2) * 100,
+            val: values[3] * 100,
         });
     }
     const colorSpace = ColorType[to].toLowerCase().replaceAll("_", "-");

@@ -13,7 +13,7 @@ import { convertColor, getNumber } from "./color.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
 import { walkValues } from "../../ast/walk.ts";
 import { evaluate, evaluateFunc } from "../../ast/math/expression.ts";
-import { colorFuncColorSpace, colorRange, colorsFunc, mathFuncs } from "../constants.ts";
+import { colorFuncColorSpace, colorRange, colorsFunc, LOC, mathFuncs } from "../constants.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 import { getColorComponents } from "./utils/components.ts";
 
@@ -167,16 +167,19 @@ export function parseRelativeColorComponents(
                 ? {
                       typ: EnumToken.NumberTokenType,
                       val: 1,
+                      [LOC]: b[LOC],
                   }
                 : alpha.typ == EnumToken.IdenTokenType && (alpha as IdentToken).val == "none"
                   ? {
                         typ: EnumToken.NumberTokenType,
                         val: 0,
+                        [LOC]: alpha[LOC],
                     }
                   : alpha.typ == EnumToken.PercentageTokenType
                     ? {
                           typ: EnumToken.NumberTokenType,
                           val: getNumber(<PercentageToken>alpha),
+                          [LOC]: alpha[LOC],
                       }
                     : alpha,
     };
@@ -191,11 +194,13 @@ export function parseRelativeColorComponents(
                 ? {
                       typ: EnumToken.NumberTokenType,
                       val: 1,
+                      [LOC]: bExp[LOC],
                   }
                 : aExp.typ == EnumToken.IdenTokenType && (aExp as IdentToken).val == "none"
                   ? {
                         typ: EnumToken.NumberTokenType,
                         val: 0,
+                        [LOC]: aExp[LOC],
                     }
                   : aExp,
         ),
@@ -234,6 +239,7 @@ function getValue(t: Token, converted?: ColorToken, component?: string): Token {
         return {
             typ: EnumToken.NumberTokenType,
             val: value,
+            [LOC]: t[LOC],
         };
     }
 
@@ -288,6 +294,7 @@ function computeComponentValue(
                                 typ: EnumToken.NumberTokenType,
                                 // @ts-ignore
                                 val: "" + Math[(value as IdentToken).val.toUpperCase()],
+                                [LOC]: value[LOC],
                                 // @ts-ignore
                             } as Token),
                     );

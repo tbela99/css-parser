@@ -17,6 +17,7 @@ import { evaluate } from "../../ast/math/expression.ts";
  * @returns
  */
 export function alpha(color: ColorToken, alpha: Token): ColorToken | null {
+
     if (alpha == null) {
         return color;
     }

@@ -3,21 +3,25 @@ import type {
     LoadResult,
     ParseInfo,
     ParseInputFileOptions,
+    ParseInputOptions,
     ParseInputStreamOptions,
     ParseResult,
     ParserOptions,
+    ParserSyncOptions,
     RenderOptions,
     RenderResult,
     TransformOptions,
     TransformResult,
+    TransformSyncOptions,
 } from "./@types/index.d.ts";
 
-import { doParse } from "./lib/parser/parse.ts";
+import { doParse, doParseSync } from "./lib/parser/parse.ts";
 import { doRender } from "./lib/renderer/render.ts";
 import { ModuleScopeEnumOptions } from "./lib/ast/types.ts";
 import { tokenize, tokenizeStream } from "./lib/parser/tokenize.ts";
 import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
 import { ResponseType } from "./types.ts";
+import { SourceFile } from "./lib/parser/source.ts";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -194,6 +198,227 @@ export async function parseFile(
     return parse({ file, asStream, ...options });
 }
 
+/**
+ * Parse css string
+ * @param stream
+ * @param options
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  let result = await parse(css, {nestingRules: true});
+ *  console.log(result.ast);
+ * ```
+ *
+ */
+
+export function parseSync(stream: string, options?: ParserSyncOptions): ParseResult;
+
+/**
+ * Parse css string
+ * @param stream
+ * @param options
+ *
+ * Parsing a string
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  let result = await parse({input: css, nestingRules: true});
+ *  console.log(result.ast);
+ * ```
+ *
+ */
+
+export function parseSync(options: ParseInputOptions & ParserSyncOptions): ParseResult;
+
+/**
+ * Parse css
+ * @param args
+ *
+ * Parsing a string
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  let result = await parse(css, {nestingRules: true});
+ *  console.log(result.ast);
+ * ```
+ *
+ */
+
+export function parseSync(
+    ...args: [string, ParserSyncOptions?] | [options: ParseInputOptions & ParserSyncOptions]
+): ParseResult {
+    let options: (ParseInputOptions & ParserSyncOptions) | ParserSyncOptions;
+    let stream: string;
+
+    if (typeof args[0] === "string") {
+        stream = args[0] as string;
+        options = args[1] as ParserSyncOptions;
+    } else {
+        const { input, ...opt } = args[0] as ParseInputOptions & ParserSyncOptions;
+
+        options = opt;
+        stream = input;
+    }
+
+    options ??= {};
+    options.src ??= "";
+    options.sourcesMap ??= new Map;
+
+    Object.assign(options, {
+        resolve,
+        dirname,
+        cwd:
+            (options.cwd ?? self.location.pathname.endsWith("/"))
+                ? self.location.pathname
+                : dirname(self.location.pathname),
+    });
+
+    options.src = resolve(options.src!, options.cwd).relative;
+
+    if (options.source == null) {
+        const source = new SourceFile(typeof stream == "string" ? stream : "", [], options.src)
+        options.sourcesMap.set(source.id, source);
+        options.source = source;
+    }
+
+    options.parseInfo = {
+        stream,
+        buffer: "",
+        src: options.src ?? "",
+        offset: 0,
+        time: 0,
+        source: options.source,
+        position: 0,
+        currentPosition: -1,
+    } as ParseInfo;
+
+    const result = doParseSync(tokenize(options.parseInfo), options);
+
+    const { revMapping, ...res } = result;
+    return res as ParseResult;
+}
+
+/**
+ * Transform css
+ * @param css
+ * @param options
+ *
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  const result = await transform(css, {beautify: true});
+ *  console.log(result.code);
+ * ```
+ *
+ */
+export function transformSync(css: string, options?: TransformSyncOptions): TransformResult;
+
+/**
+ * Transform css
+ * @param options
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  const result = await transform({input: css, beautify: true});
+ *  console.log(result.code);
+ * ```
+ *
+ */
+export function transformSync(options: ParseInputOptions & TransformSyncOptions): TransformResult;
+
+/**
+ * Transform css
+ * @param css
+ * @param options
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  const result = await transform(css);
+ *  console.log(result.code);
+ * ```
+ *
+ */
+export function transformSync(
+    ...args: [string, TransformSyncOptions?] | [ParseInputOptions & TransformSyncOptions]
+): TransformResult {
+    let options: (ParseInputOptions & TransformSyncOptions) | TransformSyncOptions;
+    let stream: string;
+
+    if (typeof args[0] === "string") {
+        stream = args[0];
+        options = args[1] as ParserSyncOptions;
+    } else {
+        const { input, ...opt } = args[0] as ParseInputOptions & TransformOptions;
+
+        // @ts-ignore
+        options = opt;
+        stream = input;
+    }
+
+    options ??= {};
+    options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+
+    const startTime: number = performance.now();
+    const parseResult: ParseResult = parseSync(stream, options);
+
+    let mapping: Record<string, string> | null = null;
+    let importMapping: Record<string, Record<string, string>> | null = null;
+
+    if (typeof options.module == "number" && options.module & ModuleScopeEnumOptions.ICSS) {
+        mapping = parseResult.mapping as Record<string, string>;
+        importMapping = parseResult.importMapping as Record<string, Record<string, string>>;
+    } else if (
+        typeof options.module == "object" &&
+        typeof options.module.scoped == "number" &&
+        options.module.scoped & ModuleScopeEnumOptions.ICSS
+    ) {
+        mapping = parseResult.mapping as Record<string, string>;
+        importMapping = parseResult.importMapping as Record<string, Record<string, string>>;
+    }
+
+    // ast already expanded by parse
+    const rendered: RenderResult = render(
+        parseResult.ast,
+        {
+            ...options,
+            expandNestingRules: false,
+        },
+        mapping != null ? { mapping, importMapping } : null,
+    );
+
+    return {
+        ...parseResult,
+        ...rendered,
+        errors: parseResult.errors.concat(rendered.errors),
+        stats: {
+            bytesOut: rendered.code.length,
+            ...parseResult.stats,
+            render: rendered.stats.total,
+            total: `${(performance.now() - startTime).toFixed(2)}ms`,
+        },
+    } as TransformResult;
+}
+
 export async function parse(stream: string | ReadableStream<Uint8Array>, options?: ParserOptions): Promise<ParseResult>;
 export async function parse(options: ParseInputFileOptions & ParserOptions): Promise<ParseResult>;
 export async function parse(options: ParseInputStreamOptions & ParserOptions): Promise<ParseResult>;
@@ -259,6 +484,8 @@ export async function parse(
 
     options ??= {};
     options.src ??= "";
+    options.sourcesMap ??= new Map;
+
     Object.assign(options, {
         load,
         resolve,
@@ -269,18 +496,26 @@ export async function parse(
                 : dirname(self.location.pathname),
     });
 
+    options.src = resolve(options.src!, options.cwd).relative;
+
+    if (options.source == null) {
+        const source = new SourceFile(typeof stream === "string" ? stream : "", [], options.src)
+        options.sourcesMap.set(source.id, source);
+        options.source = source;
+    }
+
     options.parseInfo = {
         stream,
         buffer: "",
         offset: 0,
         time: 0,
-        src: options.src ?? "",
-        position: { ind: 0, lin: 1, col: 0 },
-        currentPosition: { ind: -1, lin: 1, col: 0 },
+        source: options.source,
+        position: 0,
+        currentPosition: -1,
     } as ParseInfo;
 
     return doParse(
-        stream instanceof ReadableStream ? tokenizeStream(stream) : tokenize(options.parseInfo),
+        stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo),
         options,
     ).then((result) => {
         const { revMapping, ...res } = result;

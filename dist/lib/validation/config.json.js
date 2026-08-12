@@ -914,11 +914,14 @@ var declarations = {
 	"flex-grow": {
 		syntax: "<number>"
 	},
+	"flex-line-count": {
+		syntax: "<integer [1,∞]>"
+	},
 	"flex-shrink": {
 		syntax: "<number>"
 	},
 	"flex-wrap": {
-		syntax: "nowrap | wrap | wrap-reverse"
+		syntax: "nowrap | [ wrap | wrap-reverse ] || balance"
 	},
 	float: {
 		syntax: "left | right | none | inline-start | inline-end"
@@ -1183,6 +1186,9 @@ var declarations = {
 	},
 	"line-height-step": {
 		syntax: "<length>"
+	},
+	"link-parameters": {
+		syntax: "none | <param()>#"
 	},
 	"list-style": {
 		syntax: "<'list-style-type'> || <'list-style-position'> || <'list-style-image'>"
@@ -1481,6 +1487,9 @@ var declarations = {
 	"paint-order": {
 		syntax: "normal | [ fill || stroke || markers ]"
 	},
+	"path-length": {
+		syntax: "none | <length> [0,∞]"
+	},
 	perspective: {
 		syntax: "none | <length>"
 	},
@@ -1776,7 +1785,7 @@ var declarations = {
 		syntax: "<color>"
 	},
 	"text-decoration-inset": {
-		syntax: "<length>{1,2} | auto"
+		syntax: "<length-percentage>{1,2} | auto"
 	},
 	"text-decoration-line": {
 		syntax: "none | [ underline || overline || line-through || blink ] | spelling-error | grammar-error"
@@ -2337,6 +2346,9 @@ var functions = {
 	},
 	"palette-mix": {
 		syntax: "palette-mix(<color-interpolation-method> , [ [normal | light | dark | <palette-identifier> | <palette-mix()> ] && <percentage [0,100]>? ]#{2})"
+	},
+	param: {
+		syntax: "mod( <dashed-ident>, <declaration-value>? )"
 	},
 	path: {
 		syntax: "path( <'fill-rule'>? , <string> )"
@@ -2929,7 +2941,7 @@ var syntaxes = {
 		syntax: "[ historical-ligatures | no-historical-ligatures ]"
 	},
 	"hsl()": {
-		syntax: "hsl( <hue>, <percentage>, <percentage>, <alpha-value>? ) | hsl( [ <hue> | none ] [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ / [ <alpha-value> | none ] ]? ) | hsl(from <color> [ <hue> | none | h | s | l ] <relative-hsl-component>{2} [ / [ <alpha-value> | none]  ]? )"
+		syntax: "hsl( <hue>, <percentage>, <percentage>, <alpha-value>? ) | hsl( [ <hue> | none ] [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ / [ <alpha-value> | none ] ]? ) | hsl(from <color> [ <hue> | none | h | s | l ] <relative-hsl-component>{2} [ / [ <alpha-value> | none] ]? )"
 	},
 	"hsla()": {
 		syntax: "hsla( <hue>, <percentage>, <percentage>, <alpha-value>? ) | hsla( [ <hue> | none ] [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ / [ <alpha-value> | none ] ]? ) | hsla(from <color> < [ <hue> | none | h | s | l ] <relative-hsl-component>{2} [ / [ <alpha-value> | none ] ]? )"
@@ -2944,7 +2956,7 @@ var syntaxes = {
 		syntax: "hue-rotate( [ <angle> | <zero> ]? )"
 	},
 	"hwb()": {
-		syntax: "hwb( [ <hue> | none ] [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ / [ <alpha-value> | none ] ]? ) | hwb(from <color> [ <hue> | none | h | w | b ] <relative-hwb-component>{2} [ / [ <alpha-value> | none]  ]? )"
+		syntax: "hwb( [ <hue> | none ] [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ / [ <alpha-value> | none ] ]? ) | hwb(from <color> [ <hue> | none | h | w | b ] <relative-hwb-component>{2} [ / [ <alpha-value> | none] ]? )"
 	},
 	"hypot()": {
 		syntax: "hypot( <calc-sum># )"
@@ -3319,7 +3331,7 @@ var syntaxes = {
 		syntax: "reversed( <counter-name> )"
 	},
 	"rgb()": {
-		syntax: "rgb( <percentage>#{3} , <alpha-value>? ) | rgb( <number>#{3} , <alpha-value>? ) | rgb( [ <number> | <percentage> | none ]{3} [ / [ <alpha-value> | none ] ]? ) | rgb(from <color> <relative-rgb-component>{3} [ / [ <alpha-value> | none]  ]? )"
+		syntax: "rgb( <percentage>#{3} , <alpha-value>? ) | rgb( <number>#{3} , <alpha-value>? ) | rgb( [ <number> | <percentage> | none ]{3} [ / [ <alpha-value> | none ] ]? ) | rgb(from <color> <relative-rgb-component>{3} [ / [ <alpha-value> | none] ]? )"
 	},
 	"rgba()": {
 		syntax: "rgba( <percentage>#{3} , <alpha-value>? ) | rgba( <number>#{3} , <alpha-value>? ) | rgba( [ <number> | <percentage> | none ]{3} [ / [ <alpha-value> | none ] ]? ) | rgba(from <color> <relative-rgb-component>{3} [ / [ <alpha-value> | none ] ]? )"
@@ -3888,8 +3900,17 @@ var syntaxes = {
 	"composes-selector": {
 		syntax: "<ident>+ [from [global&&<string>]]?"
 	},
+	wcag2: {
+		syntax: "wcag2 | wcag2([<number> | [ aa | aaa ] && large? ])"
+	},
+	"target-contrast": {
+		syntax: "<wcag2>"
+	},
 	"contrast-color()": {
-		syntax: "contrast-color(<color> )"
+		syntax: "contrast-color( [ [ <color> && [ tbd-fg | tbd-bg ] && <target-contrast>? ] | [ <color> && [ tbd-fg | tbd-bg ] && <target-contrast>, <color># ] ] )"
+	},
+	"color-layers()": {
+		syntax: "color-layers([ <blend-mode>, ]? <color># )"
 	},
 	"font-feature-custom-ident": {
 		syntax: "<integer>"

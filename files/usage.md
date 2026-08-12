@@ -5,16 +5,23 @@ category: Guides
 ---
 
 ## Main function differences
+The library provides **synchronous** and **asynchronous** functions for parsing, analyzing, and transforming CSS.
 
-| Function | Parses CSS | Generates CSS Output |
-|----------|------------|----------------------|
-| `parse()` | ✅ | ❌ |
-| `render()` | ❌ | ✅
-| `transform()` | ✅ | ✅ |
+The **synchronous API** is marginally faster than the asynchronous API, but it comes with some limitations. See the [details below](#difference-between-sync-and-async-apis).
 
-> **Note:** `parse()` only produce the AST and does not generate CSS output.
+| Function          | Parses CSS | Async | CSS Output |
+| ----------------- | ---------- | ----- | ---------- |
+| `parse()`         | ✅          | ✅     | ✅          | ❌ |
+| `parseSync()`     | ✅          | ❌     | ❌          |
+| `transform()`     | ✅          | ✅     | ✅          |
+| `transformSync()` | ✅          | ❌     | ✅          |
+| `render()`        | ❌          | ❌     | ✅          |
 
-By contrast, `transform()` parses the CSS **and** generates the transformed CSS text. This is useful when you want the rendered CSS directly without performing a separate AST rendering step.
+> **Note:** `parse()` and `parseSync()` only produce the AST and does not generate CSS output.
+
+By contrast, `transform()` and `transformSync()` parses the CSS **and** generates the transformed CSS text. This is useful when you want the rendered CSS directly without performing a separate AST rendering step.
+
+### Usage
 
 ```ts
 import {parse, render} from '@tbela99/css-parser';
@@ -372,6 +379,57 @@ button {
  }
 }
 ```
+## Sourcemaps
+
+**CSS-Parser** supports generating sourcemaps. When the `output` parameter is provided, sourcemap file paths are resolved relative to the specified output file.
+
+
+```ts
+
+import {transform} from '@tbela99/css-parser';
+
+const css = `
+@import 'styles.css';
+button {
+	background: linear-gradient(
+		if(media(min-width: 768px): to right; else: to bottom),
+		if(style(--dark-mode): #333; else: #fff),
+		if(style(--dark-mode): #000; else: #ccc)
+	);
+}`;
+
+result = await transform(css, {
+
+    beautify: true,
+    sourcemap: true,
+    resolveImport: true,
+    output: 'dist/doc.html'
+});
+
+console.log(result.map.toJSON());
+```
+
+## Difference Between Sync and Async APIs
+
+The following features are **not supported by `parseSync()` and `transformSync()`**.
+
+### Unsupported Parsing Features
+
+* Flattening `@import` at-rules is not supported.
+* The file loader `ParserOptions.load()` is not available.
+* Parsing from a stream is not supported.
+* Parsing with a file as the input parameter is not supported.
+
+### Unsupported CSS Module Features
+
+* The `pattern` parameter does not support the following algorithms:
+
+  * `sha1`
+  * `sha256`
+  * `sha384`
+  * `sha512`
+* CSS `composes` does not support composing from a file.
+* Importing CSS variables from a file using `@value` is not supported.
 
 
 ------

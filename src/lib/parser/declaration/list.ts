@@ -21,6 +21,7 @@ import type { ValidationMatch } from "../../validation/types.js";
 import { createValidationContext, matchAllSyntaxes } from "../../validation/match.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";
 import { STATE } from "../../syntax/constants.ts";
+import { objectHash } from "../utils/hash.ts";
 
 const config: PropertiesConfig = getConfig();
 
@@ -52,10 +53,6 @@ export class PropertyList {
                     ? null
                     : (declaration as AstDeclaration).nam.toLowerCase();
 
-            if (declaration[STATE] == EnumAstNodeStatus.Unvalidated) {
-                // validate declaration
-            }
-
             if (
                 (declaration as AstDeclaration)[STATE] == EnumAstNodeStatus.Invalid ||
                 (declaration as AstDeclaration)[STATE] == EnumAstNodeStatus.Unknown ||
@@ -68,7 +65,13 @@ export class PropertyList {
                     ? this.options.removeDuplicateDeclarations.includes((<AstDeclaration>declaration).nam)
                     : !this.options.removeDuplicateDeclarations)
             ) {
-                this.declarations.set(Number(Math.random().toString().slice(2)).toString(36), declaration);
+                const key: string = objectHash(declaration);
+
+                if (this.declarations.has(key)) {
+                    this.declarations.delete(key);
+                }
+
+                this.declarations.set(key, declaration);
                 continue;
             }
 

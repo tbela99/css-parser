@@ -1,4 +1,4 @@
-import type {Position} from "./ast.d.ts";
+import {SourceFile} from "../lib/parser/source.ts";
 
 export declare interface PropertyListOptions {
 
@@ -12,11 +12,6 @@ export declare interface PropertyListOptions {
 export declare interface ParseInfo {
 
     /**
-     * source file or url
-     */
-    src: string;
-
-    /**
      * read buffer
      */
     buffer: string;
@@ -26,18 +21,19 @@ export declare interface ParseInfo {
     stream: string;
 
     /**
-     * the accumulated css string
+     * Source file
      */
-    // acc: string;
+    source: SourceFile;
     
     /**
      * last token position
      */
-    position: Position;
+    position: number;
+
     /**
      * current parsing position
      */
-    currentPosition: Position;
+    currentPosition: number;
 
     /**
      * offset

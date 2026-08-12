@@ -1,5 +1,5 @@
 import { getColorComponents } from './utils/components.js';
-import { color2srgbvalues, toPrecisionAngle, toPrecisionValue, getNumber, getAngle } from './color.js';
+import { color2srgbvalues, getNumber, getAngle } from './color.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import { labvalues2lchvalues } from './lch.js';
 import { srgb2oklab, lch2oklabvalues, getOKLABComponents, lab2oklabvalues, hwb2oklabvalues, hsl2oklabvalues, rgb2oklabvalues, hex2oklabvalues } from './oklab.js';
@@ -67,16 +67,16 @@ function color2oklchToken(token) {
     return oklchToken(srgb2oklch(...values));
 }
 function oklchToken(values) {
-    values[2] = toPrecisionAngle(values[2]);
+    values[2] = values[2];
     const chi = [
-        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[0]) },
-        { typ: EnumToken.NumberTokenType, val: toPrecisionValue(values[1]) },
+        { typ: EnumToken.NumberTokenType, val: values[0] },
+        { typ: EnumToken.NumberTokenType, val: values[1] },
         { typ: EnumToken.NumberTokenType, val: values[2] },
     ];
     if (values.length == 4) {
         chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
             typ: EnumToken.PercentageTokenType,
-            val: toPrecisionValue(values[3], 2) * 100,
+            val: values[3] * 100,
         });
     }
     return {

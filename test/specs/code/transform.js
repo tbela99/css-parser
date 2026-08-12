@@ -735,7 +735,6 @@ transform: translate3d(0, 100%, 0);
 }
 .translate {
  transform: none;
- transform: none;
  transform: translate(100%);
  transform: translateY(100%);
  transform: translateZ(100px)

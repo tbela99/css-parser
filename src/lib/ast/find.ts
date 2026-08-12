@@ -35,9 +35,9 @@ button {
  * @param matcher
  * @returns
  */
-export function find(ast: AstNode, matcher: (node: AstNode) => boolean): AstNode | null {
-    for (const { node } of walk(ast)) {
-        if (matcher(node)) {
+export function find(ast: AstNode, matcher: (node: AstNode, parent?: AstNode | null) => boolean): AstNode | null {
+    for (const { node, parent } of walk(ast)) {
+        if (matcher(node, parent)) {
             return node;
         }
     }
@@ -139,11 +139,11 @@ button-small {
  * @param matcher
  * @returns
  */
-export function findAll(ast: AstNode, matcher: (node: AstNode) => boolean): AstNode[] {
+export function findAll(ast: AstNode, matcher: (node: AstNode, parent?: AstNode | null) => boolean): AstNode[] {
     const result: AstNode[] = [];
 
-    for (const { node } of walk(ast)) {
-        if (matcher(node)) {
+    for (const { node, parent } of walk(ast)) {
+        if (matcher(node, parent)) {
             result.push(node);
         }
     }
@@ -181,9 +181,9 @@ button {
  * @param matcher 
  * @returns 
  */
-export function findLast(ast: AstNode, matcher: (node: AstNode) => boolean): AstNode | null {
-    for (const { node } of walk(ast, null, true)) {
-        if (matcher(node)) {
+export function findLast(ast: AstNode, matcher: (node: AstNode, parent?: AstNode | null) => boolean): AstNode | null {
+    for (const { node, parent } of walk(ast, null, true)) {
+        if (matcher(node, parent)) {
             return node;
         }
     }
