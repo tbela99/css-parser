@@ -1,8 +1,12 @@
 # Changelog
 
+# v1.4.11
+
+- fix bug in url resolution
+
 # v1.4.10
 
-- failure to convert colors to display-linear due to missing import
+- failure to convert colors to display-p3-linear due to missing import
 
 # v1.4.9
 
