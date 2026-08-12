@@ -28,7 +28,7 @@
   },
   "bootstrap-4.css": {
     "clean-css": 161971,
-    "cssnano": 160616,
+    "cssnano": 161940,
     "csso": 160160,
     "css-tree": 163307,
     "esbuild": 160755,
@@ -37,12 +37,12 @@
   },
   "bootstrap-5.css": {
     "clean-css": 163827,
-    "cssnano": 162325,
+    "cssnano": 164240,
     "csso": 161486,
     "css-tree": 165616,
     "esbuild": 162024,
     "lightningcss": 159987,
-    "css-parser": 151261
+    "css-parser": 151017
   },
   "font-awesome-all.css": {
     "clean-css": 58568,
@@ -100,7 +100,7 @@
   },
   "tailwind.css": {
     "clean-css": 1941820,
-    "cssnano": 1925896,
+    "cssnano": 1932978,
     "csso": 1652840,
     "css-tree": 1963358,
     "esbuild": 1961145,
