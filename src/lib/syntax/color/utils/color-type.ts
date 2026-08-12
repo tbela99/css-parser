@@ -1,4 +1,4 @@
-import type { ColorToken, IdentToken } from "../../../../@types/index.js";
+import type { ColorToken, IdentToken } from "../../../../@types/index.d.ts";
 import { ColorType } from "../../../ast/types.ts";
 
 /**
@@ -9,7 +9,7 @@ export function getColorType(color: ColorToken): ColorType | null {
         return color.kin === ColorType.COLOR_MIX
             ? // @ts-expect-error
               (ColorType[
-                  // @ts-expect-error
+                // @ts-expect-error
                   (color.chi![2] as IdentToken)?.val?.toUpperCase?.()?.replace?.("-", "_") as ColorType
               ] as ColorType)
             : getColorType(color.chi![2] as ColorToken);

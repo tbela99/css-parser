@@ -1,5 +1,6 @@
 import type { FractionToken } from "../../../@types/index.d.ts";
-import { EnumToken, minifyNumber } from "../types.ts";
+import { minifyNumber } from "../../syntax/syntax.ts";
+import { EnumToken } from "../types.ts";
 
 export function gcd(x: number, y: number): number {
     x = Math.abs(x);

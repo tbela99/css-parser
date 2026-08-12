@@ -660,7 +660,7 @@ transform: perspective(500px) translate3d(10px, 0, 20px) rotateY(30deg) scaleX(2
                 computeTransform: true,
                 validation: true
             }).then((result) => expect(result.code).equals(`.foo-bar {
- transform: matrix3d(1.73205,0,-1,.002,0,2,0,0,2,0,3.4641,-.0069282,10,0,20,.96)
+ transform: matrix3d(1.73205,0,-1,.002,0,2,0,0,2,0,3.4641,-.006928,10,0,20,.96)
 }`));
         });
 

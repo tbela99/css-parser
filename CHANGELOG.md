@@ -1,5 +1,9 @@
 # Changelog
 
+# v1.4.10
+
+- failure to convert colors to display-linear due to missing import
+
 # v1.4.9
 
 ## Improvements

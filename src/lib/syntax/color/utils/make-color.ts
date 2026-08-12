@@ -1,4 +1,4 @@
-import type { ColorToken, IdentToken, NumberToken, PercentageToken, Token } from "../../../../@types/index.js";
+import type { ColorToken, IdentToken, NumberToken, PercentageToken, Token } from "../../../../@types/index.d.ts";
 import { ColorType, EnumToken } from "../../../ast/types.ts";
 import { equalsIgnoreCase } from "../../../parser/utils/text.ts";
 import { getNumber, minmax } from "../color.ts";

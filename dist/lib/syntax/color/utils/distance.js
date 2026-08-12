@@ -1,7 +1,8 @@
-import { convertColor, toPrecisionValue } from '../color.js';
+import { convertColor } from '../color.js';
 import { getOKLABComponents } from '../oklab.js';
 import { ColorType } from '../../../ast/types.js';
 import { colorDistancePrecision } from '../../constants.js';
+import { toPrecisionValue } from '../../syntax.js';
 
 /**
  * Calculate the distance between two okLab colors.

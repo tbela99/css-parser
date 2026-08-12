@@ -81,7 +81,7 @@ export class LineMap {
      * clone the linemap
      * @returns
      */
-    clone() {
+    clone(): LineMap {
         return new LineMap(this.lineStarts.slice());
     }
 }

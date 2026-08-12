@@ -1,4 +1,5 @@
-import { EnumToken, minifyNumber } from '../types.js';
+import { minifyNumber } from '../../syntax/syntax.js';
+import { EnumToken } from '../types.js';
 
 function gcd(x, y) {
     x = Math.abs(x);

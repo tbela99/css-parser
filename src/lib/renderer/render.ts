@@ -47,10 +47,10 @@ import type {
     WhenElseUnaryConditionToken,
     WrappedValuesToken,
 } from "../../@types/index.d.ts";
-import { convertColor, toPrecisionAngle, toPrecisionValue } from "../syntax/color/color.ts";
+import { convertColor } from "../syntax/color/color.ts";
 import { getAngle } from "../syntax/color/color.ts";
 import { reduceHexValue } from "../syntax/color/hex.ts";
-import { ColorType, EnumToken, minifyNumber } from "../ast/types.ts";
+import { ColorType, EnumToken } from "../ast/types.ts";
 import { expand } from "../ast/expand.ts";
 import { SourceMap } from "./sourcemap/sourcemap.ts";
 import { colorPrecision, LOC, PARENT, pseudoElements, tokensfuncSet, urlTokenMatcher } from "../syntax/constants.ts";
@@ -59,11 +59,12 @@ import {
     reducegradientBackgroundPosition,
     reduceColorStops,
     reduceConicColorStops,
-    isNewLine,
+    minifyNumber,
+    toPrecisionAngle,
+    toPrecisionValue,
 } from "../syntax/syntax.ts";
 import { equalsIgnoreCase } from "../parser/utils/text.ts";
 import { toDegrees } from "../parser/utils/angle.ts";
-import { Position } from "../validation/parser/types.js";
 import { LineMap as LinesMap } from "../parser/linesmap.ts";
 import { dirname } from "../fs/resolve.ts";
 
@@ -250,11 +251,11 @@ function updateSourceMap(
         let sourceFileName: string | null = (options.sourcesMap?.get(srcId)?.getFileName?.() as string) || null;
 
         if (sourceFileName != null && options.output != null) {
-            if (!cache.has(sourceFileName)) {
-                cache.set(sourceFileName, options.resolve!(sourceFileName, dirname(options.output)).relative as string);
+            if (cache[sourceFileName] == null) {
+                cache[sourceFileName] = options.resolve!(sourceFileName, dirname(options.output)).relative as string;
             }
 
-            sourceFileName = cache.get(sourceFileName) as string;
+            sourceFileName = cache[sourceFileName] as string;
         }
 
         // @ts-ignore
@@ -566,49 +567,6 @@ export function renderValue(
             return acc + renderValue(curr, options, cache, reducer, errors);
         };
     }
-
-    // if (token.typ == EnumToken.FunctionTokenType && colorsFunc.includes((token as FunctionToken).val)) {
-    //     if (isColor(token)) {
-    //         // @ts-ignore
-    //         token.typ = EnumToken.ColorTokenType;
-
-    //         if (
-    //             // @ts-ignore
-    //             (token as ColorToken)!.chi[0]!.typ == EnumToken.IdenTokenType &&
-    //             // @ts-ignore
-    //             ((token as ColorToken)!.chi[0] as IdentToken).val == "from"
-    //         ) {
-    //             // @ts-ignore
-    //             (<ColorToken>token).cal = "rel";
-    //         } else {
-    //             // @ts-ignore
-    //             if (
-    //                 (token as ColorToken).val == "color-mix" &&
-    //                 (token as ColorToken).chi?.[0]?.typ == EnumToken.IdenTokenType &&
-    //                 ((token as ColorToken).chi?.[0] as IdentToken).val == "in"
-    //             ) {
-    //                 // @ts-ignore
-    //                 (<ColorToken>token).cal = "mix";
-    //             } else {
-    //                 // @ts-ignore
-    //                 if ((token as ColorToken).val == "color") {
-    //                     // @ts-ignore
-    //                     token.cal = "col";
-    //                 }
-
-    //                 // @ts-ignore
-    //                 (token as ColorToken).chi = (token as ColorToken).chi!.filter(
-    //                     (t: Token) =>
-    //                         ![
-    //                             EnumToken.WhitespaceTokenType,
-    //                             EnumToken.CommaTokenType,
-    //                             EnumToken.CommentTokenType,
-    //                         ].includes(t.typ),
-    //                 );
-    //             }
-    //         }
-    //     }
-    // }
 
     switch (token.typ) {
         case EnumToken.FunctionTokenDefType:
@@ -1693,7 +1651,6 @@ export function renderValue(
                 unit = "x";
             }
 
-            // @ts-ignore
             return val.includes("/") ? val.replace("/", unit + "/") : minifyNumber(toPrecisionValue(val)) + unit;
 
         case EnumToken.FlexTokenType:
