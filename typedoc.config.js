@@ -9,7 +9,7 @@ export default {
         Benchmark: "https://tbela99.github.io/css-parser/benchmark/index.html",
         Docs: "https://tbela99.github.io/css-parser/docs/",
         Playground: "https://tbela99.github.io/css-parser/playground/",
-        "llm.txt": "https://github.com/tbela99/css-parser/llms.txt",
+        "llm.txt": "https://tbela99.github.io/css-parser/llms.txt",
         GitHub: "https://github.com/tbela99/css-parser",
     },
     highlightLanguages: ["ts", "css", "javascript", "json", 'html', 'shell'],

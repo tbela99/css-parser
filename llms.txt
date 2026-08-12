@@ -43,15 +43,15 @@ console.log(result.code);
 ```
 
 ## Important behavior notes
-- parse() and transform() are lenient by default and preserve unknown constructs unless configured otherwise.
+- parse(), parseSync(), transform() and transformSync() are lenient by default and preserve unknown constructs unless configured otherwise.
 - Comments are removed by default; preserve them with removeComments: false or preserveLicense: true.
 - Validation errors are available through the parse/transform result and through node.state and node.errors.
 - The library prioritizes compact output while preserving semantics.
 
 ## Useful concepts
-- parse() returns AST, errors, and stats.
+- parse(), parseSync() return AST, errors, and stats.
 - render() turns an AST into CSS text.
-- transform() performs parsing and rendering together.
+- transform(), transformSync() perform parsing and rendering together.
 - AST node types include StyleSheet, Rule, AtRule, Declaration, Comment, and Keyframes variants.
 
 ## Documentation files

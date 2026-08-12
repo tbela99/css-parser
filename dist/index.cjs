@@ -11686,14 +11686,14 @@ function cloneNode(node, cloneChildren = false, cloneMap = null) {
             clone[name] = value;
         }
         else if (Array.isArray(value)) {
-            clone[name] =
-                !cloneChildren && name == checkNode
-                    ? []
-                    : value.map((c) => {
-                        const newObj = cloneNode(c, cloneChildren, cloneMap);
-                        cloneMap?.set?.(c, newObj);
-                        return newObj;
-                    });
+            clone[name] = [];
+            if (cloneChildren || name !== checkNode) {
+                for (const c of value) {
+                    const newObj = cloneNode(c, cloneChildren, cloneMap);
+                    cloneMap?.set?.(c, newObj);
+                    clone[name].push(newObj);
+                }
+            }
         }
         else {
             clone[name] = { ...value };
@@ -18915,12 +18915,19 @@ class PropertyMap {
                     return acc;
                 }, []);
                 let isImportant = false;
-                const filtered = values.map(removeDefaults).filter((x) => x.val.filter((t) => {
-                    if (t.typ == exports.EnumToken.ImportantTokenType) {
-                        isImportant = true;
+                let dec;
+                const filtered = [];
+                for (const declaration of values) {
+                    dec = removeDefaults(declaration);
+                    for (const t of dec.val) {
+                        if (t.typ == exports.EnumToken.ImportantTokenType) {
+                            isImportant = true;
+                        }
+                        if (filtered.length == 0 && t.typ != exports.EnumToken.WhitespaceTokenType && t.typ != exports.EnumToken.ImportantTokenType) {
+                            filtered.push(dec);
+                        }
                     }
-                    return ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.ImportantTokenType].includes(t.typ);
-                }).length > 0);
+                }
                 if (filtered.length == 0 && this.config.default.length > 0) {
                     filtered.push({
                         typ: exports.EnumToken.DeclarationNodeType,
@@ -24292,14 +24299,14 @@ const diff = memoize(function (path1, path2) {
  * @private
  */
 const resolve = memoize(function (url, currentDirectory, cwd) {
-    cwd ??= "";
-    currentDirectory ??= "";
     if (matchUrl.test(url)) {
         return {
             absolute: url,
             relative: url,
         };
     }
+    cwd ??= "";
+    currentDirectory ??= "";
     url = normalize(url);
     if (currentDirectory !== "") {
         currentDirectory = normalize(currentDirectory);
@@ -29319,12 +29326,13 @@ function doParseSync(iter, options = {}) {
         }
         if (moduleSettings.naming != exports.ModuleCaseTransformEnum.IgnoreCase) {
             revMapping = {};
-            mapping = Object.entries(mapping).reduce((acc, [key, value]) => {
-                const keyName = getKeyName(key, moduleSettings.naming);
-                acc[keyName] = value;
+            mapping = {};
+            let keyName;
+            for (const [key, value] of Object.entries(mapping)) {
+                keyName = getKeyName(key, moduleSettings.naming);
+                mapping[keyName] = value;
                 revMapping[value] = keyName;
-                return acc;
-            }, {});
+            }
         }
         result.mapping = mapping;
         result.revMapping = revMapping;
@@ -31571,7 +31579,12 @@ function parseString(src, options = { parseColor: true }, errors) {
         position: 0,
         currentPosition: -1,
     };
-    const result = parseTokens([...tokenize(parseInfo)].map((t) => t.token), options, errors);
+    const tokenResults = tokenize(parseInfo);
+    const mapped = [];
+    for (const token of tokenResults) {
+        mapped.push(token.token);
+    }
+    const result = parseTokens(mapped, options, errors);
     // remove EOF token
     result.pop();
     if (result.at(-1)?.typ === exports.EnumToken.WhitespaceTokenType) {
@@ -31930,10 +31943,10 @@ const parseFile = node_util.deprecate(async (file, options = {}, asStream = fals
  *
  * ```ts
  *
- * import {parse} from '@tbela99/css-parser';
+ * import {parseSync} from '@tbela99/css-parser';
  *
  *  // css string
- *  let result = await parse(css, {nestingRules: true});
+ *  let result = parseSync(css, {nestingRules: true});
  *  console.log(result.ast);
  * ```
  *
@@ -31985,10 +31998,10 @@ function parseSync(...args) {
  *
  * ```ts
  *
- * import {transform} from '@tbela99/css-parser';
+ * import {transformSync} from '@tbela99/css-parser';
  *
  *  // css string
- *  const result = await transform(css);
+ *  const result = transformSync(css);
  *  console.log(result.code);
  * ```
  *

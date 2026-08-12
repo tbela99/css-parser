@@ -149,16 +149,15 @@ export const resolve = memoize(function (
     cwd?: string,
 ): { absolute: string; relative: string } {
 
-
-    cwd ??= "";
-    currentDirectory ??= "";
-
     if (matchUrl.test(url)) {
         return {
             absolute: url,
             relative: url,
         };
     }
+
+    cwd ??= "";
+    currentDirectory ??= "";
 
     url = normalize(url);
     

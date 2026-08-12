@@ -6074,10 +6074,10 @@ declare const parseFile: (file: string, options?: ParserOptions, asStream?: bool
  *
  * ```ts
  *
- * import {parse} from '@tbela99/css-parser';
+ * import {parseSync} from '@tbela99/css-parser';
  *
  *  // css string
- *  let result = await parse(css, {nestingRules: true});
+ *  let result = parseSync(css, {nestingRules: true});
  *  console.log(result.ast);
  * ```
  *
@@ -6092,10 +6092,10 @@ declare function parseSync(stream: string, options?: ParserSyncOptions): ParseRe
  *
  * ```ts
  *
- * import {parse} from '@tbela99/css-parser';
+ * import {parseSync} from '@tbela99/css-parser';
  *
  *  // css string
- *  let result = await parse({input: css, nestingRules: true});
+ *  let result = parseSync({input: css, nestingRules: true});
  *  console.log(result.ast);
  * ```
  *
@@ -6109,10 +6109,10 @@ declare function parseSync(options: ParseInputOptions & ParserSyncOptions): Pars
  *
  * ```ts
  *
- * import {transform} from '@tbela99/css-parser';
+ * import {transformSync} from '@tbela99/css-parser';
  *
  *  // css string
- *  const result = await transform(css, {beautify: true});
+ *  const result = transformSync(css, {beautify: true});
  *  console.log(result.code);
  * ```
  *
@@ -6124,10 +6124,10 @@ declare function transformSync(css: string, options?: TransformSyncOptions): Tra
  *
  * ```ts
  *
- * import {transform} from '@tbela99/css-parser';
+ * import {transformSync} from '@tbela99/css-parser';
  *
  *  // css string
- *  const result = await transform({input: css, beautify: true});
+ *  const result = transformSync({input: css, beautify: true});
  *  console.log(result.code);
  * ```
  *
