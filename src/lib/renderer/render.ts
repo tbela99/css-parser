@@ -58,12 +58,10 @@ import {
     parseColor,
     reducegradientBackgroundPosition,
     reduceColorStops,
-    reduceConicColorStops,
-    isNewLine,
+    reduceConicColorStops
 } from "../syntax/syntax.ts";
 import { equalsIgnoreCase } from "../parser/utils/text.ts";
 import { toDegrees } from "../parser/utils/angle.ts";
-import { Position } from "../validation/parser/types.js";
 import { LineMap as LinesMap } from "../parser/linesmap.ts";
 import { dirname } from "../fs/resolve.ts";
 
