@@ -3,7 +3,7 @@
 <div id="search-results" data-state="idle">Search something to see results</div></dialog><header class="page-header">
 <h3 class="site-title"><a href="../" class="header-logo">@tbela99/css-parser</a></h3>
 <div class="header-content">
-<div class="header-nav-links"><a href="https://tbela99.github.io/css-parser/benchmark/index.html">Benchmark</a><a href="https://tbela99.github.io/css-parser/docs/">Docs</a><a href="https://tbela99.github.io/css-parser/playground/">Playground</a><a href="https://github.com/tbela99/css-parser">GitHub</a></div><button type="button" popovertarget="search-dialog"><svg class="icon-search" width="1em" height="1em" viewBox="0 0 24 24" stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M17 17L21 21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M3 11C3 15.4183 6.58172 19 11 19C13.213 19 15.2161 18.1015 16.6644 16.6493C18.1077 15.2022 19 13.2053 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button><label for="mobile-nav-opened" class="mobile-nav-burger-trigger" aria-label="Menu"><svg class="icon-menu" width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M3 5H21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M3 12H21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M3 19H21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></label></div></header><input id="mobile-nav-opened" type="checkbox" hidden/>
+<div class="header-nav-links"><a href="https://tbela99.github.io/css-parser/benchmark/index.html">Benchmark</a><a href="https://tbela99.github.io/css-parser/docs/">Docs</a><a href="https://tbela99.github.io/css-parser/playground/">Playground</a><a href="https://github.com/tbela99/css-parser/llms.txt">llm.txt</a><a href="https://github.com/tbela99/css-parser">GitHub</a></div><button type="button" popovertarget="search-dialog"><svg class="icon-search" width="1em" height="1em" viewBox="0 0 24 24" stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M17 17L21 21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M3 11C3 15.4183 6.58172 19 11 19C13.213 19 15.2161 18.1015 16.6644 16.6493C18.1077 15.2022 19 13.2053 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button><label for="mobile-nav-opened" class="mobile-nav-burger-trigger" aria-label="Menu"><svg class="icon-menu" width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M3 5H21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M3 12H21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M3 19H21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></label></div></header><input id="mobile-nav-opened" type="checkbox" hidden/>
 <div class="page-layout"><aside class="site-nav-wrapper">
 <div class="site-nav">
 <nav class="project-nav"><a href="../modules.html" class="nav-leaf">Modules</a>
@@ -33,9 +33,11 @@
 <li><a class="nav-leaf" href="../functions/node.parse.html"><span>parse</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../functions/node.parseDeclarations.html"><span>parseDeclarations</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../functions/node.parseString.html"><span>parseString</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/node.parseSync.html"><span>parseSync</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../functions/node.render.html"><span>render</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../functions/node.replaceNodeOrValue.html"><span>replaceNodeOrValue</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../functions/node.transform.html"><span>transform</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/node.transformSync.html"><span>transformSync</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../functions/node.walk.html"><span>walk</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../functions/node.walkValues.html"><span>walkValues</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../classes/node.SourceMap.html"><span>SourceMap</span><small><abbr title="Class" class="kind-icon">(C)</abbr></small></a></li>
@@ -57,8 +59,12 @@
 <li><a class="nav-leaf" href="../types/node.BinaryExpressionNode.html"><span>BinaryExpressionNode</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../types/node.DeclarationVisitorHandler.html"><span>DeclarationVisitorHandler</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../types/node.GenericVisitorAstNodeHandlerMap.html"><span>GenericVisitorAstNodeHandlerMap</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.GenericVisitorAstNodeSyncHandlerMap.html"><span>GenericVisitorAstNodeSyncHandlerMap</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.GenericVisitorAsyncResult.html"><span>GenericVisitorAsyncResult</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../types/node.GenericVisitorHandler.html"><span>GenericVisitorHandler</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../types/node.GenericVisitorResult.html"><span>GenericVisitorResult</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.GenericVisitorSyncHandler.html"><span>GenericVisitorSyncHandler</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.GenericVisitorSyncResult.html"><span>GenericVisitorSyncResult</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../types/node.LoadResult.html"><span>LoadResult</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../types/node.RawSelectorTokens.html"><span>RawSelectorTokens</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../types/node.RuleVisitorHandler.html"><span>RuleVisitorHandler</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
@@ -66,6 +72,7 @@
 <li><a class="nav-leaf" href="../types/node.UnaryExpressionNode.html"><span>UnaryExpressionNode</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../types/node.ValidationConfiguration.html"><span>ValidationConfiguration</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../types/node.ValueVisitorHandler.html"><span>ValueVisitorHandler</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../types/node.ValueVisitorSyncHandler.html"><span>ValueVisitorSyncHandler</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../types/node.WalkerFilter.html"><span>WalkerFilter</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../types/node.WalkerOption.html"><span>WalkerOption</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../types/node.WalkerValueFilter.html"><span>WalkerValueFilter</span><small><abbr title="TypeAlias" class="kind-icon">(T)</abbr></small></a></li>
@@ -147,7 +154,6 @@
 <li><a class="nav-leaf" href="../interfaces/node.LessThanToken.html"><span>LessThanToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.ListToken.html"><span>ListToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.LiteralToken.html"><span>LiteralToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
-<li><a class="nav-leaf" href="../interfaces/node.Location.html"><span>Location</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.MatchedSelector.html"><span>MatchedSelector</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.MatchExpressionToken.html"><span>MatchExpressionToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.MediaFeatureOnlyToken.html"><span>MediaFeatureOnlyToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
@@ -158,7 +164,8 @@
 <li><a class="nav-leaf" href="../interfaces/node.MinifyFeature.html"><span>MinifyFeature</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.MinifyFeatureOptions.html"><span>MinifyFeatureOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.MinifyOptions.html"><span>MinifyOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
-<li><a class="nav-leaf" href="../interfaces/node.ModuleOptions.html"><span>ModuleOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ModuleAsyncOptions.html"><span>ModuleAsyncOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ModuleSyncOptions.html"><span>ModuleSyncOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.MulToken.html"><span>MulToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.NameSpaceAttributeToken.html"><span>NameSpaceAttributeToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.NestingSelectorToken.html"><span>NestingSelectorToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
@@ -171,13 +178,15 @@
 <li><a class="nav-leaf" href="../interfaces/node.ParensToken.html"><span>ParensToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.ParseInfo.html"><span>ParseInfo</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.ParseInputFileOptions.html"><span>ParseInputFileOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ParseInputOptions.html"><span>ParseInputOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.ParseInputStreamOptions.html"><span>ParseInputStreamOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.ParseResult.html"><span>ParseResult</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.ParseResultStats.html"><span>ParseResultStats</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.ParserOptions.html"><span>ParserOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ParserSyncOptions.html"><span>ParserSyncOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.ParseSourceOptions.html"><span>ParseSourceOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.ParseTokenOptions.html"><span>ParseTokenOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.PercentageToken.html"><span>PercentageToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
-<li><a class="nav-leaf" href="../interfaces/node.Position.html"><span>Position</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.PropertyListOptions.html"><span>PropertyListOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.PropertyMapType.html"><span>PropertyMapType</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.PropertySetType.html"><span>PropertySetType</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
@@ -199,6 +208,7 @@
 <li><a class="nav-leaf" href="../interfaces/node.ShorthandType.html"><span>ShorthandType</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.SinglePropertyType.html"><span>SinglePropertyType</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.SinglePropertyTypeMapping.html"><span>SinglePropertyTypeMapping</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.SourceLocation.html"><span>SourceLocation</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.SourceMapObject.html"><span>SourceMapObject</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.StartMatchToken.html"><span>StartMatchToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.StringToken.html"><span>StringToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
@@ -213,6 +223,7 @@
 <li><a class="nav-leaf" href="../interfaces/node.TokenSearchResult.html"><span>TokenSearchResult</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.TransformOptions.html"><span>TransformOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.TransformResult.html"><span>TransformResult</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.TransformSyncOptions.html"><span>TransformSyncOptions</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.UnaryExpression.html"><span>UnaryExpression</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.UnclosedStringToken.html"><span>UnclosedStringToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.UniversalSelectorToken.html"><span>UniversalSelectorToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
@@ -226,6 +237,7 @@
 <li><a class="nav-leaf" href="../interfaces/node.ValidationToken.html"><span>ValidationToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.VariableScopeInfo.html"><span>VariableScopeInfo</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.VisitorNodeMap.html"><span>VisitorNodeMap</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../interfaces/node.VisitorSyncNodeMap.html"><span>VisitorSyncNodeMap</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.WalkAttributesResult.html"><span>WalkAttributesResult</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.WalkResult.html"><span>WalkResult</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../interfaces/node.WhenElseQueryConditionToken.html"><span>WhenElseQueryConditionToken</span><small><abbr title="Interface" class="kind-icon">(I)</abbr></small></a></li>
@@ -238,9 +250,11 @@
 <li><a class="nav-leaf" href="../functions/web.load.html"><span>load</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../functions/web.parse.html"><span>parse</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../functions/web.parseFile.html"><span>parseFile</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/web.parseSync.html"><span>parseSync</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../functions/web.render.html"><span>render</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../functions/web.transform.html"><span>transform</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../functions/web.transformFile.html"><span>transformFile</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../functions/web.transformSync.html"><span>transformSync</span><small><abbr title="Function" class="kind-icon">(F)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#addtoken"><span>AddToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#andtoken"><span>AndToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#angletoken"><span>AngleToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
@@ -317,8 +331,12 @@
 <li><a class="nav-leaf" href="../modules/web.html#functiontoken"><span>FunctionToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#functionurltoken"><span>FunctionURLToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#genericvisitorastnodehandlermap"><span>GenericVisitorAstNodeHandlerMap</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#genericvisitorastnodesynchandlermap"><span>GenericVisitorAstNodeSyncHandlerMap</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#genericvisitorasyncresult"><span>GenericVisitorAsyncResult</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#genericvisitorhandler"><span>GenericVisitorHandler</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#genericvisitorresult"><span>GenericVisitorResult</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#genericvisitorsynchandler"><span>GenericVisitorSyncHandler</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#genericvisitorsyncresult"><span>GenericVisitorSyncResult</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#greaterthanorequaltoken"><span>GreaterThanOrEqualToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#greaterthantoken"><span>GreaterThanToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#gridtemplatefunctoken"><span>GridTemplateFuncToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
@@ -338,7 +356,6 @@
 <li><a class="nav-leaf" href="../modules/web.html#listtoken"><span>ListToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#literaltoken"><span>LiteralToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#loadresult"><span>LoadResult</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
-<li><a class="nav-leaf" href="../modules/web.html#location"><span>Location</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#matchedselector"><span>MatchedSelector</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#matchexpressiontoken"><span>MatchExpressionToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#mediafeatureonlytoken"><span>MediaFeatureOnlyToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
@@ -349,9 +366,10 @@
 <li><a class="nav-leaf" href="../modules/web.html#minifyfeature"><span>MinifyFeature</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#minifyfeatureoptions"><span>MinifyFeatureOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#minifyoptions"><span>MinifyOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#moduleasyncoptions"><span>ModuleAsyncOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#modulecasetransformenum"><span>ModuleCaseTransformEnum</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
-<li><a class="nav-leaf" href="../modules/web.html#moduleoptions"><span>ModuleOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#modulescopeenumoptions"><span>ModuleScopeEnumOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#modulesyncoptions"><span>ModuleSyncOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#multoken"><span>MulToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#namespaceattributetoken"><span>NameSpaceAttributeToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#nestingselectortoken"><span>NestingSelectorToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
@@ -365,14 +383,16 @@
 <li><a class="nav-leaf" href="../modules/web.html#parsedeclarations"><span>parseDeclarations</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#parseinfo"><span>ParseInfo</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#parseinputfileoptions"><span>ParseInputFileOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#parseinputoptions"><span>ParseInputOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#parseinputstreamoptions"><span>ParseInputStreamOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#parseresult"><span>ParseResult</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#parseresultstats"><span>ParseResultStats</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#parseroptions"><span>ParserOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#parsersyncoptions"><span>ParserSyncOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#parsesourceoptions"><span>ParseSourceOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#parsestring"><span>parseString</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#parsetokenoptions"><span>ParseTokenOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#percentagetoken"><span>PercentageToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
-<li><a class="nav-leaf" href="../modules/web.html#position"><span>Position</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#propertylistoptions"><span>PropertyListOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#propertymaptype"><span>PropertyMapType</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#propertysettype"><span>PropertySetType</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
@@ -398,6 +418,7 @@
 <li><a class="nav-leaf" href="../modules/web.html#shorthandtype"><span>ShorthandType</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#singlepropertytype"><span>SinglePropertyType</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#singlepropertytypemapping"><span>SinglePropertyTypeMapping</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#sourcelocation"><span>SourceLocation</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#sourcemap"><span>SourceMap</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#sourcemapobject"><span>SourceMapObject</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#startmatchtoken"><span>StartMatchToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
@@ -414,6 +435,7 @@
 <li><a class="nav-leaf" href="../modules/web.html#tokensearchresult"><span>TokenSearchResult</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#transformoptions"><span>TransformOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#transformresult"><span>TransformResult</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#transformsyncoptions"><span>TransformSyncOptions</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#unaryexpression"><span>UnaryExpression</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#unaryexpressionnode"><span>UnaryExpressionNode</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#unclosedstringtoken"><span>UnclosedStringToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
@@ -429,8 +451,10 @@
 <li><a class="nav-leaf" href="../modules/web.html#validationsyntaxresult"><span>ValidationSyntaxResult</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#validationtoken"><span>ValidationToken</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#valuevisitorhandler"><span>ValueVisitorHandler</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#valuevisitorsynchandler"><span>ValueVisitorSyncHandler</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#variablescopeinfo"><span>VariableScopeInfo</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#visitornodemap"><span>VisitorNodeMap</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
+<li><a class="nav-leaf" href="../modules/web.html#visitorsyncnodemap"><span>VisitorSyncNodeMap</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#walk"><span>walk</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#walkattributesresult"><span>WalkAttributesResult</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
 <li><a class="nav-leaf" href="../modules/web.html#walkerevent"><span>WalkerEvent</span><small><abbr title="Reference" class="kind-icon">(R)</abbr></small></a></li>
@@ -456,7 +480,7 @@
 </div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">TokenizeResult</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#bytesin">bytesIn</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#token">token</a><span class="tsd-signature-symbol">:</span> <a href="../types/node.Token.html" class="tsd-signature-type tsd-kind-type-alias">Token</a><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/tbela99/css-parser/blob/2264302cb7a92665149176632d10bd99ae10cb38/src/@types/index.d.ts#L814">@types/index.d.ts:814</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/tbela99/css-parser/blob/a50aa37b453deb627946804be31029bad623d292/src/@types/index.d.ts#L932">@types/index.d.ts:932</a></li></ul></aside>
 <section class="tsd-panel tsd-index-panel">
 <h3>Index</h3>
 <section class="tsd-index-section">
@@ -471,14 +495,14 @@
 <div class="tsd-comment tsd-typography"><p>Bytes in</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/tbela99/css-parser/blob/2264302cb7a92665149176632d10bd99ae10cb38/src/@types/index.d.ts#L822">@types/index.d.ts:822</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/tbela99/css-parser/blob/a50aa37b453deb627946804be31029bad623d292/src/@types/index.d.ts#L940">@types/index.d.ts:940</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="token"><span>token</span><a href="#token" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon-anchor" width="1em" height="1em" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M14 11.9976C14 9.5059 11.683 7 8.85714 7C8.52241 7 7.41904 7.00001 7.14286 7.00001C4.30254 7.00001 2 9.23752 2 11.9976C2 14.376 3.70973 16.3664 6 16.8714C6.36756 16.9525 6.75006 16.9952 7.14286 16.9952" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10 11.9976C10 14.4893 12.317 16.9952 15.1429 16.9952C15.4776 16.9952 16.581 16.9952 16.8571 16.9952C19.6975 16.9952 22 14.7577 22 11.9976C22 9.6192 20.2903 7.62884 18 7.12383C17.6324 7.04278 17.2499 6.99999 16.8571 6.99999" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">token</span><span class="tsd-signature-symbol">:</span> <a href="../types/node.Token.html" class="tsd-signature-type tsd-kind-type-alias">Token</a></div>
 <div class="tsd-comment tsd-typography"><p>Token</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/tbela99/css-parser/blob/2264302cb7a92665149176632d10bd99ae10cb38/src/@types/index.d.ts#L818">@types/index.d.ts:818</a></li></ul></aside></section></section></details></main></div><footer class="page-footer">
+<li>Defined in <a href="https://github.com/tbela99/css-parser/blob/a50aa37b453deb627946804be31029bad623d292/src/@types/index.d.ts#L936">@types/index.d.ts:936</a></li></ul></aside></section></section></details></main></div><footer class="page-footer">
 <div class="footer-content"><select id="theme-select"><option value="light">☀️   Light</option><option value="dark">🌙   Dark</option></select>
 <div>TypeDoc 🤓 Unhoax Theme</div></div><hr/><small class="copyright"><span>Made with ❤️ by SacNoeuds</span><span>Copyright 2026</span></small></footer>
 <div class="overlay"></div><script>window.ReflectionKind={"1":"Project","2":"Module","4":"Namespace","8":"Enum","16":"EnumMember","32":"Variable","64":"Function","128":"Class","256":"Interface","512":"Constructor","1024":"Property","2048":"Method","4096":"CallSignature","8192":"IndexSignature","16384":"ConstructorSignature","32768":"Parameter","65536":"TypeLiteral","131072":"TypeParameter","262144":"Accessor","524288":"GetSignature","1048576":"SetSignature","2097152":"TypeAlias","4194304":"Reference","8388608":"Document","Project":1,"Module":2,"Namespace":4,"Enum":8,"EnumMember":16,"Variable":32,"Function":64,"Class":128,"Interface":256,"Constructor":512,"Property":1024,"Method":2048,"CallSignature":4096,"IndexSignature":8192,"ConstructorSignature":16384,"Parameter":32768,"TypeLiteral":65536,"TypeParameter":131072,"Accessor":262144,"GetSignature":524288,"SetSignature":1048576,"TypeAlias":2097152,"Reference":4194304,"Document":8388608,"All":8388607,"ClassOrInterface":384,"VariableOrProperty":1056,"FunctionOrMethod":2112,"ClassMember":265728,"SomeSignature":1601536,"SomeModule":6,"SomeType":2294016,"SomeValue":96,"SomeMember":265232,"SomeExport":6291950,"MayContainDocuments":14680559,"ExportContainer":7,"Inheritable":273920,"ContainsCallSignatures":2624,"TypeReferenceTarget":2097544,"ValueReferenceTarget":102,"SignatureContainer":264768,"VariableContainer":7,"MethodContainer":69088}

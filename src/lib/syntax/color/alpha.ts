@@ -1,4 +1,4 @@
-import type { ColorToken, FunctionToken, IdentToken, Token } from "../../../@types/index.ts";
+import type { ColorToken, FunctionToken, IdentToken, Token } from "../../../@types/index.d.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
 import { convertColor } from "./color.ts";
 import { getColorComponents } from "./utils/components.ts";

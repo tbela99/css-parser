@@ -17,7 +17,7 @@ import { parseString } from "../parse.ts";
 import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import { getParsedSyntax } from "../../validation/config.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
-import type { ValidationMatch } from "../../validation/types.js";
+import type { ValidationMatch } from "../../validation/types.d.ts";
 import { createValidationContext, matchAllSyntaxes } from "../../validation/match.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";
 import { STATE } from "../../syntax/constants.ts";

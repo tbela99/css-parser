@@ -11,7 +11,7 @@ import { oklch2srgbvalues, lch2srgbvalues, oklab2srgbvalues, lab2srgbvalues, cmy
 import { prophotorgb2srgbvalues, srgb2prophotorgbvalues } from './prophotorgb.js';
 import { rec20202srgb, srgb2rec2020values } from './rec2020.js';
 import { srgb2xyz_d65, srgb2xyz } from './xyz.js';
-import { lp32srgbvalues, p32srgbvalues, srgb2p3values } from './p3.js';
+import { lp32srgbvalues, p32srgbvalues, srgb2lp3values, srgb2p3values } from './p3.js';
 import { xyzd502srgb } from './xyzd50.js';
 import { colorMix } from './color-mix.js';
 import { reduceHexValue, rgb2HexToken, color2HexToken, lch2HexToken, lab2HexToken, oklch2HexToken, oklab2HexToken, cmyk2HexToken, hwb2HexToken, hsl2HexToken } from './hex.js';
@@ -19,7 +19,7 @@ import { parseRelativeColorComponents } from './relative-color.js';
 import { isIdentColor } from '../syntax.js';
 import { color2cmykToken, lch2cmykToken, lab2cmykToken, oklch2cmykToken, oklab2cmyk, hwb2cmykToken, hsl2cmykToken, rgb2cmykToken } from './cmyk.js';
 import { a98rgb2srgbvalues, srgb2a98values } from './a98rgb.js';
-import { LOC, colorFuncColorSpace, colorPrecision, epsilon, anglePrecision } from '../constants.js';
+import { LOC, colorFuncColorSpace } from '../constants.js';
 import { trimArray } from '../../validation/match.js';
 import { alpha } from './alpha.js';
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
@@ -602,23 +602,5 @@ function getAngle(token) {
     // @ts-ignore
     return token.val / 360;
 }
-function toPrecisionValue(value, precision = colorPrecision) {
-    const div = Math.pow(10, precision);
-    value = Math.round(value * div) / div;
-    return Math.abs(value) < epsilon ? 0 : value;
-}
-function toPrecisionAngle(angle, precision = colorPrecision, correctValue = true) {
-    angle = toPrecisionValue(angle, precision);
-    if (correctValue && Math.abs(angle) >= 360) {
-        angle %= 360;
-    }
-    if (Math.abs(angle) < anglePrecision) {
-        angle = 0;
-    }
-    if (correctValue && angle < 0) {
-        angle += 360;
-    }
-    return angle;
-}
 
-export { cmyk2colorToken, color2colorToken, color2srgbvalues, convertColor, getAngle, getNumber, hex2colorToken, hsl2colorToken, hwb2colorToken, lab2colorToken, lch2colorToken, minmax, oklab2colorToken, oklch2colorToken, rgb2colorToken, toPrecisionAngle, toPrecisionValue };
+export { cmyk2colorToken, color2colorToken, color2srgbvalues, convertColor, getAngle, getNumber, hex2colorToken, hsl2colorToken, hwb2colorToken, lab2colorToken, lch2colorToken, minmax, oklab2colorToken, oklch2colorToken, rgb2colorToken };

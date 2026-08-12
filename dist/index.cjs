@@ -985,71 +985,6 @@ exports.ModuleScopeEnumOptions = void 0;
      */
     ModuleScopeEnumOptions[ModuleScopeEnumOptions["Shortest"] = 512] = "Shortest";
 })(exports.ModuleScopeEnumOptions || (exports.ModuleScopeEnumOptions = {}));
-// https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Values_and_units#absolute_length_units
-/**
- * Convert length to px
- * @param value
- * @returns
- */
-function length2Px(value) {
-    let result = null;
-    if (value.typ == exports.EnumToken.NumberTokenType) {
-        result = +value.val;
-    }
-    else {
-        switch (value.unit) {
-            case "cm":
-                // @ts-ignore
-                result = value.val * 37.8;
-                break;
-            case "mm":
-                // @ts-ignore
-                result = value.val * 3.78;
-                break;
-            case "Q":
-                // @ts-ignore
-                result = (value.val * 37.8) / 40;
-                break;
-            case "in":
-                // @ts-ignore
-                result = value.val / 96;
-                break;
-            case "pc":
-                // @ts-ignore
-                result = value.val / 16;
-                break;
-            case "pt":
-                // @ts-ignore
-                result = (value.val * 4) / 3;
-                break;
-            case "px":
-                result = +value.val;
-                break;
-        }
-    }
-    return isNaN(result) ? null : result;
-}
-/**
- * minify number
- * @param val
- */
-function minifyNumber(val) {
-    val = String(val);
-    if (val === "0") {
-        return "0";
-    }
-    const chr = val.charAt(0);
-    if (chr == "-") {
-        const slice = val.slice(0, 2);
-        if (slice == "-0") {
-            return val.length == 2 ? "0" : "-" + val.slice(2);
-        }
-    }
-    if (chr == "0") {
-        return val.slice(1);
-    }
-    return val;
-}
 
 var declarations = {
 	"-ms-accelerator": {
@@ -9009,7 +8944,7 @@ function srgb2p3values(r, g, b, alpha) {
     // @ts-ignore
     return lp32p3(...xyz2lp3(...srgb2xyz(r, g, b, alpha)));
 }
-function srgb2lp3values$1(r, g, b, alpha) {
+function srgb2lp3values(r, g, b, alpha) {
     // @ts-ignore
     return xyz2lp3(...srgb2xyz(r, g, b, alpha));
 }
@@ -9168,7 +9103,7 @@ function colorMix(...args) {
                 break;
             case "display-p3-linear":
                 // @ts-ignore
-                values = srgb2lp3values$1(...values);
+                values = srgb2lp3values(...values);
                 break;
             case "a98-rgb":
                 // @ts-ignore
@@ -14855,24 +14790,6 @@ function getAngle(token) {
     // @ts-ignore
     return token.val / 360;
 }
-function toPrecisionValue(value, precision = colorPrecision) {
-    const div = Math.pow(10, precision);
-    value = Math.round(value * div) / div;
-    return Math.abs(value) < epsilon ? 0 : value;
-}
-function toPrecisionAngle(angle, precision = colorPrecision, correctValue = true) {
-    angle = toPrecisionValue(angle, precision);
-    if (correctValue && Math.abs(angle) >= 360) {
-        angle %= 360;
-    }
-    if (Math.abs(angle) < anglePrecision) {
-        angle = 0;
-    }
-    if (correctValue && angle < 0) {
-        angle += 360;
-    }
-    return angle;
-}
 
 /**
  * Calculate the distance between two okLab colors.
@@ -16150,6 +16067,90 @@ function isWhiteSpace(codepoint) {
         codepoint == 0xd ||
         codepoint == 0x2028 ||
         codepoint == 0x2029);
+}
+// https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Values_and_units#absolute_length_units
+/**
+ * Convert length to px
+ * @param value
+ * @returns
+ */
+function length2Px(value) {
+    let result = null;
+    if (value.typ == exports.EnumToken.NumberTokenType) {
+        result = +value.val;
+    }
+    else {
+        switch (value.unit) {
+            case "cm":
+                // @ts-ignore
+                result = value.val * 37.8;
+                break;
+            case "mm":
+                // @ts-ignore
+                result = value.val * 3.78;
+                break;
+            case "Q":
+                // @ts-ignore
+                result = (value.val * 37.8) / 40;
+                break;
+            case "in":
+                // @ts-ignore
+                result = value.val / 96;
+                break;
+            case "pc":
+                // @ts-ignore
+                result = value.val / 16;
+                break;
+            case "pt":
+                // @ts-ignore
+                result = (value.val * 4) / 3;
+                break;
+            case "px":
+                result = +value.val;
+                break;
+        }
+    }
+    return isNaN(result) ? null : result;
+}
+/**
+ * minify number
+ * @param val
+ */
+function minifyNumber(val) {
+    val = String(toPrecisionValue(val));
+    if (val === "0") {
+        return "0";
+    }
+    const chr = val.charAt(0);
+    if (chr == "-") {
+        const slice = val.slice(0, 2);
+        if (slice == "-0") {
+            return val.length == 2 ? "0" : "-" + val.slice(2);
+        }
+    }
+    if (chr == "0") {
+        return val.slice(1);
+    }
+    return val;
+}
+function toPrecisionValue(value, precision = colorPrecision) {
+    const div = Math.pow(10, precision);
+    // @ts-ignore
+    value = Math.round(value * div) / div;
+    return Math.abs(value) < epsilon ? 0 : value;
+}
+function toPrecisionAngle(angle, precision = colorPrecision, correctValue = true) {
+    angle = toPrecisionValue(angle, precision);
+    if (correctValue && Math.abs(angle) >= 360) {
+        angle %= 360;
+    }
+    if (Math.abs(angle) < anglePrecision) {
+        angle = 0;
+    }
+    if (correctValue && angle < 0) {
+        angle += 360;
+    }
+    return angle;
 }
 
 function eq(a, b) {
@@ -24447,10 +24448,10 @@ function updateSourceMap(node, options, cache, sourcemap, sourceLocation, linesM
         let srcId = node[LOC]?.srcId ?? 0;
         let sourceFileName = options.sourcesMap?.get(srcId)?.getFileName?.() || null;
         if (sourceFileName != null && options.output != null) {
-            if (!cache.has(sourceFileName)) {
-                cache.set(sourceFileName, options.resolve(sourceFileName, dirname(options.output)).relative);
+            if (cache[sourceFileName] == null) {
+                cache[sourceFileName] = options.resolve(sourceFileName, dirname(options.output)).relative;
             }
-            sourceFileName = cache.get(sourceFileName);
+            sourceFileName = cache[sourceFileName];
         }
         // @ts-ignore
         sourcemap.add(...linesMap.getOffsets(sourceLocation.end), srcId, 
@@ -24651,46 +24652,6 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
             return acc + renderValue(curr, options, cache, reducer, errors);
         };
     }
-    // if (token.typ == EnumToken.FunctionTokenType && colorsFunc.includes((token as FunctionToken).val)) {
-    //     if (isColor(token)) {
-    //         // @ts-ignore
-    //         token.typ = EnumToken.ColorTokenType;
-    //         if (
-    //             // @ts-ignore
-    //             (token as ColorToken)!.chi[0]!.typ == EnumToken.IdenTokenType &&
-    //             // @ts-ignore
-    //             ((token as ColorToken)!.chi[0] as IdentToken).val == "from"
-    //         ) {
-    //             // @ts-ignore
-    //             (<ColorToken>token).cal = "rel";
-    //         } else {
-    //             // @ts-ignore
-    //             if (
-    //                 (token as ColorToken).val == "color-mix" &&
-    //                 (token as ColorToken).chi?.[0]?.typ == EnumToken.IdenTokenType &&
-    //                 ((token as ColorToken).chi?.[0] as IdentToken).val == "in"
-    //             ) {
-    //                 // @ts-ignore
-    //                 (<ColorToken>token).cal = "mix";
-    //             } else {
-    //                 // @ts-ignore
-    //                 if ((token as ColorToken).val == "color") {
-    //                     // @ts-ignore
-    //                     token.cal = "col";
-    //                 }
-    //                 // @ts-ignore
-    //                 (token as ColorToken).chi = (token as ColorToken).chi!.filter(
-    //                     (t: Token) =>
-    //                         ![
-    //                             EnumToken.WhitespaceTokenType,
-    //                             EnumToken.CommaTokenType,
-    //                             EnumToken.CommentTokenType,
-    //                         ].includes(t.typ),
-    //                 );
-    //             }
-    //         }
-    //     }
-    // }
     switch (token.typ) {
         case exports.EnumToken.FunctionTokenDefType:
         case exports.EnumToken.UrlFunctionTokenDefType:
@@ -25485,7 +25446,6 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
             if (token.typ == exports.EnumToken.ResolutionTokenType && unit == "dppx") {
                 unit = "x";
             }
-            // @ts-ignore
             return val.includes("/") ? val.replace("/", unit + "/") : minifyNumber(toPrecisionValue(val)) + unit;
         case exports.EnumToken.FlexTokenType:
         case exports.EnumToken.PercentageTokenType:

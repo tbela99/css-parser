@@ -10,24 +10,14 @@
     "all": "npm run sizes && npm run bench && npm run report"
   },
   "dependencies": {
-    "@tbela99/css-parser": "^1.4.8",
-<<<<<<< HEAD
-=======
-    "@tbela99/css-parser2": "github:tbela99/css-parser#6ec0980",
->>>>>>> 369a3921b8e90282af74248abd69edde8cf5140b
+    "@tbela99/css-parser": "^1.4.9",
     "clean-css": "^5.3.3",
     "css-tree": "^3.2.1",
     "cssnano": "^8.0.5",
     "csso": "^5.0.5",
-<<<<<<< HEAD
-    "esbuild": "^0.28.1",
-    "lightningcss": "^1.33.0",
-    "postcss": "^8.5.23",
-=======
     "esbuild": "^0.28.2",
     "lightningcss": "^1.33.0",
     "postcss": "^8.5.26",
->>>>>>> 369a3921b8e90282af74248abd69edde8cf5140b
     "vitest": "^4.1.10"
   }
 }

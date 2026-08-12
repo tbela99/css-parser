@@ -8,7 +8,7 @@ import type {
     Token,
 } from "../../../@types/token.d.ts";
 import { identity, multiply, toZero } from "./utils.ts";
-import { EnumToken, length2Px } from "../types.ts";
+import { EnumToken } from "../types.ts";
 import { stripCommaToken } from "../../validation/utils/list.ts";
 import { translate, translate3d, translateX, translateY, translateZ } from "./translate.ts";
 import { getAngle, getNumber } from "../../syntax/color/color.ts";
@@ -20,6 +20,7 @@ import { matrix, serialize } from "./matrix.ts";
 import { perspective } from "./perspective.ts";
 import type { Matrix } from "./type.d.ts";
 import { transformFunctions } from "../../syntax/constants.ts";
+import { length2Px } from "../../syntax/syntax.ts";
 
 export function compute(transformLists: Token[]): {
     matrix: Token;

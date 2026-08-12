@@ -1,10 +1,10 @@
-import { convertColor, toPrecisionAngle, toPrecisionValue, getAngle } from '../syntax/color/color.js';
+import { convertColor, getAngle } from '../syntax/color/color.js';
 import { reduceHexValue } from '../syntax/color/hex.js';
-import { EnumToken, minifyNumber, ColorType } from '../ast/types.js';
+import { EnumToken, ColorType } from '../ast/types.js';
 import { expand } from '../ast/expand.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
 import { pseudoElements, urlTokenMatcher, PARENT, tokensfuncSet, LOC, colorPrecision } from '../syntax/constants.js';
-import { reducegradientBackgroundPosition, reduceConicColorStops, reduceColorStops, parseColor } from '../syntax/syntax.js';
+import { minifyNumber, reducegradientBackgroundPosition, reduceConicColorStops, reduceColorStops, parseColor, toPrecisionAngle, toPrecisionValue } from '../syntax/syntax.js';
 import { equalsIgnoreCase } from '../parser/utils/text.js';
 import { toDegrees } from '../parser/utils/angle.js';
 import { LineMap } from '../parser/linesmap.js';
@@ -131,10 +131,10 @@ function updateSourceMap(node, options, cache, sourcemap, sourceLocation, linesM
         let srcId = node[LOC]?.srcId ?? 0;
         let sourceFileName = options.sourcesMap?.get(srcId)?.getFileName?.() || null;
         if (sourceFileName != null && options.output != null) {
-            if (!cache.has(sourceFileName)) {
-                cache.set(sourceFileName, options.resolve(sourceFileName, dirname(options.output)).relative);
+            if (cache[sourceFileName] == null) {
+                cache[sourceFileName] = options.resolve(sourceFileName, dirname(options.output)).relative;
             }
-            sourceFileName = cache.get(sourceFileName);
+            sourceFileName = cache[sourceFileName];
         }
         // @ts-ignore
         sourcemap.add(...linesMap.getOffsets(sourceLocation.end), srcId, 
@@ -335,46 +335,6 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
             return acc + renderValue(curr, options, cache, reducer, errors);
         };
     }
-    // if (token.typ == EnumToken.FunctionTokenType && colorsFunc.includes((token as FunctionToken).val)) {
-    //     if (isColor(token)) {
-    //         // @ts-ignore
-    //         token.typ = EnumToken.ColorTokenType;
-    //         if (
-    //             // @ts-ignore
-    //             (token as ColorToken)!.chi[0]!.typ == EnumToken.IdenTokenType &&
-    //             // @ts-ignore
-    //             ((token as ColorToken)!.chi[0] as IdentToken).val == "from"
-    //         ) {
-    //             // @ts-ignore
-    //             (<ColorToken>token).cal = "rel";
-    //         } else {
-    //             // @ts-ignore
-    //             if (
-    //                 (token as ColorToken).val == "color-mix" &&
-    //                 (token as ColorToken).chi?.[0]?.typ == EnumToken.IdenTokenType &&
-    //                 ((token as ColorToken).chi?.[0] as IdentToken).val == "in"
-    //             ) {
-    //                 // @ts-ignore
-    //                 (<ColorToken>token).cal = "mix";
-    //             } else {
-    //                 // @ts-ignore
-    //                 if ((token as ColorToken).val == "color") {
-    //                     // @ts-ignore
-    //                     token.cal = "col";
-    //                 }
-    //                 // @ts-ignore
-    //                 (token as ColorToken).chi = (token as ColorToken).chi!.filter(
-    //                     (t: Token) =>
-    //                         ![
-    //                             EnumToken.WhitespaceTokenType,
-    //                             EnumToken.CommaTokenType,
-    //                             EnumToken.CommentTokenType,
-    //                         ].includes(t.typ),
-    //                 );
-    //             }
-    //         }
-    //     }
-    // }
     switch (token.typ) {
         case EnumToken.FunctionTokenDefType:
         case EnumToken.UrlFunctionTokenDefType:
@@ -1169,7 +1129,6 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
             if (token.typ == EnumToken.ResolutionTokenType && unit == "dppx") {
                 unit = "x";
             }
-            // @ts-ignore
             return val.includes("/") ? val.replace("/", unit + "/") : minifyNumber(toPrecisionValue(val)) + unit;
         case EnumToken.FlexTokenType:
         case EnumToken.PercentageTokenType:
