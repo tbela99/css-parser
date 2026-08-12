@@ -185,29 +185,9 @@ export const resolve = memoize(function (
         }
     }
 
-    // if (matchUrl.test(currentDirectory)) {
-    //     const path: string = new URL(url, currentDirectory).href;
-
-    //     return {
-    //         absolute: path,
-    //         relative: path,
-    //     };
-    // }
-
-    // let result: string = "";
-
-    // if (url.charAt(0) == "/") {
-    //     result = url;
-    // } 
-    // else if (currentDirectory.charAt(0) == "/") {
-    //     result = dirname(currentDirectory) + "/" + url;
-    // }
-
-    // const absolute = url; // normalize(result);
-
     return {
         absolute: url,
-        relative: url === "" ? "" : diff(url, cwd ?? currentDirectory),
+        relative: url === "" ? "" : diff(url, cwd || currentDirectory),
     };
 }) as (
     url: string,

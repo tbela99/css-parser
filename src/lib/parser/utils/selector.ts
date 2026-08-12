@@ -107,7 +107,7 @@ export function parseSelector(
             chi: [],
             [LOC]: {
                 ...tokens[0][LOC],
-                end: { ...(tokens[tokens.length - 1]?.[LOC]?.end ?? tokens[0]?.[LOC]?.end) },
+                end: tokens[tokens.length - 1]?.[LOC]?.end ?? tokens[0]?.[LOC]?.end
             },
             [TOKENS]: tokens.length === 0 ? null : tokens,
             [STATE]: result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid,

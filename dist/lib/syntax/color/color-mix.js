@@ -1,5 +1,5 @@
 import { EnumToken, ColorType } from '../../ast/types.js';
-import { minmax, getNumber, toPrecisionValue, toPrecisionAngle } from './color.js';
+import { minmax, getNumber } from './color.js';
 import { srgbvalues, srgb2lsrgbvalues } from './srgb.js';
 import { srgb2lch, xyz2lchvalues } from './lch.js';
 import { srgb2rgb } from './rgb.js';
@@ -345,7 +345,7 @@ function colorMix(...args) {
                 chi: values.map((v) => {
                     return {
                         typ: EnumToken.NumberTokenType,
-                        val: toPrecisionValue(v),
+                        val: v,
                     };
                 }),
                 kin: ColorType.LCH,
@@ -366,7 +366,7 @@ function colorMix(...args) {
                 values.map((v) => {
                     return {
                         typ: EnumToken.NumberTokenType,
-                        val: toPrecisionValue(v),
+                        val: v,
                     };
                 })),
                 kin: ColorType.COLOR,
@@ -404,18 +404,18 @@ function colorMix(...args) {
                 chi: values.map((v) => {
                     return {
                         typ: EnumToken.NumberTokenType,
-                        val: toPrecisionValue(v),
+                        val: v,
                     };
                 }),
                 kin: ColorType[colorSpace.toUpperCase().replaceAll("-", "_")],
             };
             if (colorSpace == "hsl" || colorSpace == "hwb") {
                 // @ts-ignore
-                result.chi[0] = { typ: EnumToken.AngleTokenType, val: toPrecisionAngle(result.chi[0].val * 360) };
+                result.chi[0] = { typ: EnumToken.AngleTokenType, val: result.chi[0].val * 360 };
                 // @ts-ignore
-                result.chi[1] = { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(result.chi[1].val) * 100 };
+                result.chi[1] = { typ: EnumToken.PercentageTokenType, val: result.chi[1].val * 100 };
                 // @ts-ignore
-                result.chi[2] = { typ: EnumToken.PercentageTokenType, val: toPrecisionValue(result.chi[2].val) * 100 };
+                result.chi[2] = { typ: EnumToken.PercentageTokenType, val: result.chi[2].val * 100 };
             }
             return result;
     }

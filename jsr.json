@@ -1,6 +1,6 @@
 {
   "name": "@tbela99/css-parser",
-  "version": "1.4.8",
+  "version": "1.4.9",
   "publish": {
     "include": [
       "src",
@@ -22,6 +22,7 @@
       "build.sh",
       "docs",
       "benchmark",
+      "llms.txt",
       "package-lock.json",
       "ROADMAP.md",
       "rollup.config.js",

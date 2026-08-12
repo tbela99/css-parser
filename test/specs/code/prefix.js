@@ -223,7 +223,7 @@ a {
   transition: -ms-transform 1s;
   transition: transform 1s
 }
-  .xl\:origin-bottom-left2 {
+  .xl\\:origin-bottom-left2 {
  background: -o-linear-gradient(-90deg,#fff,#000);
   }
 `, {
@@ -231,10 +231,6 @@ a {
                 removeDuplicateDeclarations: false,
                 beautify: true
             }).then(result => expect(result.code).equals(`::placeholder {
- color: grey;
- color: grey;
- color: grey;
- color: grey;
  color: grey
 }
 @supports selector(::placeholder) {
@@ -256,22 +252,15 @@ a {
  }
 }
 .site,.example {
- display: grid;
  display: grid
 }
 .site {
- grid-template-columns: 2fr 1fr;
  grid-template-columns: 2fr 1fr;
  grid-template-areas: "header header""title sidebar""main sidebar""footer footer"
 }
 .example {
  animation: bar 1s infinite;
  transition: all .5s;
- transition: all .5s;
- transition: all .5s;
- user-select: none;
- user-select: none;
- user-select: none;
  user-select: none;
  background: linear-gradient(#fff,#000);
  background: linear-gradient(#fff,#000);
@@ -311,11 +300,9 @@ a {
  grid-area: footer
 }
 a {
- transition: transform 1s;
- transition: transform 1s;
  transition: transform 1s
 }
-.xl\:origin-bottom-left2 {
+.xl\\:origin-bottom-left2 {
  background: linear-gradient(#fff,#000)
 }`));
         });

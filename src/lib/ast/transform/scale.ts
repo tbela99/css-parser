@@ -1,8 +1,7 @@
-import {identity, multiply} from "./utils.ts";
-import type {Matrix} from "./type.d.ts";
+import { identity, multiply } from "./utils.ts";
+import type { Matrix } from "./type.d.ts";
 
 export function scaleX(x: number, from: Matrix): Matrix {
-
     const matrix = identity();
     matrix[0] = x;
 
@@ -10,7 +9,6 @@ export function scaleX(x: number, from: Matrix): Matrix {
 }
 
 export function scaleY(y: number, from: Matrix): Matrix {
-
     const matrix = identity();
 
     matrix[4 + 1] = y;
@@ -19,7 +17,6 @@ export function scaleY(y: number, from: Matrix): Matrix {
 }
 
 export function scaleZ(z: number, from: Matrix): Matrix {
-
     const matrix = identity();
 
     matrix[2 * 4 + 2] = z;
@@ -28,7 +25,6 @@ export function scaleZ(z: number, from: Matrix): Matrix {
 }
 
 export function scale(x: number, y: number, from: Matrix): Matrix {
-
     const matrix = identity();
     matrix[0] = x;
     matrix[4 + 1] = y;
@@ -37,7 +33,6 @@ export function scale(x: number, y: number, from: Matrix): Matrix {
 }
 
 export function scale3d(x: number, y: number, z: number, from: Matrix): Matrix {
-
     const matrix = identity();
     matrix[0] = x;
     matrix[4 + 1] = y;

@@ -1,5 +1,5 @@
 import { ColorType, EnumToken } from '../../ast/types.js';
-import { color2srgbvalues, toPrecisionValue } from './color.js';
+import { color2srgbvalues } from './color.js';
 import { lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues, hwb2srgbvalues, rgb2srgbvalues } from './srgb.js';
 import { hsl2srgbvalues } from './rgb.js';
 
@@ -88,7 +88,7 @@ function cmyktoken(values) {
                 {
                     typ: EnumToken.PercentageTokenType,
                     // @ts-ignore
-                    val: toPrecisionValue(curr * 100),
+                    val: curr * 100,
                 },
             ]
             : [
@@ -99,7 +99,7 @@ function cmyktoken(values) {
                 },
                 {
                     typ: EnumToken.PercentageTokenType,
-                    val: toPrecisionValue(curr, 2) * 100,
+                    val: curr * 100,
                 },
             ], []),
         kin: ColorType.DEVICE_CMYK,

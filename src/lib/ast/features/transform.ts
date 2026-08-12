@@ -18,7 +18,7 @@ export class TransformCssFeature {
     public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.KeyFramesRuleNodeType]);
 
     get ordering(): number {
-        return 4;
+        return 3;
     }
 
     get processMode(): FeatureWalkMode {

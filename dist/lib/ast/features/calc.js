@@ -3,7 +3,7 @@ import { walkValues, WalkerEvent, WalkerOptionEnum } from '../walk.js';
 import { evaluate } from '../math/expression.js';
 import { renderValue } from '../../renderer/render.js';
 import { FeatureWalkMode } from './type.js';
-import { mathFuncs, tokensfuncSet } from '../../syntax/constants.js';
+import { mathFuncs, tokensfuncSet, LOC } from '../../syntax/constants.js';
 
 class ComputeCalcExpressionFeature {
     accept = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
@@ -124,6 +124,7 @@ class ComputeCalcExpressionFeature {
                                                     typ: EnumToken.MathFunctionTokenType,
                                                     val: "calc",
                                                     chi: values,
+                                                    [LOC]: value[LOC],
                                                 }
                                                 : values[0]);
                                             break;
@@ -137,6 +138,7 @@ class ComputeCalcExpressionFeature {
                                                 typ: EnumToken.MathFunctionTokenType,
                                                 val: "calc",
                                                 chi: values,
+                                                [LOC]: value[LOC],
                                             });
                                             break;
                                         }

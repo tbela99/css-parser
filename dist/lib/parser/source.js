@@ -1,5 +1,9 @@
-import { LineMap } from './linemap.js';
+import { LineMap } from './linesmap.js';
 
+/**
+ * Source file ID
+ */
+let sourceId = 0;
 /**
  * Source file helper class
  */
@@ -9,10 +13,6 @@ class SourceFile {
      */
     id;
     /**
-     * Source file content
-     */
-    content;
-    /**
      * Source file path
      */
     file;
@@ -21,14 +21,18 @@ class SourceFile {
      */
     lineStarts;
     /**
+     * Source file content
+     */
+    content;
+    /**
      * Constructor
      * @param id
      * @param content
      * @param lines
      * @param file
      */
-    constructor(id, content, lines, file = null) {
-        this.id = id;
+    constructor(content, lines, file = null) {
+        this.id = sourceId++;
         this.content = content;
         this.file = file;
         this.lineStarts = new LineMap(lines);
@@ -38,27 +42,47 @@ class SourceFile {
      * @param content
      * @param lines
      */
-    updateContent(content, lines) {
-        this.content = content;
-        this.lineStarts = new LineMap(lines);
+    append(content) {
+        this.content += content;
     }
-    getFile() {
+    /**
+     * get file name
+     * @returns
+     */
+    getFileName() {
         return this.file;
+    }
+    /**
+     * get content
+     * @returns
+     */
+    getContent() {
+        return this.content;
+    }
+    /**
+     * get text
+     * @param start
+     * @param length
+     * @returns
+     */
+    getText(start, length) {
+        return this.content.slice(start, start + length);
     }
     /**
      * Compute line and column of the offset
      * @param offset
      * @returns
      */
-    position(offset) {
-        return this.lineStarts.position(offset);
+    getOffsets(offset) {
+        return this.lineStarts.getOffsets(offset);
     }
     /**
-     * set line starts
-     * @param lines
+     * get source location
+     * @param offset
+     * @returns
      */
-    setLineStarts(lines) {
-        this.lineStarts.setLineStarts(lines);
+    getSourceLocation(offset) {
+        return [this.file, ...this.getOffsets(offset)];
     }
     /**
      * get line starts
@@ -66,6 +90,13 @@ class SourceFile {
      */
     getLineStarts() {
         return this.lineStarts.getLineStarts();
+    }
+    /**
+     * add line start
+     * @param lineStart
+     */
+    addLineStart(lineStart) {
+        this.lineStarts.addLineStart(lineStart);
     }
 }
 

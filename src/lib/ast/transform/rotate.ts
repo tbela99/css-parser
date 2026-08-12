@@ -1,5 +1,5 @@
-import {identity, multiply} from "./utils.ts";
-import type {Matrix} from "./type.d.ts";
+import { identity, multiply } from "./utils.ts";
+import type { Matrix } from "./type.d.ts";
 
 /**
  * angle in radian
@@ -10,7 +10,6 @@ import type {Matrix} from "./type.d.ts";
  * @param from
  */
 export function rotate3D(angle: number, x: number, y: number, z: number, from: Matrix): Matrix {
-
     const matrix: Matrix = identity();
     const sc: number = Math.sin(angle / 2) * Math.cos(angle / 2);
     const sq: number = Math.sin(angle / 2) * Math.sin(angle / 2);
@@ -38,7 +37,6 @@ export function rotate3D(angle: number, x: number, y: number, z: number, from: M
 }
 
 export function rotate(angle: number, from: Matrix): Matrix {
-
     const matrix: Matrix = identity();
     matrix[0] = Math.cos(angle);
     matrix[1] = Math.sin(angle);

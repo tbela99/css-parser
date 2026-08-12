@@ -203,14 +203,14 @@
       "syntax": "<number> | <percentage> | none | h | w | b | alpha"
     },
     "hwb()": {
-      "syntax": "| hwb(from <color> [ <hue> | none | h | w | b ] <relative-hwb-component>{2} [ / [ <alpha-value> | none]  ]? )",
+      "syntax": "| hwb(from <color> [ <hue> | none | h | w | b ] <relative-hwb-component>{2} [ / [ <alpha-value> | none] ]? )",
       "comment": "extend hwb() syntax"
     },
     "relative-hsl-component": {
       "syntax": "<number> | <percentage> | none | h | s | l | alpha"
     },
     "hsl()": {
-      "syntax": "| hsl(from <color> [ <hue> | none | h | s | l ] <relative-hsl-component>{2} [ / [ <alpha-value> | none]  ]? )",
+      "syntax": "| hsl(from <color> [ <hue> | none | h | s | l ] <relative-hsl-component>{2} [ / [ <alpha-value> | none] ]? )",
       "comment": "extend hsl() syntax"
     },
     "hsla()": {
@@ -221,7 +221,7 @@
       "syntax": "<number> | <percentage> | none | r | g | b | alpha"
     },
     "rgb()": {
-      "syntax": "| rgb(from <color> <relative-rgb-component>{3} [ / [ <alpha-value> | none]  ]? )",
+      "syntax": "| rgb(from <color> <relative-rgb-component>{3} [ / [ <alpha-value> | none] ]? )",
       "comment": "extend rgb() syntax"
     },
     "rgba()": {
@@ -298,8 +298,17 @@
     "color-mix()": {
       "syntax": "color-mix( <color-interpolation-method> ,? [ <color> && <percentage [0,100]>? ]#)"
     },
+    "wcag2": {
+      "syntax": "wcag2 | wcag2([<number> | [ aa | aaa ] && large? ])"
+    },
+    "target-contrast": {
+      "syntax": "<wcag2>"
+    },
     "contrast-color()": {
-      "syntax": "contrast-color(<color> )"
+      "syntax": "contrast-color( [ [ <color> && [ tbd-fg | tbd-bg ] && <target-contrast>? ] | [ <color> && [ tbd-fg | tbd-bg ] && <target-contrast>, <color># ] ] )"
+    },
+    "color-layers()": {
+      "syntax": "color-layers([ <blend-mode>, ]? <color># )"
     },
     "env()": {
       "syntax": "env( <custom-ident> <integer [0,∞]>* , <declaration-value>? )"

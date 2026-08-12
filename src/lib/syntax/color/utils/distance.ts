@@ -1,5 +1,5 @@
 import type { ColorToken } from "../../../../@types/index.d.ts";
-import { convertColor } from "../color.ts";
+import { convertColor, toPrecisionValue } from "../color.ts";
 import { getOKLABComponents } from "../oklab.ts";
 import { ColorType } from "../../../ast/types.ts";
 import { colorDistancePrecision } from "../../constants.ts";
@@ -35,7 +35,7 @@ export function okLabDistance(color1: ColorToken, color2: ColorToken): number | 
         diff.push((okLab1[3] ?? 1) - (okLab2[3] ?? 1));
     }
 
-    return Math.hypot(...diff);
+    return toPrecisionValue(Math.hypot(...diff));
 }
 
 /**

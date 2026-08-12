@@ -1,6 +1,6 @@
 import type { ColorToken, Token } from "../../../@types/token.d.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
-import { color2srgbvalues, toPrecisionValue } from "./color.ts";
+import { color2srgbvalues } from "./color.ts";
 import {
     hwb2srgbvalues,
     lab2srgbvalues,
@@ -125,7 +125,7 @@ function cmyktoken(values: number[]): ColorToken {
                           {
                               typ: EnumToken.PercentageTokenType,
                               // @ts-ignore
-                              val: toPrecisionValue(curr * 100),
+                              val: curr * 100,
                           } as Token,
                       ]
                     : [
@@ -136,7 +136,7 @@ function cmyktoken(values: number[]): ColorToken {
                           } as Token,
                           {
                               typ: EnumToken.PercentageTokenType,
-                              val: toPrecisionValue(curr, 2) * 100,
+                              val: curr * 100,
                           } as Token,
                       ],
             [] as Token[],

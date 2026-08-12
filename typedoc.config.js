@@ -9,12 +9,15 @@ export default {
         Benchmark: "https://tbela99.github.io/css-parser/benchmark/index.html",
         Docs: "https://tbela99.github.io/css-parser/docs/",
         Playground: "https://tbela99.github.io/css-parser/playground/",
+        "llm.txt": "https://github.com/tbela99/css-parser/llms.txt",
         GitHub: "https://github.com/tbela99/css-parser",
     },
-    plugin: ["typedoc-unhoax-theme", "typedoc-plugin-coverage", "typedoc-plugin-redirect"],
+    highlightLanguages: ["ts", "css", "javascript", "json", 'html', 'shell'],
+    plugin: ["typedoc-unhoax-theme", "typedoc-plugin-coverage", "typedoc-plugin-redirect", "typedoc-plugin-llms-txt"],
     redirects: {
         "documents/Guide.html": "documents/Guide.Getting_started.html",
     },
+    llmsTxtTemplate: "./llms.txt",
     coverageOutputType: "all",
     out: "docs",
     // Inject the checkbox parser into TypeDoc's markdown engine

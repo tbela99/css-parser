@@ -1,41 +1,23 @@
-import { EnumToken } from "../lib/ast/types.ts";
-import { LOC, PARENT, TOKENS, STATE, ERRORS, RAW, ROOT, OPTIMIZED } from "../lib/syntax/constants.ts";
-import type { Token } from "./token.d.ts";
-
-/**
- * Position
- */
-export declare interface Position {
-    /**
-     * index in the source
-     */
-    ind: number;
-    /**
-     * line number
-     */
-    lin: number;
-    /**
-     * column number
-     */
-    col: number;
-}
+import {EnumToken} from "../lib/ast/types.ts";
+import {ERRORS, LOC, OPTIMIZED, PARENT, RAW, ROOT, STATE, TOKENS} from "../lib/syntax/constants.ts";
+import type {Token} from "./token.d.ts";
 
 /**
  * token or node location
  */
-export declare interface Location {
+export declare interface SourceLocation {
     /**
      * start position
      */
-    sta: Position;
+    sta: number;
     /**
      * end position
      */
-    end: Position;
+    end: number;
     /**
      * source file
      */
-    src: string;
+    srcId: number;
 }
 
 /**
@@ -50,7 +32,7 @@ export declare interface BaseToken {
      * location info
      * @private
      */
-    [LOC]?: Location;
+    [LOC]?: SourceLocation;
     /**
      * parent node
      * @private

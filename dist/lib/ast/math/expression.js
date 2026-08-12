@@ -1,4 +1,4 @@
-import { mathFuncs } from '../../syntax/constants.js';
+import { mathFuncs, LOC } from '../../syntax/constants.js';
 import { EnumToken } from '../types.js';
 import { rem, compute } from './math.js';
 
@@ -58,6 +58,7 @@ function evaluate(tokens) {
                         // @ts-ignore
                         val: Math[nodes[0].val.toUpperCase()],
                         typ: EnumToken.NumberTokenType,
+                        [LOC]: nodes[0][LOC],
                     },
                 ];
             }
@@ -74,10 +75,14 @@ function evaluate(tokens) {
         }
         if (token.typ == EnumToken.Sub) {
             if (!isScalarToken(nodes[i + 1])) {
-                token = { typ: EnumToken.ListToken, chi: [nodes[i], nodes[i + 1]] };
+                token = {
+                    typ: EnumToken.ListToken,
+                    chi: [nodes[i], nodes[i + 1]],
+                    [LOC]: { ...nodes[i][LOC], end: nodes[i + 1][LOC].end },
+                };
             }
             else {
-                token = doEvaluate(nodes[i + 1], { typ: EnumToken.NumberTokenType, val: -1 }, EnumToken.Mul);
+                token = doEvaluate(nodes[i + 1], { typ: EnumToken.NumberTokenType, val: -1, [LOC]: nodes[i + 1][LOC] }, EnumToken.Mul);
             }
             i++;
         }
@@ -92,12 +97,16 @@ function evaluate(tokens) {
         const token = curr[1].reduce((acc, curr) => doEvaluate(acc, curr, EnumToken.Add));
         if (token.typ != EnumToken.BinaryExpressionTokenType) {
             if ("val" in token && +token.val < 0) {
-                acc.push({ typ: EnumToken.Sub }, { ...token, val: -token.val });
+                acc.push({ typ: EnumToken.Sub, [LOC]: token[LOC] }, {
+                    ...token,
+                    val: -token.val,
+                    [LOC]: token[LOC],
+                });
                 return acc;
             }
         }
         if (acc.length > 0 && curr[0] != EnumToken.ListToken) {
-            acc.push({ typ: EnumToken.Add });
+            acc.push({ typ: EnumToken.Add, [LOC]: token[LOC] });
         }
         acc.push(token);
         return acc;
@@ -115,6 +124,7 @@ function doEvaluate(l, r, op) {
         op,
         l,
         r,
+        [LOC]: { ...l[LOC], end: (r?.[LOC] ?? l[LOC])?.end },
     };
     if (!isScalarToken(l) || !isScalarToken(r) || (l.typ == r.typ && "unit" in l && "unit" in r && l.unit != r.unit)) {
         return defaultReturn;
@@ -152,15 +162,15 @@ function doEvaluate(l, r, op) {
             if (typeof v1 == "number" && l.typ == EnumToken.PercentageTokenType) {
                 v1 = {
                     typ: EnumToken.FractionTokenType,
-                    l: { typ: EnumToken.NumberTokenType, val: v1 },
-                    r: { typ: EnumToken.NumberTokenType, val: 100 },
+                    l: { typ: EnumToken.NumberTokenType, val: v1, [LOC]: l[LOC] },
+                    r: { typ: EnumToken.NumberTokenType, val: 100, [LOC]: r[LOC] },
                 };
             }
             else if (typeof v2 == "number" && r.typ == EnumToken.PercentageTokenType) {
                 v2 = {
                     typ: EnumToken.FractionTokenType,
-                    l: { typ: EnumToken.NumberTokenType, val: v2 },
-                    r: { typ: EnumToken.NumberTokenType, val: 100 },
+                    l: { typ: EnumToken.NumberTokenType, val: v2, [LOC]: l[LOC] },
+                    r: { typ: EnumToken.NumberTokenType, val: 100, [LOC]: r[LOC] },
                 };
             }
         }
@@ -171,6 +181,7 @@ function doEvaluate(l, r, op) {
         ...(l.typ === EnumToken.NumberTokenType || l.typ === EnumToken.IdenTokenType ? r : l),
         typ,
         val /* : typeof val == 'number' ? minifyNumber(val) : val */,
+        [LOC]: { ...l[LOC], end: (r?.[LOC] ?? l?.[LOC])?.end },
     };
     if (token.typ == EnumToken.IdenTokenType) {
         // @ts-ignore
@@ -209,6 +220,7 @@ function evaluateFunc(token) {
                 {
                     typ: EnumToken.NumberTokenType,
                     val: Math[token.val](val),
+                    [LOC]: value[0][LOC],
                 },
             ];
         }
@@ -230,6 +242,7 @@ function evaluateFunc(token) {
                 {
                     ...ref,
                     val: +Math.sqrt(value).toFixed(rem(...all)),
+                    [LOC]: token[LOC],
                 },
             ];
         }
@@ -258,6 +271,7 @@ function evaluateFunc(token) {
                     {
                         ...v1[0],
                         val: Math.pow(val1, val2),
+                        [LOC]: token[LOC],
                     },
                 ];
             }
@@ -267,6 +281,7 @@ function evaluateFunc(token) {
                         ...{},
                         ...v1[0],
                         val: Math.atan2(val1, val2),
+                        [LOC]: token[LOC],
                     },
                 ];
             }
@@ -274,6 +289,7 @@ function evaluateFunc(token) {
                 {
                     ...v1[0],
                     val: val2 == 0 ? val1 : val1 - Math.floor(val1 / val2) * val2,
+                    [LOC]: token[LOC],
                 },
             ];
         }
@@ -310,6 +326,7 @@ function evaluateFunc(token) {
                         {
                             ...values[0],
                             val: Math.log(val1) / Math.log(val2),
+                            [LOC]: token[LOC],
                         },
                     ];
                 }
@@ -345,7 +362,7 @@ function evaluateFunc(token) {
                                     : Math.ceil(val / val2) * val2;
                     }
                     // @ts-ignore
-                    return [{ ...values[0], val }];
+                    return [{ ...values[0], val, [LOC]: token[LOC] }];
                 }
             }
         }
@@ -363,7 +380,7 @@ function inlineExpression(token) {
             result.push(token);
         }
         else {
-            result.push(...inlineExpression(token.l), { typ: token.op }, ...inlineExpression(token.r));
+            result.push(...inlineExpression(token.l), { typ: token.op, [LOC]: token[LOC] }, ...inlineExpression(token.r));
         }
     }
     else {
@@ -426,7 +443,7 @@ function factorToken(token) {
             token.val == "calc")) {
         if ((token.typ == EnumToken.MathFunctionTokenType || token.typ == EnumToken.FunctionTokenType) &&
             token.val == "calc") {
-            token = { ...token, typ: EnumToken.ParensTokenType };
+            token = { ...token, typ: EnumToken.ParensTokenType, [LOC]: token[LOC] };
             // @ts-ignore
             delete token.val;
         }
@@ -464,6 +481,7 @@ function factor(tokens, ops) {
                     : getArithmeticOperation(tokens[i].val),
                 l: factorToken(tokens[i - 1]),
                 r: factorToken(tokens[i + 1]),
+                [LOC]: { ...tokens[i - 1][LOC], end: tokens[i + 1][LOC]?.end },
             });
             i--;
         }

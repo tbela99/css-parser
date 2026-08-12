@@ -2361,6 +2361,14 @@ declare enum ColorType$1 {
      */
     DISPLAY_P3_LINEAR = 26,
     /**
+     * Contrast color
+     */
+    CONTRAST_COLOR = 27,
+    /**
+     * color layers
+     */
+    COLOR_LAYERS = 28,
+    /**
      * alias for rgba
      */
     RGB = 4,
@@ -2454,39 +2462,21 @@ declare const PARENT: unique symbol;
 declare const OPTIMIZED: unique symbol;
 
 /**
- * Position
- */
-export declare interface Position$1 {
-    /**
-     * index in the source
-     */
-    ind: number;
-    /**
-     * line number
-     */
-    lin: number;
-    /**
-     * column number
-     */
-    col: number;
-}
-
-/**
  * token or node location
  */
-export declare interface Location {
+export declare interface SourceLocation {
     /**
      * start position
      */
-    sta: Position$1;
+    sta: number;
     /**
      * end position
      */
-    end: Position$1;
+    end: number;
     /**
      * source file
      */
-    src: string;
+    srcId: number;
 }
 
 /**
@@ -2501,7 +2491,7 @@ export declare interface BaseToken {
      * location info
      * @private
      */
-    [LOC]?: Location;
+    [LOC]?: SourceLocation;
     /**
      * parent node
      * @private
@@ -3070,12 +3060,285 @@ declare function walkValues(values: Token$1[], root?: AstNode$1 | Token$1 | null
     type?: EnumToken | EnumToken[] | ((token: Token$1) => boolean);
 }, reverse?: boolean): Generator<WalkAttributesResult>;
 
-export declare type GenericVisitorResult<T> = T | T[] | Promise<T> | Promise<T[]> | null | Promise<null>;
+export declare type GenericVisitorSyncResult<T> = T | T[] | null;
+export declare type GenericVisitorAsyncResult<T> = Promise<T> | Promise<T[]>| Promise<null>;
+export declare type GenericVisitorResult<T> = GenericVisitorSyncResult<T> | GenericVisitorAsyncResult<T>;
+
+
+
+export declare type GenericVisitorSyncHandler<T> = (
+    node: T,
+    parent?: AstNode | Token,
+    root?: AstNode | Token,
+) => GenericVisitorSyncResult<T>;
+
+export declare type GenericVisitorAstNodeSyncHandlerMap<T> =
+    | Record<string, GenericVisitorSyncHandler<T>>
+    | GenericVisitorSyncHandler<T>
+    | { type: WalkerEvent; handler: GenericVisitorSyncHandler<T> }
+    | { type: WalkerEvent; handler: Record<string, GenericVisitorSyncHandler<T>> };
+
+export declare type ValueVisitorSyncHandler = GenericVisitorSyncHandler<Token>;
+
+/**
+ * node visitor callback map
+ *
+ */
+export declare interface VisitorSyncNodeMap {
+    /**
+     * at rule visitor
+     *
+     * Example: change media at-rule prelude
+     *
+     * ```ts
+     *
+     * import {transform, AstAtRule, ParserOptions} from "@tbela99/css-parser";
+     *
+     * const options: ParserOptions = {
+     *
+     *     visitor: {
+     *
+     *         AtRule: {
+     *
+     *             media: (node: AstAtRule): AstAtRule => {
+     *
+     *                 node.val = 'tv,screen';
+     *                 return node
+     *             }
+     *         }
+     *     }
+     * };
+     *
+     * const css = `
+     *
+     * @media screen {
+     *
+     *     .foo {
+     *
+     *             height: calc(100px * 2/ 15);
+     *     }
+     * }
+     * `;
+     *
+     * const result = await transform(css, options);
+     *
+     * console.debug(result.code);
+     *
+     * // @media tv,screen{.foo{height:calc(40px/3)}}
+     * ```
+     */
+    AtRule?: GenericVisitorAstNodeSyncHandlerMap<AstAtRule>;
+    /**
+     * declaration visitor
+     *
+     *  Example: add 'width: 3px' everytime a declaration with the name 'height' is found
+     *
+     * ```ts
+     *
+     * import {transform, parseDeclarations} from "@tbela99/css-parser";
+     *
+     * const options: ParserOptions = {
+     *
+     *     removeEmpty: false,
+     *     visitor: {
+     *
+     *         Declaration: {
+     *
+     *             // called only for height declaration
+     *             height: (node: AstDeclaration): AstDeclaration[] => {
+     *
+     *
+     *                 return [
+     *                     node,
+     *                     {
+     *
+     *                         typ: EnumToken.DeclarationNodeType,
+     *                         nam: 'width',
+     *                         val: [
+     *                             <LengthToken>{
+     *                                 typ: EnumToken.LengthTokenType,
+     *                                 val: 3,
+     *                                 unit: 'px'
+     *                             }
+     *                         ]
+     *                     }
+     *                 ];
+     *             }
+     *            }
+     *         }
+     * };
+     *
+     * const css = `
+     *
+     * .foo {
+     *     height: calc(100px * 2/ 15);
+     * }
+     * .selector {
+     * color: lch(from peru calc(l * 0.8) calc(c * 0.7) calc(h + 180))
+     * }
+     * `;
+     *
+     * console.debug(await transform(css, options));
+     *
+     * // .foo{height:calc(40px/3);width:3px}.selector{color:#0880b0}
+     * ```
+     *
+     * Example: rename 'margin' to 'padding' and 'height' to 'width'
+     *
+     * ```ts
+     * import {AstDeclaration, ParserOptions, transform} from "../src/node.ts";
+     *
+     * const options: ParserOptions = {
+     *
+     *     visitor: {
+     *
+     *         // called for every declaration
+     *         Declaration: (node: AstDeclaration): null => {
+     *
+     *
+     *             if (node.nam == 'height') {
+     *
+     *                 node.nam = 'width';
+     *             }
+     *
+     *             else if (node.nam == 'margin') {
+     *
+     *                 node.nam = 'padding'
+     *             }
+     *
+     *             return null;
+     *         }
+     *     }
+     * };
+     *
+     * const css = `
+     *
+     * .foo {
+     *     height: calc(100px * 2/ 15);
+     *     margin: 10px;
+     * }
+     * .selector {
+     *
+     * margin: 20px;}
+     * `;
+     *
+     * const result = await transform(css, options);
+     *
+     * console.debug(result.code);
+     *
+     * // .foo{width:calc(40px/3);padding:10px}.selector{padding:20px}
+     * ```
+     */
+    Declaration?: GenericVisitorAstNodeSyncHandlerMap<AstDeclaration>;
+
+    /**
+     * rule visitor
+     *
+     *  Example: add 'width: 3px' to every rule with the selector '.foo'
+     *
+     * ```ts
+     *
+     * import {transform, parseDeclarations} from "@tbela99/css-parser";
+     *
+     * const options: ParserOptions = {
+     *
+     *     removeEmpty: false,
+     *     visitor: {
+     *
+     *         Rule: async (node: AstRule): Promise<AstRule | null> => {
+     *
+     *             if (node.sel == '.foo') {
+     *
+     *                 node.chi.push(...await parseDeclarations('width: 3px'));
+     *                 return node;
+     *             }
+     *
+     *             return null;
+     *         }
+     *     }
+     * };
+     *
+     * const css = `
+     *
+     * .foo {
+     *     .foo {
+     *     }
+     * }
+     * `;
+     *
+     * console.debug(await transform(css, options));
+     *
+     * // .foo{width:3px;.foo{width:3px}}
+     * ```
+     */
+    Rule?: GenericVisitorAstNodeSyncHandlerMap<AstRule>;
+
+    KeyframesRule?: GenericVisitorAstNodeSyncHandlerMap<AstKeyframesRule>;
+
+    KeyframesAtRule?: GenericVisitorAstNodeSyncHandlerMap<AstKeyframesAtRule>;
+
+    /**
+     * value visitor
+     */
+    Value?: GenericVisitorAstNodeSyncHandlerMap<Token>;
+
+    /**
+     * generic token visitor. the key name is of type keyof EnumToken.
+     * generic tokens are called for every token of the specified type.
+     *
+     * ```ts
+     *
+     * import {transform, parse, parseDeclarations} from "@tbela99/css-parser";
+     *
+     * const options: ParserOptions = {
+     *
+     *     inlineCssVariables: true,
+     *     visitor: {
+     *
+     *         // Stylesheet node visitor
+     *         StyleSheetNodeType: async (node) => {
+     *
+     *             // insert a new rule
+     *             node.chi.unshift(await parse('html {--base-color: pink}').then(result => result.ast.chi[0]))
+     *         },
+     *         ColorTokenType:  (node) => {
+     *
+     *             // dump all color tokens
+     *             // console.debug(node);
+     *          },
+     *          FunctionTokenType:  (node) => {
+     *
+     *              // dump all function tokens
+     *              // console.debug(node);
+     *          },
+     *          DeclarationNodeType:  (node) => {
+     *
+     *              // dump all declaration nodes
+     *              // console.debug(node);
+     *          }
+     *     }
+     * };
+     *
+     * const css = `
+     *
+     * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
+     * `;
+     *
+     * console.debug(await transform(css, options));
+     *
+     * // body {color:#f3fff0}
+     * ```
+     */
+    [key: keyof typeof EnumToken]: GenericVisitorAstNodeSyncHandlerMap<Token> | GenericVisitorAstNodeSyncHandlerMap<AstNode>;
+}
+
+
 export declare type GenericVisitorHandler<T> = (
     node: T,
     parent?: AstNode | Token,
     root?: AstNode | Token,
-) => GenericVisitorResult<T>;
+) => GenericVisitorSyncResult<T> | GenericVisitorAsyncResult<T>;
+
 export declare type GenericVisitorAstNodeHandlerMap<T> =
     | Record<string, GenericVisitorHandler<T>>
     | GenericVisitorHandler<T>
@@ -3088,10 +3351,24 @@ export declare type ValueVisitorHandler = GenericVisitorHandler<Token>;
  * Declaration visitor handler
  */
 export declare type DeclarationVisitorHandler = GenericVisitorHandler<AstDeclaration>;
+
+/**
+ * Declaration visitor handler
+ */
+export declare type DeclarationVisitorHandler = GenericVisitorHandler<AstDeclaration>;
 /**
  * Rule visitor handler
  */
 export declare type RuleVisitorHandler = GenericVisitorHandler<AstRule>;
+/**
+ * Rule visitor handler
+ */
+export declare type RuleVisitorHandler = GenericVisitorHandler<AstRule>;
+
+/**
+ * AtRule visitor handler
+ */
+export declare type AtRuleVisitorHandler = GenericVisitorHandler<AstAtRule>;
 
 /**
  * AtRule visitor handler
@@ -3355,17 +3632,41 @@ export declare interface VisitorNodeMap {
  * @internal
  */
 declare class SourceMap {
-    #private;
     /**
      * Last location
      */
-    lastLocation: Location | null;
+    private lastLocation;
+    /**
+     * Version
+     * @private
+     */
+    private version;
+    /**
+     * Sources map
+     * @private
+     */
+    private sourcesMap;
+    /**
+     * Sources
+     * @private
+     */
+    private sources;
+    /**
+     * Map
+     * @private
+     */
+    private map;
+    /**
+     * Line
+     * @private
+     */
+    private line;
     /**
      * Add a location
      * @param source
      * @param original
      */
-    add(source: Location, original: Location): void;
+    add(newLine: number, newColumn: number, srcId: number, ln: number, col: number, sourceFileName: string, sourceContent: string): void;
     /**
      * Convert to URL encoded string
      */
@@ -3374,6 +3675,122 @@ declare class SourceMap {
      * Convert to JSON object
      */
     toJSON(): SourceMapObject;
+}
+
+/**
+ * Compute line and column of the offset
+ */
+declare class LineMap {
+    /**
+     * line starts
+     */
+    readonly lineStarts: number[];
+    /**
+     * Constructor
+     * @param lines
+     */
+    constructor(lines: number[]);
+    /**
+     * Compute line and column of the offset
+     * @param offset
+     * @returns
+     */
+    getOffsets(offset: number): [number, number];
+    /**
+     * search the greatest index of the value less than or equal to offset
+     * @param offset
+     * @returns
+     */
+    search(offset: number): number;
+    /**
+     * get line starts
+     * @returns
+     */
+    getLineStarts(): number[];
+    /**
+     * add line start
+     */
+    addLineStart(lineStart: number): void;
+    /**
+     * clone the linemap
+     * @returns
+     */
+    clone(): LineMap;
+}
+
+/**
+ * Source file helper class
+ */
+declare class SourceFile {
+    /**
+     * Source file ID
+     */
+    readonly id: number;
+    /**
+     * Source file path
+     */
+    readonly file: string | null;
+    /**
+     * Line map
+     */
+    readonly lineStarts: LineMap;
+    /**
+     * Source file content
+     */
+    private content;
+    /**
+     * Constructor
+     * @param id
+     * @param content
+     * @param lines
+     * @param file
+     */
+    constructor(content: string, lines: number[], file?: string | null);
+    /**
+     * Update source content
+     * @param content
+     * @param lines
+     */
+    append(content: string): void;
+    /**
+     * get file name
+     * @returns
+     */
+    getFileName(): string | null;
+    /**
+     * get content
+     * @returns
+     */
+    getContent(): string;
+    /**
+     * get text
+     * @param start
+     * @param length
+     * @returns
+     */
+    getText(start: number, length: number): string;
+    /**
+     * Compute line and column of the offset
+     * @param offset
+     * @returns
+     */
+    getOffsets(offset: number): [number, number];
+    /**
+     * get source location
+     * @param offset
+     * @returns
+     */
+    getSourceLocation(offset: number): [string | null, number, number];
+    /**
+     * get line starts
+     * @returns
+     */
+    getLineStarts(): number[];
+    /**
+     * add line start
+     * @param lineStart
+     */
+    addLineStart(lineStart: number): void;
 }
 
 export declare interface PropertyListOptions {
@@ -3388,11 +3805,6 @@ export declare interface PropertyListOptions {
 export declare interface ParseInfo$1 {
 
     /**
-     * source file or url
-     */
-    src: string;
-
-    /**
      * read buffer
      */
     buffer: string;
@@ -3402,18 +3814,19 @@ export declare interface ParseInfo$1 {
     stream: string;
 
     /**
-     * the accumulated css string
+     * Source file
      */
-    // acc: string;
+    source: SourceFile;
     
     /**
      * last token position
      */
-    position: Position$1;
+    position: number;
+
     /**
      * current parsing position
      */
-    currentPosition: Position$1;
+    currentPosition: number;
 
     /**
      * offset
@@ -4225,7 +4638,7 @@ export declare interface ErrorDescription$1 {
     /**
      * Error location
      */
-    location?: Location;
+    location?: [string | null, number, number];
     /**
      * Error object
      */
@@ -4391,7 +4804,7 @@ export declare type LoadResult =
 /**
  * CSS module parser options
  */
-export declare interface ModuleOptions {
+export declare interface ModuleSyncOptions {
     /**
      * Use local scope vs global scope
      */
@@ -4407,6 +4820,101 @@ export declare interface ModuleOptions {
      */
     hashLength?: number;
 
+    /**
+     * The pattern used to generate scoped names. the supported placeholders are:
+     * - name: the file base name without the extension
+     * - hash: the file path hash
+     * - local: the local name
+     * - path: the file path
+     * - folder: the folder name
+     * - ext: the file extension
+     *
+     * the pattern can optionally have a maximum number of characters:
+     * ```
+     * pattern: '[local:2]-[hash:5]'
+     * ```
+     * the hash pattern can take an algorithm, a maximum number of characters or both:
+     * ```
+     * pattern: '[local]-[hash:base64:5]'
+     * ```
+     * or
+     * ```
+     * pattern: '[local]-[hash:5]'
+     * ```
+     * or
+     * ```
+     * pattern: '[local]-[hash:sha1]'
+     * ```
+     *
+     * supported hash algorithms are:
+     * - base64
+     * - hex
+     * - base64url
+     *
+     * ```typescript
+     *
+     * import {transform, ModuleCaseTransformEnum} from '@tbela99/css-parser';
+     * import type {TransformResult} from '@tbela99/css-parser';
+     * css = `
+     * :local(.className) {
+     *   background: red;
+     *   color: yellow;
+     * }
+     *
+     * :local(.subClass) {
+     *   composes: className;
+     *   background: blue;
+     * }
+     * `;
+     *
+     * let result: TransformResult = await transform(css, {
+     *
+     *     beautify:true,
+     *     module: {
+     *         pattern: '[local]-[hash:sha256]'
+     *     }
+     *
+     * });
+     *
+     * console.log(result.code);
+     * ```
+     * generated css
+     *
+     * ```css
+     * .className-b629f {
+     *  background: red;
+     *  color: #ff0
+     * }
+     * .subClass-a0c35 {
+     *  background: blue
+     * }
+     * ```
+     */
+    pattern?: string;
+
+    /**
+     * optional. function change the case of the scoped name and the class mapping
+     *
+     * - {@link ModuleCaseTransformEnum.IgnoreCase}: do not change case
+     * - {@link ModuleCaseTransformEnum.CamelCase}: camelCase {@link ParseResult.mapping} key name
+     * - {@link ModuleCaseTransformEnum.CamelCaseOnly}: camelCase {@link ParseResult.mapping} key name and the scoped class name
+     * - {@link ModuleCaseTransformEnum.DashCase}: dashCase {@link ParseResult.mapping} key name
+     * - {@link ModuleCaseTransformEnum.DashCaseOnly}: dashCase {@link ParseResult.mapping} key name and the scoped class name
+     *
+     */
+    naming?: ModuleCaseTransformEnum;
+
+    /**
+     * Function to generate scoped name
+     * @param localName
+     * @param filePath
+     * @param pattern see {@link ModuleSyncOptions.pattern}
+     * @param hashLength
+     */
+    generateScopedName?: (localName: string, filePath: string, pattern: string, hashLength?: number) => string;
+}
+
+export declare interface ModuleAsyncOptions extends ModuleSyncOptions {
     /**
      * The pattern used to generate scoped names. the supported placeholders are:
      * - name: the file base name without the extension
@@ -4484,22 +4992,10 @@ export declare interface ModuleOptions {
     pattern?: string;
 
     /**
-     * optional. function change the case of the scoped name and the class mapping
-     *
-     * - {@link ModuleCaseTransformEnum.IgnoreCase}: do not change case
-     * - {@link ModuleCaseTransformEnum.CamelCase}: camelCase {@link ParseResult.mapping} key name
-     * - {@link ModuleCaseTransformEnum.CamelCaseOnly}: camelCase {@link ParseResult.mapping} key name and the scoped class name
-     * - {@link ModuleCaseTransformEnum.DashCase}: dashCase {@link ParseResult.mapping} key name
-     * - {@link ModuleCaseTransformEnum.DashCaseOnly}: dashCase {@link ParseResult.mapping} key name and the scoped class name
-     *
-     */
-    naming?: ModuleCaseTransformEnum;
-
-    /**
      * Function to generate scoped name
      * @param localName
      * @param filePath
-     * @param pattern see {@link ModuleOptions.pattern}
+     * @param pattern see {@link ModuleSyncOptions.pattern}
      * @param hashLength
      */
     generateScopedName?: (
@@ -4528,6 +5024,15 @@ export declare interface ParseInputFileOptions {
 /**
  * Input options for string or stream
  */
+export declare interface ParseInputOptions {
+    /**
+     * Input string or stream
+     */
+    input: string;
+}
+/**
+ * Input options for string or stream
+ */
 export declare interface ParseInputStreamOptions {
     /**
      * Input string or stream
@@ -4535,11 +5040,13 @@ export declare interface ParseInputStreamOptions {
     input: string | ReadableStream<Uint8Array>;
 }
 
-/**
- * Parser options
- */
-export declare interface ParserOptions
-    extends MinifyOptions, MinifyFeatureOptions, ValidationOptions, PropertyListOptions {
+export declare interface ParseSourceOptions {
+    sourcesMap?: Map<number, SourceFile>;
+    source?: SourceFile | null;
+}
+
+export declare interface ParserSyncOptions
+    extends MinifyOptions, MinifyFeatureOptions, ValidationOptions, PropertyListOptions, ParseSourceOptions {
     /**
      * Source file to be used for sourcemap
      */
@@ -4552,10 +5059,6 @@ export declare interface ParserOptions
      * Remove at-rule charset
      */
     removeCharset?: boolean;
-    /**
-     * Resolve import
-     */
-    resolveImport?: boolean;
     /**
      * Current working directory
      *
@@ -4572,18 +5075,6 @@ export declare interface ParserOptions
      */
     expandIfSyntax?: boolean;
 
-    /**
-     * Custom URL and file loader.
-     * @param url
-     * @param currentDirectory
-     * @param responseType
-     *
-     */
-    load?: (
-        url: string | { absolute: string; relative: string },
-        currentDirectory: string,
-        responseType?: boolean | ResponseType,
-    ) => Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
     /**
      * Get directory name
      * @param path
@@ -4619,9 +5110,9 @@ export declare interface ParserOptions
 
     /**
      * Node visitor
-     * {@link VisitorNodeMap | VisitorNodeMap[]}
+     * {@link VisitorSyncNodeMap | VisitorSyncNodeMap[]}
      */
-    visitor?: VisitorNodeMap | VisitorNodeMap[];
+    visitor?: VisitorSyncNodeMap | VisitorSyncNodeMap[];
     /**
      * Abort signal
      *
@@ -4651,13 +5142,42 @@ export declare interface ParserOptions
     /**
      * CSS modules options
      */
-    module?: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleOptions;
+    module?: boolean | ModuleCaseTransformEnum | ModuleScopeEnumOptions | ModuleSyncOptions;
 
     /**
      * Tokenizing info
      * @private
      */
     parseInfo?: ParseInfo;
+}
+
+/**
+ * Parser options
+ */
+export declare interface ParserOptions extends ParserSyncOptions, ModuleAsyncOptions {
+    /**
+     * Resolve import
+     */
+    resolveImport?: boolean;
+
+    /**
+     * Custom URL and file loader.
+     * @param url
+     * @param currentDirectory
+     * @param responseType
+     *
+     */
+    load?: (
+        url: string | { absolute: string; relative: string },
+        currentDirectory?: string,
+        responseType?: boolean | ResponseType,
+    ) => Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
+
+    /**
+     * Node visitor
+     * {@link VisitorNodeMap | VisitorNodeMap[]}
+     */
+    visitor?: VisitorNodeMap | VisitorNodeMap[];
 }
 
 /**
@@ -4811,7 +5331,18 @@ export declare interface RenderOptions {
      * @internal
      */
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => ResolvedPath;
+
+    /**
+     * Source map
+     * @internal
+     */
+    sourcesMap?: Map<number, SourceFile>;
 }
+
+/**
+ * Transform options
+ */
+export declare interface TransformSyncOptions extends ParserSyncOptions, RenderOptions {}
 
 /**
  * Transform options
@@ -5081,7 +5612,7 @@ export declare interface SourceMapObject {
     /**
      * Source files
      */
-    sources?: string[];
+    sources?: Array<string | null>;
     /**
      * Source files content
      */
@@ -5332,7 +5863,7 @@ button {
  * @param matcher
  * @returns
  */
-declare function find(ast: AstNode$1, matcher: (node: AstNode$1) => boolean): AstNode$1 | null;
+declare function find(ast: AstNode$1, matcher: (node: AstNode$1, parent?: AstNode$1 | null) => boolean): AstNode$1 | null;
 /**
  * Search the ast sub-tree by checking each node's value token and return the first match
  *
@@ -5402,7 +5933,7 @@ button-small {
  * @param matcher
  * @returns
  */
-declare function findAll(ast: AstNode$1, matcher: (node: AstNode$1) => boolean): AstNode$1[];
+declare function findAll(ast: AstNode$1, matcher: (node: AstNode$1, parent?: AstNode$1 | null) => boolean): AstNode$1[];
 /**
  * Search the ast sub-tree and return the last match.
  *
@@ -5433,7 +5964,7 @@ button {
  * @param matcher
  * @returns
  */
-declare function findLast(ast: AstNode$1, matcher: (node: AstNode$1) => boolean): AstNode$1 | null;
+declare function findLast(ast: AstNode$1, matcher: (node: AstNode$1, parent?: AstNode$1 | null) => boolean): AstNode$1 | null;
 
 /**
  *
@@ -5534,6 +6065,74 @@ declare function render(data: AstNode$1, options?: RenderOptions, mapping?: {
  * ```
  */
 declare const parseFile: (file: string, options?: ParserOptions, asStream?: boolean) => Promise<ParseResult>;
+/**
+ * Parse css string
+ * @param stream
+ * @param options
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  let result = await parse(css, {nestingRules: true});
+ *  console.log(result.ast);
+ * ```
+ *
+ */
+declare function parseSync(stream: string, options?: ParserSyncOptions): ParseResult;
+/**
+ * Parse css string
+ * @param stream
+ * @param options
+ *
+ * Parsing a string
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  let result = await parse({input: css, nestingRules: true});
+ *  console.log(result.ast);
+ * ```
+ *
+ */
+declare function parseSync(options: ParseInputOptions & ParserSyncOptions): ParseResult;
+/**
+ * Transform css
+ * @param css
+ * @param options
+ *
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  const result = await transform(css, {beautify: true});
+ *  console.log(result.code);
+ * ```
+ *
+ */
+declare function transformSync(css: string, options?: TransformSyncOptions): TransformResult;
+/**
+ * Transform css
+ * @param options
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  const result = await transform({input: css, beautify: true});
+ *  console.log(result.code);
+ * ```
+ *
+ */
+declare function transformSync(options: ParseInputOptions & TransformSyncOptions): TransformResult;
 /**
  * Parse css
  * @param stream
@@ -5680,9 +6279,137 @@ declare function parse(options: ParseInputStreamOptions & ParserOptions): Promis
  * ```
  */
 declare const transformFile: (file: string, options?: TransformOptions, asStream?: boolean) => Promise<TransformResult>;
-declare function transform(css: string | ReadableStream<Uint8Array>, options: TransformOptions): Promise<TransformResult>;
-declare function transform(options: ParseInputFileOptions & TransformOptions): Promise<TransformResult>;
+/**
+ * Transform css
+ * @param css
+ * @param options
+ *
+ * Parsing a string
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  const result = await transform(css);
+ *  console.log(result.code);
+ * ```
+ *
+ * Parsing a Readable stream
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ * import {Readable} from "node:stream";
+ *
+ * // usage: node index.ts < styles.css or cat styles.css | node index.ts
+ *
+ *  const readableStream = Readable.toWeb(process.stdin);
+ *  const result = await transform(readableStream, {beautify: true});
+ *
+ *  console.log(result.code);
+ * ```
+ *
+ * Example using fetch
+ *
+ * ```ts
+ *
+ *  import {transform} from '@tbela99/css-parser';
+ *
+ *  const response = await fetch('https://docs.deno.com/styles.css');
+ *  result = await transform(response.body, {beautify: true});
+ *
+ *  console.log(result.code);
+ * ```
+ */
+declare function transform(css: string | ReadableStream<Uint8Array>, options?: TransformOptions): Promise<TransformResult>;
+/**
+ * Transform css
+ * @param css
+ * @param options
+ *
+ * Parsing a string
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  const result = await transform({input: css});
+ *  console.log(result.code);
+ * ```
+ *
+ * Parsing a Readable stream
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ * import {Readable} from "node:stream";
+ *
+ * // usage: node index.ts < styles.css or cat styles.css | node index.ts
+ *
+ *  const readableStream = Readable.toWeb(process.stdin);
+ *  const result = await transform( {input: readableStream, beautify: true});
+ *
+ *  console.log(result.code);
+ * ```
+ *
+ * Example using fetch
+ *
+ * ```ts
+ *
+ *  import {transform} from '@tbela99/css-parser';
+ *
+ *  const response = await fetch('https://docs.deno.com/styles.css');
+ *  result = await transform({input: response.body, beautify: true});
+ *
+ *  console.log(result.code);
+ * ```
+ */
 declare function transform(options: ParseInputStreamOptions & TransformOptions): Promise<TransformResult>;
+/**
+ * Transform css
+ * @param css
+ * @param options
+ *
+ * Parsing a string
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ *
+ *  // css string
+ *  const result = await transform({input: css});
+ *  console.log(result.code);
+ * ```
+ *
+ * Parsing a Readable stream
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser';
+ * import {Readable} from "node:stream";
+ *
+ * // usage: node index.ts < styles.css or cat styles.css | node index.ts
+ *
+ *  const readableStream = Readable.toWeb(process.stdin);
+ *  const result = await transform( {input: readableStream, beautify: true});
+ *
+ *  console.log(result.code);
+ * ```
+ *
+ * Example using fetch
+ *
+ * ```ts
+ *
+ *  import {transform} from '@tbela99/css-parser';
+ *
+ *  result = await transform({file: 'https://docs.deno.com/styles.css', beautify: true});
+ *
+ *  console.log(result.code);
+ * ```
+ */
+declare function transform(options: ParseInputFileOptions & TransformOptions): Promise<TransformResult>;
 
-export { ColorType$1 as ColorType, EnumAstNodeStatus$1 as EnumAstNodeStatus, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType$1 as ResponseType, SourceMap, ValidationLevel, WalkerEvent, WalkerOptionEnum, cloneNode, convertColor, dirname, expand, find, findAll, findByValue, findLast, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, render, renderValue as renderToken, replaceNodeOrValue, resolve, transform, transformFile, walk, walkValues };
-export type { AddToken, AndToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyFrameRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstNodeStatus, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, Context, CssVariableImportTokenType$1 as CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken$1 as CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, DoubleColonToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription$1 as ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorHandler, GenericVisitorResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InvalidAttrToken, InvalidClassSelectorToken, InvalidMediaQueryToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Location, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleOptions, MulToken, NameSpaceAttributeToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseInputFileOptions, ParseInputStreamOptions, ParseResult, ParseResultStats, ParseTokenOptions, ParserOptions, PercentageToken, Position$1 as Position, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SinglePropertyType, SinglePropertyTypeMapping, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenSearchResult, TokenizeResult, TransformOptions, TransformResult, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, VariableScopeInfo, VisitorNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerValueFilter, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken, WrappedValuesToken };
+export { ColorType$1 as ColorType, EnumAstNodeStatus$1 as EnumAstNodeStatus, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType$1 as ResponseType, SourceMap, ValidationLevel, WalkerEvent, WalkerOptionEnum, cloneNode, convertColor, dirname, expand, find, findAll, findByValue, findLast, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, parseSync, render, renderValue as renderToken, replaceNodeOrValue, resolve, transform, transformFile, transformSync, walk, walkValues };
+export type { AddToken, AndToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyFrameRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstNodeStatus, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, Context, CssVariableImportTokenType$1 as CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken$1 as CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, DoubleColonToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription$1 as ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorAstNodeSyncHandlerMap, GenericVisitorAsyncResult, GenericVisitorHandler, GenericVisitorResult, GenericVisitorSyncHandler, GenericVisitorSyncResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InvalidAttrToken, InvalidClassSelectorToken, InvalidMediaQueryToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleAsyncOptions, ModuleSyncOptions, MulToken, NameSpaceAttributeToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseInputFileOptions, ParseInputOptions, ParseInputStreamOptions, ParseResult, ParseResultStats, ParseSourceOptions, ParseTokenOptions, ParserOptions, ParserSyncOptions, PercentageToken, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SinglePropertyType, SinglePropertyTypeMapping, SourceLocation, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenSearchResult, TokenizeResult, TransformOptions, TransformResult, TransformSyncOptions, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, ValueVisitorSyncHandler, VariableScopeInfo, VisitorNodeMap, VisitorSyncNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerValueFilter, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken, WrappedValuesToken };
