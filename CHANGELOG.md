@@ -6,6 +6,7 @@
 
 ### Provide sync Api
 - [x] Added parseSync() and transformSync() with the limitations below: 
+
   Unsupported parse features
     - [x] flattened at-rule import files
     - [x] using file loader as options.load() is forbidden

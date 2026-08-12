@@ -21,6 +21,7 @@
       "Writerside",
       "build.sh",
       "docs",
+      "llms.txt",
       "package-lock.json",
       "ROADMAP.md",
       "rollup.config.js",

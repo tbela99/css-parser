@@ -7,6 +7,7 @@
 /Writerside export-ignore linguist-vendored
 /benchmark export-ignore linguist-vendored
 /tools/ export-ignore
+/llms.txt export-ignore linguist-vendored
 /happydom.ts export-ignore
 /bunfig.toml export-ignore
 /package-lock.json export-ignore

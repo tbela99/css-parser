@@ -1586,7 +1586,6 @@ export function doParseSync(
                 matchSelectorSyntax(tokens, [] as ErrorDescription[], options);
 
                 node[TOKENS] = trimArray(tokens);
-                // }
 
                 let hasIdOrClass: boolean = false;
 
@@ -2201,6 +2200,8 @@ export async function doParse(
                     );
 
                     stats.importedBytesIn += root.stats.bytesIn;
+                    stats.nodesCount += root.stats.nodesCount;
+                    stats.tokensCount += root.stats.tokensCount;
                     stats.imports.push(root.stats);
                     node[PARENT]!.chi.splice(node[PARENT]!.chi.indexOf(node), 1, ...root.ast.chi);
 

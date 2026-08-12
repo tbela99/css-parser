@@ -78,6 +78,10 @@ function doRender(data, options = {}, mapping) {
         code += `:export${options.indent}{${options.newLine}${Object.entries(mapping.mapping).reduce((acc, [k, v]) => acc + (acc.length > 0 ? options.newLine : "") + `${options.indent}${k}:${options.indent}${v};`, "")}${options.newLine}}${options.newLine}`;
         move(sourceLocation, linesMap, code);
     }
+    if (options.output != null) {
+        // @ts-ignore
+        options.output = options.resolve(options.output, options.cwd).absolute;
+    }
     const result = {
         code: code +
             renderAstNode(options.expandNestingRules &&
@@ -98,10 +102,6 @@ function doRender(data, options = {}, mapping) {
             total: `${(performance.now() - startTime).toFixed(2)}ms`,
         },
     };
-    if (options.output != null) {
-        // @ts-ignore
-        options.output = options.resolve(options.output, options.cwd).absolute;
-    }
     if (sourcemap != null) {
         result.map = sourcemap;
         if (options.sourcemap === "inline") {
@@ -131,7 +131,10 @@ function updateSourceMap(node, options, cache, sourcemap, sourceLocation, linesM
         let srcId = node[LOC]?.srcId ?? 0;
         let sourceFileName = options.sourcesMap?.get(srcId)?.getFileName?.() || null;
         if (sourceFileName != null && options.output != null) {
-            sourceFileName = options.resolve(sourceFileName, dirname(options.output)).relative;
+            if (!cache.has(sourceFileName)) {
+                cache.set(sourceFileName, options.resolve(sourceFileName, dirname(options.output)).relative);
+            }
+            sourceFileName = cache.get(sourceFileName);
         }
         // @ts-ignore
         sourcemap.add(...linesMap.getOffsets(sourceLocation.end), srcId, 

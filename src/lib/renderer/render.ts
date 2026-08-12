@@ -164,6 +164,11 @@ export function doRender(
         move(sourceLocation, linesMap, code);
     }
 
+    if (options.output != null) {
+        // @ts-ignore
+        options.output = options.resolve(options.output, options.cwd).absolute;
+    }
+
     const result: RenderResult = {
         code:
             code +
@@ -198,11 +203,6 @@ export function doRender(
             total: `${(performance.now() - startTime).toFixed(2)}ms`,
         },
     };
-
-    if (options.output != null) {
-        // @ts-ignore
-        options.output = options.resolve(options.output, options.cwd).absolute;
-    }
 
     if (sourcemap != null) {
         result.map = sourcemap;
@@ -250,7 +250,11 @@ function updateSourceMap(
         let sourceFileName: string | null = (options.sourcesMap?.get(srcId)?.getFileName?.() as string) || null;
 
         if (sourceFileName != null && options.output != null) {
-            sourceFileName = options.resolve!(sourceFileName, dirname(options.output)).relative as string;
+            if (!cache.has(sourceFileName)) {
+                cache.set(sourceFileName, options.resolve!(sourceFileName, dirname(options.output)).relative as string);
+            }
+
+            sourceFileName = cache.get(sourceFileName) as string;
         }
 
         // @ts-ignore

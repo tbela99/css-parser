@@ -1967,11 +1967,14 @@ var declarations = {
 	"flex-grow": {
 		syntax: "<number>"
 	},
+	"flex-line-count": {
+		syntax: "<integer [1,∞]>"
+	},
 	"flex-shrink": {
 		syntax: "<number>"
 	},
 	"flex-wrap": {
-		syntax: "nowrap | wrap | wrap-reverse"
+		syntax: "nowrap | [ wrap | wrap-reverse ] || balance"
 	},
 	float: {
 		syntax: "left | right | none | inline-start | inline-end"
@@ -2537,6 +2540,9 @@ var declarations = {
 	"paint-order": {
 		syntax: "normal | [ fill || stroke || markers ]"
 	},
+	"path-length": {
+		syntax: "none | <length> [0,∞]"
+	},
 	perspective: {
 		syntax: "none | <length>"
 	},
@@ -2832,7 +2838,7 @@ var declarations = {
 		syntax: "<color>"
 	},
 	"text-decoration-inset": {
-		syntax: "<length>{1,2} | auto"
+		syntax: "<length-percentage>{1,2} | auto"
 	},
 	"text-decoration-line": {
 		syntax: "none | [ underline || overline || line-through || blink ] | spelling-error | grammar-error"
@@ -24314,24 +24320,9 @@ const resolve = memoize(function (url, currentDirectory, cwd) {
             };
         }
     }
-    // if (matchUrl.test(currentDirectory)) {
-    //     const path: string = new URL(url, currentDirectory).href;
-    //     return {
-    //         absolute: path,
-    //         relative: path,
-    //     };
-    // }
-    // let result: string = "";
-    // if (url.charAt(0) == "/") {
-    //     result = url;
-    // } 
-    // else if (currentDirectory.charAt(0) == "/") {
-    //     result = dirname(currentDirectory) + "/" + url;
-    // }
-    // const absolute = url; // normalize(result);
     return {
         absolute: url,
-        relative: url === "" ? "" : diff(url, cwd ?? currentDirectory),
+        relative: url === "" ? "" : diff(url, cwd || currentDirectory),
     };
 });
 
@@ -24403,6 +24394,10 @@ function doRender(data, options = {}, mapping) {
         code += `:export${options.indent}{${options.newLine}${Object.entries(mapping.mapping).reduce((acc, [k, v]) => acc + (acc.length > 0 ? options.newLine : "") + `${options.indent}${k}:${options.indent}${v};`, "")}${options.newLine}}${options.newLine}`;
         move(sourceLocation, linesMap, code);
     }
+    if (options.output != null) {
+        // @ts-ignore
+        options.output = options.resolve(options.output, options.cwd).absolute;
+    }
     const result = {
         code: code +
             renderAstNode(options.expandNestingRules &&
@@ -24423,10 +24418,6 @@ function doRender(data, options = {}, mapping) {
             total: `${(performance.now() - startTime).toFixed(2)}ms`,
         },
     };
-    if (options.output != null) {
-        // @ts-ignore
-        options.output = options.resolve(options.output, options.cwd).absolute;
-    }
     if (sourcemap != null) {
         result.map = sourcemap;
         if (options.sourcemap === "inline") {
@@ -24456,7 +24447,10 @@ function updateSourceMap(node, options, cache, sourcemap, sourceLocation, linesM
         let srcId = node[LOC]?.srcId ?? 0;
         let sourceFileName = options.sourcesMap?.get(srcId)?.getFileName?.() || null;
         if (sourceFileName != null && options.output != null) {
-            sourceFileName = options.resolve(sourceFileName, dirname(options.output)).relative;
+            if (!cache.has(sourceFileName)) {
+                cache.set(sourceFileName, options.resolve(sourceFileName, dirname(options.output)).relative);
+            }
+            sourceFileName = cache.get(sourceFileName);
         }
         // @ts-ignore
         sourcemap.add(...linesMap.getOffsets(sourceLocation.end), srcId, 
@@ -29258,7 +29252,6 @@ function doParseSync(iter, options = {}) {
                 const tokens = parseString(node.sel);
                 matchSelectorSyntax(tokens, [], options);
                 node[TOKENS] = trimArray(tokens);
-                // }
                 let hasIdOrClass = false;
                 for (const { value } of walkValues(node[TOKENS], node, 
                 // @ts-ignore
@@ -29718,6 +29711,8 @@ async function doParse(iter, options = {}) {
                     src: options.resolve(url, options.src || options.cwd).relative,
                 }));
                 stats.importedBytesIn += root.stats.bytesIn;
+                stats.nodesCount += root.stats.nodesCount;
+                stats.tokensCount += root.stats.tokensCount;
                 stats.imports.push(root.stats);
                 node[PARENT].chi.splice(node[PARENT].chi.indexOf(node), 1, ...root.ast.chi);
                 if (root.errors.length > 0) {

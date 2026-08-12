@@ -1185,7 +1185,6 @@ function doParseSync(iter, options = {}) {
                 const tokens = parseString(node.sel);
                 matchSelectorSyntax(tokens, [], options);
                 node[TOKENS] = trimArray(tokens);
-                // }
                 let hasIdOrClass = false;
                 for (const { value } of walkValues(node[TOKENS], node, 
                 // @ts-ignore
@@ -1645,6 +1644,8 @@ async function doParse(iter, options = {}) {
                     src: options.resolve(url, options.src || options.cwd).relative,
                 }));
                 stats.importedBytesIn += root.stats.bytesIn;
+                stats.nodesCount += root.stats.nodesCount;
+                stats.tokensCount += root.stats.tokensCount;
                 stats.imports.push(root.stats);
                 node[PARENT].chi.splice(node[PARENT].chi.indexOf(node), 1, ...root.ast.chi);
                 if (root.errors.length > 0) {

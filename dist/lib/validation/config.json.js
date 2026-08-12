@@ -914,11 +914,14 @@ var declarations = {
 	"flex-grow": {
 		syntax: "<number>"
 	},
+	"flex-line-count": {
+		syntax: "<integer [1,∞]>"
+	},
 	"flex-shrink": {
 		syntax: "<number>"
 	},
 	"flex-wrap": {
-		syntax: "nowrap | wrap | wrap-reverse"
+		syntax: "nowrap | [ wrap | wrap-reverse ] || balance"
 	},
 	float: {
 		syntax: "left | right | none | inline-start | inline-end"
@@ -1484,6 +1487,9 @@ var declarations = {
 	"paint-order": {
 		syntax: "normal | [ fill || stroke || markers ]"
 	},
+	"path-length": {
+		syntax: "none | <length> [0,∞]"
+	},
 	perspective: {
 		syntax: "none | <length>"
 	},
@@ -1779,7 +1785,7 @@ var declarations = {
 		syntax: "<color>"
 	},
 	"text-decoration-inset": {
-		syntax: "<length>{1,2} | auto"
+		syntax: "<length-percentage>{1,2} | auto"
 	},
 	"text-decoration-line": {
 		syntax: "none | [ underline || overline || line-through || blink ] | spelling-error | grammar-error"

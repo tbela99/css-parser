@@ -24,12 +24,14 @@ for (const file of await readdir(baseDir)) {
         removePrefix: true,
         nestingRules: true,
         resolveImport: true,
+        sourcemap: true,
         validation: true
     }));
 
     message += `[inputSize]: ${toFileSize(result.stats.bytesIn)}\n `;
     message += `[outputSize]: ${toFileSize(result.stats.bytesOut)}\n `;
     message += `[ratio]: ${(100 * (1 - result.stats.bytesOut / result.stats.bytesIn)).toFixed(2)}%\n `;
+    message += `[sourcemap]: ${JSON.stringify(result.map.toJSON()).length}\n `;
 
     for (const key in result.stats) {
 

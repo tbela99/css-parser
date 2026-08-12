@@ -5,16 +5,17 @@ category: Guides
 ---
 
 ## Main function differences
+The library provides **synchronous** and **asynchronous** functions for parsing, analyzing, and transforming CSS.
 
-The library provides sync and async function to achieve parsing, analysing and transforming CSS. The sync api is marginally faster than the async api, but with some limitations. See the [details below](#difference-between-sync-and-async-apis).
+The **synchronous API** is marginally faster than the asynchronous API, but it comes with some limitations. See the [details below](#difference-between-sync-and-async-apis).
 
-| Function | Parses CSS | Async |  CSS Output |
-|----------|------------|------|----------|
-| `parse()` | ✅ | ✅ | ✅ | ❌|
-| `parseSync()` | ✅ | ❌ | ❌ |
-| `transform()` | ✅ | ✅  | ✅ |
-| `transformSync()` | ✅ | ❌ | ✅ |
-| `render()` | ❌ | ❌ | ✅ |
+| Function          | Parses CSS | Async | CSS Output |
+| ----------------- | ---------- | ----- | ---------- |
+| `parse()`         | ✅          | ✅     | ✅          | ❌ |
+| `parseSync()`     | ✅          | ❌     | ❌          |
+| `transform()`     | ✅          | ✅     | ✅          |
+| `transformSync()` | ✅          | ❌     | ✅          |
+| `render()`        | ❌          | ❌     | ✅          |
 
 > **Note:** `parse()` and `parseSync()` only produce the AST and does not generate CSS output.
 
@@ -378,10 +379,35 @@ button {
  }
 }
 ```
-
 ## Sourcemaps
 
-CSS-Parser supports generating sourcemaps. Sourcemap file paths are resolved using the output parameter.
+**CSS-Parser** supports generating sourcemaps. When the `output` parameter is provided, sourcemap file paths are resolved relative to the specified output file.
+
+
+```ts
+
+import {transform} from '@tbela99/css-parser';
+
+const css = `
+@import 'styles.css';
+button {
+	background: linear-gradient(
+		if(media(min-width: 768px): to right; else: to bottom),
+		if(style(--dark-mode): #333; else: #fff),
+		if(style(--dark-mode): #000; else: #ccc)
+	);
+}`;
+
+result = await transform(css, {
+
+    beautify: true,
+    sourcemap: true,
+    resolveImport: true,
+    output: 'dist/doc.html'
+});
+
+console.log(result.map.toJSON());
+```
 
 ## Difference Between Sync and Async APIs
 
@@ -403,7 +429,7 @@ The following features are **not supported by `parseSync()` and `transformSync()
   * `sha384`
   * `sha512`
 * CSS `composes` does not support composing from a file.
-* Importing CSS variables using `@value` is not supported.
+* Importing CSS variables from a file using `@value` is not supported.
 
 
 ------
