@@ -2,7 +2,7 @@
 
 # v1.4.10
 
-- failure to convert colors to display-py-linear du to missing import
+- failure to convert colors to display-linear due to missing import
 
 # v1.4.9
 
