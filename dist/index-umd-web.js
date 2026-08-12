@@ -24289,14 +24289,14 @@
      * @private
      */
     const resolve = memoize(function (url, currentDirectory, cwd) {
-        // if (matchUrl.test(url)) {
-        //     return {
-        //         absolute: url,
-        //         relative: url,
-        //     };
-        // }
         cwd ??= "";
         currentDirectory ??= "";
+        if (matchUrl.test(url)) {
+            return {
+                absolute: url,
+                relative: url,
+            };
+        }
         url = normalize(url);
         if (currentDirectory !== "") {
             currentDirectory = normalize(currentDirectory);
