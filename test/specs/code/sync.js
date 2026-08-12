@@ -26,7 +26,7 @@ export function run(
         it("parse sync #2", function () {
             return readFile(import.meta.dirname + "/../../files/css/tailwind.css", "utf-8").then((css) =>
                 Promise.all([parse(css), parseSync(css)]).then(([result1, result2]) =>
-                    expect(result1.code).equals(result2.code),
+                    expect(render(result1.ast).code).equals(render(result2.ast).code),
                 ),
             );
         });
