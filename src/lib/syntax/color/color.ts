@@ -103,7 +103,7 @@ import {
 import { prophotorgb2srgbvalues, srgb2prophotorgbvalues } from "./prophotorgb.ts";
 import { rec20202srgb, srgb2rec2020values } from "./rec2020.ts";
 import { srgb2xyz, srgb2xyz_d65 } from "./xyz.ts";
-import { lp32srgbvalues, p32srgbvalues, srgb2p3values } from "./p3.ts";
+import { lp32srgbvalues, p32srgbvalues, srgb2lp3values, srgb2p3values } from "./p3.ts";
 import { xyzd502srgb } from "./xyzd50.ts";
 import { colorMix } from "./color-mix.ts";
 import {
@@ -926,33 +926,4 @@ export function getAngle(token: NumberToken | AngleToken | IdentToken): number {
 
     // @ts-ignore
     return token.val / 360;
-}
-
-export function toPrecisionValue(value: number, precision: number = colorPrecision): number {
-    const div: number = Math.pow(10, precision);
-    value = Math.round(value * div) / div;
-
-    return Math.abs(value) < epsilon ? 0 : value;
-}
-
-export function toPrecisionAngle(
-    angle: number,
-    precision: number = colorPrecision,
-    correctValue: boolean = true,
-): number {
-    angle = toPrecisionValue(angle, precision);
-
-    if (correctValue && Math.abs(angle) >= 360) {
-        angle %= 360;
-    }
-
-    if (Math.abs(angle) < anglePrecision) {
-        angle = 0;
-    }
-
-    if (correctValue && angle < 0) {
-        angle += 360;
-    }
-
-    return angle;
 }

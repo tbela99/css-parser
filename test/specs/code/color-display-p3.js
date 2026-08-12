@@ -2,7 +2,7 @@ import {ColorType, EnumToken} from "../../../dist/lib/ast/types.js";
 import {isOkLabClose} from "../../../dist/lib/syntax/color/utils/distance.js";
 import { parseString } from "../../../dist/lib/parser/parse.js";
 
-export function run(describe, expect, transform, parse, render) {
+export function run(describe, expect, transform, parse, render, dirname,  readFile, resolve, ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, transformSync, parseSync) {
 
     describe('convert to display-p3', function () {
 
@@ -574,6 +574,30 @@ export function run(describe, expect, transform, parse, render) {
                 beautify: true,
             }).then(result => expect(result.code).equals(`.hsl {
  color: #bcbcbc
+}`));
+        });
+
+        it('display-p3 #21', function () {
+            return transform(`
+   .hsl {
+ color: #bcbcbc
+}`, {
+                beautify: true,
+        convertColor: ColorType.DISPLAY_P3_LINEAR,
+            }).then(result => expect(result.code).equals(`.hsl {
+ color: color(display-p3-linear .502886 .502886 .502886)
+}`));
+        });
+
+        it('display-p3 #22', function () {
+            return transform(`
+.hsl {
+ color: color(display-p3-linear .502886 .502886 .502886)
+}`, {
+                beautify: true,
+        convertColor: ColorType.DISPLAY_P3,
+            }).then(result => expect(result.code).equals(`.hsl {
+ color: color(display-p3 .737255 .737255 .737255)
 }`));
         });
     });

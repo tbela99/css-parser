@@ -1,5 +1,5 @@
 import { multiply, toZero, identity } from './utils.js';
-import { EnumToken, length2Px } from '../types.js';
+import { EnumToken } from '../types.js';
 import { stripCommaToken } from '../../validation/utils/list.js';
 import { translateX, translateY, translateZ, translate, translate3d } from './translate.js';
 import { getNumber, getAngle } from '../../syntax/color/color.js';
@@ -10,6 +10,7 @@ import { skew, skewX, skewY } from './skew.js';
 import { serialize, matrix } from './matrix.js';
 import { perspective } from './perspective.js';
 import { transformFunctions } from '../../syntax/constants.js';
+import { length2Px } from '../../syntax/syntax.js';
 
 function compute(transformLists) {
     transformLists = transformLists.slice();

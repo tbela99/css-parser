@@ -8,7 +8,7 @@ import { trimArray } from '../validation/match.js';
 import { splitTokenList } from '../validation/utils/list.js';
 import { getColorSpace } from './color/utils/colorspace.js';
 import { getColorComponents } from './color/utils/components.js';
-import { nonStandardColors, systemColors, deprecatedSystemColors, COLORS_NAMES, colorsFunc, colorFuncColorSpace } from './constants.js';
+import { nonStandardColors, systemColors, deprecatedSystemColors, COLORS_NAMES, colorsFunc, colorFuncColorSpace, colorPrecision, epsilon, anglePrecision } from './constants.js';
 import { getSyntaxConfig } from '../validation/config.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
@@ -1140,5 +1140,89 @@ function isWhiteSpace(codepoint) {
         codepoint == 0x2028 ||
         codepoint == 0x2029);
 }
+// https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Values_and_units#absolute_length_units
+/**
+ * Convert length to px
+ * @param value
+ * @returns
+ */
+function length2Px(value) {
+    let result = null;
+    if (value.typ == EnumToken.NumberTokenType) {
+        result = +value.val;
+    }
+    else {
+        switch (value.unit) {
+            case "cm":
+                // @ts-ignore
+                result = value.val * 37.8;
+                break;
+            case "mm":
+                // @ts-ignore
+                result = value.val * 3.78;
+                break;
+            case "Q":
+                // @ts-ignore
+                result = (value.val * 37.8) / 40;
+                break;
+            case "in":
+                // @ts-ignore
+                result = value.val / 96;
+                break;
+            case "pc":
+                // @ts-ignore
+                result = value.val / 16;
+                break;
+            case "pt":
+                // @ts-ignore
+                result = (value.val * 4) / 3;
+                break;
+            case "px":
+                result = +value.val;
+                break;
+        }
+    }
+    return isNaN(result) ? null : result;
+}
+/**
+ * minify number
+ * @param val
+ */
+function minifyNumber(val) {
+    val = String(toPrecisionValue(val));
+    if (val === "0") {
+        return "0";
+    }
+    const chr = val.charAt(0);
+    if (chr == "-") {
+        const slice = val.slice(0, 2);
+        if (slice == "-0") {
+            return val.length == 2 ? "0" : "-" + val.slice(2);
+        }
+    }
+    if (chr == "0") {
+        return val.slice(1);
+    }
+    return val;
+}
+function toPrecisionValue(value, precision = colorPrecision) {
+    const div = Math.pow(10, precision);
+    // @ts-ignore
+    value = Math.round(value * div) / div;
+    return Math.abs(value) < epsilon ? 0 : value;
+}
+function toPrecisionAngle(angle, precision = colorPrecision, correctValue = true) {
+    angle = toPrecisionValue(angle, precision);
+    if (correctValue && Math.abs(angle) >= 360) {
+        angle %= 360;
+    }
+    if (Math.abs(angle) < anglePrecision) {
+        angle = 0;
+    }
+    if (correctValue && angle < 0) {
+        angle += 360;
+    }
+    return angle;
+}
 
-export { dimensionUnits, isAngle, isColor, isDigit, isFlex, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isLetter, isNewLine, isNumber, isPercentage, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, parseColor, parseDimension, pseudoAliasMap, reduceColorStops, reduceConicColorStops, reducegradientBackgroundPosition, renamedStandardProperties };
+export { dimensionUnits, isAngle, isColor, isDigit, isFlex, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isLetter, isNewLine, isNumber, isPercentage, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, length2Px, minifyNumber, parseColor, parseDimension, pseudoAliasMap, reduceColorStops, reduceConicColorStops, reducegradientBackgroundPosition, renamedStandardProperties, toPrecisionAngle, toPrecisionValue };
