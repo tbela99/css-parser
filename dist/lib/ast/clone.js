@@ -17,14 +17,14 @@ function cloneNode(node, cloneChildren = false, cloneMap = null) {
             clone[name] = value;
         }
         else if (Array.isArray(value)) {
-            clone[name] =
-                !cloneChildren && name == checkNode
-                    ? []
-                    : value.map((c) => {
-                        const newObj = cloneNode(c, cloneChildren, cloneMap);
-                        cloneMap?.set?.(c, newObj);
-                        return newObj;
-                    });
+            clone[name] = [];
+            if (cloneChildren || name !== checkNode) {
+                for (const c of value) {
+                    const newObj = cloneNode(c, cloneChildren, cloneMap);
+                    cloneMap?.set?.(c, newObj);
+                    clone[name].push(newObj);
+                }
+            }
         }
         else {
             clone[name] = { ...value };

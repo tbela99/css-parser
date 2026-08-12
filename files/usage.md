@@ -17,9 +17,9 @@ The **synchronous API** is marginally faster than the asynchronous API, but it c
 | `transformSync()` | ✅          | ❌     | ✅          |
 | `render()`        | ❌          | ❌     | ✅          |
 
-> **Note:** `parse()` and `parseSync()` only produce the AST and does not generate CSS output.
+> **Note:** `parse()` and `parseSync()` only produce the AST and do not generate CSS output.
 
-By contrast, `transform()` and `transformSync()` parses the CSS **and** generates the transformed CSS text. This is useful when you want the rendered CSS directly without performing a separate AST rendering step.
+By contrast, `transform()` and `transformSync()` parse the CSS **and** generate the transformed CSS text. This is useful when you want the rendered CSS directly without performing a separate AST rendering step.
 
 ### Usage
 
@@ -53,18 +53,19 @@ console.debug(result.stats);
 
 Parsing converts input CSS into an **AST (Abstract Syntax Tree)**.
 
-You can parse CSS in two ways:
+You can parse CSS in multiple ways:
 
-- `parse()` – Parses CSS and returns an AST.
-- `transform()` – Parses and generate CSS as part of the transformation process.
+- `parse()` or `parseSync()` – Parse CSS and returns an AST.
+- `transform()` or `transformSync()` – Parse and generate CSS as part of the transformation process.
 
 For more information about the available parsing options, see the TypeScript documentation for [`ParserOptions`](../interfaces/node.ParserOptions.html).
 
 ### Usage
 
-```javascript
+```ts
 parse(css, parserOptions = {})
 parse(parserOptions = {input: css})
+parse(parserOptions = {file: url_or_path})
 ```
 
 ### Example

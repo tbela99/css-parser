@@ -207,10 +207,10 @@ export async function parseFile(
  *
  * ```ts
  *
- * import {parse} from '@tbela99/css-parser';
+ * import {parseSync} from '@tbela99/css-parser';
  *
  *  // css string
- *  let result = await parse(css, {nestingRules: true});
+ *  let result = await parseSync(css, {nestingRules: true});
  *  console.log(result.ast);
  * ```
  *
@@ -227,10 +227,10 @@ export function parseSync(stream: string, options?: ParserSyncOptions): ParseRes
  *
  * ```ts
  *
- * import {parse} from '@tbela99/css-parser';
+ * import {parseSync} from '@tbela99/css-parser';
  *
  *  // css string
- *  let result = await parse({input: css, nestingRules: true});
+ *  let result = await parseSync({input: css, nestingRules: true});
  *  console.log(result.ast);
  * ```
  *
@@ -246,10 +246,10 @@ export function parseSync(options: ParseInputOptions & ParserSyncOptions): Parse
  *
  * ```ts
  *
- * import {parse} from '@tbela99/css-parser';
+ * import {parseSync} from '@tbela99/css-parser';
  *
  *  // css string
- *  let result = await parse(css, {nestingRules: true});
+ *  let result = await parseSync(css, {nestingRules: true});
  *  console.log(result.ast);
  * ```
  *
@@ -317,10 +317,10 @@ export function parseSync(
  *
  * ```ts
  *
- * import {transform} from '@tbela99/css-parser';
+ * import {transformSync} from '@tbela99/css-parser';
  *
  *  // css string
- *  const result = await transform(css, {beautify: true});
+ *  const result = transformSync(css, {beautify: true});
  *  console.log(result.code);
  * ```
  *
@@ -333,10 +333,10 @@ export function transformSync(css: string, options?: TransformSyncOptions): Tran
  *
  * ```ts
  *
- * import {transform} from '@tbela99/css-parser';
+ * import {transformSync} from '@tbela99/css-parser';
  *
  *  // css string
- *  const result = await transform({input: css, beautify: true});
+ *  const result = transformSync({input: css, beautify: true});
  *  console.log(result.code);
  * ```
  *
@@ -350,10 +350,10 @@ export function transformSync(options: ParseInputOptions & TransformSyncOptions)
  *
  * ```ts
  *
- * import {transform} from '@tbela99/css-parser';
+ * import {transformSync} from '@tbela99/css-parser';
  *
  *  // css string
- *  const result = await transform(css);
+ *  const result = transformSync(css);
  *  console.log(result.code);
  * ```
  *

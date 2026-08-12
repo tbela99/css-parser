@@ -141,10 +141,10 @@ const parseFile = deprecate(async (file, options = {}, asStream = false) => pars
  *
  * ```ts
  *
- * import {parse} from '@tbela99/css-parser';
+ * import {parseSync} from '@tbela99/css-parser';
  *
  *  // css string
- *  let result = await parse(css, {nestingRules: true});
+ *  let result = parseSync(css, {nestingRules: true});
  *  console.log(result.ast);
  * ```
  *
@@ -196,10 +196,10 @@ function parseSync(...args) {
  *
  * ```ts
  *
- * import {transform} from '@tbela99/css-parser';
+ * import {transformSync} from '@tbela99/css-parser';
  *
  *  // css string
- *  const result = await transform(css);
+ *  const result = transformSync(css);
  *  console.log(result.code);
  * ```
  *

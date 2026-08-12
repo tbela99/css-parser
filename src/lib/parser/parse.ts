@@ -1742,17 +1742,15 @@ export function doParseSync(
 
         if (moduleSettings.naming != ModuleCaseTransformEnum.IgnoreCase) {
             revMapping = {};
-            mapping = Object.entries(mapping).reduce(
-                (acc: Record<string, string>, [key, value]: [string, string]) => {
-                    const keyName = getKeyName(key, moduleSettings.naming!);
+            mapping = {} as Record<string, string>;
+            let keyName: string;
 
-                    acc[keyName] = value;
-                    revMapping[value] = keyName;
+            for (const [key, value] of Object.entries(mapping)) {
+                keyName = getKeyName(key, moduleSettings.naming!);
 
-                    return acc;
-                },
-                {} as Record<string, string>,
-            );
+                mapping[keyName] = value;
+                revMapping[value] = keyName;
+            }
         }
 
         result.mapping = mapping;
@@ -4616,11 +4614,14 @@ export function parseString(
         currentPosition: -1,
     };
 
-    const result = parseTokens(
-        [...tokenize(parseInfo)].map((t) => t.token),
-        options,
-        errors,
-    );
+    const tokenResults = tokenize(parseInfo);
+    const mapped = [];
+
+    for (const token of tokenResults) {
+        mapped.push(token.token);
+    }
+
+    const result = parseTokens(mapped, options, errors);
 
     // remove EOF token
     result.pop();

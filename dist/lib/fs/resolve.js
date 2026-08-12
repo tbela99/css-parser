@@ -122,14 +122,14 @@ const diff = memoize(function (path1, path2) {
  * @private
  */
 const resolve = memoize(function (url, currentDirectory, cwd) {
-    cwd ??= "";
-    currentDirectory ??= "";
     if (matchUrl.test(url)) {
         return {
             absolute: url,
             relative: url,
         };
     }
+    cwd ??= "";
+    currentDirectory ??= "";
     url = normalize(url);
     if (currentDirectory !== "") {
         currentDirectory = normalize(currentDirectory);

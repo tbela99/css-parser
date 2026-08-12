@@ -1292,12 +1292,13 @@ function doParseSync(iter, options = {}) {
         }
         if (moduleSettings.naming != ModuleCaseTransformEnum.IgnoreCase) {
             revMapping = {};
-            mapping = Object.entries(mapping).reduce((acc, [key, value]) => {
-                const keyName = getKeyName(key, moduleSettings.naming);
-                acc[keyName] = value;
+            mapping = {};
+            let keyName;
+            for (const [key, value] of Object.entries(mapping)) {
+                keyName = getKeyName(key, moduleSettings.naming);
+                mapping[keyName] = value;
                 revMapping[value] = keyName;
-                return acc;
-            }, {});
+            }
         }
         result.mapping = mapping;
         result.revMapping = revMapping;
@@ -3544,7 +3545,12 @@ function parseString(src, options = { parseColor: true }, errors) {
         position: 0,
         currentPosition: -1,
     };
-    const result = parseTokens([...tokenize(parseInfo)].map((t) => t.token), options, errors);
+    const tokenResults = tokenize(parseInfo);
+    const mapped = [];
+    for (const token of tokenResults) {
+        mapped.push(token.token);
+    }
+    const result = parseTokens(mapped, options, errors);
     // remove EOF token
     result.pop();
     if (result.at(-1)?.typ === EnumToken.WhitespaceTokenType) {

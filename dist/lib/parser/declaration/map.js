@@ -286,12 +286,19 @@ class PropertyMap {
                     return acc;
                 }, []);
                 let isImportant = false;
-                const filtered = values.map(removeDefaults).filter((x) => x.val.filter((t) => {
-                    if (t.typ == EnumToken.ImportantTokenType) {
-                        isImportant = true;
+                let dec;
+                const filtered = [];
+                for (const declaration of values) {
+                    dec = removeDefaults(declaration);
+                    for (const t of dec.val) {
+                        if (t.typ == EnumToken.ImportantTokenType) {
+                            isImportant = true;
+                        }
+                        if (filtered.length == 0 && t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.ImportantTokenType) {
+                            filtered.push(dec);
+                        }
                     }
-                    return ![EnumToken.WhitespaceTokenType, EnumToken.ImportantTokenType].includes(t.typ);
-                }).length > 0);
+                }
                 if (filtered.length == 0 && this.config.default.length > 0) {
                     filtered.push({
                         typ: EnumToken.DeclarationNodeType,
