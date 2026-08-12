@@ -10,7 +10,7 @@
     "all": "npm run sizes && npm run bench && npm run report"
   },
   "dependencies": {
-    "@tbela99/css-parser": "^1.4.10",
+    "@tbela99/css-parser": "^1.4.11",
     "clean-css": "^5.3.3",
     "css-tree": "^3.2.1",
     "cssnano": "^8.0.5",
