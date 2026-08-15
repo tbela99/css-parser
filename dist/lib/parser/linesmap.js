@@ -10,7 +10,7 @@ class LineMap {
      * Constructor
      * @param lines
      */
-    constructor(lines) {
+    constructor(lines = []) {
         if (lines.length === 0) {
             lines.push(0);
         }
@@ -28,7 +28,7 @@ class LineMap {
         }
         const column = offset - this.lineStarts[line];
         // [line, column]
-        return [line + 1, column === 0 ? 1 : column];
+        return [line + 1, line === 0 ? column + 1 : column];
     }
     /**
      * search the greatest index of the value less than or equal to offset

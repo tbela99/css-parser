@@ -1,4 +1,5 @@
 import type {
+    AstComment,
     AstNode,
     LoadResult,
     ParseInfo,
@@ -20,13 +21,14 @@ import { createReadStream } from "node:fs";
 import { lstat, readFile } from "node:fs/promises";
 import { doParse, doParseSync } from "./lib/parser/parse.ts";
 import { doRender } from "./lib/renderer/render.ts";
-import { ModuleScopeEnumOptions } from "./lib/ast/types.ts";
+import { EnumToken, ModuleScopeEnumOptions } from "./lib/ast/types.ts";
 import { tokenize, tokenizeStream } from "./lib/parser/tokenize.ts";
 import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
 import { ResponseType } from "./types.ts";
 import { resolve as resolvePath } from "node:path";
 import { SourceFile } from "./lib/parser/source.ts";
 import { cwd } from "node:process";
+import { parseResult } from "./utils.ts";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -230,7 +232,6 @@ export function parseSync(stream: string, options?: ParserSyncOptions): ParseRes
 
 /**
  * Parse css string
- * @param stream
  * @param options
  *
  * Parsing a string
@@ -283,7 +284,7 @@ export function parseSync(
 
     options ??= {};
     options.src ??= "";
-    options.sourcesMap ??= new Map;
+    options.sourcesMap ??= new Map();
 
     Object.assign(options, {
         resolve,
@@ -310,10 +311,8 @@ export function parseSync(
         currentPosition: -1,
     } as ParseInfo;
 
-    const result = doParseSync(tokenize(options.parseInfo), options);
-
-    const { revMapping, ...res } = result;
-    return res as ParseResult;
+    const result = doParseSync(tokenize(options.parseInfo), options) as ParseResult;
+    return !options.module && !options.inputSourceMap ? result : parseResult(result, options);
 }
 
 /**
@@ -352,8 +351,6 @@ export function transformSync(options: ParseInputOptions & TransformSyncOptions)
 
 /**
  * Transform css
- * @param css
- * @param options
  *
  * ```ts
  *
@@ -364,6 +361,7 @@ export function transformSync(options: ParseInputOptions & TransformSyncOptions)
  *  console.log(result.code);
  * ```
  *
+ * @param args
  */
 export function transformSync(
     ...args: [string, TransformSyncOptions?] | [ParseInputOptions & TransformSyncOptions]
@@ -476,7 +474,6 @@ export async function parse(stream: string | ReadableStream<Uint8Array>, options
 
 /**
  * Parse css
- * @param stream
  * @param options
  *
  * @throws Error file not found
@@ -511,7 +508,6 @@ export async function parse(options: ParseInputFileOptions & ParserOptions): Pro
 
 /**
  * Parse css
- * @param stream
  * @param options
  *
  * Parsing a string
@@ -629,7 +625,7 @@ export async function parse(
 
     options ??= {};
     options.src ??= "";
-    options.sourcesMap ??= new Map;
+    options.sourcesMap ??= new Map();
 
     Object.assign(options, {
         load,
@@ -641,7 +637,6 @@ export async function parse(
     options.src = resolve(options.src!, options.cwd).relative;
 
     if (options.source == null) {
-
         const source = new SourceFile(typeof stream == "string" ? stream : "", [], options.src);
         options.sourcesMap.set(source.id, source);
         options.source = source;
@@ -661,10 +656,7 @@ export async function parse(
     return doParse(
         stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo),
         options,
-    ).then((result) => {
-        const { revMapping, ...res } = result;
-        return res as ParseResult;
-    });
+    ).then((result) => (!options.module && !options.inputSourceMap ? result : parseResult(result, options)));
 }
 
 /**
@@ -752,7 +744,6 @@ export async function transform(
 
 /**
  * Transform css
- * @param css
  * @param options
  *
  * Parsing a string
@@ -798,7 +789,6 @@ export async function transform(options: ParseInputStreamOptions & TransformOpti
 
 /**
  * Transform css
- * @param css
  * @param options
  *
  * Parsing a string
@@ -843,8 +833,6 @@ export async function transform(options: ParseInputFileOptions & TransformOption
 
 /**
  * Transform css
- * @param css
- * @param options
  *
  * Parsing a string
  *
@@ -883,6 +871,7 @@ export async function transform(options: ParseInputFileOptions & TransformOption
  *
  *  console.log(result.code);
  * ```
+ * @param args
  */
 export async function transform(
     ...args:

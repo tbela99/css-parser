@@ -1,3 +1,4 @@
+import { SourceMap } from '../renderer/sourcemap/sourcemap.js';
 import { LineMap } from './linesmap.js';
 
 /**
@@ -8,6 +9,7 @@ let sourceId = 0;
  * Source file helper class
  */
 class SourceFile {
+    inputSourceMap = null;
     /**
      * Source file ID
      */
@@ -26,7 +28,6 @@ class SourceFile {
     content;
     /**
      * Constructor
-     * @param id
      * @param content
      * @param lines
      * @param file
@@ -40,7 +41,6 @@ class SourceFile {
     /**
      * Update source content
      * @param content
-     * @param lines
      */
     append(content) {
         this.content += content;
@@ -97,6 +97,20 @@ class SourceFile {
      */
     addLineStart(lineStart) {
         this.lineStarts.addLineStart(lineStart);
+    }
+    /**
+     * set input source map
+     * @param inputSourceMap
+     */
+    setInputSourceMap(inputSourceMap) {
+        this.inputSourceMap = inputSourceMap == null ? null : new SourceMap(inputSourceMap);
+    }
+    /**
+     * return input source map
+     * @returns
+     */
+    getInputSourceMap() {
+        return this.inputSourceMap;
     }
 }
 

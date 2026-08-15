@@ -14,6 +14,7 @@ import { ResponseType } from './types.js';
 import { resolve as resolve$1 } from 'node:path';
 import { SourceFile } from './lib/parser/source.js';
 import { cwd } from 'node:process';
+import { parseResult } from './utils.js';
 export { minify } from './lib/ast/minify.js';
 export { expand } from './lib/ast/expand.js';
 export { WalkerEvent, WalkerOptionEnum, walk, walkValues } from './lib/ast/walk.js';
@@ -163,7 +164,7 @@ function parseSync(...args) {
     }
     options ??= {};
     options.src ??= "";
-    options.sourcesMap ??= new Map;
+    options.sourcesMap ??= new Map();
     Object.assign(options, {
         resolve,
         dirname,
@@ -186,13 +187,10 @@ function parseSync(...args) {
         currentPosition: -1,
     };
     const result = doParseSync(tokenize(options.parseInfo), options);
-    const { revMapping, ...res } = result;
-    return res;
+    return !options.module && !options.inputSourceMap ? result : parseResult(result, options);
 }
 /**
  * Transform css
- * @param css
- * @param options
  *
  * ```ts
  *
@@ -203,6 +201,7 @@ function parseSync(...args) {
  *  console.log(result.code);
  * ```
  *
+ * @param args
  */
 function transformSync(...args) {
     let options;
@@ -314,7 +313,7 @@ async function parse(...args) {
     }
     options ??= {};
     options.src ??= "";
-    options.sourcesMap ??= new Map;
+    options.sourcesMap ??= new Map();
     Object.assign(options, {
         load,
         resolve,
@@ -337,10 +336,7 @@ async function parse(...args) {
         position: 0,
         currentPosition: -1,
     };
-    return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => {
-        const { revMapping, ...res } = result;
-        return res;
-    });
+    return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => (!options.module && !options.inputSourceMap ? result : parseResult(result, options)));
 }
 /**
  * Transform css file
@@ -373,8 +369,6 @@ const transformFile = deprecate(async (file, options = {}, asStream = false) => 
 }), "transformFile is deprecated, use transform instead as transform({file, asStream, ...options})");
 /**
  * Transform css
- * @param css
- * @param options
  *
  * Parsing a string
  *
@@ -413,6 +407,7 @@ const transformFile = deprecate(async (file, options = {}, asStream = false) => 
  *
  *  console.log(result.code);
  * ```
+ * @param args
  */
 async function transform(...args) {
     let options;

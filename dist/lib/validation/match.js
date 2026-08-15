@@ -971,7 +971,7 @@ function matchSyntax(syntaxes, context, options) {
         if (syntaxes[i].isList) {
             result = matchListSyntax(syntaxes[i], context.slice(), options);
             if (result.success) {
-                options.visited.get(token).delete(syntaxes[i]);
+                options.visited.get(token)?.delete?.(syntaxes[i]);
                 if (result.context.done()) {
                     context.end();
                     return {

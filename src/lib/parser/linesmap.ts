@@ -11,7 +11,7 @@ export class LineMap {
      * Constructor
      * @param lines
      */
-    constructor(lines: number[]) {
+    constructor(lines: number[] = []) {
         if (lines.length === 0) {
             lines.push(0);
         }
@@ -32,9 +32,8 @@ export class LineMap {
         }
 
         const column: number = offset - this.lineStarts[line];
-
         // [line, column]
-        return [line + 1, column === 0 ? 1 : column];
+        return [line + 1, line === 0 ? column + 1 : column];
     }
 
     /**

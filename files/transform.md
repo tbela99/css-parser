@@ -8,6 +8,30 @@ category: Guides
 
 Visitors are used to transform the ast tree produced by the parser. For more information about the visitor object see the [typescript definition](../docs/interfaces/node.VisitorNodeMap.html)
 
+## Plugin support through the visitor API
+
+The CSS parser supports plugin-style extensions through its visitor API. You can register handlers for specific AST node types and lifecycle events such as enter, visit, and leave to inspect, validate, or modify nodes without altering the parser internals.
+
+This pattern is useful for building reusable plugins that enforce conventions, inject transformations, or add custom analysis on top of the parsed AST.
+
+```ts
+import {transform, type ParserOptions} from '@tbela99/css-parser';
+
+const options: ParserOptions = {
+    visitor: {
+        Rule: {
+            '.card': (node) => {
+                node.selector = '.card, .panel';
+                return node;
+            }
+        }
+    }
+};
+
+const result = await transform('.card { color: red; }', options);
+console.log(result.code);
+```
+
 ## Visitors execution order
 
 Visitors can be called when the node is entered, visited or left.

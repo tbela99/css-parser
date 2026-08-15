@@ -1,11 +1,11 @@
-import type { Token } from "../../@types/token.d.ts";
-import type { AstDeclaration, AstNode, AstValueMatcher, TokenSearchResult } from "../../@types/ast.d.ts";
-import { EnumToken } from "./types.ts";
-import { walk, walkValues } from "./walk.ts";
-import { PARENT, TOKENS } from "../syntax/constants.ts";
+import type {Token} from "../../@types/token.d.ts";
+import type {AstDeclaration, AstNode, AstValueMatcher, TokenSearchResult} from "../../@types/ast.d.ts";
+import {EnumToken} from "./types.ts";
+import {walk, walkValues} from "./walk.ts";
+import {PARENT, TOKENS} from "../syntax/constants.ts";
 
 /**
- * Search the ast sub-tree and return the first match
+ * Search the ast subtree and return the first match
  * 
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'

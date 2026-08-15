@@ -442,21 +442,38 @@ export declare interface ParseInputStreamOptions {
     input: string | ReadableStream<Uint8Array>;
 }
 
+/**
+ * Input options for string or stream
+ * @internal
+ */
 export declare interface ParseSourceOptions {
     sourcesMap?: Map<number, SourceFile>;
     source?: SourceFile | null;
 }
 
-export declare interface ParserSyncOptions
-    extends MinifyOptions, MinifyFeatureOptions, ValidationOptions, PropertyListOptions, ParseSourceOptions {
-    /**
-     * Source file to be used for sourcemap
-     */
-    src?: string;
+export declare interface ParserSourceMapOptions {
     /**
      * Include sourcemap in the ast. Sourcemap info is always generated
      */
     sourcemap?: boolean | "inline";
+    /**
+     * Input source map
+     */
+    inputSourceMap?: SourceMapObject | string;
+}
+
+export declare interface ParserSyncOptions
+    extends
+        MinifyOptions,
+        ParserSourceMapOptions,
+        MinifyFeatureOptions,
+        ValidationOptions,
+        PropertyListOptions,
+        ParseSourceOptions {
+    /**
+     * Source file to be used for sourcemap
+     */
+    src?: string;
     /**
      * Remove at-rule charset
      */
@@ -658,6 +675,11 @@ export declare interface ResolvedPath {
  * Ast node render options
  */
 export declare interface RenderOptions {
+    /**
+     * Source file to be used as CSS input file for sourcemap resolution
+     */
+    src?: string;
+
     /**
      * Minify css values.
      */

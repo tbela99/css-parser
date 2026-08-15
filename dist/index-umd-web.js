@@ -12666,7 +12666,7 @@
             if (syntaxes[i].isList) {
                 result = matchListSyntax(syntaxes[i], context.slice(), options);
                 if (result.success) {
-                    options.visited.get(token).delete(syntaxes[i]);
+                    options.visited.get(token)?.delete?.(syntaxes[i]);
                     if (result.context.done()) {
                         context.end();
                         return {
@@ -21050,7 +21050,7 @@
     }
 
     /**
-     * Search the ast sub-tree and return the first match
+     * Search the ast subtree and return the first match
      *
      * ```ts
      *  // find the first ast declaration node which name is 'aspect-ratio'
@@ -21389,6 +21389,315 @@
         TransformCssFeature: TransformCssFeature
     });
 
+    // from https://github.com/Rich-Harris/vlq/tree/master
+    // credit: Rich Harris
+    const integer_to_char = {};
+    const char_to_integer = {};
+    let i = 0;
+    for (const char of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=') {
+        char_to_integer[char] = i;
+        integer_to_char[i++] = char;
+    }
+    /**
+     * @param {string} str
+     */
+    function decode(str) {
+        /** @type {number[]} */
+        let result = [];
+        let shift = 0;
+        let value = 0;
+        for (let i = 0; i < str.length; i += 1) {
+            let integer = char_to_integer[str[i]];
+            if (integer === undefined) {
+                throw new Error('Invalid character (' + str[i] + ')');
+            }
+            const has_continuation_bit = integer & 32;
+            integer &= 31;
+            value += integer << shift;
+            if (has_continuation_bit) {
+                shift += 5;
+            }
+            else {
+                const should_negate = value & 1;
+                value >>>= 1;
+                if (should_negate) {
+                    result.push(value === 0 ? -2147483648 : -value);
+                }
+                else {
+                    result.push(value);
+                }
+                // reset
+                value = shift = 0;
+            }
+        }
+        return result;
+    }
+    /**
+     *
+     * @param value
+     * @returns
+     */
+    function encode(value) {
+        if (typeof value === 'number') {
+            return encode_integer(value);
+        }
+        let result = '';
+        for (let i = 0; i < value.length; i += 1) {
+            result += encode_integer(value[i]);
+        }
+        return result;
+    }
+    function encode_integer(num) {
+        let result = '';
+        if (num < 0) {
+            num = (-num << 1) | 1;
+        }
+        else {
+            num <<= 1;
+        }
+        do {
+            let clamped = num & 31;
+            num >>>= 5;
+            if (num > 0) {
+                clamped |= 32;
+            }
+            result += integer_to_char[clamped];
+        } while (num > 0);
+        return result;
+    }
+
+    /**
+     * Generate and parse source map
+     */
+    class SourceMap {
+        /**
+         *
+         * @private
+         */
+        keys = new Set();
+        /**
+         * Last location
+         */
+        lastLocation = null;
+        /**
+         * Version
+         * @private
+         */
+        version = 3;
+        /**
+         * Sources map
+         * @private
+         */
+        sourcesMap = [];
+        /**
+         * Sources content
+         * @private
+         */
+        sourcesContent = [];
+        /**
+         * Sources
+         * @private
+         */
+        sources = [];
+        /**
+         * Map
+         * @private
+         *
+         */
+        map = new Map();
+        /**
+         * Map
+         * @private
+         *
+         */
+        reverseMap = new Map();
+        /**
+         * Line
+         * @private
+         */
+        line = -1;
+        /**
+         *
+         * @param sourcemaps
+         */
+        constructor(sourcemaps) {
+            if (typeof sourcemaps === "string") {
+                sourcemaps = JSON.parse(sourcemaps);
+            }
+            if (sourcemaps != null) {
+                this.sources = sourcemaps.sources?.slice() ?? [];
+                this.sourcesContent = sourcemaps.sourcesContent?.slice() ?? [];
+                const decodedMappings = sourcemaps.mappings
+                    .split(";")
+                    .map((mapping) => mapping.split(",").map((mapping) => decode(mapping)));
+                this.line = decodedMappings.length - 1;
+                for (let index = 0; index < decodedMappings.length; index++) {
+                    if (decodedMappings[index].length == 0 ||
+                        (decodedMappings[index].length == 1 && decodedMappings[index][0].length == 0)) {
+                        continue;
+                    }
+                    this.map.set(index, decodedMappings[index]);
+                }
+                this.computePositions();
+            }
+        }
+        /**
+         * Add all location
+         * @param maps
+         */
+        addAll(maps) {
+            for (let [newLine, newColumn, srcId, ln, col, sourceFileName, sourceContent] of maps) {
+                const key = `${srcId}:${ln}:${sourceFileName}:${col}:${newLine}:${newColumn}:${sourceContent}`;
+                const sourcemap = `${srcId}:${sourceFileName}:${sourceContent}`;
+                if (this.keys.has(key)) {
+                    continue;
+                }
+                this.keys.add(key);
+                if (!this.sourcesMap.includes(sourcemap)) {
+                    this.sourcesMap.push(sourcemap);
+                    this.sources.push(sourceFileName || null);
+                    this.sourcesContent.push((sourceFileName != null ? null : sourceContent) || null);
+                }
+                const line = newLine - 1;
+                let record;
+                if (line > this.line) {
+                    this.line = line;
+                }
+                if (!this.map.has(line)) {
+                    record = [Math.max(0, newColumn - 1), this.sourcesMap.indexOf(sourcemap), ln - 1, col - 1];
+                    this.map.set(line, [record]);
+                }
+                else {
+                    const arr = this.map.get(line);
+                    record = [
+                        Math.max(0, newColumn - 1) - arr[0][0],
+                        this.sourcesMap.indexOf(sourcemap) - arr[0][1],
+                        ln - 1,
+                        col - 1,
+                    ];
+                    arr.push(record);
+                }
+                if (this.lastLocation != null) {
+                    record[2] -= this.lastLocation.ln - 1;
+                    record[3] -= this.lastLocation.col - 1;
+                }
+                this.lastLocation ??= { ln, col };
+                this.lastLocation.ln = ln;
+                this.lastLocation.col = col;
+            }
+        }
+        /**
+         * compute original positions
+         */
+        computePositions() {
+            this.reverseMap.clear();
+            let sourceFileIndex = 0; // second field
+            let sourceCodeLine = 0; // third field
+            let sourceCodeColumn = 0; // fourth field
+            let nameIndex = 0; // fifth field
+            let generatedCodeColumn;
+            let result;
+            // mappings to original source
+            for (let [i, line] of this.map.entries()) {
+                if (line.length === 0 || (line.length === 1 && line[0].length === 0)) {
+                    continue;
+                }
+                generatedCodeColumn = line[0][0]; // first field - reset each time
+                line = line
+                    .map((segment, index, array) => {
+                    if (segment.length === 0) {
+                        return [];
+                    }
+                    generatedCodeColumn = index == 0 ? segment[0] : segment[0] + array[0][0];
+                    result = [generatedCodeColumn];
+                    if (segment.length <= 1) {
+                        return result;
+                    }
+                    sourceFileIndex = index == 0 ? segment[1] : segment[1] + array[0][1];
+                    sourceCodeLine += segment[2];
+                    sourceCodeColumn += segment[3];
+                    result.push(sourceFileIndex, sourceCodeLine, sourceCodeColumn);
+                    if (segment.length === 5) {
+                        nameIndex += segment[4];
+                        result.push(nameIndex);
+                    }
+                    return result;
+                })
+                    .sort((a, b) => {
+                    if (a[1] !== b[1]) {
+                        return a[1] - b[1];
+                    }
+                    return a[0] - b[0];
+                });
+                if (line.length == 0 || (line.length == 1 && line[0].length == 0)) {
+                    continue;
+                }
+                this.reverseMap.set(i, line);
+            }
+        }
+        /**
+         * retrieve original sources, lines and columns
+         * @param line generated line
+         * @param column generated column
+         */
+        find(line, column) {
+            if (!this.reverseMap.has(--line)) {
+                return null;
+            }
+            column--;
+            const result = [];
+            for (const record of this.reverseMap.get(line)) {
+                if (record.length == 0 || record[0] < column) {
+                    continue;
+                }
+                if (record[0] > column) {
+                    break;
+                }
+                result.push([
+                    this.sources?.[record[1]] ?? null,
+                    record[2] + 1,
+                    record[3] + 1,
+                    this.sourcesContent?.[record[1]] ?? null,
+                ]);
+            }
+            return result.length == 0 ? null : result;
+        }
+        /**
+         * Convert to URL encoded string
+         */
+        toUrl() {
+            // /*# sourceMappingURL = ${url} */
+            return `data:application/json;charset=utf-8;base64,${btoa(JSON.stringify(this.toJSON()))}`;
+        }
+        /**
+         * Convert to JSON object
+         */
+        toJSON() {
+            const mappings = [];
+            let i = 0;
+            for (; i <= this.line; i++) {
+                if (!this.map.has(i)) {
+                    mappings.push("");
+                }
+                else {
+                    mappings.push(this.map.get(i).reduce((acc, curr) => acc + (acc === "" ? "" : ",") + encode(curr), ""));
+                }
+            }
+            return {
+                version: this.version,
+                sources: this.sources.slice(),
+                sourcesContent: this.sourcesContent?.slice(),
+                mappings: mappings.join(";"),
+            };
+        }
+        /**
+         * to string
+         */
+        toString() {
+            return JSON.stringify(this);
+        }
+    }
+
     /**
      * Compute line and column of the offset
      */
@@ -21401,7 +21710,7 @@
          * Constructor
          * @param lines
          */
-        constructor(lines) {
+        constructor(lines = []) {
             if (lines.length === 0) {
                 lines.push(0);
             }
@@ -21419,7 +21728,7 @@
             }
             const column = offset - this.lineStarts[line];
             // [line, column]
-            return [line + 1, column === 0 ? 1 : column];
+            return [line + 1, line === 0 ? column + 1 : column];
         }
         /**
          * search the greatest index of the value less than or equal to offset
@@ -21474,6 +21783,7 @@
      * Source file helper class
      */
     class SourceFile {
+        inputSourceMap = null;
         /**
          * Source file ID
          */
@@ -21492,7 +21802,6 @@
         content;
         /**
          * Constructor
-         * @param id
          * @param content
          * @param lines
          * @param file
@@ -21506,7 +21815,6 @@
         /**
          * Update source content
          * @param content
-         * @param lines
          */
         append(content) {
             this.content += content;
@@ -21563,6 +21871,20 @@
          */
         addLineStart(lineStart) {
             this.lineStarts.addLineStart(lineStart);
+        }
+        /**
+         * set input source map
+         * @param inputSourceMap
+         */
+        setInputSourceMap(inputSourceMap) {
+            this.inputSourceMap = inputSourceMap == null ? null : new SourceMap(inputSourceMap);
+        }
+        /**
+         * return input source map
+         * @returns
+         */
+        getInputSourceMap() {
+            return this.inputSourceMap;
         }
     }
 
@@ -21940,7 +22262,7 @@
         return char;
     }
     /**
-     * Tokenize css string
+     * Tokenize CSS string
      * @param parseInfo
      * @param yieldEOFToken
      */
@@ -21967,8 +22289,6 @@
         parseInfo.buffer = "";
         while ((value = peek(parseInfo))) {
             charCode = value.charCodeAt(0);
-            // nextCharCode = nextValue.charCodeAt(0);
-            // console.debug({value, buffer});
             switch (charCode) {
                 case 61 /* TokenMap.EQUALS */:
                     if (buffer.length > 0) {
@@ -22333,10 +22653,6 @@
                         break;
                     }
                     buffer += value + next(parseInfo);
-                    // buffer +=
-                    //     (parseInfo.offset == parseInfo.currentPosition
-                    //         ? parseInfo.buffer.slice(-1)
-                    //         : parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset - 1)) + value;
                     break;
                 case 39 /* TokenMap.SINGLE_QUOTE */:
                 case 34 /* TokenMap.DOUBLE_QUOTE */:
@@ -22423,13 +22739,16 @@
      * @param errors
      * @param nestingContent
      *
+     * @param context
      * @private
      */
-    function minify(ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
+    function minify(ast, opt = {}, recursive = false, errors, nestingContent, context = {}) {
         let preprocess = false;
         let postprocess = false;
         let parents;
         let replacement;
+        // @ts-ignore
+        let { sourcemap, module, ...options } = opt;
         if (!("features" in options)) {
             // @ts-ignore
             options = {
@@ -22626,9 +22945,9 @@
      * Minify at-rule media
      * - remove redundant tokens
      * - generate range queries
-     * @param ast
      *
      * @private
+     * @param tokens
      */
     function minifyAtRuleMedia(tokens) {
         let hasUpdates = false;
@@ -22726,7 +23045,6 @@
                 }
                 while (previous?.typ === exports.EnumToken.CommentNodeType) {
                     previous = ast.chi[--nodeIndex];
-                    continue;
                 }
                 node = ast.chi[i];
                 if (node.typ === exports.EnumToken.AtRuleNodeType && node.nam === "font-face") {
@@ -23197,7 +23515,9 @@
             }
             break;
         }
-        selector.forEach((selector) => selector.splice(0, optimized.length));
+        for (let i1 = 0; i1 < selector.length; i1++) {
+            selector[i1].splice(0, optimized.length);
+        }
         let reducible = optimized.length == 1;
         if (optimized[0] == "&") {
             if (optimized[1] == " ") {
@@ -23579,7 +23899,6 @@
      * Diff nodes
      * @param n1
      * @param n2
-     * @param reducer
      * @param options
      *
      * @private
@@ -23698,17 +24017,36 @@
                 // @ts-ignore
                 chi: intersect.reverse(),
             };
+        let op = { level: 0, ...options };
         if (result == null ||
             [n1, n2].reduce((acc, curr) => {
                 let css = options.cache.get(curr);
                 if (css == null) {
-                    css = doRender(curr, options).code;
+                    let level = 0;
+                    let parent = curr[PARENT];
+                    while (parent != null && parent.typ != exports.EnumToken.StyleSheetNodeType) {
+                        level++;
+                        parent = parent[PARENT];
+                    }
+                    op.level = level;
+                    css = doRender(curr, op).code;
                     options.cache.set(curr, css);
                 }
                 return curr.chi.length == 0 ? acc : acc + css.length;
             }, 0) <=
                 [node1, node2, result].reduce((acc, curr) => {
-                    const css = doRender(curr, options).code;
+                    let css = options.cache.get(curr);
+                    if (css != null) {
+                        return curr.chi.length == 0 ? acc : acc + css.length;
+                    }
+                    let level = 0;
+                    let parent = curr[PARENT];
+                    while (parent != null && parent.typ != exports.EnumToken.StyleSheetNodeType) {
+                        level++;
+                        parent = parent[PARENT];
+                    }
+                    op.level = level;
+                    css = doRender(curr, op).code;
                     return curr.chi.length == 0 ? acc : acc + css.length;
                 }, 0)) {
             if (node1.chi.length != 0 && node2.chi.length != 0) {
@@ -23843,7 +24181,10 @@
                             ast.chi.splice(i--, 1);
                             continue;
                         }
-                        selRule.forEach((arr) => combinators.includes(arr[0].charAt(0)) ? arr.unshift(arSelf) : arr.unshift(arSelf, " "));
+                        for (let i1 = 0; i1 < selRule.length; i1++) {
+                            const arr = selRule[i1];
+                            combinators.includes(arr[0].charAt(0)) ? arr.unshift(arSelf) : arr.unshift(arSelf, " ");
+                        }
                         rule.sel = selRule
                             .reduce((acc, curr) => {
                             acc.push(curr.join(""));
@@ -24035,145 +24376,9 @@
             .reduce((acc, curr) => acc + (curr == "&" ? replace : curr), "");
     }
 
-    // from https://github.com/Rich-Harris/vlq/tree/master
-    // credit: Rich Harris
-    const integer_to_char = {};
-    let i = 0;
-    for (const char of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=') {
-        integer_to_char[i++] = char;
-    }
-    function encode(value) {
-        if (typeof value === 'number') {
-            return encode_integer(value);
-        }
-        let result = '';
-        for (let i = 0; i < value.length; i += 1) {
-            result += encode_integer(value[i]);
-        }
-        return result;
-    }
-    function encode_integer(num) {
-        let result = '';
-        if (num < 0) {
-            num = (-num << 1) | 1;
-        }
-        else {
-            num <<= 1;
-        }
-        do {
-            let clamped = num & 31;
-            num >>>= 5;
-            if (num > 0) {
-                clamped |= 32;
-            }
-            result += integer_to_char[clamped];
-        } while (num > 0);
-        return result;
-    }
-
     /**
-     * Source map class
-     * @internal
+     * match url
      */
-    class SourceMap {
-        /**
-         * Last location
-         */
-        lastLocation = null;
-        /**
-         * Version
-         * @private
-         */
-        version = 3;
-        /**
-         * Sources map
-         * @private
-         */
-        sourcesMap = [];
-        /**
-         * Sources
-         * @private
-         */
-        sources = [];
-        /**
-         * Map
-         * @private
-         */
-        map = new Map();
-        /**
-         * Line
-         * @private
-         */
-        line = -1;
-        /**
-         * Add a location
-         * @param source
-         * @param original
-         */
-        add(newLine, newColumn, srcId, ln, col, sourceFileName, sourceContent) {
-            if (!this.sourcesMap.includes(srcId)) {
-                if (sourceFileName == null && sourceContent != null) {
-                    sourceFileName = "data:text/css;charset=utf-8;base64," + btoa(sourceContent);
-                }
-                this.sourcesMap.push(srcId);
-                this.sources.push(sourceFileName || null);
-            }
-            const line = newLine - 1;
-            let record;
-            if (line > this.line) {
-                this.line = line;
-            }
-            if (!this.map.has(line)) {
-                record = [Math.max(0, newColumn - 1), this.sourcesMap.indexOf(srcId), ln - 1, col - 1];
-                this.map.set(line, [record]);
-            }
-            else {
-                const arr = this.map.get(line);
-                record = [
-                    Math.max(0, newColumn - 1 - arr[0][0]),
-                    this.sourcesMap.indexOf(srcId) - arr[0][1],
-                    ln - 1,
-                    col - 1,
-                ];
-                arr.push(record);
-            }
-            if (this.lastLocation != null) {
-                record[2] -= this.lastLocation.ln - 1;
-                record[3] -= this.lastLocation.col - 1;
-            }
-            this.lastLocation ??= { ln, col };
-            this.lastLocation.ln = ln;
-            this.lastLocation.col = col;
-        }
-        /**
-         * Convert to URL encoded string
-         */
-        toUrl() {
-            // /*# sourceMappingURL = ${url} */
-            return `data:application/json;charset=utf-8;base64,${btoa(JSON.stringify(this.toJSON()))}`;
-        }
-        /**
-         * Convert to JSON object
-         */
-        toJSON() {
-            const mappings = [];
-            let i = 0;
-            for (; i <= this.line; i++) {
-                if (!this.map.has(i)) {
-                    mappings.push("");
-                }
-                else {
-                    mappings.push(this.map.get(i).reduce((acc, curr) => acc + (acc === "" ? "" : ",") + encode(curr), ""));
-                }
-            }
-            return {
-                version: this.version,
-                sources: this.sources.slice(),
-                mappings: mappings.join(";"),
-            };
-        }
-    }
-
     const matchUrl = /^(https?:)?\/\//;
     /**
      * return the directory name of a path
@@ -24184,6 +24389,9 @@
     function dirname(path) {
         if (path === "") {
             return "";
+        }
+        if (path.startsWith("data:")) {
+            return path;
         }
         let i = 0;
         let parts = [""];
@@ -24208,10 +24416,7 @@
         if (result.length == 0) {
             return { parts: [], i: 0 };
         }
-        // if (result === "/") {
-        //     return { parts: ["/"], i: 0 };
-        // }
-        const parts = [""];
+        const parts = result == "/" ? [] : [""];
         let i = 0;
         for (; i < result.length; i++) {
             const chr = result.charAt(i);
@@ -24220,7 +24425,7 @@
             }
             // else if (chr == "?" || chr == "#") {
             //     break;
-            // } 
+            // }
             else {
                 parts[parts.length - 1] += chr;
             }
@@ -24238,6 +24443,8 @@
     }
     /**
      * Nomalize path
+     * @param path
+     * @private
      */
     const normalize = memoize(function (path) {
         let parts = [];
@@ -24266,14 +24473,20 @@
         while (++k < parts.length) {
             // if (parts[k] == ".") {
             //     parts.splice(k--, 1);
-            // } else 
-            if (parts[k] == "..") {
+            // } else
+            if (k > 0 && parts[k] == "..") {
                 parts.splice(k - 1, 2);
                 k -= 2;
             }
         }
         return (path.charAt(0) == "/" ? "/" : "") + parts.join("/");
     });
+    /**
+     * diff path
+     * @param path1
+     * @param path2
+     * @private
+     */
     const diff = memoize(function (path1, path2) {
         let { parts } = splitPath(path1);
         const { parts: dirs } = splitPath(path2);
@@ -24305,31 +24518,52 @@
         cwd ??= "";
         currentDirectory ??= "";
         url = normalize(url);
+        if (cwd !== "") {
+            cwd = normalize(cwd);
+        }
         if (currentDirectory !== "") {
             currentDirectory = normalize(currentDirectory);
-            if (url.startsWith(currentDirectory + "/")) {
-                return {
-                    absolute: url,
-                    relative: url.slice(currentDirectory.length + 1),
-                };
-            }
         }
-        if ((currentDirectory === "" || currentDirectory === ".") && cwd !== "") {
-            cwd = normalize(cwd);
-            if (url.startsWith(cwd == "/" ? cwd : cwd + "/")) {
-                const absolute = url;
-                const prefix = cwd == "/" ? cwd : cwd + "/";
-                return {
-                    absolute,
-                    relative: absolute.startsWith(prefix) ? absolute.slice(prefix.length) : diff(absolute, cwd),
-                };
-            }
-        }
+        const dir = cwd || currentDirectory;
+        const absolute = dir == "" || url.startsWith("/") ? resolvePath(url) : resolvePath(dir, url);
         return {
-            absolute: url,
-            relative: url === "" ? "" : diff(url, cwd || currentDirectory),
+            absolute,
+            relative: dir === "" ? absolute : diff(absolute, dir),
         };
     });
+    /**
+     *
+     * @param parts
+     * @returns
+     * @private
+     */
+    function resolvePath(...parts) {
+        const path = parts.filter(Boolean).join("/");
+        const isAbsolute = /^[\\/]/.test(path);
+        const segments = path.split(/[\\/]+/);
+        const resolved = [];
+        for (const segment of segments) {
+            if (!segment || segment === ".") {
+                continue;
+            }
+            if (segment === "..") {
+                if (resolved.length && resolved[resolved.length - 1] !== "..") {
+                    resolved.pop();
+                }
+                else if (!isAbsolute) {
+                    resolved.push("..");
+                }
+            }
+            else {
+                resolved.push(segment);
+            }
+        }
+        let result = resolved.join("/");
+        if (isAbsolute) {
+            result = "/" + result;
+        }
+        return result || (isAbsolute ? "/" : ".");
+    }
 
     /**
      * render ast
@@ -24382,22 +24616,28 @@
         const startTime = performance.now();
         const errors = [];
         const sourcemap = options.sourcemap ? new SourceMap() : null;
+        const sourcemaps = options.sourcemap ? [] : null;
         const cache = Object.create(null);
         const sourceLocation = {
-            srcId: 0,
-            sta: 0,
             end: 0,
         };
-        const linesMap = new LineMap([]);
+        const linesMap = options.sourcemap ? new LineMap() : null;
         let code = "";
         if (mapping != null) {
             if (mapping.importMapping != null) {
-                for (const [key, value] of Object.entries(mapping.importMapping)) {
+                const absolutePath = options.resolve(options.output != null ? dirname(options.output) : dirname(options.src), options.cwd).absolute;
+                for (let [key, value] of Object.entries(mapping.importMapping)) {
+                    key = options.resolve(options.resolve(key, options.cwd).absolute, absolutePath).relative;
+                    if (!key.startsWith("/") && !key.startsWith(".")) {
+                        key = "./" + key;
+                    }
                     code += `:import("${key}")${options.indent}{${options.newLine}${Object.entries(value).reduce((acc, [k, v]) => acc + (acc.length > 0 ? options.newLine : "") + `${options.indent}${v}:${options.indent}${k};`, "")}${options.newLine}}${options.newLine}`;
                 }
             }
             code += `:export${options.indent}{${options.newLine}${Object.entries(mapping.mapping).reduce((acc, [k, v]) => acc + (acc.length > 0 ? options.newLine : "") + `${options.indent}${k}:${options.indent}${v};`, "")}${options.newLine}}${options.newLine}`;
-            move(sourceLocation, linesMap, code);
+            if (sourcemap != null) {
+                move(sourceLocation, linesMap, code);
+            }
         }
         if (options.output != null) {
             // @ts-ignore
@@ -24409,7 +24649,7 @@
                     [exports.EnumToken.StyleSheetNodeType, exports.EnumToken.AtRuleNodeType, exports.EnumToken.RuleNodeType].includes(data.typ) &&
                     "chi" in data
                     ? expand(data)
-                    : data, options, sourcemap, sourceLocation, linesMap, errors, function reducer(acc, curr) {
+                    : data, options, sourcemaps, sourceLocation, linesMap, errors, function reducer(acc, curr) {
                     if (curr.typ == exports.EnumToken.CommentTokenType && options.removeComments) {
                         if (!options.preserveLicense || !curr.val.startsWith("/*!")) {
                             return acc;
@@ -24424,6 +24664,7 @@
             },
         };
         if (sourcemap != null) {
+            sourcemap.addAll(sourcemaps);
             result.map = sourcemap;
             if (options.sourcemap === "inline") {
                 result.code += `\n/*# sourceMappingURL=${result.map.toUrl()} */`;
@@ -24436,37 +24677,88 @@
      * @param node
      * @param options
      * @param cache
-     * @param sourcemap
-     * @param position
+     * @param sourcemaps
+     * @param sourceLocation
+     * @param linesMap
      * @param str
      *
      * @internal
      */
-    function updateSourceMap(node, options, cache, sourcemap, sourceLocation, linesMap, str) {
-        if ([
-            exports.EnumToken.RuleNodeType,
-            exports.EnumToken.AtRuleNodeType,
-            exports.EnumToken.KeyFramesRuleNodeType,
-            exports.EnumToken.KeyframesAtRuleNodeType,
-        ].includes(node.typ)) {
-            let srcId = node[LOC]?.srcId ?? 0;
-            let sourceFileName = options.sourcesMap?.get(srcId)?.getFileName?.() || null;
-            if (sourceFileName != null && options.output != null) {
-                if (cache[sourceFileName] == null) {
-                    cache[sourceFileName] = options.resolve(sourceFileName, dirname(options.output)).relative;
-                }
-                sourceFileName = cache[sourceFileName];
+    function updateSourceMap(node, options, cache, sourcemaps, sourceLocation, linesMap, str) {
+        let offset = 0;
+        while (true) {
+            if (str.charAt(offset) == options.newLine) {
+                offset += options.newLine.length;
+                continue;
             }
-            // @ts-ignore
-            sourcemap.add(...linesMap.getOffsets(sourceLocation.end), srcId, 
-            // @ts-ignore
-            ...options.sourcesMap?.get(srcId)?.getOffsets(sourceLocation.sta), sourceFileName, options.sourcesMap?.get(srcId)?.getContent?.());
+            if (str.charAt(offset) == options.indent) {
+                offset += options.indent.length;
+                continue;
+            }
+            break;
         }
-        move(sourceLocation, linesMap, str);
+        if (offset > 0) {
+            move(sourceLocation, linesMap, str.slice(0, offset));
+        }
+        if (node[LOC] != null &&
+            [
+                exports.EnumToken.RuleNodeType,
+                exports.EnumToken.AtRuleNodeType,
+                exports.EnumToken.KeyFramesRuleNodeType,
+                exports.EnumToken.KeyframesAtRuleNodeType,
+            ].includes(node.typ)) {
+            const source = options.sourcesMap.get(node[LOC].srcId);
+            const inputSourceMap = source.getInputSourceMap();
+            const offsets = source.getOffsets(node[LOC].sta);
+            const [newLine, newColumn] = linesMap.getOffsets(sourceLocation.end);
+            let records = null;
+            let srcId = node[LOC].srcId;
+            let sourceFileName = source.getFileName() || null;
+            let sourceContent = source.getContent() || null;
+            if (inputSourceMap != null && (records = inputSourceMap.find(offsets[0], offsets[1])) != null) {
+                for (const record of records) {
+                    // @ts-ignore
+                    sourceFileName = record[0] || null;
+                    // @ts-ignore
+                    offsets[0] = record[1];
+                    // @ts-ignore
+                    offsets[1] = record[2];
+                    sourceContent = record[3] || null;
+                    if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
+                        if (cache[sourceFileName] == null) {
+                            const absolute = options.resolve(dirname(options.output), options.cwd)
+                                .absolute;
+                            const absoluteSourcePath = options.resolve(dirname(options.src || ""), options.cwd).absolute;
+                            // resolution is relative to the source file
+                            const absoluteSourceFileName = options.resolve(sourceFileName, absoluteSourcePath)
+                                .absolute;
+                            cache[sourceFileName] = options.resolve(absoluteSourceFileName, absolute).relative;
+                        }
+                        sourceFileName = cache[sourceFileName];
+                    }
+                    sourcemaps.push([newLine, newColumn, srcId, ...offsets, sourceFileName, sourceContent]);
+                }
+            }
+            else {
+                if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
+                    if (cache[sourceFileName] == null) {
+                        const absolute = options.resolve(dirname(options.output), options.cwd)
+                            .absolute;
+                        const absoluteSourceFileName = options.resolve(sourceFileName, options.cwd)
+                            .absolute;
+                        cache[sourceFileName] = options.resolve(absoluteSourceFileName, absolute).relative;
+                    }
+                    sourceFileName = cache[sourceFileName];
+                }
+                sourcemaps.push([newLine, newColumn, srcId, ...offsets, sourceFileName, sourceContent]);
+            }
+        }
+        move(sourceLocation, linesMap, offset > 0 ? str.slice(offset) : str);
     }
     /**
      * Update position
-     * @param position
+     * @param sourceLocation
+     * @param linesMap
      * @param str
      */
     function move(sourceLocation, linesMap, str) {
@@ -24496,8 +24788,9 @@
      * render ast node
      * @param data
      * @param options
-     * @param sourcemap
-     * @param position
+     * @param sourcemaps
+     * @param sourceLocation
+     * @param linesMap
      * @param errors
      * @param reducer
      * @param cache
@@ -24506,13 +24799,17 @@
      *
      * @internal
      */
-    function renderAstNode(data, options, sourcemap, sourceLocation, linesMap, errors, reducer, cache, level = 0, indents = []) {
+    function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, errors, reducer, cache, level = 0, indents = []) {
         if (indents.length < level + 1) {
             indents.push(options.indent.repeat(level));
         }
         if (indents.length < level + 2) {
             indents.push(options.indent.repeat(level + 1));
         }
+        // @ts-ignore
+        let children = "";
+        let str = "";
+        let previousStr = "";
         const indent = indents[level];
         const indentSub = indents[level + 1];
         switch (data.typ) {
@@ -24530,20 +24827,17 @@
                     ? data.val
                     : "";
             case exports.EnumToken.StyleSheetNodeType:
-                return data.chi.reduce((css, node) => {
-                    const hasPreviousContent = css !== "";
-                    const str = renderAstNode(node, options, sourcemap, sourceLocation, linesMap, errors, reducer, cache, level, indents);
+                for (const node of data.chi) {
+                    str = renderAstNode(node, options, sourcemaps, sourceLocation, linesMap, errors, reducer, cache, level, indents);
                     if (str === "") {
-                        return css;
+                        continue;
                     }
-                    if (sourcemap != null && node[LOC] != null) {
-                        updateSourceMap(node, options, cache, sourcemap, sourceLocation, linesMap, (hasPreviousContent ? options.newLine : "") + str);
+                    if (children.length > 0) {
+                        str = options.newLine + str;
                     }
-                    if (!hasPreviousContent) {
-                        return str;
-                    }
-                    return `${css}${options.newLine}${str}`;
-                }, "");
+                    children += str;
+                }
+                return children;
             case exports.EnumToken.AtRuleNodeType:
             case exports.EnumToken.RuleNodeType:
             case exports.EnumToken.KeyFramesRuleNodeType:
@@ -24551,9 +24845,15 @@
                 if ([exports.EnumToken.AtRuleNodeType, exports.EnumToken.KeyframesAtRuleNodeType].includes(data.typ) && !("chi" in data)) {
                     return `${indent}@${data.nam}${data.val === "" ? "" : options.indent || " "}${data.val};`;
                 }
-                // @ts-ignore
-                let children = data.chi.reduce((css, node) => {
-                    let str;
+                const prelude = [exports.EnumToken.AtRuleNodeType, exports.EnumToken.KeyframesAtRuleNodeType].includes(data.typ)
+                    ? `@${data.nam}${data.val === "" ? "" : options.indent || " "}${data.val}${options.indent}{`
+                    : data.sel + `${options.indent}{`;
+                if (sourcemaps != null) {
+                    updateSourceMap(data, options, cache, sourcemaps, sourceLocation, linesMap, prelude);
+                }
+                let node;
+                for (let i = 0; i < data.chi.length; i++) {
+                    node = data.chi[i];
                     if (node.typ == exports.EnumToken.CommentNodeType) {
                         str =
                             options.removeComments &&
@@ -24576,41 +24876,45 @@
                         : node.val)
                         .reduce(reducer, "")
                         .trimEnd()};`;
+                        if (sourcemaps != null) {
+                            if (previousStr.length > 0) {
+                                move(sourceLocation, linesMap, previousStr);
+                            }
+                        }
+                        previousStr = str === "" ? "" : options.newLine + indentSub + str;
                     }
                     // else if (node.typ == EnumToken.AtRuleNodeType && !("chi" in node)) {
                     //     str = `${(<AstAtRule>node).val === "" ? "" : options.indent || " "}${(<AstAtRule>node).val};`;
                     // }
                     else {
-                        str = renderAstNode(node, options, sourcemap, sourceLocation, linesMap, errors, reducer, cache, level + 1, indents);
-                    }
-                    if (css === "") {
-                        return str;
+                        if (sourcemaps != null) {
+                            if (previousStr.length > 0) {
+                                move(sourceLocation, linesMap, previousStr);
+                            }
+                        }
+                        str = renderAstNode(node, options, sourcemaps, sourceLocation, linesMap, errors, reducer, cache, level + 1, indents);
+                        previousStr = "";
                     }
                     if (str === "") {
-                        return css;
+                        continue;
                     }
-                    return `${css}${options.newLine}${indentSub}${str}`;
-                }, "");
-                if (options.removeEmpty && children === "") {
-                    return "";
+                    str = options.newLine + indentSub + str;
+                    children += str;
+                }
+                if (sourcemaps != null && str !== "") {
+                    move(sourceLocation, linesMap, str.endsWith(";") ? str.slice(0, -1) : str);
                 }
                 if (children.endsWith(";")) {
                     children = children.slice(0, -1);
                 }
-                const rendered = [exports.EnumToken.AtRuleNodeType, exports.EnumToken.KeyframesAtRuleNodeType].includes(data.typ)
-                    ? `@${data.nam}${data.val === "" ? "" : options.indent || " "}${data.val}${options.indent}{${options.newLine}` +
-                        (children === "" ? "" : indentSub + children + options.newLine) +
-                        indent +
-                        `}`
-                    : data.sel +
-                        `${options.indent}{${options.newLine}` +
-                        (children === "" ? "" : indentSub + children + options.newLine) +
-                        indent +
-                        `}`;
-                if (sourcemap != null && data[LOC] != null) {
-                    updateSourceMap(data, options, cache, sourcemap, { ...sourceLocation }, linesMap.clone(), rendered);
+                if (options.removeEmpty && children === "") {
+                    return "";
                 }
-                return rendered;
+                const end = options.newLine + indent + `}`;
+                if (sourcemaps != null) {
+                    move(sourceLocation, linesMap, end);
+                }
+                return prelude + children + end;
             // case EnumToken.CssVariableTokenType:
             // case EnumToken.CssVariableImportTokenType:
             //     return `@value ${(<CssVariableToken | CssVariableImportTokenType>data).val}:${options.indent}${filterValues(
@@ -24637,6 +24941,9 @@
      * render ast token
      * @param token
      * @param options
+     * @param cache
+     * @param reducer
+     * @param errors
      * @private
      */
     function renderValue(token, options = {}, cache = Object.create(null), reducer, errors) {
@@ -28674,7 +28981,7 @@
                             if (replacement == null) {
                                 continue;
                             }
-                            if (replacement == null || replacement == node) {
+                            if (replacement == node) {
                                 continue;
                             }
                             // @ts-ignore
@@ -28720,7 +29027,7 @@
                             if (replacement == null) {
                                 continue;
                             }
-                            if (replacement == null || replacement == node) {
+                            if (replacement == node) {
                                 continue;
                             }
                             // @ts-ignore
@@ -28754,7 +29061,7 @@
                                 if (replacement == null) {
                                     continue;
                                 }
-                                if (replacement != null && replacement != node) {
+                                if (replacement != node) {
                                     node = replacement;
                                 }
                             }
@@ -28787,7 +29094,7 @@
                                     if (result == null) {
                                         continue;
                                     }
-                                    if (result != null && result != node) {
+                                    if (result != node) {
                                         node = result;
                                     }
                                     if (Array.isArray(node)) {
@@ -28972,10 +29279,9 @@
                 if (node.typ == exports.EnumToken.DeclarationNodeType) {
                     if (node.nam.startsWith("--")) {
                         if (!(node.nam in namesMapping)) {
-                            let result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
+                            let value = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
                                 ? node.nam
                                 : moduleSettings.generateScopedName(node.nam, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                            let value = result;
                             mapping[node.nam] =
                                 "--" +
                                     (moduleSettings.naming & exports.ModuleCaseTransformEnum.DashCaseOnly ||
@@ -29017,10 +29323,9 @@
                                         continue;
                                     }
                                     if (!(rule.val in mapping)) {
-                                        let result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
+                                        let value = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
                                             ? rule.val
                                             : moduleSettings.generateScopedName(rule.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                                        let value = result;
                                         mapping[rule.val] =
                                             (rule.typ == exports.EnumToken.DashedIdenTokenType ? "--" : "") +
                                                 (moduleSettings.naming & exports.ModuleCaseTransformEnum.DashCaseOnly ||
@@ -29191,10 +29496,10 @@
                                     "unset",
                                 ].includes(value.val)) {
                                 if (!(value.val in mapping)) {
-                                    const result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
-                                        ? value.val
-                                        : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                                    mapping[value.val] = result;
+                                    mapping[value.val] =
+                                        moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
+                                            ? value.val
+                                            : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
                                     revMapping[mapping[value.val]] = value.val;
                                 }
                                 value.val = mapping[value.val];
@@ -29266,10 +29571,9 @@
                             if (value.typ == exports.EnumToken.ClassSelectorTokenType) {
                                 const val = value.val.slice(1);
                                 if (!(val in mapping)) {
-                                    const result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
+                                    let value = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
                                         ? val
                                         : moduleSettings.generateScopedName(val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                                    let value = result;
                                     mapping[val] =
                                         moduleSettings.naming & exports.ModuleCaseTransformEnum.DashCaseOnly ||
                                             moduleSettings.naming & exports.ModuleCaseTransformEnum.CamelCaseOnly
@@ -29302,10 +29606,9 @@
                             if ((prefix == "--" && value.typ == exports.EnumToken.DashedIdenTokenType) ||
                                 (prefix == "" && value.typ == exports.EnumToken.IdenTokenType)) {
                                 if (!(value.val in mapping)) {
-                                    const result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
+                                    let val = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
                                         ? value.val
                                         : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                                    let val = result;
                                     mapping[value.val] =
                                         prefix +
                                             (moduleSettings.naming & exports.ModuleCaseTransformEnum.DashCaseOnly ||
@@ -29655,7 +29958,7 @@
                 const token = node[TOKENS][0];
                 const url = token.typ == exports.EnumToken.StringTokenType ? token.val.slice(1, -1) : token.val;
                 try {
-                    const src = options.resolve(url, options.src || options.cwd);
+                    const src = options.resolve(url, options.src ? dirname(options.src) : options.cwd);
                     const result = options.load(src);
                     const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                         ? await result
@@ -30129,6 +30432,7 @@
                             parentRule.chi.splice(parentRule.chi.indexOf(node), 1);
                             continue;
                         }
+                        const resolvedSrc = options.resolve(options.src, options.cwd);
                         for (const token of composeSelectors) {
                             // composes: a b c;
                             if (token.r == null) {
@@ -30198,8 +30502,10 @@
                                     setParent: false,
                                     src: src.relative,
                                 }));
-                                const srcIndex = (src.relative.startsWith("/") || src.relative.startsWith("../") ? "" : "./") +
-                                    src.relative;
+                                let srcIndex = options.resolve(src.absolute, resolvedSrc.absolute).relative;
+                                if (!srcIndex.startsWith("/") && !srcIndex.startsWith("../")) {
+                                    srcIndex = `./${srcIndex}`;
+                                }
                                 if (Object.keys(root.mapping).length > 0) {
                                     importMapping[srcIndex] = {};
                                 }
@@ -30451,26 +30757,6 @@
                                                 exports.EnumToken.DescendantCombinatorTokenType) {
                                             parent[TOKENS].splice(index, 1);
                                         }
-                                        // if (val == ":global") {
-                                        //     for (; index < (parent as AstRule)[TOKENS]!.length; index++) {
-                                        //         if (
-                                        //             (parent as AstRule)[TOKENS]![index].typ ==
-                                        //                 EnumToken.CommaTokenType ||
-                                        //             ([
-                                        //                 EnumToken.PseudoClassFuncTokenType,
-                                        //                 EnumToken.PseudoClassTokenType,
-                                        //             ].includes((parent as AstRule)[TOKENS]![index].typ) &&
-                                        //                 [":global", ":local"].includes(
-                                        //                     (
-                                        //                         (parent as AstRule)[TOKENS]![index] as PseudoClassToken
-                                        //                     ).val.toLowerCase(),
-                                        //                 ))
-                                        //         ) {
-                                        //             break;
-                                        //         }
-                                        //         global.add((parent as AstRule)[TOKENS]![index]);
-                                        //     }
-                                        // }
                                     }
                                     break;
                             }
@@ -30484,12 +30770,6 @@
                                 case ":local":
                                     parent[TOKENS].splice(parent[TOKENS].indexOf(value), 1, ...value.chi);
                                     break;
-                                // (parent as AstRule)[TOKENS]!.splice(
-                                //     (parent as AstRule)[TOKENS]!.indexOf(value),
-                                //     1,
-                                //     ...(value as FunctionToken).chi,
-                                // );
-                                // break;
                             }
                         }
                     })) {
@@ -30775,6 +31055,8 @@
         return null;
     }
     /**
+     * @param stream
+     * @param context
      * @param options
      * @param errors
      * @param parseAsBlock
@@ -30851,7 +31133,6 @@
             parseAsBlock = blockAllowed;
         }
         if (syntax != null && atRule.nam !== "layer" && parseAsBlock !== blockAllowed) {
-            success = false;
             errors.push({
                 action: "drop",
                 node: atRule,
@@ -31339,7 +31620,7 @@
                         action: "drop",
                         node: atRule,
                         location: options.source.getSourceLocation(atRule[LOC].sta),
-                        message: "node is allowd only in @page rule",
+                        message: "node is allowed only in @page rule",
                     });
                 }
                 else {
@@ -31478,9 +31759,6 @@
                     if (result.errors.length > 0) {
                         errors.push(...result.errors);
                     }
-                    // else if (atRuleName === "document") {
-                    //     parseUrlToken(stream);
-                    // }
                     if (result.success) {
                         let i = 0;
                         const stack = [];
@@ -31825,6 +32103,52 @@
     })(exports.ResponseType || (exports.ResponseType = {}));
 
     /**
+     * parse result. process input sourcemap
+     * @param result
+     * @param options
+     * @returns
+     * @private
+     */
+    function parseResult(result, options) {
+        if (options.sourcemap != null && options.source.getInputSourceMap() == null) {
+            if (options.inputSourceMap != null) {
+                options.source.setInputSourceMap(options.inputSourceMap);
+            }
+            else {
+                // extract inline source map from the input CSS
+                const token = result.ast.chi.at(-1);
+                if (token?.typ == exports.EnumToken.CommentTokenType &&
+                    token.val.startsWith("/*# sourceMappingURL=")) {
+                    const data = token.val.slice(21, -2).trim();
+                    let sourcemap;
+                    let encoding = "";
+                    if (data.startsWith("data:")) {
+                        let offset = data.indexOf(",") + 1;
+                        if (offset == 0) {
+                            offset = data.lastIndexOf(";") + 1;
+                        }
+                        else {
+                            encoding = data.slice(data.lastIndexOf(";") + 1, offset - 1);
+                        }
+                        if (encoding == "base64") {
+                            sourcemap = atob(data.slice(offset));
+                        }
+                        else {
+                            sourcemap = decodeURIComponent(data.slice(offset));
+                        }
+                        options.source.setInputSourceMap(sourcemap);
+                    }
+                }
+            }
+        }
+        if (options.module) {
+            const { revMapping, ...res } = result;
+            return res;
+        }
+        return result;
+    }
+
+    /**
      * Load file or url
      * @param url
      * @param currentDirectory
@@ -31960,7 +32284,7 @@
         }
         options ??= {};
         options.src ??= "";
-        options.sourcesMap ??= new Map;
+        options.sourcesMap ??= new Map();
         Object.assign(options, {
             resolve,
             dirname,
@@ -31985,13 +32309,10 @@
             currentPosition: -1,
         };
         const result = doParseSync(tokenize(options.parseInfo), options);
-        const { revMapping, ...res } = result;
-        return res;
+        return !options.module && !options.inputSourceMap ? result : parseResult(result, options);
     }
     /**
      * Transform css
-     * @param css
-     * @param options
      *
      * ```ts
      *
@@ -32002,6 +32323,7 @@
      *  console.log(result.code);
      * ```
      *
+     * @param args
      */
     function transformSync(...args) {
         let options;
@@ -32051,8 +32373,6 @@
     }
     /**
      * Parse css
-     * @param stream
-     * @param options
      *
      * Example:
      *
@@ -32076,6 +32396,7 @@
      *
      *  console.log(result.ast);
      * ```
+     * @param args
      */
     async function parse(...args) {
         let options;
@@ -32097,7 +32418,7 @@
         }
         options ??= {};
         options.src ??= "";
-        options.sourcesMap ??= new Map;
+        options.sourcesMap ??= new Map();
         Object.assign(options, {
             load,
             resolve,
@@ -32121,10 +32442,7 @@
             position: 0,
             currentPosition: -1,
         };
-        return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => {
-            const { revMapping, ...res } = result;
-            return res;
-        });
+        return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => (!options.module && !options.inputSourceMap ? result : parseResult(result, options)));
     }
     /**
      * Transform css file
@@ -32158,8 +32476,6 @@
     }
     /**
      * Transform css
-     * @param css
-     * @param options
      *
      * Example:
      *
@@ -32177,6 +32493,7 @@
      *
      *  console.log(result.code);
      * ```
+     * @param args
      */
     async function transform(...args) {
         let options;

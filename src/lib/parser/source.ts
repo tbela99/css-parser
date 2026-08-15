@@ -1,5 +1,7 @@
+import type { SourceMapObject } from "../../@types/index.d.ts";
+import { SourceMap } from "../renderer/sourcemap/sourcemap.ts";
 import { LineMap } from "./linesmap.ts";
-import type {SourceLocation} from "../../@types/ast.d.ts";
+
 /**
  * Source file ID
  */
@@ -9,6 +11,7 @@ let sourceId: number = 0;
  * Source file helper class
  */
 export class SourceFile {
+    private inputSourceMap: SourceMap | null = null;
 
     /**
      * Source file ID
@@ -29,10 +32,9 @@ export class SourceFile {
 
     /**
      * Constructor
-     * @param id 
-     * @param content 
-     * @param lines 
-     * @param file 
+     * @param content
+     * @param lines
+     * @param file
      */
     constructor(content: string, lines: number[], file: string | null = null) {
         this.id = sourceId++;
@@ -43,8 +45,7 @@ export class SourceFile {
 
     /**
      * Update source content
-     * @param content 
-     * @param lines 
+     * @param content
      */
     append(content: string) {
         this.content += content;
@@ -52,16 +53,15 @@ export class SourceFile {
 
     /**
      * get file name
-     * @returns 
+     * @returns
      */
     getFileName(): string | null {
-        
         return this.file;
     }
 
     /**
      * get content
-     * @returns 
+     * @returns
      */
     getContent(): string {
         return this.content;
@@ -69,9 +69,9 @@ export class SourceFile {
 
     /**
      * get text
-     * @param start 
-     * @param length 
-     * @returns 
+     * @param start
+     * @param length
+     * @returns
      */
     getText(start: number, length: number): string {
         return this.content.slice(start, start + length);
@@ -79,8 +79,8 @@ export class SourceFile {
 
     /**
      * Compute line and column of the offset
-     * @param offset 
-     * @returns 
+     * @param offset
+     * @returns
      */
     getOffsets(offset: number): [number, number] {
         return this.lineStarts.getOffsets(offset);
@@ -88,26 +88,42 @@ export class SourceFile {
 
     /**
      * get source location
-     * @param offset 
-     * @returns 
+     * @param offset
+     * @returns
      */
     getSourceLocation(offset: number): [string | null, number, number] {
-        return [this.file, ...  this.getOffsets(offset)];
+        return [this.file, ...this.getOffsets(offset)];
     }
 
     /**
      * get line starts
-     * @returns 
+     * @returns
      */
     getLineStarts(): number[] {
         return this.lineStarts.getLineStarts();
     }
-    
+
     /**
      * add line start
-     * @param lineStart 
+     * @param lineStart
      */
     addLineStart(lineStart: number) {
         this.lineStarts.addLineStart(lineStart);
+    }
+
+    /**
+     * set input source map
+     * @param inputSourceMap
+     */
+    setInputSourceMap(inputSourceMap: SourceMapObject | string | null) {
+        this.inputSourceMap = inputSourceMap == null ? null : new SourceMap(inputSourceMap as SourceMapObject | string);
+    }
+
+    /**
+     * return input source map
+     * @returns
+     */
+    getInputSourceMap(): SourceMap | null {
+        return this.inputSourceMap;
     }
 }

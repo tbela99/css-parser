@@ -1323,7 +1323,7 @@ function matchSyntax(
             result = matchListSyntax(syntaxes[i], context.slice(), options);
 
             if (result.success) {
-                (options.visited!.get(token) as Set<ValidationToken>)!.delete(syntaxes[i]);
+                (options.visited!.get(token) as Set<ValidationToken>)?.delete?.(syntaxes[i]);
 
                 if (result.context.done()) {
                     context.end();

@@ -1,5 +1,11 @@
 # Changelog
 
+# v1.5.0
+
+## Improvements
+
+- [x] Add support for input sourcemap
+
 # v1.4.11
 
 - fix bug in url resolution

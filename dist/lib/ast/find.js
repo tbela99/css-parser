@@ -3,7 +3,7 @@ import { walk, walkValues } from './walk.js';
 import { TOKENS } from '../syntax/constants.js';
 
 /**
- * Search the ast sub-tree and return the first match
+ * Search the ast subtree and return the first match
  *
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'

@@ -24,6 +24,7 @@ import { parseAtRuleFontFeatureValues } from './utils/at-rule-font-feature-value
 import { matchGenericSyntax } from './utils/at-rule-generic.js';
 import { memoize } from './utils/cache.js';
 import { SourceFile } from './source.js';
+import { dirname } from '../fs/resolve.js';
 
 function renderTokens(tokens, options) {
     if (tokens == null || tokens.length === 0)
@@ -643,7 +644,7 @@ function doParseSync(iter, options = {}) {
                         if (replacement == null) {
                             continue;
                         }
-                        if (replacement == null || replacement == node) {
+                        if (replacement == node) {
                             continue;
                         }
                         // @ts-ignore
@@ -689,7 +690,7 @@ function doParseSync(iter, options = {}) {
                         if (replacement == null) {
                             continue;
                         }
-                        if (replacement == null || replacement == node) {
+                        if (replacement == node) {
                             continue;
                         }
                         // @ts-ignore
@@ -723,7 +724,7 @@ function doParseSync(iter, options = {}) {
                             if (replacement == null) {
                                 continue;
                             }
-                            if (replacement != null && replacement != node) {
+                            if (replacement != node) {
                                 node = replacement;
                             }
                         }
@@ -756,7 +757,7 @@ function doParseSync(iter, options = {}) {
                                 if (result == null) {
                                     continue;
                                 }
-                                if (result != null && result != node) {
+                                if (result != node) {
                                     node = result;
                                 }
                                 if (Array.isArray(node)) {
@@ -941,10 +942,9 @@ function doParseSync(iter, options = {}) {
             if (node.typ == EnumToken.DeclarationNodeType) {
                 if (node.nam.startsWith("--")) {
                     if (!(node.nam in namesMapping)) {
-                        let result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
+                        let value = moduleSettings.scoped & ModuleScopeEnumOptions.Global
                             ? node.nam
                             : moduleSettings.generateScopedName(node.nam, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                        let value = result;
                         mapping[node.nam] =
                             "--" +
                                 (moduleSettings.naming & ModuleCaseTransformEnum.DashCaseOnly ||
@@ -986,10 +986,9 @@ function doParseSync(iter, options = {}) {
                                     continue;
                                 }
                                 if (!(rule.val in mapping)) {
-                                    let result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
+                                    let value = moduleSettings.scoped & ModuleScopeEnumOptions.Global
                                         ? rule.val
                                         : moduleSettings.generateScopedName(rule.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                                    let value = result;
                                     mapping[rule.val] =
                                         (rule.typ == EnumToken.DashedIdenTokenType ? "--" : "") +
                                             (moduleSettings.naming & ModuleCaseTransformEnum.DashCaseOnly ||
@@ -1160,10 +1159,10 @@ function doParseSync(iter, options = {}) {
                                 "unset",
                             ].includes(value.val)) {
                             if (!(value.val in mapping)) {
-                                const result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
-                                    ? value.val
-                                    : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                                mapping[value.val] = result;
+                                mapping[value.val] =
+                                    moduleSettings.scoped & ModuleScopeEnumOptions.Global
+                                        ? value.val
+                                        : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
                                 revMapping[mapping[value.val]] = value.val;
                             }
                             value.val = mapping[value.val];
@@ -1235,10 +1234,9 @@ function doParseSync(iter, options = {}) {
                         if (value.typ == EnumToken.ClassSelectorTokenType) {
                             const val = value.val.slice(1);
                             if (!(val in mapping)) {
-                                const result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
+                                let value = moduleSettings.scoped & ModuleScopeEnumOptions.Global
                                     ? val
                                     : moduleSettings.generateScopedName(val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                                let value = result;
                                 mapping[val] =
                                     moduleSettings.naming & ModuleCaseTransformEnum.DashCaseOnly ||
                                         moduleSettings.naming & ModuleCaseTransformEnum.CamelCaseOnly
@@ -1271,10 +1269,9 @@ function doParseSync(iter, options = {}) {
                         if ((prefix == "--" && value.typ == EnumToken.DashedIdenTokenType) ||
                             (prefix == "" && value.typ == EnumToken.IdenTokenType)) {
                             if (!(value.val in mapping)) {
-                                const result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
+                                let val = moduleSettings.scoped & ModuleScopeEnumOptions.Global
                                     ? value.val
                                     : moduleSettings.generateScopedName(value.val, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                                let val = result;
                                 mapping[value.val] =
                                     prefix +
                                         (moduleSettings.naming & ModuleCaseTransformEnum.DashCaseOnly ||
@@ -1624,7 +1621,7 @@ async function doParse(iter, options = {}) {
             const token = node[TOKENS][0];
             const url = token.typ == EnumToken.StringTokenType ? token.val.slice(1, -1) : token.val;
             try {
-                const src = options.resolve(url, options.src || options.cwd);
+                const src = options.resolve(url, options.src ? dirname(options.src) : options.cwd);
                 const result = options.load(src);
                 const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
                     ? await result
@@ -2098,6 +2095,7 @@ async function doParse(iter, options = {}) {
                         parentRule.chi.splice(parentRule.chi.indexOf(node), 1);
                         continue;
                     }
+                    const resolvedSrc = options.resolve(options.src, options.cwd);
                     for (const token of composeSelectors) {
                         // composes: a b c;
                         if (token.r == null) {
@@ -2167,8 +2165,10 @@ async function doParse(iter, options = {}) {
                                 setParent: false,
                                 src: src.relative,
                             }));
-                            const srcIndex = (src.relative.startsWith("/") || src.relative.startsWith("../") ? "" : "./") +
-                                src.relative;
+                            let srcIndex = options.resolve(src.absolute, resolvedSrc.absolute).relative;
+                            if (!srcIndex.startsWith("/") && !srcIndex.startsWith("../")) {
+                                srcIndex = `./${srcIndex}`;
+                            }
                             if (Object.keys(root.mapping).length > 0) {
                                 importMapping[srcIndex] = {};
                             }
@@ -2420,26 +2420,6 @@ async function doParse(iter, options = {}) {
                                             EnumToken.DescendantCombinatorTokenType) {
                                         parent[TOKENS].splice(index, 1);
                                     }
-                                    // if (val == ":global") {
-                                    //     for (; index < (parent as AstRule)[TOKENS]!.length; index++) {
-                                    //         if (
-                                    //             (parent as AstRule)[TOKENS]![index].typ ==
-                                    //                 EnumToken.CommaTokenType ||
-                                    //             ([
-                                    //                 EnumToken.PseudoClassFuncTokenType,
-                                    //                 EnumToken.PseudoClassTokenType,
-                                    //             ].includes((parent as AstRule)[TOKENS]![index].typ) &&
-                                    //                 [":global", ":local"].includes(
-                                    //                     (
-                                    //                         (parent as AstRule)[TOKENS]![index] as PseudoClassToken
-                                    //                     ).val.toLowerCase(),
-                                    //                 ))
-                                    //         ) {
-                                    //             break;
-                                    //         }
-                                    //         global.add((parent as AstRule)[TOKENS]![index]);
-                                    //     }
-                                    // }
                                 }
                                 break;
                         }
@@ -2453,12 +2433,6 @@ async function doParse(iter, options = {}) {
                             case ":local":
                                 parent[TOKENS].splice(parent[TOKENS].indexOf(value), 1, ...value.chi);
                                 break;
-                            // (parent as AstRule)[TOKENS]!.splice(
-                            //     (parent as AstRule)[TOKENS]!.indexOf(value),
-                            //     1,
-                            //     ...(value as FunctionToken).chi,
-                            // );
-                            // break;
                         }
                     }
                 })) {
@@ -2744,6 +2718,8 @@ function parseNode(tokens, context, options, errors, stats, invalidNodes) {
     return null;
 }
 /**
+ * @param stream
+ * @param context
  * @param options
  * @param errors
  * @param parseAsBlock
@@ -2820,7 +2796,6 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
         parseAsBlock = blockAllowed;
     }
     if (syntax != null && atRule.nam !== "layer" && parseAsBlock !== blockAllowed) {
-        success = false;
         errors.push({
             action: "drop",
             node: atRule,
@@ -3308,7 +3283,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                     action: "drop",
                     node: atRule,
                     location: options.source.getSourceLocation(atRule[LOC].sta),
-                    message: "node is allowd only in @page rule",
+                    message: "node is allowed only in @page rule",
                 });
             }
             else {
@@ -3447,9 +3422,6 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                 if (result.errors.length > 0) {
                     errors.push(...result.errors);
                 }
-                // else if (atRuleName === "document") {
-                //     parseUrlToken(stream);
-                // }
                 if (result.success) {
                     let i = 0;
                     const stack = [];

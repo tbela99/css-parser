@@ -1,7 +1,7 @@
-import { eq } from "../parser/utils/eq.ts";
-import { doRender, renderValue } from "../renderer/render.ts";
+import {eq} from "../parser/utils/eq.ts";
+import {doRender, renderValue} from "../renderer/render.ts";
 import * as allFeatures from "./features/index.ts";
-import { walkValues } from "./walk.ts";
+import {walkValues} from "./walk.ts";
 import type {
     AstAtRule,
     AstDeclaration,
@@ -24,15 +24,15 @@ import type {
     RawSelectorTokens,
     Token,
 } from "../../@types/index.d.ts";
-import { EnumToken } from "./types.ts";
-import { isFunction, isIdent, isIdentStart, isWhiteSpace } from "../syntax/syntax.ts";
-import { FeatureWalkMode } from "./features/type.ts";
-import { trimArray } from "../validation/match.ts";
-import { combinators, LOC, OPTIMIZED, PARENT, RAW, TOKENS } from "../syntax/constants.ts";
-import { replaceNodeOrValue } from "../parser/utils/token.ts";
-import { parseString } from "../parser/parse.ts";
-import { tokenize } from "../parser/tokenize.ts";
-import { replaceCompound } from "./expand.ts";
+import {EnumToken} from "./types.ts";
+import {isFunction, isIdent, isIdentStart, isWhiteSpace} from "../syntax/syntax.ts";
+import {FeatureWalkMode} from "./features/type.ts";
+import {trimArray} from "../validation/match.ts";
+import {combinators, LOC, OPTIMIZED, PARENT, RAW, TOKENS} from "../syntax/constants.ts";
+import {replaceNodeOrValue} from "../parser/utils/token.ts";
+import {parseString} from "../parser/parse.ts";
+import {tokenize} from "../parser/tokenize.ts";
+import {replaceCompound} from "./expand.ts";
 
 const notEndingWith: string[] = ["(", "["].concat(combinators);
 const rules: EnumToken[] = [
@@ -72,11 +72,12 @@ export function minify(
  * @param errors
  * @param nestingContent
  *
+ * @param context
  * @private
  */
 export function minify(
     ast: AstNode,
-    options: ParserOptions | MinifyFeatureOptions = {},
+    opt: ParserOptions | MinifyFeatureOptions = {},
     recursive: boolean = false,
     errors?: ErrorDescription[],
     nestingContent?: boolean,
@@ -88,6 +89,9 @@ export function minify(
     let postprocess: boolean = false;
     let parents: Set<AstNode>;
     let replacement: AstNode | null;
+
+    // @ts-ignore
+    let {sourcemap, module, ...options} = opt;
 
     if (!("features" in <MinifyFeatureOptions>options)) {
         // @ts-ignore
@@ -357,9 +361,9 @@ function transformAtRuleMediaPrelude(values: Token[]) {
  * Minify at-rule media
  * - remove redundant tokens
  * - generate range queries
- * @param ast
  *
  * @private
+ * @param tokens
  */
 function minifyAtRuleMedia(tokens: Token[]): Token[] {
     let hasUpdates: boolean = false;
@@ -496,7 +500,6 @@ function doMinify(
 
             while (previous?.typ === EnumToken.CommentNodeType) {
                 previous = ast.chi[--nodeIndex];
-                continue;
             }
 
             node = ast.chi![i] as AstNode;
@@ -1107,7 +1110,9 @@ export function optimizeSelector(selector: string[][]): OptimizedSelector | null
         break;
     }
 
-    selector.forEach((selector: string[]) => selector.splice(0, optimized.length));
+    for (let i1 = 0; i1 < selector.length; i1++) {
+        selector[i1].splice(0, optimized.length);
+    }
 
     let reducible: boolean = optimized.length == 1;
 
@@ -1591,7 +1596,6 @@ function wrapNodes(
  * Diff nodes
  * @param n1
  * @param n2
- * @param reducer
  * @param options
  *
  * @private
@@ -1744,20 +1748,48 @@ function diff(n1: AstRule, n2: AstRule, options: ParserOptions = {}) {
                   chi: intersect.reverse(),
               };
 
+              let op = {level: 0, ...options};
+
     if (
         result == null ||
         [n1, n2].reduce((acc: number, curr: AstRule): number => {
             let css: string = options.cache!.get(curr) as string;
 
             if (css == null) {
-                css = doRender(curr, options).code;
+                let level: number = 0;
+                let parent: AstNode | null = curr[PARENT];
+
+                while (parent != null && parent.typ != EnumToken.StyleSheetNodeType) {
+                    level++;
+                    parent = parent[PARENT] as AstRule;
+                }
+
+                op.level = level;
+
+                css = doRender(curr, op).code;
                 options.cache!.set(curr, css);
             }
 
             return curr.chi.length == 0 ? acc : acc + css.length;
         }, 0) <=
             [node1, node2, result].reduce((acc: number, curr: AstRule): number => {
-                const css = doRender(curr, options).code;
+                            
+                let css: string = options.cache!.get(curr) as string;
+
+                if (css != null) {
+                    return  curr.chi.length == 0 ? acc : acc + css.length
+                }
+
+                let level: number = 0;
+                let parent: AstNode | null = curr[PARENT];
+
+                while (parent != null && parent.typ != EnumToken.StyleSheetNodeType) {
+                    level++;
+                    parent = parent[PARENT] as AstRule;
+                }
+
+                op.level = level;                
+                 css = doRender(curr, op).code;
 
                 return curr.chi.length == 0 ? acc : acc + css.length;
             }, 0)

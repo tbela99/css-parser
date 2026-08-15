@@ -57,7 +57,10 @@ function expandRule(node) {
                         ast.chi.splice(i--, 1);
                         continue;
                     }
-                    selRule.forEach((arr) => combinators.includes(arr[0].charAt(0)) ? arr.unshift(arSelf) : arr.unshift(arSelf, " "));
+                    for (let i1 = 0; i1 < selRule.length; i1++) {
+                        const arr = selRule[i1];
+                        combinators.includes(arr[0].charAt(0)) ? arr.unshift(arSelf) : arr.unshift(arSelf, " ");
+                    }
                     rule.sel = selRule
                         .reduce((acc, curr) => {
                         acc.push(curr.join(""));

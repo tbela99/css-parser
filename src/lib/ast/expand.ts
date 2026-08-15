@@ -1,10 +1,10 @@
-import { splitRule } from "./minify.ts";
-import { combinators, RAW } from "../syntax/constants.ts";
-import { parseString } from "../parser/parse.ts";
-import { walkValues } from "./walk.ts";
-import { renderValue } from "../renderer/render.ts";
-import type { AstAtRule, AstNode, AstRule, AstStyleSheet, LiteralToken, Token } from "../../@types/index.d.ts";
-import { EnumToken } from "./types.ts";
+import {splitRule} from "./minify.ts";
+import {combinators, RAW} from "../syntax/constants.ts";
+import {parseString} from "../parser/parse.ts";
+import {walkValues} from "./walk.ts";
+import {renderValue} from "../renderer/render.ts";
+import type {AstAtRule, AstNode, AstRule, AstStyleSheet, LiteralToken, Token} from "../../@types/index.d.ts";
+import {EnumToken} from "./types.ts";
 
 /**
  * expand css nesting ast nodes
@@ -70,9 +70,10 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                         continue;
                     }
 
-                    selRule.forEach((arr) =>
-                        combinators.includes(arr[0].charAt(0)) ? arr.unshift(arSelf) : arr.unshift(arSelf, " "),
-                    );
+                    for (let i1 = 0; i1 < selRule.length; i1++) {
+                        const arr = selRule[i1];
+                        combinators.includes(arr[0].charAt(0)) ? arr.unshift(arSelf) : arr.unshift(arSelf, " ");
+                    }
 
                     rule.sel = selRule
                         .reduce(

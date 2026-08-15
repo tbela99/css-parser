@@ -99,6 +99,9 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
         });
 
         it("module #4", function () {
+            
+            const url = new URL(dirname(import.meta.url) + '/../../css-modules/mixins.css');
+
             return transform(
                 `
 .goal .bg-indigo {
@@ -107,7 +110,7 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
 
 .indigo-white {
   composes: bg-indigo;
-composes: button cell title from "${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replaceAll("\\", "/")}/../../css-modules/mixins.css";  color: white;
+composes: button cell title from "${url.pathname}";  color: white;
 }
 `,
                 {
@@ -119,7 +122,7 @@ composes: button cell title from "${(import.meta.dirname ?? dirname(new URL(impo
                     goal: "goal_r7bhp",
                     "bg-indigo": "bg-indigo_gy28g",
                     "indigo-white":
-                        "indigo-white_wims0 bg-indigo_gy28g button_rptz7_mixins cell_dptz7_mixins title_fnrx5_mixins",
+                        "indigo-white_wims0 bg-indigo_gy28g button_egkqy_mixins cell_s04ai_mixins title_seiow_mixins",
                 });
 
                 expect(result.code).equals(`.goal_r7bhp .bg-indigo_gy28g {
@@ -610,6 +613,9 @@ a span {
         });
 
         it("module mode ICSS #17", function () {
+            
+
+            const url = new URL(dirname(import.meta.url) + '/../../css-modules/mixins.css');
             return transform(
                 `
 
@@ -626,7 +632,7 @@ a span {
               
               .indigo-white {
                 composes: bg-indigo;
-              composes: button cell title from "${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replaceAll("\\", "/")}/../../css-modules/mixins.css";  color: white;
+              composes: button cell title from "${url.pathname}";  color: white;
               }
 `,
                 {
@@ -719,11 +725,13 @@ a span {
 //         });
 
         it("module import variables #19", function () {
+
+            const url = new URL(dirname(import.meta.url) + '/../../css-modules/color.css');
             return transform(
                 `
 
   /* import your colors... */
-  @value colors: "${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replaceAll("\\", "/")}/../../css-modules/color.css";
+  @value colors: "${url.pathname}";
   @value blue, red, green from colors;
   
   .button {
