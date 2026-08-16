@@ -1,7 +1,7 @@
-import {eq} from "../parser/utils/eq.ts";
-import {doRender, renderValue} from "../renderer/render.ts";
+import { eq } from "../parser/utils/eq.ts";
+import { doRender, renderValue } from "../renderer/render.ts";
 import * as allFeatures from "./features/index.ts";
-import {walkValues} from "./walk.ts";
+import { walkValues } from "./walk.ts";
 import type {
     AstAtRule,
     AstDeclaration,
@@ -24,15 +24,15 @@ import type {
     RawSelectorTokens,
     Token,
 } from "../../@types/index.d.ts";
-import {EnumToken} from "./types.ts";
-import {isFunction, isIdent, isIdentStart, isWhiteSpace} from "../syntax/syntax.ts";
-import {FeatureWalkMode} from "./features/type.ts";
-import {trimArray} from "../validation/match.ts";
-import {combinators, LOC, OPTIMIZED, PARENT, RAW, TOKENS} from "../syntax/constants.ts";
-import {replaceNodeOrValue} from "../parser/utils/token.ts";
-import {parseString} from "../parser/parse.ts";
-import {tokenize} from "../parser/tokenize.ts";
-import {replaceCompound} from "./expand.ts";
+import { EnumToken } from "./types.ts";
+import { isFunction, isIdent, isIdentStart, isWhiteSpace } from "../syntax/syntax.ts";
+import { FeatureWalkMode } from "./features/type.ts";
+import { trimArray } from "../validation/match.ts";
+import { combinators, LOC, OPTIMIZED, PARENT, RAW, TOKENS } from "../syntax/constants.ts";
+import { replaceNodeOrValue } from "../parser/utils/token.ts";
+import { parseString } from "../parser/parse.ts";
+import { tokenize } from "../parser/tokenize.ts";
+import { replaceCompound } from "./expand.ts";
 
 const notEndingWith: string[] = ["(", "["].concat(combinators);
 const rules: EnumToken[] = [
@@ -91,7 +91,7 @@ export function minify(
     let replacement: AstNode | null;
 
     // @ts-ignore
-    let {sourcemap, module, ...options} = opt;
+    let { sourcemap, module, ...options } = opt;
 
     if (!("features" in <MinifyFeatureOptions>options)) {
         // @ts-ignore
@@ -209,7 +209,7 @@ export function minify(
                 const result = feature.run(
                     replacement as AstRule | AstAtRule,
                     options,
-                    <AstRule | AstAtRule | AstStyleSheet>parent[PARENT] ?? ast,
+                    parent[PARENT] ?? (ast as AstRule | AstAtRule | AstStyleSheet),
                     context,
                     FeatureWalkMode.Post,
                 );
@@ -1748,7 +1748,7 @@ function diff(n1: AstRule, n2: AstRule, options: ParserOptions = {}) {
                   chi: intersect.reverse(),
               };
 
-              let op = {level: 0, ...options};
+    let op = { level: 0, ...options };
 
     if (
         result == null ||
@@ -1773,11 +1773,10 @@ function diff(n1: AstRule, n2: AstRule, options: ParserOptions = {}) {
             return curr.chi.length == 0 ? acc : acc + css.length;
         }, 0) <=
             [node1, node2, result].reduce((acc: number, curr: AstRule): number => {
-                            
                 let css: string = options.cache!.get(curr) as string;
 
                 if (css != null) {
-                    return  curr.chi.length == 0 ? acc : acc + css.length
+                    return curr.chi.length == 0 ? acc : acc + css.length;
                 }
 
                 let level: number = 0;
@@ -1788,8 +1787,8 @@ function diff(n1: AstRule, n2: AstRule, options: ParserOptions = {}) {
                     parent = parent[PARENT] as AstRule;
                 }
 
-                op.level = level;                
-                 css = doRender(curr, op).code;
+                op.level = level;
+                css = doRender(curr, op).code;
 
                 return curr.chi.length == 0 ? acc : acc + css.length;
             }, 0)

@@ -891,7 +891,7 @@ Output:
 
 ### Computed shorthands properties
 
-Below is the list of computed shorthands properties:
+Below is the list of computed shorthands properties. Minification is fully supported for the propertie with a checkmark.
 
 - [ ] ~all~
 - [x] animation

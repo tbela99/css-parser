@@ -1,5 +1,5 @@
 import { splitRule } from './minify.js';
-import { combinators, RAW } from '../syntax/constants.js';
+import { PARENT, combinators, RAW } from '../syntax/constants.js';
 import { parseString } from '../parser/parse.js';
 import { walkValues } from './walk.js';
 import { renderValue } from '../renderer/render.js';
@@ -13,11 +13,16 @@ import { EnumToken } from './types.js';
  */
 function expand(ast) {
     const result = { ...ast, chi: [] };
+    let children;
     for (let i = 0; i < ast.chi.length; i++) {
-        const node = ast.chi[i];
+        let node = ast.chi[i];
         if (node.typ === EnumToken.RuleNodeType) {
+            children = expandRule(node);
+            for (const child of children) {
+                child[PARENT] = result;
+            }
             // @ts-ignore
-            result.chi.push(...expandRule(node));
+            result.chi.push(...children);
         }
         else if (node.typ == EnumToken.AtRuleNodeType && "chi" in node) {
             let hasRule = false;
@@ -29,10 +34,23 @@ function expand(ast) {
                     break;
                 }
             }
-            // @ts-ignore
-            result.chi.push({ ...(hasRule ? expand(node) : node) });
+            if (hasRule) {
+                node = expand(node);
+                for (const child of node.chi) {
+                    child[PARENT] = result;
+                }
+                node[PARENT] = result;
+                // @ts-ignore
+                result.chi.push(node);
+            }
+            else {
+                node[PARENT] = result;
+                // @ts-ignore
+                result.chi.push(node);
+            }
         }
         else {
+            node[PARENT] = result;
             // @ts-ignore
             result.chi.push(node);
         }

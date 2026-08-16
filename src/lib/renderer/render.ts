@@ -421,7 +421,7 @@ function renderAstNode(
     // @ts-ignore
     let children: string = "";
     let str: string = "";
-    let previousStr: string = "";
+    // let previousStr: string = "";
 
     const indent: string = indents[level];
     const indentSub: string = indents[level + 1];
@@ -468,6 +468,10 @@ function renderAstNode(
                 }
 
                 children += str;
+
+                if (sourcemaps != null && str !== "" && options.newLine) {
+                    move(sourceLocation, linesMap!, options.newLine as string);
+                }
             }
 
             return children;
@@ -482,18 +486,21 @@ function renderAstNode(
                 };`;
             }
 
-            const prelude = [EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ)
-                ? `@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === "" ? "" : options.indent || " "}${
-                      (<AstAtRule>data).val
-                  }${options.indent}{`
-                : (<AstRule>data).sel + `${options.indent}{`;
+            const prelude =
+                (indent.length > 0 ? options.newLine : "") +
+                indent +
+                ([EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ)
+                    ? `@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === "" ? "" : options.indent || " "}${
+                          (<AstAtRule>data).val
+                      }${options.indent}{`
+                    : (<AstRule>data).sel + `${options.indent}{`);
 
             if (sourcemaps != null) {
                 updateSourceMap(data, options, cache, sourcemaps, sourceLocation, linesMap!, prelude);
             }
 
             let node: AstNode;
-            let k: number = (data as AstRule | AstAtRule).chi!.length - 1;
+            let recordDeclarationSourceMap: boolean = data.typ == EnumToken.AtRuleNodeType;
             for (let i = 0; i < (data as AstRule | AstAtRule).chi!.length; i++) {
                 node = (data as AstRule | AstAtRule).chi![i];
                 if (node.typ == EnumToken.CommentNodeType) {
@@ -519,25 +526,7 @@ function renderAstNode(
                     )
                         .reduce(reducer, "")
                         .trimEnd()};`;
-
-                    if (sourcemaps != null) {
-                        if (previousStr.length > 0) {
-                            move(sourceLocation, linesMap!, previousStr);
-                        }
-                    }
-
-                    previousStr = str === "" ? "" : options.newLine + indentSub + str;
-                }
-                // else if (node.typ == EnumToken.AtRuleNodeType && !("chi" in node)) {
-                //     str = `${(<AstAtRule>node).val === "" ? "" : options.indent || " "}${(<AstAtRule>node).val};`;
-                // }
-                else {
-                    if (sourcemaps != null) {
-                        if (previousStr.length > 0) {
-                            move(sourceLocation, linesMap!, previousStr);
-                        }
-                    }
-
+                } else {
                     str = renderAstNode(
                         node,
                         options,
@@ -551,7 +540,13 @@ function renderAstNode(
                         indents,
                     );
 
-                    previousStr = "";
+                    if (str === "") {
+                        continue;
+                    }
+
+                    children += str;
+                    str = "";
+                    continue;
                 }
 
                 if (str === "") {
@@ -560,16 +555,38 @@ function renderAstNode(
 
                 str = options.newLine + indentSub + str;
                 children += str;
-            }
 
-            if (sourcemaps != null && str !== "") {
-                move(sourceLocation, linesMap!, str.endsWith(";") ? str.slice(0, -1) : str);
+                if (sourcemaps != null && str !== "") {
+                    move(sourceLocation, linesMap!, str);
+
+                    if (node.typ == EnumToken.DeclarationNodeType && recordDeclarationSourceMap) {
+                        // if declaration is child of at-rule, then record it
+                        // .rule {
+                        //     @media screen {
+                        //         color: red;
+                        //     }
+                        // }
+                        const source = options.sourcesMap!.get(node[LOC]!.srcId) as SourceFile;
+                        sourcemaps.push([
+                            ...linesMap!.getOffsets(
+                                sourceLocation.end - str.length + options.newLine!.length + indentSub.length,
+                            ),
+                            node[LOC]!.srcId,
+                            ...source!.getOffsets(node[LOC].sta),
+                            source.getFileName(),
+                            source.getContent(),
+                        ]);
+                    }
+                }
             }
 
             if (children.endsWith(";")) {
                 children = children.slice(0, -1);
+                sourceLocation.end--;
             }
+
             if (options.removeEmpty && children === "") {
+                sourceLocation.end -= prelude.length;
                 return "";
             }
 

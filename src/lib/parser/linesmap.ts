@@ -31,9 +31,9 @@ export class LineMap {
             return [1, 1];
         }
 
-        const column: number = offset - this.lineStarts[line];
+        const column: number = offset - this.lineStarts[line] + 1;
         // [line, column]
-        return [line + 1, line === 0 ? column + 1 : column];
+        return [line + 1, column == 0 ? 1 : column];
     }
 
     /**

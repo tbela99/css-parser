@@ -21729,9 +21729,9 @@ class LineMap {
         if (offset < 0 || line < 0) {
             return [1, 1];
         }
-        const column = offset - this.lineStarts[line];
+        const column = offset - this.lineStarts[line] + 1;
         // [line, column]
-        return [line + 1, line === 0 ? column + 1 : column];
+        return [line + 1, column == 0 ? 1 : column];
     }
     /**
      * search the greatest index of the value less than or equal to offset
@@ -24140,11 +24140,16 @@ function reduceRuleSelector(node) {
  */
 function expand(ast) {
     const result = { ...ast, chi: [] };
+    let children;
     for (let i = 0; i < ast.chi.length; i++) {
-        const node = ast.chi[i];
+        let node = ast.chi[i];
         if (node.typ === exports.EnumToken.RuleNodeType) {
+            children = expandRule(node);
+            for (const child of children) {
+                child[PARENT] = result;
+            }
             // @ts-ignore
-            result.chi.push(...expandRule(node));
+            result.chi.push(...children);
         }
         else if (node.typ == exports.EnumToken.AtRuleNodeType && "chi" in node) {
             let hasRule = false;
@@ -24156,10 +24161,23 @@ function expand(ast) {
                     break;
                 }
             }
-            // @ts-ignore
-            result.chi.push({ ...(hasRule ? expand(node) : node) });
+            if (hasRule) {
+                node = expand(node);
+                for (const child of node.chi) {
+                    child[PARENT] = result;
+                }
+                node[PARENT] = result;
+                // @ts-ignore
+                result.chi.push(node);
+            }
+            else {
+                node[PARENT] = result;
+                // @ts-ignore
+                result.chi.push(node);
+            }
         }
         else {
+            node[PARENT] = result;
             // @ts-ignore
             result.chi.push(node);
         }
@@ -24812,7 +24830,7 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
     // @ts-ignore
     let children = "";
     let str = "";
-    let previousStr = "";
+    // let previousStr: string = "";
     const indent = indents[level];
     const indentSub = indents[level + 1];
     switch (data.typ) {
@@ -24839,6 +24857,9 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
                     str = options.newLine + str;
                 }
                 children += str;
+                if (sourcemaps != null && str !== "" && options.newLine) {
+                    move(sourceLocation, linesMap, options.newLine);
+                }
             }
             return children;
         case exports.EnumToken.AtRuleNodeType:
@@ -24848,13 +24869,16 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
             if ([exports.EnumToken.AtRuleNodeType, exports.EnumToken.KeyframesAtRuleNodeType].includes(data.typ) && !("chi" in data)) {
                 return `${indent}@${data.nam}${data.val === "" ? "" : options.indent || " "}${data.val};`;
             }
-            const prelude = [exports.EnumToken.AtRuleNodeType, exports.EnumToken.KeyframesAtRuleNodeType].includes(data.typ)
-                ? `@${data.nam}${data.val === "" ? "" : options.indent || " "}${data.val}${options.indent}{`
-                : data.sel + `${options.indent}{`;
+            const prelude = (indent.length > 0 ? options.newLine : "") +
+                indent +
+                ([exports.EnumToken.AtRuleNodeType, exports.EnumToken.KeyframesAtRuleNodeType].includes(data.typ)
+                    ? `@${data.nam}${data.val === "" ? "" : options.indent || " "}${data.val}${options.indent}{`
+                    : data.sel + `${options.indent}{`);
             if (sourcemaps != null) {
                 updateSourceMap(data, options, cache, sourcemaps, sourceLocation, linesMap, prelude);
             }
             let node;
+            let recordDeclarationSourceMap = data.typ == exports.EnumToken.AtRuleNodeType;
             for (let i = 0; i < data.chi.length; i++) {
                 node = data.chi[i];
                 if (node.typ == exports.EnumToken.CommentNodeType) {
@@ -24879,38 +24903,47 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
                         : node.val)
                         .reduce(reducer, "")
                         .trimEnd()};`;
-                    if (sourcemaps != null) {
-                        if (previousStr.length > 0) {
-                            move(sourceLocation, linesMap, previousStr);
-                        }
-                    }
-                    previousStr = str === "" ? "" : options.newLine + indentSub + str;
                 }
-                // else if (node.typ == EnumToken.AtRuleNodeType && !("chi" in node)) {
-                //     str = `${(<AstAtRule>node).val === "" ? "" : options.indent || " "}${(<AstAtRule>node).val};`;
-                // }
                 else {
-                    if (sourcemaps != null) {
-                        if (previousStr.length > 0) {
-                            move(sourceLocation, linesMap, previousStr);
-                        }
-                    }
                     str = renderAstNode(node, options, sourcemaps, sourceLocation, linesMap, errors, reducer, cache, level + 1, indents);
-                    previousStr = "";
+                    if (str === "") {
+                        continue;
+                    }
+                    children += str;
+                    str = "";
+                    continue;
                 }
                 if (str === "") {
                     continue;
                 }
                 str = options.newLine + indentSub + str;
                 children += str;
-            }
-            if (sourcemaps != null && str !== "") {
-                move(sourceLocation, linesMap, str.endsWith(";") ? str.slice(0, -1) : str);
+                if (sourcemaps != null && str !== "") {
+                    move(sourceLocation, linesMap, str);
+                    if (node.typ == exports.EnumToken.DeclarationNodeType && recordDeclarationSourceMap) {
+                        // if declaration is child of at-rule, then record it
+                        // .rule {
+                        //     @media screen {
+                        //         color: red;
+                        //     }
+                        // }
+                        const source = options.sourcesMap.get(node[LOC].srcId);
+                        sourcemaps.push([
+                            ...linesMap.getOffsets(sourceLocation.end - str.length + options.newLine.length + indentSub.length),
+                            node[LOC].srcId,
+                            ...source.getOffsets(node[LOC].sta),
+                            source.getFileName(),
+                            source.getContent(),
+                        ]);
+                    }
+                }
             }
             if (children.endsWith(";")) {
                 children = children.slice(0, -1);
+                sourceLocation.end--;
             }
             if (options.removeEmpty && children === "") {
+                sourceLocation.end -= prelude.length;
                 return "";
             }
             const end = options.newLine + indent + `}`;
@@ -29720,7 +29753,7 @@ async function doParse(iter, options = {}) {
     };
     let tokens = [];
     let context = ast;
-    ast[ROOT] = ast;
+    // ast[ROOT] = ast;
     ast[LOC] = {
         sta: 0,
         end: 0,
@@ -30002,6 +30035,20 @@ async function doParse(iter, options = {}) {
     }
     let replacement;
     let callable;
+    while (stack.length > 0 && context != ast) {
+        const previousNode = stack.pop();
+        context = (stack[stack.length - 1] ?? ast);
+        previousNode[PARENT] = context;
+        // remove empty nodes
+        if (options.removeEmpty &&
+            previousNode != null &&
+            previousNode.chi.length == 0 &&
+            context.chi[context.chi.length - 1] == previousNode) {
+            context.chi.pop();
+            continue;
+        }
+        break;
+    }
     if (options.visitor != null) {
         let parens;
         for (const result of walk(ast)) {
@@ -30226,19 +30273,6 @@ async function doParse(iter, options = {}) {
                 }
             }
         }
-    }
-    while (stack.length > 0 && context != ast) {
-        const previousNode = stack.pop();
-        context = (stack[stack.length - 1] ?? ast);
-        // remove empty nodes
-        if (options.removeEmpty &&
-            previousNode != null &&
-            previousNode.chi.length == 0 &&
-            context.chi[context.chi.length - 1] == previousNode) {
-            context.chi.pop();
-            continue;
-        }
-        break;
     }
     if (options.minify) {
         if (ast.chi.length > 0) {

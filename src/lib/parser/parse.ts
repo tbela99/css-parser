@@ -1838,7 +1838,7 @@ export async function doParse(
     let tokens: Token[] = [];
     let context: AstRuleList = ast;
 
-    ast[ROOT] = ast;
+    // ast[ROOT] = ast;
 
     ast[LOC] = {
         sta: 0,
@@ -2020,7 +2020,6 @@ export async function doParse(
             : // @ts-expect-error
               ((iter as Iterator<TokenizeResult>).next().value as TokenizeResult))
     ) {
-
         stats.bytesIn = item.bytesIn;
         stats.tokensCount++;
 
@@ -2156,7 +2155,10 @@ export async function doParse(
                 const url: string = token.typ == EnumToken.StringTokenType ? token.val.slice(1, -1) : token.val;
 
                 try {
-                    const src = options.resolve!(url, options.src ? dirname(options.src as string) : (options.cwd as string)) as ResolvedPath;
+                    const src = options.resolve!(
+                        url,
+                        options.src ? dirname(options.src as string) : (options.cwd as string),
+                    ) as ResolvedPath;
                     const result = options.load!(src) as LoadResult;
                     const stream =
                         result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
@@ -2208,6 +2210,26 @@ export async function doParse(
     let replacement: GenericVisitorResult<T>;
     let callable: GenericVisitorHandler<T>;
 
+    while (stack.length > 0 && context != ast) {
+        const previousNode: AstAtRule | AstRule = stack.pop() as AstAtRule | AstRule;
+        context = (stack[stack.length - 1] ?? ast) as AstRuleList;
+
+        previousNode[PARENT] = context;
+
+        // remove empty nodes
+        if (
+            options.removeEmpty &&
+            previousNode != null &&
+            previousNode.chi!.length == 0 &&
+            context.chi![context.chi!.length - 1] == previousNode
+        ) {
+            context.chi!.pop();
+            continue;
+        }
+
+        break;
+    }
+    
     if (options.visitor != null) {
         let parens: Token[] | null;
         for (const result of walk(ast)) {
@@ -2516,24 +2538,6 @@ export async function doParse(
                 }
             }
         }
-    }
-
-    while (stack.length > 0 && context != ast) {
-        const previousNode: AstAtRule | AstRule = stack.pop() as AstAtRule | AstRule;
-        context = (stack[stack.length - 1] ?? ast) as AstRuleList;
-
-        // remove empty nodes
-        if (
-            options.removeEmpty &&
-            previousNode != null &&
-            previousNode.chi!.length == 0 &&
-            context.chi![context.chi!.length - 1] == previousNode
-        ) {
-            context.chi!.pop();
-            continue;
-        }
-
-        break;
     }
 
     if (options.minify) {

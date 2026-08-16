@@ -6,7 +6,7 @@ import { minify } from '../ast/minify.js';
 import { expand } from '../ast/expand.js';
 import { WalkerEvent, walk, walkValues } from '../ast/walk.js';
 import { tokenizeStream, tokenize } from './tokenize.js';
-import { ROOT, LOC, tokensfuncDefMap, STATE, PARENT, TOKENS, ERRORS, pageMarginBoxType } from '../syntax/constants.js';
+import { LOC, tokensfuncDefMap, STATE, PARENT, TOKENS, ROOT, ERRORS, pageMarginBoxType } from '../syntax/constants.js';
 import { hashAlgorithms, hash, syncHash } from './utils/hash.js';
 import { parseSelector } from './utils/selector.js';
 import { parseDeclaration } from './utils/declaration.js';
@@ -1380,7 +1380,7 @@ async function doParse(iter, options = {}) {
     };
     let tokens = [];
     let context = ast;
-    ast[ROOT] = ast;
+    // ast[ROOT] = ast;
     ast[LOC] = {
         sta: 0,
         end: 0,
@@ -1662,6 +1662,20 @@ async function doParse(iter, options = {}) {
     }
     let replacement;
     let callable;
+    while (stack.length > 0 && context != ast) {
+        const previousNode = stack.pop();
+        context = (stack[stack.length - 1] ?? ast);
+        previousNode[PARENT] = context;
+        // remove empty nodes
+        if (options.removeEmpty &&
+            previousNode != null &&
+            previousNode.chi.length == 0 &&
+            context.chi[context.chi.length - 1] == previousNode) {
+            context.chi.pop();
+            continue;
+        }
+        break;
+    }
     if (options.visitor != null) {
         let parens;
         for (const result of walk(ast)) {
@@ -1886,19 +1900,6 @@ async function doParse(iter, options = {}) {
                 }
             }
         }
-    }
-    while (stack.length > 0 && context != ast) {
-        const previousNode = stack.pop();
-        context = (stack[stack.length - 1] ?? ast);
-        // remove empty nodes
-        if (options.removeEmpty &&
-            previousNode != null &&
-            previousNode.chi.length == 0 &&
-            context.chi[context.chi.length - 1] == previousNode) {
-            context.chi.pop();
-            continue;
-        }
-        break;
     }
     if (options.minify) {
         if (ast.chi.length > 0) {
