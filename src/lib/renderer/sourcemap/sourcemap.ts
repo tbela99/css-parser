@@ -71,6 +71,7 @@ export class SourceMap {
     /**
      *
      * @param sourcemaps
+     * @private
      */
     constructor(sourcemaps?: SourceMapObject | string) {
         if (typeof sourcemaps === "string") {

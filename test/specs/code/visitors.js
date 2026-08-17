@@ -492,5 +492,53 @@ html,body {
  }
 }`);
         });
+
+        it("visitor #9", function () {
+            const css = `
+
+body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
+
+html,
+body {
+    line-height: 1.474;
+}
+
+.ruler {
+
+    height: 10px;
+    background-color: orange
+}
+`;
+            const options = {
+                beautify: true,
+                visitor: [
+                    function DeclarationNodeType(declaration) {
+                        if (declaration.nam == "height") {
+                            declaration.nam = "width";
+                        }
+                    },
+                    function ColorTokenType(color) {
+                        return {
+                            typ: EnumToken.Color,
+                            val: "red",
+                            kin: ColorType.HEX,
+                        };
+                    },
+                ],
+            };
+
+            return transform(css, options).then((result) =>
+                expect(result.code).equals(`body {
+ color: red
+}
+html,body {
+ line-height: 1.474
+}
+.ruler {
+ width: 10px;
+ background-color: red
+}`),
+            );
+        });
     });
 }

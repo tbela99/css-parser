@@ -22,7 +22,7 @@ import { tokenize, tokenizeStream } from "./lib/parser/tokenize.ts";
 import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
 import { ResponseType } from "./types.ts";
 import { SourceFile } from "./lib/parser/source.ts";
-import { parseResult } from "./utils.ts";
+import { parseResult, validateSyncArguments } from "./utils/sync.ts";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -298,7 +298,12 @@ export function parseSync(
         stream = input;
     }
 
+    if (options != null) {
+        validateSyncArguments(options);
+    }
+
     options ??= {};
+
     options.src ??= "";
     options.sourcesMap ??= new Map();
 
@@ -331,7 +336,7 @@ export function parseSync(
     } as ParseInfo;
 
     const result = doParseSync(tokenize(options.parseInfo), options);
-    return !options.module && !options.inputSourceMap ? result : parseResult(result, options);
+    return !options.module && !options.inputSourceMap && !options.sourcemap ? result : parseResult(result, options);
 }
 
 /**

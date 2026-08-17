@@ -8,7 +8,7 @@ import { tokenizeStream, tokenize } from './lib/parser/tokenize.js';
 import { matchUrl, resolve, dirname } from './lib/fs/resolve.js';
 import { ResponseType } from './types.js';
 import { SourceFile } from './lib/parser/source.js';
-import { parseResult } from './utils.js';
+import { parseResult, validateSyncArguments } from './utils/sync.js';
 export { minify } from './lib/ast/minify.js';
 export { expand } from './lib/ast/expand.js';
 export { WalkerEvent, WalkerOptionEnum, walk, walkValues } from './lib/ast/walk.js';
@@ -155,6 +155,9 @@ function parseSync(...args) {
         options = opt;
         stream = input;
     }
+    if (options != null) {
+        validateSyncArguments(options);
+    }
     options ??= {};
     options.src ??= "";
     options.sourcesMap ??= new Map();
@@ -182,7 +185,7 @@ function parseSync(...args) {
         currentPosition: -1,
     };
     const result = doParseSync(tokenize(options.parseInfo), options);
-    return !options.module && !options.inputSourceMap ? result : parseResult(result, options);
+    return !options.module && !options.inputSourceMap && !options.sourcemap ? result : parseResult(result, options);
 }
 /**
  * Transform CSS

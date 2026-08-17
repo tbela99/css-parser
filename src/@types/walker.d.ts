@@ -3,6 +3,26 @@ import type { Token } from "./token.d.ts";
 import { WalkerEvent, WalkerOptionEnum } from "../lib/ast/walk.ts";
 
 /**
+ * node walker options
+ */
+export declare interface WalkerOptions {
+
+    /**
+     * walk in reverse
+     */
+    reverse?: boolean;
+
+    /**
+     * Traverse node value tokens. If false, only traverse node children
+     */
+    inludeValues?: boolean;
+    /**
+     * filter function to control the walk
+     */
+    filter?: WalkerFilter;
+}
+
+/**
  * node walker option
  */
 export declare type WalkerOption = WalkerOptionEnum | AstNode | Token | null;

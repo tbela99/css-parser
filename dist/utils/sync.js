@@ -1,4 +1,4 @@
-import { EnumToken } from './lib/ast/types.js';
+import { EnumToken } from '../lib/ast/types.js';
 
 /**
  * parse result. process input sourcemap
@@ -45,5 +45,20 @@ function parseResult(result, options) {
     }
     return result;
 }
+function validateSyncArguments(options, prefix = "options.") {
+    const args = Object.entries(options);
+    let i;
+    for (i = 0; i < args.length; i++) {
+        const [key, value] = args[i];
+        if (typeof value == 'function') {
+            if (value instanceof Promise || Object.getPrototypeOf(value).constructor.name == "AsyncFunction") {
+                throw new Error(`[${prefix + key}]: Async functions are not supported in sync mode. Use parse() or transform() instead.`);
+            }
+        }
+        else if (value != null && typeof value == 'object') {
+            validateSyncArguments(value, prefix + key + ".");
+        }
+    }
+}
 
-export { parseResult };
+export { parseResult, validateSyncArguments };

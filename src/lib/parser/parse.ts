@@ -10,8 +10,8 @@ import type {
     AstAtRule,
     AstComment,
     AstDeclaration,
-    AstKeyframesRule,
     AstKeyframesAtRule,
+    AstKeyframesRule,
     AstNode,
     AstRule,
     AstRuleList,
@@ -27,6 +27,7 @@ import type {
     ErrorDescription,
     FunctionToken,
     GenericVisitorAstNodeHandlerMap,
+    GenericVisitorAstNodeSyncHandlerMap,
     GenericVisitorHandler,
     GenericVisitorResult,
     IdentToken,
@@ -44,6 +45,7 @@ import type {
     Token,
     TokenizeResult,
     UrlToken,
+    VisitorNodeMap,
     WhitespaceToken,
 } from "../../@types/index.d.ts";
 import { ERRORS, LOC, pageMarginBoxType, PARENT, ROOT, STATE, TOKENS, tokensfuncDefMap } from "../syntax/constants.ts";
@@ -412,29 +414,36 @@ export const generateSyncScopedName = memoize(
     },
 ) as (localName: string, filePath: string, pattern: string, hashLength?: number) => string;
 
+/**
+ *
+ * @param visitorsDef
+ * @param errors
+ * @private
+ */
 function parseVisitors(
-    options: ParserSyncOptions | ParserOptions,
-    valuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>>,
-    preValuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>>,
-    postValuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>>,
+    visitorsDef: GenericVisitorHandler<T> | GenericVisitorAstNodeSyncHandlerMap<T> | VisitorNodeMap | VisitorNodeMap[],
     errors: ErrorDescription[],
-    visitorsHandlersMap: Map<
-        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, GenericVisitorAstNodeHandlerMap<T>>>
-    >,
-    preVisitorsHandlersMap: Map<
-        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
-    >,
-    postVisitorsHandlersMap: Map<
-        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
-    >,
 ) {
-    const visitors = Object.entries(options.visitor!);
+    const visitors = Object.entries(typeof visitorsDef === "function" ? [visitorsDef] : visitorsDef);
     let key: string;
     let value: any;
     let i: number;
+
+    const valuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>> = new Map();
+    const preValuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>> = new Map();
+    const postValuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>> = new Map();
+    const visitorsHandlersMap: Map<
+        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
+        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, GenericVisitorAstNodeHandlerMap<T>>>
+    > = new Map();
+    const preVisitorsHandlersMap: Map<
+        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
+        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
+    > = new Map();
+    const postVisitorsHandlersMap: Map<
+        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
+        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
+    > = new Map();
 
     for (i = 0; i < visitors.length; i++) {
         key = visitors[i][0];
@@ -553,6 +562,50 @@ function parseVisitors(
             errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
         }
     }
+    const allHandlers = [] as Array<
+        | Map<
+              "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
+              Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
+          >
+        | Map<
+              "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
+              Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, GenericVisitorAstNodeHandlerMap<T>>>
+          >
+        | Map<EnumToken, Array<GenericVisitorHandler<Token>>>
+        | Map<
+              EnumToken,
+              Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
+          >
+    >;
+
+    if (preVisitorsHandlersMap!.size > 0) {
+        allHandlers.push(preVisitorsHandlersMap!);
+    }
+
+    if (preValuesHandlers!.size > 0) {
+        allHandlers.push(preValuesHandlers!);
+    }
+
+    if (visitorsHandlersMap!.size > 0) {
+        allHandlers.push(visitorsHandlersMap!);
+    }
+
+    if (valuesHandlers!.size > 0) {
+        allHandlers.push(valuesHandlers!);
+    }
+
+    if (postVisitorsHandlersMap!.size > 0) {
+        allHandlers.push(postVisitorsHandlersMap!);
+    }
+
+    if (postValuesHandlers!.size > 0) {
+        allHandlers.push(postValuesHandlers!);
+    }
+
+    return {
+        allHandlers,
+        includeTokens: preValuesHandlers!.size > 0 || valuesHandlers!.size > 0 || postValuesHandlers!.size > 0,
+    };
 }
 
 /**
@@ -632,46 +685,27 @@ export function doParseSync(
     let tokens: Token[] = [];
     let context: AstRuleList = ast;
 
-    ast[ROOT] = ast;
-
-    ast[LOC] = {
-        sta: 0,
-        end: 0,
-        srcId: options.source!.id,
-    };
-
-    let valuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-    let preValuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-    let postValuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-    let preVisitorsHandlersMap: Map<
-        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
-    >;
-    let visitorsHandlersMap: Map<
-        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, GenericVisitorAstNodeHandlerMap<T>>>
-    >;
-    let postVisitorsHandlersMap: Map<
-        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
-    >;
-
     let item: TokenizeResult;
     let node: AstAtRule | AstRule | AstKeyframesRule | AstKeyframesAtRule | AstDeclaration | AstComment | null;
 
     // @ts-ignore ignore error
     let parensMatch: number = 0;
     let curlyBracketMatch: number = 0;
-
     let currentItemIndex: number;
+
+    // ast[ROOT] = ast;
+    ast[LOC] = {
+        sta: 0,
+        end: 0,
+        srcId: options.source!.id,
+    };
 
     // if (Array.isArray(iter)) {
     //     // @ts-expect-error
     //     iter = iter[Symbol.iterator]() as Iterator<TokenizeResult>;
     // }
 
-    for (currentItemIndex = 0; currentItemIndex < (iter as Array<TokenizeResult>).length; currentItemIndex++
-    ) {
+    for (currentItemIndex = 0; currentItemIndex < (iter as Array<TokenizeResult>).length; currentItemIndex++) {
         item = (iter as Array<TokenizeResult>)[currentItemIndex];
         stats.bytesIn = item.bytesIn;
         stats.tokensCount++;
@@ -793,77 +827,18 @@ export function doParseSync(
     let replacement: GenericVisitorResult<T>;
 
     if (options.visitor != null) {
-        valuesHandlers = new Map() as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-        preValuesHandlers = new Map() as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-        postValuesHandlers = new Map() as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
+        const handlers = [] as Array<GenericVisitorHandler<T>>;
+        const visitors = parseVisitors(options.visitor, errors);
 
-        preVisitorsHandlersMap = new Map();
-        visitorsHandlersMap = new Map();
-        postVisitorsHandlersMap = new Map();
-        parseVisitors(
-            options,
-            valuesHandlers,
-            preValuesHandlers,
-            postValuesHandlers,
-            errors,
-            visitorsHandlersMap,
-            preVisitorsHandlersMap,
-            postVisitorsHandlersMap,
-        );
-
+        const subNodes: Array<AstNode | Token> = [];
         let parens: Token[] | null;
 
         let genericKey: string | null;
-        const handlers = [] as Array<GenericVisitorHandler<T>>;
-        const allHandlers = [] as Array<
-            | Map<
-                  "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-                  Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
-              >
-            | Map<
-                  "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-                  Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, GenericVisitorAstNodeHandlerMap<T>>>
-              >
-            | Map<EnumToken, Array<GenericVisitorHandler<Token>>>
-            | Map<
-                  EnumToken,
-                  Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
-              >
-        >;
-
-        if (preVisitorsHandlersMap!.size > 0) {
-            allHandlers.push(preVisitorsHandlersMap!);
-        }
-
-        if (preValuesHandlers!.size > 0) {
-            allHandlers.push(preValuesHandlers!);
-        }
-
-        if (visitorsHandlersMap!.size > 0) {
-            allHandlers.push(visitorsHandlersMap!);
-        }
-
-        if (valuesHandlers!.size > 0) {
-            allHandlers.push(valuesHandlers!);
-        }
-
-        if (postVisitorsHandlersMap!.size > 0) {
-            allHandlers.push(postVisitorsHandlersMap!);
-        }
-
-        if (postValuesHandlers!.size > 0) {
-            allHandlers.push(postValuesHandlers!);
-        }
-
         let nodes: AstNode[] | null = new Array(stats.tokensCount);
-        const subNodes: Array<AstNode | Token> = [];
         let i: number;
         let k: number;
         let j: number;
         let freeBlock: number = 1;
-        const includeTokens: boolean =
-            preValuesHandlers!.size > 0 || valuesHandlers!.size > 0 || postValuesHandlers!.size > 0;
-
         nodes[0] = ast;
 
         for (i = 0; i < nodes.length; i++) {
@@ -872,7 +847,7 @@ export function doParseSync(
             }
 
             subNodes.length = 0;
-            if (includeTokens) {
+            if (visitors.includeTokens) {
                 switch (nodes[i].typ) {
                     case EnumToken.RuleNodeType:
                     case EnumToken.AtRuleNodeType:
@@ -930,7 +905,7 @@ export function doParseSync(
                       ? camelize((nodes[i] as AstKeyframesAtRule).val)
                       : null;
 
-            for (const map of allHandlers) {
+            for (const map of visitors.allHandlers) {
                 // @ts-ignore
                 if (genericKey != null && map!.has(genericKey)) {
                     // @ts-ignore
@@ -1060,24 +1035,6 @@ export function doParseSync(
                 }
             }
         }
-    }
-
-    while (stack.length > 0 && context != ast) {
-        const previousNode: AstAtRule | AstRule = stack.pop() as AstAtRule | AstRule;
-        context = (stack[stack.length - 1] ?? ast) as AstRuleList;
-
-        // remove empty nodes
-        if (
-            options.removeEmpty &&
-            previousNode != null &&
-            previousNode.chi!.length == 0 &&
-            context.chi![context.chi!.length - 1] == previousNode
-        ) {
-            context.chi!.pop();
-            continue;
-        }
-
-        break;
     }
 
     if (options.minify) {
@@ -1816,30 +1773,6 @@ export async function doParse(
     let tokens: Token[] = [];
     let context: AstRuleList = ast;
 
-    // ast[ROOT] = ast;
-
-    ast[LOC] = {
-        sta: 0,
-        end: 0,
-        srcId: options.source!.id,
-    };
-
-    let valuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-    let preValuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-    let postValuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-    let preVisitorsHandlersMap: Map<
-        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
-    >;
-    let visitorsHandlersMap: Map<
-        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, GenericVisitorAstNodeHandlerMap<T>>>
-    >;
-    let postVisitorsHandlersMap: Map<
-        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
-    >;
-
     const imports: AstAtRule[] = [];
 
     let item: TokenizeResult;
@@ -1849,6 +1782,14 @@ export async function doParse(
     let isAsync: boolean = typeof iter[Symbol.asyncIterator] === "function";
     let parensMatch: number = 0;
     let curlyBracketMatch: number = 0;
+
+    // ast[ROOT] = ast;
+
+    ast[LOC] = {
+        sta: 0,
+        end: 0,
+        srcId: options.source!.id,
+    };
 
     if (Array.isArray(iter)) {
         // @ts-expect-error
@@ -2051,89 +1992,12 @@ export async function doParse(
 
     let replacement: GenericVisitorResult<T>;
 
-    while (stack.length > 0 && context != ast) {
-        const previousNode: AstAtRule | AstRule = stack.pop() as AstAtRule | AstRule;
-        context = (stack[stack.length - 1] ?? ast) as AstRuleList;
-
-        previousNode[PARENT] = context;
-
-        // remove empty nodes
-        if (
-            options.removeEmpty &&
-            previousNode != null &&
-            previousNode.chi!.length == 0 &&
-            context.chi![context.chi!.length - 1] == previousNode
-        ) {
-            context.chi!.pop();
-            continue;
-        }
-
-        break;
-    }
-
     if (options.visitor != null) {
-        valuesHandlers = new Map() as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-        preValuesHandlers = new Map() as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-        postValuesHandlers = new Map() as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-
-        preVisitorsHandlersMap = new Map();
-        visitorsHandlersMap = new Map();
-        postVisitorsHandlersMap = new Map();
-
-        parseVisitors(
-            options as ParserSyncOptions,
-            valuesHandlers,
-            preValuesHandlers,
-            postValuesHandlers,
-            errors,
-            visitorsHandlersMap,
-            preVisitorsHandlersMap,
-            postVisitorsHandlersMap,
-        );
-
         let parens: Token[] | null;
 
         let genericKey: string | null;
         const handlers = [] as Array<GenericVisitorHandler<T>>;
-        const allHandlers = [] as Array<
-            | Map<
-                  "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-                  Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
-              >
-            | Map<
-                  "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-                  Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, GenericVisitorAstNodeHandlerMap<T>>>
-              >
-            | Map<EnumToken, Array<GenericVisitorHandler<Token>>>
-            | Map<
-                  EnumToken,
-                  Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
-              >
-        >;
-
-        if (preVisitorsHandlersMap!.size > 0) {
-            allHandlers.push(preVisitorsHandlersMap!);
-        }
-
-        if (preValuesHandlers!.size > 0) {
-            allHandlers.push(preValuesHandlers!);
-        }
-
-        if (visitorsHandlersMap!.size > 0) {
-            allHandlers.push(visitorsHandlersMap!);
-        }
-
-        if (valuesHandlers!.size > 0) {
-            allHandlers.push(valuesHandlers!);
-        }
-
-        if (postVisitorsHandlersMap!.size > 0) {
-            allHandlers.push(postVisitorsHandlersMap!);
-        }
-
-        if (postValuesHandlers!.size > 0) {
-            allHandlers.push(postValuesHandlers!);
-        }
+        const visitors = parseVisitors(options.visitor, errors);
 
         let nodes: AstNode[] | null = new Array(stats.tokensCount);
         const subNodes: Array<AstNode | Token> = [];
@@ -2141,9 +2005,6 @@ export async function doParse(
         let k: number;
         let j: number;
         let freeblock: number = 1;
-        const includeTokens: boolean =
-            preValuesHandlers!.size > 0 || valuesHandlers!.size > 0 || postValuesHandlers!.size > 0;
-
         nodes[0] = ast;
 
         for (i = 0; i < nodes.length; i++) {
@@ -2152,7 +2013,7 @@ export async function doParse(
             }
 
             subNodes.length = 0;
-            if (includeTokens) {
+            if (visitors.includeTokens) {
                 switch (nodes[i].typ) {
                     case EnumToken.RuleNodeType:
                     case EnumToken.AtRuleNodeType:
@@ -2210,7 +2071,7 @@ export async function doParse(
                       ? camelize((nodes[i] as AstKeyframesAtRule).val)
                       : null;
 
-            for (const map of allHandlers) {
+            for (const map of visitors.allHandlers) {
                 // @ts-ignore
                 if (genericKey != null && map!.has(genericKey)) {
                     // @ts-ignore
@@ -4382,21 +4243,17 @@ export function parseString(
         currentPosition: -1,
     };
 
-    const tokenResults = tokenize(parseInfo);
-    const mapped = [];
+    const tokenResults: TokenizeResult[] = tokenize(parseInfo);
+    const mapped: Token[] = [];
 
     for (const token of tokenResults) {
         mapped.push(token.token);
     }
 
-    const result = parseTokens(mapped, options, errors);
+    const result: Token[] = parseTokens(mapped, options, errors);
 
     // remove EOF token
-    result.pop();
-
-    if (result.at(-1)?.typ === EnumToken.WhitespaceTokenType) {
-        result.pop();
-    }
+    result.splice(result.length - (result[result.length - 2]?.typ === EnumToken.WhitespaceTokenType ? 2 : 1), 2);
 
     return result;
 }
@@ -4514,7 +4371,6 @@ export function parseTokens(
                     node,
                     location: options.source!.getSourceLocation(node[LOC]!.sta),
                 });
-                // return [];
                 continue;
             }
 

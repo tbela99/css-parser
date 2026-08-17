@@ -60,8 +60,8 @@ export const funcTypes: EnumToken[] = [
 
 /**
  * trim leading and trailing whitespace
- * @param tokens 
- * @returns 
+ * @param tokens
+ * @returns
  */
 export function trimArray(tokens: Token[]): Token[] {
     while (tokens[0]?.typ === EnumToken.WhitespaceTokenType) {
@@ -77,8 +77,8 @@ export function trimArray(tokens: Token[]): Token[] {
 
 /**
  * is a media feature
- * @param featureName 
- * @returns 
+ * @param featureName
+ * @returns
  */
 export function isMFName(featureName: string): boolean {
     // @ts-expect-error
@@ -206,8 +206,8 @@ export function isMFValue(
 
 /**
  * create validation context
- * @param tokens 
- * @returns 
+ * @param tokens
+ * @returns
  */
 export function createValidationContext(tokens: Token[]): ValidationContext {
     tokens = trimArray(tokens.filter((t) => t.typ !== EnumToken.CommentTokenType));
@@ -412,11 +412,11 @@ export function createValidationContext(tokens: Token[]): ValidationContext {
 
 /**
  * match selector syntax
- * @param stream 
- * @param errors 
- * @param options 
- * @param nested 
- * @returns 
+ * @param stream
+ * @param errors
+ * @param options
+ * @param nested
+ * @returns
  */
 export function matchSelectorSyntax(
     stream: Token[],
@@ -994,10 +994,10 @@ export function matchSelectorSyntax(
 
 /**
  * matches all syntaxes
- * @param syntaxes 
- * @param context 
- * @param options 
- * @returns 
+ * @param syntaxes
+ * @param context
+ * @param options
+ * @returns
  */
 export function matchAllSyntaxes(
     syntaxes: ValidationToken[] | null,
@@ -1053,9 +1053,9 @@ export function matchAllSyntaxes(
 
 /**
  * matches a list of syntaxes
- * @param syntax 
- * @param context 
- * @param options 
+ * @param syntax
+ * @param context
+ * @param options
  * @returns
  */
 function matchListSyntax(
@@ -1121,9 +1121,9 @@ function matchListSyntax(
 
 /**
  * matches a list of syntaxes
- * @param syntax 
- * @param context 
- * @param options 
+ * @param syntax
+ * @param context
+ * @param options
  * @returns
  */
 export function matchOccurenceSyntax(
@@ -1183,10 +1183,10 @@ export function matchOccurenceSyntax(
 
 /**
  * matches a list of syntaxes
- * @param syntaxes 
- * @param context 
- * @param options 
- * @returns 
+ * @param syntaxes
+ * @param context
+ * @param options
+ * @returns
  */
 function matchSyntax(
     syntaxes: ValidationToken[] | null,
@@ -2023,10 +2023,10 @@ function matchSyntax(
 
 /**
  * matches a column of syntaxes
- * @param syntax 
- * @param context 
- * @param options 
- * @returns 
+ * @param syntax
+ * @param context
+ * @param options
+ * @returns
  */
 function matchColumnSyntax(
     syntax: ValidationColumnToken,
@@ -2080,10 +2080,10 @@ function matchColumnSyntax(
 
 /**
  * matches an ampersand of syntaxes
- * @param syntax 
- * @param context 
- * @param options 
- * @returns 
+ * @param syntax
+ * @param context
+ * @param options
+ * @returns
  */
 function matchAmpersandSyntax(
     syntax: ValidationAmpersandToken,
@@ -2116,10 +2116,10 @@ function matchAmpersandSyntax(
 
 /**
  * matches a property
- * @param property 
- * @param context 
- * @param options 
- * @returns 
+ * @param property
+ * @param context
+ * @param options
+ * @returns
  */
 function matchProperty(
     property: ValidationPropertyToken,
@@ -3075,10 +3075,10 @@ function matchProperty(
 
 /**
  * matches a repeatable syntax
- * @param syntax 
- * @param context 
- * @param options 
- * @returns 
+ * @param syntax
+ * @param context
+ * @param options
+ * @returns
  */
 function matchRepeatableSyntax(
     syntax: ValidationToken,

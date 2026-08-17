@@ -291,11 +291,23 @@ const generateSyncScopedName = memoize((localName, filePath, pattern, hashLength
     // if leading char is digit, prefix underscore (very rare)
     return (/^[0-9]/.test(result) ? "_" : "") + result;
 });
-function parseVisitors(options, valuesHandlers, preValuesHandlers, postValuesHandlers, errors, visitorsHandlersMap, preVisitorsHandlersMap, postVisitorsHandlersMap) {
-    const visitors = Object.entries(options.visitor);
+/**
+ *
+ * @param visitorsDef
+ * @param errors
+ * @private
+ */
+function parseVisitors(visitorsDef, errors) {
+    const visitors = Object.entries(typeof visitorsDef === "function" ? [visitorsDef] : visitorsDef);
     let key;
     let value;
     let i;
+    const valuesHandlers = new Map();
+    const preValuesHandlers = new Map();
+    const postValuesHandlers = new Map();
+    const visitorsHandlersMap = new Map();
+    const preVisitorsHandlersMap = new Map();
+    const postVisitorsHandlersMap = new Map();
     for (i = 0; i < visitors.length; i++) {
         key = visitors[i][0];
         value = visitors[i][1];
@@ -383,6 +395,29 @@ function parseVisitors(options, valuesHandlers, preValuesHandlers, postValuesHan
             errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
         }
     }
+    const allHandlers = [];
+    if (preVisitorsHandlersMap.size > 0) {
+        allHandlers.push(preVisitorsHandlersMap);
+    }
+    if (preValuesHandlers.size > 0) {
+        allHandlers.push(preValuesHandlers);
+    }
+    if (visitorsHandlersMap.size > 0) {
+        allHandlers.push(visitorsHandlersMap);
+    }
+    if (valuesHandlers.size > 0) {
+        allHandlers.push(valuesHandlers);
+    }
+    if (postVisitorsHandlersMap.size > 0) {
+        allHandlers.push(postVisitorsHandlersMap);
+    }
+    if (postValuesHandlers.size > 0) {
+        allHandlers.push(postValuesHandlers);
+    }
+    return {
+        allHandlers,
+        includeTokens: preValuesHandlers.size > 0 || valuesHandlers.size > 0 || postValuesHandlers.size > 0,
+    };
 }
 /**
  * Parse css string
@@ -449,24 +484,18 @@ function doParseSync(iter, options = {}) {
     };
     let tokens = [];
     let context = ast;
-    ast[ROOT] = ast;
-    ast[LOC] = {
-        sta: 0,
-        end: 0,
-        srcId: options.source.id,
-    };
-    let valuesHandlers;
-    let preValuesHandlers;
-    let postValuesHandlers;
-    let preVisitorsHandlersMap;
-    let visitorsHandlersMap;
-    let postVisitorsHandlersMap;
     let item;
     let node;
     // @ts-ignore ignore error
     let parensMatch = 0;
     let curlyBracketMatch = 0;
     let currentItemIndex;
+    // ast[ROOT] = ast;
+    ast[LOC] = {
+        sta: 0,
+        end: 0,
+        srcId: options.source.id,
+    };
     // if (Array.isArray(iter)) {
     //     // @ts-expect-error
     //     iter = iter[Symbol.iterator]() as Iterator<TokenizeResult>;
@@ -571,49 +600,23 @@ function doParseSync(iter, options = {}) {
     }
     let replacement;
     if (options.visitor != null) {
-        valuesHandlers = new Map();
-        preValuesHandlers = new Map();
-        postValuesHandlers = new Map();
-        preVisitorsHandlersMap = new Map();
-        visitorsHandlersMap = new Map();
-        postVisitorsHandlersMap = new Map();
-        parseVisitors(options, valuesHandlers, preValuesHandlers, postValuesHandlers, errors, visitorsHandlersMap, preVisitorsHandlersMap, postVisitorsHandlersMap);
+        const handlers = [];
+        const visitors = parseVisitors(options.visitor, errors);
+        const subNodes = [];
         let parens;
         let genericKey;
-        const handlers = [];
-        const allHandlers = [];
-        if (preVisitorsHandlersMap.size > 0) {
-            allHandlers.push(preVisitorsHandlersMap);
-        }
-        if (preValuesHandlers.size > 0) {
-            allHandlers.push(preValuesHandlers);
-        }
-        if (visitorsHandlersMap.size > 0) {
-            allHandlers.push(visitorsHandlersMap);
-        }
-        if (valuesHandlers.size > 0) {
-            allHandlers.push(valuesHandlers);
-        }
-        if (postVisitorsHandlersMap.size > 0) {
-            allHandlers.push(postVisitorsHandlersMap);
-        }
-        if (postValuesHandlers.size > 0) {
-            allHandlers.push(postValuesHandlers);
-        }
         let nodes = new Array(stats.tokensCount);
-        const subNodes = [];
         let i;
         let k;
         let j;
         let freeBlock = 1;
-        const includeTokens = preValuesHandlers.size > 0 || valuesHandlers.size > 0 || postValuesHandlers.size > 0;
         nodes[0] = ast;
         for (i = 0; i < nodes.length; i++) {
             if (nodes[i] == null) {
                 break;
             }
             subNodes.length = 0;
-            if (includeTokens) {
+            if (visitors.includeTokens) {
                 switch (nodes[i].typ) {
                     case EnumToken.RuleNodeType:
                     case EnumToken.AtRuleNodeType:
@@ -661,7 +664,7 @@ function doParseSync(iter, options = {}) {
                 : nodes[i].typ == EnumToken.KeyframesAtRuleNodeType
                     ? camelize(nodes[i].val)
                     : null;
-            for (const map of allHandlers) {
+            for (const map of visitors.allHandlers) {
                 // @ts-ignore
                 if (genericKey != null && map.has(genericKey)) {
                     // @ts-ignore
@@ -771,19 +774,6 @@ function doParseSync(iter, options = {}) {
                 }
             }
         }
-    }
-    while (stack.length > 0 && context != ast) {
-        const previousNode = stack.pop();
-        context = (stack[stack.length - 1] ?? ast);
-        // remove empty nodes
-        if (options.removeEmpty &&
-            previousNode != null &&
-            previousNode.chi.length == 0 &&
-            context.chi[context.chi.length - 1] == previousNode) {
-            context.chi.pop();
-            continue;
-        }
-        break;
     }
     if (options.minify) {
         if (ast.chi.length > 0) {
@@ -1357,18 +1347,6 @@ async function doParse(iter, options = {}) {
     };
     let tokens = [];
     let context = ast;
-    // ast[ROOT] = ast;
-    ast[LOC] = {
-        sta: 0,
-        end: 0,
-        srcId: options.source.id,
-    };
-    let valuesHandlers;
-    let preValuesHandlers;
-    let postValuesHandlers;
-    let preVisitorsHandlersMap;
-    let visitorsHandlersMap;
-    let postVisitorsHandlersMap;
     const imports = [];
     let item;
     let node;
@@ -1376,6 +1354,12 @@ async function doParse(iter, options = {}) {
     let isAsync = typeof iter[Symbol.asyncIterator] === "function";
     let parensMatch = 0;
     let curlyBracketMatch = 0;
+    // ast[ROOT] = ast;
+    ast[LOC] = {
+        sta: 0,
+        end: 0,
+        srcId: options.source.id,
+    };
     if (Array.isArray(iter)) {
         // @ts-expect-error
         iter = iter[Symbol.iterator]();
@@ -1537,64 +1521,24 @@ async function doParse(iter, options = {}) {
         ast = expand(ast);
     }
     let replacement;
-    while (stack.length > 0 && context != ast) {
-        const previousNode = stack.pop();
-        context = (stack[stack.length - 1] ?? ast);
-        previousNode[PARENT] = context;
-        // remove empty nodes
-        if (options.removeEmpty &&
-            previousNode != null &&
-            previousNode.chi.length == 0 &&
-            context.chi[context.chi.length - 1] == previousNode) {
-            context.chi.pop();
-            continue;
-        }
-        break;
-    }
     if (options.visitor != null) {
-        valuesHandlers = new Map();
-        preValuesHandlers = new Map();
-        postValuesHandlers = new Map();
-        preVisitorsHandlersMap = new Map();
-        visitorsHandlersMap = new Map();
-        postVisitorsHandlersMap = new Map();
-        parseVisitors(options, valuesHandlers, preValuesHandlers, postValuesHandlers, errors, visitorsHandlersMap, preVisitorsHandlersMap, postVisitorsHandlersMap);
         let parens;
         let genericKey;
         const handlers = [];
-        const allHandlers = [];
-        if (preVisitorsHandlersMap.size > 0) {
-            allHandlers.push(preVisitorsHandlersMap);
-        }
-        if (preValuesHandlers.size > 0) {
-            allHandlers.push(preValuesHandlers);
-        }
-        if (visitorsHandlersMap.size > 0) {
-            allHandlers.push(visitorsHandlersMap);
-        }
-        if (valuesHandlers.size > 0) {
-            allHandlers.push(valuesHandlers);
-        }
-        if (postVisitorsHandlersMap.size > 0) {
-            allHandlers.push(postVisitorsHandlersMap);
-        }
-        if (postValuesHandlers.size > 0) {
-            allHandlers.push(postValuesHandlers);
-        }
+        const visitors = parseVisitors(options.visitor, errors);
         let nodes = new Array(stats.tokensCount);
         const subNodes = [];
         let i;
         let k;
         let j;
         let freeblock = 1;
-        const includeTokens = preValuesHandlers.size > 0 || valuesHandlers.size > 0 || postValuesHandlers.size > 0;
         nodes[0] = ast;
         for (i = 0; i < nodes.length; i++) {
             if (nodes[i] == null) {
                 break;
             }
             subNodes.length = 0;
-            if (includeTokens) {
+            if (visitors.includeTokens) {
                 switch (nodes[i].typ) {
                     case EnumToken.RuleNodeType:
                     case EnumToken.AtRuleNodeType:
@@ -1642,7 +1586,7 @@ async function doParse(iter, options = {}) {
                 : nodes[i].typ == EnumToken.KeyframesAtRuleNodeType
                     ? camelize(nodes[i].val)
                     : null;
-            for (const map of allHandlers) {
+            for (const map of visitors.allHandlers) {
                 // @ts-ignore
                 if (genericKey != null && map.has(genericKey)) {
                     // @ts-ignore
@@ -3380,10 +3324,7 @@ function parseString(src, options = { parseColor: true }, errors) {
     }
     const result = parseTokens(mapped, options, errors);
     // remove EOF token
-    result.pop();
-    if (result.at(-1)?.typ === EnumToken.WhitespaceTokenType) {
-        result.pop();
-    }
+    result.splice(result.length - (result[result.length - 2]?.typ === EnumToken.WhitespaceTokenType ? 2 : 1), 2);
     return result;
 }
 /**
@@ -3474,7 +3415,6 @@ function parseTokens(tokens, options, errors) {
                     node,
                     location: options.source.getSourceLocation(node[LOC].sta),
                 });
-                // return [];
                 continue;
             }
             index = tokens.indexOf(stack.at(-1));

@@ -53,6 +53,7 @@ class SourceMap {
     /**
      *
      * @param sourcemaps
+     * @private
      */
     constructor(sourcemaps) {
         if (typeof sourcemaps === "string") {

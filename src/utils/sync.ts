@@ -1,5 +1,5 @@
-import type { AstComment, ParseResult, ParserOptions } from "./@types/index.d.ts";
-import { EnumToken } from "./lib/ast/types.ts";
+import type { AstComment, ParseResult, ParserOptions, ParserSyncOptions } from "../@types/index.js";
+import { EnumToken } from "../lib/ast/types.ts";
 
 /**
  * parse result. process input sourcemap
@@ -51,4 +51,24 @@ export function parseResult(result: ParseResult, options: ParserOptions): ParseR
     }
 
     return result;
+}
+
+export function validateSyncArguments(options: ParserSyncOptions, prefix: string = "options."): void {
+    const args = Object.entries(options);
+
+    let i: number;
+
+    for (i = 0; i < args.length; i++) {
+        const [key, value] = args[i];
+
+        if (typeof value == "function") {
+            if (value instanceof Promise || Object.getPrototypeOf(value).constructor.name == "AsyncFunction") {
+                throw new Error(
+                    `[${prefix + key}]: Async functions are not supported in sync mode. Use parse() or transform() instead.`,
+                );
+            }
+        } else if (value != null && typeof value == "object") {
+            validateSyncArguments(value, prefix + key + ".");
+        }
+    }
 }
