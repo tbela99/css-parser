@@ -11708,11 +11708,19 @@ function cloneNode(node, cloneChildren = false, cloneMap = null) {
 const config$3 = getSyntaxConfig();
 // @ts-expect-error
 const allValues = config$3.declarations.all.syntax.split(/[\s|]+/g);
+/**
+ * @type {Array.<EnumToken>}
+ */
 const funcTypes = [
     ...tokensfuncDefMap.values(),
     exports.EnumToken.FunctionTokenType,
     exports.EnumToken.PseudoClassFuncTokenType,
 ];
+/**
+ * trim leading and trailing whitespace
+ * @param tokens
+ * @returns
+ */
 function trimArray(tokens) {
     while (tokens[0]?.typ === exports.EnumToken.WhitespaceTokenType) {
         tokens.shift();
@@ -11813,6 +11821,11 @@ function isMFValue(featureName, tokens, isMFRange) {
         success: true,
     };
 }
+/**
+ * create validation context
+ * @param tokens
+ * @returns
+ */
 function createValidationContext(tokens) {
     tokens = trimArray(tokens.filter((t) => t.typ !== exports.EnumToken.CommentTokenType));
     if (tokens.at(-1)?.typ === exports.EnumToken.ImportantTokenType) {
@@ -11976,6 +11989,14 @@ function createValidationContext(tokens) {
     };
     return token;
 }
+/**
+ * match selector syntax
+ * @param stream
+ * @param errors
+ * @param options
+ * @param nested
+ * @returns
+ */
 function matchSelectorSyntax(stream, errors, options, nested = true) {
     const stack = [];
     const tokens = [];
@@ -12414,6 +12435,13 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
     stream.push(...tokens);
     return { success, errors };
 }
+/**
+ * matches all syntaxes
+ * @param syntaxes
+ * @param context
+ * @param options
+ * @returns
+ */
 function matchAllSyntaxes(syntaxes, context, options) {
     const result = matchSyntax(syntaxes, context, {
         ...options,
@@ -12452,6 +12480,13 @@ function matchAllSyntaxes(syntaxes, context, options) {
         syntaxToken: !result.success ? result.syntaxToken : null,
     };
 }
+/**
+ * matches a list of syntaxes
+ * @param syntax
+ * @param context
+ * @param options
+ * @returns
+ */
 function matchListSyntax(syntax, context, options) {
     const { isList, match, isOptional, ...rest } = syntax;
     let success = true;
@@ -12496,6 +12531,13 @@ function matchListSyntax(syntax, context, options) {
             token: context.peek(),
         };
 }
+/**
+ * matches a list of syntaxes
+ * @param syntax
+ * @param context
+ * @param options
+ * @returns
+ */
 function matchOccurenceSyntax(syntax, context, options) {
     const { match, ...rest } = syntax;
     let result = null;
@@ -12537,6 +12579,13 @@ function matchOccurenceSyntax(syntax, context, options) {
     }
     return result;
 }
+/**
+ * matches a list of syntaxes
+ * @param syntaxes
+ * @param context
+ * @param options
+ * @returns
+ */
 function matchSyntax(syntaxes, context, options) {
     if (syntaxes == null) {
         return {
@@ -13177,6 +13226,13 @@ function matchSyntax(syntaxes, context, options) {
             errors: [],
         };
 }
+/**
+ * matches a column of syntaxes
+ * @param syntax
+ * @param context
+ * @param options
+ * @returns
+ */
 function matchColumnSyntax(syntax, context, options) {
     let syntaxes = syntax.chi.slice();
     let i = 0;
@@ -13213,6 +13269,13 @@ function matchColumnSyntax(syntax, context, options) {
         errors: [],
     };
 }
+/**
+ * matches an ampersand of syntaxes
+ * @param syntax
+ * @param context
+ * @param options
+ * @returns
+ */
 function matchAmpersandSyntax(syntax, context, options) {
     const syntaxes = [syntax.l, syntax.r];
     let result;
@@ -13231,6 +13294,13 @@ function matchAmpersandSyntax(syntax, context, options) {
     }
     return result;
 }
+/**
+ * matches a property
+ * @param property
+ * @param context
+ * @param options
+ * @returns
+ */
 function matchProperty(property, context, options) {
     let success = false;
     let t = context.peek()?.typ;
@@ -13963,6 +14033,13 @@ function matchProperty(property, context, options) {
         errors: [],
     };
 }
+/**
+ * matches a repeatable syntax
+ * @param syntax
+ * @param context
+ * @param options
+ * @returns
+ */
 function matchRepeatableSyntax(syntax, context, options) {
     const { isRepeatable, isOptional, isMandatatoryGroup, isRepeatableAtLeastOnce, ...rest } = syntax;
     let result = null;
@@ -21092,6 +21169,11 @@ function find(ast, matcher) {
     return null;
 }
 /**
+ *
+ * @param ast
+ * @param matcher
+ * @returns
+ *
  * Search the ast sub-tree by checking each node's value token and return the first match
  *
  ```ts
@@ -21117,10 +21199,6 @@ button {
      console.log({node, value});
  
     ```
- *
- * @param ast
- * @param matcher
- * @returns
  */
 function findByValue(ast, matcher) {
     let source;
@@ -22745,29 +22823,29 @@ const features = Object.values(allFeatures).sort((a, b) => a.ordering - b.orderi
  * @param context
  * @private
  */
-function minify(ast, opt = {}, recursive = false, errors, nestingContent, context = {}) {
+function minify(ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
     let preprocess = false;
     let postprocess = false;
     let parents;
     let replacement;
     // @ts-ignore
-    let { sourcemap, module, ...options } = opt;
-    if (!("features" in options)) {
+    let { sourcemap, module, ...options2 } = options;
+    if (!("features" in options2)) {
         // @ts-ignore
-        options = {
+        options2 = {
             removeDuplicateDeclarations: true,
             computeShorthand: true,
             computeCalcExpression: true,
             removePrefix: false,
             features: [],
-            ...options,
+            ...options2,
         };
         for (const feature of features) {
-            feature.register(options);
+            feature.register(options2);
         }
-        options.features.sort((a, b) => a.ordering - b.ordering);
+        options2.features.sort((a, b) => a.ordering - b.ordering);
     }
-    for (const feature of options.features) {
+    for (const feature of options2.features) {
         if (feature.processMode & exports.FeatureWalkMode.Pre) {
             preprocess = true;
         }
@@ -22782,7 +22860,7 @@ function minify(ast, opt = {}, recursive = false, errors, nestingContent, contex
                 continue;
             }
             replacement = parent;
-            for (const feature of options.features) {
+            for (const feature of options2.features) {
                 if ((feature.processMode & exports.FeatureWalkMode.Pre) === 0 ||
                     (feature.accept != null && !feature.accept.has(parent.typ))) {
                     continue;
@@ -22792,7 +22870,7 @@ function minify(ast, opt = {}, recursive = false, errors, nestingContent, contex
                         ? replacement.sel
                         : replacement.nam);
                 }
-                const result = feature.run(replacement, options, parent[PARENT] ?? ast, context, exports.FeatureWalkMode.Pre);
+                const result = feature.run(replacement, options2, parent[PARENT] ?? ast, context, exports.FeatureWalkMode.Pre);
                 if (result != null) {
                     replacement = result;
                 }
@@ -22811,14 +22889,14 @@ function minify(ast, opt = {}, recursive = false, errors, nestingContent, contex
                 }
             }
         }
-        for (const feature of options.features) {
+        for (const feature of options2.features) {
             if (feature.processMode & exports.FeatureWalkMode.Pre && "cleanup" in feature) {
                 // @ts-ignore
-                feature.cleanup(ast, options, context, exports.FeatureWalkMode.Pre);
+                feature.cleanup(ast, options2, context, exports.FeatureWalkMode.Pre);
             }
         }
     }
-    doMinify(ast, options, recursive, errors, nestingContent, context);
+    doMinify(ast, options2, recursive, errors, nestingContent, context);
     parents = new Set([ast]);
     for (const parent of parents) {
         if (parent.typ == exports.EnumToken.CommentTokenType || parent.typ == exports.EnumToken.CDOCOMMTokenType) {
@@ -22826,12 +22904,12 @@ function minify(ast, opt = {}, recursive = false, errors, nestingContent, contex
         }
         replacement = parent;
         if (postprocess) {
-            for (const feature of options.features) {
+            for (const feature of options2.features) {
                 if ((feature.processMode & exports.FeatureWalkMode.Post) === 0 ||
                     (feature.accept != null && !feature.accept.has(parent.typ))) {
                     continue;
                 }
-                const result = feature.run(replacement, options, parent[PARENT] ?? ast, context, exports.FeatureWalkMode.Post);
+                const result = feature.run(replacement, options2, parent[PARENT] ?? ast, context, exports.FeatureWalkMode.Post);
                 if (result != null) {
                     replacement = result;
                 }
@@ -22852,10 +22930,10 @@ function minify(ast, opt = {}, recursive = false, errors, nestingContent, contex
         }
     }
     if (postprocess) {
-        for (const feature of options.features) {
+        for (const feature of options2.features) {
             if (feature.processMode & exports.FeatureWalkMode.Post && "cleanup" in feature) {
                 // @ts-ignore
-                feature.cleanup(ast, options, context, exports.FeatureWalkMode.Post);
+                feature.cleanup(ast, options2, context, exports.FeatureWalkMode.Post);
             }
         }
     }

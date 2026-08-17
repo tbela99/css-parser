@@ -1,7 +1,6 @@
 import { EnumToken } from "../lib/ast/types.ts";
 import { ERRORS, LOC, OPTIMIZED, PARENT, RAW, ROOT, STATE, TOKENS } from "../lib/syntax/constants.ts";
 import type { Token } from "./token.d.ts";
-import type { AstNode } from "./ast.d.ts";
 
 /**
  * token or node location

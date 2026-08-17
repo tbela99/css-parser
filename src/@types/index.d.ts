@@ -7,7 +7,6 @@ import type { CssVariableToken, Token } from "./token.d.ts";
 import { FeatureWalkMode } from "../lib/ast/features/type.ts";
 import { ValidationToken } from "../lib/validation/parser/types";
 import { SourceFile } from "../lib/parser/source.ts";
-import type { VisitorSyncNodeMap, VisitorNodeMap } from "./visitor.d.ts";
 
 export * from "./ast.d.ts";
 export * from "./token.d.ts";
