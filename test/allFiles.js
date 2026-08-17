@@ -20,11 +20,11 @@ for (const file of await readdir(baseDir)) {
     message = '';
 
     const result = await load(baseDir + file, import.meta.dirname).then(css => transform(css, {
-        src: baseDir + file, minify: true, sourcemap: true,
+        src: baseDir + file, minify: true, 
         removePrefix: true,
         nestingRules: true,
         resolveImport: true,
-        sourcemap: true,
+        // sourcemap: true,
         validation: true
     }));
 
