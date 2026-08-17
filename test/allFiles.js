@@ -31,7 +31,7 @@ for (const file of await readdir(baseDir)) {
     message += `[inputSize]: ${toFileSize(result.stats.bytesIn)}\n `;
     message += `[outputSize]: ${toFileSize(result.stats.bytesOut)}\n `;
     message += `[ratio]: ${(100 * (1 - result.stats.bytesOut / result.stats.bytesIn)).toFixed(2)}%\n `;
-    message += `[sourcemap]: ${JSON.stringify(result.map.toJSON()).length}\n `;
+    // message += `[sourcemap]: ${JSON.stringify(result.map.toJSON()).length}\n `;
 
     for (const key in result.stats) {
 
