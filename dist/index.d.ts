@@ -6205,11 +6205,9 @@ declare function transformSync(css: string, options?: TransformSyncOptions): Tra
  */
 declare function transformSync(options: ParseInputOptions & TransformSyncOptions): TransformResult;
 /**
- * Parse css
+ * Parse CSS
  * @param stream
  * @param options
- *
- * @throws Error file not found
  *
  * Example:
  *
@@ -6222,7 +6220,7 @@ declare function transformSync(options: ParseInputOptions & TransformSyncOptions
  *  console.log(result.ast);
  * ```
  *
- * parsing a Readable stream
+ * parsing a ReadableStream
  *
  * ```ts
  *
@@ -6237,7 +6235,7 @@ declare function transformSync(options: ParseInputOptions & TransformSyncOptions
  *  console.log(result.ast);
  * ```
  *
- * Example using fetch and readable stream
+ * Parsing a file as a ReadableStream
  *
  * ```ts
  *
@@ -6324,7 +6322,7 @@ declare function parse(options: ParseInputFileOptions & ParserOptions): Promise<
  */
 declare function parse(options: ParseInputStreamOptions & ParserOptions): Promise<ParseResult>;
 /**
- * Transform css file
+ * Transform CSS file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
@@ -6349,7 +6347,7 @@ declare function parse(options: ParseInputStreamOptions & ParserOptions): Promis
  */
 declare const transformFile: (file: string, options?: TransformOptions, asStream?: boolean) => Promise<TransformResult>;
 /**
- * Transform css
+ * Transform CSS
  * @param css
  * @param options
  *
@@ -6422,7 +6420,7 @@ declare function transform(css: string | ReadableStream<Uint8Array>, options?: T
  *  console.log(result.code);
  * ```
  *
- * Example using fetch
+ * Parse a file as a ReadableStream
  *
  * ```ts
  *
@@ -6436,43 +6434,16 @@ declare function transform(css: string | ReadableStream<Uint8Array>, options?: T
  */
 declare function transform(options: ParseInputStreamOptions & TransformOptions): Promise<TransformResult>;
 /**
- * Transform css
+ * Transform CSS
  * @param options
  *
- * Parsing a string
+ * Parsing a file
  *
  * ```ts
  *
  * import {transform} from '@tbela99/css-parser';
  *
- *  // css string
- *  const result = await transform({input: css});
- *  console.log(result.code);
- * ```
- *
- * Parsing a Readable stream
- *
- * ```ts
- *
- * import {transform} from '@tbela99/css-parser';
- * import {Readable} from "node:stream";
- *
- * // usage: node index.ts < styles.css or cat styles.css | node index.ts
- *
- *  const readableStream = Readable.toWeb(process.stdin);
- *  const result = await transform( {input: readableStream, beautify: true});
- *
- *  console.log(result.code);
- * ```
- *
- * Example using fetch
- *
- * ```ts
- *
- *  import {transform} from '@tbela99/css-parser';
- *
- *  result = await transform({file: 'https://docs.deno.com/styles.css', beautify: true});
- *
+ *  const result = await transform( {file: 'https://docs.deno.com/styles.css', beautify: true});
  *  console.log(result.code);
  * ```
  */

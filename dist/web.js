@@ -28,7 +28,7 @@ export { FeatureWalkMode } from './lib/ast/features/type.js';
  * @throws Error file not found
  *
  * ```ts
- * import {load, ResponseType} from '@tbela99/css-parser';
+ * import {load, ResponseType} from '@tbela99/css-parser/web';
  * const result = await load(file, '.', ResponseType.ArrayBuffer) as ArrayBuffer;
  * ```
  */
@@ -70,7 +70,7 @@ async function load(url, currentDirectory = ".", responseType = false) {
  *
  * ```ts
  *
- *  import {render, ColorType} from '@tbela99/css-parser';
+ *  import {render, ColorType} from '@tbela99/css-parser/web';
  *
  *  const css = 'body { color: color(from hsl(0 100% 50%) xyz x y z); }';
  *  const parseResult = await parse(css);
@@ -129,12 +129,13 @@ async function parseFile(file, options = {}, asStream = false) {
 /**
  * Parse css
  * @param args
+ * @private
  *
  * Parsing a string
  *
  * ```ts
  *
- * import {parseSync} from '@tbela99/css-parser';
+ * import {parseSync} from '@tbela99/css-parser/web';
  *
  *  // css string
  *  let result = await parseSync(css, {nestingRules: true});
@@ -184,11 +185,11 @@ function parseSync(...args) {
     return !options.module && !options.inputSourceMap ? result : parseResult(result, options);
 }
 /**
- * Transform css
+ * Transform CSS
  *
  * ```ts
  *
- * import {transformSync} from '@tbela99/css-parser';
+ * import {transformSync} from '@tbela99/css-parser/web';
  *
  *  // css string
  *  const result = transformSync(css);
@@ -196,6 +197,7 @@ function parseSync(...args) {
  * ```
  *
  * @param args
+ * @private
  */
 function transformSync(...args) {
     let options;
@@ -269,6 +271,7 @@ function transformSync(...args) {
  *  console.log(result.ast);
  * ```
  * @param args
+ * @private
  */
 async function parse(...args) {
     let options;
@@ -317,7 +320,7 @@ async function parse(...args) {
     return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => (!options.module && !options.inputSourceMap ? result : parseResult(result, options)));
 }
 /**
- * Transform css file
+ * Transform CSS file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
@@ -366,6 +369,7 @@ async function transformFile(file, options = {}, asStream = false) {
  *  console.log(result.code);
  * ```
  * @param args
+ * @private
  */
 async function transform(...args) {
     let options;

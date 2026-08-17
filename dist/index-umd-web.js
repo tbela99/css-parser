@@ -24827,7 +24827,6 @@
         // @ts-ignore
         let children = "";
         let str = "";
-        // let previousStr: string = "";
         const indent = indents[level];
         const indentSub = indents[level + 1];
         switch (data.typ) {
@@ -24838,7 +24837,7 @@
             case exports.EnumToken.CommentNodeType:
             case exports.EnumToken.CDOCOMMNodeType:
                 if (data.val.startsWith("/*# sourceMappingURL=")) {
-                    // ignore sourcemap
+                    // ignore sourcemap comment
                     return "";
                 }
                 return !options.removeComments || (options.preserveLicense && data.val.startsWith("/*!"))
@@ -24886,15 +24885,6 @@
                                 : node.val;
                     }
                     else if (node.typ == exports.EnumToken.DeclarationNodeType) {
-                        // if (!(<AstDeclaration>node).nam.startsWith("--") && (<AstDeclaration>node).val.length === 0) {
-                        //     // @ts-ignore
-                        //     errors.push(<ErrorDescription>{
-                        //         action: "ignore",
-                        //         message: `render: invalid declaration ${JSON.stringify(node)}`,
-                        //         location: node[LOC],
-                        //     });
-                        //     return "";
-                        // }
                         str = `${node.nam}:${options.indent}${(options.minify
                         ? filterValues(node.val)
                         : node.val)
@@ -24948,24 +24938,6 @@
                     move(sourceLocation, linesMap, end);
                 }
                 return prelude + children + end;
-            // case EnumToken.CssVariableTokenType:
-            // case EnumToken.CssVariableImportTokenType:
-            //     return `@value ${(<CssVariableToken | CssVariableImportTokenType>data).val}:${options.indent}${filterValues(
-            //         options.minify
-            //             ? (<CssVariableToken | CssVariableImportTokenType>data).val
-            //             : (<CssVariableToken>data).val,
-            //     )
-            //         .reduce(reducer, "")
-            //         .trim()};`;
-            // case EnumToken.CssVariableDeclarationMapTokenType:
-            //     return `@value ${filterValues((data as CssVariableMapTokenType).vars)
-            //         .reduce((acc, curr) => acc + renderValue(curr), "")
-            //         .trim()} from ${filterValues((data as CssVariableMapTokenType).from)
-            //         .reduce((acc, curr) => acc + renderValue(curr), "")
-            //         .trim()};`;
-            // case EnumToken.InvalidDeclarationNodeType:
-            // case EnumToken.InvalidRuleNodeType:
-            // case EnumToken.InvalidAtRuleNodeType:
             default:
                 return "";
         }
@@ -32190,7 +32162,7 @@
      * @throws Error file not found
      *
      * ```ts
-     * import {load, ResponseType} from '@tbela99/css-parser';
+     * import {load, ResponseType} from '@tbela99/css-parser/web';
      * const result = await load(file, '.', ResponseType.ArrayBuffer) as ArrayBuffer;
      * ```
      */
@@ -32232,7 +32204,7 @@
      *
      * ```ts
      *
-     *  import {render, ColorType} from '@tbela99/css-parser';
+     *  import {render, ColorType} from '@tbela99/css-parser/web';
      *
      *  const css = 'body { color: color(from hsl(0 100% 50%) xyz x y z); }';
      *  const parseResult = await parse(css);
@@ -32291,12 +32263,13 @@
     /**
      * Parse css
      * @param args
+     * @private
      *
      * Parsing a string
      *
      * ```ts
      *
-     * import {parseSync} from '@tbela99/css-parser';
+     * import {parseSync} from '@tbela99/css-parser/web';
      *
      *  // css string
      *  let result = await parseSync(css, {nestingRules: true});
@@ -32346,11 +32319,11 @@
         return !options.module && !options.inputSourceMap ? result : parseResult(result, options);
     }
     /**
-     * Transform css
+     * Transform CSS
      *
      * ```ts
      *
-     * import {transformSync} from '@tbela99/css-parser';
+     * import {transformSync} from '@tbela99/css-parser/web';
      *
      *  // css string
      *  const result = transformSync(css);
@@ -32358,6 +32331,7 @@
      * ```
      *
      * @param args
+     * @private
      */
     function transformSync(...args) {
         let options;
@@ -32431,6 +32405,7 @@
      *  console.log(result.ast);
      * ```
      * @param args
+     * @private
      */
     async function parse(...args) {
         let options;
@@ -32479,7 +32454,7 @@
         return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => (!options.module && !options.inputSourceMap ? result : parseResult(result, options)));
     }
     /**
-     * Transform css file
+     * Transform CSS file
      * @param file url or path
      * @param options
      * @param asStream load file as stream
@@ -32528,6 +32503,7 @@
      *  console.log(result.code);
      * ```
      * @param args
+     * @private
      */
     async function transform(...args) {
         let options;

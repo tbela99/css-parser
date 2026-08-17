@@ -40,7 +40,7 @@ A non-exhaustive list of features is provided below:
 * **CSS variable inlining** where values can be safely resolved.
 * **Duplicate declaration removal** to eliminate redundant rules.
 * **`@import` flattening** to produce self-contained stylesheets.
-* **Experimental vendor prefix cleanup** to modernize generated CSS.
+* **Vendor prefix cleanup** to modernize generated CSS.
 
 ## Installation
 

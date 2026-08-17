@@ -43,7 +43,7 @@ $ deno add @tbela99/css-parser
 * **`@import` flattening** to produce self-contained stylesheets.
 
 ## Vendor prefix removal
-**Experimental vendor prefix cleanup** to modernize generated CSS.
+**Vendor prefix cleanup** to modernize generated CSS.
 
 ## Syntax lowering
 CSS-Parser can transform these modern CSS features into lower-level CSS syntax:
@@ -85,7 +85,8 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 - [CSS Modules](https://tbela99.github.io/css-parser/docs/documents/Guide.CSS_Modules.html)
 - [Minification](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html)
 - [Custom Transform](https://tbela99.github.io/css-parser/docs/documents/Guide.Custom_Transform.html)
-- [Sourcema](https://tbela99.github.io/css-parser/docs/documents/Guide.Sourcemap.html)
+- [Sourcemap](https://tbela99.github.io/css-parser/docs/documents/Guide.Sourcemap.html)
+- [Plugins API](https://tbela99.github.io/css-parser/docs/documents/Guide.Plugins_API.html)
 - [Syntax Lowering](https://tbela99.github.io/css-parser/docs/documents/Guide.Syntax_Lowering.html)
 - [Ast Manipulation](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast_Manipulation.html)
 - [Utility Functions](https://tbela99.github.io/css-parser/docs/documents/Guide.Utility_Functions.html)

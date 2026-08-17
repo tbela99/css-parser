@@ -657,7 +657,7 @@ Output:
 }
 ```
 
-### CSS prefix removal (Experimental)
+### CSS prefix removal
 
 This feature is disabled by default.
 
@@ -891,7 +891,7 @@ Output:
 
 ### Computed shorthands properties
 
-Below is the list of computed shorthands properties. Minification is fully supported for the propertie with a checkmark.
+Below is the list of computed shorthands properties. Minification is fully supported for the properties with a checkmark.
 
 - [ ] ~all~
 - [x] animation

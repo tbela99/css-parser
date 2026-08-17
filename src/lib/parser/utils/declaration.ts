@@ -1,7 +1,7 @@
 import type {
     AstAtRule,
     AstDeclaration,
-    AstKeyFrameRule,
+    AstKeyframesRule,
     AstRule,
     AstStyleSheet,
     AtRuleToken,
@@ -91,7 +91,7 @@ function parseGridTemplate(template: string): string {
 
 export function parseDeclaration(
     tokens: Token[],
-    parent: AstRule | AstAtRule | AstKeyFrameRule | AstStyleSheet | AtRuleToken | null,
+    parent: AstRule | AstAtRule | AstKeyframesRule | AstStyleSheet | AtRuleToken | null,
     options: ParserOptions,
     errors: ErrorDescription[],
 ): AstDeclaration | RawNodeToken {

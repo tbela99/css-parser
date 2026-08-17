@@ -10,9 +10,8 @@ import type {
     AstAtRule,
     AstComment,
     AstDeclaration,
-    AstKeyFrameRule,
-    AstKeyframesAtRule,
     AstKeyframesRule,
+    AstKeyframesAtRule,
     AstNode,
     AstRule,
     AstRuleList,
@@ -515,7 +514,7 @@ export function doParseSync(
     >;
 
     let item: TokenizeResult;
-    let node: AstAtRule | AstRule | AstKeyFrameRule | AstKeyframesAtRule | AstDeclaration | AstComment | null;
+    let node: AstAtRule | AstRule | AstKeyframesRule | AstKeyframesAtRule | AstDeclaration | AstComment | null;
 
     // @ts-ignore ignore error
     let parensMatch: number = 0;
@@ -710,7 +709,7 @@ export function doParseSync(
 
             if (node != null) {
                 if ("chi" in node) {
-                    stack.push(node as AstAtRule | AstRule | AstKeyFrameRule);
+                    stack.push(node as AstAtRule | AstRule | AstKeyframesRule);
                     context = node as AstRuleList;
                 }
             } else if (item.token.typ == EnumToken.BlockStartTokenType) {
@@ -892,7 +891,12 @@ export function doParseSync(
 
                     if (node != result.node) {
                         replaceNodeOrValue(
-                            result.parent as AstRule | AstAtRule | AstKeyframesAtRule | AstKeyFrameRule | AstStyleSheet,
+                            result.parent as
+                                | AstRule
+                                | AstAtRule
+                                | AstKeyframesAtRule
+                                | AstKeyframesRule
+                                | AstStyleSheet,
                             result.node,
                             node,
                         );
@@ -1865,7 +1869,7 @@ export async function doParse(
     const imports: AstAtRule[] = [];
 
     let item: TokenizeResult;
-    let node: AstAtRule | AstRule | AstKeyFrameRule | AstKeyframesAtRule | AstDeclaration | AstComment | null;
+    let node: AstAtRule | AstRule | AstKeyframesRule | AstKeyframesAtRule | AstDeclaration | AstComment | null;
 
     // @ts-ignore ignore error
     let isAsync: boolean = typeof iter[Symbol.asyncIterator] === "function";
@@ -2064,7 +2068,7 @@ export async function doParse(
 
             if (node != null) {
                 if ("chi" in node) {
-                    stack.push(node as AstAtRule | AstRule | AstKeyFrameRule);
+                    stack.push(node as AstAtRule | AstRule | AstKeyframesRule);
                     context = node as AstRuleList;
                 } else if (node.typ == EnumToken.AtRuleNodeType && (node as AstAtRule).nam === "import") {
                     imports.push(node);
@@ -2229,7 +2233,7 @@ export async function doParse(
 
         break;
     }
-    
+
     if (options.visitor != null) {
         let parens: Token[] | null;
         for (const result of walk(ast)) {
@@ -2336,7 +2340,12 @@ export async function doParse(
 
                     if (node != result.node) {
                         replaceNodeOrValue(
-                            result.parent as AstRule | AstAtRule | AstKeyframesAtRule | AstKeyFrameRule | AstStyleSheet,
+                            result.parent as
+                                | AstRule
+                                | AstAtRule
+                                | AstKeyframesAtRule
+                                | AstKeyframesRule
+                                | AstStyleSheet,
                             result.node,
                             node,
                         );
@@ -3405,7 +3414,7 @@ function parseNode(
     errors: ErrorDescription[],
     stats: ParseResultStats,
     invalidNodes: AstNode[],
-): AstRule | AstAtRule | AstKeyFrameRule | AstKeyframesAtRule | AstDeclaration | AstComment | null {
+): AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule | AstDeclaration | AstComment | null {
     let i: number = 0;
 
     if (tokens.at(-1)?.typ === EnumToken.EOFTokenType) {

@@ -7,6 +7,7 @@ import type { CssVariableToken, Token } from "./token.d.ts";
 import { FeatureWalkMode } from "../lib/ast/features/type.ts";
 import { ValidationToken } from "../lib/validation/parser/types";
 import { SourceFile } from "../lib/parser/source.ts";
+import type { VisitorSyncNodeMap, VisitorNodeMap } from "./visitor.d.ts";
 
 export * from "./ast.d.ts";
 export * from "./token.d.ts";
@@ -447,10 +448,21 @@ export declare interface ParseInputStreamOptions {
  * @internal
  */
 export declare interface ParseSourceOptions {
+    /**
+     * Source file to be used for sourcemap
+     * @internal
+     */
     sourcesMap?: Map<number, SourceFile>;
+    /**
+     * Source file to be used for sourcemap
+     * @internal
+     */
     source?: SourceFile | null;
 }
 
+/**
+ * Parser sourcemap options
+ */
 export declare interface ParserSourceMapOptions {
     /**
      * Include sourcemap in the ast. Sourcemap info is always generated
@@ -462,6 +474,9 @@ export declare interface ParserSourceMapOptions {
     inputSourceMap?: SourceMapObject | string;
 }
 
+/**
+ * Sync parseroptions
+ */
 export declare interface ParserSyncOptions
     extends
         MinifyOptions,

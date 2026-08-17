@@ -1,12 +1,12 @@
-import { eq } from "../parser/utils/eq.ts";
-import { doRender, renderValue } from "../renderer/render.ts";
+import {eq} from "../parser/utils/eq.ts";
+import {doRender, renderValue} from "../renderer/render.ts";
 import * as allFeatures from "./features/index.ts";
-import { walkValues } from "./walk.ts";
+import {walkValues} from "./walk.ts";
 import type {
     AstAtRule,
     AstDeclaration,
-    AstKeyFrameRule,
     AstKeyframesAtRule,
+    AstKeyframesRule,
     AstNode,
     AstRule,
     AstStyleSheet,
@@ -24,15 +24,15 @@ import type {
     RawSelectorTokens,
     Token,
 } from "../../@types/index.d.ts";
-import { EnumToken } from "./types.ts";
-import { isFunction, isIdent, isIdentStart, isWhiteSpace } from "../syntax/syntax.ts";
-import { FeatureWalkMode } from "./features/type.ts";
-import { trimArray } from "../validation/match.ts";
-import { combinators, LOC, OPTIMIZED, PARENT, RAW, TOKENS } from "../syntax/constants.ts";
-import { replaceNodeOrValue } from "../parser/utils/token.ts";
-import { parseString } from "../parser/parse.ts";
-import { tokenize } from "../parser/tokenize.ts";
-import { replaceCompound } from "./expand.ts";
+import {EnumToken} from "./types.ts";
+import {isFunction, isIdent, isIdentStart, isWhiteSpace} from "../syntax/syntax.ts";
+import {FeatureWalkMode} from "./features/type.ts";
+import {trimArray} from "../validation/match.ts";
+import {combinators, LOC, OPTIMIZED, PARENT, RAW, TOKENS} from "../syntax/constants.ts";
+import {replaceNodeOrValue} from "../parser/utils/token.ts";
+import {parseString} from "../parser/parse.ts";
+import {tokenize} from "../parser/tokenize.ts";
+import {replaceCompound} from "./expand.ts";
 
 const notEndingWith: string[] = ["(", "["].concat(combinators);
 const rules: EnumToken[] = [
@@ -77,7 +77,7 @@ export function minify(
  */
 export function minify(
     ast: AstNode,
-    opt: ParserOptions | MinifyFeatureOptions = {},
+    options: ParserOptions | MinifyFeatureOptions = {},
     recursive: boolean = false,
     errors?: ErrorDescription[],
     nestingContent?: boolean,
@@ -91,27 +91,27 @@ export function minify(
     let replacement: AstNode | null;
 
     // @ts-ignore
-    let { sourcemap, module, ...options } = opt;
+    let { sourcemap, module, ...options2 } = options;
 
-    if (!("features" in <MinifyFeatureOptions>options)) {
+    if (!("features" in <MinifyFeatureOptions>options2)) {
         // @ts-ignore
-        options = <MinifyFeatureOptions>{
+        options2 = <MinifyFeatureOptions>{
             removeDuplicateDeclarations: true,
             computeShorthand: true,
             computeCalcExpression: true,
             removePrefix: false,
             features: <Function[]>[],
-            ...options,
+            ...options2,
         };
 
         for (const feature of features) {
-            feature.register(options);
+            feature.register(options2);
         }
 
-        options.features!.sort((a: MinifyFeature, b: MinifyFeature): number => a.ordering - b.ordering);
+        options2.features!.sort((a: MinifyFeature, b: MinifyFeature): number => a.ordering - b.ordering);
     }
 
-    for (const feature of options!.features as MinifyFeature[]) {
+    for (const feature of options2!.features as MinifyFeature[]) {
         if (feature.processMode & FeatureWalkMode.Pre) {
             preprocess = true;
         }
@@ -131,7 +131,7 @@ export function minify(
 
             replacement = parent;
 
-            for (const feature of options.features as MinifyFeature[]) {
+            for (const feature of options2.features as MinifyFeature[]) {
                 if (
                     (feature.processMode & FeatureWalkMode.Pre) === 0 ||
                     (feature.accept != null && !feature.accept.has(parent.typ))
@@ -149,7 +149,7 @@ export function minify(
 
                 const result = feature.run(
                     <AstRule | AstAtRule>replacement,
-                    options,
+                    options2,
                     <AstRule | AstAtRule | AstStyleSheet>parent[PARENT] ?? ast,
                     context,
                     FeatureWalkMode.Pre,
@@ -178,15 +178,15 @@ export function minify(
             }
         }
 
-        for (const feature of options.features as MinifyFeature[]) {
+        for (const feature of options2.features as MinifyFeature[]) {
             if (feature.processMode & FeatureWalkMode.Pre && "cleanup" in feature) {
                 // @ts-ignore
-                feature.cleanup(<AstStyleSheet>ast, options, context, FeatureWalkMode.Pre);
+                feature.cleanup(<AstStyleSheet>ast, options2, context, FeatureWalkMode.Pre);
             }
         }
     }
 
-    doMinify(ast, options, recursive, errors, nestingContent, context);
+    doMinify(ast, options2, recursive, errors, nestingContent, context);
 
     parents = new Set([<AstStyleSheet>ast]);
 
@@ -198,7 +198,7 @@ export function minify(
         replacement = parent;
 
         if (postprocess) {
-            for (const feature of options.features as MinifyFeature[]) {
+            for (const feature of options2.features as MinifyFeature[]) {
                 if (
                     (feature.processMode & FeatureWalkMode.Post) === 0 ||
                     (feature.accept != null && !feature.accept.has(parent.typ))
@@ -208,7 +208,7 @@ export function minify(
 
                 const result = feature.run(
                     replacement as AstRule | AstAtRule,
-                    options,
+                    options2,
                     parent[PARENT] ?? (ast as AstRule | AstAtRule | AstStyleSheet),
                     context,
                     FeatureWalkMode.Post,
@@ -239,10 +239,10 @@ export function minify(
     }
 
     if (postprocess) {
-        for (const feature of options.features as MinifyFeature[]) {
+        for (const feature of options2.features as MinifyFeature[]) {
             if (feature.processMode & FeatureWalkMode.Post && "cleanup" in feature) {
                 // @ts-ignore
-                feature.cleanup(<AstStyleSheet>ast, options, context, FeatureWalkMode.Post);
+                feature.cleanup(<AstStyleSheet>ast, options2, context, FeatureWalkMode.Post);
             }
         }
     }
@@ -523,11 +523,11 @@ function doMinify(
             } else if (node.typ === EnumToken.KeyFramesRuleNodeType) {
                 if (
                     previous?.typ === EnumToken.KeyFramesRuleNodeType &&
-                    (<AstKeyFrameRule>node).sel === (<AstKeyFrameRule>previous).sel
+                    (<AstKeyframesRule>node).sel === (<AstKeyframesRule>previous).sel
                 ) {
                     // do not merge keyframes
                     // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@keyframes#resolving_duplicates
-                    (<AstKeyFrameRule>previous).chi.push(...(<AstKeyFrameRule>node).chi);
+                    (<AstKeyframesRule>previous).chi.push(...(<AstKeyframesRule>node).chi);
 
                     ast.chi.splice(i, 1);
                     previous = (ast?.chi?.[nodeIndex] as AstNode) ?? null;
@@ -538,22 +538,22 @@ function doMinify(
 
                 let k: number;
 
-                for (k = 0; k < (node as AstKeyFrameRule).chi.length; k++) {
-                    if ((node as AstKeyFrameRule).chi[k].typ == EnumToken.DeclarationNodeType) {
-                        let l: number = ((node as AstKeyFrameRule).chi[k] as AstDeclaration).val.length;
+                for (k = 0; k < (node as AstKeyframesRule).chi.length; k++) {
+                    if ((node as AstKeyframesRule).chi[k].typ == EnumToken.DeclarationNodeType) {
+                        let l: number = ((node as AstKeyframesRule).chi[k] as AstDeclaration).val.length;
 
                         while (l--) {
                             if (
-                                ((node as AstKeyFrameRule).chi[k] as AstDeclaration).val[l].typ ==
+                                ((node as AstKeyframesRule).chi[k] as AstDeclaration).val[l].typ ==
                                 EnumToken.ImportantTokenType
                             ) {
-                                (node as AstKeyFrameRule).chi.splice(k--, 1);
+                                (node as AstKeyframesRule).chi.splice(k--, 1);
                                 break;
                             }
 
                             if (
                                 [EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(
-                                    ((node as AstKeyFrameRule).chi[k] as AstDeclaration).val[l].typ,
+                                    ((node as AstKeyframesRule).chi[k] as AstDeclaration).val[l].typ,
                                 )
                             ) {
                                 continue;

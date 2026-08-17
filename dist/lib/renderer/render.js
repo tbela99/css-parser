@@ -254,7 +254,6 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
     // @ts-ignore
     let children = "";
     let str = "";
-    // let previousStr: string = "";
     const indent = indents[level];
     const indentSub = indents[level + 1];
     switch (data.typ) {
@@ -265,7 +264,7 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
         case EnumToken.CommentNodeType:
         case EnumToken.CDOCOMMNodeType:
             if (data.val.startsWith("/*# sourceMappingURL=")) {
-                // ignore sourcemap
+                // ignore sourcemap comment
                 return "";
             }
             return !options.removeComments || (options.preserveLicense && data.val.startsWith("/*!"))
@@ -313,15 +312,6 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
                             : node.val;
                 }
                 else if (node.typ == EnumToken.DeclarationNodeType) {
-                    // if (!(<AstDeclaration>node).nam.startsWith("--") && (<AstDeclaration>node).val.length === 0) {
-                    //     // @ts-ignore
-                    //     errors.push(<ErrorDescription>{
-                    //         action: "ignore",
-                    //         message: `render: invalid declaration ${JSON.stringify(node)}`,
-                    //         location: node[LOC],
-                    //     });
-                    //     return "";
-                    // }
                     str = `${node.nam}:${options.indent}${(options.minify
                         ? filterValues(node.val)
                         : node.val)
@@ -375,24 +365,6 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
                 move(sourceLocation, linesMap, end);
             }
             return prelude + children + end;
-        // case EnumToken.CssVariableTokenType:
-        // case EnumToken.CssVariableImportTokenType:
-        //     return `@value ${(<CssVariableToken | CssVariableImportTokenType>data).val}:${options.indent}${filterValues(
-        //         options.minify
-        //             ? (<CssVariableToken | CssVariableImportTokenType>data).val
-        //             : (<CssVariableToken>data).val,
-        //     )
-        //         .reduce(reducer, "")
-        //         .trim()};`;
-        // case EnumToken.CssVariableDeclarationMapTokenType:
-        //     return `@value ${filterValues((data as CssVariableMapTokenType).vars)
-        //         .reduce((acc, curr) => acc + renderValue(curr), "")
-        //         .trim()} from ${filterValues((data as CssVariableMapTokenType).from)
-        //         .reduce((acc, curr) => acc + renderValue(curr), "")
-        //         .trim()};`;
-        // case EnumToken.InvalidDeclarationNodeType:
-        // case EnumToken.InvalidRuleNodeType:
-        // case EnumToken.InvalidAtRuleNodeType:
         default:
             return "";
     }

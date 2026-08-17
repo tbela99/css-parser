@@ -1,5 +1,4 @@
 import type {
-    AstComment,
     AstNode,
     LoadResult,
     ParseInfo,
@@ -21,7 +20,7 @@ import { createReadStream } from "node:fs";
 import { lstat, readFile } from "node:fs/promises";
 import { doParse, doParseSync } from "./lib/parser/parse.ts";
 import { doRender } from "./lib/renderer/render.ts";
-import { EnumToken, ModuleScopeEnumOptions } from "./lib/ast/types.ts";
+import { ModuleScopeEnumOptions } from "./lib/ast/types.ts";
 import { tokenize, tokenizeStream } from "./lib/parser/tokenize.ts";
 import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
 import { ResponseType } from "./types.ts";
@@ -252,6 +251,7 @@ export function parseSync(options: ParseInputOptions & ParserSyncOptions): Parse
 /**
  * Parse css
  * @param args
+ * @private
  *
  * Parsing a string
  *
@@ -362,11 +362,12 @@ export function transformSync(options: ParseInputOptions & TransformSyncOptions)
  * ```
  *
  * @param args
+ * @private
  */
 export function transformSync(
     ...args: [string, TransformSyncOptions?] | [ParseInputOptions & TransformSyncOptions]
 ): TransformResult {
-    let options: (ParseInputOptions & TransformSyncOptions) | TransformSyncOptions;
+    let options: (ParseInputStreamOptions & TransformSyncOptions) | TransformSyncOptions;
     let stream: string;
 
     if (typeof args[0] === "string") {
@@ -425,11 +426,9 @@ export function transformSync(
 }
 
 /**
- * Parse css
+ * Parse CSS
  * @param stream
  * @param options
- *
- * @throws Error file not found
  *
  * Example:
  *
@@ -442,7 +441,7 @@ export function transformSync(
  *  console.log(result.ast);
  * ```
  *
- * parsing a Readable stream
+ * parsing a ReadableStream
  *
  * ```ts
  *
@@ -457,7 +456,7 @@ export function transformSync(
  *  console.log(result.ast);
  * ```
  *
- * Example using fetch and readable stream
+ * Parsing a file as a ReadableStream
  *
  * ```ts
  *
@@ -554,6 +553,7 @@ export async function parse(options: ParseInputStreamOptions & ParserOptions): P
  * @param args
  *
  * @throws Error file not found
+ * @private
  *
  * Parsing a string
  *
@@ -660,7 +660,7 @@ export async function parse(
 }
 
 /**
- * Transform css file
+ * Transform CSS file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
@@ -695,7 +695,7 @@ export const transformFile = deprecate(
 ) as (file: string, options?: TransformOptions, asStream?: boolean) => Promise<TransformResult>;
 
 /**
- * Transform css
+ * Transform CSS
  * @param css
  * @param options
  *
@@ -772,7 +772,7 @@ export async function transform(
  *  console.log(result.code);
  * ```
  *
- * Example using fetch
+ * Parse a file as a ReadableStream
  *
  * ```ts
  *
@@ -788,43 +788,16 @@ export async function transform(
 export async function transform(options: ParseInputStreamOptions & TransformOptions): Promise<TransformResult>;
 
 /**
- * Transform css
+ * Transform CSS
  * @param options
  *
- * Parsing a string
+ * Parsing a file
  *
  * ```ts
  *
  * import {transform} from '@tbela99/css-parser';
  *
- *  // css string
- *  const result = await transform({input: css});
- *  console.log(result.code);
- * ```
- *
- * Parsing a Readable stream
- *
- * ```ts
- *
- * import {transform} from '@tbela99/css-parser';
- * import {Readable} from "node:stream";
- *
- * // usage: node index.ts < styles.css or cat styles.css | node index.ts
- *
- *  const readableStream = Readable.toWeb(process.stdin);
- *  const result = await transform( {input: readableStream, beautify: true});
- *
- *  console.log(result.code);
- * ```
- *
- * Example using fetch
- *
- * ```ts
- *
- *  import {transform} from '@tbela99/css-parser';
- *
- *  result = await transform({file: 'https://docs.deno.com/styles.css', beautify: true});
- *
+ *  const result = await transform( {file: 'https://docs.deno.com/styles.css', beautify: true});
  *  console.log(result.code);
  * ```
  */
@@ -872,6 +845,7 @@ export async function transform(options: ParseInputFileOptions & TransformOption
  *  console.log(result.code);
  * ```
  * @param args
+ * @private
  */
 export async function transform(
     ...args:

@@ -137,6 +137,7 @@ const parseFile = deprecate(async (file, options = {}, asStream = false) => pars
 /**
  * Parse css
  * @param args
+ * @private
  *
  * Parsing a string
  *
@@ -202,6 +203,7 @@ function parseSync(...args) {
  * ```
  *
  * @param args
+ * @private
  */
 function transformSync(...args) {
     let options;
@@ -254,6 +256,7 @@ function transformSync(...args) {
  * @param args
  *
  * @throws Error file not found
+ * @private
  *
  * Parsing a string
  *
@@ -339,7 +342,7 @@ async function parse(...args) {
     return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => (!options.module && !options.inputSourceMap ? result : parseResult(result, options)));
 }
 /**
- * Transform css file
+ * Transform CSS file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
@@ -408,6 +411,7 @@ const transformFile = deprecate(async (file, options = {}, asStream = false) => 
  *  console.log(result.code);
  * ```
  * @param args
+ * @private
  */
 async function transform(...args) {
     let options;

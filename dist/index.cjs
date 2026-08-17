@@ -24830,7 +24830,6 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
     // @ts-ignore
     let children = "";
     let str = "";
-    // let previousStr: string = "";
     const indent = indents[level];
     const indentSub = indents[level + 1];
     switch (data.typ) {
@@ -24841,7 +24840,7 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
         case exports.EnumToken.CommentNodeType:
         case exports.EnumToken.CDOCOMMNodeType:
             if (data.val.startsWith("/*# sourceMappingURL=")) {
-                // ignore sourcemap
+                // ignore sourcemap comment
                 return "";
             }
             return !options.removeComments || (options.preserveLicense && data.val.startsWith("/*!"))
@@ -24889,15 +24888,6 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
                             : node.val;
                 }
                 else if (node.typ == exports.EnumToken.DeclarationNodeType) {
-                    // if (!(<AstDeclaration>node).nam.startsWith("--") && (<AstDeclaration>node).val.length === 0) {
-                    //     // @ts-ignore
-                    //     errors.push(<ErrorDescription>{
-                    //         action: "ignore",
-                    //         message: `render: invalid declaration ${JSON.stringify(node)}`,
-                    //         location: node[LOC],
-                    //     });
-                    //     return "";
-                    // }
                     str = `${node.nam}:${options.indent}${(options.minify
                         ? filterValues(node.val)
                         : node.val)
@@ -24951,24 +24941,6 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
                 move(sourceLocation, linesMap, end);
             }
             return prelude + children + end;
-        // case EnumToken.CssVariableTokenType:
-        // case EnumToken.CssVariableImportTokenType:
-        //     return `@value ${(<CssVariableToken | CssVariableImportTokenType>data).val}:${options.indent}${filterValues(
-        //         options.minify
-        //             ? (<CssVariableToken | CssVariableImportTokenType>data).val
-        //             : (<CssVariableToken>data).val,
-        //     )
-        //         .reduce(reducer, "")
-        //         .trim()};`;
-        // case EnumToken.CssVariableDeclarationMapTokenType:
-        //     return `@value ${filterValues((data as CssVariableMapTokenType).vars)
-        //         .reduce((acc, curr) => acc + renderValue(curr), "")
-        //         .trim()} from ${filterValues((data as CssVariableMapTokenType).from)
-        //         .reduce((acc, curr) => acc + renderValue(curr), "")
-        //         .trim()};`;
-        // case EnumToken.InvalidDeclarationNodeType:
-        // case EnumToken.InvalidRuleNodeType:
-        // case EnumToken.InvalidAtRuleNodeType:
         default:
             return "";
     }
@@ -32296,6 +32268,7 @@ const parseFile = node_util.deprecate(async (file, options = {}, asStream = fals
 /**
  * Parse css
  * @param args
+ * @private
  *
  * Parsing a string
  *
@@ -32361,6 +32334,7 @@ function parseSync(...args) {
  * ```
  *
  * @param args
+ * @private
  */
 function transformSync(...args) {
     let options;
@@ -32413,6 +32387,7 @@ function transformSync(...args) {
  * @param args
  *
  * @throws Error file not found
+ * @private
  *
  * Parsing a string
  *
@@ -32498,7 +32473,7 @@ async function parse(...args) {
     return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => (!options.module && !options.inputSourceMap ? result : parseResult(result, options)));
 }
 /**
- * Transform css file
+ * Transform CSS file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
@@ -32567,6 +32542,7 @@ const transformFile = node_util.deprecate(async (file, options = {}, asStream = 
  *  console.log(result.code);
  * ```
  * @param args
+ * @private
  */
 async function transform(...args) {
     let options;

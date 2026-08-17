@@ -108,4 +108,4 @@ console.log(result.map.toJSON());
 ```
 
 ------
-[← Custom Transform](./transform.md) | [Syntax Lowering →](./syntax-lowering.md) 
+[← Custom Transform](./transform.md) | [Plugins API →](./plugins.md) 
