@@ -15,7 +15,7 @@ import { FeatureWalkMode } from "./type.ts";
 import { STATE } from "../../syntax/constants.ts";
 
 export class TransformCssFeature {
-    public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.KeyFramesRuleNodeType]);
+    public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.KeyframesRuleNodeType]);
 
     get ordering(): number {
         return 3;

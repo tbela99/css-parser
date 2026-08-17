@@ -1,6 +1,6 @@
 import { ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from "../../../dist/lib/ast/types.js";
 
-export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
+export function run(describe, expect, it, transform, parse, render, dirname, readFile, resolve, ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, transformSync, parseSync) {
     describe("css modules", function () {
         it("module #1", function () {
             return transform(
@@ -929,6 +929,38 @@ a span {
  grid-column-end: b
 }`);
             });
+        });
+
+         it("module #24", function () {
+            const result = transformSync(
+                `
+.goal .bg-indigo {
+  background: indigo;
+}
+
+.indigo-white {
+  composes: bg-indigo title;
+  color: white;
+}
+`,
+                {
+                    module: true,
+                    beautify: true,
+                },
+            );
+            
+                expect(result.mapping).deep.equals({
+                    goal: "goal_r7bhp",
+                    "bg-indigo": "bg-indigo_gy28g",
+                    "indigo-white": "indigo-white_wims0 bg-indigo_gy28g title_qw06e",
+                    title: "title_qw06e",
+                });
+                expect(result.code).equals(`.goal_r7bhp .bg-indigo_gy28g {
+ background: indigo
+}
+.indigo-white_wims0 {
+ color: #fff
+}`);
         });
     });
 }

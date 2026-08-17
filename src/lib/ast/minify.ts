@@ -39,7 +39,7 @@ const rules: EnumToken[] = [
     EnumToken.AtRuleNodeType,
     EnumToken.RuleNodeType,
     EnumToken.AtRuleTokenType,
-    EnumToken.KeyFramesRuleNodeType,
+    EnumToken.KeyframesRuleNodeType,
 ];
 // @ts-ignore
 const features: MinifyFeature[] = Object.values(allFeatures as Record<string, MinifyFeature>).sort(
@@ -141,7 +141,7 @@ export function minify(
 
                 if (rules.includes(replacement.typ) && !Array.isArray(replacement[TOKENS])) {
                     replacement[TOKENS] = parseString(
-                        replacement.typ == EnumToken.RuleNodeType || replacement.typ === EnumToken.KeyFramesRuleNodeType
+                        replacement.typ == EnumToken.RuleNodeType || replacement.typ === EnumToken.KeyframesRuleNodeType
                             ? replacement.sel
                             : replacement.nam,
                     );
@@ -520,9 +520,9 @@ function doMinify(
 
                     continue;
                 }
-            } else if (node.typ === EnumToken.KeyFramesRuleNodeType) {
+            } else if (node.typ === EnumToken.KeyframesRuleNodeType) {
                 if (
-                    previous?.typ === EnumToken.KeyFramesRuleNodeType &&
+                    previous?.typ === EnumToken.KeyframesRuleNodeType &&
                     (<AstKeyframesRule>node).sel === (<AstKeyframesRule>previous).sel
                 ) {
                     // do not merge keyframes
@@ -905,7 +905,7 @@ function doMinify(
                         if (shouldMerge) {
                             if (
                                 ((node.typ === EnumToken.RuleNodeType ||
-                                    node.typ === EnumToken.KeyFramesRuleNodeType) &&
+                                    node.typ === EnumToken.KeyframesRuleNodeType) &&
                                     (node as AstRule).sel === (previous as AstRule).sel) ||
                                 (node.typ == EnumToken.AtRuleNodeType &&
                                     (node as AstAtRule).nam !== "font-face" &&
@@ -923,7 +923,7 @@ function doMinify(
                                 continue;
                             } else if (
                                 node.typ == previous?.typ &&
-                                [EnumToken.KeyFramesRuleNodeType, EnumToken.RuleNodeType].includes(node.typ)
+                                [EnumToken.KeyframesRuleNodeType, EnumToken.RuleNodeType].includes(node.typ)
                             ) {
                                 const intersect = diff(previous as AstRule, node as AstRule, options);
 

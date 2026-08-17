@@ -239,7 +239,7 @@ export function findValue(
         (ast.typ === EnumToken.StyleSheetNodeType ||
             ast.typ === EnumToken.RuleNodeType ||
             ast.typ === EnumToken.AtRuleNodeType ||
-            ast.typ === EnumToken.KeyFramesRuleNodeType ||
+            ast.typ === EnumToken.KeyframesRuleNodeType ||
             ast.typ === EnumToken.KeyframesAtRuleNodeType)
     ) {
         if (Array.isArray(ast[TOKENS])) {

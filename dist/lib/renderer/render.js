@@ -149,7 +149,7 @@ function updateSourceMap(node, options, cache, sourcemaps, sourceLocation, lines
         [
             EnumToken.RuleNodeType,
             EnumToken.AtRuleNodeType,
-            EnumToken.KeyFramesRuleNodeType,
+            EnumToken.KeyframesRuleNodeType,
             EnumToken.KeyframesAtRuleNodeType,
         ].includes(node.typ)) {
         const source = options.sourcesMap.get(node[LOC].srcId);
@@ -287,7 +287,7 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
             return children;
         case EnumToken.AtRuleNodeType:
         case EnumToken.RuleNodeType:
-        case EnumToken.KeyFramesRuleNodeType:
+        case EnumToken.KeyframesRuleNodeType:
         case EnumToken.KeyframesAtRuleNodeType:
             if ([EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ) && !("chi" in data)) {
                 return `${indent}@${data.nam}${data.val === "" ? "" : options.indent || " "}${data.val};`;

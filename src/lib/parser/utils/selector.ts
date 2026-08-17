@@ -97,7 +97,7 @@ export function parseSelector(
         );
 
         return {
-            typ: EnumToken.KeyFramesRuleNodeType,
+            typ: EnumToken.KeyframesRuleNodeType,
             sel: [
                 ...splitTokenList(trimArray(tokens)).reduce((acc, curr: Token[]) => {
                     acc.add(curr.reduce((acc, curr) => acc + renderValue(curr, { minify: false }), ""));

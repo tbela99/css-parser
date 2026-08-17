@@ -386,7 +386,7 @@ export enum EnumToken {
     /**
      * keyframe rule node type
      */
-    KeyFramesRuleNodeType,
+    KeyframesRuleNodeType,
     /**
      * class selector token type
      */

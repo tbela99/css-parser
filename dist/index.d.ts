@@ -379,7 +379,7 @@ declare enum EnumToken {
     /**
      * keyframe rule node type
      */
-    KeyFramesRuleNodeType = 73,
+    KeyframesRuleNodeType = 73,
     /**
      * class selector token type
      */
@@ -2937,7 +2937,7 @@ export declare interface AstKeyframesRule extends BaseToken, AstNodeStatus {
     /**
      * token type
      */
-    typ: EnumToken.KeyFramesRuleNodeType;
+    typ: EnumToken.KeyframesRuleNodeType;
     /**
      * selector
      */
@@ -2967,7 +2967,7 @@ export declare interface AstKeyframesRule extends BaseToken, AstNodeStatus {
     /**
      * token type
      */
-    typ: EnumToken.KeyFramesRuleNodeType;
+    typ: EnumToken.KeyframesRuleNodeType;
     /**
      * selector
      */

@@ -224,7 +224,7 @@ export declare interface AstKeyframesRule extends BaseToken, AstNodeStatus {
     /**
      * token type
      */
-    typ: EnumToken.KeyFramesRuleNodeType;
+    typ: EnumToken.KeyframesRuleNodeType;
     /**
      * selector
      */
@@ -329,7 +329,7 @@ export declare interface AstKeyframesRule extends BaseToken, AstNodeStatus {
     /**
      * token type
      */
-    typ: EnumToken.KeyFramesRuleNodeType;
+    typ: EnumToken.KeyframesRuleNodeType;
     /**
      * selector
      */

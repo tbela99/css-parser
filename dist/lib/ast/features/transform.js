@@ -6,7 +6,7 @@ import { FeatureWalkMode } from './type.js';
 import { STATE } from '../../syntax/constants.js';
 
 class TransformCssFeature {
-    accept = new Set([EnumToken.RuleNodeType, EnumToken.KeyFramesRuleNodeType]);
+    accept = new Set([EnumToken.RuleNodeType, EnumToken.KeyframesRuleNodeType]);
     get ordering() {
         return 3;
     }

@@ -6,7 +6,7 @@ class ComputeShorthandFeature {
     accept = new Set([
         EnumToken.RuleNodeType,
         EnumToken.AtRuleNodeType,
-        EnumToken.KeyFramesRuleNodeType,
+        EnumToken.KeyframesRuleNodeType,
     ]);
     get ordering() {
         return 10;

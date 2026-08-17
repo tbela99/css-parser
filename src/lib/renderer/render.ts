@@ -281,7 +281,7 @@ function updateSourceMap(
         [
             EnumToken.RuleNodeType,
             EnumToken.AtRuleNodeType,
-            EnumToken.KeyFramesRuleNodeType,
+            EnumToken.KeyframesRuleNodeType,
             EnumToken.KeyframesAtRuleNodeType,
         ].includes(node.typ)
     ) {
@@ -477,7 +477,7 @@ function renderAstNode(
 
         case EnumToken.AtRuleNodeType:
         case EnumToken.RuleNodeType:
-        case EnumToken.KeyFramesRuleNodeType:
+        case EnumToken.KeyframesRuleNodeType:
         case EnumToken.KeyframesAtRuleNodeType:
             if ([EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ) && !("chi" in data)) {
                 return `${indent}@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === "" ? "" : options.indent || " "}${

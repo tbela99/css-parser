@@ -48,7 +48,7 @@ function parseSelector(tokens, context, options, errors) {
             return acc;
         }, []));
         return {
-            typ: EnumToken.KeyFramesRuleNodeType,
+            typ: EnumToken.KeyframesRuleNodeType,
             sel: [
                 ...splitTokenList(trimArray(tokens)).reduce((acc, curr) => {
                     acc.add(curr.reduce((acc, curr) => acc + renderValue(curr, { minify: false }), ""));

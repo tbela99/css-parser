@@ -17,7 +17,7 @@ const rules = [
     EnumToken.AtRuleNodeType,
     EnumToken.RuleNodeType,
     EnumToken.AtRuleTokenType,
-    EnumToken.KeyFramesRuleNodeType,
+    EnumToken.KeyframesRuleNodeType,
 ];
 // @ts-ignore
 const features = Object.values(index).sort((a, b) => a.ordering - b.ordering);
@@ -75,7 +75,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                     continue;
                 }
                 if (rules.includes(replacement.typ) && !Array.isArray(replacement[TOKENS])) {
-                    replacement[TOKENS] = parseString(replacement.typ == EnumToken.RuleNodeType || replacement.typ === EnumToken.KeyFramesRuleNodeType
+                    replacement[TOKENS] = parseString(replacement.typ == EnumToken.RuleNodeType || replacement.typ === EnumToken.KeyframesRuleNodeType
                         ? replacement.sel
                         : replacement.nam);
                 }
@@ -350,8 +350,8 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     continue;
                 }
             }
-            else if (node.typ === EnumToken.KeyFramesRuleNodeType) {
-                if (previous?.typ === EnumToken.KeyFramesRuleNodeType &&
+            else if (node.typ === EnumToken.KeyframesRuleNodeType) {
+                if (previous?.typ === EnumToken.KeyframesRuleNodeType &&
                     node.sel === previous.sel) {
                     // do not merge keyframes
                     // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@keyframes#resolving_duplicates
@@ -639,7 +639,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                         }
                         if (shouldMerge) {
                             if (((node.typ === EnumToken.RuleNodeType ||
-                                node.typ === EnumToken.KeyFramesRuleNodeType) &&
+                                node.typ === EnumToken.KeyframesRuleNodeType) &&
                                 node.sel === previous.sel) ||
                                 (node.typ == EnumToken.AtRuleNodeType &&
                                     node.nam !== "font-face" &&
@@ -652,7 +652,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                 continue;
                             }
                             else if (node.typ == previous?.typ &&
-                                [EnumToken.KeyFramesRuleNodeType, EnumToken.RuleNodeType].includes(node.typ)) {
+                                [EnumToken.KeyframesRuleNodeType, EnumToken.RuleNodeType].includes(node.typ)) {
                                 const intersect = diff(previous, node, options);
                                 if (intersect != null) {
                                     if (intersect.node1.chi.length == 0) {
