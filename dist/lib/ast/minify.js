@@ -32,29 +32,29 @@ const features = Object.values(index).sort((a, b) => a.ordering - b.ordering);
  * @param context
  * @private
  */
-function minify(ast, opt = {}, recursive = false, errors, nestingContent, context = {}) {
+function minify(ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
     let preprocess = false;
     let postprocess = false;
     let parents;
     let replacement;
     // @ts-ignore
-    let { sourcemap, module, ...options } = opt;
-    if (!("features" in options)) {
+    let { sourcemap, module, ...options2 } = options;
+    if (!("features" in options2)) {
         // @ts-ignore
-        options = {
+        options2 = {
             removeDuplicateDeclarations: true,
             computeShorthand: true,
             computeCalcExpression: true,
             removePrefix: false,
             features: [],
-            ...options,
+            ...options2,
         };
         for (const feature of features) {
-            feature.register(options);
+            feature.register(options2);
         }
-        options.features.sort((a, b) => a.ordering - b.ordering);
+        options2.features.sort((a, b) => a.ordering - b.ordering);
     }
-    for (const feature of options.features) {
+    for (const feature of options2.features) {
         if (feature.processMode & FeatureWalkMode.Pre) {
             preprocess = true;
         }
@@ -69,7 +69,7 @@ function minify(ast, opt = {}, recursive = false, errors, nestingContent, contex
                 continue;
             }
             replacement = parent;
-            for (const feature of options.features) {
+            for (const feature of options2.features) {
                 if ((feature.processMode & FeatureWalkMode.Pre) === 0 ||
                     (feature.accept != null && !feature.accept.has(parent.typ))) {
                     continue;
@@ -79,7 +79,7 @@ function minify(ast, opt = {}, recursive = false, errors, nestingContent, contex
                         ? replacement.sel
                         : replacement.nam);
                 }
-                const result = feature.run(replacement, options, parent[PARENT] ?? ast, context, FeatureWalkMode.Pre);
+                const result = feature.run(replacement, options2, parent[PARENT] ?? ast, context, FeatureWalkMode.Pre);
                 if (result != null) {
                     replacement = result;
                 }
@@ -98,14 +98,14 @@ function minify(ast, opt = {}, recursive = false, errors, nestingContent, contex
                 }
             }
         }
-        for (const feature of options.features) {
+        for (const feature of options2.features) {
             if (feature.processMode & FeatureWalkMode.Pre && "cleanup" in feature) {
                 // @ts-ignore
-                feature.cleanup(ast, options, context, FeatureWalkMode.Pre);
+                feature.cleanup(ast, options2, context, FeatureWalkMode.Pre);
             }
         }
     }
-    doMinify(ast, options, recursive, errors, nestingContent, context);
+    doMinify(ast, options2, recursive, errors, nestingContent, context);
     parents = new Set([ast]);
     for (const parent of parents) {
         if (parent.typ == EnumToken.CommentTokenType || parent.typ == EnumToken.CDOCOMMTokenType) {
@@ -113,12 +113,12 @@ function minify(ast, opt = {}, recursive = false, errors, nestingContent, contex
         }
         replacement = parent;
         if (postprocess) {
-            for (const feature of options.features) {
+            for (const feature of options2.features) {
                 if ((feature.processMode & FeatureWalkMode.Post) === 0 ||
                     (feature.accept != null && !feature.accept.has(parent.typ))) {
                     continue;
                 }
-                const result = feature.run(replacement, options, parent[PARENT] ?? ast, context, FeatureWalkMode.Post);
+                const result = feature.run(replacement, options2, parent[PARENT] ?? ast, context, FeatureWalkMode.Post);
                 if (result != null) {
                     replacement = result;
                 }
@@ -139,10 +139,10 @@ function minify(ast, opt = {}, recursive = false, errors, nestingContent, contex
         }
     }
     if (postprocess) {
-        for (const feature of options.features) {
+        for (const feature of options2.features) {
             if (feature.processMode & FeatureWalkMode.Post && "cleanup" in feature) {
                 // @ts-ignore
-                feature.cleanup(ast, options, context, FeatureWalkMode.Post);
+                feature.cleanup(ast, options2, context, FeatureWalkMode.Post);
             }
         }
     }

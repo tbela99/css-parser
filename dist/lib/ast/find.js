@@ -42,6 +42,11 @@ function find(ast, matcher) {
     return null;
 }
 /**
+ *
+ * @param ast
+ * @param matcher
+ * @returns
+ *
  * Search the ast sub-tree by checking each node's value token and return the first match
  *
  ```ts
@@ -67,10 +72,6 @@ button {
      console.log({node, value});
  
     ```
- *
- * @param ast
- * @param matcher
- * @returns
  */
 function findByValue(ast, matcher) {
     let source;
