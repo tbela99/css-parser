@@ -6,7 +6,9 @@ category: Guides
 
 ## Custom transform
 
-Visitors are used to transform the ast tree produced by the parser. For more information about the visitor object see the [typescript definition](../docs/interfaces/node.VisitorNodeMap.html)
+Visitors are used to transform the ast tree produced by the parser. For more information about the visitor object see the [typescript definition](../docs/interfaces/node.VisitorNodeMap.html). You can register handlers for specific AST node types and lifecycle events such as enter, visit, and leave to inspect, validate, or modify nodes without altering the parser internals.
+
+This pattern is useful for building reusable plugins that enforce conventions, inject transformations, or add custom analysis on top of the parsed AST.
 
 ## Visitors execution order
 
@@ -421,94 +423,5 @@ console.debug(await transform(css, options));
 
 // body {color:#f3fff0}
 ```
-
-### Example of visitor that inlines images
-
-A visitor that inlines all images under a specific size
-
-```ts
-import {
-    EnumToken,
-    FunctionURLToken,
-    load,
-    StringToken,
-    Token,
-    transform,
-    UrlToken,
-    ResponseType,
-    AstDeclaration,
-    AstNode
-} from "@tbela99/css-parser";
-const css = `
-.goal .bg-indigo {
-  background: url(/img/animatecss-opengraph.jpg);
-}
-`;
-
-// 35 kb or something
-const maxSize = 35 * 1024;
-// accepted images
-const extensions = ['jpg', 'gif', 'png', 'webp']
-const result = await transform(css, {
-    visitor: {
-        UrlFunctionTokenType: async (node: FunctionURLToken, parent : AstNode) => {
-
-            if (parent.typ == EnumToken.DeclarationNodeType) {
-
-                const t = node.chi.find(t => t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.CommaTokenType) as Token;
-                
-                if (t == null) {
-                    
-                    return;
-                }
-
-                const url = t.typ == EnumToken.StringTokenType ? (t as StringToken).val.slice(1, -1) : (t as UrlToken).val;
-
-                if (url.startsWith('data:')) {
-
-                    return;
-                }
-
-                const matches = /(.*?\/)?([^/.]+)\.([^?#]+)([?#].*)?$/.exec(url);
-
-                if (matches == null || !extensions.includes(matches[3].toLowerCase())) {
-
-                    return;
-                }
-
-                const buffer = await load(url, '.', ResponseType.ArrayBuffer) as ArrayBuffer  ;
-
-                if (buffer.byteLength > maxSize) {
-
-                    return
-                }
-
-                Object.assign(t, {typ: EnumToken.StringTokenType, val: `"data:image/${matches[3].toLowerCase()};base64,${toBase64(new Uint8Array(buffer))}"`})
-            }
-        }
-    }
-});
-
-function toBase64(arraybuffer: Uint8Array) {
-
-    // @ts-ignore
-    if (typeof Uint8Array.prototype.toBase64! == 'function') {
-
-        // @ts-ignore
-        return arraybuffer.toBase64();
-    }
-
-    let binary = '';
-    for (const byte of arraybuffer) {
-        binary += String.fromCharCode( byte);
-    }
-
-    return btoa( binary );
-}
-
-console.error(result.code);
-// .goal .bg-indigo{background:url("data:image/jpg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/4QugRXhpZgAA ...")}
-```
-
 ------
-[← Minification](./minification.md) | [Syntax Lowering →](./syntax-lowering.md) 
+[← Minification](./minification.md) | [Sourcemap →](./sourcemap.md) 

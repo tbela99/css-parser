@@ -477,7 +477,7 @@ export function next(parseInfo: ParseInfo, count: number = 1): string {
 }
 
 /**
- * Tokenize css string
+ * Tokenize CSS string
  * @param parseInfo
  * @param yieldEOFToken
  */
@@ -495,7 +495,6 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
     }
 
     let value: string;
-    let nextValue: string;
     let buffer: string = parseInfo.buffer;
     let charCode: number;
     let nextCharCode: number;
@@ -509,9 +508,6 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
 
     while ((value = peek(parseInfo))) {
         charCode = value.charCodeAt(0);
-        // nextCharCode = nextValue.charCodeAt(0);
-
-        // console.debug({value, buffer});
 
         switch (charCode) {
             case TokenMap.EQUALS:
@@ -962,7 +958,7 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
                 next(parseInfo);
 
                 // EOF
-                if (!(nextValue = peek(parseInfo))) {
+                if (!(peek(parseInfo))) {
                     // end of stream ignore \\
                     if (buffer.length > 0) {
                         result.push(yieldResult(buffer, parseInfo));
@@ -973,11 +969,6 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
                 }
 
                 buffer += value + next(parseInfo);
-
-                // buffer +=
-                //     (parseInfo.offset == parseInfo.currentPosition
-                //         ? parseInfo.buffer.slice(-1)
-                //         : parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset - 1)) + value;
                 break;
 
             case TokenMap.SINGLE_QUOTE:

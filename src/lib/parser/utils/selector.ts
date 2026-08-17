@@ -2,7 +2,7 @@ import type {
     Token,
     AstRule,
     AstAtRule,
-    AstKeyFrameRule,
+    AstKeyframesRule,
     AstKeyframesAtRule,
     AstStyleSheet,
     ParserOptions,
@@ -36,10 +36,10 @@ import { trimWhiteSpace } from "../parse.ts";
 
 export function parseSelector(
     tokens: Token[],
-    context: AtRuleToken | AstRule | AstAtRule | AstKeyFrameRule | AstKeyframesAtRule | AstStyleSheet | null,
+    context: AtRuleToken | AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule | AstStyleSheet | null,
     options: ParserOptions,
     errors: ErrorDescription[],
-): AstRule | AstKeyFrameRule {
+): AstRule | AstKeyframesRule {
     if (context?.typ === EnumToken.KeyframesAtRuleNodeType) {
         const result = matchAllSyntaxes(
             getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "keyframe-selectors"),
@@ -112,7 +112,7 @@ export function parseSelector(
             [TOKENS]: tokens.length === 0 ? null : tokens,
             [STATE]: result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid,
             [ERRORS]: result.errors,
-        } as AstKeyFrameRule;
+        } as AstKeyframesRule;
     }
 
     const stack: Token[] = [];

@@ -10,9 +10,8 @@ import type {
     AstAtRule,
     AstComment,
     AstDeclaration,
-    AstKeyFrameRule,
-    AstKeyframesAtRule,
     AstKeyframesRule,
+    AstKeyframesAtRule,
     AstNode,
     AstRule,
     AstRuleList,
@@ -29,23 +28,23 @@ import type {
     FunctionToken,
     GenericVisitorAstNodeHandlerMap,
     GenericVisitorHandler,
+    GenericVisitorResult,
     IdentToken,
     LoadResult,
-    SourceLocation,
     ModuleSyncOptions,
     ParseInfo,
     ParseResult,
     ParseResultStats,
     ParserOptions,
+    ParserSyncOptions,
     PseudoClassToken,
     ResolvedPath,
+    SourceLocation,
     StringToken,
     Token,
     TokenizeResult,
     UrlToken,
     WhitespaceToken,
-    GenericVisitorResult,
-    ParserSyncOptions,
 } from "../../@types/index.d.ts";
 import { ERRORS, LOC, pageMarginBoxType, PARENT, ROOT, STATE, TOKENS, tokensfuncDefMap } from "../syntax/constants.ts";
 import { hash, hashAlgorithms, syncHash } from "../parser/utils/hash.ts";
@@ -67,6 +66,7 @@ import { parseAtRuleFontFeatureValues } from "./utils/at-rule-font-feature-value
 import { matchGenericSyntax } from "./utils/at-rule-generic.ts";
 import { memoize } from "./utils/cache.ts";
 import { SourceFile } from "./source.ts";
+import { dirname } from "../fs/resolve.ts";
 
 function renderTokens(tokens: Token[] | null | undefined, options?: any): string {
     if (tokens == null || tokens.length === 0) return "";
@@ -90,9 +90,7 @@ const BadTokensTypes: EnumToken[] = [
     EnumToken.BadUrlTokenType,
     EnumToken.BadStringTokenType,
 ];
-
-export const atRulesMap: Map<string, EnumToken> = new Map([["keyframes", EnumToken.KeyframesAtRuleNodeType]]);
-
+new Map([["keyframes", EnumToken.KeyframesAtRuleNodeType]]);
 let keyNameCounter: number = 0;
 const forbiddenStartCharacters: number[] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].map((c) =>
     c.charCodeAt(0),
@@ -110,8 +108,6 @@ const forbiddenStartCharacters: number[] = ["0", "1", "2", "3", "4", "5", "6", "
  */
 export const getShortNameGenerator = memoize(
     (localName: string, filePath: string, pattern: string, hashLength = 5): string => {
-        const key = `${localName}_${filePath}_${pattern}_${hashLength}`;
-
         let value: string = keyNameCounter!.toString(36);
         keyNameCounter!++;
 
@@ -517,10 +513,8 @@ export function doParseSync(
         Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
     >;
 
-    const imports: AstAtRule[] = [];
-
     let item: TokenizeResult;
-    let node: AstAtRule | AstRule | AstKeyFrameRule | AstKeyframesAtRule | AstDeclaration | AstComment | null;
+    let node: AstAtRule | AstRule | AstKeyframesRule | AstKeyframesAtRule | AstDeclaration | AstComment | null;
 
     // @ts-ignore ignore error
     let parensMatch: number = 0;
@@ -715,10 +709,8 @@ export function doParseSync(
 
             if (node != null) {
                 if ("chi" in node) {
-                    stack.push(node as AstAtRule | AstRule | AstKeyFrameRule);
+                    stack.push(node as AstAtRule | AstRule | AstKeyframesRule);
                     context = node as AstRuleList;
-                } else if (node.typ == EnumToken.AtRuleNodeType && (node as AstAtRule).nam === "import") {
-                    imports.push(node);
                 }
             } else if (item.token.typ == EnumToken.BlockStartTokenType) {
                 let inBlock: number = 1;
@@ -781,10 +773,6 @@ export function doParseSync(
         node = parseNode(tokens, context, options as ParserOptions, errors, stats, invalidNodes);
 
         if (node != null) {
-            if (node.typ == EnumToken.AtRuleNodeType && "import" === (node as AstAtRule).val) {
-                imports.push(node);
-            }
-
             if ("chi" in node /* && node.typ != EnumToken.InvalidRuleNodeType */) {
                 stack.push(node);
                 context = node as AstRuleList;
@@ -889,7 +877,7 @@ export function doParseSync(
                             continue;
                         }
 
-                        if (replacement == null || replacement == node) {
+                        if (replacement == node) {
                             continue;
                         }
 
@@ -903,7 +891,12 @@ export function doParseSync(
 
                     if (node != result.node) {
                         replaceNodeOrValue(
-                            result.parent as AstRule | AstAtRule | AstKeyframesAtRule | AstKeyFrameRule | AstStyleSheet,
+                            result.parent as
+                                | AstRule
+                                | AstAtRule
+                                | AstKeyframesAtRule
+                                | AstKeyframesRule
+                                | AstStyleSheet,
                             result.node,
                             node,
                         );
@@ -961,7 +954,7 @@ export function doParseSync(
                             continue;
                         }
 
-                        if (replacement == null || replacement == node) {
+                        if (replacement == node) {
                             continue;
                         }
 
@@ -1006,7 +999,7 @@ export function doParseSync(
                                 continue;
                             }
 
-                            if (replacement != null && replacement != node) {
+                            if (replacement != node) {
                                 node = replacement as AstNode;
                             }
                         }
@@ -1048,7 +1041,7 @@ export function doParseSync(
                                     continue;
                                 }
 
-                                if (result != null && result != node) {
+                                if (result != node) {
                                     node = result as Token;
                                 }
 
@@ -1273,7 +1266,7 @@ export function doParseSync(
             if (node.typ == EnumToken.DeclarationNodeType) {
                 if (node.nam.startsWith("--")) {
                     if (!(node.nam in namesMapping)) {
-                        let result =
+                        let value: string =
                             moduleSettings.scoped! & ModuleScopeEnumOptions.Global
                                 ? node.nam
                                 : moduleSettings.generateScopedName!(
@@ -1282,7 +1275,6 @@ export function doParseSync(
                                       moduleSettings.pattern as string,
                                       moduleSettings.hashLength,
                                   );
-                        let value: string = result;
 
                         mapping[node.nam] =
                             "--" +
@@ -1336,7 +1328,7 @@ export function doParseSync(
                                 }
 
                                 if (!((rule as IdentToken).val in mapping)) {
-                                    let result =
+                                    let value: string =
                                         moduleSettings.scoped! & ModuleScopeEnumOptions.Global
                                             ? (rule as IdentToken).val
                                             : moduleSettings.generateScopedName!(
@@ -1345,7 +1337,6 @@ export function doParseSync(
                                                   moduleSettings.pattern as string,
                                                   moduleSettings.hashLength,
                                               );
-                                    let value: string = result;
 
                                     mapping[(rule as DashedIdentToken | IdentToken).val] =
                                         (rule.typ == EnumToken.DashedIdenTokenType ? "--" : "") +
@@ -1552,7 +1543,7 @@ export function doParseSync(
                             ].includes((value as IdentToken).val)
                         ) {
                             if (!((value as IdentToken).val in mapping)) {
-                                const result =
+                                mapping[(value as IdentToken).val] =
                                     moduleSettings.scoped! & ModuleScopeEnumOptions.Global
                                         ? (value as IdentToken).val
                                         : moduleSettings.generateScopedName!(
@@ -1561,7 +1552,6 @@ export function doParseSync(
                                               moduleSettings.pattern as string,
                                               moduleSettings.hashLength,
                                           );
-                                mapping[(value as IdentToken).val] = result;
                                 revMapping[mapping[(value as IdentToken).val]] = (value as IdentToken).val;
                             }
 
@@ -1658,7 +1648,7 @@ export function doParseSync(
                             const val: string = (value as ClassSelectorToken).val.slice(1);
 
                             if (!(val in mapping)) {
-                                const result =
+                                let value: string =
                                     moduleSettings.scoped! & ModuleScopeEnumOptions.Global
                                         ? val
                                         : moduleSettings.generateScopedName!(
@@ -1667,7 +1657,6 @@ export function doParseSync(
                                               moduleSettings.pattern as string,
                                               moduleSettings.hashLength,
                                           );
-                                let value: string = result;
 
                                 mapping[val] =
                                     moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly ||
@@ -1711,7 +1700,7 @@ export function doParseSync(
                             (prefix == "" && value.typ == EnumToken.IdenTokenType)
                         ) {
                             if (!((value as DashedIdentToken | IdentToken).val in mapping)) {
-                                const result =
+                                let val: string =
                                     moduleSettings.scoped! & ModuleScopeEnumOptions.Global
                                         ? (value as DashedIdentToken | IdentToken).val
                                         : moduleSettings.generateScopedName!(
@@ -1720,7 +1709,6 @@ export function doParseSync(
                                               moduleSettings.pattern as string,
                                               moduleSettings.hashLength,
                                           );
-                                let val: string = result;
 
                                 mapping[(value as DashedIdentToken | IdentToken).val] =
                                     prefix +
@@ -1854,7 +1842,7 @@ export async function doParse(
     let tokens: Token[] = [];
     let context: AstRuleList = ast;
 
-    ast[ROOT] = ast;
+    // ast[ROOT] = ast;
 
     ast[LOC] = {
         sta: 0,
@@ -1881,7 +1869,7 @@ export async function doParse(
     const imports: AstAtRule[] = [];
 
     let item: TokenizeResult;
-    let node: AstAtRule | AstRule | AstKeyFrameRule | AstKeyframesAtRule | AstDeclaration | AstComment | null;
+    let node: AstAtRule | AstRule | AstKeyframesRule | AstKeyframesAtRule | AstDeclaration | AstComment | null;
 
     // @ts-ignore ignore error
     let isAsync: boolean = typeof iter[Symbol.asyncIterator] === "function";
@@ -2080,7 +2068,7 @@ export async function doParse(
 
             if (node != null) {
                 if ("chi" in node) {
-                    stack.push(node as AstAtRule | AstRule | AstKeyFrameRule);
+                    stack.push(node as AstAtRule | AstRule | AstKeyframesRule);
                     context = node as AstRuleList;
                 } else if (node.typ == EnumToken.AtRuleNodeType && (node as AstAtRule).nam === "import") {
                     imports.push(node);
@@ -2171,7 +2159,10 @@ export async function doParse(
                 const url: string = token.typ == EnumToken.StringTokenType ? token.val.slice(1, -1) : token.val;
 
                 try {
-                    const src = options.resolve!(url, options.src || (options.cwd as string)) as ResolvedPath;
+                    const src = options.resolve!(
+                        url,
+                        options.src ? dirname(options.src as string) : (options.cwd as string),
+                    ) as ResolvedPath;
                     const result = options.load!(src) as LoadResult;
                     const stream =
                         result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
@@ -2222,6 +2213,26 @@ export async function doParse(
 
     let replacement: GenericVisitorResult<T>;
     let callable: GenericVisitorHandler<T>;
+
+    while (stack.length > 0 && context != ast) {
+        const previousNode: AstAtRule | AstRule = stack.pop() as AstAtRule | AstRule;
+        context = (stack[stack.length - 1] ?? ast) as AstRuleList;
+
+        previousNode[PARENT] = context;
+
+        // remove empty nodes
+        if (
+            options.removeEmpty &&
+            previousNode != null &&
+            previousNode.chi!.length == 0 &&
+            context.chi![context.chi!.length - 1] == previousNode
+        ) {
+            context.chi!.pop();
+            continue;
+        }
+
+        break;
+    }
 
     if (options.visitor != null) {
         let parens: Token[] | null;
@@ -2329,7 +2340,12 @@ export async function doParse(
 
                     if (node != result.node) {
                         replaceNodeOrValue(
-                            result.parent as AstRule | AstAtRule | AstKeyframesAtRule | AstKeyFrameRule | AstStyleSheet,
+                            result.parent as
+                                | AstRule
+                                | AstAtRule
+                                | AstKeyframesAtRule
+                                | AstKeyframesRule
+                                | AstStyleSheet,
                             result.node,
                             node,
                         );
@@ -2531,24 +2547,6 @@ export async function doParse(
                 }
             }
         }
-    }
-
-    while (stack.length > 0 && context != ast) {
-        const previousNode: AstAtRule | AstRule = stack.pop() as AstAtRule | AstRule;
-        context = (stack[stack.length - 1] ?? ast) as AstRuleList;
-
-        // remove empty nodes
-        if (
-            options.removeEmpty &&
-            previousNode != null &&
-            previousNode.chi!.length == 0 &&
-            context.chi![context.chi!.length - 1] == previousNode
-        ) {
-            context.chi!.pop();
-            continue;
-        }
-
-        break;
     }
 
     if (options.minify) {
@@ -2798,6 +2796,8 @@ export async function doParse(
                         continue;
                     }
 
+                    const resolvedSrc = options.resolve!(options.src as string, options.cwd as string);
+
                     for (const token of composeSelectors) {
                         // composes: a b c;
                         if (token.r == null) {
@@ -2887,9 +2887,11 @@ export async function doParse(
                                 }) as ParserOptions,
                             );
 
-                            const srcIndex: string =
-                                (src.relative.startsWith("/") || src.relative.startsWith("../") ? "" : "./") +
-                                src.relative;
+                            let srcIndex: string = options.resolve!(src.absolute, resolvedSrc.absolute).relative;
+
+                            if (!srcIndex.startsWith("/") && !srcIndex.startsWith("../")) {
+                                srcIndex = `./${srcIndex}`;
+                            }
 
                             if (Object.keys(root.mapping as Record<string, string>).length > 0) {
                                 importMapping[srcIndex] = {} as Record<string, string>;
@@ -3216,28 +3218,6 @@ export async function doParse(
                                         ) {
                                             (parent as AstRule)[TOKENS]!.splice(index, 1);
                                         }
-
-                                        // if (val == ":global") {
-                                        //     for (; index < (parent as AstRule)[TOKENS]!.length; index++) {
-                                        //         if (
-                                        //             (parent as AstRule)[TOKENS]![index].typ ==
-                                        //                 EnumToken.CommaTokenType ||
-                                        //             ([
-                                        //                 EnumToken.PseudoClassFuncTokenType,
-                                        //                 EnumToken.PseudoClassTokenType,
-                                        //             ].includes((parent as AstRule)[TOKENS]![index].typ) &&
-                                        //                 [":global", ":local"].includes(
-                                        //                     (
-                                        //                         (parent as AstRule)[TOKENS]![index] as PseudoClassToken
-                                        //                     ).val.toLowerCase(),
-                                        //                 ))
-                                        //         ) {
-                                        //             break;
-                                        //         }
-
-                                        //         global.add((parent as AstRule)[TOKENS]![index]);
-                                        //     }
-                                        // }
                                     }
 
                                     break;
@@ -3257,13 +3237,6 @@ export async function doParse(
                                     );
 
                                     break;
-                                // (parent as AstRule)[TOKENS]!.splice(
-                                //     (parent as AstRule)[TOKENS]!.indexOf(value),
-                                //     1,
-                                //     ...(value as FunctionToken).chi,
-                                // );
-
-                                // break;
                             }
                         }
                     },
@@ -3441,7 +3414,7 @@ function parseNode(
     errors: ErrorDescription[],
     stats: ParseResultStats,
     invalidNodes: AstNode[],
-): AstRule | AstAtRule | AstKeyFrameRule | AstKeyframesAtRule | AstDeclaration | AstComment | null {
+): AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule | AstDeclaration | AstComment | null {
     let i: number = 0;
 
     if (tokens.at(-1)?.typ === EnumToken.EOFTokenType) {
@@ -3652,6 +3625,8 @@ function parseNode(
 }
 
 /**
+ * @param stream
+ * @param context
  * @param options
  * @param errors
  * @param parseAsBlock
@@ -3750,7 +3725,6 @@ export function parseAtRule(
     }
 
     if (syntax != null && atRule.nam !== "layer" && parseAsBlock !== blockAllowed) {
-        success = false;
         errors.push({
             action: "drop",
             node: atRule,
@@ -4333,7 +4307,7 @@ export function parseAtRule(
                     action: "drop",
                     node: atRule,
                     location: options.source!.getSourceLocation(atRule[LOC]!.sta),
-                    message: "node is allowd only in @page rule",
+                    message: "node is allowed only in @page rule",
                 });
             } else {
                 trimArray(stream);
@@ -4498,9 +4472,6 @@ export function parseAtRule(
                 if (result.errors.length > 0) {
                     errors.push(...result.errors);
                 }
-                // else if (atRuleName === "document") {
-                //     parseUrlToken(stream);
-                // }
 
                 if (result.success) {
                     let i: number = 0;

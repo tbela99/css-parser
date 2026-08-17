@@ -29,13 +29,16 @@ const features = Object.values(index).sort((a, b) => a.ordering - b.ordering);
  * @param errors
  * @param nestingContent
  *
+ * @param context
  * @private
  */
-function minify(ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
+function minify(ast, opt = {}, recursive = false, errors, nestingContent, context = {}) {
     let preprocess = false;
     let postprocess = false;
     let parents;
     let replacement;
+    // @ts-ignore
+    let { sourcemap, module, ...options } = opt;
     if (!("features" in options)) {
         // @ts-ignore
         options = {
@@ -232,9 +235,9 @@ function transformAtRuleMediaPrelude(values) {
  * Minify at-rule media
  * - remove redundant tokens
  * - generate range queries
- * @param ast
  *
  * @private
+ * @param tokens
  */
 function minifyAtRuleMedia(tokens) {
     let hasUpdates = false;
@@ -332,7 +335,6 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
             }
             while (previous?.typ === EnumToken.CommentNodeType) {
                 previous = ast.chi[--nodeIndex];
-                continue;
             }
             node = ast.chi[i];
             if (node.typ === EnumToken.AtRuleNodeType && node.nam === "font-face") {
@@ -803,7 +805,9 @@ function optimizeSelector(selector) {
         }
         break;
     }
-    selector.forEach((selector) => selector.splice(0, optimized.length));
+    for (let i1 = 0; i1 < selector.length; i1++) {
+        selector[i1].splice(0, optimized.length);
+    }
     let reducible = optimized.length == 1;
     if (optimized[0] == "&") {
         if (optimized[1] == " ") {
@@ -1185,7 +1189,6 @@ function wrapNodes(previous, node, match, ast, reducer, i, nodeIndex) {
  * Diff nodes
  * @param n1
  * @param n2
- * @param reducer
  * @param options
  *
  * @private
@@ -1304,17 +1307,36 @@ function diff(n1, n2, options = {}) {
             // @ts-ignore
             chi: intersect.reverse(),
         };
+    let op = { level: 0, ...options };
     if (result == null ||
         [n1, n2].reduce((acc, curr) => {
             let css = options.cache.get(curr);
             if (css == null) {
-                css = doRender(curr, options).code;
+                let level = 0;
+                let parent = curr[PARENT];
+                while (parent != null && parent.typ != EnumToken.StyleSheetNodeType) {
+                    level++;
+                    parent = parent[PARENT];
+                }
+                op.level = level;
+                css = doRender(curr, op).code;
                 options.cache.set(curr, css);
             }
             return curr.chi.length == 0 ? acc : acc + css.length;
         }, 0) <=
             [node1, node2, result].reduce((acc, curr) => {
-                const css = doRender(curr, options).code;
+                let css = options.cache.get(curr);
+                if (css != null) {
+                    return curr.chi.length == 0 ? acc : acc + css.length;
+                }
+                let level = 0;
+                let parent = curr[PARENT];
+                while (parent != null && parent.typ != EnumToken.StyleSheetNodeType) {
+                    level++;
+                    parent = parent[PARENT];
+                }
+                op.level = level;
+                css = doRender(curr, op).code;
                 return curr.chi.length == 0 ? acc : acc + css.length;
             }, 0)) {
         if (node1.chi.length != 0 && node2.chi.length != 0) {

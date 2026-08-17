@@ -378,7 +378,7 @@ function next(parseInfo, count = 1) {
     return char;
 }
 /**
- * Tokenize css string
+ * Tokenize CSS string
  * @param parseInfo
  * @param yieldEOFToken
  */
@@ -405,8 +405,6 @@ function tokenize(parseInfo, yieldEOFToken = true) {
     parseInfo.buffer = "";
     while ((value = peek(parseInfo))) {
         charCode = value.charCodeAt(0);
-        // nextCharCode = nextValue.charCodeAt(0);
-        // console.debug({value, buffer});
         switch (charCode) {
             case 61 /* TokenMap.EQUALS */:
                 if (buffer.length > 0) {
@@ -771,10 +769,6 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                     break;
                 }
                 buffer += value + next(parseInfo);
-                // buffer +=
-                //     (parseInfo.offset == parseInfo.currentPosition
-                //         ? parseInfo.buffer.slice(-1)
-                //         : parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset - 1)) + value;
                 break;
             case 39 /* TokenMap.SINGLE_QUOTE */:
             case 34 /* TokenMap.DOUBLE_QUOTE */:

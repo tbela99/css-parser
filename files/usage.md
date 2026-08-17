@@ -380,35 +380,6 @@ button {
  }
 }
 ```
-## Sourcemaps
-
-**CSS-Parser** supports generating sourcemaps. When the `output` parameter is provided, sourcemap file paths are resolved relative to the specified output file.
-
-
-```ts
-
-import {transform} from '@tbela99/css-parser';
-
-const css = `
-@import 'styles.css';
-button {
-	background: linear-gradient(
-		if(media(min-width: 768px): to right; else: to bottom),
-		if(style(--dark-mode): #333; else: #fff),
-		if(style(--dark-mode): #000; else: #ccc)
-	);
-}`;
-
-result = await transform(css, {
-
-    beautify: true,
-    sourcemap: true,
-    resolveImport: true,
-    output: 'dist/doc.html'
-});
-
-console.log(result.map.toJSON());
-```
 
 ## Difference Between Sync and Async APIs
 

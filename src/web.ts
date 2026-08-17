@@ -22,6 +22,7 @@ import { tokenize, tokenizeStream } from "./lib/parser/tokenize.ts";
 import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
 import { ResponseType } from "./types.ts";
 import { SourceFile } from "./lib/parser/source.ts";
+import { parseResult } from "./utils.ts";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -72,7 +73,7 @@ export { dirname, resolve, ResponseType };
  * @throws Error file not found
  *
  * ```ts
- * import {load, ResponseType} from '@tbela99/css-parser';
+ * import {load, ResponseType} from '@tbela99/css-parser/web';
  * const result = await load(file, '.', ResponseType.ArrayBuffer) as ArrayBuffer;
  * ```
  */
@@ -122,7 +123,7 @@ export async function load(
  *
  * ```ts
  *
- *  import {render, ColorType} from '@tbela99/css-parser';
+ *  import {render, ColorType} from '@tbela99/css-parser/web';
  *
  *  const css = 'body { color: color(from hsl(0 100% 50%) xyz x y z); }';
  *  const parseResult = await parse(css);
@@ -207,11 +208,24 @@ export async function parseFile(
  *
  * ```ts
  *
- * import {parseSync} from '@tbela99/css-parser';
+ * import {parseSync} from '@tbela99/css-parser/web';
  *
  *  // css string
  *  let result = await parseSync(css, {nestingRules: true});
  *  console.log(result.ast);
+ * ```
+ *
+ * parsing a ReadableStream
+ *
+ * ```ts
+ *
+ * import {parseSync} from '@tbela99/css-parser/web';
+ *
+ * const response = await fetch('https://docs.deno.com/styles.css');
+ *
+ *  // css string
+ *  const result = parseSync(response.body, {beautify: true});
+ *  console.log(result.code);
  * ```
  *
  */
@@ -220,18 +234,30 @@ export function parseSync(stream: string, options?: ParserSyncOptions): ParseRes
 
 /**
  * Parse css string
- * @param stream
  * @param options
  *
  * Parsing a string
  *
  * ```ts
  *
- * import {parseSync} from '@tbela99/css-parser';
+ * import {parseSync} from '@tbela99/css-parser/web';
  *
  *  // css string
- *  let result = await parseSync({input: css, nestingRules: true});
+ *  let result = parseSync({input: css, nestingRules: true});
  *  console.log(result.ast);
+ * ```
+ *
+ * parsing a ReadableStream
+ *
+ * ```ts
+ *
+ * import {parseSync} from '@tbela99/css-parser/web';
+ *
+ * const response = await fetch('https://docs.deno.com/styles.css');
+ *
+ *  // css string
+ *  const result = parseSync({input: response.body, beautify: true});
+ *  console.log(result.code);
  * ```
  *
  */
@@ -241,12 +267,13 @@ export function parseSync(options: ParseInputOptions & ParserSyncOptions): Parse
 /**
  * Parse css
  * @param args
+ * @private
  *
  * Parsing a string
  *
  * ```ts
  *
- * import {parseSync} from '@tbela99/css-parser';
+ * import {parseSync} from '@tbela99/css-parser/web';
  *
  *  // css string
  *  let result = await parseSync(css, {nestingRules: true});
@@ -273,7 +300,7 @@ export function parseSync(
 
     options ??= {};
     options.src ??= "";
-    options.sourcesMap ??= new Map;
+    options.sourcesMap ??= new Map();
 
     Object.assign(options, {
         resolve,
@@ -287,7 +314,7 @@ export function parseSync(
     options.src = resolve(options.src!, options.cwd).relative;
 
     if (options.source == null) {
-        const source = new SourceFile(typeof stream == "string" ? stream : "", [], options.src)
+        const source = new SourceFile(typeof stream == "string" ? stream : "", [], options.src);
         options.sourcesMap.set(source.id, source);
         options.source = source;
     }
@@ -304,20 +331,19 @@ export function parseSync(
     } as ParseInfo;
 
     const result = doParseSync(tokenize(options.parseInfo), options);
-
-    const { revMapping, ...res } = result;
-    return res as ParseResult;
+    return !options.module && !options.inputSourceMap ? result : parseResult(result, options);
 }
 
 /**
  * Transform css
  * @param css
  * @param options
+ * @private
  *
  *
  * ```ts
  *
- * import {transformSync} from '@tbela99/css-parser';
+ * import {transformSync} from '@tbela99/css-parser/web';
  *
  *  // css string
  *  const result = transformSync(css, {beautify: true});
@@ -331,9 +357,11 @@ export function transformSync(css: string, options?: TransformSyncOptions): Tran
  * Transform css
  * @param options
  *
+ * parsing a string
+ *
  * ```ts
  *
- * import {transformSync} from '@tbela99/css-parser';
+ * import {transformSync} from '@tbela99/css-parser/web';
  *
  *  // css string
  *  const result = transformSync({input: css, beautify: true});
@@ -344,25 +372,25 @@ export function transformSync(css: string, options?: TransformSyncOptions): Tran
 export function transformSync(options: ParseInputOptions & TransformSyncOptions): TransformResult;
 
 /**
- * Transform css
- * @param css
- * @param options
+ * Transform CSS
  *
  * ```ts
  *
- * import {transformSync} from '@tbela99/css-parser';
+ * import {transformSync} from '@tbela99/css-parser/web';
  *
  *  // css string
  *  const result = transformSync(css);
  *  console.log(result.code);
  * ```
  *
+ * @param args
+ * @private
  */
 export function transformSync(
     ...args: [string, TransformSyncOptions?] | [ParseInputOptions & TransformSyncOptions]
 ): TransformResult {
     let options: (ParseInputOptions & TransformSyncOptions) | TransformSyncOptions;
-    let stream: string;
+    let stream: string | ReadableStream<Uint8Array>;
 
     if (typeof args[0] === "string") {
         stream = args[0];
@@ -419,14 +447,102 @@ export function transformSync(
     } as TransformResult;
 }
 
+/**
+ * Parse CSS
+ * @param stream
+ * @param options
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser/web';
+ *
+ *  // css string
+ *  let result = await parse(css);
+ *  console.log(result.ast);
+ * ```
+ *
+ * Parse a file as a ReadableStream
+ *
+ * ```ts
+ *
+ *  import {parse} from '@tbela99/css-parser/web';
+ *
+ *  const response = await fetch('https://docs.deno.com/styles.css');
+ *  const result = await parse(response.body, {beautify: true});
+ *
+ *  console.log(result.ast);
+ * ```
+ */
+
 export async function parse(stream: string | ReadableStream<Uint8Array>, options?: ParserOptions): Promise<ParseResult>;
+
+/**
+ * Parse css
+ * @param options
+ *
+ * @throws Error file not found
+ *
+ * Parsing a file
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser/web';
+ *
+ * const file = 'https://docs.deno.com/styles.css';
+ *  // css file or url
+ *  let result = await parse({file});
+ *  console.log(result.ast);
+ * ```
+ *
+ * Parsing a file as stream
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser/web';
+ *
+ *  const file = 'https://docs.deno.com/styles.css';
+ *  let result = await parse({file, asStream: true, beautify: true});
+ *
+ *  console.log(result.ast);
+ * ```
+ *
+ */
 export async function parse(options: ParseInputFileOptions & ParserOptions): Promise<ParseResult>;
+
+/**
+ * Parse css
+ * @param options
+ *
+ * Parsing a string
+ *
+ * ```ts
+ *
+ * import {parse} from '@tbela99/css-parser/web';
+ *
+ *  // css string
+ *  let result = await parse({input:css});
+ *  console.log(result.ast);
+ * ```
+ *
+ * Parsing a Readable stream
+ * Parsing a file as a ReadableStream
+ *
+ * ```ts
+ *
+ *  import {parse} from '@tbela99/css-parser/web';
+ *
+ *  const response = await fetch('https://docs.deno.com/styles.css');
+ *  const result = await parse({input: response.body, beautify: true});
+ *
+ *  console.log(result.ast);
+ * ```
+ */
 export async function parse(options: ParseInputStreamOptions & ParserOptions): Promise<ParseResult>;
 
 /**
  * Parse css
- * @param stream
- * @param options
  *
  * Example:
  *
@@ -450,6 +566,8 @@ export async function parse(options: ParseInputStreamOptions & ParserOptions): P
  *
  *  console.log(result.ast);
  * ```
+ * @param args
+ * @private
  */
 export async function parse(
     ...args:
@@ -484,7 +602,7 @@ export async function parse(
 
     options ??= {};
     options.src ??= "";
-    options.sourcesMap ??= new Map;
+    options.sourcesMap ??= new Map();
 
     Object.assign(options, {
         load,
@@ -499,7 +617,7 @@ export async function parse(
     options.src = resolve(options.src!, options.cwd).relative;
 
     if (options.source == null) {
-        const source = new SourceFile(typeof stream === "string" ? stream : "", [], options.src)
+        const source = new SourceFile(typeof stream === "string" ? stream : "", [], options.src);
         options.sourcesMap.set(source.id, source);
         options.source = source;
     }
@@ -517,14 +635,11 @@ export async function parse(
     return doParse(
         stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo),
         options,
-    ).then((result) => {
-        const { revMapping, ...res } = result;
-        return res as ParseResult;
-    });
+    ).then((result) => (!options.module && !options.inputSourceMap ? result : parseResult(result, options)));
 }
 
 /**
- * Transform css file
+ * Transform CSS file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
@@ -561,18 +676,87 @@ export async function transformFile(
     });
 }
 
+/**
+ * Transform CSS
+ * @param css
+ * @param options
+ *
+ * Parsing a string
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser/web';
+ *
+ *  // css string
+ *  const result = await transform(css);
+ *  console.log(result.code);
+ * ```
+ *
+ * Parsing a Readable stream
+ *
+ * ```ts
+ *
+ *  import {transform} from '@tbela99/css-parser/web';
+ *
+ *  const response = await fetch('https://docs.deno.com/styles.css');
+ *  result = await transform(response.body, {beautify: true});
+ *
+ *  console.log(result.code);
+ * ```
+ */
 export async function transform(
     css: string | ReadableStream<Uint8Array>,
     options: TransformOptions,
 ): Promise<TransformResult>;
 
-export async function transform(options: ParseInputFileOptions & TransformOptions): Promise<TransformResult>;
+/**
+ * Transform CSS
+ * @param options
+ *
+ * Parsing a string
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser/web';
+ *
+ *  // css string
+ *  const result = await transform({input: css}); // or transform(css)
+ *  console.log(result.code);
+ * ```
+ *
+ * Parsing a file as a Readable stream
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser/web';
+ *
+ *  const response = await fetch('https://docs.deno.com/styles.css');
+ *  const result = await transform( {input: response.body, beautify: true});
+ *
+ *  console.log(result.code);
+ * ```
+ *
+ */
 export async function transform(options: ParseInputStreamOptions & TransformOptions): Promise<TransformResult>;
 
 /**
- * Transform css
- * @param css
+ * Transform CSS
  * @param options
+ *
+ * Parsing a file
+ *
+ * ```ts
+ *
+ * import {transform} from '@tbela99/css-parser/web';
+ *
+ *  const result = await transform( {file: 'https://docs.deno.com/styles.css', beautify: true});
+ *  console.log(result.code);
+ * ```
+ */
+export async function transform(options: ParseInputFileOptions & TransformOptions): Promise<TransformResult>;
+
+/**
+ * Transform css
  *
  * Example:
  *
@@ -590,6 +774,8 @@ export async function transform(options: ParseInputStreamOptions & TransformOpti
  *
  *  console.log(result.code);
  * ```
+ * @param args
+ * @private
  */
 export async function transform(
     ...args:

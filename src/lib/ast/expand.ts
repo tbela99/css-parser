@@ -1,5 +1,5 @@
 import { splitRule } from "./minify.ts";
-import { combinators, RAW } from "../syntax/constants.ts";
+import { combinators, PARENT, RAW } from "../syntax/constants.ts";
 import { parseString } from "../parser/parse.ts";
 import { walkValues } from "./walk.ts";
 import { renderValue } from "../renderer/render.ts";
@@ -14,13 +14,20 @@ import { EnumToken } from "./types.ts";
  */
 export function expand(ast: AstStyleSheet | AstAtRule | AstRule): AstNode {
     const result = <AstStyleSheet | AstAtRule>{ ...ast, chi: [] };
+    let children: AstNode[];
 
     for (let i = 0; i < ast.chi!.length; i++) {
-        const node = ast.chi![i];
+        let node = ast.chi![i];
 
         if (node.typ === EnumToken.RuleNodeType) {
+            children = expandRule(node as AstRule);
+
+            for (const child of children) {
+                child[PARENT] = result;
+            }
+
             // @ts-ignore
-            result.chi.push(...expandRule(<AstRule>node));
+            result.chi.push(...children);
         } else if (node.typ == EnumToken.AtRuleNodeType && "chi" in node) {
             let hasRule: boolean = false;
             let j: number = node!.chi!.length;
@@ -33,10 +40,25 @@ export function expand(ast: AstStyleSheet | AstAtRule | AstRule): AstNode {
                 }
             }
 
-            // @ts-ignore
-            result.chi.push(<AstAtRule>{ ...(hasRule ? expand(node) : node) });
+            if (hasRule) {
+                node = expand(node as AstRule);
+
+                for (const child of node.chi) {
+                    child[PARENT] = result;
+                }
+
+                node[PARENT] = result;
+                // @ts-ignore
+                result.chi.push(node);
+            } else {
+                node[PARENT] = result;
+                // @ts-ignore
+                result.chi.push(node);
+            }
         } else {
+            node[PARENT] = result;
             // @ts-ignore
+
             result.chi!.push(node);
         }
     }
@@ -70,9 +92,10 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                         continue;
                     }
 
-                    selRule.forEach((arr) =>
-                        combinators.includes(arr[0].charAt(0)) ? arr.unshift(arSelf) : arr.unshift(arSelf, " "),
-                    );
+                    for (let i1 = 0; i1 < selRule.length; i1++) {
+                        const arr = selRule[i1];
+                        combinators.includes(arr[0].charAt(0)) ? arr.unshift(arSelf) : arr.unshift(arSelf, " ");
+                    }
 
                     rule.sel = selRule
                         .reduce(
@@ -84,8 +107,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                             <string[]>[],
                         )
                         .join(",");
-
-                    } else {
+                } else {
                     let childSelectorCompound: string[] = [];
                     let withCompound: string[] = [];
                     let withoutCompound: string[] = [];
@@ -102,7 +124,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                         continue;
                     }
 
-                    for (const sel of rule[RAW]?? splitRule(rule.sel)) {
+                    for (const sel of rule[RAW] ?? splitRule(rule.sel)) {
                         const s: string = sel.join("");
 
                         if (s.includes("&") || parentSelector) {

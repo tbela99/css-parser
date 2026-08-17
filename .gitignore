@@ -5,6 +5,7 @@
 /ROADMAP.draft.md
 /.idea
 /.DS_Store
+/benchmark
 /ROADMAP.md
 /package-lock.json
 test/*.ts

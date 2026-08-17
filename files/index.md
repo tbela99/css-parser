@@ -9,6 +9,8 @@ children:
     - ./css-module.md
     - ./minification.md
     - ./transform.md
+    - ./sourcemap.md
+    - ./plugins.md
     - ./syntax-lowering.md
     - ./ast.md
     - ./utilities.md
@@ -22,6 +24,8 @@ children:
 - [CSS Modules](./css-module.md)
 - [Minification](./minification.md)
 - [Custom Transform](./transform.md)
+- [Sourcemap](./sourcemap.md)
+- [Plugins API](./plugins.md)
 - [Syntax Lowering](./syntax-lowering.md)
 - [Ast Manipulation](./ast.md)
 - [Utility Functions](./utilities.md)

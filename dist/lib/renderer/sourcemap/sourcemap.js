@@ -1,10 +1,14 @@
-import { encode } from './lib/encode.js';
+import { decode, encode } from './lib/codec.js';
 
 /**
- * Source map class
- * @internal
+ * Generate and parse source map
  */
 class SourceMap {
+    /**
+     *
+     * @private
+     */
+    keys = new Set();
     /**
      * Last location
      */
@@ -20,6 +24,11 @@ class SourceMap {
      */
     sourcesMap = [];
     /**
+     * Sources content
+     * @private
+     */
+    sourcesContent = [];
+    /**
      * Sources
      * @private
      */
@@ -27,52 +36,165 @@ class SourceMap {
     /**
      * Map
      * @private
+     *
      */
     map = new Map();
+    /**
+     * Map
+     * @private
+     *
+     */
+    reverseMap = new Map();
     /**
      * Line
      * @private
      */
     line = -1;
     /**
-     * Add a location
-     * @param source
-     * @param original
+     *
+     * @param sourcemaps
      */
-    add(newLine, newColumn, srcId, ln, col, sourceFileName, sourceContent) {
-        if (!this.sourcesMap.includes(srcId)) {
-            if (sourceFileName == null && sourceContent != null) {
-                sourceFileName = "data:text/css;charset=utf-8;base64," + btoa(sourceContent);
+    constructor(sourcemaps) {
+        if (typeof sourcemaps === "string") {
+            sourcemaps = JSON.parse(sourcemaps);
+        }
+        if (sourcemaps != null) {
+            this.sources = sourcemaps.sources?.slice() ?? [];
+            this.sourcesContent = sourcemaps.sourcesContent?.slice() ?? [];
+            const decodedMappings = sourcemaps.mappings
+                .split(";")
+                .map((mapping) => mapping.split(",").map((mapping) => decode(mapping)));
+            this.line = decodedMappings.length - 1;
+            for (let index = 0; index < decodedMappings.length; index++) {
+                if (decodedMappings[index].length == 0 ||
+                    (decodedMappings[index].length == 1 && decodedMappings[index][0].length == 0)) {
+                    continue;
+                }
+                this.map.set(index, decodedMappings[index]);
             }
-            this.sourcesMap.push(srcId);
-            this.sources.push(sourceFileName || null);
+            this.computePositions();
         }
-        const line = newLine - 1;
-        let record;
-        if (line > this.line) {
-            this.line = line;
+    }
+    /**
+     * Add all location
+     * @param maps
+     */
+    addAll(maps) {
+        for (let [newLine, newColumn, srcId, ln, col, sourceFileName, sourceContent] of maps) {
+            const key = `${srcId}:${ln}:${sourceFileName}:${col}:${newLine}:${newColumn}:${sourceContent}`;
+            const sourcemap = `${srcId}:${sourceFileName}:${sourceContent}`;
+            if (this.keys.has(key)) {
+                continue;
+            }
+            this.keys.add(key);
+            if (!this.sourcesMap.includes(sourcemap)) {
+                this.sourcesMap.push(sourcemap);
+                this.sources.push(sourceFileName || null);
+                this.sourcesContent.push((sourceFileName != null ? null : sourceContent) || null);
+            }
+            const line = newLine - 1;
+            let record;
+            if (line > this.line) {
+                this.line = line;
+            }
+            if (!this.map.has(line)) {
+                record = [Math.max(0, newColumn - 1), this.sourcesMap.indexOf(sourcemap), ln - 1, col - 1];
+                this.map.set(line, [record]);
+            }
+            else {
+                const arr = this.map.get(line);
+                record = [
+                    Math.max(0, newColumn - 1) - arr[0][0],
+                    this.sourcesMap.indexOf(sourcemap) - arr[0][1],
+                    ln - 1,
+                    col - 1,
+                ];
+                arr.push(record);
+            }
+            if (this.lastLocation != null) {
+                record[2] -= this.lastLocation.ln - 1;
+                record[3] -= this.lastLocation.col - 1;
+            }
+            this.lastLocation ??= { ln, col };
+            this.lastLocation.ln = ln;
+            this.lastLocation.col = col;
         }
-        if (!this.map.has(line)) {
-            record = [Math.max(0, newColumn - 1), this.sourcesMap.indexOf(srcId), ln - 1, col - 1];
-            this.map.set(line, [record]);
+    }
+    /**
+     * compute original positions
+     */
+    computePositions() {
+        this.reverseMap.clear();
+        let sourceFileIndex = 0; // second field
+        let sourceCodeLine = 0; // third field
+        let sourceCodeColumn = 0; // fourth field
+        let nameIndex = 0; // fifth field
+        let generatedCodeColumn;
+        let result;
+        // mappings to original source
+        for (let [i, line] of this.map.entries()) {
+            if (line.length === 0 || (line.length === 1 && line[0].length === 0)) {
+                continue;
+            }
+            generatedCodeColumn = line[0][0]; // first field - reset each time
+            line = line
+                .map((segment, index, array) => {
+                if (segment.length === 0) {
+                    return [];
+                }
+                generatedCodeColumn = index == 0 ? segment[0] : segment[0] + array[0][0];
+                result = [generatedCodeColumn];
+                if (segment.length <= 1) {
+                    return result;
+                }
+                sourceFileIndex = index == 0 ? segment[1] : segment[1] + array[0][1];
+                sourceCodeLine += segment[2];
+                sourceCodeColumn += segment[3];
+                result.push(sourceFileIndex, sourceCodeLine, sourceCodeColumn);
+                if (segment.length === 5) {
+                    nameIndex += segment[4];
+                    result.push(nameIndex);
+                }
+                return result;
+            })
+                .sort((a, b) => {
+                if (a[1] !== b[1]) {
+                    return a[1] - b[1];
+                }
+                return a[0] - b[0];
+            });
+            if (line.length == 0 || (line.length == 1 && line[0].length == 0)) {
+                continue;
+            }
+            this.reverseMap.set(i, line);
         }
-        else {
-            const arr = this.map.get(line);
-            record = [
-                Math.max(0, newColumn - 1 - arr[0][0]),
-                this.sourcesMap.indexOf(srcId) - arr[0][1],
-                ln - 1,
-                col - 1,
-            ];
-            arr.push(record);
+    }
+    /**
+     * retrieve original sources, lines and columns
+     * @param line generated line
+     * @param column generated column
+     */
+    find(line, column) {
+        if (!this.reverseMap.has(--line)) {
+            return null;
         }
-        if (this.lastLocation != null) {
-            record[2] -= this.lastLocation.ln - 1;
-            record[3] -= this.lastLocation.col - 1;
+        column--;
+        const result = [];
+        for (const record of this.reverseMap.get(line)) {
+            if (record.length == 0 || record[0] < column) {
+                continue;
+            }
+            if (record[0] > column) {
+                break;
+            }
+            result.push([
+                this.sources?.[record[1]] ?? null,
+                record[2] + 1,
+                record[3] + 1,
+                this.sourcesContent?.[record[1]] ?? null,
+            ]);
         }
-        this.lastLocation ??= { ln, col };
-        this.lastLocation.ln = ln;
-        this.lastLocation.col = col;
+        return result.length == 0 ? null : result;
     }
     /**
      * Convert to URL encoded string
@@ -98,8 +220,15 @@ class SourceMap {
         return {
             version: this.version,
             sources: this.sources.slice(),
+            sourcesContent: this.sourcesContent?.slice(),
             mappings: mappings.join(";"),
         };
+    }
+    /**
+     * to string
+     */
+    toString() {
+        return JSON.stringify(this);
     }
 }
 

@@ -5,7 +5,7 @@ import { walk, walkValues } from "./walk.ts";
 import { PARENT, TOKENS } from "../syntax/constants.ts";
 
 /**
- * Search the ast sub-tree and return the first match
+ * Search the ast subtree and return the first match
  * 
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'
@@ -46,6 +46,11 @@ export function find(ast: AstNode, matcher: (node: AstNode, parent?: AstNode | n
 }
 
 /**
+ *
+ * @param ast 
+ * @param matcher 
+ * @returns 
+ * 
  * Search the ast sub-tree by checking each node's value token and return the first match
  * 
  ```ts
@@ -71,10 +76,6 @@ button {
      console.log({node, value});
  
     ```
- *
- * @param ast 
- * @param matcher 
- * @returns 
  */
 export function findByValue(
     ast: AstNode,

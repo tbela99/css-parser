@@ -1,9 +1,8 @@
 import type {
     AstAtRule,
     AstDeclaration,
-    AstKeyFrameRule,
-    AstKeyframesAtRule,
     AstKeyframesRule,
+    AstKeyframesAtRule,
     AstNode,
     AstRule,
 } from "../../../@types/ast.d.ts";
@@ -81,7 +80,7 @@ export function replaceNodeOrValue(
                           | ParensToken
                           | AstAtRule
                           | AstKeyframesAtRule
-                          | AstKeyFrameRule
+                          | AstKeyframesRule
                           | AstRule
                           | AstKeyframesRule
                   ).chi as Token[]) ?? parent);

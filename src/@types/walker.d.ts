@@ -33,18 +33,54 @@ export declare type WalkerValueFilter = (
     parents?: Generator<Token>,
 ) => WalkerOption | null;
 
+/**
+ * walker result
+ */
 export declare interface WalkResult {
+    /**
+     * current node
+     */
     node: AstNode;
+    /**
+     * parent node
+     */
     parent?: AstRuleList;
+    /**
+     * root node
+     */
     root?: AstNode;
+    /**
+     * parent nodes
+     */
     parents: Generator<AstNode>;
 }
 
+/**
+ * walker result
+ */
 export declare interface WalkAttributesResult {
+    /**
+     * current node
+     */
     value: Token;
+    /**
+     * previous node
+     */
     previousValue: Token | null;
+    /**
+     * next node
+     */
     nextValue: Token | null;
+    /**
+     * root node
+     */
     root?: AstNode | Token | null;
+    /**
+     * parent node
+     */
     parent: AstNode | Token | null;
+    /**
+     * parent nodes
+     */
     parents: Generator<Token>;
 }

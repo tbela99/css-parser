@@ -1,8 +1,9 @@
 
 export function run(describe, expect, it, transform, parse, render, dirname) {
 
+    const url = new URL(dirname(import.meta.url) + '/../../files/css/color.css?v=1');
     const atRule = `
-@import '${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)).replace(/\\/g, '/') + '/../../files/css/color.css?v=1'}';
+@import '${url.pathname}';
 abbr[title], abbr[data-original-title] {
     text-decoration: underline dotted;
     -webkit-text-decoration: underline dotted;

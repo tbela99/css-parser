@@ -1,5 +1,8 @@
 import { memoize } from '../parser/utils/cache.js';
 
+/**
+ * match url
+ */
 const matchUrl = /^(https?:)?\/\//;
 /**
  * return the directory name of a path
@@ -10,6 +13,9 @@ const matchUrl = /^(https?:)?\/\//;
 function dirname(path) {
     if (path === "") {
         return "";
+    }
+    if (path.startsWith("data:")) {
+        return path;
     }
     let i = 0;
     let parts = [""];
@@ -34,10 +40,7 @@ function splitPath(result) {
     if (result.length == 0) {
         return { parts: [], i: 0 };
     }
-    // if (result === "/") {
-    //     return { parts: ["/"], i: 0 };
-    // }
-    const parts = [""];
+    const parts = result == "/" ? [] : [""];
     let i = 0;
     for (; i < result.length; i++) {
         const chr = result.charAt(i);
@@ -46,7 +49,7 @@ function splitPath(result) {
         }
         // else if (chr == "?" || chr == "#") {
         //     break;
-        // } 
+        // }
         else {
             parts[parts.length - 1] += chr;
         }
@@ -64,6 +67,8 @@ function splitPath(result) {
 }
 /**
  * Nomalize path
+ * @param path
+ * @private
  */
 const normalize = memoize(function (path) {
     let parts = [];
@@ -92,14 +97,20 @@ const normalize = memoize(function (path) {
     while (++k < parts.length) {
         // if (parts[k] == ".") {
         //     parts.splice(k--, 1);
-        // } else 
-        if (parts[k] == "..") {
+        // } else
+        if (k > 0 && parts[k] == "..") {
             parts.splice(k - 1, 2);
             k -= 2;
         }
     }
     return (path.charAt(0) == "/" ? "/" : "") + parts.join("/");
 });
+/**
+ * diff path
+ * @param path1
+ * @param path2
+ * @private
+ */
 const diff = memoize(function (path1, path2) {
     let { parts } = splitPath(path1);
     const { parts: dirs } = splitPath(path2);
@@ -131,30 +142,51 @@ const resolve = memoize(function (url, currentDirectory, cwd) {
     cwd ??= "";
     currentDirectory ??= "";
     url = normalize(url);
+    if (cwd !== "") {
+        cwd = normalize(cwd);
+    }
     if (currentDirectory !== "") {
         currentDirectory = normalize(currentDirectory);
-        if (url.startsWith(currentDirectory + "/")) {
-            return {
-                absolute: url,
-                relative: url.slice(currentDirectory.length + 1),
-            };
-        }
     }
-    if ((currentDirectory === "" || currentDirectory === ".") && cwd !== "") {
-        cwd = normalize(cwd);
-        if (url.startsWith(cwd == "/" ? cwd : cwd + "/")) {
-            const absolute = url;
-            const prefix = cwd == "/" ? cwd : cwd + "/";
-            return {
-                absolute,
-                relative: absolute.startsWith(prefix) ? absolute.slice(prefix.length) : diff(absolute, cwd),
-            };
-        }
-    }
+    const dir = cwd || currentDirectory;
+    const absolute = dir == "" || url.startsWith("/") ? resolvePath(url) : resolvePath(dir, url);
     return {
-        absolute: url,
-        relative: url === "" ? "" : diff(url, cwd || currentDirectory),
+        absolute,
+        relative: dir === "" ? absolute : diff(absolute, dir),
     };
 });
+/**
+ *
+ * @param parts
+ * @returns
+ * @private
+ */
+function resolvePath(...parts) {
+    const path = parts.filter(Boolean).join("/");
+    const isAbsolute = /^[\\/]/.test(path);
+    const segments = path.split(/[\\/]+/);
+    const resolved = [];
+    for (const segment of segments) {
+        if (!segment || segment === ".") {
+            continue;
+        }
+        if (segment === "..") {
+            if (resolved.length && resolved[resolved.length - 1] !== "..") {
+                resolved.pop();
+            }
+            else if (!isAbsolute) {
+                resolved.push("..");
+            }
+        }
+        else {
+            resolved.push(segment);
+        }
+    }
+    let result = resolved.join("/");
+    if (isAbsolute) {
+        result = "/" + result;
+    }
+    return result || (isAbsolute ? "/" : ".");
+}
 
 export { diff, dirname, matchUrl, normalize, resolve };

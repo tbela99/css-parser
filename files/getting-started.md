@@ -6,9 +6,9 @@ category: Guides
 
 ## About
 
-CSS-Parser is a high-performance, fault-tolerant, and dependency-free CSS toolkit for Node.js and browsers.
+CSS-Parser is a high-performance, fault-tolerant, and dependency-free all-in-one CSS parsing solution for Node.js and browsers.
 
-It implements the [CSS Syntax Module Level 3](https://www.w3.org/TR/css-syntax-3/) specification and validates CSS using syntax rules from [MDN Data](https://github.com/mdn/data).
+It implements the [CSS Syntax Module Level 3](https://www.w3.org/TR/css-syntax-3/) specification and validates CSS using syntax rules from [MDN Data](https://github.com/mdn/data). Every stylesheet is fully parsed into a structured AST, and token values are exposed as typed data so the library can support robust transformations, validation, and plugin-oriented workflows without falling back to raw strings.
 
 In addition to parsing and validation, CSS-Parser provides advanced optimization and minification capabilities. According to [this benchmark](https://tbela99.github.io/css-parser/benchmark/index.html), it is the most efficient CSS minifier available, producing smaller output than competing solutions while maintaining competitive performance.
 
@@ -22,9 +22,11 @@ A non-exhaustive list of features is provided below:
 
 
 * **Zero dependencies** — lightweight and easy to integrate into any project.
+* **All-in-one CSS parsing solution** for parsing, validation, transformation, and minification.
 * **Standards-based CSS validation** powered by MDN data.
 * **Full CSS Modules support** for modern component-based workflows.
-* **Fault-tolerant parsing** that follows the CSS Syntax Module Level 3 specification.
+* **Fault-tolerant parsing** that follows the CSS Syntax Module Level 3 specification and always yields a complete parse tree.
+* **Typed tokens and AST** — parsed CSS is exposed as strongly typed tokens and nodes for safer plugin and transform logic.
 * **High-performance minification** with safe optimizations and no unsafe transforms.
 * **Advanced color processing** with support for modern color spaces and functions, including `color()`, `lab()`, `lch()`, `oklab()`, `oklch()`, `color-mix()`, `light-dark()`, system colors, and relative colors.
 * **Color conversion engine** capable of transforming colors between all supported formats.
@@ -38,7 +40,7 @@ A non-exhaustive list of features is provided below:
 * **CSS variable inlining** where values can be safely resolved.
 * **Duplicate declaration removal** to eliminate redundant rules.
 * **`@import` flattening** to produce self-contained stylesheets.
-* **Experimental vendor prefix cleanup** to modernize generated CSS.
+* **Vendor prefix cleanup** to modernize generated CSS.
 
 ## Installation
 

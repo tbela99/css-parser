@@ -4,7 +4,9 @@
 
 # css-parser
 
-CSS parser, transformer, minifier and validator for node and the browser
+An all-in-one CSS parsing solution for Node.js and the browser, covering parsing, validation, transformation, minification, and AST-based tooling.
+
+The library always fully parses the stylesheet into a structured AST, and token values are exposed as typed data so custom transforms, plugins, and analysis can work with reliable, semantic input instead of raw strings.
 
 ## Installation
 
@@ -23,9 +25,11 @@ $ deno add @tbela99/css-parser
 ## Features
 
 * **Zero dependencies** — lightweight and easy to integrate into any project.
+* **All-in-one CSS parsing solution** covering parsing, validation, transformation, minification, and AST manipulation.
 * **Standards-based CSS validation** powered by MDN data.
 * **Full CSS Modules support** for modern component-based workflows.
-* **Fault-tolerant parsing** that follows the CSS Syntax Module Level 3 specification.
+* **Fault-tolerant parsing** that follows the CSS Syntax Module Level 3 specification and always produces a complete, structured parse result.
+* **Typed tokens and AST** — parsed CSS is exposed as strongly typed tokens and nodes so plugins and transforms can operate on semantic structures.
 * **High-performance minification** with safe optimizations and no unsafe transforms.
 * **Advanced color processing** with support for modern color spaces and functions, including `color()`, `lab()`, `lch()`, `oklab()`, `oklch()`, `color-mix()`, `light-dark()`, system colors, and relative colors.
 * **Color conversion engine** capable of transforming colors between all supported formats.
@@ -39,7 +43,7 @@ $ deno add @tbela99/css-parser
 * **`@import` flattening** to produce self-contained stylesheets.
 
 ## Vendor prefix removal
-**Experimental vendor prefix cleanup** to modernize generated CSS.
+**Vendor prefix cleanup** to modernize generated CSS.
 
 ## Syntax lowering
 CSS-Parser can transform these modern CSS features into lower-level CSS syntax:
@@ -81,6 +85,8 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 - [CSS Modules](https://tbela99.github.io/css-parser/docs/documents/Guide.CSS_Modules.html)
 - [Minification](https://tbela99.github.io/css-parser/docs/documents/Guide.Minification.html)
 - [Custom Transform](https://tbela99.github.io/css-parser/docs/documents/Guide.Custom_Transform.html)
+- [Sourcemap](https://tbela99.github.io/css-parser/docs/documents/Guide.Sourcemap.html)
+- [Plugins API](https://tbela99.github.io/css-parser/docs/documents/Guide.Plugins_API.html)
 - [Syntax Lowering](https://tbela99.github.io/css-parser/docs/documents/Guide.Syntax_Lowering.html)
 - [Ast Manipulation](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast_Manipulation.html)
 - [Utility Functions](https://tbela99.github.io/css-parser/docs/documents/Guide.Utility_Functions.html)

@@ -1,5 +1,8 @@
 import { memoize } from "../parser/utils/cache.ts";
 
+/**
+ * match url
+ */
 export const matchUrl: RegExp = /^(https?:)?\/\//;
 
 /**
@@ -11,6 +14,10 @@ export const matchUrl: RegExp = /^(https?:)?\/\//;
 export function dirname(path: string): string {
     if (path === "") {
         return "";
+    }
+
+    if (path.startsWith("data:")) {
+        return path;
     }
 
     let i: number = 0;
@@ -42,11 +49,7 @@ function splitPath(result: string): { i: number; parts: string[] } {
         return { parts: [], i: 0 };
     }
 
-    // if (result === "/") {
-    //     return { parts: ["/"], i: 0 };
-    // }
-
-    const parts: string[] = [""];
+    const parts: string[] = result == "/" ? [] : [""];
     let i: number = 0;
 
     for (; i < result.length; i++) {
@@ -54,10 +57,10 @@ function splitPath(result: string): { i: number; parts: string[] } {
 
         if (chr == "/") {
             parts.push("");
-        } 
+        }
         // else if (chr == "?" || chr == "#") {
         //     break;
-        // } 
+        // }
         else {
             parts[parts.length - 1] += chr;
         }
@@ -79,6 +82,8 @@ function splitPath(result: string): { i: number; parts: string[] } {
 
 /**
  * Nomalize path
+ * @param path
+ * @private
  */
 export const normalize = memoize(function (path: string) {
     let parts: string[] = [];
@@ -111,8 +116,8 @@ export const normalize = memoize(function (path: string) {
     while (++k < parts.length) {
         // if (parts[k] == ".") {
         //     parts.splice(k--, 1);
-        // } else 
-            if (parts[k] == "..") {
+        // } else
+        if (k > 0 && parts[k] == "..") {
             parts.splice(k - 1, 2);
             k -= 2;
         }
@@ -121,9 +126,16 @@ export const normalize = memoize(function (path: string) {
     return (path.charAt(0) == "/" ? "/" : "") + parts.join("/");
 });
 
+/**
+ * diff path
+ * @param path1
+ * @param path2
+ * @private
+ */
 export const diff = memoize(function (path1: string, path2: string) {
     let { parts } = splitPath(path1);
     const { parts: dirs } = splitPath(path2);
+
     for (const p of dirs) {
         if (parts[0] == p) {
             parts.shift();
@@ -148,7 +160,6 @@ export const resolve = memoize(function (
     currentDirectory: string,
     cwd?: string,
 ): { absolute: string; relative: string } {
-
     if (matchUrl.test(url)) {
         return {
             absolute: url,
@@ -160,39 +171,57 @@ export const resolve = memoize(function (
     currentDirectory ??= "";
 
     url = normalize(url);
-    
+
+    if (cwd !== "") {
+        cwd = normalize(cwd);
+    }
 
     if (currentDirectory !== "") {
         currentDirectory = normalize(currentDirectory);
-
-        if (url.startsWith(currentDirectory + "/")) {
-            return {
-                absolute: url,
-                relative: url.slice(currentDirectory.length + 1),
-            };
-        }
     }
 
-    if ((currentDirectory === "" || currentDirectory === ".") && cwd !== "") {
-        cwd = normalize(cwd);
-
-        if (url.startsWith(cwd == "/" ? cwd : cwd + "/")) {
-            const absolute: string = url;
-            const prefix: string = cwd == "/" ? cwd : cwd + "/";
-
-            return {
-                absolute,
-                relative: absolute.startsWith(prefix) ? absolute.slice(prefix.length) : diff(absolute, cwd),
-            };
-        }
-    }
+    const dir = cwd || currentDirectory;
+    const absolute = dir == "" || url.startsWith("/") ? resolvePath(url) : resolvePath(dir, url);
 
     return {
-        absolute: url,
-        relative: url === "" ? "" : diff(url, cwd || currentDirectory),
+        absolute,
+        relative: dir === "" ? absolute : diff(absolute, dir),
     };
-}) as (
-    url: string,
-    currentDirectory?: string,
-    cwd?: string,
-) => { absolute: string; relative: string };
+}) as (url: string, currentDirectory?: string, cwd?: string) => { absolute: string; relative: string };
+
+/**
+ *
+ * @param parts
+ * @returns
+ * @private
+ */
+function resolvePath(...parts: string[]): string {
+    const path = parts.filter(Boolean).join("/");
+    const isAbsolute: boolean = /^[\\/]/.test(path);
+    const segments: string[] = path.split(/[\\/]+/);
+    const resolved: string[] = [];
+
+    for (const segment of segments) {
+        if (!segment || segment === ".") {
+            continue;
+        }
+
+        if (segment === "..") {
+            if (resolved.length && resolved[resolved.length - 1] !== "..") {
+                resolved.pop();
+            } else if (!isAbsolute) {
+                resolved.push("..");
+            }
+        } else {
+            resolved.push(segment);
+        }
+    }
+
+    let result = resolved.join("/");
+
+    if (isAbsolute) {
+        result = "/" + result;
+    }
+
+    return result || (isAbsolute ? "/" : ".");
+}

@@ -61,22 +61,28 @@ function doRender(data, options = {}, mapping) {
     const startTime = performance.now();
     const errors = [];
     const sourcemap = options.sourcemap ? new SourceMap() : null;
+    const sourcemaps = options.sourcemap ? [] : null;
     const cache = Object.create(null);
     const sourceLocation = {
-        srcId: 0,
-        sta: 0,
         end: 0,
     };
-    const linesMap = new LineMap([]);
+    const linesMap = options.sourcemap ? new LineMap() : null;
     let code = "";
     if (mapping != null) {
         if (mapping.importMapping != null) {
-            for (const [key, value] of Object.entries(mapping.importMapping)) {
+            const absolutePath = options.resolve(options.output != null ? dirname(options.output) : dirname(options.src), options.cwd).absolute;
+            for (let [key, value] of Object.entries(mapping.importMapping)) {
+                key = options.resolve(options.resolve(key, options.cwd).absolute, absolutePath).relative;
+                if (!key.startsWith("/") && !key.startsWith(".")) {
+                    key = "./" + key;
+                }
                 code += `:import("${key}")${options.indent}{${options.newLine}${Object.entries(value).reduce((acc, [k, v]) => acc + (acc.length > 0 ? options.newLine : "") + `${options.indent}${v}:${options.indent}${k};`, "")}${options.newLine}}${options.newLine}`;
             }
         }
         code += `:export${options.indent}{${options.newLine}${Object.entries(mapping.mapping).reduce((acc, [k, v]) => acc + (acc.length > 0 ? options.newLine : "") + `${options.indent}${k}:${options.indent}${v};`, "")}${options.newLine}}${options.newLine}`;
-        move(sourceLocation, linesMap, code);
+        if (sourcemap != null) {
+            move(sourceLocation, linesMap, code);
+        }
     }
     if (options.output != null) {
         // @ts-ignore
@@ -88,7 +94,7 @@ function doRender(data, options = {}, mapping) {
                 [EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(data.typ) &&
                 "chi" in data
                 ? expand(data)
-                : data, options, sourcemap, sourceLocation, linesMap, errors, function reducer(acc, curr) {
+                : data, options, sourcemaps, sourceLocation, linesMap, errors, function reducer(acc, curr) {
                 if (curr.typ == EnumToken.CommentTokenType && options.removeComments) {
                     if (!options.preserveLicense || !curr.val.startsWith("/*!")) {
                         return acc;
@@ -103,6 +109,7 @@ function doRender(data, options = {}, mapping) {
         },
     };
     if (sourcemap != null) {
+        sourcemap.addAll(sourcemaps);
         result.map = sourcemap;
         if (options.sourcemap === "inline") {
             result.code += `\n/*# sourceMappingURL=${result.map.toUrl()} */`;
@@ -115,37 +122,88 @@ function doRender(data, options = {}, mapping) {
  * @param node
  * @param options
  * @param cache
- * @param sourcemap
- * @param position
+ * @param sourcemaps
+ * @param sourceLocation
+ * @param linesMap
  * @param str
  *
  * @internal
  */
-function updateSourceMap(node, options, cache, sourcemap, sourceLocation, linesMap, str) {
-    if ([
-        EnumToken.RuleNodeType,
-        EnumToken.AtRuleNodeType,
-        EnumToken.KeyFramesRuleNodeType,
-        EnumToken.KeyframesAtRuleNodeType,
-    ].includes(node.typ)) {
-        let srcId = node[LOC]?.srcId ?? 0;
-        let sourceFileName = options.sourcesMap?.get(srcId)?.getFileName?.() || null;
-        if (sourceFileName != null && options.output != null) {
-            if (cache[sourceFileName] == null) {
-                cache[sourceFileName] = options.resolve(sourceFileName, dirname(options.output)).relative;
-            }
-            sourceFileName = cache[sourceFileName];
+function updateSourceMap(node, options, cache, sourcemaps, sourceLocation, linesMap, str) {
+    let offset = 0;
+    while (true) {
+        if (str.charAt(offset) == options.newLine) {
+            offset += options.newLine.length;
+            continue;
         }
-        // @ts-ignore
-        sourcemap.add(...linesMap.getOffsets(sourceLocation.end), srcId, 
-        // @ts-ignore
-        ...options.sourcesMap?.get(srcId)?.getOffsets(sourceLocation.sta), sourceFileName, options.sourcesMap?.get(srcId)?.getContent?.());
+        if (str.charAt(offset) == options.indent) {
+            offset += options.indent.length;
+            continue;
+        }
+        break;
     }
-    move(sourceLocation, linesMap, str);
+    if (offset > 0) {
+        move(sourceLocation, linesMap, str.slice(0, offset));
+    }
+    if (node[LOC] != null &&
+        [
+            EnumToken.RuleNodeType,
+            EnumToken.AtRuleNodeType,
+            EnumToken.KeyFramesRuleNodeType,
+            EnumToken.KeyframesAtRuleNodeType,
+        ].includes(node.typ)) {
+        const source = options.sourcesMap.get(node[LOC].srcId);
+        const inputSourceMap = source.getInputSourceMap();
+        const offsets = source.getOffsets(node[LOC].sta);
+        const [newLine, newColumn] = linesMap.getOffsets(sourceLocation.end);
+        let records = null;
+        let srcId = node[LOC].srcId;
+        let sourceFileName = source.getFileName() || null;
+        let sourceContent = source.getContent() || null;
+        if (inputSourceMap != null && (records = inputSourceMap.find(offsets[0], offsets[1])) != null) {
+            for (const record of records) {
+                // @ts-ignore
+                sourceFileName = record[0] || null;
+                // @ts-ignore
+                offsets[0] = record[1];
+                // @ts-ignore
+                offsets[1] = record[2];
+                sourceContent = record[3] || null;
+                if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
+                    if (cache[sourceFileName] == null) {
+                        const absolute = options.resolve(dirname(options.output), options.cwd)
+                            .absolute;
+                        const absoluteSourcePath = options.resolve(dirname(options.src || ""), options.cwd).absolute;
+                        // resolution is relative to the source file
+                        const absoluteSourceFileName = options.resolve(sourceFileName, absoluteSourcePath)
+                            .absolute;
+                        cache[sourceFileName] = options.resolve(absoluteSourceFileName, absolute).relative;
+                    }
+                    sourceFileName = cache[sourceFileName];
+                }
+                sourcemaps.push([newLine, newColumn, srcId, ...offsets, sourceFileName, sourceContent]);
+            }
+        }
+        else {
+            if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
+                if (cache[sourceFileName] == null) {
+                    const absolute = options.resolve(dirname(options.output), options.cwd)
+                        .absolute;
+                    const absoluteSourceFileName = options.resolve(sourceFileName, options.cwd)
+                        .absolute;
+                    cache[sourceFileName] = options.resolve(absoluteSourceFileName, absolute).relative;
+                }
+                sourceFileName = cache[sourceFileName];
+            }
+            sourcemaps.push([newLine, newColumn, srcId, ...offsets, sourceFileName, sourceContent]);
+        }
+    }
+    move(sourceLocation, linesMap, offset > 0 ? str.slice(offset) : str);
 }
 /**
  * Update position
- * @param position
+ * @param sourceLocation
+ * @param linesMap
  * @param str
  */
 function move(sourceLocation, linesMap, str) {
@@ -175,8 +233,9 @@ function move(sourceLocation, linesMap, str) {
  * render ast node
  * @param data
  * @param options
- * @param sourcemap
- * @param position
+ * @param sourcemaps
+ * @param sourceLocation
+ * @param linesMap
  * @param errors
  * @param reducer
  * @param cache
@@ -185,13 +244,16 @@ function move(sourceLocation, linesMap, str) {
  *
  * @internal
  */
-function renderAstNode(data, options, sourcemap, sourceLocation, linesMap, errors, reducer, cache, level = 0, indents = []) {
+function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, errors, reducer, cache, level = 0, indents = []) {
     if (indents.length < level + 1) {
         indents.push(options.indent.repeat(level));
     }
     if (indents.length < level + 2) {
         indents.push(options.indent.repeat(level + 1));
     }
+    // @ts-ignore
+    let children = "";
+    let str = "";
     const indent = indents[level];
     const indentSub = indents[level + 1];
     switch (data.typ) {
@@ -202,27 +264,27 @@ function renderAstNode(data, options, sourcemap, sourceLocation, linesMap, error
         case EnumToken.CommentNodeType:
         case EnumToken.CDOCOMMNodeType:
             if (data.val.startsWith("/*# sourceMappingURL=")) {
-                // ignore sourcemap
+                // ignore sourcemap comment
                 return "";
             }
             return !options.removeComments || (options.preserveLicense && data.val.startsWith("/*!"))
                 ? data.val
                 : "";
         case EnumToken.StyleSheetNodeType:
-            return data.chi.reduce((css, node) => {
-                const hasPreviousContent = css !== "";
-                const str = renderAstNode(node, options, sourcemap, sourceLocation, linesMap, errors, reducer, cache, level, indents);
+            for (const node of data.chi) {
+                str = renderAstNode(node, options, sourcemaps, sourceLocation, linesMap, errors, reducer, cache, level, indents);
                 if (str === "") {
-                    return css;
+                    continue;
                 }
-                if (sourcemap != null && node[LOC] != null) {
-                    updateSourceMap(node, options, cache, sourcemap, sourceLocation, linesMap, (hasPreviousContent ? options.newLine : "") + str);
+                if (children.length > 0) {
+                    str = options.newLine + str;
                 }
-                if (!hasPreviousContent) {
-                    return str;
+                children += str;
+                if (sourcemaps != null && str !== "" && options.newLine) {
+                    move(sourceLocation, linesMap, options.newLine);
                 }
-                return `${css}${options.newLine}${str}`;
-            }, "");
+            }
+            return children;
         case EnumToken.AtRuleNodeType:
         case EnumToken.RuleNodeType:
         case EnumToken.KeyFramesRuleNodeType:
@@ -230,9 +292,18 @@ function renderAstNode(data, options, sourcemap, sourceLocation, linesMap, error
             if ([EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ) && !("chi" in data)) {
                 return `${indent}@${data.nam}${data.val === "" ? "" : options.indent || " "}${data.val};`;
             }
-            // @ts-ignore
-            let children = data.chi.reduce((css, node) => {
-                let str;
+            const prelude = (indent.length > 0 ? options.newLine : "") +
+                indent +
+                ([EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ)
+                    ? `@${data.nam}${data.val === "" ? "" : options.indent || " "}${data.val}${options.indent}{`
+                    : data.sel + `${options.indent}{`);
+            if (sourcemaps != null) {
+                updateSourceMap(data, options, cache, sourcemaps, sourceLocation, linesMap, prelude);
+            }
+            let node;
+            let recordDeclarationSourceMap = data.typ == EnumToken.AtRuleNodeType;
+            for (let i = 0; i < data.chi.length; i++) {
+                node = data.chi[i];
                 if (node.typ == EnumToken.CommentNodeType) {
                     str =
                         options.removeComments &&
@@ -241,73 +312,59 @@ function renderAstNode(data, options, sourcemap, sourceLocation, linesMap, error
                             : node.val;
                 }
                 else if (node.typ == EnumToken.DeclarationNodeType) {
-                    // if (!(<AstDeclaration>node).nam.startsWith("--") && (<AstDeclaration>node).val.length === 0) {
-                    //     // @ts-ignore
-                    //     errors.push(<ErrorDescription>{
-                    //         action: "ignore",
-                    //         message: `render: invalid declaration ${JSON.stringify(node)}`,
-                    //         location: node[LOC],
-                    //     });
-                    //     return "";
-                    // }
                     str = `${node.nam}:${options.indent}${(options.minify
                         ? filterValues(node.val)
                         : node.val)
                         .reduce(reducer, "")
                         .trimEnd()};`;
                 }
-                // else if (node.typ == EnumToken.AtRuleNodeType && !("chi" in node)) {
-                //     str = `${(<AstAtRule>node).val === "" ? "" : options.indent || " "}${(<AstAtRule>node).val};`;
-                // }
                 else {
-                    str = renderAstNode(node, options, sourcemap, sourceLocation, linesMap, errors, reducer, cache, level + 1, indents);
-                }
-                if (css === "") {
-                    return str;
+                    str = renderAstNode(node, options, sourcemaps, sourceLocation, linesMap, errors, reducer, cache, level + 1, indents);
+                    if (str === "") {
+                        continue;
+                    }
+                    children += str;
+                    str = "";
+                    continue;
                 }
                 if (str === "") {
-                    return css;
+                    continue;
                 }
-                return `${css}${options.newLine}${indentSub}${str}`;
-            }, "");
-            if (options.removeEmpty && children === "") {
-                return "";
+                str = options.newLine + indentSub + str;
+                children += str;
+                if (sourcemaps != null && str !== "") {
+                    move(sourceLocation, linesMap, str);
+                    if (node.typ == EnumToken.DeclarationNodeType && recordDeclarationSourceMap) {
+                        // if declaration is child of at-rule, then record it
+                        // .rule {
+                        //     @media screen {
+                        //         color: red;
+                        //     }
+                        // }
+                        const source = options.sourcesMap.get(node[LOC].srcId);
+                        sourcemaps.push([
+                            ...linesMap.getOffsets(sourceLocation.end - str.length + options.newLine.length + indentSub.length),
+                            node[LOC].srcId,
+                            ...source.getOffsets(node[LOC].sta),
+                            source.getFileName(),
+                            source.getContent(),
+                        ]);
+                    }
+                }
             }
             if (children.endsWith(";")) {
                 children = children.slice(0, -1);
+                sourceLocation.end--;
             }
-            const rendered = [EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ)
-                ? `@${data.nam}${data.val === "" ? "" : options.indent || " "}${data.val}${options.indent}{${options.newLine}` +
-                    (children === "" ? "" : indentSub + children + options.newLine) +
-                    indent +
-                    `}`
-                : data.sel +
-                    `${options.indent}{${options.newLine}` +
-                    (children === "" ? "" : indentSub + children + options.newLine) +
-                    indent +
-                    `}`;
-            if (sourcemap != null && data[LOC] != null) {
-                updateSourceMap(data, options, cache, sourcemap, { ...sourceLocation }, linesMap.clone(), rendered);
+            if (options.removeEmpty && children === "") {
+                sourceLocation.end -= prelude.length;
+                return "";
             }
-            return rendered;
-        // case EnumToken.CssVariableTokenType:
-        // case EnumToken.CssVariableImportTokenType:
-        //     return `@value ${(<CssVariableToken | CssVariableImportTokenType>data).val}:${options.indent}${filterValues(
-        //         options.minify
-        //             ? (<CssVariableToken | CssVariableImportTokenType>data).val
-        //             : (<CssVariableToken>data).val,
-        //     )
-        //         .reduce(reducer, "")
-        //         .trim()};`;
-        // case EnumToken.CssVariableDeclarationMapTokenType:
-        //     return `@value ${filterValues((data as CssVariableMapTokenType).vars)
-        //         .reduce((acc, curr) => acc + renderValue(curr), "")
-        //         .trim()} from ${filterValues((data as CssVariableMapTokenType).from)
-        //         .reduce((acc, curr) => acc + renderValue(curr), "")
-        //         .trim()};`;
-        // case EnumToken.InvalidDeclarationNodeType:
-        // case EnumToken.InvalidRuleNodeType:
-        // case EnumToken.InvalidAtRuleNodeType:
+            const end = options.newLine + indent + `}`;
+            if (sourcemaps != null) {
+                move(sourceLocation, linesMap, end);
+            }
+            return prelude + children + end;
         default:
             return "";
     }
@@ -316,6 +373,9 @@ function renderAstNode(data, options, sourcemap, sourceLocation, linesMap, error
  * render ast token
  * @param token
  * @param options
+ * @param cache
+ * @param reducer
+ * @param errors
  * @private
  */
 function renderValue(token, options = {}, cache = Object.create(null), reducer, errors) {
