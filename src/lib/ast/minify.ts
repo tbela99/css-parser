@@ -1,7 +1,7 @@
-import {eq} from "../parser/utils/eq.ts";
-import {doRender, renderValue} from "../renderer/render.ts";
+import { eq } from "../parser/utils/eq.ts";
+import { doRender, renderValue } from "../renderer/render.ts";
 import * as allFeatures from "./features/index.ts";
-import {walkValues} from "./walk.ts";
+import { walkValues } from "./walk.ts";
 import type {
     AstAtRule,
     AstDeclaration,
@@ -24,15 +24,15 @@ import type {
     RawSelectorTokens,
     Token,
 } from "../../@types/index.d.ts";
-import {EnumToken} from "./types.ts";
-import {isFunction, isIdent, isIdentStart, isWhiteSpace} from "../syntax/syntax.ts";
-import {FeatureWalkMode} from "./features/type.ts";
-import {trimArray} from "../validation/match.ts";
-import {combinators, LOC, OPTIMIZED, PARENT, RAW, TOKENS} from "../syntax/constants.ts";
-import {replaceNodeOrValue} from "../parser/utils/token.ts";
-import {parseString} from "../parser/parse.ts";
-import {tokenize} from "../parser/tokenize.ts";
-import {replaceCompound} from "./expand.ts";
+import { EnumToken } from "./types.ts";
+import { isFunction, isIdent, isIdentStart, isWhiteSpace } from "../syntax/syntax.ts";
+import { FeatureWalkMode } from "./features/type.ts";
+import { trimArray } from "../validation/match.ts";
+import { combinators, LOC, OPTIMIZED, PARENT, RAW, TOKENS } from "../syntax/constants.ts";
+import { replaceNodeOrValue } from "../parser/utils/token.ts";
+import { parseString } from "../parser/parse.ts";
+import { tokenize } from "../parser/tokenize.ts";
+import { replaceCompound } from "./expand.ts";
 
 const notEndingWith: string[] = ["(", "["].concat(combinators);
 const rules: EnumToken[] = [
@@ -90,19 +90,17 @@ export function minify(
     let parents: Set<AstNode>;
     let replacement: AstNode | null;
 
-    // @ts-ignore
-    let { sourcemap, module, ...options2 } = options;
+    let { sourcemap, module, ...options2 } = options as ParserOptions;
 
-    if (!("features" in <MinifyFeatureOptions>options2)) {
-        // @ts-ignore
-        options2 = <MinifyFeatureOptions>{
+    if (!((options2 as MinifyFeatureOptions).features != null)) {
+        options2 = {
             removeDuplicateDeclarations: true,
             computeShorthand: true,
             computeCalcExpression: true,
             removePrefix: false,
-            features: <Function[]>[],
+            features: [] as Function[],
             ...options2,
-        };
+        } as MinifyFeatureOptions;
 
         for (const feature of features) {
             feature.register(options2);
@@ -148,9 +146,9 @@ export function minify(
                 }
 
                 const result = feature.run(
-                    <AstRule | AstAtRule>replacement,
+                    replacement as AstRule | AstAtRule,
                     options2,
-                    <AstRule | AstAtRule | AstStyleSheet>parent[PARENT] ?? ast,
+                    parent[PARENT] ?? (ast as AstRule | AstAtRule | AstStyleSheet),
                     context,
                     FeatureWalkMode.Pre,
                 );
@@ -169,10 +167,9 @@ export function minify(
                 replaceNodeOrValue(parent[PARENT] as AstRule | AstAtRule | AstStyleSheet, parent, replacement);
             }
 
-            if ("chi" in replacement) {
-                // @ts-ignore
+            if (replacement.chi != null) {
                 for (const node of replacement.chi) {
-                    // node[PARENT] = replacement;
+                    node[PARENT] = replacement;
                     parents.add(node as AstNode);
                 }
             }
@@ -181,13 +178,12 @@ export function minify(
         for (const feature of options2.features as MinifyFeature[]) {
             if (feature.processMode & FeatureWalkMode.Pre && "cleanup" in feature) {
                 // @ts-ignore
-                feature.cleanup(<AstStyleSheet>ast, options2, context, FeatureWalkMode.Pre);
+                feature.cleanup(ast as AstStyleSheet, options2, context, FeatureWalkMode.Pre);
             }
         }
     }
 
     doMinify(ast, options2, recursive, errors, nestingContent, context);
-
     parents = new Set([<AstStyleSheet>ast]);
 
     for (const parent of parents) {
@@ -230,9 +226,9 @@ export function minify(
             replaceNodeOrValue(parent[PARENT], parent, replacement);
         }
 
-        if ("chi" in replacement) {
+        if (replacement.chi != null) {
             for (const node of replacement.chi!) {
-                // node[PARENT] = replacement;
+                node[PARENT] = replacement;
                 parents.add(node as AstNode);
             }
         }
@@ -242,7 +238,7 @@ export function minify(
         for (const feature of options2.features as MinifyFeature[]) {
             if (feature.processMode & FeatureWalkMode.Post && "cleanup" in feature) {
                 // @ts-ignore
-                feature.cleanup(<AstStyleSheet>ast, options2, context, FeatureWalkMode.Post);
+                feature.cleanup(ast as AstStyleSheet, options2, context, FeatureWalkMode.Post);
             }
         }
     }

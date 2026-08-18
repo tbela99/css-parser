@@ -61,7 +61,7 @@ function doRender(data, options = {}, mapping) {
     const startTime = performance.now();
     const errors = [];
     const sourcemap = options.sourcemap ? new SourceMap() : null;
-    const sourcemaps = options.sourcemap ? [] : null;
+    const sourcemaps = options.sourcemap ? { sources: [], maps: [] } : null;
     const cache = Object.create(null);
     const sourceLocation = {
         end: 0,
@@ -109,7 +109,12 @@ function doRender(data, options = {}, mapping) {
         },
     };
     if (sourcemap != null) {
-        sourcemap.addAll(sourcemaps);
+        let source;
+        for (const sourceId of sourcemaps.sources) {
+            source = options.sourcesMap.get(sourceId);
+            sourcemap.addSourceContent(source.id, source.getFileName(), source.getContent());
+        }
+        sourcemap.addAll(sourcemaps.maps);
         result.map = sourcemap;
         if (options.sourcemap === "inline") {
             result.code += `\n/*# sourceMappingURL=${result.map.toUrl()} */`;
@@ -159,7 +164,7 @@ function updateSourceMap(node, options, cache, sourcemaps, sourceLocation, lines
         let records = null;
         let srcId = node[LOC].srcId;
         let sourceFileName = source.getFileName() || null;
-        let sourceContent = source.getContent() || null;
+        source.getContent() || null;
         if (inputSourceMap != null && (records = inputSourceMap.find(offsets[0], offsets[1])) != null) {
             for (const record of records) {
                 // @ts-ignore
@@ -168,7 +173,6 @@ function updateSourceMap(node, options, cache, sourcemaps, sourceLocation, lines
                 offsets[0] = record[1];
                 // @ts-ignore
                 offsets[1] = record[2];
-                sourceContent = record[3] || null;
                 if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
                     if (cache[sourceFileName] == null) {
                         const absolute = options.resolve(dirname(options.output), options.cwd)
@@ -181,7 +185,10 @@ function updateSourceMap(node, options, cache, sourcemaps, sourceLocation, lines
                     }
                     sourceFileName = cache[sourceFileName];
                 }
-                sourcemaps.push([newLine, newColumn, srcId, ...offsets, sourceFileName, sourceContent]);
+                if (!sourcemaps.sources.includes(srcId)) {
+                    sourcemaps.sources.push(srcId);
+                }
+                sourcemaps.maps.push([newLine, newColumn, srcId, ...offsets]);
             }
         }
         else {
@@ -195,7 +202,10 @@ function updateSourceMap(node, options, cache, sourcemaps, sourceLocation, lines
                 }
                 sourceFileName = cache[sourceFileName];
             }
-            sourcemaps.push([newLine, newColumn, srcId, ...offsets, sourceFileName, sourceContent]);
+            if (!sourcemaps.sources.includes(srcId)) {
+                sourcemaps.sources.push(srcId);
+            }
+            sourcemaps.maps.push([newLine, newColumn, srcId, ...offsets]);
         }
     }
     move(sourceLocation, linesMap, offset > 0 ? str.slice(offset) : str);
@@ -342,12 +352,13 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
                         //     }
                         // }
                         const source = options.sourcesMap.get(node[LOC].srcId);
-                        sourcemaps.push([
+                        if (!sourcemaps.sources.includes(node[LOC].srcId)) {
+                            sourcemaps.sources.push(node[LOC].srcId);
+                        }
+                        sourcemaps.maps.push([
                             ...linesMap.getOffsets(sourceLocation.end - str.length + options.newLine.length + indentSub.length),
                             node[LOC].srcId,
                             ...source.getOffsets(node[LOC].sta),
-                            source.getFileName(),
-                            source.getContent(),
                         ]);
                     }
                 }
@@ -452,8 +463,8 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
             return " + ";
         case EnumToken.Sub:
             return " - ";
-        case EnumToken.Star:
         case EnumToken.UniversalSelectorTokenType:
+        case EnumToken.Star:
         case EnumToken.Mul:
             return "*";
         case EnumToken.Div:
@@ -1292,11 +1303,11 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.OrTokenType:
             return "or";
         case EnumToken.InvalidMediaQueryTokenType:
-        // case EnumToken.InvalidDeclarationNodeType:
         case EnumToken.InvalidCommentTokenType:
         case EnumToken.BadCommentTokenType:
         case EnumToken.BadCdoTokenType:
         case EnumToken.BadStringTokenType:
+        case EnumToken.BadUrlTokenType:
         case EnumToken.EOFTokenType:
             return "";
         default:

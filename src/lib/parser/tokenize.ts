@@ -41,6 +41,7 @@ import {
     isNumber,
     isPercentage,
     isPseudo,
+    isURLToken,
     isWhiteSpace,
     parseDimension,
 } from "../syntax/syntax.ts";
@@ -453,7 +454,7 @@ export function next(parseInfo: ParseInfo, count: number = 1): string {
     let codepoint: number;
 
     for (; i < char.length; i++) {
-         codepoint = char[i].charCodeAt(0);
+        codepoint = char[i].charCodeAt(0);
 
         if (
             codepoint == 0xa || // \n
@@ -578,83 +579,57 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
                             value = peek(parseInfo);
 
                             // consume an <url>
-                            while (isWhiteSpace((charCode = value.charCodeAt(0)))) {
-                                buffer += next(parseInfo);
-                                value = peek(parseInfo);
-                                charCode = value.charCodeAt(0);
+                            while (isWhiteSpace(peek(parseInfo).charCodeAt(0))) {
+                                // buffer += next(parseInfo);
+                                next(parseInfo);
+                                // charCode = value.charCodeAt(0);
+                            }
 
-                                if (value === "/" && match(parseInfo, "/*")) {
-                                    if (buffer.length > 0) {
-                                        result.push(yieldResult(buffer, parseInfo));
-                                        buffer = "";
-                                    }
+                            value = peek(parseInfo);
 
-                                    buffer += next(parseInfo, 2);
+                            let values: Array<TokenizeResult> | null = null;
 
-                                    while ((value = next(parseInfo))) {
-                                        if (value == "*") {
-                                            buffer += value;
-
-                                            if (match(parseInfo, "/")) {
-                                                result.push(
-                                                    yieldResult(
-                                                        buffer + next(parseInfo),
-                                                        parseInfo,
-                                                        EnumToken.CommentTokenType,
-                                                    ),
-                                                );
-                                                buffer = "";
-                                                break;
-                                            }
-                                        } else {
-                                            buffer += value;
-                                        }
-                                    }
-
-                                    if (buffer.length > 0) {
-                                        result.push(yieldResult(buffer, parseInfo, EnumToken.BadCommentTokenType));
-                                        buffer = "";
-                                    }
-
+                            if (value == '"' || value == "'") {
+                                values = consumeString(parseInfo);
+                            } else {
+                                do {
+                                    buffer += next(parseInfo);
                                     value = peek(parseInfo);
                                     charCode = value.charCodeAt(0);
-                                }
-                            }
-
-                            if (buffer.length > 0) {
-                                result.push(yieldResult(buffer, parseInfo, EnumToken.WhitespaceTokenType));
-                                buffer = "";
-                            }
-
-                            if (value === ")" || value === '"' || value === "'") {
-                                break;
-                            }
-
-                            do {
-                                buffer += next(parseInfo);
-                                value = peek(parseInfo);
-                                charCode = value.charCodeAt(0);
-                            } while (
-                                value !== ")" &&
-                                !isWhiteSpace(charCode) &&
-                                !(value === "/" && match(parseInfo, "/*"))
-                            );
-
-                            if (buffer.length > 0) {
-                                result.push(
-                                    yieldResult(
-                                        buffer,
-                                        parseInfo,
-                                        peek(parseInfo) === ""
-                                            ? EnumToken.BadUrlTokenType
-                                            : EnumToken.UrlTokenTokenType,
-                                    ),
+                                } while (
+                                    // !(value === "/" && match(parseInfo, "/*") &&
+                                    value !== ")" &&
+                                    value !== ""
                                 );
-                                buffer = "";
                             }
-                        }
 
-                        // console.debug({value: peek(parseInfo)});
+                            if (values) {
+
+                                if (peek(parseInfo) === "" ) {
+
+                                    for (let i = 0; i < values.length; i++) {
+                                        
+                                        values[i].token.typ = EnumToken.BadUrlTokenType;
+                                    }
+                                }
+
+                                result.push(...values);
+                            }
+
+                            else  if (buffer.length > 0) {
+                                    result.push(
+                                        yieldResult(
+                                            buffer.trimEnd(),
+                                            parseInfo,
+                                            // buffer.length > 0
+                                            peek(parseInfo) === "" || !isURLToken(buffer)
+                                                ? EnumToken.BadUrlTokenType
+                                                : EnumToken.UrlTokenTokenType,
+                                        ),
+                                    );
+                                    buffer = "";
+                                }
+                        }
 
                         break;
                     }
@@ -958,7 +933,7 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
                 next(parseInfo);
 
                 // EOF
-                if (!(peek(parseInfo))) {
+                if (!peek(parseInfo)) {
                     // end of stream ignore \\
                     if (buffer.length > 0) {
                         result.push(yieldResult(buffer, parseInfo));

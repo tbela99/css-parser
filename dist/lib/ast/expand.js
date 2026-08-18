@@ -1,9 +1,10 @@
 import { splitRule } from './minify.js';
-import { PARENT, combinators, RAW } from '../syntax/constants.js';
+import { STATE, PARENT, combinators, RAW } from '../syntax/constants.js';
 import { parseString } from '../parser/parse.js';
 import { walkValues } from './walk.js';
 import { renderValue } from '../renderer/render.js';
-import { EnumToken } from './types.js';
+import { EnumAstNodeStatus, EnumToken } from './types.js';
+import { cloneNode } from './clone.js';
 
 /**
  * expand css nesting ast nodes
@@ -12,7 +13,14 @@ import { EnumToken } from './types.js';
  * @private
  */
 function expand(ast) {
-    const result = { ...ast, chi: [] };
+    if (ast[STATE] == EnumAstNodeStatus.Invalid ||
+        ast[STATE] == EnumAstNodeStatus.Disallowed ||
+        ast[STATE] == EnumAstNodeStatus.Unknown ||
+        ast[STATE] == EnumAstNodeStatus.Unparsed ||
+        ast[STATE] == EnumAstNodeStatus.Malformed) {
+        return ast;
+    }
+    const result = Object.assign(cloneNode(ast), { chi: [] });
     let children;
     for (let i = 0; i < ast.chi.length; i++) {
         let node = ast.chi[i];
@@ -58,7 +66,14 @@ function expand(ast) {
     return result;
 }
 function expandRule(node) {
-    const ast = { ...node, chi: node.chi.slice() };
+    if (node[STATE] == EnumAstNodeStatus.Invalid ||
+        node[STATE] == EnumAstNodeStatus.Disallowed ||
+        node[STATE] == EnumAstNodeStatus.Unknown ||
+        node[STATE] == EnumAstNodeStatus.Unparsed ||
+        node[STATE] == EnumAstNodeStatus.Malformed) {
+        return [node];
+    }
+    const ast = Object.assign(cloneNode(node), { chi: node.chi.slice() });
     const result = [];
     if (ast.typ == EnumToken.RuleNodeType) {
         let i = 0;

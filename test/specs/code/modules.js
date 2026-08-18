@@ -1,6 +1,22 @@
 import { ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from "../../../dist/lib/ast/types.js";
 
-export function run(describe, expect, it, transform, parse, render, dirname, readFile, resolve, ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, transformSync, parseSync) {
+export function run(
+    describe,
+    expect,
+    it,
+    transform,
+    parse,
+    render,
+    dirname,
+    readFile,
+    resolve,
+    ColorType,
+    EnumToken,
+    ModuleCaseTransformEnum,
+    ModuleScopeEnumOptions,
+    transformSync,
+    parseSync,
+) {
     describe("css modules", function () {
         it("module #1", function () {
             return transform(
@@ -99,8 +115,7 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
         });
 
         it("module #4", function () {
-            
-            const url = new URL(dirname(import.meta.url) + '/../../css-modules/mixins.css');
+            const url = new URL(dirname(import.meta.url) + "/../../css-modules/mixins.css");
 
             return transform(
                 `
@@ -613,9 +628,7 @@ a span {
         });
 
         it("module mode ICSS #17", function () {
-            
-
-            const url = new URL(dirname(import.meta.url) + '/../../css-modules/mixins.css');
+            const url = new URL(dirname(import.meta.url) + "/../../css-modules/mixins.css");
             return transform(
                 `
 
@@ -673,60 +686,59 @@ a span {
             });
         });
 
-//         it("module export variables #18", function () {
-//             return transform(
-//                 `
+        //         it("module export variables #18", function () {
+        //             return transform(
+        //                 `
 
-//               @value blue: #0c77f8;
-//               @value red: #ff0000;
-//               @value green: #aaf200;
-// `,
-//                 {
-//                     module: ModuleScopeEnumOptions.ICSS,
-//                     beautify: true,
-//                 },
-//             ).then((result) =>
-//                 expect(result.cssModuleVariables).deep.equals({
-//                     blue: {
-//                         typ: EnumToken.CssVariableTokenType,
-//                         nam: "blue",
-//                         val: [
-//                             {
-//                                 typ: EnumToken.ColorTokenType,
-//                                 val: "#0c77f8",
-//                                 kin: ColorType.HEX,
-//                             },
-//                         ],
-//                     },
-//                     red: {
-//                         typ: EnumToken.CssVariableTokenType,
-//                         nam: "red",
-//                         val: [
-//                             {
-//                                 typ: EnumToken.ColorTokenType,
-//                                 val: "#ff0000",
-//                                 kin: ColorType.HEX,
-//                             },
-//                         ],
-//                     },
-//                     green: {
-//                         typ: EnumToken.CssVariableTokenType,
-//                         nam: "green",
-//                         val: [
-//                             {
-//                                 typ: EnumToken.ColorTokenType,
-//                                 val: "#aaf200",
-//                                 kin: ColorType.HEX,
-//                             },
-//                         ],
-//                     },
-//                 }),
-//             );
-//         });
+        //               @value blue: #0c77f8;
+        //               @value red: #ff0000;
+        //               @value green: #aaf200;
+        // `,
+        //                 {
+        //                     module: ModuleScopeEnumOptions.ICSS,
+        //                     beautify: true,
+        //                 },
+        //             ).then((result) =>
+        //                 expect(result.cssModuleVariables).deep.equals({
+        //                     blue: {
+        //                         typ: EnumToken.CssVariableTokenType,
+        //                         nam: "blue",
+        //                         val: [
+        //                             {
+        //                                 typ: EnumToken.ColorTokenType,
+        //                                 val: "#0c77f8",
+        //                                 kin: ColorType.HEX,
+        //                             },
+        //                         ],
+        //                     },
+        //                     red: {
+        //                         typ: EnumToken.CssVariableTokenType,
+        //                         nam: "red",
+        //                         val: [
+        //                             {
+        //                                 typ: EnumToken.ColorTokenType,
+        //                                 val: "#ff0000",
+        //                                 kin: ColorType.HEX,
+        //                             },
+        //                         ],
+        //                     },
+        //                     green: {
+        //                         typ: EnumToken.CssVariableTokenType,
+        //                         nam: "green",
+        //                         val: [
+        //                             {
+        //                                 typ: EnumToken.ColorTokenType,
+        //                                 val: "#aaf200",
+        //                                 kin: ColorType.HEX,
+        //                             },
+        //                         ],
+        //                     },
+        //                 }),
+        //             );
+        //         });
 
         it("module import variables #19", function () {
-
-            const url = new URL(dirname(import.meta.url) + '/../../css-modules/color.css');
+            const url = new URL(dirname(import.meta.url) + "/../../css-modules/color.css");
             return transform(
                 `
 
@@ -866,9 +878,9 @@ a span {
         });
 
         it("module grid #22", function () {
-             
-                return expect(transform(
-                `
+            return expect(
+                transform(
+                    `
 
 .grid {
   grid-template-areas: 'nav main';
@@ -881,15 +893,16 @@ a span {
 }
 
 `,
-                {
-                    module: {
-                        pattern: "[local]-[hash:bogus]",
+                    {
+                        module: {
+                            pattern: "[local]-[hash:bogus]",
+                        },
+                        beautify: true,
                     },
-                    beautify: true,
-                },
-            )).to.be.rejectedWith(
-                    `Unsupported hash length: 'bogus'. expecting format [hash:length] or [hash:hash-algo:length]`,
-                );
+                ),
+            ).to.be.rejectedWith(
+                `Unsupported hash length: 'bogus'. expecting format [hash:length] or [hash:hash-algo:length]`,
+            );
         });
 
         it("module grid #23", function () {
@@ -931,7 +944,7 @@ a span {
             });
         });
 
-         it("module #24", function () {
+        it("module #24", function () {
             const result = transformSync(
                 `
 .goal .bg-indigo {
@@ -948,19 +961,50 @@ a span {
                     beautify: true,
                 },
             );
-            
-                expect(result.mapping).deep.equals({
-                    goal: "goal_r7bhp",
-                    "bg-indigo": "bg-indigo_gy28g",
-                    "indigo-white": "indigo-white_wims0 bg-indigo_gy28g title_qw06e",
-                    title: "title_qw06e",
-                });
-                expect(result.code).equals(`.goal_r7bhp .bg-indigo_gy28g {
+
+            expect(result.mapping).deep.equals({
+                goal: "goal_r7bhp",
+                "bg-indigo": "bg-indigo_gy28g",
+                "indigo-white": "indigo-white_wims0 bg-indigo_gy28g title_qw06e",
+                title: "title_qw06e",
+            });
+            expect(result.code).equals(`.goal_r7bhp .bg-indigo_gy28g {
  background: indigo
 }
 .indigo-white_wims0 {
  color: #fff
 }`);
+        });
+
+        it("module grid #25", function () {
+            return expect(
+                Promise.resolve(
+                    (async () =>
+                        transformSync(
+                            `
+
+.grid {
+  grid-template-areas: 'nav main';
+  grid-template-columns: [line-name1] 100px [line-name2 line-name3];
+}
+
+.nav {
+  grid-column-start: nav-start;
+  grid-column-end: nav-end;
+}
+
+`,
+                            {
+                                module: {
+                                    pattern: "[local]-[hash:sha1]",
+                                },
+                                beautify: true,
+                            },
+                        ))(),
+                ),
+            ).to.be.rejectedWith(
+                `Unsupported hash algorithm: 'sha1'. Not supported by parseSync() or transformSync(). Use parse() or transform().`,
+            );
         });
     });
 }

@@ -967,13 +967,51 @@ const isIdent = memoize(function (name) {
     }
     return true;
 });
+function isNonPrintable(codepoint) {
+    // null -> backspace
+    return ((codepoint >= 0 && codepoint <= 0x8) ||
+        // tab
+        codepoint == 0xb ||
+        // delete
+        codepoint == 0x7f ||
+        (codepoint >= 0xe && codepoint <= 0x1f));
+}
+function isURLToken(str) {
+    let i = -1;
+    let c;
+    while (++i < str.length) {
+        c = str.charCodeAt(i);
+        // single quote or double quote or start parenthesis or close parenthesis
+        if (isNonPrintable(c) || c == 0x27 || c == 0x22 || c == 0x28 || c == 0x29) {
+            return false;
+        }
+        // valid escape
+        if (c == REVERSE_SOLIDUS) {
+            i++;
+            if (i >= str.length) {
+                return false;
+            }
+            c = str.charCodeAt(i);
+            // c is not '\n' or '\r' or '\f'
+            if (c == 0x6e || c == 0x72 || c == 0x66) {
+                return false;
+            }
+            continue;
+        }
+        // is white space
+        if (c == 0x20 || c == 0x09) {
+            break;
+        }
+    }
+    return i == str.length;
+}
 function isPseudo(name) {
     return (name.charAt(0) == ":" &&
         ((name.endsWith("(") && isIdent(name.charAt(1) == ":" ? name.slice(2, -1) : name.slice(1, -1))) ||
             isIdent(name.charAt(1) == ":" ? name.slice(2) : name.slice(1))));
 }
 function isHash(name) {
-    return name.charAt(0) == "#" && isIdent(name.charAt(1));
+    return name.charAt(0) == "#" && isIdentStart(name.charCodeAt(1));
 }
 const isNumber = memoize(function (name) {
     // if (name.length == 0) {
@@ -1225,4 +1263,4 @@ function toPrecisionAngle(angle, precision = colorPrecision, correctValue = true
     return angle;
 }
 
-export { dimensionUnits, isAngle, isColor, isDigit, isFlex, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isLetter, isNewLine, isNumber, isPercentage, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, length2Px, minifyNumber, parseColor, parseDimension, pseudoAliasMap, reduceColorStops, reduceConicColorStops, reducegradientBackgroundPosition, renamedStandardProperties, toPrecisionAngle, toPrecisionValue };
+export { dimensionUnits, isAngle, isColor, isDigit, isFlex, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isLetter, isNewLine, isNonPrintable, isNumber, isPercentage, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isURLToken, isWhiteSpace, length2Px, minifyNumber, parseColor, parseDimension, pseudoAliasMap, reduceColorStops, reduceConicColorStops, reducegradientBackgroundPosition, renamedStandardProperties, toPrecisionAngle, toPrecisionValue };

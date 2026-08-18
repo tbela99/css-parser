@@ -76,37 +76,47 @@ class SourceMap {
             this.computePositions();
         }
     }
+    hasSourceContent(id) {
+        return this.sourcesMap.includes(id);
+    }
+    addSourceContent(id, fileName, content) {
+        if (this.sourcesMap.includes(id)) {
+            return;
+        }
+        this.sourcesMap[this.sourcesMap.length] = id;
+        this.sources[this.sources.length] = fileName;
+        this.sourcesContent[this.sourcesContent.length] = content;
+    }
     /**
      * Add all location
      * @param maps
      */
     addAll(maps) {
-        for (let [newLine, newColumn, srcId, ln, col, sourceFileName, sourceContent] of maps) {
-            const key = `${srcId}:${ln}:${sourceFileName}:${col}:${newLine}:${newColumn}:${sourceContent}`;
-            const sourcemap = `${srcId}:${sourceFileName}:${sourceContent}`;
+        let srcIndex;
+        for (let [newLine, newColumn, srcId, ln, col] of maps) {
+            const key = `${srcId}:${ln}:${col}:${newLine}:${newColumn}`;
             if (this.keys.has(key)) {
                 continue;
             }
             this.keys.add(key);
-            if (!this.sourcesMap.includes(sourcemap)) {
-                this.sourcesMap.push(sourcemap);
-                this.sources.push(sourceFileName || null);
-                this.sourcesContent.push((sourceFileName != null ? null : sourceContent) || null);
-            }
             const line = newLine - 1;
             let record;
             if (line > this.line) {
                 this.line = line;
             }
+            srcIndex = this.sourcesMap.indexOf(srcId);
+            if (srcIndex == -1) {
+                throw new Error(`Source file ${srcId} not added to sourcemap`);
+            }
             if (!this.map.has(line)) {
-                record = [Math.max(0, newColumn - 1), this.sourcesMap.indexOf(sourcemap), ln - 1, col - 1];
+                record = [Math.max(0, newColumn - 1), srcIndex, ln - 1, col - 1];
                 this.map.set(line, [record]);
             }
             else {
                 const arr = this.map.get(line);
                 record = [
                     Math.max(0, newColumn - 1) - arr[0][0],
-                    this.sourcesMap.indexOf(sourcemap) - arr[0][1],
+                    srcIndex - arr[0][1],
                     ln - 1,
                     col - 1,
                 ];

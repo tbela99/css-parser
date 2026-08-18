@@ -48,7 +48,6 @@ const BadTokensTypes = [
     EnumToken.BadStringTokenType,
 ];
 let keyNameCounter = 0;
-const forbiddenStartCharacters = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].map((c) => c.charCodeAt(0));
 /**
  * Short-scoped name generator.
  *
@@ -59,12 +58,15 @@ const forbiddenStartCharacters = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "
  *
  * @returns string
  */
-const getShortNameGenerator = memoize((localName, filePath, pattern, hashLength = 5) => {
+const getShortNameGenerator = memoize(() => {
     let value = keyNameCounter.toString(36);
+    let val = value.charAt(0).charCodeAt(0);
     keyNameCounter++;
-    while (forbiddenStartCharacters.includes(value.charCodeAt(0))) {
+    // starts with'0' - '9'
+    while (48 <= val && val <= 57) {
         value = keyNameCounter.toString(36);
         keyNameCounter++;
+        val = value.charAt(0).charCodeAt(0);
     }
     return value;
 });
@@ -312,19 +314,19 @@ function parseVisitors(visitorsDef, errors) {
         key = visitors[i][0];
         value = visitors[i][1];
         if (Number.isInteger(+key)) {
-            if (Array.isArray(value)) {
-                visitors.splice(i + 1, 0, ...Object.entries(value));
-                continue;
-            }
+            // if (Array.isArray(value)) {
+            //     visitors.splice(i + 1, 0, ...Object.entries(value));
+            //     continue;
+            // }
             if (typeof value == "function") {
                 key = value.name;
             }
         }
-        if (Array.isArray(value)) {
-            // @ts-ignore
-            visitors.splice(i + 1, 0, ...value.map((item) => [key, item]));
-            continue;
-        }
+        // if (Array.isArray(value)) {
+        //     // @ts-ignore
+        //     visitors.splice(i + 1, 0, ...value.map((item) => [key, item]));
+        //     continue;
+        // }
         if (key in EnumToken) {
             if (typeof value == "function") {
                 if (!valuesHandlers.has(EnumToken[key])) {
@@ -332,18 +334,27 @@ function parseVisitors(visitorsDef, errors) {
                 }
                 valuesHandlers.get(EnumToken[key]).push(value);
             }
-            else if (typeof value == "object" && "type" in value && "handler" in value && value.type in WalkerEvent) {
-                if (value.type == WalkerEvent.Enter) {
-                    if (!preValuesHandlers.has(EnumToken[key])) {
-                        preValuesHandlers.set(EnumToken[key], []);
+            else if (typeof value == "object") {
+                if ("type" in value && "handler" in value && value.type in WalkerEvent) {
+                    if (value.type == WalkerEvent.Enter) {
+                        if (!preValuesHandlers.has(EnumToken[key])) {
+                            preValuesHandlers.set(EnumToken[key], []);
+                        }
+                        preValuesHandlers
+                            .get(EnumToken[key])
+                            .push(value.handler);
                     }
-                    preValuesHandlers.get(EnumToken[key]).push(value.handler);
+                    else if (value.type == WalkerEvent.Leave) {
+                        if (!postValuesHandlers.has(EnumToken[key])) {
+                            postValuesHandlers.set(EnumToken[key], []);
+                        }
+                        postValuesHandlers
+                            .get(EnumToken[key])
+                            .push(value.handler);
+                    }
                 }
-                else if (value.type == WalkerEvent.Leave) {
-                    if (!postValuesHandlers.has(EnumToken[key])) {
-                        postValuesHandlers.set(EnumToken[key], []);
-                    }
-                    postValuesHandlers.get(EnumToken[key]).push(value.handler);
+                else {
+                    visitors.push(...Object.entries(value));
                 }
             }
             else {
@@ -360,6 +371,7 @@ function parseVisitors(visitorsDef, errors) {
                     .push(value);
             }
             else if (typeof value == "object") {
+                // visitors.push(...Object.entries(value));
                 if ("type" in value && "handler" in value && value.type in WalkerEvent) {
                     if (value.type == WalkerEvent.Enter) {
                         if (!preVisitorsHandlersMap.has(key)) {
@@ -496,10 +508,6 @@ function doParseSync(iter, options = {}) {
         end: 0,
         srcId: options.source.id,
     };
-    // if (Array.isArray(iter)) {
-    //     // @ts-expect-error
-    //     iter = iter[Symbol.iterator]() as Iterator<TokenizeResult>;
-    // }
     for (currentItemIndex = 0; currentItemIndex < iter.length; currentItemIndex++) {
         item = iter[currentItemIndex];
         stats.bytesIn = item.bytesIn;
@@ -672,21 +680,20 @@ function doParseSync(iter, options = {}) {
                         if (typeof handler == "function") {
                             handlers.push(handler);
                         }
-                        else if (Array.isArray(handler)) {
-                            for (const h of handler) {
-                                if (typeof h == "function") {
-                                    handlers.push(h);
-                                }
-                                // @ts-ignore
-                                else if (h[keyName] != null) {
-                                    // @ts-ignore
-                                    handlers.push(h[keyName]);
-                                }
-                            }
-                        }
-                        else if (typeof handler.handler == "function") {
-                            handlers.push(handler.handler);
-                        }
+                        // else if (Array.isArray(handler)) {
+                        //     for (const h of handler) {
+                        //         if (typeof h == "function") {
+                        //             handlers.push(h);
+                        //         }
+                        //         // @ts-ignore
+                        //         else if (h[keyName] != null) {
+                        //             // @ts-ignore
+                        //             handlers.push(h[keyName]);
+                        //         }
+                        //     }
+                        // } else if (typeof handler.handler! == "function") {
+                        //     handlers.push(handler.handler);
+                        // }
                         // @ts-ignore
                         else if (typeof handler[keyName] == "function") {
                             // @ts-ignore
@@ -1396,8 +1403,6 @@ async function doParse(iter, options = {}) {
             curlyBracketMatch--;
         }
         tokens.push(item.token);
-        // console.debug([item.token, {parensMatch, curlyBracketMatch}]);
-        // if (parensMatch === 0) {
         if (parensMatch === 0 &&
             (item.token.typ === EnumToken.SemiColonTokenType ||
                 item.token.typ === EnumToken.BlockStartTokenType ||
@@ -1594,21 +1599,20 @@ async function doParse(iter, options = {}) {
                         if (typeof handler == "function") {
                             handlers.push(handler);
                         }
-                        else if (Array.isArray(handler)) {
-                            for (const h of handler) {
-                                if (typeof h == "function") {
-                                    handlers.push(h);
-                                }
-                                // @ts-ignore
-                                else if (h[keyName] != null) {
-                                    // @ts-ignore
-                                    handlers.push(h[keyName]);
-                                }
-                            }
-                        }
-                        else if (typeof handler.handler == "function") {
-                            handlers.push(handler.handler);
-                        }
+                        // else if (Array.isArray(handler)) {
+                        //     for (const h of handler) {
+                        //         if (typeof h == "function") {
+                        //             handlers.push(h);
+                        //         }
+                        //         // @ts-ignore
+                        //         else if (h[keyName] != null) {
+                        //             // @ts-ignore
+                        //             handlers.push(h[keyName]);
+                        //         }
+                        //     }
+                        // } else if (typeof handler.handler! == "function") {
+                        //     handlers.push(handler.handler);
+                        // }
                         // @ts-ignore
                         else if (typeof handler[keyName] == "function") {
                             // @ts-ignore

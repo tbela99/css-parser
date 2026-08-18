@@ -7,7 +7,7 @@ const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'], e = Math.floor(Math.log(this)
 function toFileSize(value) {
 
     const e = Math.floor(Math.log(value) / Math.log(1024));
-    const result = value === 0 ? 0 : (value / Math.pow(1024, Math.floor(e)));
+    const result = (value / Math.pow(1024, Math.floor(e)));
 
     return (Number.isInteger(result) ? result : result.toFixed(2)) + units[e];
 }
@@ -24,14 +24,14 @@ for (const file of await readdir(baseDir)) {
         removePrefix: true,
         nestingRules: true,
         resolveImport: true,
-        // sourcemap: true,
+        sourcemap: true,
         validation: true
     }));
 
     message += `[inputSize]: ${toFileSize(result.stats.bytesIn)}\n `;
     message += `[outputSize]: ${toFileSize(result.stats.bytesOut)}\n `;
     message += `[ratio]: ${(100 * (1 - result.stats.bytesOut / result.stats.bytesIn)).toFixed(2)}%\n `;
-    // message += `[sourcemap]: ${JSON.stringify(result.map.toJSON()).length}\n `;
+    message += `[sourcemap]: ${JSON.stringify(result.map.toJSON()).length}\n `;
 
     for (const key in result.stats) {
 

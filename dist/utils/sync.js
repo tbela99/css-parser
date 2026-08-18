@@ -50,12 +50,12 @@ function validateSyncArguments(options, prefix = "options.") {
     let i;
     for (i = 0; i < args.length; i++) {
         const [key, value] = args[i];
-        if (typeof value == 'function') {
+        if (typeof value == "function") {
             if (value instanceof Promise || Object.getPrototypeOf(value).constructor.name == "AsyncFunction") {
                 throw new Error(`[${prefix + key}]: Async functions are not supported in sync mode. Use parse() or transform() instead.`);
             }
         }
-        else if (value != null && typeof value == 'object') {
+        else if (value != null && typeof value == "object") {
             validateSyncArguments(value, prefix + key + ".");
         }
     }

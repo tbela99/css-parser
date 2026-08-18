@@ -25,7 +25,7 @@ export class SourceMap {
      * Sources map
      * @private
      */
-    private sourcesMap: string[] = [];
+    private sourcesMap: number[] = [];
 
     /**
      * Sources content
@@ -102,26 +102,37 @@ export class SourceMap {
         }
     }
 
+    hasSourceContent(id: number): boolean {
+        return this.sourcesMap.includes(id);
+    }
+
+    addSourceContent(id: number, fileName: string | null, content: string | null): void {
+
+        if (this.sourcesMap.includes(id)) {
+            return;
+        }
+
+        this.sourcesMap[this.sourcesMap.length] = id;
+        this.sources[this.sources.length] = fileName;
+        this.sourcesContent[this.sourcesContent.length] = content;
+    }
+
     /**
      * Add all location
      * @param maps
      */
-    addAll(maps: Array<[number, number, number, number, number, string | null, string | null]>): void {
-        for (let [newLine, newColumn, srcId, ln, col, sourceFileName, sourceContent] of maps) {
-            const key = `${srcId}:${ln}:${sourceFileName}:${col}:${newLine}:${newColumn}:${sourceContent}`;
-            const sourcemap = `${srcId}:${sourceFileName}:${sourceContent}`;
+    addAll(maps: Array<[number, number, number, number, number]>): void {
+
+        let srcIndex: number;
+        for (let [newLine, newColumn, srcId, ln, col] of maps) {
+            const key = `${srcId}:${ln}:${col}:${newLine}:${newColumn}`;
+            const sourcemap = `${srcId}`;
 
             if (this.keys.has(key)) {
                 continue;
             }
 
             this.keys.add(key);
-
-            if (!this.sourcesMap.includes(sourcemap)) {
-                this.sourcesMap.push(sourcemap);
-                this.sources.push((sourceFileName as string) || null);
-                this.sourcesContent.push((sourceFileName != null ? null : sourceContent) || null);
-            }
 
             const line: number = newLine - 1;
             let record: number[];
@@ -130,8 +141,15 @@ export class SourceMap {
                 this.line = line;
             }
 
+            srcIndex = this.sourcesMap.indexOf(srcId);
+
+            if (srcIndex == -1) {
+
+                throw new Error(`Source file ${srcId} not added to sourcemap`);
+            }
+
             if (!this.map.has(line)) {
-                record = [Math.max(0, newColumn - 1), this.sourcesMap.indexOf(sourcemap), ln - 1, col - 1];
+                record = [Math.max(0, newColumn - 1), srcIndex, ln - 1, col - 1];
 
                 this.map.set(line, [record]);
             } else {
@@ -139,7 +157,7 @@ export class SourceMap {
 
                 record = [
                     Math.max(0, newColumn - 1) - arr[0][0],
-                    this.sourcesMap.indexOf(sourcemap) - arr[0][1],
+                    srcIndex - arr[0][1],
                     ln - 1,
                     col - 1,
                 ];

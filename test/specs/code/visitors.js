@@ -425,6 +425,11 @@ html,body {
         it("visitor #8", function () {
             const css = `
 
+            .ruler {
+            
+                height: 10px;
+            }
+
 @keyframes slide-in {
   from {
     transform: translateX(0%);
@@ -456,6 +461,24 @@ html,body {
                 removePrefix: true,
                 beautify: true,
                 visitor: {
+                    Rule: {
+                        type: WalkerEvent.Enter,
+                        handler(node) {
+
+                            node.sel = ".ruled";
+                            // node.val = "slide-in-out";
+                            // return node;
+                        },
+                    },
+                    Declaration: {
+                        type: WalkerEvent.Leave,
+                        handler(node) {
+
+                            // node.sel = ".ruled";
+                            // node.val = "slide-in-out";
+                            // return node;
+                        },
+                    },
                     KeyframesAtRule: {
                         slideIn(node) {
                             node.val = "slide-in-out";
@@ -467,7 +490,10 @@ html,body {
 
             const result = transformSync(css, options);
 
-            expect(result.code).equals(`@keyframes slide-in-out {
+            expect(result.code).equals(`.ruled {
+ height: 10px
+}
+@keyframes slide-in-out {
  0% {
   transform: translateX(0)
  }
@@ -517,12 +543,17 @@ body {
                             declaration.nam = "width";
                         }
                     },
-                    function ColorTokenType(color) {
-                        return {
-                            typ: EnumToken.Color,
-                            val: "red",
-                            kin: ColorType.HEX,
-                        };
+                    {
+                        ColorTokenType: {
+                            type: WalkerEvent.Enter,
+                            handler: function (color) {
+                                return {
+                                    typ: EnumToken.Color,
+                                    val: "red",
+                                    kin: ColorType.HEX,
+                                };
+                            },
+                        },
                     },
                 ],
             };
@@ -539,6 +570,124 @@ html,body {
  background-color: red
 }`),
             );
+        });
+
+
+
+        it("visitor #10", function () {
+            const css = `
+
+            .ruler {
+            
+                height: 10px;
+            }
+
+@keyframes slide-in {
+  from {
+    transform: translateX(0%);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes identifier {
+  0% {
+    top: 0;
+    left: 0;
+  }
+  30% {
+    top: 50px;
+  }
+  68%,
+  72% {
+    left: 50px;
+  }
+  100% {
+    top: 100px;
+    left: 100%;
+  }
+}
+`;
+            const options = {
+                removePrefix: true,
+                beautify: true,
+                visitor: [
+        {
+            Rule: {
+                type: WalkerEvent.Enter,
+                handler(node) {
+                    node.sel = ".ruled";
+                    // node.val = "slide-in-out";
+                    // return node;
+                },
+            },
+        },
+        {
+            KeyframesAtRule: {
+                slideIn(node) {
+                    node.val = "slide-in-out";
+                    return node;
+                },
+            },
+        },
+    ],
+            };
+
+            const result = transformSync(css, options);
+
+            expect(result.code).equals(`.ruled {
+ height: 10px
+}
+@keyframes slide-in-out {
+ 0% {
+  transform: translateX(0)
+ }
+ to {
+  transform: translateX(100%)
+ }
+}
+@keyframes identifier {
+ 0% {
+  top: 0;
+  left: 0
+ }
+ 30% {
+  top: 50px
+ }
+ 68%,72% {
+  left: 50px
+ }
+ to {
+  top: 100px;
+  left: 100%
+ }
+}`);
+        });
+
+        it("visitor #11", function () {
+            const css = `
+
+            .ruler {
+            
+                height: 10px;
+            }
+`;
+            const options = {
+    removePrefix: true,
+    beautify: true,
+    visitor: function Rule(node) {
+                    node.sel = ".ruled";
+                    // node.val = "slide-in-out";
+                    // return node;
+                },
+};
+
+            const result = transformSync(css, options);
+
+            expect(result.code).equals(`.ruled {
+ height: 10px
+}`);
         });
     });
 }

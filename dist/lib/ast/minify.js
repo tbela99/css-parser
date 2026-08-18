@@ -37,10 +37,8 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
     let postprocess = false;
     let parents;
     let replacement;
-    // @ts-ignore
     let { sourcemap, module, ...options2 } = options;
-    if (!("features" in options2)) {
-        // @ts-ignore
+    if (!(options2.features != null)) {
         options2 = {
             removeDuplicateDeclarations: true,
             computeShorthand: true,
@@ -90,10 +88,9 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                 parent[PARENT] != null) {
                 replaceNodeOrValue(parent[PARENT], parent, replacement);
             }
-            if ("chi" in replacement) {
-                // @ts-ignore
+            if (replacement.chi != null) {
                 for (const node of replacement.chi) {
-                    // node[PARENT] = replacement;
+                    node[PARENT] = replacement;
                     parents.add(node);
                 }
             }
@@ -131,9 +128,9 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
             // @ts-ignore
             replaceNodeOrValue(parent[PARENT], parent, replacement);
         }
-        if ("chi" in replacement) {
+        if (replacement.chi != null) {
             for (const node of replacement.chi) {
-                // node[PARENT] = replacement;
+                node[PARENT] = replacement;
                 parents.add(node);
             }
         }
