@@ -866,7 +866,9 @@ export function doParseSync(
                 }
             }
 
+            // @ts-ignore
             if (nodes[i].chi != null) {
+                // @ts-ignore
                 subNodes.push(...nodes[i].chi);
             }
 
@@ -1007,6 +1009,7 @@ export function doParseSync(
             }
 
             if (node != nodes[i]) {
+                // @ts-ignore
                 replaceNodeOrValue(nodes[i][PARENT], nodes[i], node);
             }
         }
@@ -1150,6 +1153,7 @@ export function doParseSync(
                 );
             }
 
+            // @ts-ignore
             if (node.typ == EnumToken.CssVariableDeclarationMapTokenType) {
                 const from = (node as CssVariableMapTokenType).from.find(
                     (t) => t.typ == EnumToken.IdenTokenType || isIdentColor(t),
@@ -1502,6 +1506,7 @@ export function doParseSync(
                         (value.typ == EnumToken.IdenTokenType || isIdentColor(value)) &&
                         (value as IdentToken).val in importedCssVariables
                     ) {
+                        // @ts-ignore
                         replaceNodeOrValue(parent, value, importedCssVariables[(value as IdentToken).val].val);
                     }
                 }
@@ -1609,7 +1614,7 @@ export function doParseSync(
                 if (moduleSettings.scoped! & ModuleScopeEnumOptions.Pure) {
                     if (!hasIdOrClass) {
                         throw new Error(
-                            `pure module: No id or class found in selector '${node.sel}' at '${node[LOC]?.src ?? ""}':${node[LOC]?.sta?.lin ?? ""}:${node[LOC]?.sta?.col ?? ""}`,
+                            `pure module: No id or class found in selector '${node.sel}' at '${options.source!.getOffsets(node[LOC]?.sta as number).join(":")}'`,
                         );
                     }
                 }
@@ -1972,7 +1977,8 @@ export async function doParse(
                     stats.nodesCount += root.stats.nodesCount;
                     stats.tokensCount += root.stats.tokensCount;
                     stats.imports.push(root.stats);
-                    node[PARENT]!.chi.splice(node[PARENT]!.chi.indexOf(node), 1, ...root.ast.chi);
+                    // @ts-ignore
+                    node[PARENT]!.chi!.splice(node[PARENT]!.chi!.indexOf(node), 1, ...root.ast.chi);
 
                     if (root.errors.length > 0) {
                         errors.push(...root.errors);
@@ -2030,7 +2036,9 @@ export async function doParse(
                 }
             }
 
+            // @ts-ignore
             if (nodes[i].chi != null) {
+                // @ts-ignore
                 subNodes.push(...nodes[i].chi);
             }
 
@@ -2176,7 +2184,8 @@ export async function doParse(
             }
 
             if (node != nodes[i]) {
-                replaceNodeOrValue(nodes[i][PARENT], nodes[i], node);
+                // @ts-ignore
+                replaceNodeOrValue(nodes[i]![PARENT] as AstNode, nodes[i], node);
             }
         }
 
@@ -2355,6 +2364,7 @@ export async function doParse(
                 continue;
             }
 
+            // @ts-ignore
             if (node.typ == EnumToken.CssVariableDeclarationMapTokenType) {
                 const from = (node as CssVariableMapTokenType).from.find(
                     (t) => t.typ == EnumToken.IdenTokenType || isIdentColor(t),
@@ -2415,6 +2425,7 @@ export async function doParse(
                                       moduleSettings.pattern as string,
                                       moduleSettings.hashLength,
                                   );
+                        // @ts-ignore
                         let value: string = result instanceof Promise ? await result : result;
 
                         mapping[node.nam] =
@@ -2815,33 +2826,17 @@ export async function doParse(
 
                 for (const { value, parent } of walkValues(node.val, node)) {
                     if (value.typ == EnumToken.DashedIdenTokenType) {
-                        // if (!((value as DashedIdentToken).val in mapping)) {
-                        //     const result =
-                        //         moduleSettings.scoped! & ModuleScopeEnumOptions.Global
-                        //             ? (value as DashedIdentToken).val
-                        //             : moduleSettings.generateScopedName!(
-                        //                   (value as DashedIdentToken).val,
-                        //                   moduleSettings.filePath as string,
-                        //                   moduleSettings.pattern as string,
-                        //                   moduleSettings.hashLength,
-                        //               );
-                        //     let val: string = result instanceof Promise ? await result : result;
-
-                        //     mapping[(value as DashedIdentToken).val] =
-                        //         "--" +
-                        //         (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly ||
-                        //         moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly
-                        //             ? getKeyName(val, moduleSettings.naming as ModuleCaseTransformEnum)
-                        //             : val);
-                        //     revMapping[mapping[(value as DashedIdentToken).val]] = (value as DashedIdentToken).val;
-                        // }
-
                         (value as DashedIdentToken).val = mapping[(value as DashedIdentToken).val];
                     } else if (
                         (value.typ == EnumToken.IdenTokenType || isIdentColor(value)) &&
                         (value as IdentToken).val in importedCssVariables
                     ) {
-                        replaceNodeOrValue(parent, value, importedCssVariables[(value as IdentToken).val].val);
+                        replaceNodeOrValue(
+                            // @ts-ignore
+                            parent as AstRule,
+                            value,
+                            importedCssVariables[(value as IdentToken).val].val,
+                        );
                     }
                 }
             } else if (node.typ == EnumToken.RuleNodeType) {
@@ -2951,7 +2946,7 @@ export async function doParse(
                 if (moduleSettings.scoped! & ModuleScopeEnumOptions.Pure) {
                     if (!hasIdOrClass) {
                         throw new Error(
-                            `pure module: No id or class found in selector '${node.sel}' at '${node[LOC]?.src ?? ""}':${node[LOC]?.sta?.lin ?? ""}:${node[LOC]?.sta?.col ?? ""}`,
+                            `pure module: No id or class found in selector '${node.sel}' at '${(options.source?.getOffsets?.(node[LOC]?.sta as number) ?? []).join(":")}'`,
                         );
                     }
                 }
@@ -3142,7 +3137,9 @@ function parseNode(
     }
 
     if (i > 0) {
-        context.chi!.push(...(tokens.splice(0, i) as AstNode[]).filter((n) => n.typ !== EnumToken.WhitespaceTokenType));
+        context.chi!.push(
+            ...(tokens.splice(0, i) as AstNode[]).filter((n: AstNode) => n.typ !== EnumToken.WhitespaceTokenType),
+        );
         i = 0;
     }
 
@@ -3198,7 +3195,7 @@ function parseNode(
                 break;
             }
 
-            parent = parent[PARENT];
+            parent = parent[PARENT] as AstNode;
         }
 
         node = parseAtRule(
@@ -3277,7 +3274,7 @@ function parseNode(
                 (node as AstNode)[STATE] == EnumAstNodeStatus.Unparsed ||
                 (node as AstNode)[STATE] == EnumAstNodeStatus.Malformed
             ) {
-                invalidNodes.push(node);
+                invalidNodes.push(node as AstDeclaration);
             }
         }
     }
@@ -3735,8 +3732,8 @@ export function parseAtRule(
             let success: boolean = result.success;
 
             if (atRule.nam === "else") {
-                const siblings = (context as AstAtRule | AstStyleSheet).chi as AstNode[];
-                let sibling: AstNode | null = null;
+                const siblings = (context as AstAtRule | AstStyleSheet).chi as AstNode[] | Token[];
+                let sibling: AstNode | Token | null = null;
                 let l: number = siblings.length;
 
                 while (l--) {
@@ -3757,9 +3754,12 @@ export function parseAtRule(
 
                 if (sibling == null || sibling.typ !== EnumToken.AtRuleNodeType) {
                     missingWhen = true;
+                    // @ts-expect-error
                 } else if (sibling.nam !== "when") {
+                    // @ts-expect-error
                     if (sibling.nam !== "else") {
                         missingWhen = true;
+                        // @ts-expect-error
                     } else if (sibling.val === "") {
                         definedAfterLastElse = true;
                     }

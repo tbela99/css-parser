@@ -1,5 +1,6 @@
-import type { AstComment, ParseResult, ParserOptions, ParserSyncOptions } from "../@types/index.d.ts";
-import { EnumToken } from "../lib/ast/types.ts";
+import type { AstComment, AstNode, ParseResult, ParserOptions, ParserSyncOptions } from "../@types/index.d.ts";
+import { AstNodePropertyType, EnumToken } from "../lib/ast/types.ts";
+import { ERRORS, LOC, PARENT, STATE, TOKENS } from "../lib/syntax/constants.ts";
 
 /**
  * parse result. process input sourcemap
@@ -33,6 +34,12 @@ export function parseResult(result: ParseResult, options: ParserOptions): ParseR
     return result;
 }
 
+/**
+ *
+ * @param options
+ * @param prefix
+ * @private
+ */
 export function validateSyncArguments(options: ParserSyncOptions, prefix: string = "options."): void {
     const args = Object.entries(options);
 

@@ -92,3 +92,8 @@ html[data-theme="dark"] {
         text-align: center;
     }
 }
+
+
+.tsd-kind-icon {
+  width: 16px;
+}

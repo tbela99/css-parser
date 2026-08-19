@@ -141,13 +141,15 @@ export function minify(
                     replacement[TOKENS] = parseString(
                         replacement.typ == EnumToken.RuleNodeType || replacement.typ === EnumToken.KeyframesRuleNodeType
                             ? replacement.sel
-                            : replacement.nam,
+                            : // @ts-ignore
+                              replacement.nam,
                     );
                 }
 
                 const result = feature.run(
                     replacement as AstRule | AstAtRule,
                     options2,
+                    // @ts-ignore
                     parent[PARENT] ?? (ast as AstRule | AstAtRule | AstStyleSheet),
                     context,
                     FeatureWalkMode.Pre,
@@ -164,10 +166,13 @@ export function minify(
                 replacement != parent &&
                 parent[PARENT] != null
             ) {
+                // @ts-ignore
                 replaceNodeOrValue(parent[PARENT] as AstRule | AstAtRule | AstStyleSheet, parent, replacement);
             }
 
+            // @ts-ignore
             if (replacement.chi != null) {
+                // @ts-ignore
                 for (const node of replacement.chi) {
                     node[PARENT] = replacement;
                     parents.add(node as AstNode);
@@ -205,6 +210,7 @@ export function minify(
                 const result = feature.run(
                     replacement as AstRule | AstAtRule,
                     options2,
+                    // @ts-ignore
                     parent[PARENT] ?? (ast as AstRule | AstAtRule | AstStyleSheet),
                     context,
                     FeatureWalkMode.Post,
@@ -226,7 +232,9 @@ export function minify(
             replaceNodeOrValue(parent[PARENT], parent, replacement);
         }
 
+        // @ts-ignore
         if (replacement.chi != null) {
+            // @ts-ignore
             for (const node of replacement.chi!) {
                 node[PARENT] = replacement;
                 parents.add(node as AstNode);
@@ -262,6 +270,7 @@ function transformAtRuleMediaPrelude(values: Token[]) {
                     // @ts-ignore
                     values[values.indexOf(value)] = (value as MediaQueryConditionToken).l;
                 } else {
+                    // @ts-ignore
                     replaceNodeOrValue(parent, value, (value as MediaQueryConditionToken).l);
                     // @ts-ignore
                     value = (value as MediaQueryConditionToken).l;
@@ -338,8 +347,10 @@ function transformAtRuleMediaPrelude(values: Token[]) {
                     const p = parents?.[parents?.indexOf?.(parent) + 1];
 
                     if (p != null) {
+                        // @ts-ignore
                         replaceNodeOrValue(p, parent, replacement);
                     } else {
+                        // @ts-ignore
                         values.splice(values.indexOf(parent), 1, replacement as Token);
                     }
 
@@ -495,6 +506,7 @@ function doMinify(
             }
 
             while (previous?.typ === EnumToken.CommentNodeType) {
+                // @ts-ignore
                 previous = ast.chi[--nodeIndex];
             }
 
@@ -525,6 +537,7 @@ function doMinify(
                     // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@keyframes#resolving_duplicates
                     (<AstKeyframesRule>previous).chi.push(...(<AstKeyframesRule>node).chi);
 
+                    // @ts-ignore
                     ast.chi.splice(i, 1);
                     previous = (ast?.chi?.[nodeIndex] as AstNode) ?? null;
                     i = nodeIndex;
@@ -624,6 +637,7 @@ function doMinify(
                     (ast as AstAtRule).nam === (node as AstAtRule).nam &&
                     (ast as AstAtRule).val === (node as AstAtRule).val
                 ) {
+                    // @ts-ignore
                     replaceNodeOrValue(ast as AstAtRule, node as AstAtRule, (node as AstAtRule).chi!);
                     i--;
                     continue;
@@ -750,6 +764,7 @@ function doMinify(
                                 ")";
                             const sel2 = node[OPTIMIZED].selector.reduce(
                                 (acc: string, curr: string[]) =>
+                                    // @ts-ignore
                                     (acc.length > 0 ? acc + "," : "") + node[OPTIMIZED].optimized[0] + curr.join(""),
                                 "",
                             );
@@ -849,6 +864,7 @@ function doMinify(
                             ")";
                         const sel2 = node[OPTIMIZED].selector.reduce(
                             (acc: string, curr: string[]) =>
+                                // @ts-ignore
                                 (acc.length > 0 ? acc + "," : "") + node[OPTIMIZED].optimized[0] + curr.join(""),
                             "",
                         );
@@ -866,11 +882,14 @@ function doMinify(
                         );
                         node[TOKENS] = null;
                     }
+                    // @ts-ignore
                 } else if (node[OPTIMIZED]?.optimized.length > 0) {
+                    // @ts-ignore
                     const sel = node[OPTIMIZED].optimized.join("");
 
                     if (sel.length < node.sel.length) {
                         node.sel = sel;
+                        // @ts-ignore
                         node[RAW] = [node[OPTIMIZED].optimized.slice()];
                         node[TOKENS] = null;
                     }
@@ -903,10 +922,13 @@ function doMinify(
                                 ((node.typ === EnumToken.RuleNodeType ||
                                     node.typ === EnumToken.KeyframesRuleNodeType) &&
                                     (node as AstRule).sel === (previous as AstRule).sel) ||
+                                // @ts-ignore
                                 (node.typ == EnumToken.AtRuleNodeType &&
                                     (node as AstAtRule).nam !== "font-face" &&
+                                    // @ts-ignore
                                     (node as AstAtRule).nam === (previous as AstAtRule).nam)
                             ) {
+                                // @ts-ignore
                                 node.chi.unshift(...previous.chi);
 
                                 doMinify(node, options, recursive, errors, nestingContent, context);
@@ -1753,7 +1775,7 @@ function diff(n1: AstRule, n2: AstRule, options: ParserOptions = {}) {
 
             if (css == null) {
                 let level: number = 0;
-                let parent: AstNode | null = curr[PARENT];
+                let parent: AstNode | null = curr[PARENT] as AstNode;
 
                 while (parent != null && parent.typ != EnumToken.StyleSheetNodeType) {
                     level++;
@@ -1776,7 +1798,7 @@ function diff(n1: AstRule, n2: AstRule, options: ParserOptions = {}) {
                 }
 
                 let level: number = 0;
-                let parent: AstNode | null = curr[PARENT];
+                let parent: AstNode | null = curr[PARENT] as AstNode;
 
                 while (parent != null && parent.typ != EnumToken.StyleSheetNodeType) {
                     level++;

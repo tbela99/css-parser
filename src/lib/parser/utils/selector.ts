@@ -17,6 +17,7 @@ import type {
     PercentageToken,
     AtRuleToken,
     ColorToken,
+    AstNode,
 } from "../../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import { renderValue } from "../../renderer/render.ts";
@@ -164,12 +165,12 @@ export function parseSelector(
 
     do {
         if (parent?.typ === EnumToken.AtRuleNodeType && "media" === (parent as AstAtRule).nam) {
-            parent = parent[PARENT];
+            parent = parent[PARENT] as AstRuleList;
             continue;
         }
 
         nested = parent?.typ == EnumToken.RuleNodeType;
-        parent = parent?.[PARENT];
+        parent = parent?.[PARENT] as AstRuleList;
     } while (!nested && parent != null);
 
     for (; i < tokens.length; i++) {

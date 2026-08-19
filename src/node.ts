@@ -69,6 +69,7 @@ export type { ValidationToken } from "./lib/validation/parser/types.d.ts";
 
 export { FeatureWalkMode } from "./lib/ast/features/type.ts";
 export { dirname, resolve, ResponseType };
+export { getNodeProperty, setNodeProperty } from "./lib/ast/node.ts";
 
 /**
  * Load file or url
@@ -178,7 +179,7 @@ export function render(
 }
 
 /**
- * Parse css file
+ * Parse CSS file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
@@ -210,7 +211,7 @@ export const parseFile = deprecate(
 ) as (file: string, options?: ParserOptions, asStream?: boolean) => Promise<ParseResult>;
 
 /**
- * Parse css string
+ * Parse CSS string
  * @param stream
  * @param options
  *
@@ -230,7 +231,7 @@ export const parseFile = deprecate(
 export function parseSync(stream: string, options?: ParserSyncOptions): ParseResult;
 
 /**
- * Parse css string
+ * Parse CSS string
  * @param options
  *
  * Parsing a string
@@ -249,9 +250,8 @@ export function parseSync(stream: string, options?: ParserSyncOptions): ParseRes
 export function parseSync(options: ParseInputOptions & ParserSyncOptions): ParseResult;
 
 /**
- * Parse css
+ * Parse CSS
  * @param args
- * @private
  *
  * Parsing a string
  *
@@ -321,7 +321,7 @@ export function parseSync(
 }
 
 /**
- * Transform css
+ * Transform CSS
  * @param css
  * @param options
  *
@@ -339,7 +339,7 @@ export function parseSync(
 export function transformSync(css: string, options?: TransformSyncOptions): TransformResult;
 
 /**
- * Transform css
+ * Transform CSS
  * @param options
  *
  * ```ts
@@ -355,7 +355,7 @@ export function transformSync(css: string, options?: TransformSyncOptions): Tran
 export function transformSync(options: ParseInputOptions & TransformSyncOptions): TransformResult;
 
 /**
- * Transform css
+ * Transform CSS
  *
  * ```ts
  *
@@ -367,7 +367,6 @@ export function transformSync(options: ParseInputOptions & TransformSyncOptions)
  * ```
  *
  * @param args
- * @private
  */
 export function transformSync(
     ...args: [string, TransformSyncOptions?] | [ParseInputOptions & TransformSyncOptions]
@@ -477,7 +476,7 @@ export function transformSync(
 export async function parse(stream: string | ReadableStream<Uint8Array>, options?: ParserOptions): Promise<ParseResult>;
 
 /**
- * Parse css
+ * Parse CSS
  * @param options
  *
  * @throws Error file not found
@@ -511,7 +510,7 @@ export async function parse(stream: string | ReadableStream<Uint8Array>, options
 export async function parse(options: ParseInputFileOptions & ParserOptions): Promise<ParseResult>;
 
 /**
- * Parse css
+ * Parse CSS
  * @param options
  *
  * Parsing a string
@@ -554,11 +553,10 @@ export async function parse(options: ParseInputFileOptions & ParserOptions): Pro
 export async function parse(options: ParseInputStreamOptions & ParserOptions): Promise<ParseResult>;
 
 /**
- * Parse css
+ * Parse CSS
  * @param args
  *
  * @throws Error file not found
- * @private
  *
  * Parsing a string
  *
@@ -748,7 +746,7 @@ export async function transform(
 ): Promise<TransformResult>;
 
 /**
- * Transform css
+ * Transform CSS
  * @param options
  *
  * Parsing a string
@@ -810,7 +808,7 @@ export async function transform(options: ParseInputStreamOptions & TransformOpti
 export async function transform(options: ParseInputFileOptions & TransformOptions): Promise<TransformResult>;
 
 /**
- * Transform css
+ * Transform CSS
  *
  * Parsing a string
  *
@@ -850,7 +848,6 @@ export async function transform(options: ParseInputFileOptions & TransformOption
  *  console.log(result.code);
  * ```
  * @param args
- * @private
  */
 export async function transform(
     ...args:

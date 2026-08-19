@@ -223,10 +223,12 @@ export declare interface FunctionToken extends BaseToken {
         | EnumToken.ImageFunctionTokenType
         | EnumToken.TimelineFunctionTokenType
         | EnumToken.TimingFunctionTokenType
-        | EnumToken.ColorFunctionTokenType
+        | EnumToken.ColorTokenType
         | EnumToken.MathFunctionTokenType
-        | EnumToken.PseudoClassFunctionTokenType
-        | EnumToken.TransformFunctionTokenType;
+        | EnumToken.PseudoClassFuncTokenType
+        | EnumToken.TransformFunctionTokenType
+        | EnumToken.GeneralEnclosedFunctionTokenType
+        | EnumToken.WildCardFunctionTokenType;
     /**
      * function name
      */

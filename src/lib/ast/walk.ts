@@ -334,13 +334,18 @@ export function* walk(
 
         if (includeValues) {
             if (node[TOKENS] != null) {
+                // @ts-ignore
                 parents.splice(i, 0, ...(reverse ? node[TOKENS]!.toReversed() : node[TOKENS]));
+                // @ts-ignore
             } else if (Array.isArray(node.val)) {
+                // @ts-ignore
                 parents.splice(i, 0, ...(reverse ? node.val.toReversed() : node.val));
             }
         }
 
+        // @ts-ignore
         if (node["chi"] != null && (!isNumeric || ((option as number) & WalkerOptionEnum.IgnoreChildren) === 0)) {
+            // @ts-ignore
             parents.splice(i, 0, ...(reverse ? node.chi!.toReversed() : node.chi));
 
             for (const child of <AstNode[]>(<AstRuleList>node).chi) {
@@ -507,7 +512,7 @@ export function* walkValues(
 
                 do {
                     yield result;
-                    next = map.get(result) ?? root;
+                    next = map.get(result as Token) ?? root;
 
                     if (next == result) {
                         break;

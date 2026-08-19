@@ -228,7 +228,7 @@ export function doRender(
             sourcemap.addSourceContent(source.id, source.getFileName(), source.getContent());
         }
 
-        sourcemap.add(...(sourcemaps!.maps! as Array<[number, number, number, number, number]>) );
+        sourcemap.add(...(sourcemaps!.maps! as Array<[number, number, number, number, number]>));
         result.map = sourcemap;
 
         if (options.sourcemap === "inline") {
@@ -581,7 +581,7 @@ function renderAstNode(
                                 sourceLocation.end - str.length + options.newLine!.length + indentSub.length,
                             ),
                             node[LOC]!.srcId,
-                            ...source!.getOffsets(node[LOC].sta),
+                            ...source!.getOffsets(node![LOC]!.sta),
                         ]);
                     }
                 }

@@ -1325,6 +1325,7 @@ function matchSyntax(
 
         if (
             tokensfuncDefMap.has(token.typ) &&
+            // @ts-ignore
             (token as FunctionToken).typ === EnumToken.WildCardFunctionTokenDefType
         ) {
             const range = trimArray(context.peekRange());
@@ -2646,8 +2647,10 @@ function matchProperty(
                     // ) {
                     const newRange = range.map((t) => cloneNode(t, true));
 
+                    // @ts-ignore
                     parseTokens(newRange, { parseColor: true }, errors);
 
+                    // @ts-ignore
                     success = newRange.length == 1 && isColor(newRange[0], errors);
 
                     if (success) {

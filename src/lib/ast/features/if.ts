@@ -32,7 +32,7 @@ function substituteIfElseNode(
     parentWrapper: FunctionToken,
     cache: Set<AstNode>,
 ): AstNode[] {
-    const result: AstNode = [];
+    const result: AstNode[] = [] as AstNode[];
     let nodeMap = new Map();
     let clonedDeclaration;
 
@@ -60,6 +60,7 @@ function substituteIfElseNode(
                         : ((node as IfElseConditionToken).r as IfConditionToken).r,
                 );
 
+                // @ts-expect-error
                 if (targetParentWrapper.typ != EnumToken.DeclarationNodeType) {
                     let index: number = (targetParentWrapper as FunctionToken).chi.indexOf(targetWrapper);
                     if (index != -1) {
@@ -104,6 +105,7 @@ function substituteIfElseNode(
                                                       ).r,
                                             );
 
+                                            // @ts-ignore
                                             cache.add((siblingWrapper.chi[k] as IfElseConditionToken).l);
                                         }
                                     }
@@ -140,6 +142,7 @@ function substituteIfElseNode(
 
             replaceNodeOrValue(
                 nodeMap.get(parentWrapper),
+                // @ts-expect-error
                 nodeMap.get(targetWrapper.typ === EnumToken.DeclarationNodeType ? node : targetWrapper),
                 node.r.at(-1)?.typ === EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r,
             );
@@ -228,7 +231,7 @@ function processNode(declarationNode: AstDeclaration, cache: Set<AstNode>): AstN
         const { node: declaration, value: node } = findByValue(astNode, nodeMatcher) ?? {};
 
         if (declaration == null || node == null) {
-            result.push(astNode);
+            result.push(astNode as Token);
             continue;
         }
 
@@ -239,7 +242,9 @@ function processNode(declarationNode: AstDeclaration, cache: Set<AstNode>): AstN
         if (node!.node!.typ === EnumToken.WildCardFunctionTokenType) {
             for (i = 0; i < (node!.node as FunctionToken).chi.length; i++) {
                 stack.push(
+                    // @ts-expect-error
                     ...substituteIfElseNode(
+                        // @ts-expect-error
                         declaration,
                         (node!.node as FunctionToken).chi[i] as IfConditionToken | IfElseConditionToken,
                         node!.node as FunctionToken,
@@ -250,7 +255,9 @@ function processNode(declarationNode: AstDeclaration, cache: Set<AstNode>): AstN
             }
         } else {
             stack.push(
+                // @ts-expect-error
                 ...substituteIfElseNode(
+                    // @ts-expect-error
                     declaration,
                     node!.node as IfConditionToken,
                     parentWrapper as FunctionToken,
@@ -262,9 +269,11 @@ function processNode(declarationNode: AstDeclaration, cache: Set<AstNode>): AstN
     }
 
     if (result.length > 0) {
+        // @ts-expect-error
         replaceNodeOrValue(declarationNode[PARENT], declarationNode, result);
     }
     // else remove node?
+    // @ts-expect-error
     return result;
 }
 
@@ -286,7 +295,7 @@ export class ExpandIfFeature {
         }
     }
 
-    run(declaration: AstDeclaration): AstNode | null {
-        return processNode(declaration, new Set<AstNode>());
+    run(declaration: AstDeclaration): AstNode | AstNode[] | null {
+        return processNode(declaration, new Set<AstNode>()) as AstNode[];
     }
 }

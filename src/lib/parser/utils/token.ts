@@ -48,6 +48,13 @@ export function replaceNodeOrValue(
                   | {
                         val: Token[];
                     }
+              ))
+        | (Token &
+              (
+                  | { chi: Token[] }
+                  | {
+                        val: Token[];
+                    }
               )),
     node: Token,
     replacement: Token | Token[],
