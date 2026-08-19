@@ -1,4 +1,4 @@
-import type { AstComment, ParseResult, ParserOptions, ParserSyncOptions } from "../@types/index.js";
+import type { AstComment, ParseResult, ParserOptions, ParserSyncOptions } from "../@types/index.d.ts";
 import { EnumToken } from "../lib/ast/types.ts";
 
 /**
