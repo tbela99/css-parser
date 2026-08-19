@@ -22,9 +22,9 @@ export function decode(str: string) {
 	for (let i = 0; i < str.length; i += 1) {
 		let integer = char_to_integer[str[i]];
 
-		if (integer === undefined) {
-			throw new Error('Invalid character (' + str[i] + ')');
-		}
+		// if (integer === undefined) {
+		// 	throw new Error('Invalid character (' + str[i] + ')');
+		// }
 
 		const has_continuation_bit = integer & 32;
 

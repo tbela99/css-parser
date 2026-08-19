@@ -64,5 +64,37 @@ button {
                 expect(positions?.[0]?.slice?.(0, 3)).deep.equals([null, 19, 2]);
             });
         });
+
+        it("input sourcemap minified #3", async () => {
+            return transform({...options, sourcemap: true}).then(async (result) => {
+                const result2 = transformSync({
+                    input: result.code,
+                    nestingRules: false,
+                    sourcemap: "inline",
+                    inputSourceMap: result.map.toJSON(),
+                    output: "test/sourcemap.html",
+                });
+
+                result2.map.computePositions();
+                const positions = result2.map.find(1, 254);
+                expect(positions?.[0]?.slice?.(0, 3)).deep.equals([null, 19, 2]);
+            });
+        });
+
+        it("input sourcemap minified #3", async () => {
+            return transform({...options, sourcemap: true}).then(async (result) => {
+                const result2 = transformSync({
+                    input: result.code,
+                    nestingRules: false,
+                    sourcemap: "inline",
+                    inputSourceMap: `data:application/json;charset=utf-8;${encodeURIComponent(JSON.stringify(result.map.toJSON()))}`,
+                    output: "test/sourcemap.html",
+                });
+
+                result2.map.computePositions();
+                const positions = result2.map.find(1, 254);
+                expect(positions?.[0]?.slice?.(0, 3)).deep.equals([null, 19, 2]);
+            });
+        });
     });
 }

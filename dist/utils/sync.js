@@ -17,25 +17,7 @@ function parseResult(result, options) {
             const token = result.ast.chi.at(-1);
             if (token?.typ == EnumToken.CommentTokenType &&
                 token.val.startsWith("/*# sourceMappingURL=")) {
-                const data = token.val.slice(21, -2).trim();
-                let sourcemap;
-                let encoding = "";
-                if (data.startsWith("data:")) {
-                    let offset = data.indexOf(",") + 1;
-                    if (offset == 0) {
-                        offset = data.lastIndexOf(";") + 1;
-                    }
-                    else {
-                        encoding = data.slice(data.lastIndexOf(";") + 1, offset - 1);
-                    }
-                    if (encoding == "base64") {
-                        sourcemap = atob(data.slice(offset));
-                    }
-                    else {
-                        sourcemap = decodeURIComponent(data.slice(offset));
-                    }
-                    options.source.setInputSourceMap(sourcemap);
-                }
+                options.source.setInputSourceMap(token.val.slice(21, -2).trim());
             }
         }
     }

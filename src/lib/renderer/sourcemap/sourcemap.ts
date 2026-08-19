@@ -75,6 +75,23 @@ export class SourceMap {
      */
     constructor(sourcemaps?: SourceMapObject | string) {
         if (typeof sourcemaps === "string") {
+            if (sourcemaps.startsWith("data:")) {
+                let encoding: string = "";
+                let offset: number = sourcemaps.indexOf(",") + 1;
+
+                if (offset == 0) {
+                    offset = sourcemaps.lastIndexOf(";") + 1;
+                } else {
+                    encoding = sourcemaps.slice(sourcemaps.lastIndexOf(";") + 1, offset - 1);
+                }
+
+                if (encoding == "base64") {
+                    sourcemaps = atob(sourcemaps.slice(offset));
+                } else {
+                    sourcemaps = decodeURIComponent(sourcemaps.slice(offset));
+                }
+            }
+
             sourcemaps = JSON.parse(sourcemaps) as SourceMapObject;
         }
 
@@ -297,12 +314,5 @@ export class SourceMap {
             sourcesContent: this.sourcesContent?.slice(),
             mappings: mappings.join(";"),
         };
-    }
-
-    /**
-     * to string
-     */
-    toString(): string {
-        return JSON.stringify(this);
     }
 }

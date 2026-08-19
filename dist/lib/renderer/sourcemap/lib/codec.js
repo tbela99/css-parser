@@ -17,9 +17,9 @@ function decode(str) {
     let value = 0;
     for (let i = 0; i < str.length; i += 1) {
         let integer = char_to_integer[str[i]];
-        if (integer === undefined) {
-            throw new Error('Invalid character (' + str[i] + ')');
-        }
+        // if (integer === undefined) {
+        // 	throw new Error('Invalid character (' + str[i] + ')');
+        // }
         const has_continuation_bit = integer & 32;
         integer &= 31;
         value += integer << shift;

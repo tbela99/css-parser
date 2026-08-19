@@ -21379,9 +21379,9 @@
         let value = 0;
         for (let i = 0; i < str.length; i += 1) {
             let integer = char_to_integer[str[i]];
-            if (integer === undefined) {
-                throw new Error('Invalid character (' + str[i] + ')');
-            }
+            // if (integer === undefined) {
+            // 	throw new Error('Invalid character (' + str[i] + ')');
+            // }
             const has_continuation_bit = integer & 32;
             integer &= 31;
             value += integer << shift;
@@ -21494,6 +21494,22 @@
          */
         constructor(sourcemaps) {
             if (typeof sourcemaps === "string") {
+                if (sourcemaps.startsWith("data:")) {
+                    let encoding = "";
+                    let offset = sourcemaps.indexOf(",") + 1;
+                    if (offset == 0) {
+                        offset = sourcemaps.lastIndexOf(";") + 1;
+                    }
+                    else {
+                        encoding = sourcemaps.slice(sourcemaps.lastIndexOf(";") + 1, offset - 1);
+                    }
+                    if (encoding == "base64") {
+                        sourcemaps = atob(sourcemaps.slice(offset));
+                    }
+                    else {
+                        sourcemaps = decodeURIComponent(sourcemaps.slice(offset));
+                    }
+                }
                 sourcemaps = JSON.parse(sourcemaps);
             }
             if (sourcemaps != null) {
@@ -21668,12 +21684,6 @@
                 mappings: mappings.join(";"),
             };
         }
-        /**
-         * to string
-         */
-        toString() {
-            return JSON.stringify(this);
-        }
     }
 
     /**
@@ -21701,9 +21711,9 @@
          */
         getOffsets(offset) {
             const line = this.search(offset);
-            if (offset < 0 || line < 0) {
-                return [1, 1];
-            }
+            // if (offset < 0 || line < 0) {
+            //     return [1, 1];
+            // }
             // [line, column]
             return [line + 1, offset - this.lineStarts[line] + 1];
         }
@@ -21742,13 +21752,6 @@
          */
         addLineStart(lineStart) {
             this.lineStarts.push(lineStart);
-        }
-        /**
-         * clone the linemap
-         * @returns
-         */
-        clone() {
-            return new LineMap(this.lineStarts.slice());
         }
     }
 
@@ -31963,25 +31966,7 @@
                 const token = result.ast.chi.at(-1);
                 if (token?.typ == exports.EnumToken.CommentTokenType &&
                     token.val.startsWith("/*# sourceMappingURL=")) {
-                    const data = token.val.slice(21, -2).trim();
-                    let sourcemap;
-                    let encoding = "";
-                    if (data.startsWith("data:")) {
-                        let offset = data.indexOf(",") + 1;
-                        if (offset == 0) {
-                            offset = data.lastIndexOf(";") + 1;
-                        }
-                        else {
-                            encoding = data.slice(data.lastIndexOf(";") + 1, offset - 1);
-                        }
-                        if (encoding == "base64") {
-                            sourcemap = atob(data.slice(offset));
-                        }
-                        else {
-                            sourcemap = decodeURIComponent(data.slice(offset));
-                        }
-                        options.source.setInputSourceMap(sourcemap);
-                    }
+                    options.source.setInputSourceMap(token.val.slice(21, -2).trim());
                 }
             }
         }

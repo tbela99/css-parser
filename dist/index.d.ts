@@ -3996,10 +3996,6 @@ declare class SourceMap {
      * Convert to JSON object
      */
     toJSON(): SourceMapObject;
-    /**
-     * to string
-     */
-    toString(): string;
 }
 
 /**
@@ -4036,11 +4032,6 @@ declare class LineMap {
      * add line start
      */
     addLineStart(lineStart: number): void;
-    /**
-     * clone the linemap
-     * @returns
-     */
-    clone(): LineMap;
 }
 
 /**

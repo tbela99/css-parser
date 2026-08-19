@@ -23,9 +23,9 @@ class LineMap {
      */
     getOffsets(offset) {
         const line = this.search(offset);
-        if (offset < 0 || line < 0) {
-            return [1, 1];
-        }
+        // if (offset < 0 || line < 0) {
+        //     return [1, 1];
+        // }
         // [line, column]
         return [line + 1, offset - this.lineStarts[line] + 1];
     }
@@ -64,13 +64,6 @@ class LineMap {
      */
     addLineStart(lineStart) {
         this.lineStarts.push(lineStart);
-    }
-    /**
-     * clone the linemap
-     * @returns
-     */
-    clone() {
-        return new LineMap(this.lineStarts.slice());
     }
 }
 
