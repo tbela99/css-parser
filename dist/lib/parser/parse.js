@@ -1499,7 +1499,7 @@ async function doParse(iter, options = {}) {
                     offset: 0,
                     source,
                     position: 0,
-                    currentPosition: -1,
+                    currentPosition: 0,
                 };
                 const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream, parseInfo) : tokenize(parseInfo), Object.assign({}, options, {
                     minify: false,
@@ -1809,7 +1809,7 @@ async function doParse(iter, options = {}) {
                     time: 0,
                     source,
                     position: 0,
-                    currentPosition: -1,
+                    currentPosition: 0,
                 };
                 const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream, parseInfo) : tokenize(parseInfo), Object.assign({}, options, {
                     source,
@@ -1955,7 +1955,7 @@ async function doParse(iter, options = {}) {
                                     offset: 0,
                                     source: new SourceFile("", [], src.relative),
                                     position: 0,
-                                    currentPosition: -1,
+                                    currentPosition: 0,
                                 })
                                 : tokenize({
                                     stream,
@@ -1963,7 +1963,7 @@ async function doParse(iter, options = {}) {
                                     offset: 0,
                                     position: 0,
                                     source: new SourceFile(stream, [], src.relative),
-                                    currentPosition: -1,
+                                    currentPosition: 0,
                                 }), Object.assign({}, options, {
                                 minify: false,
                                 setParent: false,
@@ -3284,7 +3284,7 @@ async function parseDeclarations(declaration) {
         offset: 0,
         position: 0,
         source: new SourceFile(stream, [], ""),
-        currentPosition: -1,
+        currentPosition: 0,
     }), { setParent: false, minify: false, validation: false }).then((result) => {
         return result.ast.chi[0].chi.filter((t) => t.typ == EnumToken.DeclarationNodeType || t.typ == EnumToken.CommentNodeType);
     });
@@ -3319,7 +3319,7 @@ function parseString(src, options = { parseColor: true }, errors) {
         time: 0,
         source: new SourceFile(src, [], ""),
         position: 0,
-        currentPosition: -1,
+        currentPosition: 0,
     };
     const tokenResults = tokenize(parseInfo);
     const mapped = [];

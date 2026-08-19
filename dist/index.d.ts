@@ -3975,6 +3975,7 @@ declare class SourceMap {
     /**
      * Add all location
      * @param maps
+     * @throws
      */
     addAll(maps: Array<[number, number, number, number, number]>): void;
     /**

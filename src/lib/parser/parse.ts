@@ -1957,7 +1957,7 @@ export async function doParse(
                         offset: 0,
                         source,
                         position: 0,
-                        currentPosition: -1,
+                        currentPosition: 0,
                     } as ParseInfo;
                     const root: ParseResult = await doParse(
                         stream instanceof ReadableStream ? tokenizeStream(stream, parseInfo) : tokenize(parseInfo),
@@ -2335,7 +2335,7 @@ export async function doParse(
                     time: 0,
                     source,
                     position: 0,
-                    currentPosition: -1,
+                    currentPosition: 0,
                 } as ParseInfo;
 
                 const root: ParseResult = await doParse(
@@ -2531,7 +2531,7 @@ export async function doParse(
                                           offset: 0,
                                           source: new SourceFile("", [], src.relative),
                                           position: 0,
-                                          currentPosition: -1,
+                                          currentPosition: 0,
                                       } as ParseInfo)
                                     : tokenize({
                                           stream,
@@ -2539,7 +2539,7 @@ export async function doParse(
                                           offset: 0,
                                           position: 0,
                                           source: new SourceFile(stream, [], src.relative),
-                                          currentPosition: -1,
+                                          currentPosition: 0,
                                       } as ParseInfo),
                                 Object.assign({}, options, {
                                     minify: false,
@@ -4199,7 +4199,7 @@ export async function parseDeclarations(declaration: string): Promise<Array<AstD
             offset: 0,
             position: 0,
             source: new SourceFile(stream, [], ""),
-            currentPosition: -1,
+            currentPosition: 0,
         } as ParseInfo),
         { setParent: false, minify: false, validation: false },
     ).then((result) => {
@@ -4243,7 +4243,7 @@ export function parseString(
         time: 0,
         source: new SourceFile(src, [], ""),
         position: 0,
-        currentPosition: -1,
+        currentPosition: 0,
     };
 
     const tokenResults: TokenizeResult[] = tokenize(parseInfo);

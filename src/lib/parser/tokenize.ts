@@ -187,9 +187,9 @@ export function consumeString(parseInfo: ParseInfo): Array<TokenizeResult> {
 
     const result: Array<TokenizeResult> = [];
 
-    while ((value = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 1))) {
+    while ((value = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset))) {
         if (value == "\\") {
-            if ("\\" == parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 2)) {
+            if ("\\" == parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 1)) {
                 buffer += next(parseInfo, 2);
                 continue;
             }
@@ -240,7 +240,7 @@ export function consumeString(parseInfo: ParseInfo): Array<TokenizeResult> {
                     escapeSequence.length +
                         1 +
                         (isWhiteSpace(
-                            parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 1)?.charCodeAt(0),
+                            parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset)?.charCodeAt(0),
                         )
                             ? 1
                             : 0),
@@ -421,14 +421,14 @@ export function yieldResult(val: string, parseInfo: ParseInfo, hint?: EnumToken)
 
     parseInfo.position = parseInfo.currentPosition;
 
-    return { token, bytesIn: parseInfo.currentPosition + 1 };
+    return { token, bytesIn: parseInfo.currentPosition };
 }
 
 export function match(parseInfo: ParseInfo, input: string): boolean {
     let position: number = parseInfo.currentPosition - parseInfo.offset;
 
     for (let i: number = 0; i < input.length; i++) {
-        if (parseInfo.stream[position + i + 1] != input.charAt(i)) {
+        if (parseInfo.stream[position + i] != input.charAt(i)) {
             return false;
         }
     }
@@ -438,18 +438,18 @@ export function match(parseInfo: ParseInfo, input: string): boolean {
 
 export function peek(parseInfo: ParseInfo, count: number = 1): string {
     if (count == 1) {
-        return parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 1);
+        return parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset);
     }
 
     const position = parseInfo.currentPosition - parseInfo.offset;
-    return parseInfo.stream.slice(position + 1, position + count + 1);
+    return parseInfo.stream.slice(position, position + count);
 }
 
 export function next(parseInfo: ParseInfo, count: number = 1): string {
     let position = parseInfo.currentPosition - parseInfo.offset;
 
     let char: string =
-        count == 1 ? parseInfo.stream.charAt(position + 1) : parseInfo.stream.slice(position + 1, position + 1 + count);
+        count == 1 ? parseInfo.stream.charAt(position) : parseInfo.stream.slice(position, position + count);
     let i: number = 0;
     let codepoint: number;
 
@@ -491,7 +491,7 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
             offset: 0,
             time: 0,
             position: 0,
-            currentPosition: -1,
+            currentPosition: 0,
         };
     }
 
@@ -603,32 +603,27 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
                                 );
                             }
 
-                            if (values) {
-
-                                if (peek(parseInfo) === "" ) {
-
+                            if (values != null) {
+                                if (peek(parseInfo) === "") {
                                     for (let i = 0; i < values.length; i++) {
-                                        
                                         values[i].token.typ = EnumToken.BadUrlTokenType;
                                     }
                                 }
 
                                 result.push(...values);
+                            } else if (buffer.length > 0) {
+                                result.push(
+                                    yieldResult(
+                                        buffer.trimEnd(),
+                                        parseInfo,
+                                        // buffer.length > 0
+                                        peek(parseInfo) === "" || !isURLToken(buffer)
+                                            ? EnumToken.BadUrlTokenType
+                                            : EnumToken.UrlTokenTokenType,
+                                    ),
+                                );
+                                buffer = "";
                             }
-
-                            else  if (buffer.length > 0) {
-                                    result.push(
-                                        yieldResult(
-                                            buffer.trimEnd(),
-                                            parseInfo,
-                                            // buffer.length > 0
-                                            peek(parseInfo) === "" || !isURLToken(buffer)
-                                                ? EnumToken.BadUrlTokenType
-                                                : EnumToken.UrlTokenTokenType,
-                                        ),
-                                    );
-                                    buffer = "";
-                                }
                         }
 
                         break;
@@ -707,7 +702,7 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
                 }
 
                 buffer += next(parseInfo);
-                nextCharCode = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 1).charCodeAt(0);
+                nextCharCode = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset).charCodeAt(0);
 
                 while (
                     nextCharCode == 0x20 ||
@@ -716,9 +711,7 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
                     nextCharCode == 0x2029
                 ) {
                     value += next(parseInfo);
-                    nextCharCode = parseInfo.stream
-                        .charAt(parseInfo.currentPosition - parseInfo.offset + 1)
-                        .charCodeAt(0);
+                    nextCharCode = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset).charCodeAt(0);
                 }
 
                 result.push(yieldResult(value, parseInfo, EnumToken.WhitespaceTokenType));
@@ -958,7 +951,7 @@ export function tokenize(parseInfo: ParseInfo | string, yieldEOFToken: boolean =
 
             case TokenMap.DOT:
                 const codepoint = parseInfo.stream
-                    .charAt(parseInfo.currentPosition - parseInfo.offset + 2)
+                    .charAt(parseInfo.currentPosition - parseInfo.offset + 1)
                     .charCodeAt(0);
 
                 if (!isDigit(codepoint) && buffer !== "") {
@@ -1015,11 +1008,11 @@ export async function* tokenizeStream(
             if (typeof parseInfo.stream != "string") {
                 parseInfo.stream = stream as string;
             } else {
-                parseInfo.stream = (parseInfo.stream.slice(parseInfo.currentPosition - parseInfo.offset + 1) +
+                parseInfo.stream = (parseInfo.stream.slice(parseInfo.currentPosition - parseInfo.offset) +
                     stream) as string;
             }
 
-            parseInfo.offset = parseInfo.currentPosition + 1;
+            parseInfo.offset = parseInfo.currentPosition;
         }
 
         yield* tokenize(parseInfo, done);

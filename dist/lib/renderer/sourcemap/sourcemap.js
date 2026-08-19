@@ -84,12 +84,13 @@ class SourceMap {
             return;
         }
         this.sourcesMap[this.sourcesMap.length] = id;
-        this.sources[this.sources.length] = fileName;
-        this.sourcesContent[this.sourcesContent.length] = content;
+        this.sources[this.sources.length] = fileName || null;
+        this.sourcesContent[this.sourcesContent.length] = content || null;
     }
     /**
      * Add all location
      * @param maps
+     * @throws
      */
     addAll(maps) {
         let srcIndex;
@@ -114,12 +115,7 @@ class SourceMap {
             }
             else {
                 const arr = this.map.get(line);
-                record = [
-                    Math.max(0, newColumn - 1) - arr[0][0],
-                    srcIndex - arr[0][1],
-                    ln - 1,
-                    col - 1,
-                ];
+                record = [Math.max(0, newColumn - 1) - arr[0][0], srcIndex - arr[0][1], ln - 1, col - 1];
                 arr.push(record);
             }
             if (this.lastLocation != null) {

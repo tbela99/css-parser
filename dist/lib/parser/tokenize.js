@@ -140,9 +140,9 @@ function consumeString(parseInfo) {
     let value;
     let buffer = quote;
     const result = [];
-    while ((value = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 1))) {
+    while ((value = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset))) {
         if (value == "\\") {
-            if ("\\" == parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 2)) {
+            if ("\\" == parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 1)) {
                 buffer += next(parseInfo, 2);
                 continue;
             }
@@ -178,7 +178,7 @@ function consumeString(parseInfo) {
                 }
                 next(parseInfo, escapeSequence.length +
                     1 +
-                    (isWhiteSpace(parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 1)?.charCodeAt(0))
+                    (isWhiteSpace(parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset)?.charCodeAt(0))
                         ? 1
                         : 0));
                 continue;
@@ -335,12 +335,12 @@ function yieldResult(val, parseInfo, hint) {
         end: parseInfo.currentPosition,
     };
     parseInfo.position = parseInfo.currentPosition;
-    return { token, bytesIn: parseInfo.currentPosition + 1 };
+    return { token, bytesIn: parseInfo.currentPosition };
 }
 function match(parseInfo, input) {
     let position = parseInfo.currentPosition - parseInfo.offset;
     for (let i = 0; i < input.length; i++) {
-        if (parseInfo.stream[position + i + 1] != input.charAt(i)) {
+        if (parseInfo.stream[position + i] != input.charAt(i)) {
             return false;
         }
     }
@@ -348,14 +348,14 @@ function match(parseInfo, input) {
 }
 function peek(parseInfo, count = 1) {
     if (count == 1) {
-        return parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 1);
+        return parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset);
     }
     const position = parseInfo.currentPosition - parseInfo.offset;
-    return parseInfo.stream.slice(position + 1, position + count + 1);
+    return parseInfo.stream.slice(position, position + count);
 }
 function next(parseInfo, count = 1) {
     let position = parseInfo.currentPosition - parseInfo.offset;
-    let char = count == 1 ? parseInfo.stream.charAt(position + 1) : parseInfo.stream.slice(position + 1, position + 1 + count);
+    let char = count == 1 ? parseInfo.stream.charAt(position) : parseInfo.stream.slice(position, position + count);
     let i = 0;
     let codepoint;
     for (; i < char.length; i++) {
@@ -391,7 +391,7 @@ function tokenize(parseInfo, yieldEOFToken = true) {
             offset: 0,
             time: 0,
             position: 0,
-            currentPosition: -1,
+            currentPosition: 0,
         };
     }
     let value;
@@ -483,7 +483,7 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                                 value !== ")" &&
                                     value !== "");
                             }
-                            if (values) {
+                            if (values != null) {
                                 if (peek(parseInfo) === "") {
                                     for (let i = 0; i < values.length; i++) {
                                         values[i].token.typ = EnumToken.BadUrlTokenType;
@@ -563,15 +563,13 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                     buffer = "";
                 }
                 buffer += next(parseInfo);
-                nextCharCode = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 1).charCodeAt(0);
+                nextCharCode = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset).charCodeAt(0);
                 while (nextCharCode == 0x20 ||
                     (nextCharCode >= 0x9 && nextCharCode <= 0xd) ||
                     nextCharCode == 0x2028 ||
                     nextCharCode == 0x2029) {
                     value += next(parseInfo);
-                    nextCharCode = parseInfo.stream
-                        .charAt(parseInfo.currentPosition - parseInfo.offset + 1)
-                        .charCodeAt(0);
+                    nextCharCode = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset).charCodeAt(0);
                 }
                 result.push(yieldResult(value, parseInfo, EnumToken.WhitespaceTokenType));
                 buffer = "";
@@ -764,7 +762,7 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                 break;
             case 46 /* TokenMap.DOT */:
                 const codepoint = parseInfo.stream
-                    .charAt(parseInfo.currentPosition - parseInfo.offset + 2)
+                    .charAt(parseInfo.currentPosition - parseInfo.offset + 1)
                     .charCodeAt(0);
                 if (!isDigit(codepoint) && buffer !== "") {
                     result.push(yieldResult(buffer, parseInfo));
@@ -810,10 +808,10 @@ async function* tokenizeStream(input, parseInfo) {
                 parseInfo.stream = stream;
             }
             else {
-                parseInfo.stream = (parseInfo.stream.slice(parseInfo.currentPosition - parseInfo.offset + 1) +
+                parseInfo.stream = (parseInfo.stream.slice(parseInfo.currentPosition - parseInfo.offset) +
                     stream);
             }
-            parseInfo.offset = parseInfo.currentPosition + 1;
+            parseInfo.offset = parseInfo.currentPosition;
         }
         yield* tokenize(parseInfo, done);
         if (done) {

@@ -499,6 +499,7 @@ function renderAstNode(
                 };`;
             }
 
+            const lineMapLength = linesMap ? linesMap.getLineStarts().length : 0;
             const prelude =
                 (indent.length > 0 ? options.newLine : "") +
                 indent +
@@ -592,7 +593,10 @@ function renderAstNode(
             }
 
             if (options.removeEmpty && children === "") {
-                sourceLocation.end -= prelude.length;
+                if (sourcemaps != null) {
+                    sourceLocation.end -= prelude.length;
+                    linesMap!.getLineStarts().length = lineMapLength;
+                }
                 return "";
             }
 

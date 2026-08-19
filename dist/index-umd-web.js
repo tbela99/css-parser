@@ -15606,7 +15606,6 @@
                                 action: "drop",
                                 message: `Invalid color`,
                                 node: token,
-                                // location: options.source!.getSourLocation(token[LOC]!.sta),
                             });
                             return false;
                         }
@@ -15629,31 +15628,6 @@
                     if (children.length == 4 || (isRelative && children.length == 6)) {
                         return true;
                     }
-                    if (children.length == 8 || children.length == 6) {
-                        children.at(-2);
-                        children.at(-1);
-                        // @ts-ignore
-                        // if (
-                        //     ((children.length > 6 || !isRelative) && sep.typ != EnumToken.LiteralTokenType) ||
-                        //     (sep as LiteralToken).val != "/"
-                        // ) {
-                        //     return false;
-                        // }
-                        // if (alpha.typ == EnumToken.IdenTokenType && (alpha as IdentToken).val != "none") {
-                        //     return false;
-                        // } else {
-                        //     // @ts-ignore
-                        //     if (alpha.typ == EnumToken.PercentageTokenType) {
-                        //         if (+(alpha as PercentageToken).val < 0 || +(alpha as PercentageToken).val > 100) {
-                        //             return false;
-                        //         }
-                        //     } else if (alpha.typ == EnumToken.NumberTokenType) {
-                        //         if (+(alpha as NumberToken).val < 0 || +(alpha as NumberToken).val > 1) {
-                        //             return false;
-                        //         }
-                        //     }
-                        // }
-                    }
                     return true;
                 }
                 // @ts-ignore
@@ -15670,9 +15644,6 @@
                         }
                         return acc;
                     }, [[]]);
-                    // if (children.length === 0 || children[0].length === 0) {
-                    //     return false;
-                    // }
                     let j = 0;
                     let k = 0;
                     if (children[j][0].typ === exports.EnumToken.IdenTokenType &&
@@ -15706,50 +15677,13 @@
                                         k++;
                                     }
                                 }
-                                // else {
-                                //     return false;
-                                // }
                             }
                             else {
                                 k++;
                             }
                         }
-                        // else {
-                        //     return false;
-                        // }
-                        // if (k != children[j].length) {
-                        //     return false;
-                        // }
                         j++;
                     }
-                    // while (j < children.length) {
-                    // if (children[j].length > 2) {
-                    //     return false;
-                    // }
-                    // if (
-                    //     !isColor(children[j][0]) &&
-                    //     !(
-                    //         children[j][0].typ == EnumToken.WildCardFunctionTokenType &&
-                    //         equalsIgnoreCase("calc", (children[j][0] as FunctionToken).val)
-                    //     )
-                    // ) {
-                    //     return false;
-                    // }
-                    // if (children[j][0].typ == EnumToken.WildCardFunctionTokenType) {
-                    //     const result = matchAllSyntaxes(
-                    //         getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "calc()") as ValidationFunctionToken[],
-                    //         createValidationContext([children[j][0]]),
-                    //         {},
-                    //     );
-                    //     if (!result.success) {
-                    //         return false;
-                    //     }
-                    // }
-                    // if (children[j].length > 1 && !isPercentageToken(children[j][1])) {
-                    //     return false;
-                    // }
-                    //     j++;
-                    // }
                     return true;
                 }
                 else {
@@ -15762,21 +15696,6 @@
                     // @ts-ignore
                     for (const v of token.chi) {
                         if (v.typ == exports.EnumToken.IdenTokenType) {
-                            // if (isColor(v)) {
-                            //     continue;
-                            // }
-                            // if (!(keywords.includes(v.val) || COLORS_NAMES[v.val.toLowerCase()] != null)) {
-                            //     return false;
-                            // }
-                            // if (keywords.includes(v.val)) {
-                            //     if (isLegacySyntax) {
-                            //         return false;
-                            //     }
-                            //     // @ts-ignore
-                            //     if (v.val == "from" && ["rgba", "hsla"].includes((token as ColorToken).val)) {
-                            //         return false;
-                            //     }
-                            // }
                             continue;
                         }
                         if (v.typ === exports.EnumToken.MathFunctionTokenType ||
@@ -15784,20 +15703,6 @@
                             colorsFunc.includes(v.val)) {
                             continue;
                         }
-                        // if (
-                        //     ![
-                        //         EnumToken.ColorTokenType,
-                        //         EnumToken.IdenTokenType,
-                        //         EnumToken.NumberTokenType,
-                        //         EnumToken.AngleTokenType,
-                        //         EnumToken.PercentageTokenType,
-                        //         EnumToken.CommaTokenType,
-                        //         EnumToken.WhitespaceTokenType,
-                        //         EnumToken.LiteralTokenType,
-                        //     ].includes(v.typ)
-                        // ) {
-                        //     return false;
-                        // }
                     }
                 }
                 return true;
@@ -15853,63 +15758,12 @@
                 }
                 if (token.val == "color") {
                     let index = token.chi.indexOf(tk);
-                    // if ((token as ColorToken).cal == "rel") {
-                    //     for (let k = 0; k < (token as ColorToken).chi!.length; k++) {
-                    //         if (EnumToken.DashedIdenTokenType == (token as ColorToken).chi![k].typ) {
-                    //             index = k;
-                    //             break;
-                    //         }
-                    //     }
-                    // }
                     if (exports.EnumToken.DashedIdenTokenType == token?.chi?.[index]?.typ) {
                         token.kin = exports.ColorType.CUSTOM_COLOR;
                     }
                 }
             }
-            // return token;
         }
-        // @ts-ignore
-        // token.typ = EnumToken.ColorTokenType;
-        // // @ts-ignore
-        // (token as ColorToken).kin = ColorType[token.val.replaceAll("-", "_").toUpperCase()];
-        // if (!("chi" in token)) {
-        //     const val: string = (token as ColorToken).val.toLowerCase();
-        //     if (val == "currentcolor" || val == "transparent" || val in COLORS_NAMES) {
-        //         (token as ColorToken).kin = ColorType.LIT;
-        //     } else if (isHexColor(val)) {
-        //         (token as ColorToken).kin = ColorType.HEX;
-        //     }
-        //     const tk = (token as ColorToken).chi?.find(
-        //         (t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType,
-        //     );
-        //     if (tk?.typ === EnumToken.IdenTokenType && (tk as IdentToken).val === "from") {
-        //         (token as ColorToken).cal = "rel";
-        //     } else if ((token as ColorToken).val == "color-mix" && (tk as IdentToken).val == "in") {
-        //         (token as ColorToken).cal = "mix";
-        //     } else if ((token as ColorToken).val == "color") {
-        //         (token as ColorToken).cal = "col";
-        //     }
-        //     return token;
-        // }
-        // // @ts-ignore
-        // if (((token as ColorToken).chi as Token[])[0].typ == EnumToken.IdenTokenType) {
-        //     // @ts-ignore
-        //     if (((token as ColorToken).chi as Token[])[0].val == "from") {
-        //         // @ts-ignore
-        //         (token as ColorToken).cal = "rel";
-        //     }
-        //     // @ts-ignore
-        //     else if ((token as ColorToken).val == "color-mix" && ((token as ColorToken).chi as Token[])[0].val == "in") {
-        //         // @ts-ignore
-        //         (token as ColorToken).cal = "mix";
-        //     } else {
-        //         // @ts-ignore
-        //         if ((token as ColorToken).val == "color") {
-        //             // @ts-ignore
-        //             (token as ColorToken).cal = "col";
-        //         }
-        //     }
-        // }
         return token;
     }
     function isLetter(codepoint) {
@@ -16029,9 +15883,6 @@
         return name.charAt(0) == "#" && isIdentStart(name.charCodeAt(1));
     }
     const isNumber = memoize(function (name) {
-        // if (name.length == 0) {
-        //     return false;
-        // }
         let codepoint = name.charCodeAt(0);
         let i = 0;
         const j = name.length;
@@ -21409,6 +21260,9 @@
                     nam: left.val,
                     chi: [],
                 });
+                if (declaration[PARENT] != null) {
+                    atRule[LOC] = declaration[PARENT][LOC];
+                }
                 atRule[TOKENS] = [{ typ: exports.EnumToken.ParensTokenType, chi: left.chi.slice() }];
                 const minify = atRule.nam !== "supports";
                 const options = {
@@ -21431,6 +21285,9 @@
                 });
                 atRule[TOKENS] = [left];
                 atRule.val = atRule[TOKENS].reduce((acc, curr) => acc + renderValue(curr), "");
+                if (declaration[PARENT] != null) {
+                    atRule[LOC] = declaration[PARENT][LOC];
+                }
                 clonedDeclaration = cloneNode(declaration, true, nodeMap);
                 replaceNodeOrValue(nodeMap.get(targetWrapper.typ === exports.EnumToken.WildCardFunctionTokenType ? targetParentWrapper : targetWrapper), nodeMap.get(targetWrapper.typ === exports.EnumToken.WildCardFunctionTokenType ? targetWrapper : node), node.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType
                     ? trimArray(node.r.slice(0, -1))
@@ -21664,12 +21521,13 @@
                 return;
             }
             this.sourcesMap[this.sourcesMap.length] = id;
-            this.sources[this.sources.length] = fileName;
-            this.sourcesContent[this.sourcesContent.length] = content;
+            this.sources[this.sources.length] = fileName || null;
+            this.sourcesContent[this.sourcesContent.length] = content || null;
         }
         /**
          * Add all location
          * @param maps
+         * @throws
          */
         addAll(maps) {
             let srcIndex;
@@ -21694,12 +21552,7 @@
                 }
                 else {
                     const arr = this.map.get(line);
-                    record = [
-                        Math.max(0, newColumn - 1) - arr[0][0],
-                        srcIndex - arr[0][1],
-                        ln - 1,
-                        col - 1,
-                    ];
+                    record = [Math.max(0, newColumn - 1) - arr[0][0], srcIndex - arr[0][1], ln - 1, col - 1];
                     arr.push(record);
                 }
                 if (this.lastLocation != null) {
@@ -21851,9 +21704,8 @@
             if (offset < 0 || line < 0) {
                 return [1, 1];
             }
-            const column = offset - this.lineStarts[line] + 1;
             // [line, column]
-            return [line + 1, column == 0 ? 1 : column];
+            return [line + 1, offset - this.lineStarts[line] + 1];
         }
         /**
          * search the greatest index of the value less than or equal to offset
@@ -22149,9 +22001,9 @@
         let value;
         let buffer = quote;
         const result = [];
-        while ((value = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 1))) {
+        while ((value = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset))) {
             if (value == "\\") {
-                if ("\\" == parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 2)) {
+                if ("\\" == parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 1)) {
                     buffer += next(parseInfo, 2);
                     continue;
                 }
@@ -22187,7 +22039,7 @@
                     }
                     next(parseInfo, escapeSequence.length +
                         1 +
-                        (isWhiteSpace(parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 1)?.charCodeAt(0))
+                        (isWhiteSpace(parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset)?.charCodeAt(0))
                             ? 1
                             : 0));
                     continue;
@@ -22344,12 +22196,12 @@
             end: parseInfo.currentPosition,
         };
         parseInfo.position = parseInfo.currentPosition;
-        return { token, bytesIn: parseInfo.currentPosition + 1 };
+        return { token, bytesIn: parseInfo.currentPosition };
     }
     function match(parseInfo, input) {
         let position = parseInfo.currentPosition - parseInfo.offset;
         for (let i = 0; i < input.length; i++) {
-            if (parseInfo.stream[position + i + 1] != input.charAt(i)) {
+            if (parseInfo.stream[position + i] != input.charAt(i)) {
                 return false;
             }
         }
@@ -22357,14 +22209,14 @@
     }
     function peek(parseInfo, count = 1) {
         if (count == 1) {
-            return parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 1);
+            return parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset);
         }
         const position = parseInfo.currentPosition - parseInfo.offset;
-        return parseInfo.stream.slice(position + 1, position + count + 1);
+        return parseInfo.stream.slice(position, position + count);
     }
     function next(parseInfo, count = 1) {
         let position = parseInfo.currentPosition - parseInfo.offset;
-        let char = count == 1 ? parseInfo.stream.charAt(position + 1) : parseInfo.stream.slice(position + 1, position + 1 + count);
+        let char = count == 1 ? parseInfo.stream.charAt(position) : parseInfo.stream.slice(position, position + count);
         let i = 0;
         let codepoint;
         for (; i < char.length; i++) {
@@ -22400,7 +22252,7 @@
                 offset: 0,
                 time: 0,
                 position: 0,
-                currentPosition: -1,
+                currentPosition: 0,
             };
         }
         let value;
@@ -22492,7 +22344,7 @@
                                     value !== ")" &&
                                         value !== "");
                                 }
-                                if (values) {
+                                if (values != null) {
                                     if (peek(parseInfo) === "") {
                                         for (let i = 0; i < values.length; i++) {
                                             values[i].token.typ = exports.EnumToken.BadUrlTokenType;
@@ -22572,15 +22424,13 @@
                         buffer = "";
                     }
                     buffer += next(parseInfo);
-                    nextCharCode = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 1).charCodeAt(0);
+                    nextCharCode = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset).charCodeAt(0);
                     while (nextCharCode == 0x20 ||
                         (nextCharCode >= 0x9 && nextCharCode <= 0xd) ||
                         nextCharCode == 0x2028 ||
                         nextCharCode == 0x2029) {
                         value += next(parseInfo);
-                        nextCharCode = parseInfo.stream
-                            .charAt(parseInfo.currentPosition - parseInfo.offset + 1)
-                            .charCodeAt(0);
+                        nextCharCode = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset).charCodeAt(0);
                     }
                     result.push(yieldResult(value, parseInfo, exports.EnumToken.WhitespaceTokenType));
                     buffer = "";
@@ -22773,7 +22623,7 @@
                     break;
                 case 46 /* TokenMap.DOT */:
                     const codepoint = parseInfo.stream
-                        .charAt(parseInfo.currentPosition - parseInfo.offset + 2)
+                        .charAt(parseInfo.currentPosition - parseInfo.offset + 1)
                         .charCodeAt(0);
                     if (!isDigit(codepoint) && buffer !== "") {
                         result.push(yieldResult(buffer, parseInfo));
@@ -22819,10 +22669,10 @@
                     parseInfo.stream = stream;
                 }
                 else {
-                    parseInfo.stream = (parseInfo.stream.slice(parseInfo.currentPosition - parseInfo.offset + 1) +
+                    parseInfo.stream = (parseInfo.stream.slice(parseInfo.currentPosition - parseInfo.offset) +
                         stream);
                 }
-                parseInfo.offset = parseInfo.currentPosition + 1;
+                parseInfo.offset = parseInfo.currentPosition;
             }
             yield* tokenize(parseInfo, done);
             if (done) {
@@ -24995,6 +24845,7 @@
                 if ([exports.EnumToken.AtRuleNodeType, exports.EnumToken.KeyframesAtRuleNodeType].includes(data.typ) && !("chi" in data)) {
                     return `${indent}@${data.nam}${data.val === "" ? "" : options.indent || " "}${data.val};`;
                 }
+                const lineMapLength = linesMap ? linesMap.getLineStarts().length : 0;
                 const prelude = (indent.length > 0 ? options.newLine : "") +
                     indent +
                     ([exports.EnumToken.AtRuleNodeType, exports.EnumToken.KeyframesAtRuleNodeType].includes(data.typ)
@@ -25061,7 +24912,10 @@
                     sourceLocation.end--;
                 }
                 if (options.removeEmpty && children === "") {
-                    sourceLocation.end -= prelude.length;
+                    if (sourcemaps != null) {
+                        sourceLocation.end -= prelude.length;
+                        linesMap.getLineStarts().length = lineMapLength;
+                    }
                     return "";
                 }
                 const end = options.newLine + indent + `}`;
@@ -30026,7 +29880,7 @@
                         offset: 0,
                         source,
                         position: 0,
-                        currentPosition: -1,
+                        currentPosition: 0,
                     };
                     const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream, parseInfo) : tokenize(parseInfo), Object.assign({}, options, {
                         minify: false,
@@ -30336,7 +30190,7 @@
                         time: 0,
                         source,
                         position: 0,
-                        currentPosition: -1,
+                        currentPosition: 0,
                     };
                     const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream, parseInfo) : tokenize(parseInfo), Object.assign({}, options, {
                         source,
@@ -30482,7 +30336,7 @@
                                         offset: 0,
                                         source: new SourceFile("", [], src.relative),
                                         position: 0,
-                                        currentPosition: -1,
+                                        currentPosition: 0,
                                     })
                                     : tokenize({
                                         stream,
@@ -30490,7 +30344,7 @@
                                         offset: 0,
                                         position: 0,
                                         source: new SourceFile(stream, [], src.relative),
-                                        currentPosition: -1,
+                                        currentPosition: 0,
                                     }), Object.assign({}, options, {
                                     minify: false,
                                     setParent: false,
@@ -31811,7 +31665,7 @@
             offset: 0,
             position: 0,
             source: new SourceFile(stream, [], ""),
-            currentPosition: -1,
+            currentPosition: 0,
         }), { setParent: false, minify: false, validation: false }).then((result) => {
             return result.ast.chi[0].chi.filter((t) => t.typ == exports.EnumToken.DeclarationNodeType || t.typ == exports.EnumToken.CommentNodeType);
         });
@@ -31846,7 +31700,7 @@
             time: 0,
             source: new SourceFile(src, [], ""),
             position: 0,
-            currentPosition: -1,
+            currentPosition: 0,
         };
         const tokenResults = tokenize(parseInfo);
         const mapped = [];
@@ -32315,7 +32169,7 @@
             time: 0,
             source: options.source,
             position: 0,
-            currentPosition: -1,
+            currentPosition: 0,
         };
         const result = doParseSync(tokenize(options.parseInfo), options);
         return !options.module && !options.inputSourceMap && !options.sourcemap ? result : parseResult(result, options);
@@ -32451,7 +32305,7 @@
             time: 0,
             source: options.source,
             position: 0,
-            currentPosition: -1,
+            currentPosition: 0,
         };
         return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => (!options.module && !options.inputSourceMap ? result : parseResult(result, options)));
     }

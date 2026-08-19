@@ -313,7 +313,7 @@ export function parseSync(
         time: 0,
         source: options.source,
         position: 0,
-        currentPosition: -1,
+        currentPosition: 0,
     } as ParseInfo;
 
     const result = doParseSync(tokenize(options.parseInfo), options) as ParseResult;
@@ -655,7 +655,7 @@ export async function parse(
         time: 0,
         source: options.source,
         position: 0,
-        currentPosition: -1,
+        currentPosition: 0,
     } as ParseInfo;
 
     return doParse(

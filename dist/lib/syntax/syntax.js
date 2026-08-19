@@ -591,7 +591,6 @@ function isColor(token, errors) {
                             action: "drop",
                             message: `Invalid color`,
                             node: token,
-                            // location: options.source!.getSourLocation(token[LOC]!.sta),
                         });
                         return false;
                     }
@@ -614,31 +613,6 @@ function isColor(token, errors) {
                 if (children.length == 4 || (isRelative && children.length == 6)) {
                     return true;
                 }
-                if (children.length == 8 || children.length == 6) {
-                    children.at(-2);
-                    children.at(-1);
-                    // @ts-ignore
-                    // if (
-                    //     ((children.length > 6 || !isRelative) && sep.typ != EnumToken.LiteralTokenType) ||
-                    //     (sep as LiteralToken).val != "/"
-                    // ) {
-                    //     return false;
-                    // }
-                    // if (alpha.typ == EnumToken.IdenTokenType && (alpha as IdentToken).val != "none") {
-                    //     return false;
-                    // } else {
-                    //     // @ts-ignore
-                    //     if (alpha.typ == EnumToken.PercentageTokenType) {
-                    //         if (+(alpha as PercentageToken).val < 0 || +(alpha as PercentageToken).val > 100) {
-                    //             return false;
-                    //         }
-                    //     } else if (alpha.typ == EnumToken.NumberTokenType) {
-                    //         if (+(alpha as NumberToken).val < 0 || +(alpha as NumberToken).val > 1) {
-                    //             return false;
-                    //         }
-                    //     }
-                    // }
-                }
                 return true;
             }
             // @ts-ignore
@@ -655,9 +629,6 @@ function isColor(token, errors) {
                     }
                     return acc;
                 }, [[]]);
-                // if (children.length === 0 || children[0].length === 0) {
-                //     return false;
-                // }
                 let j = 0;
                 let k = 0;
                 if (children[j][0].typ === EnumToken.IdenTokenType &&
@@ -691,50 +662,13 @@ function isColor(token, errors) {
                                     k++;
                                 }
                             }
-                            // else {
-                            //     return false;
-                            // }
                         }
                         else {
                             k++;
                         }
                     }
-                    // else {
-                    //     return false;
-                    // }
-                    // if (k != children[j].length) {
-                    //     return false;
-                    // }
                     j++;
                 }
-                // while (j < children.length) {
-                // if (children[j].length > 2) {
-                //     return false;
-                // }
-                // if (
-                //     !isColor(children[j][0]) &&
-                //     !(
-                //         children[j][0].typ == EnumToken.WildCardFunctionTokenType &&
-                //         equalsIgnoreCase("calc", (children[j][0] as FunctionToken).val)
-                //     )
-                // ) {
-                //     return false;
-                // }
-                // if (children[j][0].typ == EnumToken.WildCardFunctionTokenType) {
-                //     const result = matchAllSyntaxes(
-                //         getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "calc()") as ValidationFunctionToken[],
-                //         createValidationContext([children[j][0]]),
-                //         {},
-                //     );
-                //     if (!result.success) {
-                //         return false;
-                //     }
-                // }
-                // if (children[j].length > 1 && !isPercentageToken(children[j][1])) {
-                //     return false;
-                // }
-                //     j++;
-                // }
                 return true;
             }
             else {
@@ -747,21 +681,6 @@ function isColor(token, errors) {
                 // @ts-ignore
                 for (const v of token.chi) {
                     if (v.typ == EnumToken.IdenTokenType) {
-                        // if (isColor(v)) {
-                        //     continue;
-                        // }
-                        // if (!(keywords.includes(v.val) || COLORS_NAMES[v.val.toLowerCase()] != null)) {
-                        //     return false;
-                        // }
-                        // if (keywords.includes(v.val)) {
-                        //     if (isLegacySyntax) {
-                        //         return false;
-                        //     }
-                        //     // @ts-ignore
-                        //     if (v.val == "from" && ["rgba", "hsla"].includes((token as ColorToken).val)) {
-                        //         return false;
-                        //     }
-                        // }
                         continue;
                     }
                     if (v.typ === EnumToken.MathFunctionTokenType ||
@@ -769,20 +688,6 @@ function isColor(token, errors) {
                         colorsFunc.includes(v.val)) {
                         continue;
                     }
-                    // if (
-                    //     ![
-                    //         EnumToken.ColorTokenType,
-                    //         EnumToken.IdenTokenType,
-                    //         EnumToken.NumberTokenType,
-                    //         EnumToken.AngleTokenType,
-                    //         EnumToken.PercentageTokenType,
-                    //         EnumToken.CommaTokenType,
-                    //         EnumToken.WhitespaceTokenType,
-                    //         EnumToken.LiteralTokenType,
-                    //     ].includes(v.typ)
-                    // ) {
-                    //     return false;
-                    // }
                 }
             }
             return true;
@@ -838,63 +743,12 @@ function parseColor(token) {
             }
             if (token.val == "color") {
                 let index = token.chi.indexOf(tk);
-                // if ((token as ColorToken).cal == "rel") {
-                //     for (let k = 0; k < (token as ColorToken).chi!.length; k++) {
-                //         if (EnumToken.DashedIdenTokenType == (token as ColorToken).chi![k].typ) {
-                //             index = k;
-                //             break;
-                //         }
-                //     }
-                // }
                 if (EnumToken.DashedIdenTokenType == token?.chi?.[index]?.typ) {
                     token.kin = ColorType.CUSTOM_COLOR;
                 }
             }
         }
-        // return token;
     }
-    // @ts-ignore
-    // token.typ = EnumToken.ColorTokenType;
-    // // @ts-ignore
-    // (token as ColorToken).kin = ColorType[token.val.replaceAll("-", "_").toUpperCase()];
-    // if (!("chi" in token)) {
-    //     const val: string = (token as ColorToken).val.toLowerCase();
-    //     if (val == "currentcolor" || val == "transparent" || val in COLORS_NAMES) {
-    //         (token as ColorToken).kin = ColorType.LIT;
-    //     } else if (isHexColor(val)) {
-    //         (token as ColorToken).kin = ColorType.HEX;
-    //     }
-    //     const tk = (token as ColorToken).chi?.find(
-    //         (t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType,
-    //     );
-    //     if (tk?.typ === EnumToken.IdenTokenType && (tk as IdentToken).val === "from") {
-    //         (token as ColorToken).cal = "rel";
-    //     } else if ((token as ColorToken).val == "color-mix" && (tk as IdentToken).val == "in") {
-    //         (token as ColorToken).cal = "mix";
-    //     } else if ((token as ColorToken).val == "color") {
-    //         (token as ColorToken).cal = "col";
-    //     }
-    //     return token;
-    // }
-    // // @ts-ignore
-    // if (((token as ColorToken).chi as Token[])[0].typ == EnumToken.IdenTokenType) {
-    //     // @ts-ignore
-    //     if (((token as ColorToken).chi as Token[])[0].val == "from") {
-    //         // @ts-ignore
-    //         (token as ColorToken).cal = "rel";
-    //     }
-    //     // @ts-ignore
-    //     else if ((token as ColorToken).val == "color-mix" && ((token as ColorToken).chi as Token[])[0].val == "in") {
-    //         // @ts-ignore
-    //         (token as ColorToken).cal = "mix";
-    //     } else {
-    //         // @ts-ignore
-    //         if ((token as ColorToken).val == "color") {
-    //             // @ts-ignore
-    //             (token as ColorToken).cal = "col";
-    //         }
-    //     }
-    // }
     return token;
 }
 function isLetter(codepoint) {
@@ -1014,9 +868,6 @@ function isHash(name) {
     return name.charAt(0) == "#" && isIdentStart(name.charCodeAt(1));
 }
 const isNumber = memoize(function (name) {
-    // if (name.length == 0) {
-    //     return false;
-    // }
     let codepoint = name.charCodeAt(0);
     let i = 0;
     const j = name.length;

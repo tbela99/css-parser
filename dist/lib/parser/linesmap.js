@@ -26,9 +26,8 @@ class LineMap {
         if (offset < 0 || line < 0) {
             return [1, 1];
         }
-        const column = offset - this.lineStarts[line] + 1;
         // [line, column]
-        return [line + 1, column == 0 ? 1 : column];
+        return [line + 1, offset - this.lineStarts[line] + 1];
     }
     /**
      * search the greatest index of the value less than or equal to offset

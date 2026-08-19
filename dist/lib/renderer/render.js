@@ -302,6 +302,7 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
             if ([EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ) && !("chi" in data)) {
                 return `${indent}@${data.nam}${data.val === "" ? "" : options.indent || " "}${data.val};`;
             }
+            const lineMapLength = linesMap ? linesMap.getLineStarts().length : 0;
             const prelude = (indent.length > 0 ? options.newLine : "") +
                 indent +
                 ([EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ)
@@ -368,7 +369,10 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
                 sourceLocation.end--;
             }
             if (options.removeEmpty && children === "") {
-                sourceLocation.end -= prelude.length;
+                if (sourcemaps != null) {
+                    sourceLocation.end -= prelude.length;
+                    linesMap.getLineStarts().length = lineMapLength;
+                }
                 return "";
             }
             const end = options.newLine + indent + `}`;

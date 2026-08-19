@@ -107,26 +107,24 @@ export class SourceMap {
     }
 
     addSourceContent(id: number, fileName: string | null, content: string | null): void {
-
         if (this.sourcesMap.includes(id)) {
             return;
         }
 
         this.sourcesMap[this.sourcesMap.length] = id;
-        this.sources[this.sources.length] = fileName;
-        this.sourcesContent[this.sourcesContent.length] = content;
+        this.sources[this.sources.length] = fileName || null;
+        this.sourcesContent[this.sourcesContent.length] = content || null;
     }
 
     /**
      * Add all location
      * @param maps
+     * @throws
      */
     addAll(maps: Array<[number, number, number, number, number]>): void {
-
         let srcIndex: number;
         for (let [newLine, newColumn, srcId, ln, col] of maps) {
             const key = `${srcId}:${ln}:${col}:${newLine}:${newColumn}`;
-            const sourcemap = `${srcId}`;
 
             if (this.keys.has(key)) {
                 continue;
@@ -144,7 +142,6 @@ export class SourceMap {
             srcIndex = this.sourcesMap.indexOf(srcId);
 
             if (srcIndex == -1) {
-
                 throw new Error(`Source file ${srcId} not added to sourcemap`);
             }
 
@@ -155,12 +152,7 @@ export class SourceMap {
             } else {
                 const arr: number[][] = this.map.get(line) as number[][];
 
-                record = [
-                    Math.max(0, newColumn - 1) - arr[0][0],
-                    srcIndex - arr[0][1],
-                    ln - 1,
-                    col - 1,
-                ];
+                record = [Math.max(0, newColumn - 1) - arr[0][0], srcIndex - arr[0][1], ln - 1, col - 1];
                 arr.push(record);
             }
 

@@ -182,7 +182,7 @@ function parseSync(...args) {
         time: 0,
         source: options.source,
         position: 0,
-        currentPosition: -1,
+        currentPosition: 0,
     };
     const result = doParseSync(tokenize(options.parseInfo), options);
     return !options.module && !options.inputSourceMap && !options.sourcemap ? result : parseResult(result, options);
@@ -318,7 +318,7 @@ async function parse(...args) {
         time: 0,
         source: options.source,
         position: 0,
-        currentPosition: -1,
+        currentPosition: 0,
     };
     return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => (!options.module && !options.inputSourceMap ? result : parseResult(result, options)));
 }

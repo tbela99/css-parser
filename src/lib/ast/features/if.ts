@@ -13,7 +13,7 @@ import type {
 import { EnumToken } from "../types.ts";
 import { renderValue } from "../../renderer/render.ts";
 import { FeatureWalkMode } from "./type.ts";
-import { PARENT, TOKENS } from "../../syntax/constants.ts";
+import { LOC, PARENT, TOKENS } from "../../syntax/constants.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 import { replaceNodeOrValue } from "../../parser/utils/token.ts";
 import { cloneNode } from "../../ast/clone.ts";
@@ -152,6 +152,10 @@ function substituteIfElseNode(
                 chi: [] as Token[],
             }) as AstAtRule;
 
+            if (declaration[PARENT] != null) {
+                atRule[LOC] = declaration[PARENT][LOC]!;
+            }
+
             atRule[TOKENS] = [{ typ: EnumToken.ParensTokenType, chi: (left as FunctionToken).chi.slice() }];
 
             const minify: boolean = atRule.nam !== "supports";
@@ -184,6 +188,10 @@ function substituteIfElseNode(
 
             atRule[TOKENS] = [left];
             atRule.val = atRule[TOKENS]!.reduce((acc: string, curr: Token) => acc + renderValue(curr), "");
+
+            if (declaration[PARENT] != null) {
+                atRule[LOC] = declaration[PARENT][LOC]!;
+            }
 
             clonedDeclaration = cloneNode(declaration, true, nodeMap) as AstDeclaration;
 
