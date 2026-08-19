@@ -114,7 +114,7 @@ function doRender(data, options = {}, mapping) {
             source = options.sourcesMap.get(sourceId);
             sourcemap.addSourceContent(source.id, source.getFileName(), source.getContent());
         }
-        sourcemap.addAll(sourcemaps.maps);
+        sourcemap.add(...sourcemaps.maps);
         result.map = sourcemap;
         if (options.sourcemap === "inline") {
             result.code += `\n/*# sourceMappingURL=${result.map.toUrl()} */`;

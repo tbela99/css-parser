@@ -92,9 +92,13 @@ class SourceMap {
             this.computePositions();
         }
     }
-    hasSourceContent(id) {
-        return this.sourcesMap.includes(id);
-    }
+    /**
+     * add source
+     * @param id
+     * @param fileName
+     * @param content
+     * @returns
+     */
     addSourceContent(id, fileName, content) {
         if (this.sourcesMap.includes(id)) {
             return;
@@ -107,9 +111,13 @@ class SourceMap {
      * Add all location
      * @param maps
      * @throws
+     * @private
      */
-    addAll(maps) {
+    add(...maps) {
         let srcIndex;
+        if (typeof maps[0] === "number") {
+            maps = [maps];
+        }
         for (let [newLine, newColumn, srcId, ln, col] of maps) {
             const key = `${srcId}:${ln}:${col}:${newLine}:${newColumn}`;
             if (this.keys.has(key)) {
@@ -151,7 +159,6 @@ class SourceMap {
         let sourceFileIndex = 0; // second field
         let sourceCodeLine = 0; // third field
         let sourceCodeColumn = 0; // fourth field
-        let nameIndex = 0; // fifth field
         let generatedCodeColumn;
         let result;
         // mappings to original source
@@ -174,10 +181,11 @@ class SourceMap {
                 sourceCodeLine += segment[2];
                 sourceCodeColumn += segment[3];
                 result.push(sourceFileIndex, sourceCodeLine, sourceCodeColumn);
-                if (segment.length === 5) {
-                    nameIndex += segment[4];
-                    result.push(nameIndex);
-                }
+                // nameIndex not needed
+                // if (segment.length === 5) {
+                //     nameIndex += segment[4];
+                //     result.push(nameIndex);
+                // }
                 return result;
             })
                 .sort((a, b) => {
@@ -198,6 +206,9 @@ class SourceMap {
      * @param column generated column
      */
     find(line, column) {
+        if (this.reverseMap.size == 0) {
+            this.computePositions();
+        }
         if (!this.reverseMap.has(--line)) {
             return null;
         }

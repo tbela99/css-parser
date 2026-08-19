@@ -44,7 +44,7 @@ button {
 
         it("sourcemap unminified #1", async () => {
             return transform(options).then(async (result) => {
-                result.map.computePositions();
+                // result.map.computePositions();
                 let positions = result.map.find(40, 2);
                 expect(positions?.length == 1 && positions[0].slice(0, 3)).deep.equals([null, 6, 2]);
             });
@@ -59,14 +59,20 @@ button {
                     output: "test/sourcemap.html",
                 });
 
-                result2.map.computePositions();
-                const positions = result2.map.find(1, 254);
+                // result2.map.computePositions();
+                let positions = result2.map.find(1, 254);
                 expect(positions?.[0]?.slice?.(0, 3)).deep.equals([null, 19, 2]);
+                
+                positions = result2.map.find(1, 255);
+                expect(positions).equals(null);
+                
+                positions = result2.map.find(100, 255);
+                expect(positions).equals(null);
             });
         });
 
         it("input sourcemap minified #3", async () => {
-            return transform({...options, sourcemap: true}).then(async (result) => {
+            return transform({ ...options, sourcemap: true }).then(async (result) => {
                 const result2 = transformSync({
                     input: result.code,
                     nestingRules: false,
@@ -75,14 +81,14 @@ button {
                     output: "test/sourcemap.html",
                 });
 
-                result2.map.computePositions();
+                // result2.map.computePositions();
                 const positions = result2.map.find(1, 254);
                 expect(positions?.[0]?.slice?.(0, 3)).deep.equals([null, 19, 2]);
             });
         });
 
         it("input sourcemap minified #3", async () => {
-            return transform({...options, sourcemap: true}).then(async (result) => {
+            return transform({ ...options, sourcemap: true }).then(async (result) => {
                 const result2 = transformSync({
                     input: result.code,
                     nestingRules: false,
@@ -91,7 +97,7 @@ button {
                     output: "test/sourcemap.html",
                 });
 
-                result2.map.computePositions();
+                // result2.map.computePositions();
                 const positions = result2.map.find(1, 254);
                 expect(positions?.[0]?.slice?.(0, 3)).deep.equals([null, 19, 2]);
             });

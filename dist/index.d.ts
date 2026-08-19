@@ -3970,14 +3970,26 @@ declare class SourceMap {
      * @param sourcemaps
      */
     constructor(sourcemaps: string | SourceMapObject);
-    hasSourceContent(id: number): boolean;
+    /**
+     * add source
+     * @param id
+     * @param fileName
+     * @param content
+     * @returns
+     */
     addSourceContent(id: number, fileName: string | null, content: string | null): void;
     /**
-     * Add all location
+     * Add location
      * @param maps
      * @throws
      */
-    addAll(maps: Array<[number, number, number, number, number]>): void;
+    add(newLine: number, newColumn: number, srcId: number, ln: number, col: number): void;
+    /**
+     * Add multiple locations
+     * @param maps
+     * @throws
+     */
+    add(...maps: Array<[number, number, number, number, number]>): void;
     /**
      * compute original positions
      */

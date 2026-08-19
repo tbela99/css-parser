@@ -228,7 +228,7 @@ export function doRender(
             sourcemap.addSourceContent(source.id, source.getFileName(), source.getContent());
         }
 
-        sourcemap.addAll(sourcemaps!.maps!);
+        sourcemap.add(...(sourcemaps!.maps! as Array<[number, number, number, number, number]>) );
         result.map = sourcemap;
 
         if (options.sourcemap === "inline") {

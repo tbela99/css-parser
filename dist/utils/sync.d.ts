@@ -1,4 +1,4 @@
-import type { ParseResult, ParserOptions, ParserSyncOptions } from "../@types/index.js";
+import type { ParseResult, ParserOptions, ParserSyncOptions } from "../@types/index.d.ts";
 /**
  * parse result. process input sourcemap
  * @param result
