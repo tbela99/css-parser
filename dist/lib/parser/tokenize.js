@@ -276,7 +276,12 @@ function yieldResult(parseInfo, hint, options) {
     else {
         let slice = val.slice(1);
         const chr = val.charAt(0);
-        if (chr == "@" && isIdent(slice)) {
+        if (chr == "!" && equalsIgnoreCase("!important", val)) {
+            token = {
+                typ: EnumToken.ImportantTokenType,
+            };
+        }
+        else if (chr == "@" && isIdent(slice)) {
             token = {
                 typ: EnumToken.AtRuleTokenType,
                 nam: slice,

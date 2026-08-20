@@ -22155,7 +22155,12 @@
         else {
             let slice = val.slice(1);
             const chr = val.charAt(0);
-            if (chr == "@" && isIdent(slice)) {
+            if (chr == "!" && equalsIgnoreCase("!important", val)) {
+                token = {
+                    typ: exports.EnumToken.ImportantTokenType,
+                };
+            }
+            else if (chr == "@" && isIdent(slice)) {
                 token = {
                     typ: exports.EnumToken.AtRuleTokenType,
                     nam: slice,
@@ -24680,7 +24685,7 @@
             currentDirectory = normalize(currentDirectory);
         }
         const dir = cwd || currentDirectory;
-        const absolute = dir == "" || url.startsWith("/") ? resolvePath(url) : resolvePath(dir, url);
+        const absolute = dir == "" || url.startsWith("/") || url.match(/^[a-zA-Z]:/) ? resolvePath(url) : resolvePath(dir, url);
         return {
             absolute,
             relative: dir === "" ? absolute : diff(absolute, dir),

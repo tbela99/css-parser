@@ -377,7 +377,11 @@ export function yieldResult(
         let slice: string = val.slice(1);
         const chr: string = val.charAt(0);
 
-        if (chr == "@" && isIdent(slice)) {
+        if (chr == "!" && equalsIgnoreCase("!important", val)) {
+            token = {
+                typ: EnumToken.ImportantTokenType,
+            } as Token;
+        } else if (chr == "@" && isIdent(slice)) {
             token = {
                 typ: EnumToken.AtRuleTokenType,
                 nam: slice,
