@@ -37,7 +37,7 @@
   },
   "bootstrap-5.css": {
     "clean-css": 163827,
-    "cssnano": 164240,
+    "cssnano": 164034,
     "csso": 161486,
     "css-tree": 165616,
     "esbuild": 162024,
@@ -55,7 +55,7 @@
   },
   "font-awesome.css": {
     "clean-css": 82143,
-    "cssnano": 73902,
+    "cssnano": 73387,
     "csso": 73592,
     "css-tree": 84685,
     "esbuild": 76185,
@@ -82,7 +82,7 @@
   },
   "pure.css": {
     "clean-css": 16797,
-    "cssnano": 16660,
+    "cssnano": 16621,
     "csso": 16737,
     "css-tree": 17086,
     "esbuild": 16758,

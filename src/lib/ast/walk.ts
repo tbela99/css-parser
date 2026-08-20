@@ -8,9 +8,11 @@ import type {
     WalkAttributesResult,
     WalkerFilter,
     WalkerOption,
+    WalkerOptions,
     WalkerValueFilter,
     WalkResult,
 } from "../../@types/index.d.ts";
+import { TOKENS } from "../syntax/constants.ts";
 import { EnumToken } from "./types.ts";
 
 /**
@@ -108,6 +110,157 @@ export enum WalkerEvent {
  * }
  *
  * const result = await transform(css);
+ * for (const {node} of walk(result.ast, filter, false)) {
+ *
+ *     console.error([EnumToken[node.typ]]);
+ * }
+ *
+ * // [ "StyleSheetNodeType" ]
+ * // [ "RuleNodeType" ]
+ * // [ "DeclarationNodeType" ]
+ * // [ "RuleNodeType" ]
+ * // [ "DeclarationNodeType" ]
+ * // [ "RuleNodeType" ]
+ * // [ "DeclarationNodeType" ]
+ * ```
+ */
+export function walk(node: AstNode, filter?: WalkerFilter | null, reverse?: boolean): Generator<WalkResult>;
+
+/**
+ * Walk ast nodes
+ * @param node initial node
+ * @param filter control the walk process
+ *
+ * ```ts
+ *
+ * import {walk} from '@tbela99/css-parser';
+ *
+ * const css = `
+ * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
+ *
+ * html,
+ * body {
+ *     line-height: 1.474;
+ * }
+ *
+ * .ruler {
+ *
+ *     height: 10px;
+ * }
+ * `;
+ *
+ * for (const {node, parent, root} of walk(ast)) {
+ *
+ *     // do something with node
+ * }
+ * ```
+ *
+ * Using a {@link filter} function to control the ast traversal.  the filter function returns a value of type {@link WalkerOption}.
+ *
+ * ```ts
+ * import {EnumToken, transform, walk, WalkerOptionEnum} from '@tbela99/css-parser';
+ *
+ * const css = `
+ * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
+ *
+ * html,
+ * body {
+ *     line-height: 1.474;
+ * }
+ *
+ * .ruler {
+ *
+ *     height: 10px;
+ * }
+ * `;
+ *
+ * function filter(node) {
+ *
+ *     if (node.typ == EnumToken.AstRule && node.sel.includes('html')) {
+ *
+ *         // skip the children of the current node
+ *         return WalkerOptionEnum.IgnoreChildren;
+ *     }
+ * }
+ *
+ * const result = await transform(css);
+ * for (const {node} of walk(result.ast, {filter, reverse: false})) {
+ *
+ *     console.error([EnumToken[node.typ]]);
+ * }
+ *
+ * // [ "StyleSheetNodeType" ]
+ * // [ "RuleNodeType" ]
+ * // [ "DeclarationNodeType" ]
+ * // [ "RuleNodeType" ]
+ * // [ "DeclarationNodeType" ]
+ * // [ "RuleNodeType" ]
+ * // [ "DeclarationNodeType" ]
+ * ```
+ */
+export function walk(node: AstNode, filter?: WalkerOptions | null): Generator<WalkResult>;
+
+/**
+ * Walk ast nodes
+ * @param node initial node
+ * @param filter control the walk process
+ * @param reverse walk in reverse order
+ *
+ * @private
+ *
+ * ```ts
+ *
+ * import {walk} from '@tbela99/css-parser';
+ *
+ * const css = `
+ * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
+ *
+ * html,
+ * body {
+ *     line-height: 1.474;
+ * }
+ *
+ * .ruler {
+ *
+ *     height: 10px;
+ * }
+ * `;
+ *
+ * for (const {node, parent, root} of walk(ast)) {
+ *
+ *     // do something with node
+ * }
+ * ```
+ *
+ * Using a {@link filter} function to control the ast traversal.  the filter function returns a value of type {@link WalkerOption}.
+ *
+ * ```ts
+ * import {EnumToken, transform, walk, WalkerOptionEnum} from '@tbela99/css-parser';
+ *
+ * const css = `
+ * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
+ *
+ * html,
+ * body {
+ *     line-height: 1.474;
+ * }
+ *
+ * .ruler {
+ *
+ *     height: 10px;
+ * }
+ * `;
+ *
+ * function filter(node) {
+ *
+ *     if (node.typ == EnumToken.AstRule && node.sel.includes('html')) {
+ *
+ *         // skip the children of the current node
+ *         return WalkerOptionEnum.IgnoreChildren;
+ *     }
+ * }
+ *
+ * const result = await transform(css);
  * for (const {node} of walk(result.ast, filter)) {
  *
  *     console.error([EnumToken[node.typ]]);
@@ -122,18 +275,31 @@ export enum WalkerEvent {
  * // [ "DeclarationNodeType" ]
  * ```
  */
-export function* walk(node: AstNode, filter?: WalkerFilter | null, reverse?: boolean): Generator<WalkResult> {
+export function* walk(
+    node: AstNode,
+    filter?: WalkerFilter | WalkerOptions | null,
+    reverse?: boolean,
+): Generator<WalkResult> {
     const parents: AstNode[] = [node];
     const root: AstRuleList = <AstRuleList>node;
 
     const map: Map<AstNode, AstNode> = new Map();
+    let options: WalkerOptions | null = filter as WalkerOptions | null;
     let isNumeric: boolean = false;
+    let includeValues: boolean = false;
     let i: number = 0;
+
+    if (options != null && typeof options == "object") {
+        filter = options.filter as WalkerFilter;
+        reverse = options.reverse;
+        includeValues = options.inludeValues as boolean;
+    }
 
     while ((node = <AstNode>parents[i++])) {
         let option: WalkerOption = null;
 
         if (filter != null) {
+            // @ts-ignore
             option = filter(node);
             isNumeric = typeof option == "number";
 
@@ -166,8 +332,21 @@ export function* walk(node: AstNode, filter?: WalkerFilter | null, reverse?: boo
             };
         }
 
-        if ("chi" in node && (!isNumeric || ((option as number) & WalkerOptionEnum.IgnoreChildren) === 0)) {
-            parents.splice(i, 0, ...(<AstNode[]>(<AstRuleList>node).chi![reverse ? "toReversed" : "slice"]()));
+        if (includeValues) {
+            if (node[TOKENS] != null) {
+                // @ts-ignore
+                parents.splice(i, 0, ...(reverse ? node[TOKENS]!.toReversed() : node[TOKENS]));
+                // @ts-ignore
+            } else if (Array.isArray(node.val)) {
+                // @ts-ignore
+                parents.splice(i, 0, ...(reverse ? node.val.toReversed() : node.val));
+            }
+        }
+
+        // @ts-ignore
+        if (node["chi"] != null && (!isNumeric || ((option as number) & WalkerOptionEnum.IgnoreChildren) === 0)) {
+            // @ts-ignore
+            parents.splice(i, 0, ...(reverse ? node.chi!.toReversed() : node.chi));
 
             for (const child of <AstNode[]>(<AstRuleList>node).chi) {
                 map.set(child, node);
@@ -270,12 +449,6 @@ export function* walkValues(
         }
 
         used.add(value);
-        // parents.length = 0;
-
-        // while (node != null) {
-        //     parents.push(node);
-        //     node = map.get(node) ?? null;
-        // }
 
         if (filter.fn != null && eventType & WalkerEvent.Enter) {
             const isValid: boolean =
@@ -339,7 +512,7 @@ export function* walkValues(
 
                 do {
                     yield result;
-                    next = map.get(result) ?? root;
+                    next = map.get(result as Token) ?? root;
 
                     if (next == result) {
                         break;

@@ -135,4 +135,4 @@ table.colortable th {
 ````
 
 ------
-[← Plugins API](./plugins.md) | [Ast Manipulation →](./ast.md) 
+[← Plugins API](./plugins.md) | [Prefix Removal →](./prefix-removal.md) 

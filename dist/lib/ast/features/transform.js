@@ -6,7 +6,11 @@ import { FeatureWalkMode } from './type.js';
 import { STATE } from '../../syntax/constants.js';
 
 class TransformCssFeature {
-    accept = new Set([EnumToken.RuleNodeType, EnumToken.KeyFramesRuleNodeType]);
+    accept = new Set([
+        EnumToken.RuleNodeType,
+        EnumToken.AtRuleNodeType,
+        EnumToken.KeyframesRuleNodeType,
+    ]);
     get ordering() {
         return 3;
     }
@@ -43,7 +47,6 @@ class TransformCssFeature {
                     ? minifyTransformFunctions(child)
                     : child);
             }
-            // consumeWhitespace(children);
             let { matrix, cumulative, minified } = compute(children) ?? {
                 matrix: null,
                 cumulative: null,

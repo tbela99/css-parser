@@ -90,17 +90,19 @@ function replaceAstNodes(tokens: Token[], root?: AstNode): boolean {
                 const isPseudClass: boolean = pseudoAliasMap[key].startsWith("::");
                 (value as PseudoClassToken).val = pseudoAliasMap[key];
 
-                if (
-                    value.typ == EnumToken.IdenTokenType &&
-                    ["min-resolution", "max-resolution"].includes((value as IdentToken).val) &&
-                    parent?.typ == EnumToken.MediaQueryConditionTokenType &&
-                    (parent as MediaQueryConditionToken).r?.[0]?.typ == EnumToken.NumberTokenType
-                ) {
-                    Object.assign((parent as MediaQueryConditionToken).r?.[0], {
-                        typ: EnumToken.ResolutionTokenType,
-                        unit: "x",
-                    });
-                } else if (isPseudClass && value.typ == EnumToken.PseudoElementTokenType) {
+                // if (
+                //     value.typ == EnumToken.IdenTokenType &&
+                //     ["min-resolution", "max-resolution"].includes((value as IdentToken).val) &&
+                //     parent?.typ == EnumToken.MediaQueryConditionTokenType &&
+                //     (parent as MediaQueryConditionToken).r?.[0]?.typ == EnumToken.NumberTokenType
+                // ) {
+                //     Object.assign((parent as MediaQueryConditionToken).r?.[0], {
+                //         typ: EnumToken.ResolutionTokenType,
+                //         unit: "x",
+                //     });
+                // } 
+                // else 
+                    if (isPseudClass && value.typ == EnumToken.PseudoElementTokenType) {
                     // @ts-ignore
                     value.typ = EnumToken.PseudoClassTokenType;
                 }
@@ -386,36 +388,11 @@ export class ComputePrefixFeature {
         let type: string = "";
         let tokens = token.chi.slice();
 
-        // while (
-        //     i < tokens.length &&
-        //     (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)
-        // ) {
-        //     i++;
-        // }
-
-        // if (i >= tokens.length || tokens[i].typ !== EnumToken.IdenTokenType) {
-        //     return;
-        // }
-
         // linear or radial
         if (equalsIgnoreCase((tokens[i] as IdentToken).val, "linear")) {
             type = "linear-gradient";
             i++;
         }
-        // else {
-        //     return;
-        // }
-
-        // while (
-        //     i < tokens.length &&
-        //     (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)
-        // ) {
-        //     i++;
-        // }
-
-        // if (tokens[i].typ !== EnumToken.CommaTokenType) {
-        //     return;
-        // }
 
         tokens.splice(0, i + 1);
 

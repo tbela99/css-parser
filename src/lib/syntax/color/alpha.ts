@@ -49,7 +49,7 @@ export function alpha(color: ColorToken, alpha: Token): ColorToken | null {
         alpha.typ === EnumToken.MathFunctionTokenType &&
         equalsIgnoreCase((alpha as FunctionToken).val, "calc")
     ) {
-        alpha = cloneNode(alpha, true);
+        alpha = cloneNode(alpha, true) as FunctionToken;
 
         const alphaValue = components[3] ?? {
             typ: EnumToken.NumberTokenType,
@@ -58,7 +58,7 @@ export function alpha(color: ColorToken, alpha: Token): ColorToken | null {
 
         for (const { value, parent } of walkValues((alpha as FunctionToken).chi, alpha)) {
             if (value.typ === EnumToken.IdenTokenType && equalsIgnoreCase((value as IdentToken).val, "alpha")) {
-                replaceNodeOrValue(parent, value, alphaValue);
+                replaceNodeOrValue(parent as FunctionToken, value, alphaValue);
             }
         }
 

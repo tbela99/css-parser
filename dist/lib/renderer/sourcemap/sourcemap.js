@@ -56,6 +56,22 @@ class SourceMap {
      */
     constructor(sourcemaps) {
         if (typeof sourcemaps === "string") {
+            if (sourcemaps.startsWith("data:")) {
+                let encoding = "";
+                let offset = sourcemaps.indexOf(",") + 1;
+                if (offset == 0) {
+                    offset = sourcemaps.lastIndexOf(";") + 1;
+                }
+                else {
+                    encoding = sourcemaps.slice(sourcemaps.lastIndexOf(";") + 1, offset - 1);
+                }
+                if (encoding == "base64") {
+                    sourcemaps = atob(sourcemaps.slice(offset));
+                }
+                else {
+                    sourcemaps = decodeURIComponent(sourcemaps.slice(offset));
+                }
+            }
             sourcemaps = JSON.parse(sourcemaps);
         }
         if (sourcemaps != null) {
@@ -76,39 +92,52 @@ class SourceMap {
         }
     }
     /**
+     * add source
+     * @param id
+     * @param fileName
+     * @param content
+     * @returns
+     */
+    addSourceContent(id, fileName, content) {
+        if (this.sourcesMap.includes(id)) {
+            return;
+        }
+        this.sourcesMap[this.sourcesMap.length] = id;
+        this.sources[this.sources.length] = fileName || null;
+        this.sourcesContent[this.sourcesContent.length] = content || null;
+    }
+    /**
      * Add all location
      * @param maps
+     * @throws
      */
-    addAll(maps) {
-        for (let [newLine, newColumn, srcId, ln, col, sourceFileName, sourceContent] of maps) {
-            const key = `${srcId}:${ln}:${sourceFileName}:${col}:${newLine}:${newColumn}:${sourceContent}`;
-            const sourcemap = `${srcId}:${sourceFileName}:${sourceContent}`;
+    add(...maps) {
+        let srcIndex;
+        if (typeof maps[0] === "number") {
+            maps = [maps];
+        }
+        for (let [newLine, newColumn, srcId, ln, col] of maps) {
+            const key = `${srcId}:${ln}:${col}:${newLine}:${newColumn}`;
             if (this.keys.has(key)) {
                 continue;
             }
             this.keys.add(key);
-            if (!this.sourcesMap.includes(sourcemap)) {
-                this.sourcesMap.push(sourcemap);
-                this.sources.push(sourceFileName || null);
-                this.sourcesContent.push((sourceFileName != null ? null : sourceContent) || null);
-            }
             const line = newLine - 1;
             let record;
             if (line > this.line) {
                 this.line = line;
             }
+            srcIndex = this.sourcesMap.indexOf(srcId);
+            if (srcIndex == -1) {
+                throw new Error(`Source file ${srcId} not added to sourcemap`);
+            }
             if (!this.map.has(line)) {
-                record = [Math.max(0, newColumn - 1), this.sourcesMap.indexOf(sourcemap), ln - 1, col - 1];
+                record = [Math.max(0, newColumn - 1), srcIndex, ln - 1, col - 1];
                 this.map.set(line, [record]);
             }
             else {
                 const arr = this.map.get(line);
-                record = [
-                    Math.max(0, newColumn - 1) - arr[0][0],
-                    this.sourcesMap.indexOf(sourcemap) - arr[0][1],
-                    ln - 1,
-                    col - 1,
-                ];
+                record = [Math.max(0, newColumn - 1) - arr[0][0], srcIndex - arr[0][1], ln - 1, col - 1];
                 arr.push(record);
             }
             if (this.lastLocation != null) {
@@ -128,7 +157,7 @@ class SourceMap {
         let sourceFileIndex = 0; // second field
         let sourceCodeLine = 0; // third field
         let sourceCodeColumn = 0; // fourth field
-        let nameIndex = 0; // fifth field
+        // let nameIndex: number = 0; // fifth field
         let generatedCodeColumn;
         let result;
         // mappings to original source
@@ -151,10 +180,11 @@ class SourceMap {
                 sourceCodeLine += segment[2];
                 sourceCodeColumn += segment[3];
                 result.push(sourceFileIndex, sourceCodeLine, sourceCodeColumn);
-                if (segment.length === 5) {
-                    nameIndex += segment[4];
-                    result.push(nameIndex);
-                }
+                // nameIndex not needed
+                // if (segment.length === 5) {
+                //     nameIndex += segment[4];
+                //     result.push(nameIndex);
+                // }
                 return result;
             })
                 .sort((a, b) => {
@@ -175,6 +205,9 @@ class SourceMap {
      * @param column generated column
      */
     find(line, column) {
+        if (this.reverseMap.size == 0) {
+            this.computePositions();
+        }
         if (!this.reverseMap.has(--line)) {
             return null;
         }
@@ -223,12 +256,6 @@ class SourceMap {
             sourcesContent: this.sourcesContent?.slice(),
             mappings: mappings.join(";"),
         };
-    }
-    /**
-     * to string
-     */
-    toString() {
-        return JSON.stringify(this);
     }
 }
 

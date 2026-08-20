@@ -7,7 +7,7 @@ const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'], e = Math.floor(Math.log(this)
 function toFileSize(value) {
 
     const e = Math.floor(Math.log(value) / Math.log(1024));
-    const result = value === 0 ? 0 : (value / Math.pow(1024, Math.floor(e)));
+    const result = (value / Math.pow(1024, Math.floor(e)));
 
     return (Number.isInteger(result) ? result : result.toFixed(2)) + units[e];
 }
@@ -20,7 +20,7 @@ for (const file of await readdir(baseDir)) {
     message = '';
 
     const result = await load(baseDir + file, import.meta.dirname).then(css => transform(css, {
-        src: baseDir + file, minify: true, sourcemap: true,
+        src: baseDir + file, minify: true, 
         removePrefix: true,
         nestingRules: true,
         resolveImport: true,

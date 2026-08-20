@@ -25,7 +25,7 @@ export class SourceMap {
      * Sources map
      * @private
      */
-    private sourcesMap: string[] = [];
+    private sourcesMap: number[] = [];
 
     /**
      * Sources content
@@ -60,11 +60,11 @@ export class SourceMap {
     private line: number = -1;
 
     /**
-     *
+     * Constructor
      */
     constructor();
     /**
-     *
+     * Constructor
      * @param sourcemaps
      */
     constructor(sourcemaps: string | SourceMapObject);
@@ -74,6 +74,23 @@ export class SourceMap {
      */
     constructor(sourcemaps?: SourceMapObject | string) {
         if (typeof sourcemaps === "string") {
+            if (sourcemaps.startsWith("data:")) {
+                let encoding: string = "";
+                let offset: number = sourcemaps.indexOf(",") + 1;
+
+                if (offset == 0) {
+                    offset = sourcemaps.lastIndexOf(";") + 1;
+                } else {
+                    encoding = sourcemaps.slice(sourcemaps.lastIndexOf(";") + 1, offset - 1);
+                }
+
+                if (encoding == "base64") {
+                    sourcemaps = atob(sourcemaps.slice(offset));
+                } else {
+                    sourcemaps = decodeURIComponent(sourcemaps.slice(offset));
+                }
+            }
+
             sourcemaps = JSON.parse(sourcemaps) as SourceMapObject;
         }
 
@@ -102,25 +119,59 @@ export class SourceMap {
     }
 
     /**
+     * add source
+     * @param id
+     * @param fileName
+     * @param content
+     * @returns
+     */
+    addSourceContent(id: number, fileName: string | null, content: string | null): void {
+        if (this.sourcesMap.includes(id)) {
+            return;
+        }
+
+        this.sourcesMap[this.sourcesMap.length] = id;
+        this.sources[this.sources.length] = fileName || null;
+        this.sourcesContent[this.sourcesContent.length] = content || null;
+    }
+
+    /**
+     * Add sourcemap
+     * @param newLine
+     * @param newColumn
+     * @param srcId
+     * @param ln
+     * @param col
+     */
+    add(newLine: number, newColumn: number, srcId: number, ln: number, col: number): void;
+
+    /**
+     * Add multiple sourcemaps
+     * @param maps
+     * @throws
+     */
+    add(...maps: Array<[newLine: number, newColumn: number, srcId: number, ln: number, col: number]>): void;
+
+    /**
      * Add all location
      * @param maps
+     * @throws
      */
-    addAll(maps: Array<[number, number, number, number, number, string | null, string | null]>): void {
-        for (let [newLine, newColumn, srcId, ln, col, sourceFileName, sourceContent] of maps) {
-            const key = `${srcId}:${ln}:${sourceFileName}:${col}:${newLine}:${newColumn}:${sourceContent}`;
-            const sourcemap = `${srcId}:${sourceFileName}:${sourceContent}`;
+    add(...maps: Array<[number, number, number, number, number]> | [number, number, number, number, number]): void {
+        let srcIndex: number;
+
+        if (typeof maps[0] === "number") {
+            maps = [maps as [number, number, number, number, number]];
+        }
+
+        for (let [newLine, newColumn, srcId, ln, col] of maps as Array<[number, number, number, number, number]>) {
+            const key = `${srcId}:${ln}:${col}:${newLine}:${newColumn}`;
 
             if (this.keys.has(key)) {
                 continue;
             }
 
             this.keys.add(key);
-
-            if (!this.sourcesMap.includes(sourcemap)) {
-                this.sourcesMap.push(sourcemap);
-                this.sources.push((sourceFileName as string) || null);
-                this.sourcesContent.push((sourceFileName != null ? null : sourceContent) || null);
-            }
 
             const line: number = newLine - 1;
             let record: number[];
@@ -129,19 +180,20 @@ export class SourceMap {
                 this.line = line;
             }
 
+            srcIndex = this.sourcesMap.indexOf(srcId);
+
+            if (srcIndex == -1) {
+                throw new Error(`Source file ${srcId} not added to sourcemap`);
+            }
+
             if (!this.map.has(line)) {
-                record = [Math.max(0, newColumn - 1), this.sourcesMap.indexOf(sourcemap), ln - 1, col - 1];
+                record = [Math.max(0, newColumn - 1), srcIndex, ln - 1, col - 1];
 
                 this.map.set(line, [record]);
             } else {
                 const arr: number[][] = this.map.get(line) as number[][];
 
-                record = [
-                    Math.max(0, newColumn - 1) - arr[0][0],
-                    this.sourcesMap.indexOf(sourcemap) - arr[0][1],
-                    ln - 1,
-                    col - 1,
-                ];
+                record = [Math.max(0, newColumn - 1) - arr[0][0], srcIndex - arr[0][1], ln - 1, col - 1];
                 arr.push(record);
             }
 
@@ -164,7 +216,7 @@ export class SourceMap {
         let sourceFileIndex: number = 0; // second field
         let sourceCodeLine: number = 0; // third field
         let sourceCodeColumn: number = 0; // fourth field
-        let nameIndex: number = 0; // fifth field
+        // let nameIndex: number = 0; // fifth field
         let generatedCodeColumn: number;
         let result: number[];
 
@@ -196,10 +248,11 @@ export class SourceMap {
 
                     result.push(sourceFileIndex, sourceCodeLine, sourceCodeColumn);
 
-                    if (segment.length === 5) {
-                        nameIndex += segment[4];
-                        result.push(nameIndex);
-                    }
+                    // nameIndex not needed
+                    // if (segment.length === 5) {
+                    //     nameIndex += segment[4];
+                    //     result.push(nameIndex);
+                    // }
 
                     return result;
                 })
@@ -225,6 +278,10 @@ export class SourceMap {
      * @param column generated column
      */
     find(line: number, column: number): Array<[string | null, number, number, string | null]> | null {
+        if (this.reverseMap.size == 0) {
+            this.computePositions();
+        }
+
         if (!this.reverseMap.has(--line)) {
             return null;
         }
@@ -286,12 +343,5 @@ export class SourceMap {
             sourcesContent: this.sourcesContent?.slice(),
             mappings: mappings.join(";"),
         };
-    }
-
-    /**
-     * to string
-     */
-    toString(): string {
-        return JSON.stringify(this);
     }
 }

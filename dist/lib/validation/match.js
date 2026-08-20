@@ -990,6 +990,7 @@ function matchSyntax(syntaxes, context, options) {
             return result;
         }
         if (tokensfuncDefMap.has(token.typ) &&
+            // @ts-ignore
             token.typ === EnumToken.WildCardFunctionTokenDefType) {
             const range = trimArray(context.peekRange());
             result = matchSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, token.val + "()")?.[0]?.chi, createValidationContext(range.slice(1, -1)), options);
@@ -1990,7 +1991,9 @@ function matchProperty(property, context, options) {
                     //     )
                     // ) {
                     const newRange = range.map((t) => cloneNode(t, true));
+                    // @ts-ignore
                     parseTokens(newRange, { parseColor: true }, errors);
+                    // @ts-ignore
                     success = newRange.length == 1 && isColor(newRange[0], errors);
                     if (success) {
                         context.update(range.at(-1));

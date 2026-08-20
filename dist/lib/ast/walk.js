@@ -1,3 +1,5 @@
+import { TOKENS } from '../syntax/constants.js';
+
 /**
  * Options for the walk function
  */
@@ -39,6 +41,8 @@ var WalkerEvent;
  * @param node initial node
  * @param filter control the walk process
  * @param reverse walk in reverse order
+ *
+ * @private
  *
  * ```ts
  *
@@ -111,11 +115,19 @@ function* walk(node, filter, reverse) {
     const parents = [node];
     const root = node;
     const map = new Map();
+    let options = filter;
     let isNumeric = false;
+    let includeValues = false;
     let i = 0;
+    if (options != null && typeof options == "object") {
+        filter = options.filter;
+        reverse = options.reverse;
+        includeValues = options.inludeValues;
+    }
     while ((node = parents[i++])) {
         let option = null;
         if (filter != null) {
+            // @ts-ignore
             option = filter(node);
             isNumeric = typeof option == "number";
             if (isNumeric) {
@@ -143,8 +155,21 @@ function* walk(node, filter, reverse) {
                 },
             };
         }
-        if ("chi" in node && (!isNumeric || (option & WalkerOptionEnum.IgnoreChildren) === 0)) {
-            parents.splice(i, 0, ...node.chi[reverse ? "toReversed" : "slice"]());
+        if (includeValues) {
+            if (node[TOKENS] != null) {
+                // @ts-ignore
+                parents.splice(i, 0, ...(reverse ? node[TOKENS].toReversed() : node[TOKENS]));
+                // @ts-ignore
+            }
+            else if (Array.isArray(node.val)) {
+                // @ts-ignore
+                parents.splice(i, 0, ...(reverse ? node.val.toReversed() : node.val));
+            }
+        }
+        // @ts-ignore
+        if (node["chi"] != null && (!isNumeric || (option & WalkerOptionEnum.IgnoreChildren) === 0)) {
+            // @ts-ignore
+            parents.splice(i, 0, ...(reverse ? node.chi.toReversed() : node.chi));
             for (const child of node.chi) {
                 map.set(child, node);
             }
@@ -228,11 +253,6 @@ function* walkValues(values, root = null, filter, reverse) {
             continue;
         }
         used.add(value);
-        // parents.length = 0;
-        // while (node != null) {
-        //     parents.push(node);
-        //     node = map.get(node) ?? null;
-        // }
         if (filter.fn != null && eventType & WalkerEvent.Enter) {
             const isValid = filter.type == null ||
                 value.typ == filter.type ||

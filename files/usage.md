@@ -383,25 +383,22 @@ button {
 
 ## Difference Between Sync and Async APIs
 
-The following features are **not supported by `parseSync()` and `transformSync()`**.
+### Parsing features comparison
 
-### Unsupported Parsing Features
+| Feature                 | parse() | transform() | transformSync() | ParseSync() |
+| ----------------------- | ------- | ----------- | --------------- | ----------- |
+| Parse from stream       | ✅       | ✅           | ❌               | ❌           |
+| Parse from file         | ✅       | ✅           | ❌               | ❌           |
+| Flatten @import at-rule | ✅       | ✅           | ❌               | ❌           |
+| transformSync()         | ✅       | ✅           | ❌               | ❌           |
 
-* Flattening `@import` at-rules is not supported.
-* The file loader `ParserOptions.load()` is not available.
-* Parsing from a stream is not supported.
-* Parsing with a file as the input parameter is not supported.
+### CSS Module features comparison
 
-### Unsupported CSS Module Features
-
-* The `pattern` parameter does not support the following algorithms:
-
-  * `sha1`
-  * `sha256`
-  * `sha384`
-  * `sha512`
-* CSS `composes` does not support composing from a file.
-* Importing CSS variables from a file using `@value` is not supported.
+| Feature                                                                | parse() | transform() | transformSync() | ParseSync() |
+| ---------------------------------------------------------------------- | ------- | ----------- | --------------- | ----------- |
+| Algorithms supported by `pattern`: <br> sha1, sha256, sha384, sha512      | ✅      | ✅           | ❌              | ❌          |
+| CSS `composes` from file                                                   | ✅      | ✅           | ❌              | ❌          |
+| import CSS variables from file                                         | ✅      | ✅           | ❌              | ❌          |
 
 
 ------

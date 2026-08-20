@@ -416,4 +416,4 @@ button {
 ```
 
 ------
-[← Syntax Lowering](./syntax-lowering.md) | [Utility Functions →](./utilities.md)
+[← Prefix Removal](./prefix-removal.md) | [Utility Functions →](./utilities.md)

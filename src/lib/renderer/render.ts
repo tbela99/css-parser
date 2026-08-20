@@ -133,8 +133,8 @@ export function doRender(
     const startTime: number = performance.now();
     const errors: ErrorDescription[] = [];
     const sourcemap: SourceMap | null = options.sourcemap ? new SourceMap() : null;
-    const sourcemaps: Array<[number, number, number, number, number, string | null, string | null]> | null =
-        options.sourcemap ? [] : null;
+    const sourcemaps: { sources: number[]; maps: Array<[number, number, number, number, number]> } | null =
+        options.sourcemap ? { sources: [], maps: [] } : null;
     const cache: {
         [key: string]: any;
     } = Object.create(null);
@@ -222,7 +222,13 @@ export function doRender(
     };
 
     if (sourcemap != null) {
-        sourcemap.addAll(sourcemaps!);
+        let source: SourceFile;
+        for (const sourceId of sourcemaps!.sources) {
+            source = options!.sourcesMap!.get(sourceId)! as SourceFile;
+            sourcemap.addSourceContent(source.id, source.getFileName(), source.getContent());
+        }
+
+        sourcemap.add(...(sourcemaps!.maps! as Array<[number, number, number, number, number]>));
         result.map = sourcemap;
 
         if (options.sourcemap === "inline") {
@@ -251,7 +257,7 @@ function updateSourceMap(
     cache: {
         [p: string]: any;
     },
-    sourcemaps: Array<[number, number, number, number, number, string | null, string | null]>,
+    sourcemaps: { sources: number[]; maps: Array<[number, number, number, number, number]> },
     sourceLocation: SourceLocation,
     linesMap: LinesMap,
     str: string,
@@ -281,7 +287,7 @@ function updateSourceMap(
         [
             EnumToken.RuleNodeType,
             EnumToken.AtRuleNodeType,
-            EnumToken.KeyFramesRuleNodeType,
+            EnumToken.KeyframesRuleNodeType,
             EnumToken.KeyframesAtRuleNodeType,
         ].includes(node.typ)
     ) {
@@ -323,7 +329,11 @@ function updateSourceMap(
                     sourceFileName = cache[sourceFileName] as string;
                 }
 
-                sourcemaps.push([newLine, newColumn, srcId, ...offsets, sourceFileName as string, sourceContent]);
+                if (!sourcemaps.sources.includes(srcId)) {
+                    sourcemaps.sources.push(srcId);
+                }
+
+                sourcemaps.maps.push([newLine, newColumn, srcId, ...offsets]);
             }
         } else {
             if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
@@ -339,7 +349,11 @@ function updateSourceMap(
                 sourceFileName = cache[sourceFileName] as string;
             }
 
-            sourcemaps.push([newLine, newColumn, srcId, ...offsets, sourceFileName as string, sourceContent]);
+            if (!sourcemaps.sources.includes(srcId)) {
+                sourcemaps.sources.push(srcId);
+            }
+
+            sourcemaps.maps.push([newLine, newColumn, srcId, ...offsets]);
         }
     }
 
@@ -399,7 +413,7 @@ export function move(sourceLocation: SourceLocation, linesMap: LinesMap, str: st
 function renderAstNode(
     data: AstNode,
     options: RenderOptions,
-    sourcemaps: Array<[number, number, number, number, number, string | null, string | null]> | null,
+    sourcemaps: { sources: number[]; maps: Array<[number, number, number, number, number]> } | null,
     sourceLocation: SourceLocation,
     linesMap: LinesMap | null,
     errors: ErrorDescription[],
@@ -477,7 +491,7 @@ function renderAstNode(
 
         case EnumToken.AtRuleNodeType:
         case EnumToken.RuleNodeType:
-        case EnumToken.KeyFramesRuleNodeType:
+        case EnumToken.KeyframesRuleNodeType:
         case EnumToken.KeyframesAtRuleNodeType:
             if ([EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ) && !("chi" in data)) {
                 return `${indent}@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === "" ? "" : options.indent || " "}${
@@ -485,6 +499,7 @@ function renderAstNode(
                 };`;
             }
 
+            const lineMapLength = linesMap ? linesMap.getLineStarts().length : 0;
             const prelude =
                 (indent.length > 0 ? options.newLine : "") +
                 indent +
@@ -509,7 +524,6 @@ function renderAstNode(
                             ? ""
                             : (<AstComment>node).val;
                 } else if (node.typ == EnumToken.DeclarationNodeType) {
-
                     str = `${(<AstDeclaration>node).nam}:${options.indent}${(options.minify
                         ? filterValues((<AstDeclaration>node).val)
                         : (<AstDeclaration>node).val
@@ -557,14 +571,17 @@ function renderAstNode(
                         //     }
                         // }
                         const source = options.sourcesMap!.get(node[LOC]!.srcId) as SourceFile;
-                        sourcemaps.push([
+
+                        if (!sourcemaps.sources.includes(node[LOC]!.srcId as number)) {
+                            sourcemaps.sources.push(node[LOC]!.srcId as number);
+                        }
+
+                        sourcemaps.maps.push([
                             ...linesMap!.getOffsets(
                                 sourceLocation.end - str.length + options.newLine!.length + indentSub.length,
                             ),
                             node[LOC]!.srcId,
-                            ...source!.getOffsets(node[LOC].sta),
-                            source.getFileName(),
-                            source.getContent(),
+                            ...source!.getOffsets(node![LOC]!.sta),
                         ]);
                     }
                 }
@@ -576,7 +593,10 @@ function renderAstNode(
             }
 
             if (options.removeEmpty && children === "") {
-                sourceLocation.end -= prelude.length;
+                if (sourcemaps != null) {
+                    sourceLocation.end -= prelude.length;
+                    linesMap!.getLineStarts().length = lineMapLength;
+                }
                 return "";
             }
 
@@ -718,8 +738,8 @@ export function renderValue(
         case EnumToken.Sub:
             return " - ";
 
-        case EnumToken.Star:
         case EnumToken.UniversalSelectorTokenType:
+        case EnumToken.Star:
         case EnumToken.Mul:
             return "*";
 
@@ -1923,11 +1943,11 @@ export function renderValue(
             return "or";
 
         case EnumToken.InvalidMediaQueryTokenType:
-        // case EnumToken.InvalidDeclarationNodeType:
         case EnumToken.InvalidCommentTokenType:
         case EnumToken.BadCommentTokenType:
         case EnumToken.BadCdoTokenType:
         case EnumToken.BadStringTokenType:
+        case EnumToken.BadUrlTokenType:
         case EnumToken.EOFTokenType:
             return "";
 

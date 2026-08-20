@@ -13,11 +13,11 @@
     "@tbela99/css-parser": "^1.5.0",
     "clean-css": "^5.3.3",
     "css-tree": "^3.2.1",
-    "cssnano": "^8.0.5",
+    "cssnano": "^8.0.7",
     "csso": "^5.0.5",
     "esbuild": "^0.28.2",
     "lightningcss": "^1.33.0",
     "postcss": "^8.5.26",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   }
 }

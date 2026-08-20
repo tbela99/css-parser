@@ -1,10 +1,11 @@
 import { splitRule } from "./minify.ts";
-import { combinators, PARENT, RAW } from "../syntax/constants.ts";
+import { combinators, PARENT, RAW, STATE } from "../syntax/constants.ts";
 import { parseString } from "../parser/parse.ts";
 import { walkValues } from "./walk.ts";
 import { renderValue } from "../renderer/render.ts";
 import type { AstAtRule, AstNode, AstRule, AstStyleSheet, LiteralToken, Token } from "../../@types/index.d.ts";
-import { EnumToken } from "./types.ts";
+import { EnumAstNodeStatus, EnumToken } from "./types.ts";
+import { cloneNode } from "./clone.ts";
 
 /**
  * expand css nesting ast nodes
@@ -13,7 +14,18 @@ import { EnumToken } from "./types.ts";
  * @private
  */
 export function expand(ast: AstStyleSheet | AstAtRule | AstRule): AstNode {
-    const result = <AstStyleSheet | AstAtRule>{ ...ast, chi: [] };
+
+    if(
+                (ast as AstNode)[STATE] == EnumAstNodeStatus.Invalid ||
+                (ast as AstNode)[STATE] == EnumAstNodeStatus.Disallowed ||
+                (ast as AstNode)[STATE] == EnumAstNodeStatus.Unknown ||
+                (ast as AstNode)[STATE] == EnumAstNodeStatus.Unparsed ||
+                (ast as AstNode)[STATE] == EnumAstNodeStatus.Malformed
+    ) {
+        return ast;
+    }
+
+    const result = Object.assign(cloneNode(ast), { chi: [] }) as AstStyleSheet | AstAtRule;
     let children: AstNode[];
 
     for (let i = 0; i < ast.chi!.length; i++) {
@@ -67,7 +79,18 @@ export function expand(ast: AstStyleSheet | AstAtRule | AstRule): AstNode {
 }
 
 function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
-    const ast: AstRule = <AstRule>{ ...node, chi: node.chi.slice() };
+
+    if(
+                (node as AstNode)[STATE] == EnumAstNodeStatus.Invalid ||
+                (node as AstNode)[STATE] == EnumAstNodeStatus.Disallowed ||
+                (node as AstNode)[STATE] == EnumAstNodeStatus.Unknown ||
+                (node as AstNode)[STATE] == EnumAstNodeStatus.Unparsed ||
+                (node as AstNode)[STATE] == EnumAstNodeStatus.Malformed
+    ) {
+        return [node];
+    }
+
+    const ast: AstRule = Object.assign(cloneNode(node), {chi: node.chi.slice() }) as AstRule;
     const result: Array<AstRule | AstAtRule> = [];
 
     if (ast.typ == EnumToken.RuleNodeType) {

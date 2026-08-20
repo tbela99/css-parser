@@ -22,7 +22,7 @@ import { tokenize, tokenizeStream } from "./lib/parser/tokenize.ts";
 import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
 import { ResponseType } from "./types.ts";
 import { SourceFile } from "./lib/parser/source.ts";
-import { parseResult } from "./utils.ts";
+import { parseResult, validateSyncArguments } from "./utils/sync.ts";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -64,6 +64,7 @@ export type { ValidationToken } from "./lib/validation/parser/types.d.ts";
 
 export { FeatureWalkMode } from "./lib/ast/features/type.ts";
 export { dirname, resolve, ResponseType };
+export { getNodeProperty, setNodeProperty } from "./lib/ast/node.ts";
 
 /**
  * Load file or url
@@ -165,7 +166,7 @@ export function render(
 }
 
 /**
- * Parse css file
+ * Parse CSS file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
@@ -200,7 +201,7 @@ export async function parseFile(
 }
 
 /**
- * Parse css string
+ * Parse CSS string
  * @param stream
  * @param options
  *
@@ -233,7 +234,7 @@ export async function parseFile(
 export function parseSync(stream: string, options?: ParserSyncOptions): ParseResult;
 
 /**
- * Parse css string
+ * Parse CSS string
  * @param options
  *
  * Parsing a string
@@ -265,9 +266,8 @@ export function parseSync(stream: string, options?: ParserSyncOptions): ParseRes
 export function parseSync(options: ParseInputOptions & ParserSyncOptions): ParseResult;
 
 /**
- * Parse css
+ * Parse CSS
  * @param args
- * @private
  *
  * Parsing a string
  *
@@ -298,7 +298,12 @@ export function parseSync(
         stream = input;
     }
 
+    if (options != null) {
+        validateSyncArguments(options);
+    }
+
     options ??= {};
+
     options.src ??= "";
     options.sourcesMap ??= new Map();
 
@@ -327,18 +332,17 @@ export function parseSync(
         time: 0,
         source: options.source,
         position: 0,
-        currentPosition: -1,
+        currentPosition: 0,
     } as ParseInfo;
 
     const result = doParseSync(tokenize(options.parseInfo), options);
-    return !options.module && !options.inputSourceMap ? result : parseResult(result, options);
+    return !options.module && !options.inputSourceMap && !options.sourcemap ? result : parseResult(result, options);
 }
 
 /**
- * Transform css
+ * Transform CSS
  * @param css
  * @param options
- * @private
  *
  *
  * ```ts
@@ -354,7 +358,7 @@ export function parseSync(
 export function transformSync(css: string, options?: TransformSyncOptions): TransformResult;
 
 /**
- * Transform css
+ * Transform CSS
  * @param options
  *
  * parsing a string
@@ -384,7 +388,6 @@ export function transformSync(options: ParseInputOptions & TransformSyncOptions)
  * ```
  *
  * @param args
- * @private
  */
 export function transformSync(
     ...args: [string, TransformSyncOptions?] | [ParseInputOptions & TransformSyncOptions]
@@ -479,7 +482,7 @@ export function transformSync(
 export async function parse(stream: string | ReadableStream<Uint8Array>, options?: ParserOptions): Promise<ParseResult>;
 
 /**
- * Parse css
+ * Parse CSS
  * @param options
  *
  * @throws Error file not found
@@ -512,7 +515,7 @@ export async function parse(stream: string | ReadableStream<Uint8Array>, options
 export async function parse(options: ParseInputFileOptions & ParserOptions): Promise<ParseResult>;
 
 /**
- * Parse css
+ * Parse CSS
  * @param options
  *
  * Parsing a string
@@ -542,7 +545,7 @@ export async function parse(options: ParseInputFileOptions & ParserOptions): Pro
 export async function parse(options: ParseInputStreamOptions & ParserOptions): Promise<ParseResult>;
 
 /**
- * Parse css
+ * Parse CSS
  *
  * Example:
  *
@@ -567,7 +570,6 @@ export async function parse(options: ParseInputStreamOptions & ParserOptions): P
  *  console.log(result.ast);
  * ```
  * @param args
- * @private
  */
 export async function parse(
     ...args:
@@ -629,7 +631,7 @@ export async function parse(
         time: 0,
         source: options.source,
         position: 0,
-        currentPosition: -1,
+        currentPosition: 0,
     } as ParseInfo;
 
     return doParse(
@@ -756,7 +758,7 @@ export async function transform(options: ParseInputStreamOptions & TransformOpti
 export async function transform(options: ParseInputFileOptions & TransformOptions): Promise<TransformResult>;
 
 /**
- * Transform css
+ * Transform CSS
  *
  * Example:
  *
@@ -775,7 +777,6 @@ export async function transform(options: ParseInputFileOptions & TransformOption
  *  console.log(result.code);
  * ```
  * @param args
- * @private
  */
 export async function transform(
     ...args:

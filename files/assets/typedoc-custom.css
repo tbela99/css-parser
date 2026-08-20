@@ -78,6 +78,22 @@ html[data-theme="dark"] {
     }
 }
 
-#main-function-differences ~ table td {
-    text-align: center;
+#main-function-differences ~ table tbody tr {
+    &:hover {
+        background-color: var(--transparent-blue) !important;
+        color: var(--blue-dark) !important;
+    }
+
+    td {
+        &:first-child {
+            text-align: left;
+        }
+
+        text-align: center;
+    }
+}
+
+
+.tsd-kind-icon {
+  width: 16px;
 }

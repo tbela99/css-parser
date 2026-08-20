@@ -10,8 +10,8 @@ import type {
     AstAtRule,
     AstComment,
     AstDeclaration,
-    AstKeyframesRule,
     AstKeyframesAtRule,
+    AstKeyframesRule,
     AstNode,
     AstRule,
     AstRuleList,
@@ -27,6 +27,7 @@ import type {
     ErrorDescription,
     FunctionToken,
     GenericVisitorAstNodeHandlerMap,
+    GenericVisitorAstNodeSyncHandlerMap,
     GenericVisitorHandler,
     GenericVisitorResult,
     IdentToken,
@@ -44,6 +45,7 @@ import type {
     Token,
     TokenizeResult,
     UrlToken,
+    VisitorNodeMap,
     WhitespaceToken,
 } from "../../@types/index.d.ts";
 import { ERRORS, LOC, pageMarginBoxType, PARENT, ROOT, STATE, TOKENS, tokensfuncDefMap } from "../syntax/constants.ts";
@@ -92,9 +94,6 @@ const BadTokensTypes: EnumToken[] = [
 ];
 new Map([["keyframes", EnumToken.KeyframesAtRuleNodeType]]);
 let keyNameCounter: number = 0;
-const forbiddenStartCharacters: number[] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].map((c) =>
-    c.charCodeAt(0),
-);
 
 /**
  * Short-scoped name generator.
@@ -106,19 +105,20 @@ const forbiddenStartCharacters: number[] = ["0", "1", "2", "3", "4", "5", "6", "
  *
  * @returns string
  */
-export const getShortNameGenerator = memoize(
-    (localName: string, filePath: string, pattern: string, hashLength = 5): string => {
-        let value: string = keyNameCounter!.toString(36);
+export const getShortNameGenerator = memoize((): string => {
+    let value: string = keyNameCounter!.toString(36);
+    let val: number = value.charAt(0).charCodeAt(0);
+    keyNameCounter!++;
+
+    // starts with'0' - '9'
+    while (48 <= val && val <= 57) {
+        value = keyNameCounter!.toString(36);
         keyNameCounter!++;
+        val = value.charAt(0).charCodeAt(0);
+    }
 
-        while (forbiddenStartCharacters.includes(value.charCodeAt(0))) {
-            value = keyNameCounter!.toString(36);
-            keyNameCounter!++;
-        }
-
-        return value;
-    },
-);
+    return value;
+});
 
 function reject(reason?: any) {
     throw new Error(reason ?? "Parsing aborted");
@@ -413,6 +413,210 @@ export const generateSyncScopedName = memoize(
 ) as (localName: string, filePath: string, pattern: string, hashLength?: number) => string;
 
 /**
+ *
+ * @param visitorsDef
+ * @param errors
+ * @private
+ */
+function parseVisitors(
+    visitorsDef: GenericVisitorHandler<T> | GenericVisitorAstNodeSyncHandlerMap<T> | VisitorNodeMap | VisitorNodeMap[],
+    errors: ErrorDescription[],
+) {
+    const visitors = Object.entries(typeof visitorsDef === "function" ? [visitorsDef] : visitorsDef);
+    let key: string;
+    let value: any;
+    let i: number;
+
+    const valuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>> = new Map();
+    const preValuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>> = new Map();
+    const postValuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>> = new Map();
+    const visitorsHandlersMap: Map<
+        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
+        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, GenericVisitorAstNodeHandlerMap<T>>>
+    > = new Map();
+    const preVisitorsHandlersMap: Map<
+        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
+        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
+    > = new Map();
+    const postVisitorsHandlersMap: Map<
+        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
+        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
+    > = new Map();
+
+    for (i = 0; i < visitors.length; i++) {
+        key = visitors[i][0];
+        value = visitors[i][1];
+
+        if (Number.isInteger(+key)) {
+            // if (Array.isArray(value)) {
+            //     visitors.splice(i + 1, 0, ...Object.entries(value));
+            //     continue;
+            // }
+
+            if (typeof value == "function") {
+                key = value.name;
+            }
+        }
+
+        // if (Array.isArray(value)) {
+        //     // @ts-ignore
+        //     visitors.splice(i + 1, 0, ...value.map((item) => [key, item]));
+        //     continue;
+        // }
+
+        if (key in EnumToken) {
+            if (typeof value == "function") {
+                if (!valuesHandlers.has(EnumToken[key as keyof typeof EnumToken] as EnumToken)) {
+                    valuesHandlers.set(EnumToken[key as keyof typeof EnumToken] as EnumToken, []);
+                }
+
+                valuesHandlers.get(EnumToken[key as keyof typeof EnumToken] as EnumToken)!.push(value);
+            } else if (typeof value == "object") {
+                if ("type" in value && "handler" in value && value.type in WalkerEvent) {
+                    if (value.type == WalkerEvent.Enter) {
+                        if (!preValuesHandlers.has(EnumToken[key as keyof typeof EnumToken] as EnumToken)) {
+                            preValuesHandlers.set(EnumToken[key as keyof typeof EnumToken] as EnumToken, []);
+                        }
+
+                        preValuesHandlers
+                            .get(EnumToken[key as keyof typeof EnumToken] as EnumToken)!
+                            .push(value.handler);
+                    } else if (value.type == WalkerEvent.Leave) {
+                        if (!postValuesHandlers.has(EnumToken[key as keyof typeof EnumToken] as EnumToken)) {
+                            postValuesHandlers.set(EnumToken[key as keyof typeof EnumToken] as EnumToken, []);
+                        }
+
+                        postValuesHandlers
+                            .get(EnumToken[key as keyof typeof EnumToken] as EnumToken)!
+                            .push(value.handler);
+                    }
+                } else {
+                    visitors.push(...Object.entries(value));
+                }
+            } else {
+                errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
+            }
+        } else if (["Declaration", "Rule", "AtRule", "KeyframesRule", "KeyframesAtRule"].includes(key)) {
+            if (typeof value == "function") {
+                if (
+                    !visitorsHandlersMap.has(
+                        key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
+                    )
+                ) {
+                    visitorsHandlersMap.set(
+                        key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
+                        [],
+                    );
+                }
+
+                visitorsHandlersMap
+                    .get(key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule")!
+                    .push(value);
+            } else if (typeof value == "object") {
+                // visitors.push(...Object.entries(value));
+
+                if ("type" in value && "handler" in value && value.type in WalkerEvent) {
+                    if (value.type == WalkerEvent.Enter) {
+                        if (
+                            !preVisitorsHandlersMap.has(
+                                key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
+                            )
+                        ) {
+                            preVisitorsHandlersMap.set(
+                                key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
+                                [],
+                            );
+                        }
+
+                        preVisitorsHandlersMap
+                            .get(key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule")!
+                            .push(value.handler);
+                    } else if (value.type == WalkerEvent.Leave) {
+                        if (
+                            !postVisitorsHandlersMap.has(
+                                key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
+                            )
+                        ) {
+                            postVisitorsHandlersMap.set(
+                                key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
+                                [],
+                            );
+                        }
+
+                        postVisitorsHandlersMap
+                            .get(key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule")!
+                            .push(value.handler);
+                    }
+                } else {
+                    if (
+                        !visitorsHandlersMap.has(
+                            key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
+                        )
+                    ) {
+                        visitorsHandlersMap.set(
+                            key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
+                            [],
+                        );
+                    }
+
+                    visitorsHandlersMap
+                        .get(key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule")!
+                        .push(value);
+                }
+            } else {
+                errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
+            }
+        } else {
+            errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
+        }
+    }
+    const allHandlers = [] as Array<
+        | Map<
+              "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
+              Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
+          >
+        | Map<
+              "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
+              Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, GenericVisitorAstNodeHandlerMap<T>>>
+          >
+        | Map<EnumToken, Array<GenericVisitorHandler<Token>>>
+        | Map<
+              EnumToken,
+              Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
+          >
+    >;
+
+    if (preVisitorsHandlersMap!.size > 0) {
+        allHandlers.push(preVisitorsHandlersMap!);
+    }
+
+    if (preValuesHandlers!.size > 0) {
+        allHandlers.push(preValuesHandlers!);
+    }
+
+    if (visitorsHandlersMap!.size > 0) {
+        allHandlers.push(visitorsHandlersMap!);
+    }
+
+    if (valuesHandlers!.size > 0) {
+        allHandlers.push(valuesHandlers!);
+    }
+
+    if (postVisitorsHandlersMap!.size > 0) {
+        allHandlers.push(postVisitorsHandlersMap!);
+    }
+
+    if (postValuesHandlers!.size > 0) {
+        allHandlers.push(postValuesHandlers!);
+    }
+
+    return {
+        allHandlers,
+        includeTokens: preValuesHandlers!.size > 0 || valuesHandlers!.size > 0 || postValuesHandlers!.size > 0,
+    };
+}
+
+/**
  * Parse css string
  * @param iter
  * @param options
@@ -489,182 +693,23 @@ export function doParseSync(
     let tokens: Token[] = [];
     let context: AstRuleList = ast;
 
-    ast[ROOT] = ast;
-
-    ast[LOC] = {
-        sta: 0,
-        end: 0,
-        srcId: options.source!.id,
-    };
-
-    let valuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-    let preValuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-    let postValuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-    let preVisitorsHandlersMap: Map<
-        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
-    >;
-    let visitorsHandlersMap: Map<
-        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, GenericVisitorAstNodeHandlerMap<T>>>
-    >;
-    let postVisitorsHandlersMap: Map<
-        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
-    >;
-
     let item: TokenizeResult;
     let node: AstAtRule | AstRule | AstKeyframesRule | AstKeyframesAtRule | AstDeclaration | AstComment | null;
 
     // @ts-ignore ignore error
     let parensMatch: number = 0;
     let curlyBracketMatch: number = 0;
+    let currentItemIndex: number;
 
-    if (options.visitor != null) {
-        valuesHandlers = new Map() as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-        preValuesHandlers = new Map() as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-        postValuesHandlers = new Map() as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
+    // ast[ROOT] = ast;
+    ast[LOC] = {
+        sta: 0,
+        end: 0,
+        srcId: options.source!.id,
+    };
 
-        preVisitorsHandlersMap = new Map();
-        visitorsHandlersMap = new Map();
-        postVisitorsHandlersMap = new Map();
-
-        const visitors = Object.entries(options.visitor);
-        let key: string;
-        let value: any;
-        let i: number;
-
-        for (i = 0; i < visitors.length; i++) {
-            key = visitors[i][0];
-            value = visitors[i][1];
-
-            if (Number.isInteger(+key)) {
-                visitors.splice(i + 1, 0, ...Object.entries(value));
-                continue;
-            }
-
-            if (Array.isArray(value)) {
-                // @ts-ignore
-                visitors.splice(i + 1, 0, ...value.map((item) => [key, item]));
-                continue;
-            }
-
-            if (key in EnumToken) {
-                if (typeof value == "function") {
-                    if (!valuesHandlers.has(EnumToken[key as keyof typeof EnumToken] as EnumToken)) {
-                        valuesHandlers.set(EnumToken[key as keyof typeof EnumToken] as EnumToken, []);
-                    }
-
-                    valuesHandlers.get(EnumToken[key as keyof typeof EnumToken] as EnumToken)!.push(value);
-                } else if (
-                    typeof value == "object" &&
-                    "type" in value &&
-                    "handler" in value &&
-                    value.type in WalkerEvent
-                ) {
-                    if (value.type == WalkerEvent.Enter) {
-                        if (!preValuesHandlers.has(EnumToken[key as keyof typeof EnumToken] as EnumToken)) {
-                            preValuesHandlers.set(EnumToken[key as keyof typeof EnumToken] as EnumToken, []);
-                        }
-
-                        preValuesHandlers
-                            .get(EnumToken[key as keyof typeof EnumToken] as EnumToken)!
-                            .push(value.handler);
-                    } else if (value.type == WalkerEvent.Leave) {
-                        if (!postValuesHandlers.has(EnumToken[key as keyof typeof EnumToken] as EnumToken)) {
-                            postValuesHandlers.set(EnumToken[key as keyof typeof EnumToken] as EnumToken, []);
-                        }
-
-                        postValuesHandlers
-                            .get(EnumToken[key as keyof typeof EnumToken] as EnumToken)!
-                            .push(value.handler);
-                    }
-                } else {
-                    errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
-                }
-            } else if (["Declaration", "Rule", "AtRule", "KeyframesRule", "KeyframesAtRule"].includes(key)) {
-                if (typeof value == "function") {
-                    if (
-                        !visitorsHandlersMap.has(
-                            key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-                        )
-                    ) {
-                        visitorsHandlersMap.set(
-                            key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-                            [],
-                        );
-                    }
-
-                    visitorsHandlersMap
-                        .get(key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule")!
-                        .push(value);
-                } else if (typeof value == "object") {
-                    if ("type" in value && "handler" in value && value.type in WalkerEvent) {
-                        if (value.type == WalkerEvent.Enter) {
-                            if (
-                                !preVisitorsHandlersMap.has(
-                                    key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-                                )
-                            ) {
-                                preVisitorsHandlersMap.set(
-                                    key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-                                    [],
-                                );
-                            }
-
-                            preVisitorsHandlersMap
-                                .get(key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule")!
-                                .push(value.handler);
-                        } else if (value.type == WalkerEvent.Leave) {
-                            if (
-                                !postVisitorsHandlersMap.has(
-                                    key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-                                )
-                            ) {
-                                postVisitorsHandlersMap.set(
-                                    key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-                                    [],
-                                );
-                            }
-
-                            postVisitorsHandlersMap
-                                .get(key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule")!
-                                .push(value.handler);
-                        }
-                    } else {
-                        if (
-                            !visitorsHandlersMap.has(
-                                key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-                            )
-                        ) {
-                            visitorsHandlersMap.set(
-                                key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-                                [],
-                            );
-                        }
-
-                        visitorsHandlersMap
-                            .get(key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule")!
-                            .push(value);
-                    }
-                } else {
-                    errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
-                }
-            } else {
-                errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
-            }
-        }
-    }
-
-    if (Array.isArray(iter)) {
-        // @ts-expect-error
-        iter = iter[Symbol.iterator]() as Iterator<TokenizeResult>;
-    }
-
-    while (
-        // @ts-expect-error
-        (item = (iter as Iterator<TokenizeResult>).next().value as TokenizeResult)
-    ) {
+    for (currentItemIndex = 0; currentItemIndex < (iter as Array<TokenizeResult>).length; currentItemIndex++) {
+        item = (iter as Array<TokenizeResult>)[currentItemIndex];
         stats.bytesIn = item.bytesIn;
         stats.tokensCount++;
 
@@ -696,9 +741,6 @@ export function doParseSync(
 
         tokens.push(item.token);
 
-        // console.debug([item.token, {parensMatch, curlyBracketMatch}]);
-
-        // if (parensMatch === 0) {
         if (
             parensMatch === 0 &&
             (item.token.typ === EnumToken.SemiColonTokenType ||
@@ -717,8 +759,7 @@ export function doParseSync(
                 tokens = [item.token];
 
                 do {
-                    // @ts-expect-error
-                    item = (iter as Iterator<TokenizeResult>).next().value as TokenizeResult;
+                    item = (iter as Array<TokenizeResult>)[++currentItemIndex];
 
                     if (item == null) {
                         break;
@@ -787,278 +828,193 @@ export function doParseSync(
     }
 
     let replacement: GenericVisitorResult<T>;
-    let callable: GenericVisitorHandler<T>;
 
     if (options.visitor != null) {
+        const handlers = [] as Array<GenericVisitorHandler<T>>;
+        const visitors = parseVisitors(options.visitor, errors);
+
+        const subNodes: Array<AstNode | Token> = [];
         let parens: Token[] | null;
-        for (const result of walk(ast)) {
+
+        let genericKey: string | null;
+        let nodes: AstNode[] | null = new Array(stats.tokensCount);
+        let i: number;
+        let k: number;
+        let j: number;
+        let freeBlock: number = 1;
+        nodes[0] = ast;
+
+        for (i = 0; i < nodes.length; i++) {
+            if (nodes[i] == null) {
+                break;
+            }
+
+            subNodes.length = 0;
+            if (visitors.includeTokens) {
+                switch (nodes[i].typ) {
+                    case EnumToken.RuleNodeType:
+                    case EnumToken.AtRuleNodeType:
+                    case EnumToken.KeyframesRuleNodeType:
+                    case EnumToken.KeyframesAtRuleNodeType:
+                        subNodes.push(
+                            ...(nodes[i] as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule)[TOKENS]!,
+                        );
+                        break;
+                    case EnumToken.DeclarationNodeType:
+                        subNodes.push(...(nodes[i] as AstDeclaration).val);
+                        break;
+                }
+            }
+
+            // @ts-ignore
+            if (nodes[i].chi != null) {
+                // @ts-ignore
+                subNodes.push(...nodes[i].chi);
+            }
+
+            if (subNodes.length > 0) {
+                if (freeBlock <= i) {
+                    freeBlock = i + 1;
+                }
+
+                for (k = 0; k < subNodes.length; k++) {
+                    j = k + freeBlock;
+                    nodes[j] = subNodes[k] as AstNode;
+                    nodes[j][PARENT] = nodes[i];
+                }
+
+                freeBlock += subNodes.length;
+            }
+
             parens = null;
+            handlers.length = 0;
 
-            if (
-                valuesHandlers!.size > 0 ||
-                preVisitorsHandlersMap!.size > 0 ||
-                visitorsHandlersMap!.size > 0 ||
-                postVisitorsHandlersMap!.size > 0
-            ) {
-                if (
-                    (result.node.typ == EnumToken.DeclarationNodeType &&
-                        (preVisitorsHandlersMap!.has("Declaration") ||
-                            visitorsHandlersMap!.has("Declaration") ||
-                            postVisitorsHandlersMap!.has("Declaration"))) ||
-                    (result.node.typ == EnumToken.AtRuleNodeType &&
-                        (preVisitorsHandlersMap!.has("AtRule") ||
-                            visitorsHandlersMap!.has("AtRule") ||
-                            postVisitorsHandlersMap!.has("AtRule"))) ||
-                    (result.node.typ == EnumToken.KeyframesAtRuleNodeType &&
-                        (preVisitorsHandlersMap!.has("KeyframesAtRule") ||
-                            visitorsHandlersMap!.has("KeyframesAtRule") ||
-                            postVisitorsHandlersMap!.has("KeyframesAtRule")))
-                ) {
-                    const handlers = [] as Array<GenericVisitorHandler<T> | Record<string, GenericVisitorHandler<T>>>;
-                    const key =
-                        result.node.typ == EnumToken.DeclarationNodeType
-                            ? "Declaration"
-                            : result.node.typ == EnumToken.AtRuleNodeType
-                              ? "AtRule"
-                              : "KeyframesAtRule";
+            genericKey =
+                nodes[i].typ == EnumToken.DeclarationNodeType
+                    ? "Declaration"
+                    : nodes[i].typ == EnumToken.AtRuleNodeType
+                      ? "AtRule"
+                      : nodes[i].typ == EnumToken.KeyframesAtRuleNodeType
+                        ? "KeyframesAtRule"
+                        : nodes[i].typ === EnumToken.KeyframesRuleNodeType
+                          ? "KeyframesRule"
+                          : nodes[i].typ == EnumToken.RuleNodeType
+                            ? "Rule"
+                            : nodes[i].typ == EnumToken.KeyframesRuleNodeType
+                              ? "KeyframesRule"
+                              : null;
+            let keyName: string | null =
+                nodes[i].typ == EnumToken.DeclarationNodeType || nodes[i].typ == EnumToken.AtRuleNodeType
+                    ? camelize((nodes[i] as AstDeclaration | AstAtRule).nam)
+                    : nodes[i].typ == EnumToken.KeyframesAtRuleNodeType
+                      ? camelize((nodes[i] as AstKeyframesAtRule).val)
+                      : null;
 
-                    if (preVisitorsHandlersMap!.has(key)) {
-                        handlers.push(
-                            // @ts-expect-error
-                            ...(preVisitorsHandlersMap!.get(key)! as
-                                | GenericVisitorHandler<T>
-                                | Record<string, GenericVisitorHandler<T>>),
-                        );
-                    }
-
-                    if (visitorsHandlersMap!.has(key)) {
-                        // @ts-ignore
-                        handlers.push(...visitorsHandlersMap.get(key)!);
-                    }
-
-                    if (postVisitorsHandlersMap!.has(key)) {
-                        // @ts-ignore
-                        handlers.push(...postVisitorsHandlersMap.get(key));
-                    }
-
-                    let node: AstDeclaration | AstAtRule | AstKeyframesAtRule = result.node as
-                        | AstDeclaration
-                        | AstAtRule
-                        | AstKeyframesAtRule;
-
-                    for (const handler of handlers) {
-                        callable =
-                            typeof handler == "function"
-                                ? handler
-                                : (handler[
-                                      camelize(
-                                          node.typ === EnumToken.DeclarationNodeType ||
-                                              node.typ === EnumToken.AtRuleNodeType
-                                              ? (node as AstDeclaration | AstAtRule).nam
-                                              : (node as AstKeyframesAtRule).val,
-                                      )
-                                  ] as GenericVisitorHandler<T>);
-
-                        if (callable == null) {
-                            continue;
-                        }
-
-                        // @ts-expect-error
-                        replacement = callable(node, result[PARENT], ast, function* () {
-                            if (parens == null) {
-                                // @ts-expect-error
-                                parens = [...result.parents()];
-                            }
-
-                            yield* parens[Symbol.iterator]();
-                        });
-
-                        if (replacement == null) {
-                            continue;
-                        }
-
-                        if (replacement == node) {
-                            continue;
-                        }
-
-                        // @ts-ignore
-                        node = replacement;
-
-                        if (Array.isArray(node)) {
-                            break;
-                        }
-                    }
-
-                    if (node != result.node) {
-                        replaceNodeOrValue(
-                            result.parent as
-                                | AstRule
-                                | AstAtRule
-                                | AstKeyframesAtRule
-                                | AstKeyframesRule
-                                | AstStyleSheet,
-                            result.node,
-                            node,
-                        );
-                    }
-                } else if (
-                    (result.node.typ == EnumToken.RuleNodeType &&
-                        (preVisitorsHandlersMap!.has("Rule") ||
-                            visitorsHandlersMap!.has("Rule") ||
-                            postVisitorsHandlersMap!.has("Rule"))) ||
-                    (result.node.typ == EnumToken.KeyFramesRuleNodeType &&
-                        (preVisitorsHandlersMap!.has("KeyframesRule") ||
-                            visitorsHandlersMap!.has("KeyframesRule") ||
-                            postVisitorsHandlersMap!.has("KeyframesRule")))
-                ) {
-                    const handlers = [] as Array<
-                        | GenericVisitorHandler<T>
-                        | {
-                              type: WalkerEvent;
-                              handler: GenericVisitorHandler<T>;
-                          }
-                    >;
-                    const key = result.node.typ == EnumToken.RuleNodeType ? "Rule" : "KeyframesRule";
-
-                    if (preVisitorsHandlersMap!.has(key)) {
-                        handlers.push(...(preVisitorsHandlersMap!.get(key)! as Array<GenericVisitorHandler<T>>));
-                    }
-
-                    if (visitorsHandlersMap!.has(key)) {
-                        handlers.push(...(visitorsHandlersMap!.get(key)! as Array<GenericVisitorHandler<T>>));
-                    }
-
-                    if (postVisitorsHandlersMap!.has(key)) {
-                        handlers.push(...(postVisitorsHandlersMap!.get(key)! as Array<GenericVisitorHandler<T>>));
-                    }
-
-                    let node = result.node;
-
-                    for (const callable of handlers) {
-                        replacement = (callable as GenericVisitorHandler<T>)(
-                            node as T,
-                            result.parent,
-                            result.root,
-                            // @ts-expect-error
-                            function* () {
-                                if (parens == null) {
-                                    // @ts-expect-error
-                                    parens = [...result.parents()];
-                                }
-
-                                yield* parens[Symbol.iterator]();
-                            },
-                        ) as GenericVisitorResult<T>;
-
-                        if (replacement == null) {
-                            continue;
-                        }
-
-                        if (replacement == node) {
-                            continue;
-                        }
-
-                        // @ts-ignore
-                        node = replacement as AstNode;
-
-                        //
-                        if (Array.isArray(node)) {
-                            break;
-                        }
-                    }
-
+            for (const map of visitors.allHandlers) {
+                // @ts-ignore
+                if (genericKey != null && map!.has(genericKey)) {
                     // @ts-ignore
-                    if (node != result.node) {
-                        // @ts-ignore
-                        replaceNodeOrValue(result.parent, result.node, node);
-                    }
-                } else if (valuesHandlers!.size > 0) {
-                    let node: Token | AstNode | null = null;
-
-                    node = result.node;
-
-                    if (valuesHandlers!.has(node.typ)) {
-                        for (const valueHandler of valuesHandlers!.get(node.typ)!) {
-                            callable = valueHandler as GenericVisitorHandler<T>;
-                            replacement = callable(
-                                node as T,
-                                result.parent,
-                                ast,
-                                // @ts-expect-error
-                                function* () {
-                                    if (parens == null) {
-                                        // @ts-expect-error
-                                        parens = [...result.parents()];
-                                    }
-
-                                    yield* parens[Symbol.iterator]();
-                                },
-                            );
-
-                            if (replacement == null) {
-                                continue;
-                            }
-
-                            if (replacement != node) {
-                                node = replacement as AstNode;
-                            }
+                    for (const handler of map!.get(genericKey)!) {
+                        if (typeof handler == "function") {
+                            handlers.push(handler as GenericVisitorHandler<T>);
                         }
-                    }
+                        // else if (Array.isArray(handler)) {
+                        //     for (const h of handler) {
+                        //         if (typeof h == "function") {
+                        //             handlers.push(h);
+                        //         }
 
-                    if (node != result.node) {
+                        //         // @ts-ignore
+                        //         else if (h[keyName] != null) {
+                        //             // @ts-ignore
+                        //             handlers.push(h[keyName]);
+                        //         }
+                        //     }
+                        // } else if (typeof handler.handler! == "function") {
+                        //     handlers.push(handler.handler);
+                        // }
+
                         // @ts-ignore
-                        replaceNodeOrValue(result[PARENT], value, node);
-                    }
-
-                    const tokens: Token[] = Array.isArray(result.node[TOKENS]) ? (result.node[TOKENS] as Token[]) : [];
-
-                    if (Array.isArray(result.node.val)) {
-                        tokens.push(...(result.node.val as Token[]));
-                    }
-
-                    if (tokens.length == 0) {
-                        continue;
-                    }
-
-                    for (const { value, parent, root, parents } of walkValues(tokens, result.node)) {
-                        node = value;
-
-                        if (valuesHandlers!.has(node!.typ)) {
-                            let parens: Token[] | null = null;
-                            for (const valueHandler of valuesHandlers!.get(node!.typ)!) {
-                                callable = valueHandler as GenericVisitorHandler<T>;
-                                // @ts-expect-error
-                                let result: GenericVisitorResult<T> = callable(node as T, parent, root, function* () {
-                                    if (parens == null) {
-                                        // @ts-expect-error
-                                        parens = [...parents()];
-                                    }
-
-                                    yield* parens[Symbol.iterator]();
-                                });
-
-                                if (result == null) {
-                                    continue;
-                                }
-
-                                if (result != node) {
-                                    node = result as Token;
-                                }
-
-                                if (Array.isArray(node)) {
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (node != value) {
+                        else if (typeof handler[keyName]! == "function") {
                             // @ts-ignore
-                            replaceNodeOrValue(parent, value, node);
+                            handlers.push(handler[keyName]);
+                        }
+                    }
+                }
+
+                // @ts-ignore
+                if (map!.has(nodes[i].typ)) {
+                    // @ts-ignore
+                    for (const handler of map!.get(nodes[i].typ)!) {
+                        if (typeof handler == "function") {
+                            handlers.push(handler as GenericVisitorHandler<T>);
+                        } else if (Array.isArray(handler)) {
+                            for (const h of handler) {
+                                if (typeof h == "function") {
+                                    handlers.push(h);
+                                }
+                            }
+                        } else if (typeof handler.handler! == "function") {
+                            handlers.push(handler.handler);
+                        }
+
+                        // @ts-ignore
+                        else if (typeof handler[keyName]! == "function") {
+                            // @ts-ignore
+                            handlers.push(handler[keyName]);
                         }
                     }
                 }
             }
+
+            if (handlers.length == 0) {
+                continue;
+            }
+
+            let node = nodes[i];
+
+            for (const callable of handlers) {
+                replacement = (callable as GenericVisitorHandler<T>)(
+                    node as T,
+                    nodes[i][PARENT] as AstNode,
+                    ast as AstStyleSheet,
+                    // @ts-expect-error
+                    function* () {
+                        if (parens == null) {
+                            let node = nodes![i][PARENT] as AstNode;
+
+                            while (node != null) {
+                                yield node;
+                                node = node[PARENT] as AstNode;
+                            }
+                        }
+                    },
+                ) as GenericVisitorResult<T>;
+
+                if (replacement == null) {
+                    continue;
+                }
+
+                if (replacement == node) {
+                    continue;
+                }
+
+                // @ts-ignore
+                node = replacement as AstNode;
+
+                //
+                if (Array.isArray(node)) {
+                    break;
+                }
+            }
+
+            if (node != nodes[i]) {
+                // @ts-ignore
+                replaceNodeOrValue(nodes[i][PARENT], nodes[i], node);
+            }
         }
+
+        nodes = null;
     }
 
     if (invalidNodes.length > 0) {
@@ -1086,24 +1042,6 @@ export function doParseSync(
                 }
             }
         }
-    }
-
-    while (stack.length > 0 && context != ast) {
-        const previousNode: AstAtRule | AstRule = stack.pop() as AstAtRule | AstRule;
-        context = (stack[stack.length - 1] ?? ast) as AstRuleList;
-
-        // remove empty nodes
-        if (
-            options.removeEmpty &&
-            previousNode != null &&
-            previousNode.chi!.length == 0 &&
-            context.chi![context.chi!.length - 1] == previousNode
-        ) {
-            context.chi!.pop();
-            continue;
-        }
-
-        break;
     }
 
     if (options.minify) {
@@ -1138,7 +1076,7 @@ export function doParseSync(
             scoped: ModuleScopeEnumOptions.Local,
             naming: ModuleCaseTransformEnum.IgnoreCase,
             pattern: "",
-            generateScopedName,
+            generateScopedName: generateSyncScopedName,
             ...(typeof options.module != "object" ? {} : options.module),
         } as ModuleSyncOptions;
 
@@ -1215,6 +1153,7 @@ export function doParseSync(
                 );
             }
 
+            // @ts-ignore
             if (node.typ == EnumToken.CssVariableDeclarationMapTokenType) {
                 const from = (node as CssVariableMapTokenType).from.find(
                     (t) => t.typ == EnumToken.IdenTokenType || isIdentColor(t),
@@ -1567,6 +1506,7 @@ export function doParseSync(
                         (value.typ == EnumToken.IdenTokenType || isIdentColor(value)) &&
                         (value as IdentToken).val in importedCssVariables
                     ) {
+                        // @ts-ignore
                         replaceNodeOrValue(parent, value, importedCssVariables[(value as IdentToken).val].val);
                     }
                 }
@@ -1674,7 +1614,7 @@ export function doParseSync(
                 if (moduleSettings.scoped! & ModuleScopeEnumOptions.Pure) {
                     if (!hasIdOrClass) {
                         throw new Error(
-                            `pure module: No id or class found in selector '${node.sel}' at '${node[LOC]?.src ?? ""}':${node[LOC]?.sta?.lin ?? ""}:${node[LOC]?.sta?.col ?? ""}`,
+                            `pure module: No id or class found in selector '${node.sel}' at '${options.source!.getOffsets(node[LOC]?.sta as number).join(":")}'`,
                         );
                     }
                 }
@@ -1842,30 +1782,6 @@ export async function doParse(
     let tokens: Token[] = [];
     let context: AstRuleList = ast;
 
-    // ast[ROOT] = ast;
-
-    ast[LOC] = {
-        sta: 0,
-        end: 0,
-        srcId: options.source!.id,
-    };
-
-    let valuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-    let preValuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-    let postValuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-    let preVisitorsHandlersMap: Map<
-        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
-    >;
-    let visitorsHandlersMap: Map<
-        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, GenericVisitorAstNodeHandlerMap<T>>>
-    >;
-    let postVisitorsHandlersMap: Map<
-        "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-        Array<GenericVisitorAstNodeHandlerMap<T> | Record<string, Array<GenericVisitorAstNodeHandlerMap<T>>>>
-    >;
-
     const imports: AstAtRule[] = [];
 
     let item: TokenizeResult;
@@ -1876,141 +1792,13 @@ export async function doParse(
     let parensMatch: number = 0;
     let curlyBracketMatch: number = 0;
 
-    if (options.visitor != null) {
-        valuesHandlers = new Map() as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-        preValuesHandlers = new Map() as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
-        postValuesHandlers = new Map() as Map<EnumToken, Array<GenericVisitorHandler<Token>>>;
+    // ast[ROOT] = ast;
 
-        preVisitorsHandlersMap = new Map();
-        visitorsHandlersMap = new Map();
-        postVisitorsHandlersMap = new Map();
-
-        const visitors = Object.entries(options.visitor);
-        let key: string;
-        let value: any;
-        let i: number;
-
-        for (i = 0; i < visitors.length; i++) {
-            key = visitors[i][0];
-            value = visitors[i][1];
-
-            if (Number.isInteger(+key)) {
-                visitors.splice(i + 1, 0, ...Object.entries(value));
-                continue;
-            }
-
-            if (Array.isArray(value)) {
-                // @ts-ignore
-                visitors.splice(i + 1, 0, ...value.map((item) => [key, item]));
-                continue;
-            }
-
-            if (key in EnumToken) {
-                if (typeof value == "function") {
-                    if (!valuesHandlers.has(EnumToken[key as keyof typeof EnumToken] as EnumToken)) {
-                        valuesHandlers.set(EnumToken[key as keyof typeof EnumToken] as EnumToken, []);
-                    }
-
-                    valuesHandlers.get(EnumToken[key as keyof typeof EnumToken] as EnumToken)!.push(value);
-                } else if (
-                    typeof value == "object" &&
-                    "type" in value &&
-                    "handler" in value &&
-                    value.type in WalkerEvent
-                ) {
-                    if (value.type == WalkerEvent.Enter) {
-                        if (!preValuesHandlers.has(EnumToken[key as keyof typeof EnumToken] as EnumToken)) {
-                            preValuesHandlers.set(EnumToken[key as keyof typeof EnumToken] as EnumToken, []);
-                        }
-
-                        preValuesHandlers
-                            .get(EnumToken[key as keyof typeof EnumToken] as EnumToken)!
-                            .push(value.handler);
-                    } else if (value.type == WalkerEvent.Leave) {
-                        if (!postValuesHandlers.has(EnumToken[key as keyof typeof EnumToken] as EnumToken)) {
-                            postValuesHandlers.set(EnumToken[key as keyof typeof EnumToken] as EnumToken, []);
-                        }
-
-                        postValuesHandlers
-                            .get(EnumToken[key as keyof typeof EnumToken] as EnumToken)!
-                            .push(value.handler);
-                    }
-                } else {
-                    errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
-                }
-            } else if (["Declaration", "Rule", "AtRule", "KeyframesRule", "KeyframesAtRule"].includes(key)) {
-                if (typeof value == "function") {
-                    if (
-                        !visitorsHandlersMap.has(
-                            key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-                        )
-                    ) {
-                        visitorsHandlersMap.set(
-                            key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-                            [],
-                        );
-                    }
-
-                    visitorsHandlersMap
-                        .get(key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule")!
-                        .push(value);
-                } else if (typeof value == "object") {
-                    if ("type" in value && "handler" in value && value.type in WalkerEvent) {
-                        if (value.type == WalkerEvent.Enter) {
-                            if (
-                                !preVisitorsHandlersMap.has(
-                                    key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-                                )
-                            ) {
-                                preVisitorsHandlersMap.set(
-                                    key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-                                    [],
-                                );
-                            }
-
-                            preVisitorsHandlersMap
-                                .get(key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule")!
-                                .push(value.handler);
-                        } else if (value.type == WalkerEvent.Leave) {
-                            if (
-                                !postVisitorsHandlersMap.has(
-                                    key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-                                )
-                            ) {
-                                postVisitorsHandlersMap.set(
-                                    key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-                                    [],
-                                );
-                            }
-
-                            postVisitorsHandlersMap
-                                .get(key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule")!
-                                .push(value.handler);
-                        }
-                    } else {
-                        if (
-                            !visitorsHandlersMap.has(
-                                key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-                            )
-                        ) {
-                            visitorsHandlersMap.set(
-                                key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
-                                [],
-                            );
-                        }
-
-                        visitorsHandlersMap
-                            .get(key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule")!
-                            .push(value);
-                    }
-                } else {
-                    errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
-                }
-            } else {
-                errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
-            }
-        }
-    }
+    ast[LOC] = {
+        sta: 0,
+        end: 0,
+        srcId: options.source!.id,
+    };
 
     if (Array.isArray(iter)) {
         // @ts-expect-error
@@ -2055,9 +1843,6 @@ export async function doParse(
 
         tokens.push(item.token);
 
-        // console.debug([item.token, {parensMatch, curlyBracketMatch}]);
-
-        // if (parensMatch === 0) {
         if (
             parensMatch === 0 &&
             (item.token.typ === EnumToken.SemiColonTokenType ||
@@ -2173,11 +1958,10 @@ export async function doParse(
                     options.sourcesMap!.set(source.id, source);
                     const parseInfo = {
                         stream,
-                        buffer: "",
                         offset: 0,
                         source,
                         position: 0,
-                        currentPosition: -1,
+                        currentPosition: 0,
                     } as ParseInfo;
                     const root: ParseResult = await doParse(
                         stream instanceof ReadableStream ? tokenizeStream(stream, parseInfo) : tokenize(parseInfo),
@@ -2192,7 +1976,8 @@ export async function doParse(
                     stats.nodesCount += root.stats.nodesCount;
                     stats.tokensCount += root.stats.tokensCount;
                     stats.imports.push(root.stats);
-                    node[PARENT]!.chi.splice(node[PARENT]!.chi.indexOf(node), 1, ...root.ast.chi);
+                    // @ts-ignore
+                    node[PARENT]!.chi!.splice(node[PARENT]!.chi!.indexOf(node), 1, ...root.ast.chi);
 
                     if (root.errors.length > 0) {
                         errors.push(...root.errors);
@@ -2212,314 +1997,198 @@ export async function doParse(
     }
 
     let replacement: GenericVisitorResult<T>;
-    let callable: GenericVisitorHandler<T>;
-
-    while (stack.length > 0 && context != ast) {
-        const previousNode: AstAtRule | AstRule = stack.pop() as AstAtRule | AstRule;
-        context = (stack[stack.length - 1] ?? ast) as AstRuleList;
-
-        previousNode[PARENT] = context;
-
-        // remove empty nodes
-        if (
-            options.removeEmpty &&
-            previousNode != null &&
-            previousNode.chi!.length == 0 &&
-            context.chi![context.chi!.length - 1] == previousNode
-        ) {
-            context.chi!.pop();
-            continue;
-        }
-
-        break;
-    }
 
     if (options.visitor != null) {
         let parens: Token[] | null;
-        for (const result of walk(ast)) {
+
+        let genericKey: string | null;
+        const handlers = [] as Array<GenericVisitorHandler<T>>;
+        const visitors = parseVisitors(options.visitor, errors);
+
+        let nodes: AstNode[] | null = new Array(stats.tokensCount);
+        const subNodes: Array<AstNode | Token> = [];
+        let i: number;
+        let k: number;
+        let j: number;
+        let freeblock: number = 1;
+        nodes[0] = ast;
+
+        for (i = 0; i < nodes.length; i++) {
+            if (nodes[i] == null) {
+                break;
+            }
+
+            subNodes.length = 0;
+            if (visitors.includeTokens) {
+                switch (nodes[i].typ) {
+                    case EnumToken.RuleNodeType:
+                    case EnumToken.AtRuleNodeType:
+                    case EnumToken.KeyframesRuleNodeType:
+                    case EnumToken.KeyframesAtRuleNodeType:
+                        subNodes.push(
+                            ...(nodes[i] as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule)[TOKENS]!,
+                        );
+                        break;
+                    case EnumToken.DeclarationNodeType:
+                        subNodes.push(...(nodes[i] as AstDeclaration).val);
+                        break;
+                }
+            }
+
+            // @ts-ignore
+            if (nodes[i].chi != null) {
+                // @ts-ignore
+                subNodes.push(...nodes[i].chi);
+            }
+
+            if (subNodes.length > 0) {
+                if (freeblock <= i) {
+                    freeblock = i + 1;
+                }
+
+                for (k = 0; k < subNodes.length; k++) {
+                    j = k + freeblock;
+                    nodes[j] = subNodes[k] as AstNode;
+                    nodes[j][PARENT] = nodes[i];
+                }
+
+                freeblock += subNodes.length;
+            }
+
             parens = null;
+            handlers.length = 0;
 
-            if (
-                valuesHandlers!.size > 0 ||
-                preVisitorsHandlersMap!.size > 0 ||
-                visitorsHandlersMap!.size > 0 ||
-                postVisitorsHandlersMap!.size > 0
-            ) {
-                if (
-                    (result.node.typ == EnumToken.DeclarationNodeType &&
-                        (preVisitorsHandlersMap!.has("Declaration") ||
-                            visitorsHandlersMap!.has("Declaration") ||
-                            postVisitorsHandlersMap!.has("Declaration"))) ||
-                    (result.node.typ == EnumToken.AtRuleNodeType &&
-                        (preVisitorsHandlersMap!.has("AtRule") ||
-                            visitorsHandlersMap!.has("AtRule") ||
-                            postVisitorsHandlersMap!.has("AtRule"))) ||
-                    (result.node.typ == EnumToken.KeyframesAtRuleNodeType &&
-                        (preVisitorsHandlersMap!.has("KeyframesAtRule") ||
-                            visitorsHandlersMap!.has("KeyframesAtRule") ||
-                            postVisitorsHandlersMap!.has("KeyframesAtRule")))
-                ) {
-                    const handlers = [] as Array<GenericVisitorHandler<T> | Record<string, GenericVisitorHandler<T>>>;
-                    const key =
-                        result.node.typ == EnumToken.DeclarationNodeType
-                            ? "Declaration"
-                            : result.node.typ == EnumToken.AtRuleNodeType
-                              ? "AtRule"
-                              : "KeyframesAtRule";
+            genericKey =
+                nodes[i].typ == EnumToken.DeclarationNodeType
+                    ? "Declaration"
+                    : nodes[i].typ == EnumToken.AtRuleNodeType
+                      ? "AtRule"
+                      : nodes[i].typ == EnumToken.KeyframesAtRuleNodeType
+                        ? "KeyframesAtRule"
+                        : nodes[i].typ === EnumToken.KeyframesRuleNodeType
+                          ? "KeyframesRule"
+                          : nodes[i].typ == EnumToken.RuleNodeType
+                            ? "Rule"
+                            : nodes[i].typ == EnumToken.KeyframesRuleNodeType
+                              ? "KeyframesRule"
+                              : null;
+            let keyName: string | null =
+                nodes[i].typ == EnumToken.DeclarationNodeType || nodes[i].typ == EnumToken.AtRuleNodeType
+                    ? camelize((nodes[i] as AstDeclaration | AstAtRule).nam)
+                    : nodes[i].typ == EnumToken.KeyframesAtRuleNodeType
+                      ? camelize((nodes[i] as AstKeyframesAtRule).val)
+                      : null;
 
-                    if (preVisitorsHandlersMap!.has(key)) {
-                        handlers.push(
-                            // @ts-expect-error
-                            ...(preVisitorsHandlersMap!.get(key)! as
-                                | GenericVisitorHandler<T>
-                                | Record<string, GenericVisitorHandler<T>>),
-                        );
-                    }
-
-                    if (visitorsHandlersMap!.has(key)) {
-                        // @ts-ignore
-                        handlers.push(...visitorsHandlersMap.get(key)!);
-                    }
-
-                    if (postVisitorsHandlersMap!.has(key)) {
-                        // @ts-ignore
-                        handlers.push(...postVisitorsHandlersMap.get(key));
-                    }
-
-                    let node: AstDeclaration | AstAtRule | AstKeyframesAtRule = result.node as
-                        | AstDeclaration
-                        | AstAtRule
-                        | AstKeyframesAtRule;
-
-                    for (const handler of handlers) {
-                        callable =
-                            typeof handler == "function"
-                                ? handler
-                                : (handler[
-                                      camelize(
-                                          node.typ === EnumToken.DeclarationNodeType ||
-                                              node.typ === EnumToken.AtRuleNodeType
-                                              ? (node as AstDeclaration | AstAtRule).nam
-                                              : (node as AstKeyframesAtRule).val,
-                                      )
-                                  ] as GenericVisitorHandler<T>);
-
-                        if (callable == null) {
-                            continue;
-                        }
-
-                        // @ts-expect-error
-                        replacement = callable(node, result[PARENT], ast, function* () {
-                            if (parens == null) {
-                                // @ts-expect-error
-                                parens = [...result.parents()];
-                            }
-
-                            yield* parens[Symbol.iterator]();
-                        });
-
-                        if (replacement == null) {
-                            continue;
-                        }
-
-                        if (replacement instanceof Promise) {
-                            replacement = await replacement;
-                        }
-
-                        if (replacement == null || replacement == node) {
-                            continue;
-                        }
-
-                        // @ts-ignore
-                        node = replacement;
-
-                        if (Array.isArray(node)) {
-                            break;
-                        }
-                    }
-
-                    if (node != result.node) {
-                        replaceNodeOrValue(
-                            result.parent as
-                                | AstRule
-                                | AstAtRule
-                                | AstKeyframesAtRule
-                                | AstKeyframesRule
-                                | AstStyleSheet,
-                            result.node,
-                            node,
-                        );
-                    }
-                } else if (
-                    (result.node.typ == EnumToken.RuleNodeType &&
-                        (preVisitorsHandlersMap!.has("Rule") ||
-                            visitorsHandlersMap!.has("Rule") ||
-                            postVisitorsHandlersMap!.has("Rule"))) ||
-                    (result.node.typ == EnumToken.KeyFramesRuleNodeType &&
-                        (preVisitorsHandlersMap!.has("KeyframesRule") ||
-                            visitorsHandlersMap!.has("KeyframesRule") ||
-                            postVisitorsHandlersMap!.has("KeyframesRule")))
-                ) {
-                    const handlers = [] as Array<
-                        | GenericVisitorHandler<T>
-                        | {
-                              type: WalkerEvent;
-                              handler: GenericVisitorHandler<T>;
-                          }
-                    >;
-                    const key = result.node.typ == EnumToken.RuleNodeType ? "Rule" : "KeyframesRule";
-
-                    if (preVisitorsHandlersMap!.has(key)) {
-                        handlers.push(...(preVisitorsHandlersMap!.get(key)! as Array<GenericVisitorHandler<T>>));
-                    }
-
-                    if (visitorsHandlersMap!.has(key)) {
-                        handlers.push(...(visitorsHandlersMap!.get(key)! as Array<GenericVisitorHandler<T>>));
-                    }
-
-                    if (postVisitorsHandlersMap!.has(key)) {
-                        handlers.push(...(postVisitorsHandlersMap!.get(key)! as Array<GenericVisitorHandler<T>>));
-                    }
-
-                    let node = result.node;
-
-                    for (const callable of handlers) {
-                        replacement = (callable as GenericVisitorHandler<T>)(
-                            node as T,
-                            result.parent,
-                            result.root,
-                            // @ts-expect-error
-                            function* () {
-                                if (parens == null) {
-                                    // @ts-expect-error
-                                    parens = [...result.parents()];
-                                }
-
-                                yield* parens[Symbol.iterator]();
-                            },
-                        ) as GenericVisitorResult<T>;
-
-                        if (replacement == null) {
-                            continue;
-                        }
-
-                        if (replacement instanceof Promise) {
-                            replacement = await replacement;
-                        }
-
-                        if (replacement == null || replacement == node) {
-                            continue;
-                        }
-
-                        // @ts-ignore
-                        node = replacement as AstNode;
-
-                        //
-                        if (Array.isArray(node)) {
-                            break;
-                        }
-                    }
-
+            for (const map of visitors.allHandlers) {
+                // @ts-ignore
+                if (genericKey != null && map!.has(genericKey)) {
                     // @ts-ignore
-                    if (node != result.node) {
-                        // @ts-ignore
-                        replaceNodeOrValue(result.parent, result.node, node);
-                    }
-                } else if (valuesHandlers!.size > 0) {
-                    let node: Token | AstNode | null = null;
-
-                    node = result.node;
-
-                    if (valuesHandlers!.has(node.typ)) {
-                        for (const valueHandler of valuesHandlers!.get(node.typ)!) {
-                            callable = valueHandler as GenericVisitorHandler<T>;
-                            replacement = callable(
-                                node as T,
-                                result.parent,
-                                ast,
-                                // @ts-expect-error
-                                function* () {
-                                    if (parens == null) {
-                                        // @ts-expect-error
-                                        parens = [...result.parents()];
-                                    }
-
-                                    yield* parens[Symbol.iterator]();
-                                },
-                            );
-
-                            if (replacement == null) {
-                                continue;
-                            }
-
-                            if (replacement instanceof Promise) {
-                                replacement = await replacement;
-                            }
-
-                            if (replacement != null && replacement != node) {
-                                node = replacement as AstNode;
-                            }
-                        }
-                    }
-
-                    if (node != result.node) {
-                        // @ts-ignore
-                        replaceNodeOrValue(result[PARENT], value, node);
-                    }
-
-                    const tokens: Token[] = Array.isArray(result.node[TOKENS]) ? (result.node[TOKENS] as Token[]) : [];
-
-                    if (Array.isArray(result.node.val)) {
-                        tokens.push(...(result.node.val as Token[]));
-                    }
-
-                    if (tokens.length == 0) {
-                        continue;
-                    }
-
-                    for (const { value, parent, root, parents } of walkValues(tokens, result.node)) {
-                        node = value;
-
-                        if (valuesHandlers!.has(node!.typ)) {
-                            let parens: Token[] | null = null;
-                            for (const valueHandler of valuesHandlers!.get(node!.typ)!) {
-                                callable = valueHandler as GenericVisitorHandler<T>;
-                                // @ts-expect-error
-                                let result: GenericVisitorResult<T> = callable(node as T, parent, root, function* () {
-                                    if (parens == null) {
-                                        // @ts-expect-error
-                                        parens = [...parents()];
-                                    }
-
-                                    yield* parens[Symbol.iterator]();
-                                });
-
-                                if (result == null) {
-                                    continue;
-                                }
-
-                                if (result instanceof Promise) {
-                                    result = await result;
-                                }
-
-                                if (result != null && result != node) {
-                                    node = result as Token;
-                                }
-
-                                if (Array.isArray(node)) {
-                                    break;
-                                }
-                            }
+                    for (const handler of map!.get(genericKey)!) {
+                        if (typeof handler == "function") {
+                            handlers.push(handler as GenericVisitorHandler<T>);
                         }
 
-                        if (node != value) {
+                        // else if (Array.isArray(handler)) {
+                        //     for (const h of handler) {
+                        //         if (typeof h == "function") {
+                        //             handlers.push(h);
+                        //         }
+
+                        //         // @ts-ignore
+                        //         else if (h[keyName] != null) {
+                        //             // @ts-ignore
+                        //             handlers.push(h[keyName]);
+                        //         }
+                        //     }
+                        // } else if (typeof handler.handler! == "function") {
+                        //     handlers.push(handler.handler);
+                        // }
+
+                        // @ts-ignore
+                        else if (typeof handler[keyName]! == "function") {
                             // @ts-ignore
-                            replaceNodeOrValue(parent, value, node);
+                            handlers.push(handler[keyName]);
+                        }
+                    }
+                }
+
+                // @ts-ignore
+                if (map!.has(nodes[i].typ)) {
+                    // @ts-ignore
+                    for (const handler of map!.get(nodes[i].typ)!) {
+                        if (typeof handler == "function") {
+                            handlers.push(handler as GenericVisitorHandler<T>);
+                        } else if (Array.isArray(handler)) {
+                            for (const h of handler) {
+                                if (typeof h == "function") {
+                                    handlers.push(h);
+                                }
+                            }
+                        } else if (typeof handler.handler! == "function") {
+                            handlers.push(handler.handler);
+                        }
+
+                        // @ts-ignore
+                        else if (typeof handler[keyName]! == "function") {
+                            // @ts-ignore
+                            handlers.push(handler[keyName]);
                         }
                     }
                 }
             }
+
+            if (handlers.length == 0) {
+                continue;
+            }
+
+            let node = nodes[i] as AstNode;
+
+            for (const callable of handlers) {
+                replacement = (callable as GenericVisitorHandler<T>)(
+                    node as T,
+                    nodes[i][PARENT] as AstNode,
+                    ast as AstStyleSheet,
+                    // @ts-expect-error
+                    function* () {
+                        if (parens == null) {
+                            let node = nodes![i][PARENT] as AstNode;
+
+                            while (node != null) {
+                                yield node;
+                                node = node[PARENT] as AstNode;
+                            }
+                        }
+                    },
+                ) as GenericVisitorResult<T>;
+
+                if (replacement == null) {
+                    continue;
+                }
+
+                if (replacement instanceof Promise) {
+                    replacement = await replacement;
+                }
+
+                if (replacement == null || replacement == node) {
+                    continue;
+                }
+
+                // @ts-ignore
+                node = replacement as AstNode;
+
+                //
+                if (Array.isArray(node)) {
+                    break;
+                }
+            }
+
+            if (node != nodes[i]) {
+                // @ts-ignore
+                replaceNodeOrValue(nodes[i]![PARENT] as AstNode, nodes[i], node);
+            }
         }
+
+        nodes = null;
     }
 
     if (invalidNodes.length > 0) {
@@ -2674,7 +2343,7 @@ export async function doParse(
                     time: 0,
                     source,
                     position: 0,
-                    currentPosition: -1,
+                    currentPosition: 0,
                 } as ParseInfo;
 
                 const root: ParseResult = await doParse(
@@ -2694,6 +2363,7 @@ export async function doParse(
                 continue;
             }
 
+            // @ts-ignore
             if (node.typ == EnumToken.CssVariableDeclarationMapTokenType) {
                 const from = (node as CssVariableMapTokenType).from.find(
                     (t) => t.typ == EnumToken.IdenTokenType || isIdentColor(t),
@@ -2754,6 +2424,7 @@ export async function doParse(
                                       moduleSettings.pattern as string,
                                       moduleSettings.hashLength,
                                   );
+                        // @ts-ignore
                         let value: string = result instanceof Promise ? await result : result;
 
                         mapping[node.nam] =
@@ -2866,19 +2537,17 @@ export async function doParse(
                             const root: ParseResult = await doParse(
                                 stream instanceof ReadableStream
                                     ? tokenizeStream(stream, {
-                                          buffer: "",
                                           offset: 0,
                                           source: new SourceFile("", [], src.relative),
                                           position: 0,
-                                          currentPosition: -1,
+                                          currentPosition: 0,
                                       } as ParseInfo)
                                     : tokenize({
                                           stream,
-                                          buffer: "",
                                           offset: 0,
                                           position: 0,
                                           source: new SourceFile(stream, [], src.relative),
-                                          currentPosition: -1,
+                                          currentPosition: 0,
                                       } as ParseInfo),
                                 Object.assign({}, options, {
                                     minify: false,
@@ -3154,33 +2823,17 @@ export async function doParse(
 
                 for (const { value, parent } of walkValues(node.val, node)) {
                     if (value.typ == EnumToken.DashedIdenTokenType) {
-                        // if (!((value as DashedIdentToken).val in mapping)) {
-                        //     const result =
-                        //         moduleSettings.scoped! & ModuleScopeEnumOptions.Global
-                        //             ? (value as DashedIdentToken).val
-                        //             : moduleSettings.generateScopedName!(
-                        //                   (value as DashedIdentToken).val,
-                        //                   moduleSettings.filePath as string,
-                        //                   moduleSettings.pattern as string,
-                        //                   moduleSettings.hashLength,
-                        //               );
-                        //     let val: string = result instanceof Promise ? await result : result;
-
-                        //     mapping[(value as DashedIdentToken).val] =
-                        //         "--" +
-                        //         (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly ||
-                        //         moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly
-                        //             ? getKeyName(val, moduleSettings.naming as ModuleCaseTransformEnum)
-                        //             : val);
-                        //     revMapping[mapping[(value as DashedIdentToken).val]] = (value as DashedIdentToken).val;
-                        // }
-
                         (value as DashedIdentToken).val = mapping[(value as DashedIdentToken).val];
                     } else if (
                         (value.typ == EnumToken.IdenTokenType || isIdentColor(value)) &&
                         (value as IdentToken).val in importedCssVariables
                     ) {
-                        replaceNodeOrValue(parent, value, importedCssVariables[(value as IdentToken).val].val);
+                        replaceNodeOrValue(
+                            // @ts-ignore
+                            parent as AstRule,
+                            value,
+                            importedCssVariables[(value as IdentToken).val].val,
+                        );
                     }
                 }
             } else if (node.typ == EnumToken.RuleNodeType) {
@@ -3290,7 +2943,7 @@ export async function doParse(
                 if (moduleSettings.scoped! & ModuleScopeEnumOptions.Pure) {
                     if (!hasIdOrClass) {
                         throw new Error(
-                            `pure module: No id or class found in selector '${node.sel}' at '${node[LOC]?.src ?? ""}':${node[LOC]?.sta?.lin ?? ""}:${node[LOC]?.sta?.col ?? ""}`,
+                            `pure module: No id or class found in selector '${node.sel}' at '${(options.source?.getOffsets?.(node[LOC]?.sta as number) ?? []).join(":")}'`,
                         );
                     }
                 }
@@ -3481,7 +3134,9 @@ function parseNode(
     }
 
     if (i > 0) {
-        context.chi!.push(...(tokens.splice(0, i) as AstNode[]).filter((n) => n.typ !== EnumToken.WhitespaceTokenType));
+        context.chi!.push(
+            ...(tokens.splice(0, i) as AstNode[]).filter((n: AstNode) => n.typ !== EnumToken.WhitespaceTokenType),
+        );
         i = 0;
     }
 
@@ -3537,7 +3192,7 @@ function parseNode(
                 break;
             }
 
-            parent = parent[PARENT];
+            parent = parent[PARENT] as AstNode;
         }
 
         node = parseAtRule(
@@ -3616,7 +3271,7 @@ function parseNode(
                 (node as AstNode)[STATE] == EnumAstNodeStatus.Unparsed ||
                 (node as AstNode)[STATE] == EnumAstNodeStatus.Malformed
             ) {
-                invalidNodes.push(node);
+                invalidNodes.push(node as AstDeclaration);
             }
         }
     }
@@ -4074,8 +3729,8 @@ export function parseAtRule(
             let success: boolean = result.success;
 
             if (atRule.nam === "else") {
-                const siblings = (context as AstAtRule | AstStyleSheet).chi as AstNode[];
-                let sibling: AstNode | null = null;
+                const siblings = (context as AstAtRule | AstStyleSheet).chi as AstNode[] | Token[];
+                let sibling: AstNode | Token | null = null;
                 let l: number = siblings.length;
 
                 while (l--) {
@@ -4096,9 +3751,12 @@ export function parseAtRule(
 
                 if (sibling == null || sibling.typ !== EnumToken.AtRuleNodeType) {
                     missingWhen = true;
+                    // @ts-expect-error
                 } else if (sibling.nam !== "when") {
+                    // @ts-expect-error
                     if (sibling.nam !== "else") {
                         missingWhen = true;
+                        // @ts-expect-error
                     } else if (sibling.val === "") {
                         definedAfterLastElse = true;
                     }
@@ -4534,11 +4192,10 @@ export async function parseDeclarations(declaration: string): Promise<Array<AstD
     return doParse(
         tokenize({
             stream,
-            buffer: "",
             offset: 0,
             position: 0,
             source: new SourceFile(stream, [], ""),
-            currentPosition: -1,
+            currentPosition: 0,
         } as ParseInfo),
         { setParent: false, minify: false, validation: false },
     ).then((result) => {
@@ -4577,29 +4234,24 @@ export function parseString(
 ): Token[] {
     const parseInfo: ParseInfo = {
         stream: src,
-        buffer: "",
         offset: 0,
         time: 0,
         source: new SourceFile(src, [], ""),
         position: 0,
-        currentPosition: -1,
+        currentPosition: 0,
     };
 
-    const tokenResults = tokenize(parseInfo);
-    const mapped = [];
+    const tokenResults: TokenizeResult[] = tokenize(parseInfo);
+    const mapped: Token[] = [];
 
     for (const token of tokenResults) {
         mapped.push(token.token);
     }
 
-    const result = parseTokens(mapped, options, errors);
+    const result: Token[] = parseTokens(mapped, options, errors);
 
     // remove EOF token
-    result.pop();
-
-    if (result.at(-1)?.typ === EnumToken.WhitespaceTokenType) {
-        result.pop();
-    }
+    result.splice(result.length - (result[result.length - 2]?.typ === EnumToken.WhitespaceTokenType ? 2 : 1), 2);
 
     return result;
 }
@@ -4717,7 +4369,6 @@ export function parseTokens(
                     node,
                     location: options.source!.getSourceLocation(node[LOC]!.sta),
                 });
-                // return [];
                 continue;
             }
 

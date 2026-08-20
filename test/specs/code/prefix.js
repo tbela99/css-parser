@@ -1,10 +1,24 @@
-
-export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
-
-    describe('prefix removal', function () {
-
-        it('selector prefix #1', function () {
-            return transform(`
+export function run(
+    describe,
+    expect,
+    it,
+    transform,
+    parse,
+    render,
+    dirname,
+    readFile,
+    resolve,
+    ColorType,
+    EnumToken,
+    ModuleCaseTransformEnum,
+    ModuleScopeEnumOptions,
+    transformSync,
+    parseSync,
+) {
+    describe("prefix removal", function () {
+        it("selector prefix #1", function () {
+            return transform(
+                `
 
 @media screen {
         
@@ -12,15 +26,20 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
             height: calc(100px * 2/ 15);
     }
 }
-`, {removePrefix: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@media screen {
+`,
+                { removePrefix: true },
+            ).then((result) =>
+                expect(render(result.ast, { minify: false }).code).equals(`@media screen {
  .foo:autofill:not(:hover) {
   height: calc(40px/3)
  }
-}`));
+}`),
+            );
         });
 
-        it('selector prefix #2', function () {
-            return transform(`
+        it("selector prefix #2", function () {
+            return transform(
+                `
 
 @media screen {
         
@@ -29,15 +48,20 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
             display: none;
     }
 }
-`, {removePrefix: true, nestingRules: false}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@media screen {
+`,
+                { removePrefix: true, nestingRules: false },
+            ).then((result) =>
+                expect(render(result.ast, { minify: false }).code).equals(`@media screen {
  .foo:is(:autofill:not(:hover),a,b) {
   display: none
  }
-}`));
+}`),
+            );
         });
 
-        it('selector unknown prefix #3', function () {
-            return transform(`
+        it("selector unknown prefix #3", function () {
+            return transform(
+                `
 
 @media screen {
         
@@ -45,15 +69,20 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
             height: calc(100px * 2/ 15);
     }
 }
-`, {removePrefix: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@media screen {
+`,
+                { removePrefix: true },
+            ).then((result) =>
+                expect(render(result.ast, { minify: false }).code).equals(`@media screen {
  .foo:autofill:not(:hover) {
   height: calc(40px/3)
  }
-}`));
+}`),
+            );
         });
 
-        it('selector invalid prefix #4', function () {
-            return transform(`
+        it("selector invalid prefix #4", function () {
+            return transform(
+                `
 
 @media screen {
         
@@ -61,11 +90,14 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
             height: calc(100px * 2/ 15);
     }
 }
-`, {removePrefix: true}).then(result => expect(result.code).equals(``));
+`,
+                { removePrefix: true },
+            ).then((result) => expect(result.code).equals(``));
         });
 
-        it('prefixed properties #4', function () {
-            return transform(`
+        it("prefixed properties #4", function () {
+            return transform(
+                `
 
    a:any-link {
   border: 1px solid blue;
@@ -89,7 +121,10 @@ a:-webkit-any-link {
             -webkit-appearance: none;;
     }
 }
-`, {removePrefix: true, beautify: true}).then(result => expect(result.code).equals(`a:any-link {
+`,
+                { removePrefix: true, beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`a:any-link {
  border: 1px solid blue;
  color: orange
 }
@@ -103,11 +138,13 @@ a:-webkit-any-link {
    appearance: none
   }
  }
-}`));
+}`),
+            );
         });
 
-        it('all prefixed #5', function () {
-            return transform(`
+        it("all prefixed #5", function () {
+            return transform(
+                `
 
 ::-webkit-input-placeholder {
   color: gray;
@@ -226,11 +263,14 @@ a {
   .xl\\:origin-bottom-left2 {
  background: -o-linear-gradient(-90deg,#fff,#000);
   }
-`, {
-                removePrefix: true,
-                removeDuplicateDeclarations: false,
-                beautify: true
-            }).then(result => expect(result.code).equals(`::placeholder {
+`,
+                {
+                    removePrefix: true,
+                    removeDuplicateDeclarations: false,
+                    beautify: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`::placeholder {
  color: grey
 }
 @supports selector(::placeholder) {
@@ -304,11 +344,13 @@ a {
 }
 .xl\\:origin-bottom-left2 {
  background: linear-gradient(#fff,#000)
-}`));
+}`),
+            );
         });
 
-        it('do not mix #6', function () {
-            return transform(`
+        it("do not mix #6", function () {
+            return transform(
+                `
 
 ::moz-selection  {
     opacity: .25;
@@ -325,9 +367,12 @@ a {
     filter: blur(25px);
   }
 }
-`, {
-                beautify: true
-            }).then(result => expect(result.code).equals(`::moz-selection {
+`,
+                {
+                    beautify: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`::moz-selection {
  opacity: .25;
  filter: blur(25px)
 }
@@ -338,8 +383,75 @@ a {
 ::selection {
  opacity: .25;
  filter: blur(25px)
-}`));
+}`),
+            );
         });
 
+        it("do not mix #7", function () {
+            const result = transformSync(
+                `
+
+@media (-webkit-max-device-pixel-ratio: 2) {
+#converted-text {
+ color: #00b400;
+ background: -webkit-gradient(linear,left bottom, left top,from(#fff),to(#000));
+}
+ 
+.hsl {
+ color: #00b400;
+ background: -webkit-gradient(linear,left top, right top,from(#fff),to(#000));
+}
+.bg {
+ color: #00b400;
+ background: -webkit-gradient(linear,right top, left top,from(#fff),to(#000));
+}
+.bg2 {
+ color: #00b400;
+ background: -webkit-gradient(linear,right top, left bottom,from(#fff),to(#000));
+}
+.bg3 {
+ color: #00b400;
+ background: -webkit-gradient(linear,left bottom, right top,from(#fff),to(#000));
+}
+.bg4 {
+ color: #00b400;
+ background: -webkit-gradient(linear,right bottom, left top,from(#fff),to(#000));
+}
+`,
+                {
+                    beautify: true,
+                    removePrefix: true,
+                },
+            );
+
+            expect(result.code).equals(`@media (max-resolution:2x) {
+ #converted-text {
+  color: #00b400;
+  background: linear-gradient(0,#fff,#000)
+ }
+ .hsl,.bg {
+  color: #00b400
+ }
+ .bg {
+  background: linear-gradient(270deg,#fff,#000)
+ }
+ .hsl {
+  background: linear-gradient(90deg,#fff,#000)
+ }
+ .bg2,.bg3 {
+  color: #00b400
+ }
+ .bg3 {
+  background: linear-gradient(to top right,#fff,#000)
+ }
+ .bg2 {
+  background: linear-gradient(to bottom left,#fff,#000)
+ }
+ .bg4 {
+  color: #00b400;
+  background: linear-gradient(to top left,#fff,#000)
+ }
+}`);
+        });
     });
 }

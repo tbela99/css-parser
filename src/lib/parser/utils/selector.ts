@@ -17,10 +17,20 @@ import type {
     PercentageToken,
     AtRuleToken,
     ColorToken,
+    AstNode,
 } from "../../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import { renderValue } from "../../renderer/render.ts";
-import { combinators, ERRORS, LOC, PARENT, pseudoElements, STATE, TOKENS, tokensfuncDefMap } from "../../syntax/constants.ts";
+import {
+    combinators,
+    ERRORS,
+    LOC,
+    PARENT,
+    pseudoElements,
+    STATE,
+    TOKENS,
+    tokensfuncDefMap,
+} from "../../syntax/constants.ts";
 import { isHash } from "../../syntax/syntax.ts";
 import { getParsedSyntax, getSyntaxConfig, getSyntaxRule } from "../../validation/config.ts";
 import { createValidationContext, matchAllSyntaxes, matchSelectorSyntax, trimArray } from "../../validation/match.ts";
@@ -29,6 +39,7 @@ import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from "../../validation
 import type { ValidationPropertyToken } from "../../validation/parser/types.d.ts";
 import { splitTokenList } from "../../validation/utils/list.ts";
 import { trimWhiteSpace } from "../parse.ts";
+import { equalsIgnoreCase } from "./text.ts";
 
 /**
  * parse selector
@@ -97,7 +108,7 @@ export function parseSelector(
         );
 
         return {
-            typ: EnumToken.KeyFramesRuleNodeType,
+            typ: EnumToken.KeyframesRuleNodeType,
             sel: [
                 ...splitTokenList(trimArray(tokens)).reduce((acc, curr: Token[]) => {
                     acc.add(curr.reduce((acc, curr) => acc + renderValue(curr, { minify: false }), ""));
@@ -107,7 +118,7 @@ export function parseSelector(
             chi: [],
             [LOC]: {
                 ...tokens[0][LOC],
-                end: tokens[tokens.length - 1]?.[LOC]?.end ?? tokens[0]?.[LOC]?.end
+                end: tokens[tokens.length - 1]?.[LOC]?.end ?? tokens[0]?.[LOC]?.end,
             },
             [TOKENS]: tokens.length === 0 ? null : tokens,
             [STATE]: result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid,
@@ -155,12 +166,12 @@ export function parseSelector(
 
     do {
         if (parent?.typ === EnumToken.AtRuleNodeType && "media" === (parent as AstAtRule).nam) {
-            parent = parent[PARENT];
+            parent = parent[PARENT] as AstRuleList;
             continue;
         }
 
         nested = parent?.typ == EnumToken.RuleNodeType;
-        parent = parent?.[PARENT];
+        parent = parent?.[PARENT] as AstRuleList;
     } while (!nested && parent != null);
 
     for (; i < tokens.length; i++) {
@@ -223,15 +234,80 @@ export function parseSelector(
         }
 
         if (tokens[i].typ == EnumToken.ColorTokenType) {
-            // if (isIdent((tokens[i] as ColorToken).val)) {
-            //     Object.assign(tokens[i], {
-            //         typ: EnumToken.IdenTokenType,
-            //     });
-            // } else 
-                if (isHash((tokens[i] as ColorToken).val)) {
+            
+            if (isHash((tokens[i] as ColorToken).val)) {
                 Object.assign(tokens[i], {
                     typ: EnumToken.HashTokenType,
                 });
+            } else {
+
+                return {
+                    typ: EnumToken.RuleNodeType,
+                    sel: [
+                        ...tokens
+                            .reduce(
+                                (acc: string[][], curr: Token, index: number, array: Token[]) => {
+                                    // if (curr.typ == EnumToken.CommentTokenType) {
+                                    //     return acc;
+                                    // }
+
+                                    if (curr.typ == EnumToken.WhitespaceTokenType) {
+                                        if (
+                                            trimWhiteSpace.includes(array[index - 1]?.typ) ||
+                                            trimWhiteSpace.includes(array[index + 1]?.typ) ||
+                                            combinators.includes((<LiteralToken>array[index - 1])?.val) ||
+                                            combinators.includes((<LiteralToken>array[index + 1])?.val)
+                                        ) {
+                                            return acc;
+                                        }
+                                    }
+
+                                    let t: string = renderValue(curr, { minify: false });
+
+                                    if (t == ",") {
+                                        acc.push([]);
+                                    } else {
+                                        acc[acc.length - 1].push(t);
+                                    }
+                                    return acc;
+                                },
+                                [[]],
+                            )
+                            .reduce((acc: Map<string, string[]>, curr: string[]) => {
+                                let i: number = 0;
+
+                                for (; i < curr.length; i++) {
+                                    if (i + 1 < curr.length && curr[i] == "*") {
+                                        if (curr[i] == "*") {
+                                            let index: number = curr[i + 1] == " " ? 2 : 1;
+
+                                            if (![">", "~", "+"].includes(curr[index])) {
+                                                curr.splice(i, index);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                acc.set(curr.join(""), curr);
+                                return acc;
+                            }, uniq)
+                            .keys(),
+                    ].join(","),
+                    chi: [],
+                    [LOC]: {
+                        ...tokens[0][LOC],
+                        end: tokens[tokens.length - 1][LOC]!.end,
+                    },
+                    [TOKENS]: tokens,
+                    [STATE]: EnumAstNodeStatus.Invalid,
+                    [ERRORS]: [
+                        {
+                            action: "drop",
+                            node: tokens[i],
+                            message: "invalid hash id",
+                        },
+                    ],
+                } as AstRule;
             }
         }
     }
@@ -298,6 +374,41 @@ export function parseSelector(
                                 func.val == ":nth-of-type" ||
                                 func.val == ":nth-last-of-type"
                             ) {
+
+                                const list: Token[] = [];
+                                let index: number;
+
+                                for ( index = 0; index < func.chi.length; index++) {
+
+                                    if (func.chi[index].typ == EnumToken.CommentTokenType || func.chi[index].typ == EnumToken.WhitespaceTokenType) {
+                                        continue;
+                                    }
+
+                                    if (func.chi[index].typ == EnumToken.IdenTokenType && equalsIgnoreCase('of', (func.chi[index] as IdentToken).val)) {
+                                        
+                                        index--;
+                                        break;
+                                    }
+
+                                   list.push(func.chi[index]);
+                                }
+
+                                if (list.length == 3) {
+                                    
+                                    if (list[0].typ == EnumToken.IdenTokenType && ('n' == (list[0] as IdentToken).val || '-n' == (list[0] as IdentToken).val || '+n' == (list[0] as IdentToken).val)) {
+                                        
+                                        if (list[1].typ == EnumToken.NextSiblingCombinatorTokenType) {
+                                            
+                                            if (list[2].typ == EnumToken.NumberTokenType && (0 == (list[2] as NumberToken).val)) {
+                                                
+                                                (list[0] as IdentToken).val = 'n';
+                                                func.chi.splice(0, index, list[0]);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+
                                 const token = func.chi.find(
                                     (t) =>
                                         t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.CommentTokenType,
@@ -407,8 +518,8 @@ export function parseSelector(
                                             //     } else {
                                             //         Object.assign(token, { typ: EnumToken.NumberTokenType, val: b1 });
                                             //     }
-                                            // } else 
-                                                if (b1 === 0) {
+                                            // } else
+                                            if (b1 === 0) {
                                                 Object.assign(
                                                     token,
                                                     Math.abs(a1) === 1
@@ -422,7 +533,7 @@ export function parseSelector(
                                                               unit: "n",
                                                           },
                                                 );
-                                            } 
+                                            }
                                             // else if (Math.abs(a1) === 2) {
                                             //     if (b1 === 0) {
                                             //         Object.assign(token, {
@@ -493,8 +604,8 @@ export function parseSelector(
                                         //     }
 
                                         //     break;
-                                        // } else 
-                                            if (num.val === 0) {
+                                        // } else
+                                        if (num.val === 0) {
                                             func.chi.splice(index + 1, i - index);
 
                                             if (((token as DimensionToken).val as number) < 0) {

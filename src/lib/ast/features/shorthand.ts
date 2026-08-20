@@ -14,7 +14,7 @@ export class ComputeShorthandFeature {
     public accept: Set<EnumToken> = new Set([
         EnumToken.RuleNodeType,
         EnumToken.AtRuleNodeType,
-        EnumToken.KeyFramesRuleNodeType,
+        EnumToken.KeyframesRuleNodeType,
     ]);
 
     get ordering() {

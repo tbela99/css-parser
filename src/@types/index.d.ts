@@ -1,4 +1,9 @@
-import type { VisitorSyncNodeMap, VisitorNodeMap } from "./visitor.d.ts";
+import type {
+    GenericVisitorAstNodeSyncHandlerMap,
+    GenericVisitorAstNodeHandlerMap,
+    VisitorSyncNodeMap,
+    VisitorNodeMap,
+} from "./visitor.d.ts";
 import type { AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet, SourceLocation } from "./ast.d.ts";
 import { SourceMap } from "../lib/renderer/sourcemap/sourcemap.ts";
 import type { PropertyListOptions } from "./parse.d.ts";
@@ -545,7 +550,7 @@ export declare interface ParserSyncOptions
      * Node visitor
      * {@link VisitorSyncNodeMap | VisitorSyncNodeMap[]}
      */
-    visitor?: VisitorSyncNodeMap | VisitorSyncNodeMap[];
+    visitor?: GenericVisitorAstNodeSyncHandlerMap<T> | VisitorSyncNodeMap | VisitorSyncNodeMap[];
     /**
      * Abort signal
      *
@@ -610,7 +615,11 @@ export declare interface ParserOptions extends ParserSyncOptions, ModuleAsyncOpt
      * Node visitor
      * {@link VisitorNodeMap | VisitorNodeMap[]}
      */
-    visitor?: VisitorNodeMap | VisitorNodeMap[];
+    visitor?:
+        | GenericVisitorAstNodeSyncHandlerMap<T>
+        | GenericVisitorAstNodeHandlerMap<T>
+        | VisitorNodeMap
+        | VisitorNodeMap[];
 }
 
 /**

@@ -42,7 +42,7 @@ function toBase64(arraybuffer: Uint8Array) {
 }
 
 function inlineImagesPlugin(maxSize: number, extensions: string[]) {
-    return async function (node: FunctionURLToken, parent: AstNode) {
+    return async function UrlFunctionTokenType(node: FunctionURLToken, parent: AstNode) {
         if (parent.typ == EnumToken.DeclarationNodeType) {
             const t = node.chi.find(
                 (t) => t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.CommaTokenType,
@@ -70,7 +70,6 @@ function inlineImagesPlugin(maxSize: number, extensions: string[]) {
                 return;
             }
 
-            // change node type to EnumToken.String
             Object.assign(t, {
                 typ: EnumToken.StringTokenType,
                 val: `"data:image/${matches[3].toLowerCase()};base64,${toBase64(new Uint8Array(buffer))}"`,
@@ -90,9 +89,7 @@ const css = `
 `;
 
 const result = await transform(css, {
-    visitor: {
-        UrlFunctionTokenType: inlineImagesPlugin(maxSize, extensions),
-    },
+    visitor: inlineImagesPlugin(maxSize, extensions),
 });
 
 console.error(result.code);
