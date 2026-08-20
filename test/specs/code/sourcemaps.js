@@ -17,12 +17,14 @@ export function run(
     transformSync,
     parseSync,
 ) {
+    const root = new URL(dirname(import.meta.url) + "/../../../");
+
     describe("sourcemap", function () {
         const url = new URL(dirname(import.meta.url) + "/../../files/css/nested.css"); // const file = `@import '${dir}/files/css/line-awesome.css`;
 
         const options = {
             input: `
-@import '${url.pathname}';
+@import '${url.pathname.replace(root.pathname, "")}';
 h1 {
   text-transform: uppercase;
 }
@@ -62,10 +64,10 @@ button {
                 // result2.map.computePositions();
                 let positions = result2.map.find(1, 254);
                 expect(positions?.[0]?.slice?.(0, 3)).deep.equals([null, 19, 2]);
-                
+
                 positions = result2.map.find(1, 255);
                 expect(positions).equals(null);
-                
+
                 positions = result2.map.find(100, 255);
                 expect(positions).equals(null);
             });
