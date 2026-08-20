@@ -12,6 +12,7 @@ children:
     - ./sourcemap.md
     - ./plugins.md
     - ./syntax-lowering.md
+    - ./prefix-removal.md
     - ./ast.md
     - ./utilities.md
 ---
@@ -27,6 +28,7 @@ children:
 - [Sourcemap](./sourcemap.md)
 - [Plugins API](./plugins.md)
 - [Syntax Lowering](./syntax-lowering.md)
+- [Prefix Removal](./prefix-removal.md)
 - [Ast Manipulation](./ast.md)
 - [Utility Functions](./utilities.md)
 

@@ -90,7 +90,7 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 - [Syntax Lowering](https://tbela99.github.io/css-parser/docs/documents/Guide.Syntax_Lowering.html)
 - [Ast Manipulation](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast_Manipulation.html)
 - [Utility Functions](https://tbela99.github.io/css-parser/docs/documents/Guide.Utility_Functions.html)
-- 
+  
 ## AST
 
 ### Comment

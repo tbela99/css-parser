@@ -22090,12 +22090,6 @@
         let val = parseInfo.stream.slice(parseInfo.position - parseInfo.offset, parseInfo.currentPosition - parseInfo.offset);
         let token = null;
         let dimension;
-        // if (val === "" && hint != EnumToken.EOFTokenType) {
-        //                         console.error(parseInfo.stream.length > parseInfo.currentPosition - parseInfo.offset, parseInfo.position < parseInfo.currentPosition, parseInfo.currentPosition - parseInfo.offset,  parseInfo.stream.slice(parseInfo.position - parseInfo.offset, parseInfo.currentPosition - parseInfo.offset), parseInfo.stream.length, parseInfo.currentPosition- parseInfo.offset, parseInfo.position- parseInfo.offset, parseInfo.position, parseInfo.currentPosition, parseInfo.offset)
-        //     console.error(new Error(`val is empty '${hint}'`));
-        // }
-        // console.error({val, hint, position: parseInfo.position - parseInfo.offset, currentPosition: parseInfo.currentPosition - parseInfo.offset, endPosition: parseInfo.stream.length, offset: parseInfo.offset, len: parseInfo.stream.length});
-        // console.error(new Error('incomplete token'));
         if (options?.decodeSegments) {
             val = val.replace(/\\([0-9a-fA-F]{1,6})(?:\s)?/g, (_, sequence) => {
                 const codepoint = parseInt(sequence, 16);
@@ -22307,9 +22301,6 @@
             if ((nextCodepoint = parseInfo.stream.charCodeAt(i + 1)) != nextCodepoint) {
                 return false;
             }
-            // if (nextCodepoint == REVERSE_SOLIDUS) {
-            //     return name.length > 2 && !isNewLine(name.charCodeAt(2) as number);
-            // }
             if (isDigit(nextCodepoint)) {
                 return false;
             }
@@ -22551,7 +22542,6 @@
                     break;
                 case 59 /* TokenMap.SEMICOLON */:
                     if (parseInfo.position < parseInfo.currentPosition) {
-                        // console.error(parseInfo.stream.length > parseInfo.currentPosition - parseInfo.offset, parseInfo.position < parseInfo.currentPosition, parseInfo.currentPosition - parseInfo.offset, endPosition, parseInfo.stream.slice(parseInfo.position - parseInfo.offset, parseInfo.currentPosition - parseInfo.offset), parseInfo.stream.length)
                         result.push(yieldResult(parseInfo));
                     }
                     next(parseInfo);
@@ -22559,7 +22549,6 @@
                     break;
                 case 58 /* TokenMap.COLON */:
                     if (parseInfo.position < parseInfo.currentPosition) {
-                        // console.error(parseInfo.currentPosition - parseInfo.offset, parseInfo.position - parseInfo.offset, parseInfo.stream.length, parseInfo.stream.slice(parseInfo.position - parseInfo.offset, parseInfo.currentPosition - parseInfo.offset));
                         result.push(yieldResult(parseInfo));
                     }
                     next(parseInfo);
@@ -22757,7 +22746,6 @@
                     if (!yieldEOFToken && parseInfo.stream.length == parseInfo.currentPosition - parseInfo.offset + 1) {
                         break;
                     }
-                    // console.error('reverse solidus', parseInfo.position - parseInfo.offset, parseInfo.currentPosition - parseInfo.offset, parseInfo.stream.length, parseInfo.stream.slice(parseInfo.position, parseInfo.currentPosition));
                     next(parseInfo);
                     // EOF
                     if (!peek(parseInfo)) {
@@ -22799,15 +22787,11 @@
             }
         }
         if (yieldEOFToken) {
-            // console.error(parseInfo.stream.length > parseInfo.currentPosition - parseInfo.offset, parseInfo.position < parseInfo.currentPosition, parseInfo.currentPosition - parseInfo.offset, parseInfo.position - parseInfo.offset, parseInfo.stream.length);
             if (parseInfo.position < parseInfo.currentPosition) {
                 result.push(yieldResult(parseInfo));
             }
             result.push(yieldResult(parseInfo, exports.EnumToken.EOFTokenType));
         }
-        // else {
-        //     // parseInfo.buffer = buffer;
-        // }
         parseInfo.time += performance.now() - startTime;
         return result;
     }
@@ -30088,7 +30072,6 @@
                     options.sourcesMap.set(source.id, source);
                     const parseInfo = {
                         stream,
-                        buffer: "",
                         offset: 0,
                         source,
                         position: 0,
@@ -30550,7 +30533,6 @@
                                     : result;
                                 const root = await doParse(stream instanceof ReadableStream
                                     ? tokenizeStream(stream, {
-                                        buffer: "",
                                         offset: 0,
                                         source: new SourceFile("", [], src.relative),
                                         position: 0,
@@ -30558,7 +30540,6 @@
                                     })
                                     : tokenize({
                                         stream,
-                                        buffer: "",
                                         offset: 0,
                                         position: 0,
                                         source: new SourceFile(stream, [], src.relative),
@@ -31865,7 +31846,6 @@
         const stream = `.x{${declaration}}`;
         return doParse(tokenize({
             stream,
-            buffer: "",
             offset: 0,
             position: 0,
             source: new SourceFile(stream, [], ""),
@@ -31899,7 +31879,6 @@
     function parseString(src, options = { parseColor: true }, errors) {
         const parseInfo = {
             stream: src,
-            buffer: "",
             offset: 0,
             time: 0,
             source: new SourceFile(src, [], ""),
@@ -32200,13 +32179,37 @@
     }
 
     /**
-     * set node property
+     *
      * @param node
-     * @param property
+     * @param key
+     * @returns
+     */
+    function getNodeProperty(node, key) {
+        switch (key) {
+            case "parent":
+                return node[PARENT];
+            case "location":
+                return node[LOC];
+            case "state":
+                return node[STATE];
+            case "errors":
+                return node[ERRORS];
+            case "tokens":
+                return node[TOKENS];
+        }
+        return undefined;
+    }
+    /**
+     *
+     * @param node
+     * @param key
      * @param value
      */
-    function setNodeProperty(node, property, value) {
-        switch (property) {
+    function setNodeProperty(node, key, value) {
+        switch (key) {
+            case "parent":
+                node[PARENT] = value;
+                break;
             case "location":
                 node[LOC] = value;
                 break;
@@ -32219,29 +32222,6 @@
             case "tokens":
                 node[TOKENS] = value;
                 break;
-            case "parent":
-                node[PARENT] = value;
-                break;
-        }
-    }
-    /**
-     * get node property
-     * @param node
-     * @param property
-     * @returns
-     */
-    function getNodeProperty(node, property) {
-        switch (property) {
-            case "location":
-                return node[LOC];
-            case "state":
-                return node[STATE];
-            case "errors":
-                return node[ERRORS];
-            case "tokens":
-                return node[TOKENS];
-            case "parent":
-                return node[PARENT];
         }
     }
 

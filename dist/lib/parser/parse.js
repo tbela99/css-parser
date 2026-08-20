@@ -1500,7 +1500,6 @@ async function doParse(iter, options = {}) {
                 options.sourcesMap.set(source.id, source);
                 const parseInfo = {
                     stream,
-                    buffer: "",
                     offset: 0,
                     source,
                     position: 0,
@@ -1962,7 +1961,6 @@ async function doParse(iter, options = {}) {
                                 : result;
                             const root = await doParse(stream instanceof ReadableStream
                                 ? tokenizeStream(stream, {
-                                    buffer: "",
                                     offset: 0,
                                     source: new SourceFile("", [], src.relative),
                                     position: 0,
@@ -1970,7 +1968,6 @@ async function doParse(iter, options = {}) {
                                 })
                                 : tokenize({
                                     stream,
-                                    buffer: "",
                                     offset: 0,
                                     position: 0,
                                     source: new SourceFile(stream, [], src.relative),
@@ -3277,7 +3274,6 @@ async function parseDeclarations(declaration) {
     const stream = `.x{${declaration}}`;
     return doParse(tokenize({
         stream,
-        buffer: "",
         offset: 0,
         position: 0,
         source: new SourceFile(stream, [], ""),
@@ -3311,7 +3307,6 @@ async function parseDeclarations(declaration) {
 function parseString(src, options = { parseColor: true }, errors) {
     const parseInfo = {
         stream: src,
-        buffer: "",
         offset: 0,
         time: 0,
         source: new SourceFile(src, [], ""),
