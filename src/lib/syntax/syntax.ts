@@ -1342,6 +1342,10 @@ export const isIdent = memoize(function (name: string): boolean {
     }
 
     if (codepoint == REVERSE_SOLIDUS) {
+        if (i + 1 > j) {
+            return false;
+        }
+
         codepoint = name.charCodeAt(i + 1) as number;
 
         // if (!isIdentCodepoint(codepoint)) {
@@ -1365,6 +1369,7 @@ export const isIdent = memoize(function (name: string): boolean {
         if (codepoint == REVERSE_SOLIDUS) {
             i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
             codepoint = name.charCodeAt(i) as number;
+
             i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
 
             continue;

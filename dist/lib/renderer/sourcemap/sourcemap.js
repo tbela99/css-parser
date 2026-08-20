@@ -53,7 +53,6 @@ class SourceMap {
     /**
      *
      * @param sourcemaps
-     * @private
      */
     constructor(sourcemaps) {
         if (typeof sourcemaps === "string") {
@@ -111,7 +110,6 @@ class SourceMap {
      * Add all location
      * @param maps
      * @throws
-     * @private
      */
     add(...maps) {
         let srcIndex;
@@ -159,6 +157,7 @@ class SourceMap {
         let sourceFileIndex = 0; // second field
         let sourceCodeLine = 0; // third field
         let sourceCodeColumn = 0; // fourth field
+        // let nameIndex: number = 0; // fifth field
         let generatedCodeColumn;
         let result;
         // mappings to original source

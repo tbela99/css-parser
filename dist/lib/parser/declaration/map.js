@@ -294,7 +294,9 @@ class PropertyMap {
                         if (t.typ == EnumToken.ImportantTokenType) {
                             isImportant = true;
                         }
-                        if (filtered.length == 0 && t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.ImportantTokenType) {
+                        if (filtered.length == 0 &&
+                            t.typ != EnumToken.WhitespaceTokenType &&
+                            t.typ != EnumToken.ImportantTokenType) {
                             filtered.push(dec);
                         }
                     }

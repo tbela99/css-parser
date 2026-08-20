@@ -29,6 +29,7 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
                     EnumToken.SemiColonTokenType
                     ? trimArray(node.r.r.slice(0, -1))
                     : node.r.r);
+                // @ts-expect-error
                 if (targetParentWrapper.typ != EnumToken.DeclarationNodeType) {
                     let index = targetParentWrapper.chi.indexOf(targetWrapper);
                     if (index != -1) {
@@ -50,6 +51,7 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
                                                     .r.r.slice(0, -1))
                                                 : siblingWrapper.chi[k]
                                                     .r.r);
+                                            // @ts-ignore
                                             cache.add(siblingWrapper.chi[k].l);
                                         }
                                     }
@@ -73,7 +75,9 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
         }
         if (left.typ === EnumToken.IdenTokenType && equalsIgnoreCase("else", left.val)) {
             clonedDeclaration = cloneNode(declaration, true, nodeMap);
-            replaceNodeOrValue(nodeMap.get(parentWrapper), nodeMap.get(targetWrapper.typ === EnumToken.DeclarationNodeType ? node : targetWrapper), node.r.at(-1)?.typ === EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
+            replaceNodeOrValue(nodeMap.get(parentWrapper), 
+            // @ts-expect-error
+            nodeMap.get(targetWrapper.typ === EnumToken.DeclarationNodeType ? node : targetWrapper), node.r.at(-1)?.typ === EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
             result.push(clonedDeclaration);
         }
         else if (left?.typ === EnumToken.WhenElseFunctionTokenType) {
@@ -140,17 +144,27 @@ function processNode(declarationNode, cache) {
         const parentWrapper = node.parent ?? parents.find((node) => !nodeMatcher(node));
         if (node.node.typ === EnumToken.WildCardFunctionTokenType) {
             for (i = 0; i < node.node.chi.length; i++) {
-                stack.push(...substituteIfElseNode(declaration, node.node.chi[i], node.node, parentWrapper, cache));
+                stack.push(
+                // @ts-expect-error
+                ...substituteIfElseNode(
+                // @ts-expect-error
+                declaration, node.node.chi[i], node.node, parentWrapper, cache));
             }
         }
         else {
-            stack.push(...substituteIfElseNode(declaration, node.node, parentWrapper, parents[parents.indexOf(parentWrapper) + 1] ?? declaration, cache));
+            stack.push(
+            // @ts-expect-error
+            ...substituteIfElseNode(
+            // @ts-expect-error
+            declaration, node.node, parentWrapper, parents[parents.indexOf(parentWrapper) + 1] ?? declaration, cache));
         }
     }
     if (result.length > 0) {
+        // @ts-expect-error
         replaceNodeOrValue(declarationNode[PARENT], declarationNode, result);
     }
     // else remove node?
+    // @ts-expect-error
     return result;
 }
 class ExpandIfFeature {

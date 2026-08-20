@@ -19,6 +19,7 @@ export { cloneNode } from './lib/ast/clone.js';
 export { replaceNodeOrValue } from './lib/parser/utils/token.js';
 export { SourceMap } from './lib/renderer/sourcemap/sourcemap.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
+export { getNodeProperty, setNodeProperty } from './lib/ast/node.js';
 
 /**
  * Load file or url
@@ -99,7 +100,7 @@ function render(data, options = {}, mapping) {
     }), mapping);
 }
 /**
- * Parse css file
+ * Parse CSS file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
@@ -127,9 +128,8 @@ async function parseFile(file, options = {}, asStream = false) {
     return parse({ file, asStream, ...options });
 }
 /**
- * Parse css
+ * Parse CSS
  * @param args
- * @private
  *
  * Parsing a string
  *
@@ -200,7 +200,6 @@ function parseSync(...args) {
  * ```
  *
  * @param args
- * @private
  */
 function transformSync(...args) {
     let options;
@@ -249,7 +248,7 @@ function transformSync(...args) {
     };
 }
 /**
- * Parse css
+ * Parse CSS
  *
  * Example:
  *
@@ -274,7 +273,6 @@ function transformSync(...args) {
  *  console.log(result.ast);
  * ```
  * @param args
- * @private
  */
 async function parse(...args) {
     let options;
@@ -353,7 +351,7 @@ async function transformFile(file, options = {}, asStream = false) {
     });
 }
 /**
- * Transform css
+ * Transform CSS
  *
  * Example:
  *
@@ -372,7 +370,6 @@ async function transformFile(file, options = {}, asStream = false) {
  *  console.log(result.code);
  * ```
  * @param args
- * @private
  */
 async function transform(...args) {
     let options;

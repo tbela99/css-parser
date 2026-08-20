@@ -27,6 +27,12 @@ function parseResult(result, options) {
     }
     return result;
 }
+/**
+ *
+ * @param options
+ * @param prefix
+ * @private
+ */
 function validateSyncArguments(options, prefix = "options.") {
     const args = Object.entries(options);
     let i;

@@ -386,7 +386,18 @@ export function transformSync(
     }
 
     options ??= {};
-    options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+
+    if (options.minify == null) {
+        options.minify = true;
+    }
+
+    if (options.removeEmpty == null) {
+        options.removeEmpty = true;
+    }
+
+    if (options.removeCharset == null) {
+        options.removeCharset = true;
+    }
 
     const startTime: number = performance.now();
     const parseResult: ParseResult = parseSync(stream, options);
@@ -879,7 +890,18 @@ export async function transform(
     }
 
     options ??= {};
-    options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+
+    if (options.minify == null) {
+        options.minify = true;
+    }
+
+    if (options.removeEmpty == null) {
+        options.removeEmpty = true;
+    }
+
+    if (options.removeCharset == null) {
+        options.removeCharset = true;
+    }
 
     const startTime: number = performance.now();
     return parse(stream, options).then((parseResult: ParseResult) => {

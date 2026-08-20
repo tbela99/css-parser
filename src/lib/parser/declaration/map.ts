@@ -387,7 +387,6 @@ export class PropertyMap {
                 const filtered: AstDeclaration[] = [];
 
                 for (const declaration of values) {
-                    
                     dec = removeDefaults(declaration);
 
                     for (const t of dec.val) {
@@ -395,8 +394,11 @@ export class PropertyMap {
                             isImportant = true;
                         }
 
-                        if (filtered.length == 0 && t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.ImportantTokenType) {
-                         
+                        if (
+                            filtered.length == 0 &&
+                            t.typ != EnumToken.WhitespaceTokenType &&
+                            t.typ != EnumToken.ImportantTokenType
+                        ) {
                             filtered.push(dec);
                         }
                     }

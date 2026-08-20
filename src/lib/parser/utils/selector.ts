@@ -39,6 +39,7 @@ import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from "../../validation
 import type { ValidationPropertyToken } from "../../validation/parser/types.d.ts";
 import { splitTokenList } from "../../validation/utils/list.ts";
 import { trimWhiteSpace } from "../parse.ts";
+import { equalsIgnoreCase } from "./text.ts";
 
 /**
  * parse selector
@@ -373,6 +374,41 @@ export function parseSelector(
                                 func.val == ":nth-of-type" ||
                                 func.val == ":nth-last-of-type"
                             ) {
+
+                                const list: Token[] = [];
+                                let index: number;
+
+                                for ( index = 0; index < func.chi.length; index++) {
+
+                                    if (func.chi[index].typ == EnumToken.CommentTokenType || func.chi[index].typ == EnumToken.WhitespaceTokenType) {
+                                        continue;
+                                    }
+
+                                    if (func.chi[index].typ == EnumToken.IdenTokenType && equalsIgnoreCase('of', (func.chi[index] as IdentToken).val)) {
+                                        
+                                        index--;
+                                        break;
+                                    }
+
+                                   list.push(func.chi[index]);
+                                }
+
+                                if (list.length == 3) {
+                                    
+                                    if (list[0].typ == EnumToken.IdenTokenType && ('n' == (list[0] as IdentToken).val || '-n' == (list[0] as IdentToken).val || '+n' == (list[0] as IdentToken).val)) {
+                                        
+                                        if (list[1].typ == EnumToken.NextSiblingCombinatorTokenType) {
+                                            
+                                            if (list[2].typ == EnumToken.NumberTokenType && (0 == (list[2] as NumberToken).val)) {
+                                                
+                                                (list[0] as IdentToken).val = 'n';
+                                                func.chi.splice(0, index, list[0]);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+
                                 const token = func.chi.find(
                                     (t) =>
                                         t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.CommentTokenType,

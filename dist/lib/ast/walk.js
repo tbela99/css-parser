@@ -157,13 +157,18 @@ function* walk(node, filter, reverse) {
         }
         if (includeValues) {
             if (node[TOKENS] != null) {
+                // @ts-ignore
                 parents.splice(i, 0, ...(reverse ? node[TOKENS].toReversed() : node[TOKENS]));
+                // @ts-ignore
             }
             else if (Array.isArray(node.val)) {
+                // @ts-ignore
                 parents.splice(i, 0, ...(reverse ? node.val.toReversed() : node.val));
             }
         }
+        // @ts-ignore
         if (node["chi"] != null && (!isNumeric || (option & WalkerOptionEnum.IgnoreChildren) === 0)) {
+            // @ts-ignore
             parents.splice(i, 0, ...(reverse ? node.chi.toReversed() : node.chi));
             for (const child of node.chi) {
                 map.set(child, node);

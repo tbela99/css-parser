@@ -88,6 +88,7 @@ function findByValue(ast, matcher) {
         }
         for (const { value, parent, root: rootNode, parents } of walkValues(source, node)) {
             if (matcher(value, node)) {
+                // @ts-ignore
                 return { node, value: { node: value, parent, root: rootNode, parents } };
             }
         }

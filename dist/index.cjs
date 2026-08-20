@@ -9553,13 +9553,18 @@ function* walk(node, filter, reverse) {
         }
         if (includeValues) {
             if (node[TOKENS] != null) {
+                // @ts-ignore
                 parents.splice(i, 0, ...(reverse ? node[TOKENS].toReversed() : node[TOKENS]));
+                // @ts-ignore
             }
             else if (Array.isArray(node.val)) {
+                // @ts-ignore
                 parents.splice(i, 0, ...(reverse ? node.val.toReversed() : node.val));
             }
         }
+        // @ts-ignore
         if (node["chi"] != null && (!isNumeric || (option & exports.WalkerOptionEnum.IgnoreChildren) === 0)) {
+            // @ts-ignore
             parents.splice(i, 0, ...(reverse ? node.chi.toReversed() : node.chi));
             for (const child of node.chi) {
                 map.set(child, node);
@@ -10939,7 +10944,7 @@ function getTokenType(token, position, currentPosition) {
             [LOC]: pos,
         };
     }
-    if (isPseudo(token)) {
+    if (isPseudo$1(token)) {
         return {
             typ: ValidationTokenEnum.PseudoClassToken,
             val: token,
@@ -11696,23 +11701,28 @@ function cloneNode(node, cloneChildren = false, cloneMap = null) {
     cloneMap?.set?.(node, clone);
     for (const [name, value] of Object.entries(node)) {
         if (value == null || typeof value != "object") {
+            // @ts-ignore
             clone[name] = value;
         }
         else if (Array.isArray(value)) {
+            // @ts-ignore
             clone[name] = [];
             if (cloneChildren || name !== checkNode) {
                 for (const c of value) {
                     const newObj = cloneNode(c, cloneChildren, cloneMap);
                     cloneMap?.set?.(c, newObj);
+                    // @ts-ignore
                     clone[name].push(newObj);
                 }
             }
         }
         else {
+            // @ts-ignore
             clone[name] = { ...value };
         }
     }
     for (const symbol of Object.getOwnPropertySymbols(node)) {
+        // @ts-ignore
         clone[symbol] = node[symbol];
     }
     return clone;
@@ -12701,6 +12711,7 @@ function matchSyntax(syntaxes, context, options) {
             return result;
         }
         if (tokensfuncDefMap.has(token.typ) &&
+            // @ts-ignore
             token.typ === exports.EnumToken.WildCardFunctionTokenDefType) {
             const range = trimArray(context.peekRange());
             result = matchSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, token.val + "()")?.[0]?.chi, createValidationContext(range.slice(1, -1)), options);
@@ -13701,7 +13712,9 @@ function matchProperty(property, context, options) {
                     //     )
                     // ) {
                     const newRange = range.map((t) => cloneNode(t, true));
+                    // @ts-ignore
                     parseTokens(newRange, { parseColor: true }, errors);
+                    // @ts-ignore
                     success = newRange.length == 1 && isColor(newRange[0], errors);
                     if (success) {
                         context.update(range.at(-1));
@@ -15812,6 +15825,9 @@ const isIdent = memoize(function (name) {
         return false;
     }
     if (codepoint == REVERSE_SOLIDUS) {
+        if (i + 1 > j) {
+            return false;
+        }
         codepoint = name.charCodeAt(i + 1);
         // if (!isIdentCodepoint(codepoint)) {
         //     return false;
@@ -15848,36 +15864,7 @@ function isNonPrintable(codepoint) {
         codepoint == 0x7f ||
         (codepoint >= 0xe && codepoint <= 0x1f));
 }
-function isURLToken(str) {
-    let i = -1;
-    let c;
-    while (++i < str.length) {
-        c = str.charCodeAt(i);
-        // single quote or double quote or start parenthesis or close parenthesis
-        if (isNonPrintable(c) || c == 0x27 || c == 0x22 || c == 0x28 || c == 0x29) {
-            return false;
-        }
-        // valid escape
-        if (c == REVERSE_SOLIDUS) {
-            i++;
-            if (i >= str.length) {
-                return false;
-            }
-            c = str.charCodeAt(i);
-            // c is not '\n' or '\r' or '\f'
-            if (c == 0x6e || c == 0x72 || c == 0x66) {
-                return false;
-            }
-            continue;
-        }
-        // is white space
-        if (c == 0x20 || c == 0x09) {
-            break;
-        }
-    }
-    return i == str.length;
-}
-function isPseudo(name) {
+function isPseudo$1(name) {
     return (name.charAt(0) == ":" &&
         ((name.endsWith("(") && isIdent(name.charAt(1) == ":" ? name.slice(2, -1) : name.slice(1, -1))) ||
             isIdent(name.charAt(1) == ":" ? name.slice(2) : name.slice(1))));
@@ -18884,7 +18871,9 @@ class PropertyMap {
                         if (t.typ == exports.EnumToken.ImportantTokenType) {
                             isImportant = true;
                         }
-                        if (filtered.length == 0 && t.typ != exports.EnumToken.WhitespaceTokenType && t.typ != exports.EnumToken.ImportantTokenType) {
+                        if (filtered.length == 0 &&
+                            t.typ != exports.EnumToken.WhitespaceTokenType &&
+                            t.typ != exports.EnumToken.ImportantTokenType) {
                             filtered.push(dec);
                         }
                     }
@@ -19763,7 +19752,8 @@ class ComputeCalcExpressionFeature {
                                 // @ts-ignore
                                 const children = parent.typ == exports.EnumToken.DeclarationNodeType
                                     ? parent.val
-                                    : parent.chi;
+                                    : // @ts-ignore
+                                        parent.chi;
                                 if (values.length == 1 && values[0].typ != exports.EnumToken.BinaryExpressionTokenType) {
                                     for (let i = 0; i < children.length; i++) {
                                         if (children[i] == value) {
@@ -21102,6 +21092,7 @@ function findByValue(ast, matcher) {
         }
         for (const { value, parent, root: rootNode, parents } of walkValues(source, node)) {
             if (matcher(value, node)) {
+                // @ts-ignore
                 return { node, value: { node: value, parent, root: rootNode, parents } };
             }
         }
@@ -21210,6 +21201,7 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
                     exports.EnumToken.SemiColonTokenType
                     ? trimArray(node.r.r.slice(0, -1))
                     : node.r.r);
+                // @ts-expect-error
                 if (targetParentWrapper.typ != exports.EnumToken.DeclarationNodeType) {
                     let index = targetParentWrapper.chi.indexOf(targetWrapper);
                     if (index != -1) {
@@ -21231,6 +21223,7 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
                                                     .r.r.slice(0, -1))
                                                 : siblingWrapper.chi[k]
                                                     .r.r);
+                                            // @ts-ignore
                                             cache.add(siblingWrapper.chi[k].l);
                                         }
                                     }
@@ -21254,7 +21247,9 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
         }
         if (left.typ === exports.EnumToken.IdenTokenType && equalsIgnoreCase("else", left.val)) {
             clonedDeclaration = cloneNode(declaration, true, nodeMap);
-            replaceNodeOrValue(nodeMap.get(parentWrapper), nodeMap.get(targetWrapper.typ === exports.EnumToken.DeclarationNodeType ? node : targetWrapper), node.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
+            replaceNodeOrValue(nodeMap.get(parentWrapper), 
+            // @ts-expect-error
+            nodeMap.get(targetWrapper.typ === exports.EnumToken.DeclarationNodeType ? node : targetWrapper), node.r.at(-1)?.typ === exports.EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
             result.push(clonedDeclaration);
         }
         else if (left?.typ === exports.EnumToken.WhenElseFunctionTokenType) {
@@ -21321,17 +21316,27 @@ function processNode(declarationNode, cache) {
         const parentWrapper = node.parent ?? parents.find((node) => !nodeMatcher(node));
         if (node.node.typ === exports.EnumToken.WildCardFunctionTokenType) {
             for (i = 0; i < node.node.chi.length; i++) {
-                stack.push(...substituteIfElseNode(declaration, node.node.chi[i], node.node, parentWrapper, cache));
+                stack.push(
+                // @ts-expect-error
+                ...substituteIfElseNode(
+                // @ts-expect-error
+                declaration, node.node.chi[i], node.node, parentWrapper, cache));
             }
         }
         else {
-            stack.push(...substituteIfElseNode(declaration, node.node, parentWrapper, parents[parents.indexOf(parentWrapper) + 1] ?? declaration, cache));
+            stack.push(
+            // @ts-expect-error
+            ...substituteIfElseNode(
+            // @ts-expect-error
+            declaration, node.node, parentWrapper, parents[parents.indexOf(parentWrapper) + 1] ?? declaration, cache));
         }
     }
     if (result.length > 0) {
+        // @ts-expect-error
         replaceNodeOrValue(declarationNode[PARENT], declarationNode, result);
     }
     // else remove node?
+    // @ts-expect-error
     return result;
 }
 class ExpandIfFeature {
@@ -21493,7 +21498,6 @@ class SourceMap {
     /**
      *
      * @param sourcemaps
-     * @private
      */
     constructor(sourcemaps) {
         if (typeof sourcemaps === "string") {
@@ -21551,7 +21555,6 @@ class SourceMap {
      * Add all location
      * @param maps
      * @throws
-     * @private
      */
     add(...maps) {
         let srcIndex;
@@ -21599,6 +21602,7 @@ class SourceMap {
         let sourceFileIndex = 0; // second field
         let sourceCodeLine = 0; // third field
         let sourceCodeColumn = 0; // fourth field
+        // let nameIndex: number = 0; // fifth field
         let generatedCodeColumn;
         let result;
         // mappings to original source
@@ -22014,17 +22018,17 @@ var TokenMap;
     TokenMap[TokenMap["GREATERTHAN"] = 62] = "GREATERTHAN";
 })(TokenMap || (TokenMap = {}));
 function consumeString(parseInfo) {
-    const quote = next(parseInfo);
-    let value;
-    let buffer = quote;
+    const quote = next(parseInfo).charCodeAt(0);
+    let charCode;
+    let decodeSegments = false;
     const result = [];
-    while ((value = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset))) {
-        if (value == "\\") {
-            if ("\\" == parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset + 1)) {
-                buffer += next(parseInfo, 2);
+    while ((charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset)) == charCode) {
+        if (charCode == 92 /* TokenMap.REVERSE_SOLIDUS */) {
+            if (charCode == parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset + 1)) {
+                next(parseInfo, 2);
                 continue;
             }
-            const sequence = peek(parseInfo, 6);
+            const sequence = peek(parseInfo, 7);
             let escapeSequence = "";
             let codepoint;
             let i;
@@ -22043,50 +22047,72 @@ function consumeString(parseInfo) {
                 break;
             }
             if (escapeSequence.trimEnd().length > 0) {
-                const codepoint = parseInt(escapeSequence, 16);
-                if (codepoint == 0 ||
-                    // leading surrogate
-                    (0xd800 <= codepoint && codepoint <= 0xdbff) ||
-                    // trailing surrogate
-                    (0xdc00 <= codepoint && codepoint <= 0xdfff)) {
-                    buffer += String.fromCodePoint(0xfffd);
-                }
-                else {
-                    buffer += String.fromCodePoint(codepoint);
-                }
-                next(parseInfo, escapeSequence.length +
+                // const codepoint = parseInt(escapeSequence, 16);
+                // TODO set decode flag ON
+                // if (
+                //     codepoint == 0 ||
+                //     // leading surrogate
+                //     (0xd800 <= codepoint && codepoint <= 0xdbff) ||
+                //     // trailing surrogate
+                //     (0xdc00 <= codepoint && codepoint <= 0xdfff)
+                // ) {
+                //     buffer += String.fromCodePoint(0xfffd);
+                // } else {
+                //     buffer += String.fromCodePoint(codepoint);
+                // }
+                const length = escapeSequence.length +
                     1 +
                     (isWhiteSpace(parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset)?.charCodeAt(0))
                         ? 1
-                        : 0));
+                        : 0);
+                decodeSegments = true;
+                next(parseInfo, length);
                 continue;
             }
-            buffer += next(parseInfo, 2);
+            next(parseInfo, 2);
             continue;
         }
-        if (value == quote) {
-            buffer += value;
-            result.push(yieldResult(buffer, parseInfo, 
-            /* hasNewLine ? EnumToken.BadStringTokenType : */ exports.EnumToken.StringTokenType));
+        if (charCode == quote) {
             next(parseInfo);
-            buffer = "";
+            result.push(yieldResult(parseInfo, 
+            /* hasNewLine ? EnumToken.BadStringTokenType : */ exports.EnumToken.StringTokenType, decodeSegments ? { decodeSegments } : null));
             return result;
         }
-        if (isNewLine(value.charCodeAt(0))) {
-            result.push(yieldResult(buffer + next(parseInfo), parseInfo, exports.EnumToken.BadStringTokenType));
+        if (isNewLine(charCode)) {
+            next(parseInfo);
+            result.push(yieldResult(parseInfo, exports.EnumToken.BadStringTokenType));
             return result;
         }
-        buffer += value;
         next(parseInfo);
     }
     // EOF - 'Unclosed-string' fixed
-    result.push(yieldResult(buffer + quote, parseInfo, exports.EnumToken.StringTokenType));
+    result.push(yieldResult(parseInfo, exports.EnumToken.StringTokenType));
     return result;
 }
-function yieldResult(val, parseInfo, hint) {
+function yieldResult(parseInfo, hint, options) {
+    let val = parseInfo.stream.slice(parseInfo.position - parseInfo.offset, parseInfo.currentPosition - parseInfo.offset);
     let token = null;
     let dimension;
-    // console.debug(`Yield result: ${val}, ${hint}`);
+    // if (val === "" && hint != EnumToken.EOFTokenType) {
+    //                         console.error(parseInfo.stream.length > parseInfo.currentPosition - parseInfo.offset, parseInfo.position < parseInfo.currentPosition, parseInfo.currentPosition - parseInfo.offset,  parseInfo.stream.slice(parseInfo.position - parseInfo.offset, parseInfo.currentPosition - parseInfo.offset), parseInfo.stream.length, parseInfo.currentPosition- parseInfo.offset, parseInfo.position- parseInfo.offset, parseInfo.position, parseInfo.currentPosition, parseInfo.offset)
+    //     console.error(new Error(`val is empty '${hint}'`));
+    // }
+    // console.error({val, hint, position: parseInfo.position - parseInfo.offset, currentPosition: parseInfo.currentPosition - parseInfo.offset, endPosition: parseInfo.stream.length, offset: parseInfo.offset, len: parseInfo.stream.length});
+    // console.error(new Error('incomplete token'));
+    if (options?.decodeSegments) {
+        val = val.replace(/\\([0-9a-fA-F]{1,6})(?:\s)?/g, (_, sequence) => {
+            const codepoint = parseInt(sequence, 16);
+            if (codepoint == 0 ||
+                // leading surrogate
+                (0xd800 <= codepoint && codepoint <= 0xdbff) ||
+                // trailing surrogate
+                (0xdc00 <= codepoint && codepoint <= 0xdfff) ||
+                codepoint > 0x10ffff) {
+                return "\uFFFD";
+            }
+            return String.fromCodePoint(codepoint);
+        });
+    }
     if (hint != null) {
         let searchArray = null;
         switch (hint) {
@@ -22255,6 +22281,127 @@ function next(parseInfo, count = 1) {
     parseInfo.currentPosition += char.length;
     return char;
 }
+function isIdentToken(parseInfo, start, end) {
+    let j = parseInfo.currentPosition - parseInfo.offset;
+    let i = parseInfo.position - parseInfo.offset;
+    if (start != null) {
+        if (end == null) {
+            if (start < 0) {
+                j += start;
+            }
+            else {
+                i += start;
+            }
+        }
+        else {
+            if (end < 0) {
+                j += end;
+            }
+            else {
+                j = parseInfo.position + end;
+            }
+        }
+    }
+    j--;
+    let codepoint = parseInfo.stream.charCodeAt(i);
+    // -
+    if (codepoint == 0x2d) {
+        let nextCodepoint;
+        if ((nextCodepoint = parseInfo.stream.charCodeAt(i + 1)) != nextCodepoint) {
+            return false;
+        }
+        // if (nextCodepoint == REVERSE_SOLIDUS) {
+        //     return name.length > 2 && !isNewLine(name.charCodeAt(2) as number);
+        // }
+        if (isDigit(nextCodepoint)) {
+            return false;
+        }
+        codepoint = nextCodepoint;
+        i++;
+    }
+    if (codepoint !== 0x2d && !isIdentStart(codepoint)) {
+        return false;
+    }
+    if (codepoint == 92 /* TokenMap.REVERSE_SOLIDUS */) {
+        codepoint = parseInfo.stream.charCodeAt(i + 1);
+        // if (!isIdentCodepoint(codepoint)) {
+        //     return false;
+        // }
+        i += String.fromCodePoint(codepoint).length;
+        // if (i < j) {
+        //     codepoint = name.charCodeAt(i) as number;
+        //     if (!isIdentCodepoint(codepoint)) {
+        //         return false;
+        //     }
+        // }
+    }
+    while (i < j) {
+        i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
+        codepoint = parseInfo.stream.charCodeAt(i);
+        if (codepoint == 92 /* TokenMap.REVERSE_SOLIDUS */) {
+            i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
+            codepoint = parseInfo.stream.charCodeAt(i);
+            i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
+            continue;
+        }
+        if (codepoint !== 0x2d && !isIdentCodepoint(codepoint)) {
+            return false;
+        }
+    }
+    return true;
+}
+function isPseudo(parseInfo) {
+    let position = parseInfo.currentPosition - parseInfo.offset;
+    let endPosition = parseInfo.currentPosition - parseInfo.offset;
+    return (parseInfo.stream.charAt(position) == ":" &&
+        parseInfo.stream.charAt(endPosition - 1) == "(" &&
+        (parseInfo.stream.charAt(position + 1) == ":"
+            ? isIdentToken(parseInfo, 2, -1)
+            : isIdentToken(parseInfo, 1, -1))) ||
+        parseInfo.stream.charAt(position + 1) == ":"
+        ? isIdentToken(parseInfo, 2)
+        : isIdentToken(parseInfo, 1);
+}
+function startsWith(parseInfo, input) {
+    let i = 0;
+    let j = input.length;
+    while (i < j) {
+        if (parseInfo.stream.charAt(parseInfo.position - parseInfo.offset + i) != input.charAt(i)) {
+            return false;
+        }
+        i++;
+    }
+    return true;
+}
+function isURLToken(parseInfo) {
+    let i = parseInfo.position - parseInfo.offset;
+    let c;
+    while (++i < parseInfo.currentPosition) {
+        c = parseInfo.stream.charCodeAt(i);
+        // single quote or double quote or start parenthesis or close parenthesis
+        if (isNonPrintable(c) || c == 0x27 || c == 0x22 || c == 0x28 || c == 0x29) {
+            return false;
+        }
+        // valid escape
+        if (c == 92 /* TokenMap.REVERSE_SOLIDUS */) {
+            i++;
+            if (i >= parseInfo.currentPosition) {
+                return false;
+            }
+            c = parseInfo.stream.charCodeAt(i);
+            // c is not '\n' or '\r' or '\f'
+            if (c == 0x6e || c == 0x72 || c == 0x66) {
+                return false;
+            }
+            continue;
+        }
+        // is white space
+        if (c == 0x20 || c == 0x09) {
+            break;
+        }
+    }
+    return i == parseInfo.currentPosition;
+}
 /**
  * Tokenize CSS string
  * @param parseInfo
@@ -22263,7 +22410,6 @@ function next(parseInfo, count = 1) {
 function tokenize(parseInfo, yieldEOFToken = true) {
     if (typeof parseInfo == "string") {
         parseInfo = {
-            buffer: "",
             stream: parseInfo,
             source: new SourceFile(parseInfo, [], ""),
             offset: 0,
@@ -22272,160 +22418,160 @@ function tokenize(parseInfo, yieldEOFToken = true) {
             currentPosition: 0,
         };
     }
-    let value;
-    let buffer = parseInfo.buffer;
     let charCode;
     let nextCharCode;
     const startTime = performance.now();
     const result = [];
     // allow 10 characters buffer for the streaming parser to avoid incomplete tokens
-    const endPosition = parseInfo.stream.length - 10;
-    parseInfo.buffer = "";
-    while ((value = peek(parseInfo))) {
-        charCode = value.charCodeAt(0);
+    const endPosition = parseInfo.stream.length - 1;
+    // NaN is not equal to NaN
+    while ((charCode = peek(parseInfo).charCodeAt(0)) == charCode) {
         switch (charCode) {
             case 61 /* TokenMap.EQUALS */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
                 }
-                result.push(yieldResult(next(parseInfo), parseInfo, exports.EnumToken.DelimTokenType));
+                next(parseInfo);
+                result.push(yieldResult(parseInfo, exports.EnumToken.DelimTokenType));
                 break;
             // '+' or '-'
             case 43 /* TokenMap.PLUS */:
             case 45 /* TokenMap.MINUS */:
-                next(parseInfo);
-                if (charCode === 43 /* TokenMap.PLUS */ && !isNumber(peek(parseInfo))) {
-                    if (buffer.length > 0) {
-                        result.push(yieldResult(buffer, parseInfo));
-                        buffer = "";
+                nextCharCode = peek(parseInfo).charCodeAt(0);
+                // not a number
+                if (charCode === 43 /* TokenMap.PLUS */ && !(nextCharCode >= 0x30 && nextCharCode <= 0x39)) {
+                    if (parseInfo.position < parseInfo.currentPosition) {
+                        result.push(yieldResult(parseInfo));
                     }
-                    result.push(yieldResult(value, parseInfo, SymbolsMapTokens[value]));
+                    next(parseInfo);
+                    result.push(yieldResult(parseInfo, SymbolsMapTokens[parseInfo.stream
+                        .slice(parseInfo.position - parseInfo.offset, parseInfo.currentPosition - parseInfo.offset)
+                        .toLowerCase()]));
                     break;
                 }
-                buffer += value;
+                next(parseInfo);
                 break;
             // '{'
             case 123 /* TokenMap.LEFT_BRACE */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
                 }
-                result.push(yieldResult(next(parseInfo), parseInfo, exports.EnumToken.BlockStartTokenType));
+                next(parseInfo);
+                result.push(yieldResult(parseInfo, exports.EnumToken.BlockStartTokenType));
                 break;
             // '}'
             case 125 /* TokenMap.RIGHT_BRACE */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
                 }
-                result.push(yieldResult(next(parseInfo), parseInfo, exports.EnumToken.BlockEndTokenType));
+                next(parseInfo);
+                result.push(yieldResult(parseInfo, exports.EnumToken.BlockEndTokenType));
                 break;
             // '('
             case 40 /* TokenMap.LEFT_PARENTHESIS */:
-                if (buffer.length > 0) {
-                    if (buffer[0] === ":" && isPseudo(buffer)) {
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    if (parseInfo.stream[parseInfo.position - parseInfo.offset] === ":" && isPseudo(parseInfo)) {
                         next(parseInfo);
-                        result.push(yieldResult(buffer, parseInfo, exports.EnumToken.PseudoClassFunctionTokenDefType));
-                        buffer = "";
+                        result.push(yieldResult(parseInfo, exports.EnumToken.PseudoClassFunctionTokenDefType));
                         break;
                     }
-                    else if (isIdent(buffer)) {
-                        const hint = buffer.startsWith("--")
+                    else if (isIdentToken(parseInfo)) {
+                        const hint = startsWith(parseInfo, "--")
                             ? exports.EnumToken.CustomFunctionTokenDefType
-                            : (SymbolsMapTokens[buffer.toLowerCase() + "("] ?? exports.EnumToken.FunctionTokenDefType);
-                        result.push(yieldResult(buffer, parseInfo, hint));
+                            : (SymbolsMapTokens[parseInfo.stream
+                                .slice(parseInfo.position - parseInfo.offset, parseInfo.currentPosition - parseInfo.offset)
+                                .toLowerCase() + "("] ?? exports.EnumToken.FunctionTokenDefType);
+                        result.push(yieldResult(parseInfo, hint));
                         next(parseInfo);
-                        buffer = "";
+                        // consume '('
+                        parseInfo.position = parseInfo.currentPosition;
                         if (hint === exports.EnumToken.UrlFunctionTokenDefType) {
-                            buffer = "";
-                            value = peek(parseInfo);
                             // consume an <url>
                             while (isWhiteSpace(peek(parseInfo).charCodeAt(0))) {
-                                // buffer += next(parseInfo);
                                 next(parseInfo);
-                                // charCode = value.charCodeAt(0);
                             }
-                            value = peek(parseInfo);
+                            charCode = peek(parseInfo).charCodeAt(0);
                             let values = null;
-                            if (value == '"' || value == "'") {
+                            if (charCode == 34 /* TokenMap.DOUBLE_QUOTE */ || charCode == 39 /* TokenMap.SINGLE_QUOTE */) {
                                 values = consumeString(parseInfo);
                             }
                             else {
                                 do {
-                                    buffer += next(parseInfo);
-                                    value = peek(parseInfo);
-                                    charCode = value.charCodeAt(0);
+                                    next(parseInfo);
+                                    // value = peek(parseInfo);
+                                    charCode = peek(parseInfo).charCodeAt(0);
                                 } while (
                                 // !(value === "/" && match(parseInfo, "/*") &&
-                                value !== ")" &&
-                                    value !== "");
+                                charCode !== 41 /* TokenMap.RIGHT_PARENTHESIS */ &&
+                                    parseInfo.currentPosition < endPosition);
                             }
                             if (values != null) {
-                                if (peek(parseInfo) === "") {
+                                // NaN is not equal to NaN
+                                if ((charCode = peek(parseInfo).charCodeAt(0)) != charCode) {
                                     for (let i = 0; i < values.length; i++) {
                                         values[i].token.typ = exports.EnumToken.BadUrlTokenType;
                                     }
                                 }
                                 result.push(...values);
                             }
-                            else if (buffer.length > 0) {
-                                result.push(yieldResult(buffer.trimEnd(), parseInfo, 
-                                // buffer.length > 0
-                                peek(parseInfo) === "" || !isURLToken(buffer)
+                            else if (parseInfo.position < parseInfo.currentPosition) {
+                                result.push(yieldResult(parseInfo, 
+                                // parseInfo.position < parseInfo.currentPosition
+                                (charCode = peek(parseInfo).charCodeAt(0)) != charCode || !isURLToken(parseInfo)
                                     ? exports.EnumToken.BadUrlTokenType
                                     : exports.EnumToken.UrlTokenTokenType));
-                                buffer = "";
                             }
                         }
                         break;
                     }
                 }
-                result.push(yieldResult(next(parseInfo), parseInfo, exports.EnumToken.StartParensTokenType));
-                buffer = "";
+                next(parseInfo);
+                result.push(yieldResult(parseInfo, exports.EnumToken.StartParensTokenType));
                 break;
             // ')'
             case 41 /* TokenMap.RIGHT_PARENTHESIS */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
                 }
-                result.push(yieldResult(next(parseInfo), parseInfo, exports.EnumToken.EndParensTokenType));
+                next(parseInfo);
+                result.push(yieldResult(parseInfo, exports.EnumToken.EndParensTokenType));
                 break;
             // '['
             case 91 /* TokenMap.LEFT_BRACKETS */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
                 }
-                result.push(yieldResult(next(parseInfo), parseInfo, exports.EnumToken.AttrStartTokenType));
+                next(parseInfo);
+                result.push(yieldResult(parseInfo, exports.EnumToken.AttrStartTokenType));
                 break;
             // ']'
             case 93 /* TokenMap.RIGHT_BRACKETS */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
                 }
-                result.push(yieldResult(next(parseInfo), parseInfo, exports.EnumToken.AttrEndTokenType));
+                next(parseInfo);
+                result.push(yieldResult(parseInfo, exports.EnumToken.AttrEndTokenType));
                 break;
             case 59 /* TokenMap.SEMICOLON */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    // console.error(parseInfo.stream.length > parseInfo.currentPosition - parseInfo.offset, parseInfo.position < parseInfo.currentPosition, parseInfo.currentPosition - parseInfo.offset, endPosition, parseInfo.stream.slice(parseInfo.position - parseInfo.offset, parseInfo.currentPosition - parseInfo.offset), parseInfo.stream.length)
+                    result.push(yieldResult(parseInfo));
                 }
-                result.push(yieldResult(next(parseInfo), parseInfo, exports.EnumToken.SemiColonTokenType));
+                next(parseInfo);
+                result.push(yieldResult(parseInfo, exports.EnumToken.SemiColonTokenType));
                 break;
             case 58 /* TokenMap.COLON */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    // console.error(parseInfo.currentPosition - parseInfo.offset, parseInfo.position - parseInfo.offset, parseInfo.stream.length, parseInfo.stream.slice(parseInfo.position - parseInfo.offset, parseInfo.currentPosition - parseInfo.offset));
+                    result.push(yieldResult(parseInfo));
                 }
                 next(parseInfo);
                 if (peek(parseInfo).charCodeAt(0) == 58 /* TokenMap.COLON */) {
-                    result.push(yieldResult(value + next(parseInfo), parseInfo, exports.EnumToken.DoubleColonTokenType));
+                    next(parseInfo);
+                    result.push(yieldResult(parseInfo, exports.EnumToken.DoubleColonTokenType));
                     break;
                 }
-                result.push(yieldResult(value, parseInfo, exports.EnumToken.ColonTokenType));
+                result.push(yieldResult(parseInfo, exports.EnumToken.ColonTokenType));
                 break;
             // \n \r \f \v \t space
             case 0x9:
@@ -22436,205 +22582,203 @@ function tokenize(parseInfo, yieldEOFToken = true) {
             case 0xd:
             case 0x2028:
             case 0x2029:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
                 }
-                buffer += next(parseInfo);
+                next(parseInfo);
                 nextCharCode = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset).charCodeAt(0);
                 while (nextCharCode == 0x20 ||
                     (nextCharCode >= 0x9 && nextCharCode <= 0xd) ||
                     nextCharCode == 0x2028 ||
                     nextCharCode == 0x2029) {
-                    value += next(parseInfo);
+                    next(parseInfo);
                     nextCharCode = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset).charCodeAt(0);
                 }
-                result.push(yieldResult(value, parseInfo, exports.EnumToken.WhitespaceTokenType));
-                buffer = "";
+                result.push(yieldResult(parseInfo, exports.EnumToken.WhitespaceTokenType));
                 break;
             case 44 /* TokenMap.COMMA */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
                 }
-                result.push(yieldResult(next(parseInfo), parseInfo, exports.EnumToken.CommaTokenType));
+                next(parseInfo);
+                result.push(yieldResult(parseInfo, exports.EnumToken.CommaTokenType));
                 break;
             case 36 /* TokenMap.DOLLAR */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
                 }
                 if (match(parseInfo, "$=")) {
-                    result.push(yieldResult(next(parseInfo, 2), parseInfo, exports.EnumToken.EndMatchTokenType));
+                    next(parseInfo, 2);
+                    result.push(yieldResult(parseInfo, exports.EnumToken.EndMatchTokenType));
                     break;
                 }
-                buffer += next(parseInfo);
+                next(parseInfo);
                 break;
             case 126 /* TokenMap.TILDA */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
                 }
                 if (match(parseInfo, "~=")) {
-                    result.push(yieldResult(next(parseInfo, 2), parseInfo, exports.EnumToken.IncludeMatchTokenType));
+                    next(parseInfo, 2);
+                    result.push(yieldResult(parseInfo, exports.EnumToken.IncludeMatchTokenType));
                     break;
                 }
-                result.push(yieldResult(next(parseInfo), parseInfo, exports.EnumToken.Tilda));
-                buffer = "";
+                next(parseInfo);
+                result.push(yieldResult(parseInfo, exports.EnumToken.Tilda));
                 break;
             // case '^':
             case 94 /* TokenMap.CARET */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
                 }
                 if (match(parseInfo, "^=")) {
-                    result.push(yieldResult(next(parseInfo, 2), parseInfo, exports.EnumToken.StartMatchTokenType));
+                    next(parseInfo, 2);
+                    result.push(yieldResult(parseInfo, exports.EnumToken.StartMatchTokenType));
                     break;
                 }
-                buffer += next(parseInfo);
+                next(parseInfo);
                 break;
             case 42 /* TokenMap.STAR */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
                 }
                 if (match(parseInfo, "*=")) {
-                    result.push(yieldResult(next(parseInfo, 2), parseInfo, exports.EnumToken.ContainMatchTokenType));
+                    next(parseInfo, 2);
+                    result.push(yieldResult(parseInfo, exports.EnumToken.ContainMatchTokenType));
                     break;
                 }
-                result.push(yieldResult(next(parseInfo), parseInfo, exports.EnumToken.Star));
-                buffer = "";
+                next(parseInfo);
+                result.push(yieldResult(parseInfo, exports.EnumToken.Star));
                 break;
             case 38 /* TokenMap.AMPERSAND */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
                 }
-                result.push(yieldResult(next(parseInfo), parseInfo, exports.EnumToken.NestingSelectorTokenType));
-                buffer = "";
+                next(parseInfo);
+                result.push(yieldResult(parseInfo, exports.EnumToken.NestingSelectorTokenType));
                 break;
             case 124 /* TokenMap.PIPE */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
                 }
                 // '||'
                 if (match(parseInfo, "||")) {
-                    result.push(yieldResult(next(parseInfo, 2), parseInfo, exports.EnumToken.ColumnCombinatorTokenType));
+                    next(parseInfo, 2);
+                    result.push(yieldResult(parseInfo, exports.EnumToken.ColumnCombinatorTokenType));
                     break;
                 }
                 else if (match(parseInfo, "|=")) {
-                    result.push(yieldResult(next(parseInfo, 2), parseInfo, exports.EnumToken.DashMatchTokenType));
+                    next(parseInfo, 2);
+                    result.push(yieldResult(parseInfo, exports.EnumToken.DashMatchTokenType));
                     break;
                 }
-                result.push(yieldResult(next(parseInfo), parseInfo, exports.EnumToken.Pipe));
-                buffer = "";
+                next(parseInfo);
+                result.push(yieldResult(parseInfo, exports.EnumToken.Pipe));
                 break;
             case 33 /* TokenMap.EXCLAMATION */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
                 }
                 if (match(parseInfo, "!important")) {
-                    result.push(yieldResult(next(parseInfo, 10), parseInfo, exports.EnumToken.ImportantTokenType));
-                    buffer = "";
+                    next(parseInfo, 10);
+                    result.push(yieldResult(parseInfo, exports.EnumToken.ImportantTokenType));
                     break;
                 }
-                buffer += next(parseInfo);
+                next(parseInfo);
                 break;
             case 47 /* TokenMap.SLASH */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
                 }
                 if (!match(parseInfo, "/*")) {
-                    result.push(yieldResult(next(parseInfo), parseInfo, SymbolsMapTokens[value]));
+                    next(parseInfo);
+                    result.push(yieldResult(parseInfo, SymbolsMapTokens[parseInfo.stream.slice(parseInfo.position, parseInfo.currentPosition)]));
                     break;
                 }
-                buffer += next(parseInfo, 2);
-                while ((value = next(parseInfo))) {
-                    if (value == "*") {
-                        buffer += value;
+                next(parseInfo, 2);
+                while ((charCode = next(parseInfo).charCodeAt(0)) == charCode) {
+                    if (charCode == 42 /* TokenMap.STAR */) {
                         if (match(parseInfo, "/")) {
-                            result.push(yieldResult(buffer + next(parseInfo), parseInfo, exports.EnumToken.CommentTokenType));
-                            buffer = "";
+                            next(parseInfo);
+                            result.push(yieldResult(parseInfo, exports.EnumToken.CommentTokenType));
                             break;
                         }
                     }
-                    else {
-                        buffer += value;
-                    }
+                    // else {
+                    // buffer += value;
+                    // }
                 }
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo, exports.EnumToken.BadCommentTokenType));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo, exports.EnumToken.BadCommentTokenType));
                 }
                 break;
             case 62 /* TokenMap.GREATERTHAN */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
                 }
                 if (match(parseInfo, ">=")) {
-                    result.push(yieldResult(next(parseInfo, 2), parseInfo, exports.EnumToken.GteTokenType));
+                    next(parseInfo, 2);
+                    result.push(yieldResult(parseInfo, exports.EnumToken.GteTokenType));
                     break;
                 }
-                result.push(yieldResult(next(parseInfo), parseInfo, exports.EnumToken.GtTokenType));
-                buffer = "";
+                next(parseInfo);
+                result.push(yieldResult(parseInfo, exports.EnumToken.GtTokenType));
                 break;
             case 60 /* TokenMap.LOWERTHAN */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
                 }
                 if (match(parseInfo, "<=")) {
-                    result.push(yieldResult(next(parseInfo, 2), parseInfo, exports.EnumToken.LteTokenType));
+                    next(parseInfo, 2);
+                    result.push(yieldResult(parseInfo, exports.EnumToken.LteTokenType));
                     break;
                 }
-                buffer += next(parseInfo);
+                next(parseInfo);
                 if (match(parseInfo, "!--")) {
-                    buffer += next(parseInfo, 3);
-                    while ((value = next(parseInfo))) {
-                        buffer += value;
-                        if (value == "-" && match(parseInfo, "->")) {
+                    next(parseInfo, 3);
+                    while ((charCode = next(parseInfo).charCodeAt(0)) == charCode) {
+                        if (charCode == 45 /* TokenMap.MINUS */ && match(parseInfo, "->")) {
                             break;
                         }
                     }
-                    if (value === "") {
-                        result.push(yieldResult(buffer, parseInfo, exports.EnumToken.BadCdoTokenType));
+                    if (parseInfo.currentPosition >= endPosition) {
+                        result.push(yieldResult(parseInfo, exports.EnumToken.BadCdoTokenType));
                     }
                     else {
-                        result.push(yieldResult(buffer + next(parseInfo, 2), parseInfo, exports.EnumToken.CDOCOMMTokenType));
+                        next(parseInfo, 2);
+                        result.push(yieldResult(parseInfo, exports.EnumToken.CDOCOMMTokenType));
                     }
-                    buffer = "";
                 }
                 break;
             case 35 /* TokenMap.HASH */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
                 }
-                buffer += next(parseInfo);
+                next(parseInfo);
                 break;
             case 92 /* TokenMap.REVERSE_SOLIDUS */:
+                if (!yieldEOFToken && parseInfo.stream.length == parseInfo.currentPosition - parseInfo.offset + 1) {
+                    break;
+                }
+                // console.error('reverse solidus', parseInfo.position - parseInfo.offset, parseInfo.currentPosition - parseInfo.offset, parseInfo.stream.length, parseInfo.stream.slice(parseInfo.position, parseInfo.currentPosition));
                 next(parseInfo);
                 // EOF
                 if (!peek(parseInfo)) {
+                    if (!yieldEOFToken) {
+                        break;
+                    }
                     // end of stream ignore \\
-                    if (buffer.length > 0) {
-                        result.push(yieldResult(buffer, parseInfo));
-                        buffer = "";
+                    if (parseInfo.position < parseInfo.currentPosition) {
+                        result.push(yieldResult(parseInfo));
                     }
                     break;
                 }
-                buffer += value + next(parseInfo);
+                next(parseInfo);
                 break;
             case 39 /* TokenMap.SINGLE_QUOTE */:
             case 34 /* TokenMap.DOUBLE_QUOTE */:
-                if (buffer.length > 0) {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = "";
+                if (parseInfo.position < parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
                 }
                 result.push(...consumeString(parseInfo));
                 break;
@@ -22642,30 +22786,31 @@ function tokenize(parseInfo, yieldEOFToken = true) {
                 const codepoint = parseInfo.stream
                     .charAt(parseInfo.currentPosition - parseInfo.offset + 1)
                     .charCodeAt(0);
-                if (!isDigit(codepoint) && buffer !== "") {
-                    result.push(yieldResult(buffer, parseInfo));
-                    buffer = next(parseInfo, 2);
+                if (!isDigit(codepoint) && parseInfo.position !== parseInfo.currentPosition) {
+                    result.push(yieldResult(parseInfo));
+                    next(parseInfo, 2);
                     break;
                 }
-                buffer += next(parseInfo);
+                next(parseInfo);
                 break;
             default:
-                buffer += next(parseInfo);
+                next(parseInfo);
                 break;
         }
-        if (!yieldEOFToken && endPosition <= parseInfo.stream.length - parseInfo.currentPosition + parseInfo.offset) {
+        if (!yieldEOFToken && endPosition <= parseInfo.currentPosition - parseInfo.offset + 1) {
             break;
         }
     }
     if (yieldEOFToken) {
-        if (buffer.length > 0) {
-            result.push(yieldResult(buffer, parseInfo));
+        // console.error(parseInfo.stream.length > parseInfo.currentPosition - parseInfo.offset, parseInfo.position < parseInfo.currentPosition, parseInfo.currentPosition - parseInfo.offset, parseInfo.position - parseInfo.offset, parseInfo.stream.length);
+        if (parseInfo.position < parseInfo.currentPosition) {
+            result.push(yieldResult(parseInfo));
         }
-        result.push(yieldResult("", parseInfo, exports.EnumToken.EOFTokenType));
+        result.push(yieldResult(parseInfo, exports.EnumToken.EOFTokenType));
     }
-    else {
-        parseInfo.buffer = buffer;
-    }
+    // else {
+    //     // parseInfo.buffer = buffer;
+    // }
     parseInfo.time += performance.now() - startTime;
     return result;
 }
@@ -22677,19 +22822,17 @@ function tokenize(parseInfo, yieldEOFToken = true) {
 async function* tokenizeStream(input, parseInfo) {
     const decoder = new TextDecoder("utf-8");
     const reader = input.getReader();
+    parseInfo.stream = "";
     while (true) {
         const { done, value } = await reader.read();
         const stream = ArrayBuffer.isView(value) ? decoder.decode(value, { stream: true }) : value;
         if (!done) {
             parseInfo.source.append(stream);
-            if (typeof parseInfo.stream != "string") {
-                parseInfo.stream = stream;
-            }
-            else {
-                parseInfo.stream = (parseInfo.stream.slice(parseInfo.currentPosition - parseInfo.offset) +
-                    stream);
-            }
-            parseInfo.offset = parseInfo.currentPosition;
+            parseInfo.stream = (parseInfo.stream.slice(parseInfo.position - parseInfo.offset) + stream);
+            parseInfo.offset = parseInfo.offset = parseInfo.position;
+        }
+        else {
+            parseInfo.stream = "";
         }
         yield* tokenize(parseInfo, done);
         if (done) {
@@ -22761,9 +22904,12 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                 if (rules.includes(replacement.typ) && !Array.isArray(replacement[TOKENS])) {
                     replacement[TOKENS] = parseString(replacement.typ == exports.EnumToken.RuleNodeType || replacement.typ === exports.EnumToken.KeyframesRuleNodeType
                         ? replacement.sel
-                        : replacement.nam);
+                        : // @ts-ignore
+                            replacement.nam);
                 }
-                const result = feature.run(replacement, options2, parent[PARENT] ?? ast, context, exports.FeatureWalkMode.Pre);
+                const result = feature.run(replacement, options2, 
+                // @ts-ignore
+                parent[PARENT] ?? ast, context, exports.FeatureWalkMode.Pre);
                 if (result != null) {
                     replacement = result;
                 }
@@ -22772,9 +22918,12 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                 (!Array.isArray(replacement) || replacement.length > 0) &&
                 replacement != parent &&
                 parent[PARENT] != null) {
+                // @ts-ignore
                 replaceNodeOrValue(parent[PARENT], parent, replacement);
             }
+            // @ts-ignore
             if (replacement.chi != null) {
+                // @ts-ignore
                 for (const node of replacement.chi) {
                     node[PARENT] = replacement;
                     parents.add(node);
@@ -22801,7 +22950,9 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                     (feature.accept != null && !feature.accept.has(parent.typ))) {
                     continue;
                 }
-                const result = feature.run(replacement, options2, parent[PARENT] ?? ast, context, exports.FeatureWalkMode.Post);
+                const result = feature.run(replacement, options2, 
+                // @ts-ignore
+                parent[PARENT] ?? ast, context, exports.FeatureWalkMode.Post);
                 if (result != null) {
                     replacement = result;
                 }
@@ -22814,7 +22965,9 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
             // @ts-ignore
             replaceNodeOrValue(parent[PARENT], parent, replacement);
         }
+        // @ts-ignore
         if (replacement.chi != null) {
+            // @ts-ignore
             for (const node of replacement.chi) {
                 node[PARENT] = replacement;
                 parents.add(node);
@@ -22845,6 +22998,7 @@ function transformAtRuleMediaPrelude(values) {
                     values[values.indexOf(value)] = value.l;
                 }
                 else {
+                    // @ts-ignore
                     replaceNodeOrValue(parent, value, value.l);
                     // @ts-ignore
                     value = value.l;
@@ -22901,9 +23055,11 @@ function transformAtRuleMediaPrelude(values) {
                     // @ts-expect-error
                     const p = parents?.[parents?.indexOf?.(parent) + 1];
                     if (p != null) {
+                        // @ts-ignore
                         replaceNodeOrValue(p, parent, replacement);
                     }
                     else {
+                        // @ts-ignore
                         values.splice(values.indexOf(parent), 1, replacement);
                     }
                     hasUpdates = true;
@@ -23017,6 +23173,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                 continue;
             }
             while (previous?.typ === exports.EnumToken.CommentNodeType) {
+                // @ts-ignore
                 previous = ast.chi[--nodeIndex];
             }
             node = ast.chi[i];
@@ -23039,6 +23196,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     // do not merge keyframes
                     // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@keyframes#resolving_duplicates
                     previous.chi.push(...node.chi);
+                    // @ts-ignore
                     ast.chi.splice(i, 1);
                     previous = ast?.chi?.[nodeIndex] ?? null;
                     i = nodeIndex;
@@ -23111,6 +23269,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                 else if (ast.typ === node.typ &&
                     ast.nam === node.nam &&
                     ast.val === node.val) {
+                    // @ts-ignore
                     replaceNodeOrValue(ast, node, node.chi);
                     i--;
                     continue;
@@ -23204,7 +23363,9 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                 ":is(" +
                                 node[OPTIMIZED].selector.reduce(reducer, []).join(",") +
                                 ")";
-                            const sel2 = node[OPTIMIZED].selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") + node[OPTIMIZED].optimized[0] + curr.join(""), "");
+                            const sel2 = node[OPTIMIZED].selector.reduce((acc, curr) => 
+                            // @ts-ignore
+                            (acc.length > 0 ? acc + "," : "") + node[OPTIMIZED].optimized[0] + curr.join(""), "");
                             node.sel = sel1.length < sel2.length ? sel1 : sel2;
                             node[TOKENS] = null;
                         }
@@ -23284,7 +23445,9 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                             ":is(" +
                             node[OPTIMIZED].selector.reduce(reducer, []).join(",") +
                             ")";
-                        const sel2 = node[OPTIMIZED].selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") + node[OPTIMIZED].optimized[0] + curr.join(""), "");
+                        const sel2 = node[OPTIMIZED].selector.reduce((acc, curr) => 
+                        // @ts-ignore
+                        (acc.length > 0 ? acc + "," : "") + node[OPTIMIZED].optimized[0] + curr.join(""), "");
                         node.sel = sel1.length < sel2.length ? sel1 : sel2;
                         node[TOKENS] = null;
                     }
@@ -23295,11 +23458,14 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                             curr.join(""), "");
                         node[TOKENS] = null;
                     }
+                    // @ts-ignore
                 }
                 else if (node[OPTIMIZED]?.optimized.length > 0) {
+                    // @ts-ignore
                     const sel = node[OPTIMIZED].optimized.join("");
                     if (sel.length < node.sel.length) {
                         node.sel = sel;
+                        // @ts-ignore
                         node[RAW] = [node[OPTIMIZED].optimized.slice()];
                         node[TOKENS] = null;
                     }
@@ -23324,9 +23490,12 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                             if (((node.typ === exports.EnumToken.RuleNodeType ||
                                 node.typ === exports.EnumToken.KeyframesRuleNodeType) &&
                                 node.sel === previous.sel) ||
+                                // @ts-ignore
                                 (node.typ == exports.EnumToken.AtRuleNodeType &&
                                     node.nam !== "font-face" &&
+                                    // @ts-ignore
                                     node.nam === previous.nam)) {
+                                // @ts-ignore
                                 node.chi.unshift(...previous.chi);
                                 doMinify(node, options, recursive, errors, nestingContent, context);
                                 ast.chi.splice(nodeIndex, 1);
@@ -26161,6 +26330,29 @@ function parseSelector(tokens, context, options, errors) {
                                 func.val == ":nth-last-child" ||
                                 func.val == ":nth-of-type" ||
                                 func.val == ":nth-last-of-type") {
+                                const list = [];
+                                let index;
+                                for (index = 0; index < func.chi.length; index++) {
+                                    if (func.chi[index].typ == exports.EnumToken.CommentTokenType || func.chi[index].typ == exports.EnumToken.WhitespaceTokenType) {
+                                        continue;
+                                    }
+                                    if (func.chi[index].typ == exports.EnumToken.IdenTokenType && equalsIgnoreCase('of', func.chi[index].val)) {
+                                        index--;
+                                        break;
+                                    }
+                                    list.push(func.chi[index]);
+                                }
+                                if (list.length == 3) {
+                                    if (list[0].typ == exports.EnumToken.IdenTokenType && ('n' == list[0].val || '-n' == list[0].val || '+n' == list[0].val)) {
+                                        if (list[1].typ == exports.EnumToken.NextSiblingCombinatorTokenType) {
+                                            if (list[2].typ == exports.EnumToken.NumberTokenType && (0 == list[2].val)) {
+                                                list[0].val = 'n';
+                                                func.chi.splice(0, index, list[0]);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
                                 const token = func.chi.find((t) => t.typ != exports.EnumToken.WhitespaceTokenType && t.typ != exports.EnumToken.CommentTokenType);
                                 if (token?.typ == exports.EnumToken.IdenTokenType || token?.typ == exports.EnumToken.LiteralTokenType) {
                                     if (token.typ == exports.EnumToken.IdenTokenType &&
@@ -27976,7 +28168,8 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                                     success = false;
                                     errors.push({
                                         action: "drop",
-                                        node: options.source.getSourceLocation(stream[i][LOC].sta),
+                                        node: stream[i],
+                                        location: options.source.getSourceLocation(stream[i][LOC].sta),
                                         message: `<or> is not allowed outside of parentheses`,
                                     });
                                     break;
@@ -29035,7 +29228,9 @@ function doParseSync(iter, options = {}) {
                         break;
                 }
             }
+            // @ts-ignore
             if (nodes[i].chi != null) {
+                // @ts-ignore
                 subNodes.push(...nodes[i].chi);
             }
             if (subNodes.length > 0) {
@@ -29154,6 +29349,7 @@ function doParseSync(iter, options = {}) {
                 }
             }
             if (node != nodes[i]) {
+                // @ts-ignore
                 replaceNodeOrValue(nodes[i][PARENT], nodes[i], node);
             }
         }
@@ -29273,6 +29469,7 @@ function doParseSync(iter, options = {}) {
                 throw new Error("css variable import not supported by parseSync() or transformSync(). use parse() or transform() instead.\nat " +
                     options.source.getSourceLocation(node[LOC].sta).join(":"));
             }
+            // @ts-ignore
             if (node.typ == exports.EnumToken.CssVariableDeclarationMapTokenType) {
                 const from = node.from.find((t) => t.typ == exports.EnumToken.IdenTokenType || isIdentColor(t));
                 if (!(from.val in cssVariablesMap)) {
@@ -29547,6 +29744,7 @@ function doParseSync(iter, options = {}) {
                     }
                     else if ((value.typ == exports.EnumToken.IdenTokenType || isIdentColor(value)) &&
                         value.val in importedCssVariables) {
+                        // @ts-ignore
                         replaceNodeOrValue(parent, value, importedCssVariables[value.val].val);
                     }
                 }
@@ -29622,7 +29820,7 @@ function doParseSync(iter, options = {}) {
                 }
                 if (moduleSettings.scoped & exports.ModuleScopeEnumOptions.Pure) {
                     if (!hasIdOrClass) {
-                        throw new Error(`pure module: No id or class found in selector '${node.sel}' at '${node[LOC]?.src ?? ""}':${node[LOC]?.sta?.lin ?? ""}:${node[LOC]?.sta?.col ?? ""}`);
+                        throw new Error(`pure module: No id or class found in selector '${node.sel}' at '${options.source.getOffsets(node[LOC]?.sta).join(":")}'`);
                     }
                 }
                 node.sel = "";
@@ -29908,6 +30106,7 @@ async function doParse(iter, options = {}) {
                 stats.nodesCount += root.stats.nodesCount;
                 stats.tokensCount += root.stats.tokensCount;
                 stats.imports.push(root.stats);
+                // @ts-ignore
                 node[PARENT].chi.splice(node[PARENT].chi.indexOf(node), 1, ...root.ast.chi);
                 if (root.errors.length > 0) {
                     errors.push(...root.errors);
@@ -29954,7 +30153,9 @@ async function doParse(iter, options = {}) {
                         break;
                 }
             }
+            // @ts-ignore
             if (nodes[i].chi != null) {
+                // @ts-ignore
                 subNodes.push(...nodes[i].chi);
             }
             if (subNodes.length > 0) {
@@ -30076,6 +30277,7 @@ async function doParse(iter, options = {}) {
                 }
             }
             if (node != nodes[i]) {
+                // @ts-ignore
                 replaceNodeOrValue(nodes[i][PARENT], nodes[i], node);
             }
         }
@@ -30220,6 +30422,7 @@ async function doParse(iter, options = {}) {
                 parent.chi.splice(parent.chi.indexOf(node), 1);
                 continue;
             }
+            // @ts-ignore
             if (node.typ == exports.EnumToken.CssVariableDeclarationMapTokenType) {
                 const from = node.from.find((t) => t.typ == exports.EnumToken.IdenTokenType || isIdentColor(t));
                 if (!(from.val in cssVariablesMap)) {
@@ -30264,6 +30467,7 @@ async function doParse(iter, options = {}) {
                         let result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
                             ? node.nam
                             : moduleSettings.generateScopedName(node.nam, moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
+                        // @ts-ignore
                         let value = result instanceof Promise ? await result : result;
                         mapping[node.nam] =
                             "--" +
@@ -30571,30 +30775,13 @@ async function doParse(iter, options = {}) {
                 }
                 for (const { value, parent } of walkValues(node.val, node)) {
                     if (value.typ == exports.EnumToken.DashedIdenTokenType) {
-                        // if (!((value as DashedIdentToken).val in mapping)) {
-                        //     const result =
-                        //         moduleSettings.scoped! & ModuleScopeEnumOptions.Global
-                        //             ? (value as DashedIdentToken).val
-                        //             : moduleSettings.generateScopedName!(
-                        //                   (value as DashedIdentToken).val,
-                        //                   moduleSettings.filePath as string,
-                        //                   moduleSettings.pattern as string,
-                        //                   moduleSettings.hashLength,
-                        //               );
-                        //     let val: string = result instanceof Promise ? await result : result;
-                        //     mapping[(value as DashedIdentToken).val] =
-                        //         "--" +
-                        //         (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly ||
-                        //         moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly
-                        //             ? getKeyName(val, moduleSettings.naming as ModuleCaseTransformEnum)
-                        //             : val);
-                        //     revMapping[mapping[(value as DashedIdentToken).val]] = (value as DashedIdentToken).val;
-                        // }
                         value.val = mapping[value.val];
                     }
                     else if ((value.typ == exports.EnumToken.IdenTokenType || isIdentColor(value)) &&
                         value.val in importedCssVariables) {
-                        replaceNodeOrValue(parent, value, importedCssVariables[value.val].val);
+                        replaceNodeOrValue(
+                        // @ts-ignore
+                        parent, value, importedCssVariables[value.val].val);
                     }
                 }
             }
@@ -30672,7 +30859,7 @@ async function doParse(iter, options = {}) {
                 }
                 if (moduleSettings.scoped & exports.ModuleScopeEnumOptions.Pure) {
                     if (!hasIdOrClass) {
-                        throw new Error(`pure module: No id or class found in selector '${node.sel}' at '${node[LOC]?.src ?? ""}':${node[LOC]?.sta?.lin ?? ""}:${node[LOC]?.sta?.col ?? ""}`);
+                        throw new Error(`pure module: No id or class found in selector '${node.sel}' at '${(options.source?.getOffsets?.(node[LOC]?.sta) ?? []).join(":")}'`);
                     }
                 }
                 node.sel = "";
@@ -31292,10 +31479,13 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                 let definedAfterLastElse = false;
                 if (sibling == null || sibling.typ !== exports.EnumToken.AtRuleNodeType) {
                     missingWhen = true;
+                    // @ts-expect-error
                 }
                 else if (sibling.nam !== "when") {
+                    // @ts-expect-error
                     if (sibling.nam !== "else") {
                         missingWhen = true;
+                        // @ts-expect-error
                     }
                     else if (sibling.val === "") {
                         definedAfterLastElse = true;
@@ -31990,6 +32180,12 @@ function parseResult(result, options) {
     }
     return result;
 }
+/**
+ *
+ * @param options
+ * @param prefix
+ * @private
+ */
 function validateSyncArguments(options, prefix = "options.") {
     const args = Object.entries(options);
     let i;
@@ -32003,6 +32199,52 @@ function validateSyncArguments(options, prefix = "options.") {
         else if (value != null && typeof value == "object") {
             validateSyncArguments(value, prefix + key + ".");
         }
+    }
+}
+
+/**
+ * set node property
+ * @param node
+ * @param property
+ * @param value
+ */
+function setNodeProperty(node, property, value) {
+    switch (property) {
+        case "location":
+            node[LOC] = value;
+            break;
+        case "state":
+            node[STATE] = value;
+            break;
+        case "errors":
+            node[ERRORS] = value;
+            break;
+        case "tokens":
+            node[TOKENS] = value;
+            break;
+        case "parent":
+            node[PARENT] = value;
+            break;
+    }
+}
+/**
+ * get node property
+ * @param node
+ * @param property
+ * @returns
+ */
+function getNodeProperty(node, property) {
+    switch (property) {
+        case "location":
+            return node[LOC];
+        case "state":
+            return node[STATE];
+        case "errors":
+            return node[ERRORS];
+        case "tokens":
+            return node[TOKENS];
+        case "parent":
+            return node[PARENT];
     }
 }
 
@@ -32089,7 +32331,7 @@ function render(data, options = {}, mapping) {
     return doRender(data, Object.assign(options, { resolve, dirname, cwd: options.cwd ?? node_path.resolve() }), mapping);
 }
 /**
- * Parse css file
+ * Parse CSS file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
@@ -32115,9 +32357,8 @@ function render(data, options = {}, mapping) {
  */
 const parseFile = node_util.deprecate(async (file, options = {}, asStream = false) => parse({ file, asStream, ...options }), "parseFile is deprecated, use parse instead as parse({file, asStream, ...options})");
 /**
- * Parse css
+ * Parse CSS
  * @param args
- * @private
  *
  * Parsing a string
  *
@@ -32174,7 +32415,7 @@ function parseSync(...args) {
     return !options.module && !options.inputSourceMap && !options.sourcemap ? result : parseResult(result, options);
 }
 /**
- * Transform css
+ * Transform CSS
  *
  * ```ts
  *
@@ -32186,7 +32427,6 @@ function parseSync(...args) {
  * ```
  *
  * @param args
- * @private
  */
 function transformSync(...args) {
     let options;
@@ -32202,7 +32442,15 @@ function transformSync(...args) {
         stream = input;
     }
     options ??= {};
-    options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+    if (options.minify == null) {
+        options.minify = true;
+    }
+    if (options.removeEmpty == null) {
+        options.removeEmpty = true;
+    }
+    if (options.removeCharset == null) {
+        options.removeCharset = true;
+    }
     const startTime = performance.now();
     const parseResult = parseSync(stream, options);
     let mapping = null;
@@ -32235,11 +32483,10 @@ function transformSync(...args) {
     };
 }
 /**
- * Parse css
+ * Parse CSS
  * @param args
  *
  * @throws Error file not found
- * @private
  *
  * Parsing a string
  *
@@ -32354,7 +32601,7 @@ const transformFile = node_util.deprecate(async (file, options = {}, asStream = 
     ...options,
 }), "transformFile is deprecated, use transform instead as transform({file, asStream, ...options})");
 /**
- * Transform css
+ * Transform CSS
  *
  * Parsing a string
  *
@@ -32394,7 +32641,6 @@ const transformFile = node_util.deprecate(async (file, options = {}, asStream = 
  *  console.log(result.code);
  * ```
  * @param args
- * @private
  */
 async function transform(...args) {
     let options;
@@ -32415,7 +32661,15 @@ async function transform(...args) {
         }
     }
     options ??= {};
-    options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+    if (options.minify == null) {
+        options.minify = true;
+    }
+    if (options.removeEmpty == null) {
+        options.removeEmpty = true;
+    }
+    if (options.removeCharset == null) {
+        options.removeCharset = true;
+    }
     const startTime = performance.now();
     return parse(stream, options).then((parseResult) => {
         let mapping = null;
@@ -32458,6 +32712,7 @@ exports.find = find;
 exports.findAll = findAll;
 exports.findByValue = findByValue;
 exports.findLast = findLast;
+exports.getNodeProperty = getNodeProperty;
 exports.isOkLabClose = isOkLabClose;
 exports.load = load;
 exports.minify = minify;
@@ -32471,6 +32726,7 @@ exports.render = render;
 exports.renderToken = renderValue;
 exports.replaceNodeOrValue = replaceNodeOrValue;
 exports.resolve = resolve;
+exports.setNodeProperty = setNodeProperty;
 exports.transform = transform;
 exports.transformFile = transformFile;
 exports.transformSync = transformSync;

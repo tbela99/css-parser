@@ -7,4 +7,10 @@ import type { ParseResult, ParserOptions, ParserSyncOptions } from "../@types/in
  * @private
  */
 export declare function parseResult(result: ParseResult, options: ParserOptions): ParseResult;
+/**
+ *
+ * @param options
+ * @param prefix
+ * @private
+ */
 export declare function validateSyncArguments(options: ParserSyncOptions, prefix?: string): void;

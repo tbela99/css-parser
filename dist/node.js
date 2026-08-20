@@ -25,6 +25,7 @@ export { cloneNode } from './lib/ast/clone.js';
 export { replaceNodeOrValue } from './lib/parser/utils/token.js';
 export { SourceMap } from './lib/renderer/sourcemap/sourcemap.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
+export { getNodeProperty, setNodeProperty } from './lib/ast/node.js';
 
 /**
  * Load file or url
@@ -109,7 +110,7 @@ function render(data, options = {}, mapping) {
     return doRender(data, Object.assign(options, { resolve, dirname, cwd: options.cwd ?? resolve$1() }), mapping);
 }
 /**
- * Parse css file
+ * Parse CSS file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
@@ -135,9 +136,8 @@ function render(data, options = {}, mapping) {
  */
 const parseFile = deprecate(async (file, options = {}, asStream = false) => parse({ file, asStream, ...options }), "parseFile is deprecated, use parse instead as parse({file, asStream, ...options})");
 /**
- * Parse css
+ * Parse CSS
  * @param args
- * @private
  *
  * Parsing a string
  *
@@ -194,7 +194,7 @@ function parseSync(...args) {
     return !options.module && !options.inputSourceMap && !options.sourcemap ? result : parseResult(result, options);
 }
 /**
- * Transform css
+ * Transform CSS
  *
  * ```ts
  *
@@ -206,7 +206,6 @@ function parseSync(...args) {
  * ```
  *
  * @param args
- * @private
  */
 function transformSync(...args) {
     let options;
@@ -222,7 +221,15 @@ function transformSync(...args) {
         stream = input;
     }
     options ??= {};
-    options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+    if (options.minify == null) {
+        options.minify = true;
+    }
+    if (options.removeEmpty == null) {
+        options.removeEmpty = true;
+    }
+    if (options.removeCharset == null) {
+        options.removeCharset = true;
+    }
     const startTime = performance.now();
     const parseResult = parseSync(stream, options);
     let mapping = null;
@@ -255,11 +262,10 @@ function transformSync(...args) {
     };
 }
 /**
- * Parse css
+ * Parse CSS
  * @param args
  *
  * @throws Error file not found
- * @private
  *
  * Parsing a string
  *
@@ -374,7 +380,7 @@ const transformFile = deprecate(async (file, options = {}, asStream = false) => 
     ...options,
 }), "transformFile is deprecated, use transform instead as transform({file, asStream, ...options})");
 /**
- * Transform css
+ * Transform CSS
  *
  * Parsing a string
  *
@@ -414,7 +420,6 @@ const transformFile = deprecate(async (file, options = {}, asStream = false) => 
  *  console.log(result.code);
  * ```
  * @param args
- * @private
  */
 async function transform(...args) {
     let options;
@@ -435,7 +440,15 @@ async function transform(...args) {
         }
     }
     options ??= {};
-    options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+    if (options.minify == null) {
+        options.minify = true;
+    }
+    if (options.removeEmpty == null) {
+        options.removeEmpty = true;
+    }
+    if (options.removeCharset == null) {
+        options.removeCharset = true;
+    }
     const startTime = performance.now();
     return parse(stream, options).then((parseResult) => {
         let mapping = null;

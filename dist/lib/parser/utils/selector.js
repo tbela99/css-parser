@@ -7,6 +7,7 @@ import { matchAllSyntaxes, createValidationContext, trimArray, matchSelectorSynt
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from '../../validation/parser/typedef.js';
 import { splitTokenList } from '../../validation/utils/list.js';
 import { trimWhiteSpace } from '../parse.js';
+import { equalsIgnoreCase } from './text.js';
 
 /**
  * parse selector
@@ -266,6 +267,29 @@ function parseSelector(tokens, context, options, errors) {
                                 func.val == ":nth-last-child" ||
                                 func.val == ":nth-of-type" ||
                                 func.val == ":nth-last-of-type") {
+                                const list = [];
+                                let index;
+                                for (index = 0; index < func.chi.length; index++) {
+                                    if (func.chi[index].typ == EnumToken.CommentTokenType || func.chi[index].typ == EnumToken.WhitespaceTokenType) {
+                                        continue;
+                                    }
+                                    if (func.chi[index].typ == EnumToken.IdenTokenType && equalsIgnoreCase('of', func.chi[index].val)) {
+                                        index--;
+                                        break;
+                                    }
+                                    list.push(func.chi[index]);
+                                }
+                                if (list.length == 3) {
+                                    if (list[0].typ == EnumToken.IdenTokenType && ('n' == list[0].val || '-n' == list[0].val || '+n' == list[0].val)) {
+                                        if (list[1].typ == EnumToken.NextSiblingCombinatorTokenType) {
+                                            if (list[2].typ == EnumToken.NumberTokenType && (0 == list[2].val)) {
+                                                list[0].val = 'n';
+                                                func.chi.splice(0, index, list[0]);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
                                 const token = func.chi.find((t) => t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.CommentTokenType);
                                 if (token?.typ == EnumToken.IdenTokenType || token?.typ == EnumToken.LiteralTokenType) {
                                     if (token.typ == EnumToken.IdenTokenType &&
