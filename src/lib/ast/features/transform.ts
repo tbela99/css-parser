@@ -15,7 +15,11 @@ import { FeatureWalkMode } from "./type.ts";
 import { STATE } from "../../syntax/constants.ts";
 
 export class TransformCssFeature {
-    public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.KeyFramesRuleNodeType]);
+    public accept: Set<EnumToken> = new Set([
+        EnumToken.RuleNodeType,
+        EnumToken.AtRuleNodeType,
+        EnumToken.KeyframesRuleNodeType,
+    ]);
 
     get ordering(): number {
         return 3;
@@ -65,8 +69,6 @@ export class TransformCssFeature {
                         : child,
                 );
             }
-
-            // consumeWhitespace(children);
 
             let { matrix, cumulative, minified } = compute(children as Token[]) ?? {
                 matrix: null,

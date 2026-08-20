@@ -109,7 +109,8 @@ class ComputeCalcExpressionFeature {
                                 // @ts-ignore
                                 const children = parent.typ == EnumToken.DeclarationNodeType
                                     ? parent.val
-                                    : parent.chi;
+                                    : // @ts-ignore
+                                        parent.chi;
                                 if (values.length == 1 && values[0].typ != EnumToken.BinaryExpressionTokenType) {
                                     for (let i = 0; i < children.length; i++) {
                                         if (children[i] == value) {

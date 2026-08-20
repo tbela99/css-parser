@@ -1,9 +1,8 @@
 import type {
     AstAtRule,
     AstDeclaration,
-    AstKeyFrameRule,
-    AstKeyframesAtRule,
     AstKeyframesRule,
+    AstKeyframesAtRule,
     AstNode,
     AstRule,
 } from "../../../@types/ast.d.ts";
@@ -49,6 +48,13 @@ export function replaceNodeOrValue(
                   | {
                         val: Token[];
                     }
+              ))
+        | (Token &
+              (
+                  | { chi: Token[] }
+                  | {
+                        val: Token[];
+                    }
               )),
     node: Token,
     replacement: Token | Token[],
@@ -81,7 +87,7 @@ export function replaceNodeOrValue(
                           | ParensToken
                           | AstAtRule
                           | AstKeyframesAtRule
-                          | AstKeyFrameRule
+                          | AstKeyframesRule
                           | AstRule
                           | AstKeyframesRule
                   ).chi as Token[]) ?? parent);

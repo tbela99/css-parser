@@ -17,7 +17,7 @@ const rules = [
     EnumToken.AtRuleNodeType,
     EnumToken.RuleNodeType,
     EnumToken.AtRuleTokenType,
-    EnumToken.KeyFramesRuleNodeType,
+    EnumToken.KeyframesRuleNodeType,
 ];
 // @ts-ignore
 const features = Object.values(index).sort((a, b) => a.ordering - b.ordering);
@@ -29,6 +29,7 @@ const features = Object.values(index).sort((a, b) => a.ordering - b.ordering);
  * @param errors
  * @param nestingContent
  *
+ * @param context
  * @private
  */
 function minify(ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
@@ -36,22 +37,22 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
     let postprocess = false;
     let parents;
     let replacement;
-    if (!("features" in options)) {
-        // @ts-ignore
-        options = {
+    let { sourcemap, module, ...options2 } = options;
+    if (!(options2.features != null)) {
+        options2 = {
             removeDuplicateDeclarations: true,
             computeShorthand: true,
             computeCalcExpression: true,
             removePrefix: false,
             features: [],
-            ...options,
+            ...options2,
         };
         for (const feature of features) {
-            feature.register(options);
+            feature.register(options2);
         }
-        options.features.sort((a, b) => a.ordering - b.ordering);
+        options2.features.sort((a, b) => a.ordering - b.ordering);
     }
-    for (const feature of options.features) {
+    for (const feature of options2.features) {
         if (feature.processMode & FeatureWalkMode.Pre) {
             preprocess = true;
         }
@@ -66,17 +67,20 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                 continue;
             }
             replacement = parent;
-            for (const feature of options.features) {
+            for (const feature of options2.features) {
                 if ((feature.processMode & FeatureWalkMode.Pre) === 0 ||
                     (feature.accept != null && !feature.accept.has(parent.typ))) {
                     continue;
                 }
                 if (rules.includes(replacement.typ) && !Array.isArray(replacement[TOKENS])) {
-                    replacement[TOKENS] = parseString(replacement.typ == EnumToken.RuleNodeType || replacement.typ === EnumToken.KeyFramesRuleNodeType
+                    replacement[TOKENS] = parseString(replacement.typ == EnumToken.RuleNodeType || replacement.typ === EnumToken.KeyframesRuleNodeType
                         ? replacement.sel
-                        : replacement.nam);
+                        : // @ts-ignore
+                            replacement.nam);
                 }
-                const result = feature.run(replacement, options, parent[PARENT] ?? ast, context, FeatureWalkMode.Pre);
+                const result = feature.run(replacement, options2, 
+                // @ts-ignore
+                parent[PARENT] ?? ast, context, FeatureWalkMode.Pre);
                 if (result != null) {
                     replacement = result;
                 }
@@ -85,24 +89,26 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                 (!Array.isArray(replacement) || replacement.length > 0) &&
                 replacement != parent &&
                 parent[PARENT] != null) {
+                // @ts-ignore
                 replaceNodeOrValue(parent[PARENT], parent, replacement);
             }
-            if ("chi" in replacement) {
+            // @ts-ignore
+            if (replacement.chi != null) {
                 // @ts-ignore
                 for (const node of replacement.chi) {
-                    // node[PARENT] = replacement;
+                    node[PARENT] = replacement;
                     parents.add(node);
                 }
             }
         }
-        for (const feature of options.features) {
+        for (const feature of options2.features) {
             if (feature.processMode & FeatureWalkMode.Pre && "cleanup" in feature) {
                 // @ts-ignore
-                feature.cleanup(ast, options, context, FeatureWalkMode.Pre);
+                feature.cleanup(ast, options2, context, FeatureWalkMode.Pre);
             }
         }
     }
-    doMinify(ast, options, recursive, errors, nestingContent, context);
+    doMinify(ast, options2, recursive, errors, nestingContent, context);
     parents = new Set([ast]);
     for (const parent of parents) {
         if (parent.typ == EnumToken.CommentTokenType || parent.typ == EnumToken.CDOCOMMTokenType) {
@@ -110,12 +116,14 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
         }
         replacement = parent;
         if (postprocess) {
-            for (const feature of options.features) {
+            for (const feature of options2.features) {
                 if ((feature.processMode & FeatureWalkMode.Post) === 0 ||
                     (feature.accept != null && !feature.accept.has(parent.typ))) {
                     continue;
                 }
-                const result = feature.run(replacement, options, parent[PARENT] ?? ast, context, FeatureWalkMode.Post);
+                const result = feature.run(replacement, options2, 
+                // @ts-ignore
+                parent[PARENT] ?? ast, context, FeatureWalkMode.Post);
                 if (result != null) {
                     replacement = result;
                 }
@@ -128,18 +136,20 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
             // @ts-ignore
             replaceNodeOrValue(parent[PARENT], parent, replacement);
         }
-        if ("chi" in replacement) {
+        // @ts-ignore
+        if (replacement.chi != null) {
+            // @ts-ignore
             for (const node of replacement.chi) {
-                // node[PARENT] = replacement;
+                node[PARENT] = replacement;
                 parents.add(node);
             }
         }
     }
     if (postprocess) {
-        for (const feature of options.features) {
+        for (const feature of options2.features) {
             if (feature.processMode & FeatureWalkMode.Post && "cleanup" in feature) {
                 // @ts-ignore
-                feature.cleanup(ast, options, context, FeatureWalkMode.Post);
+                feature.cleanup(ast, options2, context, FeatureWalkMode.Post);
             }
         }
     }
@@ -159,6 +169,7 @@ function transformAtRuleMediaPrelude(values) {
                     values[values.indexOf(value)] = value.l;
                 }
                 else {
+                    // @ts-ignore
                     replaceNodeOrValue(parent, value, value.l);
                     // @ts-ignore
                     value = value.l;
@@ -215,9 +226,11 @@ function transformAtRuleMediaPrelude(values) {
                     // @ts-expect-error
                     const p = parents?.[parents?.indexOf?.(parent) + 1];
                     if (p != null) {
+                        // @ts-ignore
                         replaceNodeOrValue(p, parent, replacement);
                     }
                     else {
+                        // @ts-ignore
                         values.splice(values.indexOf(parent), 1, replacement);
                     }
                     hasUpdates = true;
@@ -232,9 +245,9 @@ function transformAtRuleMediaPrelude(values) {
  * Minify at-rule media
  * - remove redundant tokens
  * - generate range queries
- * @param ast
  *
  * @private
+ * @param tokens
  */
 function minifyAtRuleMedia(tokens) {
     let hasUpdates = false;
@@ -331,8 +344,8 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                 continue;
             }
             while (previous?.typ === EnumToken.CommentNodeType) {
+                // @ts-ignore
                 previous = ast.chi[--nodeIndex];
-                continue;
             }
             node = ast.chi[i];
             if (node.typ === EnumToken.AtRuleNodeType && node.nam === "font-face") {
@@ -348,12 +361,13 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     continue;
                 }
             }
-            else if (node.typ === EnumToken.KeyFramesRuleNodeType) {
-                if (previous?.typ === EnumToken.KeyFramesRuleNodeType &&
+            else if (node.typ === EnumToken.KeyframesRuleNodeType) {
+                if (previous?.typ === EnumToken.KeyframesRuleNodeType &&
                     node.sel === previous.sel) {
                     // do not merge keyframes
                     // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@keyframes#resolving_duplicates
                     previous.chi.push(...node.chi);
+                    // @ts-ignore
                     ast.chi.splice(i, 1);
                     previous = ast?.chi?.[nodeIndex] ?? null;
                     i = nodeIndex;
@@ -426,6 +440,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                 else if (ast.typ === node.typ &&
                     ast.nam === node.nam &&
                     ast.val === node.val) {
+                    // @ts-ignore
                     replaceNodeOrValue(ast, node, node.chi);
                     i--;
                     continue;
@@ -519,7 +534,9 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                 ":is(" +
                                 node[OPTIMIZED].selector.reduce(reducer, []).join(",") +
                                 ")";
-                            const sel2 = node[OPTIMIZED].selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") + node[OPTIMIZED].optimized[0] + curr.join(""), "");
+                            const sel2 = node[OPTIMIZED].selector.reduce((acc, curr) => 
+                            // @ts-ignore
+                            (acc.length > 0 ? acc + "," : "") + node[OPTIMIZED].optimized[0] + curr.join(""), "");
                             node.sel = sel1.length < sel2.length ? sel1 : sel2;
                             node[TOKENS] = null;
                         }
@@ -599,7 +616,9 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                             ":is(" +
                             node[OPTIMIZED].selector.reduce(reducer, []).join(",") +
                             ")";
-                        const sel2 = node[OPTIMIZED].selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") + node[OPTIMIZED].optimized[0] + curr.join(""), "");
+                        const sel2 = node[OPTIMIZED].selector.reduce((acc, curr) => 
+                        // @ts-ignore
+                        (acc.length > 0 ? acc + "," : "") + node[OPTIMIZED].optimized[0] + curr.join(""), "");
                         node.sel = sel1.length < sel2.length ? sel1 : sel2;
                         node[TOKENS] = null;
                     }
@@ -610,11 +629,14 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                             curr.join(""), "");
                         node[TOKENS] = null;
                     }
+                    // @ts-ignore
                 }
                 else if (node[OPTIMIZED]?.optimized.length > 0) {
+                    // @ts-ignore
                     const sel = node[OPTIMIZED].optimized.join("");
                     if (sel.length < node.sel.length) {
                         node.sel = sel;
+                        // @ts-ignore
                         node[RAW] = [node[OPTIMIZED].optimized.slice()];
                         node[TOKENS] = null;
                     }
@@ -637,11 +659,14 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                         }
                         if (shouldMerge) {
                             if (((node.typ === EnumToken.RuleNodeType ||
-                                node.typ === EnumToken.KeyFramesRuleNodeType) &&
+                                node.typ === EnumToken.KeyframesRuleNodeType) &&
                                 node.sel === previous.sel) ||
+                                // @ts-ignore
                                 (node.typ == EnumToken.AtRuleNodeType &&
                                     node.nam !== "font-face" &&
+                                    // @ts-ignore
                                     node.nam === previous.nam)) {
+                                // @ts-ignore
                                 node.chi.unshift(...previous.chi);
                                 doMinify(node, options, recursive, errors, nestingContent, context);
                                 ast.chi.splice(nodeIndex, 1);
@@ -650,7 +675,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                 continue;
                             }
                             else if (node.typ == previous?.typ &&
-                                [EnumToken.KeyFramesRuleNodeType, EnumToken.RuleNodeType].includes(node.typ)) {
+                                [EnumToken.KeyframesRuleNodeType, EnumToken.RuleNodeType].includes(node.typ)) {
                                 const intersect = diff(previous, node, options);
                                 if (intersect != null) {
                                     if (intersect.node1.chi.length == 0) {
@@ -803,7 +828,9 @@ function optimizeSelector(selector) {
         }
         break;
     }
-    selector.forEach((selector) => selector.splice(0, optimized.length));
+    for (let i1 = 0; i1 < selector.length; i1++) {
+        selector[i1].splice(0, optimized.length);
+    }
     let reducible = optimized.length == 1;
     if (optimized[0] == "&") {
         if (optimized[1] == " ") {
@@ -1185,7 +1212,6 @@ function wrapNodes(previous, node, match, ast, reducer, i, nodeIndex) {
  * Diff nodes
  * @param n1
  * @param n2
- * @param reducer
  * @param options
  *
  * @private
@@ -1304,17 +1330,36 @@ function diff(n1, n2, options = {}) {
             // @ts-ignore
             chi: intersect.reverse(),
         };
+    let op = { level: 0, ...options };
     if (result == null ||
         [n1, n2].reduce((acc, curr) => {
             let css = options.cache.get(curr);
             if (css == null) {
-                css = doRender(curr, options).code;
+                let level = 0;
+                let parent = curr[PARENT];
+                while (parent != null && parent.typ != EnumToken.StyleSheetNodeType) {
+                    level++;
+                    parent = parent[PARENT];
+                }
+                op.level = level;
+                css = doRender(curr, op).code;
                 options.cache.set(curr, css);
             }
             return curr.chi.length == 0 ? acc : acc + css.length;
         }, 0) <=
             [node1, node2, result].reduce((acc, curr) => {
-                const css = doRender(curr, options).code;
+                let css = options.cache.get(curr);
+                if (css != null) {
+                    return curr.chi.length == 0 ? acc : acc + css.length;
+                }
+                let level = 0;
+                let parent = curr[PARENT];
+                while (parent != null && parent.typ != EnumToken.StyleSheetNodeType) {
+                    level++;
+                    parent = parent[PARENT];
+                }
+                op.level = level;
+                css = doRender(curr, op).code;
                 return curr.chi.length == 0 ? acc : acc + css.length;
             }, 0)) {
         if (node1.chi.length != 0 && node2.chi.length != 0) {

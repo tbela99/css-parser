@@ -1,6 +1,6 @@
-import {EnumToken} from "../lib/ast/types.ts";
-import {ERRORS, LOC, OPTIMIZED, PARENT, RAW, ROOT, STATE, TOKENS} from "../lib/syntax/constants.ts";
-import type {Token} from "./token.d.ts";
+import { EnumToken } from "../lib/ast/types.ts";
+import { ERRORS, LOC, OPTIMIZED, PARENT, RAW, ROOT, STATE, TOKENS } from "../lib/syntax/constants.ts";
+import type { Token, CssVariableToken, CssVariableImportTokenType, WhitespaceToken } from "./token.d.ts";
 
 /**
  * token or node location
@@ -32,16 +32,16 @@ export declare interface BaseToken {
      * location info
      * @private
      */
-    [LOC]?: SourceLocation;
+    [LOC]?: SourceLocation | null;
     /**
      * parent node
      * @private
      */
-    [PARENT]?: AstNode;
+    [PARENT]?: AstNode | Token | null;
     /**
      * root node
      */
-    [ROOT]?: AstStyleSheet;
+    [ROOT]?: AstStyleSheet | null;
     /**
      * prelude or selector tokens
      * @private
@@ -51,12 +51,12 @@ export declare interface BaseToken {
      * node state
      * @private
      */
-    [STATE]?: EnumAstNodeStatus;
+    [STATE]?: EnumAstNodeStatus | null;
     /**
      * node syntax errors
      * @private
      */
-    [ERRORS]?: ErrorDescription[];
+    [ERRORS]?: ErrorDescription[] | null;
     /**
      * property name
      * @private
@@ -75,7 +75,7 @@ export declare interface BaseToken {
     /**
      * parent node
      */
-    parent?: AstAtRule | astRule | AstKeyframesAtRule | AstKeyFrameRule | AstInvalidRule | AstInvalidAtRule | null;
+    parent?: AstAtRule | astRule | AstKeyframesAtRule | AstKeyframesRule | AstInvalidRule | AstInvalidAtRule | null;
     /**
      * @private
      */
@@ -220,11 +220,11 @@ export declare interface AstInvalidAtRule extends BaseToken, AstNodeStatus {
 /**
  * keyframe rule node
  */
-export declare interface AstKeyFrameRule extends BaseToken, AstNodeStatus {
+export declare interface AstKeyframesRule extends BaseToken, AstNodeStatus {
     /**
      * token type
      */
-    typ: EnumToken.KeyFramesRuleNodeType;
+    typ: EnumToken.KeyframesRuleNodeType;
     /**
      * selector
      */
@@ -329,7 +329,7 @@ export declare interface AstKeyframesRule extends BaseToken, AstNodeStatus {
     /**
      * token type
      */
-    typ: EnumToken.KeyFramesRuleNodeType;
+    typ: EnumToken.KeyframesRuleNodeType;
     /**
      * selector
      */
@@ -378,7 +378,7 @@ export declare type AstRuleList =
     | AstAtRule
     | AstRule
     | AstKeyframesAtRule
-    | AstKeyFrameRule
+    | AstKeyframesRule
     | AstInvalidRule;
 
 /**
@@ -406,12 +406,13 @@ export declare type AstNode =
     | AstRule
     | AstDeclaration
     | AstKeyframesAtRule
-    | AstKeyFrameRule
+    | AstKeyframesRule
     | AstInvalidRule
     | AstInvalidAtRule
     | AstInvalidDeclaration
     | CssVariableToken
-    | CssVariableImportTokenType;
+    | CssVariableImportTokenType
+    | WhitespaceToken;
 
 /**
  * token search result

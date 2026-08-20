@@ -1,4 +1,6 @@
 export function run(describe, expect, it, transform, parse, render, dirname, readFile, resolve) {
+    const root = new URL(dirname(import.meta.url) + "/../../../");
+
     describe("doParse block", function () {
         it("similar rules #1", function () {
             const file = `
@@ -1134,10 +1136,14 @@ font-family: random-item(--x, {Times, serif}, {Arial, sans-serif}, {Courier, mon
     });
 
     it("stream file #50", async () => {
-        const dir = resolve((import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)) + "/../..").absolute;
+        // const dir = resolve((import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)) + "/../..").absolute;
         // const file = `@import '${dir}/files/css/line-awesome.css`;
+
+        const url = new URL(import.meta.url);
+        url.pathname = dirname(url.pathname) + "/../../files/css/bootstrap-4.css";
+
         const options = {
-            file: `${dir}/files/css/bootstrap-4.css`,
+            file: url.pathname.replace(root.pathname, ""),
             beautify: true,
         };
 
@@ -1149,10 +1155,11 @@ font-family: random-item(--x, {Times, serif}, {Arial, sans-serif}, {Courier, mon
     });
 
     it("stream file #51", async () => {
-        const dir = resolve((import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)) + "/../..").absolute;
-        // const file = `@import '${dir}/files/css/line-awesome.css`;
+        const url = new URL(import.meta.url);
+        url.pathname = dirname(url.pathname) + "/../../files/css/tailwind.css";
+
         const options = {
-            file: `${dir}/files/css/tailwind.css`,
+            file: url.pathname.replace(root.pathname, ""),
             beautify: true,
         };
 

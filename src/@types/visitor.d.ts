@@ -2,24 +2,40 @@ import type { AstAtRule, AstDeclaration, AstKeyframesAtRule, AstKeyframesRule, A
 import { WalkerEvent } from "../lib/ast/walk.ts";
 import { EnumToken } from "../lib/ast/types.ts";
 
+/**
+ * Generic visitor result
+ */
 export declare type GenericVisitorSyncResult<T> = T | T[] | null;
-export declare type GenericVisitorAsyncResult<T> = Promise<T> | Promise<T[]>| Promise<null>;
+/**
+ * Generic visitor result
+ */
+export declare type GenericVisitorAsyncResult<T> = Promise<T> | Promise<T[]> | Promise<null>;
+/**
+ * Generic visitor result
+ */
 export declare type GenericVisitorResult<T> = GenericVisitorSyncResult<T> | GenericVisitorAsyncResult<T>;
 
-
-
+/**
+ * Generic visitor handler
+ */
 export declare type GenericVisitorSyncHandler<T> = (
     node: T,
     parent?: AstNode | Token,
     root?: AstNode | Token,
 ) => GenericVisitorSyncResult<T>;
 
+/**
+ * Generic visitor handler
+ */
 export declare type GenericVisitorAstNodeSyncHandlerMap<T> =
     | Record<string, GenericVisitorSyncHandler<T>>
     | GenericVisitorSyncHandler<T>
     | { type: WalkerEvent; handler: GenericVisitorSyncHandler<T> }
     | { type: WalkerEvent; handler: Record<string, GenericVisitorSyncHandler<T>> };
 
+/**
+ * Generic visitor handler
+ */
 export declare type ValueVisitorSyncHandler = GenericVisitorSyncHandler<Token>;
 
 /**
@@ -229,8 +245,14 @@ export declare interface VisitorSyncNodeMap {
      */
     Rule?: GenericVisitorAstNodeSyncHandlerMap<AstRule>;
 
+    /**
+     * keyframes rule visitor
+     */
     KeyframesRule?: GenericVisitorAstNodeSyncHandlerMap<AstKeyframesRule>;
 
+    /**
+     * keyframes at-rule visitor
+     */
     KeyframesAtRule?: GenericVisitorAstNodeSyncHandlerMap<AstKeyframesAtRule>;
 
     /**
@@ -285,22 +307,32 @@ export declare interface VisitorSyncNodeMap {
      * // body {color:#f3fff0}
      * ```
      */
-    [key: keyof typeof EnumToken]: GenericVisitorAstNodeSyncHandlerMap<Token> | GenericVisitorAstNodeSyncHandlerMap<AstNode>;
+    [key: keyof typeof EnumToken]:
+        | GenericVisitorAstNodeSyncHandlerMap<Token>
+        | GenericVisitorAstNodeSyncHandlerMap<AstNode>;
 }
 
-
+/**
+ * Generic visitor handler
+ */
 export declare type GenericVisitorHandler<T> = (
     node: T,
     parent?: AstNode | Token,
     root?: AstNode | Token,
 ) => GenericVisitorSyncResult<T> | GenericVisitorAsyncResult<T>;
 
+/**
+ * Generic visitor handler
+ */
 export declare type GenericVisitorAstNodeHandlerMap<T> =
     | Record<string, GenericVisitorHandler<T>>
     | GenericVisitorHandler<T>
     | { type: WalkerEvent; handler: GenericVisitorHandler<T> }
     | { type: WalkerEvent; handler: Record<string, GenericVisitorHandler<T>> };
 
+/**
+ * Generic visitor handler
+ */
 export declare type ValueVisitorHandler = GenericVisitorHandler<Token>;
 
 /**

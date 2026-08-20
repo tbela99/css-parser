@@ -382,16 +382,27 @@ export class PropertyMap {
                 );
 
                 let isImportant: boolean = false;
-                const filtered: AstDeclaration[] = values.map(removeDefaults).filter(
-                    (x: AstDeclaration): boolean =>
-                        x.val.filter((t: Token) => {
-                            if (t.typ == EnumToken.ImportantTokenType) {
-                                isImportant = true;
-                            }
+                let dec: AstDeclaration;
 
-                            return ![EnumToken.WhitespaceTokenType, EnumToken.ImportantTokenType].includes(t.typ);
-                        }).length > 0,
-                );
+                const filtered: AstDeclaration[] = [];
+
+                for (const declaration of values) {
+                    dec = removeDefaults(declaration);
+
+                    for (const t of dec.val) {
+                        if (t.typ == EnumToken.ImportantTokenType) {
+                            isImportant = true;
+                        }
+
+                        if (
+                            filtered.length == 0 &&
+                            t.typ != EnumToken.WhitespaceTokenType &&
+                            t.typ != EnumToken.ImportantTokenType
+                        ) {
+                            filtered.push(dec);
+                        }
+                    }
+                }
 
                 if (filtered.length == 0 && this.config.default.length > 0) {
                     filtered.push(<AstDeclaration>{

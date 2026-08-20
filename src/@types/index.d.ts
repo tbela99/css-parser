@@ -1,4 +1,9 @@
-import type { VisitorSyncNodeMap, VisitorNodeMap } from "./visitor.d.ts";
+import type {
+    GenericVisitorAstNodeSyncHandlerMap,
+    GenericVisitorAstNodeHandlerMap,
+    VisitorSyncNodeMap,
+    VisitorNodeMap,
+} from "./visitor.d.ts";
 import type { AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet, SourceLocation } from "./ast.d.ts";
 import { SourceMap } from "../lib/renderer/sourcemap/sourcemap.ts";
 import type { PropertyListOptions } from "./parse.d.ts";
@@ -442,21 +447,52 @@ export declare interface ParseInputStreamOptions {
     input: string | ReadableStream<Uint8Array>;
 }
 
+/**
+ * Input options for string or stream
+ * @internal
+ */
 export declare interface ParseSourceOptions {
+    /**
+     * Source file to be used for sourcemap
+     * @internal
+     */
     sourcesMap?: Map<number, SourceFile>;
+    /**
+     * Source file to be used for sourcemap
+     * @internal
+     */
     source?: SourceFile | null;
 }
 
-export declare interface ParserSyncOptions
-    extends MinifyOptions, MinifyFeatureOptions, ValidationOptions, PropertyListOptions, ParseSourceOptions {
-    /**
-     * Source file to be used for sourcemap
-     */
-    src?: string;
+/**
+ * Parser sourcemap options
+ */
+export declare interface ParserSourceMapOptions {
     /**
      * Include sourcemap in the ast. Sourcemap info is always generated
      */
     sourcemap?: boolean | "inline";
+    /**
+     * Input source map
+     */
+    inputSourceMap?: SourceMapObject | string;
+}
+
+/**
+ * Sync parseroptions
+ */
+export declare interface ParserSyncOptions
+    extends
+        MinifyOptions,
+        ParserSourceMapOptions,
+        MinifyFeatureOptions,
+        ValidationOptions,
+        PropertyListOptions,
+        ParseSourceOptions {
+    /**
+     * Source file to be used for sourcemap
+     */
+    src?: string;
     /**
      * Remove at-rule charset
      */
@@ -514,7 +550,7 @@ export declare interface ParserSyncOptions
      * Node visitor
      * {@link VisitorSyncNodeMap | VisitorSyncNodeMap[]}
      */
-    visitor?: VisitorSyncNodeMap | VisitorSyncNodeMap[];
+    visitor?: GenericVisitorAstNodeSyncHandlerMap<T> | VisitorSyncNodeMap | VisitorSyncNodeMap[];
     /**
      * Abort signal
      *
@@ -579,7 +615,11 @@ export declare interface ParserOptions extends ParserSyncOptions, ModuleAsyncOpt
      * Node visitor
      * {@link VisitorNodeMap | VisitorNodeMap[]}
      */
-    visitor?: VisitorNodeMap | VisitorNodeMap[];
+    visitor?:
+        | GenericVisitorAstNodeSyncHandlerMap<T>
+        | GenericVisitorAstNodeHandlerMap<T>
+        | VisitorNodeMap
+        | VisitorNodeMap[];
 }
 
 /**
@@ -658,6 +698,11 @@ export declare interface ResolvedPath {
  * Ast node render options
  */
 export declare interface RenderOptions {
+    /**
+     * Source file to be used as CSS input file for sourcemap resolution
+     */
+    src?: string;
+
     /**
      * Minify css values.
      */

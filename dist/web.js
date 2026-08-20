@@ -8,6 +8,7 @@ import { tokenizeStream, tokenize } from './lib/parser/tokenize.js';
 import { matchUrl, resolve, dirname } from './lib/fs/resolve.js';
 import { ResponseType } from './types.js';
 import { SourceFile } from './lib/parser/source.js';
+import { parseResult, validateSyncArguments } from './utils/sync.js';
 export { minify } from './lib/ast/minify.js';
 export { expand } from './lib/ast/expand.js';
 export { WalkerEvent, WalkerOptionEnum, walk, walkValues } from './lib/ast/walk.js';
@@ -18,6 +19,7 @@ export { cloneNode } from './lib/ast/clone.js';
 export { replaceNodeOrValue } from './lib/parser/utils/token.js';
 export { SourceMap } from './lib/renderer/sourcemap/sourcemap.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
+export { getNodeProperty, setNodeProperty } from './lib/ast/node.js';
 
 /**
  * Load file or url
@@ -27,7 +29,7 @@ export { FeatureWalkMode } from './lib/ast/features/type.js';
  * @throws Error file not found
  *
  * ```ts
- * import {load, ResponseType} from '@tbela99/css-parser';
+ * import {load, ResponseType} from '@tbela99/css-parser/web';
  * const result = await load(file, '.', ResponseType.ArrayBuffer) as ArrayBuffer;
  * ```
  */
@@ -69,7 +71,7 @@ async function load(url, currentDirectory = ".", responseType = false) {
  *
  * ```ts
  *
- *  import {render, ColorType} from '@tbela99/css-parser';
+ *  import {render, ColorType} from '@tbela99/css-parser/web';
  *
  *  const css = 'body { color: color(from hsl(0 100% 50%) xyz x y z); }';
  *  const parseResult = await parse(css);
@@ -98,7 +100,7 @@ function render(data, options = {}, mapping) {
     }), mapping);
 }
 /**
- * Parse css file
+ * Parse CSS file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
@@ -126,17 +128,17 @@ async function parseFile(file, options = {}, asStream = false) {
     return parse({ file, asStream, ...options });
 }
 /**
- * Parse css
+ * Parse CSS
  * @param args
  *
  * Parsing a string
  *
  * ```ts
  *
- * import {parse} from '@tbela99/css-parser';
+ * import {parseSync} from '@tbela99/css-parser/web';
  *
  *  // css string
- *  let result = await parse(css, {nestingRules: true});
+ *  let result = await parseSync(css, {nestingRules: true});
  *  console.log(result.ast);
  * ```
  *
@@ -153,9 +155,12 @@ function parseSync(...args) {
         options = opt;
         stream = input;
     }
+    if (options != null) {
+        validateSyncArguments(options);
+    }
     options ??= {};
     options.src ??= "";
-    options.sourcesMap ??= new Map;
+    options.sourcesMap ??= new Map();
     Object.assign(options, {
         resolve,
         dirname,
@@ -177,26 +182,24 @@ function parseSync(...args) {
         time: 0,
         source: options.source,
         position: 0,
-        currentPosition: -1,
+        currentPosition: 0,
     };
     const result = doParseSync(tokenize(options.parseInfo), options);
-    const { revMapping, ...res } = result;
-    return res;
+    return !options.module && !options.inputSourceMap && !options.sourcemap ? result : parseResult(result, options);
 }
 /**
- * Transform css
- * @param css
- * @param options
+ * Transform CSS
  *
  * ```ts
  *
- * import {transform} from '@tbela99/css-parser';
+ * import {transformSync} from '@tbela99/css-parser/web';
  *
  *  // css string
- *  const result = await transform(css);
+ *  const result = transformSync(css);
  *  console.log(result.code);
  * ```
  *
+ * @param args
  */
 function transformSync(...args) {
     let options;
@@ -245,9 +248,7 @@ function transformSync(...args) {
     };
 }
 /**
- * Parse css
- * @param stream
- * @param options
+ * Parse CSS
  *
  * Example:
  *
@@ -271,6 +272,7 @@ function transformSync(...args) {
  *
  *  console.log(result.ast);
  * ```
+ * @param args
  */
 async function parse(...args) {
     let options;
@@ -292,7 +294,7 @@ async function parse(...args) {
     }
     options ??= {};
     options.src ??= "";
-    options.sourcesMap ??= new Map;
+    options.sourcesMap ??= new Map();
     Object.assign(options, {
         load,
         resolve,
@@ -314,15 +316,12 @@ async function parse(...args) {
         time: 0,
         source: options.source,
         position: 0,
-        currentPosition: -1,
+        currentPosition: 0,
     };
-    return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => {
-        const { revMapping, ...res } = result;
-        return res;
-    });
+    return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => (!options.module && !options.inputSourceMap ? result : parseResult(result, options)));
 }
 /**
- * Transform css file
+ * Transform CSS file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
@@ -352,9 +351,7 @@ async function transformFile(file, options = {}, asStream = false) {
     });
 }
 /**
- * Transform css
- * @param css
- * @param options
+ * Transform CSS
  *
  * Example:
  *
@@ -372,6 +369,7 @@ async function transformFile(file, options = {}, asStream = false) {
  *
  *  console.log(result.code);
  * ```
+ * @param args
  */
 async function transform(...args) {
     let options;

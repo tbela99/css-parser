@@ -1,9 +1,10 @@
 # css-parser
 
 ## Project overview
-- This repository contains css-parser, a dependency-free CSS parser, transformer, minifier, and validator for Node.js and browsers.
+- This repository contains css-parser, a dependency-free all-in-one CSS parsing solution for Node.js and browsers.
 - The library follows the CSS Syntax Module Level 3 specification and uses MDN syntax data for validation.
-- It is designed for fault-tolerant parsing, AST manipulation, CSS Modules, minification, color processing, and syntax lowering.
+- It is designed for fault-tolerant parsing, full AST and typed-token analysis, AST manipulation, CSS Modules, minification, color processing, and syntax lowering.
+- CSS is always fully parsed into a structured AST, and token values are typed so plugins and transforms can work against semantic data instead of raw strings.
 
 ## Installation
 - npm: npm install @tbela99/css-parser
@@ -26,8 +27,14 @@
 - Support CSS Modules with scoped class generation.
 - Minify CSS safely with options such as inlineCssVariables, computeCalcExpression, removeDuplicateDeclarations, and beautify.
 - Transform ASTs through visitors and custom traversal logic.
+- Support plugin-style extensions through the visitor API, where custom handlers can observe and mutate AST nodes during enter/visit/leave phases.
 - Lower modern CSS syntax such as nested CSS and if() to broadly compatible output.
 - Generate source maps and handle advanced color functions and conversions.
+
+## Visitor-based plugin model
+- The parser exposes a visitor option that accepts node-specific handlers keyed by AST node type and event type.
+- Plugins can be implemented as reusable visitor maps that inspect or transform nodes such as Rule, AtRule, Declaration, KeyframesRule, and Value nodes.
+- This allows extension code to run alongside the core parser without modifying the parser itself.
 
 ## Typical usage
 ```ts
@@ -43,15 +50,15 @@ console.log(result.code);
 ```
 
 ## Important behavior notes
-- parse() and transform() are lenient by default and preserve unknown constructs unless configured otherwise.
+- parse(), parseSync(), transform() and transformSync() are lenient by default and preserve unknown constructs unless configured otherwise.
 - Comments are removed by default; preserve them with removeComments: false or preserveLicense: true.
 - Validation errors are available through the parse/transform result and through node.state and node.errors.
 - The library prioritizes compact output while preserving semantics.
 
 ## Useful concepts
-- parse() returns AST, errors, and stats.
+- parse(), parseSync() return AST, errors, and stats.
 - render() turns an AST into CSS text.
-- transform() performs parsing and rendering together.
+- transform(), transformSync() perform parsing and rendering together.
 - AST node types include StyleSheet, Rule, AtRule, Declaration, Comment, and Keyframes variants.
 
 ## Documentation files

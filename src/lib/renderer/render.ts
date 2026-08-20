@@ -28,7 +28,6 @@ import type {
     LengthToken,
     ListToken,
     LiteralToken,
-    SourceLocation,
     MediaFeatureToken,
     MediaQueryConditionToken,
     MediaQueryUnaryFeatureToken,
@@ -39,6 +38,7 @@ import type {
     PseudoPageToken,
     RenderOptions,
     RenderResult,
+    SourceLocation,
     StringToken,
     SupportsQueryConditionToken,
     SupportsQueryUnaryConditionToken,
@@ -47,19 +47,18 @@ import type {
     WhenElseUnaryConditionToken,
     WrappedValuesToken,
 } from "../../@types/index.d.ts";
-import { convertColor } from "../syntax/color/color.ts";
-import { getAngle } from "../syntax/color/color.ts";
+import { convertColor, getAngle } from "../syntax/color/color.ts";
 import { reduceHexValue } from "../syntax/color/hex.ts";
 import { ColorType, EnumToken } from "../ast/types.ts";
 import { expand } from "../ast/expand.ts";
 import { SourceMap } from "./sourcemap/sourcemap.ts";
 import { colorPrecision, LOC, PARENT, pseudoElements, tokensfuncSet, urlTokenMatcher } from "../syntax/constants.ts";
 import {
+    minifyNumber,
     parseColor,
-    reducegradientBackgroundPosition,
     reduceColorStops,
     reduceConicColorStops,
-    minifyNumber,
+    reducegradientBackgroundPosition,
     toPrecisionAngle,
     toPrecisionValue,
 } from "../syntax/syntax.ts";
@@ -67,6 +66,7 @@ import { equalsIgnoreCase } from "../parser/utils/text.ts";
 import { toDegrees } from "../parser/utils/angle.ts";
 import { LineMap as LinesMap } from "../parser/linesmap.ts";
 import { dirname } from "../fs/resolve.ts";
+import { SourceFile } from "../parser/source.ts";
 
 /**
  * render ast
@@ -133,6 +133,8 @@ export function doRender(
     const startTime: number = performance.now();
     const errors: ErrorDescription[] = [];
     const sourcemap: SourceMap | null = options.sourcemap ? new SourceMap() : null;
+    const sourcemaps: { sources: number[]; maps: Array<[number, number, number, number, number]> } | null =
+        options.sourcemap ? { sources: [], maps: [] } : null;
     const cache: {
         [key: string]: any;
     } = Object.create(null);
@@ -142,13 +144,24 @@ export function doRender(
         sta: 0,
         end: 0,
     } as SourceLocation;
-    const linesMap = new LinesMap([]);
+    const linesMap: LinesMap | null = options.sourcemap ? new LinesMap() : null;
 
     let code: string = "";
 
     if (mapping != null) {
         if (mapping.importMapping != null) {
-            for (const [key, value] of Object.entries(mapping.importMapping)) {
+            const absolutePath = options.resolve!(
+                options.output != null ? dirname(options.output as string) : dirname(options.src as string),
+                options.cwd as string,
+            ).absolute;
+
+            for (let [key, value] of Object.entries(mapping.importMapping)) {
+                key = options.resolve!(options.resolve!(key, options.cwd as string).absolute, absolutePath).relative;
+
+                if (!key.startsWith("/") && !key.startsWith(".")) {
+                    key = "./" + key;
+                }
+
                 code += `:import("${key}")${options.indent}{${options.newLine}${Object.entries(value).reduce(
                     (acc, [k, v]) =>
                         acc + (acc.length > 0 ? options.newLine : "") + `${options.indent}${v}:${options.indent}${k};`,
@@ -162,7 +175,10 @@ export function doRender(
                 acc + (acc.length > 0 ? options.newLine : "") + `${options.indent}${k}:${options.indent}${v};`,
             "",
         )}${options.newLine}}${options.newLine}`;
-        move(sourceLocation, linesMap, code);
+
+        if (sourcemap != null) {
+            move(sourceLocation, linesMap!, code);
+        }
     }
 
     if (options.output != null) {
@@ -182,7 +198,7 @@ export function doRender(
                     ? expand(data as AstStyleSheet | AstAtRule | AstRule)
                     : data,
                 options,
-                sourcemap,
+                sourcemaps,
                 sourceLocation,
                 linesMap,
                 errors,
@@ -206,6 +222,13 @@ export function doRender(
     };
 
     if (sourcemap != null) {
+        let source: SourceFile;
+        for (const sourceId of sourcemaps!.sources) {
+            source = options!.sourcesMap!.get(sourceId)! as SourceFile;
+            sourcemap.addSourceContent(source.id, source.getFileName(), source.getContent());
+        }
+
+        sourcemap.add(...(sourcemaps!.maps! as Array<[number, number, number, number, number]>));
         result.map = sourcemap;
 
         if (options.sourcemap === "inline") {
@@ -221,8 +244,9 @@ export function doRender(
  * @param node
  * @param options
  * @param cache
- * @param sourcemap
- * @param position
+ * @param sourcemaps
+ * @param sourceLocation
+ * @param linesMap
  * @param str
  *
  * @internal
@@ -233,48 +257,113 @@ function updateSourceMap(
     cache: {
         [p: string]: any;
     },
-    sourcemap: SourceMap,
+    sourcemaps: { sources: number[]; maps: Array<[number, number, number, number, number]> },
     sourceLocation: SourceLocation,
     linesMap: LinesMap,
     str: string,
 ) {
+    let offset: number = 0;
+
+    while (true) {
+        if (str.charAt(offset) == options.newLine) {
+            offset += options.newLine.length;
+            continue;
+        }
+
+        if (str.charAt(offset) == options.indent) {
+            offset += options.indent.length;
+            continue;
+        }
+
+        break;
+    }
+
+    if (offset > 0) {
+        move(sourceLocation, linesMap, str.slice(0, offset));
+    }
+
     if (
+        node[LOC] != null &&
         [
             EnumToken.RuleNodeType,
             EnumToken.AtRuleNodeType,
-            EnumToken.KeyFramesRuleNodeType,
+            EnumToken.KeyframesRuleNodeType,
             EnumToken.KeyframesAtRuleNodeType,
         ].includes(node.typ)
     ) {
-        let srcId: number = (<SourceLocation>node[LOC])?.srcId ?? 0;
+        const source = options.sourcesMap!.get((node[LOC] as SourceLocation)!.srcId) as SourceFile;
+        const inputSourceMap = source.getInputSourceMap();
+        const offsets: [number, number] = source.getOffsets(node[LOC].sta) as [number, number];
+        const [newLine, newColumn] = linesMap.getOffsets(sourceLocation.end);
+        let records: Array<[string | null, number, number, string | null]> | null = null;
+        let srcId: number = (node[LOC] as SourceLocation)!.srcId;
+        let sourceFileName: string | null = (source.getFileName() as string) || null;
+        let sourceContent: string | null = (source.getContent() as string) || null;
 
-        let sourceFileName: string | null = (options.sourcesMap?.get(srcId)?.getFileName?.() as string) || null;
+        if (inputSourceMap != null && (records = inputSourceMap.find(offsets[0], offsets[1])) != null) {
+            for (const record of records) {
+                // @ts-ignore
+                sourceFileName = (record[0] as string) || null;
+                // @ts-ignore
+                offsets[0] = record[1] as number;
+                // @ts-ignore
+                offsets[1] = record[2] as number;
 
-        if (sourceFileName != null && options.output != null) {
-            if (cache[sourceFileName] == null) {
-                cache[sourceFileName] = options.resolve!(sourceFileName, dirname(options.output)).relative as string;
+                sourceContent = (record[3] as string) || null;
+
+                if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
+                    if (cache[sourceFileName] == null) {
+                        const absolute = options.resolve!(dirname(options.output as string), options.cwd as string)
+                            .absolute as string;
+                        const absoluteSourcePath = options.resolve!(
+                            dirname(options.src! || ("" as string)),
+                            options.cwd as string,
+                        ).absolute;
+                        // resolution is relative to the source file
+                        const absoluteSourceFileName = options.resolve!(sourceFileName, absoluteSourcePath as string)
+                            .absolute as string;
+
+                        cache[sourceFileName] = options.resolve!(absoluteSourceFileName, absolute).relative as string;
+                    }
+
+                    sourceFileName = cache[sourceFileName] as string;
+                }
+
+                if (!sourcemaps.sources.includes(srcId)) {
+                    sourcemaps.sources.push(srcId);
+                }
+
+                sourcemaps.maps.push([newLine, newColumn, srcId, ...offsets]);
+            }
+        } else {
+            if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
+                if (cache[sourceFileName] == null) {
+                    const absolute = options.resolve!(dirname(options.output as string), options.cwd as string)
+                        .absolute as string;
+                    const absoluteSourceFileName = options.resolve!(sourceFileName, options.cwd as string)
+                        .absolute as string;
+
+                    cache[sourceFileName] = options.resolve!(absoluteSourceFileName, absolute).relative as string;
+                }
+
+                sourceFileName = cache[sourceFileName] as string;
             }
 
-            sourceFileName = cache[sourceFileName] as string;
-        }
+            if (!sourcemaps.sources.includes(srcId)) {
+                sourcemaps.sources.push(srcId);
+            }
 
-        // @ts-ignore
-        sourcemap.add(
-            ...linesMap.getOffsets(sourceLocation.end),
-            srcId,
-            // @ts-ignore
-            ...(options.sourcesMap?.get(srcId)?.getOffsets(sourceLocation.sta) as [number, number]),
-            sourceFileName as string,
-            options.sourcesMap?.get(srcId)?.getContent?.() as string,
-        );
+            sourcemaps.maps.push([newLine, newColumn, srcId, ...offsets]);
+        }
     }
 
-    move(sourceLocation, linesMap, str);
+    move(sourceLocation, linesMap, offset > 0 ? str.slice(offset) : str);
 }
 
 /**
  * Update position
- * @param position
+ * @param sourceLocation
+ * @param linesMap
  * @param str
  */
 export function move(sourceLocation: SourceLocation, linesMap: LinesMap, str: string) {
@@ -310,8 +399,9 @@ export function move(sourceLocation: SourceLocation, linesMap: LinesMap, str: st
  * render ast node
  * @param data
  * @param options
- * @param sourcemap
- * @param position
+ * @param sourcemaps
+ * @param sourceLocation
+ * @param linesMap
  * @param errors
  * @param reducer
  * @param cache
@@ -323,9 +413,9 @@ export function move(sourceLocation: SourceLocation, linesMap: LinesMap, str: st
 function renderAstNode(
     data: AstNode,
     options: RenderOptions,
-    sourcemap: SourceMap | null,
+    sourcemaps: { sources: number[]; maps: Array<[number, number, number, number, number]> } | null,
     sourceLocation: SourceLocation,
-    linesMap: LinesMap,
+    linesMap: LinesMap | null,
     errors: ErrorDescription[],
     reducer: (acc: string, curr: Token) => string,
     cache: {
@@ -342,6 +432,10 @@ function renderAstNode(
         indents.push((<string>options.indent).repeat(level + 1));
     }
 
+    // @ts-ignore
+    let children: string = "";
+    let str: string = "";
+
     const indent: string = indents[level];
     const indentSub: string = indents[level + 1];
 
@@ -355,7 +449,7 @@ function renderAstNode(
         case EnumToken.CommentNodeType:
         case EnumToken.CDOCOMMNodeType:
             if ((<AstComment>data).val.startsWith("/*# sourceMappingURL=")) {
-                // ignore sourcemap
+                // ignore sourcemap comment
                 return "";
             }
 
@@ -364,13 +458,11 @@ function renderAstNode(
                 : "";
 
         case EnumToken.StyleSheetNodeType:
-            return (<AstStyleSheet>data).chi.reduce((css: string, node: AstRuleList | AstComment) => {
-                const hasPreviousContent = css !== "";
-
-                const str: string = renderAstNode(
+            for (const node of (<AstStyleSheet>data).chi) {
+                str = renderAstNode(
                     node,
                     options,
-                    sourcemap,
+                    sourcemaps,
                     sourceLocation,
                     linesMap,
                     errors,
@@ -381,31 +473,25 @@ function renderAstNode(
                 );
 
                 if (str === "") {
-                    return css;
+                    continue;
                 }
 
-                if (sourcemap != null && node[LOC] != null) {
-                    updateSourceMap(
-                        node,
-                        options,
-                        cache,
-                        sourcemap,
-                        sourceLocation,
-                        linesMap,
-                        (hasPreviousContent ? options.newLine : "") + str,
-                    );
+                if (children.length > 0) {
+                    str = options.newLine + str;
                 }
 
-                if (!hasPreviousContent) {
-                    return str;
-                }
+                children += str;
 
-                return `${css}${options.newLine}${str}`;
-            }, "");
+                if (sourcemaps != null && str !== "" && options.newLine) {
+                    move(sourceLocation, linesMap!, options.newLine as string);
+                }
+            }
+
+            return children;
 
         case EnumToken.AtRuleNodeType:
         case EnumToken.RuleNodeType:
-        case EnumToken.KeyFramesRuleNodeType:
+        case EnumToken.KeyframesRuleNodeType:
         case EnumToken.KeyframesAtRuleNodeType:
             if ([EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ) && !("chi" in data)) {
                 return `${indent}@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === "" ? "" : options.indent || " "}${
@@ -413,10 +499,24 @@ function renderAstNode(
                 };`;
             }
 
-            // @ts-ignore
-            let children: string = (<AstRule>data).chi.reduce((css: string, node: AstNode) => {
-                let str: string;
+            const lineMapLength = linesMap ? linesMap.getLineStarts().length : 0;
+            const prelude =
+                (indent.length > 0 ? options.newLine : "") +
+                indent +
+                ([EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ)
+                    ? `@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === "" ? "" : options.indent || " "}${
+                          (<AstAtRule>data).val
+                      }${options.indent}{`
+                    : (<AstRule>data).sel + `${options.indent}{`);
 
+            if (sourcemaps != null) {
+                updateSourceMap(data, options, cache, sourcemaps, sourceLocation, linesMap!, prelude);
+            }
+
+            let node: AstNode;
+            let recordDeclarationSourceMap: boolean = data.typ == EnumToken.AtRuleNodeType;
+            for (let i = 0; i < (data as AstRule | AstAtRule).chi!.length; i++) {
+                node = (data as AstRule | AstAtRule).chi![i];
                 if (node.typ == EnumToken.CommentNodeType) {
                     str =
                         options.removeComments &&
@@ -424,31 +524,17 @@ function renderAstNode(
                             ? ""
                             : (<AstComment>node).val;
                 } else if (node.typ == EnumToken.DeclarationNodeType) {
-                    // if (!(<AstDeclaration>node).nam.startsWith("--") && (<AstDeclaration>node).val.length === 0) {
-                    //     // @ts-ignore
-                    //     errors.push(<ErrorDescription>{
-                    //         action: "ignore",
-                    //         message: `render: invalid declaration ${JSON.stringify(node)}`,
-                    //         location: node[LOC],
-                    //     });
-                    //     return "";
-                    // }
-
                     str = `${(<AstDeclaration>node).nam}:${options.indent}${(options.minify
                         ? filterValues((<AstDeclaration>node).val)
                         : (<AstDeclaration>node).val
                     )
                         .reduce(reducer, "")
                         .trimEnd()};`;
-                }
-                // else if (node.typ == EnumToken.AtRuleNodeType && !("chi" in node)) {
-                //     str = `${(<AstAtRule>node).val === "" ? "" : options.indent || " "}${(<AstAtRule>node).val};`;
-                // }
-                else {
+                } else {
                     str = renderAstNode(
                         node,
                         options,
-                        sourcemap,
+                        sourcemaps,
                         sourceLocation,
                         linesMap,
                         errors,
@@ -457,74 +543,70 @@ function renderAstNode(
                         level + 1,
                         indents,
                     );
-                }
 
-                if (css === "") {
-                    return str;
+                    if (str === "") {
+                        continue;
+                    }
+
+                    children += str;
+                    str = "";
+                    continue;
                 }
 
                 if (str === "") {
-                    return css;
+                    continue;
                 }
 
-                return `${css}${options.newLine}${indentSub}${str}`;
-            }, "");
+                str = options.newLine + indentSub + str;
+                children += str;
 
-            if (options.removeEmpty && children === "") {
-                return "";
+                if (sourcemaps != null && str !== "") {
+                    move(sourceLocation, linesMap!, str);
+
+                    if (node.typ == EnumToken.DeclarationNodeType && recordDeclarationSourceMap) {
+                        // if declaration is child of at-rule, then record it
+                        // .rule {
+                        //     @media screen {
+                        //         color: red;
+                        //     }
+                        // }
+                        const source = options.sourcesMap!.get(node[LOC]!.srcId) as SourceFile;
+
+                        if (!sourcemaps.sources.includes(node[LOC]!.srcId as number)) {
+                            sourcemaps.sources.push(node[LOC]!.srcId as number);
+                        }
+
+                        sourcemaps.maps.push([
+                            ...linesMap!.getOffsets(
+                                sourceLocation.end - str.length + options.newLine!.length + indentSub.length,
+                            ),
+                            node[LOC]!.srcId,
+                            ...source!.getOffsets(node![LOC]!.sta),
+                        ]);
+                    }
+                }
             }
 
             if (children.endsWith(";")) {
                 children = children.slice(0, -1);
+                sourceLocation.end--;
             }
 
-            const rendered = [EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ)
-                ? `@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === "" ? "" : options.indent || " "}${
-                      (<AstAtRule>data).val
-                  }${options.indent}{${options.newLine}` +
-                  (children === "" ? "" : indentSub + children + options.newLine) +
-                  indent +
-                  `}`
-                : (<AstRule>data).sel +
-                  `${options.indent}{${options.newLine}` +
-                  (children === "" ? "" : indentSub + children + options.newLine) +
-                  indent +
-                  `}`;
-
-            if (sourcemap != null && data[LOC] != null) {
-                updateSourceMap(
-                    data as AstRuleList,
-                    options,
-                    cache,
-                    sourcemap,
-                    { ...sourceLocation },
-                    linesMap.clone(),
-                    rendered,
-                );
+            if (options.removeEmpty && children === "") {
+                if (sourcemaps != null) {
+                    sourceLocation.end -= prelude.length;
+                    linesMap!.getLineStarts().length = lineMapLength;
+                }
+                return "";
             }
 
-            return rendered;
+            const end: string = options.newLine + indent + `}`;
 
-        // case EnumToken.CssVariableTokenType:
-        // case EnumToken.CssVariableImportTokenType:
-        //     return `@value ${(<CssVariableToken | CssVariableImportTokenType>data).val}:${options.indent}${filterValues(
-        //         options.minify
-        //             ? (<CssVariableToken | CssVariableImportTokenType>data).val
-        //             : (<CssVariableToken>data).val,
-        //     )
-        //         .reduce(reducer, "")
-        //         .trim()};`;
+            if (sourcemaps != null) {
+                move(sourceLocation, linesMap!, end);
+            }
 
-        // case EnumToken.CssVariableDeclarationMapTokenType:
-        //     return `@value ${filterValues((data as CssVariableMapTokenType).vars)
-        //         .reduce((acc, curr) => acc + renderValue(curr), "")
-        //         .trim()} from ${filterValues((data as CssVariableMapTokenType).from)
-        //         .reduce((acc, curr) => acc + renderValue(curr), "")
-        //         .trim()};`;
-
-        // case EnumToken.InvalidDeclarationNodeType:
-        // case EnumToken.InvalidRuleNodeType:
-        // case EnumToken.InvalidAtRuleNodeType:
+            return prelude + children + end;
 
         default:
             return "";
@@ -535,6 +617,9 @@ function renderAstNode(
  * render ast token
  * @param token
  * @param options
+ * @param cache
+ * @param reducer
+ * @param errors
  * @private
  */
 export function renderValue(
@@ -653,8 +738,8 @@ export function renderValue(
         case EnumToken.Sub:
             return " - ";
 
-        case EnumToken.Star:
         case EnumToken.UniversalSelectorTokenType:
+        case EnumToken.Star:
         case EnumToken.Mul:
             return "*";
 
@@ -1858,11 +1943,11 @@ export function renderValue(
             return "or";
 
         case EnumToken.InvalidMediaQueryTokenType:
-        // case EnumToken.InvalidDeclarationNodeType:
         case EnumToken.InvalidCommentTokenType:
         case EnumToken.BadCommentTokenType:
         case EnumToken.BadCdoTokenType:
         case EnumToken.BadStringTokenType:
+        case EnumToken.BadUrlTokenType:
         case EnumToken.EOFTokenType:
             return "";
 

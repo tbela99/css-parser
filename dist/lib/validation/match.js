@@ -10,11 +10,19 @@ import { parseTokens } from '../parser/parse.js';
 const config = getSyntaxConfig();
 // @ts-expect-error
 const allValues = config.declarations.all.syntax.split(/[\s|]+/g);
+/**
+ * @type {Array.<EnumToken>}
+ */
 const funcTypes = [
     ...tokensfuncDefMap.values(),
     EnumToken.FunctionTokenType,
     EnumToken.PseudoClassFuncTokenType,
 ];
+/**
+ * trim leading and trailing whitespace
+ * @param tokens
+ * @returns
+ */
 function trimArray(tokens) {
     while (tokens[0]?.typ === EnumToken.WhitespaceTokenType) {
         tokens.shift();
@@ -115,6 +123,11 @@ function isMFValue(featureName, tokens, isMFRange) {
         success: true,
     };
 }
+/**
+ * create validation context
+ * @param tokens
+ * @returns
+ */
 function createValidationContext(tokens) {
     tokens = trimArray(tokens.filter((t) => t.typ !== EnumToken.CommentTokenType));
     if (tokens.at(-1)?.typ === EnumToken.ImportantTokenType) {
@@ -278,6 +291,14 @@ function createValidationContext(tokens) {
     };
     return token;
 }
+/**
+ * match selector syntax
+ * @param stream
+ * @param errors
+ * @param options
+ * @param nested
+ * @returns
+ */
 function matchSelectorSyntax(stream, errors, options, nested = true) {
     const stack = [];
     const tokens = [];
@@ -716,6 +737,13 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
     stream.push(...tokens);
     return { success, errors };
 }
+/**
+ * matches all syntaxes
+ * @param syntaxes
+ * @param context
+ * @param options
+ * @returns
+ */
 function matchAllSyntaxes(syntaxes, context, options) {
     const result = matchSyntax(syntaxes, context, {
         ...options,
@@ -754,6 +782,13 @@ function matchAllSyntaxes(syntaxes, context, options) {
         syntaxToken: !result.success ? result.syntaxToken : null,
     };
 }
+/**
+ * matches a list of syntaxes
+ * @param syntax
+ * @param context
+ * @param options
+ * @returns
+ */
 function matchListSyntax(syntax, context, options) {
     const { isList, match, isOptional, ...rest } = syntax;
     let success = true;
@@ -798,6 +833,13 @@ function matchListSyntax(syntax, context, options) {
             token: context.peek(),
         };
 }
+/**
+ * matches a list of syntaxes
+ * @param syntax
+ * @param context
+ * @param options
+ * @returns
+ */
 function matchOccurenceSyntax(syntax, context, options) {
     const { match, ...rest } = syntax;
     let result = null;
@@ -839,6 +881,13 @@ function matchOccurenceSyntax(syntax, context, options) {
     }
     return result;
 }
+/**
+ * matches a list of syntaxes
+ * @param syntaxes
+ * @param context
+ * @param options
+ * @returns
+ */
 function matchSyntax(syntaxes, context, options) {
     if (syntaxes == null) {
         return {
@@ -941,6 +990,7 @@ function matchSyntax(syntaxes, context, options) {
             return result;
         }
         if (tokensfuncDefMap.has(token.typ) &&
+            // @ts-ignore
             token.typ === EnumToken.WildCardFunctionTokenDefType) {
             const range = trimArray(context.peekRange());
             result = matchSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, token.val + "()")?.[0]?.chi, createValidationContext(range.slice(1, -1)), options);
@@ -971,7 +1021,7 @@ function matchSyntax(syntaxes, context, options) {
         if (syntaxes[i].isList) {
             result = matchListSyntax(syntaxes[i], context.slice(), options);
             if (result.success) {
-                options.visited.get(token).delete(syntaxes[i]);
+                options.visited.get(token)?.delete?.(syntaxes[i]);
                 if (result.context.done()) {
                     context.end();
                     return {
@@ -1479,6 +1529,13 @@ function matchSyntax(syntaxes, context, options) {
             errors: [],
         };
 }
+/**
+ * matches a column of syntaxes
+ * @param syntax
+ * @param context
+ * @param options
+ * @returns
+ */
 function matchColumnSyntax(syntax, context, options) {
     let syntaxes = syntax.chi.slice();
     let i = 0;
@@ -1515,6 +1572,13 @@ function matchColumnSyntax(syntax, context, options) {
         errors: [],
     };
 }
+/**
+ * matches an ampersand of syntaxes
+ * @param syntax
+ * @param context
+ * @param options
+ * @returns
+ */
 function matchAmpersandSyntax(syntax, context, options) {
     const syntaxes = [syntax.l, syntax.r];
     let result;
@@ -1533,6 +1597,13 @@ function matchAmpersandSyntax(syntax, context, options) {
     }
     return result;
 }
+/**
+ * matches a property
+ * @param property
+ * @param context
+ * @param options
+ * @returns
+ */
 function matchProperty(property, context, options) {
     let success = false;
     let t = context.peek()?.typ;
@@ -1920,7 +1991,9 @@ function matchProperty(property, context, options) {
                     //     )
                     // ) {
                     const newRange = range.map((t) => cloneNode(t, true));
+                    // @ts-ignore
                     parseTokens(newRange, { parseColor: true }, errors);
+                    // @ts-ignore
                     success = newRange.length == 1 && isColor(newRange[0], errors);
                     if (success) {
                         context.update(range.at(-1));
@@ -2265,6 +2338,13 @@ function matchProperty(property, context, options) {
         errors: [],
     };
 }
+/**
+ * matches a repeatable syntax
+ * @param syntax
+ * @param context
+ * @param options
+ * @returns
+ */
 function matchRepeatableSyntax(syntax, context, options) {
     const { isRepeatable, isOptional, isMandatatoryGroup, isRepeatableAtLeastOnce, ...rest } = syntax;
     let result = null;

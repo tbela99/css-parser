@@ -3,7 +3,7 @@ import { walk, walkValues } from './walk.js';
 import { TOKENS } from '../syntax/constants.js';
 
 /**
- * Search the ast sub-tree and return the first match
+ * Search the ast subtree and return the first match
  *
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'
@@ -42,6 +42,11 @@ function find(ast, matcher) {
     return null;
 }
 /**
+ *
+ * @param ast
+ * @param matcher
+ * @returns
+ *
  * Search the ast sub-tree by checking each node's value token and return the first match
  *
  ```ts
@@ -67,10 +72,6 @@ button {
      console.log({node, value});
  
     ```
- *
- * @param ast
- * @param matcher
- * @returns
  */
 function findByValue(ast, matcher) {
     let source;
@@ -87,6 +88,7 @@ function findByValue(ast, matcher) {
         }
         for (const { value, parent, root: rootNode, parents } of walkValues(source, node)) {
             if (matcher(value, node)) {
+                // @ts-ignore
                 return { node, value: { node: value, parent, root: rootNode, parents } };
             }
         }

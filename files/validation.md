@@ -70,24 +70,25 @@ The following example prints the validation state of each node, along with any v
 
 ```ts
 
-import {EnumToken, EnumAstNodeStatus, transform} from "@tbela99/css-parser";
+import {EnumToken, EnumAstNodeStatus, transformSync, getNodeProperty} from "@tbela99/css-parser";
 import type {TransformOptions, VisitorNodeMap, AstAtRule, AstRule, AstDeclaration} from "@tbela99/css-parser";
-const options: TransformOptions = {
+
+const options: TransformSyncOptions = {
 
     beautify: true,
     validation: true,
     visitor: {
         AtRule: (node: AstAtRule) => {
             
-            console.debug('>>> ' + node.nam, '\n state: ' +EnumAstNodeStatus[node.state], '\n errors:', node.errors)
+            console.debug('>>> ' + node.nam, '\n state: ' + EnumAstNodeStatus[getNodeProperty(node, 'state')], '\n errors:', getNodeProperty(node, 'errors'))
         },
         Rule: (node: AstRule) => {
             
-            console.debug('>>> ' + node.sel, '\n state: ' + EnumAstNodeStatus[node.state], '\n errors:', node.errors)
+            console.debug('>>> ' + node.sel, '\n state: ' + EnumAstNodeStatus[getNodeProperty(node, 'state')], '\n errors:', getNodeProperty(node, 'errors'))
         },
         Declaration: (node: AstDeclaration) => {
             
-            console.debug('>>> ' + node.nam, '\n state: ' + EnumAstNodeStatus[node.state], '\n errors:', node.errors)
+            console.debug('>>> ' + node.nam, '\n state: ' + EnumAstNodeStatus[getNodeProperty(node, 'state')], '\n errors:', getNodeProperty(node, 'errors'))
         }
     } as VisitorNodeMap
 };
@@ -112,7 +113,7 @@ const css = `
 }
 `;
 
-const result = await transform(css, options);
+const result = transformSync(css, options);
 
 // > >>> .xl\:stats-horizontal:where([dir=rtl],[dir=rtl] *),.prose :where(tbody tr,thead):not(:where([class~=not-prose] *)),.prose :where(code):not(:where([class~=not-prose] *,pre *)) 
 // >  state: Validated 
@@ -161,7 +162,7 @@ const result = await transform(css, options);
 
 ## Overriding Node Validation State
 
-A node's validation state can be overridden using node visitors. The `state` property is an [`EnumAstNodeStatus`](../enums/node.EnumAstNodeStatus.html) value.
+A node's validation state can be overridden using node visitors. The `state` property type is [`EnumAstNodeStatus`](../enums/node.EnumAstNodeStatus.html) value.
 
 By default, nodes with any of the following states are discarded unless their state is overridden by a visitor:
 
@@ -175,18 +176,20 @@ In the example below, the node's validation state is changed from `EnumAstNodeSt
 
 ```ts
 
-import {EnumToken, EnumAstNodeStatus, transform} from "@tbela99/css-parser";
-import type {TransformOptions, VisitorNodeMap, AstDeclaration} from "@tbela99/css-parser";
-const options: TransformOptions = {
+import {EnumToken, EnumAstNodeStatus, transformSync, getNodeProperty, setNodeProperty} from "@tbela99/css-parser";
+import type {TransformSyncOptions, VisitorNodeMap, AstDeclaration} from "@tbela99/css-parser";
+
+
+const options: TransformSyncOptions = {
 
     beautify: true,
     validation: true,
     visitor: {
         AtRule: (node: AstAtRule) => {
             
-            if (node.state == EnumAstNodeStatus.Invalid) {
+            if (getNodeProperty(node, "state") == EnumAstNodeStatus.Invalid) {
 
-                node.state = EnumAstNodeStatus.ValidationFailed;
+                setNodeProperty(node, "state", EnumAstNodeStatus.ValidationFailed);
             }
         },
     } as VisitorNodeMap
@@ -205,7 +208,7 @@ const css = `
 }
 `;
 
-const result = await transform(css, options);
+const result = transformSync(css, options);
 console.debug(result.code);
 ```
 

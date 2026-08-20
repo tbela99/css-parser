@@ -1,7 +1,6 @@
-import {SourceFile} from "../lib/parser/source.ts";
+import { SourceFile } from "../lib/parser/source.ts";
 
 export declare interface PropertyListOptions {
-
     removeDuplicateDeclarations?: boolean | string | string[];
     computeShorthand?: boolean;
 }
@@ -10,11 +9,6 @@ export declare interface PropertyListOptions {
  * parse info
  */
 export declare interface ParseInfo {
-
-    /**
-     * read buffer
-     */
-    buffer: string;
     /**
      * stream
      */
@@ -24,7 +18,7 @@ export declare interface ParseInfo {
      * Source file
      */
     source: SourceFile;
-    
+
     /**
      * last token position
      */

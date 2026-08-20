@@ -10,7 +10,7 @@ class LineMap {
      * Constructor
      * @param lines
      */
-    constructor(lines) {
+    constructor(lines = []) {
         if (lines.length === 0) {
             lines.push(0);
         }
@@ -23,12 +23,11 @@ class LineMap {
      */
     getOffsets(offset) {
         const line = this.search(offset);
-        if (offset < 0 || line < 0) {
-            return [1, 1];
-        }
-        const column = offset - this.lineStarts[line];
+        // if (offset < 0 || line < 0) {
+        //     return [1, 1];
+        // }
         // [line, column]
-        return [line + 1, column === 0 ? 1 : column];
+        return [line + 1, offset - this.lineStarts[line] + 1];
     }
     /**
      * search the greatest index of the value less than or equal to offset
@@ -65,13 +64,6 @@ class LineMap {
      */
     addLineStart(lineStart) {
         this.lineStarts.push(lineStart);
-    }
-    /**
-     * clone the linemap
-     * @returns
-     */
-    clone() {
-        return new LineMap(this.lineStarts.slice());
     }
 }
 

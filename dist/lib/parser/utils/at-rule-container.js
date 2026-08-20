@@ -138,7 +138,8 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                                     success = false;
                                     errors.push({
                                         action: "drop",
-                                        node: options.source.getSourceLocation(stream[i][LOC].sta),
+                                        node: stream[i],
+                                        location: options.source.getSourceLocation(stream[i][LOC].sta),
                                         message: `<or> is not allowed outside of parentheses`,
                                     });
                                     break;

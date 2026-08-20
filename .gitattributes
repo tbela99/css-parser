@@ -18,10 +18,12 @@
 /.github/** linguist-vendored
 # exclude all files in test/ from stats
 /rollup.config.js linguist-vendored
+/dist/** linguist-vendored
 /docs/** linguist-vendored
 /tools/** linguist-vendored
 /dist/** linguist-vendored
 /test/** linguist-vendored
+/benchmark/** linguist-vendored
 /coverage/** linguist-vendored
 #
 # do not replace lf by crlf

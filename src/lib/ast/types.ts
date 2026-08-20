@@ -48,6 +48,8 @@ export enum EnumAstNodeStatus {
     Malformed,
 }
 
+export declare type AstNodePropertyType = "state" | "errors" | "location" | "tokens" | "parent" | "selector";
+
 /**
  * Enum of validation levels
  * @deprecated
@@ -386,7 +388,7 @@ export enum EnumToken {
     /**
      * keyframe rule node type
      */
-    KeyFramesRuleNodeType,
+    KeyframesRuleNodeType,
     /**
      * class selector token type
      */

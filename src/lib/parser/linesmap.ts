@@ -11,7 +11,7 @@ export class LineMap {
      * Constructor
      * @param lines
      */
-    constructor(lines: number[]) {
+    constructor(lines: number[] = []) {
         if (lines.length === 0) {
             lines.push(0);
         }
@@ -27,14 +27,12 @@ export class LineMap {
     getOffsets(offset: number): [number, number] {
         const line: number = this.search(offset);
 
-        if (offset < 0 || line < 0) {
-            return [1, 1];
-        }
-
-        const column: number = offset - this.lineStarts[line];
+        // if (offset < 0 || line < 0) {
+        //     return [1, 1];
+        // }
 
         // [line, column]
-        return [line + 1, column === 0 ? 1 : column];
+        return [line + 1, offset - this.lineStarts[line] + 1];
     }
 
     /**
@@ -75,13 +73,5 @@ export class LineMap {
      */
     addLineStart(lineStart: number) {
         this.lineStarts.push(lineStart);
-    }
-
-    /**
-     * clone the linemap
-     * @returns
-     */
-    clone(): LineMap {
-        return new LineMap(this.lineStarts.slice());
     }
 }

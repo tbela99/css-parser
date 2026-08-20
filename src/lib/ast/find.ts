@@ -5,7 +5,7 @@ import { walk, walkValues } from "./walk.ts";
 import { PARENT, TOKENS } from "../syntax/constants.ts";
 
 /**
- * Search the ast sub-tree and return the first match
+ * Search the ast subtree and return the first match
  * 
  * ```ts
  *  // find the first ast declaration node which name is 'aspect-ratio'
@@ -46,6 +46,11 @@ export function find(ast: AstNode, matcher: (node: AstNode, parent?: AstNode | n
 }
 
 /**
+ *
+ * @param ast 
+ * @param matcher 
+ * @returns 
+ * 
  * Search the ast sub-tree by checking each node's value token and return the first match
  * 
  ```ts
@@ -71,10 +76,6 @@ button {
      console.log({node, value});
  
     ```
- *
- * @param ast 
- * @param matcher 
- * @returns 
  */
 export function findByValue(
     ast: AstNode,
@@ -97,6 +98,7 @@ export function findByValue(
 
         for (const { value, parent, root: rootNode, parents } of walkValues(source, node)) {
             if (matcher(value, node)) {
+                // @ts-ignore
                 return { node, value: { node: value, parent, root: rootNode, parents } };
             }
         }
@@ -238,7 +240,7 @@ export function findValue(
         (ast.typ === EnumToken.StyleSheetNodeType ||
             ast.typ === EnumToken.RuleNodeType ||
             ast.typ === EnumToken.AtRuleNodeType ||
-            ast.typ === EnumToken.KeyFramesRuleNodeType ||
+            ast.typ === EnumToken.KeyframesRuleNodeType ||
             ast.typ === EnumToken.KeyframesAtRuleNodeType)
     ) {
         if (Array.isArray(ast[TOKENS])) {
@@ -247,18 +249,24 @@ export function findValue(
     } else if (ast?.typ === EnumToken.DeclarationNodeType) {
         tokens = (ast as AstDeclaration).val;
     } else if (ast != null) {
+        // @ts-ignore
         if (matcher(ast, ast?.[PARENT])) {
+            // @ts-ignore
             return { node: ast, parent: ast?.[PARENT], root: null, parents: null };
         }
 
+        // @ts-ignore
         if (Array.isArray(ast.chi)) {
+            // @ts-ignore
             tokens = ast.chi;
         }
     }
 
     if (Array.isArray(tokens)) {
         for (const { value, parent, root: rootNode, parents } of walkValues(tokens, ast)) {
+            // @ts-ignore
             if (matcher(value, parent, rootNode, parents)) {
+                // @ts-ignore
                 return { node: value, parent, root: rootNode, parents };
             }
         }

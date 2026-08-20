@@ -17,9 +17,9 @@ The **synchronous API** is marginally faster than the asynchronous API, but it c
 | `transformSync()` | ✅          | ❌     | ✅          |
 | `render()`        | ❌          | ❌     | ✅          |
 
-> **Note:** `parse()` and `parseSync()` only produce the AST and does not generate CSS output.
+> **Note:** `parse()` and `parseSync()` only produce the AST and do not generate CSS output.
 
-By contrast, `transform()` and `transformSync()` parses the CSS **and** generates the transformed CSS text. This is useful when you want the rendered CSS directly without performing a separate AST rendering step.
+By contrast, `transform()` and `transformSync()` parse the CSS **and** generate the transformed CSS text. This is useful when you want the rendered CSS directly without performing a separate AST rendering step.
 
 ### Usage
 
@@ -53,18 +53,19 @@ console.debug(result.stats);
 
 Parsing converts input CSS into an **AST (Abstract Syntax Tree)**.
 
-You can parse CSS in two ways:
+You can parse CSS in multiple ways:
 
-- `parse()` – Parses CSS and returns an AST.
-- `transform()` – Parses and generate CSS as part of the transformation process.
+- `parse()` or `parseSync()` – Parse CSS and returns an AST.
+- `transform()` or `transformSync()` – Parse and generate CSS as part of the transformation process.
 
 For more information about the available parsing options, see the TypeScript documentation for [`ParserOptions`](../interfaces/node.ParserOptions.html).
 
 ### Usage
 
-```javascript
+```ts
 parse(css, parserOptions = {})
 parse(parserOptions = {input: css})
+parse(parserOptions = {file: url_or_path})
 ```
 
 ### Example
@@ -379,57 +380,25 @@ button {
  }
 }
 ```
-## Sourcemaps
-
-**CSS-Parser** supports generating sourcemaps. When the `output` parameter is provided, sourcemap file paths are resolved relative to the specified output file.
-
-
-```ts
-
-import {transform} from '@tbela99/css-parser';
-
-const css = `
-@import 'styles.css';
-button {
-	background: linear-gradient(
-		if(media(min-width: 768px): to right; else: to bottom),
-		if(style(--dark-mode): #333; else: #fff),
-		if(style(--dark-mode): #000; else: #ccc)
-	);
-}`;
-
-result = await transform(css, {
-
-    beautify: true,
-    sourcemap: true,
-    resolveImport: true,
-    output: 'dist/doc.html'
-});
-
-console.log(result.map.toJSON());
-```
 
 ## Difference Between Sync and Async APIs
 
-The following features are **not supported by `parseSync()` and `transformSync()`**.
+### Parsing features comparison
 
-### Unsupported Parsing Features
+| Feature                 | parse() | transform() | transformSync() | ParseSync() |
+| ----------------------- | ------- | ----------- | --------------- | ----------- |
+| Parse from stream       | ✅       | ✅           | ❌               | ❌           |
+| Parse from file         | ✅       | ✅           | ❌               | ❌           |
+| Flatten @import at-rule | ✅       | ✅           | ❌               | ❌           |
+| transformSync()         | ✅       | ✅           | ❌               | ❌           |
 
-* Flattening `@import` at-rules is not supported.
-* The file loader `ParserOptions.load()` is not available.
-* Parsing from a stream is not supported.
-* Parsing with a file as the input parameter is not supported.
+### CSS Module features comparison
 
-### Unsupported CSS Module Features
-
-* The `pattern` parameter does not support the following algorithms:
-
-  * `sha1`
-  * `sha256`
-  * `sha384`
-  * `sha512`
-* CSS `composes` does not support composing from a file.
-* Importing CSS variables from a file using `@value` is not supported.
+| Feature                                                                | parse() | transform() | transformSync() | ParseSync() |
+| ---------------------------------------------------------------------- | ------- | ----------- | --------------- | ----------- |
+| Algorithms supported by `pattern`: <br> sha1, sha256, sha384, sha512      | ✅      | ✅           | ❌              | ❌          |
+| CSS `composes` from file                                                   | ✅      | ✅           | ❌              | ❌          |
+| import CSS variables from file                                         | ✅      | ✅           | ❌              | ❌          |
 
 
 ------

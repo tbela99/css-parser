@@ -14,6 +14,7 @@ import { ResponseType } from './types.js';
 import { resolve as resolve$1 } from 'node:path';
 import { SourceFile } from './lib/parser/source.js';
 import { cwd } from 'node:process';
+import { parseResult, validateSyncArguments } from './utils/sync.js';
 export { minify } from './lib/ast/minify.js';
 export { expand } from './lib/ast/expand.js';
 export { WalkerEvent, WalkerOptionEnum, walk, walkValues } from './lib/ast/walk.js';
@@ -24,6 +25,7 @@ export { cloneNode } from './lib/ast/clone.js';
 export { replaceNodeOrValue } from './lib/parser/utils/token.js';
 export { SourceMap } from './lib/renderer/sourcemap/sourcemap.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
+export { getNodeProperty, setNodeProperty } from './lib/ast/node.js';
 
 /**
  * Load file or url
@@ -108,7 +110,7 @@ function render(data, options = {}, mapping) {
     return doRender(data, Object.assign(options, { resolve, dirname, cwd: options.cwd ?? resolve$1() }), mapping);
 }
 /**
- * Parse css file
+ * Parse CSS file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
@@ -134,17 +136,17 @@ function render(data, options = {}, mapping) {
  */
 const parseFile = deprecate(async (file, options = {}, asStream = false) => parse({ file, asStream, ...options }), "parseFile is deprecated, use parse instead as parse({file, asStream, ...options})");
 /**
- * Parse css
+ * Parse CSS
  * @param args
  *
  * Parsing a string
  *
  * ```ts
  *
- * import {parse} from '@tbela99/css-parser';
+ * import {parseSync} from '@tbela99/css-parser';
  *
  *  // css string
- *  let result = await parse(css, {nestingRules: true});
+ *  let result = parseSync(css, {nestingRules: true});
  *  console.log(result.ast);
  * ```
  *
@@ -161,9 +163,12 @@ function parseSync(...args) {
         options = opt;
         stream = input;
     }
+    if (options != null) {
+        validateSyncArguments(options);
+    }
     options ??= {};
     options.src ??= "";
-    options.sourcesMap ??= new Map;
+    options.sourcesMap ??= new Map();
     Object.assign(options, {
         resolve,
         dirname,
@@ -183,26 +188,24 @@ function parseSync(...args) {
         time: 0,
         source: options.source,
         position: 0,
-        currentPosition: -1,
+        currentPosition: 0,
     };
     const result = doParseSync(tokenize(options.parseInfo), options);
-    const { revMapping, ...res } = result;
-    return res;
+    return !options.module && !options.inputSourceMap && !options.sourcemap ? result : parseResult(result, options);
 }
 /**
- * Transform css
- * @param css
- * @param options
+ * Transform CSS
  *
  * ```ts
  *
- * import {transform} from '@tbela99/css-parser';
+ * import {transformSync} from '@tbela99/css-parser';
  *
  *  // css string
- *  const result = await transform(css);
+ *  const result = transformSync(css);
  *  console.log(result.code);
  * ```
  *
+ * @param args
  */
 function transformSync(...args) {
     let options;
@@ -218,7 +221,15 @@ function transformSync(...args) {
         stream = input;
     }
     options ??= {};
-    options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+    if (options.minify == null) {
+        options.minify = true;
+    }
+    if (options.removeEmpty == null) {
+        options.removeEmpty = true;
+    }
+    if (options.removeCharset == null) {
+        options.removeCharset = true;
+    }
     const startTime = performance.now();
     const parseResult = parseSync(stream, options);
     let mapping = null;
@@ -251,7 +262,7 @@ function transformSync(...args) {
     };
 }
 /**
- * Parse css
+ * Parse CSS
  * @param args
  *
  * @throws Error file not found
@@ -314,7 +325,7 @@ async function parse(...args) {
     }
     options ??= {};
     options.src ??= "";
-    options.sourcesMap ??= new Map;
+    options.sourcesMap ??= new Map();
     Object.assign(options, {
         load,
         resolve,
@@ -335,15 +346,12 @@ async function parse(...args) {
         time: 0,
         source: options.source,
         position: 0,
-        currentPosition: -1,
+        currentPosition: 0,
     };
-    return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => {
-        const { revMapping, ...res } = result;
-        return res;
-    });
+    return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => (!options.module && !options.inputSourceMap ? result : parseResult(result, options)));
 }
 /**
- * Transform css file
+ * Transform CSS file
  * @param file url or path
  * @param options
  * @param asStream load file as stream
@@ -372,9 +380,7 @@ const transformFile = deprecate(async (file, options = {}, asStream = false) => 
     ...options,
 }), "transformFile is deprecated, use transform instead as transform({file, asStream, ...options})");
 /**
- * Transform css
- * @param css
- * @param options
+ * Transform CSS
  *
  * Parsing a string
  *
@@ -413,6 +419,7 @@ const transformFile = deprecate(async (file, options = {}, asStream = false) => 
  *
  *  console.log(result.code);
  * ```
+ * @param args
  */
 async function transform(...args) {
     let options;
@@ -433,7 +440,15 @@ async function transform(...args) {
         }
     }
     options ??= {};
-    options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+    if (options.minify == null) {
+        options.minify = true;
+    }
+    if (options.removeEmpty == null) {
+        options.removeEmpty = true;
+    }
+    if (options.removeCharset == null) {
+        options.removeCharset = true;
+    }
     const startTime = performance.now();
     return parse(stream, options).then((parseResult) => {
         let mapping = null;

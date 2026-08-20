@@ -5,8 +5,8 @@ import { walkValues } from "./walk.ts";
 import type {
     AstAtRule,
     AstDeclaration,
-    AstKeyFrameRule,
     AstKeyframesAtRule,
+    AstKeyframesRule,
     AstNode,
     AstRule,
     AstStyleSheet,
@@ -39,7 +39,7 @@ const rules: EnumToken[] = [
     EnumToken.AtRuleNodeType,
     EnumToken.RuleNodeType,
     EnumToken.AtRuleTokenType,
-    EnumToken.KeyFramesRuleNodeType,
+    EnumToken.KeyframesRuleNodeType,
 ];
 // @ts-ignore
 const features: MinifyFeature[] = Object.values(allFeatures as Record<string, MinifyFeature>).sort(
@@ -72,6 +72,7 @@ export function minify(
  * @param errors
  * @param nestingContent
  *
+ * @param context
  * @private
  */
 export function minify(
@@ -89,25 +90,26 @@ export function minify(
     let parents: Set<AstNode>;
     let replacement: AstNode | null;
 
-    if (!("features" in <MinifyFeatureOptions>options)) {
-        // @ts-ignore
-        options = <MinifyFeatureOptions>{
+    let { sourcemap, module, ...options2 } = options as ParserOptions;
+
+    if (!((options2 as MinifyFeatureOptions).features != null)) {
+        options2 = {
             removeDuplicateDeclarations: true,
             computeShorthand: true,
             computeCalcExpression: true,
             removePrefix: false,
-            features: <Function[]>[],
-            ...options,
-        };
+            features: [] as Function[],
+            ...options2,
+        } as MinifyFeatureOptions;
 
         for (const feature of features) {
-            feature.register(options);
+            feature.register(options2);
         }
 
-        options.features!.sort((a: MinifyFeature, b: MinifyFeature): number => a.ordering - b.ordering);
+        options2.features!.sort((a: MinifyFeature, b: MinifyFeature): number => a.ordering - b.ordering);
     }
 
-    for (const feature of options!.features as MinifyFeature[]) {
+    for (const feature of options2!.features as MinifyFeature[]) {
         if (feature.processMode & FeatureWalkMode.Pre) {
             preprocess = true;
         }
@@ -127,7 +129,7 @@ export function minify(
 
             replacement = parent;
 
-            for (const feature of options.features as MinifyFeature[]) {
+            for (const feature of options2.features as MinifyFeature[]) {
                 if (
                     (feature.processMode & FeatureWalkMode.Pre) === 0 ||
                     (feature.accept != null && !feature.accept.has(parent.typ))
@@ -137,16 +139,18 @@ export function minify(
 
                 if (rules.includes(replacement.typ) && !Array.isArray(replacement[TOKENS])) {
                     replacement[TOKENS] = parseString(
-                        replacement.typ == EnumToken.RuleNodeType || replacement.typ === EnumToken.KeyFramesRuleNodeType
+                        replacement.typ == EnumToken.RuleNodeType || replacement.typ === EnumToken.KeyframesRuleNodeType
                             ? replacement.sel
-                            : replacement.nam,
+                            : // @ts-ignore
+                              replacement.nam,
                     );
                 }
 
                 const result = feature.run(
-                    <AstRule | AstAtRule>replacement,
-                    options,
-                    <AstRule | AstAtRule | AstStyleSheet>parent[PARENT] ?? ast,
+                    replacement as AstRule | AstAtRule,
+                    options2,
+                    // @ts-ignore
+                    parent[PARENT] ?? (ast as AstRule | AstAtRule | AstStyleSheet),
                     context,
                     FeatureWalkMode.Pre,
                 );
@@ -162,28 +166,29 @@ export function minify(
                 replacement != parent &&
                 parent[PARENT] != null
             ) {
+                // @ts-ignore
                 replaceNodeOrValue(parent[PARENT] as AstRule | AstAtRule | AstStyleSheet, parent, replacement);
             }
 
-            if ("chi" in replacement) {
+            // @ts-ignore
+            if (replacement.chi != null) {
                 // @ts-ignore
                 for (const node of replacement.chi) {
-                    // node[PARENT] = replacement;
+                    node[PARENT] = replacement;
                     parents.add(node as AstNode);
                 }
             }
         }
 
-        for (const feature of options.features as MinifyFeature[]) {
+        for (const feature of options2.features as MinifyFeature[]) {
             if (feature.processMode & FeatureWalkMode.Pre && "cleanup" in feature) {
                 // @ts-ignore
-                feature.cleanup(<AstStyleSheet>ast, options, context, FeatureWalkMode.Pre);
+                feature.cleanup(ast as AstStyleSheet, options2, context, FeatureWalkMode.Pre);
             }
         }
     }
 
-    doMinify(ast, options, recursive, errors, nestingContent, context);
-
+    doMinify(ast, options2, recursive, errors, nestingContent, context);
     parents = new Set([<AstStyleSheet>ast]);
 
     for (const parent of parents) {
@@ -194,7 +199,7 @@ export function minify(
         replacement = parent;
 
         if (postprocess) {
-            for (const feature of options.features as MinifyFeature[]) {
+            for (const feature of options2.features as MinifyFeature[]) {
                 if (
                     (feature.processMode & FeatureWalkMode.Post) === 0 ||
                     (feature.accept != null && !feature.accept.has(parent.typ))
@@ -204,8 +209,9 @@ export function minify(
 
                 const result = feature.run(
                     replacement as AstRule | AstAtRule,
-                    options,
-                    <AstRule | AstAtRule | AstStyleSheet>parent[PARENT] ?? ast,
+                    options2,
+                    // @ts-ignore
+                    parent[PARENT] ?? (ast as AstRule | AstAtRule | AstStyleSheet),
                     context,
                     FeatureWalkMode.Post,
                 );
@@ -226,19 +232,21 @@ export function minify(
             replaceNodeOrValue(parent[PARENT], parent, replacement);
         }
 
-        if ("chi" in replacement) {
+        // @ts-ignore
+        if (replacement.chi != null) {
+            // @ts-ignore
             for (const node of replacement.chi!) {
-                // node[PARENT] = replacement;
+                node[PARENT] = replacement;
                 parents.add(node as AstNode);
             }
         }
     }
 
     if (postprocess) {
-        for (const feature of options.features as MinifyFeature[]) {
+        for (const feature of options2.features as MinifyFeature[]) {
             if (feature.processMode & FeatureWalkMode.Post && "cleanup" in feature) {
                 // @ts-ignore
-                feature.cleanup(<AstStyleSheet>ast, options, context, FeatureWalkMode.Post);
+                feature.cleanup(ast as AstStyleSheet, options2, context, FeatureWalkMode.Post);
             }
         }
     }
@@ -262,6 +270,7 @@ function transformAtRuleMediaPrelude(values: Token[]) {
                     // @ts-ignore
                     values[values.indexOf(value)] = (value as MediaQueryConditionToken).l;
                 } else {
+                    // @ts-ignore
                     replaceNodeOrValue(parent, value, (value as MediaQueryConditionToken).l);
                     // @ts-ignore
                     value = (value as MediaQueryConditionToken).l;
@@ -338,8 +347,10 @@ function transformAtRuleMediaPrelude(values: Token[]) {
                     const p = parents?.[parents?.indexOf?.(parent) + 1];
 
                     if (p != null) {
+                        // @ts-ignore
                         replaceNodeOrValue(p, parent, replacement);
                     } else {
+                        // @ts-ignore
                         values.splice(values.indexOf(parent), 1, replacement as Token);
                     }
 
@@ -357,9 +368,9 @@ function transformAtRuleMediaPrelude(values: Token[]) {
  * Minify at-rule media
  * - remove redundant tokens
  * - generate range queries
- * @param ast
  *
  * @private
+ * @param tokens
  */
 function minifyAtRuleMedia(tokens: Token[]): Token[] {
     let hasUpdates: boolean = false;
@@ -495,8 +506,8 @@ function doMinify(
             }
 
             while (previous?.typ === EnumToken.CommentNodeType) {
+                // @ts-ignore
                 previous = ast.chi[--nodeIndex];
-                continue;
             }
 
             node = ast.chi![i] as AstNode;
@@ -517,15 +528,16 @@ function doMinify(
 
                     continue;
                 }
-            } else if (node.typ === EnumToken.KeyFramesRuleNodeType) {
+            } else if (node.typ === EnumToken.KeyframesRuleNodeType) {
                 if (
-                    previous?.typ === EnumToken.KeyFramesRuleNodeType &&
-                    (<AstKeyFrameRule>node).sel === (<AstKeyFrameRule>previous).sel
+                    previous?.typ === EnumToken.KeyframesRuleNodeType &&
+                    (<AstKeyframesRule>node).sel === (<AstKeyframesRule>previous).sel
                 ) {
                     // do not merge keyframes
                     // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@keyframes#resolving_duplicates
-                    (<AstKeyFrameRule>previous).chi.push(...(<AstKeyFrameRule>node).chi);
+                    (<AstKeyframesRule>previous).chi.push(...(<AstKeyframesRule>node).chi);
 
+                    // @ts-ignore
                     ast.chi.splice(i, 1);
                     previous = (ast?.chi?.[nodeIndex] as AstNode) ?? null;
                     i = nodeIndex;
@@ -535,22 +547,22 @@ function doMinify(
 
                 let k: number;
 
-                for (k = 0; k < (node as AstKeyFrameRule).chi.length; k++) {
-                    if ((node as AstKeyFrameRule).chi[k].typ == EnumToken.DeclarationNodeType) {
-                        let l: number = ((node as AstKeyFrameRule).chi[k] as AstDeclaration).val.length;
+                for (k = 0; k < (node as AstKeyframesRule).chi.length; k++) {
+                    if ((node as AstKeyframesRule).chi[k].typ == EnumToken.DeclarationNodeType) {
+                        let l: number = ((node as AstKeyframesRule).chi[k] as AstDeclaration).val.length;
 
                         while (l--) {
                             if (
-                                ((node as AstKeyFrameRule).chi[k] as AstDeclaration).val[l].typ ==
+                                ((node as AstKeyframesRule).chi[k] as AstDeclaration).val[l].typ ==
                                 EnumToken.ImportantTokenType
                             ) {
-                                (node as AstKeyFrameRule).chi.splice(k--, 1);
+                                (node as AstKeyframesRule).chi.splice(k--, 1);
                                 break;
                             }
 
                             if (
                                 [EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(
-                                    ((node as AstKeyFrameRule).chi[k] as AstDeclaration).val[l].typ,
+                                    ((node as AstKeyframesRule).chi[k] as AstDeclaration).val[l].typ,
                                 )
                             ) {
                                 continue;
@@ -625,6 +637,7 @@ function doMinify(
                     (ast as AstAtRule).nam === (node as AstAtRule).nam &&
                     (ast as AstAtRule).val === (node as AstAtRule).val
                 ) {
+                    // @ts-ignore
                     replaceNodeOrValue(ast as AstAtRule, node as AstAtRule, (node as AstAtRule).chi!);
                     i--;
                     continue;
@@ -751,6 +764,7 @@ function doMinify(
                                 ")";
                             const sel2 = node[OPTIMIZED].selector.reduce(
                                 (acc: string, curr: string[]) =>
+                                    // @ts-ignore
                                     (acc.length > 0 ? acc + "," : "") + node[OPTIMIZED].optimized[0] + curr.join(""),
                                 "",
                             );
@@ -850,6 +864,7 @@ function doMinify(
                             ")";
                         const sel2 = node[OPTIMIZED].selector.reduce(
                             (acc: string, curr: string[]) =>
+                                // @ts-ignore
                                 (acc.length > 0 ? acc + "," : "") + node[OPTIMIZED].optimized[0] + curr.join(""),
                             "",
                         );
@@ -867,11 +882,14 @@ function doMinify(
                         );
                         node[TOKENS] = null;
                     }
+                    // @ts-ignore
                 } else if (node[OPTIMIZED]?.optimized.length > 0) {
+                    // @ts-ignore
                     const sel = node[OPTIMIZED].optimized.join("");
 
                     if (sel.length < node.sel.length) {
                         node.sel = sel;
+                        // @ts-ignore
                         node[RAW] = [node[OPTIMIZED].optimized.slice()];
                         node[TOKENS] = null;
                     }
@@ -902,12 +920,15 @@ function doMinify(
                         if (shouldMerge) {
                             if (
                                 ((node.typ === EnumToken.RuleNodeType ||
-                                    node.typ === EnumToken.KeyFramesRuleNodeType) &&
+                                    node.typ === EnumToken.KeyframesRuleNodeType) &&
                                     (node as AstRule).sel === (previous as AstRule).sel) ||
+                                // @ts-ignore
                                 (node.typ == EnumToken.AtRuleNodeType &&
                                     (node as AstAtRule).nam !== "font-face" &&
+                                    // @ts-ignore
                                     (node as AstAtRule).nam === (previous as AstAtRule).nam)
                             ) {
+                                // @ts-ignore
                                 node.chi.unshift(...previous.chi);
 
                                 doMinify(node, options, recursive, errors, nestingContent, context);
@@ -920,7 +941,7 @@ function doMinify(
                                 continue;
                             } else if (
                                 node.typ == previous?.typ &&
-                                [EnumToken.KeyFramesRuleNodeType, EnumToken.RuleNodeType].includes(node.typ)
+                                [EnumToken.KeyframesRuleNodeType, EnumToken.RuleNodeType].includes(node.typ)
                             ) {
                                 const intersect = diff(previous as AstRule, node as AstRule, options);
 
@@ -1107,7 +1128,9 @@ export function optimizeSelector(selector: string[][]): OptimizedSelector | null
         break;
     }
 
-    selector.forEach((selector: string[]) => selector.splice(0, optimized.length));
+    for (let i1 = 0; i1 < selector.length; i1++) {
+        selector[i1].splice(0, optimized.length);
+    }
 
     let reducible: boolean = optimized.length == 1;
 
@@ -1591,7 +1614,6 @@ function wrapNodes(
  * Diff nodes
  * @param n1
  * @param n2
- * @param reducer
  * @param options
  *
  * @private
@@ -1744,20 +1766,47 @@ function diff(n1: AstRule, n2: AstRule, options: ParserOptions = {}) {
                   chi: intersect.reverse(),
               };
 
+    let op = { level: 0, ...options };
+
     if (
         result == null ||
         [n1, n2].reduce((acc: number, curr: AstRule): number => {
             let css: string = options.cache!.get(curr) as string;
 
             if (css == null) {
-                css = doRender(curr, options).code;
+                let level: number = 0;
+                let parent: AstNode | null = curr[PARENT] as AstNode;
+
+                while (parent != null && parent.typ != EnumToken.StyleSheetNodeType) {
+                    level++;
+                    parent = parent[PARENT] as AstRule;
+                }
+
+                op.level = level;
+
+                css = doRender(curr, op).code;
                 options.cache!.set(curr, css);
             }
 
             return curr.chi.length == 0 ? acc : acc + css.length;
         }, 0) <=
             [node1, node2, result].reduce((acc: number, curr: AstRule): number => {
-                const css = doRender(curr, options).code;
+                let css: string = options.cache!.get(curr) as string;
+
+                if (css != null) {
+                    return curr.chi.length == 0 ? acc : acc + css.length;
+                }
+
+                let level: number = 0;
+                let parent: AstNode | null = curr[PARENT] as AstNode;
+
+                while (parent != null && parent.typ != EnumToken.StyleSheetNodeType) {
+                    level++;
+                    parent = parent[PARENT] as AstRule;
+                }
+
+                op.level = level;
+                css = doRender(curr, op).code;
 
                 return curr.chi.length == 0 ? acc : acc + css.length;
             }, 0)
