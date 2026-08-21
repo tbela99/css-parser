@@ -1,4 +1,4 @@
-import { multiply, toZero, identity } from './utils.js';
+import { identity, multiply, toZero } from './utils.js';
 import { EnumToken } from '../types.js';
 import { stripCommaToken } from '../../validation/utils/list.js';
 import { translateX, translateY, translateZ, translate, translate3d } from './translate.js';

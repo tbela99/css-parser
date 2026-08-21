@@ -19798,8 +19798,9 @@ class ComputeCalcExpressionFeature {
     }
 }
 
+const identityMatrix = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 function identity() {
-    return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+    return identityMatrix.slice();
 }
 function normalize$1(point) {
     const [x, y, z] = point;
@@ -19813,16 +19814,31 @@ function dot(point1, point2) {
     return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2];
 }
 function multiply(matrixA, matrixB) {
-    let result = new Array(16).fill(0);
-    for (let i = 0; i < 4; i++) {
-        for (let j = 0; j < 4; j++) {
-            for (let k = 0; k < 4; k++) {
-                // Utiliser l'indexation linéaire pour accéder aux éléments
-                // Pour une matrice 4x4, l'index est (row * 4 + col)
-                result[j * 4 + i] += matrixA[k * 4 + i] * matrixB[j * 4 + k];
-            }
-        }
-    }
+    const result = new Float32Array(16);
+    result[0] = matrixA[0] * matrixB[0] + matrixA[4] * matrixB[1] + matrixA[8] * matrixB[2] + matrixA[12] * matrixB[3];
+    result[1] = matrixA[1] * matrixB[0] + matrixA[5] * matrixB[1] + matrixA[9] * matrixB[2] + matrixA[13] * matrixB[3];
+    result[2] = matrixA[2] * matrixB[0] + matrixA[6] * matrixB[1] + matrixA[10] * matrixB[2] + matrixA[14] * matrixB[3];
+    result[3] = matrixA[3] * matrixB[0] + matrixA[7] * matrixB[1] + matrixA[11] * matrixB[2] + matrixA[15] * matrixB[3];
+    result[4] = matrixA[0] * matrixB[4] + matrixA[4] * matrixB[5] + matrixA[8] * matrixB[6] + matrixA[12] * matrixB[7];
+    result[5] = matrixA[1] * matrixB[4] + matrixA[5] * matrixB[5] + matrixA[9] * matrixB[6] + matrixA[13] * matrixB[7];
+    result[6] = matrixA[2] * matrixB[4] + matrixA[6] * matrixB[5] + matrixA[10] * matrixB[6] + matrixA[14] * matrixB[7];
+    result[7] = matrixA[3] * matrixB[4] + matrixA[7] * matrixB[5] + matrixA[11] * matrixB[6] + matrixA[15] * matrixB[7];
+    result[8] =
+        matrixA[0] * matrixB[8] + matrixA[4] * matrixB[9] + matrixA[8] * matrixB[10] + matrixA[12] * matrixB[11];
+    result[9] =
+        matrixA[1] * matrixB[8] + matrixA[5] * matrixB[9] + matrixA[9] * matrixB[10] + matrixA[13] * matrixB[11];
+    result[10] =
+        matrixA[2] * matrixB[8] + matrixA[6] * matrixB[9] + matrixA[10] * matrixB[10] + matrixA[14] * matrixB[11];
+    result[11] =
+        matrixA[3] * matrixB[8] + matrixA[7] * matrixB[9] + matrixA[11] * matrixB[10] + matrixA[15] * matrixB[11];
+    result[12] =
+        matrixA[0] * matrixB[12] + matrixA[4] * matrixB[13] + matrixA[8] * matrixB[14] + matrixA[12] * matrixB[15];
+    result[13] =
+        matrixA[1] * matrixB[12] + matrixA[5] * matrixB[13] + matrixA[9] * matrixB[14] + matrixA[13] * matrixB[15];
+    result[14] =
+        matrixA[2] * matrixB[12] + matrixA[6] * matrixB[13] + matrixA[10] * matrixB[14] + matrixA[14] * matrixB[15];
+    result[15] =
+        matrixA[3] * matrixB[12] + matrixA[7] * matrixB[13] + matrixA[11] * matrixB[14] + matrixA[15] * matrixB[15];
     return result;
 }
 function inverse(matrix) {
@@ -20475,7 +20491,7 @@ function minify$1(matrix) {
 function eqMatrix(a, b) {
     let mat = identity();
     let tmp = identity();
-    const data = (Array.isArray(a) ? a : parseMatrix(a));
+    const data = (Array.isArray(a) || ArrayBuffer.isView(a) ? a : parseMatrix(a));
     for (const transform of b) {
         tmp = computeMatrix([transform], identity());
         if (tmp == null) {
@@ -20537,10 +20553,10 @@ function minifyTransformFunctions(transform) {
     }
     const ignoredValue = name.startsWith("scale") ? 1 : 0;
     const t = new Set(["x", "y", "z"]);
-    let i = 3;
-    while (i--) {
+    for (let i = 0; i < 3; i++) {
+        const axis = i == 0 ? "x" : i == 1 ? "y" : "z";
         if (values.length <= i || values[i].val == ignoredValue) {
-            t.delete(i == 0 ? "x" : i == 1 ? "y" : "z");
+            t.delete(axis);
         }
     }
     if (name == "translate3d" || name == "translate") {

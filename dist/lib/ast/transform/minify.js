@@ -1,4 +1,4 @@
-import { multiply, decompose, round, toZero, identity } from './utils.js';
+import { identity, multiply, decompose, round, toZero } from './utils.js';
 import { epsilon } from '../../syntax/constants.js';
 import { EnumToken } from '../types.js';
 import { computeMatrix } from './compute.js';
@@ -245,7 +245,7 @@ function minify(matrix) {
 function eqMatrix(a, b) {
     let mat = identity();
     let tmp = identity();
-    const data = (Array.isArray(a) ? a : parseMatrix(a));
+    const data = (Array.isArray(a) || ArrayBuffer.isView(a) ? a : parseMatrix(a));
     for (const transform of b) {
         tmp = computeMatrix([transform], identity());
         if (tmp == null) {
@@ -307,10 +307,10 @@ function minifyTransformFunctions(transform) {
     }
     const ignoredValue = name.startsWith("scale") ? 1 : 0;
     const t = new Set(["x", "y", "z"]);
-    let i = 3;
-    while (i--) {
+    for (let i = 0; i < 3; i++) {
+        const axis = i == 0 ? "x" : i == 1 ? "y" : "z";
         if (values.length <= i || values[i].val == ignoredValue) {
-            t.delete(i == 0 ? "x" : i == 1 ? "y" : "z");
+            t.delete(axis);
         }
     }
     if (name == "translate3d" || name == "translate") {
