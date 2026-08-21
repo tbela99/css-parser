@@ -88,9 +88,10 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 - [Sourcemap](https://tbela99.github.io/css-parser/docs/documents/Guide.Sourcemap.html)
 - [Plugins API](https://tbela99.github.io/css-parser/docs/documents/Guide.Plugins_API.html)
 - [Syntax Lowering](https://tbela99.github.io/css-parser/docs/documents/Guide.Syntax_Lowering.html)
+- [Prefix Removal](https://tbela99.github.io/css-parser/docs/documents/Guide.Prefix_Removal.html)
 - [Ast Manipulation](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast_Manipulation.html)
 - [Utility Functions](https://tbela99.github.io/css-parser/docs/documents/Guide.Utility_Functions.html)
-- 
+  
 ## AST
 
 ### Comment

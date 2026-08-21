@@ -17,6 +17,8 @@ export function run(
     transformSync,
     parseSync,
 ) {
+    const root = new URL(dirname(import.meta.url) + "/../../../");
+
     describe("css modules", function () {
         it("module #1", function () {
             return transform(
@@ -125,7 +127,7 @@ export function run(
 
 .indigo-white {
   composes: bg-indigo;
-composes: button cell title from "${url.pathname}";  color: white;
+composes: button cell title from "${url.pathname.replace(root.pathname, "")}";  color: white;
 }
 `,
                 {
@@ -645,7 +647,7 @@ a span {
               
               .indigo-white {
                 composes: bg-indigo;
-              composes: button cell title from "${url.pathname}";  color: white;
+              composes: button cell title from "${url.pathname.replace(root.pathname, "")}";  color: white;
               }
 `,
                 {
@@ -743,7 +745,7 @@ a span {
                 `
 
   /* import your colors... */
-  @value colors: "${url.pathname}";
+  @value colors: "${url.pathname.replace(root.pathname, "")}";
   @value blue, red, green from colors;
   
   .button {

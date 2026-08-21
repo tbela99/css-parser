@@ -1,15 +1,19 @@
+import { StringInterner } from "./utils/intern.ts";
+
 class ArenaData {
     private count: number = 0;
     private kind: Uint8Array;
     private nodes: Uint32Array;
-    private parents: Uint32Array;
+    /**
+     * node token data
+     */
     private data: Uint32Array;
-    private children: Uint32Array;
-    private childrenLen: Uint32Array;
     private args: Uint32Array;
     private argsLen: Uint8Array;
     private spans: Uint32Array;
     private source: Uint8Array;
+
+    private strings: StringInterner = new StringInterner();
 
     constructor(size: number = 1024) {
         this.kind = new Uint8Array(size);
@@ -22,6 +26,23 @@ class ArenaData {
         this.args = new Uint32Array(size);
         this.argsLen = new Uint8Array(size);
         this.spans = new Uint32Array(size);
+    }
+
+    allocate(kind: number, node: number, parent: number, data: number, source: number, children: number, childrenLen: number, args: number, argsLen: number, spans: number) {
+        if (this.count === this.kind.length) {
+            this.grow();
+        }
+        this.kind[this.count] = kind;
+        this.nodes[this.count] = node;
+        this.parents[this.count] = parent;
+        this.data[this.count] = data;
+        this.source[this.count] = source;
+        this.children[this.count] = children;
+        this.childrenLen[this.count] = childrenLen;
+        this.args[this.count] = args;
+        this.argsLen[this.count] = argsLen;
+        this.spans[this.count] = spans;
+        return this.count++;
     }
 
     private grow() {

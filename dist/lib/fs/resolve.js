@@ -149,7 +149,7 @@ const resolve = memoize(function (url, currentDirectory, cwd) {
         currentDirectory = normalize(currentDirectory);
     }
     const dir = cwd || currentDirectory;
-    const absolute = dir == "" || url.startsWith("/") ? resolvePath(url) : resolvePath(dir, url);
+    const absolute = dir == "" || url.startsWith("/") || url.match(/^[a-zA-Z]:/) ? resolvePath(url) : resolvePath(dir, url);
     return {
         absolute,
         relative: dir === "" ? absolute : diff(absolute, dir),

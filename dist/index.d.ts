@@ -4137,7 +4137,6 @@ declare class SourceFile {
 }
 
 export declare interface PropertyListOptions {
-
     removeDuplicateDeclarations?: boolean | string | string[];
     computeShorthand?: boolean;
 }
@@ -4146,7 +4145,6 @@ export declare interface PropertyListOptions {
  * parse info
  */
 export declare interface ParseInfo$1 {
-
     /**
      * stream
      */
@@ -4156,7 +4154,7 @@ export declare interface ParseInfo$1 {
      * Source file
      */
     source: SourceFile;
-    
+
     /**
      * last token position
      */
@@ -6475,68 +6473,68 @@ declare function replaceNodeOrValue(parent: BinaryExpressionToken | (AstNode$1 &
 /**
  *
  * @param node
- * @param property
+ * @param key
+ */
+declare function getNodeProperty(node: AstNode$1, key: 'parent'): AstNode$1 | Token$1 | null;
+/**
+ *
+ * @param node
+ * @param key
+ */
+declare function getNodeProperty(node: AstNode$1, key: 'location'): SourceLocation | null;
+/**
+ *
+ * @param node
+ * @param key
+ */
+declare function getNodeProperty(node: AstNode$1, key: 'state'): EnumAstNodeStatus$1 | null;
+/**
+ *
+ * @param node
+ * @param key
+ */
+declare function getNodeProperty(node: AstNode$1, key: 'errors'): ErrorDescription$1[] | null;
+/**
+ *
+ * @param node
+ * @param key
+ */
+declare function getNodeProperty(node: AstNode$1, key: 'tokens'): Token$1[] | null;
+/**
+ *
+ * @param node
+ * @param key
  * @param value
  */
-declare function setNodeProperty(node: AstNode$1, property: "location", value: SourceLocation): void;
+declare function setNodeProperty(node: AstNode$1, key: 'parent', value: AstNode$1 | Token$1 | null): void;
 /**
  *
  * @param node
- * @param property
+ * @param key
  * @param value
  */
-declare function setNodeProperty(node: AstNode$1, property: "state", value: EnumAstNodeStatus$1): void;
+declare function setNodeProperty(node: AstNode$1, key: 'location', value: SourceLocation | null): void;
 /**
  *
  * @param node
- * @param property
+ * @param key
  * @param value
  */
-declare function setNodeProperty(node: AstNode$1, property: "errors", value: ErrorDescription$1[]): void;
+declare function setNodeProperty(node: AstNode$1, key: 'state', value: EnumAstNodeStatus$1 | null): void;
 /**
  *
  * @param node
- * @param property
+ * @param key
  * @param value
  */
-declare function setNodeProperty(node: AstNode$1, property: "tokens", value: Token$1[]): void;
+declare function setNodeProperty(node: AstNode$1, key: 'errors', value: ErrorDescription$1[] | null): void;
 /**
  *
  * @param node
- * @param property
+ * @param key
  * @param value
  */
-declare function setNodeProperty(node: AstNode$1, property: "parent", value: AstNode$1 | Token$1): void;
-/**
- *
- * @param node
- * @param property
- */
-declare function getNodeProperty(node: AstNode$1, property: "location"): SourceLocation | null;
-/**
- *
- * @param node
- * @param property
- */
-declare function getNodeProperty(node: AstNode$1, property: "state"): EnumAstNodeStatus$1 | null;
-/**
- *
- * @param node
- * @param property
- */
-declare function getNodeProperty(node: AstNode$1, property: "errors"): ErrorDescription$1[] | null;
-/**
- *
- * @param node
- * @param property
- */
-declare function getNodeProperty(node: AstNode$1, property: "tokens"): Token$1[] | null;
-/**
- *
- * @param node
- * @param property
- */
-declare function getNodeProperty(node: AstNode$1, property: "parent"): AstNode$1 | Token$1 | null;
+declare function setNodeProperty(node: AstNode$1, key: 'tokens', value: Token$1[] | null): void;
 
 /**
  * Load file or url
