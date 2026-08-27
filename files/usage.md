@@ -11,11 +11,11 @@ The **synchronous API** is marginally faster than the asynchronous API, but it c
 
 | Function          | Parses CSS | Async | CSS Output |
 | ----------------- | ---------- | ----- | ---------- |
-| `parse()`         | ✅          | ✅     | ✅          | ❌ |
-| `parseSync()`     | ✅          | ❌     | ❌          |
-| `transform()`     | ✅          | ✅     | ✅          |
-| `transformSync()` | ✅          | ❌     | ✅          |
-| `render()`        | ❌          | ❌     | ✅          |
+| `parse()`         | ✅         | ✅     | ✅         | 
+| `parseSync()`     | ✅         | ❌     | ❌         |
+| `transform()`     | ✅         | ✅     | ✅         |
+| `transformSync()` | ✅         | ❌     | ✅         |
+| `render()`        | ❌         | ❌     | ✅         |
 
 > **Note:** `parse()` and `parseSync()` only produce the AST and do not generate CSS output.
 
@@ -387,18 +387,18 @@ button {
 
 | Feature                 | parse() | transform() | transformSync() | ParseSync() |
 | ----------------------- | ------- | ----------- | --------------- | ----------- |
-| Parse from stream       | ✅       | ✅           | ❌               | ❌           |
-| Parse from file         | ✅       | ✅           | ❌               | ❌           |
-| Flatten @import at-rule | ✅       | ✅           | ❌               | ❌           |
-| transformSync()         | ✅       | ✅           | ❌               | ❌           |
+| Parse from stream       | ✅      | ✅          | ❌               | ❌          |
+| Parse from file         | ✅      | ✅          | ❌               | ❌          |
+| Flatten @import at-rule | ✅      | ✅          | ❌               | ❌          |
+| transformSync()         | ✅      | ✅          | ❌               | ❌          |
 
 ### CSS Module features comparison
 
-| Feature                                                                | parse() | transform() | transformSync() | ParseSync() |
-| ---------------------------------------------------------------------- | ------- | ----------- | --------------- | ----------- |
-| Algorithms supported by `pattern`: <br> sha1, sha256, sha384, sha512      | ✅      | ✅           | ❌              | ❌          |
-| CSS `composes` from file                                                   | ✅      | ✅           | ❌              | ❌          |
-| import CSS variables from file                                         | ✅      | ✅           | ❌              | ❌          |
+| Feature                                                              | parse() | transform() | transformSync() | ParseSync() |
+| -------------------------------------------------------------------- | ------- | ----------- | --------------- | ----------- |
+| Algorithms supported by `pattern`: <br> sha1, sha256, sha384, sha512 | ✅      | ✅          | ❌               | ❌          |
+| CSS `composes` from file                                             | ✅      | ✅          | ❌               | ❌          |
+| import CSS variables from file                                       | ✅      | ✅          | ❌               | ❌          |
 
 
 ------

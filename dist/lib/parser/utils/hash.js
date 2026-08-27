@@ -29,7 +29,7 @@ function hashId(input, length = 6) {
     chars.push(FIRST_ALPHABET[n % FIRST_ALPHABET.length]);
     // Remaining characters
     for (let i = 1; i < length; i++) {
-        n = (n + chars.length + i) % FULL_ALPHABET.length;
+        n = (n + chars.length * i) % FULL_ALPHABET.length;
         chars.push(FULL_ALPHABET[n]);
     }
     return chars.join("");
@@ -60,13 +60,13 @@ function toSortedString(input) {
  * @returns
  */
 function objectHash(object) {
-    return hashId(toSortedString(object));
+    return hashCode(toSortedString(object)).toString(16);
 }
 /**
  * convert input to hex
  * @param input
  */
-function toHex(input) {
+function toHex(input, length) {
     let result = "";
     if (input instanceof ArrayBuffer || ArrayBuffer.isView(input)) {
         for (const byte of Array.from(new Uint8Array(input))) {
@@ -136,4 +136,4 @@ function syncHash(input, length = 6, algo) {
     return hashId(input, length);
 }
 
-export { DIGITS, FIRST_ALPHABET, FULL_ALPHABET, LOWER, hash, hashAlgorithms, hashId, objectHash, syncHash };
+export { DIGITS, FIRST_ALPHABET, FULL_ALPHABET, LOWER, hash, hashAlgorithms, hashId, objectHash, syncHash, toSortedString };

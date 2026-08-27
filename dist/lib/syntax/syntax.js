@@ -15,7 +15,12 @@ import { getSyntaxConfig } from '../validation/config.js';
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
-const dimensionUnits = new Set([
+const flexUnits = ["fr"];
+const frequencyUnits = ["hz", "khz"];
+const timeUnits = ["ms", "s"];
+const angleUnits = ["rad", "turn", "deg", "grad"];
+const resolutionUnits = ["dpi", "dpcm", "dppx", "x"];
+const dimensionUnits = [
     "q",
     "cap",
     "ch",
@@ -59,7 +64,7 @@ const dimensionUnits = new Set([
     "vmax",
     "vmin",
     "vw",
-]);
+];
 // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions
 // https://developer.mozilla.org/en-US/docs/Web/CSS/Mozilla_Extensions
 const pseudoAliasMap = {
@@ -196,19 +201,19 @@ const pseudoAliasMap = {
 // renamed standard properties
 const renamedStandardProperties = new Map([["color-adjust", "print-color-adjust"]]);
 function isLength(dimension) {
-    return "unit" in dimension && dimensionUnits.has(dimension.unit.toLowerCase());
+    return "unit" in dimension && dimensionUnits.includes(dimension.unit.toLowerCase());
 }
 function isResolution(dimension) {
-    return "unit" in dimension && ["dpi", "dpcm", "dppx", "x"].includes(dimension.unit.toLowerCase());
+    return "unit" in dimension && resolutionUnits.includes(dimension.unit.toLowerCase());
 }
 function isAngle(dimension) {
-    return "unit" in dimension && ["rad", "turn", "deg", "grad"].includes(dimension.unit.toLowerCase());
+    return "unit" in dimension && angleUnits.includes(dimension.unit.toLowerCase());
 }
 function isTime(dimension) {
-    return "unit" in dimension && ["ms", "s"].includes(dimension.unit.toLowerCase());
+    return "unit" in dimension && timeUnits.includes(dimension.unit.toLowerCase());
 }
 function isFrequency(dimension) {
-    return "unit" in dimension && ["hz", "khz"].includes(dimension.unit.toLowerCase());
+    return "unit" in dimension && frequencyUnits.includes(dimension.unit.toLowerCase());
 }
 /**
  * Reduce color stops
@@ -841,75 +846,6 @@ function isPseudo(name) {
 function isHash(name) {
     return name.charAt(0) == "#" && isIdentStart(name.charCodeAt(1));
 }
-const isNumber = memoize(function (name) {
-    let codepoint = name.charCodeAt(0);
-    let i = 0;
-    const j = name.length;
-    if (j == 1 && !isDigit(codepoint)) {
-        return false;
-    }
-    // '+' '-'
-    if ([0x2b, 0x2d].includes(codepoint)) {
-        i++;
-    }
-    // consume digits
-    while (i < j) {
-        codepoint = name.charCodeAt(i);
-        if (isDigit(codepoint)) {
-            i++;
-            continue;
-        }
-        // '.' 'E' 'e'
-        if (codepoint == 0x2e || codepoint == 0x45 || codepoint == 0x65) {
-            break;
-        }
-        return false;
-    }
-    // '.'
-    if (codepoint == 0x2e) {
-        if (!isDigit(name.charCodeAt(++i))) {
-            return false;
-        }
-    }
-    while (i < j) {
-        codepoint = name.charCodeAt(i);
-        if (isDigit(codepoint)) {
-            i++;
-            continue;
-        }
-        // 'E' 'e'
-        if (codepoint == 0x45 || codepoint == 0x65) {
-            i++;
-            break;
-        }
-        return false;
-    }
-    // 'E' 'e'
-    if (codepoint == 0x45 || codepoint == 0x65) {
-        // if (i == j) {
-        //     return false;
-        // }
-        codepoint = name.charCodeAt(i + 1);
-        // '+' '-'
-        // if ([0x2b, 0x2d].includes(codepoint)) {
-        //     i++;
-        // }
-        codepoint = name.charCodeAt(i + 1);
-        if (!isDigit(codepoint)) {
-            return false;
-        }
-    }
-    // while (++i < j) {
-    //     codepoint = name.charCodeAt(i) as number;
-    //     if (!isDigit(codepoint)) {
-    //         return false;
-    //     }
-    // }
-    return true;
-});
-function isPercentage(name) {
-    return name.endsWith("%") && isNumber(name.slice(0, -1));
-}
 function isFlex(dimension) {
     return "unit" in dimension && "fr" == dimension.unit.toLowerCase();
 }
@@ -950,9 +886,9 @@ function parseDimension(name) {
     else if (isResolution(dimension)) {
         // @ts-ignore
         dimension.typ = EnumToken.ResolutionTokenType;
-        if (dimension.unit == "dppx") {
-            dimension.unit = "x";
-        }
+        // if (dimension.unit == "dppx") {
+        //     dimension.unit = "x";
+        // }
     }
     else if (isFrequency(dimension)) {
         // @ts-ignore
@@ -963,22 +899,6 @@ function parseDimension(name) {
         dimension.typ = EnumToken.FlexTokenType;
     }
     return dimension;
-}
-function isHexColor(name) {
-    if (name.charAt(0) != "#" || ![4, 5, 7, 9].includes(name.length)) {
-        return false;
-    }
-    for (let chr of name.slice(1)) {
-        let codepoint = chr.charCodeAt(0);
-        if (!isDigit(codepoint) &&
-            // A-F
-            !(codepoint >= 0x41 && codepoint <= 0x46) &&
-            // a-f
-            !(codepoint >= 0x61 && codepoint <= 0x66)) {
-            return false;
-        }
-    }
-    return true;
 }
 function isFunction(name) {
     return name.endsWith("(") && isIdent(name.slice(0, -1));
@@ -1088,4 +1008,4 @@ function toPrecisionAngle(angle, precision = colorPrecision, correctValue = true
     return angle;
 }
 
-export { dimensionUnits, isAngle, isColor, isDigit, isFlex, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isLetter, isNewLine, isNonPrintable, isNumber, isPercentage, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, length2Px, minifyNumber, parseColor, parseDimension, pseudoAliasMap, reduceColorStops, reduceConicColorStops, reducegradientBackgroundPosition, renamedStandardProperties, toPrecisionAngle, toPrecisionValue };
+export { angleUnits, dimensionUnits, flexUnits, frequencyUnits, isAngle, isColor, isDigit, isFlex, isFrequency, isFunction, isHash, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isLetter, isNewLine, isNonPrintable, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, length2Px, minifyNumber, parseColor, parseDimension, pseudoAliasMap, reduceColorStops, reduceConicColorStops, reducegradientBackgroundPosition, renamedStandardProperties, resolutionUnits, timeUnits, toPrecisionAngle, toPrecisionValue };

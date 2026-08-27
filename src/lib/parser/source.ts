@@ -28,7 +28,7 @@ export class SourceFile {
     /**
      * Source file content
      */
-    private content: string;
+    content: string;
 
     /**
      * Constructor

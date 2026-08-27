@@ -12,12 +12,18 @@ class ArenaData {
     private data: Uint32Array;
     private source: Uint8Array;
 
+    private nodeView: DataView;
+    private dataView: DataView;
+
     private strings: StringInterner = new StringInterner();
 
     constructor(size: number = 1024) {
         this.nodes = new Uint32Array(size);
         this.data = new Uint32Array(size);
         this.source = new Uint8Array(5);
+
+        this.nodeView = new DataView(this.nodes.buffer);
+        this.dataView = new DataView(this.data.buffer);
         this.strings = new StringInterner();
     }
 
@@ -34,11 +40,14 @@ class ArenaData {
     private grow() {
         const nodes = new Uint32Array(this.nodes.length * 2);
         const data = new Uint32Array(this.data.length * 2);
-        
+
         nodes.set(this.nodes);
         data.set(this.data);
 
         this.nodes = nodes;
         this.data = data;
+
+        this.nodeView = new DataView(this.nodes.buffer);
+        this.dataView = new DataView(this.data.buffer);
     }
 }

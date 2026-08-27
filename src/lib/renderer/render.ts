@@ -52,8 +52,9 @@ import { reduceHexValue } from "../syntax/color/hex.ts";
 import { ColorType, EnumToken } from "../ast/types.ts";
 import { expand } from "../ast/expand.ts";
 import { SourceMap } from "./sourcemap/sourcemap.ts";
-import { colorPrecision, LOC, PARENT, pseudoElements, tokensfuncSet, urlTokenMatcher } from "../syntax/constants.ts";
+import { colorPrecision, LOCSRCID, LOCSTA, PARENT, pseudoElements, tokensfuncSet, urlTokenMatcher } from "../syntax/constants.ts";
 import {
+    isWhiteSpace,
     minifyNumber,
     parseColor,
     reduceColorStops,
@@ -264,44 +265,36 @@ function updateSourceMap(
 ) {
     let offset: number = 0;
 
-    while (true) {
-        if (str.charAt(offset) == options.newLine) {
-            offset += options.newLine.length;
-            continue;
-        }
-
-        if (str.charAt(offset) == options.indent) {
-            offset += options.indent.length;
-            continue;
-        }
-
-        break;
+    // eat leanding whitespace
+    while (offset < str.length && isWhiteSpace(str.charCodeAt(offset))) {
+        offset++;
     }
 
     if (offset > 0) {
-        move(sourceLocation, linesMap, str.slice(0, offset));
+        move(sourceLocation, linesMap, str, 0, offset + 1);
     }
 
     if (
-        node[LOC] != null &&
-        [
-            EnumToken.RuleNodeType,
-            EnumToken.AtRuleNodeType,
-            EnumToken.KeyframesRuleNodeType,
-            EnumToken.KeyframesAtRuleNodeType,
-        ].includes(node.typ)
+        node[LOCSTA] != null
     ) {
-        const source = options.sourcesMap!.get((node[LOC] as SourceLocation)!.srcId) as SourceFile;
+
+        const source = options.sourcesMap!.get(node[LOCSRCID]!) as SourceFile;
         const inputSourceMap = source.getInputSourceMap();
-        const offsets: [number, number] = source.getOffsets(node[LOC].sta) as [number, number];
+        const offsets: [number, number] = source.getOffsets(node[LOCSTA]) as [number, number];
         const [newLine, newColumn] = linesMap.getOffsets(sourceLocation.end);
         let records: Array<[string | null, number, number, string | null]> | null = null;
-        let srcId: number = (node[LOC] as SourceLocation)!.srcId;
+        let srcId: number = node[LOCSRCID]!;
         let sourceFileName: string | null = (source.getFileName() as string) || null;
-        let sourceContent: string | null = (source.getContent() as string) || null;
+        let sourceContent: string | null; // = (source.getContent() as string) || null;
 
         if (inputSourceMap != null && (records = inputSourceMap.find(offsets[0], offsets[1])) != null) {
+
+                let newId: number | null = null;
+
             for (const record of records) {
+
+                newId = null;
+                
                 // @ts-ignore
                 sourceFileName = (record[0] as string) || null;
                 // @ts-ignore
@@ -309,9 +302,12 @@ function updateSourceMap(
                 // @ts-ignore
                 offsets[1] = record[2] as number;
 
+                // console.error({record});
+
                 sourceContent = (record[3] as string) || null;
 
                 if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
+
                     if (cache[sourceFileName] == null) {
                         const absolute = options.resolve!(dirname(options.output as string), options.cwd as string)
                             .absolute as string;
@@ -329,6 +325,32 @@ function updateSourceMap(
                     sourceFileName = cache[sourceFileName] as string;
                 }
 
+                for (const [id, file] of options.sourcesMap!.entries()) {
+                    if (file.getFileName() === sourceFileName) {
+                        newId = id;
+                        break;
+                    }
+
+                    if (sourceFileName == null && file.getContent() === sourceContent) {
+                        newId = id;
+                        break;
+                    }
+                }
+
+                if (newId == null) {
+                    
+                    const source = new SourceFile(
+                        sourceContent as string,
+                        [],
+                        sourceFileName,
+                    )
+
+                    options.sourcesMap!.set(source.id, source);
+                    newId = source.id;
+                }
+
+                srcId = newId as number;
+
                 if (!sourcemaps.sources.includes(srcId)) {
                     sourcemaps.sources.push(srcId);
                 }
@@ -336,18 +358,18 @@ function updateSourceMap(
                 sourcemaps.maps.push([newLine, newColumn, srcId, ...offsets]);
             }
         } else {
-            if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
-                if (cache[sourceFileName] == null) {
-                    const absolute = options.resolve!(dirname(options.output as string), options.cwd as string)
-                        .absolute as string;
-                    const absoluteSourceFileName = options.resolve!(sourceFileName, options.cwd as string)
-                        .absolute as string;
+            // if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
+            //     if (cache[sourceFileName] == null) {
+            //         const absolute = options.resolve!(dirname(options.output as string), options.cwd as string)
+            //             .absolute as string;
+            //         const absoluteSourceFileName = options.resolve!(sourceFileName, options.cwd as string)
+            //             .absolute as string;
 
-                    cache[sourceFileName] = options.resolve!(absoluteSourceFileName, absolute).relative as string;
-                }
+            //         cache[sourceFileName] = options.resolve!(absoluteSourceFileName, absolute).relative as string;
+            //     }
 
-                sourceFileName = cache[sourceFileName] as string;
-            }
+            //     sourceFileName = cache[sourceFileName] as string;
+            // }
 
             if (!sourcemaps.sources.includes(srcId)) {
                 sourcemaps.sources.push(srcId);
@@ -355,9 +377,11 @@ function updateSourceMap(
 
             sourcemaps.maps.push([newLine, newColumn, srcId, ...offsets]);
         }
+
+    // console.error([newLine, newColumn, srcId, ...offsets, EnumToken[node.typ], node.nam ?? node.sel]);
     }
 
-    move(sourceLocation, linesMap, offset > 0 ? str.slice(offset) : str);
+    move(sourceLocation, linesMap, str, offset);
 }
 
 /**
@@ -366,12 +390,13 @@ function updateSourceMap(
  * @param linesMap
  * @param str
  */
-export function move(sourceLocation: SourceLocation, linesMap: LinesMap, str: string) {
-    let i: number = 0;
+export function move(sourceLocation: SourceLocation, linesMap: LinesMap, str: string, start?: number, end?: number) {
+    let i: number = start ?? 0;
+    let j: number = end ?? str.length;
     let codepoint: number;
     let char: string;
 
-    for (; i < str.length; i++) {
+    for (; i < j; i++) {
         char = str.charAt(i);
         codepoint = char.charCodeAt(0);
         sourceLocation.end += char.length;
@@ -561,7 +586,6 @@ function renderAstNode(
                 children += str;
 
                 if (sourcemaps != null && str !== "") {
-                    move(sourceLocation, linesMap!, str);
 
                     if (node.typ == EnumToken.DeclarationNodeType && recordDeclarationSourceMap) {
                         // if declaration is child of at-rule, then record it
@@ -570,19 +594,28 @@ function renderAstNode(
                         //         color: red;
                         //     }
                         // }
-                        const source = options.sourcesMap!.get(node[LOC]!.srcId) as SourceFile;
+                        // const source = options.sourcesMap!.get(node[LOCSTA]) as SourceFile;
 
-                        if (!sourcemaps.sources.includes(node[LOC]!.srcId as number)) {
-                            sourcemaps.sources.push(node[LOC]!.srcId as number);
-                        }
+                        // if (!sourcemaps.sources.includes(node[LOCSTA] as number)) {
+                        //     sourcemaps.sources.push(node[LOCSTA] as number);
+                        // }
 
-                        sourcemaps.maps.push([
-                            ...linesMap!.getOffsets(
-                                sourceLocation.end - str.length + options.newLine!.length + indentSub.length,
-                            ),
-                            node[LOC]!.srcId,
-                            ...source!.getOffsets(node![LOC]!.sta),
-                        ]);
+                        // sourcemaps.maps.push([
+                        //     ...linesMap!.getOffsets(
+                        //         sourceLocation.end - str.length + options.newLine!.length + indentSub.length,
+                        //     ),
+                        //     node[LOCSTA],
+                        //     ...source!.getOffsets(node![LOCSTA]),
+                        // ]);
+
+                        // console.error(options.sourcesMap.get(node[LOCSTA])?.getSourceLocation(node[LOCSTA]), linesMap?.getOffsets(sourceLocation.end), node.nam);
+
+                        // @ts-ignore
+                        updateSourceMap(node, options, cache, sourcemaps, sourceLocation, linesMap!, str);
+                    }
+                    else {
+                        
+                    move(sourceLocation, linesMap!, str);
                     }
                 }
             }

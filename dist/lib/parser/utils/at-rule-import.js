@@ -2,7 +2,7 @@ import { EnumToken } from '../../ast/types.js';
 import { getSyntaxRule } from '../../validation/config.js';
 import { trimArray } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
-import { tokensfuncDefMap, LOC } from '../../syntax/constants.js';
+import { tokensfuncDefMap, LOCEND, LOCSTA } from '../../syntax/constants.js';
 import { parseMediaqueryList } from './at-rule-media.js';
 import { parseAtRuleSupportSyntax } from './at-rule-support.js';
 
@@ -38,11 +38,7 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
             }
         }
         const slice = stream.slice(index + 1, k);
-        // @ts-expect-error
-        stream[0][LOC] = {
-            ...stream[0][LOC],
-            end: stream[1][LOC].end,
-        };
+        stream[0][LOCEND] = stream[1][LOCEND];
         tokens.push(Object.assign({
             typ: tokensfuncDefMap.get(stream[0].typ),
             chi: trimArray(slice),
@@ -58,7 +54,7 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                     message: "Expected string or url()",
                     syntax: "@import",
                     node: stream[0],
-                    location: stream[0]?.[LOC],
+                    location: options.source.getSourceLocation(stream[0]?.[LOCSTA]),
                 },
             ],
         };
@@ -88,7 +84,7 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                         message: `Expected <layer-name>`,
                         syntax: "@import",
                         node: stream[index],
-                        location: options.source.getSourceLocation(stream[index]?.[LOC].sta),
+                        location: options.source.getSourceLocation(stream[index]?.[LOCSTA]),
                     },
                 ],
             };
@@ -115,7 +111,7 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
                         message: `Expected <layer-name>`,
                         syntax: "@import",
                         node: stream[index],
-                        location: options.source.getSourceLocation(stream[index]?.[LOC].sta),
+                        location: options.source.getSourceLocation(stream[index]?.[LOCSTA]),
                     },
                 ],
             };

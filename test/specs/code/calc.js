@@ -245,8 +245,8 @@ scale: rem(10 * 2, 1.7);
  height: 100px
 }
 .two {
- width: 141px;
- height: 141px
+ width: 141.421356px;
+ height: 141.421356px
 }
 .three {
  width: 250px;
@@ -265,9 +265,9 @@ line-height: calc(pi);
 transform: rotate(atan2(e, 30));
 }
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
- -moz-transform: rotate(atan2(1rem,-.5rem));
- line-height: calc(pi);
- transform: rotate(atan2(e,30))
+ -moz-transform: rotate(116.565deg);
+ line-height: 3.141593;
+ transform: rotate(5.1774deg)
 }`));
         });
 
@@ -278,9 +278,11 @@ transform: rotate(atan2(e, 30));
 a {
 
 width: calc(100px * log(8, 2));
+ transform: rotate( tan(45deg))
 }
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
- width: 300px
+ width: 300px;
+ transform: rotate(1rad)
 }`));
         });
 
@@ -468,8 +470,8 @@ width: calc(-2px *sign(-1);}
  height: 100px
 }
 .two {
- width: 141px;
- height: 141px
+ width: 141.421356px;
+ height: 141.421356px
 }
 .three {
  width: 250px;

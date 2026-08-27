@@ -24,26 +24,6 @@ export function matchAtRuleSyntax(
     trimArray(stream);
 
     if (syntax.length === 0) {
-        // const filtered = stream.filter(
-        //     (token) => token.typ !== EnumToken.WhitespaceTokenType && token.typ !== EnumToken.CommentTokenType,
-        // );
-
-        // if (filtered.length > 0) {
-        //     return {
-        //         success: false,
-        //         errors: [
-        //             {
-        //                 action: "drop",
-        //                 message: `unexpected token ${EnumToken[filtered[0].typ]} at ${filtered[0][LOC]!.src}:${
-        //                     filtered[0][LOC]!.sta.lin
-        //                 }:${filtered[0][LOC]!.sta.col}`,
-        //                 node: filtered[0],
-        //                 location: filtered[0][LOC]!,
-        //             },
-        //         ],
-        //     };
-        // }
-
         return { success: true, errors: [] };
     }
 

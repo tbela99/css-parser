@@ -8,11 +8,13 @@ import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { matchAllSyntaxes, createValidationContext } from '../../validation/match.js';
 import { STATE } from '../../syntax/constants.js';
 import { objectHash } from '../utils/hash.js';
+import { equalsIgnoreCase } from '../utils/text.js';
 
 const config = getConfig();
 class PropertyList {
     options = { removeDuplicateDeclarations: true, computeShorthand: true };
     declarations;
+    //  ketsey = new Map;
     constructor(options = {}) {
         this.options = options;
         this.declarations = new Map();
@@ -32,12 +34,12 @@ class PropertyList {
             name =
                 declaration.typ != EnumToken.DeclarationNodeType
                     ? null
-                    : declaration.nam.toLowerCase();
+                    : declaration.nam;
             if (declaration[STATE] == EnumAstNodeStatus.Invalid ||
                 declaration[STATE] == EnumAstNodeStatus.Unknown ||
                 declaration[STATE] == EnumAstNodeStatus.ValidationFailed ||
                 declaration.typ != EnumToken.DeclarationNodeType ||
-                "composes" === name ||
+                equalsIgnoreCase("composes", name) ||
                 (typeof this.options.removeDuplicateDeclarations === "string" &&
                     this.options.removeDuplicateDeclarations === name) ||
                 (Array.isArray(this.options.removeDuplicateDeclarations)
@@ -65,7 +67,21 @@ class PropertyList {
             }
             // do not compute shorthand for invalid declarations
             if (declaration[STATE] !== EnumAstNodeStatus.Validated) {
-                this.declarations.set(declaration.nam, declaration);
+                // const key = objectHash(declaration);
+                // if (!this.ketsey.has(key)) {
+                //     this.ketsey.set(key, [declaration.nam]);
+                //     console.error(
+                //         `Adding declaration : ${(<AstDeclaration>declaration).nam} with key : ${key}`
+                //     )
+                // }
+                // else {
+                //     console.error(
+                //         `Duplicate declaration found: ${(<AstDeclaration>declaration).nam} with key : [ ${key} => ${this.ketsey.get(key)} ]`
+                //     )
+                //     console.error(JSON.stringify(toSortedString(declaration)))
+                //     this.ketsey.get(key).push(declaration.nam);
+                // }
+                this.declarations.set(objectHash(declaration), declaration);
                 return this;
             }
             let propertyName = declaration.nam;

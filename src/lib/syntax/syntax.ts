@@ -15,36 +15,40 @@ import type {
     TimeToken,
     Token,
 } from "../../@types/index.d.ts";
-import { isOkLabClose } from "./color/utils/distance.ts";
-import { ColorType, EnumToken } from "../ast/types.ts";
-import { WalkerOptionEnum, walkValues } from "../ast/walk.ts";
-import { toDegrees } from "../parser/utils/angle.ts";
-import { memoize } from "../parser/utils/cache.ts";
-import { equalsIgnoreCase } from "../parser/utils/text.ts";
-import { trimArray } from "../validation/match.ts";
-import { splitTokenList } from "../validation/utils/list.ts";
-import { getColorSpace } from "./color/utils/colorspace.ts";
-import { getColorComponents } from "./color/utils/components.ts";
+import {isOkLabClose} from "./color/utils/distance.ts";
+import {ColorType, EnumToken} from "../ast/types.ts";
+import {WalkerOptionEnum, walkValues} from "../ast/walk.ts";
+import {toDegrees} from "../parser/utils/angle.ts";
+import {memoize} from "../parser/utils/cache.ts";
+import {equalsIgnoreCase} from "../parser/utils/text.ts";
+import {trimArray} from "../validation/match.ts";
+import {splitTokenList} from "../validation/utils/list.ts";
+import {getColorSpace} from "./color/utils/colorspace.ts";
+import {getColorComponents} from "./color/utils/components.ts";
 import {
-    colorsFunc,
-    systemColors,
-    deprecatedSystemColors,
-    nonStandardColors,
-    COLORS_NAMES,
-    colorFuncColorSpace,
-    LOC,
     anglePrecision,
+    colorFuncColorSpace,
     colorPrecision,
+    COLORS_NAMES,
+    colorsFunc,
+    deprecatedSystemColors,
     epsilon,
+    nonStandardColors,
+    systemColors,
 } from "./constants.ts";
-import { getSyntaxConfig } from "../validation/config.ts";
+import {getSyntaxConfig} from "../validation/config.ts";
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
 
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
-export const dimensionUnits: Set<string> = new Set([
+export const flexUnits: Array<string> = ["fr"];
+export const frequencyUnits: Array<string> = ["hz", "khz"];
+export const timeUnits: Array<string> = ["ms", "s"];
+export const angleUnits: Array<string> = ["rad", "turn", "deg", "grad"];
+export const resolutionUnits: Array<string> = ["dpi", "dpcm", "dppx", "x"];
+export const dimensionUnits: Array<string> = [
     "q",
     "cap",
     "ch",
@@ -88,7 +92,7 @@ export const dimensionUnits: Set<string> = new Set([
     "vmax",
     "vmin",
     "vw",
-]);
+];
 
 // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions
 // https://developer.mozilla.org/en-US/docs/Web/CSS/Mozilla_Extensions
@@ -524,23 +528,23 @@ export const mozExtensions = new Set([
 export const renamedStandardProperties = new Map([["color-adjust", "print-color-adjust"]]);
 
 export function isLength(dimension: DimensionToken): boolean {
-    return "unit" in dimension && dimensionUnits.has(dimension.unit.toLowerCase());
+    return "unit" in dimension && dimensionUnits.includes(dimension.unit.toLowerCase());
 }
 
 export function isResolution(dimension: DimensionToken): boolean {
-    return "unit" in dimension && ["dpi", "dpcm", "dppx", "x"].includes(dimension.unit.toLowerCase());
+    return "unit" in dimension && resolutionUnits.includes(dimension.unit.toLowerCase());
 }
 
 export function isAngle(dimension: DimensionToken): boolean {
-    return "unit" in dimension && ["rad", "turn", "deg", "grad"].includes(dimension.unit.toLowerCase());
+    return "unit" in dimension && angleUnits.includes(dimension.unit.toLowerCase());
 }
 
 export function isTime(dimension: DimensionToken): boolean {
-    return "unit" in dimension && ["ms", "s"].includes(dimension.unit.toLowerCase());
+    return "unit" in dimension && timeUnits.includes(dimension.unit.toLowerCase());
 }
 
 export function isFrequency(dimension: DimensionToken): boolean {
-    return "unit" in dimension && ["hz", "khz"].includes(dimension.unit.toLowerCase());
+    return "unit" in dimension && frequencyUnits.includes(dimension.unit.toLowerCase());
 }
 
 /**
@@ -1584,9 +1588,9 @@ export function parseDimension(
         // @ts-ignore
         dimension.typ = EnumToken.ResolutionTokenType;
 
-        if (dimension.unit == "dppx") {
-            dimension.unit = "x";
-        }
+        // if (dimension.unit == "dppx") {
+        //     dimension.unit = "x";
+        // }
     } else if (isFrequency(dimension)) {
         // @ts-ignore
         dimension.typ = EnumToken.FrequencyTokenType;

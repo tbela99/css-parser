@@ -1,5 +1,7 @@
 # Changelog
 
+- [x] added `tan()` function.
+
 # v1.5.0
 
 ## Improvements

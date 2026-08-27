@@ -1,5 +1,5 @@
 import { EnumToken, EnumAstNodeStatus, ColorType, ValidationLevel } from '../../ast/types.js';
-import { LOC, STATE, ERRORS, tokensfuncDefMap, COLORS_NAMES, nonStandardColors, systemColors, deprecatedSystemColors, tokensMap, trimTokenSpace } from '../../syntax/constants.js';
+import { LOCEND, STATE, ERRORS, LOCSTA, tokensfuncDefMap, COLORS_NAMES, nonStandardColors, systemColors, deprecatedSystemColors, tokensMap, trimTokenSpace, LOCSRCID } from '../../syntax/constants.js';
 import { renamedStandardProperties, isColor, parseColor, isWhiteSpace } from '../../syntax/syntax.js';
 import { getSyntaxRule, getParsedSyntax } from '../../validation/config.js';
 import { trimArray, matchAllSyntaxes, createValidationContext } from '../../validation/match.js';
@@ -50,6 +50,7 @@ function parseGridTemplate(template) {
  * @param errors
  */
 function parseDeclaration(tokens, parent, options, errors) {
+    // console.error(tokens);
     const name = tokens.shift();
     let i;
     let rules = null;
@@ -70,16 +71,15 @@ function parseDeclaration(tokens, parent, options, errors) {
     }
     if ((name.typ !== EnumToken.IdenTokenType && name.typ !== EnumToken.DashedIdenTokenType) ||
         tokens[i]?.typ !== EnumToken.ColonTokenType) {
-        name[LOC] = {
-            ...name[LOC],
-            end: tokens[tokens.length - 1]?.[LOC]?.end ?? name[LOC].end,
-        };
+        if (tokens[tokens.length - 1]?.[LOCEND] != null) {
+            name[LOCEND] = tokens[tokens.length - 1]?.[LOCEND];
+        }
         name[STATE] = EnumAstNodeStatus.Unparsed;
         name[ERRORS] = [
             {
                 action: "drop",
                 node: name,
-                location: name[LOC],
+                location: options.source.getSourceLocation(name[LOCSTA]),
                 message: "invalid declaration",
             },
         ];
@@ -109,39 +109,6 @@ function parseDeclaration(tokens, parent, options, errors) {
                         rules.acceptAnyDeclaration && rules.acceptAnyRule
                             ? getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, name.val.toLowerCase())
                             : rules.getBlockRules();
-                    // if (syntaxRules == null) {
-                    //     // check rule in nested context
-                    //     let pr = parent[PARENT] as AstNode | null;
-                    //     while (pr != null && pr.typ !== EnumToken.RuleNodeType) {
-                    //         pr = pr[PARENT];
-                    //     }
-                    //     if (pr != null) {
-                    //         syntaxRules = getParsedSyntax(
-                    //             ValidationSyntaxGroupEnum.Declarations,
-                    //             name.val.toLowerCase(),
-                    //         );
-                    //     }
-                    //     if (syntaxRules == null) {
-                    //         errors.push({
-                    //             action: "drop",
-                    //             message: "declaration not allowed in context",
-                    //             node: name,
-                    //             location: name[LOC],
-                    //         });
-                    //         name[LOC] = {
-                    //             ...name[LOC],
-                    //             end: tokens[tokens.length - 1][LOC]!.end,
-                    //         } as Location;
-                    //         name[STATE] = EnumAstNodeStatus.Disallowed;
-                    //         name[ERRORS] = [errors[errors.length - 1]];
-                    //         // @ts-expect-error
-                    //         return Object.assign(name, {
-                    //             typ: EnumToken.DeclarationNodeType,
-                    //             nam: name.val,
-                    //             val: tokens,
-                    //         }) as AstDeclaration;
-                    //     }
-                    // }
                 }
             }
         }
@@ -179,12 +146,11 @@ function parseDeclaration(tokens, parent, options, errors) {
             action: "drop",
             message: "declaration value missing",
             node: name,
-            location: options.source.getSourceLocation(name[LOC].sta),
+            location: options.source.getSourceLocation(name[LOCSTA]),
         });
-        name[LOC] = {
-            ...name[LOC],
-            end: tokens[tokens.length - 1]?.[LOC].end ?? name[LOC].end,
-        };
+        if (tokens[tokens.length - 1]?.[LOCEND] != null) {
+            name[LOCEND] = tokens[tokens.length - 1][LOCEND];
+        }
         name[STATE] = EnumAstNodeStatus.Invalid;
         name[ERRORS] = [errors[errors.length - 1]];
         // @ts-expect-error
@@ -234,7 +200,7 @@ function parseDeclaration(tokens, parent, options, errors) {
             //         Object.assign(token, {
             //             typ: EnumToken.FunctionTokenDefType,
             //         });
-            //         token[LOC]!.end = tokens[i + 1][LOC]!.end;
+            //         token[LOCEND] = tokens[i + 1][LOCEND];
             //         tokens.splice(i + 1, 1);
             //         stack.push(token);
             //     }
@@ -272,26 +238,6 @@ function parseDeclaration(tokens, parent, options, errors) {
                 }
                 break;
             case EnumToken.EndParensTokenType:
-                // if (stack.length == 0) {
-                //     errors.push({
-                //         action: "drop",
-                //         message: "unbalanced parentheses",
-                //         node: token,
-                //         location: token[LOC],
-                //     });
-                //     name[LOC] = {
-                //         ...name[LOC],
-                //         end: tokens[tokens.length - 1]?.[LOC]!.end ?? name[LOC]!.end,
-                //     } as Location;
-                //     name[STATE] = EnumAstNodeStatus.Invalid;
-                //     name[ERRORS] = [errors[errors.length - 1]];
-                //     // @ts-expect-error
-                //     return Object.assign(name, {
-                //         typ: EnumToken.DeclarationNodeType,
-                //         nam: name.val,
-                //         val: tokens,
-                //     }) as AstDeclaration;
-                // }
                 if (stack.at(-1)?.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(stack.at(-1)?.typ)) {
                     index = tokens.indexOf(stack.at(-1));
                     tokens.splice(i, 1);
@@ -364,9 +310,9 @@ function parseDeclaration(tokens, parent, options, errors) {
                             //                 ((tokens[index] as FunctionToken).chi[l] as IdentToken | UrlToken).val +
                             //                 ((tokens[index] as FunctionToken).chi[m] as ClassSelectorToken).val,
                             //         });
-                            //         (tokens[index] as FunctionToken).chi[l][LOC]!.end = (
+                            //         (tokens[index] as FunctionToken).chi[l][LOCEND] = (
                             //             tokens[index] as FunctionToken
-                            //         ).chi[m][LOC]!.end;
+                            //         ).chi[m][LOCEND];
                             //         (tokens[index] as FunctionToken).chi.splice(m, 1);
                             //     }
                             //     break;
@@ -396,7 +342,7 @@ function parseDeclaration(tokens, parent, options, errors) {
                                 action: "drop",
                                 message: `invalid color`,
                                 node: tokens[index],
-                                location: options.source.getSourceLocation(tokens[index][LOC].sta),
+                                location: options.source.getSourceLocation(tokens[index][LOCSTA]),
                             });
                         }
                     }
@@ -448,12 +394,11 @@ function parseDeclaration(tokens, parent, options, errors) {
             action: "drop",
             message: "unbalanced token",
             node: stack[stack.length - 1],
-            location: options.source.getSourceLocation(stack[stack.length - 1][LOC].sta),
+            location: options.source.getSourceLocation(stack[stack.length - 1][LOCSTA]),
         });
-        name[LOC] = {
-            ...name[LOC],
-            end: tokens[tokens.length - 1][LOC].end,
-        };
+        if (tokens[tokens.length - 1][LOCEND] != null) {
+            name[LOCEND] = tokens[tokens.length - 1][LOCEND];
+        }
         name[STATE] = EnumAstNodeStatus.Invalid;
         name[ERRORS] = result?.errors ?? [];
         //@ts-expect-error
@@ -486,10 +431,9 @@ function parseDeclaration(tokens, parent, options, errors) {
         }
     }
     if (validate && syntaxRules == null && name.typ === EnumToken.IdenTokenType) {
-        name[LOC] = {
-            ...name[LOC],
-            end: tokens[tokens.length - 1]?.[LOC]?.end ?? name[LOC].end,
-        };
+        if (tokens[tokens.length - 1]?.[LOCEND] != null) {
+            name[LOCEND] = tokens[tokens.length - 1][LOCEND];
+        }
         name[STATE] = EnumAstNodeStatus.Unknown;
         name[ERRORS] = result?.errors ?? [];
         // @ts-expect-error
@@ -498,14 +442,6 @@ function parseDeclaration(tokens, parent, options, errors) {
             nam: name.val,
             val: tokens,
         });
-        // if ((options.validation as ValidationLevel) & ValidationLevel.Declaration) {
-        //     errors.push({
-        //         action: "drop",
-        //         message: "unknown declaration",
-        //         node: node,
-        //         location: node[LOC],
-        //     });
-        // }
         return node;
     }
     if (equalsIgnoreCase("composes", name.val)) {
@@ -523,18 +459,15 @@ function parseDeclaration(tokens, parent, options, errors) {
                 typ: EnumToken.ComposesSelectorNodeType,
                 l: left,
                 r: right?.[0] ?? null,
-                [LOC]: {
-                    ...tokens[0][LOC],
-                    sta: left[0]?.[LOC]?.sta,
-                    end: index != -1 ? right[right.length - 1]?.[LOC]?.end : left[left.length - 1][LOC].end,
-                },
+                [LOCSRCID]: tokens[0][LOCSRCID],
+                [LOCSTA]: tokens[0][LOCSTA],
+                [LOCEND]: index != -1 ? right[right.length - 1]?.[LOCEND] : left[left.length - 1][LOCEND],
             },
         ];
     }
-    name[LOC] = {
-        ...name[LOC],
-        end: (tokens[tokens.length - 1] ?? name)[LOC].end,
-    };
+    if (tokens[tokens.length - 1]?.[LOCEND] != null) {
+        name[LOCEND] = tokens[tokens.length - 1][LOCEND];
+    }
     name[STATE] = success
         ? result == null
             ? EnumAstNodeStatus.Unvalidated

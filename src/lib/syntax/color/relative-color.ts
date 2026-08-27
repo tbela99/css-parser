@@ -13,7 +13,7 @@ import { convertColor, getNumber } from "./color.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
 import { walkValues } from "../../ast/walk.ts";
 import { evaluate, evaluateFunc } from "../../ast/math/expression.ts";
-import { colorFuncColorSpace, colorRange, colorsFunc, LOC, mathFuncs } from "../constants.ts";
+import { colorFuncColorSpace, colorRange, colorsFunc, LOC, LOCEND, LOCSRCID, LOCSTA, mathFuncs } from "../constants.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 import { getColorComponents } from "./utils/components.ts";
 
@@ -167,19 +167,25 @@ export function parseRelativeColorComponents(
                 ? {
                       typ: EnumToken.NumberTokenType,
                       val: 1,
-                      [LOC]: b[LOC],
+                      [LOCSRCID]: b[LOCSRCID],
+                      [LOCSTA]: b[LOCSTA],
+                      [LOCEND]: b[LOCEND],
                   }
                 : alpha.typ == EnumToken.IdenTokenType && (alpha as IdentToken).val == "none"
                   ? {
                         typ: EnumToken.NumberTokenType,
                         val: 0,
-                        [LOC]: alpha[LOC],
+                        [LOCSRCID]: alpha[LOCSRCID],
+                        [LOCSTA]: alpha[LOCSTA],
+                        [LOCEND]: alpha[LOCEND],
                     }
                   : alpha.typ == EnumToken.PercentageTokenType
                     ? {
                           typ: EnumToken.NumberTokenType,
                           val: getNumber(<PercentageToken>alpha),
-                          [LOC]: alpha[LOC],
+                          [LOCSRCID]: alpha[LOCSRCID],
+                          [LOCSTA]: alpha[LOCSTA],
+                          [LOCEND]: alpha[LOCEND],
                       }
                     : alpha,
     };
@@ -194,13 +200,17 @@ export function parseRelativeColorComponents(
                 ? {
                       typ: EnumToken.NumberTokenType,
                       val: 1,
-                      [LOC]: bExp[LOC],
+                      [LOCSRCID]: bExp[LOCSRCID],
+                      [LOCSTA]: bExp[LOCSTA],
+                      [LOCEND]: bExp[LOCEND],
                   }
                 : aExp.typ == EnumToken.IdenTokenType && (aExp as IdentToken).val == "none"
                   ? {
                         typ: EnumToken.NumberTokenType,
                         val: 0,
-                        [LOC]: aExp[LOC],
+                        [LOCSRCID]: aExp[LOCSRCID],
+                        [LOCSTA]: aExp[LOCSTA],
+                        [LOCEND]: aExp[LOCEND],
                     }
                   : aExp,
         ),
@@ -239,7 +249,9 @@ function getValue(t: Token, converted?: ColorToken, component?: string): Token {
         return {
             typ: EnumToken.NumberTokenType,
             val: value,
-            [LOC]: t[LOC],
+            [LOCSRCID]: t[LOCSRCID],
+            [LOCSTA]: t[LOCSTA],
+            [LOCEND]: t[LOCEND],
         };
     }
 
@@ -293,8 +305,10 @@ function computeComponentValue(
                             ({
                                 typ: EnumToken.NumberTokenType,
                                 // @ts-ignore
-                                val: "" + Math[(value as IdentToken).val.toUpperCase()],
-                                [LOC]: value[LOC],
+                                val: Math[(value as IdentToken).val.toUpperCase()] as number,
+                                [LOCSRCID]: value[LOCSRCID],
+                                [LOCSTA]: value[LOCSTA],
+                                [LOCEND]: value[LOCEND],
                                 // @ts-ignore
                             } as Token),
                     );

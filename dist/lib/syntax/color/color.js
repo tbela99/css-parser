@@ -19,7 +19,7 @@ import { parseRelativeColorComponents } from './relative-color.js';
 import { isIdentColor } from '../syntax.js';
 import { color2cmykToken, lch2cmykToken, lab2cmykToken, oklch2cmykToken, oklab2cmyk, hwb2cmykToken, hsl2cmykToken, rgb2cmykToken } from './cmyk.js';
 import { a98rgb2srgbvalues, srgb2a98values } from './a98rgb.js';
-import { LOC, colorFuncColorSpace } from '../constants.js';
+import { LOCSRCID, LOCSTA, LOCEND, colorFuncColorSpace } from '../constants.js';
 import { trimArray } from '../../validation/match.js';
 import { alpha } from './alpha.js';
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
@@ -86,7 +86,9 @@ function convertColor(token, to) {
                 chi: [...(token.val == "color" ? [chi[offset]] : []), ...Object.values(components)],
                 kin: ColorType[token.val.toUpperCase().replaceAll("-", "_")],
             };
-            tk[LOC] = token[LOC];
+            tk[LOCSRCID] = token[LOCSRCID];
+            tk[LOCSTA] = token[LOCSTA];
+            tk[LOCEND] = token[LOCEND];
             token = tk;
         }
     }

@@ -259,6 +259,7 @@ function* walkValues(values, root = null, filter, reverse) {
                 (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
                 (typeof filter.type == "function" && filter.type(value));
             if (isValid) {
+                // @ts-ignore
                 option = filter.fn(value, map.get(value) ?? root, WalkerEvent.Enter, 
                 // @ts-expect-error
                 function* () {
@@ -357,6 +358,7 @@ function* walkValues(values, root = null, filter, reverse) {
                 (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
                 (typeof filter.type == "function" && filter.type(value));
             if (isValid) {
+                // @ts-ignore
                 option = filter.fn(value, map.get(value), WalkerEvent.Leave);
                 // @ts-ignore
                 if (option != null && ("typ" in option || Array.isArray(option))) {

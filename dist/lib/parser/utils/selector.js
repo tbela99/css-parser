@@ -1,6 +1,6 @@
 import { EnumToken, EnumAstNodeStatus } from '../../ast/types.js';
 import { renderValue } from '../../renderer/render.js';
-import { LOC, ERRORS, STATE, TOKENS, pseudoElements, combinators, tokensfuncDefMap, PARENT } from '../../syntax/constants.js';
+import { LOCEND, LOCSTA, LOCSRCID, ERRORS, STATE, TOKENS, pseudoElements, combinators, tokensfuncDefMap, PARENT } from '../../syntax/constants.js';
 import { isHash } from '../../syntax/syntax.js';
 import { getParsedSyntax, getSyntaxRule, getSyntaxConfig } from '../../validation/config.js';
 import { matchAllSyntaxes, createValidationContext, trimArray, matchSelectorSyntax } from '../../validation/match.js';
@@ -26,7 +26,9 @@ function parseSelector(tokens, context, options, errors) {
                         filtered[0] = {
                             typ: EnumToken.PercentageTokenType,
                             val: 0,
-                            [LOC]: filtered[0][LOC],
+                            [LOCSRCID]: filtered[0][LOCSRCID],
+                            [LOCSTA]: filtered[0][LOCSTA],
+                            [LOCEND]: filtered[0][LOCEND],
                         };
                     }
                     else if (filtered[0].typ === EnumToken.PercentageTokenType &&
@@ -34,7 +36,9 @@ function parseSelector(tokens, context, options, errors) {
                         filtered[0] = {
                             typ: EnumToken.IdenTokenType,
                             val: "to",
-                            [LOC]: filtered[0][LOC],
+                            [LOCSRCID]: filtered[0][LOCSRCID],
+                            [LOCSTA]: filtered[0][LOCSTA],
+                            [LOCEND]: filtered[0][LOCEND],
                         };
                     }
                     part.splice(0, part.length, ...filtered);
@@ -57,10 +61,9 @@ function parseSelector(tokens, context, options, errors) {
                 }, new Set()),
             ].join(),
             chi: [],
-            [LOC]: {
-                ...tokens[0][LOC],
-                end: tokens[tokens.length - 1]?.[LOC]?.end ?? tokens[0]?.[LOC]?.end,
-            },
+            [LOCSRCID]: tokens[0]?.[LOCSRCID],
+            [LOCSTA]: tokens[0]?.[LOCSTA],
+            [LOCEND]: tokens[tokens.length - 1]?.[LOCEND],
             [TOKENS]: tokens.length === 0 ? null : tokens,
             [STATE]: result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid,
             [ERRORS]: result.errors,
@@ -110,7 +113,7 @@ function parseSelector(tokens, context, options, errors) {
                     typ: EnumToken.PseudoElementTokenType,
                     val: ":" + tokens[i + 1].val,
                 });
-                tokens[i][LOC].end = tokens[i + 1][LOC].end;
+                tokens[i][LOCEND] = tokens[i + 1][LOCEND];
                 tokens.splice(i + 1, 1);
                 continue;
             }
@@ -122,7 +125,7 @@ function parseSelector(tokens, context, options, errors) {
                         : tokens[i + 1].typ,
                     val,
                 });
-                tokens[i][LOC].end = tokens[i + 1][LOC].end;
+                tokens[i][LOCEND] = tokens[i + 1][LOCEND];
                 tokens.splice(i + 1, 1);
                 continue;
             }
@@ -134,7 +137,7 @@ function parseSelector(tokens, context, options, errors) {
                     typ: EnumToken.PseudoClassTokenType,
                     val: (pseudoElements.includes(val) ? "" : ":") + val,
                 });
-                tokens[i][LOC].end = tokens[i + 1][LOC].end;
+                tokens[i][LOCEND] = tokens[i + 1][LOCEND];
                 tokens.splice(i + 1, 1);
                 continue;
             }
@@ -146,7 +149,7 @@ function parseSelector(tokens, context, options, errors) {
                         : EnumToken.FunctionTokenDefType,
                     val,
                 });
-                tokens[i][LOC].end = tokens[i + 1][LOC].end;
+                tokens[i][LOCEND] = tokens[i + 1][LOCEND];
                 tokens.splice(i + 1, 1);
                 continue;
             }
@@ -201,10 +204,9 @@ function parseSelector(tokens, context, options, errors) {
                             .keys(),
                     ].join(","),
                     chi: [],
-                    [LOC]: {
-                        ...tokens[0][LOC],
-                        end: tokens[tokens.length - 1][LOC].end,
-                    },
+                    [LOCSRCID]: tokens[0][LOCSRCID],
+                    [LOCSTA]: tokens[0][LOCSTA],
+                    [LOCEND]: tokens[tokens.length - 1][LOCEND],
                     [TOKENS]: tokens,
                     [STATE]: EnumAstNodeStatus.Invalid,
                     [ERRORS]: [
@@ -232,10 +234,9 @@ function parseSelector(tokens, context, options, errors) {
                         index = tokens.indexOf(stack.at(-1));
                         // @ts-expect-error
                         const { val, ...attr } = stack.at(-1);
-                        attr[LOC] = {
-                            ...stack.at(-1)[LOC],
-                            end: token[LOC].end,
-                        };
+                        attr[LOCSRCID] = stack.at(-1)[LOCSRCID];
+                        attr[LOCSTA] = stack.at(-1)[LOCSTA];
+                        attr[LOCEND] = token[LOCEND];
                         tokens.splice(i, 1);
                         Object.assign(attr, {
                             typ: EnumToken.AttrTokenType,
@@ -253,7 +254,7 @@ function parseSelector(tokens, context, options, errors) {
                     if (stack.at(-1)?.typ == EnumToken.PseudoClassFunctionTokenDefType) {
                         const func = stack.at(-1);
                         index = tokens.indexOf(func);
-                        stack.at(-1)[LOC].end = token[LOC].end;
+                        stack.at(-1)[LOCEND] = token[LOCEND];
                         tokens.splice(i, 1);
                         if (tokensfuncDefMap.has(func.typ)) {
                             // @ts-expect-error
@@ -270,20 +271,77 @@ function parseSelector(tokens, context, options, errors) {
                                 const list = [];
                                 let index;
                                 for (index = 0; index < func.chi.length; index++) {
-                                    if (func.chi[index].typ == EnumToken.CommentTokenType || func.chi[index].typ == EnumToken.WhitespaceTokenType) {
+                                    if (func.chi[index].typ == EnumToken.CommentTokenType ||
+                                        func.chi[index].typ == EnumToken.WhitespaceTokenType) {
                                         continue;
                                     }
-                                    if (func.chi[index].typ == EnumToken.IdenTokenType && equalsIgnoreCase('of', func.chi[index].val)) {
+                                    if (func.chi[index].typ == EnumToken.IdenTokenType &&
+                                        equalsIgnoreCase("of", func.chi[index].val)) {
                                         index--;
                                         break;
                                     }
                                     list.push(func.chi[index]);
                                 }
+                                if (list.length == 2) {
+                                    if (list[1].typ == EnumToken.NumberTokenType) {
+                                        if (list[1].val == 0) {
+                                            list.length = 1;
+                                            if (list[0].typ == EnumToken.DimensionTokenType &&
+                                                list[0].val == -2) {
+                                                list[0].val = 2;
+                                            }
+                                        }
+                                        else {
+                                            const sign = Math.sign(list[1].val);
+                                            // @ts-ignore
+                                            list[1].val *= sign;
+                                            list.splice(1, 0, {
+                                                typ: EnumToken.LiteralTokenType,
+                                                val: sign > 0 ? "+" : "-",
+                                            });
+                                        }
+                                    }
+                                    if (list.length == 3 &&
+                                        list[2].typ == EnumToken.NumberTokenType &&
+                                        list[0].typ == EnumToken.DimensionTokenType &&
+                                        (list[0].val == 2 ||
+                                            list[0].val == -2)) {
+                                        if (1 == list[2].val) {
+                                            list.splice(0, 3, {
+                                                typ: EnumToken.IdenTokenType,
+                                                val: "odd",
+                                                [LOCSRCID]: list[0][LOCSRCID],
+                                                [LOCSTA]: list[0][LOCSTA],
+                                                [LOCEND]: list[0][LOCEND],
+                                            });
+                                        }
+                                        else if (0 == list[2].val) {
+                                            list.splice(0, 3, {
+                                                typ: EnumToken.IdenTokenType,
+                                                val: "even",
+                                                [LOCSRCID]: list[0][LOCSRCID],
+                                                [LOCSTA]: list[0][LOCSTA],
+                                                [LOCEND]: list[0][LOCEND],
+                                            });
+                                        }
+                                    }
+                                    func.chi.splice(0, index, ...list);
+                                }
+                                if (list.length == 1) {
+                                    if (list[0].typ == EnumToken.IdenTokenType &&
+                                        equalsIgnoreCase("-n", list[0].val)) {
+                                        list[0].val = "n";
+                                    }
+                                }
                                 if (list.length == 3) {
-                                    if (list[0].typ == EnumToken.IdenTokenType && ('n' == list[0].val || '-n' == list[0].val || '+n' == list[0].val)) {
+                                    if (list[0].typ == EnumToken.IdenTokenType &&
+                                        ("n" == list[0].val ||
+                                            "-n" == list[0].val ||
+                                            "+n" == list[0].val)) {
                                         if (list[1].typ == EnumToken.NextSiblingCombinatorTokenType) {
-                                            if (list[2].typ == EnumToken.NumberTokenType && (0 == list[2].val)) {
-                                                list[0].val = 'n';
+                                            if (list[2].typ == EnumToken.NumberTokenType &&
+                                                0 == list[2].val) {
+                                                list[0].val = "n";
                                                 func.chi.splice(0, index, list[0]);
                                                 break;
                                             }
@@ -303,83 +361,10 @@ function parseSelector(tokens, context, options, errors) {
                                         }
                                     }
                                     else {
-                                        // if (!/\d+$/.test((token as IdentToken | LiteralToken).val)) {
-                                        //     let index = func.chi.indexOf(token);
-                                        //     let i: number = index + 1;
-                                        //     let sign: Token | null = null;
-                                        //     let num: NumberToken | null = null;
-                                        //     for (; i < func.chi.length; i++) {
-                                        //         if (
-                                        //             func.chi[i].typ == EnumToken.WhitespaceTokenType ||
-                                        //             func.chi[i].typ == EnumToken.CommentTokenType
-                                        //         ) {
-                                        //             continue;
-                                        //         }
-                                        //         if (func.chi[i].typ == EnumToken.NumberTokenType) {
-                                        //             num = func.chi[i] as NumberToken;
-                                        //             break;
-                                        //         } else {
-                                        //             sign = func.chi[i] as Token;
-                                        //         }
-                                        //     }
-                                        //     if (num != null) {
-                                        //         if (num.val === 0) {
-                                        //             func.chi.splice(index + 1, i - index);
-                                        //             if ((token as IdentToken | LiteralToken).val == "-n") {
-                                        //                 (token as IdentToken).val = "n";
-                                        //             }
-                                        //             break;
-                                        //         }
-                                        //         if (sign == null) {
-                                        //             func.chi.splice(index + 1, i - index - 1);
-                                        //             if (Math.sign(num.val as number) === 1) {
-                                        //                 func.chi.splice(index + 1, 0, {
-                                        //                     typ: EnumToken.LiteralTokenType,
-                                        //                     val: "+",
-                                        //                 });
-                                        //             }
-                                        //         }
-                                        //     } else if ((token as IdentToken | LiteralToken).val == "-n") {
-                                        //         (token as IdentToken).val = "n";
-                                        //     }
-                                        //     break;
-                                        // }
                                         const matches = /^(([+-]?[0-9]*)?n)?([+-]?[0-9]+)?$/.exec(token.val);
                                         if (matches != null) {
                                             const a1 = matches[2] === "" ? 1 : matches[2] === "-" ? -1 : +matches[2];
                                             const b1 = +matches[3];
-                                            // if (a1 === 0) {
-                                            //     if (b1 === 1) {
-                                            //         let hasSelector: boolean = false;
-                                            //         let i: number = func.chi.indexOf(token);
-                                            //         let j: number = i + 1;
-                                            //         for (; j < func.chi.length; j++) {
-                                            //             if (
-                                            //                 func.chi[j].typ == EnumToken.IdenTokenType &&
-                                            //                 (func.chi[j] as IdentToken).val == "of"
-                                            //             ) {
-                                            //                 hasSelector = true;
-                                            //                 break;
-                                            //             }
-                                            //         }
-                                            //         if (hasSelector) {
-                                            //             Object.assign(token, {
-                                            //                 typ: EnumToken.NumberTokenType,
-                                            //                 val: b1,
-                                            //             });
-                                            //         } else {
-                                            //             // :first-child
-                                            //             tokens[tokens.indexOf(func)] = {
-                                            //                 typ: EnumToken.PseudoClassTokenType,
-                                            //                 val: ":first-child",
-                                            //                 [LOC]: func[LOC],
-                                            //             };
-                                            //         }
-                                            //         break;
-                                            //     } else {
-                                            //         Object.assign(token, { typ: EnumToken.NumberTokenType, val: b1 });
-                                            //     }
-                                            // } else
                                             if (b1 === 0) {
                                                 Object.assign(token, Math.abs(a1) === 1
                                                     ? {
@@ -392,17 +377,6 @@ function parseSelector(tokens, context, options, errors) {
                                                         unit: "n",
                                                     });
                                             }
-                                            // else if (Math.abs(a1) === 2) {
-                                            //     if (b1 === 0) {
-                                            //         Object.assign(token, {
-                                            //             typ: EnumToken.DimensionTokenType,
-                                            //             val: a1,
-                                            //             unit: "n",
-                                            //         });
-                                            //     } else if (Math.abs(b1) === 1) {
-                                            //         Object.assign(token, { typ: EnumToken.IdenTokenType, val: "odd" });
-                                            //     }
-                                            // }
                                         }
                                     }
                                 }
@@ -421,36 +395,6 @@ function parseSelector(tokens, context, options, errors) {
                                         }
                                     }
                                     if (num != null) {
-                                        // if ((token as DimensionToken).val === 0) {
-                                        //     if (num.val === 0) {
-                                        //         func.chi.splice(0, i);
-                                        //     } else if (num.val === 1) {
-                                        //         let hasSelector: boolean = false;
-                                        //         let j: number = i + 1;
-                                        //         for (; j < func.chi.length; j++) {
-                                        //             if (
-                                        //                 func.chi[j].typ == EnumToken.IdenTokenType &&
-                                        //                 (func.chi[j] as IdentToken).val == "of"
-                                        //             ) {
-                                        //                 hasSelector = true;
-                                        //                 break;
-                                        //             }
-                                        //         }
-                                        //         if (hasSelector) {
-                                        //             func.chi.splice(0, i);
-                                        //         } else {
-                                        //             tokens[tokens.indexOf(func)] = {
-                                        //                 typ: EnumToken.PseudoClassTokenType,
-                                        //                 val: ":first-child",
-                                        //                 [LOC]: func[LOC],
-                                        //             };
-                                        //         }
-                                        //         break;
-                                        //     } else {
-                                        //         func.chi.splice(0, i);
-                                        //     }
-                                        //     break;
-                                        // } else
                                         if (num.val === 0) {
                                             func.chi.splice(index + 1, i - index);
                                             if (token.val < 0) {
@@ -539,10 +483,9 @@ function parseSelector(tokens, context, options, errors) {
                 .keys(),
         ].join(","),
         chi: [],
-        [LOC]: {
-            ...tokens[0][LOC],
-            end: tokens[tokens.length - 1][LOC].end,
-        },
+        [LOCSRCID]: tokens[0][LOCSRCID],
+        [LOCSTA]: tokens[0][LOCSTA],
+        [LOCEND]: tokens[tokens.length - 1][LOCEND],
         [TOKENS]: tokens,
         [STATE]: result.success && allowed
             ? EnumAstNodeStatus.Validated

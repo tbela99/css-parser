@@ -1,5 +1,5 @@
 import type { AstNode, ErrorDescription, SourceLocation, Token } from "../../@types/index.d.ts";
-import { ERRORS, LOC, PARENT, STATE, TOKENS } from "../syntax/constants.ts";
+import { ERRORS, LOCEND, LOCSRCID, LOCSTA, PARENT, STATE, TOKENS } from "../syntax/constants.ts";
 import { AstNodePropertyType, EnumAstNodeStatus } from "./types.ts";
 
 /**
@@ -46,7 +46,7 @@ export function getNodeProperty(node: AstNode, key: AstNodePropertyType): any {
         case "parent":
             return node[PARENT];
         case "location":
-            return node[LOC];
+            return node[LOCSRCID] == null && node[LOCSTA] == null && node[LOCEND] == null ? null : {srcId: node[LOCSRCID], sta: node[LOCSTA], end: node[LOCEND]} as SourceLocation;
         case "state":
             return node[STATE];
         case "errors":
@@ -105,7 +105,9 @@ export function setNodeProperty(node: AstNode, key: AstNodePropertyType, value: 
             node[PARENT] = value;
             break;
         case "location":
-            node[LOC] = value;
+            node[LOCSRCID] = (value as SourceLocation).srcId;
+            node[LOCSTA] = (value as SourceLocation).sta;
+            node[LOCEND] = (value as SourceLocation).end;
             break;
         case "state":
             node[STATE] = value;

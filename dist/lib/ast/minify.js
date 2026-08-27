@@ -6,10 +6,9 @@ import { EnumToken } from './types.js';
 import { isWhiteSpace, isIdent, isFunction, isIdentStart } from '../syntax/syntax.js';
 import { FeatureWalkMode } from './features/type.js';
 import { trimArray } from '../validation/match.js';
-import { TOKENS, PARENT, OPTIMIZED, RAW, combinators, LOC } from '../syntax/constants.js';
+import { TOKENS, PARENT, OPTIMIZED, RAW, combinators, LOCEND, LOCSTA, LOCSRCID } from '../syntax/constants.js';
 import { replaceNodeOrValue } from '../parser/utils/token.js';
 import { parseString } from '../parser/parse.js';
-import { tokenize } from '../parser/tokenize.js';
 import { replaceCompound } from './expand.js';
 
 const notEndingWith = ["(", "["].concat(combinators);
@@ -219,7 +218,9 @@ function transformAtRuleMediaPrelude(values) {
                                 },
                                 l: val1,
                                 r: val2,
-                                [LOC]: value[LOC],
+                                [LOCSRCID]: value[LOCSRCID],
+                                [LOCSTA]: value[LOCSTA],
+                                [LOCEND]: value[LOCEND],
                             },
                         ],
                     };
@@ -1144,7 +1145,7 @@ function matchSelectors(selector1, selector2) {
  */
 function fixSelector(node) {
     if (node.sel.includes("&")) {
-        const attributes = [...tokenize(node.sel)].map((t) => t.token); // parseString(node.sel);
+        const attributes = parseString(node.sel);
         for (const attr of walkValues(attributes)) {
             if (attr.value.typ == EnumToken.PseudoClassFuncTokenType &&
                 attr.value.val == ":is") {

@@ -458,6 +458,7 @@ export function* walkValues(
                 (typeof filter.type == "function" && filter.type(value));
 
             if (isValid) {
+                // @ts-ignore
                 option = filter.fn(
                     value,
                     <FunctionToken | ParensToken>map.get(value) ?? root,
@@ -579,6 +580,7 @@ export function* walkValues(
                 (typeof filter.type == "function" && filter.type(value));
 
             if (isValid) {
+                // @ts-ignore
                 option = filter.fn(value, <FunctionToken | ParensToken>map.get(value), WalkerEvent.Leave);
 
                 // @ts-ignore

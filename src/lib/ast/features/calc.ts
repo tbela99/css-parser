@@ -7,17 +7,15 @@ import type {
     DimensionToken,
     FunctionToken,
     NumberToken,
-    ParensToken,
     ParserOptions,
-    Token,
-    WalkerOption,
+    Token
 } from "../../../@types/index.d.ts";
 import { EnumToken } from "../types.ts";
-import { WalkerEvent, WalkerOptionEnum, walkValues } from "../walk.ts";
+import { walkValues } from "../walk.ts";
 import { evaluate } from "../math/expression.ts";
-import { renderValue } from "../../renderer/render.ts";
 import { FeatureWalkMode } from "./type.ts";
-import { LOC, mathFuncs, tokensfuncSet } from "../../syntax/constants.ts";
+import { LOCEND, LOCSRCID, LOCSTA, mathFuncs, tokensfuncSet } from "../../syntax/constants.ts";
+import { replaceNodeOrValue } from "../../parser/utils/token.ts";
 
 export class ComputeCalcExpressionFeature {
     public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
@@ -49,75 +47,104 @@ export class ComputeCalcExpressionFeature {
 
             const set: Set<Token> = new Set();
 
-            for (const { value, parent } of walkValues((<AstDeclaration>node).val, node, {
-                event: WalkerEvent.Enter,
-                // @ts-ignore
-                fn(
-                    node: AstNode | Token,
-                    parent: FunctionToken | ParensToken | BinaryExpressionToken,
-                ): WalkerOption | null {
-                    if (
-                        parent != null &&
-                        // @ts-ignore
-                        (parent as AstDeclaration).typ == EnumToken.DeclarationNodeType &&
-                        // @ts-ignore
-                        (parent as AstDeclaration).val.length == 1 &&
-                        (node.typ === EnumToken.MathFunctionTokenType || node.typ === EnumToken.FunctionTokenType) &&
-                        mathFuncs.includes((node as FunctionToken).val) &&
-                        (node as FunctionToken).chi.length == 1 &&
-                        (node as FunctionToken).chi[0].typ == EnumToken.IdenTokenType
-                    ) {
-                        return WalkerOptionEnum.Ignore;
-                    }
+            for (const { value, parent } of walkValues(
+                (<AstDeclaration>node).val,
+                node,
+                // {
+                //     event: WalkerEvent.Enter,
+                //     // @ts-ignore
+                //     fn(
+                //         node: AstNode | Token,
+                //         parent: AstNode | Token | AstNode[] | Token[] | null,
+                //     ): WalkerOption | AstNode | Token | AstNode[] | Token[] | null | void {
+                //         if (node.typ == EnumToken.BinaryExpressionTokenType) {
+                //             // @ts-ignore
+                //             const children = evaluate([node]);
 
-                    if (
-                        (node.typ === EnumToken.WildCardFunctionTokenType && (node as FunctionToken).val == "var") ||
-                        (!mathFuncs.includes((parent as FunctionToken).val) &&
-                            [
-                                EnumToken.MathFunctionTokenType,
-                                EnumToken.ColorTokenType,
-                                EnumToken.DeclarationNodeType,
-                                EnumToken.ImageFunc,
-                                EnumToken.RuleNodeType,
-                                EnumToken.AtRuleNodeType,
-                                EnumToken.StyleSheetNodeType,
-                            ].includes(parent?.typ))
-                    ) {
-                        return null;
-                    }
+                //             // @ts-ignore
+                //             replaceNodeOrValue(parent, node, children);
 
+                //             return children;
+                //         }
+                //     },
+                //     // @ts-ignore
+                //     // fn(
+                //     //     node: AstNode | Token,
+                //     //     parent: FunctionToken | ParensToken | BinaryExpressionToken,
+                //     // ): WalkerOption | null {
+                //     //     if (
+                //     //         parent != null &&
+                //     //         // @ts-ignore
+                //     //         (parent as AstDeclaration).typ == EnumToken.DeclarationNodeType &&
+                //     //         // @ts-ignore
+                //     //         (parent as AstDeclaration).val.length == 1 &&
+                //     //         (node.typ === EnumToken.MathFunctionTokenType || node.typ === EnumToken.FunctionTokenType) &&
+                //     //         mathFuncs.includes((node as FunctionToken).val) &&
+                //     //         (node as FunctionToken).chi.length == 1 &&
+                //     //         (node as FunctionToken).chi[0].typ == EnumToken.IdenTokenType
+                //     //     ) {
+
+                //     //         return WalkerOptionEnum.Ignore;
+                //     //     }
+
+                //     //     // if (
+                //     //     //     (node.typ === EnumToken.WildCardFunctionTokenType && (node as FunctionToken).val == "var") ||
+                //     //     //     (!mathFuncs.includes((parent as FunctionToken).val) &&
+                //     //     //         [
+                //     //     //             EnumToken.MathFunctionTokenType,
+                //     //     //             EnumToken.ColorTokenType,
+                //     //     //             EnumToken.DeclarationNodeType,
+                //     //     //             EnumToken.ImageFunc,
+                //     //     //             EnumToken.RuleNodeType,
+                //     //     //             EnumToken.AtRuleNodeType,
+                //     //     //             EnumToken.StyleSheetNodeType,
+                //     //     //         ].includes(parent?.typ))
+                //     //     // ) {
+                //     //     //     return null;
+                //     //     // }
+
+                //     //     // @ts-ignore
+                //     //     // const slice: Token[] = (
+                //     //     //     node.typ == EnumToken.FunctionTokenType || node.typ == EnumToken.MathFunctionTokenType
+                //     //     //         ? (node as FunctionToken).chi
+                //     //     //         : node.typ == EnumToken.DeclarationNodeType
+                //     //     //           ? (<AstDeclaration>node).val
+                //     //     //           : (node as FunctionToken).chi
+                //     //     // )?.slice();
+
+                //     //     // if (
+                //     //     //     slice != null &&
+                //     //     //     (node.typ === EnumToken.MathFunctionTokenType ||
+                //     //     //         (node.typ == EnumToken.FunctionTokenType &&
+                //     //     //             mathFuncs.includes((node as FunctionToken).val)))
+                //     //     // ) {
+                //     //     //     // @ts-ignore
+                //     //     //     const key = "chi" in node ? "chi" : "val";
+
+                //     //     //     const str1: string = renderValue({ ...node, [key]: slice } as Token);
+                //     //     //     const str2: string = renderValue(node as Token); // values.reduce((acc: string, curr: Token): string => acc + renderValue(curr), '');
+
+                //     //     //     if (str1.length < str2.length) {
+                //     //     //         // @ts-ignore
+                //     //     //         node[key] = slice;
+                //     //     //     }
+
+                //     //     //     return WalkerOptionEnum.Ignore;
+                //     //     // }
+
+                //     //     return null;
+                //     // },
+                // }
+            )) {
+                if (parent?.typ == EnumToken.BinaryExpressionTokenType) {
+                    continue;
+                }
+                if (value.typ == EnumToken.BinaryExpressionTokenType) {
                     // @ts-ignore
-                    const slice: Token[] = (
-                        node.typ == EnumToken.FunctionTokenType || node.typ == EnumToken.MathFunctionTokenType
-                            ? (node as FunctionToken).chi
-                            : node.typ == EnumToken.DeclarationNodeType
-                              ? (<AstDeclaration>node).val
-                              : (node as FunctionToken).chi
-                    )?.slice();
+                    replaceNodeOrValue(parent, value, evaluate([value]));
+                    continue;
+                }
 
-                    if (
-                        slice != null &&
-                        (node.typ === EnumToken.MathFunctionTokenType ||
-                            (node.typ == EnumToken.FunctionTokenType &&
-                                mathFuncs.includes((node as FunctionToken).val)))
-                    ) {
-                        // @ts-ignore
-                        const key = "chi" in node ? "chi" : "val";
-
-                        const str1: string = renderValue({ ...node, [key]: slice } as Token);
-                        const str2: string = renderValue(node as Token); // values.reduce((acc: string, curr: Token): string => acc + renderValue(curr), '');
-
-                        if (str1.length < str2.length) {
-                            // @ts-ignore
-                            node[key] = slice;
-                        }
-
-                        return WalkerOptionEnum.Ignore;
-                    }
-
-                    return null;
-                },
-            })) {
                 if (value != null && tokensfuncSet.has(value.typ)) {
                     if (!set.has(value as FunctionToken)) {
                         set.add(value);
@@ -184,7 +211,9 @@ export class ComputeCalcExpressionFeature {
                                                           typ: EnumToken.MathFunctionTokenType,
                                                           val: "calc",
                                                           chi: values,
-                                                          [LOC]: value[LOC],
+                                                          [LOCSRCID]: value[LOCSRCID],
+                                                          [LOCSTA]: value[LOCSTA],
+                                                          [LOCEND]: value[LOCEND],
                                                       }
                                                     : values[0],
                                             );
@@ -198,7 +227,9 @@ export class ComputeCalcExpressionFeature {
                                                 typ: EnumToken.MathFunctionTokenType,
                                                 val: "calc",
                                                 chi: values,
-                                                [LOC]: value[LOC],
+                                                [LOCSRCID]: value[LOCSRCID],
+                                                [LOCSTA]: value[LOCSTA],
+                                                [LOCEND]: value[LOCEND],
                                             });
 
                                             break;

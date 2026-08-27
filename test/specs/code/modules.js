@@ -38,15 +38,15 @@ export function run(
                 },
             ).then((result) => {
                 expect(result.mapping).deep.equals({
-                    goal: "goal_r7bhp",
-                    "bg-indigo": "bg-indigo_gy28g",
-                    "indigo-white": "indigo-white_wims0 bg-indigo_gy28g title_qw06e",
-                    title: "title_qw06e",
+                    goal: "goal_r6ajz",
+                    "bg-indigo": "bg-indigo_gx1aq",
+                    "indigo-white": "indigo-white_whlua bg-indigo_gx1aq title_qvz8o",
+                    title: "title_qvz8o",
                 });
-                expect(result.code).equals(`.goal_r7bhp .bg-indigo_gy28g {
+                expect(result.code).equals(`.goal_r6ajz .bg-indigo_gx1aq {
  background: indigo
 }
-.indigo-white_wims0 {
+.indigo-white_whlua {
  color: #fff
 }`);
             });
@@ -70,15 +70,15 @@ export function run(
                 },
             ).then((result) => {
                 expect(result.mapping).deep.equals({
-                    "--accent-color": "--accent-color_yosy6",
-                    button: "button_oims0",
+                    "--accent-color": "--accent-color_ynr0g",
+                    button: "button_ohlua",
                 });
 
                 expect(result.code).equals(`:root {
- --accent-color_yosy6: hotpink
+ --accent-color_ynr0g: hotpink
 }
-.button_oims0 {
- background: var(--accent-color_yosy6)
+.button_ohlua {
+ background: var(--accent-color_ynr0g)
 }`);
             });
         });
@@ -102,15 +102,15 @@ export function run(
                 },
             ).then((result) => {
                 expect(result.mapping).deep.equals({
-                    goal: "goal_r7bhp",
-                    "bg-indigo": "bg-indigo_gy28g",
-                    "indigo-white": "indigo-white_wims0 bg-indigo_gy28g title block ruler",
+                    goal: "goal_r6ajz",
+                    "bg-indigo": "bg-indigo_gx1aq",
+                    "indigo-white": "indigo-white_whlua bg-indigo_gx1aq title block ruler",
                 });
 
-                expect(result.code).equals(`.goal_r7bhp .bg-indigo_gy28g {
+                expect(result.code).equals(`.goal_r6ajz .bg-indigo_gx1aq {
  background: indigo
 }
-.indigo-white_wims0 {
+.indigo-white_whlua {
  color: #fff
 }`);
             });
@@ -136,16 +136,16 @@ composes: button cell title from "${url.pathname.replace(root.pathname, "")}";  
                 },
             ).then((result) => {
                 expect(result.mapping).deep.equals({
-                    goal: "goal_r7bhp",
-                    "bg-indigo": "bg-indigo_gy28g",
+                    goal: "goal_r6ajz",
+                    "bg-indigo": "bg-indigo_gx1aq",
                     "indigo-white":
-                        "indigo-white_wims0 bg-indigo_gy28g button_egkqy_mixins cell_s04ai_mixins title_seiow_mixins",
+                        "indigo-white_whlua bg-indigo_gx1aq button_efjs8_mixins cell_sz3cs_mixins title_sdhq6_mixins",
                 });
 
-                expect(result.code).equals(`.goal_r7bhp .bg-indigo_gy28g {
+                expect(result.code).equals(`.goal_r6ajz .bg-indigo_gx1aq {
  background: indigo
 }
-.indigo-white_wims0 {
+.indigo-white_whlua {
  color: #fff
 }`);
             });
@@ -187,27 +187,27 @@ composes: button cell title from "${url.pathname.replace(root.pathname, "")}";  
                 },
             ).then((result) => {
                 expect(result.mapping).deep.equals({
-                    "--progress": "--progress_rlpv3",
-                    bar: "bar_dnrx5",
-                    progressAnimation: "progressAnimation_nrv19",
+                    "--progress": "--progress_rkoxd",
+                    bar: "bar_dmqzf",
+                    progressAnimation: "progressAnimation_nqu3j",
                 });
 
-                expect(result.code).equals(`@property --progress_rlpv3 {
+                expect(result.code).equals(`@property --progress_rkoxd {
  syntax: "<percentage>";
  inherits: false;
  initial-value: 25%
 }
-.bar_dnrx5 {
+.bar_dmqzf {
  display: inline-block;
- --progress_rlpv3: 25%;
+ --progress_rkoxd: 25%;
  width: 100%;
  height: 5px;
- background: linear-gradient(90deg,#00d230 var(--progress_rlpv3),#000 var(--progress_rlpv3));
- animation: progressAnimation_nrv19 2.5s infinite
+ background: linear-gradient(90deg,#00d230 var(--progress_rkoxd),#000 var(--progress_rkoxd));
+ animation: progressAnimation_nqu3j 2.5s infinite
 }
-@keyframes progressAnimation_nrv19 {
+@keyframes progressAnimation_nqu3j {
  to {
-  --progress_rlpv3: 100%
+  --progress_rkoxd: 100%
  }
 }`);
             });
@@ -263,9 +263,9 @@ composes: button cell title from "${url.pathname.replace(root.pathname, "")}";  
                 },
             ).then((result) => {
                 expect(result.mapping).deep.equals({
-                    sun: "sun_ckou2",
-                    rise: "rise_jtx3b",
-                    bounce: "bounce_gw06e",
+                    sun: "sun_cjnwc",
+                    rise: "rise_jsw5l",
+                    bounce: "bounce_gvz8o",
                 });
 
                 expect(result.code).equals(`:root {
@@ -274,14 +274,14 @@ composes: button cell title from "${url.pathname.replace(root.pathname, "")}";  
  display: flex;
  justify-content: center
 }
-.sun_ckou2 {
+.sun_cjnwc {
  background-color: #ff0;
  border-radius: 50%;
  height: 100vh;
  aspect-ratio: 1 / 1;
- animation: 4s linear infinite alternate rise_jtx3b,4s linear 0s infinite alternate bounce_gw06e
+ animation: 4s linear infinite alternate rise_jsw5l,4s linear 0s infinite alternate bounce_gvz8o
 }
-@keyframes rise_jtx3b {
+@keyframes rise_jsw5l {
  0% {
   transform: translateY(110vh)
  }
@@ -289,7 +289,7 @@ composes: button cell title from "${url.pathname.replace(root.pathname, "")}";  
   transform: none
  }
 }
-@keyframes bounce_gw06e {
+@keyframes bounce_gvz8o {
  0% {
   transform: translateX(-50vw)
  }
@@ -323,17 +323,17 @@ composes: button cell title from "${url.pathname.replace(root.pathname, "")}";  
                 },
             ).then((result) => {
                 expect(result.mapping).deep.equals({
-                    className: "className_vjnt1",
-                    subClass: "subClass_sgkqy",
+                    className: "className_vimvb",
+                    subClass: "subClass_sfjs8",
                 });
 
-                expect(result.code).equals(`.className_vjnt1 {
+                expect(result.code).equals(`.className_vimvb {
  background: red
 }
-.className_vjnt1,.className_vjnt1 .subClass_sgkqy {
+.className_vimvb,.className_vimvb .subClass_sfjs8 {
  color: green
 }
-.className_vjnt1 .subClass_sgkqy .global-class-name {
+.className_vimvb .subClass_sfjs8 .global-class-name {
  color: blue
 }`);
             });
@@ -358,15 +358,15 @@ composes: button cell title from "${url.pathname.replace(root.pathname, "")}";  
                 },
             ).then((result) => {
                 expect(result.mapping).deep.equals({
-                    className: "className_vjnt1",
-                    subClass: "subClass_sgkqy className_vjnt1",
+                    className: "className_vimvb",
+                    subClass: "subClass_sfjs8 className_vimvb",
                 });
 
-                expect(result.code).equals(`.className_vjnt1 {
+                expect(result.code).equals(`.className_vimvb {
  background: red;
  color: #ff0
 }
-.subClass_sgkqy {
+.subClass_sfjs8 {
  background: blue
 }`);
             });
@@ -391,15 +391,15 @@ composes: button cell title from "${url.pathname.replace(root.pathname, "")}";  
                 },
             ).then((result) => {
                 expect(result.mapping).deep.equals({
-                    "class-name": "class-name_vjnt1",
-                    "sub-class": "sub-class_sgkqy class-name_vjnt1",
+                    "class-name": "class-name_vimvb",
+                    "sub-class": "sub-class_sfjs8 class-name_vimvb",
                 });
 
-                expect(result.code).equals(`.class-name_vjnt1 {
+                expect(result.code).equals(`.class-name_vimvb {
  background: red;
  color: #ff0
 }
-.sub-class_sgkqy {
+.sub-class_sfjs8 {
  background: blue
 }`);
             });
@@ -424,15 +424,15 @@ composes: button cell title from "${url.pathname.replace(root.pathname, "")}";  
                 },
             ).then((result) => {
                 expect(result.mapping).deep.equals({
-                    "class-name": "className_vjnt1",
-                    "sub-class": "subClass_sgkqy className_vjnt1",
+                    "class-name": "className_vimvb",
+                    "sub-class": "subClass_sfjs8 className_vimvb",
                 });
 
-                expect(result.code).equals(`.className_vjnt1 {
+                expect(result.code).equals(`.className_vimvb {
  background: red;
  color: #ff0
 }
-.subClass_sgkqy {
+.subClass_sfjs8 {
  background: blue
 }`);
             });
@@ -457,15 +457,15 @@ composes: button cell title from "${url.pathname.replace(root.pathname, "")}";  
                 },
             ).then((result) => {
                 expect(result.mapping).deep.equals({
-                    className: "className_agkqy",
-                    subClass: "subClass_nfjpx className_agkqy",
+                    className: "className_afjs8",
+                    subClass: "subClass_neir7 className_afjs8",
                 });
 
-                expect(result.code).equals(`.className_agkqy {
+                expect(result.code).equals(`.className_afjs8 {
  background: red;
  color: #ff0
 }
-.subClass_nfjpx {
+.subClass_neir7 {
  background: blue
 }`);
             });
@@ -490,15 +490,15 @@ composes: button cell title from "${url.pathname.replace(root.pathname, "")}";  
                 },
             ).then((result) => {
                 expect(result.mapping).deep.equals({
-                    className: "class-name_agkqy",
-                    subClass: "sub-class_nfjpx class-name_agkqy",
+                    className: "class-name_afjs8",
+                    subClass: "sub-class_neir7 class-name_afjs8",
                 });
 
-                expect(result.code).equals(`.class-name_agkqy {
+                expect(result.code).equals(`.class-name_afjs8 {
  background: red;
  color: #ff0
 }
-.sub-class_nfjpx {
+.sub-class_neir7 {
  background: blue
 }`);
             });
@@ -523,15 +523,15 @@ composes: button cell title from "${url.pathname.replace(root.pathname, "")}";  
                 },
             ).then((result) => {
                 expect(result.mapping).deep.equals({
-                    className: "className_vjnt1",
-                    subClass: "subClass_sgkqy className_vjnt1",
+                    className: "className_vimvb",
+                    subClass: "subClass_sfjs8 className_vimvb",
                 });
 
-                expect(result.code).equals(`.className_vjnt1 {
+                expect(result.code).equals(`.className_vimvb {
  background: red;
  color: #ff0
 }
-.subClass_sgkqy {
+.subClass_sfjs8 {
  background: blue
 }`);
             });
@@ -556,15 +556,15 @@ composes: button cell title from "${url.pathname.replace(root.pathname, "")}";  
                 },
             ).then((result) => {
                 expect(result.mapping).deep.equals({
-                    "class-name": "class-name_agkqy",
-                    "sub-class": "sub-class_nfjpx class-name_agkqy",
+                    "class-name": "class-name_afjs8",
+                    "sub-class": "sub-class_neir7 class-name_afjs8",
                 });
 
-                expect(result.code).equals(`.class-name_agkqy {
+                expect(result.code).equals(`.class-name_afjs8 {
  background: red;
  color: #ff0
 }
-.sub-class_nfjpx {
+.sub-class_neir7 {
  background: blue
 }`);
             });
@@ -657,32 +657,32 @@ a span {
             ).then((result) => {
                 expect(result.importMapping).deep.equals({
                     "./test/css-modules/mixins.css": {
-                        title: "title_seiow_mixins",
-                        cell: "cell_s04ai_mixins",
-                        button: "button_egkqy_mixins",
+                        title: "title_sdhq6_mixins",
+                        cell: "cell_sz3cs_mixins",
+                        button: "button_efjs8_mixins",
                     },
                 });
 
                 expect(result.mapping).deep.equals({
-                    goal: "goal_r7bhp",
-                    "bg-indigo": "bg-indigo_gy28g",
+                    goal: "goal_r6ajz",
+                    "bg-indigo": "bg-indigo_gx1aq",
                     "indigo-white":
-                        "indigo-white_wims0 title block ruler bg-indigo_gy28g button_egkqy_mixins cell_s04ai_mixins title_seiow_mixins",
+                        "indigo-white_whlua title block ruler bg-indigo_gx1aq button_efjs8_mixins cell_sz3cs_mixins title_sdhq6_mixins",
                 });
                 expect(result.code).equals(`:import("./test/css-modules/mixins.css") {
- button_egkqy_mixins: button;
- cell_s04ai_mixins: cell;
- title_seiow_mixins: title;
+ button_efjs8_mixins: button;
+ cell_sz3cs_mixins: cell;
+ title_sdhq6_mixins: title;
 }
 :export {
- goal: goal_r7bhp;
- bg-indigo: bg-indigo_gy28g;
- indigo-white: indigo-white_wims0 title block ruler bg-indigo_gy28g button_egkqy_mixins cell_s04ai_mixins title_seiow_mixins;
+ goal: goal_r6ajz;
+ bg-indigo: bg-indigo_gx1aq;
+ indigo-white: indigo-white_whlua title block ruler bg-indigo_gx1aq button_efjs8_mixins cell_sz3cs_mixins title_sdhq6_mixins;
 }
-.goal_r7bhp .bg-indigo_gy28g {
+.goal_r6ajz .bg-indigo_gx1aq {
  background: indigo
 }
-.indigo-white_wims0 {
+.indigo-white_whlua {
  color: #fff
 }`);
             });
@@ -769,15 +769,15 @@ a span {
                 },
             ).then((result) => {
                 expect(result.code).equals(`:export {
- button: button_oims0;
- green: green_znrx5;
+ button: button_ohlua;
+ green: green_zmqzf;
 }
-.button_oims0 {
+.button_ohlua {
  color: light-dark(#0c77f8,#ff0020);
  display: inline-block
 }
 @supports (border-color:green) and (color:color(from green srgb r g b/.5)) {
- .green_znrx5 .button_oims0 {
+ .green_zmqzf .button_ohlua {
   color: #aaf201
  }
 }`);
@@ -965,15 +965,15 @@ a span {
             );
 
             expect(result.mapping).deep.equals({
-                goal: "goal_r7bhp",
-                "bg-indigo": "bg-indigo_gy28g",
-                "indigo-white": "indigo-white_wims0 bg-indigo_gy28g title_qw06e",
-                title: "title_qw06e",
+                goal: "goal_r6ajz",
+                "bg-indigo": "bg-indigo_gx1aq",
+                "indigo-white": "indigo-white_whlua bg-indigo_gx1aq title_qvz8o",
+                title: "title_qvz8o",
             });
-            expect(result.code).equals(`.goal_r7bhp .bg-indigo_gy28g {
+            expect(result.code).equals(`.goal_r6ajz .bg-indigo_gx1aq {
  background: indigo
 }
-.indigo-white_wims0 {
+.indigo-white_whlua {
  color: #fff
 }`);
         });

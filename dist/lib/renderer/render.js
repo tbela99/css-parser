@@ -3,12 +3,13 @@ import { reduceHexValue } from '../syntax/color/hex.js';
 import { EnumToken, ColorType } from '../ast/types.js';
 import { expand } from '../ast/expand.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
-import { pseudoElements, urlTokenMatcher, PARENT, tokensfuncSet, LOC, colorPrecision } from '../syntax/constants.js';
-import { minifyNumber, reducegradientBackgroundPosition, reduceConicColorStops, reduceColorStops, parseColor, toPrecisionAngle, toPrecisionValue } from '../syntax/syntax.js';
+import { pseudoElements, urlTokenMatcher, PARENT, tokensfuncSet, LOCSTA, LOCSRCID, colorPrecision } from '../syntax/constants.js';
+import { minifyNumber, reducegradientBackgroundPosition, reduceConicColorStops, reduceColorStops, parseColor, isWhiteSpace, toPrecisionAngle, toPrecisionValue } from '../syntax/syntax.js';
 import { equalsIgnoreCase } from '../parser/utils/text.js';
 import { toDegrees } from '../parser/utils/angle.js';
 import { LineMap } from '../parser/linesmap.js';
 import { dirname } from '../fs/resolve.js';
+import { SourceFile } from '../parser/source.js';
 
 /**
  * render ast
@@ -136,43 +137,34 @@ function doRender(data, options = {}, mapping) {
  */
 function updateSourceMap(node, options, cache, sourcemaps, sourceLocation, linesMap, str) {
     let offset = 0;
-    while (true) {
-        if (str.charAt(offset) == options.newLine) {
-            offset += options.newLine.length;
-            continue;
-        }
-        if (str.charAt(offset) == options.indent) {
-            offset += options.indent.length;
-            continue;
-        }
-        break;
+    // eat leanding whitespace
+    while (offset < str.length && isWhiteSpace(str.charCodeAt(offset))) {
+        offset++;
     }
     if (offset > 0) {
-        move(sourceLocation, linesMap, str.slice(0, offset));
+        move(sourceLocation, linesMap, str, 0, offset + 1);
     }
-    if (node[LOC] != null &&
-        [
-            EnumToken.RuleNodeType,
-            EnumToken.AtRuleNodeType,
-            EnumToken.KeyframesRuleNodeType,
-            EnumToken.KeyframesAtRuleNodeType,
-        ].includes(node.typ)) {
-        const source = options.sourcesMap.get(node[LOC].srcId);
+    if (node[LOCSTA] != null) {
+        const source = options.sourcesMap.get(node[LOCSRCID]);
         const inputSourceMap = source.getInputSourceMap();
-        const offsets = source.getOffsets(node[LOC].sta);
+        const offsets = source.getOffsets(node[LOCSTA]);
         const [newLine, newColumn] = linesMap.getOffsets(sourceLocation.end);
         let records = null;
-        let srcId = node[LOC].srcId;
+        let srcId = node[LOCSRCID];
         let sourceFileName = source.getFileName() || null;
-        source.getContent() || null;
+        let sourceContent; // = (source.getContent() as string) || null;
         if (inputSourceMap != null && (records = inputSourceMap.find(offsets[0], offsets[1])) != null) {
+            let newId = null;
             for (const record of records) {
+                newId = null;
                 // @ts-ignore
                 sourceFileName = record[0] || null;
                 // @ts-ignore
                 offsets[0] = record[1];
                 // @ts-ignore
                 offsets[1] = record[2];
+                // console.error({record});
+                sourceContent = record[3] || null;
                 if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
                     if (cache[sourceFileName] == null) {
                         const absolute = options.resolve(dirname(options.output), options.cwd)
@@ -185,6 +177,22 @@ function updateSourceMap(node, options, cache, sourcemaps, sourceLocation, lines
                     }
                     sourceFileName = cache[sourceFileName];
                 }
+                for (const [id, file] of options.sourcesMap.entries()) {
+                    if (file.getFileName() === sourceFileName) {
+                        newId = id;
+                        break;
+                    }
+                    if (sourceFileName == null && file.getContent() === sourceContent) {
+                        newId = id;
+                        break;
+                    }
+                }
+                if (newId == null) {
+                    const source = new SourceFile(sourceContent, [], sourceFileName);
+                    options.sourcesMap.set(source.id, source);
+                    newId = source.id;
+                }
+                srcId = newId;
                 if (!sourcemaps.sources.includes(srcId)) {
                     sourcemaps.sources.push(srcId);
                 }
@@ -192,23 +200,24 @@ function updateSourceMap(node, options, cache, sourcemaps, sourceLocation, lines
             }
         }
         else {
-            if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
-                if (cache[sourceFileName] == null) {
-                    const absolute = options.resolve(dirname(options.output), options.cwd)
-                        .absolute;
-                    const absoluteSourceFileName = options.resolve(sourceFileName, options.cwd)
-                        .absolute;
-                    cache[sourceFileName] = options.resolve(absoluteSourceFileName, absolute).relative;
-                }
-                sourceFileName = cache[sourceFileName];
-            }
+            // if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
+            //     if (cache[sourceFileName] == null) {
+            //         const absolute = options.resolve!(dirname(options.output as string), options.cwd as string)
+            //             .absolute as string;
+            //         const absoluteSourceFileName = options.resolve!(sourceFileName, options.cwd as string)
+            //             .absolute as string;
+            //         cache[sourceFileName] = options.resolve!(absoluteSourceFileName, absolute).relative as string;
+            //     }
+            //     sourceFileName = cache[sourceFileName] as string;
+            // }
             if (!sourcemaps.sources.includes(srcId)) {
                 sourcemaps.sources.push(srcId);
             }
             sourcemaps.maps.push([newLine, newColumn, srcId, ...offsets]);
         }
+        // console.error([newLine, newColumn, srcId, ...offsets, EnumToken[node.typ], node.nam ?? node.sel]);
     }
-    move(sourceLocation, linesMap, offset > 0 ? str.slice(offset) : str);
+    move(sourceLocation, linesMap, str, offset);
 }
 /**
  * Update position
@@ -216,11 +225,12 @@ function updateSourceMap(node, options, cache, sourcemaps, sourceLocation, lines
  * @param linesMap
  * @param str
  */
-function move(sourceLocation, linesMap, str) {
-    let i = 0;
+function move(sourceLocation, linesMap, str, start, end) {
+    let i = start ?? 0;
+    let j = end ?? str.length;
     let codepoint;
     let char;
-    for (; i < str.length; i++) {
+    for (; i < j; i++) {
         char = str.charAt(i);
         codepoint = char.charCodeAt(0);
         sourceLocation.end += char.length;
@@ -344,7 +354,6 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
                 str = options.newLine + indentSub + str;
                 children += str;
                 if (sourcemaps != null && str !== "") {
-                    move(sourceLocation, linesMap, str);
                     if (node.typ == EnumToken.DeclarationNodeType && recordDeclarationSourceMap) {
                         // if declaration is child of at-rule, then record it
                         // .rule {
@@ -352,15 +361,23 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
                         //         color: red;
                         //     }
                         // }
-                        const source = options.sourcesMap.get(node[LOC].srcId);
-                        if (!sourcemaps.sources.includes(node[LOC].srcId)) {
-                            sourcemaps.sources.push(node[LOC].srcId);
-                        }
-                        sourcemaps.maps.push([
-                            ...linesMap.getOffsets(sourceLocation.end - str.length + options.newLine.length + indentSub.length),
-                            node[LOC].srcId,
-                            ...source.getOffsets(node[LOC].sta),
-                        ]);
+                        // const source = options.sourcesMap!.get(node[LOCSTA]) as SourceFile;
+                        // if (!sourcemaps.sources.includes(node[LOCSTA] as number)) {
+                        //     sourcemaps.sources.push(node[LOCSTA] as number);
+                        // }
+                        // sourcemaps.maps.push([
+                        //     ...linesMap!.getOffsets(
+                        //         sourceLocation.end - str.length + options.newLine!.length + indentSub.length,
+                        //     ),
+                        //     node[LOCSTA],
+                        //     ...source!.getOffsets(node![LOCSTA]),
+                        // ]);
+                        // console.error(options.sourcesMap.get(node[LOCSTA])?.getSourceLocation(node[LOCSTA]), linesMap?.getOffsets(sourceLocation.end), node.nam);
+                        // @ts-ignore
+                        updateSourceMap(node, options, cache, sourcemaps, sourceLocation, linesMap, str);
+                    }
+                    else {
+                        move(sourceLocation, linesMap, str);
                     }
                 }
             }

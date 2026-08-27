@@ -1814,6 +1814,9 @@ var declarations = {
 	"text-emphasis-style": {
 		syntax: "none | [ [ filled | open ] || [ dot | circle | double-circle | triangle | sesame ] ] | <string>"
 	},
+	"text-fit": {
+		syntax: "[ none | grow | shrink ] [consistent | per-line | per-line-all]? <percentage>?"
+	},
 	"text-indent": {
 		syntax: "<length-percentage> && hanging? && each-line?"
 	},

@@ -222,7 +222,7 @@ export function run(describe, expect, it, transform, parse, render) {
         });
 
         it('display-p3 to rec2020 #7', function () {
-            return transform(`.hsl { color: color(display-p3 0.644980276448 0.191199800941 0.165770885403 / 0.501960784314); }`, {
+            return transform(`.hsl { color: color(display-p3 0.644980276448 0.191199800941 0.165770885403 / 0.5); }`, {
                 beautify: true,
                 convertColor: ColorType.SRGB_LINEAR
             }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {

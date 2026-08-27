@@ -132,7 +132,7 @@ import {
     rgb2cmykToken,
 } from "./cmyk.ts";
 import { a98rgb2srgbvalues, srgb2a98values } from "./a98rgb.ts";
-import { epsilon, LOC } from "../constants.ts";
+import { epsilon, LOCEND, LOCSRCID, LOCSTA } from "../constants.ts";
 import { colorFuncColorSpace, colorPrecision, anglePrecision } from "../constants.ts";
 import { trimArray } from "../../validation/match.ts";
 import { alpha } from "./alpha.ts";
@@ -230,7 +230,9 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
                 kin: ColorType[token.val.toUpperCase().replaceAll("-", "_") as keyof typeof ColorType],
             };
 
-            tk[LOC] = token[LOC];
+            tk[LOCSRCID] = token[LOCSRCID];
+            tk[LOCSTA] = token[LOCSTA];
+            tk[LOCEND] = token[LOCEND];
             token = tk as ColorToken;
         }
     }

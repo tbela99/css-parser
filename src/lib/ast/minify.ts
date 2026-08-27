@@ -28,10 +28,9 @@ import { EnumToken } from "./types.ts";
 import { isFunction, isIdent, isIdentStart, isWhiteSpace } from "../syntax/syntax.ts";
 import { FeatureWalkMode } from "./features/type.ts";
 import { trimArray } from "../validation/match.ts";
-import { combinators, LOC, OPTIMIZED, PARENT, RAW, TOKENS } from "../syntax/constants.ts";
+import { combinators, LOCEND, LOCSRCID, LOCSTA, OPTIMIZED, PARENT, RAW, TOKENS } from "../syntax/constants.ts";
 import { replaceNodeOrValue } from "../parser/utils/token.ts";
 import { parseString } from "../parser/parse.ts";
-import { tokenize } from "../parser/tokenize.ts";
 import { replaceCompound } from "./expand.ts";
 
 const notEndingWith: string[] = ["(", "["].concat(combinators);
@@ -338,7 +337,9 @@ function transformAtRuleMediaPrelude(values: Token[]) {
                                 },
                                 l: val1,
                                 r: val2,
-                                [LOC]: value[LOC],
+                                [LOCSRCID]: value[LOCSRCID],
+                                [LOCSTA]: value[LOCSTA],
+                                [LOCEND]: value[LOCEND],
                             } as MediaRangeQueryToken,
                         ],
                     } as ParensToken;
@@ -1526,7 +1527,7 @@ function matchSelectors(selector1: string[][], selector2: string[][]): null | Ma
  */
 function fixSelector(node: AstRule): void {
     if (node.sel.includes("&")) {
-        const attributes: Token[] = [...tokenize(node.sel as string)].map((t) => t.token) as Token[]; // parseString(node.sel);
+        const attributes: Token[] = parseString(node.sel);
 
         for (const attr of walkValues(attributes)) {
             if (

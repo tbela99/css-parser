@@ -185,7 +185,9 @@ function parseSync(...args) {
         currentPosition: 0,
     };
     const result = doParseSync(tokenize(options.parseInfo), options);
-    return !options.module && !options.inputSourceMap && !options.sourcemap ? result : parseResult(result, options);
+    return options.module == null && options.inputSourceMap == null && !options.sourcemap
+        ? result
+        : parseResult(result, options);
 }
 /**
  * Transform CSS
@@ -318,7 +320,9 @@ async function parse(...args) {
         position: 0,
         currentPosition: 0,
     };
-    return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => (!options.module && !options.inputSourceMap ? result : parseResult(result, options)));
+    return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => options.module == null && options.inputSourceMap == null && !options.sourcemap
+        ? result
+        : parseResult(result, options));
 }
 /**
  * Transform CSS file

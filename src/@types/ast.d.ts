@@ -1,5 +1,5 @@
 import { EnumToken } from "../lib/ast/types.ts";
-import { ERRORS, LOC, OPTIMIZED, PARENT, RAW, ROOT, STATE, TOKENS } from "../lib/syntax/constants.ts";
+import { ERRORS, LOCSRCID, LOCSTA, LOCEND, OPTIMIZED, PARENT, RAW, ROOT, STATE, TOKENS } from "../lib/syntax/constants.ts";
 import type { Token, CssVariableToken, CssVariableImportTokenType, WhitespaceToken } from "./token.d.ts";
 
 /**
@@ -28,11 +28,22 @@ export declare interface BaseToken {
      * token type
      */
     typ: EnumToken;
+
     /**
-     * location info
-     * @private
+     * source src
      */
-    [LOC]?: SourceLocation | null;
+    [LOCSRCID]?: number;
+
+    /**
+     * source start offset
+     */
+    [LOCSTA]?: number;
+
+    /**
+     * source end offset
+     */
+    [LOCEND]?: number;
+
     /**
      * parent node
      * @private

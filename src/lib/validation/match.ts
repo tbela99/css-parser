@@ -36,9 +36,8 @@ import type {
 import { MediaFeatureType, ValidationSyntaxGroupEnum, ValidationTokenEnum } from "./parser/typedef.ts";
 import type { ValidationContext, ValidationMatch } from "./types.d.ts";
 import type { ValidationConfiguration, ValidationMediaFeature } from "../../@types/validation.d.ts";
-import { funcLike, LOC, mFGT, mFLT, tokensfuncDefMap, tokensfuncSet } from "../syntax/constants.ts";
+import { funcLike, LOCSTA, mFGT, mFLT, tokensfuncDefMap, tokensfuncSet } from "../syntax/constants.ts";
 import { isColor } from "../syntax/syntax.ts";
-// import { isDeclarationValue } from "../parser/utils/declaration.ts";
 import { renderSyntax } from "./parser/parse.ts";
 import { equalsIgnoreCase } from "../parser/utils/text.ts";
 import { cloneNode } from "../ast/clone.ts";
@@ -488,7 +487,7 @@ export function matchSelectorSyntax(
                                 message: `Unexpected token ${EnumToken[stream[i].typ]}`,
                                 node: stream[i],
                                 // @ts-expect-error
-                                location: options.source!.getSourceLocation(stream[i][LOC]!.sta),
+                                location: options.source!.getSourceLocation(stream[i][LOCSTA]),
                             },
                         ],
                     };
@@ -565,7 +564,7 @@ export function matchSelectorSyntax(
                                 message: `Nesting selector is not allowed`,
                                 node: token,
                                 // @ts-expect-error
-                                location: options.source!.getSourceLocation(token[LOC]!.sta),
+                                location: options.source!.getSourceLocation(token[LOCSTA]),
                             },
                         ],
                     };
@@ -605,7 +604,7 @@ export function matchSelectorSyntax(
                                 message: `Unexpected combinator ${EnumToken[token.typ]}`,
                                 node: token,
                                 // @ts-expect-error
-                                location: options.source!.getSourceLocation(token[LOC]!.sta),
+                                location: options.source!.getSourceLocation(token[LOCSTA]),
                             },
                         ],
                     };
@@ -670,7 +669,7 @@ export function matchSelectorSyntax(
                                 message: `Unexpected token ${EnumToken[token.typ]}`,
                                 node: token,
                                 // @ts-expect-error
-                                location: options.source!.getSourceLocation(token[LOC]!.sta),
+                                location: options.source!.getSourceLocation(token[LOCSTA]),
                             },
                         ],
                     };
@@ -738,7 +737,7 @@ export function matchSelectorSyntax(
                                     message: `Unexpected token ${EnumToken[slice[0].typ]}`,
                                     node: slice[0],
                                     // @ts-expect-error
-                                    location: options.source!.getSourceLocation(slice[0][LOC]!.sta),
+                                    location: options.source!.getSourceLocation(slice[0][LOCSTA]),
                                 },
                             ],
                         };
@@ -752,8 +751,8 @@ export function matchSelectorSyntax(
                     //         errors: [
                     //             {
                     //                 action: "drop",
-                    //                 message: `Unexpected token ${EnumToken[slice[0].typ]} at ${slice[0][LOC]!.src}:${slice[0][LOC]!.sta.lin}:${
-                    //                     slice[0][LOC]!.sta.col
+                    //                 message: `Unexpected token ${EnumToken[slice[0].typ]} at ${slice[0][LOC]!.src}:${slice[0][LOCSTA].lin}:${
+                    //                     slice[0][LOCSTA].col
                     //                 }`,
                     //                 node: slice[0],
                     //                 location: slice[0][LOC],
@@ -796,8 +795,8 @@ export function matchSelectorSyntax(
             //         errors: [
             //             {
             //                 action: "drop",
-            //                 message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${
-            //                     token[LOC]!.sta.col
+            //                 message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOCSTA].lin}:${
+            //                     token[LOCSTA].col
             //                 }`,
             //                 node: token,
             //                 location: token[LOC],
@@ -831,8 +830,8 @@ export function matchSelectorSyntax(
             //         errors: [
             //             {
             //                 action: "drop",
-            //                 message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOC]!.sta.lin}:${
-            //                     token[LOC]!.sta.col
+            //                 message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOCSTA].lin}:${
+            //                     token[LOCSTA].col
             //                 }`,
             //                 node: token,
             //                 location: token[LOC],
@@ -863,7 +862,7 @@ export function matchSelectorSyntax(
                             message: `Unexpected token ${EnumToken[token.typ]}`,
                             node: token,
                             // @ts-expect-error
-                            location: options.source!.getSourceLocation(token[LOC]!.sta),
+                            location: options.source!.getSourceLocation(token[LOCSTA]),
                         },
                     ],
                 };
@@ -925,7 +924,7 @@ export function matchSelectorSyntax(
                             message: `Unexpected token ${EnumToken[token.typ]}`,
                             node: token,
                             // @ts-expect-error
-                            location: options.source!.getSourceLocation(token[LOC]!.sta),
+                            location: options.source!.getSourceLocation(token[LOCSTA]),
                         },
                     ],
                 };
@@ -950,7 +949,7 @@ export function matchSelectorSyntax(
                             message: `Unsupported selector token ${EnumToken[token.typ]}`,
                             node: token,
                             // @ts-expect-error
-                            location: options.source!.getSourceLocation(token[LOC]!.sta),
+                            location: options.source!.getSourceLocation(token[LOCSTA]),
                         },
                     ],
                 };
@@ -980,7 +979,7 @@ export function matchSelectorSyntax(
                     message: `Unmatched token ${EnumToken[stack.at(-1)!.typ]}`,
                     node: stack.at(-1)! as Token,
                     // @ts-expect-error
-                    location: options.source!.getSourceLocation(stack.at(-1)![LOC]!.sta),
+                    location: options.source!.getSourceLocation(stack.at(-1)![LOCSTA]),
                 },
             ],
         };
@@ -1042,7 +1041,7 @@ export function matchAllSyntaxes(
                           node: result.token,
                           syntax: result.syntaxToken,
                           location: options.source!.getSourceLocation(
-                              (result.token?.[LOC]! ?? context.tokens.at(-1)?.[LOC]).sta,
+                              (result.token?.[LOCSTA] ?? context.tokens.at(-1)?.[LOCSTA])!,
                           ),
                       },
                   ]
@@ -1168,7 +1167,7 @@ export function matchOccurenceSyntax(
                     action: "drop",
                     message: "could not match syntax",
                     node: context.peek(),
-                    // location: options.source!.getSourceLocation(context.peek()?.[LOC]!.sta),
+                    // location: options.source!.getSourceLocation(context.peek()?.[LOCSTA]),
                 },
             ],
             syntaxToken: null,
@@ -1871,7 +1870,6 @@ function matchSyntax(
                 };
 
             case ValidationTokenEnum.FunctionDefinition:
-
                 if (
                     equalsIgnoreCase(
                         (token as FunctionToken).val,

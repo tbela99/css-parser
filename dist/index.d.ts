@@ -966,6 +966,15 @@ declare enum ModuleScopeEnumOptions {
     Shortest = 512
 }
 
+/**
+ * Location source id
+ */
+declare const LOCSRCID: unique symbol;
+declare const LOCSTA: unique symbol;
+declare const LOCEND: unique symbol;
+/**
+ * Used by the validation parser
+ */
 declare const LOC: unique symbol;
 declare const RAW: unique symbol;
 declare const STATE: unique symbol;
@@ -2668,11 +2677,22 @@ export declare interface BaseToken {
      * token type
      */
     typ: EnumToken;
+
     /**
-     * location info
-     * @private
+     * source src
      */
-    [LOC]?: SourceLocation | null;
+    [LOCSRCID]?: number;
+
+    /**
+     * source start offset
+     */
+    [LOCSTA]?: number;
+
+    /**
+     * source end offset
+     */
+    [LOCEND]?: number;
+
     /**
      * parent node
      * @private
@@ -4072,7 +4092,7 @@ declare class SourceFile {
     /**
      * Source file content
      */
-    private content;
+    content: string;
     /**
      * Constructor
      * @param content
@@ -4908,7 +4928,6 @@ interface BorderRadius {
  * node walker options
  */
 export declare interface WalkerOptions {
-
     /**
      * walk in reverse
      */
@@ -4953,7 +4972,7 @@ export declare type WalkerValueFilter = (
     parent?: AstNode$1 | Token$1 | AstNode$1[] | Token$1[] | null,
     event?: WalkerEvent,
     parents?: Generator<Token$1>,
-) => WalkerOption | null;
+) => WalkerOption | AstNode$1 | Token$1 | AstNode$1[] | Token$1[] | null;
 
 /**
  * walker result

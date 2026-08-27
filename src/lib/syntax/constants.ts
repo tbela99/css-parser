@@ -1,6 +1,15 @@
 import { EnumToken } from "../ast/types.ts";
 import { config } from "../validation/json.ts";
 
+/**
+ * Location source id
+ */
+export const LOCSRCID = Symbol.for("locSrcId");
+export const LOCSTA = Symbol.for("locSta");
+export const LOCEND = Symbol.for("locEnd");
+/**
+ * Used by the validation parser
+ */
 export const LOC = Symbol.for("loc");
 export const RAW = Symbol.for("raw");
 export const STATE = Symbol.for("state");
@@ -116,6 +125,7 @@ export const mathFuncs = [
     "acos",
     "atan",
     "atan2",
+    "tan",
     "pow",
     "sqrt",
     "hypot",
