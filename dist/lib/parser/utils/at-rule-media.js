@@ -145,7 +145,9 @@ function parseMediaqueryList(stream, options) {
                             scopes.pop();
                             currentScope = scopes.at(-1);
                             if (!result.success) {
-                                errors.push(...result.errors);
+                                for (const error of result.errors) {
+                                    errors.push(error);
+                                }
                                 success = false;
                             }
                             break;
@@ -352,7 +354,9 @@ function parseMediaqueryList(stream, options) {
                 parts.splice(parts.indexOf(stream), 1);
             }
             stream.length = 0;
-            stream.push(...trimArray(tokens));
+            for (const t of trimArray(tokens)) {
+                stream.push(t);
+            }
         }
     }
     stream.length = 0;
@@ -362,7 +366,9 @@ function parseMediaqueryList(stream, options) {
         if (acc.length > 0) {
             acc.push({ typ: EnumToken.CommaTokenType });
         }
-        acc.push(...b);
+        for (const t of b) {
+            acc.push(t);
+        }
         return acc;
     }, []));
     return {

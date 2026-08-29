@@ -3,118 +3,63 @@ import { wildCardFuncs, whenElseFunc, mathFuncs, timingFunc, supportFunc, timeli
 import { isWhiteSpace, isNewLine, isDigit, isLetter, isIdentStart, isIdentCodepoint, isNonPrintable, timeUnits, angleUnits, flexUnits, dimensionUnits, resolutionUnits, frequencyUnits } from '../syntax/syntax.js';
 import { SourceFile } from './source.js';
 
-const SymbolsMapTokens = {
-    "+": EnumToken.Plus,
-    "=": EnumToken.DelimTokenType,
-    "|": EnumToken.Pipe,
-    "||": EnumToken.ColumnCombinatorTokenType,
-    "|=": EnumToken.DashMatchTokenType,
-    "&": EnumToken.NestingSelectorTokenType,
-    "*": EnumToken.Star,
-    "*=": EnumToken.ContainMatchTokenType,
-    "~": EnumToken.Tilda,
-    "~=": EnumToken.IncludeMatchTokenType,
-    "^=": EnumToken.StartMatchTokenType,
-    "$=": EnumToken.EndMatchTokenType,
-    ",": EnumToken.Comma,
-    ":": EnumToken.ColonTokenType,
-    "::": EnumToken.DoubleColonTokenType,
-    ";": EnumToken.SemiColonTokenType,
-    "(": EnumToken.StartParensTokenType,
-    ")": EnumToken.EndParensTokenType,
-    "[": EnumToken.AttrStartTokenType,
-    "]": EnumToken.AttrEndTokenType,
-    "{": EnumToken.BlockStartTokenType,
-    "}": EnumToken.BlockEndTokenType,
-    "<=": EnumToken.LteTokenType,
-    ">": EnumToken.GtTokenType,
-    ">=": EnumToken.GteTokenType,
-    " ": EnumToken.Whitespace,
-    "\t": EnumToken.Whitespace,
-    "\r": EnumToken.Whitespace,
-    "\n": EnumToken.Whitespace,
-    "\f": EnumToken.Whitespace,
-    ...flexUnits.reduce((acc, curr) => {
-        acc[curr] = EnumToken.FlexTokenType;
-        return acc;
-    }, Object.create(null)),
-    ...dimensionUnits.reduce((acc, curr) => {
-        acc[curr] = EnumToken.LengthTokenType;
-        return acc;
-    }, Object.create(null)),
-    ...resolutionUnits.reduce((acc, curr) => {
-        acc[curr] = EnumToken.ResolutionTokenType;
-        return acc;
-    }, Object.create(null)),
-    ...angleUnits.reduce((acc, curr) => {
-        acc[curr] = EnumToken.AngleTokenType;
-        return acc;
-    }, Object.create(null)),
-    ...timeUnits.reduce((acc, curr) => {
-        acc[curr] = EnumToken.TimeTokenType;
-        return acc;
-    }, Object.create(null)),
-    ...frequencyUnits.reduce((acc, curr) => {
-        acc[curr] = EnumToken.FrequencyTokenType;
-        return acc;
-    }, Object.create(null)),
-    ...pseudoElements.reduce((acc, curr) => {
-        acc[curr] = EnumToken.PseudoElementTokenType;
-        return acc;
-    }, Object.create(null)),
-    ...containerFunc.reduce((acc, curr) => {
-        acc[curr + "("] = EnumToken.ContainerFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    ...urlFunc.reduce((acc, curr) => {
-        acc[curr + "("] = EnumToken.UrlFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    ...gridTemplateFunc.reduce((acc, curr) => {
-        acc[curr + "("] = EnumToken.GridTemplateFuncTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    ...imageFunc.reduce((acc, curr) => {
-        acc[curr + "("] = EnumToken.ImageFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    ...timelineFunc.reduce((acc, curr) => {
-        acc[curr + "("] = EnumToken.TimelineFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    // ...generalEnclosedFunc.reduce((acc, curr: string) => {
-    //     acc[curr + "("] = EnumToken.GeneralEnclosedFunctionTokenDefType;
-    //     return acc;
-    // }, Object.create(null)),
-    ...supportFunc.reduce((acc, curr) => {
-        acc[curr + "("] = EnumToken.SupportsFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    ...timingFunc.reduce((acc, curr) => {
-        acc[curr + "("] = EnumToken.TimingFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    ...colorsFunc.reduce((acc, curr) => {
-        acc[curr + "("] = EnumToken.ColorFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    ...mathFuncs.reduce((acc, curr) => {
-        acc[curr + "("] = EnumToken.MathFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    ...transformFunctions.reduce((acc, curr) => {
-        acc[curr.toLowerCase() + "("] = EnumToken.TransformFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    ...whenElseFunc.reduce((acc, curr) => {
-        acc[curr + "("] = EnumToken.WhenElseFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    ...wildCardFuncs.reduce((acc, curr) => {
-        acc[curr + "("] = EnumToken.WildCardFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-};
+const SymbolsMapTokens = Object.create(null);
+function assignTokenMap(entries, tokenType, suffix = "", lowercase = false) {
+    for (const entry of entries) {
+        SymbolsMapTokens[(lowercase ? entry.toLowerCase() : entry) + suffix] = tokenType;
+    }
+}
+SymbolsMapTokens[""] = EnumToken.DelimTokenType;
+SymbolsMapTokens["+"] = EnumToken.Plus;
+SymbolsMapTokens["="] = EnumToken.DelimTokenType;
+SymbolsMapTokens["|"] = EnumToken.Pipe;
+SymbolsMapTokens["||"] = EnumToken.ColumnCombinatorTokenType;
+SymbolsMapTokens["|="] = EnumToken.DashMatchTokenType;
+SymbolsMapTokens["&"] = EnumToken.NestingSelectorTokenType;
+SymbolsMapTokens["*"] = EnumToken.Star;
+SymbolsMapTokens["*="] = EnumToken.ContainMatchTokenType;
+SymbolsMapTokens["~"] = EnumToken.Tilda;
+SymbolsMapTokens["~="] = EnumToken.IncludeMatchTokenType;
+SymbolsMapTokens["^="] = EnumToken.StartMatchTokenType;
+SymbolsMapTokens["$="] = EnumToken.EndMatchTokenType;
+SymbolsMapTokens[","] = EnumToken.Comma;
+SymbolsMapTokens[":"] = EnumToken.ColonTokenType;
+SymbolsMapTokens["::"] = EnumToken.DoubleColonTokenType;
+SymbolsMapTokens[";"] = EnumToken.SemiColonTokenType;
+SymbolsMapTokens["("] = EnumToken.StartParensTokenType;
+SymbolsMapTokens[")"] = EnumToken.EndParensTokenType;
+SymbolsMapTokens["["] = EnumToken.AttrStartTokenType;
+SymbolsMapTokens["]"] = EnumToken.AttrEndTokenType;
+SymbolsMapTokens["{"] = EnumToken.BlockStartTokenType;
+SymbolsMapTokens["}"] = EnumToken.BlockEndTokenType;
+SymbolsMapTokens["<="] = EnumToken.LteTokenType;
+SymbolsMapTokens[">"] = EnumToken.GtTokenType;
+SymbolsMapTokens[">="] = EnumToken.GteTokenType;
+SymbolsMapTokens[" "] = EnumToken.Whitespace;
+SymbolsMapTokens["\t"] = EnumToken.Whitespace;
+SymbolsMapTokens["\r"] = EnumToken.Whitespace;
+SymbolsMapTokens["\n"] = EnumToken.Whitespace;
+SymbolsMapTokens["\f"] = EnumToken.Whitespace;
+assignTokenMap(flexUnits, EnumToken.FlexTokenType);
+assignTokenMap(dimensionUnits, EnumToken.LengthTokenType);
+assignTokenMap(resolutionUnits, EnumToken.ResolutionTokenType);
+assignTokenMap(angleUnits, EnumToken.AngleTokenType);
+assignTokenMap(timeUnits, EnumToken.TimeTokenType);
+assignTokenMap(frequencyUnits, EnumToken.FrequencyTokenType);
+assignTokenMap(pseudoElements, EnumToken.PseudoElementTokenType);
+assignTokenMap(containerFunc, EnumToken.ContainerFunctionTokenDefType, "(");
+assignTokenMap(urlFunc, EnumToken.UrlFunctionTokenDefType, "(");
+assignTokenMap(gridTemplateFunc, EnumToken.GridTemplateFuncTokenDefType, "(");
+assignTokenMap(imageFunc, EnumToken.ImageFunctionTokenDefType, "(");
+assignTokenMap(timelineFunc, EnumToken.TimelineFunctionTokenDefType, "(");
+assignTokenMap(supportFunc, EnumToken.SupportsFunctionTokenDefType, "(");
+assignTokenMap(timingFunc, EnumToken.TimingFunctionTokenDefType, "(");
+assignTokenMap(colorsFunc, EnumToken.ColorFunctionTokenDefType, "(");
+assignTokenMap(mathFuncs, EnumToken.MathFunctionTokenDefType, "(");
+assignTokenMap(transformFunctions, EnumToken.TransformFunctionTokenDefType, "(", true);
+assignTokenMap(whenElseFunc, EnumToken.WhenElseFunctionTokenDefType, "(");
+assignTokenMap(wildCardFuncs, EnumToken.WildCardFunctionTokenDefType, "(");
+const SymbolsMapTokensKeys = Object.keys(SymbolsMapTokens);
 // do not capture the value
 const hintsEnum = new Set([
     EnumToken.CommaTokenType,
@@ -127,7 +72,6 @@ const hintsEnum = new Set([
     EnumToken.ColonTokenType,
     EnumToken.EOFTokenType,
 ]);
-const SymbolsMapTokensKeys = Object.keys(SymbolsMapTokens);
 var TokenMap;
 (function (TokenMap) {
     TokenMap[TokenMap["EXCLAMATION"] = 33] = "EXCLAMATION";
@@ -236,20 +180,67 @@ function searchArray(array, parseInfo, start, end) {
     }
     return null;
 }
+/**
+ * tokenizer class
+ */
 class Tokenizer {
+    /**
+     * token type
+     */
     typ = null;
+    /**
+     * token kind
+     */
     kin = null;
+    /**
+     * token name
+     */
     nam = null;
+    /**
+     * token value
+     */
     val = null;
+    /**
+     * token unit
+     */
     unit = null;
+    /**
+     * source id
+     */
     srcId = null;
+    /**
+     * token start
+     */
     sta = null;
+    /**
+     * token end
+     */
     end = null;
+    /**
+     * bytes in
+     */
     bytesIn = null;
+    /**
+     * decode string
+     */
     decodeString = null;
+    /**
+     * token slice
+     */
     slice = null;
+    /**
+     * source file
+     */
     source = null;
+    /**
+     * token hint
+     */
     hint = null;
+    /**
+     *
+     * @param parseInfo
+     * @returns
+     */
     *consumeString(parseInfo) {
         const quote = this.next(parseInfo).charCodeAt(0);
         let charCode;
@@ -308,6 +299,11 @@ class Tokenizer {
         yield this.makeToken(parseInfo, EnumToken.StringTokenType);
         // return result;
     }
+    /**
+     *
+     * @param parseInfo
+     * @returns
+     */
     *consumeURLToken(parseInfo) {
         const quote = this.next(parseInfo).charCodeAt(0);
         let charCode;
@@ -641,6 +637,11 @@ class Tokenizer {
         }
         return 0;
     }
+    /**
+     *
+     * @param parseInfo
+     * @returns
+     */
     consumeIdentToken(parseInfo) {
         let position = parseInfo.currentPosition - parseInfo.offset;
         let offset = position;
@@ -710,6 +711,11 @@ class Tokenizer {
         }
         return position - offset;
     }
+    /**
+     *
+     * @param parseInfo
+     * @returns
+     */
     consumeColor(parseInfo) {
         let position = parseInfo.currentPosition - parseInfo.offset;
         let offset = position;
@@ -745,6 +751,13 @@ class Tokenizer {
         }
         return 0;
     }
+    /**
+     *
+     * @param parseInfo
+     * @param hint
+     * @param options
+     * @returns
+     */
     makeToken(parseInfo, hint, options) {
         let val = null;
         this.typ = null;
@@ -909,6 +922,12 @@ class Tokenizer {
         parseInfo.position = parseInfo.currentPosition;
         return this;
     }
+    /**
+     *
+     * @param parseInfo
+     * @param input
+     * @returns
+     */
     equalsIgnoreCase(parseInfo, input) {
         let position = parseInfo.currentPosition - parseInfo.offset;
         let ca;
@@ -927,6 +946,12 @@ class Tokenizer {
         }
         return true;
     }
+    /**
+     *
+     * @param parseInfo
+     * @param input
+     * @returns
+     */
     match(parseInfo, input) {
         let position = parseInfo.currentPosition - parseInfo.offset;
         for (let i = 0; i < input.length; i++) {
@@ -936,6 +961,12 @@ class Tokenizer {
         }
         return true;
     }
+    /**
+     *
+     * @param parseInfo
+     * @param count
+     * @returns
+     */
     peek(parseInfo, count = 1) {
         if (count == 1) {
             return parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset);
@@ -943,6 +974,12 @@ class Tokenizer {
         const position = parseInfo.currentPosition - parseInfo.offset;
         return parseInfo.stream.slice(position, position + count);
     }
+    /**
+     *
+     * @param parseInfo
+     * @param count
+     * @returns
+     */
     next(parseInfo, count = 1) {
         let position = parseInfo.currentPosition - parseInfo.offset;
         let char = count == 1 ? parseInfo.stream.charAt(position) : parseInfo.stream.slice(position, position + count);
@@ -967,6 +1004,13 @@ class Tokenizer {
         parseInfo.currentPosition += char.length;
         return char;
     }
+    /**
+     *
+     * @param parseInfo
+     * @param start
+     * @param end
+     * @returns
+     */
     isIdentToken(parseInfo, start, end) {
         let j = parseInfo.currentPosition - parseInfo.offset;
         let i = parseInfo.position - parseInfo.offset;
@@ -1025,6 +1069,11 @@ class Tokenizer {
         }
         return true;
     }
+    /**
+     *
+     * @param parseInfo
+     * @returns
+     */
     isPseudo(parseInfo) {
         let position = parseInfo.currentPosition - parseInfo.offset;
         let endPosition = parseInfo.currentPosition - parseInfo.offset;
@@ -1037,6 +1086,12 @@ class Tokenizer {
             ? this.isIdentToken(parseInfo, 2)
             : this.isIdentToken(parseInfo, 1);
     }
+    /**
+     *
+     * @param parseInfo
+     * @param input
+     * @returns
+     */
     startsWith(parseInfo, input) {
         let i = 0;
         let j = input.length;
@@ -1048,6 +1103,11 @@ class Tokenizer {
         }
         return true;
     }
+    /**
+     *
+     * @param parseInfo
+     * @returns
+     */
     isURLToken(parseInfo) {
         let i = parseInfo.position - parseInfo.offset;
         let c;

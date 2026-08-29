@@ -3,20 +3,32 @@ import { multiplyMatrices } from './utils/matrix.js';
 import { srgb2xyz } from './xyz.js';
 
 function p32srgbvalues(r, g, b, alpha) {
+    let values = p32lp3(r, g, b);
+    values = lp32xyz(values[0], values[1], values[2]);
     // @ts-ignore
-    return xyz2srgb(...lp32xyz(...p32lp3(r, g, b, alpha)));
+    return xyz2srgb(values[0], values[1], values[2], alpha);
 }
 function srgb2p3values(r, g, b, alpha) {
-    // @ts-ignore
-    return lp32p3(...xyz2lp3(...srgb2xyz(r, g, b, alpha)));
+    let values = srgb2xyz(r, g, b);
+    values = xyz2lp3(values[0], values[1], values[2]);
+    values = lp32p3(values[0], values[1], values[2]);
+    if (alpha != null && alpha < 1) {
+        values.push(alpha);
+    }
+    return values;
 }
 function srgb2lp3values(r, g, b, alpha) {
-    // @ts-ignore
-    return xyz2lp3(...srgb2xyz(r, g, b, alpha));
+    let values = srgb2xyz(r, g, b);
+    values = xyz2lp3(values[0], values[1], values[2]);
+    if (alpha != null && alpha < 1) {
+        values.push(alpha);
+    }
+    return values;
 }
 function lp32srgbvalues(r, g, b, alpha) {
+    let values = lp32xyz(r, g, b);
     // @ts-ignore
-    return xyz2srgb(...lp32xyz(r, g, b, alpha));
+    return xyz2srgb(values[0], values[1], values[2], alpha);
 }
 function p32lp3(r, g, b, alpha) {
     // convert an array of display-p3 RGB values in the range 0.0 - 1.0
@@ -38,9 +50,6 @@ function lp32xyz(r, g, b, alpha) {
         [0, 32229 / 714400, 5220557 / 5000800],
     ];
     const result = multiplyMatrices(M, [r, g, b]);
-    if (alpha != null && alpha != 1) {
-        result.push(alpha);
-    }
     return result;
 }
 function xyz2lp3(x, y, z, alpha) {
@@ -51,9 +60,6 @@ function xyz2lp3(x, y, z, alpha) {
         [11844 / 330415, -50337 / 660830, 316169 / 330415],
     ];
     const result = multiplyMatrices(M, [x, y, z]);
-    if (alpha != null && alpha != 1) {
-        result.push(alpha);
-    }
     return result;
 }
 

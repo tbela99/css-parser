@@ -427,7 +427,10 @@ function minifyAtRuleMedia(tokens: Token[]): Token[] {
                     } as Token);
                 }
 
-                acc.push(...t);
+                for (const token of t) {
+                    acc.push(token);
+                }
+
                 return acc;
             }, [] as Token[]),
         );
@@ -536,7 +539,9 @@ function doMinify(
                 ) {
                     // do not merge keyframes
                     // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@keyframes#resolving_duplicates
-                    (<AstKeyframesRule>previous).chi.push(...(<AstKeyframesRule>node).chi);
+                    for (const child of (<AstKeyframesRule>node).chi) {
+                        (<AstKeyframesRule>previous).chi.push(child);
+                    }
 
                     // @ts-ignore
                     ast.chi.splice(i, 1);
@@ -581,7 +586,11 @@ function doMinify(
 
                         if (slice.length !== (node as AstAtRule)[TOKENS]!.length) {
                             (node as AstAtRule)[TOKENS]!.length = 0;
-                            (node as AstAtRule)[TOKENS]!.push(...slice);
+
+                            for (const token of slice) {
+                                (node as AstAtRule)[TOKENS]!.push(token);
+                            }
+
                             (node as AstAtRule).val = slice.reduce(
                                 (acc: string, curr: Token, index: number, arr: Token[]): string =>
                                     acc +
@@ -651,8 +660,9 @@ function doMinify(
                     (<AstAtRule>previous).val === (<AstAtRule>node).val
                 ) {
                     if ("chi" in node) {
-                        // @ts-ignore
-                        previous.chi!.push(...(node as AstAtRule).chi!);
+                        for (const child of (node as AstAtRule).chi!) {
+                            previous.chi!.push(child);
+                        }
 
                         if (!hasDeclaration(previous as AstAtRule)) {
                             context.nodes.delete(previous);
@@ -929,8 +939,18 @@ function doMinify(
                                     // @ts-ignore
                                     (node as AstAtRule).nam === (previous as AstAtRule).nam)
                             ) {
+
+                                const array = [];
+
+                                for (let i = 0; i < previous.chi!.length; i++) {
+                                    array.push(previous.chi![i]);
+                                }
+                                for (let i = 0; i < node.chi!.length; i++) {
+                                    array.push(node.chi![i]);
+                                }
+                                
                                 // @ts-ignore
-                                node.chi.unshift(...previous.chi);
+                                node.chi = array;
 
                                 doMinify(node, options, recursive, errors, nestingContent, context);
 
@@ -1363,7 +1383,9 @@ function reduceSelector(acc: string[][], curr: string[]): string[][] | null {
                     acc.push(",");
                 }
 
-                acc.push(...curr);
+                for (const c of curr) {
+                    acc.push(c);
+                }
 
                 return acc;
             }, []);
@@ -1585,10 +1607,14 @@ function wrapNodes(
     } as AstRule;
 
     if (pSel == "&" || pSel === "") {
-        wrapper.chi.push(...previous.chi);
+        for (const child of previous.chi) {
+            wrapper.chi.push(child);
+        }
 
         if (nSel == "&" || nSel === "") {
-            wrapper.chi.push(...node.chi);
+            for (const child of node.chi) {
+                wrapper.chi.push(child);
+            }
         } else {
             wrapper.chi.push(node);
         }
@@ -1896,7 +1922,10 @@ function reduceRuleSelector(node: AstRule) {
                 }
 
                 unique.add(sig);
-                acc.push(...curr);
+
+                for (const c of curr) {
+                    acc.push(c);
+                }
             }
 
             return acc;

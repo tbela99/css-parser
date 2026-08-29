@@ -30,7 +30,7 @@ export class PropertyList {
     protected options: PropertyListOptions = { removeDuplicateDeclarations: true, computeShorthand: true };
     protected declarations: Map<string, AstNode | PropertySet | PropertyMap>;
 
-        //  ketsey = new Map;
+    //  ketsey = new Map;
     constructor(options: PropertyListOptions = {}) {
         this.options = options;
         this.declarations = new Map<string, AstNode | PropertySet | PropertyMap>();
@@ -44,24 +44,20 @@ export class PropertyList {
         });
     }
 
-
     add(...declarations: AstNode[]) {
         let name: string | null;
         let syntaxRules: ValidationToken[] | null = null;
         let result: ValidationMatch;
 
         for (const declaration of declarations) {
-            name =
-                declaration.typ != EnumToken.DeclarationNodeType
-                    ? null
-                    : (declaration as AstDeclaration).nam;
+            name = declaration.typ != EnumToken.DeclarationNodeType ? null : (declaration as AstDeclaration).nam;
 
             if (
                 (declaration as AstDeclaration)[STATE] == EnumAstNodeStatus.Invalid ||
                 (declaration as AstDeclaration)[STATE] == EnumAstNodeStatus.Unknown ||
                 (declaration as AstDeclaration)[STATE] == EnumAstNodeStatus.ValidationFailed ||
                 declaration.typ != EnumToken.DeclarationNodeType ||
-                equalsIgnoreCase("composes" , name as string) ||
+                equalsIgnoreCase("composes", name as string) ||
                 (typeof this.options.removeDuplicateDeclarations === "string" &&
                     this.options.removeDuplicateDeclarations === name) ||
                 (Array.isArray(this.options.removeDuplicateDeclarations)
@@ -92,12 +88,10 @@ export class PropertyList {
                         ? EnumAstNodeStatus.Validated
                         : EnumAstNodeStatus.ValidationFailed;
                 }
-
             }
 
             // do not compute shorthand for invalid declarations
             if (declaration[STATE] !== EnumAstNodeStatus.Validated) {
-
                 // const key = objectHash(declaration);
                 // if (!this.ketsey.has(key)) {
                 //     this.ketsey.set(key, [declaration.nam]);
@@ -259,7 +253,10 @@ export class PropertyList {
 
         if (values != declaration.val) {
             declaration.val.length = 0;
-            declaration.val.push(...values);
+
+            for (const v of values) {
+                declaration.val.push(v);
+            }
         }
     }
 

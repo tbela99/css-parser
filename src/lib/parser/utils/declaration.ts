@@ -30,7 +30,7 @@ import {
     STATE,
     LOCEND,
     LOCSTA,
-    LOCSRCID
+    LOCSRCID,
 } from "../../syntax/constants.ts";
 import { isColor, isWhiteSpace, parseColor, renamedStandardProperties } from "../../syntax/syntax.ts";
 import { getSyntaxRule, getParsedSyntax, ValidationSyntaxRule } from "../../validation/config.ts";
@@ -127,10 +127,8 @@ export function parseDeclaration(
         (name.typ !== EnumToken.IdenTokenType && name.typ !== EnumToken.DashedIdenTokenType) ||
         tokens[i]?.typ !== EnumToken.ColonTokenType
     ) {
-
         if (tokens[tokens.length - 1]?.[LOCEND] != null) {
-            
-            name[LOCEND] = tokens[tokens.length - 1]?.[LOCEND]
+            name[LOCEND] = tokens[tokens.length - 1]?.[LOCEND];
         }
 
         name[STATE] = EnumAstNodeStatus.Unparsed;
@@ -175,7 +173,6 @@ export function parseDeclaration(
                         rules.acceptAnyDeclaration && rules.acceptAnyRule
                             ? getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, name.val.toLowerCase())
                             : rules.getBlockRules();
-
                 }
             }
         } else {
@@ -222,10 +219,9 @@ export function parseDeclaration(
         });
 
         if (tokens[tokens.length - 1]?.[LOCEND] != null) {
-            
             name[LOCEND] = tokens[tokens.length - 1][LOCEND];
         }
-        
+
         name[STATE] = EnumAstNodeStatus.Invalid;
         name[ERRORS] = [errors[errors.length - 1]];
 
@@ -263,7 +259,9 @@ export function parseDeclaration(
             }
 
             if (!doNotValidate && !result?.success && result!.errors!.length > 0) {
-                errors.push(...result!.errors);
+                for (index = 0; index < result!.errors!.length; index++) {
+                    errors.push(result!.errors![index]);
+                }
             }
         }
     }
@@ -337,7 +335,6 @@ export function parseDeclaration(
                 break;
 
             case EnumToken.EndParensTokenType:
-
                 if (stack.at(-1)?.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(stack.at(-1)?.typ)) {
                     index = tokens.indexOf(stack.at(-1)!);
 
@@ -534,10 +531,9 @@ export function parseDeclaration(
         });
 
         if (tokens[tokens.length - 1][LOCEND] != null) {
-            
             name[LOCEND] = tokens[tokens.length - 1][LOCEND];
         }
-        
+
         name[STATE] = EnumAstNodeStatus.Invalid;
         name[ERRORS] = result?.errors ?? [];
 
@@ -580,7 +576,6 @@ export function parseDeclaration(
     }
 
     if (validate && syntaxRules == null && name.typ === EnumToken.IdenTokenType) {
-
         if (tokens[tokens.length - 1]?.[LOCEND] != null) {
             name[LOCEND] = tokens[tokens.length - 1][LOCEND];
         }
@@ -618,7 +613,6 @@ export function parseDeclaration(
                 [LOCSRCID]: tokens[0][LOCSRCID],
                 [LOCSTA]: tokens[0][LOCSTA],
                 [LOCEND]: index != -1 ? right![right!.length - 1]?.[LOCEND] : left[left.length - 1][LOCEND],
-              
             } as ComposesSelectorToken,
         ];
     }

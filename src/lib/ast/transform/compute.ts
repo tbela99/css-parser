@@ -32,6 +32,7 @@ export function compute(transformLists: Token[]): {
 
     let matrix: Matrix | null = identity();
     let mat: Matrix;
+    let transforms: Token[];
     const cumulative: Token[] = [];
 
     for (const transformList of splitTransformList(transformLists)) {
@@ -42,7 +43,12 @@ export function compute(transformLists: Token[]): {
         }
 
         matrix = multiply(matrix, mat) as Matrix;
-        cumulative.push(...((minify(mat) as Token[]) ?? transformList));
+
+        transforms = (minify(mat) as Token[]) ?? transformList;
+
+        for (let i = 0; i < transforms.length; i++) {
+            cumulative.push(transforms[i]);
+        }
     }
 
     const serialized: Token = serialize(matrix);
@@ -216,7 +222,7 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
                             return null;
                         }
 
-                        matrixVar = scale3d(...(values as [number, number, number]), matrixVar);
+                        matrixVar = scale3d(values[0], values[1], values[2], matrixVar);
                         break;
                     }
 

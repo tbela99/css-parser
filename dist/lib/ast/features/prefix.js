@@ -67,8 +67,8 @@ function replaceAstNodes(tokens, root) {
                 //         typ: EnumToken.ResolutionTokenType,
                 //         unit: "x",
                 //     });
-                // } 
-                // else 
+                // }
+                // else
                 if (isPseudClass && value.typ == EnumToken.PseudoElementTokenType) {
                     // @ts-ignore
                     value.typ = EnumToken.PseudoClassTokenType;
@@ -81,7 +81,7 @@ function replaceAstNodes(tokens, root) {
         const set = new Set();
         const split = splitTokenList(tokens, [EnumToken.CommaTokenType]);
         tokens.length = 0;
-        tokens.push(...split.reduce((acc, curr) => {
+        for (const token of split.reduce((acc, curr) => {
             const str = curr.reduce((acc, curr) => acc + renderValue(curr), "");
             if (set.has(str)) {
                 return acc;
@@ -93,7 +93,9 @@ function replaceAstNodes(tokens, root) {
                 });
             }
             return acc.concat(curr);
-        }, []));
+        }, [])) {
+            tokens.push(token);
+        }
     }
     return result;
 }
@@ -311,52 +313,28 @@ class ComputePrefixFeature {
         // right bottom → left top	to top left
         const replacements = [];
         if (key === "left top left bottom") {
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" });
-            replacements.push({ typ: EnumToken.WhitespaceTokenType });
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "bottom" });
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "bottom" });
         }
         else if (key === "left bottom left top") {
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" });
-            replacements.push({ typ: EnumToken.WhitespaceTokenType });
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "top" });
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "top" });
         }
         else if (key === "left top right top") {
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" });
-            replacements.push({ typ: EnumToken.WhitespaceTokenType });
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "right" });
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "right" });
         }
         else if (key === "right top left top") {
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" });
-            replacements.push({ typ: EnumToken.WhitespaceTokenType });
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "left" });
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "left" });
         }
         else if (key === "left top right bottom") {
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" });
-            replacements.push({ typ: EnumToken.WhitespaceTokenType });
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "bottom" });
-            replacements.push({ typ: EnumToken.WhitespaceTokenType });
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "right" });
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "bottom" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "right" });
         }
         else if (key === "right top left bottom") {
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" });
-            replacements.push({ typ: EnumToken.WhitespaceTokenType });
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "bottom" });
-            replacements.push({ typ: EnumToken.WhitespaceTokenType });
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "left" });
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "bottom" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "left" });
         }
         else if (key === "left bottom right top") {
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" });
-            replacements.push({ typ: EnumToken.WhitespaceTokenType });
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "top" });
-            replacements.push({ typ: EnumToken.WhitespaceTokenType });
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "right" });
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "top" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "right" });
         }
         else if (key === "right bottom left top") {
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" });
-            replacements.push({ typ: EnumToken.WhitespaceTokenType });
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "top" });
-            replacements.push({ typ: EnumToken.WhitespaceTokenType });
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "left" });
+            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "top" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "left" });
         }
         tokens.splice(0, i, ...replacements);
         let checkStop = true;
@@ -369,7 +347,10 @@ class ComputePrefixFeature {
             }
             if (tokens[i].typ === EnumToken.FunctionTokenType) {
                 if (equalsIgnoreCase(tokens[i].val, "to")) {
-                    colorStop.push(tokens[checkStopIndex], ...tokens[i].chi);
+                    colorStop.push(tokens[checkStopIndex]);
+                    for (const token of tokens[i].chi) {
+                        colorStop.push(token);
+                    }
                     tokens.splice(checkStopIndex, i - checkStopIndex + 1);
                     i = checkStopIndex;
                     checkStop = false;
@@ -397,12 +378,16 @@ class ComputePrefixFeature {
             }
         }
         if (colorStop.length > 0) {
-            tokens.push(...colorStop);
+            for (const t of colorStop) {
+                tokens.push(t);
+            }
         }
         if (type !== "") {
             token.val = type;
             token.chi.length = 0;
-            token.chi.push(...tokens);
+            for (const t of tokens) {
+                token.chi.push(t);
+            }
         }
     }
     /**
@@ -473,7 +458,9 @@ class ComputePrefixFeature {
                 i++;
             }
         }
-        colorStops.push(...tokens.slice(i));
+        for (let m = i; m < tokens.length; m++) {
+            colorStops.push(tokens[m]);
+        }
         tokens.length = 0;
         if (form.length > 0 || size.length > 0) {
             if (form.length === 0) {
@@ -481,17 +468,27 @@ class ComputePrefixFeature {
             }
             if (size.length > 0) {
                 form.push({ typ: EnumToken.WhitespaceTokenType });
-                form.push(...size);
+                for (const token of size) {
+                    form.push(token);
+                }
             }
             if (positions.length > 0) {
-                form.push({ typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "at" }, { typ: EnumToken.WhitespaceTokenType }, ...positions);
+                form.push({ typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "at" }, { typ: EnumToken.WhitespaceTokenType });
+                for (const position of positions) {
+                    form.push(position);
+                }
             }
-            tokens.push(...form, { typ: EnumToken.CommaTokenType });
+            for (const token of form) {
+                tokens.push(token);
+            }
+            tokens.push({ typ: EnumToken.CommaTokenType });
         }
         token.val = equalsIgnoreCase(token.val, "-webkit-repeating-radial-gradient")
             ? "repeating-radial-gradient"
             : "radial-gradient";
-        tokens.push(...colorStops);
+        for (const colorStop of colorStops) {
+            tokens.push(colorStop);
+        }
         return tokens;
     }
 }

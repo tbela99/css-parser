@@ -60,7 +60,9 @@ export function parseAtRuleContainerQueryList(
     );
 
     if (!result.success) {
-        errors.push(...result.errors);
+        for (const error of result.errors) {
+            errors.push(error);
+        }
 
         return {
             success: false,
@@ -364,7 +366,10 @@ export function parseAtRuleContainerQueryList(
             }
 
             stream.length = 0;
-            stream.push(...trimArray(tokens));
+
+            for (const token of trimArray(tokens)) {
+                stream.push(token);
+            }
         }
     }
 
@@ -373,7 +378,9 @@ export function parseAtRuleContainerQueryList(
         ...parts
             .filter((p) => p.length > 0 && p[0].typ !== EnumToken.InvalidMediaQueryTokenType)
             .reduce((acc, b) => {
-                acc.push(...b);
+                for (const token of b) {
+                    acc.push(token);
+                }
 
                 return acc;
             }, []),

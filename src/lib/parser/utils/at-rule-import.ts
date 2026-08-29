@@ -257,7 +257,9 @@ export function matchAtRuleImportSyntax(
                 options,
             );
             if (!result.success && result.errors.length > 0) {
-                errors.push(...result.errors);
+                for (const error of result.errors) {
+                    errors.push(error);
+                }
 
                 return {
                     success: false,
@@ -270,10 +272,14 @@ export function matchAtRuleImportSyntax(
     const splice = stream.splice(index, stream.length - index);
     const sliced = parseMediaqueryList(splice, options);
 
-    tokens.push(...splice);
+    for (const sp of splice) {
+        tokens.push(sp);
+    }
 
     if (sliced.errors.length > 0) {
-        errors.push(...sliced.errors);
+        for (const error of sliced.errors) {
+            errors.push(error);
+        }
     }
 
     if (!sliced.success) {
@@ -281,7 +287,10 @@ export function matchAtRuleImportSyntax(
     }
 
     stream.length = 0;
-    stream.push(...trimArray(tokens));
+
+    for (const token of trimArray(tokens)) {
+        stream.push(token);
+    }
 
     return {
         success,

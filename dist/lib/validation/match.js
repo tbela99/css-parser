@@ -13,11 +13,8 @@ const allValues = config.declarations.all.syntax.split(/[\s|]+/g);
 /**
  * @type {Array.<EnumToken>}
  */
-const funcTypes = [
-    ...tokensfuncDefMap.values(),
-    EnumToken.FunctionTokenType,
-    EnumToken.PseudoClassFuncTokenType,
-];
+const funcTypes = Array.from(tokensfuncDefMap.values());
+funcTypes.push(EnumToken.FunctionTokenType, EnumToken.PseudoClassFuncTokenType);
 /**
  * trim leading and trailing whitespace
  * @param tokens
@@ -375,7 +372,9 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                     if (!result.success) {
                         success = false;
                         if (result.errors.length > 0) {
-                            errors.push(...result.errors);
+                            for (const error of result.errors) {
+                                errors.push(error);
+                            }
                         }
                     }
                 }
@@ -666,7 +665,9 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                     if (!result.success) {
                         success = false;
                         if (result.errors.length > 0) {
-                            errors.push(...result.errors);
+                            for (const error of result.errors) {
+                                errors.push(error);
+                            }
                         }
                     }
                     stack.pop();
@@ -734,7 +735,9 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
         };
     }
     stream.length = 0;
-    stream.push(...tokens);
+    for (let i = 0; i < tokens.length; i++) {
+        stream.push(tokens[i]);
+    }
     return { success, errors };
 }
 /**

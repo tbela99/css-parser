@@ -49,7 +49,9 @@ function parseSelector(tokens, context, options, errors) {
             if (acc.length > 0) {
                 acc.push({ typ: EnumToken.CommaTokenType });
             }
-            acc.push(...curr);
+            for (const c of curr) {
+                acc.push(c);
+            }
             return acc;
         }, []));
         return {

@@ -46,10 +46,14 @@ class ComputeShorthandFeature {
             // @ts-ignore
             const node = ast.chi[l];
             if (node.typ == EnumToken.DeclarationNodeType) {
-                properties.add(...ast.chi.slice(k, l + 1));
+                for (let m = k; m <= l; m++) {
+                    properties.add(ast.chi[m]);
+                }
             }
             else {
-                rules.push(...ast.chi.slice(k, l + 1));
+                for (let m = k; m <= l; m++) {
+                    rules.push(ast.chi[m]);
+                }
             }
             k = l;
         }

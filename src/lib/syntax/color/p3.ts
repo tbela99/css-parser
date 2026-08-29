@@ -3,23 +3,37 @@ import { multiplyMatrices } from "./utils/matrix.ts";
 import { srgb2xyz } from "./xyz.ts";
 
 export function p32srgbvalues(r: number, g: number, b: number, alpha?: number) {
+    let values = p32lp3(r, g, b);
+    values = lp32xyz(values[0], values[1], values[2]);
     // @ts-ignore
-    return xyz2srgb(...lp32xyz(...p32lp3(r, g, b, alpha)));
+    return xyz2srgb(values[0], values[1], values[2], alpha);
 }
 
 export function srgb2p3values(r: number, g: number, b: number, alpha?: number) {
-    // @ts-ignore
-    return lp32p3(...xyz2lp3(...srgb2xyz(r, g, b, alpha)));
+    let values = srgb2xyz(r, g, b);
+    values = xyz2lp3(values[0], values[1], values[2]);
+    values = lp32p3(values[0], values[1], values[2]);
+
+    if (alpha != null && alpha < 1) {
+        values.push(alpha);
+    }
+
+    return values;
 }
 
 export function srgb2lp3values(r: number, g: number, b: number, alpha?: number) {
-    // @ts-ignore
-    return xyz2lp3(...srgb2xyz(r, g, b, alpha));
+    let values = srgb2xyz(r, g, b);
+    values = xyz2lp3(values[0], values[1], values[2]);
+    if (alpha != null && alpha < 1) {
+        values.push(alpha);
+    }
+    return values;
 }
 
 export function lp32srgbvalues(r: number, g: number, b: number, alpha?: number) {
+    let values = lp32xyz(r, g, b);
     // @ts-ignore
-    return xyz2srgb(...lp32xyz(r, g, b, alpha));
+    return xyz2srgb(values[0], values[1], values[2], alpha);
 }
 
 export function p32lp3(r: number, g: number, b: number, alpha?: number) {

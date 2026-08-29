@@ -8,13 +8,14 @@ import { RAW, mathFuncs } from '../../syntax/constants.js';
 function inlineExpression(token) {
     const result = [];
     if (token.typ == EnumToken.BinaryExpressionTokenType) {
+        const chi = inlineExpression(token.l);
+        chi.push({ typ: token.op });
+        for (const child of inlineExpression(token.r)) {
+            chi.push(child);
+        }
         result.push({
             typ: EnumToken.ParensTokenType,
-            chi: [
-                ...inlineExpression(token.l),
-                { typ: token.op },
-                ...inlineExpression(token.r),
-            ],
+            chi,
         });
     }
     else {

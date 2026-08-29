@@ -16,9 +16,9 @@ import {
 import { cmyk2srgbvalues } from "./srgb.ts";
 
 export function hex2oklchToken(token: ColorToken): ColorToken | null {
-    const values: number[] = hex2oklchvalues(token);
+    const values: number[] | null = hex2oklchvalues(token);
 
-    return oklchToken(values);
+    return values == null ? null : oklchToken(values);
 }
 
 export function rgb2oklchToken(token: ColorToken): ColorToken | null {
@@ -98,8 +98,7 @@ export function color2oklchToken(token: ColorToken): ColorToken | null {
         return null;
     }
 
-    // @ts-ignore
-    return oklchToken(srgb2oklch(...values));
+    return oklchToken(srgb2oklch(values[0], values[1], values[2], values[3]));
 }
 
 function oklchToken(values: number[]): ColorToken | null {
@@ -129,9 +128,9 @@ function oklchToken(values: number[]): ColorToken | null {
     };
 }
 
-export function hex2oklchvalues(token: ColorToken): number[] {
-    // @ts-ignore
-    return labvalues2lchvalues(...hex2oklabvalues(token));
+export function hex2oklchvalues(token: ColorToken): number[] | null {
+    const values = hex2oklabvalues(token);
+    return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
 
 export function rgb2oklchvalues(token: ColorToken): number[] | null {
@@ -141,25 +140,23 @@ export function rgb2oklchvalues(token: ColorToken): number[] | null {
         return null;
     }
 
-    // @ts-ignore
-    return labvalues2lchvalues(...values);
+    return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
 
-export function hsl2oklchvalues(token: ColorToken): number[] {
-    // @ts-ignore
-    return labvalues2lchvalues(...hsl2oklabvalues(token));
+export function hsl2oklchvalues(token: ColorToken): number[] | null {
+    const values = hsl2oklabvalues(token);
+    return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
 
 export function hwb2oklchvalues(token: ColorToken): number[] {
-    // @ts-ignore
-    return labvalues2lchvalues(...hwb2oklabvalues(token));
+    const values = hwb2oklabvalues(token);
+    return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
 
-export function cmyk2oklchvalues(token: ColorToken): number[] {
+export function cmyk2oklchvalues(token: ColorToken): number[] | null {
     const values = cmyk2srgbvalues(token);
 
-    // @ts-ignore
-    return values == null ? null : srgb2oklch(...values);
+    return values == null ? null : srgb2oklch(values[0], values[1], values[2], values[3]);
 }
 
 export function lab2oklchvalues(token: ColorToken): number[] | null {
@@ -170,7 +167,7 @@ export function lab2oklchvalues(token: ColorToken): number[] | null {
     }
 
     // @ts-ignore
-    return labvalues2lchvalues(...values);
+    return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
 
 export function lch2oklchvalues(token: ColorToken): number[] | null {
@@ -181,7 +178,7 @@ export function lch2oklchvalues(token: ColorToken): number[] | null {
     }
 
     // @ts-ignore
-    return labvalues2lchvalues(...values);
+    return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
 
 export function oklab2oklchvalues(token: ColorToken): number[] | null {
@@ -192,12 +189,12 @@ export function oklab2oklchvalues(token: ColorToken): number[] | null {
     }
 
     // @ts-ignore
-    return labvalues2lchvalues(...values);
+    return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
 
 export function srgb2oklch(r: number, g: number, blue: number, alpha: number | null): number[] {
-    // @ts-ignore
-    return labvalues2lchvalues(...srgb2oklab(r, g, blue, alpha));
+    const values = srgb2oklab(r, g, blue, alpha);
+    return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
 
 export function getOKLCHComponents(token: ColorToken): number[] | null {

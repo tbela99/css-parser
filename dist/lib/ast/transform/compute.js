@@ -17,6 +17,7 @@ function compute(transformLists) {
     stripCommaToken(transformLists);
     let matrix = identity();
     let mat;
+    let transforms;
     const cumulative = [];
     for (const transformList of splitTransformList(transformLists)) {
         mat = computeMatrix(transformList, identity());
@@ -24,7 +25,10 @@ function compute(transformLists) {
             return null;
         }
         matrix = multiply(matrix, mat);
-        cumulative.push(...(minify(mat) ?? transformList));
+        transforms = minify(mat) ?? transformList;
+        for (let i = 0; i < transforms.length; i++) {
+            cumulative.push(transforms[i]);
+        }
     }
     const serialized = serialize(matrix);
     if (cumulative.length > 0) {
@@ -166,7 +170,7 @@ function computeMatrix(transformList, matrixVar) {
                         if (values.length != 3) {
                             return null;
                         }
-                        matrixVar = scale3d(...values, matrixVar);
+                        matrixVar = scale3d(values[0], values[1], values[2], matrixVar);
                         break;
                     }
                     if (transformList[i].val == "scale") {

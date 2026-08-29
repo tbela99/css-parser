@@ -9,7 +9,7 @@ import type {
     WhitespaceToken,
 } from "../../../@types/index.d.ts";
 import { eq } from "../utils/eq.ts";
-import {  EnumToken } from "../../ast/types.ts";
+import { EnumToken } from "../../ast/types.ts";
 import { isLength } from "../../syntax/syntax.ts";
 
 function dedup(values: Token[][]): Token[][] {
@@ -241,7 +241,10 @@ export class PropertySet {
                                 acc.push(<LiteralToken>{ ...this.config.separator, typ: EnumToken.LiteralTokenType });
                             }
 
-                            acc.push(...curr);
+                            for (const token of curr) {
+                                acc.push(token);
+                            }
+
                             return acc;
                         },
                         <Token[]>[],

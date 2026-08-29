@@ -236,7 +236,9 @@ function reduceColorStops(stops) {
             if (parts[i - 1].length == 1) {
                 parts[i - 1].push({ typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: ((k - 1) * 100) / n });
             }
-            parts[i - 1].push(...parts[i].slice(1));
+            for (let m = 1; m < parts[i].length; m++) {
+                parts[i - 1].push(parts[i][m]);
+            }
             parts.splice(i--, 1);
             updated = true;
             continue;
@@ -260,7 +262,9 @@ function reduceColorStops(stops) {
             if (stops.length > 0) {
                 stops.push({ typ: EnumToken.CommaTokenType });
             }
-            stops.push(...parts[j]);
+            for (let m = 0; m < parts[j].length; m++) {
+                stops.push(parts[j][m]);
+            }
         }
     }
     return stops;
@@ -358,7 +362,9 @@ function reduceConicColorStops(stops) {
             if (parts[i - 1].length == 1) {
                 parts[i - 1].push({ typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.AngleTokenType, val: ((k - 1) * 100) / n, unit: "deg" });
             }
-            parts[i - 1].push(...parts[i].slice(1));
+            for (let m = 1; m < parts[i].length; m++) {
+                parts[i - 1].push(parts[i][m]);
+            }
             parts.splice(i--, 1);
             updated = true;
             continue;
@@ -381,7 +387,9 @@ function reduceConicColorStops(stops) {
             if (stops.length > 0) {
                 stops.push({ typ: EnumToken.CommaTokenType });
             }
-            stops.push(...parts[j]);
+            for (const token of parts[j]) {
+                stops.push(token);
+            }
         }
     }
     return stops;
@@ -677,11 +685,10 @@ function isColor(token, errors) {
                 return true;
             }
             else {
-                const keywords = ["from", "none"];
                 // @ts-ignore
                 if (["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch"].some((t) => equalsIgnoreCase(t, token.val))) {
-                    // @ts-ignore
-                    keywords.push("alpha", ...token.val.slice(-3).split(""));
+                    for (const keyword of token.val.slice(-3).split("")) {
+                    }
                 }
                 // @ts-ignore
                 for (const v of token.chi) {

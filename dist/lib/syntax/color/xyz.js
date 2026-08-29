@@ -41,8 +41,8 @@ function srgb2xyz(r, g, b, alpha) {
 // xyz d50
 function srgb2xyz_d65(r, g, b, alpha) {
     // xyx d65
-    // @ts-ignore
-    let rgb = XYZ_D65_to_D50(...srgb2xyz(r, g, b));
+    let values = srgb2xyz(r, g, b);
+    let rgb = XYZ_D65_to_D50(values[0], values[1], values[2]);
     if (alpha != null && alpha != 1) {
         rgb.push(alpha);
     }

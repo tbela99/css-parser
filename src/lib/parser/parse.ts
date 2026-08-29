@@ -504,7 +504,9 @@ function parseVisitors(
                             .push(value.handler);
                     }
                 } else {
-                    visitors.push(...Object.entries(value));
+                    for (const val of Object.entries(value)) {
+                        visitors.push(val);
+                    }
                 }
             } else {
                 errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
@@ -526,8 +528,6 @@ function parseVisitors(
                     .get(key as "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule")!
                     .push(value);
             } else if (typeof value == "object") {
-                // visitors.push(...Object.entries(value));
-
                 if ("type" in value && "handler" in value && value.type in WalkerEvent) {
                     if (value.type == WalkerEvent.Enter) {
                         if (
@@ -799,7 +799,9 @@ export function doParseSync(iter: Generator<Tokenizer>, options: ParserSyncOptio
                 }
             } else if (item.typ == EnumToken.BlockStartTokenType) {
                 let inBlock: number = 1;
-                tokens = [item];
+
+                tokens.length = 0;
+                tokens.push(item);
 
                 do {
                     tokenizer = iter.next().value;
@@ -858,7 +860,7 @@ export function doParseSync(iter: Generator<Tokenizer>, options: ParserSyncOptio
                 }
             }
 
-            tokens = [];
+            tokens.length = 0;
         } else if ((parensMatch === 0 || curlyBracketMatch === 0) && item.typ === EnumToken.BlockEndTokenType) {
             parseNode(tokens, context, options as ParserOptions, errors, stats, invalidNodes);
 
@@ -876,7 +878,7 @@ export function doParseSync(iter: Generator<Tokenizer>, options: ParserSyncOptio
                 context.chi!.pop();
             }
 
-            tokens = [];
+            tokens.length = 0;
             parensMatch = 0;
             curlyBracketMatch = 0;
         }
@@ -929,12 +931,18 @@ export function doParseSync(iter: Generator<Tokenizer>, options: ParserSyncOptio
                     case EnumToken.AtRuleNodeType:
                     case EnumToken.KeyframesRuleNodeType:
                     case EnumToken.KeyframesAtRuleNodeType:
-                        subNodes.push(
-                            ...(nodes[i] as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule)[TOKENS]!,
-                        );
+                        for (const token of (nodes[i] as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule)[
+                            TOKENS
+                        ]!) {
+                            subNodes.push(token);
+                        }
+
                         break;
                     case EnumToken.DeclarationNodeType:
-                        subNodes.push(...(nodes[i] as AstDeclaration).val);
+                        for (const token of (nodes[i] as AstDeclaration).val) {
+                            subNodes.push(token);
+                        }
+
                         break;
                 }
             }
@@ -942,7 +950,9 @@ export function doParseSync(iter: Generator<Tokenizer>, options: ParserSyncOptio
             // @ts-ignore
             if (nodes[i].chi != null) {
                 // @ts-ignore
-                subNodes.push(...nodes[i].chi);
+                for (const child of nodes[i].chi) {
+                    subNodes.push(child);
+                }
             }
 
             if (subNodes.length > 0) {
@@ -1962,7 +1972,8 @@ export async function doParse(
                 }
             } else if (item.typ == EnumToken.BlockStartTokenType) {
                 let inBlock: number = 1;
-                tokens = [item];
+                tokens.length = 0;
+                tokens.push(item);
 
                 do {
                     tokenizer = isAsync
@@ -2023,7 +2034,7 @@ export async function doParse(
                 }
             }
 
-            tokens = [];
+            tokens.length = 0;
         } else if ((parensMatch === 0 || curlyBracketMatch === 0) && item.typ === EnumToken.BlockEndTokenType) {
             parseNode(tokens, context, options as ParserOptions, errors, stats, invalidNodes);
 
@@ -2041,7 +2052,7 @@ export async function doParse(
                 context.chi!.pop();
             }
 
-            tokens = [];
+            tokens.length = 0;
             parensMatch = 0;
             curlyBracketMatch = 0;
         }
@@ -2111,7 +2122,9 @@ export async function doParse(
                     node[PARENT]!.chi!.splice(node[PARENT]!.chi!.indexOf(node), 1, ...root.ast.chi);
 
                     if (root.errors.length > 0) {
-                        errors.push(...root.errors);
+                        for (const error of root.errors) {
+                            errors.push(error);
+                        }
                     }
                 } catch (error) {
                     // @ts-ignore ignore error
@@ -2156,12 +2169,17 @@ export async function doParse(
                     case EnumToken.AtRuleNodeType:
                     case EnumToken.KeyframesRuleNodeType:
                     case EnumToken.KeyframesAtRuleNodeType:
-                        subNodes.push(
-                            ...(nodes[i] as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule)[TOKENS]!,
-                        );
+                        for (const token of (nodes[i] as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule)[
+                            TOKENS
+                        ]!) {
+                            subNodes.push(token);
+                        }
+
                         break;
                     case EnumToken.DeclarationNodeType:
-                        subNodes.push(...(nodes[i] as AstDeclaration).val);
+                        for (const token of (nodes[i] as AstDeclaration).val) {
+                            subNodes.push(token);
+                        }
                         break;
                 }
             }
@@ -2169,7 +2187,10 @@ export async function doParse(
             // @ts-ignore
             if (nodes[i].chi != null) {
                 // @ts-ignore
-                subNodes.push(...nodes[i].chi);
+                for (k = 0; k < nodes[i].chi.length; k++) {
+                    // @ts-ignore
+                    subNodes.push(nodes[i].chi[k]);
+                }
             }
 
             if (subNodes.length > 0) {
@@ -3573,7 +3594,9 @@ export function parseAtRule(
             const result = parseAtRuleFontFeatureValues(stream, atRule, options);
 
             if (result.errors.length > 0) {
-                errors.push(...result.errors);
+                for (const error of result.errors) {
+                    errors.push(error);
+                }
             }
 
             atRule[TOKENS] = stream;
@@ -3638,7 +3661,9 @@ export function parseAtRule(
             const result = parseAtRuleContainerQueryList(stream, atRule, options);
 
             if (result.errors.length > 0) {
-                errors.push(...result.errors);
+                for (const error of result.errors) {
+                    errors.push(error);
+                }
             }
 
             atRule[LOCEND] = (stream.at(-1)! ?? atRule)[LOCEND];
@@ -3658,7 +3683,9 @@ export function parseAtRule(
             const result = matchAllSyntaxes(syntax, createValidationContext(tokens), options);
 
             if (result.errors.length > 0) {
-                errors.push(...result.errors);
+                for (const error of result.errors) {
+                    errors.push(error);
+                }
             }
 
             // @ts-expect-error
@@ -3720,7 +3747,9 @@ export function parseAtRule(
             );
 
             if (!result.success) {
-                errors.push(...result.errors);
+                for (const error of result.errors) {
+                    errors.push(error);
+                }
             }
             // else {
             //     parseUrlToken(stream);
@@ -3782,7 +3811,9 @@ export function parseAtRule(
             const result = matchAtRuleImportSyntax(atRule, stream, context, options);
 
             if (result.errors.length > 0) {
-                errors.push(...result.errors);
+                for (const error of result.errors) {
+                    errors.push(error);
+                }
             } else {
                 if (
                     stream[0]?.typ == EnumToken.UrlFunctionTokenType &&
@@ -3827,7 +3858,9 @@ export function parseAtRule(
                     : matchAtRuleWhenElseSyntax(stream, atRule, options);
 
             if (result.errors.length > 0) {
-                errors.push(...result.errors);
+                for (const error of result.errors) {
+                    errors.push(error);
+                }
             }
 
             let success: boolean = result.success;
@@ -3906,7 +3939,9 @@ export function parseAtRule(
             const result = parseMediaqueryList(stream, options);
 
             if (result.errors.length > 0) {
-                errors.push(...result.errors);
+                for (const error of result.errors) {
+                    errors.push(error);
+                }
             }
 
             atRule[LOCEND] = stream.at(-1)?.[LOCEND] ?? atRule[LOCEND];
@@ -4147,7 +4182,9 @@ export function parseAtRule(
             atRule[ERRORS] = success ? [] : [errors[errors.length - 1]];
 
             if (!result.success) {
-                errors.push(...result.errors);
+                for (const error of result.errors) {
+                    errors.push(error);
+                }
 
                 return {
                     typ: EnumToken.AtRuleNodeType,
@@ -4222,13 +4259,17 @@ export function parseAtRule(
                 result = matchGenericSyntax(stream, options);
 
                 if (result.errors.length > 0) {
-                    errors.push(...result.errors);
+                    for (const error of result.errors) {
+                        errors.push(error);
+                    }
                 }
             } else {
                 result = matchAtRuleSyntax(atRule, stream, options);
 
                 if (result.errors.length > 0) {
-                    errors.push(...result.errors);
+                    for (const error of result.errors) {
+                        errors.push(error);
+                    }
                 }
 
                 if (result.success) {
@@ -4252,7 +4293,6 @@ export function parseAtRule(
                             i = index;
                             stream.splice(index + 1, 1);
                             stack.pop();
-                            // continue;
                         }
                     }
                 }

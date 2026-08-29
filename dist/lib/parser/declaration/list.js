@@ -31,10 +31,7 @@ class PropertyList {
         let syntaxRules = null;
         let result;
         for (const declaration of declarations) {
-            name =
-                declaration.typ != EnumToken.DeclarationNodeType
-                    ? null
-                    : declaration.nam;
+            name = declaration.typ != EnumToken.DeclarationNodeType ? null : declaration.nam;
             if (declaration[STATE] == EnumAstNodeStatus.Invalid ||
                 declaration[STATE] == EnumAstNodeStatus.Unknown ||
                 declaration[STATE] == EnumAstNodeStatus.ValidationFailed ||
@@ -197,7 +194,9 @@ class PropertyList {
         }
         if (values != declaration.val) {
             declaration.val.length = 0;
-            declaration.val.push(...values);
+            for (const v of values) {
+                declaration.val.push(v);
+            }
         }
     }
     [Symbol.iterator]() {

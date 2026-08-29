@@ -3,13 +3,27 @@ import { multiplyMatrices } from "./utils/matrix.ts";
 import { srgb2xyz } from "./xyz.ts";
 
 export function a98rgb2srgbvalues(r: number, g: number, b: number, a: number | null = null): number[] {
-    //  @ts-ignore
-    return xyz2srgb(...la98rgb2xyz(...a98rgb2la98(r, g, b, a)));
+    let values = a98rgb2la98(r, g, b);
+
+    values = la98rgb2xyz(values[0], values[1], values[2]);
+    values = xyz2srgb(values[0], values[1], values[2]);
+
+    if (a != null && a < 1) {
+        values.push(a);
+    }
+
+    return values;
 }
 
 export function srgb2a98values(r: number, g: number, b: number, a: number | null = null): number[] {
-    // @ts-ignore
-    return la98rgb2a98rgb(...xyz2la98rgb(...srgb2xyz(r, g, b, a)));
+    let values = srgb2xyz(r, g, b);
+    values = xyz2la98rgb(values[0], values[1], values[2]);
+    values = la98rgb2a98rgb(values[0], values[1], values[2]);
+
+    if (a != null && a < 1) {
+        values.push(a);
+    }
+    return values;
 }
 
 // a98-rgb functions

@@ -287,7 +287,9 @@ function minifyAtRuleMedia(tokens) {
                     typ: EnumToken.CommaTokenType,
                 });
             }
-            acc.push(...t);
+            for (const token of t) {
+                acc.push(token);
+            }
             return acc;
         }, []));
     }
@@ -367,7 +369,9 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     node.sel === previous.sel) {
                     // do not merge keyframes
                     // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@keyframes#resolving_duplicates
-                    previous.chi.push(...node.chi);
+                    for (const child of node.chi) {
+                        previous.chi.push(child);
+                    }
                     // @ts-ignore
                     ast.chi.splice(i, 1);
                     previous = ast?.chi?.[nodeIndex] ?? null;
@@ -399,7 +403,9 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                         minifyAtRuleMedia(slice);
                         if (slice.length !== node[TOKENS].length) {
                             node[TOKENS].length = 0;
-                            node[TOKENS].push(...slice);
+                            for (const token of slice) {
+                                node[TOKENS].push(token);
+                            }
                             node.val = slice.reduce((acc, curr, index, arr) => acc +
                                 (curr.typ === EnumToken.CommentTokenType ||
                                     (curr.typ === EnumToken.WhitespaceTokenType &&
@@ -451,8 +457,9 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     previous.nam === node.nam &&
                     previous.val === node.val) {
                     if ("chi" in node) {
-                        // @ts-ignore
-                        previous.chi.push(...node.chi);
+                        for (const child of node.chi) {
+                            previous.chi.push(child);
+                        }
                         if (!hasDeclaration(previous)) {
                             context.nodes.delete(previous);
                             doMinify(previous, options, recursive, errors, nestingContent, context);
@@ -667,8 +674,15 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                     node.nam !== "font-face" &&
                                     // @ts-ignore
                                     node.nam === previous.nam)) {
+                                const array = [];
+                                for (let i = 0; i < previous.chi.length; i++) {
+                                    array.push(previous.chi[i]);
+                                }
+                                for (let i = 0; i < node.chi.length; i++) {
+                                    array.push(node.chi[i]);
+                                }
                                 // @ts-ignore
-                                node.chi.unshift(...previous.chi);
+                                node.chi = array;
                                 doMinify(node, options, recursive, errors, nestingContent, context);
                                 ast.chi.splice(nodeIndex, 1);
                                 previous = ast.chi[--i];
@@ -1017,7 +1031,9 @@ function reduceSelector(acc, curr) {
                 if (acc.length > 0) {
                     acc.push(",");
                 }
-                acc.push(...curr);
+                for (const c of curr) {
+                    acc.push(c);
+                }
                 return acc;
             }, []);
         }
@@ -1186,9 +1202,13 @@ function wrapNodes(previous, node, match, ast, reducer, i, nodeIndex) {
         [RAW]: match.match.map((t) => t.slice()),
     };
     if (pSel == "&" || pSel === "") {
-        wrapper.chi.push(...previous.chi);
+        for (const child of previous.chi) {
+            wrapper.chi.push(child);
+        }
         if (nSel == "&" || nSel === "") {
-            wrapper.chi.push(...node.chi);
+            for (const child of node.chi) {
+                wrapper.chi.push(child);
+            }
         }
         else {
             wrapper.chi.push(node);
@@ -1427,7 +1447,9 @@ function reduceRuleSelector(node) {
                     acc.push(",");
                 }
                 unique.add(sig);
-                acc.push(...curr);
+                for (const c of curr) {
+                    acc.push(c);
+                }
             }
             return acc;
         }, []);

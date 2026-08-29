@@ -107,7 +107,10 @@ export function parseSelector(
                     acc.push({ typ: EnumToken.CommaTokenType });
                 }
 
-                acc.push(...curr);
+                for (const c of curr) {
+                    acc.push(c);
+                }
+
                 return acc;
             }, [] as Token[]),
         );

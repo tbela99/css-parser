@@ -80,7 +80,9 @@ export function parseRelativeColorComponents(
     let val: string = "";
 
     if (components != null) {
-        allComponents.push(...components);
+        for (const component of components) {
+            allComponents.push(component);
+        }
     }
 
     // ensure all components are valid for the color space

@@ -28,7 +28,9 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
     }, [[]]);
     const result = matchAllSyntaxes(syntax, createValidationContext(stream), options);
     if (!result.success) {
-        errors.push(...result.errors);
+        for (const error of result.errors) {
+            errors.push(error);
+        }
         return {
             success: false,
             errors,
@@ -259,14 +261,18 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                 };
             }
             stream.length = 0;
-            stream.push(...trimArray(tokens));
+            for (const token of trimArray(tokens)) {
+                stream.push(token);
+            }
         }
     }
     stream.length = 0;
     stream.push(...parts
         .filter((p) => p.length > 0 && p[0].typ !== EnumToken.InvalidMediaQueryTokenType)
         .reduce((acc, b) => {
-        acc.push(...b);
+        for (const token of b) {
+            acc.push(token);
+        }
         return acc;
     }, []));
     return {

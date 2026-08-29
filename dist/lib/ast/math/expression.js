@@ -28,7 +28,9 @@ function evaluate(tokens) {
             if (acc.length > 0) {
                 acc.push({ typ: EnumToken.CommaTokenType });
             }
-            acc.push(...t);
+            for (const token of t) {
+                acc.push(token);
+            }
             return acc;
         });
         const result = evaluateFunc(tokens[0]);
@@ -491,7 +493,15 @@ function evaluateFunc(token) {
                                     : Math.ceil(val / val2) * val2;
                     }
                     // @ts-ignore
-                    return [{ ...values[0], val, [LOCSRCID]: token[LOCSRCID], [LOCSTA]: token[LOCSTA], [LOCEND]: token[LOCEND] }];
+                    return [
+                        {
+                            ...values[0],
+                            val,
+                            [LOCSRCID]: token[LOCSRCID],
+                            [LOCSTA]: token[LOCSTA],
+                            [LOCEND]: token[LOCEND],
+                        },
+                    ];
                 }
             }
         }
@@ -509,12 +519,18 @@ function inlineExpression(token) {
             result.push(token);
         }
         else {
-            result.push(...inlineExpression(token.l), {
+            for (const child of inlineExpression(token.l)) {
+                result.push(child);
+            }
+            result.push({
                 typ: token.op,
                 [LOCSRCID]: token[LOCSRCID],
                 [LOCSTA]: token[LOCSTA],
                 [LOCEND]: token[LOCEND],
-            }, ...inlineExpression(token.r));
+            });
+            for (const child of inlineExpression(token.r)) {
+                result.push(child);
+            }
         }
     }
     else {

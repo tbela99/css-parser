@@ -15,16 +15,16 @@ import type {
     TimeToken,
     Token,
 } from "../../@types/index.d.ts";
-import {isOkLabClose} from "./color/utils/distance.ts";
-import {ColorType, EnumToken} from "../ast/types.ts";
-import {WalkerOptionEnum, walkValues} from "../ast/walk.ts";
-import {toDegrees} from "../parser/utils/angle.ts";
-import {memoize} from "../parser/utils/cache.ts";
-import {equalsIgnoreCase} from "../parser/utils/text.ts";
-import {trimArray} from "../validation/match.ts";
-import {splitTokenList} from "../validation/utils/list.ts";
-import {getColorSpace} from "./color/utils/colorspace.ts";
-import {getColorComponents} from "./color/utils/components.ts";
+import { isOkLabClose } from "./color/utils/distance.ts";
+import { ColorType, EnumToken } from "../ast/types.ts";
+import { WalkerOptionEnum, walkValues } from "../ast/walk.ts";
+import { toDegrees } from "../parser/utils/angle.ts";
+import { memoize } from "../parser/utils/cache.ts";
+import { equalsIgnoreCase } from "../parser/utils/text.ts";
+import { trimArray } from "../validation/match.ts";
+import { splitTokenList } from "../validation/utils/list.ts";
+import { getColorSpace } from "./color/utils/colorspace.ts";
+import { getColorComponents } from "./color/utils/components.ts";
 import {
     anglePrecision,
     colorFuncColorSpace,
@@ -36,7 +36,7 @@ import {
     nonStandardColors,
     systemColors,
 } from "./constants.ts";
-import {getSyntaxConfig} from "../validation/config.ts";
+import { getSyntaxConfig } from "../validation/config.ts";
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
@@ -605,7 +605,10 @@ export function reduceColorStops(stops: Token[]) {
                 );
             }
 
-            parts[i - 1].push(...parts[i].slice(1));
+            for (let m = 1; m < parts[i].length; m++) {
+                parts[i - 1].push(parts[i][m]);
+            }
+
             parts.splice(i--, 1);
             updated = true;
             continue;
@@ -634,7 +637,10 @@ export function reduceColorStops(stops: Token[]) {
             if (stops.length > 0) {
                 stops.push({ typ: EnumToken.CommaTokenType });
             }
-            stops.push(...parts[j]);
+
+            for (let m = 0; m < parts[j].length; m++) {
+                stops.push(parts[j][m]);
+            }
         }
     }
 
@@ -759,7 +765,10 @@ export function reduceConicColorStops(stops: Token[]): Token[] {
                 );
             }
 
-            parts[i - 1].push(...parts[i].slice(1));
+            for (let m = 1; m < parts[i].length; m++) {
+                parts[i - 1].push(parts[i][m]);
+            }
+
             parts.splice(i--, 1);
             updated = true;
             continue;
@@ -787,7 +796,10 @@ export function reduceConicColorStops(stops: Token[]): Token[] {
             if (stops.length > 0) {
                 stops.push({ typ: EnumToken.CommaTokenType });
             }
-            stops.push(...parts[j]);
+
+            for (const token of parts[j]) {
+                stops.push(token);
+            }
         }
     }
 
@@ -1191,7 +1203,11 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                     )
                 ) {
                     // @ts-ignore
-                    keywords.push("alpha", ...(token as ColorToken).val.slice(-3).split(""));
+                    keywords.push("alpha");
+
+                    for (const keyword of (token as ColorToken).val.slice(-3).split("")) {
+                        keywords.push(keyword);
+                    }
                 }
 
                 // @ts-ignore

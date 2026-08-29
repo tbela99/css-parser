@@ -354,7 +354,9 @@ function parseVisitors(visitorsDef, errors) {
                     }
                 }
                 else {
-                    visitors.push(...Object.entries(value));
+                    for (const val of Object.entries(value)) {
+                        visitors.push(val);
+                    }
                 }
             }
             else {
@@ -371,7 +373,6 @@ function parseVisitors(visitorsDef, errors) {
                     .push(value);
             }
             else if (typeof value == "object") {
-                // visitors.push(...Object.entries(value));
                 if ("type" in value && "handler" in value && value.type in WalkerEvent) {
                     if (value.type == WalkerEvent.Enter) {
                         if (!preVisitorsHandlersMap.has(key)) {
@@ -582,7 +583,8 @@ function doParseSync(iter, options = {}) {
             }
             else if (item.typ == EnumToken.BlockStartTokenType) {
                 let inBlock = 1;
-                tokens = [item];
+                tokens.length = 0;
+                tokens.push(item);
                 do {
                     tokenizer = iter.next().value;
                     if (tokenizer == null) {
@@ -638,7 +640,7 @@ function doParseSync(iter, options = {}) {
                     });
                 }
             }
-            tokens = [];
+            tokens.length = 0;
         }
         else if ((parensMatch === 0 || curlyBracketMatch === 0) && item.typ === EnumToken.BlockEndTokenType) {
             parseNode(tokens, context, options, errors, stats, invalidNodes);
@@ -651,7 +653,7 @@ function doParseSync(iter, options = {}) {
                 context.chi[context.chi.length - 1] == previousNode) {
                 context.chi.pop();
             }
-            tokens = [];
+            tokens.length = 0;
             parensMatch = 0;
             curlyBracketMatch = 0;
         }
@@ -694,17 +696,23 @@ function doParseSync(iter, options = {}) {
                     case EnumToken.AtRuleNodeType:
                     case EnumToken.KeyframesRuleNodeType:
                     case EnumToken.KeyframesAtRuleNodeType:
-                        subNodes.push(...nodes[i][TOKENS]);
+                        for (const token of nodes[i][TOKENS]) {
+                            subNodes.push(token);
+                        }
                         break;
                     case EnumToken.DeclarationNodeType:
-                        subNodes.push(...nodes[i].val);
+                        for (const token of nodes[i].val) {
+                            subNodes.push(token);
+                        }
                         break;
                 }
             }
             // @ts-ignore
             if (nodes[i].chi != null) {
                 // @ts-ignore
-                subNodes.push(...nodes[i].chi);
+                for (const child of nodes[i].chi) {
+                    subNodes.push(child);
+                }
             }
             if (subNodes.length > 0) {
                 if (freeBlock <= i) {
@@ -1519,7 +1527,8 @@ async function doParse(iter, options = {}) {
             }
             else if (item.typ == EnumToken.BlockStartTokenType) {
                 let inBlock = 1;
-                tokens = [item];
+                tokens.length = 0;
+                tokens.push(item);
                 do {
                     tokenizer = isAsync
                         ? (await iter.next()).value
@@ -1577,7 +1586,7 @@ async function doParse(iter, options = {}) {
                     });
                 }
             }
-            tokens = [];
+            tokens.length = 0;
         }
         else if ((parensMatch === 0 || curlyBracketMatch === 0) && item.typ === EnumToken.BlockEndTokenType) {
             parseNode(tokens, context, options, errors, stats, invalidNodes);
@@ -1590,7 +1599,7 @@ async function doParse(iter, options = {}) {
                 context.chi[context.chi.length - 1] == previousNode) {
                 context.chi.pop();
             }
-            tokens = [];
+            tokens.length = 0;
             parensMatch = 0;
             curlyBracketMatch = 0;
         }
@@ -1643,7 +1652,9 @@ async function doParse(iter, options = {}) {
                 // @ts-ignore
                 node[PARENT].chi.splice(node[PARENT].chi.indexOf(node), 1, ...root.ast.chi);
                 if (root.errors.length > 0) {
-                    errors.push(...root.errors);
+                    for (const error of root.errors) {
+                        errors.push(error);
+                    }
                 }
             }
             catch (error) {
@@ -1680,17 +1691,24 @@ async function doParse(iter, options = {}) {
                     case EnumToken.AtRuleNodeType:
                     case EnumToken.KeyframesRuleNodeType:
                     case EnumToken.KeyframesAtRuleNodeType:
-                        subNodes.push(...nodes[i][TOKENS]);
+                        for (const token of nodes[i][TOKENS]) {
+                            subNodes.push(token);
+                        }
                         break;
                     case EnumToken.DeclarationNodeType:
-                        subNodes.push(...nodes[i].val);
+                        for (const token of nodes[i].val) {
+                            subNodes.push(token);
+                        }
                         break;
                 }
             }
             // @ts-ignore
             if (nodes[i].chi != null) {
                 // @ts-ignore
-                subNodes.push(...nodes[i].chi);
+                for (k = 0; k < nodes[i].chi.length; k++) {
+                    // @ts-ignore
+                    subNodes.push(nodes[i].chi[k]);
+                }
             }
             if (subNodes.length > 0) {
                 if (freeblock <= i) {
@@ -2768,7 +2786,9 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
         case "font-feature-values": {
             const result = parseAtRuleFontFeatureValues(stream, atRule, options);
             if (result.errors.length > 0) {
-                errors.push(...result.errors);
+                for (const error of result.errors) {
+                    errors.push(error);
+                }
             }
             atRule[TOKENS] = stream;
             atRule[STATE] = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
@@ -2823,7 +2843,9 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
         case "container": {
             const result = parseAtRuleContainerQueryList(stream, atRule, options);
             if (result.errors.length > 0) {
-                errors.push(...result.errors);
+                for (const error of result.errors) {
+                    errors.push(error);
+                }
             }
             atRule[LOCEND] = (stream.at(-1) ?? atRule)[LOCEND];
             atRule[TOKENS] = stream;
@@ -2840,7 +2862,9 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             const tokens = trimArray(stream.slice(1));
             const result = matchAllSyntaxes(syntax, createValidationContext(tokens), options);
             if (result.errors.length > 0) {
-                errors.push(...result.errors);
+                for (const error of result.errors) {
+                    errors.push(error);
+                }
             }
             // @ts-expect-error
             options = { ...options, convertColor: false };
@@ -2885,7 +2909,9 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
         case "namespace": {
             const result = matchAllSyntaxes(syntax, createValidationContext(stream), options);
             if (!result.success) {
-                errors.push(...result.errors);
+                for (const error of result.errors) {
+                    errors.push(error);
+                }
             }
             // else {
             //     parseUrlToken(stream);
@@ -2934,7 +2960,9 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
         case "import": {
             const result = matchAtRuleImportSyntax(atRule, stream, context, options);
             if (result.errors.length > 0) {
-                errors.push(...result.errors);
+                for (const error of result.errors) {
+                    errors.push(error);
+                }
             }
             else {
                 if (stream[0]?.typ == EnumToken.UrlFunctionTokenType &&
@@ -2966,7 +2994,9 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                 ? parseAtRuleSupportSyntax(stream, atRule, options)
                 : matchAtRuleWhenElseSyntax(stream, atRule, options);
             if (result.errors.length > 0) {
-                errors.push(...result.errors);
+                for (const error of result.errors) {
+                    errors.push(error);
+                }
             }
             let success = result.success;
             if (atRule.nam === "else") {
@@ -3034,7 +3064,9 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             options = { ...options, parseColor: false };
             const result = parseMediaqueryList(stream, options);
             if (result.errors.length > 0) {
-                errors.push(...result.errors);
+                for (const error of result.errors) {
+                    errors.push(error);
+                }
             }
             atRule[LOCEND] = stream.at(-1)?.[LOCEND] ?? atRule[LOCEND];
             atRule[TOKENS] = stream.slice();
@@ -3246,7 +3278,9 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = success ? [] : [errors[errors.length - 1]];
             if (!result.success) {
-                errors.push(...result.errors);
+                for (const error of result.errors) {
+                    errors.push(error);
+                }
                 return {
                     typ: EnumToken.AtRuleNodeType,
                     val: renderTokens(stream, options),
@@ -3308,13 +3342,17 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                 // check or and and
                 result = matchGenericSyntax(stream, options);
                 if (result.errors.length > 0) {
-                    errors.push(...result.errors);
+                    for (const error of result.errors) {
+                        errors.push(error);
+                    }
                 }
             }
             else {
                 result = matchAtRuleSyntax(atRule, stream, options);
                 if (result.errors.length > 0) {
-                    errors.push(...result.errors);
+                    for (const error of result.errors) {
+                        errors.push(error);
+                    }
                 }
                 if (result.success) {
                     let i = 0;
@@ -3334,7 +3372,6 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                             i = index;
                             stream.splice(index + 1, 1);
                             stack.pop();
-                            // continue;
                         }
                     }
                 }

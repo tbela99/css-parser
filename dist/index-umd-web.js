@@ -7040,41 +7040,41 @@
     function hex2lchvalues(token) {
         const values = hex2labvalues(token);
         // @ts-ignore
-        return values == null ? null : labvalues2lchvalues(...values);
+        return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
     }
     function rgb2lchvalues(token) {
         const values = rgb2labvalues(token);
         // @ts-ignore
-        return values == null ? null : labvalues2lchvalues(...values);
+        return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
     }
     function hsl2lchvalues(token) {
         const values = hsl2labvalues(token);
         // @ts-ignore
-        return values == null ? null : labvalues2lchvalues(...values);
+        return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
     }
     function hwb2lchvalues(token) {
         const values = hwb2labvalues(token);
         // @ts-ignore
-        return values == null ? null : labvalues2lchvalues(...values);
+        return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
     }
     function lab2lchvalues(token) {
         const values = getLABComponents(token);
         // @ts-ignore
-        return values == null ? null : labvalues2lchvalues(...values);
+        return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
     }
     function srgb2lch(r, g, blue, alpha) {
-        // @ts-ignore
-        return labvalues2lchvalues(...srgb2labvalues(r, g, blue, alpha));
+        let values = srgb2labvalues(r, g, blue, alpha);
+        return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
     }
     function oklab2lchvalues(token) {
         const values = oklab2labvalues(token);
         // @ts-ignore
-        return values == null ? null : labvalues2lchvalues(...values);
+        return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
     }
     function cmyk2lchvalues(token) {
         const values = cmyk2srgbvalues(token);
         // @ts-ignore
-        return values == null ? null : srgb2lch(...values);
+        return values == null ? null : srgb2lch(values[0], values[1], values[2], values[3]);
     }
     function oklch2lchvalues(token) {
         const values = oklch2labvalues(token);
@@ -7082,7 +7082,7 @@
             return null;
         }
         // @ts-ignore
-        return labvalues2lchvalues(...values);
+        return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
     }
     function color2lchvalues(token) {
         const values = color2srgbvalues(token);
@@ -7090,7 +7090,7 @@
             return null;
         }
         // @ts-ignore
-        return srgb2lch(...values);
+        return srgb2lch(values[0], values[1], values[2], values[3]);
     }
     function labvalues2lchvalues(l, a, b, alpha = null) {
         let c = Math.sqrt(a * a + b * b);
@@ -7104,8 +7104,8 @@
         return alpha == null ? [l, c, h] : [l, c, h, alpha];
     }
     function xyz2lchvalues(x, y, z, alpha) {
-        // @ts-ignore(
-        const lch = labvalues2lchvalues(...xyz2lab(x, y, z));
+        const values = xyz2lab(x, y, z);
+        const lch = labvalues2lchvalues(values[0], values[1], values[2]);
         return alpha == null || alpha == 1 ? lch : lch.concat(alpha);
     }
     function getLCHComponents(token) {
@@ -7145,8 +7145,8 @@
     /*
      */
     function xyzd502lch(x, y, z, alpha) {
-        // @ts-ignore
-        const [l, a, b] = xyz2lab(...XYZ_D50_to_D65(x, y, z));
+        const values = XYZ_D50_to_D65(x, y, z);
+        const [l, a, b] = xyz2lab(values[0], values[1], values[2]);
         // L in range [0,100]. For use in CSS, add a percent
         return labvalues2lchvalues(l, a, b, alpha);
     }
@@ -7214,8 +7214,8 @@
     // xyz d50
     function srgb2xyz_d65(r, g, b, alpha) {
         // xyx d65
-        // @ts-ignore
-        let rgb = XYZ_D65_to_D50(...srgb2xyz(r, g, b));
+        let values = srgb2xyz(r, g, b);
+        let rgb = XYZ_D65_to_D50(values[0], values[1], values[2]);
         if (alpha != null && alpha != 1) {
             rgb.push(alpha);
         }
@@ -7224,7 +7224,7 @@
 
     function hex2oklchToken(token) {
         const values = hex2oklchvalues(token);
-        return oklchToken(values);
+        return values == null ? null : oklchToken(values);
     }
     function rgb2oklchToken(token) {
         const values = rgb2oklchvalues(token);
@@ -7280,8 +7280,7 @@
         if (values == null) {
             return null;
         }
-        // @ts-ignore
-        return oklchToken(srgb2oklch(...values));
+        return oklchToken(srgb2oklch(values[0], values[1], values[2], values[3]));
     }
     function oklchToken(values) {
         values[2] = values[2];
@@ -7304,29 +7303,27 @@
         };
     }
     function hex2oklchvalues(token) {
-        // @ts-ignore
-        return labvalues2lchvalues(...hex2oklabvalues(token));
+        const values = hex2oklabvalues(token);
+        return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
     }
     function rgb2oklchvalues(token) {
         const values = rgb2oklabvalues(token);
         if (values == null) {
             return null;
         }
-        // @ts-ignore
-        return labvalues2lchvalues(...values);
+        return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
     }
     function hsl2oklchvalues(token) {
-        // @ts-ignore
-        return labvalues2lchvalues(...hsl2oklabvalues(token));
+        const values = hsl2oklabvalues(token);
+        return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
     }
     function hwb2oklchvalues(token) {
-        // @ts-ignore
-        return labvalues2lchvalues(...hwb2oklabvalues(token));
+        const values = hwb2oklabvalues(token);
+        return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
     }
     function cmyk2oklchvalues(token) {
         const values = cmyk2srgbvalues(token);
-        // @ts-ignore
-        return values == null ? null : srgb2oklch(...values);
+        return values == null ? null : srgb2oklch(values[0], values[1], values[2], values[3]);
     }
     function lab2oklchvalues(token) {
         const values = lab2oklabvalues(token);
@@ -7334,7 +7331,7 @@
             return null;
         }
         // @ts-ignore
-        return labvalues2lchvalues(...values);
+        return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
     }
     function lch2oklchvalues(token) {
         const values = lch2oklabvalues(token);
@@ -7342,7 +7339,7 @@
             return null;
         }
         // @ts-ignore
-        return labvalues2lchvalues(...values);
+        return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
     }
     function oklab2oklchvalues(token) {
         const values = getOKLABComponents(token);
@@ -7350,11 +7347,11 @@
             return null;
         }
         // @ts-ignore
-        return labvalues2lchvalues(...values);
+        return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
     }
     function srgb2oklch(r, g, blue, alpha) {
-        // @ts-ignore
-        return labvalues2lchvalues(...srgb2oklab(r, g, blue, alpha));
+        const values = srgb2oklab(r, g, blue, alpha);
+        return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
     }
     function getOKLCHComponents(token) {
         const components = getColorComponents(token);
@@ -7478,15 +7475,14 @@
             return null;
         }
         // @ts-ignore
-        return srgb2oklab(...values);
+        return srgb2oklab(values[0], values[1], values[2], values[3]);
     }
     function rgb2oklabvalues(token) {
         const values = rgb2srgb(token);
         if (values == null) {
             return null;
         }
-        // @ts-ignore
-        return srgb2oklab(...values);
+        return srgb2oklab(values[0], values[1], values[2], values[3]);
     }
     function hsl2oklabvalues(token) {
         const values = hsl2srgb(token);
@@ -7494,16 +7490,16 @@
             return null;
         }
         // @ts-ignore
-        return srgb2oklab(...values);
+        return srgb2oklab(values[0], values[1], values[2], values[3]);
     }
     function hwb2oklabvalues(token) {
-        // @ts-ignore
-        return srgb2oklab(...hwb2srgbvalues(token));
+        const values = hwb2srgbvalues(token);
+        return values == null ? null : srgb2oklab(values[0], values[1], values[2], values[3]);
     }
     function cmyk2oklabvalues(token) {
         const values = cmyk2srgbvalues(token);
         // @ts-ignore
-        return values == null ? null : srgb2oklab(...values);
+        return values == null ? null : srgb2oklab(values[0], values[1], values[2], values[3]);
     }
     function lab2oklabvalues(token) {
         const values = lab2srgbvalues(token);
@@ -7511,22 +7507,22 @@
             return null;
         }
         // @ts-ignore
-        return srgb2oklab(...values);
+        return srgb2oklab(values[0], values[1], values[2], values[3]);
     }
     function lch2oklabvalues(token) {
         const values = lch2srgbvalues(token);
         // @ts-ignore
-        return values == null ? null : srgb2oklab(...values);
+        return values == null ? null : srgb2oklab(values[0], values[1], values[2], values[3]);
     }
     function oklch2oklabvalues(token) {
         const values = getOKLCHComponents(token);
         // @ts-ignore
-        return values == null ? null : lchvalues2labvalues(...values);
+        return values == null ? null : lchvalues2labvalues(values[0], values[1], values[2], values[3]);
     }
     function color2oklabvalues(token) {
         const values = color2srgbvalues(token);
         // @ts-ignore
-        return values == null ? null : srgb2oklab(...values);
+        return values == null ? null : srgb2oklab(values[0], values[1], values[2], values[3]);
     }
     function srgb2oklab(r, g, blue, alpha) {
         [r, g, blue] = srgb2lsrgbvalues(r, g, blue);
@@ -7681,19 +7677,19 @@
     // L: 0% = 0.0, 100% = 100.0
     // for a and b: -100% = -125, 100% = 125
     function hex2labvalues(token) {
-        const values = hex2srgbvalues(token);
+        let values = hex2srgbvalues(token);
         // @ts-ignore
-        return values == null ? null : srgb2labvalues(...values);
+        return values == null ? null : srgb2labvalues(values[0], values[1], values[2], values[3]);
     }
     function rgb2labvalues(token) {
         const values = rgb2srgb(token);
         // @ts-ignore
-        return values == null ? null : srgb2labvalues(...values);
+        return values == null ? null : srgb2labvalues(values[0], values[1], values[2], values[3]);
     }
     function cmyk2labvalues(token) {
         const values = cmyk2srgbvalues(token);
         // @ts-ignore
-        return values == null ? null : srgb2labvalues(...values);
+        return values == null ? null : srgb2labvalues(values[0], values[1], values[2], values[3]);
     }
     function hsl2labvalues(token) {
         const values = hsl2srgb(token);
@@ -7701,7 +7697,7 @@
             return null;
         }
         // @ts-ignore
-        return srgb2labvalues(...values);
+        return srgb2labvalues(values[0], values[1], values[2], values[3]);
     }
     function hwb2labvalues(token) {
         const values = hwb2srgbvalues(token);
@@ -7709,20 +7705,21 @@
             return null;
         }
         // @ts-ignore
-        return srgb2labvalues(...values);
+        return srgb2labvalues(values[0], values[1], values[2], values[3]);
     }
     function lch2labvalues(token) {
         const values = getLCHComponents(token);
         // @ts-ignore
-        return values == null ? null : lchvalues2labvalues(...values);
+        return values == null ? null : lchvalues2labvalues(values[0], values[1], values[2], values[3]);
     }
     function oklab2labvalues(token) {
-        const values = getOKLABComponents(token);
+        let values = getOKLABComponents(token);
         if (values == null) {
             return null;
         }
-        // @ts-ignore
-        return xyz2lab(...XYZ_D65_to_D50(...OKLab_to_XYZ(...values)));
+        values = OKLab_to_XYZ(values[0], values[1], values[2], values[3]);
+        values = XYZ_D65_to_D50(values[0], values[1], values[2], values[3]);
+        return xyz2lab(values[0], values[1], values[2], values[3]);
     }
     function oklch2labvalues(token) {
         const values = oklch2srgbvalues(token);
@@ -7730,19 +7727,18 @@
             return null;
         }
         // @ts-ignore
-        return srgb2labvalues(...values);
+        return srgb2labvalues(values[0], values[1], values[2], values[3]);
     }
     function color2labvalues(token) {
         const val = color2srgbvalues(token);
         if (val == null) {
             return null;
         }
-        // @ts-ignore
-        return srgb2labvalues(...val);
+        return srgb2labvalues(val[0], val[1], val[2], val[3]);
     }
     function srgb2labvalues(r, g, b, a) {
-        // @ts-ignore */
-        const result = xyz2lab(...srgb2xyz_d65(r, g, b));
+        let result = srgb2xyz_d65(r, g, b);
+        result = xyz2lab(result[0], result[1], result[2]);
         // Fixes achromatic RGB colors having a _slight_ chroma due to floating-point errors
         // and approximated computations in sRGB <-> CIELab.
         // See: https://github.com/d3/d3-color/pull/46
@@ -7824,9 +7820,9 @@
     function Lab_to_sRGB(l, a, b) {
         const xyz_d50 = Lab_to_XYZ(l, a, b);
         // @ts-ignore
-        const xyz_d65 = XYZ_D50_to_D65(...xyz_d50);
+        const xyz_d65 = XYZ_D50_to_D65(xyz_d50[0], xyz_d50[1], xyz_d50[2]);
         // @ts-ignore
-        return xyz2srgb(...xyz_d65);
+        return xyz2srgb(xyz_d65[0], xyz_d65[1], xyz_d65[2]);
     }
     // from https://www.w3.org/TR/css-color-4/#color-conversion-code
     function Lab_to_XYZ(l, a, b) {
@@ -7908,8 +7904,9 @@
     }
     // xyz d65 input
     function xyz2srgb(x, y, z, alpha = null) {
+        let values = XYZ_to_lin_sRGB(x, y, z);
         // @ts-ignore
-        return lsrgb2srgbvalues(...XYZ_to_lin_sRGB(x, y, z, alpha));
+        return lsrgb2srgbvalues(values[0], values[1], values[2], alpha);
     }
     function hwb2srgbvalues(token) {
         const { h: hue, s: white, l: black, a: alpha } = hslvalues(token) ?? {};
@@ -7980,8 +7977,8 @@
         if (l == null || c == null || h == null) {
             return null;
         }
-        // @ts-ignore
-        const rgb = OKLab_to_sRGB(...lchvalues2labvalues(l, c, h));
+        const values = lchvalues2labvalues(l, c, h);
+        const rgb = OKLab_to_sRGB(values[0], values[1], values[2]);
         if (alpha != 1) {
             rgb.push(alpha);
         }
@@ -8082,7 +8079,7 @@
             return null;
         }
         // @ts-ignore
-        const [l, a, b, alpha] = lchvalues2labvalues(...components);
+        const [l, a, b, alpha] = lchvalues2labvalues(components[0], components[1], components[2], components[3]);
         if (l == null || a == null || b == null) {
             return null;
         }
@@ -8452,8 +8449,11 @@
     }
 
     function hex2HslToken(token) {
-        // @ts-ignore
-        return hslToken(srgb2hslvalues(...hex2srgbvalues(token)));
+        let values = hex2srgbvalues(token);
+        if (values == null) {
+            return null;
+        }
+        return hslToken(srgb2hslvalues(values[0], values[1], values[2], values[3]));
     }
     function rgb2HslToken(token) {
         const values = rgb2hslvalues(token);
@@ -8509,8 +8509,7 @@
         if (values == null) {
             return null;
         }
-        // @ts-ignore
-        return hslToken(srgb2hslvalues(...values));
+        return hslToken(srgb2hslvalues(values[0], values[1], values[2], values[3]));
     }
     function hslToken(values) {
         values[0] = values[0] * 360;
@@ -8558,8 +8557,7 @@
         if (a != null && a != 1) {
             values.push(a);
         }
-        // @ts-ignore
-        return rgbvalues2hslvalues(...values);
+        return rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
     }
     // https://gist.github.com/defims/0ca2ef8832833186ed396a2f8a204117#file-annotated-js
     function hsv2hsl(h, s, v, a) {
@@ -8581,20 +8579,19 @@
     }
     function cmyk2hslvalues(token) {
         const values = cmyk2rgbvalues(token);
-        // @ts-ignore
-        return values == null ? null : rgbvalues2hslvalues(...values);
+        return values == null ? null : rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
     }
     function hwb2hslvalues(token) {
-        // @ts-ignore
-        return hsv2hsl(...hwb2hsv(...Object.values(hslvalues(token))));
+        const hsla = hslvalues(token);
+        const hwba = hwb2hsv(hsla.h, hsla.s, hsla.l, hsla.a);
+        return hsv2hsl(hwba[0], hwba[1], hwba[2], hwba[3]);
     }
     function lab2hslvalues(token) {
         const values = lab2rgbvalues(token);
         if (values == null) {
             return null;
         }
-        // @ts-ignore
-        return rgbvalues2hslvalues(...values);
+        return rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
     }
     function lch2hslvalues(token) {
         const values = lch2rgbvalues(token);
@@ -8602,17 +8599,17 @@
             return null;
         }
         // @ts-ignore
-        return rgbvalues2hslvalues(...values);
+        return rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
     }
     function oklab2hslvalues(token) {
         const t = oklab2srgbvalues(token);
         // @ts-ignore
-        return t == null ? null : srgb2hslvalues(...t);
+        return t == null ? null : srgb2hslvalues(t[0], t[1], t[2], t[3]);
     }
     function oklch2hslvalues(token) {
         const t = oklch2srgbvalues(token);
         // @ts-ignore
-        return t == null ? null : srgb2hslvalues(...t);
+        return t == null ? null : srgb2hslvalues(t[0], t[1], t[2], t[3]);
     }
     function rgbvalues2hslvalues(r, g, b, a = null) {
         return srgb2hslvalues(r / 255, g / 255, b / 255, a);
@@ -8714,7 +8711,7 @@
         if (values.length == 4) {
             chi.push({ typ: exports.EnumToken.LiteralTokenType, val: "/" }, {
                 typ: exports.EnumToken.PercentageTokenType,
-                val: values[3] * 100
+                val: values[3] * 100,
             });
         }
         return {
@@ -8725,21 +8722,21 @@
         };
     }
     function rgb2hwbvalues(token) {
-        // @ts-ignore
-        return srgb2hwb(...getColorComponents(token).map((t, index) => {
+        const values = getColorComponents(token).map((t, index) => {
             if (index == 3) {
                 return getNumber(t);
             }
             return getNumber(t) / 255;
-        }));
+        });
+        // @ts-ignore
+        return srgb2hwb(values[0], values[1], values[2], values[3]);
     }
     function cmyk2hwbvalues(token) {
-        // @ts-ignore
-        return srgb2hwb(...cmyk2srgbvalues(token));
+        const values = cmyk2srgbvalues(token);
+        return values == null ? null : srgb2hwb(values[0], values[1], values[2], values[3]);
     }
     function hsl2hwbvalues(token) {
-        // @ts-ignore
-        return hslvalues2hwbvalues(...getColorComponents(token).map((t, index) => {
+        const values = getColorComponents(token).map((t, index) => {
             if (index == 3 && t.typ == exports.EnumToken.IdenTokenType && t.val == "none") {
                 return 1;
             }
@@ -8747,23 +8744,23 @@
                 return getAngle(t);
             }
             return getNumber(t);
-        }));
+        });
+        // @ts-ignore
+        return hslvalues2hwbvalues(values[0], values[1], values[2], values[3]);
     }
     function lab2hwbvalues(token) {
         const values = lab2srgbvalues(token);
         if (values == null) {
             return null;
         }
-        // @ts-ignore
-        return srgb2hwb(...values);
+        return srgb2hwb(values[0], values[1], values[2], values[3]);
     }
     function lch2hwbvalues(token) {
         const values = lch2srgbvalues(token);
         if (values == null) {
             return null;
         }
-        // @ts-ignore
-        return srgb2hwb(...values);
+        return srgb2hwb(values[0], values[1], values[2], values[3]);
     }
     function oklab2hwbvalues(token) {
         const values = oklab2srgbvalues(token);
@@ -8771,12 +8768,12 @@
             return null;
         }
         // @ts-ignore
-        return srgb2hwb(...values);
+        return srgb2hwb(values[0], values[1], values[2], values[3]);
     }
     function oklch2hwbvalues(token) {
         const values = oklch2srgbvalues(token);
         // @ts-ignore
-        return values == null ? null : srgb2hwb(...values);
+        return values == null ? null : srgb2hwb(values[0], values[1], values[2], values[3]);
     }
     function rgb2hue(r, g, b, fallback = 0) {
         let value = rgb2value(r, g, b);
@@ -8804,7 +8801,7 @@
             return null;
         }
         // @ts-ignore
-        return srgb2hwb(...values);
+        return srgb2hwb(values[0], values[1], values[2], values[3]);
     }
     function srgb2hwb(r, g, b, a = null, fallback = 0) {
         r *= 100;
@@ -8828,69 +8825,72 @@
         return result;
     }
     function hslvalues2hwbvalues(h, s, l, a = null) {
+        let values = hsl2hsv(h, s, l);
         // @ts-ignore
-        return hsv2hwb(...hsl2hsv(h, s, l, a));
+        return hsv2hwb(values[0], values[1], values[2], a);
     }
 
     function prophotorgb2srgbvalues(r, g, b, a = null) {
+        let values = prophotorgb2xyz50(r, g, b);
         // @ts-ignore
-        return xyzd502srgb(...prophotorgb2xyz50(r, g, b, a));
+        return xyzd502srgb(values[0], values[1], values[2], a);
     }
     function srgb2prophotorgbvalues(r, g, b, a) {
-        // @ts-ignore
-        return xyz50_to_prophotorgb(...XYZ_D65_to_D50(...srgb2xyz(r, g, b, a)));
+        let values = srgb2xyz(r, g, b);
+        values = XYZ_D65_to_D50(values[0], values[1], values[2]);
+        values = xyz50_to_prophotorgb(values[0], values[1], values[2]);
+        if (a != null && a < 1) {
+            values.push(a);
+        }
+        return values;
     }
     function prophotorgb2lin_ProPhoto(r, g, b, a = null) {
-        return [r, g, b].map(v => {
+        return [r, g, b]
+            .map((v) => {
             let abs = Math.abs(v);
             if (abs >= 16 / 512) {
                 return Math.sign(v) * Math.pow(abs, 1.8);
             }
             return v / 16;
-        }).concat(a == null || a == 1 ? [] : [a]);
+        })
+            .concat(a == null || a == 1 ? [] : [a]);
     }
     function prophotorgb2xyz50(r, g, b, a = null) {
         [r, g, b, a] = prophotorgb2lin_ProPhoto(r, g, b, a);
         const xyz = [
-            0.7977666449006423 * r +
-                0.1351812974005331 * g +
-                0.0313477341283922 * b,
-            0.2880748288194013 * r +
-                0.7118352342418731 * g +
-                0.0000899369387256 * b,
-            0.8251046025104602 * b
+            0.7977666449006423 * r + 0.1351812974005331 * g + 0.0313477341283922 * b,
+            0.2880748288194013 * r + 0.7118352342418731 * g + 0.0000899369387256 * b,
+            0.8251046025104602 * b,
         ];
         return xyz.concat(a == null || a == 1 ? [] : [a]);
     }
     function xyz50_to_prophotorgb(x, y, z, a) {
         // @ts-ignore
-        return gam_prophotorgb(...[
-            x * 1.3457868816471585 -
-                y * 0.2555720873797946 -
-                0.0511018649755453 * z,
-            x * -0.5446307051249019 +
-                y * 1.5082477428451466 +
-                0.0205274474364214 * z,
-            1.2119675456389452 * z
-        ].concat(a == null || a == 1 ? [] : [a]));
+        return gam_prophotorgb(x * 1.3457868816471585 - y * 0.2555720873797946 - 0.0511018649755453 * z, x * -0.5446307051249019 + y * 1.5082477428451466 + 0.0205274474364214 * z, 1.2119675456389452 * z);
+    }
+    function gam_prophotorgbvalue(v) {
+        let abs = Math.abs(v);
+        if (abs >= 1 / 512) {
+            return Math.sign(v) * Math.pow(abs, 1 / 1.8);
+        }
+        return 16 * v;
     }
     function gam_prophotorgb(r, g, b, a) {
-        return [r, g, b].map(v => {
-            let abs = Math.abs(v);
-            if (abs >= 1 / 512) {
-                return Math.sign(v) * Math.pow(abs, 1 / 1.8);
-            }
-            return 16 * v;
-        }).concat(a == null || a == 1 ? [] : [a]);
+        const values = [gam_prophotorgbvalue(r), gam_prophotorgbvalue(g), gam_prophotorgbvalue(b)];
+        return values;
     }
 
     function rec20202srgb(r, g, b, a) {
+        let values = rec20202lrec2020(r, g, b);
+        values = lrec20202xyz(values[0], values[1], values[2]);
         // @ts-ignore
-        return xyz2srgb(...lrec20202xyz(...rec20202lrec2020(r, g, b)), a);
+        return xyz2srgb(values[0], values[1], values[2], a);
     }
     function srgb2rec2020values(r, g, b, a) {
+        let values = srgb2xyz(r, g, b);
+        values = xyz2lrec2020(values[0], values[1], values[2]);
         // @ts-ignore
-        return lrec20202rec2020(...xyz2lrec2020(...srgb2xyz(r, g, b)), a);
+        return lrec20202rec2020(values[0], values[1], values[2], a);
     }
     function rec20202lrec2020(r, g, b, a) {
         // convert an array of rec2020 RGB values in the range 0.0 - 1.0
@@ -8936,7 +8936,7 @@
             [0, 19567812 / 697040785, 295819943 / 278816314],
         ];
         // 0 is actually calculated as  4.994106574466076e-17
-        return multiplyMatrices(M, [r, g, b]).concat(a == null || a == 1 ? [] : [a]);
+        return multiplyMatrices(M, [r, g, b]).concat([] );
     }
     function xyz2lrec2020(x, y, z, a) {
         // convert XYZ to linear-light rec2020
@@ -8945,24 +8945,36 @@
             [-19765991 / 29648200, 47925759 / 29648200, 467509 / 29648200],
             [792561 / 44930125, -1921689 / 44930125, 42328811 / 44930125],
         ];
-        return multiplyMatrices(M, [x, y, z]).concat(a == null || a == 1 ? [] : [a]);
+        return multiplyMatrices(M, [x, y, z]).concat([] );
     }
 
     function p32srgbvalues(r, g, b, alpha) {
+        let values = p32lp3(r, g, b);
+        values = lp32xyz(values[0], values[1], values[2]);
         // @ts-ignore
-        return xyz2srgb(...lp32xyz(...p32lp3(r, g, b, alpha)));
+        return xyz2srgb(values[0], values[1], values[2], alpha);
     }
     function srgb2p3values(r, g, b, alpha) {
-        // @ts-ignore
-        return lp32p3(...xyz2lp3(...srgb2xyz(r, g, b, alpha)));
+        let values = srgb2xyz(r, g, b);
+        values = xyz2lp3(values[0], values[1], values[2]);
+        values = lp32p3(values[0], values[1], values[2]);
+        if (alpha != null && alpha < 1) {
+            values.push(alpha);
+        }
+        return values;
     }
     function srgb2lp3values(r, g, b, alpha) {
-        // @ts-ignore
-        return xyz2lp3(...srgb2xyz(r, g, b, alpha));
+        let values = srgb2xyz(r, g, b);
+        values = xyz2lp3(values[0], values[1], values[2]);
+        if (alpha != null && alpha < 1) {
+            values.push(alpha);
+        }
+        return values;
     }
     function lp32srgbvalues(r, g, b, alpha) {
+        let values = lp32xyz(r, g, b);
         // @ts-ignore
-        return xyz2srgb(...lp32xyz(r, g, b, alpha));
+        return xyz2srgb(values[0], values[1], values[2], alpha);
     }
     function p32lp3(r, g, b, alpha) {
         // convert an array of display-p3 RGB values in the range 0.0 - 1.0
@@ -8984,9 +8996,6 @@
             [0, 32229 / 714400, 5220557 / 5000800],
         ];
         const result = multiplyMatrices(M, [r, g, b]);
-        if (alpha != null && alpha != 1) {
-            result.push(alpha);
-        }
         return result;
     }
     function xyz2lp3(x, y, z, alpha) {
@@ -8997,10 +9006,75 @@
             [11844 / 330415, -50337 / 660830, 316169 / 330415],
         ];
         const result = multiplyMatrices(M, [x, y, z]);
-        if (alpha != null && alpha != 1) {
-            result.push(alpha);
-        }
         return result;
+    }
+
+    function a98rgb2srgbvalues(r, g, b, a = null) {
+        let values = a98rgb2la98(r, g, b);
+        values = la98rgb2xyz(values[0], values[1], values[2]);
+        values = xyz2srgb(values[0], values[1], values[2]);
+        if (a != null && a < 1) {
+            values.push(a);
+        }
+        return values;
+    }
+    function srgb2a98values(r, g, b, a = null) {
+        let values = srgb2xyz(r, g, b);
+        values = xyz2la98rgb(values[0], values[1], values[2]);
+        values = la98rgb2a98rgb(values[0], values[1], values[2]);
+        if (a != null && a < 1) {
+            values.push(a);
+        }
+        return values;
+    }
+    // a98-rgb functions
+    function a98rgb2la98(r, g, b, a = null) {
+        // convert an array of a98-rgb values in the range 0.0 - 1.0
+        // to linear light (un-companded) form.
+        // negative values are also now accepted
+        return [r, g, b]
+            .map(function (val) {
+            let sign = val < 0 ? -1 : 1;
+            let abs = Math.abs(val);
+            return sign * Math.pow(abs, 563 / 256);
+        })
+            .concat(a == null || a == 1 ? [] : [a]);
+    }
+    function la98rgb2a98rgb(r, g, b, a = null) {
+        // convert an array of linear-light a98-rgb  in the range 0.0-1.0
+        // to gamma corrected form
+        // negative values are also now accepted
+        return [r, b, g]
+            .map(function (val) {
+            let sign = val < 0 ? -1 : 1;
+            let abs = Math.abs(val);
+            return sign * Math.pow(abs, 256 / 563);
+        })
+            .concat(a == null || a == 1 ? [] : [a]);
+    }
+    function la98rgb2xyz(r, g, b, a = null) {
+        // convert an array of linear-light a98-rgb values to CIE XYZ
+        // http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+        // has greater numerical precision than section 4.3.5.3 of
+        // https://www.adobe.com/digitalimag/pdfs/AdobeRGB1998.pdf
+        // but the values below were calculated from first principles
+        // from the chromaticity coordinates of R G B W
+        // see matrixmaker.html
+        var M = [
+            [573536 / 994567, 263643 / 1420810, 187206 / 994567],
+            [591459 / 1989134, 6239551 / 9945670, 374412 / 4972835],
+            [53769 / 1989134, 351524 / 4972835, 4929758 / 4972835],
+        ];
+        return multiplyMatrices(M, [r, g, b]).concat(a == null || a == 1 ? [] : [a]);
+    }
+    function xyz2la98rgb(x, y, z, a = null) {
+        // convert XYZ to linear-light a98-rgb
+        var M = [
+            [1829569 / 896150, -506331 / 896150, -308931 / 896150],
+            [-851781 / 878810, 1648619 / 878810, 36519 / 878810],
+            [16779 / 1248040, -147721 / 1248040, 1266979 / 1248040],
+        ];
+        return multiplyMatrices(M, [x, y, z]).concat(a == null || a == 1 ? [] : [a]);
     }
 
     function interpolateHue(interpolationMethod, h1, h2) {
@@ -9110,65 +9184,53 @@
                 case "srgb":
                     break;
                 case "display-p3":
-                    // @ts-ignore
-                    values = srgb2p3values(...values);
+                    values = srgb2p3values(values[0], values[1], values[2], values[3]);
                     break;
                 case "display-p3-linear":
-                    // @ts-ignore
-                    values = srgb2lp3values(...values);
+                    values = srgb2lp3values(values[0], values[1], values[2], values[3]);
                     break;
                 case "a98-rgb":
-                    // @ts-ignore
-                    values = srgb2a98values(...values);
+                    values = srgb2a98values(values[0], values[1], values[2], values[3]);
                     break;
                 case "prophoto-rgb":
-                    // @ts-ignore
-                    values = srgb2prophotorgbvalues(...values);
+                    values = srgb2prophotorgbvalues(values[0], values[1], values[2], values[3]);
                     break;
                 case "srgb-linear":
-                    // @ts-ignore
-                    values = srgb2lsrgbvalues(...values);
+                    values = srgb2lsrgbvalues(values[0], values[1], values[2], values[3]);
                     break;
                 case "rec2020":
-                    // @ts-ignore
-                    values = srgb2rec2020values(...values);
+                    values = srgb2rec2020values(values[0], values[1], values[2], values[3]);
                     break;
                 case "xyz":
                 case "xyz-d65":
-                    // @ts-ignore
-                    values = srgb2xyz_d65(...values);
+                    values = srgb2xyz_d65(values[0], values[1], values[2], values[3]);
                     break;
                 case "xyz-d50":
-                    // @ts-ignore
-                    values = XYZ_D65_to_D50(...srgb2xyz_d65(...values));
+                    values = srgb2xyz_d65(values[0], values[1], values[2], values[3]);
+                    values = XYZ_D65_to_D50(values[0], values[1], values[2], values[3]);
                     break;
                 case "rgb":
-                    // @ts-ignore
-                    values = srgb2rgb(...values);
+                    for (let j = 0; j < values.length; j++) {
+                        values[j] = j == 3 ? values[j] : srgb2rgb(values[j]);
+                    }
                     break;
                 case "hsl":
-                    // @ts-ignore
-                    values = srgb2hslvalues(...values);
+                    values = srgb2hslvalues(values[0], values[1], values[2], values[3]);
                     break;
                 case "hwb":
-                    // @ts-ignore
-                    values = srgb2hwb(...values);
+                    values = srgb2hwb(values[0], values[1], values[2], values[3]);
                     break;
                 case "lab":
-                    // @ts-ignore
-                    values = srgb2labvalues(...values);
+                    values = srgb2labvalues(values[0], values[1], values[2], values[3]);
                     break;
                 case "lch":
-                    // @ts-ignore
-                    values = srgb2lch(...values);
+                    values = srgb2lch(values[0], values[1], values[2], values[3]);
                     break;
                 case "oklab":
-                    // @ts-ignore
-                    values = srgb2oklab(...values);
+                    values = srgb2oklab(values[0], values[1], values[2], values[3]);
                     break;
                 case "oklch":
-                    // @ts-ignore
-                    values = srgb2oklch(...values);
+                    values = srgb2oklch(values[0], values[1], values[2], values[3]);
                     break;
                 default:
                     return null;
@@ -9317,12 +9379,10 @@
             case "xyz-d65":
             case "xyz-d50":
                 if (colorSpace == "xyz-d50") {
-                    // @ts-ignore
-                    values = xyzd502lch(...values);
+                    values = xyzd502lch(values[0], values[1], values[2], values[3]);
                 }
                 else {
-                    // @ts-ignore
-                    values = xyz2lchvalues(...values);
+                    values = xyz2lchvalues(values[0], values[1], values[2], values[3]);
                 }
                 // @ts-ignore
                 return {
@@ -9690,8 +9750,13 @@
                         const op = Array.isArray(option) ? option : [option];
                         for (const o of op) {
                             map.set(o, map.get(value) ?? root);
+                            if (reverse) {
+                                stack.unshift(o);
+                            }
+                            else {
+                                stack.push(o);
+                            }
                         }
-                        stack[reverse ? "push" : "unshift"](...op);
                     }
                 }
             }
@@ -9722,8 +9787,13 @@
                     const sliced = value.chi.slice();
                     for (const child of sliced) {
                         map.set(child, value);
+                        if (reverse) {
+                            stack.unshift(child);
+                        }
+                        else {
+                            stack.push(child);
+                        }
                     }
-                    stack[reverse ? "push" : "unshift"](...sliced);
                 }
                 else {
                     const values = [];
@@ -9756,7 +9826,14 @@
                         }
                     }
                     if (values.length > 0) {
-                        stack[reverse ? "push" : "unshift"](...values);
+                        for (const v of values) {
+                            if (reverse) {
+                                stack.unshift(v);
+                            }
+                            else {
+                                stack.push(v);
+                            }
+                        }
                     }
                 }
             }
@@ -9773,8 +9850,13 @@
                         const op = Array.isArray(option) ? option : [option];
                         for (const o of op) {
                             map.set(o, map.get(value) ?? root);
+                            if (reverse) {
+                                stack.unshift(o);
+                            }
+                            else {
+                                stack.push(o);
+                            }
                         }
-                        stack[reverse ? "push" : "unshift"](...op);
                     }
                 }
             }
@@ -9915,7 +9997,9 @@
                 if (acc.length > 0) {
                     acc.push({ typ: exports.EnumToken.CommaTokenType });
                 }
-                acc.push(...t);
+                for (const token of t) {
+                    acc.push(token);
+                }
                 return acc;
             });
             const result = evaluateFunc(tokens[0]);
@@ -10378,7 +10462,15 @@
                                         : Math.ceil(val / val2) * val2;
                         }
                         // @ts-ignore
-                        return [{ ...values[0], val, [LOCSRCID]: token[LOCSRCID], [LOCSTA]: token[LOCSTA], [LOCEND]: token[LOCEND] }];
+                        return [
+                            {
+                                ...values[0],
+                                val,
+                                [LOCSRCID]: token[LOCSRCID],
+                                [LOCSTA]: token[LOCSTA],
+                                [LOCEND]: token[LOCEND],
+                            },
+                        ];
                     }
                 }
             }
@@ -10396,12 +10488,18 @@
                 result.push(token);
             }
             else {
-                result.push(...inlineExpression$1(token.l), {
+                for (const child of inlineExpression$1(token.l)) {
+                    result.push(child);
+                }
+                result.push({
                     typ: token.op,
                     [LOCSRCID]: token[LOCSRCID],
                     [LOCSTA]: token[LOCSTA],
                     [LOCEND]: token[LOCEND],
-                }, ...inlineExpression$1(token.r));
+                });
+                for (const child of inlineExpression$1(token.r)) {
+                    result.push(child);
+                }
             }
         }
         else {
@@ -10546,7 +10644,9 @@
         const validKeys = names.split("");
         let val = "";
         if (components != null) {
-            allComponents.push(...components);
+            for (const component of components) {
+                allComponents.push(component);
+            }
         }
         // ensure all components are valid for the color space
         for (const component of allComponents) {
@@ -10774,68 +10874,60 @@
     }
 
     function rgb2cmykToken(token) {
-        const components = rgb2srgbvalues(token);
+        let components = rgb2srgbvalues(token);
         if (components == null || components.length < 3) {
             return null;
         }
-        // @ts-ignore
-        return cmyktoken(srgb2cmykvalues(...components));
+        return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
     }
     function hsl2cmykToken(token) {
-        const values = hsl2srgbvalues(token);
+        let values = hsl2srgbvalues(token);
         if (values == null) {
             return null;
         }
-        // @ts-ignore
-        return cmyktoken(srgb2cmykvalues(...values));
+        return cmyktoken(srgb2cmykvalues(values[0], values[1], values[2], values[3]));
     }
     function hwb2cmykToken(token) {
         const values = hwb2srgbvalues(token);
         if (values == null) {
             return null;
         }
-        // @ts-ignore
-        return cmyktoken(srgb2cmykvalues(...values));
+        return cmyktoken(srgb2cmykvalues(values[0], values[1], values[2], values[3]));
     }
     function lab2cmykToken(token) {
         const components = lab2srgbvalues(token);
         if (components == null || components.length < 3) {
             return null;
         }
-        // @ts-ignore
-        return cmyktoken(srgb2cmykvalues(...components));
+        return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
     }
     function lch2cmykToken(token) {
         const components = lch2srgbvalues(token);
         if (components == null || components.length < 3) {
             return null;
         }
-        // @ts-ignore
-        return cmyktoken(srgb2cmykvalues(...components));
+        return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
     }
     function oklab2cmyk(token) {
         const components = oklab2srgbvalues(token);
         if (components == null || components.length < 3) {
             return null;
         }
-        // @ts-ignore
-        return cmyktoken(srgb2cmykvalues(...components));
+        return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
     }
     function oklch2cmykToken(token) {
         const components = oklch2srgbvalues(token);
         if (components == null || components.length < 3) {
             return null;
         }
-        // @ts-ignore
-        return cmyktoken(srgb2cmykvalues(...components));
+        return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
     }
     function color2cmykToken(token) {
         const values = color2srgbvalues(token);
         if (values == null) {
             return null;
         }
-        // @ts-ignore
-        return cmyktoken(srgb2cmykvalues(...values));
+        return cmyktoken(srgb2cmykvalues(values[0], values[1], values[2], values[3]));
     }
     function srgb2cmykvalues(r, g, b, a = null) {
         const k = 1 - Math.max(r, g, b);
@@ -10874,64 +10966,6 @@
                 ], []),
             kin: exports.ColorType.DEVICE_CMYK,
         };
-    }
-
-    function a98rgb2srgbvalues(r, g, b, a = null) {
-        //  @ts-ignore
-        return xyz2srgb(...la98rgb2xyz(...a98rgb2la98(r, g, b, a)));
-    }
-    function srgb2a98values$1(r, g, b, a = null) {
-        // @ts-ignore
-        return la98rgb2a98rgb(...xyz2la98rgb(...srgb2xyz(r, g, b, a)));
-    }
-    // a98-rgb functions
-    function a98rgb2la98(r, g, b, a = null) {
-        // convert an array of a98-rgb values in the range 0.0 - 1.0
-        // to linear light (un-companded) form.
-        // negative values are also now accepted
-        return [r, g, b]
-            .map(function (val) {
-            let sign = val < 0 ? -1 : 1;
-            let abs = Math.abs(val);
-            return sign * Math.pow(abs, 563 / 256);
-        })
-            .concat(a == null || a == 1 ? [] : [a]);
-    }
-    function la98rgb2a98rgb(r, g, b, a = null) {
-        // convert an array of linear-light a98-rgb  in the range 0.0-1.0
-        // to gamma corrected form
-        // negative values are also now accepted
-        return [r, b, g]
-            .map(function (val) {
-            let sign = val < 0 ? -1 : 1;
-            let abs = Math.abs(val);
-            return sign * Math.pow(abs, 256 / 563);
-        })
-            .concat(a == null || a == 1 ? [] : [a]);
-    }
-    function la98rgb2xyz(r, g, b, a = null) {
-        // convert an array of linear-light a98-rgb values to CIE XYZ
-        // http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
-        // has greater numerical precision than section 4.3.5.3 of
-        // https://www.adobe.com/digitalimag/pdfs/AdobeRGB1998.pdf
-        // but the values below were calculated from first principles
-        // from the chromaticity coordinates of R G B W
-        // see matrixmaker.html
-        var M = [
-            [573536 / 994567, 263643 / 1420810, 187206 / 994567],
-            [591459 / 1989134, 6239551 / 9945670, 374412 / 4972835],
-            [53769 / 1989134, 351524 / 4972835, 4929758 / 4972835],
-        ];
-        return multiplyMatrices(M, [r, g, b]).concat(a == null || a == 1 ? [] : [a]);
-    }
-    function xyz2la98rgb(x, y, z, a = null) {
-        // convert XYZ to linear-light a98-rgb
-        var M = [
-            [1829569 / 896150, -506331 / 896150, -308931 / 896150],
-            [-851781 / 878810, 1648619 / 878810, 36519 / 878810],
-            [16779 / 1248040, -147721 / 1248040, 1266979 / 1248040],
-        ];
-        return multiplyMatrices(M, [x, y, z]).concat(a == null || a == 1 ? [] : [a]);
     }
 
     var ValidationTokenEnum;
@@ -11904,11 +11938,8 @@
     /**
      * @type {Array.<EnumToken>}
      */
-    const funcTypes = [
-        ...tokensfuncDefMap.values(),
-        exports.EnumToken.FunctionTokenType,
-        exports.EnumToken.PseudoClassFuncTokenType,
-    ];
+    const funcTypes = Array.from(tokensfuncDefMap.values());
+    funcTypes.push(exports.EnumToken.FunctionTokenType, exports.EnumToken.PseudoClassFuncTokenType);
     /**
      * trim leading and trailing whitespace
      * @param tokens
@@ -12266,7 +12297,9 @@
                         if (!result.success) {
                             success = false;
                             if (result.errors.length > 0) {
-                                errors.push(...result.errors);
+                                for (const error of result.errors) {
+                                    errors.push(error);
+                                }
                             }
                         }
                     }
@@ -12557,7 +12590,9 @@
                         if (!result.success) {
                             success = false;
                             if (result.errors.length > 0) {
-                                errors.push(...result.errors);
+                                for (const error of result.errors) {
+                                    errors.push(error);
+                                }
                             }
                         }
                         stack.pop();
@@ -12625,7 +12660,9 @@
             };
         }
         stream.length = 0;
-        stream.push(...tokens);
+        for (let i = 0; i < tokens.length; i++) {
+            stream.push(tokens[i]);
+        }
         return { success, errors };
     }
     /**
@@ -14508,8 +14545,8 @@
             if (args.at(-2)?.typ === exports.EnumToken.LiteralTokenType && "/" === args.at(-2)?.val) {
                 args.splice(args.length - 2, 1);
             }
-            // @ts-expect-error
-            token = alpha(...trimArray(args.slice(1)));
+            let values = trimArray(args.slice(1));
+            token = alpha(values[0], values[1]);
             if (token == null) {
                 return null;
             }
@@ -14544,9 +14581,12 @@
                 }
                 let { cal, ...tk } = {
                     ...token,
-                    chi: [...(token.val == "color" ? [chi[offset]] : []), ...Object.values(components)],
+                    chi: token.val == "color" ? [chi[offset]] : [],
                     kin: exports.ColorType[token.val.toUpperCase().replaceAll("-", "_")],
                 };
+                for (const t of Object.values(components)) {
+                    tk.chi.push(t);
+                }
                 tk[LOCSRCID] = token[LOCSRCID];
                 tk[LOCSTA] = token[LOCSTA];
                 tk[LOCEND] = token[LOCEND];
@@ -14900,46 +14940,28 @@
         return values2colortoken(values, to);
     }
     function srgb2srgbcolorspace(val, to) {
-        const values = [];
         switch (to) {
             case exports.ColorType.SRGB:
-                values.push(...val);
-                break;
+                return val;
             case exports.ColorType.SRGB_LINEAR:
-                // @ts-ignore
-                values.push(...srgb2lsrgbvalues(...val));
-                break;
+                return srgb2lsrgbvalues(val[0], val[1], val[2], val[3]);
             case exports.ColorType.DISPLAY_P3:
-                // @ts-ignore
-                values.push(...srgb2p3values(...val));
-                break;
+                return srgb2p3values(val[0], val[1], val[2], val[3]);
             case exports.ColorType.DISPLAY_P3_LINEAR:
-                // @ts-ignore
-                values.push(...srgb2lp3values(...val));
-                break;
+                return srgb2lp3values(val[0], val[1], val[2], val[3]);
             case exports.ColorType.PROPHOTO_RGB:
-                // @ts-ignore
-                values.push(...srgb2prophotorgbvalues(...val));
-                break;
+                return srgb2prophotorgbvalues(val[0], val[1], val[2], val[3]);
             case exports.ColorType.A98_RGB:
-                // @ts-ignore
-                values.push(...srgb2a98values$1(...val));
-                break;
+                return srgb2a98values(val[0], val[1], val[2], val[3]);
             case exports.ColorType.REC2020:
-                // @ts-ignore
-                values.push(...srgb2rec2020values(...val));
-                break;
+                return srgb2rec2020values(val[0], val[1], val[2], val[3]);
             case exports.ColorType.XYZ:
             case exports.ColorType.XYZ_D65:
-                // @ts-ignore
-                values.push(...srgb2xyz(...val));
-                break;
+                return srgb2xyz(val[0], val[1], val[2], val[3]);
             case exports.ColorType.XYZ_D50:
-                // @ts-ignore
-                values.push(...srgb2xyz_d65(...val));
-                break;
+                return srgb2xyz_d65(val[0], val[1], val[2], val[3]);
         }
-        return values;
+        return null;
     }
     function minmax(value, min, max) {
         return value < min ? min : value > max ? max : value;
@@ -14953,37 +14975,29 @@
         let values = components.map((val) => getNumber(val));
         switch (colorSpace.val) {
             case "display-p3":
-                // @ts-ignore
-                values = p32srgbvalues(...values);
+                values = p32srgbvalues(values[0], values[1], values[2], values[3]);
                 break;
             case "display-p3-linear":
-                // @ts-ignore
-                values = lp32srgbvalues(...values);
+                values = lp32srgbvalues(values[0], values[1], values[2], values[3]);
                 break;
             case "srgb-linear":
-                // @ts-ignore
-                values = lsrgb2srgbvalues(...values);
+                values = lsrgb2srgbvalues(values[0], values[1], values[2], values[3]);
                 break;
             case "prophoto-rgb":
-                // @ts-ignore
-                values = prophotorgb2srgbvalues(...values);
+                values = prophotorgb2srgbvalues(values[0], values[1], values[2], values[3]);
                 break;
             case "a98-rgb":
-                // @ts-ignore
-                values = a98rgb2srgbvalues(...values);
+                values = a98rgb2srgbvalues(values[0], values[1], values[2], values[3]);
                 break;
             case "rec2020":
-                // @ts-ignore
-                values = rec20202srgb(...values);
+                values = rec20202srgb(values[0], values[1], values[2], values[3]);
                 break;
             case "xyz":
             case "xyz-d65":
-                // @ts-ignore
-                values = xyz2srgb(...values);
+                values = xyz2srgb(values[0], values[1], values[2], values[3]);
                 break;
             case "xyz-d50":
-                // @ts-ignore
-                values = xyzd502srgb(...values);
+                values = xyzd502srgb(values[0], values[1], values[2], values[3]);
                 break;
         }
         if (values.length == 4) {
@@ -14992,7 +15006,11 @@
         return values;
     }
     function values2colortoken(values, to) {
+        // @ts-expect-error
         values = srgb2srgbcolorspace(values, to);
+        if (values == null) {
+            return null;
+        }
         const chi = [
             { typ: exports.EnumToken.NumberTokenType, val: values[0] },
             { typ: exports.EnumToken.NumberTokenType, val: values[1] },
@@ -15090,7 +15108,7 @@
         if (okLab1[3] != null || okLab2[3] != null) {
             diff.push((okLab1[3] ?? 1) - (okLab2[3] ?? 1));
         }
-        return toPrecisionValue(Math.hypot(...diff));
+        return toPrecisionValue(Math.hypot(diff[0], diff[1], diff[2], diff[3] ?? 0));
     }
     /**
      * Check if two colors are close in okLab space.
@@ -15439,7 +15457,9 @@
                 if (parts[i - 1].length == 1) {
                     parts[i - 1].push({ typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.PercentageTokenType, val: ((k - 1) * 100) / n });
                 }
-                parts[i - 1].push(...parts[i].slice(1));
+                for (let m = 1; m < parts[i].length; m++) {
+                    parts[i - 1].push(parts[i][m]);
+                }
                 parts.splice(i--, 1);
                 updated = true;
                 continue;
@@ -15463,7 +15483,9 @@
                 if (stops.length > 0) {
                     stops.push({ typ: exports.EnumToken.CommaTokenType });
                 }
-                stops.push(...parts[j]);
+                for (let m = 0; m < parts[j].length; m++) {
+                    stops.push(parts[j][m]);
+                }
             }
         }
         return stops;
@@ -15561,7 +15583,9 @@
                 if (parts[i - 1].length == 1) {
                     parts[i - 1].push({ typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.AngleTokenType, val: ((k - 1) * 100) / n, unit: "deg" });
                 }
-                parts[i - 1].push(...parts[i].slice(1));
+                for (let m = 1; m < parts[i].length; m++) {
+                    parts[i - 1].push(parts[i][m]);
+                }
                 parts.splice(i--, 1);
                 updated = true;
                 continue;
@@ -15584,7 +15608,9 @@
                 if (stops.length > 0) {
                     stops.push({ typ: exports.EnumToken.CommaTokenType });
                 }
-                stops.push(...parts[j]);
+                for (const token of parts[j]) {
+                    stops.push(token);
+                }
             }
         }
         return stops;
@@ -15880,11 +15906,10 @@
                     return true;
                 }
                 else {
-                    const keywords = ["from", "none"];
                     // @ts-ignore
                     if (["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch"].some((t) => equalsIgnoreCase(t, token.val))) {
-                        // @ts-ignore
-                        keywords.push("alpha", ...token.val.slice(-3).split(""));
+                        for (const keyword of token.val.slice(-3).split("")) {
+                        }
                     }
                     // @ts-ignore
                     for (const v of token.chi) {
@@ -16320,8 +16345,8 @@
                     //         typ: EnumToken.ResolutionTokenType,
                     //         unit: "x",
                     //     });
-                    // } 
-                    // else 
+                    // }
+                    // else
                     if (isPseudClass && value.typ == exports.EnumToken.PseudoElementTokenType) {
                         // @ts-ignore
                         value.typ = exports.EnumToken.PseudoClassTokenType;
@@ -16334,7 +16359,7 @@
             const set = new Set();
             const split = splitTokenList(tokens, [exports.EnumToken.CommaTokenType]);
             tokens.length = 0;
-            tokens.push(...split.reduce((acc, curr) => {
+            for (const token of split.reduce((acc, curr) => {
                 const str = curr.reduce((acc, curr) => acc + renderValue(curr), "");
                 if (set.has(str)) {
                     return acc;
@@ -16346,7 +16371,9 @@
                     });
                 }
                 return acc.concat(curr);
-            }, []));
+            }, [])) {
+                tokens.push(token);
+            }
         }
         return result;
     }
@@ -16564,52 +16591,28 @@
             // right bottom → left top	to top left
             const replacements = [];
             if (key === "left top left bottom") {
-                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "to" });
-                replacements.push({ typ: exports.EnumToken.WhitespaceTokenType });
-                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "bottom" });
+                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "to" }, { typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val: "bottom" });
             }
             else if (key === "left bottom left top") {
-                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "to" });
-                replacements.push({ typ: exports.EnumToken.WhitespaceTokenType });
-                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "top" });
+                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "to" }, { typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val: "top" });
             }
             else if (key === "left top right top") {
-                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "to" });
-                replacements.push({ typ: exports.EnumToken.WhitespaceTokenType });
-                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "right" });
+                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "to" }, { typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val: "right" });
             }
             else if (key === "right top left top") {
-                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "to" });
-                replacements.push({ typ: exports.EnumToken.WhitespaceTokenType });
-                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "left" });
+                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "to" }, { typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val: "left" });
             }
             else if (key === "left top right bottom") {
-                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "to" });
-                replacements.push({ typ: exports.EnumToken.WhitespaceTokenType });
-                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "bottom" });
-                replacements.push({ typ: exports.EnumToken.WhitespaceTokenType });
-                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "right" });
+                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "to" }, { typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val: "bottom" }, { typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val: "right" });
             }
             else if (key === "right top left bottom") {
-                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "to" });
-                replacements.push({ typ: exports.EnumToken.WhitespaceTokenType });
-                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "bottom" });
-                replacements.push({ typ: exports.EnumToken.WhitespaceTokenType });
-                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "left" });
+                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "to" }, { typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val: "bottom" }, { typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val: "left" });
             }
             else if (key === "left bottom right top") {
-                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "to" });
-                replacements.push({ typ: exports.EnumToken.WhitespaceTokenType });
-                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "top" });
-                replacements.push({ typ: exports.EnumToken.WhitespaceTokenType });
-                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "right" });
+                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "to" }, { typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val: "top" }, { typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val: "right" });
             }
             else if (key === "right bottom left top") {
-                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "to" });
-                replacements.push({ typ: exports.EnumToken.WhitespaceTokenType });
-                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "top" });
-                replacements.push({ typ: exports.EnumToken.WhitespaceTokenType });
-                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "left" });
+                replacements.push({ typ: exports.EnumToken.IdenTokenType, val: "to" }, { typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val: "top" }, { typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val: "left" });
             }
             tokens.splice(0, i, ...replacements);
             let checkStop = true;
@@ -16622,7 +16625,10 @@
                 }
                 if (tokens[i].typ === exports.EnumToken.FunctionTokenType) {
                     if (equalsIgnoreCase(tokens[i].val, "to")) {
-                        colorStop.push(tokens[checkStopIndex], ...tokens[i].chi);
+                        colorStop.push(tokens[checkStopIndex]);
+                        for (const token of tokens[i].chi) {
+                            colorStop.push(token);
+                        }
                         tokens.splice(checkStopIndex, i - checkStopIndex + 1);
                         i = checkStopIndex;
                         checkStop = false;
@@ -16650,12 +16656,16 @@
                 }
             }
             if (colorStop.length > 0) {
-                tokens.push(...colorStop);
+                for (const t of colorStop) {
+                    tokens.push(t);
+                }
             }
             if (type !== "") {
                 token.val = type;
                 token.chi.length = 0;
-                token.chi.push(...tokens);
+                for (const t of tokens) {
+                    token.chi.push(t);
+                }
             }
         }
         /**
@@ -16726,7 +16736,9 @@
                     i++;
                 }
             }
-            colorStops.push(...tokens.slice(i));
+            for (let m = i; m < tokens.length; m++) {
+                colorStops.push(tokens[m]);
+            }
             tokens.length = 0;
             if (form.length > 0 || size.length > 0) {
                 if (form.length === 0) {
@@ -16734,17 +16746,27 @@
                 }
                 if (size.length > 0) {
                     form.push({ typ: exports.EnumToken.WhitespaceTokenType });
-                    form.push(...size);
+                    for (const token of size) {
+                        form.push(token);
+                    }
                 }
                 if (positions.length > 0) {
-                    form.push({ typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val: "at" }, { typ: exports.EnumToken.WhitespaceTokenType }, ...positions);
+                    form.push({ typ: exports.EnumToken.WhitespaceTokenType }, { typ: exports.EnumToken.IdenTokenType, val: "at" }, { typ: exports.EnumToken.WhitespaceTokenType });
+                    for (const position of positions) {
+                        form.push(position);
+                    }
                 }
-                tokens.push(...form, { typ: exports.EnumToken.CommaTokenType });
+                for (const token of form) {
+                    tokens.push(token);
+                }
+                tokens.push({ typ: exports.EnumToken.CommaTokenType });
             }
             token.val = equalsIgnoreCase(token.val, "-webkit-repeating-radial-gradient")
                 ? "repeating-radial-gradient"
                 : "radial-gradient";
-            tokens.push(...colorStops);
+            for (const colorStop of colorStops) {
+                tokens.push(colorStop);
+            }
             return tokens;
         }
     }
@@ -16752,13 +16774,14 @@
     function inlineExpression(token) {
         const result = [];
         if (token.typ == exports.EnumToken.BinaryExpressionTokenType) {
+            const chi = inlineExpression(token.l);
+            chi.push({ typ: token.op });
+            for (const child of inlineExpression(token.r)) {
+                chi.push(child);
+            }
             result.push({
                 typ: exports.EnumToken.ParensTokenType,
-                chi: [
-                    ...inlineExpression(token.l),
-                    { typ: token.op },
-                    ...inlineExpression(token.r),
-                ],
+                chi,
             });
         }
         else {
@@ -17070,7 +17093,9 @@
                                 // @ts-ignore
                                 acc.push({ ...this.config.separator, typ: exports.EnumToken.LiteralTokenType });
                             }
-                            acc.push(...curr);
+                            for (const token of curr) {
+                                acc.push(token);
+                            }
                             return acc;
                         }, []),
                     },
@@ -18792,10 +18817,17 @@
                                 else {
                                     if (current == tokens[property].length) {
                                         tokens[property].push([]);
-                                        tokens[property][current].push(...defaults);
+                                        for (let i = 0; i < defaults.length; i++) {
+                                            tokens[property][current].push(defaults[i]);
+                                        }
                                     }
                                     else {
-                                        tokens[property][current].push({ typ: exports.EnumToken.WhitespaceTokenType }, ...defaults);
+                                        tokens[property][current].push({
+                                            typ: exports.EnumToken.WhitespaceTokenType,
+                                        });
+                                        for (let i = 0; i < defaults.length; i++) {
+                                            tokens[property][current].push(defaults[i]);
+                                        }
                                     }
                                 }
                             }
@@ -18812,7 +18844,9 @@
                                     if (acc.length > 0) {
                                         acc.push({ ...separator });
                                     }
-                                    acc.push(...curr);
+                                    for (let i = 0; i < curr.length; i++) {
+                                        acc.push(curr[i]);
+                                    }
                                     return acc;
                                 }, []),
                             });
@@ -18947,7 +18981,9 @@
                     };
                     const values = [...this.declarations.values()].reduce((acc, curr) => {
                         if (curr instanceof PropertySet) {
-                            acc.push(...curr);
+                            for (const declaration of curr) {
+                                acc.push(declaration);
+                            }
                         }
                         else {
                             acc.push(curr);
@@ -19169,7 +19205,7 @@
                                 else if (acc[i].length > 0) {
                                     acc[i].push({ typ: exports.EnumToken.WhitespaceTokenType });
                                 }
-                                acc[i].push(...values.reduce((acc, curr) => {
+                                for (const v of values.reduce((acc, curr) => {
                                     if (acc.length > 0) {
                                         // @ts-ignore
                                         acc.push({
@@ -19183,7 +19219,9 @@
                                     // @ts-ignore
                                     acc.push(curr);
                                     return acc;
-                                }, []));
+                                }, [])) {
+                                    acc[i].push(v);
+                                }
                             }
                         }
                         return acc;
@@ -19201,7 +19239,9 @@
                                 return acc;
                             }, []));
                         }
-                        acc.push(...curr);
+                        for (const c of curr) {
+                            acc.push(c);
+                        }
                         return acc;
                     }, []);
                     if (this.config.mapping != null) {
@@ -19269,10 +19309,13 @@
         }
         matchTypes(declaration) {
             const patterns = this.pattern.slice();
-            const values = [...declaration.val];
+            const values = [];
             let i;
             let j;
             const map = new Map();
+            for (i = 0; i < declaration.val.length; i++) {
+                values.push(declaration.val[i]);
+            }
             for (i = 0; i < patterns.length; i++) {
                 for (j = 0; j < values.length; j++) {
                     if (!map.has(patterns[i])) {
@@ -19503,10 +19546,7 @@
             let syntaxRules = null;
             let result;
             for (const declaration of declarations) {
-                name =
-                    declaration.typ != exports.EnumToken.DeclarationNodeType
-                        ? null
-                        : declaration.nam;
+                name = declaration.typ != exports.EnumToken.DeclarationNodeType ? null : declaration.nam;
                 if (declaration[STATE] == exports.EnumAstNodeStatus.Invalid ||
                     declaration[STATE] == exports.EnumAstNodeStatus.Unknown ||
                     declaration[STATE] == exports.EnumAstNodeStatus.ValidationFailed ||
@@ -19669,7 +19709,9 @@
             }
             if (values != declaration.val) {
                 declaration.val.length = 0;
-                declaration.val.push(...values);
+                for (const v of values) {
+                    declaration.val.push(v);
+                }
             }
         }
         [Symbol.iterator]() {
@@ -19742,10 +19784,14 @@
                 // @ts-ignore
                 const node = ast.chi[l];
                 if (node.typ == exports.EnumToken.DeclarationNodeType) {
-                    properties.add(...ast.chi.slice(k, l + 1));
+                    for (let m = k; m <= l; m++) {
+                        properties.add(ast.chi[m]);
+                    }
                 }
                 else {
-                    rules.push(...ast.chi.slice(k, l + 1));
+                    for (let m = k; m <= l; m++) {
+                        rules.push(ast.chi[m]);
+                    }
                 }
                 k = l;
             }
@@ -19913,22 +19959,34 @@
     function inverse(matrix) {
         // Create augmented matrix [matrix | identity]
         let augmented = [
-            ...matrix.slice(0, 4),
+            matrix[0],
+            matrix[1],
+            matrix[2],
+            matrix[3],
             1,
             0,
             0,
             0,
-            ...matrix.slice(4, 8),
+            matrix[4],
+            matrix[5],
+            matrix[6],
+            matrix[7],
             0,
             1,
             0,
             0,
-            ...matrix.slice(8, 12),
+            matrix[8],
+            matrix[9],
+            matrix[10],
+            matrix[11],
             0,
             0,
             1,
             0,
-            ...matrix.slice(12, 16),
+            matrix[12],
+            matrix[13],
+            matrix[14],
+            matrix[15],
             0,
             0,
             0,
@@ -20024,11 +20082,11 @@
             row1[0] * row2[1] - row1[1] * row2[0],
         ];
         // Compute scale
-        const scaleX = Math.hypot(...row0);
+        const scaleX = Math.hypot(row0[0], row0[1], row0[2]);
         const row0Norm = normalize$1(row0);
         const skewXY = dot(row0Norm, row1);
         const row1Proj = [row1[0] - skewXY * row0Norm[0], row1[1] - skewXY * row0Norm[1], row1[2] - skewXY * row0Norm[2]];
-        const scaleY = Math.hypot(...row1Proj);
+        const scaleY = Math.hypot(row1Proj[0], row1Proj[1], row1Proj[2]);
         const row1Norm = normalize$1(row1Proj);
         const skewXZ = dot(row0Norm, row2);
         const skewYZ = dot(row1Norm, row2);
@@ -20039,7 +20097,7 @@
         ];
         const row2Norm = normalize$1(row2Proj);
         const determinant = row0[0] * cross[0] + row0[1] * cross[1] + row0[2] * cross[2];
-        const scaleZ = Math.hypot(...row2Proj) * (determinant < 0 ? -1 : 1);
+        const scaleZ = Math.hypot(row2Proj[0], row2Proj[1], row2Proj[2]) * (determinant < 0 ? -1 : 1);
         // Build rotation matrix from orthonormalized vectors
         const r00 = row0Norm[0], r01 = row1Norm[0], r02 = row2Norm[0];
         const r10 = row0Norm[1], r11 = row1Norm[1], r12 = row2Norm[1];
@@ -20715,6 +20773,7 @@
         stripCommaToken(transformLists);
         let matrix = identity();
         let mat;
+        let transforms;
         const cumulative = [];
         for (const transformList of splitTransformList(transformLists)) {
             mat = computeMatrix(transformList, identity());
@@ -20722,7 +20781,10 @@
                 return null;
             }
             matrix = multiply(matrix, mat);
-            cumulative.push(...(minify$1(mat) ?? transformList));
+            transforms = minify$1(mat) ?? transformList;
+            for (let i = 0; i < transforms.length; i++) {
+                cumulative.push(transforms[i]);
+            }
         }
         const serialized = serialize(matrix);
         if (cumulative.length > 0) {
@@ -20864,7 +20926,7 @@
                             if (values.length != 3) {
                                 return null;
                             }
-                            matrixVar = scale3d(...values, matrixVar);
+                            matrixVar = scale3d(values[0], values[1], values[2], matrixVar);
                             break;
                         }
                         if (transformList[i].val == "scale") {
@@ -21733,7 +21795,9 @@
                         typ: exports.EnumToken.CommaTokenType,
                     });
                 }
-                acc.push(...t);
+                for (const token of t) {
+                    acc.push(token);
+                }
                 return acc;
             }, []));
         }
@@ -21813,7 +21877,9 @@
                         node.sel === previous.sel) {
                         // do not merge keyframes
                         // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@keyframes#resolving_duplicates
-                        previous.chi.push(...node.chi);
+                        for (const child of node.chi) {
+                            previous.chi.push(child);
+                        }
                         // @ts-ignore
                         ast.chi.splice(i, 1);
                         previous = ast?.chi?.[nodeIndex] ?? null;
@@ -21845,7 +21911,9 @@
                             minifyAtRuleMedia(slice);
                             if (slice.length !== node[TOKENS].length) {
                                 node[TOKENS].length = 0;
-                                node[TOKENS].push(...slice);
+                                for (const token of slice) {
+                                    node[TOKENS].push(token);
+                                }
                                 node.val = slice.reduce((acc, curr, index, arr) => acc +
                                     (curr.typ === exports.EnumToken.CommentTokenType ||
                                         (curr.typ === exports.EnumToken.WhitespaceTokenType &&
@@ -21897,8 +21965,9 @@
                         previous.nam === node.nam &&
                         previous.val === node.val) {
                         if ("chi" in node) {
-                            // @ts-ignore
-                            previous.chi.push(...node.chi);
+                            for (const child of node.chi) {
+                                previous.chi.push(child);
+                            }
                             if (!hasDeclaration(previous)) {
                                 context.nodes.delete(previous);
                                 doMinify(previous, options, recursive, errors, nestingContent, context);
@@ -22113,8 +22182,15 @@
                                         node.nam !== "font-face" &&
                                         // @ts-ignore
                                         node.nam === previous.nam)) {
+                                    const array = [];
+                                    for (let i = 0; i < previous.chi.length; i++) {
+                                        array.push(previous.chi[i]);
+                                    }
+                                    for (let i = 0; i < node.chi.length; i++) {
+                                        array.push(node.chi[i]);
+                                    }
                                     // @ts-ignore
-                                    node.chi.unshift(...previous.chi);
+                                    node.chi = array;
                                     doMinify(node, options, recursive, errors, nestingContent, context);
                                     ast.chi.splice(nodeIndex, 1);
                                     previous = ast.chi[--i];
@@ -22463,7 +22539,9 @@
                     if (acc.length > 0) {
                         acc.push(",");
                     }
-                    acc.push(...curr);
+                    for (const c of curr) {
+                        acc.push(c);
+                    }
                     return acc;
                 }, []);
             }
@@ -22632,9 +22710,13 @@
             [RAW]: match.match.map((t) => t.slice()),
         };
         if (pSel == "&" || pSel === "") {
-            wrapper.chi.push(...previous.chi);
+            for (const child of previous.chi) {
+                wrapper.chi.push(child);
+            }
             if (nSel == "&" || nSel === "") {
-                wrapper.chi.push(...node.chi);
+                for (const child of node.chi) {
+                    wrapper.chi.push(child);
+                }
             }
             else {
                 wrapper.chi.push(node);
@@ -22873,7 +22955,9 @@
                         acc.push(",");
                     }
                     unique.add(sig);
-                    acc.push(...curr);
+                    for (const c of curr) {
+                        acc.push(c);
+                    }
                 }
                 return acc;
             }, []);
@@ -22911,9 +22995,8 @@
                 children = expandRule(node);
                 for (const child of children) {
                     child[PARENT] = result;
+                    result.chi.push(child);
                 }
-                // @ts-ignore
-                result.chi.push(...children);
             }
             else if (node.typ == exports.EnumToken.AtRuleNodeType && "chi" in node) {
                 let hasRule = false;
@@ -23033,6 +23116,13 @@
                         }
                         if (withCompound.length > 0) {
                             if (withCompound.every((t) => t[0] == "&" && t.indexOf("&", 1) == -1)) {
+                                // for (const w of withCompound) {
+                                //     for (let m = 0; m < w.length; m++) {
+                                //         // for (let n = 0; n < w[m].length; n++) {
+                                //         withoutCompound.push(w[m].slice(1));
+                                //         // }
+                                //     }
+                                // }
                                 withoutCompound.push(...withCompound.map((t) => t.slice(1)));
                                 withCompound.length = 0;
                             }
@@ -23072,7 +23162,9 @@
                         rule.sel = selectors.reduce((acc, curr) => (curr.length == 0 ? acc : acc + (acc.length > 0 ? "," : "") + curr), "");
                     }
                     ast.chi.splice(i--, 1);
-                    result.push(...expandRule(rule));
+                    for (const s of expandRule(rule)) {
+                        result.push(s);
+                    }
                 }
                 else if (ast.chi[i].typ == exports.EnumToken.AtRuleNodeType) {
                     let astAtRule = ast.chi[i];
@@ -23107,13 +23199,19 @@
                                 values.push(r);
                             }
                             else if (r.typ == exports.EnumToken.RuleNodeType) {
-                                // @ts-ignore
-                                astAtRule.chi.push(...expandRule(r));
+                                for (const rule of expandRule(r)) {
+                                    // @ts-ignore
+                                    astAtRule.chi.push(rule);
+                                }
                             }
                         }
                     }
-                    // @ts-ignore
-                    result.push(...(astAtRule.chi.length > 0 ? [astAtRule].concat(values) : values));
+                    if (astAtRule.chi.length > 0) {
+                        result.push(astAtRule);
+                    }
+                    for (const r of values) {
+                        result.push(r);
+                    }
                     ast.chi.splice(i--, 1);
                 }
             }
@@ -24058,7 +24156,7 @@
                     if (!sourcemaps.sources.includes(srcId)) {
                         sourcemaps.sources.push(srcId);
                     }
-                    sourcemaps.maps.push([newLine, newColumn, srcId, ...offsets]);
+                    sourcemaps.maps.push([newLine, newColumn, srcId, offsets[0], offsets[1]]);
                 }
             }
             else {
@@ -24075,7 +24173,7 @@
                 if (!sourcemaps.sources.includes(srcId)) {
                     sourcemaps.sources.push(srcId);
                 }
-                sourcemaps.maps.push([newLine, newColumn, srcId, ...offsets]);
+                sourcemaps.maps.push([newLine, newColumn, srcId, offsets[0], offsets[1]]);
             }
             // console.error([newLine, newColumn, srcId, ...offsets, EnumToken[node.typ], node.nam ?? node.sel]);
         }
@@ -24544,7 +24642,9 @@
                                     // }
                                 }
                                 if (slice[i]?.typ === exports.EnumToken.ColorTokenType) {
-                                    slice.push(...reduceColorStops(slice.splice(i, slice.length - i)));
+                                    for (const token of reduceColorStops(slice.splice(i, slice.length - i))) {
+                                        slice.push(token);
+                                    }
                                 }
                             }
                             break;
@@ -24735,32 +24835,45 @@
                                 }
                                 const result = [];
                                 if (form.length > 0) {
-                                    result.push(...form);
+                                    for (const token of form) {
+                                        result.push(token);
+                                    }
                                 }
                                 if (size.length > 0) {
                                     if (result.length > 0) {
                                         result.push({ typ: exports.EnumToken.WhitespaceTokenType });
                                     }
-                                    result.push(...size);
+                                    for (const token of size) {
+                                        result.push(token);
+                                    }
                                 }
                                 if (positions.length > 0) {
                                     if (result.length > 0) {
                                         result.push({ typ: exports.EnumToken.WhitespaceTokenType });
                                     }
-                                    result.push({ typ: exports.EnumToken.IdenTokenType, val: "at" }, { typ: exports.EnumToken.WhitespaceTokenType }, ...positions);
+                                    result.push({ typ: exports.EnumToken.IdenTokenType, val: "at" }, { typ: exports.EnumToken.WhitespaceTokenType });
+                                    for (const token of positions) {
+                                        result.push(token);
+                                    }
                                 }
                                 if (colorSpaceDef.length > 0) {
                                     if (result.length > 0) {
                                         result.push({ typ: exports.EnumToken.WhitespaceTokenType });
                                     }
-                                    result.push(...colorSpaceDef);
+                                    for (const token of colorSpaceDef) {
+                                        result.push(token);
+                                    }
                                 }
                                 if (result.length > 0) {
                                     result.push({ typ: exports.EnumToken.CommaTokenType });
                                 }
-                                result.push(...reduceColorStops(slice.slice(i)));
+                                for (const token of reduceColorStops(slice.slice(i))) {
+                                    result.push(token);
+                                }
                                 slice.length = 0;
-                                slice.push(...result);
+                                for (const token of result) {
+                                    slice.push(token);
+                                }
                             }
                             break;
                         case "conic-gradient":
@@ -24865,24 +24978,36 @@
                                         if (angles.length > 0) {
                                             angles.push({ typ: exports.EnumToken.WhitespaceTokenType });
                                         }
-                                        angles.push({ typ: exports.EnumToken.IdenTokenType, val: "at" }, { typ: exports.EnumToken.WhitespaceTokenType }, ...positions);
+                                        angles.push({ typ: exports.EnumToken.IdenTokenType, val: "at" }, { typ: exports.EnumToken.WhitespaceTokenType });
+                                        for (const position of positions) {
+                                            angles.push(position);
+                                        }
                                     }
                                 }
                                 if (angles.length > 0) {
-                                    result.push(...angles, { typ: exports.EnumToken.CommaTokenType });
+                                    for (const angle of angles) {
+                                        result.push(angle);
+                                    }
+                                    result.push({ typ: exports.EnumToken.CommaTokenType });
                                 }
                                 if (colorSpaceDef.length > 0) {
                                     if (colorSpaceDef.length > 0) {
                                         if (result.length > 0) {
                                             result.push({ typ: exports.EnumToken.WhitespaceTokenType });
                                         }
-                                        result.push(...colorSpaceDef);
+                                        for (const token of colorSpaceDef) {
+                                            result.push(token);
+                                        }
                                     }
                                     result.push({ typ: exports.EnumToken.CommaTokenType });
                                 }
-                                result.push(...reduceConicColorStops(slice.slice(i)));
+                                for (const token of reduceConicColorStops(slice.slice(i))) {
+                                    result.push(token);
+                                }
                                 slice.length = 0;
-                                slice.push(...result);
+                                for (let j = 0; j < result.length; j++) {
+                                    slice.push(result[j]);
+                                }
                             }
                             break;
                     }
@@ -25222,118 +25347,63 @@
         return values;
     }
 
-    const SymbolsMapTokens = {
-        "+": exports.EnumToken.Plus,
-        "=": exports.EnumToken.DelimTokenType,
-        "|": exports.EnumToken.Pipe,
-        "||": exports.EnumToken.ColumnCombinatorTokenType,
-        "|=": exports.EnumToken.DashMatchTokenType,
-        "&": exports.EnumToken.NestingSelectorTokenType,
-        "*": exports.EnumToken.Star,
-        "*=": exports.EnumToken.ContainMatchTokenType,
-        "~": exports.EnumToken.Tilda,
-        "~=": exports.EnumToken.IncludeMatchTokenType,
-        "^=": exports.EnumToken.StartMatchTokenType,
-        "$=": exports.EnumToken.EndMatchTokenType,
-        ",": exports.EnumToken.Comma,
-        ":": exports.EnumToken.ColonTokenType,
-        "::": exports.EnumToken.DoubleColonTokenType,
-        ";": exports.EnumToken.SemiColonTokenType,
-        "(": exports.EnumToken.StartParensTokenType,
-        ")": exports.EnumToken.EndParensTokenType,
-        "[": exports.EnumToken.AttrStartTokenType,
-        "]": exports.EnumToken.AttrEndTokenType,
-        "{": exports.EnumToken.BlockStartTokenType,
-        "}": exports.EnumToken.BlockEndTokenType,
-        "<=": exports.EnumToken.LteTokenType,
-        ">": exports.EnumToken.GtTokenType,
-        ">=": exports.EnumToken.GteTokenType,
-        " ": exports.EnumToken.Whitespace,
-        "\t": exports.EnumToken.Whitespace,
-        "\r": exports.EnumToken.Whitespace,
-        "\n": exports.EnumToken.Whitespace,
-        "\f": exports.EnumToken.Whitespace,
-        ...flexUnits.reduce((acc, curr) => {
-            acc[curr] = exports.EnumToken.FlexTokenType;
-            return acc;
-        }, Object.create(null)),
-        ...dimensionUnits.reduce((acc, curr) => {
-            acc[curr] = exports.EnumToken.LengthTokenType;
-            return acc;
-        }, Object.create(null)),
-        ...resolutionUnits.reduce((acc, curr) => {
-            acc[curr] = exports.EnumToken.ResolutionTokenType;
-            return acc;
-        }, Object.create(null)),
-        ...angleUnits.reduce((acc, curr) => {
-            acc[curr] = exports.EnumToken.AngleTokenType;
-            return acc;
-        }, Object.create(null)),
-        ...timeUnits.reduce((acc, curr) => {
-            acc[curr] = exports.EnumToken.TimeTokenType;
-            return acc;
-        }, Object.create(null)),
-        ...frequencyUnits.reduce((acc, curr) => {
-            acc[curr] = exports.EnumToken.FrequencyTokenType;
-            return acc;
-        }, Object.create(null)),
-        ...pseudoElements.reduce((acc, curr) => {
-            acc[curr] = exports.EnumToken.PseudoElementTokenType;
-            return acc;
-        }, Object.create(null)),
-        ...containerFunc.reduce((acc, curr) => {
-            acc[curr + "("] = exports.EnumToken.ContainerFunctionTokenDefType;
-            return acc;
-        }, Object.create(null)),
-        ...urlFunc.reduce((acc, curr) => {
-            acc[curr + "("] = exports.EnumToken.UrlFunctionTokenDefType;
-            return acc;
-        }, Object.create(null)),
-        ...gridTemplateFunc.reduce((acc, curr) => {
-            acc[curr + "("] = exports.EnumToken.GridTemplateFuncTokenDefType;
-            return acc;
-        }, Object.create(null)),
-        ...imageFunc.reduce((acc, curr) => {
-            acc[curr + "("] = exports.EnumToken.ImageFunctionTokenDefType;
-            return acc;
-        }, Object.create(null)),
-        ...timelineFunc.reduce((acc, curr) => {
-            acc[curr + "("] = exports.EnumToken.TimelineFunctionTokenDefType;
-            return acc;
-        }, Object.create(null)),
-        // ...generalEnclosedFunc.reduce((acc, curr: string) => {
-        //     acc[curr + "("] = EnumToken.GeneralEnclosedFunctionTokenDefType;
-        //     return acc;
-        // }, Object.create(null)),
-        ...supportFunc.reduce((acc, curr) => {
-            acc[curr + "("] = exports.EnumToken.SupportsFunctionTokenDefType;
-            return acc;
-        }, Object.create(null)),
-        ...timingFunc.reduce((acc, curr) => {
-            acc[curr + "("] = exports.EnumToken.TimingFunctionTokenDefType;
-            return acc;
-        }, Object.create(null)),
-        ...colorsFunc.reduce((acc, curr) => {
-            acc[curr + "("] = exports.EnumToken.ColorFunctionTokenDefType;
-            return acc;
-        }, Object.create(null)),
-        ...mathFuncs.reduce((acc, curr) => {
-            acc[curr + "("] = exports.EnumToken.MathFunctionTokenDefType;
-            return acc;
-        }, Object.create(null)),
-        ...transformFunctions.reduce((acc, curr) => {
-            acc[curr.toLowerCase() + "("] = exports.EnumToken.TransformFunctionTokenDefType;
-            return acc;
-        }, Object.create(null)),
-        ...whenElseFunc.reduce((acc, curr) => {
-            acc[curr + "("] = exports.EnumToken.WhenElseFunctionTokenDefType;
-            return acc;
-        }, Object.create(null)),
-        ...wildCardFuncs.reduce((acc, curr) => {
-            acc[curr + "("] = exports.EnumToken.WildCardFunctionTokenDefType;
-            return acc;
-        }, Object.create(null)),
-    };
+    const SymbolsMapTokens = Object.create(null);
+    function assignTokenMap(entries, tokenType, suffix = "", lowercase = false) {
+        for (const entry of entries) {
+            SymbolsMapTokens[(lowercase ? entry.toLowerCase() : entry) + suffix] = tokenType;
+        }
+    }
+    SymbolsMapTokens[""] = exports.EnumToken.DelimTokenType;
+    SymbolsMapTokens["+"] = exports.EnumToken.Plus;
+    SymbolsMapTokens["="] = exports.EnumToken.DelimTokenType;
+    SymbolsMapTokens["|"] = exports.EnumToken.Pipe;
+    SymbolsMapTokens["||"] = exports.EnumToken.ColumnCombinatorTokenType;
+    SymbolsMapTokens["|="] = exports.EnumToken.DashMatchTokenType;
+    SymbolsMapTokens["&"] = exports.EnumToken.NestingSelectorTokenType;
+    SymbolsMapTokens["*"] = exports.EnumToken.Star;
+    SymbolsMapTokens["*="] = exports.EnumToken.ContainMatchTokenType;
+    SymbolsMapTokens["~"] = exports.EnumToken.Tilda;
+    SymbolsMapTokens["~="] = exports.EnumToken.IncludeMatchTokenType;
+    SymbolsMapTokens["^="] = exports.EnumToken.StartMatchTokenType;
+    SymbolsMapTokens["$="] = exports.EnumToken.EndMatchTokenType;
+    SymbolsMapTokens[","] = exports.EnumToken.Comma;
+    SymbolsMapTokens[":"] = exports.EnumToken.ColonTokenType;
+    SymbolsMapTokens["::"] = exports.EnumToken.DoubleColonTokenType;
+    SymbolsMapTokens[";"] = exports.EnumToken.SemiColonTokenType;
+    SymbolsMapTokens["("] = exports.EnumToken.StartParensTokenType;
+    SymbolsMapTokens[")"] = exports.EnumToken.EndParensTokenType;
+    SymbolsMapTokens["["] = exports.EnumToken.AttrStartTokenType;
+    SymbolsMapTokens["]"] = exports.EnumToken.AttrEndTokenType;
+    SymbolsMapTokens["{"] = exports.EnumToken.BlockStartTokenType;
+    SymbolsMapTokens["}"] = exports.EnumToken.BlockEndTokenType;
+    SymbolsMapTokens["<="] = exports.EnumToken.LteTokenType;
+    SymbolsMapTokens[">"] = exports.EnumToken.GtTokenType;
+    SymbolsMapTokens[">="] = exports.EnumToken.GteTokenType;
+    SymbolsMapTokens[" "] = exports.EnumToken.Whitespace;
+    SymbolsMapTokens["\t"] = exports.EnumToken.Whitespace;
+    SymbolsMapTokens["\r"] = exports.EnumToken.Whitespace;
+    SymbolsMapTokens["\n"] = exports.EnumToken.Whitespace;
+    SymbolsMapTokens["\f"] = exports.EnumToken.Whitespace;
+    assignTokenMap(flexUnits, exports.EnumToken.FlexTokenType);
+    assignTokenMap(dimensionUnits, exports.EnumToken.LengthTokenType);
+    assignTokenMap(resolutionUnits, exports.EnumToken.ResolutionTokenType);
+    assignTokenMap(angleUnits, exports.EnumToken.AngleTokenType);
+    assignTokenMap(timeUnits, exports.EnumToken.TimeTokenType);
+    assignTokenMap(frequencyUnits, exports.EnumToken.FrequencyTokenType);
+    assignTokenMap(pseudoElements, exports.EnumToken.PseudoElementTokenType);
+    assignTokenMap(containerFunc, exports.EnumToken.ContainerFunctionTokenDefType, "(");
+    assignTokenMap(urlFunc, exports.EnumToken.UrlFunctionTokenDefType, "(");
+    assignTokenMap(gridTemplateFunc, exports.EnumToken.GridTemplateFuncTokenDefType, "(");
+    assignTokenMap(imageFunc, exports.EnumToken.ImageFunctionTokenDefType, "(");
+    assignTokenMap(timelineFunc, exports.EnumToken.TimelineFunctionTokenDefType, "(");
+    assignTokenMap(supportFunc, exports.EnumToken.SupportsFunctionTokenDefType, "(");
+    assignTokenMap(timingFunc, exports.EnumToken.TimingFunctionTokenDefType, "(");
+    assignTokenMap(colorsFunc, exports.EnumToken.ColorFunctionTokenDefType, "(");
+    assignTokenMap(mathFuncs, exports.EnumToken.MathFunctionTokenDefType, "(");
+    assignTokenMap(transformFunctions, exports.EnumToken.TransformFunctionTokenDefType, "(", true);
+    assignTokenMap(whenElseFunc, exports.EnumToken.WhenElseFunctionTokenDefType, "(");
+    assignTokenMap(wildCardFuncs, exports.EnumToken.WildCardFunctionTokenDefType, "(");
+    const SymbolsMapTokensKeys = Object.keys(SymbolsMapTokens);
     // do not capture the value
     const hintsEnum = new Set([
         exports.EnumToken.CommaTokenType,
@@ -25346,7 +25416,6 @@
         exports.EnumToken.ColonTokenType,
         exports.EnumToken.EOFTokenType,
     ]);
-    const SymbolsMapTokensKeys = Object.keys(SymbolsMapTokens);
     var TokenMap;
     (function (TokenMap) {
         TokenMap[TokenMap["EXCLAMATION"] = 33] = "EXCLAMATION";
@@ -25455,20 +25524,67 @@
         }
         return null;
     }
+    /**
+     * tokenizer class
+     */
     class Tokenizer {
+        /**
+         * token type
+         */
         typ = null;
+        /**
+         * token kind
+         */
         kin = null;
+        /**
+         * token name
+         */
         nam = null;
+        /**
+         * token value
+         */
         val = null;
+        /**
+         * token unit
+         */
         unit = null;
+        /**
+         * source id
+         */
         srcId = null;
+        /**
+         * token start
+         */
         sta = null;
+        /**
+         * token end
+         */
         end = null;
+        /**
+         * bytes in
+         */
         bytesIn = null;
+        /**
+         * decode string
+         */
         decodeString = null;
+        /**
+         * token slice
+         */
         slice = null;
+        /**
+         * source file
+         */
         source = null;
+        /**
+         * token hint
+         */
         hint = null;
+        /**
+         *
+         * @param parseInfo
+         * @returns
+         */
         *consumeString(parseInfo) {
             const quote = this.next(parseInfo).charCodeAt(0);
             let charCode;
@@ -25527,6 +25643,11 @@
             yield this.makeToken(parseInfo, exports.EnumToken.StringTokenType);
             // return result;
         }
+        /**
+         *
+         * @param parseInfo
+         * @returns
+         */
         *consumeURLToken(parseInfo) {
             const quote = this.next(parseInfo).charCodeAt(0);
             let charCode;
@@ -25860,6 +25981,11 @@
             }
             return 0;
         }
+        /**
+         *
+         * @param parseInfo
+         * @returns
+         */
         consumeIdentToken(parseInfo) {
             let position = parseInfo.currentPosition - parseInfo.offset;
             let offset = position;
@@ -25929,6 +26055,11 @@
             }
             return position - offset;
         }
+        /**
+         *
+         * @param parseInfo
+         * @returns
+         */
         consumeColor(parseInfo) {
             let position = parseInfo.currentPosition - parseInfo.offset;
             let offset = position;
@@ -25964,6 +26095,13 @@
             }
             return 0;
         }
+        /**
+         *
+         * @param parseInfo
+         * @param hint
+         * @param options
+         * @returns
+         */
         makeToken(parseInfo, hint, options) {
             let val = null;
             this.typ = null;
@@ -26128,6 +26266,12 @@
             parseInfo.position = parseInfo.currentPosition;
             return this;
         }
+        /**
+         *
+         * @param parseInfo
+         * @param input
+         * @returns
+         */
         equalsIgnoreCase(parseInfo, input) {
             let position = parseInfo.currentPosition - parseInfo.offset;
             let ca;
@@ -26146,6 +26290,12 @@
             }
             return true;
         }
+        /**
+         *
+         * @param parseInfo
+         * @param input
+         * @returns
+         */
         match(parseInfo, input) {
             let position = parseInfo.currentPosition - parseInfo.offset;
             for (let i = 0; i < input.length; i++) {
@@ -26155,6 +26305,12 @@
             }
             return true;
         }
+        /**
+         *
+         * @param parseInfo
+         * @param count
+         * @returns
+         */
         peek(parseInfo, count = 1) {
             if (count == 1) {
                 return parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset);
@@ -26162,6 +26318,12 @@
             const position = parseInfo.currentPosition - parseInfo.offset;
             return parseInfo.stream.slice(position, position + count);
         }
+        /**
+         *
+         * @param parseInfo
+         * @param count
+         * @returns
+         */
         next(parseInfo, count = 1) {
             let position = parseInfo.currentPosition - parseInfo.offset;
             let char = count == 1 ? parseInfo.stream.charAt(position) : parseInfo.stream.slice(position, position + count);
@@ -26186,6 +26348,13 @@
             parseInfo.currentPosition += char.length;
             return char;
         }
+        /**
+         *
+         * @param parseInfo
+         * @param start
+         * @param end
+         * @returns
+         */
         isIdentToken(parseInfo, start, end) {
             let j = parseInfo.currentPosition - parseInfo.offset;
             let i = parseInfo.position - parseInfo.offset;
@@ -26244,6 +26413,11 @@
             }
             return true;
         }
+        /**
+         *
+         * @param parseInfo
+         * @returns
+         */
         isPseudo(parseInfo) {
             let position = parseInfo.currentPosition - parseInfo.offset;
             let endPosition = parseInfo.currentPosition - parseInfo.offset;
@@ -26256,6 +26430,12 @@
                 ? this.isIdentToken(parseInfo, 2)
                 : this.isIdentToken(parseInfo, 1);
         }
+        /**
+         *
+         * @param parseInfo
+         * @param input
+         * @returns
+         */
         startsWith(parseInfo, input) {
             let i = 0;
             let j = input.length;
@@ -26267,6 +26447,11 @@
             }
             return true;
         }
+        /**
+         *
+         * @param parseInfo
+         * @returns
+         */
         isURLToken(parseInfo) {
             let i = parseInfo.position - parseInfo.offset;
             let c;
@@ -26864,7 +27049,9 @@
                 if (acc.length > 0) {
                     acc.push({ typ: exports.EnumToken.CommaTokenType });
                 }
-                acc.push(...curr);
+                for (const c of curr) {
+                    acc.push(c);
+                }
                 return acc;
             }, []));
             return {
@@ -27484,7 +27671,9 @@
                     }
                 }
                 if (!doNotValidate && !result?.success && result.errors.length > 0) {
-                    errors.push(...result.errors);
+                    for (index = 0; index < result.errors.length; index++) {
+                        errors.push(result.errors[index]);
+                    }
                 }
             }
         }
@@ -27923,7 +28112,9 @@
                                 scopes.pop();
                                 currentScope = scopes.at(-1);
                                 if (!result.success) {
-                                    errors.push(...result.errors);
+                                    for (const error of result.errors) {
+                                        errors.push(error);
+                                    }
                                     success = false;
                                 }
                                 break;
@@ -28130,7 +28321,9 @@
                     parts.splice(parts.indexOf(stream), 1);
                 }
                 stream.length = 0;
-                stream.push(...trimArray(tokens));
+                for (const t of trimArray(tokens)) {
+                    stream.push(t);
+                }
             }
         }
         stream.length = 0;
@@ -28140,7 +28333,9 @@
             if (acc.length > 0) {
                 acc.push({ typ: exports.EnumToken.CommaTokenType });
             }
-            acc.push(...b);
+            for (const t of b) {
+                acc.push(t);
+            }
             return acc;
         }, []));
         return {
@@ -28358,7 +28553,9 @@
             }
         }
         stream.length = 0;
-        stream.push(...trimArray(tokens));
+        for (const token of trimArray(tokens)) {
+            stream.push(token);
+        }
         return { success, errors };
     }
 
@@ -28509,7 +28706,9 @@
             {
                 const result = parseAtRuleSupportSyntax(tokens[tokens.length - 1].chi, context, options);
                 if (!result.success && result.errors.length > 0) {
-                    errors.push(...result.errors);
+                    for (const error of result.errors) {
+                        errors.push(error);
+                    }
                     return {
                         success: false,
                         errors,
@@ -28519,15 +28718,21 @@
         }
         const splice = stream.splice(index, stream.length - index);
         const sliced = parseMediaqueryList(splice, options);
-        tokens.push(...splice);
+        for (const sp of splice) {
+            tokens.push(sp);
+        }
         if (sliced.errors.length > 0) {
-            errors.push(...sliced.errors);
+            for (const error of sliced.errors) {
+                errors.push(error);
+            }
         }
         if (!sliced.success) {
             success = false;
         }
         stream.length = 0;
-        stream.push(...trimArray(tokens));
+        for (const token of trimArray(tokens)) {
+            stream.push(token);
+        }
         return {
             success,
             errors,
@@ -28644,7 +28849,9 @@
             }
         }
         stream.length = 0;
-        stream.push(...trimArray(tokens));
+        for (const token of trimArray(tokens)) {
+            stream.push(token);
+        }
         return { success, errors };
     }
 
@@ -28672,7 +28879,9 @@
         }, [[]]);
         const result = matchAllSyntaxes(syntax, createValidationContext(stream), options);
         if (!result.success) {
-            errors.push(...result.errors);
+            for (const error of result.errors) {
+                errors.push(error);
+            }
             return {
                 success: false,
                 errors,
@@ -28903,14 +29112,18 @@
                     };
                 }
                 stream.length = 0;
-                stream.push(...trimArray(tokens));
+                for (const token of trimArray(tokens)) {
+                    stream.push(token);
+                }
             }
         }
         stream.length = 0;
         stream.push(...parts
             .filter((p) => p.length > 0 && p[0].typ !== exports.EnumToken.InvalidMediaQueryTokenType)
             .reduce((acc, b) => {
-            acc.push(...b);
+            for (const token of b) {
+                acc.push(token);
+            }
             return acc;
         }, []));
         return {
@@ -29366,7 +29579,9 @@
                         }
                     }
                     else {
-                        visitors.push(...Object.entries(value));
+                        for (const val of Object.entries(value)) {
+                            visitors.push(val);
+                        }
                     }
                 }
                 else {
@@ -29383,7 +29598,6 @@
                         .push(value);
                 }
                 else if (typeof value == "object") {
-                    // visitors.push(...Object.entries(value));
                     if ("type" in value && "handler" in value && value.type in exports.WalkerEvent) {
                         if (value.type == exports.WalkerEvent.Enter) {
                             if (!preVisitorsHandlersMap.has(key)) {
@@ -29594,7 +29808,8 @@
                 }
                 else if (item.typ == exports.EnumToken.BlockStartTokenType) {
                     let inBlock = 1;
-                    tokens = [item];
+                    tokens.length = 0;
+                    tokens.push(item);
                     do {
                         tokenizer = iter.next().value;
                         if (tokenizer == null) {
@@ -29650,7 +29865,7 @@
                         });
                     }
                 }
-                tokens = [];
+                tokens.length = 0;
             }
             else if ((parensMatch === 0 || curlyBracketMatch === 0) && item.typ === exports.EnumToken.BlockEndTokenType) {
                 parseNode(tokens, context, options, errors, stats, invalidNodes);
@@ -29663,7 +29878,7 @@
                     context.chi[context.chi.length - 1] == previousNode) {
                     context.chi.pop();
                 }
-                tokens = [];
+                tokens.length = 0;
                 parensMatch = 0;
                 curlyBracketMatch = 0;
             }
@@ -29706,17 +29921,23 @@
                         case exports.EnumToken.AtRuleNodeType:
                         case exports.EnumToken.KeyframesRuleNodeType:
                         case exports.EnumToken.KeyframesAtRuleNodeType:
-                            subNodes.push(...nodes[i][TOKENS]);
+                            for (const token of nodes[i][TOKENS]) {
+                                subNodes.push(token);
+                            }
                             break;
                         case exports.EnumToken.DeclarationNodeType:
-                            subNodes.push(...nodes[i].val);
+                            for (const token of nodes[i].val) {
+                                subNodes.push(token);
+                            }
                             break;
                     }
                 }
                 // @ts-ignore
                 if (nodes[i].chi != null) {
                     // @ts-ignore
-                    subNodes.push(...nodes[i].chi);
+                    for (const child of nodes[i].chi) {
+                        subNodes.push(child);
+                    }
                 }
                 if (subNodes.length > 0) {
                     if (freeBlock <= i) {
@@ -30531,7 +30752,8 @@
                 }
                 else if (item.typ == exports.EnumToken.BlockStartTokenType) {
                     let inBlock = 1;
-                    tokens = [item];
+                    tokens.length = 0;
+                    tokens.push(item);
                     do {
                         tokenizer = isAsync
                             ? (await iter.next()).value
@@ -30589,7 +30811,7 @@
                         });
                     }
                 }
-                tokens = [];
+                tokens.length = 0;
             }
             else if ((parensMatch === 0 || curlyBracketMatch === 0) && item.typ === exports.EnumToken.BlockEndTokenType) {
                 parseNode(tokens, context, options, errors, stats, invalidNodes);
@@ -30602,7 +30824,7 @@
                     context.chi[context.chi.length - 1] == previousNode) {
                     context.chi.pop();
                 }
-                tokens = [];
+                tokens.length = 0;
                 parensMatch = 0;
                 curlyBracketMatch = 0;
             }
@@ -30655,7 +30877,9 @@
                     // @ts-ignore
                     node[PARENT].chi.splice(node[PARENT].chi.indexOf(node), 1, ...root.ast.chi);
                     if (root.errors.length > 0) {
-                        errors.push(...root.errors);
+                        for (const error of root.errors) {
+                            errors.push(error);
+                        }
                     }
                 }
                 catch (error) {
@@ -30692,17 +30916,24 @@
                         case exports.EnumToken.AtRuleNodeType:
                         case exports.EnumToken.KeyframesRuleNodeType:
                         case exports.EnumToken.KeyframesAtRuleNodeType:
-                            subNodes.push(...nodes[i][TOKENS]);
+                            for (const token of nodes[i][TOKENS]) {
+                                subNodes.push(token);
+                            }
                             break;
                         case exports.EnumToken.DeclarationNodeType:
-                            subNodes.push(...nodes[i].val);
+                            for (const token of nodes[i].val) {
+                                subNodes.push(token);
+                            }
                             break;
                     }
                 }
                 // @ts-ignore
                 if (nodes[i].chi != null) {
                     // @ts-ignore
-                    subNodes.push(...nodes[i].chi);
+                    for (k = 0; k < nodes[i].chi.length; k++) {
+                        // @ts-ignore
+                        subNodes.push(nodes[i].chi[k]);
+                    }
                 }
                 if (subNodes.length > 0) {
                     if (freeblock <= i) {
@@ -31780,7 +32011,9 @@
             case "font-feature-values": {
                 const result = parseAtRuleFontFeatureValues(stream, atRule, options);
                 if (result.errors.length > 0) {
-                    errors.push(...result.errors);
+                    for (const error of result.errors) {
+                        errors.push(error);
+                    }
                 }
                 atRule[TOKENS] = stream;
                 atRule[STATE] = result.success ? exports.EnumAstNodeStatus.Validated : exports.EnumAstNodeStatus.Invalid;
@@ -31835,7 +32068,9 @@
             case "container": {
                 const result = parseAtRuleContainerQueryList(stream, atRule, options);
                 if (result.errors.length > 0) {
-                    errors.push(...result.errors);
+                    for (const error of result.errors) {
+                        errors.push(error);
+                    }
                 }
                 atRule[LOCEND] = (stream.at(-1) ?? atRule)[LOCEND];
                 atRule[TOKENS] = stream;
@@ -31852,7 +32087,9 @@
                 const tokens = trimArray(stream.slice(1));
                 const result = matchAllSyntaxes(syntax, createValidationContext(tokens), options);
                 if (result.errors.length > 0) {
-                    errors.push(...result.errors);
+                    for (const error of result.errors) {
+                        errors.push(error);
+                    }
                 }
                 // @ts-expect-error
                 options = { ...options, convertColor: false };
@@ -31897,7 +32134,9 @@
             case "namespace": {
                 const result = matchAllSyntaxes(syntax, createValidationContext(stream), options);
                 if (!result.success) {
-                    errors.push(...result.errors);
+                    for (const error of result.errors) {
+                        errors.push(error);
+                    }
                 }
                 // else {
                 //     parseUrlToken(stream);
@@ -31946,7 +32185,9 @@
             case "import": {
                 const result = matchAtRuleImportSyntax(atRule, stream, context, options);
                 if (result.errors.length > 0) {
-                    errors.push(...result.errors);
+                    for (const error of result.errors) {
+                        errors.push(error);
+                    }
                 }
                 else {
                     if (stream[0]?.typ == exports.EnumToken.UrlFunctionTokenType &&
@@ -31978,7 +32219,9 @@
                     ? parseAtRuleSupportSyntax(stream, atRule, options)
                     : matchAtRuleWhenElseSyntax(stream, atRule, options);
                 if (result.errors.length > 0) {
-                    errors.push(...result.errors);
+                    for (const error of result.errors) {
+                        errors.push(error);
+                    }
                 }
                 let success = result.success;
                 if (atRule.nam === "else") {
@@ -32046,7 +32289,9 @@
                 options = { ...options, parseColor: false };
                 const result = parseMediaqueryList(stream, options);
                 if (result.errors.length > 0) {
-                    errors.push(...result.errors);
+                    for (const error of result.errors) {
+                        errors.push(error);
+                    }
                 }
                 atRule[LOCEND] = stream.at(-1)?.[LOCEND] ?? atRule[LOCEND];
                 atRule[TOKENS] = stream.slice();
@@ -32258,7 +32503,9 @@
                 atRule[STATE] = success ? exports.EnumAstNodeStatus.Validated : exports.EnumAstNodeStatus.Invalid;
                 atRule[ERRORS] = success ? [] : [errors[errors.length - 1]];
                 if (!result.success) {
-                    errors.push(...result.errors);
+                    for (const error of result.errors) {
+                        errors.push(error);
+                    }
                     return {
                         typ: exports.EnumToken.AtRuleNodeType,
                         val: renderTokens(stream, options),
@@ -32320,13 +32567,17 @@
                     // check or and and
                     result = matchGenericSyntax(stream, options);
                     if (result.errors.length > 0) {
-                        errors.push(...result.errors);
+                        for (const error of result.errors) {
+                            errors.push(error);
+                        }
                     }
                 }
                 else {
                     result = matchAtRuleSyntax(atRule, stream, options);
                     if (result.errors.length > 0) {
-                        errors.push(...result.errors);
+                        for (const error of result.errors) {
+                            errors.push(error);
+                        }
                     }
                     if (result.success) {
                         let i = 0;
@@ -32346,7 +32597,6 @@
                                 i = index;
                                 stream.splice(index + 1, 1);
                                 stack.pop();
-                                // continue;
                             }
                         }
                     }

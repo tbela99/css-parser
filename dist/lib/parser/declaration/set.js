@@ -182,7 +182,9 @@ class PropertySet {
                             // @ts-ignore
                             acc.push({ ...this.config.separator, typ: EnumToken.LiteralTokenType });
                         }
-                        acc.push(...curr);
+                        for (const token of curr) {
+                            acc.push(token);
+                        }
                         return acc;
                     }, []),
                 },

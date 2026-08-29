@@ -491,9 +491,13 @@ export function* walkValues(
 
                     for (const o of op) {
                         map.set(o as Token, map.get(value) ?? (root as FunctionToken | ParensToken));
-                    }
 
-                    stack[reverse ? "push" : "unshift"](...op);
+                        if (reverse) {
+                            stack.unshift(o);
+                        } else {
+                            stack.push(o);
+                        }
+                    }
                 }
             }
         }
@@ -530,9 +534,13 @@ export function* walkValues(
 
                 for (const child of sliced) {
                     map.set(child, <FunctionToken | ParensToken>value);
-                }
 
-                stack[reverse ? "push" : "unshift"](...sliced);
+                    if (reverse) {
+                        stack.unshift(child);
+                    } else {
+                        stack.push(child);
+                    }
+                }
             } else {
                 const values: Token[] = [];
 
@@ -567,7 +575,13 @@ export function* walkValues(
                 }
 
                 if (values.length > 0) {
-                    stack[reverse ? "push" : "unshift"](...values);
+                    for (const v of values) {
+                        if (reverse) {
+                            stack.unshift(v);
+                        } else {
+                            stack.push(v);
+                        }
+                    }
                 }
             }
         }
@@ -589,9 +603,13 @@ export function* walkValues(
 
                     for (const o of op) {
                         map.set(o as Token, map.get(value) ?? (root as FunctionToken | ParensToken));
-                    }
 
-                    stack[reverse ? "push" : "unshift"](...op);
+                        if (reverse) {
+                            stack.unshift(o);
+                        } else {
+                            stack.push(o);
+                        }
+                    }
                 }
             }
         }

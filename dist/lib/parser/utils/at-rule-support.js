@@ -210,7 +210,9 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
         }
     }
     stream.length = 0;
-    stream.push(...trimArray(tokens));
+    for (const token of trimArray(tokens)) {
+        stream.push(token);
+    }
     return { success, errors };
 }
 

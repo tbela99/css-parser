@@ -34,7 +34,9 @@ function parseRelativeColorComponents(relativeKeys, original, rExp, gExp, bExp, 
     const validKeys = names.split("");
     let val = "";
     if (components != null) {
-        allComponents.push(...components);
+        for (const component of components) {
+            allComponents.push(component);
+        }
     }
     // ensure all components are valid for the color space
     for (const component of allComponents) {

@@ -54,7 +54,9 @@ export function evaluate(tokens: Token[]): Token[] {
                 acc.push({ typ: EnumToken.CommaTokenType });
             }
 
-            acc.push(...t);
+            for (const token of t) {
+                acc.push(token);
+            }
 
             return acc;
         });
@@ -652,7 +654,15 @@ export function evaluateFunc(token: FunctionToken): Token[] | null {
                     }
 
                     // @ts-ignore
-                    return [{ ...values[0], val, [LOCSRCID]: token[LOCSRCID], [LOCSTA]: token[LOCSTA], [LOCEND]: token[LOCEND] }];
+                    return [
+                        {
+                            ...values[0],
+                            val,
+                            [LOCSRCID]: token[LOCSRCID],
+                            [LOCSTA]: token[LOCSTA],
+                            [LOCEND]: token[LOCEND],
+                        },
+                    ];
                 }
             }
         }
@@ -672,16 +682,22 @@ export function inlineExpression(token: Token): Token[] {
         if ([EnumToken.Mul, EnumToken.Div].includes((token as BinaryExpressionToken).op)) {
             result.push(token);
         } else {
-            result.push(
-                ...inlineExpression((token as BinaryExpressionToken).l),
-                {
+
+                for (const child of inlineExpression((token as BinaryExpressionToken).l)) {
+                    result.push(child);
+                }
+
+            result.push({
                     typ: (token as BinaryExpressionToken).op,
                     [LOCSRCID]: (token as BinaryExpressionToken)[LOCSRCID],
                     [LOCSTA]: (token as BinaryExpressionToken)[LOCSTA],
                     [LOCEND]: (token as BinaryExpressionToken)[LOCEND],
-                } as Token,
-                ...inlineExpression((token as BinaryExpressionToken).r),
-            );
+                } as Token);
+
+                for (const child of inlineExpression((token as BinaryExpressionToken).r)) {
+                    result.push(child);
+                }
+                
         }
     } else {
         result.push(token);

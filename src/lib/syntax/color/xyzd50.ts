@@ -25,8 +25,8 @@ export function srgb2xyzd50values(r: number, g: number, b: number, alpha: number
 /*
  */
 export function xyzd502lch(x: number, y: number, z: number, alpha?: number): number[] {
-    // @ts-ignore
-    const [l, a, b] = xyz2lab(...XYZ_D50_to_D65(x, y, z));
+    const values = XYZ_D50_to_D65(x, y, z);
+    const [l, a, b] = xyz2lab(values[0], values[1], values[2]);
     // L in range [0,100]. For use in CSS, add a percent
 
     return labvalues2lchvalues(l, a, b, alpha);

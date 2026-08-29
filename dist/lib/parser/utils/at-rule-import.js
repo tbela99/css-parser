@@ -153,7 +153,9 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
         {
             const result = parseAtRuleSupportSyntax(tokens[tokens.length - 1].chi, context, options);
             if (!result.success && result.errors.length > 0) {
-                errors.push(...result.errors);
+                for (const error of result.errors) {
+                    errors.push(error);
+                }
                 return {
                     success: false,
                     errors,
@@ -163,15 +165,21 @@ function matchAtRuleImportSyntax(atRule, stream, context, options) {
     }
     const splice = stream.splice(index, stream.length - index);
     const sliced = parseMediaqueryList(splice, options);
-    tokens.push(...splice);
+    for (const sp of splice) {
+        tokens.push(sp);
+    }
     if (sliced.errors.length > 0) {
-        errors.push(...sliced.errors);
+        for (const error of sliced.errors) {
+            errors.push(error);
+        }
     }
     if (!sliced.success) {
         success = false;
     }
     stream.length = 0;
-    stream.push(...trimArray(tokens));
+    for (const token of trimArray(tokens)) {
+        stream.push(token);
+    }
     return {
         success,
         errors,

@@ -182,7 +182,9 @@ function parseDeclaration(tokens, parent, options, errors) {
                 }
             }
             if (!doNotValidate && !result?.success && result.errors.length > 0) {
-                errors.push(...result.errors);
+                for (index = 0; index < result.errors.length; index++) {
+                    errors.push(result.errors[index]);
+                }
             }
         }
     }

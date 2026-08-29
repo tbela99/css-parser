@@ -32,118 +32,67 @@ import {
 } from "../syntax/syntax.ts";
 import { SourceFile } from "./source.ts";
 
-const SymbolsMapTokens: Record<string, EnumToken> = {
-    "+": EnumToken.Plus,
-    "=": EnumToken.DelimTokenType,
-    "|": EnumToken.Pipe,
-    "||": EnumToken.ColumnCombinatorTokenType,
-    "|=": EnumToken.DashMatchTokenType,
-    "&": EnumToken.NestingSelectorTokenType,
-    "*": EnumToken.Star,
-    "*=": EnumToken.ContainMatchTokenType,
-    "~": EnumToken.Tilda,
-    "~=": EnumToken.IncludeMatchTokenType,
-    "^=": EnumToken.StartMatchTokenType,
-    "$=": EnumToken.EndMatchTokenType,
-    ",": EnumToken.Comma,
-    ":": EnumToken.ColonTokenType,
-    "::": EnumToken.DoubleColonTokenType,
-    ";": EnumToken.SemiColonTokenType,
-    "(": EnumToken.StartParensTokenType,
-    ")": EnumToken.EndParensTokenType,
-    "[": EnumToken.AttrStartTokenType,
-    "]": EnumToken.AttrEndTokenType,
-    "{": EnumToken.BlockStartTokenType,
-    "}": EnumToken.BlockEndTokenType,
-    "<=": EnumToken.LteTokenType,
-    ">": EnumToken.GtTokenType,
-    ">=": EnumToken.GteTokenType,
-    " ": EnumToken.Whitespace,
-    "\t": EnumToken.Whitespace,
-    "\r": EnumToken.Whitespace,
-    "\n": EnumToken.Whitespace,
-    "\f": EnumToken.Whitespace,
-    ...flexUnits.reduce((acc, curr: string) => {
-        acc[curr] = EnumToken.FlexTokenType;
-        return acc;
-    }, Object.create(null)),
-    ...dimensionUnits.reduce((acc, curr: string) => {
-        acc[curr] = EnumToken.LengthTokenType;
-        return acc;
-    }, Object.create(null)),
-    ...resolutionUnits.reduce((acc, curr: string) => {
-        acc[curr] = EnumToken.ResolutionTokenType;
-        return acc;
-    }, Object.create(null)),
-    ...angleUnits.reduce((acc, curr: string) => {
-        acc[curr] = EnumToken.AngleTokenType;
-        return acc;
-    }, Object.create(null)),
-    ...timeUnits.reduce((acc, curr: string) => {
-        acc[curr] = EnumToken.TimeTokenType;
-        return acc;
-    }, Object.create(null)),
-    ...frequencyUnits.reduce((acc, curr: string) => {
-        acc[curr] = EnumToken.FrequencyTokenType;
-        return acc;
-    }, Object.create(null)),
-    ...pseudoElements.reduce((acc, curr: string) => {
-        acc[curr] = EnumToken.PseudoElementTokenType;
-        return acc;
-    }, Object.create(null)),
-    ...containerFunc.reduce((acc, curr: string) => {
-        acc[curr + "("] = EnumToken.ContainerFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    ...urlFunc.reduce((acc, curr: string) => {
-        acc[curr + "("] = EnumToken.UrlFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    ...gridTemplateFunc.reduce((acc, curr: string) => {
-        acc[curr + "("] = EnumToken.GridTemplateFuncTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    ...imageFunc.reduce((acc, curr: string) => {
-        acc[curr + "("] = EnumToken.ImageFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    ...timelineFunc.reduce((acc, curr: string) => {
-        acc[curr + "("] = EnumToken.TimelineFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    // ...generalEnclosedFunc.reduce((acc, curr: string) => {
-    //     acc[curr + "("] = EnumToken.GeneralEnclosedFunctionTokenDefType;
-    //     return acc;
-    // }, Object.create(null)),
-    ...supportFunc.reduce((acc, curr: string) => {
-        acc[curr + "("] = EnumToken.SupportsFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    ...timingFunc.reduce((acc, curr: string) => {
-        acc[curr + "("] = EnumToken.TimingFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    ...colorsFunc.reduce((acc, curr: string) => {
-        acc[curr + "("] = EnumToken.ColorFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    ...mathFuncs.reduce((acc, curr: string) => {
-        acc[curr + "("] = EnumToken.MathFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    ...transformFunctions.reduce((acc, curr: string) => {
-        acc[curr.toLowerCase() + "("] = EnumToken.TransformFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    ...whenElseFunc.reduce((acc, curr: string) => {
-        acc[curr + "("] = EnumToken.WhenElseFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-    ...wildCardFuncs.reduce((acc, curr: string) => {
-        acc[curr + "("] = EnumToken.WildCardFunctionTokenDefType;
-        return acc;
-    }, Object.create(null)),
-};
+const SymbolsMapTokens: Record<string, EnumToken> = Object.create(null);
+
+function assignTokenMap(entries: string[], tokenType: EnumToken, suffix: string = "", lowercase: boolean = false) {
+    for (const entry of entries) {
+        SymbolsMapTokens[(lowercase ? entry.toLowerCase() : entry) + suffix] = tokenType;
+    }
+}
+
+SymbolsMapTokens[""] = EnumToken.DelimTokenType;
+SymbolsMapTokens["+"] = EnumToken.Plus;
+SymbolsMapTokens["="] = EnumToken.DelimTokenType;
+SymbolsMapTokens["|"] = EnumToken.Pipe;
+SymbolsMapTokens["||"] = EnumToken.ColumnCombinatorTokenType;
+SymbolsMapTokens["|="] = EnumToken.DashMatchTokenType;
+SymbolsMapTokens["&"] = EnumToken.NestingSelectorTokenType;
+SymbolsMapTokens["*"] = EnumToken.Star;
+SymbolsMapTokens["*="] = EnumToken.ContainMatchTokenType;
+SymbolsMapTokens["~"] = EnumToken.Tilda;
+SymbolsMapTokens["~="] = EnumToken.IncludeMatchTokenType;
+SymbolsMapTokens["^="] = EnumToken.StartMatchTokenType;
+SymbolsMapTokens["$="] = EnumToken.EndMatchTokenType;
+SymbolsMapTokens[","] = EnumToken.Comma;
+SymbolsMapTokens[":"] = EnumToken.ColonTokenType;
+SymbolsMapTokens["::"] = EnumToken.DoubleColonTokenType;
+SymbolsMapTokens[";"] = EnumToken.SemiColonTokenType;
+SymbolsMapTokens["("] = EnumToken.StartParensTokenType;
+SymbolsMapTokens[")"] = EnumToken.EndParensTokenType;
+SymbolsMapTokens["["] = EnumToken.AttrStartTokenType;
+SymbolsMapTokens["]"] = EnumToken.AttrEndTokenType;
+SymbolsMapTokens["{"] = EnumToken.BlockStartTokenType;
+SymbolsMapTokens["}"] = EnumToken.BlockEndTokenType;
+SymbolsMapTokens["<="] = EnumToken.LteTokenType;
+SymbolsMapTokens[">"] = EnumToken.GtTokenType;
+SymbolsMapTokens[">="] = EnumToken.GteTokenType;
+SymbolsMapTokens[" "] = EnumToken.Whitespace;
+SymbolsMapTokens["\t"] = EnumToken.Whitespace;
+SymbolsMapTokens["\r"] = EnumToken.Whitespace;
+SymbolsMapTokens["\n"] = EnumToken.Whitespace;
+SymbolsMapTokens["\f"] = EnumToken.Whitespace;
+
+assignTokenMap(flexUnits, EnumToken.FlexTokenType);
+assignTokenMap(dimensionUnits, EnumToken.LengthTokenType);
+assignTokenMap(resolutionUnits, EnumToken.ResolutionTokenType);
+assignTokenMap(angleUnits, EnumToken.AngleTokenType);
+assignTokenMap(timeUnits, EnumToken.TimeTokenType);
+assignTokenMap(frequencyUnits, EnumToken.FrequencyTokenType);
+assignTokenMap(pseudoElements, EnumToken.PseudoElementTokenType);
+assignTokenMap(containerFunc, EnumToken.ContainerFunctionTokenDefType, "(");
+assignTokenMap(urlFunc, EnumToken.UrlFunctionTokenDefType, "(");
+assignTokenMap(gridTemplateFunc, EnumToken.GridTemplateFuncTokenDefType, "(");
+assignTokenMap(imageFunc, EnumToken.ImageFunctionTokenDefType, "(");
+assignTokenMap(timelineFunc, EnumToken.TimelineFunctionTokenDefType, "(");
+assignTokenMap(supportFunc, EnumToken.SupportsFunctionTokenDefType, "(");
+assignTokenMap(timingFunc, EnumToken.TimingFunctionTokenDefType, "(");
+assignTokenMap(colorsFunc, EnumToken.ColorFunctionTokenDefType, "(");
+assignTokenMap(mathFuncs, EnumToken.MathFunctionTokenDefType, "(");
+assignTokenMap(transformFunctions, EnumToken.TransformFunctionTokenDefType, "(", true);
+assignTokenMap(whenElseFunc, EnumToken.WhenElseFunctionTokenDefType, "(");
+assignTokenMap(wildCardFuncs, EnumToken.WildCardFunctionTokenDefType, "(");
+
+const SymbolsMapTokensKeys = Object.keys(SymbolsMapTokens);
 
 // do not capture the value
 export const hintsEnum = new Set([
@@ -157,8 +106,6 @@ export const hintsEnum = new Set([
     EnumToken.ColonTokenType,
     EnumToken.EOFTokenType,
 ]) as Set<EnumToken>;
-
-const SymbolsMapTokensKeys = Object.keys(SymbolsMapTokens);
 
 export const enum TokenMap {
     EXCLAMATION = 33, // '!', EXCLAMATION

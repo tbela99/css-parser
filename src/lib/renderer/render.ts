@@ -52,7 +52,15 @@ import { reduceHexValue } from "../syntax/color/hex.ts";
 import { ColorType, EnumToken } from "../ast/types.ts";
 import { expand } from "../ast/expand.ts";
 import { SourceMap } from "./sourcemap/sourcemap.ts";
-import { colorPrecision, LOCSRCID, LOCSTA, PARENT, pseudoElements, tokensfuncSet, urlTokenMatcher } from "../syntax/constants.ts";
+import {
+    colorPrecision,
+    LOCSRCID,
+    LOCSTA,
+    PARENT,
+    pseudoElements,
+    tokensfuncSet,
+    urlTokenMatcher,
+} from "../syntax/constants.ts";
 import {
     isWhiteSpace,
     minifyNumber,
@@ -274,10 +282,7 @@ function updateSourceMap(
         move(sourceLocation, linesMap, str, 0, offset + 1);
     }
 
-    if (
-        node[LOCSTA] != null
-    ) {
-
+    if (node[LOCSTA] != null) {
         const source = options.sourcesMap!.get(node[LOCSRCID]!) as SourceFile;
         const inputSourceMap = source.getInputSourceMap();
         const offsets: [number, number] = source.getOffsets(node[LOCSTA]) as [number, number];
@@ -288,13 +293,11 @@ function updateSourceMap(
         let sourceContent: string | null; // = (source.getContent() as string) || null;
 
         if (inputSourceMap != null && (records = inputSourceMap.find(offsets[0], offsets[1])) != null) {
-
-                let newId: number | null = null;
+            let newId: number | null = null;
 
             for (const record of records) {
-
                 newId = null;
-                
+
                 // @ts-ignore
                 sourceFileName = (record[0] as string) || null;
                 // @ts-ignore
@@ -307,7 +310,6 @@ function updateSourceMap(
                 sourceContent = (record[3] as string) || null;
 
                 if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
-
                     if (cache[sourceFileName] == null) {
                         const absolute = options.resolve!(dirname(options.output as string), options.cwd as string)
                             .absolute as string;
@@ -338,12 +340,7 @@ function updateSourceMap(
                 }
 
                 if (newId == null) {
-                    
-                    const source = new SourceFile(
-                        sourceContent as string,
-                        [],
-                        sourceFileName,
-                    )
+                    const source = new SourceFile(sourceContent as string, [], sourceFileName);
 
                     options.sourcesMap!.set(source.id, source);
                     newId = source.id;
@@ -355,7 +352,7 @@ function updateSourceMap(
                     sourcemaps.sources.push(srcId);
                 }
 
-                sourcemaps.maps.push([newLine, newColumn, srcId, ...offsets]);
+                sourcemaps.maps.push([newLine, newColumn, srcId, offsets[0], offsets[1]]);
             }
         } else {
             // if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
@@ -375,10 +372,10 @@ function updateSourceMap(
                 sourcemaps.sources.push(srcId);
             }
 
-            sourcemaps.maps.push([newLine, newColumn, srcId, ...offsets]);
+            sourcemaps.maps.push([newLine, newColumn, srcId, offsets[0], offsets[1]]);
         }
 
-    // console.error([newLine, newColumn, srcId, ...offsets, EnumToken[node.typ], node.nam ?? node.sel]);
+        // console.error([newLine, newColumn, srcId, ...offsets, EnumToken[node.typ], node.nam ?? node.sel]);
     }
 
     move(sourceLocation, linesMap, str, offset);
@@ -586,7 +583,6 @@ function renderAstNode(
                 children += str;
 
                 if (sourcemaps != null && str !== "") {
-
                     if (node.typ == EnumToken.DeclarationNodeType && recordDeclarationSourceMap) {
                         // if declaration is child of at-rule, then record it
                         // .rule {
@@ -612,10 +608,8 @@ function renderAstNode(
 
                         // @ts-ignore
                         updateSourceMap(node, options, cache, sourcemaps, sourceLocation, linesMap!, str);
-                    }
-                    else {
-                        
-                    move(sourceLocation, linesMap!, str);
+                    } else {
+                        move(sourceLocation, linesMap!, str);
                     }
                 }
             }
@@ -1037,7 +1031,9 @@ export function renderValue(
                             }
 
                             if (slice[i]?.typ === EnumToken.ColorTokenType) {
-                                slice.push(...reduceColorStops(slice.splice(i, slice.length - i)));
+                                for (const token of reduceColorStops(slice.splice(i, slice.length - i))) {
+                                    slice.push(token);
+                                }
                             }
                         }
 
@@ -1275,7 +1271,9 @@ export function renderValue(
                             const result: Token[] = [];
 
                             if (form.length > 0) {
-                                result.push(...form);
+                                for (const token of form) {
+                                    result.push(token);
+                                }
                             }
 
                             if (size.length > 0) {
@@ -1283,7 +1281,9 @@ export function renderValue(
                                     result.push({ typ: EnumToken.WhitespaceTokenType });
                                 }
 
-                                result.push(...size);
+                                for (const token of size) {
+                                    result.push(token);
+                                }
                             }
 
                             if (positions.length > 0) {
@@ -1294,25 +1294,36 @@ export function renderValue(
                                 result.push(
                                     { typ: EnumToken.IdenTokenType, val: "at" },
                                     { typ: EnumToken.WhitespaceTokenType },
-                                    ...positions,
                                 );
+
+                                for (const token of positions) {
+                                    result.push(token);
+                                }
                             }
 
                             if (colorSpaceDef.length > 0) {
                                 if (result.length > 0) {
                                     result.push({ typ: EnumToken.WhitespaceTokenType });
                                 }
-                                result.push(...colorSpaceDef);
+
+                                for (const token of colorSpaceDef) {
+                                    result.push(token);
+                                }
                             }
 
                             if (result.length > 0) {
                                 result.push({ typ: EnumToken.CommaTokenType });
                             }
 
-                            result.push(...reduceColorStops(slice.slice(i)));
+                            for (const token of reduceColorStops(slice.slice(i))) {
+                                result.push(token);
+                            }
 
                             slice.length = 0;
-                            slice.push(...result);
+
+                            for (const token of result) {
+                                slice.push(token);
+                            }
                         }
                         break;
 
@@ -1468,13 +1479,19 @@ export function renderValue(
                                     angles.push(
                                         { typ: EnumToken.IdenTokenType, val: "at" },
                                         { typ: EnumToken.WhitespaceTokenType },
-                                        ...positions,
                                     );
+
+                                    for (const position of positions) {
+                                        angles.push(position);
+                                    }
                                 }
                             }
 
                             if (angles.length > 0) {
-                                result.push(...angles, { typ: EnumToken.CommaTokenType });
+                                for (const angle of angles) {
+                                    result.push(angle);
+                                }
+                                result.push({ typ: EnumToken.CommaTokenType });
                             }
 
                             if (colorSpaceDef.length > 0) {
@@ -1483,15 +1500,23 @@ export function renderValue(
                                         result.push({ typ: EnumToken.WhitespaceTokenType });
                                     }
 
-                                    result.push(...colorSpaceDef);
+                                    for (const token of colorSpaceDef) {
+                                        result.push(token);
+                                    }
                                 }
 
                                 result.push({ typ: EnumToken.CommaTokenType });
                             }
 
-                            result.push(...reduceConicColorStops(slice.slice(i)));
+                            for (const token of reduceConicColorStops(slice.slice(i))) {
+                                result.push(token);
+                            }
+
                             slice.length = 0;
-                            slice.push(...result);
+
+                            for (let j = 0; j < result.length; j++) {
+                                slice.push(result[j]);
+                            }
                         }
                         break;
                 }

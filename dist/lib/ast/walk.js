@@ -282,8 +282,13 @@ function* walkValues(values, root = null, filter, reverse) {
                     const op = Array.isArray(option) ? option : [option];
                     for (const o of op) {
                         map.set(o, map.get(value) ?? root);
+                        if (reverse) {
+                            stack.unshift(o);
+                        }
+                        else {
+                            stack.push(o);
+                        }
                     }
-                    stack[reverse ? "push" : "unshift"](...op);
                 }
             }
         }
@@ -314,8 +319,13 @@ function* walkValues(values, root = null, filter, reverse) {
                 const sliced = value.chi.slice();
                 for (const child of sliced) {
                     map.set(child, value);
+                    if (reverse) {
+                        stack.unshift(child);
+                    }
+                    else {
+                        stack.push(child);
+                    }
                 }
-                stack[reverse ? "push" : "unshift"](...sliced);
             }
             else {
                 const values = [];
@@ -348,7 +358,14 @@ function* walkValues(values, root = null, filter, reverse) {
                     }
                 }
                 if (values.length > 0) {
-                    stack[reverse ? "push" : "unshift"](...values);
+                    for (const v of values) {
+                        if (reverse) {
+                            stack.unshift(v);
+                        }
+                        else {
+                            stack.push(v);
+                        }
+                    }
                 }
             }
         }
@@ -365,8 +382,13 @@ function* walkValues(values, root = null, filter, reverse) {
                     const op = Array.isArray(option) ? option : [option];
                     for (const o of op) {
                         map.set(o, map.get(value) ?? root);
+                        if (reverse) {
+                            stack.unshift(o);
+                        }
+                        else {
+                            stack.push(o);
+                        }
                     }
-                    stack[reverse ? "push" : "unshift"](...op);
                 }
             }
         }

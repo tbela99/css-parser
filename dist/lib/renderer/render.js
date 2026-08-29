@@ -196,7 +196,7 @@ function updateSourceMap(node, options, cache, sourcemaps, sourceLocation, lines
                 if (!sourcemaps.sources.includes(srcId)) {
                     sourcemaps.sources.push(srcId);
                 }
-                sourcemaps.maps.push([newLine, newColumn, srcId, ...offsets]);
+                sourcemaps.maps.push([newLine, newColumn, srcId, offsets[0], offsets[1]]);
             }
         }
         else {
@@ -213,7 +213,7 @@ function updateSourceMap(node, options, cache, sourcemaps, sourceLocation, lines
             if (!sourcemaps.sources.includes(srcId)) {
                 sourcemaps.sources.push(srcId);
             }
-            sourcemaps.maps.push([newLine, newColumn, srcId, ...offsets]);
+            sourcemaps.maps.push([newLine, newColumn, srcId, offsets[0], offsets[1]]);
         }
         // console.error([newLine, newColumn, srcId, ...offsets, EnumToken[node.typ], node.nam ?? node.sel]);
     }
@@ -682,7 +682,9 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                                 // }
                             }
                             if (slice[i]?.typ === EnumToken.ColorTokenType) {
-                                slice.push(...reduceColorStops(slice.splice(i, slice.length - i)));
+                                for (const token of reduceColorStops(slice.splice(i, slice.length - i))) {
+                                    slice.push(token);
+                                }
                             }
                         }
                         break;
@@ -873,32 +875,45 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                             }
                             const result = [];
                             if (form.length > 0) {
-                                result.push(...form);
+                                for (const token of form) {
+                                    result.push(token);
+                                }
                             }
                             if (size.length > 0) {
                                 if (result.length > 0) {
                                     result.push({ typ: EnumToken.WhitespaceTokenType });
                                 }
-                                result.push(...size);
+                                for (const token of size) {
+                                    result.push(token);
+                                }
                             }
                             if (positions.length > 0) {
                                 if (result.length > 0) {
                                     result.push({ typ: EnumToken.WhitespaceTokenType });
                                 }
-                                result.push({ typ: EnumToken.IdenTokenType, val: "at" }, { typ: EnumToken.WhitespaceTokenType }, ...positions);
+                                result.push({ typ: EnumToken.IdenTokenType, val: "at" }, { typ: EnumToken.WhitespaceTokenType });
+                                for (const token of positions) {
+                                    result.push(token);
+                                }
                             }
                             if (colorSpaceDef.length > 0) {
                                 if (result.length > 0) {
                                     result.push({ typ: EnumToken.WhitespaceTokenType });
                                 }
-                                result.push(...colorSpaceDef);
+                                for (const token of colorSpaceDef) {
+                                    result.push(token);
+                                }
                             }
                             if (result.length > 0) {
                                 result.push({ typ: EnumToken.CommaTokenType });
                             }
-                            result.push(...reduceColorStops(slice.slice(i)));
+                            for (const token of reduceColorStops(slice.slice(i))) {
+                                result.push(token);
+                            }
                             slice.length = 0;
-                            slice.push(...result);
+                            for (const token of result) {
+                                slice.push(token);
+                            }
                         }
                         break;
                     case "conic-gradient":
@@ -1003,24 +1018,36 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                                     if (angles.length > 0) {
                                         angles.push({ typ: EnumToken.WhitespaceTokenType });
                                     }
-                                    angles.push({ typ: EnumToken.IdenTokenType, val: "at" }, { typ: EnumToken.WhitespaceTokenType }, ...positions);
+                                    angles.push({ typ: EnumToken.IdenTokenType, val: "at" }, { typ: EnumToken.WhitespaceTokenType });
+                                    for (const position of positions) {
+                                        angles.push(position);
+                                    }
                                 }
                             }
                             if (angles.length > 0) {
-                                result.push(...angles, { typ: EnumToken.CommaTokenType });
+                                for (const angle of angles) {
+                                    result.push(angle);
+                                }
+                                result.push({ typ: EnumToken.CommaTokenType });
                             }
                             if (colorSpaceDef.length > 0) {
                                 if (colorSpaceDef.length > 0) {
                                     if (result.length > 0) {
                                         result.push({ typ: EnumToken.WhitespaceTokenType });
                                     }
-                                    result.push(...colorSpaceDef);
+                                    for (const token of colorSpaceDef) {
+                                        result.push(token);
+                                    }
                                 }
                                 result.push({ typ: EnumToken.CommaTokenType });
                             }
-                            result.push(...reduceConicColorStops(slice.slice(i)));
+                            for (const token of reduceConicColorStops(slice.slice(i))) {
+                                result.push(token);
+                            }
                             slice.length = 0;
-                            slice.push(...result);
+                            for (let j = 0; j < result.length; j++) {
+                                slice.push(result[j]);
+                            }
                         }
                         break;
                 }
