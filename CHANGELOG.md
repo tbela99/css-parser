@@ -3,6 +3,31 @@
 # v1.6.0
 
 - [x] added `tan()` function.
+- [x] support input sourcemap from inlince sourcemap file. This is only supported by the async parser.
+
+```css
+
+table.colortable {
+ width: 100%;
+ text-shadow: none;
+ border-collapse: collapse
+}
+table.colortable td {
+ text-align: center
+}
+table.colortable td.c {
+ text-transform: uppercase;
+ background: #ff0
+}
+table.colortable th {
+ text-align: center;
+ color: green;
+ font-weight: 400;
+ padding: 2px 3px
+}
+
+/*# sourceMappingURL=sourcemap.css.map */
+```
 
 # v1.5.0
 

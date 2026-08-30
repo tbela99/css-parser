@@ -105,6 +105,10 @@ export async function load(
                     return response.arrayBuffer();
                 }
 
+                if (responseType == ResponseType.JSON) {
+                    return response.json();
+                }
+
                 return responseType == ResponseType.ReadableStream
                     ? (response.body as ReadableStream<Uint8Array<ArrayBuffer>>)
                     : response.text();
@@ -116,8 +120,10 @@ export async function load(
         const stats = await lstat(resolved.absolute);
 
         if (stats.isFile()) {
-            if (responseType == ResponseType.Text) {
-                return readFile(resolved.absolute, "utf-8");
+            if (responseType == ResponseType.Text || responseType == ResponseType.JSON) {
+                return readFile(resolved.absolute, "utf-8").then((buffer) =>
+                    responseType == ResponseType.JSON ? JSON.parse(buffer) : buffer,
+                );
             }
 
             if (responseType == ResponseType.ArrayBuffer) {
@@ -131,9 +137,7 @@ export async function load(
                 }),
             ) as ReadableStream<Uint8Array>;
         }
-    } catch (error) {
-        console.warn(error);
-    }
+    } catch (error) {}
 
     throw new Error(`File not found: '${resolved.absolute || url}'`);
 }

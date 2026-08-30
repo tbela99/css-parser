@@ -1008,5 +1008,64 @@ a span {
                 `Unsupported hash algorithm: 'sha1'. Not supported by parseSync() or transformSync(). Use parse() or transform().`,
             );
         });
+
+        it("module pattern #26", function () {
+            const file = new URL(dirname(import.meta.url) + "/../../css-modules/button.css");
+
+            return transform({
+                file: file.pathname,
+                beautify: true,
+                module: {
+                    pattern: "[local]-name-[name]-folder-[folder]-ext-[ext]-path-[path]-hash-[hash:base64:5]",
+                },
+            }).then((result) => {
+
+                expect(result.code)
+                    .equals(`.button-name-button-folder-css-modules-ext-css-path-test_css-modules_button_css-hash-YnV0d {
+ background-color: #007bff;
+ color: #fff;
+ padding: 10px 20px;
+ border: 0;
+ cursor: pointer;
+ border-radius: 4px
+}
+.button-name-button-folder-css-modules-ext-css-path-test_css-modules_button_css-hash-YnV0d:hover {
+ background-color: #0056b3
+}
+@property --progress-name-button-folder-css-modules-ext-css-path-test_css-modules_button_css-hash-cHJvZ {
+ syntax: "<percentage>";
+ inherits: false;
+ initial-value: 25%
+}
+.bar-name-button-folder-css-modules-ext-css-path-test_css-modules_button_css-hash-YmFyO {
+ display: inline-block;
+ --progress-name-button-folder-css-modules-ext-css-path-test_css-modules_button_css-hash-cHJvZ: 25%;
+ width: 100%;
+ height: 5px;
+ background: linear-gradient(90deg,#00d230 var(--progress-name-button-folder-css-modules-ext-css-path-test_css-modules_button_css-hash-cHJvZ),#000 var(--progress-name-button-folder-css-modules-ext-css-path-test_css-modules_button_css-hash-cHJvZ));
+ animation: progressAnimation-name-button-folder-css-modules-ext-css-path-test_css-modules_button_css-hash-cHJvZ 2.5s infinite
+}
+@keyframes progressAnimation-name-button-folder-css-modules-ext-css-path-test_css-modules_button_css-hash-cHJvZ {
+ to {
+  --progress-name-button-folder-css-modules-ext-css-path-test_css-modules_button_css-hash-cHJvZ: 100%
+ }
+}
+.body-name-button-folder-css-modules-ext-css-path-test_css-modules_button_css-hash-Ym9ke {
+ background: #6e28d9;
+ padding: 0 24px;
+ color: #fff;
+ margin: 0;
+ height: 100vh;
+ justify-content: center;
+ align-items: center
+}
+.animation-name-button-folder-css-modules-ext-css-path-test_css-modules_button_css-hash-YW5pb {
+ display: block;
+ width: var(--progress-name-button-folder-css-modules-ext-css-path-test_css-modules_button_css-hash-cHJvZ);
+ animation: progressAnimation-name-button-folder-css-modules-ext-css-path-test_css-modules_button_css-hash-cHJvZ infinite alternate 3s;
+ background: red
+}`);
+            });
+        });
     });
 }

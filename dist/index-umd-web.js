@@ -32940,6 +32940,10 @@
          * return an arraybuffer
          */
         ResponseType[ResponseType["ArrayBuffer"] = 2] = "ArrayBuffer";
+        /**
+         * return a json object
+         */
+        ResponseType[ResponseType["JSON"] = 3] = "JSON";
     })(exports.ResponseType || (exports.ResponseType = {}));
 
     /**
@@ -32959,7 +32963,26 @@
                 const token = result.ast.chi.at(-1);
                 if (token?.typ == exports.EnumToken.CommentTokenType &&
                     token.val.startsWith("/*# sourceMappingURL=")) {
-                    options.source.setInputSourceMap(token.val.slice(21, -2).trim());
+                    let data = token.val.slice(21, -2).trim();
+                    if (data.endsWith(".map")) {
+                        if (options.load == null) {
+                            data = "";
+                        }
+                        else {
+                            options
+                                .load(options.resolve(data, dirname(options.src)).absolute, ".", exports.ResponseType.JSON)
+                                .catch((error) => console.error({ error }))
+                                .then((res) => {
+                                if (res != null) {
+                                    // @ts-expect-error
+                                    options.source.setInputSourceMap(res);
+                                }
+                            });
+                        }
+                    }
+                    else {
+                        options.source.setInputSourceMap(data);
+                    }
                 }
             }
         }
@@ -33076,6 +33099,9 @@
             }
             if (responseType == exports.ResponseType.ArrayBuffer) {
                 return response.arrayBuffer();
+            }
+            if (responseType == exports.ResponseType.JSON) {
+                return response.json();
             }
             return responseType == exports.ResponseType.ReadableStream ? response.body : response.text();
         });

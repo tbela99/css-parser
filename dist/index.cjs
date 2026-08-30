@@ -32943,6 +32943,10 @@ exports.ResponseType = void 0;
      * return an arraybuffer
      */
     ResponseType[ResponseType["ArrayBuffer"] = 2] = "ArrayBuffer";
+    /**
+     * return a json object
+     */
+    ResponseType[ResponseType["JSON"] = 3] = "JSON";
 })(exports.ResponseType || (exports.ResponseType = {}));
 
 /**
@@ -32962,7 +32966,26 @@ function parseResult(result, options) {
             const token = result.ast.chi.at(-1);
             if (token?.typ == exports.EnumToken.CommentTokenType &&
                 token.val.startsWith("/*# sourceMappingURL=")) {
-                options.source.setInputSourceMap(token.val.slice(21, -2).trim());
+                let data = token.val.slice(21, -2).trim();
+                if (data.endsWith(".map")) {
+                    if (options.load == null) {
+                        data = "";
+                    }
+                    else {
+                        options
+                            .load(options.resolve(data, dirname(options.src)).absolute, ".", exports.ResponseType.JSON)
+                            .catch((error) => console.error({ error }))
+                            .then((res) => {
+                            if (res != null) {
+                                // @ts-expect-error
+                                options.source.setInputSourceMap(res);
+                            }
+                        });
+                    }
+                }
+                else {
+                    options.source.setInputSourceMap(data);
+                }
             }
         }
     }
@@ -33068,6 +33091,9 @@ async function load(url, currentDirectory = ".", responseType = false) {
             if (responseType == exports.ResponseType.ArrayBuffer) {
                 return response.arrayBuffer();
             }
+            if (responseType == exports.ResponseType.JSON) {
+                return response.json();
+            }
             return responseType == exports.ResponseType.ReadableStream
                 ? response.body
                 : response.text();
@@ -33076,8 +33102,8 @@ async function load(url, currentDirectory = ".", responseType = false) {
     try {
         const stats = await promises.lstat(resolved.absolute);
         if (stats.isFile()) {
-            if (responseType == exports.ResponseType.Text) {
-                return promises.readFile(resolved.absolute, "utf-8");
+            if (responseType == exports.ResponseType.Text || responseType == exports.ResponseType.JSON) {
+                return promises.readFile(resolved.absolute, "utf-8").then((buffer) => responseType == exports.ResponseType.JSON ? JSON.parse(buffer) : buffer);
             }
             if (responseType == exports.ResponseType.ArrayBuffer) {
                 return promises.readFile(resolved.absolute).then((buffer) => buffer.buffer);
@@ -33088,9 +33114,7 @@ async function load(url, currentDirectory = ".", responseType = false) {
             }));
         }
     }
-    catch (error) {
-        console.warn(error);
-    }
+    catch (error) { }
     throw new Error(`File not found: '${resolved.absolute || url}'`);
 }
 /**

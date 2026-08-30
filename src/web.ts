@@ -110,6 +110,10 @@ export async function load(
             return response.arrayBuffer();
         }
 
+        if (responseType == ResponseType.JSON) {
+            return response.json();
+        }
+
         return responseType == ResponseType.ReadableStream ? response.body : response.text();
     }) as Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
 }

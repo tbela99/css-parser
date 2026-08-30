@@ -2,7 +2,6 @@
  * response type
  */
 export enum ResponseType {
-
     /**
      * return text
      */
@@ -14,5 +13,9 @@ export enum ResponseType {
     /**
      * return an arraybuffer
      */
-    ArrayBuffer
+    ArrayBuffer,
+    /**
+     * return a json object
+     */
+    JSON,
 }
