@@ -5,7 +5,7 @@ import { EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumO
 import { minify } from "../ast/minify.ts";
 import { expand } from "../ast/expand.ts";
 import { walk, WalkerEvent, walkValues } from "../ast/walk.ts";
-import { tokenize, Tokenizer, tokenizeStream } from "./tokenize.ts";
+import { Tokenizer } from "./tokenize.ts";
 import type {
     AstAtRule,
     AstComment,
@@ -637,7 +637,7 @@ function parseVisitors(
  * @throws Error
  * @private
  */
-export function doParseSync(iter: Generator<Tokenizer>, options: ParserSyncOptions = {}): ParseResult {
+export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {}): ParseResult {
     if (options.signal != null) {
         options.signal.addEventListener("abort", reject);
     }
@@ -714,9 +714,10 @@ export function doParseSync(iter: Generator<Tokenizer>, options: ParserSyncOptio
     ast[LOCSRCID] = options.source!.id;
     ast[LOCSTA] = 0;
 
-    let tokenizer: Tokenizer;
+    // let tokenizer: Tokenizer;
 
-    while ((tokenizer = iter.next().value) != null) {
+    while (!tokenizer.done()) {
+        tokenizer.next();
         // item = (iter as Array<TokenizeResult>)[currentItemIndex];
 
         if (tokenizer.unit != null) {
@@ -750,8 +751,6 @@ export function doParseSync(iter: Generator<Tokenizer>, options: ParserSyncOptio
         item[LOCSRCID] = tokenizer.srcId as number;
         item[LOCSTA] = tokenizer.sta as number;
         item[LOCEND] = tokenizer.end as number;
-
-        // console.error(item);
 
         stats.bytesIn = tokenizer.bytesIn as number;
         stats.tokensCount++;
@@ -804,11 +803,7 @@ export function doParseSync(iter: Generator<Tokenizer>, options: ParserSyncOptio
                 tokens.push(item);
 
                 do {
-                    tokenizer = iter.next().value;
-
-                    if (tokenizer == null) {
-                        break;
-                    }
+                    tokenizer.next();
 
                     if (tokenizer.unit != null) {
                         item = {
@@ -849,7 +844,7 @@ export function doParseSync(iter: Generator<Tokenizer>, options: ParserSyncOptio
                     } else if (item.typ === EnumToken.BlockEndTokenType) {
                         inBlock--;
                     }
-                } while (inBlock != 0);
+                } while (inBlock != 0 && !tokenizer.done());
 
                 if (tokens.length > 0) {
                     errors.push({
@@ -1791,10 +1786,7 @@ export function doParseSync(iter: Generator<Tokenizer>, options: ParserSyncOptio
  * @throws Error
  * @private
  */
-export async function doParse(
-    iter: Generator<Tokenizer> | AsyncGenerator<Tokenizer>,
-    options: ParserOptions = {},
-): Promise<ParseResult> {
+export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: ParserOptions = {}): Promise<ParseResult> {
     if (options.signal != null) {
         options.signal.addEventListener("abort", reject);
     }
@@ -1874,7 +1866,7 @@ export async function doParse(
     let isAsync: boolean = typeof iter[Symbol.asyncIterator] === "function";
     let parensMatch: number = 0;
     let curlyBracketMatch: number = 0;
-    let tokenizer: Tokenizer;
+    let tokenizer: Tokenizer = iter instanceof Promise ? await iter : iter;
 
     // ast[ROOT] = ast;
 
@@ -1887,11 +1879,9 @@ export async function doParse(
     //     iter = iter[Symbol.iterator]() as Iterator<TokenizeResult>;
     // }
 
-    while (
-        (tokenizer = isAsync
-            ? ((await iter.next()).value as Tokenizer)
-            : ((iter as Iterator<Tokenizer>).next().value as Tokenizer))
-    ) {
+    while (!tokenizer.done()) {
+        tokenizer.next();
+
         if (tokenizer.unit != null) {
             item = {
                 typ: tokenizer.typ as EnumToken,
@@ -1976,13 +1966,7 @@ export async function doParse(
                 tokens.push(item);
 
                 do {
-                    tokenizer = isAsync
-                        ? ((await iter.next()).value as Tokenizer)
-                        : ((iter as Generator<Tokenizer>).next().value as Tokenizer);
-
-                    if (tokenizer == null) {
-                        break;
-                    }
+                    tokenizer.next();
 
                     if (tokenizer.unit != null) {
                         item = {
@@ -2023,7 +2007,7 @@ export async function doParse(
                     } else if (item.typ === EnumToken.BlockEndTokenType) {
                         inBlock--;
                     }
-                } while (inBlock != 0);
+                } while (inBlock != 0 && !tokenizer.done());
 
                 if (tokens.length > 0) {
                     errors.push({
@@ -2106,7 +2090,9 @@ export async function doParse(
                         time: 0,
                     } as ParseInfo;
                     const root: ParseResult = await doParse(
-                        stream instanceof ReadableStream ? tokenizeStream(stream, parseInfo) : tokenize(parseInfo),
+                        stream instanceof ReadableStream
+                            ? new Tokenizer(parseInfo, stream).tokenizeStream()
+                            : new Tokenizer(parseInfo),
                         Object.assign({}, options, {
                             minify: false,
                             setParent: false,
@@ -2499,7 +2485,9 @@ export async function doParse(
                 } as ParseInfo;
 
                 const root: ParseResult = await doParse(
-                    stream instanceof ReadableStream ? tokenizeStream(stream, parseInfo) : tokenize(parseInfo),
+                    stream instanceof ReadableStream
+                        ? new Tokenizer(parseInfo, stream).tokenizeStream()
+                        : new Tokenizer(parseInfo),
                     Object.assign({}, options, {
                         source,
                         minify: false,
@@ -2688,19 +2676,23 @@ export async function doParse(
                                     : result;
                             const root: ParseResult = await doParse(
                                 stream instanceof ReadableStream
-                                    ? tokenizeStream(stream, {
-                                          offset: 0,
-                                          source: new SourceFile("", [], src.relative),
-                                          position: 0,
-                                          currentPosition: 0,
-                                      } as ParseInfo)
-                                    : tokenize({
+                                    ? new Tokenizer(
+                                          {
+                                              offset: 0,
+                                              source: new SourceFile("", [], src.relative),
+                                              position: 0,
+                                              currentPosition: 0,
+                                          } as ParseInfo,
+                                          stream,
+                                      ).tokenizeStream()
+                                    : new Tokenizer({
                                           stream,
                                           offset: 0,
                                           position: 0,
-                                          source: new SourceFile(stream, [], src.relative),
+                                          source: new SourceFile(stream as string, [], src.relative),
                                           currentPosition: 0,
                                       } as ParseInfo),
+
                                 Object.assign({}, options, {
                                     minify: false,
                                     setParent: false,
@@ -4328,7 +4320,7 @@ export function parseAtRule(
 export async function parseDeclarations(declaration: string): Promise<Array<AstDeclaration | AstComment>> {
     const stream: string = `.x{${declaration}}`;
     return doParse(
-        tokenize({
+        new Tokenizer({
             stream,
             offset: 0,
             position: 0,
@@ -4379,12 +4371,22 @@ export function parseString(
     //     currentPosition: 0,
     // };
 
-    const iter: Generator<Tokenizer> = tokenize(src);
+    const tokenizer: Tokenizer = new Tokenizer({
+        stream: src,
+        buffer: "",
+        src:  options?.src ?? "",
+        offset: 0,
+        time: 0,
+        source: new SourceFile(src, [], options?.src ?? ""),
+        position: 0,
+        currentPosition: 0,
+    } as ParseInfo);
     const mapped: Token[] = [];
     let token: Token;
-    let tokenizer: Tokenizer;
 
-    while ((tokenizer = iter.next().value)) {
+    while (!tokenizer.done()) {
+        tokenizer.next();
+
         if (tokenizer.unit != null) {
             token = {
                 typ: tokenizer.typ as EnumToken,

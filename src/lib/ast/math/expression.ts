@@ -12,6 +12,7 @@ import type {
     LiteralToken,
     NumberToken,
     ParensToken,
+    PercentageToken,
     ResolutionToken,
     TimeToken,
     Token,
@@ -661,7 +662,7 @@ export function evaluateFunc(token: FunctionToken): Token[] | null {
                             [LOCSRCID]: token[LOCSRCID],
                             [LOCSTA]: token[LOCSTA],
                             [LOCEND]: token[LOCEND],
-                        },
+                        } as NumberToken | PercentageToken | DimensionToken | AngleToken,
                     ];
                 }
             }

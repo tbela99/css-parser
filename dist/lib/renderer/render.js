@@ -115,7 +115,7 @@ function doRender(data, options = {}, mapping) {
             source = options.sourcesMap.get(sourceId);
             sourcemap.addSourceContent(source.id, source.getFileName(), source.getContent());
         }
-        sourcemap.add(...sourcemaps.maps);
+        sourcemap.add(sourcemaps.maps);
         result.map = sourcemap;
         if (options.sourcemap === "inline") {
             result.code += `\n/*# sourceMappingURL=${result.map.toUrl()} */`;
@@ -163,7 +163,6 @@ function updateSourceMap(node, options, cache, sourcemaps, sourceLocation, lines
                 offsets[0] = record[1];
                 // @ts-ignore
                 offsets[1] = record[2];
-                // console.error({record});
                 sourceContent = record[3] || null;
                 if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
                     if (cache[sourceFileName] == null) {
@@ -215,7 +214,6 @@ function updateSourceMap(node, options, cache, sourcemaps, sourceLocation, lines
             }
             sourcemaps.maps.push([newLine, newColumn, srcId, offsets[0], offsets[1]]);
         }
-        // console.error([newLine, newColumn, srcId, ...offsets, EnumToken[node.typ], node.nam ?? node.sel]);
     }
     move(sourceLocation, linesMap, str, offset);
 }
@@ -361,18 +359,6 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
                         //         color: red;
                         //     }
                         // }
-                        // const source = options.sourcesMap!.get(node[LOCSTA]) as SourceFile;
-                        // if (!sourcemaps.sources.includes(node[LOCSTA] as number)) {
-                        //     sourcemaps.sources.push(node[LOCSTA] as number);
-                        // }
-                        // sourcemaps.maps.push([
-                        //     ...linesMap!.getOffsets(
-                        //         sourceLocation.end - str.length + options.newLine!.length + indentSub.length,
-                        //     ),
-                        //     node[LOCSTA],
-                        //     ...source!.getOffsets(node![LOCSTA]),
-                        // ]);
-                        // console.error(options.sourcesMap.get(node[LOCSTA])?.getSourceLocation(node[LOCSTA]), linesMap?.getOffsets(sourceLocation.end), node.nam);
                         // @ts-ignore
                         updateSourceMap(node, options, cache, sourcemaps, sourceLocation, linesMap, str);
                     }

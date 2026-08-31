@@ -107,15 +107,12 @@ class SourceMap {
         this.sourcesContent[this.sourcesContent.length] = content || null;
     }
     /**
-     * Add all location
+     * Add multiple sourcemaps
      * @param maps
      * @throws
      */
-    add(...maps) {
+    add(maps) {
         let srcIndex;
-        if (typeof maps[0] === "number") {
-            maps = [maps];
-        }
         for (let [newLine, newColumn, srcId, ln, col] of maps) {
             const key = `${srcId}:${ln}:${col}:${newLine}:${newColumn}`;
             if (this.keys.has(key)) {

@@ -5,7 +5,7 @@ import { EnumToken, EnumAstNodeStatus, ModuleCaseTransformEnum, ModuleScopeEnumO
 import { minify } from '../ast/minify.js';
 import { expand } from '../ast/expand.js';
 import { walk, walkValues, WalkerEvent } from '../ast/walk.js';
-import { tokenizeStream, tokenize } from './tokenize.js';
+import { Tokenizer } from './tokenize.js';
 import { LOCSRCID, LOCSTA, LOCEND, tokensfuncDefMap, STATE, PARENT, TOKENS, ROOT, ERRORS, pageMarginBoxType } from '../syntax/constants.js';
 import { hashAlgorithms, hash, syncHash } from './utils/hash.js';
 import { parseSelector } from './utils/selector.js';
@@ -440,7 +440,7 @@ function parseVisitors(visitorsDef, errors) {
  * @throws Error
  * @private
  */
-function doParseSync(iter, options = {}) {
+function doParseSync(tokenizer, options = {}) {
     if (options.signal != null) {
         options.signal.addEventListener("abort", reject);
     }
@@ -505,8 +505,9 @@ function doParseSync(iter, options = {}) {
     // let currentItemIndex: number;
     ast[LOCSRCID] = options.source.id;
     ast[LOCSTA] = 0;
-    let tokenizer;
-    while ((tokenizer = iter.next().value) != null) {
+    // let tokenizer: Tokenizer;
+    while (!tokenizer.done()) {
+        tokenizer.next();
         // item = (iter as Array<TokenizeResult>)[currentItemIndex];
         if (tokenizer.unit != null) {
             item = {
@@ -542,7 +543,6 @@ function doParseSync(iter, options = {}) {
         item[LOCSRCID] = tokenizer.srcId;
         item[LOCSTA] = tokenizer.sta;
         item[LOCEND] = tokenizer.end;
-        // console.error(item);
         stats.bytesIn = tokenizer.bytesIn;
         stats.tokensCount++;
         if (BadTokensTypes.includes(item.typ)) {
@@ -586,10 +586,7 @@ function doParseSync(iter, options = {}) {
                 tokens.length = 0;
                 tokens.push(item);
                 do {
-                    tokenizer = iter.next().value;
-                    if (tokenizer == null) {
-                        break;
-                    }
+                    tokenizer.next();
                     if (tokenizer.unit != null) {
                         item = {
                             typ: tokenizer.typ,
@@ -631,7 +628,7 @@ function doParseSync(iter, options = {}) {
                     else if (item.typ === EnumToken.BlockEndTokenType) {
                         inBlock--;
                     }
-                } while (inBlock != 0);
+                } while (inBlock != 0 && !tokenizer.done());
                 if (tokens.length > 0) {
                     errors.push({
                         action: "drop",
@@ -1434,11 +1431,9 @@ async function doParse(iter, options = {}) {
     const imports = [];
     let item;
     let node;
-    // @ts-ignore ignore error
-    let isAsync = typeof iter[Symbol.asyncIterator] === "function";
     let parensMatch = 0;
     let curlyBracketMatch = 0;
-    let tokenizer;
+    let tokenizer = iter instanceof Promise ? await iter : iter;
     // ast[ROOT] = ast;
     ast[LOCSRCID] = options.source.id;
     ast[LOCSTA] = 0;
@@ -1447,9 +1442,8 @@ async function doParse(iter, options = {}) {
     //     // @ts-expect-error
     //     iter = iter[Symbol.iterator]() as Iterator<TokenizeResult>;
     // }
-    while ((tokenizer = isAsync
-        ? (await iter.next()).value
-        : iter.next().value)) {
+    while (!tokenizer.done()) {
+        tokenizer.next();
         if (tokenizer.unit != null) {
             item = {
                 typ: tokenizer.typ,
@@ -1530,12 +1524,7 @@ async function doParse(iter, options = {}) {
                 tokens.length = 0;
                 tokens.push(item);
                 do {
-                    tokenizer = isAsync
-                        ? (await iter.next()).value
-                        : iter.next().value;
-                    if (tokenizer == null) {
-                        break;
-                    }
+                    tokenizer.next();
                     if (tokenizer.unit != null) {
                         item = {
                             typ: tokenizer.typ,
@@ -1577,7 +1566,7 @@ async function doParse(iter, options = {}) {
                     else if (item.typ === EnumToken.BlockEndTokenType) {
                         inBlock--;
                     }
-                } while (inBlock != 0);
+                } while (inBlock != 0 && !tokenizer.done());
                 if (tokens.length > 0) {
                     errors.push({
                         action: "drop",
@@ -1640,7 +1629,9 @@ async function doParse(iter, options = {}) {
                     currentPosition: 0,
                     time: 0,
                 };
-                const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream, parseInfo) : tokenize(parseInfo), Object.assign({}, options, {
+                const root = await doParse(stream instanceof ReadableStream
+                    ? new Tokenizer(parseInfo, stream).tokenizeStream()
+                    : new Tokenizer(parseInfo), Object.assign({}, options, {
                     minify: false,
                     setParent: false,
                     src: options.resolve(url, options.src || options.cwd).relative,
@@ -1963,7 +1954,9 @@ async function doParse(iter, options = {}) {
                     position: 0,
                     currentPosition: 0,
                 };
-                const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream, parseInfo) : tokenize(parseInfo), Object.assign({}, options, {
+                const root = await doParse(stream instanceof ReadableStream
+                    ? new Tokenizer(parseInfo, stream).tokenizeStream()
+                    : new Tokenizer(parseInfo), Object.assign({}, options, {
                     source,
                     minify: false,
                     setParent: false,
@@ -2104,13 +2097,13 @@ async function doParse(iter, options = {}) {
                                 ? await result
                                 : result;
                             const root = await doParse(stream instanceof ReadableStream
-                                ? tokenizeStream(stream, {
+                                ? new Tokenizer({
                                     offset: 0,
                                     source: new SourceFile("", [], src.relative),
                                     position: 0,
                                     currentPosition: 0,
-                                })
-                                : tokenize({
+                                }, stream).tokenizeStream()
+                                : new Tokenizer({
                                     stream,
                                     offset: 0,
                                     position: 0,
@@ -3402,7 +3395,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
  */
 async function parseDeclarations(declaration) {
     const stream = `.x{${declaration}}`;
-    return doParse(tokenize({
+    return doParse(new Tokenizer({
         stream,
         offset: 0,
         position: 0,
@@ -3443,11 +3436,20 @@ function parseString(src, options = { parseColor: true }, errors) {
     //     position: 0,
     //     currentPosition: 0,
     // };
-    const iter = tokenize(src);
+    const tokenizer = new Tokenizer({
+        stream: src,
+        buffer: "",
+        src: options?.src ?? "",
+        offset: 0,
+        time: 0,
+        source: new SourceFile(src, [], options?.src ?? ""),
+        position: 0,
+        currentPosition: 0,
+    });
     const mapped = [];
     let token;
-    let tokenizer;
-    while ((tokenizer = iter.next().value)) {
+    while (!tokenizer.done()) {
+        tokenizer.next();
         if (tokenizer.unit != null) {
             token = {
                 typ: tokenizer.typ,

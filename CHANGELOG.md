@@ -3,6 +3,9 @@
 # v1.6.0
 
 - [x] added support for math function `tan()`.
+
+## Improvements
+- [x] faster tokenizer
 - [x] support input sourcemap from inline sourcemap file. This is only supported by the async parser.
 
 ```css

@@ -149,7 +149,7 @@ export function hsl2oklchvalues(token: ColorToken): number[] | null {
 }
 
 export function hwb2oklchvalues(token: ColorToken): number[] {
-    const values = hwb2oklabvalues(token);
+    const values = hwb2oklabvalues(token) as number[];
     return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
 

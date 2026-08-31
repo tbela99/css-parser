@@ -19795,8 +19795,9 @@
                 }
                 k = l;
             }
-            // @ts-ignore
-            ast.chi = [...properties, ...rules];
+            ast.chi.length = 0;
+            // @ts-expect-error
+            ast.chi.push(...properties, ...rules);
             return ast;
         }
     }
@@ -23450,15 +23451,12 @@
             this.sourcesContent[this.sourcesContent.length] = content || null;
         }
         /**
-         * Add all location
+         * Add multiple sourcemaps
          * @param maps
          * @throws
          */
-        add(...maps) {
+        add(maps) {
             let srcIndex;
-            if (typeof maps[0] === "number") {
-                maps = [maps];
-            }
             for (let [newLine, newColumn, srcId, ln, col] of maps) {
                 const key = `${srcId}:${ln}:${col}:${newLine}:${newColumn}`;
                 if (this.keys.has(key)) {
@@ -24075,7 +24073,7 @@
                 source = options.sourcesMap.get(sourceId);
                 sourcemap.addSourceContent(source.id, source.getFileName(), source.getContent());
             }
-            sourcemap.add(...sourcemaps.maps);
+            sourcemap.add(sourcemaps.maps);
             result.map = sourcemap;
             if (options.sourcemap === "inline") {
                 result.code += `\n/*# sourceMappingURL=${result.map.toUrl()} */`;
@@ -24123,7 +24121,6 @@
                     offsets[0] = record[1];
                     // @ts-ignore
                     offsets[1] = record[2];
-                    // console.error({record});
                     sourceContent = record[3] || null;
                     if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
                         if (cache[sourceFileName] == null) {
@@ -24175,7 +24172,6 @@
                 }
                 sourcemaps.maps.push([newLine, newColumn, srcId, offsets[0], offsets[1]]);
             }
-            // console.error([newLine, newColumn, srcId, ...offsets, EnumToken[node.typ], node.nam ?? node.sel]);
         }
         move(sourceLocation, linesMap, str, offset);
     }
@@ -24321,18 +24317,6 @@
                             //         color: red;
                             //     }
                             // }
-                            // const source = options.sourcesMap!.get(node[LOCSTA]) as SourceFile;
-                            // if (!sourcemaps.sources.includes(node[LOCSTA] as number)) {
-                            //     sourcemaps.sources.push(node[LOCSTA] as number);
-                            // }
-                            // sourcemaps.maps.push([
-                            //     ...linesMap!.getOffsets(
-                            //         sourceLocation.end - str.length + options.newLine!.length + indentSub.length,
-                            //     ),
-                            //     node[LOCSTA],
-                            //     ...source!.getOffsets(node![LOCSTA]),
-                            // ]);
-                            // console.error(options.sourcesMap.get(node[LOCSTA])?.getSourceLocation(node[LOCSTA]), linesMap?.getOffsets(sourceLocation.end), node.nam);
                             // @ts-ignore
                             updateSourceMap(node, options, cache, sourcemaps, sourceLocation, linesMap, str);
                         }
@@ -25348,6 +25332,22 @@
     }
 
     const SymbolsMapTokens = Object.create(null);
+    // Regex for escape sequence decoding - compile once, reuse many times
+    const ESCAPE_SEQUENCE_REGEX = /\\([0-9a-fA-F]{1,6})(?:\s)?/g;
+    function decodeEscapeSequences(value) {
+        return value.replace(ESCAPE_SEQUENCE_REGEX, (_, sequence) => {
+            const codepoint = parseInt(sequence, 16);
+            if (codepoint == 0 ||
+                // leading surrogate
+                (0xd800 <= codepoint && codepoint <= 0xdbff) ||
+                // trailing surrogate
+                (0xdc00 <= codepoint && codepoint <= 0xdfff) ||
+                codepoint > 0x10ffff) {
+                return "\uFFFD";
+            }
+            return String.fromCodePoint(codepoint);
+        });
+    }
     function assignTokenMap(entries, tokenType, suffix = "", lowercase = false) {
         for (const entry of entries) {
             SymbolsMapTokens[(lowercase ? entry.toLowerCase() : entry) + suffix] = tokenType;
@@ -25449,65 +25449,52 @@
         TokenMap[TokenMap["PERCENTAGE"] = 37] = "PERCENTAGE";
     })(TokenMap || (TokenMap = {}));
     function getSymbolHint(parseInfo, start, end) {
-        let i = SymbolsMapTokensKeys.length;
-        let j;
-        let ca;
-        let cb;
-        let match;
-        let index;
         const len = end - start;
-        while (i--) {
-            match = len == SymbolsMapTokensKeys[i].length;
-            if (!match) {
+        const keysLength = SymbolsMapTokensKeys.length;
+        // Early exit for impossible lengths
+        if (len < 0)
+            return null;
+        for (let i = 0; i < keysLength; i++) {
+            const key = SymbolsMapTokensKeys[i];
+            if (key.length !== len)
                 continue;
-            }
-            for (j = 0; j < SymbolsMapTokensKeys[i].length; j++) {
-                index = start + j;
-                if (index > end) {
-                    match = false;
-                    break;
-                }
-                ca = SymbolsMapTokensKeys[i].charCodeAt(j);
-                cb = parseInfo.stream.charCodeAt(index);
+            // Match character by character
+            let match = true;
+            for (let j = 0; j < len; j++) {
+                let ca = key.charCodeAt(j);
+                let cb = parseInfo.stream.charCodeAt(start + j);
                 // Normalize A-Z to a-z
                 if (ca >= 65 && ca <= 90)
                     ca += 32;
                 if (cb >= 65 && cb <= 90)
                     cb += 32;
-                if (ca != cb) {
+                if (ca !== cb) {
                     match = false;
                     break;
                 }
             }
-            if (!match) {
-                continue;
+            if (match) {
+                return SymbolsMapTokens[key];
             }
-            return SymbolsMapTokens[SymbolsMapTokensKeys[i]];
         }
         return null;
     }
     function searchArray(array, parseInfo, start, end) {
-        let i = array.length;
-        let j;
-        let ca;
-        let cb;
-        let match;
-        let index;
         const len = end - start;
+        // Early exit for impossible lengths
+        if (len < 0)
+            return null;
+        // Use a simple linear search optimized with length pre-filtering
+        let i = array.length;
         while (i--) {
-            match = true;
-            for (j = 0; j < array[i].length; j++) {
-                if (len != array[i].length) {
-                    match = false;
-                    break;
-                }
-                index = start + j;
-                if (index > end) {
-                    match = false;
-                    break;
-                }
-                ca = array[i].charCodeAt(j);
-                cb = parseInfo.stream.charCodeAt(index);
+            if (array[i].length !== len)
+                continue;
+            // Match character by character
+            let match = true;
+            const arrayItem = array[i];
+            for (let j = 0; j < len; j++) {
+                let ca = arrayItem.charCodeAt(j);
+                let cb = parseInfo.stream.charCodeAt(start + j);
                 // Normalize A-Z to a-z
                 if (ca >= 65 && ca <= 90)
                     ca += 32;
@@ -25519,7 +25506,7 @@
                 }
             }
             if (match) {
-                return array[i];
+                return arrayItem;
             }
         }
         return null;
@@ -25528,6 +25515,8 @@
      * tokenizer class
      */
     class Tokenizer {
+        parseInfo;
+        input;
         /**
          * token type
          */
@@ -25580,19 +25569,36 @@
          * token hint
          */
         hint = null;
+        state = null;
+        constructor(parseInfo, input = null) {
+            this.parseInfo = parseInfo;
+            this.input = input;
+            if (typeof this.parseInfo == "string") {
+                if (typeof parseInfo == "string") {
+                    this.parseInfo = {
+                        stream: parseInfo,
+                        source: new SourceFile(parseInfo, [], ""),
+                        offset: 0,
+                        time: 0,
+                        position: 0,
+                        currentPosition: 0,
+                    };
+                }
+            }
+        }
         /**
          *
          * @param parseInfo
          * @returns
          */
-        *consumeString(parseInfo) {
-            const quote = this.next(parseInfo).charCodeAt(0);
+        consumeString(parseInfo) {
+            const quote = this.advance(parseInfo).charCodeAt(0);
             let charCode;
             let decodeSegments = false;
             while ((charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset)) == charCode) {
                 if (charCode == 92 /* TokenMap.REVERSE_SOLIDUS */) {
                     if (charCode == parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset + 1)) {
-                        this.next(parseInfo, 2);
+                        this.advance(parseInfo, 2);
                         continue;
                     }
                     const sequence = this.peek(parseInfo, 7);
@@ -25620,27 +25626,25 @@
                                 ? 1
                                 : 0);
                         decodeSegments = true;
-                        this.next(parseInfo, length);
+                        this.advance(parseInfo, length);
                         continue;
                     }
-                    this.next(parseInfo, 2);
+                    this.advance(parseInfo, 2);
                     continue;
                 }
                 if (charCode == quote) {
-                    this.next(parseInfo);
-                    yield this.makeToken(parseInfo, 
+                    this.advance(parseInfo);
+                    return this.makeToken(parseInfo, 
                     /* hasNewLine ? EnumToken.BadStringTokenType : */ exports.EnumToken.StringTokenType, decodeSegments ? { decodeSegments } : null);
-                    return;
                 }
                 if (isNewLine(charCode)) {
-                    this.next(parseInfo);
-                    yield this.makeToken(parseInfo, exports.EnumToken.BadStringTokenType);
-                    return;
+                    this.advance(parseInfo);
+                    return this.makeToken(parseInfo, exports.EnumToken.BadStringTokenType);
                 }
-                this.next(parseInfo);
+                this.advance(parseInfo);
             }
             // EOF - 'Unclosed-string' fixed
-            yield this.makeToken(parseInfo, exports.EnumToken.StringTokenType);
+            return this.makeToken(parseInfo, exports.EnumToken.StringTokenType);
             // return result;
         }
         /**
@@ -25648,14 +25652,14 @@
          * @param parseInfo
          * @returns
          */
-        *consumeURLToken(parseInfo) {
-            const quote = this.next(parseInfo).charCodeAt(0);
+        consumeURLToken(parseInfo) {
+            const quote = this.advance(parseInfo).charCodeAt(0);
             let charCode;
             let decodeSegments = false;
             while ((charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset)) == charCode) {
                 if (charCode == 92 /* TokenMap.REVERSE_SOLIDUS */) {
                     if (charCode == parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset + 1)) {
-                        this.next(parseInfo, 2);
+                        this.advance(parseInfo, 2);
                         continue;
                     }
                     const sequence = this.peek(parseInfo, 7);
@@ -25683,14 +25687,14 @@
                                 ? 1
                                 : 0);
                         decodeSegments = true;
-                        this.next(parseInfo, length);
+                        this.advance(parseInfo, length);
                         continue;
                     }
-                    this.next(parseInfo, 2);
+                    this.advance(parseInfo, 2);
                     continue;
                 }
                 if (charCode == quote) {
-                    this.next(parseInfo);
+                    this.advance(parseInfo);
                     let k = 1;
                     let end = parseInfo.stream.length - parseInfo.offset;
                     let position = parseInfo.currentPosition - parseInfo.offset;
@@ -25698,49 +25702,44 @@
                         charCode = parseInfo.stream.charCodeAt(position);
                         // NaN != NaN
                         if (charCode != charCode) {
-                            this.next(parseInfo, k);
-                            yield this.makeToken(parseInfo, exports.EnumToken.BadUrlTokenType);
-                            return;
+                            this.advance(parseInfo, k);
+                            return this.makeToken(parseInfo, exports.EnumToken.BadUrlTokenType);
                         }
                         if (isWhiteSpace(charCode)) {
-                            this.next(parseInfo, k);
+                            this.advance(parseInfo, k);
                             k++;
                             continue;
                         }
                         if (charCode != 41 /* TokenMap.RIGHT_PARENTHESIS */) {
-                            this.next(parseInfo, k);
-                            yield this.makeToken(parseInfo, exports.EnumToken.BadUrlTokenType);
-                            return;
+                            this.advance(parseInfo, k);
+                            return this.makeToken(parseInfo, exports.EnumToken.BadUrlTokenType);
                         }
                         break;
                     }
                     // consume until the ')'
-                    yield this.makeToken(parseInfo, 
+                    return this.makeToken(parseInfo, 
                     /* hasNewLine ? EnumToken.BadStringTokenType : */ exports.EnumToken.StringTokenType, decodeSegments ? { decodeSegments } : null);
-                    return;
                     // return result;
                 }
                 if (isNewLine(charCode)) {
                     // bad string
-                    this.next(parseInfo);
+                    this.advance(parseInfo);
                     while ((charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset)) == charCode) {
                         if (charCode == 92 /* TokenMap.REVERSE_SOLIDUS */) {
-                            this.next(parseInfo, 2);
+                            this.advance(parseInfo, 2);
                             continue;
                         }
                         if (charCode == 41 /* TokenMap.RIGHT_PARENTHESIS */) {
-                            yield this.makeToken(parseInfo, exports.EnumToken.BadUrlTokenType);
-                            return;
+                            return this.makeToken(parseInfo, exports.EnumToken.BadUrlTokenType);
                         }
-                        this.next(parseInfo);
+                        this.advance(parseInfo);
                     }
-                    yield this.makeToken(parseInfo, exports.EnumToken.BadStringTokenType);
-                    return;
+                    return this.makeToken(parseInfo, exports.EnumToken.BadStringTokenType);
                 }
-                this.next(parseInfo);
+                this.advance(parseInfo);
             }
             // EOF - bad url token
-            yield this.makeToken(parseInfo, exports.EnumToken.BadUrlTokenType);
+            return this.makeToken(parseInfo, exports.EnumToken.BadUrlTokenType);
             // return result;
         }
         /**
@@ -26095,6 +26094,31 @@
             }
             return 0;
         }
+        parseURLToken(parseInfo, endPosition) {
+            let charCode;
+            // consume an <url>
+            while (isWhiteSpace(this.peek(parseInfo).charCodeAt(0))) {
+                this.advance(parseInfo);
+            }
+            charCode = this.peek(parseInfo).charCodeAt(0);
+            if (charCode == 34 /* TokenMap.DOUBLE_QUOTE */ || charCode == 39 /* TokenMap.SINGLE_QUOTE */) {
+                return this.consumeURLToken(parseInfo);
+            }
+            do {
+                this.advance(parseInfo);
+                charCode = this.peek(parseInfo).charCodeAt(0);
+            } while (
+            // !(value === "/" && this.match(parseInfo, "/*") &&
+            charCode !== 41 /* TokenMap.RIGHT_PARENTHESIS */ &&
+                parseInfo.currentPosition < endPosition);
+            // if (parseInfo.position < parseInfo.currentPosition) {
+            return this.makeToken(parseInfo, 
+            // parseInfo.position < parseInfo.currentPosition
+            (charCode = this.peek(parseInfo).charCodeAt(0)) != charCode || !this.isURLToken(parseInfo)
+                ? exports.EnumToken.BadUrlTokenType
+                : exports.EnumToken.UrlTokenTokenType);
+            // }
+        }
         /**
          *
          * @param parseInfo
@@ -26196,18 +26220,7 @@
                     val = parseInfo.stream.slice(options?.slice ?? parseInfo.position - parseInfo.offset, parseInfo.currentPosition - parseInfo.offset);
                 }
                 if (this.decodeString) {
-                    val = val.replace(/\\([0-9a-fA-F]{1,6})(?:\s)?/g, (_, sequence) => {
-                        const codepoint = parseInt(sequence, 16);
-                        if (codepoint == 0 ||
-                            // leading surrogate
-                            (0xd800 <= codepoint && codepoint <= 0xdbff) ||
-                            // trailing surrogate
-                            (0xdc00 <= codepoint && codepoint <= 0xdfff) ||
-                            codepoint > 0x10ffff) {
-                            return "\uFFFD";
-                        }
-                        return String.fromCodePoint(codepoint);
-                    });
+                    val = decodeEscapeSequences(val);
                 }
                 if (hintsEnum.has(hint)) {
                     this.typ = hint;
@@ -26242,18 +26255,7 @@
             if (this.typ == null) {
                 val = parseInfo.stream.slice(parseInfo.position - parseInfo.offset, parseInfo.currentPosition - parseInfo.offset);
                 if (options?.decodeSegments) {
-                    val = val.replace(/\\([0-9a-fA-F]{1,6})(?:\s)?/g, (_, sequence) => {
-                        const codepoint = parseInt(sequence, 16);
-                        if (codepoint == 0 ||
-                            // leading surrogate
-                            (0xd800 <= codepoint && codepoint <= 0xdbff) ||
-                            // trailing surrogate
-                            (0xdc00 <= codepoint && codepoint <= 0xdfff) ||
-                            codepoint > 0x10ffff) {
-                            return "\uFFFD";
-                        }
-                        return String.fromCodePoint(codepoint);
-                    });
+                    val = decodeEscapeSequences(val);
                     this.decodeString = true;
                 }
                 this.typ = exports.EnumToken.LiteralTokenType;
@@ -26306,6 +26308,14 @@
             return true;
         }
         /**
+         * Get the current character code without creating a string
+         * @param parseInfo
+         * @returns charCode at current position
+         */
+        peekCharCode(parseInfo) {
+            return parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset);
+        }
+        /**
          *
          * @param parseInfo
          * @param count
@@ -26324,13 +26334,14 @@
          * @param count
          * @returns
          */
-        next(parseInfo, count = 1) {
+        advance(parseInfo, count = 1) {
             let position = parseInfo.currentPosition - parseInfo.offset;
             let char = count == 1 ? parseInfo.stream.charAt(position) : parseInfo.stream.slice(position, position + count);
             let i = 0;
             let codepoint;
+            const lineStarts = parseInfo.source.lineStarts.lineStarts;
             for (; i < char.length; i++) {
-                codepoint = char[i].charCodeAt(0);
+                codepoint = char.charCodeAt(i);
                 if (codepoint == 0xa || // \n
                     codepoint == 0xb || // \v
                     codepoint == 0xc || // \f
@@ -26341,7 +26352,7 @@
                     // \r\n
                     if (codepoint == 0xa && i > 0 && char.charCodeAt(i - 1) == 0xd) ;
                     else {
-                        parseInfo.source.lineStarts.lineStarts.push(position + parseInfo.offset + i);
+                        lineStarts.push(position + parseInfo.offset + i);
                     }
                 }
             }
@@ -26481,22 +26492,16 @@
             }
             return i == parseInfo.currentPosition;
         }
+        done() {
+            return this.typ === exports.EnumToken.EOF;
+        }
         /**
          * Tokenize CSS string
          * @param parseInfo
          * @param yieldEOFToken
          */
-        *tokenize(parseInfo, yieldEOFToken = true) {
-            if (typeof parseInfo == "string") {
-                parseInfo = {
-                    stream: parseInfo,
-                    source: new SourceFile(parseInfo, [], ""),
-                    offset: 0,
-                    time: 0,
-                    position: 0,
-                    currentPosition: 0,
-                };
-            }
+        next( /* parseInfo: ParseInfo | string, yieldEOFToken: boolean = true */) {
+            const parseInfo = this.parseInfo;
             this.source = parseInfo.source;
             let charCode;
             let nextCharCode;
@@ -26505,7 +26510,11 @@
             const endPosition = parseInfo.stream.length - 1; // yieldEOFToken ? parseInfo.stream.length - 1 : parseInfo.stream.length - 10;
             let tokensCount;
             // NaN is not equal to NaN
-            while ((charCode = this.peek(parseInfo).charCodeAt(0)) == charCode) {
+            while ((charCode = this.peekCharCode(parseInfo)) == charCode) {
+                if (this.state === exports.EnumToken.UrlFunctionTokenDefType) {
+                    this.state = null;
+                    return this.parseURLToken(parseInfo, endPosition);
+                }
                 if (parseInfo.position == parseInfo.currentPosition) {
                     if (charCode == 45 /* TokenMap.MINUS */ ||
                         charCode == 43 /* TokenMap.PLUS */ ||
@@ -26513,30 +26522,28 @@
                         isDigit(charCode)) {
                         tokensCount = this.consumeNumericToken(parseInfo);
                         if (tokensCount > 0) {
-                            this.next(parseInfo, tokensCount);
-                            yield this.makeToken(parseInfo, this.hint ?? exports.EnumToken.NumberTokenType, {
+                            this.advance(parseInfo, tokensCount);
+                            return this.makeToken(parseInfo, this.hint ?? exports.EnumToken.NumberTokenType, {
                                 slice: this.slice,
                                 sign: charCode == 45 /* TokenMap.MINUS */ ? "-" : charCode == 43 /* TokenMap.PLUS */ ? "+" : null,
                             });
-                            continue;
                         }
                     }
                     if (isIdentStart(charCode) || charCode == 45 /* TokenMap.MINUS */) {
                         tokensCount = this.consumeIdentToken(parseInfo);
                         if (tokensCount > 0) {
-                            this.next(parseInfo, tokensCount);
+                            this.advance(parseInfo, tokensCount);
                             charCode = this.peek(parseInfo).charCodeAt(0);
                             // do not match function
                             if (40 /* TokenMap.LEFT_PARENTHESIS */ != charCode) {
-                                yield this.makeToken(parseInfo, this.startsWith(parseInfo, "--")
+                                return this.makeToken(parseInfo, this.startsWith(parseInfo, "--")
                                     ? exports.EnumToken.DashedIdenTokenType
                                     : exports.EnumToken.IdenTokenType);
-                                continue;
                             }
                         }
                     }
                     if (charCode == 64 /* TokenMap.AT */) {
-                        this.next(parseInfo);
+                        this.advance(parseInfo);
                         charCode = this.peek(parseInfo).charCodeAt(0);
                         // match at-rule
                         if (charCode == 45 /* TokenMap.MINUS */ || isIdentStart(this.peek(parseInfo).charCodeAt(0))) {
@@ -26544,25 +26551,22 @@
                             parseInfo.position = parseInfo.currentPosition;
                             tokensCount = this.consumeIdentToken(parseInfo);
                             if (tokensCount > 0) {
-                                this.next(parseInfo, tokensCount);
-                                yield this.makeToken(parseInfo, exports.EnumToken.AtRuleTokenType);
-                                continue;
+                                this.advance(parseInfo, tokensCount);
+                                return this.makeToken(parseInfo, exports.EnumToken.AtRuleTokenType);
                             }
                         }
                     }
                     if (charCode == 35 /* TokenMap.HASH */) {
                         tokensCount = this.consumeColor(parseInfo);
                         if (tokensCount > 0) {
-                            this.next(parseInfo, tokensCount);
-                            yield this.makeToken(parseInfo, exports.EnumToken.ColorTokenType);
-                            continue;
+                            this.advance(parseInfo, tokensCount);
+                            return this.makeToken(parseInfo, exports.EnumToken.ColorTokenType);
                         }
-                        this.next(parseInfo);
+                        this.advance(parseInfo);
                         tokensCount = this.consumeIdentToken(parseInfo);
                         if (tokensCount > 0) {
-                            this.next(parseInfo, tokensCount);
-                            yield this.makeToken(parseInfo, exports.EnumToken.HashTokenType);
-                            continue;
+                            this.advance(parseInfo, tokensCount);
+                            return this.makeToken(parseInfo, exports.EnumToken.HashTokenType);
                         }
                     }
                 }
@@ -26570,162 +26574,123 @@
                 switch (charCode) {
                     case 61 /* TokenMap.EQUALS */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
-                        this.next(parseInfo);
-                        yield this.makeToken(parseInfo, exports.EnumToken.DelimTokenType);
-                        break;
+                        this.advance(parseInfo);
+                        return this.makeToken(parseInfo, exports.EnumToken.DelimTokenType);
                     // '+' or '-'
                     case 43 /* TokenMap.PLUS */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
-                        this.next(parseInfo);
+                        this.advance(parseInfo);
                         charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset);
                         if (isDigit(charCode)) {
                             tokensCount = this.consumeNumericToken(parseInfo);
                             if (tokensCount > 0) {
-                                this.next(parseInfo, tokensCount);
-                                yield this.makeToken(parseInfo, this.hint ?? exports.EnumToken.NumberTokenType, {
+                                this.advance(parseInfo, tokensCount);
+                                return this.makeToken(parseInfo, this.hint ?? exports.EnumToken.NumberTokenType, {
                                     slice: this.slice,
                                     sign: "+",
                                 });
-                                break;
                             }
                         }
-                        yield this.makeToken(parseInfo, exports.EnumToken.Plus);
-                        break;
+                        return this.makeToken(parseInfo, exports.EnumToken.Plus);
                     case 45 /* TokenMap.MINUS */:
                         if (parseInfo.position == parseInfo.currentPosition) {
                             nextCharCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset + 1);
                             // not a number
                             if (isWhiteSpace(nextCharCode)) {
-                                this.next(parseInfo);
-                                yield this.makeToken(parseInfo, exports.EnumToken.Sub);
-                                break;
+                                this.advance(parseInfo);
+                                return this.makeToken(parseInfo, exports.EnumToken.Sub);
                             }
                             if (charCode == 45 /* TokenMap.MINUS */ &&
                                 (nextCharCode == 45 /* TokenMap.MINUS */ || isIdentStart(nextCharCode))) {
-                                this.next(parseInfo);
+                                this.advance(parseInfo);
                                 tokensCount = this.consumeIdentToken(parseInfo);
                                 if (tokensCount > 0) {
-                                    this.next(parseInfo, tokensCount);
-                                    yield this.makeToken(parseInfo, exports.EnumToken.IdenTokenType);
-                                    continue;
+                                    this.advance(parseInfo, tokensCount);
+                                    return this.makeToken(parseInfo, exports.EnumToken.IdenTokenType);
                                 }
                             }
                         }
-                        this.next(parseInfo);
+                        this.advance(parseInfo);
                         break;
                     // '{'
                     case 123 /* TokenMap.LEFT_BRACE */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
-                        this.next(parseInfo);
-                        yield this.makeToken(parseInfo, exports.EnumToken.BlockStartTokenType);
-                        break;
+                        this.advance(parseInfo);
+                        return this.makeToken(parseInfo, exports.EnumToken.BlockStartTokenType);
                     // '}'
                     case 125 /* TokenMap.RIGHT_BRACE */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
-                        this.next(parseInfo);
-                        yield this.makeToken(parseInfo, exports.EnumToken.BlockEndTokenType);
-                        break;
+                        this.advance(parseInfo);
+                        return this.makeToken(parseInfo, exports.EnumToken.BlockEndTokenType);
                     // '('
                     case 40 /* TokenMap.LEFT_PARENTHESIS */:
                         if (parseInfo.position < parseInfo.currentPosition) {
                             if (parseInfo.stream[parseInfo.position - parseInfo.offset] === ":" &&
                                 this.isPseudo(parseInfo)) {
-                                this.next(parseInfo);
-                                yield this.makeToken(parseInfo, exports.EnumToken.PseudoClassFunctionTokenDefType);
-                                break;
+                                this.advance(parseInfo);
+                                return this.makeToken(parseInfo, exports.EnumToken.PseudoClassFunctionTokenDefType);
                             }
                             else if (this.isIdentToken(parseInfo)) {
                                 const hint = this.startsWith(parseInfo, "--")
                                     ? exports.EnumToken.CustomFunctionTokenDefType
                                     : (getSymbolHint(parseInfo, parseInfo.position - parseInfo.offset, parseInfo.currentPosition - parseInfo.offset + 1) ?? exports.EnumToken.FunctionTokenDefType);
-                                yield this.makeToken(parseInfo, hint);
-                                this.next(parseInfo);
+                                this.makeToken(parseInfo, hint);
+                                this.advance(parseInfo);
                                 // consume '('
                                 parseInfo.position = parseInfo.currentPosition;
                                 if (hint === exports.EnumToken.UrlFunctionTokenDefType) {
-                                    // consume an <url>
-                                    while (isWhiteSpace(this.peek(parseInfo).charCodeAt(0))) {
-                                        this.next(parseInfo);
-                                    }
-                                    charCode = this.peek(parseInfo).charCodeAt(0);
-                                    if (charCode == 34 /* TokenMap.DOUBLE_QUOTE */ || charCode == 39 /* TokenMap.SINGLE_QUOTE */) {
-                                        yield* this.consumeURLToken(parseInfo);
-                                    }
-                                    else {
-                                        do {
-                                            this.next(parseInfo);
-                                            charCode = this.peek(parseInfo).charCodeAt(0);
-                                        } while (
-                                        // !(value === "/" && this.match(parseInfo, "/*") &&
-                                        charCode !== 41 /* TokenMap.RIGHT_PARENTHESIS */ &&
-                                            parseInfo.currentPosition < endPosition);
-                                        if (parseInfo.position < parseInfo.currentPosition) {
-                                            yield this.makeToken(parseInfo, 
-                                            // parseInfo.position < parseInfo.currentPosition
-                                            (charCode = this.peek(parseInfo).charCodeAt(0)) != charCode ||
-                                                !this.isURLToken(parseInfo)
-                                                ? exports.EnumToken.BadUrlTokenType
-                                                : exports.EnumToken.UrlTokenTokenType);
-                                        }
-                                    }
+                                    this.state = hint;
                                 }
-                                break;
+                                return this;
                             }
                         }
-                        this.next(parseInfo);
-                        yield this.makeToken(parseInfo, exports.EnumToken.StartParensTokenType);
-                        break;
+                        this.advance(parseInfo);
+                        return this.makeToken(parseInfo, exports.EnumToken.StartParensTokenType);
                     // ')'
                     case 41 /* TokenMap.RIGHT_PARENTHESIS */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
-                        this.next(parseInfo);
-                        yield this.makeToken(parseInfo, exports.EnumToken.EndParensTokenType);
-                        break;
+                        this.advance(parseInfo);
+                        return this.makeToken(parseInfo, exports.EnumToken.EndParensTokenType);
                     // '['
                     case 91 /* TokenMap.LEFT_BRACKETS */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
-                        this.next(parseInfo);
-                        yield this.makeToken(parseInfo, exports.EnumToken.AttrStartTokenType);
-                        break;
+                        this.advance(parseInfo);
+                        return this.makeToken(parseInfo, exports.EnumToken.AttrStartTokenType);
                     // ']'
                     case 93 /* TokenMap.RIGHT_BRACKETS */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
-                        this.next(parseInfo);
-                        yield this.makeToken(parseInfo, exports.EnumToken.AttrEndTokenType);
-                        break;
+                        this.advance(parseInfo);
+                        return this.makeToken(parseInfo, exports.EnumToken.AttrEndTokenType);
                     case 59 /* TokenMap.SEMICOLON */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
-                        this.next(parseInfo);
-                        yield this.makeToken(parseInfo, exports.EnumToken.SemiColonTokenType);
-                        break;
+                        this.advance(parseInfo);
+                        return this.makeToken(parseInfo, exports.EnumToken.SemiColonTokenType);
                     case 58 /* TokenMap.COLON */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
-                        this.next(parseInfo);
+                        this.advance(parseInfo);
                         if (this.peek(parseInfo).charCodeAt(0) == 58 /* TokenMap.COLON */) {
-                            this.next(parseInfo);
-                            yield this.makeToken(parseInfo, exports.EnumToken.DoubleColonTokenType);
-                            break;
+                            this.advance(parseInfo);
+                            return this.makeToken(parseInfo, exports.EnumToken.DoubleColonTokenType);
                         }
-                        yield this.makeToken(parseInfo, exports.EnumToken.ColonTokenType);
-                        break;
+                        return this.makeToken(parseInfo, exports.EnumToken.ColonTokenType);
                     // \n \r \f \v \t space
                     case 0x9:
                     case 0x20:
@@ -26736,246 +26701,226 @@
                     case 0x2028:
                     case 0x2029:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
-                        this.next(parseInfo);
+                        this.advance(parseInfo);
                         nextCharCode = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset).charCodeAt(0);
                         while (nextCharCode == 0x20 ||
                             (nextCharCode >= 0x9 && nextCharCode <= 0xd) ||
                             nextCharCode == 0x2028 ||
                             nextCharCode == 0x2029) {
-                            this.next(parseInfo);
+                            this.advance(parseInfo);
                             nextCharCode = parseInfo.stream
                                 .charAt(parseInfo.currentPosition - parseInfo.offset)
                                 .charCodeAt(0);
                         }
-                        yield this.makeToken(parseInfo, exports.EnumToken.WhitespaceTokenType);
-                        break;
+                        return this.makeToken(parseInfo, exports.EnumToken.WhitespaceTokenType);
                     case 44 /* TokenMap.COMMA */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
-                        this.next(parseInfo);
-                        yield this.makeToken(parseInfo, exports.EnumToken.CommaTokenType);
-                        break;
+                        this.advance(parseInfo);
+                        return this.makeToken(parseInfo, exports.EnumToken.CommaTokenType);
                     case 36 /* TokenMap.DOLLAR */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
                         if (this.match(parseInfo, "$=")) {
-                            this.next(parseInfo, 2);
-                            yield this.makeToken(parseInfo, exports.EnumToken.EndMatchTokenType);
-                            break;
+                            this.advance(parseInfo, 2);
+                            return this.makeToken(parseInfo, exports.EnumToken.EndMatchTokenType);
                         }
-                        this.next(parseInfo);
+                        this.advance(parseInfo);
                         break;
                     case 126 /* TokenMap.TILDA */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
                         if (this.match(parseInfo, "~=")) {
-                            this.next(parseInfo, 2);
-                            yield this.makeToken(parseInfo, exports.EnumToken.IncludeMatchTokenType);
-                            break;
+                            this.advance(parseInfo, 2);
+                            return this.makeToken(parseInfo, exports.EnumToken.IncludeMatchTokenType);
                         }
-                        this.next(parseInfo);
-                        yield this.makeToken(parseInfo, exports.EnumToken.Tilda);
-                        break;
+                        this.advance(parseInfo);
+                        return this.makeToken(parseInfo, exports.EnumToken.Tilda);
                     // case '^':
                     case 94 /* TokenMap.CARET */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
                         if (this.match(parseInfo, "^=")) {
-                            this.next(parseInfo, 2);
-                            yield this.makeToken(parseInfo, exports.EnumToken.StartMatchTokenType);
-                            break;
+                            this.advance(parseInfo, 2);
+                            return this.makeToken(parseInfo, exports.EnumToken.StartMatchTokenType);
                         }
-                        this.next(parseInfo);
+                        this.advance(parseInfo);
                         break;
                     case 42 /* TokenMap.STAR */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
                         if (this.match(parseInfo, "*=")) {
-                            this.next(parseInfo, 2);
-                            yield this.makeToken(parseInfo, exports.EnumToken.ContainMatchTokenType);
-                            break;
+                            this.advance(parseInfo, 2);
+                            return this.makeToken(parseInfo, exports.EnumToken.ContainMatchTokenType);
                         }
-                        this.next(parseInfo);
-                        yield this.makeToken(parseInfo, exports.EnumToken.Star);
-                        break;
+                        this.advance(parseInfo);
+                        return this.makeToken(parseInfo, exports.EnumToken.Star);
                     case 38 /* TokenMap.AMPERSAND */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
-                        this.next(parseInfo);
-                        yield this.makeToken(parseInfo, exports.EnumToken.NestingSelectorTokenType);
-                        break;
+                        this.advance(parseInfo);
+                        return this.makeToken(parseInfo, exports.EnumToken.NestingSelectorTokenType);
                     case 124 /* TokenMap.PIPE */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
                         // '||'
                         if (this.match(parseInfo, "||")) {
-                            this.next(parseInfo, 2);
-                            yield this.makeToken(parseInfo, exports.EnumToken.ColumnCombinatorTokenType);
-                            break;
+                            this.advance(parseInfo, 2);
+                            return this.makeToken(parseInfo, exports.EnumToken.ColumnCombinatorTokenType);
                         }
                         else if (this.match(parseInfo, "|=")) {
-                            this.next(parseInfo, 2);
-                            yield this.makeToken(parseInfo, exports.EnumToken.DashMatchTokenType);
-                            break;
+                            this.advance(parseInfo, 2);
+                            return this.makeToken(parseInfo, exports.EnumToken.DashMatchTokenType);
                         }
-                        this.next(parseInfo);
-                        yield this.makeToken(parseInfo, exports.EnumToken.Pipe);
-                        break;
+                        this.advance(parseInfo);
+                        return this.makeToken(parseInfo, exports.EnumToken.Pipe);
                     case 33 /* TokenMap.EXCLAMATION */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
                         if (this.match(parseInfo, "!important")) {
-                            this.next(parseInfo, 10);
-                            yield this.makeToken(parseInfo, exports.EnumToken.ImportantTokenType);
-                            break;
+                            this.advance(parseInfo, 10);
+                            return this.makeToken(parseInfo, exports.EnumToken.ImportantTokenType);
                         }
-                        this.next(parseInfo);
+                        this.advance(parseInfo);
                         break;
                     case 47 /* TokenMap.SLASH */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
                         if (!this.match(parseInfo, "/*")) {
-                            this.next(parseInfo);
-                            yield this.makeToken(parseInfo, getSymbolHint(parseInfo, parseInfo.position - parseInfo.offset, parseInfo.currentPosition - parseInfo.offset));
-                            break;
+                            this.advance(parseInfo);
+                            return this.makeToken(parseInfo, getSymbolHint(parseInfo, parseInfo.position - parseInfo.offset, parseInfo.currentPosition - parseInfo.offset));
                         }
-                        this.next(parseInfo, 2);
-                        while ((charCode = this.next(parseInfo).charCodeAt(0)) == charCode) {
+                        this.advance(parseInfo, 2);
+                        while ((charCode = this.advance(parseInfo).charCodeAt(0)) == charCode) {
                             if (charCode == 42 /* TokenMap.STAR */) {
                                 if (this.match(parseInfo, "/")) {
-                                    this.next(parseInfo);
-                                    yield this.makeToken(parseInfo, exports.EnumToken.CommentTokenType);
-                                    break;
+                                    this.advance(parseInfo);
+                                    return this.makeToken(parseInfo, exports.EnumToken.CommentTokenType);
                                 }
                             }
                         }
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo, exports.EnumToken.BadCommentTokenType);
+                            return this.makeToken(parseInfo, exports.EnumToken.BadCommentTokenType);
                         }
                         break;
                     case 62 /* TokenMap.GREATERTHAN */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
                         if (this.match(parseInfo, ">=")) {
-                            this.next(parseInfo, 2);
-                            yield this.makeToken(parseInfo, exports.EnumToken.GteTokenType);
-                            break;
+                            this.advance(parseInfo, 2);
+                            return this.makeToken(parseInfo, exports.EnumToken.GteTokenType);
                         }
-                        this.next(parseInfo);
-                        yield this.makeToken(parseInfo, exports.EnumToken.GtTokenType);
-                        break;
+                        this.advance(parseInfo);
+                        return this.makeToken(parseInfo, exports.EnumToken.GtTokenType);
                     case 60 /* TokenMap.LOWERTHAN */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
                         if (this.match(parseInfo, "<=")) {
-                            this.next(parseInfo, 2);
-                            yield this.makeToken(parseInfo, exports.EnumToken.LteTokenType);
-                            break;
+                            this.advance(parseInfo, 2);
+                            return this.makeToken(parseInfo, exports.EnumToken.LteTokenType);
                         }
-                        this.next(parseInfo);
+                        this.advance(parseInfo);
                         if (this.match(parseInfo, "!--")) {
-                            this.next(parseInfo, 3);
-                            while ((charCode = this.next(parseInfo).charCodeAt(0)) == charCode) {
+                            this.advance(parseInfo, 3);
+                            while ((charCode = this.advance(parseInfo).charCodeAt(0)) == charCode) {
                                 if (charCode == 45 /* TokenMap.MINUS */ && this.match(parseInfo, "->")) {
                                     break;
                                 }
                             }
                             if (parseInfo.currentPosition >= endPosition) {
-                                yield this.makeToken(parseInfo, exports.EnumToken.BadCdoTokenType);
+                                return this.makeToken(parseInfo, exports.EnumToken.BadCdoTokenType);
                             }
                             else {
-                                this.next(parseInfo, 2);
-                                yield this.makeToken(parseInfo, exports.EnumToken.CDOCOMMTokenType);
+                                this.advance(parseInfo, 2);
+                                return this.makeToken(parseInfo, exports.EnumToken.CDOCOMMTokenType);
                             }
                         }
                         break;
                     case 35 /* TokenMap.HASH */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
-                        this.next(parseInfo);
+                        this.advance(parseInfo);
                         break;
                     case 92 /* TokenMap.REVERSE_SOLIDUS */:
-                        if (!yieldEOFToken && parseInfo.stream.length == parseInfo.currentPosition - parseInfo.offset + 1) {
-                            break;
-                        }
-                        this.next(parseInfo);
+                        // if (!yieldEOFToken && parseInfo.stream.length == parseInfo.currentPosition - parseInfo.offset + 1) {
+                        //     break;
+                        // }
+                        this.advance(parseInfo);
                         // EOF
                         if (!this.peek(parseInfo)) {
-                            if (!yieldEOFToken) {
-                                break;
-                            }
+                            // if (!yieldEOFToken) {
+                            //     break;
+                            // }
                             // end of stream ignore \\
                             if (parseInfo.position < parseInfo.currentPosition) {
-                                yield this.makeToken(parseInfo);
+                                return this.makeToken(parseInfo);
                             }
                             break;
                         }
-                        this.next(parseInfo);
+                        this.advance(parseInfo);
                         break;
                     case 39 /* TokenMap.SINGLE_QUOTE */:
                     case 34 /* TokenMap.DOUBLE_QUOTE */:
                         if (parseInfo.position < parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
+                            return this.makeToken(parseInfo);
                         }
-                        yield* this.consumeString(parseInfo);
-                        break;
+                        return this.consumeString(parseInfo);
                     case 46 /* TokenMap.DOT */:
                         const codepoint = parseInfo.stream
-                            .charAt(parseInfo.currentPosition - parseInfo.offset + 1)
-                            .charCodeAt(0);
+                            .charCodeAt(parseInfo.currentPosition - parseInfo.offset + 1);
                         if (isIdentStart(codepoint) || codepoint == 45 /* TokenMap.MINUS */) {
-                            this.next(parseInfo);
+                            this.advance(parseInfo);
                             let tokensCount = this.consumeIdentToken(parseInfo);
                             if (tokensCount > 0) {
-                                this.next(parseInfo, tokensCount);
-                                yield this.makeToken(parseInfo, exports.EnumToken.ClassSelectorTokenType);
-                                break;
+                                this.advance(parseInfo, tokensCount);
+                                return this.makeToken(parseInfo, exports.EnumToken.ClassSelectorTokenType);
                             }
                         }
                         if (!isDigit(codepoint) && parseInfo.position !== parseInfo.currentPosition) {
-                            yield this.makeToken(parseInfo);
-                            this.next(parseInfo, 2);
-                            break;
+                            this.makeToken(parseInfo);
+                            this.advance(parseInfo, 2);
+                            return this;
                         }
-                        this.next(parseInfo);
+                        this.advance(parseInfo);
                         break;
                     default:
-                        this.next(parseInfo);
+                        this.advance(parseInfo);
                         break;
                 }
-                if (!yieldEOFToken && endPosition <= parseInfo.currentPosition - parseInfo.offset + 1) {
-                    break;
-                }
+                // if (!yieldEOFToken && endPosition <= parseInfo.currentPosition - parseInfo.offset + 1) {
+                //     break;
+                // }
             }
-            if (yieldEOFToken) {
-                if (parseInfo.position < parseInfo.currentPosition) {
-                    yield this.makeToken(parseInfo);
-                }
-                yield this.makeToken(parseInfo, exports.EnumToken.EOFTokenType);
+            // if (yieldEOFToken) {
+            if (parseInfo.position < parseInfo.currentPosition) {
+                return this.makeToken(parseInfo);
             }
+            return this.makeToken(parseInfo, exports.EnumToken.EOFTokenType);
+            // }
         }
         /**
          * tokenize readable stream
          * @param input
          * @param parseInfo
          */
-        async *tokenizeStream(input, parseInfo) {
+        async tokenizeStream() {
             const decoder = new TextDecoder("utf-8");
-            const reader = input.getReader();
+            const reader = this.input.getReader();
+            let parseInfo = this.parseInfo;
             parseInfo.stream = "";
             while (true) {
                 const { done, value } = await reader.read();
@@ -26983,30 +26928,13 @@
                 if (!done) {
                     parseInfo.source.append(stream);
                 }
-                yield* this.tokenize(parseInfo, done);
-                if (done) {
+                else {
                     break;
                 }
             }
             parseInfo.stream = parseInfo.source.getContent();
-            yield* this.tokenize(parseInfo);
+            return this; // .next();
         }
-    }
-    /**
-     * Tokenize CSS string
-     * @param parseInfo
-     * @param yieldEOFToken
-     */
-    function tokenize(parseInfo, yieldEOFToken = true) {
-        return new Tokenizer().tokenize(parseInfo, yieldEOFToken);
-    }
-    /**
-     * tokenize readable stream
-     * @param input
-     * @param parseInfo
-     */
-    function tokenizeStream(input, parseInfo) {
-        return new Tokenizer().tokenizeStream(input, parseInfo);
     }
 
     /**
@@ -29665,7 +29593,7 @@
      * @throws Error
      * @private
      */
-    function doParseSync(iter, options = {}) {
+    function doParseSync(tokenizer, options = {}) {
         if (options.signal != null) {
             options.signal.addEventListener("abort", reject);
         }
@@ -29730,8 +29658,9 @@
         // let currentItemIndex: number;
         ast[LOCSRCID] = options.source.id;
         ast[LOCSTA] = 0;
-        let tokenizer;
-        while ((tokenizer = iter.next().value) != null) {
+        // let tokenizer: Tokenizer;
+        while (!tokenizer.done()) {
+            tokenizer.next();
             // item = (iter as Array<TokenizeResult>)[currentItemIndex];
             if (tokenizer.unit != null) {
                 item = {
@@ -29767,7 +29696,6 @@
             item[LOCSRCID] = tokenizer.srcId;
             item[LOCSTA] = tokenizer.sta;
             item[LOCEND] = tokenizer.end;
-            // console.error(item);
             stats.bytesIn = tokenizer.bytesIn;
             stats.tokensCount++;
             if (BadTokensTypes.includes(item.typ)) {
@@ -29811,10 +29739,7 @@
                     tokens.length = 0;
                     tokens.push(item);
                     do {
-                        tokenizer = iter.next().value;
-                        if (tokenizer == null) {
-                            break;
-                        }
+                        tokenizer.next();
                         if (tokenizer.unit != null) {
                             item = {
                                 typ: tokenizer.typ,
@@ -29856,7 +29781,7 @@
                         else if (item.typ === exports.EnumToken.BlockEndTokenType) {
                             inBlock--;
                         }
-                    } while (inBlock != 0);
+                    } while (inBlock != 0 && !tokenizer.done());
                     if (tokens.length > 0) {
                         errors.push({
                             action: "drop",
@@ -30659,11 +30584,9 @@
         const imports = [];
         let item;
         let node;
-        // @ts-ignore ignore error
-        let isAsync = typeof iter[Symbol.asyncIterator] === "function";
         let parensMatch = 0;
         let curlyBracketMatch = 0;
-        let tokenizer;
+        let tokenizer = iter instanceof Promise ? await iter : iter;
         // ast[ROOT] = ast;
         ast[LOCSRCID] = options.source.id;
         ast[LOCSTA] = 0;
@@ -30672,9 +30595,8 @@
         //     // @ts-expect-error
         //     iter = iter[Symbol.iterator]() as Iterator<TokenizeResult>;
         // }
-        while ((tokenizer = isAsync
-            ? (await iter.next()).value
-            : iter.next().value)) {
+        while (!tokenizer.done()) {
+            tokenizer.next();
             if (tokenizer.unit != null) {
                 item = {
                     typ: tokenizer.typ,
@@ -30755,12 +30677,7 @@
                     tokens.length = 0;
                     tokens.push(item);
                     do {
-                        tokenizer = isAsync
-                            ? (await iter.next()).value
-                            : iter.next().value;
-                        if (tokenizer == null) {
-                            break;
-                        }
+                        tokenizer.next();
                         if (tokenizer.unit != null) {
                             item = {
                                 typ: tokenizer.typ,
@@ -30802,7 +30719,7 @@
                         else if (item.typ === exports.EnumToken.BlockEndTokenType) {
                             inBlock--;
                         }
-                    } while (inBlock != 0);
+                    } while (inBlock != 0 && !tokenizer.done());
                     if (tokens.length > 0) {
                         errors.push({
                             action: "drop",
@@ -30865,7 +30782,9 @@
                         currentPosition: 0,
                         time: 0,
                     };
-                    const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream, parseInfo) : tokenize(parseInfo), Object.assign({}, options, {
+                    const root = await doParse(stream instanceof ReadableStream
+                        ? new Tokenizer(parseInfo, stream).tokenizeStream()
+                        : new Tokenizer(parseInfo), Object.assign({}, options, {
                         minify: false,
                         setParent: false,
                         src: options.resolve(url, options.src || options.cwd).relative,
@@ -31188,7 +31107,9 @@
                         position: 0,
                         currentPosition: 0,
                     };
-                    const root = await doParse(stream instanceof ReadableStream ? tokenizeStream(stream, parseInfo) : tokenize(parseInfo), Object.assign({}, options, {
+                    const root = await doParse(stream instanceof ReadableStream
+                        ? new Tokenizer(parseInfo, stream).tokenizeStream()
+                        : new Tokenizer(parseInfo), Object.assign({}, options, {
                         source,
                         minify: false,
                         setParent: false,
@@ -31329,13 +31250,13 @@
                                     ? await result
                                     : result;
                                 const root = await doParse(stream instanceof ReadableStream
-                                    ? tokenizeStream(stream, {
+                                    ? new Tokenizer({
                                         offset: 0,
                                         source: new SourceFile("", [], src.relative),
                                         position: 0,
                                         currentPosition: 0,
-                                    })
-                                    : tokenize({
+                                    }, stream).tokenizeStream()
+                                    : new Tokenizer({
                                         stream,
                                         offset: 0,
                                         position: 0,
@@ -32627,7 +32548,7 @@
      */
     async function parseDeclarations(declaration) {
         const stream = `.x{${declaration}}`;
-        return doParse(tokenize({
+        return doParse(new Tokenizer({
             stream,
             offset: 0,
             position: 0,
@@ -32668,11 +32589,20 @@
         //     position: 0,
         //     currentPosition: 0,
         // };
-        const iter = tokenize(src);
+        const tokenizer = new Tokenizer({
+            stream: src,
+            buffer: "",
+            src: options?.src ?? "",
+            offset: 0,
+            time: 0,
+            source: new SourceFile(src, [], options?.src ?? ""),
+            position: 0,
+            currentPosition: 0,
+        });
         const mapped = [];
         let token;
-        let tokenizer;
-        while ((tokenizer = iter.next().value)) {
+        while (!tokenizer.done()) {
+            tokenizer.next();
             if (tokenizer.unit != null) {
                 token = {
                     typ: tokenizer.typ,
@@ -33229,7 +33159,7 @@
             position: 0,
             currentPosition: 0,
         };
-        const result = doParseSync(tokenize(options.parseInfo), options);
+        const result = doParseSync(new Tokenizer(options.parseInfo), options);
         return options.module == null && options.inputSourceMap == null && !options.sourcemap
             ? result
             : parseResult(result, options);
@@ -33365,7 +33295,9 @@
             position: 0,
             currentPosition: 0,
         };
-        return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => options.module == null && options.inputSourceMap == null && !options.sourcemap
+        return doParse(stream instanceof ReadableStream
+            ? new Tokenizer(options.parseInfo, stream).tokenizeStream()
+            : new Tokenizer(options.parseInfo), options).then((result) => options.module == null && options.inputSourceMap == null && !options.sourcemap
             ? result
             : parseResult(result, options));
     }

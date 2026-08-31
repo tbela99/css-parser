@@ -237,7 +237,7 @@ export function doRender(
             sourcemap.addSourceContent(source.id, source.getFileName(), source.getContent());
         }
 
-        sourcemap.add(...(sourcemaps!.maps! as Array<[number, number, number, number, number]>));
+        sourcemap.add(sourcemaps!.maps!);
         result.map = sourcemap;
 
         if (options.sourcemap === "inline") {
@@ -304,8 +304,6 @@ function updateSourceMap(
                 offsets[0] = record[1] as number;
                 // @ts-ignore
                 offsets[1] = record[2] as number;
-
-                // console.error({record});
 
                 sourceContent = (record[3] as string) || null;
 
@@ -374,8 +372,6 @@ function updateSourceMap(
 
             sourcemaps.maps.push([newLine, newColumn, srcId, offsets[0], offsets[1]]);
         }
-
-        // console.error([newLine, newColumn, srcId, ...offsets, EnumToken[node.typ], node.nam ?? node.sel]);
     }
 
     move(sourceLocation, linesMap, str, offset);
@@ -590,22 +586,6 @@ function renderAstNode(
                         //         color: red;
                         //     }
                         // }
-                        // const source = options.sourcesMap!.get(node[LOCSTA]) as SourceFile;
-
-                        // if (!sourcemaps.sources.includes(node[LOCSTA] as number)) {
-                        //     sourcemaps.sources.push(node[LOCSTA] as number);
-                        // }
-
-                        // sourcemaps.maps.push([
-                        //     ...linesMap!.getOffsets(
-                        //         sourceLocation.end - str.length + options.newLine!.length + indentSub.length,
-                        //     ),
-                        //     node[LOCSTA],
-                        //     ...source!.getOffsets(node![LOCSTA]),
-                        // ]);
-
-                        // console.error(options.sourcesMap.get(node[LOCSTA])?.getSourceLocation(node[LOCSTA]), linesMap?.getOffsets(sourceLocation.end), node.nam);
-
                         // @ts-ignore
                         updateSourceMap(node, options, cache, sourcemaps, sourceLocation, linesMap!, str);
                     } else {

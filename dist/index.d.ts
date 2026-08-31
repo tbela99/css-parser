@@ -4002,20 +4002,11 @@ declare class SourceMap {
      */
     addSourceContent(id: number, fileName: string | null, content: string | null): void;
     /**
-     * Add sourcemap
-     * @param newLine
-     * @param newColumn
-     * @param srcId
-     * @param ln
-     * @param col
-     */
-    add(newLine: number, newColumn: number, srcId: number, ln: number, col: number): void;
-    /**
      * Add multiple sourcemaps
      * @param maps
      * @throws
      */
-    add(...maps: Array<[newLine: number, newColumn: number, srcId: number, ln: number, col: number]>): void;
+    add(maps: Array<[newLine: number, newColumn: number, srcId: number, ln: number, col: number]>): void;
     /**
      * compute original positions
      */

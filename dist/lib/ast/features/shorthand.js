@@ -57,8 +57,9 @@ class ComputeShorthandFeature {
             }
             k = l;
         }
-        // @ts-ignore
-        ast.chi = [...properties, ...rules];
+        ast.chi.length = 0;
+        // @ts-expect-error
+        ast.chi.push(...properties, ...rules);
         return ast;
     }
 }

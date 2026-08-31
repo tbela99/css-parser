@@ -32,14 +32,7 @@ export class ComputeShorthandFeature {
         }
     }
 
-    run(
-        ast: AstRule | AstAtRule,
-        options: PropertyListOptions = {},
-        parent: AstRule | AstAtRule | AstStyleSheet,
-        context: {
-            [key: string]: any;
-        },
-    ): AstNode | null {
+    run(ast: AstRule | AstAtRule, options: PropertyListOptions): AstNode | null {
         if (!("chi" in ast)) {
             return null;
         }
@@ -83,8 +76,9 @@ export class ComputeShorthandFeature {
             k = l;
         }
 
-        // @ts-ignore
-        ast.chi = [...properties, ...rules];
+        ast.chi!.length = 0;
+        // @ts-expect-error
+        ast.chi!.push(...properties, ...rules);
         return ast;
     }
 }
