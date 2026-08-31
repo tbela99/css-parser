@@ -2,8 +2,8 @@
 
 # v1.6.0
 
-- [x] added `tan()` function.
-- [x] support input sourcemap from inlince sourcemap file. This is only supported by the async parser.
+- [x] added support for math function `tan()`.
+- [x] support input sourcemap from inline sourcemap file. This is only supported by the async parser.
 
 ```css
 

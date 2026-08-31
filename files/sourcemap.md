@@ -107,7 +107,7 @@ result = await transform(css, {
 console.log(result.map.toJSON());
 ```
 
-Parsing reference to the input sourcemap file is only supported when using the async api
+Parsing reference to the input sourcemap file is only supported when using the async api.
 
 ```css
 table.colortable {
