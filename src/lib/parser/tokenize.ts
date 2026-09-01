@@ -963,11 +963,11 @@ export class Tokenizer {
         let charCode: number;
 
         // consume an <url>
-        while (isWhiteSpace(this.peek(parseInfo).charCodeAt(0))) {
+        while (isWhiteSpace(this.peekCharCode(parseInfo))) {
             this.advance(parseInfo);
         }
 
-        charCode = this.peek(parseInfo).charCodeAt(0);
+        charCode = this.peekCharCode(parseInfo);
 
         if (charCode == TokenMap.DOUBLE_QUOTE || charCode == TokenMap.SINGLE_QUOTE) {
             return this.consumeURLToken(parseInfo);
@@ -975,7 +975,7 @@ export class Tokenizer {
 
         do {
             this.advance(parseInfo);
-            charCode = this.peek(parseInfo).charCodeAt(0);
+            charCode = this.peekCharCode(parseInfo);
         } while (
             // !(value === "/" && this.match(parseInfo, "/*") &&
             charCode !== TokenMap.RIGHT_PARENTHESIS &&
@@ -986,7 +986,7 @@ export class Tokenizer {
         return this.makeToken(
             parseInfo,
             // parseInfo.position < parseInfo.currentPosition
-            (charCode = this.peek(parseInfo).charCodeAt(0)) != charCode || !this.isURLToken(parseInfo)
+            (charCode = this.peekCharCode(parseInfo)) != charCode || !this.isURLToken(parseInfo)
                 ? EnumToken.BadUrlTokenType
                 : EnumToken.UrlTokenTokenType,
         );
@@ -1493,7 +1493,7 @@ export class Tokenizer {
                     if (tokensCount > 0) {
                         this.advance(parseInfo, tokensCount);
 
-                        charCode = this.peek(parseInfo).charCodeAt(0);
+                        charCode = this.peekCharCode(parseInfo);
 
                         // do not match function
                         if (TokenMap.LEFT_PARENTHESIS != charCode) {
@@ -1511,10 +1511,10 @@ export class Tokenizer {
                 if (charCode == TokenMap.AT) {
                     this.advance(parseInfo);
 
-                    charCode = this.peek(parseInfo).charCodeAt(0);
+                    charCode = this.peekCharCode(parseInfo);
 
                     // match at-rule
-                    if (charCode == TokenMap.MINUS || isIdentStart(this.peek(parseInfo).charCodeAt(0))) {
+                    if (charCode == TokenMap.MINUS || isIdentStart(this.peekCharCode(parseInfo))) {
                         // consume '@'
                         parseInfo.position = parseInfo.currentPosition;
                         tokensCount = this.consumeIdentToken(parseInfo);
@@ -1720,7 +1720,7 @@ export class Tokenizer {
 
                     this.advance(parseInfo);
 
-                    if (this.peek(parseInfo).charCodeAt(0) == TokenMap.COLON) {
+                    if (this.peekCharCode(parseInfo) == TokenMap.COLON) {
                         this.advance(parseInfo);
 
                         return this.makeToken(parseInfo, EnumToken.DoubleColonTokenType);
@@ -2006,8 +2006,7 @@ export class Tokenizer {
                     break;
 
                 case TokenMap.DOT:
-                    const codepoint = parseInfo.stream
-                        .charCodeAt(parseInfo.currentPosition - parseInfo.offset + 1);
+                    const codepoint = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset + 1);
 
                     if (isIdentStart(codepoint) || codepoint == TokenMap.MINUS) {
                         this.advance(parseInfo);

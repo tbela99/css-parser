@@ -769,16 +769,16 @@ class Tokenizer {
     parseURLToken(parseInfo, endPosition) {
         let charCode;
         // consume an <url>
-        while (isWhiteSpace(this.peek(parseInfo).charCodeAt(0))) {
+        while (isWhiteSpace(this.peekCharCode(parseInfo))) {
             this.advance(parseInfo);
         }
-        charCode = this.peek(parseInfo).charCodeAt(0);
+        charCode = this.peekCharCode(parseInfo);
         if (charCode == 34 /* TokenMap.DOUBLE_QUOTE */ || charCode == 39 /* TokenMap.SINGLE_QUOTE */) {
             return this.consumeURLToken(parseInfo);
         }
         do {
             this.advance(parseInfo);
-            charCode = this.peek(parseInfo).charCodeAt(0);
+            charCode = this.peekCharCode(parseInfo);
         } while (
         // !(value === "/" && this.match(parseInfo, "/*") &&
         charCode !== 41 /* TokenMap.RIGHT_PARENTHESIS */ &&
@@ -786,7 +786,7 @@ class Tokenizer {
         // if (parseInfo.position < parseInfo.currentPosition) {
         return this.makeToken(parseInfo, 
         // parseInfo.position < parseInfo.currentPosition
-        (charCode = this.peek(parseInfo).charCodeAt(0)) != charCode || !this.isURLToken(parseInfo)
+        (charCode = this.peekCharCode(parseInfo)) != charCode || !this.isURLToken(parseInfo)
             ? EnumToken.BadUrlTokenType
             : EnumToken.UrlTokenTokenType);
         // }
@@ -1205,7 +1205,7 @@ class Tokenizer {
                     tokensCount = this.consumeIdentToken(parseInfo);
                     if (tokensCount > 0) {
                         this.advance(parseInfo, tokensCount);
-                        charCode = this.peek(parseInfo).charCodeAt(0);
+                        charCode = this.peekCharCode(parseInfo);
                         // do not match function
                         if (40 /* TokenMap.LEFT_PARENTHESIS */ != charCode) {
                             return this.makeToken(parseInfo, this.startsWith(parseInfo, "--")
@@ -1216,9 +1216,9 @@ class Tokenizer {
                 }
                 if (charCode == 64 /* TokenMap.AT */) {
                     this.advance(parseInfo);
-                    charCode = this.peek(parseInfo).charCodeAt(0);
+                    charCode = this.peekCharCode(parseInfo);
                     // match at-rule
-                    if (charCode == 45 /* TokenMap.MINUS */ || isIdentStart(this.peek(parseInfo).charCodeAt(0))) {
+                    if (charCode == 45 /* TokenMap.MINUS */ || isIdentStart(this.peekCharCode(parseInfo))) {
                         // consume '@'
                         parseInfo.position = parseInfo.currentPosition;
                         tokensCount = this.consumeIdentToken(parseInfo);
@@ -1358,7 +1358,7 @@ class Tokenizer {
                         return this.makeToken(parseInfo);
                     }
                     this.advance(parseInfo);
-                    if (this.peek(parseInfo).charCodeAt(0) == 58 /* TokenMap.COLON */) {
+                    if (this.peekCharCode(parseInfo) == 58 /* TokenMap.COLON */) {
                         this.advance(parseInfo);
                         return this.makeToken(parseInfo, EnumToken.DoubleColonTokenType);
                     }
@@ -1552,8 +1552,7 @@ class Tokenizer {
                     }
                     return this.consumeString(parseInfo);
                 case 46 /* TokenMap.DOT */:
-                    const codepoint = parseInfo.stream
-                        .charCodeAt(parseInfo.currentPosition - parseInfo.offset + 1);
+                    const codepoint = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset + 1);
                     if (isIdentStart(codepoint) || codepoint == 45 /* TokenMap.MINUS */) {
                         this.advance(parseInfo);
                         let tokensCount = this.consumeIdentToken(parseInfo);

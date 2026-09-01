@@ -20,7 +20,7 @@ class ComputeShorthandFeature {
             options.features.push(new ComputeShorthandFeature(options));
         }
     }
-    run(ast, options = {}, parent, context) {
+    run(ast, options) {
         if (!("chi" in ast)) {
             return null;
         }
