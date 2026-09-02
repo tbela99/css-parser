@@ -23726,6 +23726,7 @@ class LineMap {
  * match url
  */
 const matchUrl = /^(https?:)?\/\//;
+const windowsPathnameRegexp = /^\/?[a-zA-Z]:\/?/;
 /**
  * return the directory name of a path
  * @param path
@@ -23797,6 +23798,9 @@ const normalize = memoize(function (path) {
     let i = 0;
     if (path.includes("\\")) {
         path = path.replace(/(\\)/g, "/");
+    }
+    if (windowsPathnameRegexp.test(path)) {
+        path = path.replace(windowsPathnameRegexp, "");
     }
     for (; i < path.length; i++) {
         const chr = path.charAt(i);
@@ -23870,8 +23874,13 @@ const resolve = memoize(function (url, currentDirectory, cwd) {
     if (currentDirectory !== "") {
         currentDirectory = normalize(currentDirectory);
     }
-    const dir = cwd || currentDirectory;
-    const absolute = dir == "" || url.startsWith("/") || url.match(/^[a-zA-Z]:/) ? resolvePath(url) : resolvePath(dir, url);
+    let dir = cwd || currentDirectory;
+    if (windowsPathnameRegexp.test(dir)) {
+        dir = dir.replace(windowsPathnameRegexp, "");
+    }
+    const absolute = dir == "" || url.startsWith("/") || url.startsWith(dir) || windowsPathnameRegexp.test(url)
+        ? resolvePath(url)
+        : resolvePath(dir, url);
     return {
         absolute,
         relative: dir === "" ? absolute : diff(absolute, dir),
@@ -30107,7 +30116,7 @@ function doParseSync(tokenizer, options = {}) {
             : (moduleSettings.filePath ?? options.src);
         filePath =
             filePath === ""
-                ? options.src
+                ? options.resolve(options.src, options.cwd).relative
                 : options.resolve(filePath, options.dirname(options.src), options.cwd).relative;
         if (typeof options.module == "number") {
             if (options.module & exports.ModuleCaseTransformEnum.CamelCase) {
@@ -31100,7 +31109,7 @@ async function doParse(iter, options = {}) {
             : (moduleSettings.filePath ?? options.src);
         filePath =
             filePath === ""
-                ? options.src
+                ? options.resolve(options.src, options.cwd).relative
                 : options.resolve(filePath, options.dirname(options.src), options.cwd).relative;
         if (typeof options.module == "number") {
             if (options.module & exports.ModuleCaseTransformEnum.CamelCase) {
@@ -32902,7 +32911,6 @@ function parseTokens(tokens, options, errors) {
             node,
             location: options.source.getSourceLocation(node[LOCSTA]),
         });
-        // return [];
     }
     return tokens;
 }

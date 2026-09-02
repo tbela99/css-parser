@@ -987,7 +987,7 @@ declare const OPTIMIZED: unique symbol;
 /**
  * Literal token
  */
-export declare interface LiteralToken extends BaseToken {
+declare interface LiteralToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1001,7 +1001,7 @@ export declare interface LiteralToken extends BaseToken {
 /**
  * Class selector token
  */
-export declare interface ClassSelectorToken extends BaseToken {
+declare interface ClassSelectorToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1015,7 +1015,7 @@ export declare interface ClassSelectorToken extends BaseToken {
 /**
  * Invalid class selector token
  */
-export declare interface InvalidClassSelectorToken extends BaseToken {
+declare interface InvalidClassSelectorToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1029,7 +1029,7 @@ export declare interface InvalidClassSelectorToken extends BaseToken {
 /**
  * Universal selector token
  */
-export declare interface UniversalSelectorToken extends BaseToken {
+declare interface UniversalSelectorToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1039,7 +1039,7 @@ export declare interface UniversalSelectorToken extends BaseToken {
 /**
  * Ident token
  */
-export declare interface IdentToken extends BaseToken {
+declare interface IdentToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1053,7 +1053,7 @@ export declare interface IdentToken extends BaseToken {
 /**
  * Ident list token
  */
-export declare interface IdentListToken extends BaseToken {
+declare interface IdentListToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1067,7 +1067,7 @@ export declare interface IdentListToken extends BaseToken {
 /**
  * Dashed ident token
  */
-export declare interface DashedIdentToken extends BaseToken {
+declare interface DashedIdentToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1081,7 +1081,7 @@ export declare interface DashedIdentToken extends BaseToken {
 /**
  * Comma token
  */
-export declare interface CommaToken extends BaseToken {
+declare interface CommaToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1091,7 +1091,7 @@ export declare interface CommaToken extends BaseToken {
 /**
  * Colon token
  */
-export declare interface ColonToken extends BaseToken {
+declare interface ColonToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1101,7 +1101,7 @@ export declare interface ColonToken extends BaseToken {
 /**
  * Double colon token
  */
-export declare interface DoubleColonToken extends BaseToken {
+declare interface DoubleColonToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1111,7 +1111,7 @@ export declare interface DoubleColonToken extends BaseToken {
 /**
  * Semicolon token
  */
-export declare interface SemiColonToken extends BaseToken {
+declare interface SemiColonToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1121,7 +1121,7 @@ export declare interface SemiColonToken extends BaseToken {
 /**
  * Nesting selector token
  */
-export declare interface NestingSelectorToken extends BaseToken {
+declare interface NestingSelectorToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1131,7 +1131,7 @@ export declare interface NestingSelectorToken extends BaseToken {
 /**
  * Number token
  */
-export declare interface NumberToken extends BaseToken {
+declare interface NumberToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1149,7 +1149,7 @@ export declare interface NumberToken extends BaseToken {
 /**
  * At rule token
  */
-export declare interface AtRuleToken extends BaseToken {
+declare interface AtRuleToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1167,7 +1167,7 @@ export declare interface AtRuleToken extends BaseToken {
 /**
  * Percentage token
  */
-export declare interface PercentageToken extends BaseToken {
+declare interface PercentageToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1181,7 +1181,7 @@ export declare interface PercentageToken extends BaseToken {
 /**
  * Flex token
  */
-export declare interface FlexToken extends BaseToken {
+declare interface FlexToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1195,7 +1195,7 @@ export declare interface FlexToken extends BaseToken {
 /**
  * Function token
  */
-export declare interface FunctionToken extends BaseToken {
+declare interface FunctionToken extends BaseToken {
     /**
      * function type
      */
@@ -1225,7 +1225,7 @@ export declare interface FunctionToken extends BaseToken {
 /**
  * Grid template function token
  */
-export declare interface GridTemplateFuncToken extends BaseToken {
+declare interface GridTemplateFuncToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1243,7 +1243,7 @@ export declare interface GridTemplateFuncToken extends BaseToken {
 /**
  * Function URL token
  */
-export declare interface FunctionURLToken extends BaseToken {
+declare interface FunctionURLToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1261,7 +1261,7 @@ export declare interface FunctionURLToken extends BaseToken {
 /**
  * Function image token
  */
-export declare interface FunctionImageToken extends BaseToken {
+declare interface FunctionImageToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1288,7 +1288,7 @@ export declare interface FunctionImageToken extends BaseToken {
 /**
  * Timing function token
  */
-export declare interface TimingFunctionToken extends BaseToken {
+declare interface TimingFunctionToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1306,7 +1306,7 @@ export declare interface TimingFunctionToken extends BaseToken {
 /**
  * Timeline function token
  */
-export declare interface TimelineFunctionToken extends BaseToken {
+declare interface TimelineFunctionToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1324,7 +1324,7 @@ export declare interface TimelineFunctionToken extends BaseToken {
 /**
  * String token
  */
-export declare interface StringToken extends BaseToken {
+declare interface StringToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1338,7 +1338,7 @@ export declare interface StringToken extends BaseToken {
 /**
  * Bad string token
  */
-export declare interface BadStringToken extends BaseToken {
+declare interface BadStringToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1352,7 +1352,7 @@ export declare interface BadStringToken extends BaseToken {
 /**
  * Unclosed string token
  */
-export declare interface UnclosedStringToken extends BaseToken {
+declare interface UnclosedStringToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1366,7 +1366,7 @@ export declare interface UnclosedStringToken extends BaseToken {
 /**
  * Dimension token
  */
-export declare interface DimensionToken extends BaseToken {
+declare interface DimensionToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1384,7 +1384,7 @@ export declare interface DimensionToken extends BaseToken {
 /**
  * Length token
  */
-export declare interface LengthToken extends BaseToken {
+declare interface LengthToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1402,7 +1402,7 @@ export declare interface LengthToken extends BaseToken {
 /**
  * Angle token
  */
-export declare interface AngleToken extends BaseToken {
+declare interface AngleToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1420,7 +1420,7 @@ export declare interface AngleToken extends BaseToken {
 /**
  * Time token
  */
-export declare interface TimeToken extends BaseToken {
+declare interface TimeToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1438,7 +1438,7 @@ export declare interface TimeToken extends BaseToken {
 /**
  * Frequency token
  */
-export declare interface FrequencyToken extends BaseToken {
+declare interface FrequencyToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1456,7 +1456,7 @@ export declare interface FrequencyToken extends BaseToken {
 /**
  * Resolution token
  */
-export declare interface ResolutionToken extends BaseToken {
+declare interface ResolutionToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1474,7 +1474,7 @@ export declare interface ResolutionToken extends BaseToken {
 /**
  * Hash token
  */
-export declare interface HashToken extends BaseToken {
+declare interface HashToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1488,7 +1488,7 @@ export declare interface HashToken extends BaseToken {
 /**
  * Block start token
  */
-export declare interface BlockStartToken extends BaseToken {
+declare interface BlockStartToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1498,7 +1498,7 @@ export declare interface BlockStartToken extends BaseToken {
 /**
  * Block end token
  */
-export declare interface BlockEndToken extends BaseToken {
+declare interface BlockEndToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1508,7 +1508,7 @@ export declare interface BlockEndToken extends BaseToken {
 /**
  * Attribute start token
  */
-export declare interface AttrStartToken extends BaseToken {
+declare interface AttrStartToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1522,7 +1522,7 @@ export declare interface AttrStartToken extends BaseToken {
 /**
  * Attribute end token
  */
-export declare interface AttrEndToken extends BaseToken {
+declare interface AttrEndToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1532,7 +1532,7 @@ export declare interface AttrEndToken extends BaseToken {
 /**
  * Parenthesis start token
  */
-export declare interface ParensStartToken extends BaseToken {
+declare interface ParensStartToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1542,7 +1542,7 @@ export declare interface ParensStartToken extends BaseToken {
 /**
  * Parenthesis end token
  */
-export declare interface ParensEndToken extends BaseToken {
+declare interface ParensEndToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1552,7 +1552,7 @@ export declare interface ParensEndToken extends BaseToken {
 /**
  * Parenthesis token
  */
-export declare interface ParensToken extends BaseToken {
+declare interface ParensToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1566,7 +1566,7 @@ export declare interface ParensToken extends BaseToken {
 /**
  * Whitespace token
  */
-export declare interface WhitespaceToken extends BaseToken {
+declare interface WhitespaceToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1580,7 +1580,7 @@ export declare interface WhitespaceToken extends BaseToken {
 /**
  * Comment token
  */
-export declare interface CommentToken extends BaseToken {
+declare interface CommentToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1594,7 +1594,7 @@ export declare interface CommentToken extends BaseToken {
 /**
  * Bad comment token
  */
-export declare interface BadCommentToken extends BaseToken {
+declare interface BadCommentToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1608,7 +1608,7 @@ export declare interface BadCommentToken extends BaseToken {
 /**
  * CDO comment token
  */
-export declare interface CDOCommentToken extends BaseToken {
+declare interface CDOCommentToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1622,7 +1622,7 @@ export declare interface CDOCommentToken extends BaseToken {
 /**
  * Bad CDO comment token
  */
-export declare interface BadCDOCommentToken extends BaseToken {
+declare interface BadCDOCommentToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1636,7 +1636,7 @@ export declare interface BadCDOCommentToken extends BaseToken {
 /**
  * Include match token
  */
-export declare interface IncludeMatchToken extends BaseToken {
+declare interface IncludeMatchToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1647,7 +1647,7 @@ export declare interface IncludeMatchToken extends BaseToken {
 /**
  * Dash match token
  */
-export declare interface DashMatchToken extends BaseToken {
+declare interface DashMatchToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1658,7 +1658,7 @@ export declare interface DashMatchToken extends BaseToken {
 /**
  * Equal match token
  */
-export declare interface EqualMatchToken extends BaseToken {
+declare interface EqualMatchToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1669,7 +1669,7 @@ export declare interface EqualMatchToken extends BaseToken {
 /**
  * Start match token
  */
-export declare interface StartMatchToken extends BaseToken {
+declare interface StartMatchToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1680,7 +1680,7 @@ export declare interface StartMatchToken extends BaseToken {
 /**
  * End match token
  */
-export declare interface EndMatchToken extends BaseToken {
+declare interface EndMatchToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1691,7 +1691,7 @@ export declare interface EndMatchToken extends BaseToken {
 /**
  * Contain match token
  */
-export declare interface ContainMatchToken extends BaseToken {
+declare interface ContainMatchToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1702,7 +1702,7 @@ export declare interface ContainMatchToken extends BaseToken {
 /**
  * Less than token
  */
-export declare interface LessThanToken extends BaseToken {
+declare interface LessThanToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1712,7 +1712,7 @@ export declare interface LessThanToken extends BaseToken {
 /**
  * Less than or equal token
  */
-export declare interface LessThanOrEqualToken extends BaseToken {
+declare interface LessThanOrEqualToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1722,7 +1722,7 @@ export declare interface LessThanOrEqualToken extends BaseToken {
 /**
  * Greater than token
  */
-export declare interface GreaterThanToken extends BaseToken {
+declare interface GreaterThanToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1732,7 +1732,7 @@ export declare interface GreaterThanToken extends BaseToken {
 /**
  * Greater than or equal token
  */
-export declare interface GreaterThanOrEqualToken extends BaseToken {
+declare interface GreaterThanOrEqualToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1742,7 +1742,7 @@ export declare interface GreaterThanOrEqualToken extends BaseToken {
 /**
  * Column combinator token
  */
-export declare interface ColumnCombinatorToken extends BaseToken {
+declare interface ColumnCombinatorToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1752,7 +1752,7 @@ export declare interface ColumnCombinatorToken extends BaseToken {
 /**
  * Pseudo class token
  */
-export declare interface PseudoClassToken extends BaseToken {
+declare interface PseudoClassToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1766,7 +1766,7 @@ export declare interface PseudoClassToken extends BaseToken {
 /**
  * Pseudo element token
  */
-export declare interface PseudoElementToken extends BaseToken {
+declare interface PseudoElementToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1780,7 +1780,7 @@ export declare interface PseudoElementToken extends BaseToken {
 /**
  * Pseudo page token
  */
-export declare interface PseudoPageToken extends BaseToken {
+declare interface PseudoPageToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1794,7 +1794,7 @@ export declare interface PseudoPageToken extends BaseToken {
 /**
  * Pseudo class function token
  */
-export declare interface PseudoClassFunctionToken extends BaseToken {
+declare interface PseudoClassFunctionToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1812,7 +1812,7 @@ export declare interface PseudoClassFunctionToken extends BaseToken {
 /**
  * Delim token
  */
-export declare interface DelimToken extends BaseToken {
+declare interface DelimToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1822,7 +1822,7 @@ export declare interface DelimToken extends BaseToken {
 /**
  * Bad URL token
  */
-export declare interface BadUrlToken extends BaseToken {
+declare interface BadUrlToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1836,7 +1836,7 @@ export declare interface BadUrlToken extends BaseToken {
 /**
  * URL token
  */
-export declare interface UrlToken extends BaseToken {
+declare interface UrlToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1850,7 +1850,7 @@ export declare interface UrlToken extends BaseToken {
 /**
  * EOF token
  */
-export declare interface EOFToken extends BaseToken {
+declare interface EOFToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1860,7 +1860,7 @@ export declare interface EOFToken extends BaseToken {
 /**
  * Important token
  */
-export declare interface ImportantToken extends BaseToken {
+declare interface ImportantToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1870,7 +1870,7 @@ export declare interface ImportantToken extends BaseToken {
 /**
  * Color token
  */
-export declare interface ColorToken extends BaseToken {
+declare interface ColorToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1896,7 +1896,7 @@ export declare interface ColorToken extends BaseToken {
 /**
  * Attribute token
  */
-export declare interface AttrToken extends BaseToken {
+declare interface AttrToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1910,7 +1910,7 @@ export declare interface AttrToken extends BaseToken {
 /**
  * Invalid attribute token
  */
-export declare interface InvalidAttrToken extends BaseToken {
+declare interface InvalidAttrToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1924,7 +1924,7 @@ export declare interface InvalidAttrToken extends BaseToken {
 /**
  * Child combinator token
  */
-export declare interface ChildCombinatorToken extends BaseToken {
+declare interface ChildCombinatorToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1934,7 +1934,7 @@ export declare interface ChildCombinatorToken extends BaseToken {
 /**
  * Media feature token
  */
-export declare interface MediaFeatureToken extends BaseToken {
+declare interface MediaFeatureToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1948,7 +1948,7 @@ export declare interface MediaFeatureToken extends BaseToken {
 /**
  * Media feature not token
  */
-export declare interface NotToken extends BaseToken {
+declare interface NotToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1962,7 +1962,7 @@ export declare interface NotToken extends BaseToken {
 /**
  * Media feature only token
  */
-export declare interface MediaFeatureOnlyToken extends BaseToken {
+declare interface MediaFeatureOnlyToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1976,7 +1976,7 @@ export declare interface MediaFeatureOnlyToken extends BaseToken {
 /**
  * Media feature and token
  */
-export declare interface AndToken extends BaseToken {
+declare interface AndToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1986,7 +1986,7 @@ export declare interface AndToken extends BaseToken {
 /**
  * Media feature or token
  */
-export declare interface OrToken extends BaseToken {
+declare interface OrToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -1996,7 +1996,7 @@ export declare interface OrToken extends BaseToken {
 /**
  * Media query condition token
  */
-export declare interface MediaQueryUnaryFeatureToken extends BaseToken {
+declare interface MediaQueryUnaryFeatureToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2011,7 +2011,7 @@ export declare interface MediaQueryUnaryFeatureToken extends BaseToken {
     r: Token$1[];
 }
 
-export declare interface SupportsQueryUnaryConditionToken extends BaseToken {
+declare interface SupportsQueryUnaryConditionToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2026,7 +2026,7 @@ export declare interface SupportsQueryUnaryConditionToken extends BaseToken {
     r: Token$1[];
 }
 
-export declare interface SupportsQueryConditionToken extends BaseToken {
+declare interface SupportsQueryConditionToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2045,7 +2045,7 @@ export declare interface SupportsQueryConditionToken extends BaseToken {
     r: Token$1[];
 }
 
-export declare interface WhenElseQueryConditionToken extends BaseToken {
+declare interface WhenElseQueryConditionToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2064,7 +2064,7 @@ export declare interface WhenElseQueryConditionToken extends BaseToken {
     r: Token$1[];
 }
 
-export declare interface WhenElseUnaryConditionToken extends BaseToken {
+declare interface WhenElseUnaryConditionToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2079,7 +2079,7 @@ export declare interface WhenElseUnaryConditionToken extends BaseToken {
     r: Token$1[];
 }
 
-export declare interface MediaQueryConditionToken extends BaseToken {
+declare interface MediaQueryConditionToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2106,7 +2106,7 @@ export declare interface MediaQueryConditionToken extends BaseToken {
     r: Token$1[];
 }
 
-export declare interface IfConditionToken extends BaseToken {
+declare interface IfConditionToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2121,7 +2121,7 @@ export declare interface IfConditionToken extends BaseToken {
     r: Token$1[];
 }
 
-export declare interface IfElseConditionToken extends BaseToken {
+declare interface IfElseConditionToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2136,7 +2136,7 @@ export declare interface IfElseConditionToken extends BaseToken {
     r: IfConditionToken;
 }
 
-export declare interface ContainerStyleRangeToken extends BaseToken {
+declare interface ContainerStyleRangeToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2159,7 +2159,7 @@ export declare interface ContainerStyleRangeToken extends BaseToken {
 /**
  * @inheritdoc
  */
-export declare interface MediaRangeQueryToken extends BaseToken {
+declare interface MediaRangeQueryToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2189,7 +2189,7 @@ export declare interface MediaRangeQueryToken extends BaseToken {
 /**
  * @inheritdoc
  */
-export declare interface InvalidMediaQueryToken extends BaseToken {
+declare interface InvalidMediaQueryToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2204,7 +2204,7 @@ export declare interface InvalidMediaQueryToken extends BaseToken {
 /**
  * Descendant combinator token
  */
-export declare interface DescendantCombinatorToken extends BaseToken {
+declare interface DescendantCombinatorToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2214,7 +2214,7 @@ export declare interface DescendantCombinatorToken extends BaseToken {
 /**
  * Next sibling combinator token
  */
-export declare interface NextSiblingCombinatorToken extends BaseToken {
+declare interface NextSiblingCombinatorToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2224,7 +2224,7 @@ export declare interface NextSiblingCombinatorToken extends BaseToken {
 /**
  * Subsequent sibling combinator token
  */
-export declare interface SubsequentCombinatorToken extends BaseToken {
+declare interface SubsequentCombinatorToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2234,7 +2234,7 @@ export declare interface SubsequentCombinatorToken extends BaseToken {
 /**
  * Add token
  */
-export declare interface AddToken extends BaseToken {
+declare interface AddToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2244,7 +2244,7 @@ export declare interface AddToken extends BaseToken {
 /**
  * Sub token
  */
-export declare interface SubToken extends BaseToken {
+declare interface SubToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2254,7 +2254,7 @@ export declare interface SubToken extends BaseToken {
 /**
  * Div token
  */
-export declare interface DivToken extends BaseToken {
+declare interface DivToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2264,7 +2264,7 @@ export declare interface DivToken extends BaseToken {
 /**
  * Mul token
  */
-export declare interface MulToken extends BaseToken {
+declare interface MulToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2274,7 +2274,7 @@ export declare interface MulToken extends BaseToken {
 /**
  * Wrapped values token like {Arial, Helvetica, sans-serif}
  */
-export declare interface WrappedValuesToken extends BaseToken {
+declare interface WrappedValuesToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2288,7 +2288,7 @@ export declare interface WrappedValuesToken extends BaseToken {
 /**
  * Unary expression token
  */
-export declare interface UnaryExpression extends BaseToken {
+declare interface UnaryExpression extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2306,7 +2306,7 @@ export declare interface UnaryExpression extends BaseToken {
 /**
  * Fraction token
  */
-export declare interface FractionToken extends BaseToken {
+declare interface FractionToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2324,7 +2324,7 @@ export declare interface FractionToken extends BaseToken {
 /**
  * Binary expression token
  */
-export declare interface BinaryExpressionToken extends BaseToken {
+declare interface BinaryExpressionToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2346,7 +2346,7 @@ export declare interface BinaryExpressionToken extends BaseToken {
 /**
  * Match expression token
  */
-export declare interface MatchExpressionToken extends BaseToken {
+declare interface MatchExpressionToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2372,7 +2372,7 @@ export declare interface MatchExpressionToken extends BaseToken {
 /**
  * Name space attribute token
  */
-export declare interface NameSpaceAttributeToken extends BaseToken {
+declare interface NameSpaceAttributeToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2390,7 +2390,7 @@ export declare interface NameSpaceAttributeToken extends BaseToken {
 /**
  * List token
  */
-export declare interface ListToken extends BaseToken {
+declare interface ListToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2404,7 +2404,7 @@ export declare interface ListToken extends BaseToken {
 /**
  * Composes selector token
  */
-export declare interface ComposesSelectorToken extends BaseToken {
+declare interface ComposesSelectorToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2422,7 +2422,7 @@ export declare interface ComposesSelectorToken extends BaseToken {
 /**
  * Css variable token
  */
-export declare interface CssVariableToken extends BaseToken {
+declare interface CssVariableToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2440,7 +2440,7 @@ export declare interface CssVariableToken extends BaseToken {
 /**
  * Css variable import token
  */
-export declare interface CssVariableImportTokenType extends BaseToken {
+declare interface CssVariableImportTokenType extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2458,7 +2458,7 @@ export declare interface CssVariableImportTokenType extends BaseToken {
 /**
  * Css variable map token
  */
-export declare interface CssVariableMapTokenType extends BaseToken {
+declare interface CssVariableMapTokenType extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2476,7 +2476,7 @@ export declare interface CssVariableMapTokenType extends BaseToken {
 /**
  * Function definition token
  */
-export declare interface FunctionDefToken extends BaseToken {
+declare interface FunctionDefToken extends BaseToken {
     /**
      * @inheritdoc
      */
@@ -2504,7 +2504,7 @@ export declare interface FunctionDefToken extends BaseToken {
 /**
  * Raw node token
  */
-export declare interface RawNodeToken extends BaseToken, EnumAstNodeStatus$1 {
+declare interface RawNodeToken extends BaseToken, EnumAstNodeStatus$1 {
     /**
      * @inheritdoc
      */
@@ -2518,7 +2518,7 @@ export declare interface RawNodeToken extends BaseToken, EnumAstNodeStatus$1 {
 /**
  * Unary expression node
  */
-export declare type UnaryExpressionNode =
+declare type UnaryExpressionNode =
     | BinaryExpressionNode
     | NumberToken
     | DimensionToken
@@ -2530,7 +2530,7 @@ export declare type UnaryExpressionNode =
 /**
  * Binary expression node
  */
-export declare type BinaryExpressionNode =
+declare type BinaryExpressionNode =
     | NumberToken
     | DimensionToken
     | PercentageToken
@@ -2546,7 +2546,7 @@ export declare type BinaryExpressionNode =
 /**
  * Token
  */
-export declare type Token$1 =
+declare type Token$1 =
     | InvalidClassSelectorToken
     | InvalidAttrToken
     | LiteralToken
@@ -2654,7 +2654,7 @@ export declare type Token$1 =
 /**
  * token or node location
  */
-export declare interface SourceLocation {
+declare interface SourceLocation {
     /**
      * start position
      */
@@ -2672,7 +2672,7 @@ export declare interface SourceLocation {
 /**
  * Common token interface
  */
-export declare interface BaseToken {
+declare interface BaseToken {
     /**
      * token type
      */
@@ -2745,7 +2745,7 @@ export declare interface BaseToken {
 /**
  * Ast node state
  */
-export declare interface AstNodeStatus {
+declare interface AstNodeStatus {
     /**
      * Node state
      */
@@ -2759,7 +2759,7 @@ export declare interface AstNodeStatus {
 /**
  * comment node
  */
-export declare interface AstComment extends BaseToken {
+declare interface AstComment extends BaseToken {
     /**
      * token type
      */
@@ -2773,7 +2773,7 @@ export declare interface AstComment extends BaseToken {
 /**
  * declaration node
  */
-export declare interface AstDeclaration extends BaseToken, AstNodeStatus {
+declare interface AstDeclaration extends BaseToken, AstNodeStatus {
     /**
      * token name
      */
@@ -2791,7 +2791,7 @@ export declare interface AstDeclaration extends BaseToken, AstNodeStatus {
 /**
  * rule node
  */
-export declare interface AstRule extends BaseToken, AstNodeStatus {
+declare interface AstRule extends BaseToken, AstNodeStatus {
     /**
      * token type
      */
@@ -2820,7 +2820,7 @@ export declare interface AstRule extends BaseToken, AstNodeStatus {
  * Invalid rule node
  * @deprecated
  */
-export declare interface AstInvalidRule extends BaseToken, AstNodeStatus {
+declare interface AstInvalidRule extends BaseToken, AstNodeStatus {
     /**
      * token type
      */
@@ -2839,7 +2839,7 @@ export declare interface AstInvalidRule extends BaseToken, AstNodeStatus {
  * invalid declaration node
  * @deprecated
  */
-export declare interface AstInvalidDeclaration extends BaseToken, AstNodeStatus {
+declare interface AstInvalidDeclaration extends BaseToken, AstNodeStatus {
     /**
      * token type
      */
@@ -2858,7 +2858,7 @@ export declare interface AstInvalidDeclaration extends BaseToken, AstNodeStatus 
  * invalid at rule node
  * @deprecated
  */
-export declare interface AstInvalidAtRule extends BaseToken, AstNodeStatus {
+declare interface AstInvalidAtRule extends BaseToken, AstNodeStatus {
     /**
      * token type
      */
@@ -2880,14 +2880,14 @@ export declare interface AstInvalidAtRule extends BaseToken, AstNodeStatus {
 /**
  * raw selector tokens
  */
-export declare type RawSelectorTokens = string[][];
+declare type RawSelectorTokens = string[][];
 
 /**
  * optimized selector
  *
  * @private
  */
-export declare interface OptimizedSelector {
+declare interface OptimizedSelector {
     /**
      * matched selector
      */
@@ -2911,7 +2911,7 @@ export declare interface OptimizedSelector {
  *
  * @private
  */
-export declare interface OptimizedSelectorToken {
+declare interface OptimizedSelectorToken {
     /**
      * match
      */
@@ -2933,7 +2933,7 @@ export declare interface OptimizedSelectorToken {
 /**
  * at rule node
  */
-export declare interface AstAtRule extends BaseToken, AstNodeStatus {
+declare interface AstAtRule extends BaseToken, AstNodeStatus {
     /**
      * token type
      */
@@ -2955,7 +2955,7 @@ export declare interface AstAtRule extends BaseToken, AstNodeStatus {
 /**
  * keyframe rule node
  */
-export declare interface AstKeyframesRule extends BaseToken, AstNodeStatus {
+declare interface AstKeyframesRule extends BaseToken, AstNodeStatus {
     /**
      * token type
      */
@@ -2985,7 +2985,7 @@ export declare interface AstKeyframesRule extends BaseToken, AstNodeStatus {
 /**
  * keyframe rule node
  */
-export declare interface AstKeyframesRule extends BaseToken, AstNodeStatus {
+declare interface AstKeyframesRule extends BaseToken, AstNodeStatus {
     /**
      * token type
      */
@@ -3011,7 +3011,7 @@ export declare interface AstKeyframesRule extends BaseToken, AstNodeStatus {
 /**
  * keyframe at rule node
  */
-export declare interface AstKeyframesAtRule extends BaseToken, AstNodeStatus {
+declare interface AstKeyframesAtRule extends BaseToken, AstNodeStatus {
     /**
      * token type
      */
@@ -3033,7 +3033,7 @@ export declare interface AstKeyframesAtRule extends BaseToken, AstNodeStatus {
 /**
  * rule list node
  */
-export declare type AstRuleList =
+declare type AstRuleList =
     | AstStyleSheet
     | AstAtRule
     | AstRule
@@ -3044,7 +3044,7 @@ export declare type AstRuleList =
 /**
  * stylesheet node
  */
-export declare interface AstStyleSheet extends BaseToken {
+declare interface AstStyleSheet extends BaseToken {
     /**
      * token type
      */
@@ -3058,7 +3058,7 @@ export declare interface AstStyleSheet extends BaseToken {
 /**
  * ast node
  */
-export declare type AstNode$1 =
+declare type AstNode$1 =
     | AstStyleSheet
     | AstRuleList
     | AstComment
@@ -3338,20 +3338,20 @@ declare function walkValues(values: Token$1[], root?: AstNode$1 | Token$1 | null
 /**
  * Generic visitor result
  */
-export declare type GenericVisitorSyncResult<T> = T | T[] | null;
+declare type GenericVisitorSyncResult<T> = T | T[] | null;
 /**
  * Generic visitor result
  */
-export declare type GenericVisitorAsyncResult<T> = Promise<T> | Promise<T[]> | Promise<null>;
+declare type GenericVisitorAsyncResult<T> = Promise<T> | Promise<T[]> | Promise<null>;
 /**
  * Generic visitor result
  */
-export declare type GenericVisitorResult<T> = GenericVisitorSyncResult<T> | GenericVisitorAsyncResult<T>;
+declare type GenericVisitorResult<T> = GenericVisitorSyncResult<T> | GenericVisitorAsyncResult<T>;
 
 /**
  * Generic visitor handler
  */
-export declare type GenericVisitorSyncHandler<T> = (
+declare type GenericVisitorSyncHandler<T> = (
     node: T,
     parent?: AstNode | Token,
     root?: AstNode | Token,
@@ -3360,7 +3360,7 @@ export declare type GenericVisitorSyncHandler<T> = (
 /**
  * Generic visitor handler
  */
-export declare type GenericVisitorAstNodeSyncHandlerMap<T> =
+declare type GenericVisitorAstNodeSyncHandlerMap<T> =
     | Record<string, GenericVisitorSyncHandler<T>>
     | GenericVisitorSyncHandler<T>
     | { type: WalkerEvent; handler: GenericVisitorSyncHandler<T> }
@@ -3369,13 +3369,13 @@ export declare type GenericVisitorAstNodeSyncHandlerMap<T> =
 /**
  * Generic visitor handler
  */
-export declare type ValueVisitorSyncHandler = GenericVisitorSyncHandler<Token>;
+declare type ValueVisitorSyncHandler = GenericVisitorSyncHandler<Token>;
 
 /**
  * node visitor callback map
  *
  */
-export declare interface VisitorSyncNodeMap {
+declare interface VisitorSyncNodeMap {
     /**
      * at rule visitor
      *
@@ -3634,7 +3634,7 @@ export declare interface VisitorSyncNodeMap {
 /**
  * Generic visitor handler
  */
-export declare type GenericVisitorHandler<T> = (
+declare type GenericVisitorHandler<T> = (
     node: T,
     parent?: AstNode | Token,
     root?: AstNode | Token,
@@ -3643,7 +3643,7 @@ export declare type GenericVisitorHandler<T> = (
 /**
  * Generic visitor handler
  */
-export declare type GenericVisitorAstNodeHandlerMap<T> =
+declare type GenericVisitorAstNodeHandlerMap<T> =
     | Record<string, GenericVisitorHandler<T>>
     | GenericVisitorHandler<T>
     | { type: WalkerEvent; handler: GenericVisitorHandler<T> }
@@ -3652,41 +3652,41 @@ export declare type GenericVisitorAstNodeHandlerMap<T> =
 /**
  * Generic visitor handler
  */
-export declare type ValueVisitorHandler = GenericVisitorHandler<Token>;
+declare type ValueVisitorHandler = GenericVisitorHandler<Token>;
 
 /**
  * Declaration visitor handler
  */
-export declare type DeclarationVisitorHandler = GenericVisitorHandler<AstDeclaration>;
+declare type DeclarationVisitorHandler = GenericVisitorHandler<AstDeclaration>;
 
 /**
  * Declaration visitor handler
  */
-export declare type DeclarationVisitorHandler = GenericVisitorHandler<AstDeclaration>;
+declare type DeclarationVisitorHandler = GenericVisitorHandler<AstDeclaration>;
 /**
  * Rule visitor handler
  */
-export declare type RuleVisitorHandler = GenericVisitorHandler<AstRule>;
+declare type RuleVisitorHandler = GenericVisitorHandler<AstRule>;
 /**
  * Rule visitor handler
  */
-export declare type RuleVisitorHandler = GenericVisitorHandler<AstRule>;
+declare type RuleVisitorHandler = GenericVisitorHandler<AstRule>;
 
 /**
  * AtRule visitor handler
  */
-export declare type AtRuleVisitorHandler = GenericVisitorHandler<AstAtRule>;
+declare type AtRuleVisitorHandler = GenericVisitorHandler<AstAtRule>;
 
 /**
  * AtRule visitor handler
  */
-export declare type AtRuleVisitorHandler = GenericVisitorHandler<AstAtRule>;
+declare type AtRuleVisitorHandler = GenericVisitorHandler<AstAtRule>;
 
 /**
  * node visitor callback map
  *
  */
-export declare interface VisitorNodeMap {
+declare interface VisitorNodeMap {
     /**
      * at rule visitor
      *
@@ -4147,7 +4147,7 @@ declare class SourceFile {
     getInputSourceMap(): SourceMap | null;
 }
 
-export declare interface PropertyListOptions {
+declare interface PropertyListOptions {
     removeDuplicateDeclarations?: boolean | string | string[];
     computeShorthand?: boolean;
 }
@@ -4155,7 +4155,7 @@ export declare interface PropertyListOptions {
 /**
  * parse info
  */
-export declare interface ParseInfo$1 {
+declare interface ParseInfo$1 {
     /**
      * stream
      */
@@ -4531,7 +4531,7 @@ interface ShorthandType {
 /**
  * @private
  */
-export declare interface PropertiesConfig {
+declare interface PropertiesConfig {
     /**
      * shorthand property minification rules
      */
@@ -4940,7 +4940,7 @@ interface BorderRadius {
 /**
  * node walker options
  */
-export declare interface WalkerOptions {
+declare interface WalkerOptions {
     /**
      * walk in reverse
      */
@@ -4959,7 +4959,7 @@ export declare interface WalkerOptions {
 /**
  * node walker option
  */
-export declare type WalkerOption = WalkerOptionEnum | AstNode$1 | Token$1 | null;
+declare type WalkerOption = WalkerOptionEnum | AstNode$1 | Token$1 | null;
 /**
  * returned value:
  * - {@link WalkerOptionEnum.Ignore}: ignore this node and its children
@@ -4969,7 +4969,7 @@ export declare type WalkerOption = WalkerOptionEnum | AstNode$1 | Token$1 | null
  * - {@link AstNode}:
  * - {@link Token}:
  */
-export declare type WalkerFilter = (node: AstNode$1) => WalkerOption;
+declare type WalkerFilter = (node: AstNode$1) => WalkerOption;
 
 /**
  * returned value:
@@ -4980,7 +4980,7 @@ export declare type WalkerFilter = (node: AstNode$1) => WalkerOption;
  * - {@link AstNode}:
  * - {@link Token}:
  */
-export declare type WalkerValueFilter = (
+declare type WalkerValueFilter = (
     node: AstNode$1 | Token$1,
     parent?: AstNode$1 | Token$1 | AstNode$1[] | Token$1[] | null,
     event?: WalkerEvent,
@@ -4990,7 +4990,7 @@ export declare type WalkerValueFilter = (
 /**
  * walker result
  */
-export declare interface WalkResult {
+declare interface WalkResult {
     /**
      * current node
      */
@@ -5012,7 +5012,7 @@ export declare interface WalkResult {
 /**
  * walker result
  */
-export declare interface WalkAttributesResult {
+declare interface WalkAttributesResult {
     /**
      * current node
      */
@@ -5042,7 +5042,7 @@ export declare interface WalkAttributesResult {
 /**
  * Error description
  */
-export declare interface ErrorDescription$1 {
+declare interface ErrorDescription$1 {
     /**
      *  Drop rule or declaration
      */
@@ -5220,7 +5220,7 @@ interface MinifyOptions {
 /**
  * Result of options.load() function call.
  */
-export declare type LoadResult =
+declare type LoadResult =
     | Promise<ReadableStream<Uint8Array>>
     | ReadableStream<Uint8Array>
     | string
@@ -5229,7 +5229,7 @@ export declare type LoadResult =
 /**
  * CSS module parser options
  */
-export declare interface ModuleSyncOptions {
+declare interface ModuleSyncOptions {
     /**
      * Use local scope vs global scope
      */
@@ -5339,7 +5339,7 @@ export declare interface ModuleSyncOptions {
     generateScopedName?: (localName: string, filePath: string, pattern: string, hashLength?: number) => string;
 }
 
-export declare interface ModuleAsyncOptions extends ModuleSyncOptions {
+declare interface ModuleAsyncOptions extends ModuleSyncOptions {
     /**
      * The pattern used to generate scoped names. the supported placeholders are:
      * - name: the file base name without the extension
@@ -5434,7 +5434,7 @@ export declare interface ModuleAsyncOptions extends ModuleSyncOptions {
 /**
  * Input file options
  */
-export declare interface ParseInputFileOptions {
+declare interface ParseInputFileOptions {
     /**
      * File path or url
      */
@@ -5449,7 +5449,7 @@ export declare interface ParseInputFileOptions {
 /**
  * Input options for string or stream
  */
-export declare interface ParseInputOptions {
+declare interface ParseInputOptions {
     /**
      * Input string or stream
      */
@@ -5458,7 +5458,7 @@ export declare interface ParseInputOptions {
 /**
  * Input options for string or stream
  */
-export declare interface ParseInputStreamOptions {
+declare interface ParseInputStreamOptions {
     /**
      * Input string or stream
      */
@@ -5469,7 +5469,7 @@ export declare interface ParseInputStreamOptions {
  * Input options for string or stream
  * @internal
  */
-export declare interface ParseSourceOptions {
+declare interface ParseSourceOptions {
     /**
      * Source file to be used for sourcemap
      * @internal
@@ -5485,7 +5485,7 @@ export declare interface ParseSourceOptions {
 /**
  * Parser sourcemap options
  */
-export declare interface ParserSourceMapOptions {
+declare interface ParserSourceMapOptions {
     /**
      * Include sourcemap in the ast. Sourcemap info is always generated
      */
@@ -5499,7 +5499,7 @@ export declare interface ParserSourceMapOptions {
 /**
  * Sync parseroptions
  */
-export declare interface ParserSyncOptions
+declare interface ParserSyncOptions
     extends
         MinifyOptions,
         ParserSourceMapOptions,
@@ -5610,7 +5610,7 @@ export declare interface ParserSyncOptions
 /**
  * Parser options
  */
-export declare interface ParserOptions extends ParserSyncOptions, ModuleAsyncOptions {
+declare interface ParserOptions extends ParserSyncOptions, ModuleAsyncOptions {
     /**
      * Resolve import
      */
@@ -5645,7 +5645,7 @@ export declare interface ParserOptions extends ParserSyncOptions, ModuleAsyncOpt
  *
  * @internal
  */
-export declare interface MinifyFeatureOptions {
+declare interface MinifyFeatureOptions {
     /**
      * Minify features
      *
@@ -5659,7 +5659,7 @@ export declare interface MinifyFeatureOptions {
  *
  * @internal
  */
-export declare interface MinifyFeature {
+declare interface MinifyFeature {
     /**
      * Accepted tokens
      */
@@ -5701,7 +5701,7 @@ export declare interface MinifyFeature {
  * Resolved path
  * @internal
  */
-export declare interface ResolvedPath {
+declare interface ResolvedPath {
     /**
      * Absolute path
      */
@@ -5715,7 +5715,7 @@ export declare interface ResolvedPath {
 /**
  * Ast node render options
  */
-export declare interface RenderOptions {
+declare interface RenderOptions {
     /**
      * Source file to be used as CSS input file for sourcemap resolution
      */
@@ -5807,17 +5807,17 @@ export declare interface RenderOptions {
 /**
  * Transform options
  */
-export declare interface TransformSyncOptions extends ParserSyncOptions, RenderOptions {}
+declare interface TransformSyncOptions extends ParserSyncOptions, RenderOptions {}
 
 /**
  * Transform options
  */
-export declare interface TransformOptions extends ParserOptions, RenderOptions {}
+declare interface TransformOptions extends ParserOptions, RenderOptions {}
 
 /**
  * Parse result stats object
  */
-export declare interface ParseResultStats {
+declare interface ParseResultStats {
     /**
      * Source file
      */
@@ -5871,7 +5871,7 @@ export declare interface ParseResultStats {
 /**
  * Parse result object
  */
-export declare interface ParseResult {
+declare interface ParseResult {
     /**
      * Parsed ast tree
      */
@@ -5912,7 +5912,7 @@ export declare interface ParseResult {
 /**
  * Render result object
  */
-export declare interface RenderResult {
+declare interface RenderResult {
     /**
      * Rendered CSS
      */
@@ -5939,7 +5939,7 @@ export declare interface RenderResult {
 /**
  * Transform result object
  */
-export declare interface TransformResult extends ParseResult, RenderResult {
+declare interface TransformResult extends ParseResult, RenderResult {
     /**
      * Transform stats
      */
@@ -5986,13 +5986,13 @@ export declare interface TransformResult extends ParseResult, RenderResult {
 /**
  * Parse token options
  */
-export declare interface ParseTokenOptions extends ParserOptions {}
+declare interface ParseTokenOptions extends ParserOptions {}
 
 /**
  * Tokenize result object
  * @internal
  */
-export declare interface TokenizeResult {
+declare interface TokenizeResult {
     /**
      * Token
      */
@@ -6007,7 +6007,7 @@ export declare interface TokenizeResult {
  * Matched selector object
  * @internal
  */
-export declare interface MatchedSelector {
+declare interface MatchedSelector {
     /**
      * Matched selector
      */
@@ -6030,7 +6030,7 @@ export declare interface MatchedSelector {
  * Variable scope info object
  * @internal
  */
-export declare interface VariableScopeInfo {
+declare interface VariableScopeInfo {
     /**
      * Global scope
      */
@@ -6061,7 +6061,7 @@ export declare interface VariableScopeInfo {
  * Source map object
  * @internal
  */
-export declare interface SourceMapObject {
+declare interface SourceMapObject {
     /**
      * Source map version
      */
@@ -6116,7 +6116,7 @@ declare const resolve: (url: string, currentDirectory?: string, cwd?: string) =>
  * Validation syntax
  * @internal
  */
-export declare interface ValidationSyntaxNode {
+declare interface ValidationSyntaxNode {
     /**
      * mdn data syntax
      */
@@ -6146,7 +6146,7 @@ interface ValidationSelectorOptions extends ValidationOptions {
  * Validation media feature
  * @internal
  */
-export declare interface ValidationMediaFeature {
+declare interface ValidationMediaFeature {
     /**
      * media feature type
      */
@@ -6169,7 +6169,7 @@ export declare interface ValidationMediaFeature {
  * Validation configuration
  * @internal
  */
-export declare type ValidationConfiguration = Record<
+declare type ValidationConfiguration = Record<
     ValidationSyntaxGroupEnum,
     ValidationSyntaxNode | Record<string, string[]> | Record<string, ValidationMediaFeature>
 >;
