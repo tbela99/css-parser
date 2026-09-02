@@ -5,6 +5,8 @@ import { memoize } from "../parser/utils/cache.ts";
  */
 export const matchUrl: RegExp = /^(https?:)?\/\//;
 
+const windowsPathnameRegexp = /^\/?[a-zA-Z]:/;
+
 /**
  * return the directory name of a path
  * @param path
@@ -91,6 +93,10 @@ export const normalize = memoize(function (path: string) {
 
     if (path.includes("\\")) {
         path = path.replace(/(\\)/g, "/");
+    }
+
+    if (windowsPathnameRegexp.test(path)) {
+        path = path.replace(windowsPathnameRegexp, "");
     }
 
     for (; i < path.length; i++) {
@@ -180,9 +186,16 @@ export const resolve = memoize(function (
         currentDirectory = normalize(currentDirectory);
     }
 
-    const dir = cwd || currentDirectory;
+    let dir = cwd || currentDirectory;
+
+    if (windowsPathnameRegexp.test(dir)) {
+        dir = dir.replace(windowsPathnameRegexp, "");
+    }
+
     const absolute =
-        dir == "" || url.startsWith("/") || url.match(/^[a-zA-Z]:/) ? resolvePath(url) : resolvePath(dir, url);
+        dir == "" || url.startsWith("/") || url.startsWith(dir) || windowsPathnameRegexp.test(url)
+            ? resolvePath(url)
+            : resolvePath(dir, url);
 
     return {
         absolute,

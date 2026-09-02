@@ -1175,7 +1175,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
 
         filePath =
             filePath === ""
-                ? (options.src as string)
+                ? options.resolve!(options.src as string, options.cwd as string).relative
                 : options.resolve!(filePath, options.dirname!(options.src as string), options.cwd).relative;
 
         if (typeof options.module == "number") {
@@ -2409,7 +2409,7 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
 
         filePath =
             filePath === ""
-                ? (options.src as string)
+                ? options.resolve!(options.src as string, options.cwd as string).relative
                 : options.resolve!(filePath, options.dirname!(options.src as string), options.cwd).relative;
 
         if (typeof options.module == "number") {
@@ -4374,7 +4374,7 @@ export function parseString(
     const tokenizer: Tokenizer = new Tokenizer({
         stream: src,
         buffer: "",
-        src:  options?.src ?? "",
+        src: options?.src ?? "",
         offset: 0,
         time: 0,
         source: new SourceFile(src, [], options?.src ?? ""),
@@ -4688,8 +4688,6 @@ export function parseTokens(
             node,
             location: options.source!.getSourceLocation(node[LOCSTA]!),
         });
-
-        // return [];
     }
 
     return tokens;

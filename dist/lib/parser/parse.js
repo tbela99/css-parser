@@ -900,7 +900,7 @@ function doParseSync(tokenizer, options = {}) {
             : (moduleSettings.filePath ?? options.src);
         filePath =
             filePath === ""
-                ? options.src
+                ? options.resolve(options.src, options.cwd).relative
                 : options.resolve(filePath, options.dirname(options.src), options.cwd).relative;
         if (typeof options.module == "number") {
             if (options.module & ModuleCaseTransformEnum.CamelCase) {
@@ -1893,7 +1893,7 @@ async function doParse(iter, options = {}) {
             : (moduleSettings.filePath ?? options.src);
         filePath =
             filePath === ""
-                ? options.src
+                ? options.resolve(options.src, options.cwd).relative
                 : options.resolve(filePath, options.dirname(options.src), options.cwd).relative;
         if (typeof options.module == "number") {
             if (options.module & ModuleCaseTransformEnum.CamelCase) {
@@ -3695,7 +3695,6 @@ function parseTokens(tokens, options, errors) {
             node,
             location: options.source.getSourceLocation(node[LOCSTA]),
         });
-        // return [];
     }
     return tokens;
 }
