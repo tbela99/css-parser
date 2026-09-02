@@ -6,6 +6,7 @@
 
 ## Improvements
 - [x] faster tokenizer
+- [x] ensure transform: rotate(360deg) is not minified to transform: none
 - [x] support input sourcemap from inline sourcemap file. This is only supported by the async parser.
 
 ```css
