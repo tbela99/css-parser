@@ -10,12 +10,12 @@
   },
   "animate.css": {
     "clean-css": 75274,
-    "cssnano": 71723,
+    "cssnano": 71789,
     "csso": 73220,
     "css-tree": 75731,
     "esbuild": 73454,
     "lightningcss": 68837,
-    "css-parser": 64231
+    "css-parser": 64399
   },
   "blueprint.css": {
     "clean-css": 10794,
@@ -33,16 +33,16 @@
     "css-tree": 163307,
     "esbuild": 160755,
     "lightningcss": 153616,
-    "css-parser": 144703
+    "css-parser": 144739
   },
   "bootstrap-5.css": {
     "clean-css": 163827,
-    "cssnano": 164034,
+    "cssnano": 164044,
     "csso": 161486,
     "css-tree": 165616,
     "esbuild": 162024,
     "lightningcss": 159987,
-    "css-parser": 151017
+    "css-parser": 151036
   },
   "font-awesome-all.css": {
     "clean-css": 58568,
@@ -51,16 +51,16 @@
     "css-tree": 56085,
     "esbuild": 58980,
     "lightningcss": 56049,
-    "css-parser": 55636
+    "css-parser": 55789
   },
   "font-awesome.css": {
     "clean-css": 82143,
-    "cssnano": 73387,
+    "cssnano": 73389,
     "csso": 73592,
     "css-tree": 84685,
     "esbuild": 76185,
     "lightningcss": 70376,
-    "css-parser": 69551
+    "css-parser": 69560
   },
   "inuit.css": {
     "clean-css": 18215,
@@ -69,7 +69,7 @@
     "css-tree": 18322,
     "esbuild": 18309,
     "lightningcss": 17839,
-    "css-parser": 9727
+    "css-parser": 9731
   },
   "normalize.css": {
     "clean-css": 1815,
@@ -100,11 +100,11 @@
   },
   "tailwind.css": {
     "clean-css": 1941820,
-    "cssnano": 1932978,
+    "cssnano": 1934643,
     "csso": 1652840,
     "css-tree": 1963358,
     "esbuild": 1961145,
     "lightningcss": 1864728,
-    "css-parser": 1633251
+    "css-parser": 1633265
   }
 }
