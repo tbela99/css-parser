@@ -15,6 +15,10 @@ var ResponseType;
      * return an arraybuffer
      */
     ResponseType[ResponseType["ArrayBuffer"] = 2] = "ArrayBuffer";
+    /**
+     * return a json object
+     */
+    ResponseType[ResponseType["JSON"] = 3] = "JSON";
 })(ResponseType || (ResponseType = {}));
 
 export { ResponseType };

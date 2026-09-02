@@ -1,6 +1,15 @@
 import { EnumToken } from "../ast/types.ts";
 import { config } from "../validation/json.ts";
 
+/**
+ * Location source id
+ */
+export const LOCSRCID = Symbol.for("locSrcId");
+export const LOCSTA = Symbol.for("locSta");
+export const LOCEND = Symbol.for("locEnd");
+/**
+ * Used by the validation parser
+ */
 export const LOC = Symbol.for("loc");
 export const RAW = Symbol.for("raw");
 export const STATE = Symbol.for("state");
@@ -56,7 +65,7 @@ export const colorPrecision = 6;
 /**
  * Angle precision
  */
-export const anglePrecision = 0.001;
+export const anglePrecision = 3;
 
 /**
  * Color range definitions
@@ -116,6 +125,7 @@ export const mathFuncs = [
     "acos",
     "atan",
     "atan2",
+    "tan",
     "pow",
     "sqrt",
     "hypot",

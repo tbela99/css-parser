@@ -25,7 +25,7 @@ class TransformCssFeature {
         }
     }
     run(ast) {
-        if (!("chi" in ast)) {
+        if (ast.chi == null) {
             return null;
         }
         let i = 0;

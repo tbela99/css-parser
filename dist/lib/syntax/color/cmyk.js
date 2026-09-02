@@ -4,68 +4,60 @@ import { lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues, hwb
 import { hsl2srgbvalues } from './rgb.js';
 
 function rgb2cmykToken(token) {
-    const components = rgb2srgbvalues(token);
+    let components = rgb2srgbvalues(token);
     if (components == null || components.length < 3) {
         return null;
     }
-    // @ts-ignore
-    return cmyktoken(srgb2cmykvalues(...components));
+    return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
 }
 function hsl2cmykToken(token) {
-    const values = hsl2srgbvalues(token);
+    let values = hsl2srgbvalues(token);
     if (values == null) {
         return null;
     }
-    // @ts-ignore
-    return cmyktoken(srgb2cmykvalues(...values));
+    return cmyktoken(srgb2cmykvalues(values[0], values[1], values[2], values[3]));
 }
 function hwb2cmykToken(token) {
     const values = hwb2srgbvalues(token);
     if (values == null) {
         return null;
     }
-    // @ts-ignore
-    return cmyktoken(srgb2cmykvalues(...values));
+    return cmyktoken(srgb2cmykvalues(values[0], values[1], values[2], values[3]));
 }
 function lab2cmykToken(token) {
     const components = lab2srgbvalues(token);
     if (components == null || components.length < 3) {
         return null;
     }
-    // @ts-ignore
-    return cmyktoken(srgb2cmykvalues(...components));
+    return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
 }
 function lch2cmykToken(token) {
     const components = lch2srgbvalues(token);
     if (components == null || components.length < 3) {
         return null;
     }
-    // @ts-ignore
-    return cmyktoken(srgb2cmykvalues(...components));
+    return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
 }
 function oklab2cmyk(token) {
     const components = oklab2srgbvalues(token);
     if (components == null || components.length < 3) {
         return null;
     }
-    // @ts-ignore
-    return cmyktoken(srgb2cmykvalues(...components));
+    return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
 }
 function oklch2cmykToken(token) {
     const components = oklch2srgbvalues(token);
     if (components == null || components.length < 3) {
         return null;
     }
-    // @ts-ignore
-    return cmyktoken(srgb2cmykvalues(...components));
+    return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
 }
 function color2cmykToken(token) {
     const values = color2srgbvalues(token);
     if (values == null) {
         return null;
     }
-    // @ts-ignore
-    return cmyktoken(srgb2cmykvalues(...values));
+    return cmyktoken(srgb2cmykvalues(values[0], values[1], values[2], values[3]));
 }
 function srgb2cmykvalues(r, g, b, a = null) {
     const k = 1 - Math.max(r, g, b);

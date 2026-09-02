@@ -7,7 +7,7 @@ import { srgb2rgb } from "./rgb.ts";
 import { srgb2hslvalues } from "./hsl.ts";
 import { srgb2hwb } from "./hwb.ts";
 import { srgb2labvalues } from "./lab.ts";
-import {  srgb2lp3values, srgb2p3values } from "./p3.ts";
+import { srgb2lp3values, srgb2p3values } from "./p3.ts";
 import { getColorComponents } from "./utils/components.ts";
 import { srgb2oklch } from "./oklch.ts";
 import { srgb2oklab } from "./oklab.ts";
@@ -17,6 +17,7 @@ import { XYZ_D65_to_D50, xyzd502lch } from "./xyzd50.ts";
 import { srgb2rec2020values } from "./rec2020.ts";
 import { isPolarColorspace, isRectangularOrthogonalColorspace } from "../syntax.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
+import { srgb2a98values } from "./a98rgb.ts";
 
 function interpolateHue(interpolationMethod: string, h1: number, h2: number): number[] {
     switch (interpolationMethod) {
@@ -147,78 +148,72 @@ export function colorMix(...args: Token[]): ColorToken | null {
                 break;
 
             case "display-p3":
-                // @ts-ignore
-                values = srgb2p3values(...values);
+                (values[0], values[1], values[2], values[3]);
+                values = srgb2p3values(values[0], values[1], values[2], values[3]);
                 break;
 
             case "display-p3-linear":
-                // @ts-ignore
-                values = srgb2lp3values(...values);
+                (values[0], values[1], values[2], values[3]);
+                values = srgb2lp3values(values[0], values[1], values[2], values[3]);
                 break;
 
             case "a98-rgb":
-                // @ts-ignore
-                values = srgb2a98values(...values);
+                values = srgb2a98values(values[0], values[1], values[2], values[3]);
                 break;
 
             case "prophoto-rgb":
-                // @ts-ignore
-                values = srgb2prophotorgbvalues(...values);
+                (values[0], values[1], values[2], values[3]);
+                values = srgb2prophotorgbvalues(values[0], values[1], values[2], values[3]);
                 break;
 
             case "srgb-linear":
-                // @ts-ignore
-                values = srgb2lsrgbvalues(...values);
+                (values[0], values[1], values[2], values[3]);
+                values = srgb2lsrgbvalues(values[0], values[1], values[2], values[3]);
                 break;
 
             case "rec2020":
-                // @ts-ignore
-                values = srgb2rec2020values(...values);
+                (values[0], values[1], values[2], values[3]);
+                values = srgb2rec2020values(values[0], values[1], values[2], values[3]);
                 break;
 
             case "xyz":
             case "xyz-d65":
-                // @ts-ignore
-                values = srgb2xyz_d65(...values);
+                (values[0], values[1], values[2], values[3]);
+                values = srgb2xyz_d65(values[0], values[1], values[2], values[3]);
                 break;
             case "xyz-d50":
-                // @ts-ignore
-                values = XYZ_D65_to_D50(...srgb2xyz_d65(...values));
+                values = srgb2xyz_d65(values[0], values[1], values[2], values[3]);
+                values = XYZ_D65_to_D50(values[0], values[1], values[2], values[3]);
                 break;
 
             case "rgb":
-                // @ts-ignore
-                values = srgb2rgb(...values);
+                for (let j = 0; j < values.length; j++) {
+                    values[j] = j == 3 ? values[j] : srgb2rgb(values[j]);
+                }
                 break;
 
             case "hsl":
-                // @ts-ignore
-                values = srgb2hslvalues(...values);
+                values = srgb2hslvalues(values[0], values[1], values[2], values[3]);
                 break;
 
             case "hwb":
-                // @ts-ignore
-                values = srgb2hwb(...values);
+                values = srgb2hwb(values[0], values[1], values[2], values[3]);
                 break;
 
             case "lab":
-                // @ts-ignore
-                values = srgb2labvalues(...values);
+                values = srgb2labvalues(values[0], values[1], values[2], values[3]);
                 break;
 
             case "lch":
-                // @ts-ignore
-                values = srgb2lch(...values);
+                values = srgb2lch(values[0], values[1], values[2], values[3]);
                 break;
 
             case "oklab":
-                // @ts-ignore
-                values = srgb2oklab(...values);
+                values = srgb2oklab(values[0], values[1], values[2], values[3]);
                 break;
 
             case "oklch":
-                // @ts-ignore
-                values = srgb2oklch(...values);
+                values = srgb2oklch(values[0], values[1], values[2], values[3]);
                 break;
 
             default:
@@ -428,11 +423,10 @@ export function colorMix(...args: Token[]): ColorToken | null {
         case "xyz-d65":
         case "xyz-d50":
             if (colorSpace == "xyz-d50") {
-                // @ts-ignore
-                values = xyzd502lch(...values) as number[];
+                values = xyzd502lch(values[0], values[1], values[2], values[3]) as number[];
             } else {
-                // @ts-ignore
-                values = xyz2lchvalues(...values) as number[];
+                (values[0], values[1], values[2], values[3]);
+                values = xyz2lchvalues(values[0], values[1], values[2], values[3]) as number[];
             }
 
             // @ts-ignore
@@ -455,7 +449,6 @@ export function colorMix(...args: Token[]): ColorToken | null {
         case "display-p3":
         case "display-p3-linear":
         case "prophoto-rgb":
-
             // @ts-ignore
             return {
                 typ: EnumToken.ColorTokenType,

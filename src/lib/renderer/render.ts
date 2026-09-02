@@ -52,8 +52,18 @@ import { reduceHexValue } from "../syntax/color/hex.ts";
 import { ColorType, EnumToken } from "../ast/types.ts";
 import { expand } from "../ast/expand.ts";
 import { SourceMap } from "./sourcemap/sourcemap.ts";
-import { colorPrecision, LOC, PARENT, pseudoElements, tokensfuncSet, urlTokenMatcher } from "../syntax/constants.ts";
 import {
+    anglePrecision,
+    colorPrecision,
+    LOCSRCID,
+    LOCSTA,
+    PARENT,
+    pseudoElements,
+    tokensfuncSet,
+    urlTokenMatcher,
+} from "../syntax/constants.ts";
+import {
+    isWhiteSpace,
     minifyNumber,
     parseColor,
     reduceColorStops,
@@ -228,7 +238,7 @@ export function doRender(
             sourcemap.addSourceContent(source.id, source.getFileName(), source.getContent());
         }
 
-        sourcemap.add(...(sourcemaps!.maps! as Array<[number, number, number, number, number]>));
+        sourcemap.add(sourcemaps!.maps!);
         result.map = sourcemap;
 
         if (options.sourcemap === "inline") {
@@ -264,44 +274,31 @@ function updateSourceMap(
 ) {
     let offset: number = 0;
 
-    while (true) {
-        if (str.charAt(offset) == options.newLine) {
-            offset += options.newLine.length;
-            continue;
-        }
-
-        if (str.charAt(offset) == options.indent) {
-            offset += options.indent.length;
-            continue;
-        }
-
-        break;
+    // eat leanding whitespace
+    while (offset < str.length && isWhiteSpace(str.charCodeAt(offset))) {
+        offset++;
     }
 
     if (offset > 0) {
-        move(sourceLocation, linesMap, str.slice(0, offset));
+        move(sourceLocation, linesMap, str, 0, offset + 1);
     }
 
-    if (
-        node[LOC] != null &&
-        [
-            EnumToken.RuleNodeType,
-            EnumToken.AtRuleNodeType,
-            EnumToken.KeyframesRuleNodeType,
-            EnumToken.KeyframesAtRuleNodeType,
-        ].includes(node.typ)
-    ) {
-        const source = options.sourcesMap!.get((node[LOC] as SourceLocation)!.srcId) as SourceFile;
+    if (node[LOCSTA] != null) {
+        const source = options.sourcesMap!.get(node[LOCSRCID]!) as SourceFile;
         const inputSourceMap = source.getInputSourceMap();
-        const offsets: [number, number] = source.getOffsets(node[LOC].sta) as [number, number];
+        const offsets: [number, number] = source.getOffsets(node[LOCSTA]) as [number, number];
         const [newLine, newColumn] = linesMap.getOffsets(sourceLocation.end);
         let records: Array<[string | null, number, number, string | null]> | null = null;
-        let srcId: number = (node[LOC] as SourceLocation)!.srcId;
+        let srcId: number = node[LOCSRCID]!;
         let sourceFileName: string | null = (source.getFileName() as string) || null;
-        let sourceContent: string | null = (source.getContent() as string) || null;
+        let sourceContent: string | null; // = (source.getContent() as string) || null;
 
         if (inputSourceMap != null && (records = inputSourceMap.find(offsets[0], offsets[1])) != null) {
+            let newId: number | null = null;
+
             for (const record of records) {
+                newId = null;
+
                 // @ts-ignore
                 sourceFileName = (record[0] as string) || null;
                 // @ts-ignore
@@ -329,35 +326,56 @@ function updateSourceMap(
                     sourceFileName = cache[sourceFileName] as string;
                 }
 
+                for (const [id, file] of options.sourcesMap!.entries()) {
+                    if (file.getFileName() === sourceFileName) {
+                        newId = id;
+                        break;
+                    }
+
+                    if (sourceFileName == null && file.getContent() === sourceContent) {
+                        newId = id;
+                        break;
+                    }
+                }
+
+                if (newId == null) {
+                    const source = new SourceFile(sourceContent as string, [], sourceFileName);
+
+                    options.sourcesMap!.set(source.id, source);
+                    newId = source.id;
+                }
+
+                srcId = newId as number;
+
                 if (!sourcemaps.sources.includes(srcId)) {
                     sourcemaps.sources.push(srcId);
                 }
 
-                sourcemaps.maps.push([newLine, newColumn, srcId, ...offsets]);
+                sourcemaps.maps.push([newLine, newColumn, srcId, offsets[0], offsets[1]]);
             }
         } else {
-            if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
-                if (cache[sourceFileName] == null) {
-                    const absolute = options.resolve!(dirname(options.output as string), options.cwd as string)
-                        .absolute as string;
-                    const absoluteSourceFileName = options.resolve!(sourceFileName, options.cwd as string)
-                        .absolute as string;
+            // if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
+            //     if (cache[sourceFileName] == null) {
+            //         const absolute = options.resolve!(dirname(options.output as string), options.cwd as string)
+            //             .absolute as string;
+            //         const absoluteSourceFileName = options.resolve!(sourceFileName, options.cwd as string)
+            //             .absolute as string;
 
-                    cache[sourceFileName] = options.resolve!(absoluteSourceFileName, absolute).relative as string;
-                }
+            //         cache[sourceFileName] = options.resolve!(absoluteSourceFileName, absolute).relative as string;
+            //     }
 
-                sourceFileName = cache[sourceFileName] as string;
-            }
+            //     sourceFileName = cache[sourceFileName] as string;
+            // }
 
             if (!sourcemaps.sources.includes(srcId)) {
                 sourcemaps.sources.push(srcId);
             }
 
-            sourcemaps.maps.push([newLine, newColumn, srcId, ...offsets]);
+            sourcemaps.maps.push([newLine, newColumn, srcId, offsets[0], offsets[1]]);
         }
     }
 
-    move(sourceLocation, linesMap, offset > 0 ? str.slice(offset) : str);
+    move(sourceLocation, linesMap, str, offset);
 }
 
 /**
@@ -366,12 +384,13 @@ function updateSourceMap(
  * @param linesMap
  * @param str
  */
-export function move(sourceLocation: SourceLocation, linesMap: LinesMap, str: string) {
-    let i: number = 0;
+export function move(sourceLocation: SourceLocation, linesMap: LinesMap, str: string, start?: number, end?: number) {
+    let i: number = start ?? 0;
+    let j: number = end ?? str.length;
     let codepoint: number;
     let char: string;
 
-    for (; i < str.length; i++) {
+    for (; i < j; i++) {
         char = str.charAt(i);
         codepoint = char.charCodeAt(0);
         sourceLocation.end += char.length;
@@ -561,8 +580,6 @@ function renderAstNode(
                 children += str;
 
                 if (sourcemaps != null && str !== "") {
-                    move(sourceLocation, linesMap!, str);
-
                     if (node.typ == EnumToken.DeclarationNodeType && recordDeclarationSourceMap) {
                         // if declaration is child of at-rule, then record it
                         // .rule {
@@ -570,19 +587,10 @@ function renderAstNode(
                         //         color: red;
                         //     }
                         // }
-                        const source = options.sourcesMap!.get(node[LOC]!.srcId) as SourceFile;
-
-                        if (!sourcemaps.sources.includes(node[LOC]!.srcId as number)) {
-                            sourcemaps.sources.push(node[LOC]!.srcId as number);
-                        }
-
-                        sourcemaps.maps.push([
-                            ...linesMap!.getOffsets(
-                                sourceLocation.end - str.length + options.newLine!.length + indentSub.length,
-                            ),
-                            node[LOC]!.srcId,
-                            ...source!.getOffsets(node![LOC]!.sta),
-                        ]);
+                        // @ts-ignore
+                        updateSourceMap(node, options, cache, sourcemaps, sourceLocation, linesMap!, str);
+                    } else {
+                        move(sourceLocation, linesMap!, str);
                     }
                 }
             }
@@ -1004,7 +1012,9 @@ export function renderValue(
                             }
 
                             if (slice[i]?.typ === EnumToken.ColorTokenType) {
-                                slice.push(...reduceColorStops(slice.splice(i, slice.length - i)));
+                                for (const token of reduceColorStops(slice.splice(i, slice.length - i))) {
+                                    slice.push(token);
+                                }
                             }
                         }
 
@@ -1242,7 +1252,9 @@ export function renderValue(
                             const result: Token[] = [];
 
                             if (form.length > 0) {
-                                result.push(...form);
+                                for (const token of form) {
+                                    result.push(token);
+                                }
                             }
 
                             if (size.length > 0) {
@@ -1250,7 +1262,9 @@ export function renderValue(
                                     result.push({ typ: EnumToken.WhitespaceTokenType });
                                 }
 
-                                result.push(...size);
+                                for (const token of size) {
+                                    result.push(token);
+                                }
                             }
 
                             if (positions.length > 0) {
@@ -1261,25 +1275,36 @@ export function renderValue(
                                 result.push(
                                     { typ: EnumToken.IdenTokenType, val: "at" },
                                     { typ: EnumToken.WhitespaceTokenType },
-                                    ...positions,
                                 );
+
+                                for (const token of positions) {
+                                    result.push(token);
+                                }
                             }
 
                             if (colorSpaceDef.length > 0) {
                                 if (result.length > 0) {
                                     result.push({ typ: EnumToken.WhitespaceTokenType });
                                 }
-                                result.push(...colorSpaceDef);
+
+                                for (const token of colorSpaceDef) {
+                                    result.push(token);
+                                }
                             }
 
                             if (result.length > 0) {
                                 result.push({ typ: EnumToken.CommaTokenType });
                             }
 
-                            result.push(...reduceColorStops(slice.slice(i)));
+                            for (const token of reduceColorStops(slice.slice(i))) {
+                                result.push(token);
+                            }
 
                             slice.length = 0;
-                            slice.push(...result);
+
+                            for (const token of result) {
+                                slice.push(token);
+                            }
                         }
                         break;
 
@@ -1435,13 +1460,19 @@ export function renderValue(
                                     angles.push(
                                         { typ: EnumToken.IdenTokenType, val: "at" },
                                         { typ: EnumToken.WhitespaceTokenType },
-                                        ...positions,
                                     );
+
+                                    for (const position of positions) {
+                                        angles.push(position);
+                                    }
                                 }
                             }
 
                             if (angles.length > 0) {
-                                result.push(...angles, { typ: EnumToken.CommaTokenType });
+                                for (const angle of angles) {
+                                    result.push(angle);
+                                }
+                                result.push({ typ: EnumToken.CommaTokenType });
                             }
 
                             if (colorSpaceDef.length > 0) {
@@ -1450,15 +1481,23 @@ export function renderValue(
                                         result.push({ typ: EnumToken.WhitespaceTokenType });
                                     }
 
-                                    result.push(...colorSpaceDef);
+                                    for (const token of colorSpaceDef) {
+                                        result.push(token);
+                                    }
                                 }
 
                                 result.push({ typ: EnumToken.CommaTokenType });
                             }
 
-                            result.push(...reduceConicColorStops(slice.slice(i)));
+                            for (const token of reduceConicColorStops(slice.slice(i))) {
+                                result.push(token);
+                            }
+
                             slice.length = 0;
-                            slice.push(...result);
+
+                            for (let j = 0; j < result.length; j++) {
+                                slice.push(result[j]);
+                            }
                         }
                         break;
                 }
@@ -1647,25 +1686,16 @@ export function renderValue(
                 let v: string;
                 let value: string = val + unit;
 
-                for (const u of ["turn", "deg", "rad", "grad"]) {
+                for (const u of ["deg", "turn", "rad", "grad"]) {
                     if ((token as AngleToken).unit == u) {
                         continue;
                     }
 
                     switch (u) {
-                        case "turn":
-                            v = minifyNumber(toPrecisionAngle(angle, colorPrecision, false));
-
-                            if (v.length + 4 < value.length) {
-                                val = v;
-                                unit = u;
-                                value = v + u;
-                            }
-
-                            break;
-
                         case "deg":
-                            v = minifyNumber(toPrecisionAngle(angle * 360, colorPrecision, false));
+                            v = minifyNumber(
+                                toPrecisionAngle(angle * 360, anglePrecision, false).toFixed(anglePrecision),
+                            );
 
                             if (v.length + 3 < value.length) {
                                 val = v;
@@ -1675,8 +1705,21 @@ export function renderValue(
 
                             break;
 
+                        case "turn":
+                            v = minifyNumber(toPrecisionAngle(angle, anglePrecision, false).toFixed(anglePrecision));
+
+                            if (v.length + 4 < value.length) {
+                                val = v;
+                                unit = u;
+                                value = v + u;
+                            }
+
+                            break;
+
                         case "rad":
-                            v = minifyNumber(toPrecisionAngle(angle * (2 * Math.PI), colorPrecision, false));
+                            v = minifyNumber(
+                                toPrecisionAngle(angle * (2 * Math.PI), anglePrecision, false).toFixed(anglePrecision),
+                            );
 
                             if (v.length + 3 < value.length) {
                                 val = v;
@@ -1687,7 +1730,9 @@ export function renderValue(
                             break;
 
                         case "grad":
-                            v = minifyNumber(toPrecisionAngle(angle * 400, colorPrecision, false));
+                            v = minifyNumber(
+                                toPrecisionAngle(angle * 400, anglePrecision, false).toFixed(anglePrecision),
+                            );
 
                             if (v.length + 4 < value.length) {
                                 val = v;

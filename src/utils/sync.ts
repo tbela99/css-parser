@@ -1,6 +1,14 @@
-import type { AstComment, AstNode, ParseResult, ParserOptions, ParserSyncOptions } from "../@types/index.d.ts";
-import { AstNodePropertyType, EnumToken } from "../lib/ast/types.ts";
-import { ERRORS, LOC, PARENT, STATE, TOKENS } from "../lib/syntax/constants.ts";
+import type {
+    AstComment,
+    LoadResult,
+    ParseResult,
+    ParserOptions,
+    ParserSyncOptions,
+    SourceMapObject,
+} from "../@types/index.d.ts";
+import { EnumToken } from "../lib/ast/types.ts";
+import { dirname } from "../lib/fs/resolve.ts";
+import { ResponseType } from "../types.ts";
 
 /**
  * parse result. process input sourcemap
@@ -21,7 +29,30 @@ export function parseResult(result: ParseResult, options: ParserOptions): ParseR
                 token?.typ == EnumToken.CommentTokenType &&
                 (token as AstComment).val.startsWith("/*# sourceMappingURL=")
             ) {
-                options!.source!.setInputSourceMap((token as AstComment).val.slice(21, -2).trim());
+                let data: string = (token as AstComment).val.slice(21, -2).trim();
+
+                if (data.endsWith(".map")) {
+                    if (options.load == null) {
+                        data = "";
+                    } else {
+                        
+                        options
+                            .load(
+                                options.resolve!(data, dirname(options.src as string)).absolute,
+                                ".",
+                                ResponseType.JSON,
+                            )
+                            .catch((error) => console.error({ error }))
+                            .then((res) => {
+                                if (res != null) {
+                                    // @ts-expect-error
+                                    options!.source!.setInputSourceMap(res as SourceMapObject);
+                                }
+                            });
+                    }
+                } else {
+                    options!.source!.setInputSourceMap(data);
+                }
             }
         }
     }

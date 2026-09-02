@@ -2,7 +2,7 @@ import { convertColor, getNumber } from './color.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import { walkValues } from '../../ast/walk.js';
 import { evaluateFunc, evaluate } from '../../ast/math/expression.js';
-import { colorsFunc, colorFuncColorSpace, LOC, colorRange, mathFuncs } from '../constants.js';
+import { colorsFunc, colorFuncColorSpace, LOCEND, LOCSTA, LOCSRCID, colorRange, mathFuncs } from '../constants.js';
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
 import { getColorComponents } from './utils/components.js';
 
@@ -34,7 +34,9 @@ function parseRelativeColorComponents(relativeKeys, original, rExp, gExp, bExp, 
     const validKeys = names.split("");
     let val = "";
     if (components != null) {
-        allComponents.push(...components);
+        for (const component of components) {
+            allComponents.push(component);
+        }
     }
     // ensure all components are valid for the color space
     for (const component of allComponents) {
@@ -103,19 +105,25 @@ function parseRelativeColorComponents(relativeKeys, original, rExp, gExp, bExp, 
             ? {
                 typ: EnumToken.NumberTokenType,
                 val: 1,
-                [LOC]: b[LOC],
+                [LOCSRCID]: b[LOCSRCID],
+                [LOCSTA]: b[LOCSTA],
+                [LOCEND]: b[LOCEND],
             }
             : alpha.typ == EnumToken.IdenTokenType && alpha.val == "none"
                 ? {
                     typ: EnumToken.NumberTokenType,
                     val: 0,
-                    [LOC]: alpha[LOC],
+                    [LOCSRCID]: alpha[LOCSRCID],
+                    [LOCSTA]: alpha[LOCSTA],
+                    [LOCEND]: alpha[LOCEND],
                 }
                 : alpha.typ == EnumToken.PercentageTokenType
                     ? {
                         typ: EnumToken.NumberTokenType,
                         val: getNumber(alpha),
-                        [LOC]: alpha[LOC],
+                        [LOCSRCID]: alpha[LOCSRCID],
+                        [LOCSTA]: alpha[LOCSTA],
+                        [LOCEND]: alpha[LOCEND],
                     }
                     : alpha,
     };
@@ -128,13 +136,17 @@ function parseRelativeColorComponents(relativeKeys, original, rExp, gExp, bExp, 
             ? {
                 typ: EnumToken.NumberTokenType,
                 val: 1,
-                [LOC]: bExp[LOC],
+                [LOCSRCID]: bExp[LOCSRCID],
+                [LOCSTA]: bExp[LOCSTA],
+                [LOCEND]: bExp[LOCEND],
             }
             : aExp.typ == EnumToken.IdenTokenType && aExp.val == "none"
                 ? {
                     typ: EnumToken.NumberTokenType,
                     val: 0,
-                    [LOC]: aExp[LOC],
+                    [LOCSRCID]: aExp[LOCSRCID],
+                    [LOCSTA]: aExp[LOCSTA],
+                    [LOCEND]: aExp[LOCEND],
                 }
                 : aExp),
     };
@@ -165,7 +177,9 @@ function getValue(t, converted, component) {
         return {
             typ: EnumToken.NumberTokenType,
             val: value,
-            [LOC]: t[LOC],
+            [LOCSRCID]: t[LOCSRCID],
+            [LOCSTA]: t[LOCSTA],
+            [LOCEND]: t[LOCEND],
         };
     }
     return t;
@@ -208,8 +222,10 @@ function computeComponentValue(expr, values) {
                         {
                             typ: EnumToken.NumberTokenType,
                             // @ts-ignore
-                            val: "" + Math[value.val.toUpperCase()],
-                            [LOC]: value[LOC],
+                            val: Math[value.val.toUpperCase()],
+                            [LOCSRCID]: value[LOCSRCID],
+                            [LOCSTA]: value[LOCSTA],
+                            [LOCEND]: value[LOCEND],
                             // @ts-ignore
                         });
                 }

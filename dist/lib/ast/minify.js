@@ -6,10 +6,9 @@ import { EnumToken } from './types.js';
 import { isWhiteSpace, isIdent, isFunction, isIdentStart } from '../syntax/syntax.js';
 import { FeatureWalkMode } from './features/type.js';
 import { trimArray } from '../validation/match.js';
-import { TOKENS, PARENT, OPTIMIZED, RAW, combinators, LOC } from '../syntax/constants.js';
+import { TOKENS, PARENT, OPTIMIZED, RAW, combinators, LOCEND, LOCSTA, LOCSRCID } from '../syntax/constants.js';
 import { replaceNodeOrValue } from '../parser/utils/token.js';
 import { parseString } from '../parser/parse.js';
-import { tokenize } from '../parser/tokenize.js';
 import { replaceCompound } from './expand.js';
 
 const notEndingWith = ["(", "["].concat(combinators);
@@ -219,7 +218,9 @@ function transformAtRuleMediaPrelude(values) {
                                 },
                                 l: val1,
                                 r: val2,
-                                [LOC]: value[LOC],
+                                [LOCSRCID]: value[LOCSRCID],
+                                [LOCSTA]: value[LOCSTA],
+                                [LOCEND]: value[LOCEND],
                             },
                         ],
                     };
@@ -286,7 +287,9 @@ function minifyAtRuleMedia(tokens) {
                     typ: EnumToken.CommaTokenType,
                 });
             }
-            acc.push(...t);
+            for (const token of t) {
+                acc.push(token);
+            }
             return acc;
         }, []));
     }
@@ -366,7 +369,9 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     node.sel === previous.sel) {
                     // do not merge keyframes
                     // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@keyframes#resolving_duplicates
-                    previous.chi.push(...node.chi);
+                    for (const child of node.chi) {
+                        previous.chi.push(child);
+                    }
                     // @ts-ignore
                     ast.chi.splice(i, 1);
                     previous = ast?.chi?.[nodeIndex] ?? null;
@@ -398,7 +403,9 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                         minifyAtRuleMedia(slice);
                         if (slice.length !== node[TOKENS].length) {
                             node[TOKENS].length = 0;
-                            node[TOKENS].push(...slice);
+                            for (const token of slice) {
+                                node[TOKENS].push(token);
+                            }
                             node.val = slice.reduce((acc, curr, index, arr) => acc +
                                 (curr.typ === EnumToken.CommentTokenType ||
                                     (curr.typ === EnumToken.WhitespaceTokenType &&
@@ -450,8 +457,9 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     previous.nam === node.nam &&
                     previous.val === node.val) {
                     if ("chi" in node) {
-                        // @ts-ignore
-                        previous.chi.push(...node.chi);
+                        for (const child of node.chi) {
+                            previous.chi.push(child);
+                        }
                         if (!hasDeclaration(previous)) {
                             context.nodes.delete(previous);
                             doMinify(previous, options, recursive, errors, nestingContent, context);
@@ -666,8 +674,15 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                     node.nam !== "font-face" &&
                                     // @ts-ignore
                                     node.nam === previous.nam)) {
+                                const array = [];
+                                for (let i = 0; i < previous.chi.length; i++) {
+                                    array.push(previous.chi[i]);
+                                }
+                                for (let i = 0; i < node.chi.length; i++) {
+                                    array.push(node.chi[i]);
+                                }
                                 // @ts-ignore
-                                node.chi.unshift(...previous.chi);
+                                node.chi = array;
                                 doMinify(node, options, recursive, errors, nestingContent, context);
                                 ast.chi.splice(nodeIndex, 1);
                                 previous = ast.chi[--i];
@@ -1016,7 +1031,9 @@ function reduceSelector(acc, curr) {
                 if (acc.length > 0) {
                     acc.push(",");
                 }
-                acc.push(...curr);
+                for (const c of curr) {
+                    acc.push(c);
+                }
                 return acc;
             }, []);
         }
@@ -1144,7 +1161,7 @@ function matchSelectors(selector1, selector2) {
  */
 function fixSelector(node) {
     if (node.sel.includes("&")) {
-        const attributes = [...tokenize(node.sel)].map((t) => t.token); // parseString(node.sel);
+        const attributes = parseString(node.sel);
         for (const attr of walkValues(attributes)) {
             if (attr.value.typ == EnumToken.PseudoClassFuncTokenType &&
                 attr.value.val == ":is") {
@@ -1185,9 +1202,13 @@ function wrapNodes(previous, node, match, ast, reducer, i, nodeIndex) {
         [RAW]: match.match.map((t) => t.slice()),
     };
     if (pSel == "&" || pSel === "") {
-        wrapper.chi.push(...previous.chi);
+        for (const child of previous.chi) {
+            wrapper.chi.push(child);
+        }
         if (nSel == "&" || nSel === "") {
-            wrapper.chi.push(...node.chi);
+            for (const child of node.chi) {
+                wrapper.chi.push(child);
+            }
         }
         else {
             wrapper.chi.push(node);
@@ -1426,7 +1447,9 @@ function reduceRuleSelector(node) {
                     acc.push(",");
                 }
                 unique.add(sig);
-                acc.push(...curr);
+                for (const c of curr) {
+                    acc.push(c);
+                }
             }
             return acc;
         }, []);

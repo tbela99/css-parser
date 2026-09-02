@@ -6,8 +6,11 @@ import { hex2srgbvalues, oklch2srgbvalues, oklab2srgbvalues, hslvalues } from '.
 import { EnumToken, ColorType } from '../../ast/types.js';
 
 function hex2HslToken(token) {
-    // @ts-ignore
-    return hslToken(srgb2hslvalues(...hex2srgbvalues(token)));
+    let values = hex2srgbvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return hslToken(srgb2hslvalues(values[0], values[1], values[2], values[3]));
 }
 function rgb2HslToken(token) {
     const values = rgb2hslvalues(token);
@@ -63,8 +66,7 @@ function color2HslToken(token) {
     if (values == null) {
         return null;
     }
-    // @ts-ignore
-    return hslToken(srgb2hslvalues(...values));
+    return hslToken(srgb2hslvalues(values[0], values[1], values[2], values[3]));
 }
 function hslToken(values) {
     values[0] = values[0] * 360;
@@ -112,8 +114,7 @@ function rgb2hslvalues(token) {
     if (a != null && a != 1) {
         values.push(a);
     }
-    // @ts-ignore
-    return rgbvalues2hslvalues(...values);
+    return rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
 }
 // https://gist.github.com/defims/0ca2ef8832833186ed396a2f8a204117#file-annotated-js
 function hsv2hsl(h, s, v, a) {
@@ -135,20 +136,19 @@ function hsv2hsl(h, s, v, a) {
 }
 function cmyk2hslvalues(token) {
     const values = cmyk2rgbvalues(token);
-    // @ts-ignore
-    return values == null ? null : rgbvalues2hslvalues(...values);
+    return values == null ? null : rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
 }
 function hwb2hslvalues(token) {
-    // @ts-ignore
-    return hsv2hsl(...hwb2hsv(...Object.values(hslvalues(token))));
+    const hsla = hslvalues(token);
+    const hwba = hwb2hsv(hsla.h, hsla.s, hsla.l, hsla.a);
+    return hsv2hsl(hwba[0], hwba[1], hwba[2], hwba[3]);
 }
 function lab2hslvalues(token) {
     const values = lab2rgbvalues(token);
     if (values == null) {
         return null;
     }
-    // @ts-ignore
-    return rgbvalues2hslvalues(...values);
+    return rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
 }
 function lch2hslvalues(token) {
     const values = lch2rgbvalues(token);
@@ -156,17 +156,17 @@ function lch2hslvalues(token) {
         return null;
     }
     // @ts-ignore
-    return rgbvalues2hslvalues(...values);
+    return rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
 }
 function oklab2hslvalues(token) {
     const t = oklab2srgbvalues(token);
     // @ts-ignore
-    return t == null ? null : srgb2hslvalues(...t);
+    return t == null ? null : srgb2hslvalues(t[0], t[1], t[2], t[3]);
 }
 function oklch2hslvalues(token) {
     const t = oklch2srgbvalues(token);
     // @ts-ignore
-    return t == null ? null : srgb2hslvalues(...t);
+    return t == null ? null : srgb2hslvalues(t[0], t[1], t[2], t[3]);
 }
 function rgbvalues2hslvalues(r, g, b, a = null) {
     return srgb2hslvalues(r / 255, g / 255, b / 255, a);

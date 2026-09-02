@@ -1,4 +1,6 @@
 import { EnumToken } from '../lib/ast/types.js';
+import { dirname } from '../lib/fs/resolve.js';
+import { ResponseType } from '../types.js';
 
 /**
  * parse result. process input sourcemap
@@ -17,7 +19,26 @@ function parseResult(result, options) {
             const token = result.ast.chi.at(-1);
             if (token?.typ == EnumToken.CommentTokenType &&
                 token.val.startsWith("/*# sourceMappingURL=")) {
-                options.source.setInputSourceMap(token.val.slice(21, -2).trim());
+                let data = token.val.slice(21, -2).trim();
+                if (data.endsWith(".map")) {
+                    if (options.load == null) {
+                        data = "";
+                    }
+                    else {
+                        options
+                            .load(options.resolve(data, dirname(options.src)).absolute, ".", ResponseType.JSON)
+                            .catch((error) => console.error({ error }))
+                            .then((res) => {
+                            if (res != null) {
+                                // @ts-expect-error
+                                options.source.setInputSourceMap(res);
+                            }
+                        });
+                    }
+                }
+                else {
+                    options.source.setInputSourceMap(data);
+                }
             }
         }
     }

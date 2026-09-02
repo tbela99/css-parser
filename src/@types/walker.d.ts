@@ -6,7 +6,6 @@ import { WalkerEvent, WalkerOptionEnum } from "../lib/ast/walk.ts";
  * node walker options
  */
 export declare interface WalkerOptions {
-
     /**
      * walk in reverse
      */
@@ -51,7 +50,7 @@ export declare type WalkerValueFilter = (
     parent?: AstNode | Token | AstNode[] | Token[] | null,
     event?: WalkerEvent,
     parents?: Generator<Token>,
-) => WalkerOption | null;
+) => WalkerOption | AstNode | Token | AstNode[] | Token[] | null;
 
 /**
  * walker result

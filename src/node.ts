@@ -21,7 +21,7 @@ import { lstat, readFile } from "node:fs/promises";
 import { doParse, doParseSync } from "./lib/parser/parse.ts";
 import { doRender } from "./lib/renderer/render.ts";
 import { ModuleScopeEnumOptions } from "./lib/ast/types.ts";
-import { tokenize, tokenizeStream } from "./lib/parser/tokenize.ts";
+import { Tokenizer } from "./lib/parser/tokenize.ts";
 import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
 import { ResponseType } from "./types.ts";
 import { resolve as resolvePath } from "node:path";
@@ -105,6 +105,10 @@ export async function load(
                     return response.arrayBuffer();
                 }
 
+                if (responseType == ResponseType.JSON) {
+                    return response.json();
+                }
+
                 return responseType == ResponseType.ReadableStream
                     ? (response.body as ReadableStream<Uint8Array<ArrayBuffer>>)
                     : response.text();
@@ -116,8 +120,10 @@ export async function load(
         const stats = await lstat(resolved.absolute);
 
         if (stats.isFile()) {
-            if (responseType == ResponseType.Text) {
-                return readFile(resolved.absolute, "utf-8");
+            if (responseType == ResponseType.Text || responseType == ResponseType.JSON) {
+                return readFile(resolved.absolute, "utf-8").then((buffer) =>
+                    responseType == ResponseType.JSON ? JSON.parse(buffer) : buffer,
+                );
             }
 
             if (responseType == ResponseType.ArrayBuffer) {
@@ -131,9 +137,7 @@ export async function load(
                 }),
             ) as ReadableStream<Uint8Array>;
         }
-    } catch (error) {
-        console.warn(error);
-    }
+    } catch (error) {}
 
     throw new Error(`File not found: '${resolved.absolute || url}'`);
 }
@@ -316,8 +320,10 @@ export function parseSync(
         currentPosition: 0,
     } as ParseInfo;
 
-    const result = doParseSync(tokenize(options.parseInfo), options) as ParseResult;
-    return !options.module && !options.inputSourceMap && !options.sourcemap ? result : parseResult(result, options);
+    const result = doParseSync(new Tokenizer(options.parseInfo), options) as ParseResult;
+    return options.module == null && options.inputSourceMap == null && !options.sourcemap
+        ? result
+        : parseResult(result, options);
 }
 
 /**
@@ -631,6 +637,7 @@ export async function parse(
                     "",
                     (options as ParseInputFileOptions).asStream ?? false,
                 ),
+                // @ts-expect-error
             ).then((stream: string | ReadableStream<Uint8Array>) => parse(stream, { src: file, ...options }));
         } else {
             stream = input;
@@ -668,9 +675,15 @@ export async function parse(
     } as ParseInfo;
 
     return doParse(
-        stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo),
+        stream instanceof ReadableStream
+            ? new Tokenizer(options.parseInfo, stream).tokenizeStream()
+            : new Tokenizer(options.parseInfo),
         options,
-    ).then((result) => (!options.module && !options.inputSourceMap ? result : parseResult(result, options)));
+    ).then((result) =>
+        options.module == null && options.inputSourceMap == null && !options.sourcemap
+            ? result
+            : parseResult(result, options),
+    );
 }
 
 /**
@@ -883,6 +896,7 @@ export async function transform(
                     "",
                     (options as ParseInputFileOptions).asStream ?? false,
                 ),
+                // @ts-expect-error
             ).then((stream: string | ReadableStream<Uint8Array>) => transform(stream, { src: file, ...options }));
         } else {
             stream = input;

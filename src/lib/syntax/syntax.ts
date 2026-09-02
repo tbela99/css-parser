@@ -26,16 +26,15 @@ import { splitTokenList } from "../validation/utils/list.ts";
 import { getColorSpace } from "./color/utils/colorspace.ts";
 import { getColorComponents } from "./color/utils/components.ts";
 import {
-    colorsFunc,
-    systemColors,
-    deprecatedSystemColors,
-    nonStandardColors,
-    COLORS_NAMES,
-    colorFuncColorSpace,
-    LOC,
     anglePrecision,
+    colorFuncColorSpace,
     colorPrecision,
+    COLORS_NAMES,
+    colorsFunc,
+    deprecatedSystemColors,
     epsilon,
+    nonStandardColors,
+    systemColors,
 } from "./constants.ts";
 import { getSyntaxConfig } from "../validation/config.ts";
 
@@ -44,7 +43,12 @@ import { getSyntaxConfig } from "../validation/config.ts";
 
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
-export const dimensionUnits: Set<string> = new Set([
+export const flexUnits: Array<string> = ["fr"];
+export const frequencyUnits: Array<string> = ["hz", "khz"];
+export const timeUnits: Array<string> = ["ms", "s"];
+export const angleUnits: Array<string> = ["rad", "turn", "deg", "grad"];
+export const resolutionUnits: Array<string> = ["dpi", "dpcm", "dppx", "x"];
+export const dimensionUnits: Array<string> = [
     "q",
     "cap",
     "ch",
@@ -88,7 +92,7 @@ export const dimensionUnits: Set<string> = new Set([
     "vmax",
     "vmin",
     "vw",
-]);
+];
 
 // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions
 // https://developer.mozilla.org/en-US/docs/Web/CSS/Mozilla_Extensions
@@ -524,23 +528,23 @@ export const mozExtensions = new Set([
 export const renamedStandardProperties = new Map([["color-adjust", "print-color-adjust"]]);
 
 export function isLength(dimension: DimensionToken): boolean {
-    return "unit" in dimension && dimensionUnits.has(dimension.unit.toLowerCase());
+    return "unit" in dimension && dimensionUnits.includes(dimension.unit.toLowerCase());
 }
 
 export function isResolution(dimension: DimensionToken): boolean {
-    return "unit" in dimension && ["dpi", "dpcm", "dppx", "x"].includes(dimension.unit.toLowerCase());
+    return "unit" in dimension && resolutionUnits.includes(dimension.unit.toLowerCase());
 }
 
 export function isAngle(dimension: DimensionToken): boolean {
-    return "unit" in dimension && ["rad", "turn", "deg", "grad"].includes(dimension.unit.toLowerCase());
+    return "unit" in dimension && angleUnits.includes(dimension.unit.toLowerCase());
 }
 
 export function isTime(dimension: DimensionToken): boolean {
-    return "unit" in dimension && ["ms", "s"].includes(dimension.unit.toLowerCase());
+    return "unit" in dimension && timeUnits.includes(dimension.unit.toLowerCase());
 }
 
 export function isFrequency(dimension: DimensionToken): boolean {
-    return "unit" in dimension && ["hz", "khz"].includes(dimension.unit.toLowerCase());
+    return "unit" in dimension && frequencyUnits.includes(dimension.unit.toLowerCase());
 }
 
 /**
@@ -601,7 +605,10 @@ export function reduceColorStops(stops: Token[]) {
                 );
             }
 
-            parts[i - 1].push(...parts[i].slice(1));
+            for (let m = 1; m < parts[i].length; m++) {
+                parts[i - 1].push(parts[i][m]);
+            }
+
             parts.splice(i--, 1);
             updated = true;
             continue;
@@ -630,7 +637,10 @@ export function reduceColorStops(stops: Token[]) {
             if (stops.length > 0) {
                 stops.push({ typ: EnumToken.CommaTokenType });
             }
-            stops.push(...parts[j]);
+
+            for (let m = 0; m < parts[j].length; m++) {
+                stops.push(parts[j][m]);
+            }
         }
     }
 
@@ -755,7 +765,10 @@ export function reduceConicColorStops(stops: Token[]): Token[] {
                 );
             }
 
-            parts[i - 1].push(...parts[i].slice(1));
+            for (let m = 1; m < parts[i].length; m++) {
+                parts[i - 1].push(parts[i][m]);
+            }
+
             parts.splice(i--, 1);
             updated = true;
             continue;
@@ -783,7 +796,10 @@ export function reduceConicColorStops(stops: Token[]): Token[] {
             if (stops.length > 0) {
                 stops.push({ typ: EnumToken.CommaTokenType });
             }
-            stops.push(...parts[j]);
+
+            for (const token of parts[j]) {
+                stops.push(token);
+            }
         }
     }
 
@@ -1187,7 +1203,11 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                     )
                 ) {
                     // @ts-ignore
-                    keywords.push("alpha", ...(token as ColorToken).val.slice(-3).split(""));
+                    keywords.push("alpha");
+
+                    for (const keyword of (token as ColorToken).val.slice(-3).split("")) {
+                        keywords.push(keyword);
+                    }
                 }
 
                 // @ts-ignore
@@ -1584,9 +1604,9 @@ export function parseDimension(
         // @ts-ignore
         dimension.typ = EnumToken.ResolutionTokenType;
 
-        if (dimension.unit == "dppx") {
-            dimension.unit = "x";
-        }
+        // if (dimension.unit == "dppx") {
+        //     dimension.unit = "x";
+        // }
     } else if (isFrequency(dimension)) {
         // @ts-ignore
         dimension.typ = EnumToken.FrequencyTokenType;
@@ -1765,17 +1785,13 @@ export function toPrecisionValue(value: number | string, precision: number = col
 
 export function toPrecisionAngle(
     angle: number,
-    precision: number = colorPrecision,
+    precision: number = anglePrecision,
     correctValue: boolean = true,
 ): number {
     angle = toPrecisionValue(angle, precision);
 
     if (correctValue && Math.abs(angle) >= 360) {
         angle %= 360;
-    }
-
-    if (Math.abs(angle) < anglePrecision) {
-        angle = 0;
     }
 
     if (correctValue && angle < 0) {

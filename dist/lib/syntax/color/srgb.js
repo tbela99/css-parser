@@ -69,8 +69,9 @@ function hex2srgbvalues(token) {
 }
 // xyz d65 input
 function xyz2srgb(x, y, z, alpha = null) {
+    let values = XYZ_to_lin_sRGB(x, y, z);
     // @ts-ignore
-    return lsrgb2srgbvalues(...XYZ_to_lin_sRGB(x, y, z, alpha));
+    return lsrgb2srgbvalues(values[0], values[1], values[2], alpha);
 }
 function hwb2srgbvalues(token) {
     const { h: hue, s: white, l: black, a: alpha } = hslvalues(token) ?? {};
@@ -141,8 +142,8 @@ function oklch2srgbvalues(token) {
     if (l == null || c == null || h == null) {
         return null;
     }
-    // @ts-ignore
-    const rgb = OKLab_to_sRGB(...lchvalues2labvalues(l, c, h));
+    const values = lchvalues2labvalues(l, c, h);
+    const rgb = OKLab_to_sRGB(values[0], values[1], values[2]);
     if (alpha != 1) {
         rgb.push(alpha);
     }
@@ -243,7 +244,7 @@ function lch2srgbvalues(token) {
         return null;
     }
     // @ts-ignore
-    const [l, a, b, alpha] = lchvalues2labvalues(...components);
+    const [l, a, b, alpha] = lchvalues2labvalues(components[0], components[1], components[2], components[3]);
     if (l == null || a == null || b == null) {
         return null;
     }

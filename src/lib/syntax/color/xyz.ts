@@ -60,8 +60,8 @@ export function srgb2xyz(r: number, g: number, b: number, alpha?: number): numbe
 // xyz d50
 export function srgb2xyz_d65(r: number, g: number, b: number, alpha?: number): number[] {
     // xyx d65
-    // @ts-ignore
-    let rgb: number[] = XYZ_D65_to_D50(...srgb2xyz(r, g, b));
+    let values = srgb2xyz(r, g, b);
+    let rgb: number[] = XYZ_D65_to_D50(values[0], values[1], values[2]);
 
     if (alpha != null && alpha != 1) {
         rgb.push(alpha);

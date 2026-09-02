@@ -15,7 +15,7 @@ import { getSyntaxRule } from "../../validation/config.ts";
 import { trimArray } from "../../validation/match.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";
-import { LOC, tokensfuncDefMap } from "../../syntax/constants.ts";
+import { LOCEND, LOCSRCID, LOCSTA, tokensfuncDefMap } from "../../syntax/constants.ts";
 import { isColor, parseColor } from "../../syntax/syntax.ts";
 import { parseMediaqueryList } from "./at-rule-media.ts";
 import { parseAtRuleSupportSyntax } from "./at-rule-support.ts";
@@ -66,12 +66,7 @@ export function matchAtRuleImportSyntax(
 
         const slice: Token[] = stream.slice(index + 1, k);
 
-        // @ts-expect-error
-        stream[0][LOC] = {
-            ...stream[0][LOC],
-            end: stream[1][LOC]!.end,
-        };
-
+        stream[0][LOCEND] = stream[1][LOCEND];
         tokens.push(
             Object.assign({
                 typ: tokensfuncDefMap.get(stream[0].typ),
@@ -89,7 +84,7 @@ export function matchAtRuleImportSyntax(
                     message: "Expected string or url()",
                     syntax: "@import",
                     node: stream[0],
-                    location: stream[0]?.[LOC],
+                    location: options.source!.getSourceLocation(stream[0]?.[LOCSTA]!),
                 } as ErrorDescription,
             ],
         };
@@ -128,7 +123,7 @@ export function matchAtRuleImportSyntax(
                         message: `Expected <layer-name>`,
                         syntax: "@import",
                         node: stream[index],
-                        location: options.source!.getSourceLocation(stream[index]?.[LOC]!.sta),
+                        location: options.source!.getSourceLocation(stream[index]?.[LOCSTA]!),
                     } as ErrorDescription,
                 ],
             };
@@ -157,7 +152,7 @@ export function matchAtRuleImportSyntax(
                         message: `Expected <layer-name>`,
                         syntax: "@import",
                         node: stream[index],
-                        location: options.source!.getSourceLocation(stream[index]?.[LOC]!.sta),
+                        location: options.source!.getSourceLocation(stream[index]?.[LOCSTA]!),
                     } as ErrorDescription,
                 ],
             };
@@ -227,10 +222,9 @@ export function matchAtRuleImportSyntax(
                 typ: EnumToken.DeclarationNodeType,
                 nam: (supports.chi[i] as IdentToken).val,
                 val,
-                [LOC]: {
-                    ...supports.chi[i][LOC],
-                    end: (val.at(-1) ?? (supports.chi.at(-1) as Token))[LOC]?.end,
-                },
+                [LOCSRCID]: supports.chi[i][LOCSRCID],
+                [LOCSTA]: supports.chi[i][LOCSTA],
+                [LOCEND]: supports.chi.at(-1)![LOCEND],
             } as AstDeclaration;
 
             supports.chi.splice(i + 1, j - i + 1 + val.length);
@@ -263,7 +257,9 @@ export function matchAtRuleImportSyntax(
                 options,
             );
             if (!result.success && result.errors.length > 0) {
-                errors.push(...result.errors);
+                for (const error of result.errors) {
+                    errors.push(error);
+                }
 
                 return {
                     success: false,
@@ -276,10 +272,14 @@ export function matchAtRuleImportSyntax(
     const splice = stream.splice(index, stream.length - index);
     const sliced = parseMediaqueryList(splice, options);
 
-    tokens.push(...splice);
+    for (const sp of splice) {
+        tokens.push(sp);
+    }
 
     if (sliced.errors.length > 0) {
-        errors.push(...sliced.errors);
+        for (const error of sliced.errors) {
+            errors.push(error);
+        }
     }
 
     if (!sliced.success) {
@@ -287,7 +287,10 @@ export function matchAtRuleImportSyntax(
     }
 
     stream.length = 0;
-    stream.push(...trimArray(tokens));
+
+    for (const token of trimArray(tokens)) {
+        stream.push(token);
+    }
 
     return {
         success,

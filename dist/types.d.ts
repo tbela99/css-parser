@@ -13,5 +13,9 @@ export declare enum ResponseType {
     /**
      * return an arraybuffer
      */
-    ArrayBuffer = 2
+    ArrayBuffer = 2,
+    /**
+     * return a json object
+     */
+    JSON = 3
 }

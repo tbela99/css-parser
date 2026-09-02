@@ -28,10 +28,9 @@ import { EnumToken } from "./types.ts";
 import { isFunction, isIdent, isIdentStart, isWhiteSpace } from "../syntax/syntax.ts";
 import { FeatureWalkMode } from "./features/type.ts";
 import { trimArray } from "../validation/match.ts";
-import { combinators, LOC, OPTIMIZED, PARENT, RAW, TOKENS } from "../syntax/constants.ts";
+import { combinators, LOCEND, LOCSRCID, LOCSTA, OPTIMIZED, PARENT, RAW, TOKENS } from "../syntax/constants.ts";
 import { replaceNodeOrValue } from "../parser/utils/token.ts";
 import { parseString } from "../parser/parse.ts";
-import { tokenize } from "../parser/tokenize.ts";
 import { replaceCompound } from "./expand.ts";
 
 const notEndingWith: string[] = ["(", "["].concat(combinators);
@@ -338,7 +337,9 @@ function transformAtRuleMediaPrelude(values: Token[]) {
                                 },
                                 l: val1,
                                 r: val2,
-                                [LOC]: value[LOC],
+                                [LOCSRCID]: value[LOCSRCID],
+                                [LOCSTA]: value[LOCSTA],
+                                [LOCEND]: value[LOCEND],
                             } as MediaRangeQueryToken,
                         ],
                     } as ParensToken;
@@ -426,7 +427,10 @@ function minifyAtRuleMedia(tokens: Token[]): Token[] {
                     } as Token);
                 }
 
-                acc.push(...t);
+                for (const token of t) {
+                    acc.push(token);
+                }
+
                 return acc;
             }, [] as Token[]),
         );
@@ -535,7 +539,9 @@ function doMinify(
                 ) {
                     // do not merge keyframes
                     // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@keyframes#resolving_duplicates
-                    (<AstKeyframesRule>previous).chi.push(...(<AstKeyframesRule>node).chi);
+                    for (const child of (<AstKeyframesRule>node).chi) {
+                        (<AstKeyframesRule>previous).chi.push(child);
+                    }
 
                     // @ts-ignore
                     ast.chi.splice(i, 1);
@@ -580,7 +586,11 @@ function doMinify(
 
                         if (slice.length !== (node as AstAtRule)[TOKENS]!.length) {
                             (node as AstAtRule)[TOKENS]!.length = 0;
-                            (node as AstAtRule)[TOKENS]!.push(...slice);
+
+                            for (const token of slice) {
+                                (node as AstAtRule)[TOKENS]!.push(token);
+                            }
+
                             (node as AstAtRule).val = slice.reduce(
                                 (acc: string, curr: Token, index: number, arr: Token[]): string =>
                                     acc +
@@ -650,8 +660,9 @@ function doMinify(
                     (<AstAtRule>previous).val === (<AstAtRule>node).val
                 ) {
                     if ("chi" in node) {
-                        // @ts-ignore
-                        previous.chi!.push(...(node as AstAtRule).chi!);
+                        for (const child of (node as AstAtRule).chi!) {
+                            previous.chi!.push(child);
+                        }
 
                         if (!hasDeclaration(previous as AstAtRule)) {
                             context.nodes.delete(previous);
@@ -928,8 +939,18 @@ function doMinify(
                                     // @ts-ignore
                                     (node as AstAtRule).nam === (previous as AstAtRule).nam)
                             ) {
+
+                                const array = [];
+
+                                for (let i = 0; i < previous.chi!.length; i++) {
+                                    array.push(previous.chi![i]);
+                                }
+                                for (let i = 0; i < node.chi!.length; i++) {
+                                    array.push(node.chi![i]);
+                                }
+                                
                                 // @ts-ignore
-                                node.chi.unshift(...previous.chi);
+                                node.chi = array;
 
                                 doMinify(node, options, recursive, errors, nestingContent, context);
 
@@ -1362,7 +1383,9 @@ function reduceSelector(acc: string[][], curr: string[]): string[][] | null {
                     acc.push(",");
                 }
 
-                acc.push(...curr);
+                for (const c of curr) {
+                    acc.push(c);
+                }
 
                 return acc;
             }, []);
@@ -1526,7 +1549,7 @@ function matchSelectors(selector1: string[][], selector2: string[][]): null | Ma
  */
 function fixSelector(node: AstRule): void {
     if (node.sel.includes("&")) {
-        const attributes: Token[] = [...tokenize(node.sel as string)].map((t) => t.token) as Token[]; // parseString(node.sel);
+        const attributes: Token[] = parseString(node.sel);
 
         for (const attr of walkValues(attributes)) {
             if (
@@ -1584,10 +1607,14 @@ function wrapNodes(
     } as AstRule;
 
     if (pSel == "&" || pSel === "") {
-        wrapper.chi.push(...previous.chi);
+        for (const child of previous.chi) {
+            wrapper.chi.push(child);
+        }
 
         if (nSel == "&" || nSel === "") {
-            wrapper.chi.push(...node.chi);
+            for (const child of node.chi) {
+                wrapper.chi.push(child);
+            }
         } else {
             wrapper.chi.push(node);
         }
@@ -1895,7 +1922,10 @@ function reduceRuleSelector(node: AstRule) {
                 }
 
                 unique.add(sig);
-                acc.push(...curr);
+
+                for (const c of curr) {
+                    acc.push(c);
+                }
             }
 
             return acc;

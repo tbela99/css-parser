@@ -32,14 +32,7 @@ export class ComputeShorthandFeature {
         }
     }
 
-    run(
-        ast: AstRule | AstAtRule,
-        options: PropertyListOptions = {},
-        parent: AstRule | AstAtRule | AstStyleSheet,
-        context: {
-            [key: string]: any;
-        },
-    ): AstNode | null {
+    run(ast: AstRule | AstAtRule, options: PropertyListOptions): AstNode | null {
         if (!("chi" in ast)) {
             return null;
         }
@@ -71,16 +64,21 @@ export class ComputeShorthandFeature {
             const node = ast.chi[l];
 
             if (node.typ == EnumToken.DeclarationNodeType) {
-                properties.add(...ast.chi!.slice(k, l + 1));
+                for (let m = k; m <= l; m++) {
+                    properties.add(ast.chi![m]);
+                }
             } else {
-                rules.push(...ast.chi!.slice(k, l + 1));
+                for (let m = k; m <= l; m++) {
+                    rules.push(ast.chi![m]);
+                }
             }
 
             k = l;
         }
 
-        // @ts-ignore
-        ast.chi = [...properties, ...rules];
+        ast.chi!.length = 0;
+        // @ts-expect-error
+        ast.chi!.push(...properties, ...rules);
         return ast;
     }
 }

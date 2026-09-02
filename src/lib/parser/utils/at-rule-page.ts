@@ -42,7 +42,10 @@ export function parseAtRulePage(
     }
 
     const result = matchAllSyntaxes(trimSyntaxArray(syntax), createValidationContext(stream), options);
-    errors.push(...result.errors);
+
+    for (const error of result.errors) {
+        errors.push(error);
+    }
 
     return { success: result.success, errors };
 }

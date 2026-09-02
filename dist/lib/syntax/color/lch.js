@@ -90,41 +90,41 @@ function lchToken(values) {
 function hex2lchvalues(token) {
     const values = hex2labvalues(token);
     // @ts-ignore
-    return values == null ? null : labvalues2lchvalues(...values);
+    return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
 function rgb2lchvalues(token) {
     const values = rgb2labvalues(token);
     // @ts-ignore
-    return values == null ? null : labvalues2lchvalues(...values);
+    return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
 function hsl2lchvalues(token) {
     const values = hsl2labvalues(token);
     // @ts-ignore
-    return values == null ? null : labvalues2lchvalues(...values);
+    return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
 function hwb2lchvalues(token) {
     const values = hwb2labvalues(token);
     // @ts-ignore
-    return values == null ? null : labvalues2lchvalues(...values);
+    return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
 function lab2lchvalues(token) {
     const values = getLABComponents(token);
     // @ts-ignore
-    return values == null ? null : labvalues2lchvalues(...values);
+    return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
 function srgb2lch(r, g, blue, alpha) {
-    // @ts-ignore
-    return labvalues2lchvalues(...srgb2labvalues(r, g, blue, alpha));
+    let values = srgb2labvalues(r, g, blue, alpha);
+    return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
 function oklab2lchvalues(token) {
     const values = oklab2labvalues(token);
     // @ts-ignore
-    return values == null ? null : labvalues2lchvalues(...values);
+    return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
 function cmyk2lchvalues(token) {
     const values = cmyk2srgbvalues(token);
     // @ts-ignore
-    return values == null ? null : srgb2lch(...values);
+    return values == null ? null : srgb2lch(values[0], values[1], values[2], values[3]);
 }
 function oklch2lchvalues(token) {
     const values = oklch2labvalues(token);
@@ -132,7 +132,7 @@ function oklch2lchvalues(token) {
         return null;
     }
     // @ts-ignore
-    return labvalues2lchvalues(...values);
+    return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
 function color2lchvalues(token) {
     const values = color2srgbvalues(token);
@@ -140,7 +140,7 @@ function color2lchvalues(token) {
         return null;
     }
     // @ts-ignore
-    return srgb2lch(...values);
+    return srgb2lch(values[0], values[1], values[2], values[3]);
 }
 function labvalues2lchvalues(l, a, b, alpha = null) {
     let c = Math.sqrt(a * a + b * b);
@@ -154,8 +154,8 @@ function labvalues2lchvalues(l, a, b, alpha = null) {
     return alpha == null ? [l, c, h] : [l, c, h, alpha];
 }
 function xyz2lchvalues(x, y, z, alpha) {
-    // @ts-ignore(
-    const lch = labvalues2lchvalues(...xyz2lab(x, y, z));
+    const values = xyz2lab(x, y, z);
+    const lch = labvalues2lchvalues(values[0], values[1], values[2]);
     return alpha == null || alpha == 1 ? lch : lch.concat(alpha);
 }
 function getLCHComponents(token) {

@@ -7,41 +7,46 @@ import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";
 
 /**
- * 
- * @param context 
- * @param stream 
- * @param options 
- * @param errors 
- * @returns 
+ *
+ * @param context
+ * @param stream
+ * @param options
+ * @param errors
+ * @returns
  */
-export  function parseDeclarationList(context: AstAtRule | AtRuleToken, stream: Token[], options: ParserOptions, errors: ErrorDescription[]): {
+export function parseDeclarationList(
+    context: AstAtRule | AtRuleToken,
+    stream: Token[],
+    options: ParserOptions,
+    errors: ErrorDescription[],
+): {
     success: boolean;
     errors: ErrorDescription[];
 } {
-     const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@page" );
+    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@page");
     const syntax: ValidationToken[] = syntaxRules?.getPreludeRules?.()?.slice?.(1) as ValidationToken[];
 
     let validate: boolean = false;
 
     for (const token of stream) {
-
         if (token.typ !== EnumToken.WhitespaceTokenType && token.typ !== EnumToken.CommentTokenType) {
-
             validate = true;
             break;
         }
     }
 
     if (!validate) {
-
         return {
             success: true,
-            errors
-        }
+            errors,
+        };
     }
-        
+
     const result = matchAllSyntaxes(trimSyntaxArray(syntax), createValidationContext(stream), options);
-    errors.push(...result.errors);
+
+    for (const error of result.errors) {
+        errors.push(error);
+    }
 
     return { success: result.success, errors };
 }

@@ -1,6 +1,15 @@
 import { EnumToken } from '../ast/types.js';
 import config from '../validation/config.json.js';
 
+/**
+ * Location source id
+ */
+const LOCSRCID = Symbol.for("locSrcId");
+const LOCSTA = Symbol.for("locSta");
+const LOCEND = Symbol.for("locEnd");
+/**
+ * Used by the validation parser
+ */
 const LOC = Symbol.for("loc");
 const RAW = Symbol.for("raw");
 const STATE = Symbol.for("state");
@@ -53,7 +62,7 @@ const colorPrecision = 6;
 /**
  * Angle precision
  */
-const anglePrecision = 0.001;
+const anglePrecision = 3;
 /**
  * Color range definitions
  */
@@ -109,6 +118,7 @@ const mathFuncs = [
     "acos",
     "atan",
     "atan2",
+    "tan",
     "pow",
     "sqrt",
     "hypot",
@@ -484,4 +494,4 @@ const trimTokenSpace = new Set([
 ]);
 const combinators = ["+", ">", "~", "||", "|"];
 
-export { COLORS_NAMES, D50, ERRORS, LOC, NAMES_COLORS, OPTIMIZED, PARENT, PROPERTYNAME, RAW, ROOT, STATE, TOKENS, anglePrecision, colorDistancePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, deprecatedSystemColors, e, epsilon, funcLike, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, pseudoElements, regMatchLinearGradient, regMatchRadialGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };
+export { COLORS_NAMES, D50, ERRORS, LOC, LOCEND, LOCSRCID, LOCSTA, NAMES_COLORS, OPTIMIZED, PARENT, PROPERTYNAME, RAW, ROOT, STATE, TOKENS, anglePrecision, colorDistancePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, deprecatedSystemColors, e, epsilon, funcLike, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, pseudoElements, regMatchLinearGradient, regMatchRadialGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };

@@ -132,23 +132,23 @@ function labToken(values: number[]): ColorToken | null {
 // for a and b: -100% = -125, 100% = 125
 
 export function hex2labvalues(token: ColorToken): number[] | null {
-    const values: number[] | null = hex2srgbvalues(token);
+    let values: number[] | null = hex2srgbvalues(token);
 
     // @ts-ignore
-    return values == null ? null : srgb2labvalues(...values);
+    return values == null ? null : srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
 
 export function rgb2labvalues(token: ColorToken): number[] | null {
     const values: number[] | null = rgb2srgb(token);
     // @ts-ignore
-    return values == null ? null : srgb2labvalues(...values);
+    return values == null ? null : srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
 
 export function cmyk2labvalues(token: ColorToken) {
     const values: number[] | null = cmyk2srgbvalues(token);
 
     // @ts-ignore
-    return values == null ? null : srgb2labvalues(...values);
+    return values == null ? null : srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
 
 export function hsl2labvalues(token: ColorToken): number[] | null {
@@ -159,7 +159,7 @@ export function hsl2labvalues(token: ColorToken): number[] | null {
     }
 
     // @ts-ignore
-    return srgb2labvalues(...values);
+    return srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
 
 export function hwb2labvalues(token: ColorToken): number[] | null {
@@ -170,25 +170,27 @@ export function hwb2labvalues(token: ColorToken): number[] | null {
     }
 
     // @ts-ignore
-    return srgb2labvalues(...values);
+    return srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
 
 export function lch2labvalues(token: ColorToken): number[] | null {
     const values: number[] | null = getLCHComponents(token);
 
     // @ts-ignore
-    return values == null ? null : lchvalues2labvalues(...values);
+    return values == null ? null : lchvalues2labvalues(values[0], values[1], values[2], values[3]);
 }
 
 export function oklab2labvalues(token: ColorToken): number[] | null {
-    const values: number[] | null = getOKLABComponents(token);
+    let values: number[] | null = getOKLABComponents(token);
 
     if (values == null) {
         return null;
     }
 
-    // @ts-ignore
-    return xyz2lab(...XYZ_D65_to_D50(...OKLab_to_XYZ(...values)));
+    values = OKLab_to_XYZ(values[0], values[1], values[2], values[3]);
+    values = XYZ_D65_to_D50(values[0], values[1], values[2], values[3]);
+
+    return xyz2lab(values[0], values[1], values[2], values[3]);
 }
 
 export function oklch2labvalues(token: ColorToken): number[] | null {
@@ -199,7 +201,7 @@ export function oklch2labvalues(token: ColorToken): number[] | null {
     }
 
     // @ts-ignore
-    return srgb2labvalues(...values);
+    return srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
 
 export function color2labvalues(token: ColorToken): number[] | null {
@@ -209,13 +211,12 @@ export function color2labvalues(token: ColorToken): number[] | null {
         return null;
     }
 
-    // @ts-ignore
-    return srgb2labvalues(...val);
+    return srgb2labvalues(val[0], val[1], val[2], val[3]);
 }
 
 export function srgb2labvalues(r: number, g: number, b: number, a: number | null): number[] {
-    // @ts-ignore */
-    const result: number[] = xyz2lab(...srgb2xyz_d65(r, g, b));
+    let result: number[] = srgb2xyz_d65(r, g, b);
+    result = xyz2lab(result[0], result[1], result[2]);
 
     // Fixes achromatic RGB colors having a _slight_ chroma due to floating-point errors
     // and approximated computations in sRGB <-> CIELab.
@@ -326,10 +327,10 @@ export function getLABComponents(token: ColorToken): number[] | null {
 export function Lab_to_sRGB(l: number, a: number, b: number): number[] {
     const xyz_d50: number[] = Lab_to_XYZ(l, a, b);
     // @ts-ignore
-    const xyz_d65: number[] = XYZ_D50_to_D65(...xyz_d50);
+    const xyz_d65: number[] = XYZ_D50_to_D65(xyz_d50[0], xyz_d50[1], xyz_d50[2]);
 
     // @ts-ignore
-    return xyz2srgb(...xyz_d65);
+    return xyz2srgb(xyz_d65[0], xyz_d65[1], xyz_d65[2]);
 }
 
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code

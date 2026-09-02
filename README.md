@@ -99,6 +99,11 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 - typ: number
 - val: string, the comment
 
+### AtRuleStyleSheet
+
+- typ: number
+- chi: array of children
+
 ### Declaration
 
 - typ: number
@@ -115,7 +120,7 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 - state: EnumAstNodeStatus, validation state
 - errors: ErrorDescription[], validation errors
 
-### AtRule
+### AtRule and KeyframesAtRule
 
 - typ: number
 - nam: string. AtRule name
@@ -123,12 +128,7 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 - state: EnumAstNodeStatus, validation state
 - errors: ErrorDescription[], validation errors
 
-### AtRuleStyleSheet
-
-- typ: number
-- chi: array of children
-
-### KeyFrameRule
+### KeyframesRule
 
 - typ: number
 - sel: string, css selector

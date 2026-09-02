@@ -107,5 +107,30 @@ result = await transform(css, {
 console.log(result.map.toJSON());
 ```
 
+Parsing reference to the input sourcemap file is only supported when using the async api.
+
+```css
+table.colortable {
+ width: 100%;
+ text-shadow: none;
+ border-collapse: collapse
+}
+table.colortable td {
+ text-align: center
+}
+table.colortable td.c {
+ text-transform: uppercase;
+ background: #ff0
+}
+table.colortable th {
+ text-align: center;
+ color: green;
+ font-weight: 400;
+ padding: 2px 3px
+}
+
+/*# sourceMappingURL=sourcemap.css.map */
+```
+
 ------
 [← Custom Transform](./transform.md) | [Plugins API →](./plugins.md) 

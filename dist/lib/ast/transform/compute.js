@@ -1,4 +1,4 @@
-import { multiply, toZero, identity } from './utils.js';
+import { identity, multiply, toZero } from './utils.js';
 import { EnumToken } from '../types.js';
 import { stripCommaToken } from '../../validation/utils/list.js';
 import { translateX, translateY, translateZ, translate, translate3d } from './translate.js';
@@ -17,6 +17,7 @@ function compute(transformLists) {
     stripCommaToken(transformLists);
     let matrix = identity();
     let mat;
+    let transforms;
     const cumulative = [];
     for (const transformList of splitTransformList(transformLists)) {
         mat = computeMatrix(transformList, identity());
@@ -24,7 +25,10 @@ function compute(transformLists) {
             return null;
         }
         matrix = multiply(matrix, mat);
-        cumulative.push(...(minify(mat) ?? transformList));
+        transforms = minify(mat) ?? transformList;
+        for (let i = 0; i < transforms.length; i++) {
+            cumulative.push(transforms[i]);
+        }
     }
     const serialized = serialize(matrix);
     if (cumulative.length > 0) {
@@ -40,11 +44,66 @@ function compute(transformLists) {
             });
         }
     }
-    return {
+    const result = {
         matrix: serialize(toZero(matrix)),
         cumulative,
         minified: minify(matrix) ?? [serialized],
     };
+    // valid identity matrix
+    if ((result.minified.length == 1 &&
+        result.minified[0].typ == EnumToken.IdenTokenType &&
+        result.minified[0].val == "none") ||
+        (result.cumulative.length == 1 &&
+            result.cumulative[0].typ == EnumToken.IdenTokenType &&
+            result.cumulative[0].val == "none") ||
+        (result.matrix?.typ == EnumToken.IdenTokenType && result.matrix.val == "none")) {
+        // all transform function arguments must be 0 or scale(1)
+        for (const transform of transformLists) {
+            switch (transform.val) {
+                case "translate":
+                case "translateX":
+                case "translateY":
+                case "translateZ":
+                case "translate3d":
+                case "rotate":
+                case "rotateX":
+                case "rotateY":
+                case "rotateZ":
+                case "rotate3d":
+                case "skew":
+                case "skewX":
+                case "skewY":
+                    for (const child of transform.chi) {
+                        if (child.typ == EnumToken.WhitespaceTokenType || child.typ == EnumToken.CommaTokenType) {
+                            continue;
+                        }
+                        if ((child.typ != EnumToken.AngleTokenType &&
+                            child.typ != EnumToken.NumberTokenType &&
+                            child.typ != EnumToken.PercentageTokenType) ||
+                            getNumber(child) != 0) {
+                            return null;
+                        }
+                    }
+                    break;
+                case "scale":
+                case "scaleX":
+                case "scaleY":
+                case "scaleZ":
+                case "scale3d":
+                    for (const child of transform.chi) {
+                        if (child.typ == EnumToken.WhitespaceTokenType || child.typ == EnumToken.CommaTokenType) {
+                            continue;
+                        }
+                        if ((child.typ != EnumToken.NumberTokenType && child.typ != EnumToken.PercentageTokenType) ||
+                            getNumber(child) != 1) {
+                            return null;
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+    return result;
 }
 function computeMatrix(transformList, matrixVar) {
     let values = [];
@@ -166,7 +225,7 @@ function computeMatrix(transformList, matrixVar) {
                         if (values.length != 3) {
                             return null;
                         }
-                        matrixVar = scale3d(...values, matrixVar);
+                        matrixVar = scale3d(values[0], values[1], values[2], matrixVar);
                         break;
                     }
                     if (transformList[i].val == "scale") {

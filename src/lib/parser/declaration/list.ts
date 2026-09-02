@@ -21,7 +21,8 @@ import type { ValidationMatch } from "../../validation/types.d.ts";
 import { createValidationContext, matchAllSyntaxes } from "../../validation/match.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";
 import { STATE } from "../../syntax/constants.ts";
-import { objectHash } from "../utils/hash.ts";
+import { objectHash, toSortedString } from "../utils/hash.ts";
+import { equalsIgnoreCase } from "../utils/text.ts";
 
 const config: PropertiesConfig = getConfig();
 
@@ -29,6 +30,7 @@ export class PropertyList {
     protected options: PropertyListOptions = { removeDuplicateDeclarations: true, computeShorthand: true };
     protected declarations: Map<string, AstNode | PropertySet | PropertyMap>;
 
+    //  ketsey = new Map;
     constructor(options: PropertyListOptions = {}) {
         this.options = options;
         this.declarations = new Map<string, AstNode | PropertySet | PropertyMap>();
@@ -48,17 +50,14 @@ export class PropertyList {
         let result: ValidationMatch;
 
         for (const declaration of declarations) {
-            name =
-                declaration.typ != EnumToken.DeclarationNodeType
-                    ? null
-                    : (declaration as AstDeclaration).nam.toLowerCase();
+            name = declaration.typ != EnumToken.DeclarationNodeType ? null : (declaration as AstDeclaration).nam;
 
             if (
                 (declaration as AstDeclaration)[STATE] == EnumAstNodeStatus.Invalid ||
                 (declaration as AstDeclaration)[STATE] == EnumAstNodeStatus.Unknown ||
                 (declaration as AstDeclaration)[STATE] == EnumAstNodeStatus.ValidationFailed ||
                 declaration.typ != EnumToken.DeclarationNodeType ||
-                "composes" === name ||
+                equalsIgnoreCase("composes", name as string) ||
                 (typeof this.options.removeDuplicateDeclarations === "string" &&
                     this.options.removeDuplicateDeclarations === name) ||
                 (Array.isArray(this.options.removeDuplicateDeclarations)
@@ -93,7 +92,27 @@ export class PropertyList {
 
             // do not compute shorthand for invalid declarations
             if (declaration[STATE] !== EnumAstNodeStatus.Validated) {
-                this.declarations.set(declaration.nam, declaration);
+                // const key = objectHash(declaration);
+                // if (!this.ketsey.has(key)) {
+                //     this.ketsey.set(key, [declaration.nam]);
+
+                //     console.error(
+                //         `Adding declaration : ${(<AstDeclaration>declaration).nam} with key : ${key}`
+                //     )
+                // }
+
+                // else {
+
+                //     console.error(
+                //         `Duplicate declaration found: ${(<AstDeclaration>declaration).nam} with key : [ ${key} => ${this.ketsey.get(key)} ]`
+                //     )
+
+                //     console.error(JSON.stringify(toSortedString(declaration)))
+
+                //     this.ketsey.get(key).push(declaration.nam);
+                // }
+
+                this.declarations.set(objectHash(declaration), declaration);
                 return this;
             }
 
@@ -234,7 +253,10 @@ export class PropertyList {
 
         if (values != declaration.val) {
             declaration.val.length = 0;
-            declaration.val.push(...values);
+
+            for (const v of values) {
+                declaration.val.push(v);
+            }
         }
     }
 

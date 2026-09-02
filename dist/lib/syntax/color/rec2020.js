@@ -3,12 +3,16 @@ import { multiplyMatrices } from './utils/matrix.js';
 import { srgb2xyz } from './xyz.js';
 
 function rec20202srgb(r, g, b, a) {
+    let values = rec20202lrec2020(r, g, b);
+    values = lrec20202xyz(values[0], values[1], values[2]);
     // @ts-ignore
-    return xyz2srgb(...lrec20202xyz(...rec20202lrec2020(r, g, b)), a);
+    return xyz2srgb(values[0], values[1], values[2], a);
 }
 function srgb2rec2020values(r, g, b, a) {
+    let values = srgb2xyz(r, g, b);
+    values = xyz2lrec2020(values[0], values[1], values[2]);
     // @ts-ignore
-    return lrec20202rec2020(...xyz2lrec2020(...srgb2xyz(r, g, b)), a);
+    return lrec20202rec2020(values[0], values[1], values[2], a);
 }
 function rec20202lrec2020(r, g, b, a) {
     // convert an array of rec2020 RGB values in the range 0.0 - 1.0
@@ -54,7 +58,7 @@ function lrec20202xyz(r, g, b, a) {
         [0, 19567812 / 697040785, 295819943 / 278816314],
     ];
     // 0 is actually calculated as  4.994106574466076e-17
-    return multiplyMatrices(M, [r, g, b]).concat(a == null || a == 1 ? [] : [a]);
+    return multiplyMatrices(M, [r, g, b]).concat([] );
 }
 function xyz2lrec2020(x, y, z, a) {
     // convert XYZ to linear-light rec2020
@@ -63,7 +67,7 @@ function xyz2lrec2020(x, y, z, a) {
         [-19765991 / 29648200, 47925759 / 29648200, 467509 / 29648200],
         [792561 / 44930125, -1921689 / 44930125, 42328811 / 44930125],
     ];
-    return multiplyMatrices(M, [x, y, z]).concat(a == null || a == 1 ? [] : [a]);
+    return multiplyMatrices(M, [x, y, z]).concat([] );
 }
 
 export { rec20202srgb, srgb2rec2020values };

@@ -38,7 +38,7 @@ export class TransformCssFeature {
     }
 
     run(ast: AstRule | AstAtRule): AstNode | null {
-        if (!("chi" in ast)) {
+        if (ast.chi == null) {
             return null;
         }
 

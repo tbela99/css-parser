@@ -12,11 +12,12 @@ import type {
     LiteralToken,
     NumberToken,
     ParensToken,
+    PercentageToken,
     ResolutionToken,
     TimeToken,
     Token,
 } from "../../../@types/index.d.ts";
-import { LOC, mathFuncs } from "../../syntax/constants.ts";
+import { LOCEND, LOCSRCID, LOCSTA, mathFuncs } from "../../syntax/constants.ts";
 import { EnumToken } from "../types.ts";
 import { compute, rem } from "./math.ts";
 
@@ -54,7 +55,9 @@ export function evaluate(tokens: Token[]): Token[] {
                 acc.push({ typ: EnumToken.CommaTokenType });
             }
 
-            acc.push(...t);
+            for (const token of t) {
+                acc.push(token);
+            }
 
             return acc;
         });
@@ -96,7 +99,9 @@ export function evaluate(tokens: Token[]): Token[] {
                         // @ts-ignore
                         val: Math[(<IdentToken>nodes[0]).val.toUpperCase()] as number,
                         typ: EnumToken.NumberTokenType,
-                        [LOC]: nodes[0][LOC],
+                        [LOCSRCID]: nodes[0][LOCSRCID],
+                        [LOCSTA]: nodes[0][LOCSTA],
+                        [LOCEND]: nodes[0][LOCEND],
                     },
                 ];
             }
@@ -121,12 +126,20 @@ export function evaluate(tokens: Token[]): Token[] {
                 token = {
                     typ: EnumToken.ListToken,
                     chi: [nodes[i], nodes[i + 1]],
-                    [LOC]: { ...nodes[i][LOC], end: nodes[i + 1]![LOC]!.end as number },
+                    [LOCSRCID]: nodes[i][LOCSRCID],
+                    [LOCSTA]: nodes[i][LOCSTA],
+                    [LOCEND]: nodes[i + 1][LOCEND],
                 } as ListToken;
             } else {
                 token = doEvaluate(
                     nodes[i + 1] as Token,
-                    { typ: EnumToken.NumberTokenType, val: -1, [LOC]: nodes[i + 1][LOC] },
+                    {
+                        typ: EnumToken.NumberTokenType,
+                        val: -1,
+                        [LOCSRCID]: nodes[i + 1][LOCSRCID],
+                        [LOCSTA]: nodes[i + 1][LOCSTA],
+                        [LOCEND]: nodes[i + 1][LOCEND],
+                    },
                     EnumToken.Mul,
                 );
             }
@@ -146,17 +159,32 @@ export function evaluate(tokens: Token[]): Token[] {
 
         if (token.typ != EnumToken.BinaryExpressionTokenType) {
             if ("val" in token && +(token as NumberToken).val < 0) {
-                acc.push({ typ: EnumToken.Sub, [LOC]: token[LOC] }, {
-                    ...token,
-                    val: -(token as NumberToken).val,
-                    [LOC]: token[LOC],
-                } as Token);
+                acc.push(
+                    {
+                        typ: EnumToken.Sub,
+                        [LOCSRCID]: token[LOCSRCID],
+                        [LOCSTA]: token[LOCSTA],
+                        [LOCEND]: token[LOCEND],
+                    },
+                    {
+                        ...token,
+                        val: -(token as NumberToken).val,
+                        [LOCSRCID]: token[LOCSRCID],
+                        [LOCSTA]: token[LOCSTA],
+                        [LOCEND]: token[LOCEND],
+                    } as Token,
+                );
                 return acc;
             }
         }
 
         if (acc.length > 0 && curr[0] != EnumToken.ListToken) {
-            acc.push({ typ: EnumToken.Add, [LOC]: token[LOC] });
+            acc.push({
+                typ: EnumToken.Add,
+                [LOCSRCID]: token[LOCSRCID],
+                [LOCSTA]: token[LOCSTA],
+                [LOCEND]: token[LOCEND],
+            });
         }
 
         acc.push(token);
@@ -180,7 +208,9 @@ function doEvaluate(
         op,
         l,
         r,
-        [LOC]: { ...l[LOC], end: (r?.[LOC] ?? l[LOC])?.end },
+        [LOCSRCID]: l[LOCSRCID],
+        [LOCSTA]: l[LOCSTA],
+        [LOCEND]: r?.[LOCEND] ?? l[LOCEND],
     };
 
     if (!isScalarToken(l) || !isScalarToken(r) || (l.typ == r.typ && "unit" in l && "unit" in r && l.unit != r.unit)) {
@@ -228,14 +258,38 @@ function doEvaluate(
             if (typeof v1 == "number" && l.typ == EnumToken.PercentageTokenType) {
                 v1 = {
                     typ: EnumToken.FractionTokenType,
-                    l: { typ: EnumToken.NumberTokenType, val: v1, [LOC]: l[LOC] },
-                    r: { typ: EnumToken.NumberTokenType, val: 100, [LOC]: r[LOC] },
+                    l: {
+                        typ: EnumToken.NumberTokenType,
+                        val: v1,
+                        [LOCSRCID]: l[LOCSRCID],
+                        [LOCSTA]: l[LOCSTA],
+                        [LOCEND]: l[LOCEND],
+                    },
+                    r: {
+                        typ: EnumToken.NumberTokenType,
+                        val: 100,
+                        [LOCSRCID]: r[LOCSRCID],
+                        [LOCSTA]: r[LOCSTA],
+                        [LOCEND]: r[LOCEND],
+                    },
                 };
             } else if (typeof v2 == "number" && r.typ == EnumToken.PercentageTokenType) {
                 v2 = {
                     typ: EnumToken.FractionTokenType,
-                    l: { typ: EnumToken.NumberTokenType, val: v2, [LOC]: l[LOC] },
-                    r: { typ: EnumToken.NumberTokenType, val: 100, [LOC]: r[LOC] },
+                    l: {
+                        typ: EnumToken.NumberTokenType,
+                        val: v2,
+                        [LOCSRCID]: l[LOCSRCID],
+                        [LOCSTA]: l[LOCSTA],
+                        [LOCEND]: l[LOCEND],
+                    },
+                    r: {
+                        typ: EnumToken.NumberTokenType,
+                        val: 100,
+                        [LOCSRCID]: r[LOCSRCID],
+                        [LOCSTA]: r[LOCSTA],
+                        [LOCEND]: r[LOCEND],
+                    },
                 };
             }
         }
@@ -248,7 +302,9 @@ function doEvaluate(
         ...(l.typ === EnumToken.NumberTokenType || l.typ === EnumToken.IdenTokenType ? r : l),
         typ,
         val /* : typeof val == 'number' ? minifyNumber(val) : val */,
-        [LOC]: { ...l[LOC], end: (r?.[LOC] ?? l?.[LOC])?.end },
+        [LOCSRCID]: l[LOCSRCID],
+        [LOCSTA]: l[LOCSTA],
+        [LOCEND]: r?.[LOCEND] ?? l[LOCEND],
     } as Token;
 
     if (token.typ == EnumToken.IdenTokenType) {
@@ -283,21 +339,61 @@ export function evaluateFunc(token: FunctionToken): Token[] | null {
         case "sign":
         case "sqrt":
         case "exp": {
+            if (token.val == "tan" || token.val == "atan") {
+                for (let i = 0; i < values.length; i++) {
+                    if (values[i].typ == EnumToken.NumberTokenType) {
+                        values[i] = Object.assign(values[i], { typ: EnumToken.AngleTokenType, unit: "rad" });
+                    } else if (values[i].typ == EnumToken.AngleTokenType && (values[i] as AngleToken).unit != "rad") {
+                        switch ((values[i] as AngleToken).unit) {
+                            case "deg":
+                                Object.assign(values[i], {
+                                    unit: "rad",
+                                    val: ((values[i] as AngleToken).val as number) * (Math.PI / 180),
+                                });
+                                break;
+                            case "grad":
+                                Object.assign(values[i], {
+                                    unit: "rad",
+                                    val: ((values[i] as AngleToken).val as number) * (Math.PI / 200),
+                                });
+                                break;
+                            case "turn":
+                                Object.assign(values[i], {
+                                    unit: "rad",
+                                    val: ((values[i] as AngleToken).val as number) * (2 * Math.PI),
+                                });
+                                break;
+                        }
+                    }
+                }
+            }
+
             const value: Token[] = evaluate(values);
 
             // @ts-ignore
             let val: number =
-                value[0].typ == EnumToken.NumberTokenType
+                value[0].typ == EnumToken.NumberTokenType || value[0].typ == EnumToken.AngleTokenType
                     ? (+(value[0] as NumberToken | DimensionToken).val as number)
                     : // @ts-expect-error
                       ((value[0] as FractionToken).l.val as number) / (value[0] as FractionToken).r.val;
 
             return [
-                {
-                    typ: EnumToken.NumberTokenType,
-                    val: Math[token.val](val),
-                    [LOC]: value[0][LOC],
-                },
+                token.val == "tan" || token.val == "atan"
+                    ? {
+                          typ: EnumToken.AngleTokenType,
+                          val: Math[token.val](val),
+                          unit: "rad",
+                          [LOCSRCID]: value[0][LOCSRCID],
+                          [LOCSTA]: value[0][LOCSTA],
+                          [LOCEND]: value[0][LOCEND],
+                      }
+                    : {
+                          typ: EnumToken.NumberTokenType,
+                          val: Math[token.val](val),
+                          [LOCSRCID]: value[0][LOCSRCID],
+                          [LOCSTA]: value[0][LOCSTA],
+                          [LOCEND]: value[0][LOCEND],
+                      },
             ];
         }
 
@@ -328,8 +424,10 @@ export function evaluateFunc(token: FunctionToken): Token[] | null {
             return [
                 {
                     ...ref,
-                    val: +Math.sqrt(value).toFixed(rem(...all)),
-                    [LOC]: token[LOC],
+                    val: Math.hypot(...all),
+                    [LOCSRCID]: token[LOCSRCID],
+                    [LOCSTA]: token[LOCSTA],
+                    [LOCEND]: token[LOCEND],
                 } as
                     | DimensionToken
                     | AngleToken
@@ -348,6 +446,35 @@ export function evaluateFunc(token: FunctionToken): Token[] | null {
             const chi = values.filter(
                 (t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ),
             );
+
+            if (token.val == "atan2") {
+                for (let i = 0; i < chi.length; i++) {
+                    if (chi[i].typ == EnumToken.NumberTokenType) {
+                        chi[i] = Object.assign(chi[i], { typ: EnumToken.AngleTokenType, unit: "rad" });
+                    } else if (chi[i].typ == EnumToken.AngleTokenType && (chi[i] as AngleToken).unit != "rad") {
+                        switch ((chi[i] as AngleToken).unit) {
+                            case "deg":
+                                Object.assign(chi[i], {
+                                    unit: "rad",
+                                    val: ((chi[i] as AngleToken).val as number) * (Math.PI / 180),
+                                });
+                                break;
+                            case "grad":
+                                Object.assign(chi[i], {
+                                    unit: "rad",
+                                    val: ((chi[i] as AngleToken).val as number) * (Math.PI / 200),
+                                });
+                                break;
+                            case "turn":
+                                Object.assign(chi[i], {
+                                    unit: "rad",
+                                    val: ((chi[i] as AngleToken).val as number) * (2 * Math.PI),
+                                });
+                                break;
+                        }
+                    }
+                }
+            }
 
             // https://developer.mozilla.org/en-US/docs/Web/CSS/mod
             const v1: Token[] = evaluate([chi[0]]);
@@ -378,7 +505,9 @@ export function evaluateFunc(token: FunctionToken): Token[] | null {
                     {
                         ...v1[0],
                         val: Math.pow(val1, val2),
-                        [LOC]: token[LOC],
+                        [LOCSRCID]: token[LOCSRCID],
+                        [LOCSTA]: token[LOCSTA],
+                        [LOCEND]: token[LOCEND],
                     } as
                         | DimensionToken
                         | AngleToken
@@ -395,8 +524,12 @@ export function evaluateFunc(token: FunctionToken): Token[] | null {
                     {
                         ...{},
                         ...v1[0],
+                        typ: EnumToken.AngleTokenType,
+                        unit: "rad",
                         val: Math.atan2(val1, val2),
-                        [LOC]: token[LOC],
+                        [LOCSRCID]: token[LOCSRCID],
+                        [LOCSTA]: token[LOCSTA],
+                        [LOCEND]: token[LOCEND],
                     } as
                         | DimensionToken
                         | AngleToken
@@ -412,7 +545,9 @@ export function evaluateFunc(token: FunctionToken): Token[] | null {
                 {
                     ...v1[0],
                     val: val2 == 0 ? val1 : val1 - Math.floor(val1 / val2) * val2,
-                    [LOC]: token[LOC],
+                    [LOCSRCID]: token[LOCSRCID],
+                    [LOCSTA]: token[LOCSTA],
+                    [LOCEND]: token[LOCEND],
                 } as
                     | DimensionToken
                     | AngleToken
@@ -470,7 +605,9 @@ export function evaluateFunc(token: FunctionToken): Token[] | null {
                         {
                             ...values[0],
                             val: Math.log(val1) / Math.log(val2 as number),
-                            [LOC]: token[LOC],
+                            [LOCSRCID]: token[LOCSRCID],
+                            [LOCSTA]: token[LOCSTA],
+                            [LOCEND]: token[LOCEND],
                         } as
                             | DimensionToken
                             | AngleToken
@@ -518,7 +655,15 @@ export function evaluateFunc(token: FunctionToken): Token[] | null {
                     }
 
                     // @ts-ignore
-                    return [{ ...values[0], val, [LOC]: token[LOC] }];
+                    return [
+                        {
+                            ...values[0],
+                            val,
+                            [LOCSRCID]: token[LOCSRCID],
+                            [LOCSTA]: token[LOCSTA],
+                            [LOCEND]: token[LOCEND],
+                        } as NumberToken | PercentageToken | DimensionToken | AngleToken,
+                    ];
                 }
             }
         }
@@ -538,11 +683,22 @@ export function inlineExpression(token: Token): Token[] {
         if ([EnumToken.Mul, EnumToken.Div].includes((token as BinaryExpressionToken).op)) {
             result.push(token);
         } else {
-            result.push(
-                ...inlineExpression((token as BinaryExpressionToken).l),
-                { typ: (token as BinaryExpressionToken).op, [LOC]: (token as BinaryExpressionToken)[LOC] } as Token,
-                ...inlineExpression((token as BinaryExpressionToken).r),
-            );
+
+                for (const child of inlineExpression((token as BinaryExpressionToken).l)) {
+                    result.push(child);
+                }
+
+            result.push({
+                    typ: (token as BinaryExpressionToken).op,
+                    [LOCSRCID]: (token as BinaryExpressionToken)[LOCSRCID],
+                    [LOCSTA]: (token as BinaryExpressionToken)[LOCSTA],
+                    [LOCEND]: (token as BinaryExpressionToken)[LOCEND],
+                } as Token);
+
+                for (const child of inlineExpression((token as BinaryExpressionToken).r)) {
+                    result.push(child);
+                }
+                
         }
     } else {
         result.push(token);
@@ -638,7 +794,13 @@ function factorToken(token: Token): Token {
             (token.typ == EnumToken.MathFunctionTokenType || token.typ == EnumToken.FunctionTokenType) &&
             (token as FunctionToken).val == "calc"
         ) {
-            token = { ...token, typ: EnumToken.ParensTokenType, [LOC]: token[LOC] } as ParensToken;
+            token = {
+                ...token,
+                typ: EnumToken.ParensTokenType,
+                [LOCSRCID]: token[LOCSRCID],
+                [LOCSTA]: token[LOCSTA],
+                [LOCEND]: token[LOCEND],
+            } as ParensToken;
 
             // @ts-ignore
             delete token.val;
@@ -686,7 +848,9 @@ function factor(tokens: Array<Token | BinaryExpressionToken>, ops: Array<"+" | "
                     : getArithmeticOperation(<"-" | "+" | "/" | "*">(tokens[i] as LiteralToken).val),
                 l: factorToken(tokens[i - 1]),
                 r: factorToken(tokens[i + 1]),
-                [LOC]: { ...tokens[i - 1][LOC], end: tokens[i + 1]![LOC]?.end },
+                [LOCSRCID]: tokens[i - 1][LOCSRCID],
+                [LOCSTA]: tokens[i - 1][LOCSTA],
+                [LOCEND]: tokens[i + 1]![LOCEND],
             });
 
             i--;

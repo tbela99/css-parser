@@ -11,7 +11,7 @@ import type {
     ParensToken,
 } from "../../../@types/index.d.ts";
 import { EnumToken } from "../../ast/types.ts";
-import { LOC, pseudoElements } from "../../syntax/constants.ts";
+import { LOCEND, LOCSRCID, LOCSTA, pseudoElements } from "../../syntax/constants.ts";
 import { getParsedSyntax, getSyntaxConfig } from "../../validation/config.ts";
 import { trimArray, matchAllSyntaxes, createValidationContext } from "../../validation/match.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
@@ -56,7 +56,7 @@ export function parseAtRuleSupportSyntax(
                     val: ":" + val,
                 });
 
-                stream[i][LOC]!.end = stream[i + 1]![LOC]!.end;
+                stream[i][LOCEND] = stream[i + 1]![LOCEND];
                 stream.splice(i + 1, 1);
                 continue;
             }
@@ -73,7 +73,7 @@ export function parseAtRuleSupportSyntax(
                 });
 
                 stack.push(stream[i]);
-                stream[i][LOC]!.end = stream[i + 1]![LOC]!.end;
+                stream[i][LOCEND] = stream[i + 1]![LOCEND];
                 stream.splice(i + 1, 1);
                 continue;
             }
@@ -137,7 +137,9 @@ export function parseAtRuleSupportSyntax(
                         tokens[index] = {
                             typ: EnumToken.ParensTokenType,
                             chi: slice,
-                            [LOC]: { ...stack.at(-1)![LOC], end: stream[i]?.[LOC]?.end },
+                            [LOCSRCID]: stack.at(-1)![LOCSRCID],
+                            [LOCSTA]: stack.at(-1)![LOCSTA],
+                            [LOCEND]: stream[i]?.[LOCEND],
                         } as ParensToken;
 
                         stack.pop();
@@ -153,7 +155,9 @@ export function parseAtRuleSupportSyntax(
                             typ: tokensfuncDefMap.get(stack.at(-1)?.typ)!,
                             val: (stack.at(-1) as FunctionToken)!.val,
                             chi: trimArray(tokens.splice(index + 1, tokens.length - index - 2)),
-                            [LOC]: { ...stack.at(-1)![LOC], end: stream[i]?.[LOC]?.end },
+                            [LOCSRCID]: stack.at(-1)![LOCSRCID],
+                            [LOCSTA]: stack.at(-1)![LOCSTA],
+                            [LOCEND]: stream[i]?.[LOCEND],
                         } as FunctionToken;
 
                         if (tokens[index].typ === EnumToken.PseudoClassFuncTokenType) {
@@ -201,7 +205,9 @@ export function parseAtRuleSupportSyntax(
                             typ: EnumToken.SupportsQueryUnaryConditionTokenType,
                             l: stack.at(-1),
                             r: trimArray(tokens.splice(index + 1, i - index - 1)),
-                            [LOC]: { ...stack.at(-1)![LOC], end: stream[i]?.[LOC]?.end },
+                            [LOCSRCID]: stack.at(-1)![LOCSRCID],
+                            [LOCSTA]: stack.at(-1)![LOCSTA],
+                            [LOCEND]: stream[i]?.[LOCEND],
                         } as SupportsQueryUnaryConditionToken;
 
                         stack.pop();
@@ -223,7 +229,9 @@ export function parseAtRuleSupportSyntax(
                             op: stack.at(-1)!,
                             l: left,
                             r: trimArray(tokens.slice(index + 1)),
-                            [LOC]: { ...stack.at(-1)![LOC], end: stream[i]?.[LOC]?.end },
+                            [LOCSRCID]: stack.at(-1)![LOCSRCID],
+                            [LOCSTA]: stack.at(-1)![LOCSTA],
+                            [LOCEND]: stream[i]?.[LOCEND],
                         } as SupportsQueryConditionToken;
                         tokens.length = index2 + 1;
                         stack.pop();
@@ -248,7 +256,7 @@ export function parseAtRuleSupportSyntax(
                     if ("and" === val || "or" === val) {
                         if ("or" === val && scopes.length === 1) {
                             const fileName = options.source!.getFileName() ?? "";
-                            const [line, column] = options.source!.getOffsets(stream[i]?.[LOC]?.sta!);
+                            const [line, column] = options.source!.getOffsets(stream[i]?.[LOCSTA]!);
                             return {
                                 success: false,
                                 errors: [
@@ -276,7 +284,11 @@ export function parseAtRuleSupportSyntax(
     }
 
     stream.length = 0;
-    stream.push(...trimArray(tokens));
+
+    for (const token of trimArray(tokens)) {
+        
+        stream.push(token);
+    }
 
     return { success, errors };
 }

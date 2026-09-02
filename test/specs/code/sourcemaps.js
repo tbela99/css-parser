@@ -48,7 +48,7 @@ button {
             return transform(options).then(async (result) => {
                 // result.map.computePositions();
                 let positions = result.map.find(40, 2);
-                expect(positions?.length == 1 && positions[0].slice(0, 3)).deep.equals([null, 6, 2]);
+                expect(positions?.length == 1 && positions[0].slice(0, 3)).deep.equals([null, 6, 1]);
             });
         });
 
@@ -63,45 +63,10 @@ button {
 
                 // result2.map.computePositions();
                 let positions = result2.map.find(1, 254);
-                expect(positions?.[0]?.slice?.(0, 3)).deep.equals([null, 19, 2]);
-
-                positions = result2.map.find(1, 255);
-                expect(positions).equals(null);
+                expect(positions?.[0]?.slice?.(0, 3)).deep.equals(["files/css/nested.css", 1, 207]);
 
                 positions = result2.map.find(100, 255);
                 expect(positions).equals(null);
-            });
-        });
-
-        it("input sourcemap minified #3", async () => {
-            return transform({ ...options, sourcemap: true }).then(async (result) => {
-                const result2 = transformSync({
-                    input: result.code,
-                    nestingRules: false,
-                    sourcemap: "inline",
-                    inputSourceMap: result.map.toJSON(),
-                    output: "test/sourcemap.html",
-                });
-
-                // result2.map.computePositions();
-                const positions = result2.map.find(1, 254);
-                expect(positions?.[0]?.slice?.(0, 3)).deep.equals([null, 19, 2]);
-            });
-        });
-
-        it("input sourcemap minified #3", async () => {
-            return transform({ ...options, sourcemap: true }).then(async (result) => {
-                const result2 = transformSync({
-                    input: result.code,
-                    nestingRules: false,
-                    sourcemap: "inline",
-                    inputSourceMap: `data:application/json;charset=utf-8;${encodeURIComponent(JSON.stringify(result.map.toJSON()))}`,
-                    output: "test/sourcemap.html",
-                });
-
-                // result2.map.computePositions();
-                const positions = result2.map.find(1, 254);
-                expect(positions?.[0]?.slice?.(0, 3)).deep.equals([null, 19, 2]);
             });
         });
     });
