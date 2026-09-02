@@ -62,7 +62,7 @@ const colorPrecision = 6;
 /**
  * Angle precision
  */
-const anglePrecision = 0.001;
+const anglePrecision = 3;
 /**
  * Color range definitions
  */

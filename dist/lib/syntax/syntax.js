@@ -8,7 +8,7 @@ import { trimArray } from '../validation/match.js';
 import { splitTokenList } from '../validation/utils/list.js';
 import { getColorSpace } from './color/utils/colorspace.js';
 import { getColorComponents } from './color/utils/components.js';
-import { nonStandardColors, systemColors, deprecatedSystemColors, COLORS_NAMES, colorsFunc, colorFuncColorSpace, colorPrecision, epsilon, anglePrecision } from './constants.js';
+import { anglePrecision, nonStandardColors, systemColors, deprecatedSystemColors, COLORS_NAMES, colorsFunc, colorFuncColorSpace, colorPrecision, epsilon } from './constants.js';
 import { getSyntaxConfig } from '../validation/config.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
@@ -1001,13 +1001,10 @@ function toPrecisionValue(value, precision = colorPrecision) {
     value = Math.round(value * div) / div;
     return Math.abs(value) < epsilon ? 0 : value;
 }
-function toPrecisionAngle(angle, precision = colorPrecision, correctValue = true) {
+function toPrecisionAngle(angle, precision = anglePrecision, correctValue = true) {
     angle = toPrecisionValue(angle, precision);
     if (correctValue && Math.abs(angle) >= 360) {
         angle %= 360;
-    }
-    if (Math.abs(angle) < anglePrecision) {
-        angle = 0;
     }
     if (correctValue && angle < 0) {
         angle += 360;

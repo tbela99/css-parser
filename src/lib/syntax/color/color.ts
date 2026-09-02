@@ -132,8 +132,8 @@ import {
     rgb2cmykToken,
 } from "./cmyk.ts";
 import { a98rgb2srgbvalues, srgb2a98values } from "./a98rgb.ts";
-import { epsilon, LOCEND, LOCSRCID, LOCSTA } from "../constants.ts";
-import { colorFuncColorSpace, colorPrecision, anglePrecision } from "../constants.ts";
+import { LOCEND, LOCSRCID, LOCSTA } from "../constants.ts";
+import { colorFuncColorSpace } from "../constants.ts";
 import { trimArray } from "../../validation/match.ts";
 import { alpha } from "./alpha.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";

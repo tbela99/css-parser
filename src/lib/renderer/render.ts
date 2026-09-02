@@ -53,6 +53,7 @@ import { ColorType, EnumToken } from "../ast/types.ts";
 import { expand } from "../ast/expand.ts";
 import { SourceMap } from "./sourcemap/sourcemap.ts";
 import {
+    anglePrecision,
     colorPrecision,
     LOCSRCID,
     LOCSTA,
@@ -1685,25 +1686,16 @@ export function renderValue(
                 let v: string;
                 let value: string = val + unit;
 
-                for (const u of ["turn", "deg", "rad", "grad"]) {
+                for (const u of ["deg", "turn", "rad", "grad"]) {
                     if ((token as AngleToken).unit == u) {
                         continue;
                     }
 
                     switch (u) {
-                        case "turn":
-                            v = minifyNumber(toPrecisionAngle(angle, colorPrecision, false));
-
-                            if (v.length + 4 < value.length) {
-                                val = v;
-                                unit = u;
-                                value = v + u;
-                            }
-
-                            break;
-
                         case "deg":
-                            v = minifyNumber(toPrecisionAngle(angle * 360, colorPrecision, false));
+                            v = minifyNumber(
+                                toPrecisionAngle(angle * 360, anglePrecision, false).toFixed(anglePrecision),
+                            );
 
                             if (v.length + 3 < value.length) {
                                 val = v;
@@ -1713,8 +1705,21 @@ export function renderValue(
 
                             break;
 
+                        case "turn":
+                            v = minifyNumber(toPrecisionAngle(angle, anglePrecision, false).toFixed(anglePrecision));
+
+                            if (v.length + 4 < value.length) {
+                                val = v;
+                                unit = u;
+                                value = v + u;
+                            }
+
+                            break;
+
                         case "rad":
-                            v = minifyNumber(toPrecisionAngle(angle * (2 * Math.PI), colorPrecision, false));
+                            v = minifyNumber(
+                                toPrecisionAngle(angle * (2 * Math.PI), anglePrecision, false).toFixed(anglePrecision),
+                            );
 
                             if (v.length + 3 < value.length) {
                                 val = v;
@@ -1725,7 +1730,9 @@ export function renderValue(
                             break;
 
                         case "grad":
-                            v = minifyNumber(toPrecisionAngle(angle * 400, colorPrecision, false));
+                            v = minifyNumber(
+                                toPrecisionAngle(angle * 400, anglePrecision, false).toFixed(anglePrecision),
+                            );
 
                             if (v.length + 4 < value.length) {
                                 val = v;

@@ -65,7 +65,7 @@ export const colorPrecision = 6;
 /**
  * Angle precision
  */
-export const anglePrecision = 0.001;
+export const anglePrecision = 3;
 
 /**
  * Color range definitions

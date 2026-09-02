@@ -1785,17 +1785,13 @@ export function toPrecisionValue(value: number | string, precision: number = col
 
 export function toPrecisionAngle(
     angle: number,
-    precision: number = colorPrecision,
+    precision: number = anglePrecision,
     correctValue: boolean = true,
 ): number {
     angle = toPrecisionValue(angle, precision);
 
     if (correctValue && Math.abs(angle) >= 360) {
         angle %= 360;
-    }
-
-    if (Math.abs(angle) < anglePrecision) {
-        angle = 0;
     }
 
     if (correctValue && angle < 0) {

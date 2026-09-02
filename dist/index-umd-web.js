@@ -6403,7 +6403,7 @@
     /**
      * Angle precision
      */
-    const anglePrecision = 0.001;
+    const anglePrecision = 3;
     /**
      * Color range definitions
      */
@@ -16222,13 +16222,10 @@
         value = Math.round(value * div) / div;
         return Math.abs(value) < epsilon ? 0 : value;
     }
-    function toPrecisionAngle(angle, precision = colorPrecision, correctValue = true) {
+    function toPrecisionAngle(angle, precision = anglePrecision, correctValue = true) {
         angle = toPrecisionValue(angle, precision);
         if (correctValue && Math.abs(angle) >= 360) {
             angle %= 360;
-        }
-        if (Math.abs(angle) < anglePrecision) {
-            angle = 0;
         }
         if (correctValue && angle < 0) {
             angle += 360;
@@ -20641,7 +20638,7 @@
     }
     function minifyTransformFunctions(transform) {
         const name = transform.val.toLowerCase();
-        if ("skewx" == name) {
+        if ("skewX" == name) {
             transform.val = "skew";
             return transform;
         }
@@ -20801,11 +20798,66 @@
                 });
             }
         }
-        return {
+        const result = {
             matrix: serialize(toZero(matrix)),
             cumulative,
             minified: minify$1(matrix) ?? [serialized],
         };
+        // valid identity matrix
+        if ((result.minified.length == 1 &&
+            result.minified[0].typ == exports.EnumToken.IdenTokenType &&
+            result.minified[0].val == "none") ||
+            (result.cumulative.length == 1 &&
+                result.cumulative[0].typ == exports.EnumToken.IdenTokenType &&
+                result.cumulative[0].val == "none") ||
+            (result.matrix?.typ == exports.EnumToken.IdenTokenType && result.matrix.val == "none")) {
+            // all transform function arguments must be 0 or scale(1)
+            for (const transform of transformLists) {
+                switch (transform.val) {
+                    case "translate":
+                    case "translateX":
+                    case "translateY":
+                    case "translateZ":
+                    case "translate3d":
+                    case "rotate":
+                    case "rotateX":
+                    case "rotateY":
+                    case "rotateZ":
+                    case "rotate3d":
+                    case "skew":
+                    case "skewX":
+                    case "skewY":
+                        for (const child of transform.chi) {
+                            if (child.typ == exports.EnumToken.WhitespaceTokenType || child.typ == exports.EnumToken.CommaTokenType) {
+                                continue;
+                            }
+                            if ((child.typ != exports.EnumToken.AngleTokenType &&
+                                child.typ != exports.EnumToken.NumberTokenType &&
+                                child.typ != exports.EnumToken.PercentageTokenType) ||
+                                getNumber(child) != 0) {
+                                return null;
+                            }
+                        }
+                        break;
+                    case "scale":
+                    case "scaleX":
+                    case "scaleY":
+                    case "scaleZ":
+                    case "scale3d":
+                        for (const child of transform.chi) {
+                            if (child.typ == exports.EnumToken.WhitespaceTokenType || child.typ == exports.EnumToken.CommaTokenType) {
+                                continue;
+                            }
+                            if ((child.typ != exports.EnumToken.NumberTokenType && child.typ != exports.EnumToken.PercentageTokenType) ||
+                                getNumber(child) != 1) {
+                                return null;
+                            }
+                        }
+                        break;
+                }
+            }
+        }
+        return result;
     }
     function computeMatrix(transformList, matrixVar) {
         let values = [];
@@ -21104,7 +21156,7 @@
             }
         }
         run(ast) {
-            if (!("chi" in ast)) {
+            if (ast.chi == null) {
                 return null;
             }
             let i = 0;
@@ -25125,29 +25177,29 @@
                     const angle = getAngle(token);
                     let v;
                     let value = val + unit;
-                    for (const u of ["turn", "deg", "rad", "grad"]) {
+                    for (const u of ["deg", "turn", "rad", "grad"]) {
                         if (token.unit == u) {
                             continue;
                         }
                         switch (u) {
-                            case "turn":
-                                v = minifyNumber(toPrecisionAngle(angle, colorPrecision, false));
-                                if (v.length + 4 < value.length) {
-                                    val = v;
-                                    unit = u;
-                                    value = v + u;
-                                }
-                                break;
                             case "deg":
-                                v = minifyNumber(toPrecisionAngle(angle * 360, colorPrecision, false));
+                                v = minifyNumber(toPrecisionAngle(angle * 360, anglePrecision, false).toFixed(anglePrecision));
                                 if (v.length + 3 < value.length) {
                                     val = v;
                                     unit = u;
                                     value = v + u;
                                 }
                                 break;
+                            case "turn":
+                                v = minifyNumber(toPrecisionAngle(angle, anglePrecision, false).toFixed(anglePrecision));
+                                if (v.length + 4 < value.length) {
+                                    val = v;
+                                    unit = u;
+                                    value = v + u;
+                                }
+                                break;
                             case "rad":
-                                v = minifyNumber(toPrecisionAngle(angle * (2 * Math.PI), colorPrecision, false));
+                                v = minifyNumber(toPrecisionAngle(angle * (2 * Math.PI), anglePrecision, false).toFixed(anglePrecision));
                                 if (v.length + 3 < value.length) {
                                     val = v;
                                     unit = u;
@@ -25155,7 +25207,7 @@
                                 }
                                 break;
                             case "grad":
-                                v = minifyNumber(toPrecisionAngle(angle * 400, colorPrecision, false));
+                                v = minifyNumber(toPrecisionAngle(angle * 400, anglePrecision, false).toFixed(anglePrecision));
                                 if (v.length + 4 < value.length) {
                                     val = v;
                                     unit = u;

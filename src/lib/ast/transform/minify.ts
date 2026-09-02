@@ -303,7 +303,7 @@ export function eqMatrix(a: FunctionToken | Matrix, b: Token[]): boolean {
 export function minifyTransformFunctions(transform: FunctionToken): FunctionToken {
     const name: string = transform.val.toLowerCase();
 
-    if ("skewx" == name) {
+    if ("skewX" == name) {
         transform.val = "skew";
         return transform;
     }

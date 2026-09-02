@@ -68,11 +68,79 @@ export function compute(transformLists: Token[]): {
         }
     }
 
-    return {
+    const result = {
         matrix: serialize(toZero(matrix) as Matrix),
         cumulative,
         minified: minify(matrix) ?? [serialized],
     };
+
+    // valid identity matrix
+    if (
+        (result.minified.length == 1 &&
+            result.minified[0].typ == EnumToken.IdenTokenType &&
+            (result.minified[0] as IdentToken).val == "none") ||
+        (result.cumulative.length == 1 &&
+            result.cumulative[0].typ == EnumToken.IdenTokenType &&
+            (result.cumulative[0] as IdentToken).val == "none") ||
+        (result.matrix?.typ == EnumToken.IdenTokenType && (result.matrix as IdentToken).val == "none")
+    ) {
+        // all transform function arguments must be 0 or scale(1)
+        for (const transform of transformLists) {
+            switch ((transform as FunctionToken).val) {
+                case "translate":
+                case "translateX":
+                case "translateY":
+                case "translateZ":
+                case "translate3d":
+                case "rotate":
+                case "rotateX":
+                case "rotateY":
+                case "rotateZ":
+                case "rotate3d":
+                case "skew":
+                case "skewX":
+                case "skewY":
+                    for (const child of (transform as FunctionToken).chi) {
+                        if (child.typ == EnumToken.WhitespaceTokenType || child.typ == EnumToken.CommaTokenType) {
+                            continue;
+                        }
+
+                        if (
+                            (child.typ != EnumToken.AngleTokenType &&
+                                child.typ != EnumToken.NumberTokenType &&
+                                child.typ != EnumToken.PercentageTokenType) ||
+                            getNumber(child as NumberToken) != 0
+                        ) {
+                            return null;
+                        }
+                    }
+
+                    break;
+
+                case "scale":
+                case "scaleX":
+                case "scaleY":
+                case "scaleZ":
+                case "scale3d":
+                    for (const child of (transform as FunctionToken).chi) {
+                        if (child.typ == EnumToken.WhitespaceTokenType || child.typ == EnumToken.CommaTokenType) {
+                            continue;
+                        }
+
+                        if (
+                            (child.typ != EnumToken.NumberTokenType && child.typ != EnumToken.PercentageTokenType) ||
+                            getNumber(child as NumberToken) != 1
+                        ) {
+                            return null;
+                        }
+                    }
+
+                    break;
+            }
+        }
+    }
+
+    return result;
 }
 
 export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix | null {

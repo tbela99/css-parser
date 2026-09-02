@@ -3,8 +3,8 @@ import { reduceHexValue } from '../syntax/color/hex.js';
 import { EnumToken, ColorType } from '../ast/types.js';
 import { expand } from '../ast/expand.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
-import { pseudoElements, urlTokenMatcher, PARENT, tokensfuncSet, LOCSTA, LOCSRCID, colorPrecision } from '../syntax/constants.js';
-import { minifyNumber, reducegradientBackgroundPosition, reduceConicColorStops, reduceColorStops, parseColor, isWhiteSpace, toPrecisionAngle, toPrecisionValue } from '../syntax/syntax.js';
+import { pseudoElements, anglePrecision, urlTokenMatcher, PARENT, tokensfuncSet, LOCSTA, LOCSRCID } from '../syntax/constants.js';
+import { minifyNumber, toPrecisionAngle, reducegradientBackgroundPosition, reduceConicColorStops, reduceColorStops, parseColor, isWhiteSpace, toPrecisionValue } from '../syntax/syntax.js';
 import { equalsIgnoreCase } from '../parser/utils/text.js';
 import { toDegrees } from '../parser/utils/angle.js';
 import { LineMap } from '../parser/linesmap.js';
@@ -1167,29 +1167,29 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                 const angle = getAngle(token);
                 let v;
                 let value = val + unit;
-                for (const u of ["turn", "deg", "rad", "grad"]) {
+                for (const u of ["deg", "turn", "rad", "grad"]) {
                     if (token.unit == u) {
                         continue;
                     }
                     switch (u) {
-                        case "turn":
-                            v = minifyNumber(toPrecisionAngle(angle, colorPrecision, false));
-                            if (v.length + 4 < value.length) {
-                                val = v;
-                                unit = u;
-                                value = v + u;
-                            }
-                            break;
                         case "deg":
-                            v = minifyNumber(toPrecisionAngle(angle * 360, colorPrecision, false));
+                            v = minifyNumber(toPrecisionAngle(angle * 360, anglePrecision, false).toFixed(anglePrecision));
                             if (v.length + 3 < value.length) {
                                 val = v;
                                 unit = u;
                                 value = v + u;
                             }
                             break;
+                        case "turn":
+                            v = minifyNumber(toPrecisionAngle(angle, anglePrecision, false).toFixed(anglePrecision));
+                            if (v.length + 4 < value.length) {
+                                val = v;
+                                unit = u;
+                                value = v + u;
+                            }
+                            break;
                         case "rad":
-                            v = minifyNumber(toPrecisionAngle(angle * (2 * Math.PI), colorPrecision, false));
+                            v = minifyNumber(toPrecisionAngle(angle * (2 * Math.PI), anglePrecision, false).toFixed(anglePrecision));
                             if (v.length + 3 < value.length) {
                                 val = v;
                                 unit = u;
@@ -1197,7 +1197,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                             }
                             break;
                         case "grad":
-                            v = minifyNumber(toPrecisionAngle(angle * 400, colorPrecision, false));
+                            v = minifyNumber(toPrecisionAngle(angle * 400, anglePrecision, false).toFixed(anglePrecision));
                             if (v.length + 4 < value.length) {
                                 val = v;
                                 unit = u;
