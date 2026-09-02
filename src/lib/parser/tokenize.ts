@@ -401,7 +401,7 @@ export class Tokenizer {
      * @param parseInfo
      * @returns
      */
-    consumeURLToken(parseInfo: ParseInfo): this {
+    consumeStringAsURLToken(parseInfo: ParseInfo): this {
         const quote: number = this.advance(parseInfo).charCodeAt(0);
         let charCode: number;
         let decodeSegments: boolean = false;
@@ -959,7 +959,7 @@ export class Tokenizer {
         return 0;
     }
 
-    parseURLToken(parseInfo: ParseInfo, endPosition: number): this {
+    consumeURLToken(parseInfo: ParseInfo, endPosition: number): this {
         let charCode: number;
 
         // consume an <url>
@@ -970,7 +970,7 @@ export class Tokenizer {
         charCode = this.peekCharCode(parseInfo);
 
         if (charCode == TokenMap.DOUBLE_QUOTE || charCode == TokenMap.SINGLE_QUOTE) {
-            return this.consumeURLToken(parseInfo);
+            return this.consumeStringAsURLToken(parseInfo);
         }
 
         do {
@@ -1464,8 +1464,7 @@ export class Tokenizer {
         while ((charCode = this.peekCharCode(parseInfo)) == charCode) {
             if (this.state === EnumToken.UrlFunctionTokenDefType) {
                 this.state = null;
-                return this.parseURLToken(parseInfo, endPosition);
-                continue;
+                return this.consumeURLToken(parseInfo, endPosition);
             }
 
             if (parseInfo.position == parseInfo.currentPosition) {

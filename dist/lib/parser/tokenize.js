@@ -324,7 +324,7 @@ class Tokenizer {
      * @param parseInfo
      * @returns
      */
-    consumeURLToken(parseInfo) {
+    consumeStringAsURLToken(parseInfo) {
         const quote = this.advance(parseInfo).charCodeAt(0);
         let charCode;
         let decodeSegments = false;
@@ -766,7 +766,7 @@ class Tokenizer {
         }
         return 0;
     }
-    parseURLToken(parseInfo, endPosition) {
+    consumeURLToken(parseInfo, endPosition) {
         let charCode;
         // consume an <url>
         while (isWhiteSpace(this.peekCharCode(parseInfo))) {
@@ -774,7 +774,7 @@ class Tokenizer {
         }
         charCode = this.peekCharCode(parseInfo);
         if (charCode == 34 /* TokenMap.DOUBLE_QUOTE */ || charCode == 39 /* TokenMap.SINGLE_QUOTE */) {
-            return this.consumeURLToken(parseInfo);
+            return this.consumeStringAsURLToken(parseInfo);
         }
         do {
             this.advance(parseInfo);
@@ -1185,7 +1185,7 @@ class Tokenizer {
         while ((charCode = this.peekCharCode(parseInfo)) == charCode) {
             if (this.state === EnumToken.UrlFunctionTokenDefType) {
                 this.state = null;
-                return this.parseURLToken(parseInfo, endPosition);
+                return this.consumeURLToken(parseInfo, endPosition);
             }
             if (parseInfo.position == parseInfo.currentPosition) {
                 if (charCode == 45 /* TokenMap.MINUS */ ||
