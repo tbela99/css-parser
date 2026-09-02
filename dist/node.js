@@ -8,7 +8,7 @@ import { doRender } from './lib/renderer/render.js';
 export { renderValue as renderToken } from './lib/renderer/render.js';
 import { ModuleScopeEnumOptions } from './lib/ast/types.js';
 export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ValidationLevel } from './lib/ast/types.js';
-import { tokenizeStream, tokenize } from './lib/parser/tokenize.js';
+import { Tokenizer } from './lib/parser/tokenize.js';
 import { dirname, resolve, matchUrl } from './lib/fs/resolve.js';
 import { ResponseType } from './types.js';
 import { resolve as resolve$1 } from 'node:path';
@@ -52,6 +52,9 @@ async function load(url, currentDirectory = ".", responseType = false) {
             if (responseType == ResponseType.ArrayBuffer) {
                 return response.arrayBuffer();
             }
+            if (responseType == ResponseType.JSON) {
+                return response.json();
+            }
             return responseType == ResponseType.ReadableStream
                 ? response.body
                 : response.text();
@@ -60,8 +63,8 @@ async function load(url, currentDirectory = ".", responseType = false) {
     try {
         const stats = await lstat(resolved.absolute);
         if (stats.isFile()) {
-            if (responseType == ResponseType.Text) {
-                return readFile(resolved.absolute, "utf-8");
+            if (responseType == ResponseType.Text || responseType == ResponseType.JSON) {
+                return readFile(resolved.absolute, "utf-8").then((buffer) => responseType == ResponseType.JSON ? JSON.parse(buffer) : buffer);
             }
             if (responseType == ResponseType.ArrayBuffer) {
                 return readFile(resolved.absolute).then((buffer) => buffer.buffer);
@@ -72,9 +75,7 @@ async function load(url, currentDirectory = ".", responseType = false) {
             }));
         }
     }
-    catch (error) {
-        console.warn(error);
-    }
+    catch (error) { }
     throw new Error(`File not found: '${resolved.absolute || url}'`);
 }
 /**
@@ -190,8 +191,10 @@ function parseSync(...args) {
         position: 0,
         currentPosition: 0,
     };
-    const result = doParseSync(tokenize(options.parseInfo), options);
-    return !options.module && !options.inputSourceMap && !options.sourcemap ? result : parseResult(result, options);
+    const result = doParseSync(new Tokenizer(options.parseInfo), options);
+    return options.module == null && options.inputSourceMap == null && !options.sourcemap
+        ? result
+        : parseResult(result, options);
 }
 /**
  * Transform CSS
@@ -348,7 +351,11 @@ async function parse(...args) {
         position: 0,
         currentPosition: 0,
     };
-    return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => (!options.module && !options.inputSourceMap ? result : parseResult(result, options)));
+    return doParse(stream instanceof ReadableStream
+        ? new Tokenizer(options.parseInfo, stream).tokenizeStream()
+        : new Tokenizer(options.parseInfo), options).then((result) => options.module == null && options.inputSourceMap == null && !options.sourcemap
+        ? result
+        : parseResult(result, options));
 }
 /**
  * Transform CSS file

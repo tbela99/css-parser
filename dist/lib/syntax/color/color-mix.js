@@ -16,6 +16,7 @@ import { XYZ_D65_to_D50, xyzd502lch } from './xyzd50.js';
 import { srgb2rec2020values } from './rec2020.js';
 import { isRectangularOrthogonalColorspace, isPolarColorspace } from '../syntax.js';
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
+import { srgb2a98values } from './a98rgb.js';
 
 function interpolateHue(interpolationMethod, h1, h2) {
     switch (interpolationMethod) {
@@ -124,65 +125,53 @@ function colorMix(...args) {
             case "srgb":
                 break;
             case "display-p3":
-                // @ts-ignore
-                values = srgb2p3values(...values);
+                values = srgb2p3values(values[0], values[1], values[2], values[3]);
                 break;
             case "display-p3-linear":
-                // @ts-ignore
-                values = srgb2lp3values(...values);
+                values = srgb2lp3values(values[0], values[1], values[2], values[3]);
                 break;
             case "a98-rgb":
-                // @ts-ignore
-                values = srgb2a98values(...values);
+                values = srgb2a98values(values[0], values[1], values[2], values[3]);
                 break;
             case "prophoto-rgb":
-                // @ts-ignore
-                values = srgb2prophotorgbvalues(...values);
+                values = srgb2prophotorgbvalues(values[0], values[1], values[2], values[3]);
                 break;
             case "srgb-linear":
-                // @ts-ignore
-                values = srgb2lsrgbvalues(...values);
+                values = srgb2lsrgbvalues(values[0], values[1], values[2], values[3]);
                 break;
             case "rec2020":
-                // @ts-ignore
-                values = srgb2rec2020values(...values);
+                values = srgb2rec2020values(values[0], values[1], values[2], values[3]);
                 break;
             case "xyz":
             case "xyz-d65":
-                // @ts-ignore
-                values = srgb2xyz_d65(...values);
+                values = srgb2xyz_d65(values[0], values[1], values[2], values[3]);
                 break;
             case "xyz-d50":
-                // @ts-ignore
-                values = XYZ_D65_to_D50(...srgb2xyz_d65(...values));
+                values = srgb2xyz_d65(values[0], values[1], values[2], values[3]);
+                values = XYZ_D65_to_D50(values[0], values[1], values[2], values[3]);
                 break;
             case "rgb":
-                // @ts-ignore
-                values = srgb2rgb(...values);
+                for (let j = 0; j < values.length; j++) {
+                    values[j] = j == 3 ? values[j] : srgb2rgb(values[j]);
+                }
                 break;
             case "hsl":
-                // @ts-ignore
-                values = srgb2hslvalues(...values);
+                values = srgb2hslvalues(values[0], values[1], values[2], values[3]);
                 break;
             case "hwb":
-                // @ts-ignore
-                values = srgb2hwb(...values);
+                values = srgb2hwb(values[0], values[1], values[2], values[3]);
                 break;
             case "lab":
-                // @ts-ignore
-                values = srgb2labvalues(...values);
+                values = srgb2labvalues(values[0], values[1], values[2], values[3]);
                 break;
             case "lch":
-                // @ts-ignore
-                values = srgb2lch(...values);
+                values = srgb2lch(values[0], values[1], values[2], values[3]);
                 break;
             case "oklab":
-                // @ts-ignore
-                values = srgb2oklab(...values);
+                values = srgb2oklab(values[0], values[1], values[2], values[3]);
                 break;
             case "oklch":
-                // @ts-ignore
-                values = srgb2oklch(...values);
+                values = srgb2oklch(values[0], values[1], values[2], values[3]);
                 break;
             default:
                 return null;
@@ -331,12 +320,10 @@ function colorMix(...args) {
         case "xyz-d65":
         case "xyz-d50":
             if (colorSpace == "xyz-d50") {
-                // @ts-ignore
-                values = xyzd502lch(...values);
+                values = xyzd502lch(values[0], values[1], values[2], values[3]);
             }
             else {
-                // @ts-ignore
-                values = xyz2lchvalues(...values);
+                values = xyz2lchvalues(values[0], values[1], values[2], values[3]);
             }
             // @ts-ignore
             return {

@@ -70,7 +70,7 @@ function hwbToken(values) {
     if (values.length == 4) {
         chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
             typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100
+            val: values[3] * 100,
         });
     }
     return {
@@ -81,21 +81,21 @@ function hwbToken(values) {
     };
 }
 function rgb2hwbvalues(token) {
-    // @ts-ignore
-    return srgb2hwb(...getColorComponents(token).map((t, index) => {
+    const values = getColorComponents(token).map((t, index) => {
         if (index == 3) {
             return getNumber(t);
         }
         return getNumber(t) / 255;
-    }));
+    });
+    // @ts-ignore
+    return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 function cmyk2hwbvalues(token) {
-    // @ts-ignore
-    return srgb2hwb(...cmyk2srgbvalues(token));
+    const values = cmyk2srgbvalues(token);
+    return values == null ? null : srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 function hsl2hwbvalues(token) {
-    // @ts-ignore
-    return hslvalues2hwbvalues(...getColorComponents(token).map((t, index) => {
+    const values = getColorComponents(token).map((t, index) => {
         if (index == 3 && t.typ == EnumToken.IdenTokenType && t.val == "none") {
             return 1;
         }
@@ -103,23 +103,23 @@ function hsl2hwbvalues(token) {
             return getAngle(t);
         }
         return getNumber(t);
-    }));
+    });
+    // @ts-ignore
+    return hslvalues2hwbvalues(values[0], values[1], values[2], values[3]);
 }
 function lab2hwbvalues(token) {
     const values = lab2srgbvalues(token);
     if (values == null) {
         return null;
     }
-    // @ts-ignore
-    return srgb2hwb(...values);
+    return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 function lch2hwbvalues(token) {
     const values = lch2srgbvalues(token);
     if (values == null) {
         return null;
     }
-    // @ts-ignore
-    return srgb2hwb(...values);
+    return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 function oklab2hwbvalues(token) {
     const values = oklab2srgbvalues(token);
@@ -127,12 +127,12 @@ function oklab2hwbvalues(token) {
         return null;
     }
     // @ts-ignore
-    return srgb2hwb(...values);
+    return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 function oklch2hwbvalues(token) {
     const values = oklch2srgbvalues(token);
     // @ts-ignore
-    return values == null ? null : srgb2hwb(...values);
+    return values == null ? null : srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 function rgb2hue(r, g, b, fallback = 0) {
     let value = rgb2value(r, g, b);
@@ -160,7 +160,7 @@ function color2hwbvalues(token) {
         return null;
     }
     // @ts-ignore
-    return srgb2hwb(...values);
+    return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 function srgb2hwb(r, g, b, a = null, fallback = 0) {
     r *= 100;
@@ -184,8 +184,9 @@ function hsv2hwb(h, s, v, a = null) {
     return result;
 }
 function hslvalues2hwbvalues(h, s, l, a = null) {
+    let values = hsl2hsv(h, s, l);
     // @ts-ignore
-    return hsv2hwb(...hsl2hsv(h, s, l, a));
+    return hsv2hwb(values[0], values[1], values[2], a);
 }
 
 export { cmyk2hwbToken, cmyk2hwbvalues, color2hwbToken, color2hwbvalues, hsl2hwbToken, hsl2hwbvalues, hslvalues2hwbvalues, hsv2hwb, hwbToken, lab2hwbToken, lab2hwbvalues, lch2hwbToken, lch2hwbvalues, oklab2hwbToken, oklab2hwbvalues, oklch2hwbToken, oklch2hwbvalues, rgb2hwbToken, rgb2hwbvalues, srgb2hwb };

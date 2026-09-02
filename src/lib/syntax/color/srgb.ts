@@ -114,8 +114,9 @@ export function hex2srgbvalues(token: ColorToken): number[] {
 
 // xyz d65 input
 export function xyz2srgb(x: number, y: number, z: number, alpha: number | null = null): number[] {
+    let values = XYZ_to_lin_sRGB(x, y, z);
     // @ts-ignore
-    return lsrgb2srgbvalues(...XYZ_to_lin_sRGB(x, y, z, alpha));
+    return lsrgb2srgbvalues(values[0], values[1], values[2], alpha);
 }
 
 export function hwb2srgbvalues(token: ColorToken): number[] | null {
@@ -216,8 +217,8 @@ export function oklch2srgbvalues(token: ColorToken): number[] | null {
         return null;
     }
 
-    // @ts-ignore
-    const rgb: number[] = OKLab_to_sRGB(...lchvalues2labvalues(l, c, h));
+    const values = lchvalues2labvalues(l, c, h);
+    const rgb: number[] = OKLab_to_sRGB(values[0], values[1], values[2]);
 
     if (alpha != 1) {
         rgb.push(alpha);
@@ -344,7 +345,7 @@ export function lch2srgbvalues(token: ColorToken): number[] | null {
     }
 
     // @ts-ignore
-    const [l, a, b, alpha] = lchvalues2labvalues(...components);
+    const [l, a, b, alpha] = lchvalues2labvalues(components[0], components[1], components[2], components[3]);
 
     if (l == null || a == null || b == null) {
         return null;

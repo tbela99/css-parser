@@ -37,7 +37,7 @@ export function hashId(input: string, length: number = 6): string {
 
     // Remaining characters
     for (let i = 1; i < length; i++) {
-        n = (n + chars.length + i) % FULL_ALPHABET.length;
+        n = (n + chars.length * i) % FULL_ALPHABET.length;
         chars.push(FULL_ALPHABET[n]);
     }
 
@@ -49,7 +49,7 @@ export function hashId(input: string, length: number = 6): string {
  * @param input
  * @returns
  */
-function toSortedString(input: any): string {
+export function toSortedString(input: any): string {
     if (input == null) {
         return "null";
     }
@@ -73,23 +73,30 @@ function toSortedString(input: any): string {
  * @returns
  */
 export function objectHash(object: any): string {
-    return hashId(toSortedString(object));
+    return hashCode(toSortedString(object)).toString(16);
 }
 
 /**
  * convert input to hex
  * @param input
  */
-function toHex(input: ArrayBuffer | string): string {
+function toHex(input: ArrayBuffer | string, length?: number): string {
     let result = "";
 
     if (input instanceof ArrayBuffer || ArrayBuffer.isView(input)) {
         for (const byte of Array.from(new Uint8Array(input as ArrayBuffer))) {
             result += byte.toString(16).padStart(2, "0");
+
+            if (length != null && result.length >= length) {
+                return result;
+            }
         }
     } else {
         for (const char of String(input)) {
             result += char.charCodeAt(0).toString(16).padStart(2, "0");
+            if (length != null && result.length >= length) {
+                return result;
+            }
         }
     }
 

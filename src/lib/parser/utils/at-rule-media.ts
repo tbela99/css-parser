@@ -12,7 +12,7 @@ import type {
 import { EnumToken } from "../../ast/types.ts";
 import { evaluate } from "../../ast/math/expression.ts";
 import { gcd } from "../../ast/math/math.ts";
-import { LOC, mediaTypes, mFGT, mFLT } from "../../syntax/constants.ts";
+import { LOCEND, LOCSRCID, LOCSTA, mediaTypes, mFGT, mFLT } from "../../syntax/constants.ts";
 
 import { createValidationContext, getMFInfo, isMFValue, matchAllSyntaxes, trimArray } from "../../validation/match.ts";
 import { MediaFeatureType, ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
@@ -92,7 +92,7 @@ export function parseMediaqueryList(
                             action: "drop",
                             message: `expecting '<media-type>'`,
                             node: stream[i],
-                            location: options.source!.getSourceLocation(stream[i][LOC]!.sta),
+                            location: options.source!.getSourceLocation(stream[i][LOCSTA]!),
                         });
                     }
                 } else if (stream[i].typ !== EnumToken.StartParensTokenType) {
@@ -101,7 +101,7 @@ export function parseMediaqueryList(
                         action: "drop",
                         message: `expecting '('`,
                         node: stream[i],
-                        location: options.source!.getSourceLocation(stream[i][LOC]!.sta),
+                        location: options.source!.getSourceLocation(stream[i][LOCSTA]!),
                     });
                 }
             }
@@ -123,7 +123,6 @@ export function parseMediaqueryList(
                         valid = stream[i].typ !== EnumToken.CommaTokenType;
                     }
 
-
                     expectAndOrComma = false;
                 }
 
@@ -134,8 +133,6 @@ export function parseMediaqueryList(
                 }
 
                 switch (stream[i].typ) {
-                   
-
                     case EnumToken.ColonTokenType:
                     case EnumToken.LtTokenType:
                     case EnumToken.LteTokenType:
@@ -160,7 +157,7 @@ export function parseMediaqueryList(
                                         action: "drop",
                                         node: stream[i],
                                         message: `<or> is not allowed outside of parentheses`,
-                                        location: options.source!.getSourceLocation(stream[i][LOC]!.sta),
+                                        location: options.source!.getSourceLocation(stream[i][LOCSTA]!),
                                     });
 
                                     break;
@@ -172,7 +169,7 @@ export function parseMediaqueryList(
                                         action: "drop",
                                         node: stream[i],
                                         message: `cannot mix <and> and <or> at the same level`,
-                                        location: options.source!.getSourceLocation(stream[i][LOC]!.sta),
+                                        location: options.source!.getSourceLocation(stream[i][LOCSTA]!),
                                     });
                                 }
 
@@ -187,7 +184,7 @@ export function parseMediaqueryList(
                         if (tokensfuncDefMap.has(stack.at(-1)?.typ)) {
                             const index: number = tokens.indexOf(stack.at(-1)!);
 
-                            tokens[index][LOC] = { ...tokens[index][LOC]!, end: stream[i]![LOC]!.end };
+                            tokens[index][LOCEND] = stream[i]![LOCEND];
                             Object.assign(tokens[index], {
                                 typ: tokensfuncDefMap.get(stack.at(-1)?.typ),
                                 chi: trimArray(tokens.slice(index + 1, tokens.length - 1)),
@@ -211,7 +208,10 @@ export function parseMediaqueryList(
                             currentScope = scopes.at(-1)!;
 
                             if (!result.success) {
-                                errors.push(...result.errors);
+                                for (const error of result.errors) {
+                                    errors.push(error);
+                                }
+
                                 success = false;
                             }
 
@@ -225,7 +225,6 @@ export function parseMediaqueryList(
                             const prevToken: Token = stack[stack.length - 2];
 
                             if (mFLT.has(prevToken?.typ) || mFGT.has(prevToken?.typ)) {
-                              
                                 // const index: number = tokens.indexOf(stack.at(-1)!);
                                 // <mf-lt> | <mf-name>
                                 const index2: number = tokens.indexOf(prevToken);
@@ -240,7 +239,6 @@ export function parseMediaqueryList(
                                     (n) =>
                                         n.typ !== EnumToken.WhitespaceTokenType && n.typ !== EnumToken.CommentTokenType,
                                 );
-
 
                                 const name: string = (filteredNames[0] as IdentToken | DashedIdentToken).val;
                                 const mfInfo = getMFInfo(name);
@@ -260,8 +258,9 @@ export function parseMediaqueryList(
                                                     const value = evaluate([val[l]]);
 
                                                     if (value.length == 1) {
-                                                       
-                                                        value[0][LOC] = val[l][LOC];
+                                                        value[0][LOCSRCID] = val[l][LOCSRCID];
+                                                        value[0][LOCSTA] = val[l][LOCSTA];
+                                                        value[0][LOCEND] = val[l][LOCEND];
                                                         val[l] = value[0];
                                                     }
                                                 }
@@ -272,9 +271,7 @@ export function parseMediaqueryList(
 
                                 // let isValidMFValue = isMFValue(name, left, true);
 
-
                                 // isValidMFValue = isMFValue(name, right, true);
-
 
                                 for (const val of [left, right]) {
                                     if (mfInfo?.type === MediaFeatureType.RatioType) {
@@ -311,7 +308,9 @@ export function parseMediaqueryList(
                                     op1: prevToken,
                                     op2: stack.at(-1)!,
                                     r: right,
-                                    [LOC]: { ...left[0][LOC]!, end: right.at(-1)![LOC]!.end },
+                                    [LOCSRCID]: left[0][LOCSRCID],
+                                    [LOCSTA]: left[0][LOCSTA],
+                                    [LOCEND]: right.at(-1)![LOCEND],
                                 } as MediaRangeQueryToken);
 
                                 stack.pop();
@@ -321,13 +320,11 @@ export function parseMediaqueryList(
 
                         if (
                             stack.length > 0 &&
-                            (
-                            mFGT.has(stack.at(-1)?.typ) ||
-                            mFLT.has(stack.at(-1)?.typ) ||
-                            stack.at(-1)?.typ === EnumToken.DelimTokenType ||
-                            stack.at(-1)?.typ === EnumToken.ColonTokenType)
+                            (mFGT.has(stack.at(-1)?.typ) ||
+                                mFLT.has(stack.at(-1)?.typ) ||
+                                stack.at(-1)?.typ === EnumToken.DelimTokenType ||
+                                stack.at(-1)?.typ === EnumToken.ColonTokenType)
                         ) {
-
                             const index2: number = tokens.indexOf(stack.at(-1)!);
                             const index3: number = tokens.indexOf(stack.at(-2)!);
 
@@ -335,13 +332,11 @@ export function parseMediaqueryList(
                             let values: Token[] = trimArray(tokens.slice(index2 + 1, tokens.length - 1));
                             let swapped: boolean = false;
 
-
                             const filteredNames = (swapped ? values : names).filter(
                                 (n) => n.typ !== EnumToken.WhitespaceTokenType && n.typ !== EnumToken.CommentTokenType,
                             );
 
                             const name: string = (filteredNames[0] as IdentToken | DashedIdentToken).val;
-
 
                             const mfInfo = getMFInfo(name);
                             if (options.computeCalcExpression) {
@@ -360,8 +355,9 @@ export function parseMediaqueryList(
                                             const value = evaluate([val[l]]);
 
                                             if (value.length == 1) {
-                                               
-                                                value[0][LOC] = val[l][LOC];
+                                                value[0][LOCSRCID] = val[l][LOCSRCID];
+                                                value[0][LOCSTA] = val[l][LOCSTA];
+                                                value[0][LOCEND] = val[l][LOCEND];
                                                 val[l] = value[0];
                                             }
                                         }
@@ -383,7 +379,7 @@ export function parseMediaqueryList(
                                 errors.push({
                                     action: "drop",
                                     node: arr[0],
-                                    location: options.source!.getSourceLocation(arr[0]?.[LOC]!.sta),
+                                    location: options.source!.getSourceLocation(arr[0]?.[LOCSTA]!),
                                     message: `${mfValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"}`,
                                 });
 
@@ -417,13 +413,15 @@ export function parseMediaqueryList(
                                 }
                             }
 
+                            // @ts-expect-error
                             tokens.splice(index3 + 1, tokens.length - index3 - 2, {
                                 typ: EnumToken.MediaQueryConditionTokenType,
                                 l: names,
                                 op: stack.pop() as Token,
                                 r: values,
-                                // @ts-expect-error
-                                [LOC]: { ...names[0][LOC]!, end: values.at(-1)![LOC]!.end } as Location,
+                                [LOCSRCID]: names[0][LOCSRCID],
+                                [LOCSTA]: names[0][LOCSTA],
+                                [LOCEND]: values.at(-1)![LOCEND],
                             });
                         }
 
@@ -432,7 +430,7 @@ export function parseMediaqueryList(
                             errors.push({
                                 action: "drop",
                                 node: stream[i],
-                                location: options.source!.getSourceLocation(stream[i]?.[LOC]!.sta),
+                                location: options.source!.getSourceLocation(stream[i]?.[LOCSTA]!),
                                 message: `unmatched ')'`,
                             });
 
@@ -440,21 +438,20 @@ export function parseMediaqueryList(
                         }
 
                         {
-
                             const index: number = tokens.indexOf(stack.at(-1)!);
 
                             tokens[index] = {
                                 typ: EnumToken.ParensTokenType,
                                 chi: tokens.slice(index + 1, tokens.length - 1),
-                                // @ts-expect-error
-                                [LOC]: { ...tokens[index][LOC]!, end: stream[i]![LOC]!.end } as Location,
+                                [LOCSRCID]: tokens[index]![LOCSRCID],
+                                [LOCSTA]: tokens[index]![LOCSTA],
+                                [LOCEND]: stream[i]![LOCEND],
                             };
 
                             tokens.length = index + 1;
                             scopes.pop();
                             currentScope = scopes.at(-1)!;
                             stack.pop();
-
 
                             if (
                                 stack.at(-1)?.typ === EnumToken.AndTokenType ||
@@ -479,7 +476,9 @@ export function parseMediaqueryList(
                                     op: stack.pop()!,
                                     l: left,
                                     r: right,
-                                    [LOC]: { ...left[0][LOC]!, end: right.at(-1)![LOC]!.end },
+                                    [LOCSRCID]: left[0][LOCSRCID],
+                                    [LOCSTA]: left[0][LOCSTA],
+                                    [LOCEND]: right.at(-1)![LOCEND],
                                 } as MediaQueryConditionToken;
                                 tokens.length = l + 1;
 
@@ -501,7 +500,10 @@ export function parseMediaqueryList(
             }
 
             stream.length = 0;
-            stream.push(...trimArray(tokens));
+
+            for (const t of trimArray(tokens)) {
+                stream.push(t);
+            }
         }
     }
 
@@ -514,7 +516,10 @@ export function parseMediaqueryList(
                     acc.push({ typ: EnumToken.CommaTokenType });
                 }
 
-                acc.push(...b);
+                for (const t of b) {
+                    acc.push(t);
+                }
+
                 return acc;
             }, []),
     );

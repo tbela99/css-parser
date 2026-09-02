@@ -1,4 +1,4 @@
-import { TOKENS, ERRORS, STATE, LOC, PARENT } from '../syntax/constants.js';
+import { TOKENS, ERRORS, STATE, LOCSRCID, LOCSTA, LOCEND, PARENT } from '../syntax/constants.js';
 
 /**
  *
@@ -11,7 +11,7 @@ function getNodeProperty(node, key) {
         case "parent":
             return node[PARENT];
         case "location":
-            return node[LOC];
+            return node[LOCSRCID] == null && node[LOCSTA] == null && node[LOCEND] == null ? null : { srcId: node[LOCSRCID], sta: node[LOCSTA], end: node[LOCEND] };
         case "state":
             return node[STATE];
         case "errors":
@@ -33,7 +33,9 @@ function setNodeProperty(node, key, value) {
             node[PARENT] = value;
             break;
         case "location":
-            node[LOC] = value;
+            node[LOCSRCID] = value.srcId;
+            node[LOCSTA] = value.sta;
+            node[LOCEND] = value.end;
             break;
         case "state":
             node[STATE] = value;

@@ -1,6 +1,6 @@
 import { EnumToken } from '../../ast/types.js';
 import { trimArray } from '../../validation/match.js';
-import { tokensfuncDefMap, LOC } from '../../syntax/constants.js';
+import { tokensfuncDefMap, LOCEND, LOCSTA, LOCSRCID } from '../../syntax/constants.js';
 import { parseMediaqueryList } from './at-rule-media.js';
 import { parseAtRuleSupportSyntax } from './at-rule-support.js';
 
@@ -60,7 +60,9 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
                     const tokenList = [
                         {
                             typ: EnumToken.StartParensTokenType,
-                            [LOC]: { ...stream[i][LOC], end: stream[j]?.[LOC]?.end },
+                            [LOCSRCID]: stream[i][LOCSRCID],
+                            [LOCSTA]: stream[i][LOCSTA],
+                            [LOCEND]: stream[j]?.[LOCEND],
                         },
                         // @ts-expect-error
                     ].concat(slice.slice(1));
@@ -83,32 +85,13 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
                             return result;
                         }
                     }
-                    // else {
-                    //     errors.push({
-                    //         action: "ignore",
-                    //         message: `unknown <boolean-condition> function '${funcName}' at ${stream[i]?.[LOC]?.src}:${stream[i]?.[LOC]?.sta.lin}:${stream[i]?.[LOC]?.sta.col}`,
-                    //         node: stream[i],
-                    //         location: stream[i][LOC],
-                    //     });
-                    // }
-                    stream[i][LOC] = { ...stream[i][LOC], end: stream[j]?.[LOC]?.end };
+                    stream[i][LOCEND] = stream[j]?.[LOCEND];
                     Object.assign(stream[i], {
                         typ: tokensfuncDefMap.get(stream[i].typ),
                         chi: stream[i].typ === EnumToken.SupportsFunctionTokenDefType
                             ? trimArray(slice.slice(1, -1))
                             : tokenList[0].chi,
                     });
-                    // if (stack.at(-1)?.typ === EnumToken.NotTokenType || stack.at(-1)?.typ === EnumToken.OnlyTokenType) {
-                    //     const index: number = tokens.indexOf(stack.at(-1)!);
-                    //     tokens[index] = {
-                    //         typ: EnumToken.WhenElseUnaryConditionTokenType,
-                    //         l: stack.at(-1)!,
-                    //         r: trimArray(tokens.slice(index + 1)),
-                    //         [LOC]: { ...stack.at(-1)![LOC], end: { ...stream[i]?.[LOC]?.end } },
-                    //     } as WhenElseUnaryConditionToken;
-                    //     tokens.length = index + 1;
-                    //     stack.pop();
-                    // }
                     if (stack.at(-1)?.typ === EnumToken.AndTokenType || stack.at(-1)?.typ === EnumToken.OrTokenType) {
                         const index = tokens.indexOf(stack.at(-1));
                         const index2 = stack.length > 1 ? tokens.indexOf(stack.at(-2)) + 1 : 0;
@@ -117,7 +100,9 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
                             op: stack.at(-1),
                             l: trimArray(tokens.slice(index2, index)),
                             r: trimArray(tokens.slice(index + 1)),
-                            [LOC]: { ...stack.at(-1)[LOC], end: stream[i]?.[LOC]?.end },
+                            [LOCSRCID]: stack.at(-1)[LOCSRCID],
+                            [LOCSTA]: stack.at(-1)[LOCSTA],
+                            [LOCEND]: stream[i]?.[LOCEND],
                         };
                         tokens.length = index2 + 1;
                         stack.pop();
@@ -128,22 +113,10 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
                 break;
         }
     }
-    // if (stack.length > 0) {
-    //     return {
-    //         success: false,
-    //         errors: [
-    //             {
-    //                 action: "drop",
-    //                 node: stack.at(-1),
-    //                 message: `unmatched token '${renderValue(stack.at(-1) as Token)}' at ${stack.at(-1)![LOC]!.src}:${
-    //                     stack.at(-1)![LOC]!.sta.lin
-    //                 }:${stack.at(-1)![LOC]!.sta.col}`,
-    //             },
-    //         ],
-    //     };
-    // }
     stream.length = 0;
-    stream.push(...trimArray(tokens));
+    for (const token of trimArray(tokens)) {
+        stream.push(token);
+    }
     return { success, errors };
 }
 

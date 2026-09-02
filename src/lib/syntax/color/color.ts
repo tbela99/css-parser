@@ -132,8 +132,8 @@ import {
     rgb2cmykToken,
 } from "./cmyk.ts";
 import { a98rgb2srgbvalues, srgb2a98values } from "./a98rgb.ts";
-import { epsilon, LOC } from "../constants.ts";
-import { colorFuncColorSpace, colorPrecision, anglePrecision } from "../constants.ts";
+import { LOCEND, LOCSRCID, LOCSTA } from "../constants.ts";
+import { colorFuncColorSpace } from "../constants.ts";
 import { trimArray } from "../../validation/match.ts";
 import { alpha } from "./alpha.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
@@ -168,8 +168,9 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
             args.splice(args.length - 2, 1);
         }
 
-        // @ts-expect-error
-        token = alpha(...trimArray(args.slice(1)));
+        let values = trimArray(args.slice(1));
+
+        token = alpha(values[0] as ColorToken, values[1] as Token) as ColorToken;
 
         if (token == null) {
             return null;
@@ -226,11 +227,17 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
 
             let { cal, ...tk } = {
                 ...token,
-                chi: [...((token as ColorToken).val == "color" ? [chi[offset]] : []), ...Object.values(components)],
+                chi: (token as ColorToken).val == "color" ? [chi[offset]] : [],
                 kin: ColorType[token.val.toUpperCase().replaceAll("-", "_") as keyof typeof ColorType],
             };
 
-            tk[LOC] = token[LOC];
+            for (const t of Object.values(components)) {
+                tk.chi.push(t);
+            }
+
+            tk[LOCSRCID] = token[LOCSRCID];
+            tk[LOCSTA] = token[LOCSTA];
+            tk[LOCEND] = token[LOCEND];
             token = tk as ColorToken;
         }
     }
@@ -697,52 +704,38 @@ export function color2colorToken(token: ColorToken, to: ColorType): ColorToken |
     return values2colortoken(values, to);
 }
 
-function srgb2srgbcolorspace(val: number[], to: ColorType): number[] {
-    const values: number[] = [];
-
+function srgb2srgbcolorspace(val: number[], to: ColorType): number[] | null {
     switch (to) {
         case ColorType.SRGB:
-            values.push(...val);
-            break;
+            return val;
+
         case ColorType.SRGB_LINEAR:
-            // @ts-ignore
-            values.push(...srgb2lsrgbvalues(...val));
-            break;
+            return srgb2lsrgbvalues(val[0], val[1], val[2], val[3]);
+
         case ColorType.DISPLAY_P3:
-            // @ts-ignore
-            values.push(...srgb2p3values(...val));
-            break;
+            return srgb2p3values(val[0], val[1], val[2], val[3]);
+
         case ColorType.DISPLAY_P3_LINEAR:
-            // @ts-ignore
-            values.push(...srgb2lp3values(...val));
-            break;
+            return srgb2lp3values(val[0], val[1], val[2], val[3]);
+
         case ColorType.PROPHOTO_RGB:
-            // @ts-ignore
-            values.push(...srgb2prophotorgbvalues(...val));
-            break;
+            return srgb2prophotorgbvalues(val[0], val[1], val[2], val[3]);
+
         case ColorType.A98_RGB:
-            // @ts-ignore
-            values.push(...srgb2a98values(...val));
-            break;
+            return srgb2a98values(val[0], val[1], val[2], val[3]);
 
         case ColorType.REC2020:
-            // @ts-ignore
-            values.push(...srgb2rec2020values(...val));
-            break;
+            return srgb2rec2020values(val[0], val[1], val[2], val[3]);
 
         case ColorType.XYZ:
         case ColorType.XYZ_D65:
-            // @ts-ignore
-            values.push(...srgb2xyz(...val));
-            break;
+            return srgb2xyz(val[0], val[1], val[2], val[3]);
 
         case ColorType.XYZ_D50:
-            // @ts-ignore
-            values.push(...srgb2xyz_d65(...val));
-            break;
+            return srgb2xyz_d65(val[0], val[1], val[2], val[3]);
     }
 
-    return values;
+    return null;
 }
 
 export function minmax(value: number, min: number, max: number): number {
@@ -763,37 +756,29 @@ export function color2srgbvalues(token: ColorToken): number[] | null {
 
     switch (colorSpace.val) {
         case "display-p3":
-            // @ts-ignore
-            values = p32srgbvalues(...values);
+            values = p32srgbvalues(values[0], values[1], values[2], values[3]);
             break;
         case "display-p3-linear":
-            // @ts-ignore
-            values = lp32srgbvalues(...values);
+            values = lp32srgbvalues(values[0], values[1], values[2], values[3]);
             break;
         case "srgb-linear":
-            // @ts-ignore
-            values = lsrgb2srgbvalues(...values);
+            values = lsrgb2srgbvalues(values[0], values[1], values[2], values[3]);
             break;
         case "prophoto-rgb":
-            // @ts-ignore
-            values = prophotorgb2srgbvalues(...values);
+            values = prophotorgb2srgbvalues(values[0], values[1], values[2], values[3]);
             break;
         case "a98-rgb":
-            // @ts-ignore
-            values = a98rgb2srgbvalues(...values);
+            values = a98rgb2srgbvalues(values[0], values[1], values[2], values[3]);
             break;
         case "rec2020":
-            // @ts-ignore
-            values = rec20202srgb(...values);
+            values = rec20202srgb(values[0], values[1], values[2], values[3]);
             break;
         case "xyz":
         case "xyz-d65":
-            // @ts-ignore
-            values = xyz2srgb(...values);
+            values = xyz2srgb(values[0], values[1], values[2], values[3]);
             break;
         case "xyz-d50":
-            // @ts-ignore
-            values = xyzd502srgb(...values);
+            values = xyzd502srgb(values[0], values[1], values[2], values[3]);
             break;
     }
 
@@ -804,8 +789,13 @@ export function color2srgbvalues(token: ColorToken): number[] | null {
     return values;
 }
 
-function values2colortoken(values: number[], to: ColorType): ColorToken {
+function values2colortoken(values: number[], to: ColorType): ColorToken | null {
+    // @ts-expect-error
     values = srgb2srgbcolorspace(values, to);
+
+    if (values == null) {
+        return null;
+    }
 
     const chi: Token[] = [
         { typ: EnumToken.NumberTokenType, val: values[0] },

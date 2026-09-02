@@ -1,9 +1,9 @@
 import { EnumToken } from '../types.js';
-import { walkValues, WalkerEvent, WalkerOptionEnum } from '../walk.js';
+import { walkValues } from '../walk.js';
 import { evaluate } from '../math/expression.js';
-import { renderValue } from '../../renderer/render.js';
 import { FeatureWalkMode } from './type.js';
-import { mathFuncs, tokensfuncSet, LOC } from '../../syntax/constants.js';
+import { tokensfuncSet, mathFuncs, LOCEND, LOCSTA, LOCSRCID } from '../../syntax/constants.js';
+import { replaceNodeOrValue } from '../../parser/utils/token.js';
 
 class ComputeCalcExpressionFeature {
     accept = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
@@ -28,57 +28,15 @@ class ComputeCalcExpressionFeature {
                 continue;
             }
             const set = new Set();
-            for (const { value, parent } of walkValues(node.val, node, {
-                event: WalkerEvent.Enter,
-                // @ts-ignore
-                fn(node, parent) {
-                    if (parent != null &&
-                        // @ts-ignore
-                        parent.typ == EnumToken.DeclarationNodeType &&
-                        // @ts-ignore
-                        parent.val.length == 1 &&
-                        (node.typ === EnumToken.MathFunctionTokenType || node.typ === EnumToken.FunctionTokenType) &&
-                        mathFuncs.includes(node.val) &&
-                        node.chi.length == 1 &&
-                        node.chi[0].typ == EnumToken.IdenTokenType) {
-                        return WalkerOptionEnum.Ignore;
-                    }
-                    if ((node.typ === EnumToken.WildCardFunctionTokenType && node.val == "var") ||
-                        (!mathFuncs.includes(parent.val) &&
-                            [
-                                EnumToken.MathFunctionTokenType,
-                                EnumToken.ColorTokenType,
-                                EnumToken.DeclarationNodeType,
-                                EnumToken.ImageFunc,
-                                EnumToken.RuleNodeType,
-                                EnumToken.AtRuleNodeType,
-                                EnumToken.StyleSheetNodeType,
-                            ].includes(parent?.typ))) {
-                        return null;
-                    }
+            for (const { value, parent } of walkValues(node.val, node)) {
+                if (parent?.typ == EnumToken.BinaryExpressionTokenType) {
+                    continue;
+                }
+                if (value.typ == EnumToken.BinaryExpressionTokenType) {
                     // @ts-ignore
-                    const slice = (node.typ == EnumToken.FunctionTokenType || node.typ == EnumToken.MathFunctionTokenType
-                        ? node.chi
-                        : node.typ == EnumToken.DeclarationNodeType
-                            ? node.val
-                            : node.chi)?.slice();
-                    if (slice != null &&
-                        (node.typ === EnumToken.MathFunctionTokenType ||
-                            (node.typ == EnumToken.FunctionTokenType &&
-                                mathFuncs.includes(node.val)))) {
-                        // @ts-ignore
-                        const key = "chi" in node ? "chi" : "val";
-                        const str1 = renderValue({ ...node, [key]: slice });
-                        const str2 = renderValue(node); // values.reduce((acc: string, curr: Token): string => acc + renderValue(curr), '');
-                        if (str1.length < str2.length) {
-                            // @ts-ignore
-                            node[key] = slice;
-                        }
-                        return WalkerOptionEnum.Ignore;
-                    }
-                    return null;
-                },
-            })) {
+                    replaceNodeOrValue(parent, value, evaluate([value]));
+                    continue;
+                }
                 if (value != null && tokensfuncSet.has(value.typ)) {
                     if (!set.has(value)) {
                         set.add(value);
@@ -125,7 +83,9 @@ class ComputeCalcExpressionFeature {
                                                     typ: EnumToken.MathFunctionTokenType,
                                                     val: "calc",
                                                     chi: values,
-                                                    [LOC]: value[LOC],
+                                                    [LOCSRCID]: value[LOCSRCID],
+                                                    [LOCSTA]: value[LOCSTA],
+                                                    [LOCEND]: value[LOCEND],
                                                 }
                                                 : values[0]);
                                             break;
@@ -139,7 +99,9 @@ class ComputeCalcExpressionFeature {
                                                 typ: EnumToken.MathFunctionTokenType,
                                                 val: "calc",
                                                 chi: values,
-                                                [LOC]: value[LOC],
+                                                [LOCSRCID]: value[LOCSRCID],
+                                                [LOCSTA]: value[LOCSTA],
+                                                [LOCEND]: value[LOCEND],
                                             });
                                             break;
                                         }

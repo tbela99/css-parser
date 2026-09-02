@@ -1,5 +1,38 @@
 # Changelog
 
+# v1.6.0
+
+- [x] added support for math function `tan()`.
+
+## Improvements
+- [x] faster tokenizer
+- [x] ensure transform: rotate(360deg) is not minified to transform: none
+- [x] support input sourcemap from inline sourcemap file. This is only supported by the async parser.
+
+```css
+
+table.colortable {
+ width: 100%;
+ text-shadow: none;
+ border-collapse: collapse
+}
+table.colortable td {
+ text-align: center
+}
+table.colortable td.c {
+ text-transform: uppercase;
+ background: #ff0
+}
+table.colortable th {
+ text-align: center;
+ color: green;
+ font-weight: 400;
+ padding: 2px 3px
+}
+
+/*# sourceMappingURL=sourcemap.css.map */
+```
+
 # v1.5.0
 
 ## Improvements

@@ -28,9 +28,8 @@ function expand(ast) {
             children = expandRule(node);
             for (const child of children) {
                 child[PARENT] = result;
+                result.chi.push(child);
             }
-            // @ts-ignore
-            result.chi.push(...children);
         }
         else if (node.typ == EnumToken.AtRuleNodeType && "chi" in node) {
             let hasRule = false;
@@ -150,6 +149,13 @@ function expandRule(node) {
                     }
                     if (withCompound.length > 0) {
                         if (withCompound.every((t) => t[0] == "&" && t.indexOf("&", 1) == -1)) {
+                            // for (const w of withCompound) {
+                            //     for (let m = 0; m < w.length; m++) {
+                            //         // for (let n = 0; n < w[m].length; n++) {
+                            //         withoutCompound.push(w[m].slice(1));
+                            //         // }
+                            //     }
+                            // }
                             withoutCompound.push(...withCompound.map((t) => t.slice(1)));
                             withCompound.length = 0;
                         }
@@ -189,7 +195,9 @@ function expandRule(node) {
                     rule.sel = selectors.reduce((acc, curr) => (curr.length == 0 ? acc : acc + (acc.length > 0 ? "," : "") + curr), "");
                 }
                 ast.chi.splice(i--, 1);
-                result.push(...expandRule(rule));
+                for (const s of expandRule(rule)) {
+                    result.push(s);
+                }
             }
             else if (ast.chi[i].typ == EnumToken.AtRuleNodeType) {
                 let astAtRule = ast.chi[i];
@@ -224,13 +232,19 @@ function expandRule(node) {
                             values.push(r);
                         }
                         else if (r.typ == EnumToken.RuleNodeType) {
-                            // @ts-ignore
-                            astAtRule.chi.push(...expandRule(r));
+                            for (const rule of expandRule(r)) {
+                                // @ts-ignore
+                                astAtRule.chi.push(rule);
+                            }
                         }
                     }
                 }
-                // @ts-ignore
-                result.push(...(astAtRule.chi.length > 0 ? [astAtRule].concat(values) : values));
+                if (astAtRule.chi.length > 0) {
+                    result.push(astAtRule);
+                }
+                for (const r of values) {
+                    result.push(r);
+                }
                 ast.chi.splice(i--, 1);
             }
         }

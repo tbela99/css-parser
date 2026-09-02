@@ -1,8 +1,10 @@
 import { epsilon } from "../../syntax/constants.ts";
 import type { DecomposedMatrix3D, Matrix, Point } from "./type.d.ts";
 
+const identityMatrix = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+
 export function identity(): Matrix {
-    return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] as Matrix;
+    return identityMatrix.slice() as Matrix;
 }
 function normalize(point: Point): Point {
     const [x, y, z] = point;
@@ -25,17 +27,32 @@ function dot(
 }
 
 export function multiply(matrixA: Matrix, matrixB: Matrix): Matrix {
-    let result: Matrix = new Array(16).fill(0) as Matrix;
+    const result = new Float32Array(16) as Matrix;
 
-    for (let i = 0; i < 4; i++) {
-        for (let j = 0; j < 4; j++) {
-            for (let k = 0; k < 4; k++) {
-                // Utiliser l'indexation linéaire pour accéder aux éléments
-                // Pour une matrice 4x4, l'index est (row * 4 + col)
-                result[j * 4 + i] += matrixA[k * 4 + i] * matrixB[j * 4 + k];
-            }
-        }
-    }
+    result[0] = matrixA[0] * matrixB[0] + matrixA[4] * matrixB[1] + matrixA[8] * matrixB[2] + matrixA[12] * matrixB[3];
+    result[1] = matrixA[1] * matrixB[0] + matrixA[5] * matrixB[1] + matrixA[9] * matrixB[2] + matrixA[13] * matrixB[3];
+    result[2] = matrixA[2] * matrixB[0] + matrixA[6] * matrixB[1] + matrixA[10] * matrixB[2] + matrixA[14] * matrixB[3];
+    result[3] = matrixA[3] * matrixB[0] + matrixA[7] * matrixB[1] + matrixA[11] * matrixB[2] + matrixA[15] * matrixB[3];
+    result[4] = matrixA[0] * matrixB[4] + matrixA[4] * matrixB[5] + matrixA[8] * matrixB[6] + matrixA[12] * matrixB[7];
+    result[5] = matrixA[1] * matrixB[4] + matrixA[5] * matrixB[5] + matrixA[9] * matrixB[6] + matrixA[13] * matrixB[7];
+    result[6] = matrixA[2] * matrixB[4] + matrixA[6] * matrixB[5] + matrixA[10] * matrixB[6] + matrixA[14] * matrixB[7];
+    result[7] = matrixA[3] * matrixB[4] + matrixA[7] * matrixB[5] + matrixA[11] * matrixB[6] + matrixA[15] * matrixB[7];
+    result[8] =
+        matrixA[0] * matrixB[8] + matrixA[4] * matrixB[9] + matrixA[8] * matrixB[10] + matrixA[12] * matrixB[11];
+    result[9] =
+        matrixA[1] * matrixB[8] + matrixA[5] * matrixB[9] + matrixA[9] * matrixB[10] + matrixA[13] * matrixB[11];
+    result[10] =
+        matrixA[2] * matrixB[8] + matrixA[6] * matrixB[9] + matrixA[10] * matrixB[10] + matrixA[14] * matrixB[11];
+    result[11] =
+        matrixA[3] * matrixB[8] + matrixA[7] * matrixB[9] + matrixA[11] * matrixB[10] + matrixA[15] * matrixB[11];
+    result[12] =
+        matrixA[0] * matrixB[12] + matrixA[4] * matrixB[13] + matrixA[8] * matrixB[14] + matrixA[12] * matrixB[15];
+    result[13] =
+        matrixA[1] * matrixB[12] + matrixA[5] * matrixB[13] + matrixA[9] * matrixB[14] + matrixA[13] * matrixB[15];
+    result[14] =
+        matrixA[2] * matrixB[12] + matrixA[6] * matrixB[13] + matrixA[10] * matrixB[14] + matrixA[14] * matrixB[15];
+    result[15] =
+        matrixA[3] * matrixB[12] + matrixA[7] * matrixB[13] + matrixA[11] * matrixB[14] + matrixA[15] * matrixB[15];
 
     return result;
 }
@@ -43,22 +60,34 @@ export function multiply(matrixA: Matrix, matrixB: Matrix): Matrix {
 function inverse(matrix: Matrix): Matrix | null {
     // Create augmented matrix [matrix | identity]
     let augmented: number[] = [
-        ...matrix.slice(0, 4),
+        matrix[0],
+        matrix[1],
+        matrix[2],
+        matrix[3],
         1,
         0,
         0,
         0,
-        ...matrix.slice(4, 8),
+        matrix[4],
+        matrix[5],
+        matrix[6],
+        matrix[7],
         0,
         1,
         0,
         0,
-        ...matrix.slice(8, 12),
+        matrix[8],
+        matrix[9],
+        matrix[10],
+        matrix[11],
         0,
         0,
         1,
         0,
-        ...matrix.slice(12, 16),
+        matrix[12],
+        matrix[13],
+        matrix[14],
+        matrix[15],
         0,
         0,
         0,
@@ -191,13 +220,13 @@ export function decompose(original: Matrix): DecomposedMatrix3D | null {
     ];
 
     // Compute scale
-    const scaleX = Math.hypot(...row0);
+    const scaleX = Math.hypot(row0[0], row0[1], row0[2]);
     const row0Norm = normalize(row0);
 
     const skewXY = dot(row0Norm, row1);
     const row1Proj = [row1[0] - skewXY * row0Norm[0], row1[1] - skewXY * row0Norm[1], row1[2] - skewXY * row0Norm[2]];
 
-    const scaleY = Math.hypot(...(row1Proj as Point));
+    const scaleY = Math.hypot(row1Proj[0], row1Proj[1], row1Proj[2]);
     const row1Norm = normalize(row1Proj as Point);
 
     const skewXZ = dot(row0Norm, row2);
@@ -211,7 +240,7 @@ export function decompose(original: Matrix): DecomposedMatrix3D | null {
 
     const row2Norm = normalize(row2Proj as Point);
     const determinant: number = row0[0] * cross[0] + row0[1] * cross[1] + row0[2] * cross[2];
-    const scaleZ = Math.hypot(...(row2Proj as Point)) * (determinant < 0 ? -1 : 1);
+    const scaleZ = Math.hypot(row2Proj[0], row2Proj[1], row2Proj[2]) * (determinant < 0 ? -1 : 1);
 
     // Build rotation matrix from orthonormalized vectors
     const r00 = row0Norm[0],

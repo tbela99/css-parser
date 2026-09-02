@@ -14,13 +14,12 @@ import { cloneNode } from "./clone.ts";
  * @private
  */
 export function expand(ast: AstStyleSheet | AstAtRule | AstRule): AstNode {
-
-    if(
-                (ast as AstNode)[STATE] == EnumAstNodeStatus.Invalid ||
-                (ast as AstNode)[STATE] == EnumAstNodeStatus.Disallowed ||
-                (ast as AstNode)[STATE] == EnumAstNodeStatus.Unknown ||
-                (ast as AstNode)[STATE] == EnumAstNodeStatus.Unparsed ||
-                (ast as AstNode)[STATE] == EnumAstNodeStatus.Malformed
+    if (
+        (ast as AstNode)[STATE] == EnumAstNodeStatus.Invalid ||
+        (ast as AstNode)[STATE] == EnumAstNodeStatus.Disallowed ||
+        (ast as AstNode)[STATE] == EnumAstNodeStatus.Unknown ||
+        (ast as AstNode)[STATE] == EnumAstNodeStatus.Unparsed ||
+        (ast as AstNode)[STATE] == EnumAstNodeStatus.Malformed
     ) {
         return ast;
     }
@@ -36,10 +35,8 @@ export function expand(ast: AstStyleSheet | AstAtRule | AstRule): AstNode {
 
             for (const child of children) {
                 child[PARENT] = result;
+                result.chi!.push(child);
             }
-
-            // @ts-ignore
-            result.chi.push(...children);
         } else if (node.typ == EnumToken.AtRuleNodeType && "chi" in node) {
             let hasRule: boolean = false;
             let j: number = node!.chi!.length;
@@ -79,18 +76,17 @@ export function expand(ast: AstStyleSheet | AstAtRule | AstRule): AstNode {
 }
 
 function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
-
-    if(
-                (node as AstNode)[STATE] == EnumAstNodeStatus.Invalid ||
-                (node as AstNode)[STATE] == EnumAstNodeStatus.Disallowed ||
-                (node as AstNode)[STATE] == EnumAstNodeStatus.Unknown ||
-                (node as AstNode)[STATE] == EnumAstNodeStatus.Unparsed ||
-                (node as AstNode)[STATE] == EnumAstNodeStatus.Malformed
+    if (
+        (node as AstNode)[STATE] == EnumAstNodeStatus.Invalid ||
+        (node as AstNode)[STATE] == EnumAstNodeStatus.Disallowed ||
+        (node as AstNode)[STATE] == EnumAstNodeStatus.Unknown ||
+        (node as AstNode)[STATE] == EnumAstNodeStatus.Unparsed ||
+        (node as AstNode)[STATE] == EnumAstNodeStatus.Malformed
     ) {
         return [node];
     }
 
-    const ast: AstRule = Object.assign(cloneNode(node), {chi: node.chi.slice() }) as AstRule;
+    const ast: AstRule = Object.assign(cloneNode(node), { chi: node.chi.slice() }) as AstRule;
     const result: Array<AstRule | AstAtRule> = [];
 
     if (ast.typ == EnumToken.RuleNodeType) {
@@ -193,6 +189,15 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                     if (withCompound.length > 0) {
                         if (withCompound.every((t) => t[0] == "&" && t.indexOf("&", 1) == -1)) {
+                            // for (const w of withCompound) {
+                            //     for (let m = 0; m < w.length; m++) {
+                            //         // for (let n = 0; n < w[m].length; n++) {
+
+                            //         withoutCompound.push(w[m].slice(1));
+                            //         // }
+                            //     }
+                            // }
+
                             withoutCompound.push(...withCompound.map((t) => t.slice(1)));
                             withCompound.length = 0;
                         }
@@ -254,7 +259,9 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                 ast.chi.splice(i--, 1);
 
-                result.push(...(<AstRule[]>expandRule(rule)));
+                for (const s of expandRule(rule) as AstRule[]) {
+                    result.push(s);
+                }
             } else if (ast.chi[i].typ == EnumToken.AtRuleNodeType) {
                 let astAtRule: AstAtRule = <AstAtRule>ast.chi[i];
                 const values: Array<AstRule | AstAtRule> = <Array<AstRule | AstAtRule>>[];
@@ -291,14 +298,22 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                             // @ts-ignore
                             values.push(r);
                         } else if (r.typ == EnumToken.RuleNodeType) {
-                            // @ts-ignore
-                            astAtRule.chi.push(...expandRule(r));
+                            for (const rule of expandRule(r)) {
+                                // @ts-ignore
+                                astAtRule.chi.push(rule);
+                            }
                         }
                     }
                 }
 
-                // @ts-ignore
-                result.push(...(astAtRule.chi.length > 0 ? [astAtRule].concat(values) : values));
+                if (astAtRule.chi!.length > 0) {
+                    result.push(astAtRule);
+                }
+
+                for (const r of values) {
+                    result.push(r);
+                }
+
                 ast.chi.splice(i--, 1);
             }
         }

@@ -11,6 +11,7 @@
 /tsconfig.json
 /src
 /.idea
+/llms.txt
 /package-lock.json
 /node_modules
 /coverage

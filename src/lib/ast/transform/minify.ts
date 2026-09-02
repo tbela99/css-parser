@@ -273,7 +273,7 @@ export function eqMatrix(a: FunctionToken | Matrix, b: Token[]): boolean {
     let mat: Matrix = identity();
     let tmp: Matrix = identity();
 
-    const data = (Array.isArray(a) ? a : parseMatrix(a)) as Matrix;
+    const data = (Array.isArray(a) || ArrayBuffer.isView(a) ? a : parseMatrix(a)) as Matrix;
 
     for (const transform of b) {
         tmp = computeMatrix([transform], identity()) as Matrix;
@@ -303,7 +303,7 @@ export function eqMatrix(a: FunctionToken | Matrix, b: Token[]): boolean {
 export function minifyTransformFunctions(transform: FunctionToken): FunctionToken {
     const name: string = transform.val.toLowerCase();
 
-    if ("skewx" == name) {
+    if ("skewX" == name) {
         transform.val = "skew";
         return transform;
     }
@@ -359,11 +359,11 @@ export function minifyTransformFunctions(transform: FunctionToken): FunctionToke
     const ignoredValue = name.startsWith("scale") ? 1 : 0;
     const t = new Set(["x", "y", "z"]);
 
-    let i: number = 3;
+    for (let i = 0; i < 3; i++) {
+        const axis = i == 0 ? "x" : i == 1 ? "y" : "z";
 
-    while (i--) {
         if (values.length <= i || values[i].val == ignoredValue) {
-            t.delete(i == 0 ? "x" : i == 1 ? "y" : "z");
+            t.delete(axis);
         }
     }
 

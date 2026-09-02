@@ -106,7 +106,7 @@ export function hwbToken(values: number[]): ColorToken {
             { typ: EnumToken.LiteralTokenType, val: "/" },
             {
                 typ: EnumToken.PercentageTokenType,
-                val: values[3] * 100
+                val: values[3] * 100,
             },
         );
     }
@@ -120,38 +120,38 @@ export function hwbToken(values: number[]): ColorToken {
 }
 
 export function rgb2hwbvalues(token: ColorToken): number[] {
-    // @ts-ignore
-    return srgb2hwb(
-        ...(getColorComponents(token)!.map((t: Token, index: number): number => {
-            if (index == 3) {
-                return getNumber(<IdentToken | NumberToken | PercentageToken>t);
-            }
+    const values = getColorComponents(token)!.map((t: Token, index: number): number => {
+        if (index == 3) {
+            return getNumber(<IdentToken | NumberToken | PercentageToken>t);
+        }
 
-            return getNumber(<IdentToken | NumberToken | PercentageToken>t) / 255;
-        }) as [number, number, number, number]),
-    );
+        return getNumber(<IdentToken | NumberToken | PercentageToken>t) / 255;
+    }) as [number, number, number, number];
+
+    // @ts-ignore
+    return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 
-export function cmyk2hwbvalues(token: ColorToken): number[] {
-    // @ts-ignore
-    return srgb2hwb(...cmyk2srgbvalues(token));
+export function cmyk2hwbvalues(token: ColorToken): number[] | null {
+    const values = cmyk2srgbvalues(token);
+    return values == null ? null : srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 
 export function hsl2hwbvalues(token: ColorToken): number[] {
+    const values = getColorComponents(token)!.map((t: Token, index: number) => {
+        if (index == 3 && t.typ == EnumToken.IdenTokenType && (t as IdentToken).val == "none") {
+            return 1;
+        }
+
+        if (index == 0) {
+            return getAngle(<AngleToken | IdentToken>t);
+        }
+
+        return getNumber(<IdentToken | NumberToken | PercentageToken>t);
+    }) as [number, number, number, number];
+
     // @ts-ignore
-    return hslvalues2hwbvalues(
-        ...(getColorComponents(token)!.map((t: Token, index: number) => {
-            if (index == 3 && t.typ == EnumToken.IdenTokenType && (t as IdentToken).val == "none") {
-                return 1;
-            }
-
-            if (index == 0) {
-                return getAngle(<AngleToken | IdentToken>t);
-            }
-
-            return getNumber(<IdentToken | NumberToken | PercentageToken>t);
-        }) as [number, number, number, number]),
-    );
+    return hslvalues2hwbvalues(values[0], values[1], values[2], values[3]);
 }
 
 export function lab2hwbvalues(token: ColorToken): number[] | null {
@@ -160,8 +160,7 @@ export function lab2hwbvalues(token: ColorToken): number[] | null {
     if (values == null) {
         return null;
     }
-    // @ts-ignore
-    return srgb2hwb(...values);
+    return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 
 export function lch2hwbvalues(token: ColorToken): number[] | null {
@@ -171,8 +170,7 @@ export function lch2hwbvalues(token: ColorToken): number[] | null {
         return null;
     }
 
-    // @ts-ignore
-    return srgb2hwb(...values);
+    return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 
 export function oklab2hwbvalues(token: ColorToken): number[] | null {
@@ -183,13 +181,13 @@ export function oklab2hwbvalues(token: ColorToken): number[] | null {
     }
 
     // @ts-ignore
-    return srgb2hwb(...values);
+    return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 
 export function oklch2hwbvalues(token: ColorToken): number[] {
     const values: number[] | null = oklch2srgbvalues(token);
     // @ts-ignore
-    return values == null ? null : srgb2hwb(...values);
+    return values == null ? null : srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 
 function rgb2hue(r: number, g: number, b: number, fallback: number = 0) {
@@ -227,7 +225,7 @@ export function color2hwbvalues(token: ColorToken): number[] | null {
         return null;
     }
     // @ts-ignore
-    return srgb2hwb(...values);
+    return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 
 export function srgb2hwb(r: number, g: number, b: number, a: number | null = null, fallback: number = 0): number[] {
@@ -260,6 +258,7 @@ export function hsv2hwb(h: number, s: number, v: number, a: number | null = null
 }
 
 export function hslvalues2hwbvalues(h: number, s: number, l: number, a: number | null = null): number[] {
+    let values = hsl2hsv(h, s, l);
     // @ts-ignore
-    return hsv2hwb(...hsl2hsv(h, s, l, a));
+    return hsv2hwb(values[0], values[1], values[2], a);
 }

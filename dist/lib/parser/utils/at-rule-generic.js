@@ -1,5 +1,5 @@
 import { EnumToken } from '../../ast/types.js';
-import { tokensfuncDefMap, LOC } from '../../syntax/constants.js';
+import { tokensfuncDefMap, LOCSTA } from '../../syntax/constants.js';
 import { equalsIgnoreCase } from './text.js';
 
 function matchGenericSyntax(stream, options) {
@@ -28,7 +28,7 @@ function matchGenericSyntax(stream, options) {
                     action: "drop",
                     message: `unexpected token ${EnumToken[token.typ]}`,
                     node: token,
-                    location: options.source.getSourceLocation(token[LOC].sta),
+                    location: options.source.getSourceLocation(token[LOCSTA]),
                 });
                 success = false;
                 break;
@@ -43,7 +43,7 @@ function matchGenericSyntax(stream, options) {
                     action: "drop",
                     message: `unexpected token ${EnumToken[token.typ]}`,
                     node: token,
-                    location: options.source.getSourceLocation(token[LOC].sta),
+                    location: options.source.getSourceLocation(token[LOCSTA]),
                 });
                 success = false;
                 break;
@@ -59,7 +59,7 @@ function matchGenericSyntax(stream, options) {
                     action: "drop",
                     message: `unexpected token ${EnumToken[token.typ]}`,
                     node: token,
-                    location: options.source.getSourceLocation(token[LOC].sta),
+                    location: options.source.getSourceLocation(token[LOCSTA]),
                 });
                 success = false;
                 break;
@@ -75,7 +75,7 @@ function matchGenericSyntax(stream, options) {
                     action: "drop",
                     message: `unexpected token ${EnumToken[token.typ]}`,
                     node: token,
-                    location: options.source.getSourceLocation(token[LOC].sta),
+                    location: options.source.getSourceLocation(token[LOCSTA]),
                 });
                 success = false;
                 break;
@@ -95,8 +95,7 @@ function matchGenericSyntax(stream, options) {
             action: "drop",
             message: `unexpected token ${EnumToken[stack.at(-1)?.typ]}`,
             node: stack.at(-1),
-            // @ts-expect-error
-            location: options.source.getSourceLocation(stack.at(-1)?.[LOC].sta),
+            location: options.source.getSourceLocation(stack.at(-1)?.[LOCSTA]),
         });
         success = false;
     }

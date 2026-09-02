@@ -1,7 +1,7 @@
 import { EnumToken } from '../types.js';
 import { renderValue } from '../../renderer/render.js';
 import { FeatureWalkMode } from './type.js';
-import { PARENT, LOC, TOKENS } from '../../syntax/constants.js';
+import { PARENT, LOCSRCID, LOCSTA, LOCEND, TOKENS } from '../../syntax/constants.js';
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
 import { replaceNodeOrValue } from '../../parser/utils/token.js';
 import { cloneNode } from '../clone.js';
@@ -87,7 +87,9 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
                 chi: [],
             });
             if (declaration[PARENT] != null) {
-                atRule[LOC] = declaration[PARENT][LOC];
+                atRule[LOCSRCID] = declaration[PARENT][LOCSRCID];
+                atRule[LOCSTA] = declaration[PARENT][LOCSTA];
+                atRule[LOCEND] = declaration[PARENT][LOCEND];
             }
             atRule[TOKENS] = [{ typ: EnumToken.ParensTokenType, chi: left.chi.slice() }];
             const minify = atRule.nam !== "supports";
@@ -112,7 +114,9 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
             atRule[TOKENS] = [left];
             atRule.val = atRule[TOKENS].reduce((acc, curr) => acc + renderValue(curr), "");
             if (declaration[PARENT] != null) {
-                atRule[LOC] = declaration[PARENT][LOC];
+                atRule[LOCSRCID] = declaration[PARENT][LOCSRCID];
+                atRule[LOCSTA] = declaration[PARENT][LOCSTA];
+                atRule[LOCEND] = declaration[PARENT][LOCEND];
             }
             clonedDeclaration = cloneNode(declaration, true, nodeMap);
             replaceNodeOrValue(nodeMap.get(targetWrapper.typ === EnumToken.WildCardFunctionTokenType ? targetParentWrapper : targetWrapper), nodeMap.get(targetWrapper.typ === EnumToken.WildCardFunctionTokenType ? targetWrapper : node), node.r.at(-1)?.typ === EnumToken.SemiColonTokenType

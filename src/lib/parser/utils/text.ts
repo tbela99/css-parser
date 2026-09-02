@@ -8,9 +8,12 @@ export function camelize(value: string) {
 
 export function equalsIgnoreCase(a: string, b: string): boolean {
     if (a.length !== b.length) return false;
+
+    let ca: number;
+    let cb: number;
     for (let i = 0; i < a.length; i++) {
-        let ca = a.charCodeAt(i);
-        let cb = b.charCodeAt(i);
+         ca = a.charCodeAt(i);
+         cb = b.charCodeAt(i);
 
         // Normalize A-Z to a-z
         if (ca >= 65 && ca <= 90) ca += 32;

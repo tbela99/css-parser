@@ -15,7 +15,6 @@ import { ColorType, EnumToken } from "../../ast/types.ts";
 import { COLORS_NAMES } from "../constants.ts";
 
 export function srgb2rgb(value: number): number {
-
     return minmax(Math.round(value * 255), 0, 255);
 }
 

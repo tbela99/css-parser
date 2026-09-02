@@ -12,25 +12,23 @@ import {
 import { hsl2srgbvalues } from "./rgb.ts";
 
 export function rgb2cmykToken(token: ColorToken): ColorToken | null {
-    const components: number[] | null = rgb2srgbvalues(token);
+    let components: number[] | null = rgb2srgbvalues(token);
 
     if (components == null || components.length < 3) {
         return null;
     }
 
-    // @ts-ignore
-    return cmyktoken(srgb2cmykvalues(...components));
+    return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
 }
 
 export function hsl2cmykToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = hsl2srgbvalues(token);
+    let values: number[] | null = hsl2srgbvalues(token);
 
     if (values == null) {
         return null;
     }
 
-    // @ts-ignore
-    return cmyktoken(srgb2cmykvalues(...values));
+    return cmyktoken(srgb2cmykvalues(values[0], values[1], values[2], values[3]));
 }
 
 export function hwb2cmykToken(token: ColorToken): ColorToken | null {
@@ -40,8 +38,7 @@ export function hwb2cmykToken(token: ColorToken): ColorToken | null {
         return null;
     }
 
-    // @ts-ignore
-    return cmyktoken(srgb2cmykvalues(...values));
+    return cmyktoken(srgb2cmykvalues(values[0], values[1], values[2], values[3]));
 }
 
 export function lab2cmykToken(token: ColorToken): ColorToken | null {
@@ -51,8 +48,7 @@ export function lab2cmykToken(token: ColorToken): ColorToken | null {
         return null;
     }
 
-    // @ts-ignore
-    return cmyktoken(srgb2cmykvalues(...components));
+    return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
 }
 
 export function lch2cmykToken(token: ColorToken): ColorToken | null {
@@ -62,8 +58,7 @@ export function lch2cmykToken(token: ColorToken): ColorToken | null {
         return null;
     }
 
-    // @ts-ignore
-    return cmyktoken(srgb2cmykvalues(...components));
+    return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
 }
 
 export function oklab2cmyk(token: ColorToken): ColorToken | null {
@@ -73,8 +68,7 @@ export function oklab2cmyk(token: ColorToken): ColorToken | null {
         return null;
     }
 
-    // @ts-ignore
-    return cmyktoken(srgb2cmykvalues(...components));
+    return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
 }
 
 export function oklch2cmykToken(token: ColorToken): ColorToken | null {
@@ -84,8 +78,7 @@ export function oklch2cmykToken(token: ColorToken): ColorToken | null {
         return null;
     }
 
-    // @ts-ignore
-    return cmyktoken(srgb2cmykvalues(...components));
+    return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
 }
 
 export function color2cmykToken(token: ColorToken): ColorToken | null {
@@ -95,8 +88,7 @@ export function color2cmykToken(token: ColorToken): ColorToken | null {
         return null;
     }
 
-    // @ts-ignore
-    return cmyktoken(srgb2cmykvalues(...values));
+    return cmyktoken(srgb2cmykvalues(values[0], values[1], values[2], values[3]));
 }
 
 export function srgb2cmykvalues(r: number, g: number, b: number, a: number | null = null): number[] {

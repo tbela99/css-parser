@@ -94,15 +94,14 @@ function hex2oklabvalues(token) {
         return null;
     }
     // @ts-ignore
-    return srgb2oklab(...values);
+    return srgb2oklab(values[0], values[1], values[2], values[3]);
 }
 function rgb2oklabvalues(token) {
     const values = rgb2srgb(token);
     if (values == null) {
         return null;
     }
-    // @ts-ignore
-    return srgb2oklab(...values);
+    return srgb2oklab(values[0], values[1], values[2], values[3]);
 }
 function hsl2oklabvalues(token) {
     const values = hsl2srgb(token);
@@ -110,16 +109,16 @@ function hsl2oklabvalues(token) {
         return null;
     }
     // @ts-ignore
-    return srgb2oklab(...values);
+    return srgb2oklab(values[0], values[1], values[2], values[3]);
 }
 function hwb2oklabvalues(token) {
-    // @ts-ignore
-    return srgb2oklab(...hwb2srgbvalues(token));
+    const values = hwb2srgbvalues(token);
+    return values == null ? null : srgb2oklab(values[0], values[1], values[2], values[3]);
 }
 function cmyk2oklabvalues(token) {
     const values = cmyk2srgbvalues(token);
     // @ts-ignore
-    return values == null ? null : srgb2oklab(...values);
+    return values == null ? null : srgb2oklab(values[0], values[1], values[2], values[3]);
 }
 function lab2oklabvalues(token) {
     const values = lab2srgbvalues(token);
@@ -127,22 +126,22 @@ function lab2oklabvalues(token) {
         return null;
     }
     // @ts-ignore
-    return srgb2oklab(...values);
+    return srgb2oklab(values[0], values[1], values[2], values[3]);
 }
 function lch2oklabvalues(token) {
     const values = lch2srgbvalues(token);
     // @ts-ignore
-    return values == null ? null : srgb2oklab(...values);
+    return values == null ? null : srgb2oklab(values[0], values[1], values[2], values[3]);
 }
 function oklch2oklabvalues(token) {
     const values = getOKLCHComponents(token);
     // @ts-ignore
-    return values == null ? null : lchvalues2labvalues(...values);
+    return values == null ? null : lchvalues2labvalues(values[0], values[1], values[2], values[3]);
 }
 function color2oklabvalues(token) {
     const values = color2srgbvalues(token);
     // @ts-ignore
-    return values == null ? null : srgb2oklab(...values);
+    return values == null ? null : srgb2oklab(values[0], values[1], values[2], values[3]);
 }
 function srgb2oklab(r, g, blue, alpha) {
     [r, g, blue] = srgb2lsrgbvalues(r, g, blue);

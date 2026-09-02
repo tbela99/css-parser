@@ -90,19 +90,19 @@ function labToken(values) {
 // L: 0% = 0.0, 100% = 100.0
 // for a and b: -100% = -125, 100% = 125
 function hex2labvalues(token) {
-    const values = hex2srgbvalues(token);
+    let values = hex2srgbvalues(token);
     // @ts-ignore
-    return values == null ? null : srgb2labvalues(...values);
+    return values == null ? null : srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
 function rgb2labvalues(token) {
     const values = rgb2srgb(token);
     // @ts-ignore
-    return values == null ? null : srgb2labvalues(...values);
+    return values == null ? null : srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
 function cmyk2labvalues(token) {
     const values = cmyk2srgbvalues(token);
     // @ts-ignore
-    return values == null ? null : srgb2labvalues(...values);
+    return values == null ? null : srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
 function hsl2labvalues(token) {
     const values = hsl2srgb(token);
@@ -110,7 +110,7 @@ function hsl2labvalues(token) {
         return null;
     }
     // @ts-ignore
-    return srgb2labvalues(...values);
+    return srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
 function hwb2labvalues(token) {
     const values = hwb2srgbvalues(token);
@@ -118,20 +118,21 @@ function hwb2labvalues(token) {
         return null;
     }
     // @ts-ignore
-    return srgb2labvalues(...values);
+    return srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
 function lch2labvalues(token) {
     const values = getLCHComponents(token);
     // @ts-ignore
-    return values == null ? null : lchvalues2labvalues(...values);
+    return values == null ? null : lchvalues2labvalues(values[0], values[1], values[2], values[3]);
 }
 function oklab2labvalues(token) {
-    const values = getOKLABComponents(token);
+    let values = getOKLABComponents(token);
     if (values == null) {
         return null;
     }
-    // @ts-ignore
-    return xyz2lab(...XYZ_D65_to_D50(...OKLab_to_XYZ(...values)));
+    values = OKLab_to_XYZ(values[0], values[1], values[2], values[3]);
+    values = XYZ_D65_to_D50(values[0], values[1], values[2], values[3]);
+    return xyz2lab(values[0], values[1], values[2], values[3]);
 }
 function oklch2labvalues(token) {
     const values = oklch2srgbvalues(token);
@@ -139,19 +140,18 @@ function oklch2labvalues(token) {
         return null;
     }
     // @ts-ignore
-    return srgb2labvalues(...values);
+    return srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
 function color2labvalues(token) {
     const val = color2srgbvalues(token);
     if (val == null) {
         return null;
     }
-    // @ts-ignore
-    return srgb2labvalues(...val);
+    return srgb2labvalues(val[0], val[1], val[2], val[3]);
 }
 function srgb2labvalues(r, g, b, a) {
-    // @ts-ignore */
-    const result = xyz2lab(...srgb2xyz_d65(r, g, b));
+    let result = srgb2xyz_d65(r, g, b);
+    result = xyz2lab(result[0], result[1], result[2]);
     // Fixes achromatic RGB colors having a _slight_ chroma due to floating-point errors
     // and approximated computations in sRGB <-> CIELab.
     // See: https://github.com/d3/d3-color/pull/46
@@ -233,9 +233,9 @@ function getLABComponents(token) {
 function Lab_to_sRGB(l, a, b) {
     const xyz_d50 = Lab_to_XYZ(l, a, b);
     // @ts-ignore
-    const xyz_d65 = XYZ_D50_to_D65(...xyz_d50);
+    const xyz_d65 = XYZ_D50_to_D65(xyz_d50[0], xyz_d50[1], xyz_d50[2]);
     // @ts-ignore
-    return xyz2srgb(...xyz_d65);
+    return xyz2srgb(xyz_d65[0], xyz_d65[1], xyz_d65[2]);
 }
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 function Lab_to_XYZ(l, a, b) {

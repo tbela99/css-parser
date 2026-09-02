@@ -12,6 +12,7 @@ import type { CssVariableToken, Token } from "./token.d.ts";
 import { FeatureWalkMode } from "../lib/ast/features/type.ts";
 import { ValidationToken } from "../lib/validation/parser/types";
 import { SourceFile } from "../lib/parser/source.ts";
+import { ResponseType } from "../types.ts";
 
 export * from "./ast.d.ts";
 export * from "./token.d.ts";
@@ -206,7 +207,7 @@ export declare type LoadResult =
     | Promise<ReadableStream<Uint8Array>>
     | ReadableStream<Uint8Array>
     | string
-    | Promise<string>;
+    | Promise<string> | object;
 
 /**
  * CSS module parser options

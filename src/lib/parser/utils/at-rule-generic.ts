@@ -1,9 +1,12 @@
 import type { ErrorDescription, IdentToken, ParserOptions, Token } from "../../../@types/index.d.ts";
 import { EnumToken } from "../../ast/types.ts";
-import { LOC, tokensfuncDefMap } from "../../syntax/constants.ts";
+import { LOCSTA, tokensfuncDefMap } from "../../syntax/constants.ts";
 import { equalsIgnoreCase } from "./text.ts";
 
-export function matchGenericSyntax(stream: Token[], options: ParserOptions): {
+export function matchGenericSyntax(
+    stream: Token[],
+    options: ParserOptions,
+): {
     success: boolean;
     errors: ErrorDescription[];
 } {
@@ -38,7 +41,7 @@ export function matchGenericSyntax(stream: Token[], options: ParserOptions): {
                     action: "drop",
                     message: `unexpected token ${EnumToken[token.typ]}`,
                     node: token,
-                    location: options.source!.getSourceLocation(token[LOC]!.sta),
+                    location: options.source!.getSourceLocation(token[LOCSTA]!),
                 });
                 success = false;
                 break;
@@ -56,7 +59,7 @@ export function matchGenericSyntax(stream: Token[], options: ParserOptions): {
                     action: "drop",
                     message: `unexpected token ${EnumToken[token.typ]}`,
                     node: token,
-                    location: options.source!.getSourceLocation(token[LOC]!.sta),
+                    location: options.source!.getSourceLocation(token[LOCSTA]!),
                 });
                 success = false;
                 break;
@@ -75,7 +78,7 @@ export function matchGenericSyntax(stream: Token[], options: ParserOptions): {
                     action: "drop",
                     message: `unexpected token ${EnumToken[token.typ]}`,
                     node: token,
-                    location: options.source!.getSourceLocation(token[LOC]!.sta),
+                    location: options.source!.getSourceLocation(token[LOCSTA]!),
                 });
                 success = false;
                 break;
@@ -94,7 +97,7 @@ export function matchGenericSyntax(stream: Token[], options: ParserOptions): {
                     action: "drop",
                     message: `unexpected token ${EnumToken[token.typ]}`,
                     node: token,
-                    location: options.source!.getSourceLocation(token[LOC]!.sta),
+                    location: options.source!.getSourceLocation(token[LOCSTA]!),
                 });
                 success = false;
                 break;
@@ -118,8 +121,7 @@ export function matchGenericSyntax(stream: Token[], options: ParserOptions): {
             action: "drop",
             message: `unexpected token ${EnumToken[stack.at(-1)?.typ]}`,
             node: stack.at(-1),
-            // @ts-expect-error
-            location: options.source!.getSourceLocation(stack.at(-1)?.[LOC]!.sta),
+            location: options.source!.getSourceLocation(stack.at(-1)?.[LOCSTA]!),
         });
         success = false;
     }

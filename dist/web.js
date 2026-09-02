@@ -4,7 +4,7 @@ import { doRender } from './lib/renderer/render.js';
 export { renderValue as renderToken } from './lib/renderer/render.js';
 import { ModuleScopeEnumOptions } from './lib/ast/types.js';
 export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ValidationLevel } from './lib/ast/types.js';
-import { tokenizeStream, tokenize } from './lib/parser/tokenize.js';
+import { Tokenizer } from './lib/parser/tokenize.js';
 import { matchUrl, resolve, dirname } from './lib/fs/resolve.js';
 import { ResponseType } from './types.js';
 import { SourceFile } from './lib/parser/source.js';
@@ -57,6 +57,9 @@ async function load(url, currentDirectory = ".", responseType = false) {
         }
         if (responseType == ResponseType.ArrayBuffer) {
             return response.arrayBuffer();
+        }
+        if (responseType == ResponseType.JSON) {
+            return response.json();
         }
         return responseType == ResponseType.ReadableStream ? response.body : response.text();
     });
@@ -184,8 +187,10 @@ function parseSync(...args) {
         position: 0,
         currentPosition: 0,
     };
-    const result = doParseSync(tokenize(options.parseInfo), options);
-    return !options.module && !options.inputSourceMap && !options.sourcemap ? result : parseResult(result, options);
+    const result = doParseSync(new Tokenizer(options.parseInfo), options);
+    return options.module == null && options.inputSourceMap == null && !options.sourcemap
+        ? result
+        : parseResult(result, options);
 }
 /**
  * Transform CSS
@@ -318,7 +323,11 @@ async function parse(...args) {
         position: 0,
         currentPosition: 0,
     };
-    return doParse(stream instanceof ReadableStream ? tokenizeStream(stream, options.parseInfo) : tokenize(options.parseInfo), options).then((result) => (!options.module && !options.inputSourceMap ? result : parseResult(result, options)));
+    return doParse(stream instanceof ReadableStream
+        ? new Tokenizer(options.parseInfo, stream).tokenizeStream()
+        : new Tokenizer(options.parseInfo), options).then((result) => options.module == null && options.inputSourceMap == null && !options.sourcemap
+        ? result
+        : parseResult(result, options));
 }
 /**
  * Transform CSS file

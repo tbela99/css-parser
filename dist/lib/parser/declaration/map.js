@@ -123,10 +123,17 @@ class PropertyMap {
                             else {
                                 if (current == tokens[property].length) {
                                     tokens[property].push([]);
-                                    tokens[property][current].push(...defaults);
+                                    for (let i = 0; i < defaults.length; i++) {
+                                        tokens[property][current].push(defaults[i]);
+                                    }
                                 }
                                 else {
-                                    tokens[property][current].push({ typ: EnumToken.WhitespaceTokenType }, ...defaults);
+                                    tokens[property][current].push({
+                                        typ: EnumToken.WhitespaceTokenType,
+                                    });
+                                    for (let i = 0; i < defaults.length; i++) {
+                                        tokens[property][current].push(defaults[i]);
+                                    }
                                 }
                             }
                         }
@@ -143,7 +150,9 @@ class PropertyMap {
                                 if (acc.length > 0) {
                                     acc.push({ ...separator });
                                 }
-                                acc.push(...curr);
+                                for (let i = 0; i < curr.length; i++) {
+                                    acc.push(curr[i]);
+                                }
                                 return acc;
                             }, []),
                         });
@@ -278,7 +287,9 @@ class PropertyMap {
                 };
                 const values = [...this.declarations.values()].reduce((acc, curr) => {
                     if (curr instanceof PropertySet) {
-                        acc.push(...curr);
+                        for (const declaration of curr) {
+                            acc.push(declaration);
+                        }
                     }
                     else {
                         acc.push(curr);
@@ -500,7 +511,7 @@ class PropertyMap {
                             else if (acc[i].length > 0) {
                                 acc[i].push({ typ: EnumToken.WhitespaceTokenType });
                             }
-                            acc[i].push(...values.reduce((acc, curr) => {
+                            for (const v of values.reduce((acc, curr) => {
                                 if (acc.length > 0) {
                                     // @ts-ignore
                                     acc.push({
@@ -514,7 +525,9 @@ class PropertyMap {
                                 // @ts-ignore
                                 acc.push(curr);
                                 return acc;
-                            }, []));
+                            }, [])) {
+                                acc[i].push(v);
+                            }
                         }
                     }
                     return acc;
@@ -532,7 +545,9 @@ class PropertyMap {
                             return acc;
                         }, []));
                     }
-                    acc.push(...curr);
+                    for (const c of curr) {
+                        acc.push(c);
+                    }
                     return acc;
                 }, []);
                 if (this.config.mapping != null) {
@@ -600,10 +615,13 @@ class PropertyMap {
     }
     matchTypes(declaration) {
         const patterns = this.pattern.slice();
-        const values = [...declaration.val];
+        const values = [];
         let i;
         let j;
         const map = new Map();
+        for (i = 0; i < declaration.val.length; i++) {
+            values.push(declaration.val[i]);
+        }
         for (i = 0; i < patterns.length; i++) {
             for (j = 0; j < values.length; j++) {
                 if (!map.has(patterns[i])) {

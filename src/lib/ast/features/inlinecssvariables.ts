@@ -26,13 +26,15 @@ function inlineExpression(token: Token): Token[] {
     const result: Token[] = [];
 
     if (token.typ == EnumToken.BinaryExpressionTokenType) {
+        const chi = inlineExpression((token as BinaryExpressionToken).l);
+        chi.push({ typ: (token as BinaryExpressionToken).op } as Token);
+
+        for (const child of inlineExpression((token as BinaryExpressionToken).r)) {
+            chi.push(child);
+        }
         result.push({
             typ: EnumToken.ParensTokenType,
-            chi: [
-                ...inlineExpression((token as BinaryExpressionToken).l),
-                { typ: (token as BinaryExpressionToken).op },
-                ...inlineExpression((token as BinaryExpressionToken).r),
-            ],
+            chi,
         } as ParensToken);
     } else {
         result.push(token);

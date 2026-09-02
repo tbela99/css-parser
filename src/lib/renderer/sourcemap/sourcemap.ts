@@ -136,33 +136,12 @@ export class SourceMap {
     }
 
     /**
-     * Add sourcemap
-     * @param newLine
-     * @param newColumn
-     * @param srcId
-     * @param ln
-     * @param col
-     */
-    add(newLine: number, newColumn: number, srcId: number, ln: number, col: number): void;
-
-    /**
      * Add multiple sourcemaps
      * @param maps
      * @throws
      */
-    add(...maps: Array<[newLine: number, newColumn: number, srcId: number, ln: number, col: number]>): void;
-
-    /**
-     * Add all location
-     * @param maps
-     * @throws
-     */
-    add(...maps: Array<[number, number, number, number, number]> | [number, number, number, number, number]): void {
+    add(maps: Array<[newLine: number, newColumn: number, srcId: number, ln: number, col: number]>): void {
         let srcIndex: number;
-
-        if (typeof maps[0] === "number") {
-            maps = [maps as [number, number, number, number, number]];
-        }
 
         for (let [newLine, newColumn, srcId, ln, col] of maps as Array<[number, number, number, number, number]>) {
             const key = `${srcId}:${ln}:${col}:${newLine}:${newColumn}`;

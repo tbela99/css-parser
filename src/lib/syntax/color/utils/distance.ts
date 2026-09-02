@@ -35,7 +35,7 @@ export function okLabDistance(color1: ColorToken, color2: ColorToken): number | 
         diff.push((okLab1[3] ?? 1) - (okLab2[3] ?? 1));
     }
 
-    return toPrecisionValue(Math.hypot(...diff));
+    return toPrecisionValue(Math.hypot(diff[0], diff[1], diff[2], diff[3] ?? 0));
 }
 
 /**

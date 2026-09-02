@@ -1,39 +1,36 @@
-
-
 export function run(describe, expect, it, transform, parse, render) {
-
-    describe('calc expression', function () {
-
-        it('calc() #1', function () {
-            
+    describe("calc expression", function () {
+        it("calc() #1", function () {
             return transform(`
 .foo {
   width: calc(100px * 2);
   height: calc(((75.37% - 63.5px) - 900px) + (2 * 100px));
 }
-`).then(result => expect(result.code).equals(`.foo{width:200px;height:calc(75.37% - 763.5px)}`));
+`).then((result) => expect(result.code).equals(`.foo{width:200px;height:calc(75.37% - 763.5px)}`));
         });
 
-        it('calc() #2', function () {
-            
+        it("calc() #2", function () {
             return transform(`.foo {
         height: calc(200% / 6 + 2%/3);
   width: calc(3.5rem + calc(var(--bs-border-width) * 2));
 }
-`).then(result => expect(result.code).equals(`.foo{height:34%;width:calc(3.5rem + var(--bs-border-width)*2)}`));
+`).then((result) => expect(result.code).equals(`.foo{height:34%;width:calc(3.5rem + var(--bs-border-width)*2)}`));
         });
 
-        it('calc() #3', function () {
-            
+        it("calc() #3", function () {
             return transform(`.foo {
    bottom:calc(-1*(var(--bs-popover-arrow-height)) - var(--bs-popover-border-width))
 }
-`).then(result => expect(result.code).equals(`.foo{bottom:calc(-1*var(--bs-popover-arrow-height) - var(--bs-popover-border-width))}`));
+`).then((result) =>
+                expect(result.code).equals(
+                    `.foo{bottom:calc(-1*var(--bs-popover-arrow-height) - var(--bs-popover-border-width))}`,
+                ),
+            );
         });
 
-        it('calc() #4', function () {
-            
-            return transform(`
+        it("calc() #4", function () {
+            return transform(
+                `
 :root {
 
 --preferred-width: 20px;
@@ -41,11 +38,28 @@ export function run(describe, expect, it, transform, parse, render) {
 .foo-bar {
     width: calc(var(--preferred-width) + 5px);
 }
-`, {inlineCssVariables: true}).then(result => expect(result.code).equals(`.foo-bar{width:25px}`));
+`,
+                { inlineCssVariables: true },
+            ).then((result) => expect(result.code).equals(`.foo-bar{width:25px}`));
         });
 
-        it('calc() #5', function () {
-            
+        it("calc() #5", function () {
+            return transform(
+                `
+:root {
+
+--preferred-width: 20px;
+}
+.foo-bar {
+    width: calc((var(--preferred-width) + 1px) / 3 + 5px);
+    height: calc(100% / 4);
+}
+`,
+                { inlineCssVariables: true },
+            ).then((result) => expect(result.code).equals(`.foo-bar{width:12px;height:25%}`));
+        });
+
+        it("calc() #6", function () {
             return transform(`
 :root {
 
@@ -55,127 +69,106 @@ export function run(describe, expect, it, transform, parse, render) {
     width: calc((var(--preferred-width) + 1px) / 3 + 5px);
     height: calc(100% / 4);
 }
-`, {inlineCssVariables: true}).then(result => expect(result.code).equals(`.foo-bar{width:12px;height:25%}`));
+`).then((result) =>
+                expect(result.code).equals(
+                    `:root{--preferred-width:20px}.foo-bar{width:calc((var(--preferred-width) + 1px)/3 + 5px);height:25%}`,
+                ),
+            );
         });
 
-        it('calc() #6', function () {
-            
-            return transform(`
-:root {
-
---preferred-width: 20px;
-}
-.foo-bar {
-    width: calc((var(--preferred-width) + 1px) / 3 + 5px);
-    height: calc(100% / 4);
-}
-`).then(result => expect(result.code).equals(`:root{--preferred-width:20px}.foo-bar{width:calc((var(--preferred-width) + 1px)/3 + 5px);height:25%}`));
-        });
-
-        it('calc() #7', function () {
-            
+        it("calc() #7", function () {
             return transform(`
 
 .foo {
         height: calc(100px * 2/ 15 + 2px/3);
 }
-`).then(result => expect(result.code).equals(`.foo{height:14px}`));
+`).then((result) => expect(result.code).equals(`.foo{height:14px}`));
         });
 
-        it('calc() #8', function () {
-            
+        it("calc() #8", function () {
             return transform(`
 
 .foo {
         height: calc(100px * 2/ 15 - 5% - 1px/3);
 }
-`).then(result => expect(result.code).equals(`.foo{height:calc(13px - 5%)}`));
+`).then((result) => expect(result.code).equals(`.foo{height:calc(13px - 5%)}`));
         });
 
-        it('calc() #9', function () {
-            
+        it("calc() #9", function () {
             return transform(`
 
 .foo {
         height: calc(100px * 2/ 15);
 }
-`).then(result => expect(result.code).equals(`.foo{height:calc(40px/3)}`));
+`).then((result) => expect(result.code).equals(`.foo{height:calc(40px/3)}`));
         });
 
-        it('calc() #10', function () {
-            
+        it("calc() #10", function () {
             return transform(`
 
 .foo {
 width: calc(2px * 50%);
 height: calc(80% * 50%);
 }
-`).then(result => expect(result.code).equals(`.foo{width:1px;height:40%}`));
+`).then((result) => expect(result.code).equals(`.foo{width:1px;height:40%}`));
         });
 
-        it('calc() #11', function () {
-            
+        it("calc() #11", function () {
             return transform(`
 
 a {
 
 width: calc(100px * sin(pi / 4))
 
-`).then(result => expect(result.code).equals(`a{width:70.710678px}`));
+`).then((result) => expect(result.code).equals(`a{width:70.710678px}`));
         });
 
-        it('mod() #12', function () {
-            
+        it("mod() #12", function () {
             return transform(`
 
 .foo{
         margin: mod(29vmin, 6vmin);
 }
-`).then(result => expect(result.code).equals(`.foo{margin:5vmin}`));
+`).then((result) => expect(result.code).equals(`.foo{margin:5vmin}`));
         });
 
-        it('round() #13', function () {
-            
+        it("round() #13", function () {
             return transform(`
 
 .foo{
         margin: round(up, calc(100px * sin(pi / 4)), 5.5px);
 }
-`).then(result => expect(result.code).equals(`.foo{margin:71.5px}`));
+`).then((result) => expect(result.code).equals(`.foo{margin:71.5px}`));
         });
 
-        it('round() #14', function () {
-            
+        it("round() #14", function () {
             return transform(`
 
 .foo{
         margin: round(down, calc(100px * sin(pi / 4)), 5.5px);
 }
-`).then(result => expect(result.code).equals(`.foo{margin:66px}`));
+`).then((result) => expect(result.code).equals(`.foo{margin:66px}`));
         });
 
-        it('round() #15', function () {
-            
+        it("round() #15", function () {
             return transform(`
 
 .foo{
         margin: round(nearest, calc(100px * sin(pi / 4)), 5.5px);
 }
-`).then(result => expect(result.code).equals(`.foo{margin:71.5px}`));
+`).then((result) => expect(result.code).equals(`.foo{margin:71.5px}`));
         });
 
-        it('round() #16', function () {
-            
+        it("round() #16", function () {
             return transform(`
 
 .foo{
         margin: round(to-zero, calc(100px * sin(pi / 4)), 5.5px);
 }
-`).then(result => expect(result.code).equals(`.foo{margin:66px}`));
+`).then((result) => expect(result.code).equals(`.foo{margin:66px}`));
         });
 
-        it('min()/max() #17', function () {
-            
+        it("min()/max() #17", function () {
             return transform(`
 
 .foo{
@@ -183,34 +176,32 @@ width: calc(100px * sin(pi / 4))
 height: min(calc(100px * sin(pi / 4)), 5.5px);
 width: max(calc(100px * sin(pi / 2)), 5.5px);
 }
-`).then(result => expect(result.code).equals(`.foo{height:5.5px;width:100px}`));
+`).then((result) => expect(result.code).equals(`.foo{height:5.5px;width:100px}`));
         });
 
-        it('rem() #18', function () {
-            
+        it("rem() #18", function () {
             return transform(`
 
 .foo{
 
 scale: rem(10 * 2, 1.7);
 }
-`).then(result => expect(result.code).equals(`.foo{scale:1.3}`));
+`).then((result) => expect(result.code).equals(`.foo{scale:1.3}`));
         });
 
-        it('pow() #19', function () {
-            
+        it("pow() #19", function () {
             return transform(`
 
 .foo{
 
  width: calc(10px * pow(5, 3));
 }
-`).then(result => expect(result.code).equals(`.foo{width:1250px}`));
+`).then((result) => expect(result.code).equals(`.foo{width:1250px}`));
         });
 
-        it('pow() #20', function () {
-            
-            return transform(`
+        it("pow() #20", function () {
+            return transform(
+                `
 
 :root {
   --size-0: 100px;
@@ -234,7 +225,10 @@ scale: rem(10 * 2, 1.7);
   height: var(--size-3);
 }
 
-`, {inlineCssVariables: true, removeComments: false, beautify: true}).then(result => expect(result.code).equals(`:root {
+`,
+                { inlineCssVariables: true, removeComments: false, beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`:root {
  /* --size-0: 100px */
  /* --size-1: hypot(var(--size-0)) */
  /* --size-2: hypot(var(--size-0),var(--size-0)) */
@@ -245,17 +239,17 @@ scale: rem(10 * 2, 1.7);
  height: 100px
 }
 .two {
- width: 141px;
- height: 141px
+ width: 141.421356px;
+ height: 141.421356px
 }
 .three {
  width: 250px;
  height: 250px
-}`));
+}`),
+            );
         });
 
-        it('pow() #21', function () {
-
+        it("pow() #21", function () {
             return parse(`
 
 a {
@@ -264,176 +258,210 @@ a {
 line-height: calc(pi);
 transform: rotate(atan2(e, 30));
 }
-`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
- -moz-transform: rotate(atan2(1rem,-.5rem));
- line-height: calc(pi);
- transform: rotate(atan2(e,30))
-}`));
+`).then((result) =>
+                expect(render(result.ast, { minify: false }).code).equals(`a {
+ -moz-transform: rotate(.324turn);
+ line-height: 3.141593;
+ transform: rotate(.09rad)
+}`),
+            );
         });
 
-        it('log() #22', function () {
-
+        it("log() #22", function () {
             return parse(`
 
 a {
 
 width: calc(100px * log(8, 2));
+ transform: rotate( tan(45deg))
 }
-`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
- width: 300px
-}`));
+`).then((result) =>
+                expect(render(result.ast, { minify: false }).code).equals(`a {
+ width: 300px;
+ transform: rotate(1rad)
+}`),
+            );
         });
 
-        it('log() #23', function () {
-
+        it("log() #23", function () {
             return parse(`
 
 a {
 
 width: calc(100px * log(625, 5));
 }
-`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+`).then((result) =>
+                expect(render(result.ast, { minify: false }).code).equals(`a {
  width: 400px
-}`));
+}`),
+            );
         });
 
-        it('log() #24', function () {
-
+        it("log() #24", function () {
             return parse(`
 
 a {
 
 width: calc(100px * log(625, 5));
 }
-`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+`).then((result) =>
+                expect(render(result.ast, { minify: false }).code).equals(`a {
  width: 400px
-}`));
+}`),
+            );
         });
 
-        it('exp() #25', function () {
-
+        it("exp() #25", function () {
             return parse(`
 
 a {
 
 width: calc(100px * exp(-1));}
 }
-`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+`).then((result) =>
+                expect(render(result.ast, { minify: false }).code).equals(`a {
  width: 36.787944px
-}`));
+}`),
+            );
         });
 
-        it('abs() #26', function () {
-
+        it("abs() #26", function () {
             return parse(`
 
 a {
 
 width: calc(2px *abs(-1);}
 }
-`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
-}`));
+`).then((result) =>
+                expect(render(result.ast, { minify: false }).code).equals(`a {
+}`),
+            );
         });
 
-        it('sign() #27', function () {
-
+        it("sign() #27", function () {
             return parse(`
 
 a {
 
 width: calc(-2px *sign(-1);}
 }
-`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
-}`));
+`).then((result) =>
+                expect(render(result.ast, { minify: false }).code).equals(`a {
+}`),
+            );
         });
 
-        it('calc() #28', function () {
-
-            return transform(`
+        it("calc() #28", function () {
+            return transform(
+                `
 
 :root {
 --preferred-width: 20px;
 }
 .foo-bar {
     width: calc(calc(var(--preferred-width) + 2px) / 3 + 5/2px);
-`, {inlineCssVariables: true, beautify: true}).then(result => expect(result.code).equals(`.foo-bar {
+`,
+                { inlineCssVariables: true, beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`.foo-bar {
  width: calc(59px/6)
-}`));
+}`),
+            );
         });
 
-        it('calc() #29', function () {
-
-            return transform(`
+        it("calc() #29", function () {
+            return transform(
+                `
 
 :root {
 --preferred-width: 20px;
 }
 .foo-bar {
     width: calc(calc(var(--preferred-width) + 2px) / 3 + 5/2px - 5/6px);
-`, {inlineCssVariables: true, beautify: true}).then(result => expect(result.code).equals(`.foo-bar {
+`,
+                { inlineCssVariables: true, beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`.foo-bar {
  width: 9px
-}`));
+}`),
+            );
         });
 
-        it('calc() #30', function () {
-
-            return transform(`
+        it("calc() #30", function () {
+            return transform(
+                `
 
 :root {
 --preferred-width: 20px;
 }
 .foo-bar {
     width: calc(calc(var(--preferred-width) + 2px) / (10/3px));
-`, {inlineCssVariables: true, beautify: true}).then(result => expect(result.code).equals(`.foo-bar {
+`,
+                { inlineCssVariables: true, beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`.foo-bar {
  width: 6.6px
-}`));
+}`),
+            );
         });
 
-        it('max() #31', function () {
-
-            return transform(`
+        it("max() #31", function () {
+            return transform(
+                `
 
 :root {
 --preferred-width: 20px;
 }
 .foo-bar {
     width: max(calc(calc(var(--preferred-width) + 2px) / (10/3px)), 200px);
-`, {inlineCssVariables: true, beautify: true}).then(result => expect(result.code).equals(`.foo-bar {
+`,
+                { inlineCssVariables: true, beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`.foo-bar {
  width: 200px
-}`));
+}`),
+            );
         });
 
-        it('max() #32', function () {
-
-            return transform(`
+        it("max() #32", function () {
+            return transform(
+                `
 
 :root {
 --preferred-width: 20px;
 }
 .foo-bar {
     width: max(calc(calc(var(--preferred-width) + 2px) / (10/3px)), 200px);
-`, {inlineCssVariables: true, beautify: true}).then(result => expect(result.code).equals(`.foo-bar {
+`,
+                { inlineCssVariables: true, beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`.foo-bar {
  width: 200px
-}`));
+}`),
+            );
         });
 
-        it('max() #33', function () {
-
-            return transform(`
+        it("max() #33", function () {
+            return transform(
+                `
 
 :root {
 --preferred-width: 670px;
 }
 .foo-bar {
     width: max(calc(calc(var(--preferred-width) + 2px) / (10/3px)), 200px);
-`, {inlineCssVariables: true, beautify: true}).then(result => expect(result.code).equals(`.foo-bar {
+`,
+                { inlineCssVariables: true, beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`.foo-bar {
  width: 201.6px
-}`));
+}`),
+            );
         });
 
-        it('pow() #34', function () {
-            
-            return transform(`
+        it("pow() #34", function () {
+            return transform(
+                `
 
 :root {
   --size-0: 100px;
@@ -457,7 +485,10 @@ width: calc(-2px *sign(-1);}
   height: var(--size-3);
 }
 
-`, {inlineCssVariables: true, removeComments: false, beautify: true}).then(result => expect(result.code).equals(`:root {
+`,
+                { inlineCssVariables: true, removeComments: false, beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`:root {
  /* --size-0: 100px */
  /* --size-1: hypot(var(--size-0)) */
  /* --size-2: hypot(var(--size-0),var(--size-0)) */
@@ -468,58 +499,71 @@ width: calc(-2px *sign(-1);}
  height: 100px
 }
 .two {
- width: 141px;
- height: 141px
+ width: 141.421356px;
+ height: 141.421356px
 }
 .three {
  width: 250px;
  height: 250px
-}`));
+}`),
+            );
         });
 
-
-
-        it('abs() #35', function () {
-
+        it("abs() #35", function () {
             return parse(`
 
 a {
 
 width: calc(2px *abs(-1));}
 }
-`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+`).then((result) =>
+                expect(render(result.ast, { minify: false }).code).equals(`a {
  width: 2px
-}`));
+}`),
+            );
         });
 
-
-        it('translate() #36', function () {
-
+        it("translate() #36", function () {
             return parse(`
 
 a {
 
      transform: translate(0, -50px);
 }
-`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+`).then((result) =>
+                expect(render(result.ast, { minify: false }).code).equals(`a {
  transform: translateY(-50px)
-}`));
+}`),
+            );
         });
 
-
-        it('hypth() #37', function () {
-
+        it("hypth() #37", function () {
             return parse(`
 
 :root {
   --size-0: 100px;
   --size-1: hypot(var(--size-0));
 
-`).then(result => expect(render(result.ast, {minify: false}).code).equals(`:root {
+`).then((result) =>
+                expect(render(result.ast, { minify: false }).code).equals(`:root {
  --size-0: 100px;
  --size-1: hypot(var(--size-0))
-}`));
+}`),
+            );
+        });
+
+        it("hypth() #38", function () {
+            return parse(`
+
+a {
+transform: rotate(360deg);
+    
+
+`).then((result) =>
+                expect(render(result.ast, { beautify: true }).code).equals(`a {
+ transform: rotate(1turn)
+}`),
+            );
         });
     });
-
 }
