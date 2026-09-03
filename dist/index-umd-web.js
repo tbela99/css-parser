@@ -10262,7 +10262,9 @@
                 }
                 const value = evaluate(values);
                 // @ts-ignore
-                let val = value[0].typ == exports.EnumToken.NumberTokenType || value[0].typ == exports.EnumToken.AngleTokenType
+                let val = value[0].typ == exports.EnumToken.NumberTokenType ||
+                    value[0].typ == exports.EnumToken.AngleTokenType ||
+                    value[0].typ == exports.EnumToken.PercentageTokenType
                     ? +value[0].val
                     : // @ts-expect-error
                         value[0].l.val / value[0].r.val;
@@ -10277,7 +10279,7 @@
                             [LOCEND]: value[0][LOCEND],
                         }
                         : {
-                            typ: exports.EnumToken.NumberTokenType,
+                            typ: token.val == "sign" ? exports.EnumToken.NumberTokenType : value[0].typ,
                             val: Math[token.val](val),
                             [LOCSRCID]: value[0][LOCSRCID],
                             [LOCSTA]: value[0][LOCSTA],
@@ -10307,10 +10309,23 @@
                     },
                 ];
             }
+            case "mod":
             case "atan2":
             case "pow":
-            case "rem":
-            case "mod": {
+            case "rem": {
+                {
+                    let typ = token.chi[0]?.typ;
+                    for (let i = 1; i < token.chi.length; i++) {
+                        if (token.chi[i].typ == exports.EnumToken.WhitespaceTokenType ||
+                            token.chi[i].typ == exports.EnumToken.CommaTokenType ||
+                            token.chi[i].typ == exports.EnumToken.CommentTokenType) {
+                            continue;
+                        }
+                        if (token.chi[i].typ != typ) {
+                            return null;
+                        }
+                    }
+                }
                 const chi = values.filter((t) => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(t.typ));
                 if (token.val == "atan2") {
                     for (let i = 0; i < chi.length; i++) {

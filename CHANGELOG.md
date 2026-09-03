@@ -1,5 +1,10 @@
 # Changelog
 
+# v1.6.1
+
+- [x] fix bugs when computing path functions.
+- [x] reduce array mutations
+
 # v1.6.0
 
 - [x] added support for math function `tan()`.

@@ -565,5 +565,40 @@ transform: rotate(360deg);
 }`),
             );
         });
+
+        it("hypth() #39", function () {
+            return parse(`
+
+.test { opacity: sign(-50%); }
+.test { opacity: abs(-50%); }
+.test { opacity: mod(50%, 7); }
+.test { opacity: rem(50%, 7); }
+.test { opacity: round(nearest, 50%, 7); }
+.test { opacity: hypot(50%, 1); }
+.test { opacity: min(abs(-50%), 60%); }
+.test { color: hsl(0 abs(-50%) 50%); }
+a {
+  width: abs(-50%);
+}
+`, {
+
+                beautify: true,
+                nestingRules: false,
+                removeDuplicateDeclarations: ['opacity']
+}).then((result) =>
+                expect(render(result.ast, { beautify: true }).code).equals(`.test {
+ opacity: -1;
+ opacity: mod(50%,7);
+ opacity: rem(50%,7);
+ opacity: round(nearest,50%,7);
+ opacity: 50.009999%;
+ opacity: 50%;
+ color: #bf4040
+}
+a {
+ width: 50%
+}`),
+            );
+        });
     });
 }
