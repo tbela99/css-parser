@@ -181,139 +181,154 @@ export function parseSelector(
         parent = parent?.[PARENT] as AstRuleList;
     } while (!nested && parent != null);
 
-    for (; i < tokens.length; i++) {
-        if (tokens[i].typ == EnumToken.ColonTokenType) {
-            if (tokens[i + 1]?.typ == EnumToken.IdenTokenType) {
-                Object.assign(tokens[i], {
-                    typ: EnumToken.PseudoElementTokenType,
-                    val: ":" + (tokens[i + 1] as IdentToken).val,
-                });
+    const all = new Array(tokens.length);
+    let write = 0;
 
-                tokens[i][LOCEND] = tokens[i + 1]![LOCEND];
-                tokens.splice(i + 1, 1);
+    for (let read = 0; read < tokens.length; read++) {
+        let token = tokens[read];
+
+        if (token.typ == EnumToken.ColonTokenType) {
+            const next = tokens[read + 1];
+
+            if (next?.typ == EnumToken.IdenTokenType) {
+                all[write++] = {
+                    ...token,
+                    typ: EnumToken.PseudoElementTokenType,
+                    val: ":" + (next as IdentToken).val,
+                    [LOCEND]: next[LOCEND],
+                } as Token;
+                read++;
                 continue;
             }
 
-            if (tokens[i + 1]?.typ == EnumToken.FunctionTokenDefType) {
-                val = ":" + (tokens[i + 1] as IdentToken).val;
+            if (next?.typ == EnumToken.FunctionTokenDefType) {
+                val = ":" + (next as IdentToken).val;
 
-                Object.assign(tokens[i], {
+                all[write++] = {
+                    ...token,
                     typ:
                         val + "()" in getSyntaxConfig().selectors
                             ? EnumToken.PseudoClassFunctionTokenDefType
-                            : tokens[i + 1].typ,
+                            : next.typ,
                     val,
-                });
-
-                tokens[i][LOCEND] = tokens[i + 1]![LOCEND];
-                tokens.splice(i + 1, 1);
+                    [LOCEND]: next[LOCEND],
+                } as Token;
+                read++;
                 continue;
             }
         }
 
-        if (tokens[i].typ == EnumToken.DoubleColonTokenType) {
-            val = ":" + (tokens[i + 1] as IdentToken).val;
-            if (tokens[i + 1]?.typ == EnumToken.IdenTokenType) {
-                Object.assign(tokens[i], {
+        if (token.typ == EnumToken.DoubleColonTokenType) {
+            const next = tokens[read + 1];
+            val = ":" + (next as IdentToken).val;
+
+            if (next?.typ == EnumToken.IdenTokenType) {
+                all[write++] = {
+                    ...token,
                     typ: EnumToken.PseudoClassTokenType,
                     val: (pseudoElements.includes(val) ? "" : ":") + val,
-                });
-
-                tokens[i][LOCEND] = tokens[i + 1]![LOCEND];
-                tokens.splice(i + 1, 1);
+                    [LOCEND]: next[LOCEND],
+                } as Token;
+                read++;
                 continue;
             }
 
-            if (tokens[i + 1]?.typ == EnumToken.FunctionTokenDefType) {
-                val = "::" + (tokens[i + 1] as IdentToken).val;
-                Object.assign(tokens[i], {
+            if (next?.typ == EnumToken.FunctionTokenDefType) {
+                val = "::" + (next as IdentToken).val;
+                all[write++] = {
+                    ...token,
                     typ:
                         val + "()" in getSyntaxConfig().selectors
                             ? EnumToken.PseudoClassFunctionTokenDefType
                             : EnumToken.FunctionTokenDefType,
                     val,
-                });
-
-                tokens[i][LOCEND] = tokens[i + 1]![LOCEND];
-                tokens.splice(i + 1, 1);
+                    [LOCEND]: next[LOCEND],
+                } as Token;
+                read++;
                 continue;
             }
         }
 
-        if (tokens[i].typ == EnumToken.ColorTokenType) {
-            if (isHash((tokens[i] as ColorToken).val)) {
-                Object.assign(tokens[i], {
-                    typ: EnumToken.HashTokenType,
-                });
-            } else {
-                return {
-                    typ: EnumToken.RuleNodeType,
-                    sel: [
-                        ...tokens
-                            .reduce(
-                                (acc: string[][], curr: Token, index: number, array: Token[]) => {
-                                    // if (curr.typ == EnumToken.CommentTokenType) {
-                                    //     return acc;
-                                    // }
+        if (token.typ == EnumToken.ColorTokenType) {
+            if (isHash((token as ColorToken).val)) {
+                token.typ = EnumToken.HashTokenType;
+                all[write++] = token as Token;
+                continue;
+            }
 
-                                    if (curr.typ == EnumToken.WhitespaceTokenType) {
-                                        if (
-                                            trimWhiteSpace.includes(array[index - 1]?.typ) ||
-                                            trimWhiteSpace.includes(array[index + 1]?.typ) ||
-                                            combinators.includes((<LiteralToken>array[index - 1])?.val) ||
-                                            combinators.includes((<LiteralToken>array[index + 1])?.val)
-                                        ) {
-                                            return acc;
-                                        }
-                                    }
-
-                                    let t: string = renderValue(curr, { minify: false });
-
-                                    if (t == ",") {
-                                        acc.push([]);
-                                    } else {
-                                        acc[acc.length - 1].push(t);
-                                    }
-                                    return acc;
-                                },
-                                [[]],
-                            )
-                            .reduce((acc: Map<string, string[]>, curr: string[]) => {
-                                let i: number = 0;
-
-                                for (; i < curr.length; i++) {
-                                    if (i + 1 < curr.length && curr[i] == "*") {
-                                        if (curr[i] == "*") {
-                                            let index: number = curr[i + 1] == " " ? 2 : 1;
-
-                                            if (![">", "~", "+"].includes(curr[index])) {
-                                                curr.splice(i, index);
-                                            }
-                                        }
+            return {
+                typ: EnumToken.RuleNodeType,
+                sel: [
+                    ...tokens
+                        .reduce(
+                            (acc: string[][], curr: Token, index: number, array: Token[]) => {
+                                if (curr.typ == EnumToken.WhitespaceTokenType) {
+                                    if (
+                                        trimWhiteSpace.includes(array[index - 1]?.typ) ||
+                                        trimWhiteSpace.includes(array[index + 1]?.typ) ||
+                                        combinators.includes((<LiteralToken>array[index - 1])?.val) ||
+                                        combinators.includes((<LiteralToken>array[index + 1])?.val)
+                                    ) {
+                                        return acc;
                                     }
                                 }
 
-                                acc.set(curr.join(""), curr);
+                                let t: string = renderValue(curr, { minify: false });
+
+                                if (t == ",") {
+                                    acc.push([]);
+                                } else {
+                                    acc[acc.length - 1].push(t);
+                                }
                                 return acc;
-                            }, uniq)
-                            .keys(),
-                    ].join(","),
-                    chi: [],
-                    [LOCSRCID]: tokens[0][LOCSRCID],
-                    [LOCSTA]: tokens[0][LOCSTA],
-                    [LOCEND]: tokens[tokens.length - 1][LOCEND],
-                    [TOKENS]: tokens,
-                    [STATE]: EnumAstNodeStatus.Invalid,
-                    [ERRORS]: [
-                        {
-                            action: "drop",
-                            node: tokens[i],
-                            message: "invalid hash id",
-                        },
-                    ],
-                } as AstRule;
-            }
+                            },
+                            [[]],
+                        )
+                        .reduce((acc: Map<string, string[]>, curr: string[]) => {
+                            let i: number = 0;
+
+                            for (; i < curr.length; i++) {
+                                if (i + 1 < curr.length && curr[i] == "*") {
+                                    if (curr[i] == "*") {
+                                        let index: number = curr[i + 1] == " " ? 2 : 1;
+
+                                        if (![">", "~", "+"].includes(curr[index])) {
+                                            curr.splice(i, index);
+                                        }
+                                    }
+                                }
+                            }
+
+                            acc.set(curr.join(""), curr);
+                            return acc;
+                        }, uniq)
+                        .keys(),
+                ].join(","),
+                chi: [],
+                [LOCSRCID]: tokens[0][LOCSRCID],
+                [LOCSTA]: tokens[0][LOCSTA],
+                [LOCEND]: tokens[tokens.length - 1][LOCEND],
+                [TOKENS]: tokens,
+                [STATE]: EnumAstNodeStatus.Invalid,
+                [ERRORS]: [
+                    {
+                        action: "drop",
+                        node: token,
+                        message: "invalid hash id",
+                    },
+                ],
+            } as AstRule;
         }
+
+        all[write++] = token;
+    }
+
+    if (write !== tokens.length) {
+        for (let index = 0; index < write; index++) {
+            tokens[index] = all[index];
+        }
+
+        tokens.length = write;
     }
 
     const result = matchSelectorSyntax(tokens, errors, options, nested === true);

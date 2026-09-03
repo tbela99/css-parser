@@ -6247,7 +6247,7 @@ declare function expand(ast: AstStyleSheet | AstAtRule | AstRule): AstNode$1;
  * console.log(declarations);
  * ```
  */
-declare function parseDeclarations(declaration: string): Promise<Array<AstDeclaration | AstComment>>;
+declare function parseDeclarations(declaration: string): Array<AstDeclaration | AstComment>;
 /**
  * Parse css string and return an array of tokens
  * @param src

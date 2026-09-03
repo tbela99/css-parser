@@ -21868,7 +21868,15 @@
         // trim :is()
         if (curr[0] == "&") {
             if (curr[1] == " " && !isIdent(curr[2]) && !isFunction(curr[2])) {
-                curr.splice(0, 2);
+                const all = new Array(Math.max(curr.length - 2, 0));
+                let write = 0;
+                for (let read = 2; read < curr.length; read++) {
+                    all[write++] = curr[read];
+                }
+                curr.length = 0;
+                for (let index = 0; index < write; index++) {
+                    curr[index] = all[index];
+                }
             }
         }
         acc.push(curr.join(""));
@@ -22146,19 +22154,40 @@
                         if (optimized.length > 1) {
                             const check = optimized.at(-2);
                             if (!combinators.includes(check)) {
-                                let last = optimized.pop();
+                                const last = optimized[optimized.length - 1];
+                                const all = new Array(Math.max(optimized.length - 1, 0));
+                                let write = 0;
+                                for (let read = 0; read < optimized.length - 1; read++) {
+                                    all[write++] = optimized[read];
+                                }
+                                optimized.length = 0;
+                                for (let index = 0; index < write; index++) {
+                                    optimized[index] = all[index];
+                                }
                                 wrap = false;
                                 rule =
                                     optimized.join("") +
                                         `:is(${selector
                                         .map((s) => {
+                                        const next = s[0] == "&" ? new Array(s.length) : new Array(s.length + 1);
+                                        let write = 0;
                                         if (s[0] == "&") {
-                                            s.splice(0, 1, last);
+                                            next[write++] = last;
+                                            for (let read = 1; read < s.length; read++) {
+                                                next[write++] = s[read];
+                                            }
                                         }
                                         else {
-                                            s.unshift(last);
+                                            next[write++] = last;
+                                            for (let read = 0; read < s.length; read++) {
+                                                next[write++] = s[read];
+                                            }
                                         }
-                                        return s.join("");
+                                        const rebuilt = new Array(write);
+                                        for (let index = 0; index < write; index++) {
+                                            rebuilt[index] = next[index];
+                                        }
+                                        return rebuilt.join("");
                                     })
                                         .join(",")})`;
                             }
@@ -22167,7 +22196,20 @@
                             rule = selector
                                 .map((s) => {
                                 if (s[0] == "&") {
-                                    s.splice(0, 1, ...node[OPTIMIZED].optimized);
+                                    const replacement = node[OPTIMIZED].optimized;
+                                    const all = new Array(Math.max(s.length - 1 + replacement.length, 0));
+                                    let write = 0;
+                                    for (let read = 0; read < replacement.length; read++) {
+                                        all[write++] = replacement[read];
+                                    }
+                                    for (let read = 1; read < s.length; read++) {
+                                        all[write++] = s[read];
+                                    }
+                                    const rebuilt = new Array(write);
+                                    for (let index = 0; index < write; index++) {
+                                        rebuilt[index] = all[index];
+                                    }
+                                    return rebuilt.join("");
                                 }
                                 return s.join("");
                             })
@@ -22399,18 +22441,42 @@
         while (optimized.length > 0) {
             const last = optimized.at(-1);
             if (last == " " || combinators.includes(last)) {
-                optimized.pop();
+                const all = new Array(Math.max(optimized.length - 1, 0));
+                let write = 0;
+                for (let read = 0; read < optimized.length - 1; read++) {
+                    all[write++] = optimized[read];
+                }
+                optimized.length = 0;
+                for (let index = 0; index < write; index++) {
+                    optimized[index] = all[index];
+                }
                 continue;
             }
             break;
         }
         for (let i1 = 0; i1 < selector.length; i1++) {
-            selector[i1].splice(0, optimized.length);
+            const all = new Array(Math.max(selector[i1].length - optimized.length, 0));
+            let write = 0;
+            for (let read = optimized.length; read < selector[i1].length; read++) {
+                all[write++] = selector[i1][read];
+            }
+            selector[i1].length = 0;
+            for (let index = 0; index < write; index++) {
+                selector[i1][index] = all[index];
+            }
         }
         let reducible = optimized.length == 1;
         if (optimized[0] == "&") {
             if (optimized[1] == " ") {
-                optimized.splice(0, 2);
+                const all = new Array(Math.max(optimized.length - 2, 0));
+                let write = 0;
+                for (let read = 2; read < optimized.length; read++) {
+                    all[write++] = optimized[read];
+                }
+                optimized.length = 0;
+                for (let index = 0; index < write; index++) {
+                    optimized[index] = all[index];
+                }
             }
         }
         if (optimized.length == 0 || optimized[0].charAt(0) == "&" || selector.length == 1) {
@@ -22997,7 +23063,15 @@
                 if (selector.length > 1 &&
                     selector[0] == "&" &&
                     (combinators.includes(selector[1]) || !/^[a-zA-Z:]/.test(selector[1]))) {
-                    selector.shift();
+                    const all = new Array(Math.max(selector.length - 1, 0));
+                    let write = 0;
+                    for (let read = 1; read < selector.length; read++) {
+                        all[write++] = selector[read];
+                    }
+                    selector.length = 0;
+                    for (let index = 0; index < write; index++) {
+                        selector[index] = all[index];
+                    }
                 }
             }
             const unique = new Set();
@@ -27062,7 +27136,6 @@
         const stack = [];
         const uniq = new Map();
         let allowed = true;
-        let i = 0;
         let index;
         let parent = context;
         let nested = false;
@@ -27096,119 +27169,130 @@
             nested = parent?.typ == exports.EnumToken.RuleNodeType;
             parent = parent?.[PARENT];
         } while (!nested && parent != null);
-        for (; i < tokens.length; i++) {
-            if (tokens[i].typ == exports.EnumToken.ColonTokenType) {
-                if (tokens[i + 1]?.typ == exports.EnumToken.IdenTokenType) {
-                    Object.assign(tokens[i], {
+        const all = new Array(tokens.length);
+        let write = 0;
+        for (let read = 0; read < tokens.length; read++) {
+            let token = tokens[read];
+            if (token.typ == exports.EnumToken.ColonTokenType) {
+                const next = tokens[read + 1];
+                if (next?.typ == exports.EnumToken.IdenTokenType) {
+                    all[write++] = {
+                        ...token,
                         typ: exports.EnumToken.PseudoElementTokenType,
-                        val: ":" + tokens[i + 1].val,
-                    });
-                    tokens[i][LOCEND] = tokens[i + 1][LOCEND];
-                    tokens.splice(i + 1, 1);
+                        val: ":" + next.val,
+                        [LOCEND]: next[LOCEND],
+                    };
+                    read++;
                     continue;
                 }
-                if (tokens[i + 1]?.typ == exports.EnumToken.FunctionTokenDefType) {
-                    val = ":" + tokens[i + 1].val;
-                    Object.assign(tokens[i], {
+                if (next?.typ == exports.EnumToken.FunctionTokenDefType) {
+                    val = ":" + next.val;
+                    all[write++] = {
+                        ...token,
                         typ: val + "()" in getSyntaxConfig().selectors
                             ? exports.EnumToken.PseudoClassFunctionTokenDefType
-                            : tokens[i + 1].typ,
+                            : next.typ,
                         val,
-                    });
-                    tokens[i][LOCEND] = tokens[i + 1][LOCEND];
-                    tokens.splice(i + 1, 1);
+                        [LOCEND]: next[LOCEND],
+                    };
+                    read++;
                     continue;
                 }
             }
-            if (tokens[i].typ == exports.EnumToken.DoubleColonTokenType) {
-                val = ":" + tokens[i + 1].val;
-                if (tokens[i + 1]?.typ == exports.EnumToken.IdenTokenType) {
-                    Object.assign(tokens[i], {
+            if (token.typ == exports.EnumToken.DoubleColonTokenType) {
+                const next = tokens[read + 1];
+                val = ":" + next.val;
+                if (next?.typ == exports.EnumToken.IdenTokenType) {
+                    all[write++] = {
+                        ...token,
                         typ: exports.EnumToken.PseudoClassTokenType,
                         val: (pseudoElements.includes(val) ? "" : ":") + val,
-                    });
-                    tokens[i][LOCEND] = tokens[i + 1][LOCEND];
-                    tokens.splice(i + 1, 1);
+                        [LOCEND]: next[LOCEND],
+                    };
+                    read++;
                     continue;
                 }
-                if (tokens[i + 1]?.typ == exports.EnumToken.FunctionTokenDefType) {
-                    val = "::" + tokens[i + 1].val;
-                    Object.assign(tokens[i], {
+                if (next?.typ == exports.EnumToken.FunctionTokenDefType) {
+                    val = "::" + next.val;
+                    all[write++] = {
+                        ...token,
                         typ: val + "()" in getSyntaxConfig().selectors
                             ? exports.EnumToken.PseudoClassFunctionTokenDefType
                             : exports.EnumToken.FunctionTokenDefType,
                         val,
-                    });
-                    tokens[i][LOCEND] = tokens[i + 1][LOCEND];
-                    tokens.splice(i + 1, 1);
+                        [LOCEND]: next[LOCEND],
+                    };
+                    read++;
                     continue;
                 }
             }
-            if (tokens[i].typ == exports.EnumToken.ColorTokenType) {
-                if (isHash(tokens[i].val)) {
-                    Object.assign(tokens[i], {
-                        typ: exports.EnumToken.HashTokenType,
-                    });
+            if (token.typ == exports.EnumToken.ColorTokenType) {
+                if (isHash(token.val)) {
+                    token.typ = exports.EnumToken.HashTokenType;
+                    all[write++] = token;
+                    continue;
                 }
-                else {
-                    return {
-                        typ: exports.EnumToken.RuleNodeType,
-                        sel: [
-                            ...tokens
-                                .reduce((acc, curr, index, array) => {
-                                // if (curr.typ == EnumToken.CommentTokenType) {
-                                //     return acc;
-                                // }
-                                if (curr.typ == exports.EnumToken.WhitespaceTokenType) {
-                                    if (trimWhiteSpace.includes(array[index - 1]?.typ) ||
-                                        trimWhiteSpace.includes(array[index + 1]?.typ) ||
-                                        combinators.includes(array[index - 1]?.val) ||
-                                        combinators.includes(array[index + 1]?.val)) {
-                                        return acc;
-                                    }
+                return {
+                    typ: exports.EnumToken.RuleNodeType,
+                    sel: [
+                        ...tokens
+                            .reduce((acc, curr, index, array) => {
+                            if (curr.typ == exports.EnumToken.WhitespaceTokenType) {
+                                if (trimWhiteSpace.includes(array[index - 1]?.typ) ||
+                                    trimWhiteSpace.includes(array[index + 1]?.typ) ||
+                                    combinators.includes(array[index - 1]?.val) ||
+                                    combinators.includes(array[index + 1]?.val)) {
+                                    return acc;
                                 }
-                                let t = renderValue(curr, { minify: false });
-                                if (t == ",") {
-                                    acc.push([]);
-                                }
-                                else {
-                                    acc[acc.length - 1].push(t);
-                                }
-                                return acc;
-                            }, [[]])
-                                .reduce((acc, curr) => {
-                                let i = 0;
-                                for (; i < curr.length; i++) {
-                                    if (i + 1 < curr.length && curr[i] == "*") {
-                                        if (curr[i] == "*") {
-                                            let index = curr[i + 1] == " " ? 2 : 1;
-                                            if (![">", "~", "+"].includes(curr[index])) {
-                                                curr.splice(i, index);
-                                            }
+                            }
+                            let t = renderValue(curr, { minify: false });
+                            if (t == ",") {
+                                acc.push([]);
+                            }
+                            else {
+                                acc[acc.length - 1].push(t);
+                            }
+                            return acc;
+                        }, [[]])
+                            .reduce((acc, curr) => {
+                            let i = 0;
+                            for (; i < curr.length; i++) {
+                                if (i + 1 < curr.length && curr[i] == "*") {
+                                    if (curr[i] == "*") {
+                                        let index = curr[i + 1] == " " ? 2 : 1;
+                                        if (![">", "~", "+"].includes(curr[index])) {
+                                            curr.splice(i, index);
                                         }
                                     }
                                 }
-                                acc.set(curr.join(""), curr);
-                                return acc;
-                            }, uniq)
-                                .keys(),
-                        ].join(","),
-                        chi: [],
-                        [LOCSRCID]: tokens[0][LOCSRCID],
-                        [LOCSTA]: tokens[0][LOCSTA],
-                        [LOCEND]: tokens[tokens.length - 1][LOCEND],
-                        [TOKENS]: tokens,
-                        [STATE]: exports.EnumAstNodeStatus.Invalid,
-                        [ERRORS]: [
-                            {
-                                action: "drop",
-                                node: tokens[i],
-                                message: "invalid hash id",
-                            },
-                        ],
-                    };
-                }
+                            }
+                            acc.set(curr.join(""), curr);
+                            return acc;
+                        }, uniq)
+                            .keys(),
+                    ].join(","),
+                    chi: [],
+                    [LOCSRCID]: tokens[0][LOCSRCID],
+                    [LOCSTA]: tokens[0][LOCSTA],
+                    [LOCEND]: tokens[tokens.length - 1][LOCEND],
+                    [TOKENS]: tokens,
+                    [STATE]: exports.EnumAstNodeStatus.Invalid,
+                    [ERRORS]: [
+                        {
+                            action: "drop",
+                            node: token,
+                            message: "invalid hash id",
+                        },
+                    ],
+                };
             }
+            all[write++] = token;
+        }
+        if (write !== tokens.length) {
+            for (let index = 0; index < write; index++) {
+                tokens[index] = all[index];
+            }
+            tokens.length = write;
         }
         const result = matchSelectorSyntax(tokens, errors, options, nested === true);
         trimArray(tokens);
@@ -27527,7 +27611,6 @@
      * @param errors
      */
     function parseDeclaration(tokens, parent, options, errors) {
-        // console.error(tokens);
         const name = tokens.shift();
         let i;
         let rules = null;
@@ -27861,10 +27944,19 @@
             }
             if (trimTokenSpace$1.has(token.typ)) {
                 if (tokens[i + 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
-                    tokens.splice(i + 1, 1);
+                    for (let index = i + 1; index < tokens.length - 1; index++) {
+                        tokens[index] = tokens[index + 1];
+                    }
+                    tokens.length--;
+                    i--;
+                    continue;
                 }
                 if (tokens[i - 1]?.typ == exports.EnumToken.WhitespaceTokenType) {
-                    tokens.splice(--i, 1);
+                    for (let index = i - 1; index < tokens.length - 1; index++) {
+                        tokens[index] = tokens[index + 1];
+                    }
+                    tokens.length--;
+                    i--;
                 }
             }
         }
@@ -32606,17 +32698,18 @@
      * console.log(declarations);
      * ```
      */
-    async function parseDeclarations(declaration) {
+    function parseDeclarations(declaration) {
         const stream = `.x{${declaration}}`;
-        return doParse(new Tokenizer({
+        const result = doParseSync(new Tokenizer({
             stream,
             offset: 0,
             position: 0,
             source: new SourceFile(stream, [], ""),
             currentPosition: 0,
-        }), { setParent: false, minify: false, validation: false }).then((result) => {
-            return result.ast.chi[0].chi.filter((t) => t.typ == exports.EnumToken.DeclarationNodeType || t.typ == exports.EnumToken.CommentNodeType);
-        });
+        }), { setParent: false, minify: false, validation: false });
+        // .then((result) => {
+        return result.ast.chi[0].chi.filter((t) => t.typ == exports.EnumToken.DeclarationNodeType || t.typ == exports.EnumToken.CommentNodeType);
+        // });
     }
     /**
      * Parse css string and return an array of tokens
