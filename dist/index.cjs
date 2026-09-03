@@ -20655,7 +20655,7 @@ function eqMatrix(a, b) {
     return true;
 }
 function minifyTransformFunctions(transform) {
-    const name = transform.val.toLowerCase();
+    const name = transform.val;
     if ("skewX" == name) {
         transform.val = "skew";
         return transform;
@@ -20790,9 +20790,36 @@ function compute(transformLists) {
     let matrix = identity();
     let mat;
     let transforms;
+    let shouldComputeMatrix = true;
     const cumulative = [];
+    // all transform function arguments must be 0 or scale(1)
+    for (const transform of transformLists) {
+        switch (transform.val) {
+            case "rotate":
+            case "rotateX":
+            case "rotateY":
+            case "rotateZ":
+            case "rotate3d":
+                for (const child of transform.chi) {
+                    if (child.typ == exports.EnumToken.WhitespaceTokenType || child.typ == exports.EnumToken.CommaTokenType) {
+                        continue;
+                    }
+                    if ((child.typ != exports.EnumToken.AngleTokenType &&
+                        child.typ != exports.EnumToken.NumberTokenType &&
+                        child.typ != exports.EnumToken.PercentageTokenType) ||
+                        // angle >= 360deg, do not transform
+                        Math.abs(getAngle(child)) >= 1) {
+                        shouldComputeMatrix = false;
+                    }
+                }
+                break;
+        }
+        if (!shouldComputeMatrix) {
+            break;
+        }
+    }
     for (const transformList of splitTransformList(transformLists)) {
-        mat = computeMatrix(transformList, identity());
+        mat = shouldComputeMatrix ? computeMatrix(transformList, identity()) : null;
         if (mat == null) {
             return null;
         }
@@ -20821,60 +20848,6 @@ function compute(transformLists) {
         cumulative,
         minified: minify$1(matrix) ?? [serialized],
     };
-    // valid identity matrix
-    if ((result.minified.length == 1 &&
-        result.minified[0].typ == exports.EnumToken.IdenTokenType &&
-        result.minified[0].val == "none") ||
-        (result.cumulative.length == 1 &&
-            result.cumulative[0].typ == exports.EnumToken.IdenTokenType &&
-            result.cumulative[0].val == "none") ||
-        (result.matrix?.typ == exports.EnumToken.IdenTokenType && result.matrix.val == "none")) {
-        // all transform function arguments must be 0 or scale(1)
-        for (const transform of transformLists) {
-            switch (transform.val) {
-                case "translate":
-                case "translateX":
-                case "translateY":
-                case "translateZ":
-                case "translate3d":
-                case "rotate":
-                case "rotateX":
-                case "rotateY":
-                case "rotateZ":
-                case "rotate3d":
-                case "skew":
-                case "skewX":
-                case "skewY":
-                    for (const child of transform.chi) {
-                        if (child.typ == exports.EnumToken.WhitespaceTokenType || child.typ == exports.EnumToken.CommaTokenType) {
-                            continue;
-                        }
-                        if ((child.typ != exports.EnumToken.AngleTokenType &&
-                            child.typ != exports.EnumToken.NumberTokenType &&
-                            child.typ != exports.EnumToken.PercentageTokenType) ||
-                            getNumber(child) != 0) {
-                            return null;
-                        }
-                    }
-                    break;
-                case "scale":
-                case "scaleX":
-                case "scaleY":
-                case "scaleZ":
-                case "scale3d":
-                    for (const child of transform.chi) {
-                        if (child.typ == exports.EnumToken.WhitespaceTokenType || child.typ == exports.EnumToken.CommaTokenType) {
-                            continue;
-                        }
-                        if ((child.typ != exports.EnumToken.NumberTokenType && child.typ != exports.EnumToken.PercentageTokenType) ||
-                            getNumber(child) != 1) {
-                            return null;
-                        }
-                    }
-                    break;
-            }
-        }
-    }
     return result;
 }
 function computeMatrix(transformList, matrixVar) {
@@ -21202,7 +21175,7 @@ class TransformCssFeature {
                 minified: null,
             };
             if (matrix == null || cumulative == null || minified == null) {
-                node.val = children;
+                node.val = children.map((t) => t.typ == exports.EnumToken.TransformFunctionTokenType ? minifyTransformFunctions(t) : t);
                 continue;
             }
             let r = [filterValues(children)];

@@ -77,7 +77,9 @@ export class TransformCssFeature {
             };
 
             if (matrix == null || cumulative == null || minified == null) {
-                (node as AstDeclaration).val = children;
+                (node as AstDeclaration).val = children.map((t) =>
+                    t.typ == EnumToken.TransformFunctionTokenType ? minifyTransformFunctions(t as FunctionToken) : t,
+                );
                 continue;
             }
 

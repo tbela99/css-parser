@@ -266,7 +266,7 @@ function eqMatrix(a, b) {
     return true;
 }
 function minifyTransformFunctions(transform) {
-    const name = transform.val.toLowerCase();
+    const name = transform.val;
     if ("skewX" == name) {
         transform.val = "skew";
         return transform;

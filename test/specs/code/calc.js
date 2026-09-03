@@ -567,7 +567,8 @@ transform: rotate(360deg);
         });
 
         it("hypth() #39", function () {
-            return parse(`
+            return parse(
+                `
 
 .test { opacity: sign(-50%); }
 .test { opacity: abs(-50%); }
@@ -580,12 +581,13 @@ transform: rotate(360deg);
 a {
   width: abs(-50%);
 }
-`, {
-
-                beautify: true,
-                nestingRules: false,
-                removeDuplicateDeclarations: ['opacity']
-}).then((result) =>
+`,
+                {
+                    beautify: true,
+                    nestingRules: false,
+                    removeDuplicateDeclarations: ["opacity"],
+                },
+            ).then((result) =>
                 expect(render(result.ast, { beautify: true }).code).equals(`.test {
  opacity: -1;
  opacity: mod(50%,7);
@@ -597,6 +599,32 @@ a {
 }
 a {
  width: 50%
+}`),
+            );
+        });
+
+        it("hypth() #40", function () {
+            return parse(
+                `
+
+  a:hover {
+
+transform: rotate(calc(2.5*pi * 1rad))  }
+
+
+  .now {
+    transform: translate(100px, 100px) rotate(1215deg) skewX(10deg);
+}
+`,
+                {
+                    beautify: true,
+                },
+            ).then((result) =>
+                expect(render(result.ast, { beautify: true }).code).equals(`a:hover {
+ transform: rotate(450deg)
+}
+.now {
+ transform: translate(100px,100px)rotate(1215deg)skew(10deg)
 }`),
             );
         });
