@@ -1683,13 +1683,13 @@ var declarations = {
 		syntax: "none | auto"
 	},
 	"scroll-timeline": {
-		syntax: "[ <'scroll-timeline-name'> <'scroll-timeline-axis'>? ]#"
+		syntax: " [ <'scroll-timeline-name'> <'scroll-timeline-axis'>? ]#"
 	},
 	"scroll-timeline-axis": {
-		syntax: "[ block | inline | x | y ]#"
+		syntax: " [ block | inline | x | y ]#"
 	},
 	"scroll-timeline-name": {
-		syntax: "[ none | <dashed-ident> ]#"
+		syntax: " [ none | <dashed-ident> ]#"
 	},
 	"scrollbar-color": {
 		syntax: "auto | <color>{2}"
@@ -2181,6 +2181,9 @@ var functions = {
 	},
 	acos: {
 		syntax: "acos( <calc-sum> )"
+	},
+	alpha: {
+		syntax: "alpha( from <color> / [ <alpha-value> | none ] )"
 	},
 	anchor: {
 		syntax: "anchor( <anchor-name>? && <anchor-side>, <length-percentage>? )"

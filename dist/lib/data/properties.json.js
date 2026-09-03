@@ -329,6 +329,53 @@ var map = {
 	"flex-wrap": {
 		shorthand: "flex-flow"
 	},
+	"scroll-timeline": {
+		shorthand: "scroll-timeline",
+		pattern: "scroll-timeline-name scroll-timeline-axis",
+		keywords: [
+			"none",
+			"block",
+			"inline",
+			"x",
+			"y"
+		],
+		"default": [
+			"none",
+			"block"
+		],
+		properties: {
+			"scroll-timeline-name": {
+				keywords: [
+					"none"
+				],
+				"default": [
+					"none"
+				],
+				types: [
+					"DashedIden"
+				]
+			},
+			"scroll-timeline-axis": {
+				keywords: [
+					"block",
+					"inline",
+					"x",
+					"y"
+				],
+				"default": [
+					"block"
+				],
+				types: [
+				]
+			}
+		}
+	},
+	"scroll-timeline-name": {
+		shorthand: "scroll-timeline"
+	},
+	"scroll-timeline-axis": {
+		shorthand: "scroll-timeline"
+	},
 	container: {
 		shorthand: "container",
 		pattern: "container-name container-type",

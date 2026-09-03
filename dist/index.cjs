@@ -2671,13 +2671,13 @@ var declarations = {
 		syntax: "none | auto"
 	},
 	"scroll-timeline": {
-		syntax: "[ <'scroll-timeline-name'> <'scroll-timeline-axis'>? ]#"
+		syntax: " [ <'scroll-timeline-name'> <'scroll-timeline-axis'>? ]#"
 	},
 	"scroll-timeline-axis": {
-		syntax: "[ block | inline | x | y ]#"
+		syntax: " [ block | inline | x | y ]#"
 	},
 	"scroll-timeline-name": {
-		syntax: "[ none | <dashed-ident> ]#"
+		syntax: " [ none | <dashed-ident> ]#"
 	},
 	"scrollbar-color": {
 		syntax: "auto | <color>{2}"
@@ -3169,6 +3169,9 @@ var functions = {
 	},
 	acos: {
 		syntax: "acos( <calc-sum> )"
+	},
+	alpha: {
+		syntax: "alpha( from <color> / [ <alpha-value> | none ] )"
 	},
 	anchor: {
 		syntax: "anchor( <anchor-name>? && <anchor-side>, <length-percentage>? )"
@@ -17451,6 +17454,53 @@ var map = {
 	"flex-wrap": {
 		shorthand: "flex-flow"
 	},
+	"scroll-timeline": {
+		shorthand: "scroll-timeline",
+		pattern: "scroll-timeline-name scroll-timeline-axis",
+		keywords: [
+			"none",
+			"block",
+			"inline",
+			"x",
+			"y"
+		],
+		"default": [
+			"none",
+			"block"
+		],
+		properties: {
+			"scroll-timeline-name": {
+				keywords: [
+					"none"
+				],
+				"default": [
+					"none"
+				],
+				types: [
+					"DashedIden"
+				]
+			},
+			"scroll-timeline-axis": {
+				keywords: [
+					"block",
+					"inline",
+					"x",
+					"y"
+				],
+				"default": [
+					"block"
+				],
+				types: [
+				]
+			}
+		}
+	},
+	"scroll-timeline-name": {
+		shorthand: "scroll-timeline"
+	},
+	"scroll-timeline-axis": {
+		shorthand: "scroll-timeline"
+	},
 	container: {
 		shorthand: "container",
 		pattern: "container-name container-type",
@@ -24599,8 +24649,8 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                 return token.val;
             }
             if (Array.isArray(token.chi)) {
-                const fnName = token.val.toLowerCase();
-                const isLegacy = ["rgb", "rgba", "hsl", "hsla"].includes(token.val.toLowerCase());
+                const fnName = token.val;
+                const isLegacy = ["rgb", "rgba", "hsl", "hsla"].includes(token.val);
                 const hasAlpha = [
                     "rgb",
                     "rgba",

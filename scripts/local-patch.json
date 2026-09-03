@@ -177,6 +177,30 @@
       "comment": "replace stroke-width syntax",
       "syntax": "[ <length-percentage> | <line-width> | <number> ]# "
     },
+    "scroll-margin": {
+      "syntax": "<length>{1,4}"
+    },
+    "scroll-margin-top": {
+      "syntax": "auto | <length-percentage [0,∞]>"
+    },
+    "scroll-margin-right": {
+      "syntax": "auto | <length-percentage [0,∞]>"
+    },
+    "scroll-margin-bottom": {
+      "syntax": "auto | <length-percentage [0,∞]>"
+    },
+    "scroll-margin-left": {
+      "syntax": "auto | <length-percentage [0,∞]>"
+    },
+    "scroll-timeline-name": {
+      "syntax": "[ none | <dashed-ident> ]#"
+    },
+    "scroll-timeline-axis": {
+      "syntax": "[ block | inline | x | y ]#"
+    },
+    "scroll-timeline": {
+      "syntax": "[ <'scroll-timeline-name'> <'scroll-timeline-axis'>? ]#"
+    },
     "transform-origin": {
       "syntax": "[ left | center | right | top | bottom | <length-percentage> ] | [ left | center | right | <length-percentage> ] [ top | center | bottom | <length-percentage> ] <length>? | [ [ center | left | right ] && [ center | top | bottom ] ] <length>?"
     }

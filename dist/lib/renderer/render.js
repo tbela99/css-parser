@@ -515,8 +515,8 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                 return token.val;
             }
             if (Array.isArray(token.chi)) {
-                const fnName = token.val.toLowerCase();
-                const isLegacy = ["rgb", "rgba", "hsl", "hsla"].includes(token.val.toLowerCase());
+                const fnName = token.val;
+                const isLegacy = ["rgb", "rgba", "hsl", "hsla"].includes(token.val);
                 const hasAlpha = [
                     "rgb",
                     "rgba",
