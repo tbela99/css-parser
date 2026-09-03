@@ -2572,7 +2572,7 @@ var declarations = {
 		syntax: "none | nearest"
 	},
 	"scroll-margin": {
-		syntax: "<length>{1,4}"
+		syntax: " <length>{1,4}"
 	},
 	"scroll-margin-block": {
 		syntax: "<length>{1,2}"
@@ -2584,7 +2584,7 @@ var declarations = {
 		syntax: "<length>"
 	},
 	"scroll-margin-bottom": {
-		syntax: "<length>"
+		syntax: " auto | <length-percentage [0,∞]>"
 	},
 	"scroll-margin-inline": {
 		syntax: "<length>{1,2}"
@@ -2596,13 +2596,13 @@ var declarations = {
 		syntax: "<length>"
 	},
 	"scroll-margin-left": {
-		syntax: "<length>"
+		syntax: " auto | <length-percentage [0,∞]>"
 	},
 	"scroll-margin-right": {
-		syntax: "<length>"
+		syntax: " auto | <length-percentage [0,∞]>"
 	},
 	"scroll-margin-top": {
-		syntax: "<length>"
+		syntax: " auto | <length-percentage [0,∞]>"
 	},
 	"scroll-marker-group": {
 		syntax: "none | before | after"
@@ -7957,10 +7957,11 @@ function cmyk2srgbvalues(token) {
     t = components[3];
     // @ts-ignore
     const k = getNumber(t);
+    const mul = 1 - k;
     const rgb = [
-        1 - Math.min(1, c * (1 - k) + k),
-        1 - Math.min(1, m * (1 - k) + k),
-        1 - Math.min(1, y * (1 - k) + k),
+        1 - Math.min(1, c * mul + k),
+        1 - Math.min(1, m * mul + k),
+        1 - Math.min(1, y * mul + k),
     ];
     if (components.length == 5) {
         rgb.push(getNumber(components[4]));
@@ -10952,9 +10953,10 @@ function color2cmykToken(token) {
 }
 function srgb2cmykvalues(r, g, b, a = null) {
     const k = 1 - Math.max(r, g, b);
-    const c = k == 1 ? 0 : (1 - r - k) / (1 - k);
-    const m = k == 1 ? 0 : (1 - g - k) / (1 - k);
-    const y = k == 1 ? 0 : (1 - b - k) / (1 - k);
+    const div = 1 - k;
+    const c = k == 1 ? 0 : (1 - r - k) / div;
+    const m = k == 1 ? 0 : (1 - g - k) / div;
+    const y = k == 1 ? 0 : (1 - b - k) / div;
     const result = [c, m, y, k];
     if (a != null && a < 1) {
         result.push(a);
@@ -17232,6 +17234,65 @@ var properties = {
 	},
 	"padding-left": {
 		shorthand: "padding"
+	},
+	"scroll-margin": {
+		shorthand: "scroll-margin",
+		properties: [
+			"scroll-margin-top",
+			"scroll-margin-right",
+			"scroll-margin-bottom",
+			"scroll-margin-left"
+		],
+		types: [
+			"Length",
+			"Perc"
+		],
+		"default": [
+			"0"
+		],
+		keywords: [
+			"auto"
+		]
+	},
+	"scroll-margin-top": {
+		shorthand: "scroll-margin"
+	},
+	"scroll-margin-right": {
+		shorthand: "scroll-margin"
+	},
+	"scroll-margin-bottom": {
+		shorthand: "scroll-margin"
+	},
+	"scroll-margin-left": {
+		shorthand: "scroll-margin"
+	},
+	"scroll-padding": {
+		shorthand: "scroll-padding",
+		properties: [
+			"scroll-padding-top",
+			"scroll-padding-right",
+			"scroll-padding-bottom",
+			"scroll-padding-left"
+		],
+		types: [
+			"Length",
+			"Perc"
+		],
+		keywords: [
+			"auto"
+		]
+	},
+	"scroll-padding-top": {
+		shorthand: "scroll-padding"
+	},
+	"scroll-padding-right": {
+		shorthand: "scroll-padding"
+	},
+	"scroll-padding-bottom": {
+		shorthand: "scroll-padding"
+	},
+	"scroll-padding-left": {
+		shorthand: "scroll-padding"
 	},
 	"border-radius": {
 		shorthand: "border-radius",

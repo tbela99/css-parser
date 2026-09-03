@@ -116,10 +116,11 @@ function cmyk2srgbvalues(token) {
     t = components[3];
     // @ts-ignore
     const k = getNumber(t);
+    const mul = 1 - k;
     const rgb = [
-        1 - Math.min(1, c * (1 - k) + k),
-        1 - Math.min(1, m * (1 - k) + k),
-        1 - Math.min(1, y * (1 - k) + k),
+        1 - Math.min(1, c * mul + k),
+        1 - Math.min(1, m * mul + k),
+        1 - Math.min(1, y * mul + k),
     ];
     if (components.length == 5) {
         rgb.push(getNumber(components[4]));

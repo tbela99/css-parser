@@ -93,9 +93,10 @@ export function color2cmykToken(token: ColorToken): ColorToken | null {
 
 export function srgb2cmykvalues(r: number, g: number, b: number, a: number | null = null): number[] {
     const k: number = 1 - Math.max(r, g, b);
-    const c: number = k == 1 ? 0 : (1 - r - k) / (1 - k);
-    const m: number = k == 1 ? 0 : (1 - g - k) / (1 - k);
-    const y: number = k == 1 ? 0 : (1 - b - k) / (1 - k);
+    const div: number = 1 - k;
+    const c: number = k == 1 ? 0 : (1 - r - k) / div;
+    const m: number = k == 1 ? 0 : (1 - g - k) / div;
+    const y: number = k == 1 ? 0 : (1 - b - k) / div;
 
     const result: number[] = [c, m, y, k];
     if (a != null && a < 1) {

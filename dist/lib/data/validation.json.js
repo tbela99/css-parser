@@ -1584,7 +1584,7 @@ var declarations = {
 		syntax: "none | nearest"
 	},
 	"scroll-margin": {
-		syntax: "<length>{1,4}"
+		syntax: " <length>{1,4}"
 	},
 	"scroll-margin-block": {
 		syntax: "<length>{1,2}"
@@ -1596,7 +1596,7 @@ var declarations = {
 		syntax: "<length>"
 	},
 	"scroll-margin-bottom": {
-		syntax: "<length>"
+		syntax: " auto | <length-percentage [0,∞]>"
 	},
 	"scroll-margin-inline": {
 		syntax: "<length>{1,2}"
@@ -1608,13 +1608,13 @@ var declarations = {
 		syntax: "<length>"
 	},
 	"scroll-margin-left": {
-		syntax: "<length>"
+		syntax: " auto | <length-percentage [0,∞]>"
 	},
 	"scroll-margin-right": {
-		syntax: "<length>"
+		syntax: " auto | <length-percentage [0,∞]>"
 	},
 	"scroll-margin-top": {
-		syntax: "<length>"
+		syntax: " auto | <length-percentage [0,∞]>"
 	},
 	"scroll-marker-group": {
 		syntax: "none | before | after"
