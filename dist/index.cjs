@@ -11770,9 +11770,13 @@ function parseSyntax(syntax) {
             stack.pop();
         }
     }
-    if (stack.length > 0) {
-        throw new SyntaxError(`Unexpected token ${ValidationTokenEnum[stack.at(-1)?.typ]} at ${stack.at(-1)?.[LOC]?.lin}:${stack.at(-1)?.[LOC]?.col}`);
-    }
+    // if (stack.length > 0) {
+    //     throw new SyntaxError(
+    //         `Unexpected token ${ValidationTokenEnum[stack.at(-1)?.typ as ValidationTokenEnum]} at ${
+    //             stack.at(-1)?.[LOC]?.lin
+    //         }:${stack.at(-1)?.[LOC]?.col}`,
+    //     );
+    // }
     return trimSyntaxArray(tokens);
 }
 
@@ -23544,9 +23548,9 @@ function decode(str) {
  * @returns
  */
 function encode(value) {
-    if (typeof value === 'number') {
-        return encode_integer(value);
-    }
+    // if (typeof value === 'number') {
+    //     return encode_integer(value);
+    // }
     let result = '';
     for (let i = 0; i < value.length; i += 1) {
         result += encode_integer(value[i]);
@@ -26603,27 +26607,24 @@ class Tokenizer {
      * @param end
      * @returns
      */
-    isIdentToken(parseInfo, start, end) {
+    isIdentToken(parseInfo /* , start?: number, end?: number */) {
         let j = parseInfo.currentPosition - parseInfo.offset;
         let i = parseInfo.position - parseInfo.offset;
-        if (start != null) {
-            if (end == null) {
-                if (start < 0) {
-                    j += start;
-                }
-                else {
-                    i += start;
-                }
-            }
-            else {
-                if (end < 0) {
-                    j += end;
-                }
-                else {
-                    j = parseInfo.position + end;
-                }
-            }
-        }
+        // if (start != null) {
+        //     if (end == null) {
+        //         if (start < 0) {
+        //             j += start;
+        //         } else {
+        //             i += start;
+        //         }
+        //     } else {
+        //         if (end < 0) {
+        //             j += end;
+        //         } else {
+        //             j = parseInfo.position + end;
+        //         }
+        //     }
+        // }
         j--;
         let codepoint = parseInfo.stream.charCodeAt(i);
         // -
@@ -26666,18 +26667,18 @@ class Tokenizer {
      * @param parseInfo
      * @returns
      */
-    isPseudo(parseInfo) {
-        let position = parseInfo.currentPosition - parseInfo.offset;
-        let endPosition = parseInfo.currentPosition - parseInfo.offset;
-        return (parseInfo.stream.charAt(position) == ":" &&
-            parseInfo.stream.charAt(endPosition - 1) == "(" &&
-            (parseInfo.stream.charAt(position + 1) == ":"
-                ? this.isIdentToken(parseInfo, 2, -1)
-                : this.isIdentToken(parseInfo, 1, -1))) ||
-            parseInfo.stream.charAt(position + 1) == ":"
-            ? this.isIdentToken(parseInfo, 2)
-            : this.isIdentToken(parseInfo, 1);
-    }
+    // isPseudo(parseInfo: ParseInfo): boolean {
+    //     let position: number = parseInfo.currentPosition - parseInfo.offset;
+    //     let endPosition: number = parseInfo.currentPosition - parseInfo.offset;
+    //     return (parseInfo.stream.charAt(position) == ":" &&
+    //         parseInfo.stream.charAt(endPosition - 1) == "(" &&
+    //         (parseInfo.stream.charAt(position + 1) == ":"
+    //             ? this.isIdentToken(parseInfo, 2, -1)
+    //             : this.isIdentToken(parseInfo, 1, -1))) ||
+    //         parseInfo.stream.charAt(position + 1) == ":"
+    //         ? this.isIdentToken(parseInfo, 2)
+    //         : this.isIdentToken(parseInfo, 1);
+    // }
     /**
      *
      * @param parseInfo
@@ -26870,12 +26871,14 @@ class Tokenizer {
                 // '('
                 case 40 /* TokenMap.LEFT_PARENTHESIS */:
                     if (parseInfo.position < parseInfo.currentPosition) {
-                        if (parseInfo.stream[parseInfo.position - parseInfo.offset] === ":" &&
-                            this.isPseudo(parseInfo)) {
-                            this.advance(parseInfo);
-                            return this.makeToken(parseInfo, exports.EnumToken.PseudoClassFunctionTokenDefType);
-                        }
-                        else if (this.isIdentToken(parseInfo)) {
+                        // if (
+                        //     parseInfo.stream[parseInfo.position - parseInfo.offset] === ":" &&
+                        //     this.isPseudo(parseInfo)
+                        // ) {
+                        //     this.advance(parseInfo);
+                        //     return this.makeToken(parseInfo, EnumToken.PseudoClassFunctionTokenDefType);
+                        // } else 
+                        if (this.isIdentToken(parseInfo)) {
                             const hint = this.startsWith(parseInfo, "--")
                                 ? exports.EnumToken.CustomFunctionTokenDefType
                                 : (getSymbolHint(parseInfo, parseInfo.position - parseInfo.offset, parseInfo.currentPosition - parseInfo.offset + 1) ?? exports.EnumToken.FunctionTokenDefType);

@@ -4,8 +4,8 @@
 
 - [x] fix bugs when computing math functions.
 - [x] reduce array mutations
-- [x] do not minify transform function when the absolute angle is greater or equals to 360deg
 - [x] supporting additional shorthands: scroll-timeline, scroll-padding, scroll-margin.
+- [x] do not minify transform function when the absolute angle is greater or equals to 360deg
 
 ```css
 

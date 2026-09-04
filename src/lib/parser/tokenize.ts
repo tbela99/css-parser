@@ -1285,25 +1285,25 @@ export class Tokenizer {
      * @param end
      * @returns
      */
-    isIdentToken(parseInfo: ParseInfo, start?: number, end?: number): boolean {
+    isIdentToken(parseInfo: ParseInfo /* , start?: number, end?: number */): boolean {
         let j: number = parseInfo.currentPosition - parseInfo.offset;
         let i: number = parseInfo.position - parseInfo.offset;
 
-        if (start != null) {
-            if (end == null) {
-                if (start < 0) {
-                    j += start;
-                } else {
-                    i += start;
-                }
-            } else {
-                if (end < 0) {
-                    j += end;
-                } else {
-                    j = parseInfo.position + end;
-                }
-            }
-        }
+        // if (start != null) {
+        //     if (end == null) {
+        //         if (start < 0) {
+        //             j += start;
+        //         } else {
+        //             i += start;
+        //         }
+        //     } else {
+        //         if (end < 0) {
+        //             j += end;
+        //         } else {
+        //             j = parseInfo.position + end;
+        //         }
+        //     }
+        // }
 
         j--;
 
@@ -1361,18 +1361,18 @@ export class Tokenizer {
      * @param parseInfo
      * @returns
      */
-    isPseudo(parseInfo: ParseInfo): boolean {
-        let position: number = parseInfo.currentPosition - parseInfo.offset;
-        let endPosition: number = parseInfo.currentPosition - parseInfo.offset;
-        return (parseInfo.stream.charAt(position) == ":" &&
-            parseInfo.stream.charAt(endPosition - 1) == "(" &&
-            (parseInfo.stream.charAt(position + 1) == ":"
-                ? this.isIdentToken(parseInfo, 2, -1)
-                : this.isIdentToken(parseInfo, 1, -1))) ||
-            parseInfo.stream.charAt(position + 1) == ":"
-            ? this.isIdentToken(parseInfo, 2)
-            : this.isIdentToken(parseInfo, 1);
-    }
+    // isPseudo(parseInfo: ParseInfo): boolean {
+    //     let position: number = parseInfo.currentPosition - parseInfo.offset;
+    //     let endPosition: number = parseInfo.currentPosition - parseInfo.offset;
+    //     return (parseInfo.stream.charAt(position) == ":" &&
+    //         parseInfo.stream.charAt(endPosition - 1) == "(" &&
+    //         (parseInfo.stream.charAt(position + 1) == ":"
+    //             ? this.isIdentToken(parseInfo, 2, -1)
+    //             : this.isIdentToken(parseInfo, 1, -1))) ||
+    //         parseInfo.stream.charAt(position + 1) == ":"
+    //         ? this.isIdentToken(parseInfo, 2)
+    //         : this.isIdentToken(parseInfo, 1);
+    // }
 
     /**
      *
@@ -1637,15 +1637,15 @@ export class Tokenizer {
                 // '('
                 case TokenMap.LEFT_PARENTHESIS:
                     if (parseInfo.position < parseInfo.currentPosition) {
-                        if (
-                            parseInfo.stream[parseInfo.position - parseInfo.offset] === ":" &&
-                            this.isPseudo(parseInfo)
-                        ) {
-                            this.advance(parseInfo);
-                            return this.makeToken(parseInfo, EnumToken.PseudoClassFunctionTokenDefType);
+                        // if (
+                        //     parseInfo.stream[parseInfo.position - parseInfo.offset] === ":" &&
+                        //     this.isPseudo(parseInfo)
+                        // ) {
+                        //     this.advance(parseInfo);
+                        //     return this.makeToken(parseInfo, EnumToken.PseudoClassFunctionTokenDefType);
 
-                            break;
-                        } else if (this.isIdentToken(parseInfo)) {
+                        // } else 
+                            if (this.isIdentToken(parseInfo)) {
                             const hint: EnumToken = this.startsWith(parseInfo, "--")
                                 ? EnumToken.CustomFunctionTokenDefType
                                 : (getSymbolHint(

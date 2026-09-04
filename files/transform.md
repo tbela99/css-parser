@@ -10,9 +10,95 @@ Visitors are used to transform the ast tree produced by the parser. For more inf
 
 This pattern is useful for building reusable plugins that enforce conventions, inject transformations, or add custom analysis on top of the parsed AST.
 
+## Visitors syntax
+
+A visitor can be specified as a function whose name is a keyof EnumToken. All tokens of that kind will be visited.
+
+```ts
+
+import {transformSync} from "@tbela99/css-parser;
+
+function UrlFunctionTokenType(node) {
+
+    // ...
+    console.debug(node);
+}
+
+const options = {
+
+    visitor: UrlFunctionTokenType,
+    input: `.selector {
+            
+        /* associated properties */
+        background-image: url("star.gif");
+        list-style-image: url('../images/bullet.jpg');
+        content: url("my-icon.jpg");
+        cursor: url(my-cursor.cur);
+        border-image-source: url(/media/diamonds.png);
+        src: url('fantastic-font.woff');
+        offset-path: url(#path);
+        mask-image: url("masks.svg#mask1");
+
+        /* Properties with fallbacks */
+        cursor: url(pointer.cur), pointer;
+    }`
+}
+
+const result = transformSync(options);
+
+// ...
+```
+
+If you need the visitor to run when the node is entered or exited, you will use this syntax:
+
+```ts
+
+import {transformSync, WalkerEvent} from "@tbela99/css-parser;
+
+const visitor = {
+    UrlFunctionTokenType: {
+        type: WalkerEvent.Enter,
+        handler(node) {
+            // ...
+            console.debug(node);
+        },
+    },
+    AngleTokenType: {
+        type: WalkerEvent.Leave,
+        handler(node) {
+            // ...
+            console.debug(node);
+        },
+    },
+};
+
+const options = {
+    visitor,
+    input: `.selector {
+            
+        /* associated properties */
+        background-image: url("star.gif");
+        list-style-image: url('../images/bullet.jpg');
+        content: url("my-icon.jpg");
+        cursor: url(my-cursor.cur);
+        border-image-source: url(/media/diamonds.png);
+        src: url('fantastic-font.woff');
+        offset-path: url(#path);
+        mask-image: url("masks.svg#mask1");
+
+        /* Properties with fallbacks */
+        cursor: url(pointer.cur), pointer;
+    }`
+}
+
+const result = transformSync(options);
+
+// ...
+```
+
 ## Visitors execution order
 
-Visitors can be called when the node is entered, visited or left.
+Visitors can be called when the node is entered, visited or exited.
 
 ```ts
 
