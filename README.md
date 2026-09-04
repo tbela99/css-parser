@@ -185,9 +185,9 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 - [ ] place-content
 - [ ] place-items
 - [ ] place-self
-- [ ] scroll-margin
-- [ ] scroll-padding
-- [ ] scroll-timeline
+- [x] scroll-margin
+- [x] scroll-padding
+- [x] scroll-timeline
 - [x] text-decoration
 - [x] text-emphasis
 - [x] transition

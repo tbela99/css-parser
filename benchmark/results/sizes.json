@@ -15,7 +15,7 @@
     "css-tree": 75731,
     "esbuild": 73454,
     "lightningcss": 68837,
-    "css-parser": 64399
+    "css-parser": 64267
   },
   "blueprint.css": {
     "clean-css": 10794,
@@ -42,7 +42,7 @@
     "css-tree": 165616,
     "esbuild": 162024,
     "lightningcss": 159987,
-    "css-parser": 151036
+    "css-parser": 151035
   },
   "font-awesome-all.css": {
     "clean-css": 58568,
@@ -105,6 +105,6 @@
     "css-tree": 1963358,
     "esbuild": 1961145,
     "lightningcss": 1864728,
-    "css-parser": 1633265
+    "css-parser": 1633260
   }
 }

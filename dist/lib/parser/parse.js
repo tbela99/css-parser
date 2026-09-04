@@ -3393,17 +3393,18 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
  * console.log(declarations);
  * ```
  */
-async function parseDeclarations(declaration) {
+function parseDeclarations(declaration) {
     const stream = `.x{${declaration}}`;
-    return doParse(new Tokenizer({
+    const result = doParseSync(new Tokenizer({
         stream,
         offset: 0,
         position: 0,
         source: new SourceFile(stream, [], ""),
         currentPosition: 0,
-    }), { setParent: false, minify: false, validation: false }).then((result) => {
-        return result.ast.chi[0].chi.filter((t) => t.typ == EnumToken.DeclarationNodeType || t.typ == EnumToken.CommentNodeType);
-    });
+    }), { setParent: false, minify: false, validation: false });
+    // .then((result) => {
+    return result.ast.chi[0].chi.filter((t) => t.typ == EnumToken.DeclarationNodeType || t.typ == EnumToken.CommentNodeType);
+    // });
 }
 /**
  * Parse css string and return an array of tokens

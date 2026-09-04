@@ -18,9 +18,36 @@ function compute(transformLists) {
     let matrix = identity();
     let mat;
     let transforms;
+    let shouldComputeMatrix = true;
     const cumulative = [];
+    // all transform function arguments must be 0 or scale(1)
+    for (const transform of transformLists) {
+        switch (transform.val) {
+            case "rotate":
+            case "rotateX":
+            case "rotateY":
+            case "rotateZ":
+            case "rotate3d":
+                for (const child of transform.chi) {
+                    if (child.typ == EnumToken.WhitespaceTokenType || child.typ == EnumToken.CommaTokenType) {
+                        continue;
+                    }
+                    if ((child.typ != EnumToken.AngleTokenType &&
+                        child.typ != EnumToken.NumberTokenType &&
+                        child.typ != EnumToken.PercentageTokenType) ||
+                        // angle >= 360deg, do not transform
+                        Math.abs(getAngle(child)) >= 1) {
+                        shouldComputeMatrix = false;
+                    }
+                }
+                break;
+        }
+        if (!shouldComputeMatrix) {
+            break;
+        }
+    }
     for (const transformList of splitTransformList(transformLists)) {
-        mat = computeMatrix(transformList, identity());
+        mat = shouldComputeMatrix ? computeMatrix(transformList, identity()) : null;
         if (mat == null) {
             return null;
         }
@@ -49,60 +76,6 @@ function compute(transformLists) {
         cumulative,
         minified: minify(matrix) ?? [serialized],
     };
-    // valid identity matrix
-    if ((result.minified.length == 1 &&
-        result.minified[0].typ == EnumToken.IdenTokenType &&
-        result.minified[0].val == "none") ||
-        (result.cumulative.length == 1 &&
-            result.cumulative[0].typ == EnumToken.IdenTokenType &&
-            result.cumulative[0].val == "none") ||
-        (result.matrix?.typ == EnumToken.IdenTokenType && result.matrix.val == "none")) {
-        // all transform function arguments must be 0 or scale(1)
-        for (const transform of transformLists) {
-            switch (transform.val) {
-                case "translate":
-                case "translateX":
-                case "translateY":
-                case "translateZ":
-                case "translate3d":
-                case "rotate":
-                case "rotateX":
-                case "rotateY":
-                case "rotateZ":
-                case "rotate3d":
-                case "skew":
-                case "skewX":
-                case "skewY":
-                    for (const child of transform.chi) {
-                        if (child.typ == EnumToken.WhitespaceTokenType || child.typ == EnumToken.CommaTokenType) {
-                            continue;
-                        }
-                        if ((child.typ != EnumToken.AngleTokenType &&
-                            child.typ != EnumToken.NumberTokenType &&
-                            child.typ != EnumToken.PercentageTokenType) ||
-                            getNumber(child) != 0) {
-                            return null;
-                        }
-                    }
-                    break;
-                case "scale":
-                case "scaleX":
-                case "scaleY":
-                case "scaleZ":
-                case "scale3d":
-                    for (const child of transform.chi) {
-                        if (child.typ == EnumToken.WhitespaceTokenType || child.typ == EnumToken.CommaTokenType) {
-                            continue;
-                        }
-                        if ((child.typ != EnumToken.NumberTokenType && child.typ != EnumToken.PercentageTokenType) ||
-                            getNumber(child) != 1) {
-                            return null;
-                        }
-                    }
-                    break;
-            }
-        }
-    }
     return result;
 }
 function computeMatrix(transformList, matrixVar) {

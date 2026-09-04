@@ -1,5 +1,5 @@
 import { EnumToken } from '../ast/types.js';
-import config from '../validation/config.json.js';
+import config from '../data/validation.json.js';
 
 /**
  * Location source id

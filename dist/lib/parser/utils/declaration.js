@@ -50,7 +50,6 @@ function parseGridTemplate(template) {
  * @param errors
  */
 function parseDeclaration(tokens, parent, options, errors) {
-    // console.error(tokens);
     const name = tokens.shift();
     let i;
     let rules = null;
@@ -384,10 +383,19 @@ function parseDeclaration(tokens, parent, options, errors) {
         }
         if (trimTokenSpace.has(token.typ)) {
             if (tokens[i + 1]?.typ === EnumToken.WhitespaceTokenType) {
-                tokens.splice(i + 1, 1);
+                for (let index = i + 1; index < tokens.length - 1; index++) {
+                    tokens[index] = tokens[index + 1];
+                }
+                tokens.length--;
+                i--;
+                continue;
             }
             if (tokens[i - 1]?.typ == EnumToken.WhitespaceTokenType) {
-                tokens.splice(--i, 1);
+                for (let index = i - 1; index < tokens.length - 1; index++) {
+                    tokens[index] = tokens[index + 1];
+                }
+                tokens.length--;
+                i--;
             }
         }
     }

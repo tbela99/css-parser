@@ -96,7 +96,6 @@ export function parseDeclaration(
     options: ParserOptions,
     errors: ErrorDescription[],
 ): AstDeclaration | RawNodeToken {
-    // console.error(tokens);
     const name = tokens.shift() as IdentToken | DashedIdentToken;
     let i: number;
     let rules: ValidationSyntaxRule | null = null;
@@ -513,11 +512,22 @@ export function parseDeclaration(
 
         if (trimTokenSpace.has(token.typ)) {
             if (tokens[i + 1]?.typ === EnumToken.WhitespaceTokenType) {
-                tokens.splice(i + 1, 1);
+                for (let index = i + 1; index < tokens.length - 1; index++) {
+                    tokens[index] = tokens[index + 1];
+                }
+
+                tokens.length--;
+                i--;
+                continue;
             }
 
             if (tokens[i - 1]?.typ == EnumToken.WhitespaceTokenType) {
-                tokens.splice(--i, 1);
+                for (let index = i - 1; index < tokens.length - 1; index++) {
+                    tokens[index] = tokens[index + 1];
+                }
+
+                tokens.length--;
+                i--;
             }
         }
     }

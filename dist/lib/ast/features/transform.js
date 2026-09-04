@@ -53,7 +53,7 @@ class TransformCssFeature {
                 minified: null,
             };
             if (matrix == null || cumulative == null || minified == null) {
-                node.val = children;
+                node.val = children.map((t) => t.typ == EnumToken.TransformFunctionTokenType ? minifyTransformFunctions(t) : t);
                 continue;
             }
             let r = [filterValues(children)];

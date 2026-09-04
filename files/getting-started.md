@@ -62,7 +62,7 @@ It can be imported as an umd module.
 ```html
 <script type="module">
 
-    import {transform, ColorType} from 'https://esm.sh/@tbela99/css-parser@1.4.7/web';
+    import {transform, ColorType} from 'https://unpkg.com/@tbela99/css-parser@1.4.7/web';
 
     const css = `
 
@@ -175,7 +175,7 @@ Load as javascript module
 ```html
 <script type="module">
 
-    import {transform, ColorType} from 'https://esm.sh/@tbela99/css-parser@1.4.7/web';
+    import {transform, ColorType} from 'https://unpkg.com/@tbela99/css-parser@1.4.7/web';
 
 const css = `
 

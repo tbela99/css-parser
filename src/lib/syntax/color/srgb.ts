@@ -180,11 +180,12 @@ export function cmyk2srgbvalues(token: ColorToken): number[] | null {
 
     // @ts-ignore
     const k: number = getNumber(t);
+    const mul = 1 - k;
 
     const rgb: number[] = [
-        1 - Math.min(1, c * (1 - k) + k),
-        1 - Math.min(1, m * (1 - k) + k),
-        1 - Math.min(1, y * (1 - k) + k),
+        1 - Math.min(1, c * mul + k),
+        1 - Math.min(1, m * mul + k),
+        1 - Math.min(1, y * mul + k),
     ];
 
     if (components.length == 5) {

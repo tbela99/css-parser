@@ -56,10 +56,10 @@ export function decode(str: string) {
  * @param value 
  * @returns 
  */
-export function encode(value: number | number[]) {
-    if (typeof value === 'number') {
-        return encode_integer(value);
-    }
+export function encode(value: number[]) {
+    // if (typeof value === 'number') {
+    //     return encode_integer(value);
+    // }
 
     let result = '';
     for (let i = 0; i < value.length; i += 1) {

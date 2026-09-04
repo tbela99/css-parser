@@ -81,6 +81,32 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
     ],
     [
         {
+            shorthand: "scroll-timeline",
+            pattern: `scroll-timeline-name scroll-timeline-axis`,
+            keywords: ["none", "block", "inline", "x", "y"],
+            default: ["none", "block"],
+        },
+        [
+            {
+                shorthand: "scroll-timeline-name",
+                properties: {
+                    keywords: ["none"],
+                    default: ["none"],
+                    types: ['DashedIden'],
+                },
+            },
+            {
+                shorthand: "scroll-timeline-axis",
+                properties: {
+                    keywords: ["block", "inline", "x", "y"],
+                    default: ["block"],
+                    types: [],
+                },
+            },
+        ],
+    ],
+    [
+        {
             shorthand: "flex-flow",
             pattern: `flex-direction flex-wrap`,
             keywords: [],
@@ -910,6 +936,23 @@ export const properties: PropertySetType = [
         keywords: [],
     },
     {
+        shorthand: "scroll-margin",
+        properties: ["scroll-margin-top", "scroll-margin-right", "scroll-margin-bottom", "scroll-margin-left"],
+        types: ["Length", "Perc"],
+        default: ["0"],
+        // multiple: false,
+        // separator:null ,
+        keywords: ['auto'],
+    },
+    {
+        shorthand: "scroll-padding",
+        properties: ["scroll-padding-top", "scroll-padding-right", "scroll-padding-bottom", "scroll-padding-left"],
+        types: ["Length", "Perc"],
+        // multiple: false,
+        // separator:null ,
+        keywords: ['auto'],
+    },
+    {
         shorthand: "border-radius",
         properties: [
             "border-top-left-radius",
@@ -990,41 +1033,44 @@ export const properties: PropertySetType = [
     <PropertySetType>{},
 );
 
+/**
+ * minify individual properties to be minified
+ */
 // @ts-expect-error
 export const property = {
     "transform-origin": {
         pattern: [
-            ['left|center|right', 'top|center|bottom', '<length>'],
-            ['left|center|right', 'top|center|bottom'],
-            ['center|left|right|center|top|bottom|<length>'],
+            ["left|center|right", "top|center|bottom", "<length>"],
+            ["left|center|right", "top|center|bottom"],
+            ["center|left|right|center|top|bottom|<length>"],
         ],
         mapping: {
-            "center": {
+            center: {
                 typ: "Perc",
                 val: 50,
             },
-            "left": {
+            left: {
                 typ: "Perc",
                 val: 0,
             },
-            "right": {
+            right: {
                 typ: "Perc",
                 val: 100,
             },
-            "top": {
+            top: {
                 typ: "Perc",
                 val: 0,
             },
-            "bottom": {
+            bottom: {
                 typ: "Perc",
                 val: 100,
-            }
+            },
         },
     },
 } as Record<string, SinglePropertyTypeMapping>;
 
 const result = JSON.stringify({ properties, map, property });
 
-await writeFile(import.meta.dirname + "/../src/config.json", result);
+await writeFile(import.meta.dirname + "/../src/lib/data/properties.json", result);
 
 console.debug(result);

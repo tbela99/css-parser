@@ -1,5 +1,31 @@
 # Changelog
 
+# v1.6.1
+
+- [x] fix bugs when computing math functions.
+- [x] reduce array mutations
+- [x] supporting additional shorthands: scroll-timeline, scroll-padding, scroll-margin.
+- [x] do not minify transform function when the absolute angle is greater or equals to 360deg
+
+```css
+
+  a:hover {
+
+transform: rotate(calc(2.5*pi * 1rad))  }
+  .now {
+    transform: translate(100px, 100px) rotate(1215deg) skewX(10deg);
+}
+```
+should be minified to
+```css
+a:hover {
+ transform: rotate(450deg)
+}
+.now {
+ transform: translate(100px,100px)rotate(1215deg)skew(10deg)
+}
+```
+
 # v1.6.0
 
 - [x] added support for math function `tan()`.
