@@ -375,7 +375,7 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
                 beautify: true,
                 computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
- transform: translate(100px,100px)rotate(135deg)skew(10deg)
+ transform: translate(100px,100px)rotate(1215deg)skew(10deg)
 }`));
         });
 

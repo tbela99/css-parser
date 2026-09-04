@@ -372,7 +372,9 @@ export function evaluateFunc(token: FunctionToken): Token[] | null {
 
             // @ts-ignore
             let val: number =
-                value[0].typ == EnumToken.NumberTokenType || value[0].typ == EnumToken.AngleTokenType
+                value[0].typ == EnumToken.NumberTokenType ||
+                value[0].typ == EnumToken.AngleTokenType ||
+                value[0].typ == EnumToken.PercentageTokenType
                     ? (+(value[0] as NumberToken | DimensionToken).val as number)
                     : // @ts-expect-error
                       ((value[0] as FractionToken).l.val as number) / (value[0] as FractionToken).r.val;
@@ -388,7 +390,7 @@ export function evaluateFunc(token: FunctionToken): Token[] | null {
                           [LOCEND]: value[0][LOCEND],
                       }
                     : {
-                          typ: EnumToken.NumberTokenType,
+                          typ: token.val == "sign" ? EnumToken.NumberTokenType : value[0].typ,
                           val: Math[token.val](val),
                           [LOCSRCID]: value[0][LOCSRCID],
                           [LOCSTA]: value[0][LOCSTA],
@@ -439,10 +441,26 @@ export function evaluateFunc(token: FunctionToken): Token[] | null {
             ];
         }
 
+        case "mod":
         case "atan2":
         case "pow":
-        case "rem":
-        case "mod": {
+        case "rem": {
+            {
+                let typ: EnumToken = token.chi[0]?.typ;
+                for (let i = 1; i < token.chi.length; i++) {
+                    if (
+                        token.chi[i].typ == EnumToken.WhitespaceTokenType ||
+                        token.chi[i].typ == EnumToken.CommaTokenType ||
+                        token.chi[i].typ == EnumToken.CommentTokenType
+                    ) {
+                        continue;
+                    }
+
+                    if (token.chi[i].typ != typ) {
+                        return null;
+                    }
+                }
+            }
             const chi = values.filter(
                 (t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ),
             );
@@ -683,22 +701,20 @@ export function inlineExpression(token: Token): Token[] {
         if ([EnumToken.Mul, EnumToken.Div].includes((token as BinaryExpressionToken).op)) {
             result.push(token);
         } else {
-
-                for (const child of inlineExpression((token as BinaryExpressionToken).l)) {
-                    result.push(child);
-                }
+            for (const child of inlineExpression((token as BinaryExpressionToken).l)) {
+                result.push(child);
+            }
 
             result.push({
-                    typ: (token as BinaryExpressionToken).op,
-                    [LOCSRCID]: (token as BinaryExpressionToken)[LOCSRCID],
-                    [LOCSTA]: (token as BinaryExpressionToken)[LOCSTA],
-                    [LOCEND]: (token as BinaryExpressionToken)[LOCEND],
-                } as Token);
+                typ: (token as BinaryExpressionToken).op,
+                [LOCSRCID]: (token as BinaryExpressionToken)[LOCSRCID],
+                [LOCSTA]: (token as BinaryExpressionToken)[LOCSTA],
+                [LOCEND]: (token as BinaryExpressionToken)[LOCEND],
+            } as Token);
 
-                for (const child of inlineExpression((token as BinaryExpressionToken).r)) {
-                    result.push(child);
-                }
-                
+            for (const child of inlineExpression((token as BinaryExpressionToken).r)) {
+                result.push(child);
+            }
         }
     } else {
         result.push(token);

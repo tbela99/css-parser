@@ -1,4 +1,4 @@
-import config from './config.json.js';
+import config from '../data/validation.json.js';
 import { trimSyntaxArray, parseSyntax } from './parser/parse.js';
 import { ValidationTokenEnum } from './parser/typedef.js';
 import { memoize } from '../parser/utils/cache.js';

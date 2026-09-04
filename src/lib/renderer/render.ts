@@ -817,10 +817,8 @@ export function renderValue(
             }
 
             if (Array.isArray((token as ColorToken).chi)) {
-                const fnName: string = (token as ColorToken).val.toLowerCase();
-                const isLegacy: boolean = ["rgb", "rgba", "hsl", "hsla"].includes(
-                    (token as ColorToken).val.toLowerCase(),
-                );
+                const fnName: string = (token as ColorToken).val;
+                const isLegacy: boolean = ["rgb", "rgba", "hsl", "hsla"].includes((token as ColorToken).val);
                 const hasAlpha: boolean = [
                     "rgb",
                     "rgba",

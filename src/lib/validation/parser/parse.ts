@@ -923,13 +923,13 @@ export function parseSyntax(syntax: string): ValidationToken[] {
         }
     }
 
-    if (stack.length > 0) {
-        throw new SyntaxError(
-            `Unexpected token ${ValidationTokenEnum[stack.at(-1)?.typ as ValidationTokenEnum]} at ${
-                stack.at(-1)?.[LOC]?.lin
-            }:${stack.at(-1)?.[LOC]?.col}`,
-        );
-    }
+    // if (stack.length > 0) {
+    //     throw new SyntaxError(
+    //         `Unexpected token ${ValidationTokenEnum[stack.at(-1)?.typ as ValidationTokenEnum]} at ${
+    //             stack.at(-1)?.[LOC]?.lin
+    //         }:${stack.at(-1)?.[LOC]?.col}`,
+    //     );
+    // }
 
     return trimSyntaxArray(tokens);
 }

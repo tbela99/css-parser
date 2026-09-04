@@ -86,7 +86,7 @@ const codes = (await fetch("https://cdn.jsdelivr.net/npm/@iso-639/data/1/en.json
 // @ts-expect-error
 json.languages = Object.keys(codes);
 
-await writeFile(import.meta.dirname! + "/../src/lib/validation/config.json", JSON.stringify(json, null, 1));
+await writeFile(import.meta.dirname! + "/../src/lib/data/validation.json", JSON.stringify(json, null, 1));
 console.debug(json);
 
 // =============================== //

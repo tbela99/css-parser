@@ -108,6 +108,65 @@ var properties = {
 	"padding-left": {
 		shorthand: "padding"
 	},
+	"scroll-margin": {
+		shorthand: "scroll-margin",
+		properties: [
+			"scroll-margin-top",
+			"scroll-margin-right",
+			"scroll-margin-bottom",
+			"scroll-margin-left"
+		],
+		types: [
+			"Length",
+			"Perc"
+		],
+		"default": [
+			"0"
+		],
+		keywords: [
+			"auto"
+		]
+	},
+	"scroll-margin-top": {
+		shorthand: "scroll-margin"
+	},
+	"scroll-margin-right": {
+		shorthand: "scroll-margin"
+	},
+	"scroll-margin-bottom": {
+		shorthand: "scroll-margin"
+	},
+	"scroll-margin-left": {
+		shorthand: "scroll-margin"
+	},
+	"scroll-padding": {
+		shorthand: "scroll-padding",
+		properties: [
+			"scroll-padding-top",
+			"scroll-padding-right",
+			"scroll-padding-bottom",
+			"scroll-padding-left"
+		],
+		types: [
+			"Length",
+			"Perc"
+		],
+		keywords: [
+			"auto"
+		]
+	},
+	"scroll-padding-top": {
+		shorthand: "scroll-padding"
+	},
+	"scroll-padding-right": {
+		shorthand: "scroll-padding"
+	},
+	"scroll-padding-bottom": {
+		shorthand: "scroll-padding"
+	},
+	"scroll-padding-left": {
+		shorthand: "scroll-padding"
+	},
 	"border-radius": {
 		shorthand: "border-radius",
 		properties: [
@@ -328,6 +387,53 @@ var map = {
 	},
 	"flex-wrap": {
 		shorthand: "flex-flow"
+	},
+	"scroll-timeline": {
+		shorthand: "scroll-timeline",
+		pattern: "scroll-timeline-name scroll-timeline-axis",
+		keywords: [
+			"none",
+			"block",
+			"inline",
+			"x",
+			"y"
+		],
+		"default": [
+			"none",
+			"block"
+		],
+		properties: {
+			"scroll-timeline-name": {
+				keywords: [
+					"none"
+				],
+				"default": [
+					"none"
+				],
+				types: [
+					"DashedIden"
+				]
+			},
+			"scroll-timeline-axis": {
+				keywords: [
+					"block",
+					"inline",
+					"x",
+					"y"
+				],
+				"default": [
+					"block"
+				],
+				types: [
+				]
+			}
+		}
+	},
+	"scroll-timeline-name": {
+		shorthand: "scroll-timeline"
+	},
+	"scroll-timeline-axis": {
+		shorthand: "scroll-timeline"
 	},
 	container: {
 		shorthand: "container",

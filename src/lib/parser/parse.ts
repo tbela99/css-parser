@@ -4317,9 +4317,9 @@ export function parseAtRule(
  * console.log(declarations);
  * ```
  */
-export async function parseDeclarations(declaration: string): Promise<Array<AstDeclaration | AstComment>> {
+export function parseDeclarations(declaration: string): Array<AstDeclaration | AstComment> {
     const stream: string = `.x{${declaration}}`;
-    return doParse(
+    const result = doParseSync(
         new Tokenizer({
             stream,
             offset: 0,
@@ -4328,11 +4328,12 @@ export async function parseDeclarations(declaration: string): Promise<Array<AstD
             currentPosition: 0,
         } as ParseInfo),
         { setParent: false, minify: false, validation: false },
-    ).then((result) => {
-        return (result.ast.chi[0] as AstRule).chi.filter(
-            (t) => t.typ == EnumToken.DeclarationNodeType || t.typ == EnumToken.CommentNodeType,
-        ) as Array<AstDeclaration | AstComment>;
-    });
+    );
+    // .then((result) => {
+    return (result.ast.chi[0] as AstRule).chi.filter(
+        (t) => t.typ == EnumToken.DeclarationNodeType || t.typ == EnumToken.CommentNodeType,
+    ) as Array<AstDeclaration | AstComment>;
+    // });
 }
 
 /**

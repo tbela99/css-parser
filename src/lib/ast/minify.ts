@@ -452,7 +452,17 @@ function reduce(acc: string[], curr: string[]): string[] {
 
     if (curr[0] == "&") {
         if (curr[1] == " " && !isIdent(curr[2]) && !isFunction(curr[2])) {
-            curr.splice(0, 2);
+            const all = new Array(Math.max(curr.length - 2, 0));
+            let write = 0;
+
+            for (let read = 2; read < curr.length; read++) {
+                all[write++] = curr[read];
+            }
+
+            curr.length = 0;
+            for (let index = 0; index < write; index++) {
+                curr[index] = all[index];
+            }
         }
     }
 
@@ -830,19 +840,45 @@ function doMinify(
                         const check = optimized.at(-2) as string;
 
                         if (!combinators.includes(check)) {
-                            let last = optimized.pop() as string;
+                            const last = optimized[optimized.length - 1] as string;
+                            const all = new Array(Math.max(optimized.length - 1, 0));
+                            let write = 0;
+
+                            for (let read = 0; read < optimized.length - 1; read++) {
+                                all[write++] = optimized[read];
+                            }
+
+                            optimized.length = 0;
+                            for (let index = 0; index < write; index++) {
+                                optimized[index] = all[index];
+                            }
+
                             wrap = false;
                             rule =
                                 optimized.join("") +
                                 `:is(${selector
                                     .map((s) => {
+                                        const next = s[0] == "&" ? new Array(s.length) : new Array(s.length + 1);
+                                        let write = 0;
+
                                         if (s[0] == "&") {
-                                            s.splice(0, 1, last);
+                                            next[write++] = last;
+                                            for (let read = 1; read < s.length; read++) {
+                                                next[write++] = s[read];
+                                            }
                                         } else {
-                                            s.unshift(last);
+                                            next[write++] = last;
+                                            for (let read = 0; read < s.length; read++) {
+                                                next[write++] = s[read];
+                                            }
                                         }
 
-                                        return s.join("");
+                                        const rebuilt = new Array(write);
+                                        for (let index = 0; index < write; index++) {
+                                            rebuilt[index] = next[index];
+                                        }
+
+                                        return rebuilt.join("");
                                     })
                                     .join(",")})`;
                         }
@@ -852,7 +888,23 @@ function doMinify(
                         rule = selector
                             .map((s: string[]): string => {
                                 if (s[0] == "&") {
-                                    s.splice(0, 1, ...(node as AstRule)![OPTIMIZED]!.optimized);
+                                    const replacement = (node as AstRule)![OPTIMIZED]!.optimized;
+                                    const all = new Array(Math.max(s.length - 1 + replacement.length, 0));
+                                    let write = 0;
+
+                                    for (let read = 0; read < replacement.length; read++) {
+                                        all[write++] = replacement[read];
+                                    }
+                                    for (let read = 1; read < s.length; read++) {
+                                        all[write++] = s[read];
+                                    }
+
+                                    const rebuilt = new Array(write);
+                                    for (let index = 0; index < write; index++) {
+                                        rebuilt[index] = all[index];
+                                    }
+
+                                    return rebuilt.join("");
                                 }
 
                                 return s.join("");
@@ -1142,7 +1194,17 @@ export function optimizeSelector(selector: string[][]): OptimizedSelector | null
         const last: string = <string>optimized.at(-1);
 
         if (last == " " || combinators.includes(<string>last)) {
-            optimized.pop();
+            const all = new Array(Math.max(optimized.length - 1, 0));
+            let write = 0;
+
+            for (let read = 0; read < optimized.length - 1; read++) {
+                all[write++] = optimized[read];
+            }
+
+            optimized.length = 0;
+            for (let index = 0; index < write; index++) {
+                optimized[index] = all[index];
+            }
             continue;
         }
 
@@ -1150,14 +1212,34 @@ export function optimizeSelector(selector: string[][]): OptimizedSelector | null
     }
 
     for (let i1 = 0; i1 < selector.length; i1++) {
-        selector[i1].splice(0, optimized.length);
+        const all = new Array(Math.max(selector[i1].length - optimized.length, 0));
+        let write = 0;
+
+        for (let read = optimized.length; read < selector[i1].length; read++) {
+            all[write++] = selector[i1][read];
+        }
+
+        selector[i1].length = 0;
+        for (let index = 0; index < write; index++) {
+            selector[i1][index] = all[index];
+        }
     }
 
     let reducible: boolean = optimized.length == 1;
 
     if (optimized[0] == "&") {
         if (optimized[1] == " ") {
-            optimized.splice(0, 2);
+            const all = new Array(Math.max(optimized.length - 2, 0));
+            let write = 0;
+
+            for (let read = 2; read < optimized.length; read++) {
+                all[write++] = optimized[read];
+            }
+
+            optimized.length = 0;
+            for (let index = 0; index < write; index++) {
+                optimized[index] = all[index];
+            }
         }
     }
 
@@ -1908,7 +1990,17 @@ function reduceRuleSelector(node: AstRule) {
                 selector[0] == "&" &&
                 (combinators.includes(selector[1]) || !/^[a-zA-Z:]/.test(selector[1]))
             ) {
-                selector.shift();
+                const all = new Array(Math.max(selector.length - 1, 0));
+                let write = 0;
+
+                for (let read = 1; read < selector.length; read++) {
+                    all[write++] = selector[read];
+                }
+
+                selector.length = 0;
+                for (let index = 0; index < write; index++) {
+                    selector[index] = all[index];
+                }
             }
         }
 

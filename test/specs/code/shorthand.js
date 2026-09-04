@@ -1,8 +1,9 @@
-export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
+import { ColorType } from "../../../dist/lib/ast/types.js";
 
+export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
     const options = {
         minify: true,
-        removeEmpty: true
+        removeEmpty: true,
     };
     const marginPadding = `
 
@@ -131,56 +132,84 @@ background-size: cover auto, contain;
 
 }
 `;
-    describe('shorthand', function () {
-        it('margin padding #1', function () {
-            return transform(marginPadding, options).then(result => expect(result.code).equals('.test{margin:0 0 0 5px;top:4px;padding:0;text-align:justify}'));
+    describe("shorthand", function () {
+        it("margin padding #1", function () {
+            return transform(marginPadding, options).then((result) =>
+                expect(result.code).equals(".test{margin:0 0 0 5px;top:4px;padding:0;text-align:justify}"),
+            );
         });
-        it('border-radius #2', function () {
-            return transform(borderRadius1, options).then(result => expect(result.code).equals('.test{border-radius:4px 3px 6px/5px 4px 2px}'));
+        it("border-radius #2", function () {
+            return transform(borderRadius1, options).then((result) =>
+                expect(result.code).equals(".test{border-radius:4px 3px 6px/5px 4px 2px}"),
+            );
         });
-        it('border-radius #3', function () {
-            return transform(borderRadius2, options).then(result => expect(result.code).equals('.test{border-radius:4px 3px 6px/2px 4px}'));
+        it("border-radius #3", function () {
+            return transform(borderRadius2, options).then((result) =>
+                expect(result.code).equals(".test{border-radius:4px 3px 6px/2px 4px}"),
+            );
         });
-        it('border-width #4', function () {
-            return transform(borderRadius3, options).then(result => expect(result.code).equals('.test input[type=text]{border-width:2px thin}'));
+        it("border-width #4", function () {
+            return transform(borderRadius3, options).then((result) =>
+                expect(result.code).equals(".test input[type=text]{border-width:2px thin}"),
+            );
         });
-        it('border-color #5', function () {
-            return transform(borderColor, options).then(result => expect(result.code).equals('.test input[type=text]{border-color:gold red}'));
+        it("border-color #5", function () {
+            return transform(borderColor, options).then((result) =>
+                expect(result.code).equals(".test input[type=text]{border-color:gold red}"),
+            );
         });
-        it('outline #6', function () {
-            return transform(outline1, options).then(result => expect(result.code).equals('a:focus{outline:0}'));
+        it("outline #6", function () {
+            return transform(outline1, options).then((result) => expect(result.code).equals("a:focus{outline:0}"));
         });
-        it('outline #7', function () {
-            return transform(outline2, options).then(result => expect(result.code).equals('a:focus{outline:#dedede dotted thin}'));
+        it("outline #7", function () {
+            return transform(outline2, options).then((result) =>
+                expect(result.code).equals("a:focus{outline:#dedede dotted thin}"),
+            );
         });
-        it('inset #8', function () {
-            return transform(inset1, options).then(result => expect(result.code).equals('a:focus{inset:auto}'));
+        it("inset #8", function () {
+            return transform(inset1, options).then((result) => expect(result.code).equals("a:focus{inset:auto}"));
         });
-        it('font #9', function () {
-            return transform(font1, options).then(result => expect(result.code).equals('html,body{font:700 15px/1.5 Verdana,sans-serif}'));
+        it("font #9", function () {
+            return transform(font1, options).then((result) =>
+                expect(result.code).equals("html,body{font:700 15px/1.5 Verdana,sans-serif}"),
+            );
         });
-        it('font #10', function () {
-            return transform(font2, options).then(result => expect(result.code).equals('samp{font:700 1em/1.19em small-caps monospace,serif}'));
+        it("font #10", function () {
+            return transform(font2, options).then((result) =>
+                expect(result.code).equals("samp{font:700 1em/1.19em small-caps monospace,serif}"),
+            );
         });
-        it('background #11', function () {
-            return transform(background1, options).then(result => expect(result.code).equals('p{background:no-repeat red url(images/bg.gif)}'));
+        it("background #11", function () {
+            return transform(background1, options).then((result) =>
+                expect(result.code).equals("p{background:no-repeat red url(images/bg.gif)}"),
+            );
         });
-        it('background #12', function () {
-            return transform(background2, options).then(result => expect(result.code).equals('a:focus{background:repeat-x url(../../media/examples/star.png)0 5%/cover}'));
+        it("background #12", function () {
+            return transform(background2, options).then((result) =>
+                expect(result.code).equals("a:focus{background:repeat-x url(../../media/examples/star.png)0 5%/cover}"),
+            );
         });
-        it('background #13', function () {
-            return transform(background3, options).then(result => expect(result.code).equals('a{background:no-repeat url(../../media/examples/firefox-logo.svg)50%/cover,#eee url(../../media/examples/lizard.png)35%/contain}'));
+        it("background #13", function () {
+            return transform(background3, options).then((result) =>
+                expect(result.code).equals(
+                    "a{background:no-repeat url(../../media/examples/firefox-logo.svg)50%/cover,#eee url(../../media/examples/lizard.png)35%/contain}",
+                ),
+            );
         });
 
-        it('border #14', function () {
-            return transform(`a{
+        it("border #14", function () {
+            return transform(
+                `a{
         border: #333 solid;
         border-width: 2px;
-        }`, options).then(result => expect(result.code).equals('a{border:#333 solid 2px}'));
+        }`,
+                options,
+            ).then((result) => expect(result.code).equals("a{border:#333 solid 2px}"));
         });
 
-        it('border #15', function () {
-            return transform(`
+        it("border #15", function () {
+            return transform(
+                `
 .test input[type="text"] {
 
 border: #333 solid 1px;
@@ -189,11 +218,14 @@ border: #333 solid 1px;
     border-right-width: thin;
     border-top-width:2px;;;
 
-        }`, options).then(result => expect(result.code).equals('.test input[type=text]{border:#333 solid 2px thin}'));
+        }`,
+                options,
+            ).then((result) => expect(result.code).equals(".test input[type=text]{border:#333 solid 2px thin}"));
         });
 
-        it('border #16', function () {
-            return transform(`
+        it("border #16", function () {
+            return transform(
+                `
 .test input[type="text"] {
 
 border: #333 solid 1px;
@@ -202,11 +234,14 @@ border: #333 solid 1px;
     border-right-width: medium;
     border-top-width:2px;;;
 
-        }`, options).then(result => expect(result.code).equals('.test input[type=text]{border:#333 solid 2px medium}'));
+        }`,
+                options,
+            ).then((result) => expect(result.code).equals(".test input[type=text]{border:#333 solid 2px medium}"));
         });
 
-        it('border #17', function () {
-            return transform(`
+        it("border #17", function () {
+            return transform(
+                `
 .test input[type="text"] {
 
 border: #333 solid 1px;
@@ -217,11 +252,14 @@ border: #333 solid 1px;
     border-bottom-width: medium;
     border-top-width:medium;;;
 
-        }`, options).then(result => expect(result.code).equals('.test input[type=text]{border:#333 solid}'));
+        }`,
+                options,
+            ).then((result) => expect(result.code).equals(".test input[type=text]{border:#333 solid}"));
         });
 
-        it('clamp & calc #18', function () {
-            return transform(`
+        it("clamp & calc #18", function () {
+            return transform(
+                `
 @media all {
     html {
         font-family: Blanco, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
@@ -230,11 +268,18 @@ border: #333 solid 1px;
         line-height: 1.7;
     }
 }
-`, options).then(result => expect(result.code).equals('html{font:clamp(12px,.8rem + .25vw,20px)/1.7 Blanco,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"}'));
+`,
+                options,
+            ).then((result) =>
+                expect(result.code).equals(
+                    'html{font:clamp(12px,.8rem + .25vw,20px)/1.7 Blanco,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"}',
+                ),
+            );
         });
 
-        it('shorthand parsing #19', function () {
-            return transform(`
+        it("shorthand parsing #19", function () {
+            return transform(
+                `
 @media all {
     html {
         font-family: Blanco, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
@@ -276,7 +321,10 @@ button.jetpack-instant-search__overlay-close {
     background-color: transparent !important;
 }
 
-`, options).then(result => expect(render(result.ast, {minify: false}).code).equals(`html {
+`,
+                options,
+            ).then((result) =>
+                expect(render(result.ast, { minify: false }).code).equals(`html {
  font: clamp(12px,.8rem + .25vw,20px)/1.7 Blanco,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"
 }
 button.jetpack-instant-search__overlay-close {
@@ -309,62 +357,67 @@ button.jetpack-instant-search__overlay-close {
  text-shadow: none;
  text-transform: none;
  width: 60px
-}`));
+}`),
+            );
         });
 
-        it('shorthand parsing #20', function () {
-            return transform(`
+        it("shorthand parsing #20", function () {
+            return transform(
+                `
 
 a {
 overflow-x: hidden;
 overflow-y: hidden;
 
 }
-`, options).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+`,
+                options,
+            ).then((result) =>
+                expect(render(result.ast, { minify: false }).code).equals(`a {
  overflow: hidden
-}`));
+}`),
+            );
         });
 
-        it('shorthand parsing #21', function () {
+        it("shorthand parsing #21", function () {
             return transform(`
 
     .foo {
         
     list-style: lower-roman url("img/shape.png") outside;
     }
-`).then(result => expect(result.code).equals(`.foo{list-style:lower-roman url(img/shape.png)}`));
+`).then((result) => expect(result.code).equals(`.foo{list-style:lower-roman url(img/shape.png)}`));
         });
 
-        it('shorthand parsing #22', function () {
+        it("shorthand parsing #22", function () {
             return transform(`
 
 ._19_u :focus { outline: none !important; }
-`).then(result => expect(result.code).equals(`._19_u :focus{outline:0!important}`));
+`).then((result) => expect(result.code).equals(`._19_u :focus{outline:0!important}`));
         });
 
-        it('shorthand parsing #23', function () {
+        it("shorthand parsing #23", function () {
             return transform(`
 
 ._19_u :focus {
         container-name: none;
         container-type: size;
     }
-`).then(result => expect(result.code).equals(`._19_u :focus{container:none/size}`));
+`).then((result) => expect(result.code).equals(`._19_u :focus{container:none/size}`));
         });
 
-
-        it('shorthand parsing #24', function () {
+        it("shorthand parsing #24", function () {
             return transform(`
 
 ._19_u :focus {
     container-name: none;
     container-type: normal;
  }
-`).then(result => expect(result.code).equals(`._19_u :focus{container:none}`));
+`).then((result) => expect(result.code).equals(`._19_u :focus{container:none}`));
         });
     });
 
-    it('shorthand parsing #25', function () {
+    it("shorthand parsing #25", function () {
         return transform(`
 
 .foo {
@@ -373,20 +426,21 @@ background-position: center center;
 background-image: url("logo.png");
 }
 
-`).then(result => expect(result.code).equals(`.foo{font-weight:700;background-position:50%;background-image:url(logo.png)}`));
+`).then((result) =>
+            expect(result.code).equals(`.foo{font-weight:700;background-position:50%;background-image:url(logo.png)}`),
+        );
     });
 
-    it('shorthand parsing #26', function () {
+    it("shorthand parsing #26", function () {
         return transform(`
 
 ._19_u :focus { outline: none !important; }
 }
 
-`).then(result => expect(result.code).equals(`._19_u :focus{outline:0!important}`));
+`).then((result) => expect(result.code).equals(`._19_u :focus{outline:0!important}`));
     });
 
-
-    it('shorthand parsing #27', function () {
+    it("shorthand parsing #27", function () {
         return transform(`
 
 .pure-table-bordered tbody > tr:last-child > td {
@@ -397,20 +451,60 @@ background-image: url("logo.png");
     border-color: #34edc7;
     border-style: none;
 }
-`).then(result => expect(result.code).equals(`.pure-table-bordered tbody>tr:last-child>td{border:#34edc7 0}`));
+`).then((result) => expect(result.code).equals(`.pure-table-bordered tbody>tr:last-child>td{border:#34edc7 0}`));
     });
 
-
-    it('shorthand parsing #28', function () {
-        return transform(`
+    it("shorthand parsing #28", function () {
+        return transform(
+            `
 
     .scale {
   border-radius: 0 0 calc(0.25rem - 1px) calc(0.25rem - 10px);
 }
   
-`, {beautify: true, validation: true}).then(result => expect(result.code). equals(`.scale {
+`,
+            { beautify: true, validation: true },
+        ).then((result) =>
+            expect(result.code).equals(`.scale {
  border-radius: 0 0 calc(.25rem - 1px)calc(.25rem - 10px)
-}`));
+}`),
+        );
     });
 
+    it("shorthand parsing #29", function () {
+        return transform(
+            `
+
+a {
+scroll-timeline-name: --bard;
+scroll-timeline-axis: block;
+scroll-padding-top: 0px;
+scroll-padding-right: 500px;
+scroll-padding-bottom: 0px;
+scroll-padding-left: 500px;
+scroll-margin-top: 0px;
+scroll-margin-right: 500px;
+scroll-margin-bottom: 0px;
+scroll-margin-left: 500px;
+
+color: color-mix(in lab, device-cmyk(0.091777 0.043303 0.312816 0.000000) 100%, yellow);
+color: device-cmyk(0 81% 81% 30%);
+
+`,
+            {
+                beautify: true,
+                nestingRules: false,
+                convertColor: ColorType.LAB,
+                removeDuplicateDeclarations: ["color"],
+            },
+        ).then((result) =>
+            expect(result.code).equals(`a {
+ scroll-timeline: --bard;
+ scroll-padding: 0 500px;
+ scroll-margin: 0 500px;
+ color: color-mix(in lab,lab(94.02018 -12.307625 31.793079) 100%,lab(97.607008 -15.749828 93.393591));
+ color: lab(39.925089 56.756846 39.364791)
+}`),
+        );
+    });
 }

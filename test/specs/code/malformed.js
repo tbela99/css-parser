@@ -372,6 +372,20 @@ color:
             }).then(result => expect(result.code).equals(``));
         });
         
+        
+        it('generic at-rule #22', async function () {
+            const css = `blockquote::after {
+  display: block;
+  content: " (source: " attr(cite) ") "`;
+
+            return transform(css, {
+                beautify: true
+            }).then(result => expect(result.code).equals(`blockquote:after {
+ display: block;
+ content: " (source: " attr(cite)") "
+}`));
+        });
+        
     });
 
 }

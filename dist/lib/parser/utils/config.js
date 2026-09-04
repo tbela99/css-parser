@@ -1,4 +1,4 @@
-import config from '../../../config.json.js';
+import config from '../../data/properties.json.js';
 
 Object.freeze(config);
 // @ts-expect-error

@@ -61,9 +61,10 @@ function color2cmykToken(token) {
 }
 function srgb2cmykvalues(r, g, b, a = null) {
     const k = 1 - Math.max(r, g, b);
-    const c = k == 1 ? 0 : (1 - r - k) / (1 - k);
-    const m = k == 1 ? 0 : (1 - g - k) / (1 - k);
-    const y = k == 1 ? 0 : (1 - b - k) / (1 - k);
+    const div = 1 - k;
+    const c = k == 1 ? 0 : (1 - r - k) / div;
+    const m = k == 1 ? 0 : (1 - g - k) / div;
+    const y = k == 1 ? 0 : (1 - b - k) / div;
     const result = [c, m, y, k];
     if (a != null && a < 1) {
         result.push(a);

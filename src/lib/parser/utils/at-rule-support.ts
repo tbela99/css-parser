@@ -286,7 +286,6 @@ export function parseAtRuleSupportSyntax(
     stream.length = 0;
 
     for (const token of trimArray(tokens)) {
-        
         stream.push(token);
     }
 

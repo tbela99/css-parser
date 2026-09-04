@@ -1,4 +1,2 @@
-
-
-import config from "./config.json" with { type: "json" };
-export {config};
+import config from "../data/validation.json" with { type: "json" };
+export { config };
