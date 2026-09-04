@@ -13374,7 +13374,8 @@
                         errors: [],
                     };
                 case ValidationTokenEnum.FunctionDefinition:
-                    if (equalsIgnoreCase(token.val, syntaxes[i].val)) {
+                    if (token.val &&
+                        equalsIgnoreCase(token.val, syntaxes[i].val)) {
                         if (tokensfuncDefMap.has(token.typ)) {
                             const children = trimArray(context.peekRange());
                             result = matchSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, syntaxes[i].val + "()")?.[0]).chi ?? [], createValidationContext(children.slice(1, -1)), options);
@@ -20902,7 +20903,6 @@
         let matrix = identity();
         let mat;
         let transforms;
-        let shouldComputeMatrix = true;
         const cumulative = [];
         // all transform function arguments must be 0 or scale(1)
         for (const transform of transformLists) {
@@ -20921,17 +20921,14 @@
                             child.typ != exports.EnumToken.PercentageTokenType) ||
                             // angle >= 360deg, do not transform
                             Math.abs(getAngle(child)) >= 1) {
-                            shouldComputeMatrix = false;
+                            return null;
                         }
                     }
-                    break;
-            }
-            if (!shouldComputeMatrix) {
-                break;
+                // break;
             }
         }
         for (const transformList of splitTransformList(transformLists)) {
-            mat = shouldComputeMatrix ? computeMatrix(transformList, identity()) : null;
+            mat = computeMatrix(transformList, identity());
             if (mat == null) {
                 return null;
             }
@@ -23496,6 +23493,19 @@
             .reduce((acc, curr) => acc + (curr == "&" ? replace : curr), "");
     }
 
+    /**
+     *
+     * @param value
+     * @returns
+     */
+    function toBase64(value) {
+        let result = '';
+        for (const c of new TextEncoder().encode(value)) {
+            result += String.fromCharCode(c);
+        }
+        return btoa(result);
+    }
+
     // from https://github.com/Rich-Harris/vlq/tree/master
     // credit: Rich Harris
     const integer_to_char = {};
@@ -23804,7 +23814,7 @@
          */
         toUrl() {
             // /*# sourceMappingURL = ${url} */
-            return `data:application/json;charset=utf-8;base64,${btoa(JSON.stringify(this.toJSON()))}`;
+            return `data:application/json;charset=utf-8;base64,${toBase64(JSON.stringify(this.toJSON()))}`;
         }
         /**
          * Convert to JSON object

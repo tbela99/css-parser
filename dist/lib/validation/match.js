@@ -1425,7 +1425,8 @@ function matchSyntax(syntaxes, context, options) {
                     errors: [],
                 };
             case ValidationTokenEnum.FunctionDefinition:
-                if (equalsIgnoreCase(token.val, syntaxes[i].val)) {
+                if (token.val &&
+                    equalsIgnoreCase(token.val, syntaxes[i].val)) {
                     if (tokensfuncDefMap.has(token.typ)) {
                         const children = trimArray(context.peekRange());
                         result = matchSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, syntaxes[i].val + "()")?.[0]).chi ?? [], createValidationContext(children.slice(1, -1)), options);

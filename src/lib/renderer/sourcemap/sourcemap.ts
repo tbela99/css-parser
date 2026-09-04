@@ -1,4 +1,5 @@
 import type { SourceMapObject } from "../../../@types/index.d.ts";
+import { toBase64 } from "../../parser/utils/base64.ts";
 import { decode, encode } from "./lib/codec.ts";
 
 /**
@@ -292,7 +293,7 @@ export class SourceMap {
      */
     toUrl(): string {
         // /*# sourceMappingURL = ${url} */
-        return `data:application/json;charset=utf-8;base64,${btoa(JSON.stringify(this.toJSON()))}`;
+        return `data:application/json;charset=utf-8;base64,${toBase64(JSON.stringify(this.toJSON()))}`;
     }
 
     /**

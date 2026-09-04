@@ -33,7 +33,6 @@ export function compute(transformLists: Token[]): {
     let matrix: Matrix | null = identity();
     let mat: Matrix;
     let transforms: Token[];
-    let shouldComputeMatrix: boolean = true;
     const cumulative: Token[] = [];
 
     // all transform function arguments must be 0 or scale(1)
@@ -56,21 +55,16 @@ export function compute(transformLists: Token[]): {
                         // angle >= 360deg, do not transform
                         Math.abs(getAngle(child as NumberToken)) >= 1
                     ) {
-                        shouldComputeMatrix = false;
-                        null;
+                        return null;
                     }
                 }
 
-                break;
-        }
-
-        if (!shouldComputeMatrix) {
-            break;
+                // break;
         }
     }
 
     for (const transformList of splitTransformList(transformLists)) {
-        mat = shouldComputeMatrix ? (computeMatrix(transformList, identity()) as Matrix) : null;
+        mat = (computeMatrix(transformList, identity()) as Matrix);
 
         if (mat == null) {
             return null;

@@ -1879,7 +1879,8 @@ function matchSyntax(
                 };
 
             case ValidationTokenEnum.FunctionDefinition:
-                if (
+
+                if ((token as FunctionToken).val &&
                     equalsIgnoreCase(
                         (token as FunctionToken).val,
                         (syntaxes[i] as ValidationFunctionDefinitionToken).val,

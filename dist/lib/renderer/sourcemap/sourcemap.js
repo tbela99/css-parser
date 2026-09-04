@@ -1,3 +1,4 @@
+import { toBase64 } from '../../parser/utils/base64.js';
 import { decode, encode } from './lib/codec.js';
 
 /**
@@ -231,7 +232,7 @@ class SourceMap {
      */
     toUrl() {
         // /*# sourceMappingURL = ${url} */
-        return `data:application/json;charset=utf-8;base64,${btoa(JSON.stringify(this.toJSON()))}`;
+        return `data:application/json;charset=utf-8;base64,${toBase64(JSON.stringify(this.toJSON()))}`;
     }
     /**
      * Convert to JSON object
