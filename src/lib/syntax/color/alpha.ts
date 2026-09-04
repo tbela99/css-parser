@@ -17,9 +17,53 @@ import { evaluate } from "../../ast/math/expression.ts";
  * @returns
  */
 export function alpha(color: ColorToken, alpha: Token): ColorToken | null {
-
     if (alpha == null) {
         return color;
+    }
+
+    let components = getColorComponents(color);
+
+    if (alpha.typ === EnumToken.MathFunctionTokenType) {
+        const originalAlpha = cloneNode(alpha, true);
+
+        for (const { value } of walkValues((alpha as FunctionToken).chi, alpha)) {
+            if (value.typ === EnumToken.IdenTokenType) {
+                if (equalsIgnoreCase((value as IdentToken).val, "alpha")) {
+                    Object.assign(
+                        value,
+                        components?.[3]
+                            ? cloneNode(components[3], true)
+                            : {
+                                  typ: EnumToken.NumberTokenType,
+                                  val: 1,
+                              },
+                    );
+                    // continue;
+                } else if (equalsIgnoreCase((value as IdentToken).val, "none")) {
+                    Object.assign(value, {
+                        typ: EnumToken.NumberTokenType,
+                        val: 0,
+                    });
+                }
+            }
+        }
+
+        const result = evaluate([alpha]);
+
+        if (result.length == 1) {
+            alpha = result[0];
+        } else {
+            // @ts-expect-error
+            alpha = originalAlpha;
+        }
+    }
+
+    if (
+        alpha.typ !== EnumToken.IdenTokenType &&
+        alpha.typ !== EnumToken.NumberTokenType &&
+        alpha.typ !== EnumToken.PercentageTokenType
+    ) {
+        return null;
     }
 
     if (color.kin === ColorType.DEVICE_CMYK) {
@@ -32,42 +76,27 @@ export function alpha(color: ColorToken, alpha: Token): ColorToken | null {
         if (color == null) {
             return null;
         }
-    }
 
-    const components = getColorComponents(color);
+        components = getColorComponents(color);
+    }
 
     if (components == null) {
         return null;
     }
 
-    if (alpha?.typ === EnumToken.IdenTokenType && equalsIgnoreCase((alpha as IdentToken).val, "alpha")) {
-        alpha = components[3] ?? {
-            typ: EnumToken.NumberTokenType,
-            val: 1,
-        };
-    } else if (
-        alpha.typ === EnumToken.MathFunctionTokenType &&
-        equalsIgnoreCase((alpha as FunctionToken).val, "calc")
-    ) {
-        alpha = cloneNode(alpha, true) as FunctionToken;
-
-        const alphaValue = components[3] ?? {
-            typ: EnumToken.NumberTokenType,
-            val: 1,
-        };
-
-        for (const { value, parent } of walkValues((alpha as FunctionToken).chi, alpha)) {
-            if (value.typ === EnumToken.IdenTokenType && equalsIgnoreCase((value as IdentToken).val, "alpha")) {
-                replaceNodeOrValue(parent as FunctionToken, value, alphaValue);
-            }
-        }
-
-        const result = evaluate([alpha as FunctionToken]);
-
-        if (result.length == 1) {
-            alpha = result[0];
+    if (alpha?.typ === EnumToken.IdenTokenType) {
+        if (equalsIgnoreCase((alpha as IdentToken).val, "alpha")) {
+            alpha = components[3] ?? {
+                typ: EnumToken.NumberTokenType,
+                val: 1,
+            };
+        } else if (equalsIgnoreCase((alpha as IdentToken).val, "node")) {
+            alpha = {
+                typ: EnumToken.NumberTokenType,
+                val: 0,
+            };
         }
     }
-
+    
     return makeColor(color.kin, components, alpha);
 }

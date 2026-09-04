@@ -6838,12 +6838,28 @@
     ]);
     const combinators = ["+", ">", "~", "||", "|"];
 
+    /**
+     *
+     * @param value
+     * @returns
+     */
     function dasherize(value) {
         return value.replace(/([A-Z])/g, (all, one) => `-${one.toLowerCase()}`);
     }
+    /**
+     *
+     * @param value
+     * @returns
+     */
     function camelize(value) {
         return value.replace(/-([a-z])/g, (all, one) => one.toUpperCase());
     }
+    /**
+     *
+     * @param a
+     * @param b
+     * @returns
+     */
     function equalsIgnoreCase(a, b) {
         if (a.length !== b.length)
             return false;
@@ -10197,6 +10213,9 @@
                     };
                 }
             }
+        }
+        if (op == exports.EnumToken.Div && v2 == 0) {
+            return defaultReturn;
         }
         // @ts-ignore
         const val = compute$1(v1, v2, op);
@@ -14400,104 +14419,6 @@
         return color.kin;
     }
 
-    const trimTokenSpace = new Set([
-        exports.EnumToken.CommaTokenType,
-        exports.EnumToken.DelimTokenType,
-        exports.EnumToken.GtTokenType,
-        exports.EnumToken.GteTokenType,
-        exports.EnumToken.LtTokenType,
-        exports.EnumToken.LteTokenType,
-        exports.EnumToken.ChildCombinatorTokenType,
-    ]);
-    const trimSpaceAfter = new Set([
-        ...tokensfuncSet.values(),
-        exports.EnumToken.ChildCombinatorTokenType,
-        exports.EnumToken.SupportsQueryConditionTokenType,
-        exports.EnumToken.SupportsQueryUnaryConditionTokenType,
-    ]);
-    /**
-     * Replace token in its parent node
-     * @param parent
-     * @param node
-     * @param replacement
-     * @throws TypeError replacement is null
-     * @throws ReferenceError node not found in parent
-     */
-    function replaceNodeOrValue(parent, node, replacement) {
-        if (replacement == null || (Array.isArray(replacement) && replacement.length === 0)) {
-            throw new TypeError(`replacement is null`);
-        }
-        for (const newNode of Array.isArray(replacement) ? replacement : [replacement]) {
-            if (newNode[PARENT] != node[PARENT]) {
-                newNode[PARENT] = node[PARENT];
-            }
-        }
-        if (parent.typ == exports.EnumToken.BinaryExpressionTokenType) {
-            if (parent.l == node) {
-                parent.l = replacement;
-            }
-            else if (parent.r == node) {
-                parent.r = replacement;
-            }
-            else {
-                throw new ReferenceError("Node not found");
-            }
-        }
-        else {
-            const target = "val" in parent && Array.isArray(parent.val)
-                ? parent.val
-                : (parent.chi ?? parent);
-            if (Array.isArray(target)) {
-                // @ts-ignore
-                const index = target.indexOf(node);
-                if (index == -1) {
-                    throw new ReferenceError("Node not found");
-                }
-                target.splice(index, 1, ...(Array.isArray(replacement) ? replacement : [replacement]));
-            }
-            else if ("l" in target && target.l == node) {
-                target.l = replacement;
-            }
-            else if ("r" in target && target.r == node) {
-                target.r = replacement;
-            }
-            else {
-                throw new ReferenceError("Node not found");
-            }
-        }
-        node[PARENT] = null;
-        return true;
-    }
-    function trimWhiteSpaceTokens(tokens) {
-        let i = 0;
-        if (tokens[0]?.typ === exports.EnumToken.WhitespaceTokenType) {
-            tokens.shift();
-        }
-        if (tokens[tokens.length - 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
-            tokens.pop();
-        }
-        if (tokens.length === 1) {
-            if (tokens[0].typ === exports.EnumToken.WhitespaceTokenType) {
-                tokens.length = 0;
-            }
-            return tokens;
-        }
-        for (; i < tokens.length; i++) {
-            if (trimSpaceAfter.has(tokens[i].typ) && tokens[i + 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
-                tokens.splice(i + 1, 1);
-            }
-            else if (trimTokenSpace.has(tokens[i].typ)) {
-                if (tokens[i + 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
-                    tokens.splice(i + 1, 1);
-                }
-                if (i > 0 && tokens[i - 1].typ === exports.EnumToken.Whitespace) {
-                    tokens.splice(--i, 1);
-                }
-            }
-        }
-        return tokens;
-    }
-
     /**
      * Compute alpha color
      * @param color
@@ -14508,6 +14429,42 @@
         if (alpha == null) {
             return color;
         }
+        let components = getColorComponents(color);
+        if (alpha.typ === exports.EnumToken.MathFunctionTokenType) {
+            const originalAlpha = cloneNode(alpha, true);
+            for (const { value } of walkValues(alpha.chi, alpha)) {
+                if (value.typ === exports.EnumToken.IdenTokenType) {
+                    if (equalsIgnoreCase(value.val, "alpha")) {
+                        Object.assign(value, components?.[3]
+                            ? cloneNode(components[3], true)
+                            : {
+                                typ: exports.EnumToken.NumberTokenType,
+                                val: 1,
+                            });
+                        // continue;
+                    }
+                    else if (equalsIgnoreCase(value.val, "none")) {
+                        Object.assign(value, {
+                            typ: exports.EnumToken.NumberTokenType,
+                            val: 0,
+                        });
+                    }
+                }
+            }
+            const result = evaluate([alpha]);
+            if (result.length == 1) {
+                alpha = result[0];
+            }
+            else {
+                // @ts-expect-error
+                alpha = originalAlpha;
+            }
+        }
+        if (alpha.typ !== exports.EnumToken.IdenTokenType &&
+            alpha.typ !== exports.EnumToken.NumberTokenType &&
+            alpha.typ !== exports.EnumToken.PercentageTokenType) {
+            return null;
+        }
         if (color.kin === exports.ColorType.DEVICE_CMYK) {
             return null;
         }
@@ -14516,32 +14473,23 @@
             if (color == null) {
                 return null;
             }
+            components = getColorComponents(color);
         }
-        const components = getColorComponents(color);
         if (components == null) {
             return null;
         }
-        if (alpha?.typ === exports.EnumToken.IdenTokenType && equalsIgnoreCase(alpha.val, "alpha")) {
-            alpha = components[3] ?? {
-                typ: exports.EnumToken.NumberTokenType,
-                val: 1,
-            };
-        }
-        else if (alpha.typ === exports.EnumToken.MathFunctionTokenType &&
-            equalsIgnoreCase(alpha.val, "calc")) {
-            alpha = cloneNode(alpha, true);
-            const alphaValue = components[3] ?? {
-                typ: exports.EnumToken.NumberTokenType,
-                val: 1,
-            };
-            for (const { value, parent } of walkValues(alpha.chi, alpha)) {
-                if (value.typ === exports.EnumToken.IdenTokenType && equalsIgnoreCase(value.val, "alpha")) {
-                    replaceNodeOrValue(parent, value, alphaValue);
-                }
+        if (alpha?.typ === exports.EnumToken.IdenTokenType) {
+            if (equalsIgnoreCase(alpha.val, "alpha")) {
+                alpha = components[3] ?? {
+                    typ: exports.EnumToken.NumberTokenType,
+                    val: 1,
+                };
             }
-            const result = evaluate([alpha]);
-            if (result.length == 1) {
-                alpha = result[0];
+            else if (equalsIgnoreCase(alpha.val, "node")) {
+                alpha = {
+                    typ: exports.EnumToken.NumberTokenType,
+                    val: 0,
+                };
             }
         }
         return makeColor(color.kin, components, alpha);
@@ -19930,6 +19878,104 @@
         }
     }
 
+    const trimTokenSpace = new Set([
+        exports.EnumToken.CommaTokenType,
+        exports.EnumToken.DelimTokenType,
+        exports.EnumToken.GtTokenType,
+        exports.EnumToken.GteTokenType,
+        exports.EnumToken.LtTokenType,
+        exports.EnumToken.LteTokenType,
+        exports.EnumToken.ChildCombinatorTokenType,
+    ]);
+    const trimSpaceAfter = new Set([
+        ...tokensfuncSet.values(),
+        exports.EnumToken.ChildCombinatorTokenType,
+        exports.EnumToken.SupportsQueryConditionTokenType,
+        exports.EnumToken.SupportsQueryUnaryConditionTokenType,
+    ]);
+    /**
+     * Replace token in its parent node
+     * @param parent
+     * @param node
+     * @param replacement
+     * @throws TypeError replacement is null
+     * @throws ReferenceError node not found in parent
+     */
+    function replaceNodeOrValue(parent, node, replacement) {
+        if (replacement == null || (Array.isArray(replacement) && replacement.length === 0)) {
+            throw new TypeError(`replacement is null`);
+        }
+        for (const newNode of Array.isArray(replacement) ? replacement : [replacement]) {
+            if (newNode[PARENT] != node[PARENT]) {
+                newNode[PARENT] = node[PARENT];
+            }
+        }
+        if (parent.typ == exports.EnumToken.BinaryExpressionTokenType) {
+            if (parent.l == node) {
+                parent.l = replacement;
+            }
+            else if (parent.r == node) {
+                parent.r = replacement;
+            }
+            else {
+                throw new ReferenceError("Node not found");
+            }
+        }
+        else {
+            const target = "val" in parent && Array.isArray(parent.val)
+                ? parent.val
+                : (parent.chi ?? parent);
+            if (Array.isArray(target)) {
+                // @ts-ignore
+                const index = target.indexOf(node);
+                if (index == -1) {
+                    throw new ReferenceError("Node not found");
+                }
+                target.splice(index, 1, ...(Array.isArray(replacement) ? replacement : [replacement]));
+            }
+            else if ("l" in target && target.l == node) {
+                target.l = replacement;
+            }
+            else if ("r" in target && target.r == node) {
+                target.r = replacement;
+            }
+            else {
+                throw new ReferenceError("Node not found");
+            }
+        }
+        node[PARENT] = null;
+        return true;
+    }
+    function trimWhiteSpaceTokens(tokens) {
+        let i = 0;
+        if (tokens[0]?.typ === exports.EnumToken.WhitespaceTokenType) {
+            tokens.shift();
+        }
+        if (tokens[tokens.length - 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
+            tokens.pop();
+        }
+        if (tokens.length === 1) {
+            if (tokens[0].typ === exports.EnumToken.WhitespaceTokenType) {
+                tokens.length = 0;
+            }
+            return tokens;
+        }
+        for (; i < tokens.length; i++) {
+            if (trimSpaceAfter.has(tokens[i].typ) && tokens[i + 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
+                tokens.splice(i + 1, 1);
+            }
+            else if (trimTokenSpace.has(tokens[i].typ)) {
+                if (tokens[i + 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
+                    tokens.splice(i + 1, 1);
+                }
+                if (i > 0 && tokens[i - 1].typ === exports.EnumToken.Whitespace) {
+                    tokens.splice(--i, 1);
+                }
+            }
+        }
+        return tokens;
+    }
+
     class ComputeCalcExpressionFeature {
         accept = new Set([exports.EnumToken.RuleNodeType, exports.EnumToken.AtRuleNodeType]);
         get ordering() {
@@ -23564,6 +23610,11 @@
         }
         return result;
     }
+    /**
+     *
+     * @param num
+     * @returns
+     */
     function encode_integer(num) {
         let result = '';
         if (num < 0) {
@@ -26884,7 +26935,7 @@
                             // ) {
                             //     this.advance(parseInfo);
                             //     return this.makeToken(parseInfo, EnumToken.PseudoClassFunctionTokenDefType);
-                            // } else 
+                            // } else
                             if (this.isIdentToken(parseInfo)) {
                                 const hint = this.startsWith(parseInfo, "--")
                                     ? exports.EnumToken.CustomFunctionTokenDefType
@@ -27129,6 +27180,9 @@
                     case 46 /* TokenMap.DOT */:
                         const codepoint = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset + 1);
                         if (isIdentStart(codepoint) || codepoint == 45 /* TokenMap.MINUS */) {
+                            if (parseInfo.position < parseInfo.currentPosition) {
+                                return this.makeToken(parseInfo);
+                            }
                             this.advance(parseInfo);
                             let tokensCount = this.consumeIdentToken(parseInfo);
                             if (tokensCount > 0) {

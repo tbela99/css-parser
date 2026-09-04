@@ -225,6 +225,9 @@ function doEvaluate(l, r, op) {
             }
         }
     }
+    if (op == EnumToken.Div && v2 == 0) {
+        return defaultReturn;
+    }
     // @ts-ignore
     const val = compute(v1, v2, op);
     const token = {

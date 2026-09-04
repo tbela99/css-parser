@@ -2,7 +2,7 @@ import { dirname } from "node:path";
 import { transform } from "../dist/node.js";
 
 const { code, stats } = await transform({
-    file: dirname(new URL(import.meta.url).pathname) + "/files/css/tailwind.css",
+    file: dirname(new URL(import.meta.url).pathname) + "/files/css/larger.css",
 });
 
 console.debug(code);

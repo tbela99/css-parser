@@ -1308,7 +1308,7 @@ class Tokenizer {
                         // ) {
                         //     this.advance(parseInfo);
                         //     return this.makeToken(parseInfo, EnumToken.PseudoClassFunctionTokenDefType);
-                        // } else 
+                        // } else
                         if (this.isIdentToken(parseInfo)) {
                             const hint = this.startsWith(parseInfo, "--")
                                 ? EnumToken.CustomFunctionTokenDefType
@@ -1553,6 +1553,9 @@ class Tokenizer {
                 case 46 /* TokenMap.DOT */:
                     const codepoint = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset + 1);
                     if (isIdentStart(codepoint) || codepoint == 45 /* TokenMap.MINUS */) {
+                        if (parseInfo.position < parseInfo.currentPosition) {
+                            return this.makeToken(parseInfo);
+                        }
                         this.advance(parseInfo);
                         let tokensCount = this.consumeIdentToken(parseInfo);
                         if (tokensCount > 0) {

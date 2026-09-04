@@ -204,5 +204,50 @@ color: alpha(from OkLcH(from OkLcH(from peru  l    c  h) l c calc(h / 2) / 20%)/
 }`),
             );
         });
+
+        it("color-mix() #8", function () {
+            return transform(
+                `
+   
+:root {
+--mycolor:  oklch(60% 0.25 315 / 0.8);
+}
+    .s {
+    
+    color:
+ alpha(from var(--mycolor)  / calc(alpha * 0.5));
+    }
+        .bar.bar {
+ color: alpha(from red/calc(pi / 0))
+}
+        .bar {
+ color: alpha(from red/calc(0 / 0))
+}
+
+    .s {
+/* teal */
+color: alpha(from OkLcH(from OkLcH(from peru  l    c  h) l c calc(h / 2) / 20% )/calc(20% / 0)); 
+ `,
+                {
+                    beautify: true,
+                    inlineCssVariables: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`.s {
+ color: #b538e366
+}
+.bar {
+ &.bar {
+  color: alpha(from red/calc(pi/0))
+ }
+ & {
+  color: alpha(from red/calc(0/0))
+ }
+}
+.s {
+ color: alpha(from #d9796833/calc(20%/0))
+}`),
+            );
+        });
     });
 }
