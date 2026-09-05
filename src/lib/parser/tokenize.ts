@@ -1,5 +1,5 @@
-import type { ParseInfo } from "../../@types/index.d.ts";
-import { ColorType, EnumToken } from "../ast/types.ts";
+import type {ParseInfo} from "../../@types/index.d.ts";
+import {ColorType, EnumToken} from "../ast/types.ts";
 import {
     colorsFunc,
     containerFunc,
@@ -30,7 +30,7 @@ import {
     resolutionUnits,
     timeUnits,
 } from "../syntax/syntax.ts";
-import { SourceFile } from "./source.ts";
+import {SourceFile} from "./source.ts";
 
 const SymbolsMapTokens: Record<string, EnumToken> = Object.create(null);
 
@@ -1281,8 +1281,6 @@ export class Tokenizer {
     /**
      *
      * @param parseInfo
-     * @param start
-     * @param end
      * @returns
      */
     isIdentToken(parseInfo: ParseInfo /* , start?: number, end?: number */): boolean {
@@ -1444,8 +1442,6 @@ export class Tokenizer {
 
     /**
      * Tokenize CSS string
-     * @param parseInfo
-     * @param yieldEOFToken
      */
     next(/* parseInfo: ParseInfo | string, yieldEOFToken: boolean = true */): this {
         const parseInfo: ParseInfo = this.parseInfo as ParseInfo;
@@ -2004,8 +2000,6 @@ export class Tokenizer {
 
     /**
      * tokenize readable stream
-     * @param input
-     * @param parseInfo
      */
     async tokenizeStream(): Promise<this> {
         const decoder = new TextDecoder("utf-8");

@@ -3,8 +3,7 @@
 # v1.6.2
 
 - [x] fix base64 encoding error when inline sourcemap is enabled
-- [ ] support color interpolation in gradient functions 
-- [x] handle dividing by zero in calc()
+- [x] handle division by zero in calc()
 
 # v1.6.1
 

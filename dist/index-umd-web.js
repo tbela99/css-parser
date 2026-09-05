@@ -9298,9 +9298,17 @@
             for (i = 0; i < percentages.length; i++) {
                 percentages[i] = percentages[i] / perc;
             }
-            totalPercentage = 1;
         }
+        const stack = [];
+        const lchSpaces = ["lch", "oklch"];
         i = colors.length;
+        i = srgbComponentValues.length;
+        while (i--) {
+            stack.push({
+                color: srgbComponentValues[i],
+                alpha: percentages[i],
+            });
+        }
         let currentIndex = 0;
         let r1;
         let r2;
@@ -9311,18 +9319,8 @@
         let premult1;
         let premult2;
         let mixedPremult;
-        let colorSpace1;
-        const stack = [];
-        const lchSpaces = ["lch", "oklch"];
-        i = srgbComponentValues.length;
-        while (i--) {
-            stack.push({
-                color: srgbComponentValues[i],
-                alpha: percentages[i],
-            });
-        }
         // @ts-expect-error
-        colorSpace1 = exports.ColorType[colorComponents.at(-1).kin]?.toLowerCase?.();
+        let colorSpace1 = exports.ColorType[colorComponents.at(-1).kin]?.toLowerCase?.();
         if (colorComponents[0][3] != null &&
             colorComponents[0][3].typ == exports.EnumToken.IdenTokenType &&
             colorComponents[0][3].val == "none" &&
@@ -9404,14 +9402,13 @@
                 else {
                     values = xyz2lchvalues(values[0], values[1], values[2], values[3]);
                 }
-                // @ts-ignore
                 return {
                     typ: exports.EnumToken.ColorTokenType,
                     val: "lch",
-                    chi: values.map((v) => {
+                    chi: values.map((val) => {
                         return {
                             typ: exports.EnumToken.NumberTokenType,
-                            val: v,
+                            val
                         };
                     }),
                     kin: exports.ColorType.LCH,
@@ -15392,6 +15389,300 @@
         ":-moz-ui-valid": ":user-valid",
         "::-moz-selection": "::selection",
     };
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/::-webkit-scrollbar
+    // export const webkitExtensions = new Set([
+    //     "-webkit-app-region",
+    //     "-webkit-border-horizontal-spacing",
+    //     "-webkit-border-vertical-spacing",
+    //     "-webkit-box-reflect",
+    //     "-webkit-column-axis",
+    //     "-webkit-column-progression",
+    //     "-webkit-cursor-visibility",
+    //     "-webkit-font-smoothing",
+    //     "-webkit-hyphenate-limit-after",
+    //     "-webkit-hyphenate-limit-before",
+    //     "-webkit-hyphenate-limit-lines",
+    //     "-webkit-line-align",
+    //     "-webkit-line-box-contain",
+    //     "-webkit-line-clamp",
+    //     "-webkit-line-grid",
+    //     "-webkit-line-snap",
+    //     "-webkit-locale",
+    //     "-webkit-logical-height",
+    //     "-webkit-logical-width",
+    //     "-webkit-margin-after",
+    //     "-webkit-margin-before",
+    //     "-webkit-mask-box-image-outset",
+    //     "-webkit-mask-box-image-repeat",
+    //     "-webkit-mask-box-image-slice",
+    //     "-webkit-mask-box-image-source",
+    //     "-webkit-mask-box-image-width",
+    //     "-webkit-mask-box-image",
+    //     "-webkit-mask-composite",
+    //     "-webkit-mask-position-x",
+    //     "-webkit-mask-position-y",
+    //     "-webkit-mask-repeat-x",
+    //     "-webkit-mask-repeat-y",
+    //     "-webkit-mask-source-type",
+    //     "-webkit-max-logical-height",
+    //     "-webkit-max-logical-width",
+    //     "-webkit-min-logical-height",
+    //     "-webkit-min-logical-width",
+    //     "-webkit-nbsp-mode",
+    //     "-webkit-match-parent",
+    //     "-webkit-perspective-origin-x",
+    //     "-webkit-perspective-origin-y",
+    //     "-webkit-rtl-ordering",
+    //     "-webkit-tap-highlight-color",
+    //     "-webkit-text-decoration-skip",
+    //     "-webkit-text-decorations-in-effect",
+    //     "-webkit-text-fill-color",
+    //     "-webkit-text-security",
+    //     "-webkit-text-stroke-color",
+    //     "-webkit-text-stroke-width",
+    //     "-webkit-text-stroke",
+    //     "-webkit-text-zoom",
+    //     "-webkit-touch-callout",
+    //     "-webkit-transform-origin-x",
+    //     "-webkit-transform-origin-y",
+    //     "-webkit-transform-origin-z",
+    //     "-webkit-user-drag",
+    //     "-webkit-user-modify",
+    //     "-webkit-border-after",
+    //     "-webkit-border-after-color",
+    //     "-webkit-border-after-style",
+    //     "-webkit-border-after-width",
+    //     "-webkit-border-before",
+    //     "-webkit-border-before-color",
+    //     "-webkit-border-before-style",
+    //     "-webkit-border-before-width",
+    //     "-webkit-border-end",
+    //     "-webkit-border-end-color",
+    //     "-webkit-border-end-style",
+    //     "-webkit-border-end-width",
+    //     "-webkit-border-start",
+    //     "-webkit-border-start-color",
+    //     "-webkit-border-start-style",
+    //     "-webkit-border-start-width",
+    //     "-webkit-box-align",
+    //     "-webkit-box-direction",
+    //     "-webkit-box-flex-group",
+    //     "-webkit-box-flex",
+    //     "-webkit-box-lines",
+    //     "-webkit-box-ordinal-group",
+    //     "-webkit-box-orient",
+    //     "-webkit-box-pack",
+    //     "-webkit-column-break-after",
+    //     "-webkit-column-break-before",
+    //     "-webkit-column-break-inside",
+    //     "-webkit-font-feature-settings",
+    //     "-webkit-hyphenate-character",
+    //     "-webkit-initial-letter",
+    //     "-webkit-margin-end",
+    //     "-webkit-margin-start",
+    //     "-webkit-padding-after",
+    //     "-webkit-padding-before",
+    //     "-webkit-padding-end",
+    //     "-webkit-padding-start",
+    //     "-webkit-fill-available",
+    //     ":-webkit-animating-full-screen-transition",
+    //     ":-webkit-any",
+    //     ":-webkit-any-link",
+    //     ":-webkit-autofill",
+    //     ":-webkit-autofill-strong-password",
+    //     ":-webkit-drag",
+    //     ":-webkit-full-page-media",
+    //     ":-webkit-full-screen*",
+    //     ":-webkit-full-screen-ancestor",
+    //     ":-webkit-full-screen-document",
+    //     ":-webkit-full-screen-controls-hidden",
+    //     "::-webkit-file-upload-button*",
+    //     "::-webkit-inner-spin-button",
+    //     "::-webkit-input-placeholder",
+    //     "::-webkit-meter-bar",
+    //     "::-webkit-meter-even-less-good-value",
+    //     "::-webkit-meter-inner-element",
+    //     "::-webkit-meter-optimum-value",
+    //     "::-webkit-meter-suboptimum-value",
+    //     "::-webkit-progress-bar",
+    //     "::-webkit-progress-inner-element",
+    //     "::-webkit-progress-value",
+    //     "::-webkit-search-cancel-button",
+    //     "::-webkit-search-results-button",
+    //     "::-webkit-slider-runnable-track",
+    //     "::-webkit-slider-thumb",
+    //     "-webkit-animation",
+    //     "-webkit-device-pixel-ratio",
+    //     "-webkit-transform-2d",
+    //     "-webkit-transform-3d",
+    //     "-webkit-transition",
+    //     "::-webkit-scrollbar",
+    //     "::-webkit-scrollbar-button",
+    //     "::-webkit-scrollbar",
+    //     "::-webkit-scrollbar-thumb",
+    //     "::-webkit-scrollbar-track",
+    //     "::-webkit-scrollbar-track-piece",
+    //     "::-webkit-scrollbar:vertical",
+    //     "::-webkit-scrollbar-corner ",
+    //     "::-webkit-resizer",
+    //     ":vertical",
+    //     ":horizontal",
+    // ]);
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/Mozilla_Extensions
+    // export const mozExtensions = new Set([
+    //     "-moz-box-align",
+    //     "-moz-box-direction",
+    //     "-moz-box-flex",
+    //     "-moz-box-ordinal-group",
+    //     "-moz-box-orient",
+    //     "-moz-box-pack",
+    //     "-moz-float-edge",
+    //     "-moz-force-broken-image-icon",
+    //     "-moz-image-region",
+    //     "-moz-orient",
+    //     "-moz-osx-font-smoothing",
+    //     "-moz-user-focus",
+    //     "-moz-user-input",
+    //     "-moz-user-modify",
+    //     "-moz-animation",
+    //     "-moz-animation-delay",
+    //     "-moz-animation-direction",
+    //     "-moz-animation-duration",
+    //     "-moz-animation-fill-mode",
+    //     "-moz-animation-iteration-count",
+    //     "-moz-animation-name",
+    //     "-moz-animation-play-state",
+    //     "-moz-animation-timing-function",
+    //     "-moz-appearance",
+    //     "-moz-backface-visibility",
+    //     "-moz-background-clip",
+    //     "-moz-background-origin",
+    //     "-moz-background-inline-policy",
+    //     "-moz-background-size",
+    //     "-moz-border-end",
+    //     "-moz-border-end-color",
+    //     "-moz-border-end-style",
+    //     "-moz-border-end-width",
+    //     "-moz-border-image",
+    //     "-moz-border-start",
+    //     "-moz-border-start-color",
+    //     "-moz-border-start-style",
+    //     "-moz-border-start-width",
+    //     "-moz-box-sizing",
+    //     "clip-path",
+    //     "-moz-column-count",
+    //     "-moz-column-fill",
+    //     "-moz-column-gap",
+    //     "-moz-column-width",
+    //     "-moz-column-rule",
+    //     "-moz-column-rule-width",
+    //     "-moz-column-rule-style",
+    //     "-moz-column-rule-color",
+    //     "filter",
+    //     "-moz-font-feature-settings",
+    //     "-moz-font-language-override",
+    //     "-moz-hyphens",
+    //     "-moz-margin-end",
+    //     "-moz-margin-start",
+    //     "mask",
+    //     "-moz-opacity",
+    //     "-moz-outline",
+    //     "-moz-outline-color",
+    //     "-moz-outline-offset",
+    //     "-moz-outline-style",
+    //     "-moz-outline-width",
+    //     "-moz-padding-end",
+    //     "-moz-padding-start",
+    //     "-moz-perspective",
+    //     "-moz-perspective-origin",
+    //     "pointer-events",
+    //     "-moz-tab-size",
+    //     "-moz-text-align-last",
+    //     "-moz-text-decoration-color",
+    //     "-moz-text-decoration-line",
+    //     "-moz-text-decoration-style",
+    //     "-moz-text-size-adjust",
+    //     "-moz-transform",
+    //     "-moz-transform-origin",
+    //     "-moz-transform-style",
+    //     "-moz-transition",
+    //     "-moz-transition-delay",
+    //     "-moz-transition-duration",
+    //     "-moz-transition-property",
+    //     "-moz-transition-timing-function",
+    //     "-moz-user-select",
+    //     "-moz-initial",
+    //     "-moz-appearance",
+    //     "-moz-linear-gradient",
+    //     "-moz-radial-gradient",
+    //     "-moz-element",
+    //     "-moz-image-rect",
+    //     "::-moz-anonymous-block",
+    //     "::-moz-anonymous-positioned-block",
+    //     ":-moz-any",
+    //     ":-moz-any-link",
+    //     ":-moz-broken",
+    //     "::-moz-canvas",
+    //     "::-moz-color-swatch",
+    //     "::-moz-cell-content",
+    //     ":-moz-drag-over",
+    //     ":-moz-first-node",
+    //     "::-moz-focus-inner",
+    //     "::-moz-focus-outer",
+    //     ":-moz-full-screen",
+    //     ":-moz-full-screen-ancestor",
+    //     ":-moz-handler-blocked",
+    //     ":-moz-handler-crashed",
+    //     ":-moz-handler-disabled",
+    //     "::-moz-inline-table",
+    //     ":-moz-last-node",
+    //     "::-moz-list-bullet",
+    //     "::-moz-list-number",
+    //     ":-moz-loading",
+    //     ":-moz-locale-dir",
+    //     ":-moz-locale-dir",
+    //     ":-moz-lwtheme",
+    //     ":-moz-lwtheme-brighttext",
+    //     ":-moz-lwtheme-darktext",
+    //     "::-moz-meter-bar",
+    //     ":-moz-native-anonymous",
+    //     ":-moz-only-whitespace",
+    //     "::-moz-pagebreak",
+    //     "::-moz-pagecontent",
+    //     ":-moz-placeholder",
+    //     "::-moz-placeholder",
+    //     "::-moz-progress-bar",
+    //     "::-moz-range-progress",
+    //     "::-moz-range-thumb",
+    //     "::-moz-range-track",
+    //     ":-moz-read-only",
+    //     ":-moz-read-write",
+    //     "::-moz-scrolled-canvas",
+    //     "::-moz-scrolled-content",
+    //     "::-moz-selection",
+    //     ":-moz-submit-invalid",
+    //     ":-moz-suppressed",
+    //     "::-moz-svg-foreign-content",
+    //     "::-moz-table",
+    //     "::-moz-table-cell",
+    //     "::-moz-table-column",
+    //     "::-moz-table-column-group",
+    //     "::-moz-table-outer",
+    //     "::-moz-table-row",
+    //     "::-moz-table-row-group",
+    //     ":-moz-ui-invalid",
+    //     ":-moz-ui-valid",
+    //     ":-moz-user-disabled",
+    //     "::-moz-viewport",
+    //     "::-moz-viewport-scroll",
+    //     ":-moz-window-inactive",
+    //     "-moz-device-pixel-ratio",
+    //     "-moz-os-version",
+    //     "-moz-touch-enabled",
+    //     "-moz-windows-glass",
+    //     "-moz-alt-content",
+    // ]);
     // renamed standard properties
     const renamedStandardProperties = new Map([["color-adjust", "print-color-adjust"]]);
     function isLength(dimension) {
@@ -15409,6 +15700,34 @@
     function isFrequency(dimension) {
         return "unit" in dimension && frequencyUnits.includes(dimension.unit.toLowerCase());
     }
+    /**
+     * Is color space
+     * @param token
+     * @returns
+     */
+    // export function isColorspace(token: Token): boolean {
+    //     return (
+    //         token.typ === EnumToken.IdenTokenType &&
+    //         [
+    //             "srgb",
+    //             "srgb-linear",
+    //             "lab",
+    //             "oklab",
+    //             "lch",
+    //             "oklch",
+    //             "xyz",
+    //             "xyz-d50",
+    //             "xyz-d65",
+    //             "display-p3",
+    //             "a98-rgb",
+    //             "prophoto-rgb",
+    //             "rec2020",
+    //             "rgb",
+    //             "hsl",
+    //             "hwb",
+    //         ].includes((token as IdentToken).val.toLowerCase())
+    //     );
+    // }
     /**
      * Reduce color stops
      * @param stops
@@ -15607,6 +15926,26 @@
             ["hsl", "hwb", "lch", "oklch"].some((t) => equalsIgnoreCase(t, token.val)));
     }
     /**
+     * Is hue interpolation method
+     * @param token
+     * @returns
+     */
+    // export function isHueInterpolationMethod(token: Token | Token[]): boolean {
+    //     if (!Array.isArray(token)) {
+    //         return token.typ == EnumToken.IdenTokenType && "hue" === (token as IdentToken).val?.toLowerCase?.();
+    //     }
+    //
+    //     if (token.length != 2 || token[0].typ != EnumToken.IdenTokenType || token[1].typ != EnumToken.IdenTokenType) {
+    //         return false;
+    //     }
+    //
+    //     return (
+    //         ["shorter", "longer", "increasing", "decreasing"].some((t) =>
+    //             equalsIgnoreCase(t, (token[0] as IdentToken).val ?? ""),
+    //         ) && "hue" === (token[1] as IdentToken).val?.toLowerCase?.()
+    //     );
+    // }
+    /**
      * Is ident color
      * @param token
      * @returns
@@ -15616,6 +15955,12 @@
             [exports.ColorType.SYS, exports.ColorType.DPSYS, exports.ColorType.LIT].includes(token.kin) &&
             isIdent(token.val));
     }
+    // export function isPercentageToken(token: Token): boolean {
+    //     return (
+    //         token.typ == EnumToken.PercentageTokenType ||
+    //         (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == 0)
+    //     );
+    // }
     function isColor(token, errors) {
         if (token.typ == exports.EnumToken.WildCardFunctionTokenType) {
             return true;
@@ -15879,21 +16224,33 @@
                     return true;
                 }
                 else {
-                    // @ts-ignore
-                    if (["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch"].some((t) => equalsIgnoreCase(t, token.val))) {
-                        for (const keyword of token.val.slice(-3).split("")) {
-                        }
-                    }
+                    // const keywords: string[] = ["from", "none"];
+                    //
+                    // // @ts-ignore
+                    // if (
+                    //     ["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch"].some((t) =>
+                    //         equalsIgnoreCase(t, (token as ColorToken).val),
+                    //     )
+                    // ) {
+                    //     // @ts-ignore
+                    //     keywords.push("alpha");
+                    //
+                    //     for (const keyword of (token as ColorToken).val.slice(-3).split("")) {
+                    //         keywords.push(keyword);
+                    //     }
+                    // }
                     // @ts-ignore
                     for (const v of token.chi) {
-                        if (v.typ == exports.EnumToken.IdenTokenType) {
-                            continue;
-                        }
-                        if (v.typ === exports.EnumToken.MathFunctionTokenType ||
-                            v.typ === exports.EnumToken.WildCardFunctionTokenType ||
-                            colorsFunc.includes(v.val)) {
-                            continue;
-                        }
+                        // if (v.typ == EnumToken.IdenTokenType) {
+                        //     continue;
+                        // }
+                        // if (
+                        //     v.typ === EnumToken.MathFunctionTokenType ||
+                        //     v.typ === EnumToken.WildCardFunctionTokenType ||
+                        //     colorsFunc.includes(v.val)
+                        // ) {
+                        //     continue;
+                        // }
                     }
                 }
                 return true;
@@ -16039,6 +16396,44 @@
             codepoint == 0x7f ||
             (codepoint >= 0xe && codepoint <= 0x1f));
     }
+    // export function isURLToken(str: string): boolean {
+    //     let i: number = -1;
+    //     let c: number;
+    //
+    //     while (++i < str.length) {
+    //         c = str.charCodeAt(i) as number;
+    //
+    //         // single quote or double quote or start parenthesis or close parenthesis
+    //         if (isNonPrintable(c) || c == 0x27 || c == 0x22 || c == 0x28 || c == 0x29) {
+    //             return false;
+    //         }
+    //
+    //         // valid escape
+    //         if (c == REVERSE_SOLIDUS) {
+    //             i++;
+    //
+    //             if (i >= str.length) {
+    //                 return false;
+    //             }
+    //
+    //             c = str.charCodeAt(i) as number;
+    //
+    //             // c is not '\n' or '\r' or '\f'
+    //             if (c == 0x6e || c == 0x72 || c == 0x66) {
+    //                 return false;
+    //             }
+    //
+    //             continue;
+    //         }
+    //
+    //         // is white space
+    //         if (c == 0x20 || c == 0x09) {
+    //             break;
+    //         }
+    //     }
+    //
+    //     return i == str.length;
+    // }
     function isPseudo(name) {
         return (name.charAt(0) == ":" &&
             ((name.endsWith("(") && isIdent(name.charAt(1) == ":" ? name.slice(2, -1) : name.slice(1, -1))) ||
@@ -16047,6 +16442,94 @@
     function isHash(name) {
         return name.charAt(0) == "#" && isIdentStart(name.charCodeAt(1));
     }
+    // export const isNumber = memoize(function (name: string): boolean {
+    //     let codepoint: number = name.charCodeAt(0) as number;
+    //     let i: number = 0;
+    //     const j: number = name.length;
+    //
+    //     if (j == 1 && !isDigit(codepoint)) {
+    //         return false;
+    //     }
+    //
+    //     // '+' '-'
+    //     if ([0x2b, 0x2d].includes(codepoint)) {
+    //         i++;
+    //     }
+    //
+    //     // consume digits
+    //     while (i < j) {
+    //         codepoint = name.charCodeAt(i) as number;
+    //
+    //         if (isDigit(codepoint)) {
+    //             i++;
+    //             continue;
+    //         }
+    //
+    //         // '.' 'E' 'e'
+    //         if (codepoint == 0x2e || codepoint == 0x45 || codepoint == 0x65) {
+    //             break;
+    //         }
+    //
+    //         return false;
+    //     }
+    //
+    //     // '.'
+    //     if (codepoint == 0x2e) {
+    //         if (!isDigit(name.charCodeAt(++i) as number)) {
+    //             return false;
+    //         }
+    //     }
+    //
+    //     while (i < j) {
+    //         codepoint = name.charCodeAt(i) as number;
+    //
+    //         if (isDigit(codepoint)) {
+    //             i++;
+    //             continue;
+    //         }
+    //
+    //         // 'E' 'e'
+    //         if (codepoint == 0x45 || codepoint == 0x65) {
+    //             i++;
+    //             break;
+    //         }
+    //
+    //         return false;
+    //     }
+    //
+    //     // 'E' 'e'
+    //     if (codepoint == 0x45 || codepoint == 0x65) {
+    //         // if (i == j) {
+    //         //     return false;
+    //         // }
+    //
+    //         codepoint = name.charCodeAt(i + 1) as number;
+    //
+    //         // '+' '-'
+    //         // if ([0x2b, 0x2d].includes(codepoint)) {
+    //         //     i++;
+    //         // }
+    //
+    //         codepoint = name.charCodeAt(i + 1) as number;
+    //
+    //         if (!isDigit(codepoint)) {
+    //             return false;
+    //         }
+    //     }
+    //
+    //     // while (++i < j) {
+    //     //     codepoint = name.charCodeAt(i) as number;
+    //
+    //     //     if (!isDigit(codepoint)) {
+    //     //         return false;
+    //     //     }
+    //     // }
+    //
+    //     return true;
+    // }) as (name: string) => boolean;
+    // export function isPercentage(name: string) {
+    //     return name.endsWith("%") && isNumber(name.slice(0, -1));
+    // }
     function isFlex(dimension) {
         return "unit" in dimension && "fr" == dimension.unit.toLowerCase();
     }
@@ -16101,9 +16584,33 @@
         }
         return dimension;
     }
+    // export function isHexColor(name: string): boolean {
+    //     if (name.charAt(0) != "#" || ![4, 5, 7, 9].includes(name.length)) {
+    //         return false;
+    //     }
+    //
+    //     for (let chr of name.slice(1)) {
+    //         let codepoint: number = chr.charCodeAt(0) as number;
+    //
+    //         if (
+    //             !isDigit(codepoint) &&
+    //             // A-F
+    //             !(codepoint >= 0x41 && codepoint <= 0x46) &&
+    //             // a-f
+    //             !(codepoint >= 0x61 && codepoint <= 0x66)
+    //         ) {
+    //             return false;
+    //         }
+    //     }
+    //
+    //     return true;
+    // }
     function isFunction(name) {
         return name.endsWith("(") && isIdent(name.slice(0, -1));
     }
+    // export function isAtKeyword(name: string): boolean {
+    //     return name.charCodeAt(0) == 0x40 && isIdent(name.slice(1));
+    // }
     function isNewLine(codepoint) {
         // \n \r \f \v
         return (codepoint == 0xa ||
@@ -16124,6 +16631,32 @@
             codepoint == 0x2028 ||
             codepoint == 0x2029);
     }
+    // export function isValue(token: Token) {
+    //     if (token == null) {
+    //         return false;
+    //     }
+    //
+    //     return (
+    //         token.typ === EnumToken.IdenTokenType ||
+    //         token.typ === EnumToken.DimensionTokenType ||
+    //         token.typ === EnumToken.LengthTokenType ||
+    //         token.typ === EnumToken.AngleTokenType ||
+    //         token.typ === EnumToken.FlexTokenType ||
+    //         token.typ === EnumToken.TimeTokenType ||
+    //         token.typ === EnumToken.ResolutionTokenType ||
+    //         token.typ === EnumToken.FrequencyTokenType ||
+    //         token.typ === EnumToken.NumberTokenType ||
+    //         token.typ === EnumToken.ColorTokenType ||
+    //         token.typ === EnumToken.FunctionTokenType ||
+    //         token.typ === EnumToken.UrlFunctionTokenType ||
+    //         token.typ === EnumToken.GridTemplateFuncTokenType ||
+    //         token.typ === EnumToken.ImageFunctionTokenType ||
+    //         token.typ === EnumToken.TimelineFunctionTokenType ||
+    //         token.typ === EnumToken.TimingFunctionTokenType ||
+    //         token.typ === EnumToken.MathFunctionTokenType ||
+    //         token.typ === EnumToken.TransformFunctionTokenType
+    //     );
+    // }
     // https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Values_and_units#absolute_length_units
     /**
      * Convert length to px
@@ -26661,8 +27194,6 @@
         /**
          *
          * @param parseInfo
-         * @param start
-         * @param end
          * @returns
          */
         isIdentToken(parseInfo /* , start?: number, end?: number */) {
@@ -26793,8 +27324,6 @@
         }
         /**
          * Tokenize CSS string
-         * @param parseInfo
-         * @param yieldEOFToken
          */
         next( /* parseInfo: ParseInfo | string, yieldEOFToken: boolean = true */) {
             const parseInfo = this.parseInfo;
@@ -27214,8 +27743,6 @@
         }
         /**
          * tokenize readable stream
-         * @param input
-         * @param parseInfo
          */
         async tokenizeStream() {
             const decoder = new TextDecoder("utf-8");
@@ -27460,7 +27987,7 @@
             }
             tokens.length = write;
         }
-        const result = matchSelectorSyntax(tokens, errors, options, nested === true);
+        const result = matchSelectorSyntax(tokens, errors, options, nested);
         trimArray(tokens);
         if (result.success) {
             for (let i = 0; i < tokens.length; i++) {
@@ -33515,13 +34042,10 @@
         const parseResult = parseSync(stream, options);
         let mapping = null;
         let importMapping = null;
-        if (typeof options.module == "number" && options.module & exports.ModuleScopeEnumOptions.ICSS) {
-            mapping = parseResult.mapping;
-            importMapping = parseResult.importMapping;
-        }
-        else if (typeof options.module == "object" &&
-            typeof options.module.scoped == "number" &&
-            options.module.scoped & exports.ModuleScopeEnumOptions.ICSS) {
+        if ((typeof options.module == "number" && options.module & exports.ModuleScopeEnumOptions.ICSS) ||
+            (typeof options.module == "object" &&
+                typeof options.module.scoped == "number" &&
+                options.module.scoped & exports.ModuleScopeEnumOptions.ICSS)) {
             mapping = parseResult.mapping;
             importMapping = parseResult.importMapping;
         }
@@ -33693,13 +34217,10 @@
         return parse(stream, options).then((parseResult) => {
             let mapping = null;
             let importMapping = null;
-            if (typeof options.module == "number" && options.module & exports.ModuleScopeEnumOptions.ICSS) {
-                mapping = parseResult.mapping;
-                importMapping = parseResult.importMapping;
-            }
-            else if (typeof options.module == "object" &&
-                typeof options.module.scoped == "number" &&
-                options.module.scoped & exports.ModuleScopeEnumOptions.ICSS) {
+            if ((typeof options.module == "number" && options.module & exports.ModuleScopeEnumOptions.ICSS) ||
+                (typeof options.module == "object" &&
+                    typeof options.module.scoped == "number" &&
+                    options.module.scoped & exports.ModuleScopeEnumOptions.ICSS)) {
                 mapping = parseResult.mapping;
                 importMapping = parseResult.importMapping;
             }

@@ -15,8 +15,7 @@ export function getColorComponents(token: ColorToken | IdentToken): Token[] | nu
     // }
 
     if ((token as ColorToken).kin == ColorType.HEX || (token as ColorToken).kin == ColorType.LIT) {
-
-        if (equalsIgnoreCase('currentcolor', (token as ColorToken).val)) {
+        if (equalsIgnoreCase("currentcolor", (token as ColorToken).val)) {
             return null;
         }
 
@@ -57,7 +56,7 @@ export function getColorComponents(token: ColorToken | IdentToken): Token[] | nu
         ) {
             if ("var" == (child as FunctionToken).val.toLowerCase()) {
                 return null;
-            } 
+            }
             // else {
             //     for (const { value } of walkValues((child as FunctionToken).chi)) {
             //         if (

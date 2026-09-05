@@ -219,9 +219,17 @@ function colorMix(...args) {
         for (i = 0; i < percentages.length; i++) {
             percentages[i] = percentages[i] / perc;
         }
-        totalPercentage = 1;
     }
+    const stack = [];
+    const lchSpaces = ["lch", "oklch"];
     i = colors.length;
+    i = srgbComponentValues.length;
+    while (i--) {
+        stack.push({
+            color: srgbComponentValues[i],
+            alpha: percentages[i],
+        });
+    }
     let currentIndex = 0;
     let r1;
     let r2;
@@ -232,18 +240,8 @@ function colorMix(...args) {
     let premult1;
     let premult2;
     let mixedPremult;
-    let colorSpace1;
-    const stack = [];
-    const lchSpaces = ["lch", "oklch"];
-    i = srgbComponentValues.length;
-    while (i--) {
-        stack.push({
-            color: srgbComponentValues[i],
-            alpha: percentages[i],
-        });
-    }
     // @ts-expect-error
-    colorSpace1 = ColorType[colorComponents.at(-1).kin]?.toLowerCase?.();
+    let colorSpace1 = ColorType[colorComponents.at(-1).kin]?.toLowerCase?.();
     if (colorComponents[0][3] != null &&
         colorComponents[0][3].typ == EnumToken.IdenTokenType &&
         colorComponents[0][3].val == "none" &&
@@ -325,14 +323,13 @@ function colorMix(...args) {
             else {
                 values = xyz2lchvalues(values[0], values[1], values[2], values[3]);
             }
-            // @ts-ignore
             return {
                 typ: EnumToken.ColorTokenType,
                 val: "lch",
-                chi: values.map((v) => {
+                chi: values.map((val) => {
                     return {
                         typ: EnumToken.NumberTokenType,
-                        val: v,
+                        val
                     };
                 }),
                 kin: ColorType.LCH,

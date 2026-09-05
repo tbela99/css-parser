@@ -98,6 +98,7 @@ export const minifiers = [
         label: `csso - ${versions.csso.version}`,
         minify: (css) => csso.minify(css).css,
     },
+    // infinite loop bug
     {
         id: "css-tree",
         url: versions["css-tree"].url,

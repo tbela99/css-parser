@@ -1034,8 +1034,6 @@ class Tokenizer {
     /**
      *
      * @param parseInfo
-     * @param start
-     * @param end
      * @returns
      */
     isIdentToken(parseInfo /* , start?: number, end?: number */) {
@@ -1166,8 +1164,6 @@ class Tokenizer {
     }
     /**
      * Tokenize CSS string
-     * @param parseInfo
-     * @param yieldEOFToken
      */
     next( /* parseInfo: ParseInfo | string, yieldEOFToken: boolean = true */) {
         const parseInfo = this.parseInfo;
@@ -1587,8 +1583,6 @@ class Tokenizer {
     }
     /**
      * tokenize readable stream
-     * @param input
-     * @param parseInfo
      */
     async tokenizeStream() {
         const decoder = new TextDecoder("utf-8");
