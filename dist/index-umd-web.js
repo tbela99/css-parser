@@ -26196,7 +26196,7 @@
 
     const SymbolsMapTokens = Object.create(null);
     // Regex for escape sequence decoding - compile once, reuse many times
-    const ESCAPE_SEQUENCE_REGEX = /\\(\s|([0-9a-fA-F]{1,6}))(?:\s)?/g;
+    const ESCAPE_SEQUENCE_REGEX = /\\((\n|\r|\f|\v|\u2028|\u2029|([0-9a-fA-F]{1,6})) ?)/gsm;
     function decodeEscapeSequences(value) {
         return value.replace(ESCAPE_SEQUENCE_REGEX, (_, sequence) => {
             // \n \r \f \v
@@ -28506,16 +28506,6 @@
                 continue;
             }
             switch (token.typ) {
-                // case EnumToken.IdenTokenType:
-                //     if (tokens[i + 1]?.typ == EnumToken.StartParensTokenType) {
-                //         Object.assign(token, {
-                //             typ: EnumToken.FunctionTokenDefType,
-                //         });
-                //         token[LOCEND] = tokens[i + 1][LOCEND];
-                //         tokens.splice(i + 1, 1);
-                //         stack.push(token);
-                //     }
-                //     break;
                 case exports.EnumToken.Literal:
                     if (token.val === "/" && stack.at(-1)?.typ == exports.EnumToken.MathFunctionTokenDefType) {
                         Object.assign(token, {
@@ -33483,14 +33473,6 @@
      * ```
      */
     function parseString(src, options = { parseColor: true }, errors) {
-        // const parseInfo: ParseInfo = {
-        //     stream: src,
-        //     offset: 0,
-        //     time: 0,
-        //     source: new SourceFile(src, [], ""),
-        //     position: 0,
-        //     currentPosition: 0,
-        // };
         const tokenizer = new Tokenizer({
             stream: src,
             buffer: "",

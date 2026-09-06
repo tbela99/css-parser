@@ -3429,14 +3429,6 @@ function parseDeclarations(declaration) {
  * ```
  */
 function parseString(src, options = { parseColor: true }, errors) {
-    // const parseInfo: ParseInfo = {
-    //     stream: src,
-    //     offset: 0,
-    //     time: 0,
-    //     source: new SourceFile(src, [], ""),
-    //     position: 0,
-    //     currentPosition: 0,
-    // };
     const tokenizer = new Tokenizer({
         stream: src,
         buffer: "",

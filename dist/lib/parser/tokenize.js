@@ -5,7 +5,7 @@ import { SourceFile } from './source.js';
 
 const SymbolsMapTokens = Object.create(null);
 // Regex for escape sequence decoding - compile once, reuse many times
-const ESCAPE_SEQUENCE_REGEX = /\\(\s|([0-9a-fA-F]{1,6}))(?:\s)?/g;
+const ESCAPE_SEQUENCE_REGEX = /\\((\n|\r|\f|\v|\u2028|\u2029|([0-9a-fA-F]{1,6})) ?)/gsm;
 function decodeEscapeSequences(value) {
     return value.replace(ESCAPE_SEQUENCE_REGEX, (_, sequence) => {
         // \n \r \f \v

@@ -4363,14 +4363,6 @@ export function parseString(
     options: { src?: string; parseColor?: boolean } | null = { parseColor: true },
     errors?: ErrorDescription[],
 ): Token[] {
-    // const parseInfo: ParseInfo = {
-    //     stream: src,
-    //     offset: 0,
-    //     time: 0,
-    //     source: new SourceFile(src, [], ""),
-    //     position: 0,
-    //     currentPosition: 0,
-    // };
 
     const tokenizer: Tokenizer = new Tokenizer({
         stream: src,

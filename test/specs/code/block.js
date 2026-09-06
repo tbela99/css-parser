@@ -1,4 +1,20 @@
-export function run(describe, expect, it, transform, parse, render, dirname, readFile, resolve, ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, transformSync, parseSync) {
+export function run(
+    describe,
+    expect,
+    it,
+    transform,
+    parse,
+    render,
+    dirname,
+    readFile,
+    resolve,
+    ColorType,
+    EnumToken,
+    ModuleCaseTransformEnum,
+    ModuleScopeEnumOptions,
+    transformSync,
+    parseSync,
+) {
     const root = new URL(dirname(import.meta.url) + "/../../../");
 
     describe("doParse block", function () {
@@ -1171,12 +1187,11 @@ font-family: random-item(--x, {Times, serif}, {Arial, sans-serif}, {Courier, mon
     });
 
     it("escaped new line #52", async () => {
-        
         const options = {
             input: `
     
 a[title="a not s\\
-o very long title"] {
+ o very long title"] {
   
 color: blue;
 
@@ -1187,9 +1202,8 @@ width: :70.710704852px;
 
         const result = transformSync(options);
 
-                return expect(result.code).equals(`a[title="a not so very long title"] {
+        return expect(result.code).equals(`a[title="a not so very long title"] {
  color: blue
 }`);
-
     });
 }

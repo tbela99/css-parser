@@ -283,19 +283,6 @@ export function parseDeclaration(
         }
 
         switch (token.typ) {
-            // case EnumToken.IdenTokenType:
-            //     if (tokens[i + 1]?.typ == EnumToken.StartParensTokenType) {
-            //         Object.assign(token, {
-            //             typ: EnumToken.FunctionTokenDefType,
-            //         });
-
-            //         token[LOCEND] = tokens[i + 1][LOCEND];
-            //         tokens.splice(i + 1, 1);
-
-            //         stack.push(token);
-            //     }
-
-            //     break;
 
             case EnumToken.Literal:
                 if ((token as LiteralToken).val === "/" && stack.at(-1)?.typ == EnumToken.MathFunctionTokenDefType) {
