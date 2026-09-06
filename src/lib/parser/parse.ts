@@ -4422,7 +4422,6 @@ export function parseString(
 
     // remove EOF token
     result.splice(result.length - (result[result.length - 2]?.typ === EnumToken.WhitespaceTokenType ? 2 : 1), 2);
-
     return result;
 }
 

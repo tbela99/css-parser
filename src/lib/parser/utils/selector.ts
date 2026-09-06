@@ -18,8 +18,8 @@ import type {
     PseudoClassFunctionToken,
     Token,
 } from "../../../@types/index.d.ts";
-import {EnumAstNodeStatus, EnumToken} from "../../ast/types.ts";
-import {renderValue} from "../../renderer/render.ts";
+import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
+import { renderValue } from "../../renderer/render.ts";
 import {
     combinators,
     ERRORS,
@@ -32,15 +32,15 @@ import {
     TOKENS,
     tokensfuncDefMap,
 } from "../../syntax/constants.ts";
-import {isHash} from "../../syntax/syntax.ts";
-import {getParsedSyntax, getSyntaxConfig, getSyntaxRule} from "../../validation/config.ts";
-import {createValidationContext, matchAllSyntaxes, matchSelectorSyntax, trimArray} from "../../validation/match.ts";
+import { isHash } from "../../syntax/syntax.ts";
+import { getParsedSyntax, getSyntaxConfig, getSyntaxRule } from "../../validation/config.ts";
+import { createValidationContext, matchAllSyntaxes, matchSelectorSyntax, trimArray } from "../../validation/match.ts";
 
-import {ValidationSyntaxGroupEnum, ValidationTokenEnum} from "../../validation/parser/typedef.ts";
-import type {ValidationPropertyToken} from "../../validation/parser/types.d.ts";
-import {splitTokenList} from "../../validation/utils/list.ts";
-import {trimWhiteSpace} from "../parse.ts";
-import {equalsIgnoreCase} from "./text.ts";
+import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from "../../validation/parser/typedef.ts";
+import type { ValidationPropertyToken } from "../../validation/parser/types.d.ts";
+import { splitTokenList } from "../../validation/utils/list.ts";
+import { trimWhiteSpace } from "../parse.ts";
+import { equalsIgnoreCase } from "./text.ts";
 
 /**
  * parse selector

@@ -274,7 +274,6 @@ export function colorMix(...args: Token[]): ColorToken | null {
     const stack: Array<{ color: number[]; alpha: number }> = [];
     const lchSpaces: string[] = ["lch", "oklch"];
 
-    i = colors.length;
     i = srgbComponentValues.length;
 
     while (i--) {
@@ -296,8 +295,11 @@ export function colorMix(...args: Token[]): ColorToken | null {
     let premult1: number[];
     let premult2: number[];
     let mixedPremult: number[];
-    // @ts-expect-error
-    let colorSpace1: string = ColorType[colorComponents.at(-1).kin as keyof typeof ColorType]?.toLowerCase?.() as string;
+    let colorSpace1: string = ColorType[
+        // @ts-expect-error
+        colorComponents.at(-1)!.kin as keyof typeof ColorType
+        // @ts-expect-error
+    ]?.toLowerCase?.() as string;
 
     if (
         colorComponents[0][3] != null &&
@@ -422,7 +424,7 @@ export function colorMix(...args: Token[]): ColorToken | null {
                 chi: values.map((val: number) => {
                     return {
                         typ: EnumToken.NumberTokenType,
-                        val
+                        val,
                     };
                 }),
                 kin: ColorType.LCH,

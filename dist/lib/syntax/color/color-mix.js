@@ -222,7 +222,6 @@ function colorMix(...args) {
     }
     const stack = [];
     const lchSpaces = ["lch", "oklch"];
-    i = colors.length;
     i = srgbComponentValues.length;
     while (i--) {
         stack.push({
@@ -240,8 +239,11 @@ function colorMix(...args) {
     let premult1;
     let premult2;
     let mixedPremult;
+    let colorSpace1 = ColorType[
     // @ts-expect-error
-    let colorSpace1 = ColorType[colorComponents.at(-1).kin]?.toLowerCase?.();
+    colorComponents.at(-1).kin
+    // @ts-expect-error
+    ]?.toLowerCase?.();
     if (colorComponents[0][3] != null &&
         colorComponents[0][3].typ == EnumToken.IdenTokenType &&
         colorComponents[0][3].val == "none" &&
@@ -329,7 +331,7 @@ function colorMix(...args) {
                 chi: values.map((val) => {
                     return {
                         typ: EnumToken.NumberTokenType,
-                        val
+                        val,
                     };
                 }),
                 kin: ColorType.LCH,

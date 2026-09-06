@@ -277,6 +277,11 @@ export function parseDeclaration(
             continue;
         }
 
+        if (token.typ === EnumToken.ColonTokenType && stack.length == 0) {
+            stack.push(token);
+            continue;
+        }
+
         switch (token.typ) {
             // case EnumToken.IdenTokenType:
             //     if (tokens[i + 1]?.typ == EnumToken.StartParensTokenType) {

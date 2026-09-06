@@ -1,5 +1,5 @@
-import type {ParseInfo} from "../../@types/index.d.ts";
-import {ColorType, EnumToken} from "../ast/types.ts";
+import type { ParseInfo } from "../../@types/index.d.ts";
+import { ColorType, EnumToken } from "../ast/types.ts";
 import {
     colorsFunc,
     containerFunc,
@@ -30,15 +30,26 @@ import {
     resolutionUnits,
     timeUnits,
 } from "../syntax/syntax.ts";
-import {SourceFile} from "./source.ts";
+import { SourceFile } from "./source.ts";
 
 const SymbolsMapTokens: Record<string, EnumToken> = Object.create(null);
 
 // Regex for escape sequence decoding - compile once, reuse many times
-const ESCAPE_SEQUENCE_REGEX = /\\([0-9a-fA-F]{1,6})(?:\s)?/g;
+const ESCAPE_SEQUENCE_REGEX = /\\(\s|([0-9a-fA-F]{1,6}))(?:\s)?/g;
 
 function decodeEscapeSequences(value: string): string {
     return value.replace(ESCAPE_SEQUENCE_REGEX, (_, sequence) => {
+        // \n \r \f \v
+        switch (sequence.charCodeAt(0)) {
+            case 0xa:
+            case 0xb:
+            case 0xc:
+            case 0xd:
+            case 0x2028:
+            case 0x2029:
+                return "";
+        }
+
         const codepoint = parseInt(sequence, 16);
 
         if (
@@ -297,18 +308,17 @@ export class Tokenizer {
         private parseInfo: ParseInfo,
         private input: ReadableStream<Uint8Array> | null = null,
     ) {
-        if (typeof this.parseInfo == "string") {
-            if (typeof parseInfo == "string") {
-                this.parseInfo = {
-                    stream: parseInfo,
-                    source: new SourceFile(parseInfo, [], ""),
-                    offset: 0,
-                    time: 0,
-                    position: 0,
-                    currentPosition: 0,
-                };
-            }
-        }
+        this.parseInfo =
+            typeof parseInfo == "string"
+                ? {
+                      stream: parseInfo,
+                      source: new SourceFile(parseInfo, [], ""),
+                      offset: 0,
+                      time: 0,
+                      position: 0,
+                      currentPosition: 0,
+                  }
+                : parseInfo;
     }
 
     /**
@@ -325,6 +335,23 @@ export class Tokenizer {
             if (charCode == TokenMap.REVERSE_SOLIDUS) {
                 if (charCode == parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset + 1)) {
                     this.advance(parseInfo, 2);
+
+                    continue;
+                }
+
+                charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset + 1);
+
+                // \n \r \f \v
+                if (
+                    charCode == 0xa ||
+                    charCode == 0xb ||
+                    charCode == 0xc ||
+                    charCode == 0xd ||
+                    charCode == 0x2028 ||
+                    charCode == 0x2029
+                ) {
+                    this.advance(parseInfo, 2);
+                    decodeSegments = true;
                     continue;
                 }
 
@@ -375,6 +402,7 @@ export class Tokenizer {
 
             if (charCode == quote) {
                 this.advance(parseInfo);
+
                 return this.makeToken(
                     parseInfo,
                     /* hasNewLine ? EnumToken.BadStringTokenType : */ EnumToken.StringTokenType,
@@ -392,7 +420,7 @@ export class Tokenizer {
         }
 
         // EOF - 'Unclosed-string' fixed
-        return this.makeToken(parseInfo, EnumToken.StringTokenType);
+        return this.makeToken(parseInfo, EnumToken.StringTokenType, decodeSegments ? { decodeSegments } : null);
         // return result;
     }
 

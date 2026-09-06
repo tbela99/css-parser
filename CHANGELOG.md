@@ -4,6 +4,22 @@
 
 - [x] fix base64 encoding error when inline sourcemap is enabled
 - [x] handle division by zero in calc()
+- [x] strip escaped new line from string
+
+```css
+a[title="a not s\
+o very long title"] {
+  
+color: blue;
+```
+
+is escaped as 
+
+```css
+a[title="a not so very long title"] {
+ color: blue
+}
+```
 
 # v1.6.1
 

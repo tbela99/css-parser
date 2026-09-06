@@ -6888,7 +6888,7 @@
         //     }
         // }
         if (token.kin == exports.ColorType.HEX || token.kin == exports.ColorType.LIT) {
-            if (equalsIgnoreCase('currentcolor', token.val)) {
+            if (equalsIgnoreCase("currentcolor", token.val)) {
                 return null;
             }
             const value = expandHexValue(token.kin == exports.ColorType.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
@@ -9301,7 +9301,6 @@
         }
         const stack = [];
         const lchSpaces = ["lch", "oklch"];
-        i = colors.length;
         i = srgbComponentValues.length;
         while (i--) {
             stack.push({
@@ -9319,8 +9318,11 @@
         let premult1;
         let premult2;
         let mixedPremult;
+        let colorSpace1 = exports.ColorType[
         // @ts-expect-error
-        let colorSpace1 = exports.ColorType[colorComponents.at(-1).kin]?.toLowerCase?.();
+        colorComponents.at(-1).kin
+        // @ts-expect-error
+        ]?.toLowerCase?.();
         if (colorComponents[0][3] != null &&
             colorComponents[0][3].typ == exports.EnumToken.IdenTokenType &&
             colorComponents[0][3].val == "none" &&
@@ -9408,7 +9410,7 @@
                     chi: values.map((val) => {
                         return {
                             typ: exports.EnumToken.NumberTokenType,
-                            val
+                            val,
                         };
                     }),
                     kin: exports.ColorType.LCH,
@@ -24169,6 +24171,35 @@
 
     /**
      * Generate and parse source map
+     *
+     * ```ts
+     * const sourcemap = new SourceMap();
+     *
+     * // you can also pass an input sourcemap
+     * // const sourcemap = new SourceMap(sourcemapObjectOrJSONString);
+     *
+     * sourcemap.addSourceContent(0, '/css/styles.css', null);
+     * sourcemap.addSourceContent(1, '/css/typography.css', null);
+     *
+     * const maps = [];
+     *
+     * maps.add([
+         1, 1, 0, 1, 1]);
+     * maps.add([
+         2, 1, 1, 1, 1
+     ]);
+
+        sourcemap.add(maps);
+
+        // convert to inline sourcemap
+        sourcemap.toUrl();
+
+        // convert to JSON
+        sourcemap.toJSON();
+
+        // find the original file, line and column
+        sourcemap.find(2, 1);
+        ```
      */
     class SourceMap {
         /**
@@ -24219,7 +24250,7 @@
         line = -1;
         /**
          *
-         * @param sourcemaps
+         * @param sourcemaps input sourcemap
          */
         constructor(sourcemaps) {
             if (typeof sourcemaps === "string") {
@@ -24260,9 +24291,9 @@
         }
         /**
          * add source
-         * @param id
-         * @param fileName
-         * @param content
+         * @param id source id
+         * @param fileName source file
+         * @param content source content
          * @returns
          */
         addSourceContent(id, fileName, content) {
@@ -26165,9 +26196,19 @@
 
     const SymbolsMapTokens = Object.create(null);
     // Regex for escape sequence decoding - compile once, reuse many times
-    const ESCAPE_SEQUENCE_REGEX = /\\([0-9a-fA-F]{1,6})(?:\s)?/g;
+    const ESCAPE_SEQUENCE_REGEX = /\\(\s|([0-9a-fA-F]{1,6}))(?:\s)?/g;
     function decodeEscapeSequences(value) {
         return value.replace(ESCAPE_SEQUENCE_REGEX, (_, sequence) => {
+            // \n \r \f \v
+            switch (sequence.charCodeAt(0)) {
+                case 0xa:
+                case 0xb:
+                case 0xc:
+                case 0xd:
+                case 0x2028:
+                case 0x2029:
+                    return "";
+            }
             const codepoint = parseInt(sequence, 16);
             if (codepoint == 0 ||
                 // leading surrogate
@@ -26405,18 +26446,17 @@
         constructor(parseInfo, input = null) {
             this.parseInfo = parseInfo;
             this.input = input;
-            if (typeof this.parseInfo == "string") {
-                if (typeof parseInfo == "string") {
-                    this.parseInfo = {
+            this.parseInfo =
+                typeof parseInfo == "string"
+                    ? {
                         stream: parseInfo,
                         source: new SourceFile(parseInfo, [], ""),
                         offset: 0,
                         time: 0,
                         position: 0,
                         currentPosition: 0,
-                    };
-                }
-            }
+                    }
+                    : parseInfo;
         }
         /**
          *
@@ -26431,6 +26471,18 @@
                 if (charCode == 92 /* TokenMap.REVERSE_SOLIDUS */) {
                     if (charCode == parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset + 1)) {
                         this.advance(parseInfo, 2);
+                        continue;
+                    }
+                    charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset + 1);
+                    // \n \r \f \v
+                    if (charCode == 0xa ||
+                        charCode == 0xb ||
+                        charCode == 0xc ||
+                        charCode == 0xd ||
+                        charCode == 0x2028 ||
+                        charCode == 0x2029) {
+                        this.advance(parseInfo, 2);
+                        decodeSegments = true;
                         continue;
                     }
                     const sequence = this.peek(parseInfo, 7);
@@ -26476,7 +26528,7 @@
                 this.advance(parseInfo);
             }
             // EOF - 'Unclosed-string' fixed
-            return this.makeToken(parseInfo, exports.EnumToken.StringTokenType);
+            return this.makeToken(parseInfo, exports.EnumToken.StringTokenType, decodeSegments ? { decodeSegments } : null);
             // return result;
         }
         /**
@@ -28446,6 +28498,10 @@
             if (tokensfuncDefMap.has(token.typ) ||
                 token.typ == exports.EnumToken.StartParensTokenType ||
                 token.typ == exports.EnumToken.BlockStartTokenType) {
+                stack.push(token);
+                continue;
+            }
+            if (token.typ === exports.EnumToken.ColonTokenType && stack.length == 0) {
                 stack.push(token);
                 continue;
             }

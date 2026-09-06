@@ -4,6 +4,35 @@ import { decode, encode } from "./lib/codec.ts";
 
 /**
  * Generate and parse source map
+ * 
+ * ```ts
+ * const sourcemap = new SourceMap();
+ * 
+ * // you can also pass an input sourcemap
+ * // const sourcemap = new SourceMap(sourcemapObjectOrJSONString);
+ * 
+ * sourcemap.addSourceContent(0, '/css/styles.css', null);
+ * sourcemap.addSourceContent(1, '/css/typography.css', null);
+ * 
+ * const maps = [];
+ * 
+ * maps.add([
+     1, 1, 0, 1, 1]);
+ * maps.add([
+     2, 1, 1, 1, 1
+ ]);
+
+    sourcemap.add(maps);
+
+    // convert to inline sourcemap
+    sourcemap.toUrl();
+
+    // convert to JSON
+    sourcemap.toJSON();
+
+    // find the original file, line and column
+    sourcemap.find(2, 1);
+    ```
  */
 export class SourceMap {
     /**
@@ -71,7 +100,7 @@ export class SourceMap {
     constructor(sourcemaps: string | SourceMapObject);
     /**
      *
-     * @param sourcemaps
+     * @param sourcemaps input sourcemap
      */
     constructor(sourcemaps?: SourceMapObject | string) {
         if (typeof sourcemaps === "string") {
@@ -121,9 +150,9 @@ export class SourceMap {
 
     /**
      * add source
-     * @param id
-     * @param fileName
-     * @param content
+     * @param id source id
+     * @param fileName source file
+     * @param content source content
      * @returns
      */
     addSourceContent(id: number, fileName: string | null, content: string | null): void {
