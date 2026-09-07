@@ -16824,7 +16824,6 @@ function replaceAstNodes(tokens, root) {
                     token.val = pseudoAliasMap[token.val];
                     if ((equalsIgnoreCase(token.val, "min-resolution") ||
                         equalsIgnoreCase(token.val, "max-resolution")) &&
-                        // ["min-resolution", "max-resolution"].includes((token as IdentToken).val) &&
                         value.r?.[0]?.typ == exports.EnumToken.NumberTokenType) {
                         Object.assign(value.r?.[0], {
                             typ: exports.EnumToken.ResolutionTokenType,
@@ -16834,13 +16833,11 @@ function replaceAstNodes(tokens, root) {
                     }
                     let isMin = token.val.startsWith("min-");
                     let isMax = token.val.startsWith("max-");
-                    if (isMin) {
+                    if (isMin || isMax) {
                         token.val = token.val.slice(4);
-                        value.op.typ = exports.EnumToken.GteTokenType;
-                    }
-                    else if (isMax) {
-                        token.val = token.val.slice(4);
-                        value.op.typ = exports.EnumToken.LteTokenType;
+                        value.op.typ = isMax
+                            ? exports.EnumToken.LteTokenType
+                            : exports.EnumToken.GteTokenType;
                     }
                 }
             }
@@ -20385,7 +20382,7 @@ class ComputeShorthandFeature {
         }
     }
     run(ast, options) {
-        if (!("chi" in ast)) {
+        if (!("chi" in ast || ast.chi?.length == 0)) {
             return null;
         }
         // @ts-ignore
@@ -25250,8 +25247,8 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
         };
     }
     switch (token.typ) {
-        case exports.EnumToken.FunctionTokenDefType:
         case exports.EnumToken.UrlFunctionTokenDefType:
+        case exports.EnumToken.FunctionTokenDefType:
         case exports.EnumToken.MathFunctionTokenDefType:
         case exports.EnumToken.ImageFunctionTokenDefType:
         case exports.EnumToken.ColorFunctionTokenDefType:
@@ -25395,6 +25392,9 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
             }
         case exports.EnumToken.UrlFunctionTokenType:
             if (options.minify && token.typ === exports.EnumToken.UrlFunctionTokenType) {
+                if (token.chi[0]?.typ === exports.EnumToken.BadUrlTokenType) {
+                    return "url()";
+                }
                 for (const child of token.chi) {
                     if (child.typ === exports.EnumToken.StringTokenType) {
                         if (child.val.slice(1, 5) !== "data:" &&
@@ -27009,7 +27009,23 @@ class Tokenizer {
         } while (
         // !(value === "/" && this.match(parseInfo, "/*") &&
         charCode !== 41 /* TokenMap.RIGHT_PARENTHESIS */ &&
+            !isWhiteSpace(charCode) &&
             parseInfo.currentPosition < endPosition);
+        if (charCode !== 41 /* TokenMap.RIGHT_PARENTHESIS */) {
+            let k = 1;
+            while (k < endPosition) {
+                charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset + k);
+                if (isWhiteSpace(charCode)) {
+                    k++;
+                    continue;
+                }
+                break;
+            }
+            if (charCode != charCode || (charCode != 41 /* TokenMap.RIGHT_PARENTHESIS */ && !isIdentStart(charCode))) {
+                this.advance(parseInfo, k);
+                return this.makeToken(parseInfo, exports.EnumToken.BadUrlTokenType);
+            }
+        }
         return this.makeToken(parseInfo, 
         // parseInfo.position < parseInfo.currentPosition
         (charCode = this.peekCharCode(parseInfo)) != charCode || !this.isURLToken(parseInfo)

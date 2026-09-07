@@ -65,7 +65,6 @@ function replaceAstNodes(tokens: Token[], root?: AstNode): boolean {
                     if (
                         (equalsIgnoreCase(token.val, "min-resolution") ||
                             equalsIgnoreCase(token.val, "max-resolution")) &&
-                        // ["min-resolution", "max-resolution"].includes((token as IdentToken).val) &&
                         (value as MediaQueryConditionToken).r?.[0]?.typ == EnumToken.NumberTokenType
                     ) {
                         Object.assign((value as MediaQueryConditionToken).r?.[0], {
@@ -78,12 +77,11 @@ function replaceAstNodes(tokens: Token[], root?: AstNode): boolean {
                     let isMin: boolean = token.val.startsWith("min-");
                     let isMax: boolean = token.val.startsWith("max-");
 
-                    if (isMin) {
+                    if (isMin || isMax) {
                         token.val = token.val.slice(4);
-                        (value as MediaQueryConditionToken).op.typ = EnumToken.GteTokenType;
-                    } else if (isMax) {
-                        token.val = token.val.slice(4);
-                        (value as MediaQueryConditionToken).op.typ = EnumToken.LteTokenType;
+                        (value as MediaQueryConditionToken).op.typ = isMax
+                            ? EnumToken.LteTokenType
+                            : EnumToken.GteTokenType;
                     }
                 }
             }

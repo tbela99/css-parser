@@ -803,7 +803,23 @@ class Tokenizer {
         } while (
         // !(value === "/" && this.match(parseInfo, "/*") &&
         charCode !== 41 /* TokenMap.RIGHT_PARENTHESIS */ &&
+            !isWhiteSpace(charCode) &&
             parseInfo.currentPosition < endPosition);
+        if (charCode !== 41 /* TokenMap.RIGHT_PARENTHESIS */) {
+            let k = 1;
+            while (k < endPosition) {
+                charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset + k);
+                if (isWhiteSpace(charCode)) {
+                    k++;
+                    continue;
+                }
+                break;
+            }
+            if (charCode != charCode || (charCode != 41 /* TokenMap.RIGHT_PARENTHESIS */ && !isIdentStart(charCode))) {
+                this.advance(parseInfo, k);
+                return this.makeToken(parseInfo, EnumToken.BadUrlTokenType);
+            }
+        }
         return this.makeToken(parseInfo, 
         // parseInfo.position < parseInfo.currentPosition
         (charCode = this.peekCharCode(parseInfo)) != charCode || !this.isURLToken(parseInfo)

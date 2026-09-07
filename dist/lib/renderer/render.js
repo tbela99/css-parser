@@ -414,8 +414,8 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
         };
     }
     switch (token.typ) {
-        case EnumToken.FunctionTokenDefType:
         case EnumToken.UrlFunctionTokenDefType:
+        case EnumToken.FunctionTokenDefType:
         case EnumToken.MathFunctionTokenDefType:
         case EnumToken.ImageFunctionTokenDefType:
         case EnumToken.ColorFunctionTokenDefType:
@@ -559,6 +559,9 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
             }
         case EnumToken.UrlFunctionTokenType:
             if (options.minify && token.typ === EnumToken.UrlFunctionTokenType) {
+                if (token.chi[0]?.typ === EnumToken.BadUrlTokenType) {
+                    return "url()";
+                }
                 for (const child of token.chi) {
                     if (child.typ === EnumToken.StringTokenType) {
                         if (child.val.slice(1, 5) !== "data:" &&

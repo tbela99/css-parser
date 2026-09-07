@@ -1264,4 +1264,55 @@ color: blue;
  }
 }`);
     });
+
+    it("escaped new line #55", async () => {
+        const options = {
+            input: `
+    
+    .s {
+    background: url("star.gif" crossorigin(anonymous));
+}
+    `,
+            beautify: true,
+        };
+
+        const result = transformSync(options);
+
+        return expect(result.code).equals(`.s {
+ background: url(star.gif crossorigin(anonymous))
+}`);
+    });
+
+    it("escaped new line #56", async () => {
+        const options = {
+            input: `
+    
+    .s {
+    background: url(star.gif /* */ crossorigin(anonymous));
+}
+
+    .s2 {
+    background: url(star.gif crossorigin(anonymous));
+}
+
+@font-face {
+    
+    src: url(icons-gradient-var.woff2);
+}
+    `,
+            beautify: true,
+        };
+
+        const result = transformSync(options);
+
+        return expect(result.code).equals(`.s {
+ background: url()
+}
+.s2 {
+ background: url(star.gif crossorigin(anonymous))
+}
+@font-face {
+ src: url(icons-gradient-var.woff2)
+}`);
+    });
 }

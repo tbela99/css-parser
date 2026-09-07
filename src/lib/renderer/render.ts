@@ -662,8 +662,8 @@ export function renderValue(
     }
 
     switch (token.typ) {
-        case EnumToken.FunctionTokenDefType:
         case EnumToken.UrlFunctionTokenDefType:
+        case EnumToken.FunctionTokenDefType:
         case EnumToken.MathFunctionTokenDefType:
         case EnumToken.ImageFunctionTokenDefType:
         case EnumToken.ColorFunctionTokenDefType:
@@ -875,6 +875,10 @@ export function renderValue(
 
         case EnumToken.UrlFunctionTokenType:
             if (options.minify && token.typ === EnumToken.UrlFunctionTokenType) {
+                if ((token as FunctionToken).chi[0]?.typ === EnumToken.BadUrlTokenType) {
+                    return "url()";
+                }
+
                 for (const child of (token as FunctionToken).chi) {
                     if (child.typ === EnumToken.StringTokenType) {
                         if (

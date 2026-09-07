@@ -37,7 +37,6 @@ function replaceAstNodes(tokens, root) {
                     token.val = pseudoAliasMap[token.val];
                     if ((equalsIgnoreCase(token.val, "min-resolution") ||
                         equalsIgnoreCase(token.val, "max-resolution")) &&
-                        // ["min-resolution", "max-resolution"].includes((token as IdentToken).val) &&
                         value.r?.[0]?.typ == EnumToken.NumberTokenType) {
                         Object.assign(value.r?.[0], {
                             typ: EnumToken.ResolutionTokenType,
@@ -47,13 +46,11 @@ function replaceAstNodes(tokens, root) {
                     }
                     let isMin = token.val.startsWith("min-");
                     let isMax = token.val.startsWith("max-");
-                    if (isMin) {
+                    if (isMin || isMax) {
                         token.val = token.val.slice(4);
-                        value.op.typ = EnumToken.GteTokenType;
-                    }
-                    else if (isMax) {
-                        token.val = token.val.slice(4);
-                        value.op.typ = EnumToken.LteTokenType;
+                        value.op.typ = isMax
+                            ? EnumToken.LteTokenType
+                            : EnumToken.GteTokenType;
                     }
                 }
             }

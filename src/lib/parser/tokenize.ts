@@ -1007,8 +1007,27 @@ export class Tokenizer {
         } while (
             // !(value === "/" && this.match(parseInfo, "/*") &&
             charCode !== TokenMap.RIGHT_PARENTHESIS &&
+            !isWhiteSpace(charCode) &&
             parseInfo.currentPosition < endPosition
         );
+
+        if (charCode !== TokenMap.RIGHT_PARENTHESIS) {
+            let k: number = 1;
+
+            while (k < endPosition) {
+                charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset + k);
+                if (isWhiteSpace(charCode)) {
+                    k++;
+                    continue;
+                }
+                break;
+            }
+
+            if (charCode != charCode || (charCode != TokenMap.RIGHT_PARENTHESIS && !isIdentStart(charCode))) {
+                this.advance(parseInfo, k);
+                return this.makeToken(parseInfo, EnumToken.BadUrlTokenType);
+            }
+        }
 
         return this.makeToken(
             parseInfo,
