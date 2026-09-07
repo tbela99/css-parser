@@ -14428,6 +14428,10 @@
         if (alpha == null) {
             return color;
         }
+        // https://www.w3.org/TR/css-color-5/#:~:text=There%20is%20no%20relative%20device%2Dcmyk%28%29%20syntax
+        if (color.kin === exports.ColorType.DEVICE_CMYK) {
+            return null;
+        }
         let components = getColorComponents(color);
         if (alpha.typ === exports.EnumToken.MathFunctionTokenType) {
             const originalAlpha = cloneNode(alpha, true);
@@ -14462,9 +14466,6 @@
         if (alpha.typ !== exports.EnumToken.IdenTokenType &&
             alpha.typ !== exports.EnumToken.NumberTokenType &&
             alpha.typ !== exports.EnumToken.PercentageTokenType) {
-            return null;
-        }
-        if (color.kin === exports.ColorType.DEVICE_CMYK) {
             return null;
         }
         if (color.kin === exports.ColorType.COLOR_MIX || color.cal === "rel") {
@@ -16828,6 +16829,16 @@
                             });
                             result = true;
                         }
+                        let isMin = token.val.startsWith("min-");
+                        let isMax = token.val.startsWith("max-");
+                        if (isMin) {
+                            token.val = token.val.slice(4);
+                            value.op.typ = exports.EnumToken.GteTokenType;
+                        }
+                        else if (isMax) {
+                            token.val = token.val.slice(4);
+                            value.op.typ = exports.EnumToken.LteTokenType;
+                        }
                     }
                 }
             }
@@ -16860,6 +16871,7 @@
                 }
             }
         }
+        // remove duplicate tokens
         if (tokens.find((t) => t.typ == exports.EnumToken.CommaTokenType) != null) {
             const set = new Set();
             const split = splitTokenList(tokens, [exports.EnumToken.CommaTokenType]);
@@ -26196,7 +26208,7 @@
 
     const SymbolsMapTokens = Object.create(null);
     // Regex for escape sequence decoding - compile once, reuse many times
-    const ESCAPE_SEQUENCE_REGEX = /\\((\n|\r|\f|\v|\u2028|\u2029|([0-9a-fA-F]{1,6})) ?)/gsm;
+    const ESCAPE_SEQUENCE_REGEX = /\\((\n|\r|\f|\v|\u2028|\u2029|([0-9a-fA-F]{1,6})) ?)/gms;
     function decodeEscapeSequences(value) {
         return value.replace(ESCAPE_SEQUENCE_REGEX, (_, sequence) => {
             // \n \r \f \v
@@ -26590,7 +26602,7 @@
                             return this.makeToken(parseInfo, exports.EnumToken.BadUrlTokenType);
                         }
                         if (isWhiteSpace(charCode)) {
-                            this.advance(parseInfo, k);
+                            // this.advance(parseInfo, k);
                             k++;
                             continue;
                         }
@@ -26995,13 +27007,11 @@
             // !(value === "/" && this.match(parseInfo, "/*") &&
             charCode !== 41 /* TokenMap.RIGHT_PARENTHESIS */ &&
                 parseInfo.currentPosition < endPosition);
-            // if (parseInfo.position < parseInfo.currentPosition) {
             return this.makeToken(parseInfo, 
             // parseInfo.position < parseInfo.currentPosition
             (charCode = this.peekCharCode(parseInfo)) != charCode || !this.isURLToken(parseInfo)
                 ? exports.EnumToken.BadUrlTokenType
                 : exports.EnumToken.UrlTokenTokenType);
-            // }
         }
         /**
          *
@@ -29071,6 +29081,16 @@
                                         val.splice(0, val.length, ...filteredValues);
                                     }
                                 }
+                                if (stack.at(-1)?.typ === exports.EnumToken.ColonTokenType) {
+                                    if (name.startsWith("min-")) {
+                                        filteredNames[0].val = name.substring(4);
+                                        stack.at(-1).typ = exports.EnumToken.GteTokenType;
+                                    }
+                                    else if (name.startsWith("max-")) {
+                                        filteredNames[0].val = name.substring(4);
+                                        stack.at(-1).typ = exports.EnumToken.LteTokenType;
+                                    }
+                                }
                                 // @ts-expect-error
                                 tokens.splice(index3 + 1, tokens.length - index3 - 2, {
                                     typ: exports.EnumToken.MediaQueryConditionTokenType,
@@ -29126,6 +29146,61 @@
                                         [LOCEND]: right.at(-1)[LOCEND],
                                     };
                                     tokens.length = l + 1;
+                                    // media range query
+                                    if (tokens[l].op.typ === exports.EnumToken.AndTokenType) {
+                                        if (left.length === 1 &&
+                                            left[0].typ == exports.EnumToken.ParensTokenType &&
+                                            left[0].chi.length == 1 &&
+                                            left[0].chi[0].typ == exports.EnumToken.MediaQueryConditionTokenType &&
+                                            left[0].chi[0].l.length == 1 &&
+                                            left[0].chi[0].l[0].typ ==
+                                                exports.EnumToken.IdenTokenType &&
+                                            (left[0].chi[0].op.typ ==
+                                                exports.EnumToken.GtTokenType ||
+                                                left[0].chi[0].op.typ ==
+                                                    exports.EnumToken.GteTokenType) &&
+                                            // (left[0] as MediaQueryConditionToken).op!.typ === EnumToken.OrTokenType &&
+                                            right.length === 1 &&
+                                            left[0].typ == exports.EnumToken.ParensTokenType &&
+                                            right[0].chi.length == 1 &&
+                                            right[0].chi[0].typ ==
+                                                exports.EnumToken.MediaQueryConditionTokenType &&
+                                            right[0].chi[0].l.length == 1 &&
+                                            right[0].chi[0].l[0].typ ==
+                                                exports.EnumToken.IdenTokenType &&
+                                            (right[0].chi[0].op.typ ==
+                                                exports.EnumToken.LtTokenType ||
+                                                right[0].chi[0].op.typ ==
+                                                    exports.EnumToken.LteTokenType) &&
+                                            equalsIgnoreCase(left[0].chi[0]
+                                                .l[0].val, right[0].chi[0]
+                                                .l[0].val)) {
+                                            tokens[l] = {
+                                                typ: exports.EnumToken.ParensTokenType,
+                                                chi: [
+                                                    {
+                                                        typ: exports.EnumToken.MediaRangeQueryTokenType,
+                                                        op1: Object.assign(left[0].chi[0]
+                                                            .op, {
+                                                            typ: left[0]
+                                                                .chi[0].op.typ == exports.EnumToken.GteTokenType
+                                                                ? exports.EnumToken.LteTokenType
+                                                                : exports.EnumToken.LtTokenType,
+                                                        }),
+                                                        op2: right[0].chi[0]
+                                                            .op,
+                                                        l: left[0].chi[0].r,
+                                                        val: left[0].chi[0]
+                                                            .l,
+                                                        r: right[0].chi[0].r,
+                                                        [LOCSRCID]: left[0][LOCSRCID],
+                                                        [LOCSTA]: left[0][LOCSTA],
+                                                        [LOCEND]: right.at(-1)[LOCEND],
+                                                    },
+                                                ],
+                                            };
+                                        }
+                                    }
                                     expectAndOrComma = true;
                                 }
                             }

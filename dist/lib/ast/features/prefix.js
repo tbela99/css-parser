@@ -45,6 +45,16 @@ function replaceAstNodes(tokens, root) {
                         });
                         result = true;
                     }
+                    let isMin = token.val.startsWith("min-");
+                    let isMax = token.val.startsWith("max-");
+                    if (isMin) {
+                        token.val = token.val.slice(4);
+                        value.op.typ = EnumToken.GteTokenType;
+                    }
+                    else if (isMax) {
+                        token.val = token.val.slice(4);
+                        value.op.typ = EnumToken.LteTokenType;
+                    }
                 }
             }
         }
@@ -77,6 +87,7 @@ function replaceAstNodes(tokens, root) {
             }
         }
     }
+    // remove duplicate tokens
     if (tokens.find((t) => t.typ == EnumToken.CommaTokenType) != null) {
         const set = new Set();
         const split = splitTokenList(tokens, [EnumToken.CommaTokenType]);

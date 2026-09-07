@@ -167,7 +167,7 @@ content: '\\21 now\\21';
                 minify: true,
             }).then((result) =>
                 expect(result.code).equals(
-                    `@media (max-width:575.98px) and (prefers-reduced-motion:reduce){.offcanvas-sm{transition:0s}}`,
+                    `@media (width<=575.98px) and (prefers-reduced-motion:reduce){.offcanvas-sm{transition:0s}}`,
                 ),
             );
         });
@@ -244,7 +244,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
                 minify: true,
             }).then((result) =>
                 expect(result.code).equals(
-                    `@media (max-width:767px){.main-heading{font-size:32px;font-weight:300}.section{max-width:100vw;padding-left:16px;padding-right:16px}.hero-cta-form,.sign-in-form__third-party-container,.google-sign-in-cta-widget{margin-top:0;width:100%}.babybear\\:z-0{z-index:0}.babybear\\:mr-0{margin-right:0}.babybear\\:hidden{display:none}.babybear\\:min-h-\\[0\\]{min-height:0}}`,
+                    `@media (width<=767px){.main-heading{font-size:32px;font-weight:300}.section{max-width:100vw;padding-left:16px;padding-right:16px}.hero-cta-form,.sign-in-form__third-party-container,.google-sign-in-cta-widget{margin-top:0;width:100%}.babybear\\:z-0{z-index:0}.babybear\\:mr-0{margin-right:0}.babybear\\:hidden{display:none}.babybear\\:min-h-\\[0\\]{min-height:0}}`,
                 ),
             );
         });
@@ -264,7 +264,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
             return transform(file, {
                 minify: true,
             }).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`@media (max-width:767px) {
+                expect(render(result.ast, { minify: false }).code).equals(`@media (width<=767px) {
  .main-heading {
   font-size: 32px;
   font-weight: 300
@@ -497,7 +497,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
                         removeComments: true,
                         preserveLicense: true,
                     }).code,
-                ).equals(`@media (resolution>=2x) and (resolution<=5x) {
+                ).equals(`@media (2x<=resolution<=5x) {
  /*! this is a comment */
  .nav-pills {
   .nav-link.active,.show>.nav-link {
@@ -711,7 +711,7 @@ content: '\\21 now\\21';
 `;
         return parse(file).then((result) =>
             expect(render(result.ast.chi[0].chi[1].chi[1], { withParents: true }).code).equals(
-                `@media screen and (min-width:40em){.a{width:3px}}`,
+                `@media screen and (width>=40em){.a{width:3px}}`,
             ),
         );
     });
@@ -1204,6 +1204,64 @@ width: :70.710704852px;
 
         return expect(result.code).equals(`a[title="a not so very long title"] {
  color: blue
+}`);
+    });
+
+    it("escaped new line #53", async () => {
+        const options = {
+            input: `
+    
+    @media (width >= 600px) and (width <= 1400px) {
+       
+    a[title="a not s\\
+ o very long title"] {
+  
+color: blue;
+    .s {
+    background: url("star.gif" );
+}
+    `,
+            beautify: true,
+        };
+
+        const result = transformSync(options);
+
+        return expect(result.code).equals(`@media (600px<=width<=1400px) {
+ a[title="a not so very long title"] {
+  color: blue;
+  .s {
+   background: url(star.gif)
+  }
+ }
+}`);
+    });
+
+    it("escaped new line #54", async () => {
+        const options = {
+            input: `
+    
+    @media (min-width : 600px) and (max-width : 1400px) {
+       
+    a[title="a not s\\
+ o very long title"] {
+  
+color: blue;
+    .s {
+    background: url("star.gif" );
+}
+    `,
+            beautify: true,
+        };
+
+        const result = transformSync(options);
+
+        return expect(result.code).equals(`@media (600px<=width<=1400px) {
+ a[title="a not so very long title"] {
+  color: blue;
+  .s {
+   background: url(star.gif)
+  }
+ }
 }`);
     });
 }

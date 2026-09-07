@@ -7,7 +7,6 @@ import { getColorType } from "./utils/color-type.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 import { cloneNode } from "../../ast/clone.ts";
 import { walkValues } from "../../ast/walk.ts";
-import { replaceNodeOrValue } from "../../parser/utils/token.ts";
 import { evaluate } from "../../ast/math/expression.ts";
 
 /**
@@ -19,6 +18,11 @@ import { evaluate } from "../../ast/math/expression.ts";
 export function alpha(color: ColorToken, alpha: Token): ColorToken | null {
     if (alpha == null) {
         return color;
+    }
+
+    // https://www.w3.org/TR/css-color-5/#:~:text=There%20is%20no%20relative%20device%2Dcmyk%28%29%20syntax
+    if (color.kin === ColorType.DEVICE_CMYK) {
+        return null;
     }
 
     let components = getColorComponents(color);
@@ -66,10 +70,6 @@ export function alpha(color: ColorToken, alpha: Token): ColorToken | null {
         return null;
     }
 
-    if (color.kin === ColorType.DEVICE_CMYK) {
-        return null;
-    }
-
     if (color.kin === ColorType.COLOR_MIX || color.cal === "rel") {
         color = convertColor(color, getColorType(color) as ColorType) as ColorToken;
 
@@ -97,6 +97,6 @@ export function alpha(color: ColorToken, alpha: Token): ColorToken | null {
             };
         }
     }
-    
+
     return makeColor(color.kin, components, alpha);
 }

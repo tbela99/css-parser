@@ -305,7 +305,7 @@ export class Tokenizer {
     private state: EnumToken | null = null;
 
     constructor(
-        private parseInfo: ParseInfo,
+        private parseInfo: ParseInfo | string,
         private input: ReadableStream<Uint8Array> | null = null,
     ) {
         this.parseInfo =
@@ -505,7 +505,7 @@ export class Tokenizer {
                     }
 
                     if (isWhiteSpace(charCode)) {
-                        this.advance(parseInfo, k);
+                        // this.advance(parseInfo, k);
                         k++;
                         continue;
                     }
@@ -1010,7 +1010,6 @@ export class Tokenizer {
             parseInfo.currentPosition < endPosition
         );
 
-        // if (parseInfo.position < parseInfo.currentPosition) {
         return this.makeToken(
             parseInfo,
             // parseInfo.position < parseInfo.currentPosition
@@ -1018,7 +1017,6 @@ export class Tokenizer {
                 ? EnumToken.BadUrlTokenType
                 : EnumToken.UrlTokenTokenType,
         );
-        // }
     }
     /**
      *

@@ -4363,7 +4363,6 @@ export function parseString(
     options: { src?: string; parseColor?: boolean } | null = { parseColor: true },
     errors?: ErrorDescription[],
 ): Token[] {
-
     const tokenizer: Tokenizer = new Tokenizer({
         stream: src,
         buffer: "",

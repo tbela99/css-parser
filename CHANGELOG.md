@@ -5,6 +5,18 @@
 - [x] fix base64 encoding error when inline sourcemap is enabled
 - [x] handle division by zero in calc()
 - [x] strip escaped new line from string
+- [x] range media query : parse more expression as range query
+
+```css
+
+@media (min-resolution: 2dppx) {}
+```
+is parsed as 
+
+```css
+@media (resolution>=2x) {}
+```
+- [ ] parse \<url-modifiers\>
 
 ```css
 a[title="a not s\

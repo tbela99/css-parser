@@ -5,7 +5,7 @@ import { SourceFile } from './source.js';
 
 const SymbolsMapTokens = Object.create(null);
 // Regex for escape sequence decoding - compile once, reuse many times
-const ESCAPE_SEQUENCE_REGEX = /\\((\n|\r|\f|\v|\u2028|\u2029|([0-9a-fA-F]{1,6})) ?)/gsm;
+const ESCAPE_SEQUENCE_REGEX = /\\((\n|\r|\f|\v|\u2028|\u2029|([0-9a-fA-F]{1,6})) ?)/gms;
 function decodeEscapeSequences(value) {
     return value.replace(ESCAPE_SEQUENCE_REGEX, (_, sequence) => {
         // \n \r \f \v
@@ -399,7 +399,7 @@ class Tokenizer {
                         return this.makeToken(parseInfo, EnumToken.BadUrlTokenType);
                     }
                     if (isWhiteSpace(charCode)) {
-                        this.advance(parseInfo, k);
+                        // this.advance(parseInfo, k);
                         k++;
                         continue;
                     }
@@ -804,13 +804,11 @@ class Tokenizer {
         // !(value === "/" && this.match(parseInfo, "/*") &&
         charCode !== 41 /* TokenMap.RIGHT_PARENTHESIS */ &&
             parseInfo.currentPosition < endPosition);
-        // if (parseInfo.position < parseInfo.currentPosition) {
         return this.makeToken(parseInfo, 
         // parseInfo.position < parseInfo.currentPosition
         (charCode = this.peekCharCode(parseInfo)) != charCode || !this.isURLToken(parseInfo)
             ? EnumToken.BadUrlTokenType
             : EnumToken.UrlTokenTokenType);
-        // }
     }
     /**
      *

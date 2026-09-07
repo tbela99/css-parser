@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@tbela99/css-parser": "^1.6.1",
-    "@tbela99/css-parser2": "github:tbela99/css-parser#20f608b",
+    "@tbela99/css-parser2": "github:tbela99/css-parser#6853ef7",
     "clean-css": "^5.3.3",
     "css-tree": "^3.2.1",
     "cssnano": "^9.0.3",

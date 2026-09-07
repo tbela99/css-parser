@@ -1,4 +1,4 @@
-import { EnumToken, ColorType } from '../../ast/types.js';
+import { ColorType, EnumToken } from '../../ast/types.js';
 import { convertColor } from './color.js';
 import { getColorComponents } from './utils/components.js';
 import { makeColor } from './utils/make-color.js';
@@ -17,6 +17,10 @@ import { evaluate } from '../../ast/math/expression.js';
 function alpha(color, alpha) {
     if (alpha == null) {
         return color;
+    }
+    // https://www.w3.org/TR/css-color-5/#:~:text=There%20is%20no%20relative%20device%2Dcmyk%28%29%20syntax
+    if (color.kin === ColorType.DEVICE_CMYK) {
+        return null;
     }
     let components = getColorComponents(color);
     if (alpha.typ === EnumToken.MathFunctionTokenType) {
@@ -52,9 +56,6 @@ function alpha(color, alpha) {
     if (alpha.typ !== EnumToken.IdenTokenType &&
         alpha.typ !== EnumToken.NumberTokenType &&
         alpha.typ !== EnumToken.PercentageTokenType) {
-        return null;
-    }
-    if (color.kin === ColorType.DEVICE_CMYK) {
         return null;
     }
     if (color.kin === ColorType.COLOR_MIX || color.cal === "rel") {

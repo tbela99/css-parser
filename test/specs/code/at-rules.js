@@ -388,7 +388,7 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
 @import url("gridy.css") supports((not (display: grid)) and (display: flex))
   screen and (max-width: 400px)
 
-`).then((result) => expect(result.code).equals(`@import "gridy.css" supports((not (display:grid)) and (display:flex))screen and (max-width:400px);`));
+`).then((result) => expect(result.code).equals(`@import "gridy.css" supports((not (display:grid)) and (display:flex))screen and (width<=400px);`));
         });
 
         it('import #27', function () {
@@ -990,7 +990,7 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
                 beautify: true,
                 removeEmpty: false,
                 validation: true
-            }).then((result) => expect(result.code).equals(`@import 'charset.css' layer(layer.one.two.three) supports((selector(h2>p)) and (font-tech(color-COLRv1)))screen and (min-width:30em) and (max-width:50em),tv and (all),all and (((min-width:30em) and (max-width:50em)) or (all));`));
+            }).then((result) => expect(result.code).equals(`@import 'charset.css' layer(layer.one.two.three) supports((selector(h2>p)) and (font-tech(color-COLRv1)))screen and (width>=30em) and (width<=50em),tv and (all),all and (((30em<=width<=50em)) or (all));`));
         });
 
         it('import #48', function () {
