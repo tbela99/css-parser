@@ -516,7 +516,7 @@ export function parseSelector(
                                         );
 
                                         if (matches != null) {
-                                            let [_, an, a, b]: string[] = matches;
+                                            let [_ /* , an, a, b */]: string[] = matches;
 
                                             const a1 = matches[2] === "" ? 1 : matches[2] === "-" ? -1 : +matches[2];
                                             const b1 = +matches[3];

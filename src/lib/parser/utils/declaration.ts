@@ -20,24 +20,24 @@ import type {
 } from "../../../@types/index.d.ts";
 import { ColorType, EnumAstNodeStatus, EnumToken, ValidationLevel } from "../../ast/types.ts";
 import {
-    nonStandardColors,
-    systemColors,
-    deprecatedSystemColors,
     COLORS_NAMES,
+    deprecatedSystemColors,
+    ERRORS,
+    LOCEND,
+    LOCSRCID,
+    LOCSTA,
+    nonStandardColors,
+    STATE,
+    systemColors,
+    tokensfuncDefMap,
     tokensMap,
     trimTokenSpace,
-    ERRORS,
-    STATE,
-    LOCEND,
-    LOCSTA,
-    LOCSRCID,
 } from "../../syntax/constants.ts";
 import { isColor, isWhiteSpace, parseColor, renamedStandardProperties } from "../../syntax/syntax.ts";
-import { getSyntaxRule, getParsedSyntax, ValidationSyntaxRule } from "../../validation/config.ts";
-import { matchAllSyntaxes, createValidationContext, trimArray } from "../../validation/match.ts";
+import { getParsedSyntax, getSyntaxRule, ValidationSyntaxRule } from "../../validation/config.ts";
+import { createValidationContext, matchAllSyntaxes, trimArray } from "../../validation/match.ts";
 import type { ValidationMatch } from "../../validation/types.d.ts";
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from "../../validation/parser/typedef.ts";
-import { tokensfuncDefMap } from "../../syntax/constants.ts";
 import { walkValues } from "../../ast/walk.ts";
 import type { ValidationPropertyToken } from "../../validation/parser/types.d.ts";
 import { equalsIgnoreCase } from "./text.ts";
@@ -283,7 +283,6 @@ export function parseDeclaration(
         }
 
         switch (token.typ) {
-
             case EnumToken.Literal:
                 if ((token as LiteralToken).val === "/" && stack.at(-1)?.typ == EnumToken.MathFunctionTokenDefType) {
                     Object.assign(token, {
@@ -586,13 +585,11 @@ export function parseDeclaration(
         name[ERRORS] = result?.errors ?? [];
 
         // @ts-expect-error
-        const node = Object.assign(name, {
+        return Object.assign(name, {
             typ: EnumToken.DeclarationNodeType,
             nam: name.val,
             val: tokens,
         }) as AstDeclaration;
-
-        return node;
     }
 
     if (equalsIgnoreCase("composes", name.val)) {

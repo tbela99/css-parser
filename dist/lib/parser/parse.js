@@ -434,7 +434,7 @@ function parseVisitors(visitorsDef, errors) {
 }
 /**
  * Parse css string
- * @param iter
+ * @param tokenizer
  * @param options
  *
  * @throws Error
@@ -1431,6 +1431,7 @@ async function doParse(iter, options = {}) {
     const imports = [];
     let item;
     let node;
+    // @ts-ignore ignore error
     let parensMatch = 0;
     let curlyBracketMatch = 0;
     let tokenizer = iter instanceof Promise ? await iter : iter;

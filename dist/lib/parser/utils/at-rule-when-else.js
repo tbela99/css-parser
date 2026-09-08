@@ -10,7 +10,7 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
     let i = 0;
     let success = true;
     let expectAndOr = false;
-    let scope = new Set();
+    // let scope: Set<EnumToken> = new Set();
     const errors = [];
     // const scopes: Array<Set<EnumToken>> = [scope];
     for (; i < stream.length; i++) {
@@ -32,7 +32,7 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
                         Object.assign(stream[i], {
                             typ: "or" === val ? EnumToken.OrTokenType : EnumToken.AndTokenType,
                         });
-                        scope.add(stream[i].typ);
+                        // scope.add(stream[i].typ);
                         stack.push(stream[i]);
                         // break;
                     }

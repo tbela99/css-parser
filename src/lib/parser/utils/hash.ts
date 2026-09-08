@@ -79,6 +79,7 @@ export function objectHash(object: any): string {
 /**
  * convert input to hex
  * @param input
+ * @param length
  */
 function toHex(input: ArrayBuffer | string, length?: number): string {
     let result = "";

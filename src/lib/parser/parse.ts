@@ -42,10 +42,8 @@ import type {
     ParserSyncOptions,
     PseudoClassToken,
     ResolvedPath,
-    SourceLocation,
     StringToken,
     Token,
-    TokenizeResult,
     UrlToken,
     VisitorNodeMap,
     WhitespaceToken,
@@ -631,7 +629,7 @@ function parseVisitors(
 
 /**
  * Parse css string
- * @param iter
+ * @param tokenizer
  * @param options
  *
  * @throws Error
@@ -1863,7 +1861,6 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
     let node: AstAtRule | AstRule | AstKeyframesRule | AstKeyframesAtRule | AstDeclaration | AstComment | null;
 
     // @ts-ignore ignore error
-    let isAsync: boolean = typeof iter[Symbol.asyncIterator] === "function";
     let parensMatch: number = 0;
     let curlyBracketMatch: number = 0;
     let tokenizer: Tokenizer = iter instanceof Promise ? await iter : iter;

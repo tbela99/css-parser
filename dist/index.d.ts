@@ -6369,11 +6369,11 @@ declare function convertColor(token: ColorToken, to: ColorType$1): ColorToken | 
 
 /**
  * Calculate the distance between two okLab colors.
- * @param okLab1
- * @param okLab2
  *
  * @private
  * {@link https://drafts.csswg.org/css-color-4/#comparing-color-values}
+ * @param color1
+ * @param color2
  */
 declare function okLabDistance(color1: ColorToken, color2: ColorToken): number | null;
 /**
