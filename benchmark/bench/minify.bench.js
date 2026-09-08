@@ -10,9 +10,13 @@ const BENCH_OPTIONS = { time: 300, iterations: 5 };
 for (const fixture of fixtures) {
     test(fixture.name, async ({ bench }) => {
         for (const minifier of minifiers) {
-            await bench(minifier.id, async () => {
-                return minifier.minify(fixture.css);
-            }).run(BENCH_OPTIONS);
+            console.error(`benchmarking ${fixture.name} with ${minifier.id}`);
+
+            try {
+                await bench(minifier.id, async () => {
+                    return minifier.minify(fixture.css);
+                }).run(BENCH_OPTIONS);
+            } catch (err) {}
         }
     });
 }

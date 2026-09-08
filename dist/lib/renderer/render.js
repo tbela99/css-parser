@@ -1255,9 +1255,9 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                 ? renderValue(token.val, options, cache)
                 : minifyNumber(token.val);
         case EnumToken.InfinityTokenType:
-            return "0/0";
+            return "1/0";
         case EnumToken.NegativeInfinityTokenType:
-            return "-0/0";
+            return "-1/0";
         case EnumToken.NaNTokenType:
             return "NaN";
         case EnumToken.AtRuleTokenType:
