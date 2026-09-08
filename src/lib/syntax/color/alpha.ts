@@ -62,12 +62,24 @@ export function alpha(color: ColorToken, alpha: Token): ColorToken | null {
         }
     }
 
+    // console.error({ alpha });
+
     if (
         alpha.typ !== EnumToken.IdenTokenType &&
         alpha.typ !== EnumToken.NumberTokenType &&
         alpha.typ !== EnumToken.PercentageTokenType
     ) {
         return null;
+    }
+
+    if (alpha.typ === EnumToken.IdenTokenType) {
+        if (
+            equalsIgnoreCase((alpha as IdentToken).val, "NaN") ||
+            equalsIgnoreCase((alpha as IdentToken).val, "Infinity") ||
+            equalsIgnoreCase((alpha as IdentToken).val, "-Infinity")
+        ) {
+            return null;
+        }
     }
 
     if (color.kin === ColorType.COLOR_MIX || color.cal === "rel") {

@@ -495,7 +495,10 @@ export function parseMediaqueryList(
                                 tokens.length = l + 1;
 
                                 // media range query
-                                if ((tokens[l] as MediaQueryConditionToken).op!.typ === EnumToken.AndTokenType) {
+                                if (
+                                    options.minify &&
+                                    (tokens[l] as MediaQueryConditionToken).op!.typ === EnumToken.AndTokenType
+                                ) {
                                     if (
                                         left.length === 1 &&
                                         left[0].typ == EnumToken.ParensTokenType &&
@@ -508,7 +511,6 @@ export function parseMediaqueryList(
                                             EnumToken.GtTokenType ||
                                             ((left[0] as ParensToken).chi[0] as MediaQueryConditionToken).op.typ ==
                                                 EnumToken.GteTokenType) &&
-                                        // (left[0] as MediaQueryConditionToken).op!.typ === EnumToken.OrTokenType &&
                                         right.length === 1 &&
                                         left[0].typ == EnumToken.ParensTokenType &&
                                         (right[0] as ParensToken).chi.length == 1 &&

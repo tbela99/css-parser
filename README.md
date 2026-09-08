@@ -139,6 +139,7 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 ## Sourcemap
 
 - [x] Sourcemap generation
+- [x] Input sourcemap: when the input CSS comes from another tool, you can pass the sourcemap content to link the generated CSS positions to the original files.
 
 ## Computed shorthands properties
 

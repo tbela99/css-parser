@@ -666,6 +666,18 @@
          * wrapped values token type like {Arial, sans-serif}
          */
         EnumToken[EnumToken["WrappedValuesTokenType"] = 140] = "WrappedValuesTokenType";
+        /**
+         * infinity token
+         */
+        EnumToken[EnumToken["NaNTokenType"] = 141] = "NaNTokenType";
+        /**
+         * infinity token
+         */
+        EnumToken[EnumToken["InfinityTokenType"] = 142] = "InfinityTokenType";
+        /**
+         * negative infinity token
+         */
+        EnumToken[EnumToken["NegativeInfinityTokenType"] = 143] = "NegativeInfinityTokenType";
         /* aliases */
         /**
          * alias for time token type
@@ -10143,6 +10155,35 @@
         if (!isScalarToken(l) || !isScalarToken(r) || (l.typ == r.typ && "unit" in l && "unit" in r && l.unit != r.unit)) {
             return defaultReturn;
         }
+        if (l.typ == exports.EnumToken.IdenTokenType) {
+            if (equalsIgnoreCase(l.val, "Infinity")) {
+                Object.assign(l, { typ: exports.EnumToken.InfinityTokenType });
+            }
+            else if (equalsIgnoreCase(l.val, "-Infinity")) {
+                Object.assign(l, { typ: exports.EnumToken.NegativeInfinityTokenType });
+            }
+            else if (equalsIgnoreCase(l.val, "NaN")) {
+                Object.assign(l, { typ: exports.EnumToken.NaNTokenType });
+            }
+        }
+        if (r.typ == exports.EnumToken.IdenTokenType) {
+            if (equalsIgnoreCase(r.val, "Infinity")) {
+                Object.assign(r, { typ: exports.EnumToken.InfinityTokenType });
+            }
+            else if (equalsIgnoreCase(r.val, "-Infinity")) {
+                Object.assign(r, { typ: exports.EnumToken.NegativeInfinityTokenType });
+            }
+        }
+        // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/calc-keyword#notes
+        if (l.typ == exports.EnumToken.NaNTokenType || r.typ == exports.EnumToken.NaNTokenType) {
+            return computeNaN(l, r, defaultReturn);
+        }
+        if (l.typ == exports.EnumToken.InfinityTokenType ||
+            l.typ == exports.EnumToken.NegativeInfinityTokenType ||
+            r.typ == exports.EnumToken.InfinityTokenType ||
+            r.typ == exports.EnumToken.NegativeInfinityTokenType) {
+            return computeInfinity(l, r, op, defaultReturn);
+        }
         if (r.typ == exports.EnumToken.FunctionTokenType || r.typ == exports.EnumToken.MathFunctionTokenType) {
             const val = evaluateFunc(r);
             if (val == null) {
@@ -10214,6 +10255,15 @@
             }
         }
         if (op == exports.EnumToken.Div && v2 == 0) {
+            if (v1 == 0) {
+                return Object.assign(l, { typ: exports.EnumToken.IdenTokenType, val: "NaN" });
+            }
+            let sign = Math.sign(v1) * Math.sign(v2);
+            sign = Object.is(sign, -0) ? -1 : 1;
+            Object.assign(l, {
+                typ: l.typ == exports.EnumToken.IdenTokenType ? exports.EnumToken.NumberTokenType : l.typ,
+                val: Object.is(sign, -0) ? -1 : sign,
+            });
             return defaultReturn;
         }
         // @ts-ignore
@@ -10231,6 +10281,112 @@
             token.typ = exports.EnumToken.NumberTokenType;
         }
         return token;
+    }
+    /**
+     *
+     * @param l
+     * @param r
+     * @param defaultReturn
+     * @returns
+     */
+    function computeNaN(l, r, defaultReturn) {
+        if (l.typ == exports.EnumToken.NaNTokenType) {
+            if (r.typ == exports.EnumToken.NumberTokenType ||
+                // @ts-expect-error
+                (r.typ == exports.EnumToken.IdenTokenType && typeof Math[r.val.toUpperCase()] == "string")) {
+                return l;
+            }
+            // NaN Infinity e pi ...
+            if (r.typ == exports.EnumToken.IdenTokenType ||
+                r.typ == exports.EnumToken.InfinityTokenType ||
+                r.typ == exports.EnumToken.NegativeInfinityTokenType) {
+                return l;
+            }
+            if (typeof r.val == "number") {
+                Object.assign(r, { val: 1 });
+            }
+            return r.typ == exports.EnumToken.NaNTokenType ? l : defaultReturn;
+        }
+        if (r.typ == exports.EnumToken.NaNTokenType) {
+            // if ((r as IdentToken).val == "NaN") {
+            if (l.typ == exports.EnumToken.NumberTokenType ||
+                // @ts-expect-error
+                (l.typ == exports.EnumToken.IdenTokenType && typeof Math[l.val.toUpperCase()] == "string")) {
+                return r;
+            }
+            if (typeof l.val == "number") {
+                Object.assign(l, { val: 1 });
+            }
+            // return defaultReturn;
+        }
+        // }
+        return defaultReturn;
+    }
+    /**
+     *
+     * @param l
+     * @param r
+     * @param op
+     * @param defaultReturn
+     * @returns
+     */
+    function computeInfinity(l, r, op, defaultReturn) {
+        if (l.typ == exports.EnumToken.InfinityTokenType || l.typ == exports.EnumToken.NegativeInfinityTokenType) {
+            if (r.typ == exports.EnumToken.InfinityTokenType || r.typ == exports.EnumToken.NegativeInfinityTokenType) {
+                // Infinity / Infinity Infinity - Infinity
+                if (op == exports.EnumToken.Div ||
+                    (op == exports.EnumToken.Add && l.typ != r.typ) ||
+                    (op == exports.EnumToken.Sub && l.typ == r.typ)) {
+                    return Object.assign(l, { typ: exports.EnumToken.NaNTokenType });
+                }
+                if (l.typ != r.typ) {
+                    l.typ = exports.EnumToken.NegativeInfinityTokenType;
+                }
+                return l;
+            }
+            const value = getValue$1(r);
+            const sign = Math.sign(value);
+            const isNumber = r.typ == exports.EnumToken.NumberTokenType || r.typ == exports.EnumToken.IdenTokenType;
+            // Infinity * 0
+            if (value == 0 && op == exports.EnumToken.Mul) {
+                l.typ = exports.EnumToken.NaNTokenType;
+                return isNumber ? l : defaultReturn;
+            }
+            if (isNumber) {
+                // @ts-ignore
+                r.val /= r.val * sign;
+            }
+            if (op == exports.EnumToken.Div) {
+                return isNumber
+                    ? Object.assign(r, { typ: exports.EnumToken.NumberTokenType, val: sign < 0 ? -0 : 0 })
+                    : defaultReturn;
+            }
+            if (sign == -1) {
+                l.typ =
+                    l.typ == exports.EnumToken.InfinityTokenType
+                        ? exports.EnumToken.NegativeInfinityTokenType
+                        : exports.EnumToken.InfinityTokenType;
+            }
+            return isNumber ? l : defaultReturn;
+        }
+        if (r.typ == exports.EnumToken.InfinityTokenType || r.typ == exports.EnumToken.NegativeInfinityTokenType) {
+            const value = getValue$1(l);
+            let sign = Math.sign(value);
+            const isNumber = l.typ == exports.EnumToken.NumberTokenType || l.typ == exports.EnumToken.IdenTokenType;
+            if (isNumber) {
+                Object.assign(l, { typ: exports.EnumToken.NumberTokenType, val: sign });
+            }
+            if (value == 0 && op == exports.EnumToken.Mul) {
+                return Object.assign(l, { typ: exports.EnumToken.NaNTokenType });
+            }
+            if (op == exports.EnumToken.Div) {
+                return isNumber
+                    ? Object.assign(l, { typ: exports.EnumToken.NumberTokenType, val: sign < 0 ? -0 : 0 })
+                    : defaultReturn;
+            }
+            return l.typ == isNumber || value == 0 ? r : defaultReturn;
+        }
+        return defaultReturn;
     }
     function getValue$1(t) {
         if (t.typ == exports.EnumToken.IdenTokenType) {
@@ -10566,7 +10722,14 @@
             (token.typ == exports.EnumToken.FunctionTokenType && mathFuncs.includes(token.val)) ||
             // @ts-ignore
             (token.typ == exports.EnumToken.IdenTokenType && typeof Math[token.val.toUpperCase()] == "number") ||
-            [exports.EnumToken.NumberTokenType, exports.EnumToken.FractionTokenType, exports.EnumToken.PercentageTokenType].includes(token.typ));
+            (token.typ == exports.EnumToken.IdenTokenType && token.val == "NaN") ||
+            (token.typ == exports.EnumToken.IdenTokenType &&
+                (equalsIgnoreCase(token.val, "Infinity") ||
+                    equalsIgnoreCase(token.val, "-Infinity"))) ||
+            [exports.EnumToken.NumberTokenType, exports.EnumToken.FractionTokenType, exports.EnumToken.PercentageTokenType].includes(token.typ) ||
+            token.typ == exports.EnumToken.NaNTokenType ||
+            token.typ == exports.EnumToken.InfinityTokenType ||
+            token.typ == exports.EnumToken.NegativeInfinityTokenType);
     }
     /**
      *
@@ -14463,10 +14626,18 @@
                 alpha = originalAlpha;
             }
         }
+        // console.error({ alpha });
         if (alpha.typ !== exports.EnumToken.IdenTokenType &&
             alpha.typ !== exports.EnumToken.NumberTokenType &&
             alpha.typ !== exports.EnumToken.PercentageTokenType) {
             return null;
+        }
+        if (alpha.typ === exports.EnumToken.IdenTokenType) {
+            if (equalsIgnoreCase(alpha.val, "NaN") ||
+                equalsIgnoreCase(alpha.val, "Infinity") ||
+                equalsIgnoreCase(alpha.val, "-Infinity")) {
+                return null;
+            }
         }
         if (color.kin === exports.ColorType.COLOR_MIX || color.cal === "rel") {
             color = convertColor(color, getColorType(color));
@@ -24878,11 +25049,13 @@
             ...options,
         };
         if (options.withParents) {
-            // @ts-ignore
-            let parent = data[PARENT];
+            let parent;
             while (data[PARENT] != null) {
                 // @ts-ignore
-                parent = { ...data[PARENT], chi: [{ ...data }] };
+                // parent = { ...data[PARENT], chi: [data] };
+                parent = cloneNode(data[PARENT]);
+                // @ts-ignore
+                parent.chi = [data];
                 // @ts-ignore
                 parent[PARENT] = data[PARENT][PARENT];
                 // @ts-ignore
@@ -26079,6 +26252,12 @@
                 return token.val.typ == exports.EnumToken.FractionTokenType
                     ? renderValue(token.val, options, cache)
                     : minifyNumber(token.val);
+            case exports.EnumToken.InfinityTokenType:
+                return "0/0";
+            case exports.EnumToken.NegativeInfinityTokenType:
+                return "-0/0";
+            case exports.EnumToken.NaNTokenType:
+                return "NaN";
             case exports.EnumToken.AtRuleTokenType:
                 return "@" + token.nam;
             case exports.EnumToken.CommentTokenType:
@@ -29163,7 +29342,8 @@
                                     };
                                     tokens.length = l + 1;
                                     // media range query
-                                    if (tokens[l].op.typ === exports.EnumToken.AndTokenType) {
+                                    if (options.minify &&
+                                        tokens[l].op.typ === exports.EnumToken.AndTokenType) {
                                         if (left.length === 1 &&
                                             left[0].typ == exports.EnumToken.ParensTokenType &&
                                             left[0].chi.length == 1 &&
@@ -29175,7 +29355,6 @@
                                                 exports.EnumToken.GtTokenType ||
                                                 left[0].chi[0].op.typ ==
                                                     exports.EnumToken.GteTokenType) &&
-                                            // (left[0] as MediaQueryConditionToken).op!.typ === EnumToken.OrTokenType &&
                                             right.length === 1 &&
                                             left[0].typ == exports.EnumToken.ParensTokenType &&
                                             right[0].chi.length == 1 &&

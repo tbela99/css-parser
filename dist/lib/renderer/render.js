@@ -10,6 +10,7 @@ import { toDegrees } from '../parser/utils/angle.js';
 import { LineMap } from '../parser/linesmap.js';
 import { dirname } from '../fs/resolve.js';
 import { SourceFile } from '../parser/source.js';
+import { cloneNode } from '../ast/clone.js';
 
 /**
  * render ast
@@ -48,11 +49,13 @@ function doRender(data, options = {}, mapping) {
         ...options,
     };
     if (options.withParents) {
-        // @ts-ignore
-        let parent = data[PARENT];
+        let parent;
         while (data[PARENT] != null) {
             // @ts-ignore
-            parent = { ...data[PARENT], chi: [{ ...data }] };
+            // parent = { ...data[PARENT], chi: [data] };
+            parent = cloneNode(data[PARENT]);
+            // @ts-ignore
+            parent.chi = [data];
             // @ts-ignore
             parent[PARENT] = data[PARENT][PARENT];
             // @ts-ignore
@@ -1249,6 +1252,12 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
             return token.val.typ == EnumToken.FractionTokenType
                 ? renderValue(token.val, options, cache)
                 : minifyNumber(token.val);
+        case EnumToken.InfinityTokenType:
+            return "0/0";
+        case EnumToken.NegativeInfinityTokenType:
+            return "-0/0";
+        case EnumToken.NaNTokenType:
+            return "NaN";
         case EnumToken.AtRuleTokenType:
             return "@" + token.nam;
         case EnumToken.CommentTokenType:

@@ -1315,4 +1315,65 @@ color: blue;
  src: url(icons-gradient-var.woff2)
 }`);
     });
+
+    it("escaped new line #57", async () => {
+        const options = {
+            input: `
+    
+    .s {
+
+    height: calc(1px * (NaN + 1));
+    width: calc(NaN + 1 + calc(NaN - 1 + calc(NaN / 1 + calc(NaN * 1))));
+}
+
+    `,
+            beautify: true,
+        };
+
+        const result = transformSync(options);
+
+        return expect(result.code).equals(`.s {
+ height: calc(1px*NaN);
+ width: calc(NaN)
+}`);
+    });
+
+    it("escaped new line #58", async () => {
+        const options = {
+            input: `
+    
+    @media (min-width: 300px) and (max-width: 768px){
+    .s {
+  
+    top: calc(NaN * 1px);
+    line-height: calc(NaN * 1);
+  color: alpha(from red/calc(0/0));
+  background: alpha(from red/calc(pi/0));
+    height: calc(1px * (NaN + 1));  
+    width: calc(NaN + 1 + calc(NaN - 1 + calc(NaN / 1 + calc(NaN * 1))));
+    margin-left: calc(infinity + 1 + calc(infinity - 1 + calc(infinity / 1 + calc(infinity * 1))));
+    margin-right: calc(infinity + 1px + calc(infinity - 1 + calc(infinity / 1 + calc(infinity * 1))));
+
+}
+
+
+    `,
+            beautify: true,
+        };
+
+        const result = transformSync(options);
+
+        return expect(result.code).equals(`@media (300px<=width<=768px) {
+ .s {
+  top: calc(NaN*1px);
+  line-height: calc(NaN);
+  color: alpha(from red/calc(NaN));
+  background: alpha(from red/calc(1/0));
+  height: calc(1px*NaN);
+  width: calc(NaN);
+  margin-left: calc(0/0);
+  margin-right: calc(0/0 + 1px)
+ }
+}`);
+    });
 }

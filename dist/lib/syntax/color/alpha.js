@@ -53,10 +53,18 @@ function alpha(color, alpha) {
             alpha = originalAlpha;
         }
     }
+    // console.error({ alpha });
     if (alpha.typ !== EnumToken.IdenTokenType &&
         alpha.typ !== EnumToken.NumberTokenType &&
         alpha.typ !== EnumToken.PercentageTokenType) {
         return null;
+    }
+    if (alpha.typ === EnumToken.IdenTokenType) {
+        if (equalsIgnoreCase(alpha.val, "NaN") ||
+            equalsIgnoreCase(alpha.val, "Infinity") ||
+            equalsIgnoreCase(alpha.val, "-Infinity")) {
+            return null;
+        }
     }
     if (color.kin === ColorType.COLOR_MIX || color.cal === "rel") {
         color = convertColor(color, getColorType(color));

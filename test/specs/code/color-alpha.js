@@ -238,14 +238,14 @@ color: alpha(from OkLcH(from OkLcH(from peru  l    c  h) l c calc(h / 2) / 20% )
 }
 .bar {
  &.bar {
-  color: alpha(from red/calc(pi/0))
+  color: alpha(from red/calc(1/0))
  }
  & {
-  color: alpha(from red/calc(0/0))
+  color: alpha(from red/calc(NaN))
  }
 }
 .s {
- color: alpha(from #d9796833/calc(20%/0))
+ color: alpha(from #d9796833/calc(1%/0))
 }`),
             );
         });

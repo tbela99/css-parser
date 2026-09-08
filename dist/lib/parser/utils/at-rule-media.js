@@ -352,7 +352,8 @@ function parseMediaqueryList(stream, options) {
                                 };
                                 tokens.length = l + 1;
                                 // media range query
-                                if (tokens[l].op.typ === EnumToken.AndTokenType) {
+                                if (options.minify &&
+                                    tokens[l].op.typ === EnumToken.AndTokenType) {
                                     if (left.length === 1 &&
                                         left[0].typ == EnumToken.ParensTokenType &&
                                         left[0].chi.length == 1 &&
@@ -364,7 +365,6 @@ function parseMediaqueryList(stream, options) {
                                             EnumToken.GtTokenType ||
                                             left[0].chi[0].op.typ ==
                                                 EnumToken.GteTokenType) &&
-                                        // (left[0] as MediaQueryConditionToken).op!.typ === EnumToken.OrTokenType &&
                                         right.length === 1 &&
                                         left[0].typ == EnumToken.ParensTokenType &&
                                         right[0].chi.length == 1 &&

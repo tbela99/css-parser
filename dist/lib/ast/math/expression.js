@@ -1,3 +1,4 @@
+import { equalsIgnoreCase } from '../../parser/utils/text.js';
 import { mathFuncs, LOCEND, LOCSTA, LOCSRCID } from '../../syntax/constants.js';
 import { EnumToken } from '../types.js';
 import { rem, compute } from './math.js';
@@ -155,6 +156,35 @@ function doEvaluate(l, r, op) {
     if (!isScalarToken(l) || !isScalarToken(r) || (l.typ == r.typ && "unit" in l && "unit" in r && l.unit != r.unit)) {
         return defaultReturn;
     }
+    if (l.typ == EnumToken.IdenTokenType) {
+        if (equalsIgnoreCase(l.val, "Infinity")) {
+            Object.assign(l, { typ: EnumToken.InfinityTokenType });
+        }
+        else if (equalsIgnoreCase(l.val, "-Infinity")) {
+            Object.assign(l, { typ: EnumToken.NegativeInfinityTokenType });
+        }
+        else if (equalsIgnoreCase(l.val, "NaN")) {
+            Object.assign(l, { typ: EnumToken.NaNTokenType });
+        }
+    }
+    if (r.typ == EnumToken.IdenTokenType) {
+        if (equalsIgnoreCase(r.val, "Infinity")) {
+            Object.assign(r, { typ: EnumToken.InfinityTokenType });
+        }
+        else if (equalsIgnoreCase(r.val, "-Infinity")) {
+            Object.assign(r, { typ: EnumToken.NegativeInfinityTokenType });
+        }
+    }
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/calc-keyword#notes
+    if (l.typ == EnumToken.NaNTokenType || r.typ == EnumToken.NaNTokenType) {
+        return computeNaN(l, r, defaultReturn);
+    }
+    if (l.typ == EnumToken.InfinityTokenType ||
+        l.typ == EnumToken.NegativeInfinityTokenType ||
+        r.typ == EnumToken.InfinityTokenType ||
+        r.typ == EnumToken.NegativeInfinityTokenType) {
+        return computeInfinity(l, r, op, defaultReturn);
+    }
     if (r.typ == EnumToken.FunctionTokenType || r.typ == EnumToken.MathFunctionTokenType) {
         const val = evaluateFunc(r);
         if (val == null) {
@@ -226,6 +256,15 @@ function doEvaluate(l, r, op) {
         }
     }
     if (op == EnumToken.Div && v2 == 0) {
+        if (v1 == 0) {
+            return Object.assign(l, { typ: EnumToken.IdenTokenType, val: "NaN" });
+        }
+        let sign = Math.sign(v1) * Math.sign(v2);
+        sign = Object.is(sign, -0) ? -1 : 1;
+        Object.assign(l, {
+            typ: l.typ == EnumToken.IdenTokenType ? EnumToken.NumberTokenType : l.typ,
+            val: Object.is(sign, -0) ? -1 : sign,
+        });
         return defaultReturn;
     }
     // @ts-ignore
@@ -243,6 +282,112 @@ function doEvaluate(l, r, op) {
         token.typ = EnumToken.NumberTokenType;
     }
     return token;
+}
+/**
+ *
+ * @param l
+ * @param r
+ * @param defaultReturn
+ * @returns
+ */
+function computeNaN(l, r, defaultReturn) {
+    if (l.typ == EnumToken.NaNTokenType) {
+        if (r.typ == EnumToken.NumberTokenType ||
+            // @ts-expect-error
+            (r.typ == EnumToken.IdenTokenType && typeof Math[r.val.toUpperCase()] == "string")) {
+            return l;
+        }
+        // NaN Infinity e pi ...
+        if (r.typ == EnumToken.IdenTokenType ||
+            r.typ == EnumToken.InfinityTokenType ||
+            r.typ == EnumToken.NegativeInfinityTokenType) {
+            return l;
+        }
+        if (typeof r.val == "number") {
+            Object.assign(r, { val: 1 });
+        }
+        return r.typ == EnumToken.NaNTokenType ? l : defaultReturn;
+    }
+    if (r.typ == EnumToken.NaNTokenType) {
+        // if ((r as IdentToken).val == "NaN") {
+        if (l.typ == EnumToken.NumberTokenType ||
+            // @ts-expect-error
+            (l.typ == EnumToken.IdenTokenType && typeof Math[l.val.toUpperCase()] == "string")) {
+            return r;
+        }
+        if (typeof l.val == "number") {
+            Object.assign(l, { val: 1 });
+        }
+        // return defaultReturn;
+    }
+    // }
+    return defaultReturn;
+}
+/**
+ *
+ * @param l
+ * @param r
+ * @param op
+ * @param defaultReturn
+ * @returns
+ */
+function computeInfinity(l, r, op, defaultReturn) {
+    if (l.typ == EnumToken.InfinityTokenType || l.typ == EnumToken.NegativeInfinityTokenType) {
+        if (r.typ == EnumToken.InfinityTokenType || r.typ == EnumToken.NegativeInfinityTokenType) {
+            // Infinity / Infinity Infinity - Infinity
+            if (op == EnumToken.Div ||
+                (op == EnumToken.Add && l.typ != r.typ) ||
+                (op == EnumToken.Sub && l.typ == r.typ)) {
+                return Object.assign(l, { typ: EnumToken.NaNTokenType });
+            }
+            if (l.typ != r.typ) {
+                l.typ = EnumToken.NegativeInfinityTokenType;
+            }
+            return l;
+        }
+        const value = getValue(r);
+        const sign = Math.sign(value);
+        const isNumber = r.typ == EnumToken.NumberTokenType || r.typ == EnumToken.IdenTokenType;
+        // Infinity * 0
+        if (value == 0 && op == EnumToken.Mul) {
+            l.typ = EnumToken.NaNTokenType;
+            return isNumber ? l : defaultReturn;
+        }
+        if (isNumber) {
+            // @ts-ignore
+            r.val /= r.val * sign;
+        }
+        if (op == EnumToken.Div) {
+            return isNumber
+                ? Object.assign(r, { typ: EnumToken.NumberTokenType, val: sign < 0 ? -0 : 0 })
+                : defaultReturn;
+        }
+        if (sign == -1) {
+            l.typ =
+                l.typ == EnumToken.InfinityTokenType
+                    ? EnumToken.NegativeInfinityTokenType
+                    : EnumToken.InfinityTokenType;
+        }
+        return isNumber ? l : defaultReturn;
+    }
+    if (r.typ == EnumToken.InfinityTokenType || r.typ == EnumToken.NegativeInfinityTokenType) {
+        const value = getValue(l);
+        let sign = Math.sign(value);
+        const isNumber = l.typ == EnumToken.NumberTokenType || l.typ == EnumToken.IdenTokenType;
+        if (isNumber) {
+            Object.assign(l, { typ: EnumToken.NumberTokenType, val: sign });
+        }
+        if (value == 0 && op == EnumToken.Mul) {
+            return Object.assign(l, { typ: EnumToken.NaNTokenType });
+        }
+        if (op == EnumToken.Div) {
+            return isNumber
+                ? Object.assign(l, { typ: EnumToken.NumberTokenType, val: sign < 0 ? -0 : 0 })
+                : defaultReturn;
+        }
+        return l.typ == isNumber || value == 0 ? r : defaultReturn;
+    }
+    return defaultReturn;
 }
 function getValue(t) {
     if (t.typ == EnumToken.IdenTokenType) {
@@ -578,7 +723,14 @@ function isScalarToken(token) {
         (token.typ == EnumToken.FunctionTokenType && mathFuncs.includes(token.val)) ||
         // @ts-ignore
         (token.typ == EnumToken.IdenTokenType && typeof Math[token.val.toUpperCase()] == "number") ||
-        [EnumToken.NumberTokenType, EnumToken.FractionTokenType, EnumToken.PercentageTokenType].includes(token.typ));
+        (token.typ == EnumToken.IdenTokenType && token.val == "NaN") ||
+        (token.typ == EnumToken.IdenTokenType &&
+            (equalsIgnoreCase(token.val, "Infinity") ||
+                equalsIgnoreCase(token.val, "-Infinity"))) ||
+        [EnumToken.NumberTokenType, EnumToken.FractionTokenType, EnumToken.PercentageTokenType].includes(token.typ) ||
+        token.typ == EnumToken.NaNTokenType ||
+        token.typ == EnumToken.InfinityTokenType ||
+        token.typ == EnumToken.NegativeInfinityTokenType);
 }
 /**
  *
