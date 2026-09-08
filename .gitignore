@@ -13,7 +13,6 @@ test/*.css
 test/*.html
 test/*.json
 test/*.md
-/docs
 /deno.lock
 /badges
 /.nyc_output
@@ -42,7 +41,7 @@ pids
 lib-cov
 
 # Coverage directory used by tools like istanbul
-coverage
+# coverage
 *.lcov
 
 # nyc test coverage

@@ -2,7 +2,6 @@ import type { ColorToken, FunctionToken, IdentToken, NumberToken, Token } from "
 import { ColorType, EnumToken } from "../../../ast/types.ts";
 import { COLORS_NAMES } from "../../constants.ts";
 import { expandHexValue } from "../hex.ts";
-import { isColor, parseColor } from "../../syntax.ts";
 import { equalsIgnoreCase } from "../../../parser/utils/text.ts";
 
 export function getColorComponents(token: ColorToken | IdentToken): Token[] | null {
@@ -15,8 +14,7 @@ export function getColorComponents(token: ColorToken | IdentToken): Token[] | nu
     // }
 
     if ((token as ColorToken).kin == ColorType.HEX || (token as ColorToken).kin == ColorType.LIT) {
-
-        if (equalsIgnoreCase('currentcolor', (token as ColorToken).val)) {
+        if (equalsIgnoreCase("currentcolor", (token as ColorToken).val)) {
             return null;
         }
 
@@ -57,7 +55,7 @@ export function getColorComponents(token: ColorToken | IdentToken): Token[] | nu
         ) {
             if ("var" == (child as FunctionToken).val.toLowerCase()) {
                 return null;
-            } 
+            }
             // else {
             //     for (const { value } of walkValues((child as FunctionToken).chi)) {
             //         if (

@@ -65,7 +65,6 @@ function replaceAstNodes(tokens: Token[], root?: AstNode): boolean {
                     if (
                         (equalsIgnoreCase(token.val, "min-resolution") ||
                             equalsIgnoreCase(token.val, "max-resolution")) &&
-                        // ["min-resolution", "max-resolution"].includes((token as IdentToken).val) &&
                         (value as MediaQueryConditionToken).r?.[0]?.typ == EnumToken.NumberTokenType
                     ) {
                         Object.assign((value as MediaQueryConditionToken).r?.[0], {
@@ -73,6 +72,16 @@ function replaceAstNodes(tokens: Token[], root?: AstNode): boolean {
                             unit: "x",
                         });
                         result = true;
+                    }
+
+                    let isMin: boolean = token.val.startsWith("min-");
+                    let isMax: boolean = token.val.startsWith("max-");
+
+                    if (isMin || isMax) {
+                        token.val = token.val.slice(4);
+                        (value as MediaQueryConditionToken).op.typ = isMax
+                            ? EnumToken.LteTokenType
+                            : EnumToken.GteTokenType;
                     }
                 }
             }
@@ -112,6 +121,7 @@ function replaceAstNodes(tokens: Token[], root?: AstNode): boolean {
         }
     }
 
+    // remove duplicate tokens
     if (tokens.find((t) => t.typ == EnumToken.CommaTokenType) != null) {
         const set = new Set<string>();
 

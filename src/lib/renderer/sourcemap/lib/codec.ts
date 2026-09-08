@@ -69,6 +69,11 @@ export function encode(value: number[]) {
     return result;
 }
 
+/**
+ * 
+ * @param num 
+ * @returns 
+ */
 function encode_integer(num: number): string {
     let result = '';
 

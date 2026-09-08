@@ -13,7 +13,7 @@ import { convertColor, getNumber } from "./color.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
 import { walkValues } from "../../ast/walk.ts";
 import { evaluate, evaluateFunc } from "../../ast/math/expression.ts";
-import { colorFuncColorSpace, colorRange, colorsFunc, LOC, LOCEND, LOCSRCID, LOCSTA, mathFuncs } from "../constants.ts";
+import { colorFuncColorSpace, colorRange, colorsFunc, LOCEND, LOCSRCID, LOCSTA, mathFuncs } from "../constants.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 import { getColorComponents } from "./utils/components.ts";
 

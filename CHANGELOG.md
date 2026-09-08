@@ -1,7 +1,98 @@
 # Changelog
 
+# v1.6.2
+
+## Fix
+- [x] fix base64 encoding error when inline sourcemap is enabled
+
+## Improvements
+- [x] handle division by zero in calc()
+- [x] strip escaped new line from string
+- [x] range media query : parse more expression as range query
+- [x] handle NaN and Infinity in computation
+- [x] parse \<url-modifiers\>
+
+strip escaped new line from string
+```css
+a[title="a not s\
+o very long title"] {
+  
+color: blue;
+```
+
+is escaped as 
+
+```css
+a[title="a not so very long title"] {
+ color: blue
+}
+```
+parsing range query is improved
+
+```css
+
+@media (min-resolution: 2dppx) {}
+```
+is parsed as 
+
+```css
+@media (resolution>=2x) {}
+```
+
+NaN and Infinity are now handled in calc().
+
+```css
+
+    @media (min-width: 300px) and (max-width: 768px){
+    .s {
+  
+    top: calc(NaN * 1px);
+    line-height: calc(NaN * 1);
+  color: alpha(from red/calc(0/0));
+  background: alpha(from red/calc(pi/0));
+    height: calc(1px * (NaN + 1));  
+    width: calc(NaN + 1 + calc(NaN - 1 + calc(NaN / 1 + calc(NaN * 1))));
+    margin-left: calc(infinity + 1 + calc(infinity - 1 + calc(infinity / 1 + calc(infinity * 1))));
+    margin-right: calc(infinity + 1px + calc(infinity - 1 + calc(infinity / 1 + calc(infinity * 1))));
+
+}
+
+```
+is parsed as 
+
+```css
+@media (300px<=width<=768px) {
+ .s {
+  top: calc(NaN*1px);
+  line-height: calc(NaN);
+  color: alpha(from red/calc(NaN));
+  background: alpha(from red/calc(1/0));
+  height: calc(1px*NaN);
+  width: calc(NaN);
+  margin-left: calc(0/0);
+  margin-right: calc(0/0 + 1px)
+ }
+}
+```
+Parsing url() \<url-modifiers\> is supported.
+
+```css
+
+    .s {
+    background: url("star.gif" crossorigin(anonymous));
+}
+```
+is parsed as 
+
+```css
+.s {
+ background: url(star.gif crossorigin(anonymous))
+}
+```
+
 # v1.6.1
 
+## Fixes
 - [x] fix bugs when computing math functions.
 - [x] reduce array mutations
 - [x] supporting additional shorthands: scroll-timeline, scroll-padding, scroll-margin.
@@ -28,9 +119,8 @@ a:hover {
 
 # v1.6.0
 
-- [x] added support for math function `tan()`.
-
 ## Improvements
+- [x] added support for math function `tan()`.
 - [x] faster tokenizer
 - [x] ensure transform: rotate(360deg) is not minified to transform: none
 - [x] support input sourcemap from inline sourcemap file. This is only supported by the async parser.

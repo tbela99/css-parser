@@ -10,15 +10,22 @@ const sizes = JSON.parse(readFileSync(resultsDir + "sizes.json", "utf8"));
 
 // benchRaw.files[].groups[].benchmarks[] -> { [fixtureName]: { [minifierId]: meanMs } }
 const timings = {};
-for (const file of benchRaw.files) {
-    for (const group of file.groups) {
-        // group.fullName looks like "bench/minify.bench.js > <fixtureName>"
-        const fixtureName = group.fullName.split(">").pop().trim();
-        timings[fixtureName] ??= {};
-        for (const b of group.benchmarks) {
-            timings[fixtureName][b.name] = b.mean; // milliseconds
+for (const assertionResult of benchRaw.testResults[0]?.assertionResults ?? []) {
+    // for (const group of file.groups) {
+    // group.fullName looks like "bench/minify.bench.js > <fixtureName>"
+    // const fixtureName = assertionResult.title;
+    // timings[fixtureName] ??= {};
+    for (const b of assertionResult.benchmarks) {
+        timings[b.name] ??= {};
+
+        for (const task of b.tasks) {
+
+            const fixtureName = task.name;
+            timings[b.name][fixtureName] ??= {};
+            timings[b.name][fixtureName] = task.period; // milliseconds
         }
     }
+    // }
 }
 
 function fmtBytes(n) {
@@ -43,7 +50,7 @@ for (const fixture of fixtures) {
         const ms = timings[fixture.name]?.[m.id];
         bodyRows += `<td>
             <div class="metric"><span class="metric-label">final:</span> ${fmtBytes(size)}</div>
-            <div class="metric reduction">${fmtReduction(fixture.size, size)}</div>
+            <div class="metric reduction${size == null ? " missing" : ""}">${fmtReduction(fixture.size, size)}</div>
             <div class="metric time"><span class="metric-label">time:</span> ${fmtMs(ms)}</div>
         </td>`;
     }
@@ -58,13 +65,15 @@ for (const m of minifiers) {
     const totalMs = fixtures.reduce((sum, f) => sum + (timings[f.name]?.[m.id] ?? 0), 0);
     totalRow += `<td>
         <div class="metric"><span class="metric-label">final:</span> ${anyMissing ? fmtBytes(totalSize) + " (partial)" : fmtBytes(totalSize)}</div>
-        <div class="metric reduction">${anyMissing ? "n/a" : fmtReduction(totalOriginal, totalSize)}</div>
+        <div class="metric reduction${anyMissing ? " missing" : ""}">${anyMissing ? "n/a" : fmtReduction(totalOriginal, totalSize)}</div>
         <div class="metric time"><span class="metric-label">time:</span> ${fmtMs(totalMs)}</div>
     </td>`;
 }
 totalRow += `</tr>\n`;
 
-const headerCells = minifiers.map((m) => `<th>${m.url != null ? `<a href="${m.url}" target="_top">${m.label}</a>` : m.label}</th>`).join("\n");
+const headerCells = minifiers
+    .map((m) => `<th>${m.url != null ? `<a href="${m.url}" target="_top">${m.label}</a>` : m.label}</th>`)
+    .join("\n");
 
 const html = `<!DOCTYPE html>
 <html lang="en">
@@ -106,10 +115,13 @@ const html = `<!DOCTYPE html>
   .metric { line-height: 1.5; }
   .metric-label { color: #8b949e; font-size: 0.75rem; }
   .metric.reduction { color: #7ee787; font-size: 0.78rem; font-weight: 600; }
+  .metric.reduction.missing { color: #8c241a; }
   .metric.time { color: #58a6ff; font-size: 0.78rem; }
   tr.total-row td { background: #161b22; font-weight: 700; }
   tr.total-row .metric.time { color: #79c0ff; }
-  tr.total-row .metric.reduction { color: #56d364; }
+  tr.total-row .metric.reduction { color: #56d364; }  
+  tr.total-row .metric.reduction.missing { color: #8c241a; }
+
   .meta {
     margin-top: 1.5rem;
     color: #8b949e;

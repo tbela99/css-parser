@@ -54,7 +54,6 @@ import { expand } from "../ast/expand.ts";
 import { SourceMap } from "./sourcemap/sourcemap.ts";
 import {
     anglePrecision,
-    colorPrecision,
     LOCSRCID,
     LOCSTA,
     PARENT,
@@ -77,6 +76,7 @@ import { toDegrees } from "../parser/utils/angle.ts";
 import { LineMap as LinesMap } from "../parser/linesmap.ts";
 import { dirname } from "../fs/resolve.ts";
 import { SourceFile } from "../parser/source.ts";
+import { cloneNode } from "../ast/clone.ts";
 
 /**
  * render ast
@@ -125,12 +125,15 @@ export function doRender(
     };
 
     if (options.withParents) {
-        // @ts-ignore
-        let parent: AstNode = data[PARENT];
+        let parent: AstNode;
 
         while (data[PARENT] != null) {
             // @ts-ignore
-            parent = { ...data[PARENT], chi: [{ ...data }] };
+            // parent = { ...data[PARENT], chi: [data] };
+
+            parent = cloneNode(data[PARENT]!) as AstNode;
+            // @ts-ignore
+            parent.chi = [data];
 
             // @ts-ignore
             parent[PARENT] = data[PARENT][PARENT];
@@ -383,6 +386,8 @@ function updateSourceMap(
  * @param sourceLocation
  * @param linesMap
  * @param str
+ * @param start
+ * @param end
  */
 export function move(sourceLocation: SourceLocation, linesMap: LinesMap, str: string, start?: number, end?: number) {
     let i: number = start ?? 0;
@@ -662,8 +667,8 @@ export function renderValue(
     }
 
     switch (token.typ) {
-        case EnumToken.FunctionTokenDefType:
         case EnumToken.UrlFunctionTokenDefType:
+        case EnumToken.FunctionTokenDefType:
         case EnumToken.MathFunctionTokenDefType:
         case EnumToken.ImageFunctionTokenDefType:
         case EnumToken.ColorFunctionTokenDefType:
@@ -875,6 +880,10 @@ export function renderValue(
 
         case EnumToken.UrlFunctionTokenType:
             if (options.minify && token.typ === EnumToken.UrlFunctionTokenType) {
+                if ((token as FunctionToken).chi[0]?.typ === EnumToken.BadUrlTokenType) {
+                    return "url()";
+                }
+
                 for (const child of (token as FunctionToken).chi) {
                     if (child.typ === EnumToken.StringTokenType) {
                         if (
@@ -1795,6 +1804,14 @@ export function renderValue(
             return (<FractionToken>(token as NumberToken).val).typ == EnumToken.FractionTokenType
                 ? renderValue(<FractionToken>(token as NumberToken).val, options, cache)
                 : minifyNumber((token as NumberToken).val as number);
+
+        case EnumToken.InfinityTokenType:
+            return "0/0";
+        case EnumToken.NegativeInfinityTokenType:
+            return "-0/0";
+
+        case EnumToken.NaNTokenType:
+            return "NaN";
 
         case EnumToken.AtRuleTokenType:
             return "@" + (token as AtRuleToken).nam;

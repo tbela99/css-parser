@@ -62,7 +62,7 @@ It can be imported as an umd module.
 ```html
 <script type="module">
 
-    import {transform, ColorType} from 'https://unpkg.com/@tbela99/css-parser@1.4.7/web';
+    import {transform, ColorType} from 'https://unpkg.com/@tbela99/css-parser@1.6.2/web';
 
     const css = `
 
@@ -100,7 +100,7 @@ It can be imported as a module in the browser.
 
 ```html
 
-<script src="https://unpkg.com/@tbela99/css-parser@1.4.7/dist/index-umd-web.js"></script>
+<script src="https://unpkg.com/@tbela99/css-parser@1.6.2/dist/index-umd-web.js"></script>
 <script>
 
     (async () => {
@@ -175,7 +175,7 @@ Load as javascript module
 ```html
 <script type="module">
 
-    import {transform, ColorType} from 'https://unpkg.com/@tbela99/css-parser@1.4.7/web';
+    import {transform, ColorType} from 'https://unpkg.com/@tbela99/css-parser@1.6.2/web';
 
 const css = `
 
@@ -202,7 +202,7 @@ Load as an UMD module
 
 ```html
 
-<script src="https://unpkg.com/@tbela99/css-parser@1.4.7/dist/index-umd-web.js"></script>
+<script src="https://unpkg.com/@tbela99/css-parser@1.6.2/dist/index-umd-web.js"></script>
 <script>
 
     (async () => {

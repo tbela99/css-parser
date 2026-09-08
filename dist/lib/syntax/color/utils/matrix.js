@@ -6,6 +6,7 @@
  */
 // A is m x n. B is n x p. product is m x p.
 function multiplyMatrices(A, B) {
+    // let m: number = A.length;
     // if (!Array.isArray(A[0])) {
     //     // A is vector, convert to [[a, b, c, ...]]
     //     A = <number[][]>[A];

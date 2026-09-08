@@ -1,4 +1,4 @@
-import { EnumToken, EnumAstNodeStatus, ColorType, ValidationLevel } from '../../ast/types.js';
+import { EnumToken, EnumAstNodeStatus, ColorType } from '../../ast/types.js';
 import { LOCEND, STATE, ERRORS, LOCSTA, tokensfuncDefMap, COLORS_NAMES, nonStandardColors, systemColors, deprecatedSystemColors, tokensMap, trimTokenSpace, LOCSRCID } from '../../syntax/constants.js';
 import { renamedStandardProperties, isColor, parseColor, isWhiteSpace } from '../../syntax/syntax.js';
 import { getSyntaxRule, getParsedSyntax } from '../../validation/config.js';
@@ -164,7 +164,7 @@ function parseDeclaration(tokens, parent, options, errors) {
     let token;
     let index;
     if (syntaxRules != null) {
-        const doNotValidate = options.validation === false || options.validation === ValidationLevel.None;
+        const doNotValidate = options.validation === false;
         result = doNotValidate ? null : matchAllSyntaxes(syntaxRules, createValidationContext(tokens), options);
         if (doNotValidate || result != null) {
             success = doNotValidate || result?.success;
@@ -195,17 +195,11 @@ function parseDeclaration(tokens, parent, options, errors) {
             stack.push(token);
             continue;
         }
+        if (token.typ === EnumToken.ColonTokenType && stack.length == 0) {
+            stack.push(token);
+            continue;
+        }
         switch (token.typ) {
-            // case EnumToken.IdenTokenType:
-            //     if (tokens[i + 1]?.typ == EnumToken.StartParensTokenType) {
-            //         Object.assign(token, {
-            //             typ: EnumToken.FunctionTokenDefType,
-            //         });
-            //         token[LOCEND] = tokens[i + 1][LOCEND];
-            //         tokens.splice(i + 1, 1);
-            //         stack.push(token);
-            //     }
-            //     break;
             case EnumToken.Literal:
                 if (token.val === "/" && stack.at(-1)?.typ == EnumToken.MathFunctionTokenDefType) {
                     Object.assign(token, {
@@ -447,12 +441,11 @@ function parseDeclaration(tokens, parent, options, errors) {
         name[STATE] = EnumAstNodeStatus.Unknown;
         name[ERRORS] = result?.errors ?? [];
         // @ts-expect-error
-        const node = Object.assign(name, {
+        return Object.assign(name, {
             typ: EnumToken.DeclarationNodeType,
             nam: name.val,
             val: tokens,
         });
-        return node;
     }
     if (equalsIgnoreCase("composes", name.val)) {
         let index = -1;

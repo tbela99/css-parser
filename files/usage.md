@@ -11,7 +11,7 @@ The **synchronous API** is marginally faster than the asynchronous API, but it c
 
 | Function          | Parses CSS | Async | CSS Output |
 | ----------------- | ---------- | ----- | ---------- |
-| `parse()`         | ✅         | ✅     | ✅         | 
+| `parse()`         | ✅         | ✅     | ❌         | 
 | `parseSync()`     | ✅         | ❌     | ❌         |
 | `transform()`     | ✅         | ✅     | ✅         |
 | `transformSync()` | ✅         | ❌     | ✅         |

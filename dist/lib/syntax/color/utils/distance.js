@@ -6,11 +6,11 @@ import { toPrecisionValue } from '../../syntax.js';
 
 /**
  * Calculate the distance between two okLab colors.
- * @param okLab1
- * @param okLab2
  *
  * @private
  * {@link https://drafts.csswg.org/css-color-4/#comparing-color-values}
+ * @param color1
+ * @param color2
  */
 function okLabDistance(color1, color2) {
     color1 = convertColor(color1, ColorType.OKLAB);

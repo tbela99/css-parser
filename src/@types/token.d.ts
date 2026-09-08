@@ -163,6 +163,27 @@ export declare interface NumberToken extends BaseToken {
     val: number | FractionToken;
 }
 
+export declare interface NaNToken extends BaseToken {
+    /**
+     * @inheritdoc
+     */
+    typ: EnumToken.NaNTokenType;
+}
+
+export declare interface InfinityToken extends BaseToken {
+    /**
+     * @inheritdoc
+     */
+    typ: EnumToken.InfinityTokenType;
+}
+
+export declare interface NegativeInfinityToken extends BaseToken {
+    /**
+     * @inheritdoc
+     */
+    typ: EnumToken.NegativeInfinityTokenType;
+}
+
 /**
  * At rule token
  */
@@ -1666,4 +1687,7 @@ export declare type Token =
     | FunctionDefToken
     | RawNodeToken
     | InvalidMediaQueryToken
+    | NaNToken
+    | InfinityToken
+    | NegativeInfinityToken
     | EOFToken;

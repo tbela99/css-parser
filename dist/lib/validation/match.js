@@ -30,6 +30,15 @@ function trimArray(tokens) {
     return tokens;
 }
 /**
+ * is a media feature
+ * @param featureName
+ * @returns
+ */
+// export function isMFName(featureName: string): boolean {
+//     // @ts-expect-error
+//     return featureName.startsWith("--") || config.mediaFeatures[featureName.toLowerCase()] != null;
+// }
+/**
  *
  * @param featureName
  * @returns
@@ -42,6 +51,7 @@ function getMFInfo(featureName) {
  *
  * @param featureName
  * @param tokens
+ * @param isMFRange
  * @returns object with:
  * - valid: boolean. true the media feaure is known or is a custom property. false otherwise
  * - success: boolean. validation result
@@ -159,9 +169,10 @@ function createValidationContext(tokens) {
         },
         /**
          *
-         * @param stopCondition
-         * @param matchCount
          * @returns
+         * @param open
+         * @param close
+         * @param counter
          */
         peekRange(open = EnumToken.StartParensTokenType, close = EnumToken.EndParensTokenType, counter = 0) {
             let index = this.index;
@@ -384,7 +395,7 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
             case EnumToken.CDOCOMMTokenType:
                 break;
             case EnumToken.NestingSelectorTokenType:
-                if (nested === false && !options.nestedRule) {
+                if (!nested && !options.nestedRule) {
                     return {
                         success: false,
                         errors: [
@@ -1425,7 +1436,8 @@ function matchSyntax(syntaxes, context, options) {
                     errors: [],
                 };
             case ValidationTokenEnum.FunctionDefinition:
-                if (equalsIgnoreCase(token.val, syntaxes[i].val)) {
+                if (token.val &&
+                    equalsIgnoreCase(token.val, syntaxes[i].val)) {
                     if (tokensfuncDefMap.has(token.typ)) {
                         const children = trimArray(context.peekRange());
                         result = matchSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, syntaxes[i].val + "()")?.[0]).chi ?? [], createValidationContext(children.slice(1, -1)), options);

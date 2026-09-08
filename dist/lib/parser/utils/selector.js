@@ -232,7 +232,7 @@ function parseSelector(tokens, context, options, errors) {
         }
         tokens.length = write;
     }
-    const result = matchSelectorSyntax(tokens, errors, options, nested === true);
+    const result = matchSelectorSyntax(tokens, errors, options, nested);
     trimArray(tokens);
     if (result.success) {
         for (let i = 0; i < tokens.length; i++) {

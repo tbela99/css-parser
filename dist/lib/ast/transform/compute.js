@@ -2,7 +2,7 @@ import { identity, multiply, toZero } from './utils.js';
 import { EnumToken } from '../types.js';
 import { stripCommaToken } from '../../validation/utils/list.js';
 import { translateX, translateY, translateZ, translate, translate3d } from './translate.js';
-import { getNumber, getAngle } from '../../syntax/color/color.js';
+import { getAngle, getNumber } from '../../syntax/color/color.js';
 import { rotate, rotate3D } from './rotate.js';
 import { scale3d, scale, scaleX, scaleY, scaleZ } from './scale.js';
 import { minify } from './minify.js';
@@ -18,7 +18,6 @@ function compute(transformLists) {
     let matrix = identity();
     let mat;
     let transforms;
-    let shouldComputeMatrix = true;
     const cumulative = [];
     // all transform function arguments must be 0 or scale(1)
     for (const transform of transformLists) {
@@ -37,17 +36,14 @@ function compute(transformLists) {
                         child.typ != EnumToken.PercentageTokenType) ||
                         // angle >= 360deg, do not transform
                         Math.abs(getAngle(child)) >= 1) {
-                        shouldComputeMatrix = false;
+                        return null;
                     }
                 }
-                break;
-        }
-        if (!shouldComputeMatrix) {
-            break;
+            // break;
         }
     }
     for (const transformList of splitTransformList(transformLists)) {
-        mat = shouldComputeMatrix ? computeMatrix(transformList, identity()) : null;
+        mat = computeMatrix(transformList, identity());
         if (mat == null) {
             return null;
         }

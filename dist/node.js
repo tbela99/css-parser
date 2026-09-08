@@ -237,13 +237,10 @@ function transformSync(...args) {
     const parseResult = parseSync(stream, options);
     let mapping = null;
     let importMapping = null;
-    if (typeof options.module == "number" && options.module & ModuleScopeEnumOptions.ICSS) {
-        mapping = parseResult.mapping;
-        importMapping = parseResult.importMapping;
-    }
-    else if (typeof options.module == "object" &&
-        typeof options.module.scoped == "number" &&
-        options.module.scoped & ModuleScopeEnumOptions.ICSS) {
+    if ((typeof options.module == "number" && options.module & ModuleScopeEnumOptions.ICSS) ||
+        (typeof options.module == "object" &&
+            typeof options.module.scoped == "number" &&
+            options.module.scoped & ModuleScopeEnumOptions.ICSS)) {
         mapping = parseResult.mapping;
         importMapping = parseResult.importMapping;
     }
@@ -460,13 +457,10 @@ async function transform(...args) {
     return parse(stream, options).then((parseResult) => {
         let mapping = null;
         let importMapping = null;
-        if (typeof options.module == "number" && options.module & ModuleScopeEnumOptions.ICSS) {
-            mapping = parseResult.mapping;
-            importMapping = parseResult.importMapping;
-        }
-        else if (typeof options.module == "object" &&
-            typeof options.module.scoped == "number" &&
-            options.module.scoped & ModuleScopeEnumOptions.ICSS) {
+        if ((typeof options.module == "number" && options.module & ModuleScopeEnumOptions.ICSS) ||
+            (typeof options.module == "object" &&
+                typeof options.module.scoped == "number" &&
+                options.module.scoped & ModuleScopeEnumOptions.ICSS)) {
             mapping = parseResult.mapping;
             importMapping = parseResult.importMapping;
         }

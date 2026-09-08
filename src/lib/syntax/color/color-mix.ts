@@ -76,7 +76,7 @@ export function colorMix(...args: Token[]): ColorToken | null {
     let colorSpace: string = "oklab";
     let hueInterpolationMethod: string = "shorter";
     let values: number[] | null = null;
-    const colors: ColorToken[] = [];
+    // const colors: ColorToken[] = [];
     const percentages: Array<number | null> = [];
     const srgbComponentValues: number[][] = [];
     const colorComponents: Token[][] = [];
@@ -136,7 +136,6 @@ export function colorMix(...args: Token[]): ColorToken | null {
         }
 
         colorComponents.push(getColorComponents(args[i] as ColorToken) as Token[]);
-
         values = srgbvalues(args[i] as ColorToken);
 
         if (values == null) {
@@ -148,12 +147,10 @@ export function colorMix(...args: Token[]): ColorToken | null {
                 break;
 
             case "display-p3":
-                (values[0], values[1], values[2], values[3]);
                 values = srgb2p3values(values[0], values[1], values[2], values[3]);
                 break;
 
             case "display-p3-linear":
-                (values[0], values[1], values[2], values[3]);
                 values = srgb2lp3values(values[0], values[1], values[2], values[3]);
                 break;
 
@@ -162,23 +159,19 @@ export function colorMix(...args: Token[]): ColorToken | null {
                 break;
 
             case "prophoto-rgb":
-                (values[0], values[1], values[2], values[3]);
                 values = srgb2prophotorgbvalues(values[0], values[1], values[2], values[3]);
                 break;
 
             case "srgb-linear":
-                (values[0], values[1], values[2], values[3]);
                 values = srgb2lsrgbvalues(values[0], values[1], values[2], values[3]);
                 break;
 
             case "rec2020":
-                (values[0], values[1], values[2], values[3]);
                 values = srgb2rec2020values(values[0], values[1], values[2], values[3]);
                 break;
 
             case "xyz":
             case "xyz-d65":
-                (values[0], values[1], values[2], values[3]);
                 values = srgb2xyz_d65(values[0], values[1], values[2], values[3]);
                 break;
             case "xyz-d50":
@@ -221,7 +214,8 @@ export function colorMix(...args: Token[]): ColorToken | null {
         }
 
         srgbComponentValues.push(values as number[]);
-        colors.push(args[i++] as ColorToken);
+        // colors.push(args[i++] as ColorToken);
+        i++;
 
         if (i >= args.length) {
             missingPercentageCount++;
@@ -276,11 +270,20 @@ export function colorMix(...args: Token[]): ColorToken | null {
         for (i = 0; i < percentages.length; i++) {
             percentages[i] = (percentages[i] as number) / perc;
         }
-
-        totalPercentage = 1;
     }
 
-    i = colors.length;
+    const stack: Array<{ color: number[]; alpha: number }> = [];
+    const lchSpaces: string[] = ["lch", "oklch"];
+
+    i = srgbComponentValues.length;
+
+    while (i--) {
+        stack.push({
+            color: srgbComponentValues[i],
+            alpha: percentages[i] as number,
+        });
+    }
+
     let currentIndex: number = 0;
     let r1: { color: number[]; alpha: number };
     let r2: { color: number[]; alpha: number };
@@ -293,22 +296,11 @@ export function colorMix(...args: Token[]): ColorToken | null {
     let premult1: number[];
     let premult2: number[];
     let mixedPremult: number[];
-    let colorSpace1: string;
-    const stack: Array<{ color: number[]; alpha: number }> = [];
-
-    const lchSpaces: string[] = ["lch", "oklch"];
-
-    i = srgbComponentValues.length;
-
-    while (i--) {
-        stack.push({
-            color: srgbComponentValues[i],
-            alpha: percentages[i] as number,
-        });
-    }
-
-    // @ts-expect-error
-    colorSpace1 = ColorType[colorComponents.at(-1).kin as keyof typeof ColorType]?.toLowerCase?.() as string;
+    let colorSpace1: string = ColorType[
+        // @ts-expect-error
+        colorComponents.at(-1)!.kin as keyof typeof ColorType
+        // @ts-expect-error
+    ]?.toLowerCase?.() as string;
 
     if (
         colorComponents[0][3] != null &&
@@ -380,7 +372,6 @@ export function colorMix(...args: Token[]): ColorToken | null {
         }
 
         combinedPercentage = r1.alpha + r2.alpha;
-
         progress = r2.alpha / combinedPercentage;
 
         if (progress == 0) {
@@ -412,7 +403,7 @@ export function colorMix(...args: Token[]): ColorToken | null {
     values = result.color as number[];
     values.length = 3;
 
-    const alpha = result.alpha * (1 - leftOverPercentage);
+    const alpha: number = result.alpha * (1 - leftOverPercentage);
 
     if (alpha != 1) {
         values.push(alpha);
@@ -425,22 +416,20 @@ export function colorMix(...args: Token[]): ColorToken | null {
             if (colorSpace == "xyz-d50") {
                 values = xyzd502lch(values[0], values[1], values[2], values[3]) as number[];
             } else {
-                (values[0], values[1], values[2], values[3]);
                 values = xyz2lchvalues(values[0], values[1], values[2], values[3]) as number[];
             }
 
-            // @ts-ignore
-            return <ColorToken>{
+            return {
                 typ: EnumToken.ColorTokenType,
                 val: "lch",
-                chi: values.map((v) => {
+                chi: values.map((val: number) => {
                     return {
                         typ: EnumToken.NumberTokenType,
-                        val: v,
+                        val,
                     };
                 }),
                 kin: ColorType.LCH,
-            };
+            } as ColorToken;
 
         case "srgb":
         case "srgb-linear":
@@ -491,7 +480,7 @@ export function colorMix(...args: Token[]): ColorToken | null {
             }
 
             // @ts-ignore
-            const result: ColorToken = <ColorToken>{
+            const result: ColorToken = {
                 typ: EnumToken.ColorTokenType,
                 val: colorSpace,
                 chi: values.map((v) => {
@@ -501,7 +490,7 @@ export function colorMix(...args: Token[]): ColorToken | null {
                     };
                 }),
                 kin: ColorType[colorSpace.toUpperCase().replaceAll("-", "_") as keyof typeof ColorType],
-            };
+            } as ColorToken;
 
             if (colorSpace == "hsl" || colorSpace == "hwb") {
                 // @ts-ignore

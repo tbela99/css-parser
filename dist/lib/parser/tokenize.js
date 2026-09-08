@@ -5,9 +5,19 @@ import { SourceFile } from './source.js';
 
 const SymbolsMapTokens = Object.create(null);
 // Regex for escape sequence decoding - compile once, reuse many times
-const ESCAPE_SEQUENCE_REGEX = /\\([0-9a-fA-F]{1,6})(?:\s)?/g;
+const ESCAPE_SEQUENCE_REGEX = /\\((\n|\r|\f|\v|\u2028|\u2029|([0-9a-fA-F]{1,6})) ?)/gms;
 function decodeEscapeSequences(value) {
     return value.replace(ESCAPE_SEQUENCE_REGEX, (_, sequence) => {
+        // \n \r \f \v
+        switch (sequence.charCodeAt(0)) {
+            case 0xa:
+            case 0xb:
+            case 0xc:
+            case 0xd:
+            case 0x2028:
+            case 0x2029:
+                return "";
+        }
         const codepoint = parseInt(sequence, 16);
         if (codepoint == 0 ||
             // leading surrogate
@@ -245,18 +255,17 @@ class Tokenizer {
     constructor(parseInfo, input = null) {
         this.parseInfo = parseInfo;
         this.input = input;
-        if (typeof this.parseInfo == "string") {
-            if (typeof parseInfo == "string") {
-                this.parseInfo = {
+        this.parseInfo =
+            typeof parseInfo == "string"
+                ? {
                     stream: parseInfo,
                     source: new SourceFile(parseInfo, [], ""),
                     offset: 0,
                     time: 0,
                     position: 0,
                     currentPosition: 0,
-                };
-            }
-        }
+                }
+                : parseInfo;
     }
     /**
      *
@@ -271,6 +280,18 @@ class Tokenizer {
             if (charCode == 92 /* TokenMap.REVERSE_SOLIDUS */) {
                 if (charCode == parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset + 1)) {
                     this.advance(parseInfo, 2);
+                    continue;
+                }
+                charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset + 1);
+                // \n \r \f \v
+                if (charCode == 0xa ||
+                    charCode == 0xb ||
+                    charCode == 0xc ||
+                    charCode == 0xd ||
+                    charCode == 0x2028 ||
+                    charCode == 0x2029) {
+                    this.advance(parseInfo, 2);
+                    decodeSegments = true;
                     continue;
                 }
                 const sequence = this.peek(parseInfo, 7);
@@ -316,7 +337,7 @@ class Tokenizer {
             this.advance(parseInfo);
         }
         // EOF - 'Unclosed-string' fixed
-        return this.makeToken(parseInfo, EnumToken.StringTokenType);
+        return this.makeToken(parseInfo, EnumToken.StringTokenType, decodeSegments ? { decodeSegments } : null);
         // return result;
     }
     /**
@@ -378,7 +399,7 @@ class Tokenizer {
                         return this.makeToken(parseInfo, EnumToken.BadUrlTokenType);
                     }
                     if (isWhiteSpace(charCode)) {
-                        this.advance(parseInfo, k);
+                        // this.advance(parseInfo, k);
                         k++;
                         continue;
                     }
@@ -782,14 +803,28 @@ class Tokenizer {
         } while (
         // !(value === "/" && this.match(parseInfo, "/*") &&
         charCode !== 41 /* TokenMap.RIGHT_PARENTHESIS */ &&
+            !isWhiteSpace(charCode) &&
             parseInfo.currentPosition < endPosition);
-        // if (parseInfo.position < parseInfo.currentPosition) {
+        if (charCode !== 41 /* TokenMap.RIGHT_PARENTHESIS */) {
+            let k = 1;
+            while (k < endPosition) {
+                charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset + k);
+                if (isWhiteSpace(charCode)) {
+                    k++;
+                    continue;
+                }
+                break;
+            }
+            if (charCode != charCode || (charCode != 41 /* TokenMap.RIGHT_PARENTHESIS */ && !isIdentStart(charCode))) {
+                this.advance(parseInfo, k);
+                return this.makeToken(parseInfo, EnumToken.BadUrlTokenType);
+            }
+        }
         return this.makeToken(parseInfo, 
         // parseInfo.position < parseInfo.currentPosition
         (charCode = this.peekCharCode(parseInfo)) != charCode || !this.isURLToken(parseInfo)
             ? EnumToken.BadUrlTokenType
             : EnumToken.UrlTokenTokenType);
-        // }
     }
     /**
      *
@@ -1034,8 +1069,6 @@ class Tokenizer {
     /**
      *
      * @param parseInfo
-     * @param start
-     * @param end
      * @returns
      */
     isIdentToken(parseInfo /* , start?: number, end?: number */) {
@@ -1166,8 +1199,6 @@ class Tokenizer {
     }
     /**
      * Tokenize CSS string
-     * @param parseInfo
-     * @param yieldEOFToken
      */
     next( /* parseInfo: ParseInfo | string, yieldEOFToken: boolean = true */) {
         const parseInfo = this.parseInfo;
@@ -1308,7 +1339,7 @@ class Tokenizer {
                         // ) {
                         //     this.advance(parseInfo);
                         //     return this.makeToken(parseInfo, EnumToken.PseudoClassFunctionTokenDefType);
-                        // } else 
+                        // } else
                         if (this.isIdentToken(parseInfo)) {
                             const hint = this.startsWith(parseInfo, "--")
                                 ? EnumToken.CustomFunctionTokenDefType
@@ -1553,6 +1584,9 @@ class Tokenizer {
                 case 46 /* TokenMap.DOT */:
                     const codepoint = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset + 1);
                     if (isIdentStart(codepoint) || codepoint == 45 /* TokenMap.MINUS */) {
+                        if (parseInfo.position < parseInfo.currentPosition) {
+                            return this.makeToken(parseInfo);
+                        }
                         this.advance(parseInfo);
                         let tokensCount = this.consumeIdentToken(parseInfo);
                         if (tokensCount > 0) {
@@ -1584,8 +1618,6 @@ class Tokenizer {
     }
     /**
      * tokenize readable stream
-     * @param input
-     * @param parseInfo
      */
     async tokenizeStream() {
         const decoder = new TextDecoder("utf-8");

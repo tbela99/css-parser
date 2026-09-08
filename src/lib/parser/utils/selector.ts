@@ -1,22 +1,22 @@
 import type {
-    Token,
-    AstRule,
     AstAtRule,
-    AstKeyframesRule,
     AstKeyframesAtRule,
-    AstStyleSheet,
-    ParserOptions,
-    ErrorDescription,
+    AstKeyframesRule,
+    AstRule,
     AstRuleList,
+    AstStyleSheet,
+    AtRuleToken,
     AttrStartToken,
-    PseudoClassFunctionToken,
-    IdentToken,
+    ColorToken,
     DimensionToken,
+    ErrorDescription,
+    IdentToken,
     LiteralToken,
     NumberToken,
+    ParserOptions,
     PercentageToken,
-    AtRuleToken,
-    ColorToken,
+    PseudoClassFunctionToken,
+    Token,
 } from "../../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import { renderValue } from "../../renderer/render.ts";
@@ -137,7 +137,6 @@ export function parseSelector(
     const uniq = new Map<string, string[]>();
 
     let allowed: boolean = true;
-    let i: number = 0;
     let index: number;
     let parent: AstRuleList = context as AstRuleList;
     let nested: boolean = false;
@@ -331,7 +330,7 @@ export function parseSelector(
         tokens.length = write;
     }
 
-    const result = matchSelectorSyntax(tokens, errors, options, nested === true);
+    const result = matchSelectorSyntax(tokens, errors, options, nested);
 
     trimArray(tokens);
 
@@ -517,7 +516,7 @@ export function parseSelector(
                                         );
 
                                         if (matches != null) {
-                                            let [_, an, a, b]: string[] = matches;
+                                            let [_ /* , an, a, b */]: string[] = matches;
 
                                             const a1 = matches[2] === "" ? 1 : matches[2] === "-" ? -1 : +matches[2];
                                             const b1 = +matches[3];

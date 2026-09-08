@@ -21,7 +21,7 @@ class ComputeShorthandFeature {
         }
     }
     run(ast, options) {
-        if (!("chi" in ast)) {
+        if (!("chi" in ast || ast.chi?.length == 0)) {
             return null;
         }
         // @ts-ignore

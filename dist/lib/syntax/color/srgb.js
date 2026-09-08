@@ -56,6 +56,15 @@ function rgb2srgbvalues(token) {
         ? getNumber(t)
         : getNumber(t) / 255) ?? null);
 }
+// export function rgbvalues2srgbvalues(r: number, g: number, b: number, a: number | null = null): number[] | null {
+//     const result = [r / 255, g / 255, b / 255];
+//
+//     if (a != null && a != 1) {
+//         result.push(a);
+//     }
+//
+//     return result;
+// }
 function hex2srgbvalues(token) {
     const value = expandHexValue(token.kin == ColorType.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
     const rgb = [];
@@ -117,11 +126,7 @@ function cmyk2srgbvalues(token) {
     // @ts-ignore
     const k = getNumber(t);
     const mul = 1 - k;
-    const rgb = [
-        1 - Math.min(1, c * mul + k),
-        1 - Math.min(1, m * mul + k),
-        1 - Math.min(1, y * mul + k),
-    ];
+    const rgb = [1 - Math.min(1, c * mul + k), 1 - Math.min(1, m * mul + k), 1 - Math.min(1, y * mul + k)];
     if (components.length == 5) {
         rgb.push(getNumber(components[4]));
     }

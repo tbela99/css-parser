@@ -56,6 +56,11 @@ function encode(value) {
     }
     return result;
 }
+/**
+ *
+ * @param num
+ * @returns
+ */
 function encode_integer(num) {
     let result = '';
     if (num < 0) {

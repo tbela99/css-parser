@@ -399,7 +399,7 @@ html {
   grid-auto-flow: column
  }
 }
-@media (orientation:landscape) and (min-width:1024px) {
+@media (orientation:landscape) and (width>=1024px) {
  .foo {
   max-inline-size: 1024px
  }
