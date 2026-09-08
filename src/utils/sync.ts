@@ -1,10 +1,9 @@
 import type {
     AstComment,
-    LoadResult,
     ParseResult,
     ParserOptions,
     ParserSyncOptions,
-    SourceMapObject,
+    SourceMapObject
 } from "../@types/index.d.ts";
 import { EnumToken } from "../lib/ast/types.ts";
 import { dirname } from "../lib/fs/resolve.ts";

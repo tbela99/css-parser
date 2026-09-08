@@ -660,6 +660,18 @@ var EnumToken;
      * wrapped values token type like {Arial, sans-serif}
      */
     EnumToken[EnumToken["WrappedValuesTokenType"] = 140] = "WrappedValuesTokenType";
+    /**
+     * infinity token
+     */
+    EnumToken[EnumToken["NaNTokenType"] = 141] = "NaNTokenType";
+    /**
+     * infinity token
+     */
+    EnumToken[EnumToken["InfinityTokenType"] = 142] = "InfinityTokenType";
+    /**
+     * negative infinity token
+     */
+    EnumToken[EnumToken["NegativeInfinityTokenType"] = 143] = "NegativeInfinityTokenType";
     /* aliases */
     /**
      * alias for time token type

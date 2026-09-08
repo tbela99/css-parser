@@ -1,13 +1,12 @@
 import { multiplyMatrices } from "./utils/matrix.ts";
 import { srgb2lsrgbvalues } from "./srgb.ts";
-import { Lab_to_XYZ } from "./lab.ts";
 import { XYZ_D65_to_D50 } from "./xyzd50.ts";
 
-export function lab2xyz(l: number, a: number, b: number, alpha?: number): number[] {
-    const [x, y, z] = Lab_to_XYZ(l, a, b);
-
-    return alpha == null || alpha == 1 ? [x, y, z] : [x, y, z, alpha];
-}
+// export function lab2xyz(l: number, a: number, b: number, alpha?: number): number[] {
+//     const [x, y, z] = Lab_to_XYZ(l, a, b);
+//
+//     return alpha == null || alpha == 1 ? [x, y, z] : [x, y, z, alpha];
+// }
 
 export function XYZ_to_lin_sRGB(x: number, y: number, z: number, alpha: number | null = null): number[] {
     // convert XYZ to linear-light sRGB

@@ -6,6 +6,7 @@ import type {
     MediaQueryConditionToken,
     MediaRangeQueryToken,
     NumberToken,
+    ParensToken,
     ParserOptions,
     Token,
 } from "../../../@types/index.d.ts";
@@ -20,6 +21,7 @@ import type { ValidationFunctionToken } from "../../validation/parser/types.d.ts
 import type { ValidationMatch } from "../../validation/types.d.ts";
 import { tokensfuncDefMap } from "../../syntax/constants.ts";
 import { getParsedSyntax } from "../../validation/config.ts";
+import { equalsIgnoreCase } from "./text.ts";
 
 // https://drafts.csswg.org/mediaqueries/#media-descriptor-table:~:text=It%20is%20invalid%20to%20mix%20and%20and%20or%20and%20not%20at%20the%20same%20%E2%80%9Clevel%E2%80%9D%20of%20a%20media%20query%2E
 // 'or' is not allowed at the same level as 'and' and 'not'
@@ -413,6 +415,16 @@ export function parseMediaqueryList(
                                 }
                             }
 
+                            if (stack.at(-1)?.typ === EnumToken.ColonTokenType) {
+                                if (name.startsWith("min-")) {
+                                    (filteredNames[0] as IdentToken).val = name.substring(4);
+                                    stack.at(-1)!.typ = EnumToken.GteTokenType;
+                                } else if (name.startsWith("max-")) {
+                                    (filteredNames[0] as IdentToken).val = name.substring(4);
+                                    stack.at(-1)!.typ = EnumToken.LteTokenType;
+                                }
+                            }
+
                             // @ts-expect-error
                             tokens.splice(index3 + 1, tokens.length - index3 - 2, {
                                 typ: EnumToken.MediaQueryConditionTokenType,
@@ -468,8 +480,8 @@ export function parseMediaqueryList(
                                     l--;
                                 }
 
-                                const left: Token[] = trimArray(tokens.slice(l, index));
-                                const right: Token[] = trimArray(tokens.slice(index + 1));
+                                const left: Token[] = trimArray(tokens.slice(l, index)) as Token[];
+                                const right: Token[] = trimArray(tokens.slice(index + 1)) as Token[];
 
                                 tokens[l] = {
                                     typ: EnumToken.MediaQueryConditionTokenType,
@@ -481,6 +493,79 @@ export function parseMediaqueryList(
                                     [LOCEND]: right.at(-1)![LOCEND],
                                 } as MediaQueryConditionToken;
                                 tokens.length = l + 1;
+
+                                // media range query
+                                if (
+                                    options.minify &&
+                                    (tokens[l] as MediaQueryConditionToken).op!.typ === EnumToken.AndTokenType
+                                ) {
+                                    if (
+                                        left.length === 1 &&
+                                        left[0].typ == EnumToken.ParensTokenType &&
+                                        (left[0] as ParensToken).chi.length == 1 &&
+                                        (left[0] as ParensToken).chi[0].typ == EnumToken.MediaQueryConditionTokenType &&
+                                        ((left[0] as ParensToken).chi[0] as MediaQueryConditionToken).l.length == 1 &&
+                                        ((left[0] as ParensToken).chi[0] as MediaQueryConditionToken).l[0].typ ==
+                                            EnumToken.IdenTokenType &&
+                                        (((left[0] as ParensToken).chi[0] as MediaQueryConditionToken).op.typ ==
+                                            EnumToken.GtTokenType ||
+                                            ((left[0] as ParensToken).chi[0] as MediaQueryConditionToken).op.typ ==
+                                                EnumToken.GteTokenType) &&
+                                        right.length === 1 &&
+                                        left[0].typ == EnumToken.ParensTokenType &&
+                                        (right[0] as ParensToken).chi.length == 1 &&
+                                        (right[0] as ParensToken).chi[0].typ ==
+                                            EnumToken.MediaQueryConditionTokenType &&
+                                        ((right[0] as ParensToken).chi[0] as MediaQueryConditionToken).l.length == 1 &&
+                                        ((right[0] as ParensToken).chi[0] as MediaQueryConditionToken).l[0].typ ==
+                                            EnumToken.IdenTokenType &&
+                                        (((right[0] as ParensToken).chi[0] as MediaQueryConditionToken).op.typ ==
+                                            EnumToken.LtTokenType ||
+                                            ((right[0] as ParensToken).chi[0] as MediaQueryConditionToken).op.typ ==
+                                                EnumToken.LteTokenType) &&
+                                        equalsIgnoreCase(
+                                            (
+                                                ((left[0] as ParensToken).chi[0] as MediaQueryConditionToken)
+                                                    .l[0] as IdentToken
+                                            ).val,
+                                            (
+                                                ((right[0] as ParensToken).chi[0] as MediaQueryConditionToken)
+                                                    .l[0] as IdentToken
+                                            ).val,
+                                        )
+                                    ) {
+                                        tokens[l] = {
+                                            typ: EnumToken.ParensTokenType,
+                                            chi: [
+                                                {
+                                                    typ: EnumToken.MediaRangeQueryTokenType,
+                                                    op1: Object.assign(
+                                                        ((left[0] as ParensToken).chi[0] as MediaQueryConditionToken)
+                                                            .op,
+                                                        {
+                                                            typ:
+                                                                (
+                                                                    (left[0] as ParensToken)
+                                                                        .chi[0] as MediaQueryConditionToken
+                                                                ).op.typ == EnumToken.GteTokenType
+                                                                    ? EnumToken.LteTokenType
+                                                                    : EnumToken.LtTokenType,
+                                                        },
+                                                    ),
+                                                    op2: ((right[0] as ParensToken).chi[0] as MediaQueryConditionToken)
+                                                        .op,
+                                                    l: ((left[0] as ParensToken).chi[0] as MediaQueryConditionToken).r,
+                                                    val: ((left[0] as ParensToken).chi[0] as MediaQueryConditionToken)
+                                                        .l,
+                                                    r: ((right[0] as ParensToken).chi[0] as MediaQueryConditionToken).r,
+                                                    [LOCSRCID]: left[0][LOCSRCID],
+                                                    [LOCSTA]: left[0][LOCSTA],
+                                                    [LOCEND]: right.at(-1)![LOCEND],
+                                                } as MediaRangeQueryToken,
+                                            ],
+                                        };
+                                    }
+                                }
 
                                 expectAndOrComma = true;
                             }

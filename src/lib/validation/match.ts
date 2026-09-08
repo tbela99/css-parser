@@ -38,7 +38,6 @@ import type { ValidationContext, ValidationMatch } from "./types.d.ts";
 import type { ValidationConfiguration, ValidationMediaFeature } from "../../@types/validation.d.ts";
 import { funcLike, LOCSTA, mFGT, mFLT, tokensfuncDefMap, tokensfuncSet } from "../syntax/constants.ts";
 import { isColor } from "../syntax/syntax.ts";
-import { renderSyntax } from "./parser/parse.ts";
 import { equalsIgnoreCase } from "../parser/utils/text.ts";
 import { cloneNode } from "../ast/clone.ts";
 import { parseTokens } from "../parser/parse.ts";
@@ -53,11 +52,7 @@ const allValues = config.declarations.all!.syntax.split(/[\s|]+/g) as string[];
  */
 export const funcTypes: EnumToken[] = Array.from(tokensfuncDefMap.values());
 
-funcTypes.push(
-    
-    EnumToken.FunctionTokenType,
-    EnumToken.PseudoClassFuncTokenType,
-);
+funcTypes.push(EnumToken.FunctionTokenType, EnumToken.PseudoClassFuncTokenType);
 
 /**
  * trim leading and trailing whitespace
@@ -81,10 +76,10 @@ export function trimArray(tokens: Token[]): Token[] {
  * @param featureName
  * @returns
  */
-export function isMFName(featureName: string): boolean {
-    // @ts-expect-error
-    return featureName.startsWith("--") || config.mediaFeatures[featureName.toLowerCase()] != null;
-}
+// export function isMFName(featureName: string): boolean {
+//     // @ts-expect-error
+//     return featureName.startsWith("--") || config.mediaFeatures[featureName.toLowerCase()] != null;
+// }
 
 /**
  *
@@ -100,6 +95,7 @@ export function getMFInfo(featureName: string): ValidationMediaFeature | null {
  *
  * @param featureName
  * @param tokens
+ * @param isMFRange
  * @returns object with:
  * - valid: boolean. true the media feaure is known or is a custom property. false otherwise
  * - success: boolean. validation result
@@ -254,9 +250,10 @@ export function createValidationContext(tokens: Token[]): ValidationContext {
 
         /**
          *
-         * @param stopCondition
-         * @param matchCount
          * @returns
+         * @param open
+         * @param close
+         * @param counter
          */
         peekRange(
             open: EnumToken = EnumToken.StartParensTokenType,
@@ -559,7 +556,7 @@ export function matchSelectorSyntax(
                 break;
 
             case EnumToken.NestingSelectorTokenType:
-                if (nested === false && !options.nestedRule) {
+                if (!nested && !options.nestedRule) {
                     return {
                         success: false,
                         errors: [
@@ -1880,6 +1877,7 @@ function matchSyntax(
 
             case ValidationTokenEnum.FunctionDefinition:
                 if (
+                    (token as FunctionToken).val &&
                     equalsIgnoreCase(
                         (token as FunctionToken).val,
                         (syntaxes[i] as ValidationFunctionDefinitionToken).val,

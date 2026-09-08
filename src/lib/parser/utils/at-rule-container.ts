@@ -10,13 +10,12 @@ import type {
     Token,
 } from "../../../@types/index.d.ts";
 import { EnumToken } from "../../ast/types.ts";
-import { LOCEND, LOCSRCID, LOCSTA, mFGT, mFLT } from "../../syntax/constants.ts";
+import { LOCEND, LOCSRCID, LOCSTA, mFGT, mFLT, tokensfuncDefMap } from "../../syntax/constants.ts";
 
 import { createValidationContext, matchAllSyntaxes, trimArray } from "../../validation/match.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import type { ValidationFunctionToken, ValidationToken } from "../../validation/parser/types.d.ts";
 import type { ValidationMatch } from "../../validation/types.d.ts";
-import { tokensfuncDefMap } from "../../syntax/constants.ts";
 import { getSyntaxRule } from "../../validation/config.ts";
 
 export function parseAtRuleContainerQueryList(
@@ -201,10 +200,7 @@ export function parseAtRuleContainerQueryList(
                             stack.at(-1)?.typ === EnumToken.DelimTokenType ||
                             stack.at(-1)?.typ === EnumToken.ColonTokenType
                         ) {
-                            const funcName: string = (
-                                stack[stack.length - 2] as FunctionToken
-                            ).val?.toLowerCase?.() as string;
-
+                            (stack[stack.length - 2] as FunctionToken).val?.toLowerCase?.() as string;
                             const index2: number = tokens.indexOf(stack.at(-1)!);
                             const index3: number = tokens.indexOf(stack.at(-2)!);
 

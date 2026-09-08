@@ -2,6 +2,11 @@ import { multiplyMatrices } from './utils/matrix.js';
 import { srgb2lsrgbvalues } from './srgb.js';
 import { XYZ_D65_to_D50 } from './xyzd50.js';
 
+// export function lab2xyz(l: number, a: number, b: number, alpha?: number): number[] {
+//     const [x, y, z] = Lab_to_XYZ(l, a, b);
+//
+//     return alpha == null || alpha == 1 ? [x, y, z] : [x, y, z, alpha];
+// }
 function XYZ_to_lin_sRGB(x, y, z, alpha = null) {
     // convert XYZ to linear-light sRGB
     const M = [

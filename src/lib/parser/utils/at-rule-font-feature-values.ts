@@ -1,4 +1,4 @@
-import type { ParserOptions, Token, AstAtRule, AtRuleToken } from "../../../@types/index.d.ts";
+import type { AstAtRule, AtRuleToken, ParserOptions, Token } from "../../../@types/index.d.ts";
 import { getSyntaxRule } from "../../validation/config.ts";
 import { createValidationContext, matchAllSyntaxes, trimArray } from "../../validation/match.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
@@ -14,7 +14,7 @@ export function parseAtRuleFontFeatureValues(
 
     trimArray(stream);
 
-    const { success, errors, ...all } = matchAllSyntaxes(syntax, createValidationContext(stream), options);
+    const { success, errors /* , ...all */ } = matchAllSyntaxes(syntax, createValidationContext(stream), options);
 
     return { success, errors };
 }

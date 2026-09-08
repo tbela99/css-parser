@@ -7,7 +7,6 @@ import { getColorType } from "./utils/color-type.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 import { cloneNode } from "../../ast/clone.ts";
 import { walkValues } from "../../ast/walk.ts";
-import { replaceNodeOrValue } from "../../parser/utils/token.ts";
 import { evaluate } from "../../ast/math/expression.ts";
 
 /**
@@ -17,13 +16,70 @@ import { evaluate } from "../../ast/math/expression.ts";
  * @returns
  */
 export function alpha(color: ColorToken, alpha: Token): ColorToken | null {
-
     if (alpha == null) {
         return color;
     }
 
+    // https://www.w3.org/TR/css-color-5/#:~:text=There%20is%20no%20relative%20device%2Dcmyk%28%29%20syntax
     if (color.kin === ColorType.DEVICE_CMYK) {
         return null;
+    }
+
+    let components = getColorComponents(color);
+
+    if (alpha.typ === EnumToken.MathFunctionTokenType) {
+        const originalAlpha = cloneNode(alpha, true);
+
+        for (const { value } of walkValues((alpha as FunctionToken).chi, alpha)) {
+            if (value.typ === EnumToken.IdenTokenType) {
+                if (equalsIgnoreCase((value as IdentToken).val, "alpha")) {
+                    Object.assign(
+                        value,
+                        components?.[3]
+                            ? cloneNode(components[3], true)
+                            : {
+                                  typ: EnumToken.NumberTokenType,
+                                  val: 1,
+                              },
+                    );
+                    // continue;
+                } else if (equalsIgnoreCase((value as IdentToken).val, "none")) {
+                    Object.assign(value, {
+                        typ: EnumToken.NumberTokenType,
+                        val: 0,
+                    });
+                }
+            }
+        }
+
+        const result = evaluate([alpha]);
+
+        if (result.length == 1) {
+            alpha = result[0];
+        } else {
+            // @ts-expect-error
+            alpha = originalAlpha;
+        }
+    }
+
+    // console.error({ alpha });
+
+    if (
+        alpha.typ !== EnumToken.IdenTokenType &&
+        alpha.typ !== EnumToken.NumberTokenType &&
+        alpha.typ !== EnumToken.PercentageTokenType
+    ) {
+        return null;
+    }
+
+    if (alpha.typ === EnumToken.IdenTokenType) {
+        if (
+            equalsIgnoreCase((alpha as IdentToken).val, "NaN") ||
+            equalsIgnoreCase((alpha as IdentToken).val, "Infinity") ||
+            equalsIgnoreCase((alpha as IdentToken).val, "-Infinity")
+        ) {
+            return null;
+        }
     }
 
     if (color.kin === ColorType.COLOR_MIX || color.cal === "rel") {
@@ -32,40 +88,25 @@ export function alpha(color: ColorToken, alpha: Token): ColorToken | null {
         if (color == null) {
             return null;
         }
-    }
 
-    const components = getColorComponents(color);
+        components = getColorComponents(color);
+    }
 
     if (components == null) {
         return null;
     }
 
-    if (alpha?.typ === EnumToken.IdenTokenType && equalsIgnoreCase((alpha as IdentToken).val, "alpha")) {
-        alpha = components[3] ?? {
-            typ: EnumToken.NumberTokenType,
-            val: 1,
-        };
-    } else if (
-        alpha.typ === EnumToken.MathFunctionTokenType &&
-        equalsIgnoreCase((alpha as FunctionToken).val, "calc")
-    ) {
-        alpha = cloneNode(alpha, true) as FunctionToken;
-
-        const alphaValue = components[3] ?? {
-            typ: EnumToken.NumberTokenType,
-            val: 1,
-        };
-
-        for (const { value, parent } of walkValues((alpha as FunctionToken).chi, alpha)) {
-            if (value.typ === EnumToken.IdenTokenType && equalsIgnoreCase((value as IdentToken).val, "alpha")) {
-                replaceNodeOrValue(parent as FunctionToken, value, alphaValue);
-            }
-        }
-
-        const result = evaluate([alpha as FunctionToken]);
-
-        if (result.length == 1) {
-            alpha = result[0];
+    if (alpha?.typ === EnumToken.IdenTokenType) {
+        if (equalsIgnoreCase((alpha as IdentToken).val, "alpha")) {
+            alpha = components[3] ?? {
+                typ: EnumToken.NumberTokenType,
+                val: 1,
+            };
+        } else if (equalsIgnoreCase((alpha as IdentToken).val, "node")) {
+            alpha = {
+                typ: EnumToken.NumberTokenType,
+                val: 0,
+            };
         }
     }
 

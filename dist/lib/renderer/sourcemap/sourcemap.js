@@ -1,7 +1,37 @@
+import { toBase64 } from '../../parser/utils/base64.js';
 import { decode, encode } from './lib/codec.js';
 
 /**
  * Generate and parse source map
+ *
+ * ```ts
+ * const sourcemap = new SourceMap();
+ *
+ * // you can also pass an input sourcemap
+ * // const sourcemap = new SourceMap(sourcemapObjectOrJSONString);
+ *
+ * sourcemap.addSourceContent(0, '/css/styles.css', null);
+ * sourcemap.addSourceContent(1, '/css/typography.css', null);
+ *
+ * const maps = [];
+ *
+ * maps.add([
+     1, 1, 0, 1, 1]);
+ * maps.add([
+     2, 1, 1, 1, 1
+ ]);
+
+    sourcemap.add(maps);
+
+    // convert to inline sourcemap
+    sourcemap.toUrl();
+
+    // convert to JSON
+    sourcemap.toJSON();
+
+    // find the original file, line and column
+    sourcemap.find(2, 1);
+    ```
  */
 class SourceMap {
     /**
@@ -52,7 +82,7 @@ class SourceMap {
     line = -1;
     /**
      *
-     * @param sourcemaps
+     * @param sourcemaps input sourcemap
      */
     constructor(sourcemaps) {
         if (typeof sourcemaps === "string") {
@@ -93,9 +123,9 @@ class SourceMap {
     }
     /**
      * add source
-     * @param id
-     * @param fileName
-     * @param content
+     * @param id source id
+     * @param fileName source file
+     * @param content source content
      * @returns
      */
     addSourceContent(id, fileName, content) {
@@ -231,7 +261,7 @@ class SourceMap {
      */
     toUrl() {
         // /*# sourceMappingURL = ${url} */
-        return `data:application/json;charset=utf-8;base64,${btoa(JSON.stringify(this.toJSON()))}`;
+        return `data:application/json;charset=utf-8;base64,${toBase64(JSON.stringify(this.toJSON()))}`;
     }
     /**
      * Convert to JSON object

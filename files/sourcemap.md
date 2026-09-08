@@ -37,7 +37,7 @@ console.log(result.map.toJSON());
 
 ### Input sourcemap
 
-If the input CSS comes from another tool, you can pass the sourcemap content to link the generated CSS positions to the original files. Additionally, if an inline sourcemap is provided with the CSS input, it will be automatically used as the input sourcemap.
+When the input CSS comes from another tool, you can pass the sourcemap content to link the generated CSS positions to the original files. Additionally, if an inline sourcemap is provided with the CSS input, it will be automatically used as the input sourcemap.
 
 
 ```ts

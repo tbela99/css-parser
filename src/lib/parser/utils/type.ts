@@ -1,18 +1,18 @@
 import { EnumToken } from "../../ast/types.ts";
 import type { FunctionToken, IdentToken, NumberToken, PropertyMapType, Token } from "../../../@types/index.d.ts";
-import { mathFuncs, tokensfuncSet } from "../../syntax/constants.ts";
+import { tokensfuncSet } from "../../syntax/constants.ts";
 import { isColor } from "../../syntax/syntax.ts";
 
 export function matchType(val: Token, properties: PropertyMapType): boolean {
     if (
         (val.typ === EnumToken.IdenTokenType && properties.keywords.includes((<IdentToken>val).val)) ||
         properties.types.some(
-        // @ts-expect-error
+            // @ts-expect-error
             (t: keyof EnumToken) =>
-        // @ts-expect-error
+                // @ts-expect-error
                 (val.typ === EnumToken.IdenTokenType && EnumToken[t] === EnumToken.ColorTokenType && isColor(val)) ||
                 // @ts-expect-error
-            EnumToken[t] === val.typ,
+                EnumToken[t] === val.typ,
         )
     ) {
         return true;

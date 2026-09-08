@@ -26,7 +26,7 @@ export function matchAtRuleWhenElseSyntax(
     let i: number = 0;
     let success: boolean = true;
     let expectAndOr: boolean = false;
-    let scope: Set<EnumToken> = new Set();
+    // let scope: Set<EnumToken> = new Set();
     const errors: ErrorDescription[] = [];
     // const scopes: Array<Set<EnumToken>> = [scope];
 
@@ -56,7 +56,7 @@ export function matchAtRuleWhenElseSyntax(
                             typ: "or" === val ? EnumToken.OrTokenType : EnumToken.AndTokenType,
                         });
 
-                        scope.add(stream[i].typ);
+                        // scope.add(stream[i].typ);
                         stack.push(stream[i]);
                         // break;
                     }
@@ -156,7 +156,7 @@ export function matchAtRuleWhenElseSyntax(
     }
 
     stream.length = 0;
-    
+
     for (const token of trimArray(tokens)) {
         stream.push(token);
     }

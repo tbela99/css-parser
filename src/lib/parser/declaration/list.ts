@@ -13,7 +13,6 @@ import type {
 import { PropertySet } from "./set.ts";
 import { getConfig } from "../utils/config.ts";
 import { PropertyMap } from "./map.ts";
-import { parseString } from "../parse.ts";
 import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import { getParsedSyntax } from "../../validation/config.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
@@ -21,7 +20,7 @@ import type { ValidationMatch } from "../../validation/types.d.ts";
 import { createValidationContext, matchAllSyntaxes } from "../../validation/match.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";
 import { STATE } from "../../syntax/constants.ts";
-import { objectHash, toSortedString } from "../utils/hash.ts";
+import { objectHash } from "../utils/hash.ts";
 import { equalsIgnoreCase } from "../utils/text.ts";
 
 const config: PropertiesConfig = getConfig();
@@ -30,19 +29,18 @@ export class PropertyList {
     protected options: PropertyListOptions = { removeDuplicateDeclarations: true, computeShorthand: true };
     protected declarations: Map<string, AstNode | PropertySet | PropertyMap>;
 
-    //  ketsey = new Map;
     constructor(options: PropertyListOptions = {}) {
         this.options = options;
         this.declarations = new Map<string, AstNode | PropertySet | PropertyMap>();
     }
 
-    set(nam: string, value: string | Token[]) {
-        return this.add({
-            typ: EnumToken.DeclarationNodeType,
-            nam,
-            val: Array.isArray(value) ? value : parseString(String(value)),
-        });
-    }
+    // set(nam: string, value: string | Token[]) {
+    //     return this.add({
+    //         typ: EnumToken.DeclarationNodeType,
+    //         nam,
+    //         val: Array.isArray(value) ? value : parseString(String(value)),
+    //     });
+    // }
 
     add(...declarations: AstNode[]) {
         let name: string | null;

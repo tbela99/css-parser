@@ -434,7 +434,7 @@ function parseVisitors(visitorsDef, errors) {
 }
 /**
  * Parse css string
- * @param iter
+ * @param tokenizer
  * @param options
  *
  * @throws Error
@@ -1431,6 +1431,7 @@ async function doParse(iter, options = {}) {
     const imports = [];
     let item;
     let node;
+    // @ts-ignore ignore error
     let parensMatch = 0;
     let curlyBracketMatch = 0;
     let tokenizer = iter instanceof Promise ? await iter : iter;
@@ -3429,14 +3430,6 @@ function parseDeclarations(declaration) {
  * ```
  */
 function parseString(src, options = { parseColor: true }, errors) {
-    // const parseInfo: ParseInfo = {
-    //     stream: src,
-    //     offset: 0,
-    //     time: 0,
-    //     source: new SourceFile(src, [], ""),
-    //     position: 0,
-    //     currentPosition: 0,
-    // };
     const tokenizer = new Tokenizer({
         stream: src,
         buffer: "",

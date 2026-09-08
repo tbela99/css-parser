@@ -8,7 +8,7 @@ import type {
     FunctionToken,
     NumberToken,
     ParserOptions,
-    Token
+    Token,
 } from "../../../@types/index.d.ts";
 import { EnumToken } from "../types.ts";
 import { walkValues } from "../walk.ts";

@@ -1,11 +1,27 @@
+/**
+ * 
+ * @param value 
+ * @returns 
+ */
 export function dasherize(value: string) {
     return value.replace(/([A-Z])/g, (all, one) => `-${one.toLowerCase()}`);
 }
 
+/**
+ * 
+ * @param value 
+ * @returns 
+ */
 export function camelize(value: string) {
     return value.replace(/-([a-z])/g, (all, one) => one.toUpperCase());
 }
 
+/**
+ * 
+ * @param a 
+ * @param b 
+ * @returns 
+ */
 export function equalsIgnoreCase(a: string, b: string): boolean {
     if (a.length !== b.length) return false;
 

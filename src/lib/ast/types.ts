@@ -701,6 +701,20 @@ export enum EnumToken {
      */
     WrappedValuesTokenType,
 
+    /**
+     * infinity token
+     */
+    NaNTokenType,
+    /**
+     * infinity token
+     */
+    InfinityTokenType,
+
+    /**
+     * negative infinity token
+     */
+    NegativeInfinityTokenType,
+
     /* aliases */
 
     /**

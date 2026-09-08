@@ -1,9 +1,25 @@
+/**
+ *
+ * @param value
+ * @returns
+ */
 function dasherize(value) {
     return value.replace(/([A-Z])/g, (all, one) => `-${one.toLowerCase()}`);
 }
+/**
+ *
+ * @param value
+ * @returns
+ */
 function camelize(value) {
     return value.replace(/-([a-z])/g, (all, one) => one.toUpperCase());
 }
+/**
+ *
+ * @param a
+ * @param b
+ * @returns
+ */
 function equalsIgnoreCase(a, b) {
     if (a.length !== b.length)
         return false;

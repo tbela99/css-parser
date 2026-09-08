@@ -421,13 +421,11 @@ export function transformSync(
     let mapping: Record<string, string> | null = null;
     let importMapping: Record<string, Record<string, string>> | null = null;
 
-    if (typeof options.module == "number" && options.module & ModuleScopeEnumOptions.ICSS) {
-        mapping = parseResult.mapping as Record<string, string>;
-        importMapping = parseResult.importMapping as Record<string, Record<string, string>>;
-    } else if (
-        typeof options.module == "object" &&
-        typeof options.module.scoped == "number" &&
-        options.module.scoped & ModuleScopeEnumOptions.ICSS
+    if (
+        (typeof options.module == "number" && options.module & ModuleScopeEnumOptions.ICSS) ||
+        (typeof options.module == "object" &&
+            typeof options.module.scoped == "number" &&
+            options.module.scoped & ModuleScopeEnumOptions.ICSS)
     ) {
         mapping = parseResult.mapping as Record<string, string>;
         importMapping = parseResult.importMapping as Record<string, Record<string, string>>;
@@ -830,13 +828,11 @@ export async function transform(
         let mapping: Record<string, string> | null = null;
         let importMapping: Record<string, Record<string, string>> | null = null;
 
-        if (typeof options.module == "number" && options.module & ModuleScopeEnumOptions.ICSS) {
-            mapping = parseResult.mapping as Record<string, string>;
-            importMapping = parseResult.importMapping as Record<string, Record<string, string>>;
-        } else if (
-            typeof options.module == "object" &&
-            typeof options.module.scoped == "number" &&
-            options.module.scoped & ModuleScopeEnumOptions.ICSS
+        if (
+            (typeof options.module == "number" && options.module & ModuleScopeEnumOptions.ICSS) ||
+            (typeof options.module == "object" &&
+                typeof options.module.scoped == "number" &&
+                options.module.scoped & ModuleScopeEnumOptions.ICSS)
         ) {
             mapping = parseResult.mapping as Record<string, string>;
             importMapping = parseResult.importMapping as Record<string, Record<string, string>>;

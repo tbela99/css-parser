@@ -281,7 +281,7 @@ a {
 .image {
  background-image: url(image@1x.png)
 }
-@media (min-resolution:2x) {
+@media (resolution>=2x) {
  .image {
   background-image: url(image@2x.png)
  }
@@ -424,7 +424,7 @@ a {
                 },
             );
 
-            expect(result.code).equals(`@media (max-resolution:2x) {
+            expect(result.code).equals(`@media (resolution<=2x) {
  #converted-text {
   color: #00b400;
   background: linear-gradient(0,#fff,#000)

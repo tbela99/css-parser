@@ -1,13 +1,6 @@
 import { PropertyList } from "../../parser/declaration/list.ts";
 import { EnumToken } from "../types.ts";
-import type {
-    AstAtRule,
-    AstNode,
-    AstRule,
-    AstStyleSheet,
-    ParserOptions,
-    PropertyListOptions,
-} from "../../../@types/index.d.ts";
+import type { AstAtRule, AstNode, AstRule, ParserOptions, PropertyListOptions } from "../../../@types/index.d.ts";
 import { FeatureWalkMode } from "./type.ts";
 
 export class ComputeShorthandFeature {
@@ -33,7 +26,7 @@ export class ComputeShorthandFeature {
     }
 
     run(ast: AstRule | AstAtRule, options: PropertyListOptions): AstNode | null {
-        if (!("chi" in ast)) {
+        if (!("chi" in ast || ast.chi?.length == 0)) {
             return null;
         }
 

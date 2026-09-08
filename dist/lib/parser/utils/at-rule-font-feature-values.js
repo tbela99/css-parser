@@ -6,7 +6,7 @@ function parseAtRuleFontFeatureValues(stream, context, options = {}) {
     const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + context.nam);
     const syntax = syntaxRules?.getPreludeRules()?.slice?.(1);
     trimArray(stream);
-    const { success, errors} = matchAllSyntaxes(syntax, createValidationContext(stream), options);
+    const { success, errors /* , ...all */ } = matchAllSyntaxes(syntax, createValidationContext(stream), options);
     return { success, errors };
 }
 

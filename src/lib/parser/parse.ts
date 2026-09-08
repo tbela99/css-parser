@@ -42,10 +42,8 @@ import type {
     ParserSyncOptions,
     PseudoClassToken,
     ResolvedPath,
-    SourceLocation,
     StringToken,
     Token,
-    TokenizeResult,
     UrlToken,
     VisitorNodeMap,
     WhitespaceToken,
@@ -631,7 +629,7 @@ function parseVisitors(
 
 /**
  * Parse css string
- * @param iter
+ * @param tokenizer
  * @param options
  *
  * @throws Error
@@ -1863,7 +1861,6 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
     let node: AstAtRule | AstRule | AstKeyframesRule | AstKeyframesAtRule | AstDeclaration | AstComment | null;
 
     // @ts-ignore ignore error
-    let isAsync: boolean = typeof iter[Symbol.asyncIterator] === "function";
     let parensMatch: number = 0;
     let curlyBracketMatch: number = 0;
     let tokenizer: Tokenizer = iter instanceof Promise ? await iter : iter;
@@ -4363,15 +4360,6 @@ export function parseString(
     options: { src?: string; parseColor?: boolean } | null = { parseColor: true },
     errors?: ErrorDescription[],
 ): Token[] {
-    // const parseInfo: ParseInfo = {
-    //     stream: src,
-    //     offset: 0,
-    //     time: 0,
-    //     source: new SourceFile(src, [], ""),
-    //     position: 0,
-    //     currentPosition: 0,
-    // };
-
     const tokenizer: Tokenizer = new Tokenizer({
         stream: src,
         buffer: "",
@@ -4422,7 +4410,6 @@ export function parseString(
 
     // remove EOF token
     result.splice(result.length - (result[result.length - 2]?.typ === EnumToken.WhitespaceTokenType ? 2 : 1), 2);
-
     return result;
 }
 
