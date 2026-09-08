@@ -1371,8 +1371,8 @@ color: blue;
   background: alpha(from red/calc(1/0));
   height: calc(1px*NaN);
   width: calc(NaN);
-  margin-left: calc(0/0);
-  margin-right: calc(0/0 + 1px)
+  margin-left: calc(1/0);
+  margin-right: calc(1/0 + 1px)
  }
 }`);
     });

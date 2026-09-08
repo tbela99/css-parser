@@ -1806,9 +1806,9 @@ export function renderValue(
                 : minifyNumber((token as NumberToken).val as number);
 
         case EnumToken.InfinityTokenType:
-            return "0/0";
+            return "1/0";
         case EnumToken.NegativeInfinityTokenType:
-            return "-0/0";
+            return "-1/0";
 
         case EnumToken.NaNTokenType:
             return "NaN";

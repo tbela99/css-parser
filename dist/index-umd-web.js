@@ -26327,9 +26327,9 @@
                     ? renderValue(token.val, options, cache)
                     : minifyNumber(token.val);
             case exports.EnumToken.InfinityTokenType:
-                return "0/0";
+                return "1/0";
             case exports.EnumToken.NegativeInfinityTokenType:
-                return "-0/0";
+                return "-1/0";
             case exports.EnumToken.NaNTokenType:
                 return "NaN";
             case exports.EnumToken.AtRuleTokenType:
