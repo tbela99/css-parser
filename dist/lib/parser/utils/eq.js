@@ -1,3 +1,9 @@
+/**
+ *
+ * @param a
+ * @param b
+ * @returns
+ */
 function eq(a, b) {
     if (a == null || b == null) {
         return a == b;

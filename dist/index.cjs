@@ -7177,6 +7177,23 @@ function getLCHComponents(token) {
     return alpha == null ? [l, c, h] : [l, c, h, alpha];
 }
 
+// export function srgb2xyzd50values(r: number, g: number, b: number, alpha: number | null = null): number[] {
+//     [r, g, b] = srgb2lsrgbvalues(r, g, b);
+//
+//     const rgb: number[] = [
+//         0.436065742824811 * r + 0.3851514688337912 * g + 0.14307845442264197 * b,
+//
+//         0.22249319175623702 * r + 0.7168870538238823 * g + 0.06061979053616537 * b,
+//
+//         0.013923904500943465 * r + 0.09708128566574634 * g + 0.7140993584005155 * b,
+//     ];
+//
+//     if (alpha != null && alpha != 1) {
+//         rgb.push(alpha);
+//     }
+//
+//     return rgb;
+// }
 /*
  */
 function xyzd502lch(x, y, z, alpha) {
@@ -7210,6 +7227,11 @@ function xyzd502srgb(x, y, z, alpha = null) {
     x * 0.07195537988411677 - y * 0.2289768264158322 + 1.405386058324125 * z, alpha);
 }
 
+// export function lab2xyz(l: number, a: number, b: number, alpha?: number): number[] {
+//     const [x, y, z] = Lab_to_XYZ(l, a, b);
+//
+//     return alpha == null || alpha == 1 ? [x, y, z] : [x, y, z, alpha];
+// }
 function XYZ_to_lin_sRGB(x, y, z, alpha = null) {
     // convert XYZ to linear-light sRGB
     const M = [
@@ -7926,6 +7948,15 @@ function rgb2srgbvalues(token) {
         ? getNumber(t)
         : getNumber(t) / 255) ?? null);
 }
+// export function rgbvalues2srgbvalues(r: number, g: number, b: number, a: number | null = null): number[] | null {
+//     const result = [r / 255, g / 255, b / 255];
+//
+//     if (a != null && a != 1) {
+//         result.push(a);
+//     }
+//
+//     return result;
+// }
 function hex2srgbvalues(token) {
     const value = expandHexValue(token.kin == exports.ColorType.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
     const rgb = [];
@@ -7987,11 +8018,7 @@ function cmyk2srgbvalues(token) {
     // @ts-ignore
     const k = getNumber(t);
     const mul = 1 - k;
-    const rgb = [
-        1 - Math.min(1, c * mul + k),
-        1 - Math.min(1, m * mul + k),
-        1 - Math.min(1, y * mul + k),
-    ];
+    const rgb = [1 - Math.min(1, c * mul + k), 1 - Math.min(1, m * mul + k), 1 - Math.min(1, y * mul + k)];
     if (components.length == 5) {
         rgb.push(getNumber(components[4]));
     }
@@ -9163,7 +9190,7 @@ function colorMix(...args) {
     let colorSpace = "oklab";
     let hueInterpolationMethod = "shorter";
     let values = null;
-    const colors = [];
+    // const colors: ColorToken[] = [];
     const percentages = [];
     const srgbComponentValues = [];
     const colorComponents = [];
@@ -9272,7 +9299,8 @@ function colorMix(...args) {
                 return null;
         }
         srgbComponentValues.push(values);
-        colors.push(args[i++]);
+        // colors.push(args[i++] as ColorToken);
+        i++;
         if (i >= args.length) {
             missingPercentageCount++;
             percentages.push(null);
@@ -12014,6 +12042,32 @@ function getSyntaxConfig() {
     // @ts-expect-error
     return config$4;
 }
+// export const getSyntax = memoize((group: ValidationSyntaxGroupEnum, key: string | string[]): null | string => {
+//     // @ts-expect-error
+//     let obj = config[group] as Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode>;
+//
+//     const keys: string[] = Array.isArray(key) ? key : [key];
+//
+//     for (let i = 0; i < keys.length; i++) {
+//         key = keys[i];
+//
+//         if (!(key in obj)) {
+//             if ((i == 0 && key.charAt(0) == "@") || key.charAt(0) == "-") {
+//                 const matches: RegExpMatchArray = key.match(/^(@?)(-[a-zA-Z]+)-(.*?)$/) as RegExpMatchArray;
+//
+//                 if (matches != null) {
+//                     key = matches[1] + matches[3];
+//                 }
+//             }
+//         }
+//
+//         // @ts-expect-error
+//         obj = obj[key];
+//     }
+//
+//     // @ts-expect-error
+//     return obj?.syntax ?? null;
+// }) as (group: ValidationSyntaxGroupEnum, key: string | string[]) => null | string;
 function findNode(group, key) {
     // @ts-expect-error
     let obj = config$4[group];
@@ -16928,6 +16982,12 @@ function toPrecisionAngle(angle, precision = anglePrecision, correctValue = true
     return angle;
 }
 
+/**
+ *
+ * @param a
+ * @param b
+ * @returns
+ */
 function eq(a, b) {
     if (a == null || b == null) {
         return a == b;
@@ -20336,18 +20396,17 @@ const config = getConfig();
 class PropertyList {
     options = { removeDuplicateDeclarations: true, computeShorthand: true };
     declarations;
-    //  ketsey = new Map;
     constructor(options = {}) {
         this.options = options;
         this.declarations = new Map();
     }
-    set(nam, value) {
-        return this.add({
-            typ: exports.EnumToken.DeclarationNodeType,
-            nam,
-            val: Array.isArray(value) ? value : parseString(String(value)),
-        });
-    }
+    // set(nam: string, value: string | Token[]) {
+    //     return this.add({
+    //         typ: EnumToken.DeclarationNodeType,
+    //         nam,
+    //         val: Array.isArray(value) ? value : parseString(String(value)),
+    //     });
+    // }
     add(...declarations) {
         let name;
         let syntaxRules = null;
@@ -28693,7 +28752,7 @@ function parseDeclaration(tokens, parent, options, errors) {
     let token;
     let index;
     if (syntaxRules != null) {
-        const doNotValidate = options.validation === false || options.validation === exports.ValidationLevel.None;
+        const doNotValidate = options.validation === false;
         result = doNotValidate ? null : matchAllSyntaxes(syntaxRules, createValidationContext(tokens), options);
         if (doNotValidate || result != null) {
             success = doNotValidate || result?.success;
@@ -30253,7 +30312,7 @@ function parseAtRuleFontFeatureValues(stream, context, options = {}) {
     const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + context.nam);
     const syntax = syntaxRules?.getPreludeRules()?.slice?.(1);
     trimArray(stream);
-    const { success, errors} = matchAllSyntaxes(syntax, createValidationContext(stream), options);
+    const { success, errors /* , ...all */ } = matchAllSyntaxes(syntax, createValidationContext(stream), options);
     return { success, errors };
 }
 

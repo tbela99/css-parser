@@ -1,4 +1,4 @@
-import { EnumToken, EnumAstNodeStatus, ColorType, ValidationLevel } from '../../ast/types.js';
+import { EnumToken, EnumAstNodeStatus, ColorType } from '../../ast/types.js';
 import { LOCEND, STATE, ERRORS, LOCSTA, tokensfuncDefMap, COLORS_NAMES, nonStandardColors, systemColors, deprecatedSystemColors, tokensMap, trimTokenSpace, LOCSRCID } from '../../syntax/constants.js';
 import { renamedStandardProperties, isColor, parseColor, isWhiteSpace } from '../../syntax/syntax.js';
 import { getSyntaxRule, getParsedSyntax } from '../../validation/config.js';
@@ -164,7 +164,7 @@ function parseDeclaration(tokens, parent, options, errors) {
     let token;
     let index;
     if (syntaxRules != null) {
-        const doNotValidate = options.validation === false || options.validation === ValidationLevel.None;
+        const doNotValidate = options.validation === false;
         result = doNotValidate ? null : matchAllSyntaxes(syntaxRules, createValidationContext(tokens), options);
         if (doNotValidate || result != null) {
             success = doNotValidate || result?.success;

@@ -1,3 +1,9 @@
+/**
+ * 
+ * @param a 
+ * @param b 
+ * @returns 
+ */
 export function eq(a: any, b: any): boolean {
 
     if (a == null || b == null) {

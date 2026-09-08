@@ -15,16 +15,16 @@ import type {
     TimeToken,
     Token,
 } from "../../@types/index.d.ts";
-import {isOkLabClose} from "./color/utils/distance.ts";
-import {ColorType, EnumToken} from "../ast/types.ts";
-import {WalkerOptionEnum, walkValues} from "../ast/walk.ts";
-import {toDegrees} from "../parser/utils/angle.ts";
-import {memoize} from "../parser/utils/cache.ts";
-import {equalsIgnoreCase} from "../parser/utils/text.ts";
-import {trimArray} from "../validation/match.ts";
-import {splitTokenList} from "../validation/utils/list.ts";
-import {getColorSpace} from "./color/utils/colorspace.ts";
-import {getColorComponents} from "./color/utils/components.ts";
+import { isOkLabClose } from "./color/utils/distance.ts";
+import { ColorType, EnumToken } from "../ast/types.ts";
+import { WalkerOptionEnum, walkValues } from "../ast/walk.ts";
+import { toDegrees } from "../parser/utils/angle.ts";
+import { memoize } from "../parser/utils/cache.ts";
+import { equalsIgnoreCase } from "../parser/utils/text.ts";
+import { trimArray } from "../validation/match.ts";
+import { splitTokenList } from "../validation/utils/list.ts";
+import { getColorSpace } from "./color/utils/colorspace.ts";
+import { getColorComponents } from "./color/utils/components.ts";
 import {
     anglePrecision,
     colorFuncColorSpace,
@@ -36,7 +36,7 @@ import {
     nonStandardColors,
     systemColors,
 } from "./constants.ts";
-import {getSyntaxConfig} from "../validation/config.ts";
+import { getSyntaxConfig } from "../validation/config.ts";
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token

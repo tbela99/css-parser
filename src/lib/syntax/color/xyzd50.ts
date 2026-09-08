@@ -1,26 +1,26 @@
-import { lsrgb2srgbvalues, srgb2lsrgbvalues } from "./srgb.ts";
-import { multiplyMatrices } from "./utils/matrix.ts";
-import { xyz2lab } from "./lab.ts";
-import { XYZ_D50_to_D65 } from "./xyz.ts";
-import { labvalues2lchvalues } from "./lch.ts";
+import {lsrgb2srgbvalues} from "./srgb.ts";
+import {multiplyMatrices} from "./utils/matrix.ts";
+import {xyz2lab} from "./lab.ts";
+import {XYZ_D50_to_D65} from "./xyz.ts";
+import {labvalues2lchvalues} from "./lch.ts";
 
-export function srgb2xyzd50values(r: number, g: number, b: number, alpha: number | null = null): number[] {
-    [r, g, b] = srgb2lsrgbvalues(r, g, b);
-
-    const rgb: number[] = [
-        0.436065742824811 * r + 0.3851514688337912 * g + 0.14307845442264197 * b,
-
-        0.22249319175623702 * r + 0.7168870538238823 * g + 0.06061979053616537 * b,
-
-        0.013923904500943465 * r + 0.09708128566574634 * g + 0.7140993584005155 * b,
-    ];
-
-    if (alpha != null && alpha != 1) {
-        rgb.push(alpha);
-    }
-
-    return rgb;
-}
+// export function srgb2xyzd50values(r: number, g: number, b: number, alpha: number | null = null): number[] {
+//     [r, g, b] = srgb2lsrgbvalues(r, g, b);
+//
+//     const rgb: number[] = [
+//         0.436065742824811 * r + 0.3851514688337912 * g + 0.14307845442264197 * b,
+//
+//         0.22249319175623702 * r + 0.7168870538238823 * g + 0.06061979053616537 * b,
+//
+//         0.013923904500943465 * r + 0.09708128566574634 * g + 0.7140993584005155 * b,
+//     ];
+//
+//     if (alpha != null && alpha != 1) {
+//         rgb.push(alpha);
+//     }
+//
+//     return rgb;
+// }
 
 /*
  */

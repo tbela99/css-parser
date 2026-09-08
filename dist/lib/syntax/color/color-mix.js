@@ -68,7 +68,7 @@ function colorMix(...args) {
     let colorSpace = "oklab";
     let hueInterpolationMethod = "shorter";
     let values = null;
-    const colors = [];
+    // const colors: ColorToken[] = [];
     const percentages = [];
     const srgbComponentValues = [];
     const colorComponents = [];
@@ -177,7 +177,8 @@ function colorMix(...args) {
                 return null;
         }
         srgbComponentValues.push(values);
-        colors.push(args[i++]);
+        // colors.push(args[i++] as ColorToken);
+        i++;
         if (i >= args.length) {
             missingPercentageCount++;
             percentages.push(null);

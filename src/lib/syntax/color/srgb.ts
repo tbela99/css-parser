@@ -85,15 +85,15 @@ export function rgb2srgbvalues(token: ColorToken): number[] | null {
     );
 }
 
-export function rgbvalues2srgbvalues(r: number, g: number, b: number, a: number | null = null): number[] | null {
-    const result = [r / 255, g / 255, b / 255];
-
-    if (a != null && a != 1) {
-        result.push(a);
-    }
-
-    return result;
-}
+// export function rgbvalues2srgbvalues(r: number, g: number, b: number, a: number | null = null): number[] | null {
+//     const result = [r / 255, g / 255, b / 255];
+//
+//     if (a != null && a != 1) {
+//         result.push(a);
+//     }
+//
+//     return result;
+// }
 
 export function hex2srgbvalues(token: ColorToken): number[] {
     const value: string = expandHexValue(
@@ -182,11 +182,7 @@ export function cmyk2srgbvalues(token: ColorToken): number[] | null {
     const k: number = getNumber(t);
     const mul = 1 - k;
 
-    const rgb: number[] = [
-        1 - Math.min(1, c * mul + k),
-        1 - Math.min(1, m * mul + k),
-        1 - Math.min(1, y * mul + k),
-    ];
+    const rgb: number[] = [1 - Math.min(1, c * mul + k), 1 - Math.min(1, m * mul + k), 1 - Math.min(1, y * mul + k)];
 
     if (components.length == 5) {
         rgb.push(getNumber(components[4] as NumberToken | PercentageToken));

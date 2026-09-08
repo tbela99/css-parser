@@ -76,7 +76,7 @@ export function colorMix(...args: Token[]): ColorToken | null {
     let colorSpace: string = "oklab";
     let hueInterpolationMethod: string = "shorter";
     let values: number[] | null = null;
-    const colors: ColorToken[] = [];
+    // const colors: ColorToken[] = [];
     const percentages: Array<number | null> = [];
     const srgbComponentValues: number[][] = [];
     const colorComponents: Token[][] = [];
@@ -214,7 +214,8 @@ export function colorMix(...args: Token[]): ColorToken | null {
         }
 
         srgbComponentValues.push(values as number[]);
-        colors.push(args[i++] as ColorToken);
+        // colors.push(args[i++] as ColorToken);
+        i++;
 
         if (i >= args.length) {
             missingPercentageCount++;

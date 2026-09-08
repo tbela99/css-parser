@@ -1,8 +1,7 @@
 import { PropertySet } from './set.js';
 import { getConfig } from '../utils/config.js';
 import { PropertyMap } from './map.js';
-import { parseString } from '../parse.js';
-import { EnumToken, EnumAstNodeStatus } from '../../ast/types.js';
+import { EnumAstNodeStatus, EnumToken } from '../../ast/types.js';
 import { getParsedSyntax } from '../../validation/config.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { matchAllSyntaxes, createValidationContext } from '../../validation/match.js';
@@ -14,18 +13,17 @@ const config = getConfig();
 class PropertyList {
     options = { removeDuplicateDeclarations: true, computeShorthand: true };
     declarations;
-    //  ketsey = new Map;
     constructor(options = {}) {
         this.options = options;
         this.declarations = new Map();
     }
-    set(nam, value) {
-        return this.add({
-            typ: EnumToken.DeclarationNodeType,
-            nam,
-            val: Array.isArray(value) ? value : parseString(String(value)),
-        });
-    }
+    // set(nam: string, value: string | Token[]) {
+    //     return this.add({
+    //         typ: EnumToken.DeclarationNodeType,
+    //         nam,
+    //         val: Array.isArray(value) ? value : parseString(String(value)),
+    //     });
+    // }
     add(...declarations) {
         let name;
         let syntaxRules = null;

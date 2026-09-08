@@ -18,7 +18,7 @@ import type {
     StringToken,
     Token,
 } from "../../../@types/index.d.ts";
-import { ColorType, EnumAstNodeStatus, EnumToken, ValidationLevel } from "../../ast/types.ts";
+import { ColorType, EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import {
     COLORS_NAMES,
     deprecatedSystemColors,
@@ -239,7 +239,7 @@ export function parseDeclaration(
     let index: number;
 
     if (syntaxRules != null) {
-        const doNotValidate: boolean = options.validation === false || options.validation === ValidationLevel.None;
+        const doNotValidate: boolean = options.validation === false;
         result = doNotValidate ? null : matchAllSyntaxes(syntaxRules, createValidationContext(tokens), options);
 
         if (doNotValidate || result != null) {

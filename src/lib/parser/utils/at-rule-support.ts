@@ -10,13 +10,13 @@ import type {
     SupportsQueryUnaryConditionToken,
     Token,
 } from "../../../@types/index.d.ts";
-import {EnumToken} from "../../ast/types.ts";
-import {LOCEND, LOCSRCID, LOCSTA, pseudoElements, tokensfuncDefMap} from "../../syntax/constants.ts";
-import {getParsedSyntax, getSyntaxConfig} from "../../validation/config.ts";
-import {createValidationContext, matchAllSyntaxes, trimArray} from "../../validation/match.ts";
-import {ValidationSyntaxGroupEnum} from "../../validation/parser/typedef.ts";
-import type {ValidationFunctionToken, ValidationToken} from "../../validation/parser/types.d.ts";
-import {parseDeclaration} from "./declaration.ts";
+import { EnumToken } from "../../ast/types.ts";
+import { LOCEND, LOCSRCID, LOCSTA, pseudoElements, tokensfuncDefMap } from "../../syntax/constants.ts";
+import { getParsedSyntax, getSyntaxConfig } from "../../validation/config.ts";
+import { createValidationContext, matchAllSyntaxes, trimArray } from "../../validation/match.ts";
+import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
+import type { ValidationFunctionToken, ValidationToken } from "../../validation/parser/types.d.ts";
+import { parseDeclaration } from "./declaration.ts";
 
 export function parseAtRuleSupportSyntax(
     stream: Token[],
