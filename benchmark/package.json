@@ -5,20 +5,20 @@
   "private": true,
   "scripts": {
     "sizes": "node src/compute-sizes.js",
-    "bench": "vitest bench --run --outputJson=results/bench-results.json",
+    "bench": "vitest bench --run --reporter=json --outputFile=results/bench-results.json",
     "report": "node src/generate-report.js",
-    "all": "npm run sizes && npm run bench && npm run report"
+    "all": "npm run sizes && npm run bench; npm run report"
   },
   "dependencies": {
-    "@tbela99/css-parser": "^1.6.1",
-    "@tbela99/css-parser2": "github:tbela99/css-parser#7862cfa",
+    "@tbela99/css-parser": "^1.6.2",
+    "@tbela99/css-parser2": "github:tbela99/css-parser#4303f4b",
     "clean-css": "^5.3.3",
     "css-tree": "^3.2.1",
-    "cssnano": "^9.0.3",
+    "cssnano": "^9.0.4",
     "csso": "^5.0.5",
     "esbuild": "^0.28.2",
     "lightningcss": "^1.33.0",
     "postcss": "^8.5.28",
-    "vitest": "^4.1.11"
+    "vitest": "^5.0.0"
   }
 }

@@ -1,5 +1,32 @@
 # Changelog
 
+# v1.6.3
+
+## Fix
+- [x] fix infinity rendering as 1/0 instead of 0/0 (NaN)
+
+```css
+
+    @media (min-width: 300px) and (max-width: 768px){
+    .s {
+  
+    margin-left: calc(infinity + 1 + calc(infinity - 1 + calc(infinity / 1 + calc(infinity * 1))));
+    margin-right: calc(infinity + 1px + calc(infinity - 1 + calc(infinity / 1 + calc(infinity * 1))));
+
+}
+
+```
+is parsed as 
+
+```css
+@media (300px<=width<=768px) {
+ .s {
+  margin-left: calc(1/0);
+  margin-right: calc(1/0 + 1px)
+ }
+}
+```
+
 # v1.6.2
 
 ## Fix

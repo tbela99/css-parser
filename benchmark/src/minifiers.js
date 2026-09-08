@@ -99,15 +99,15 @@ export const minifiers = [
         minify: (css) => csso.minify(css).css,
     },
     // infinite loop bug
-    {
-        id: "css-tree",
-        url: versions["css-tree"].url,
-        label: `css-tree - ${versions["css-tree"].version}`,
-        // css-tree has no dedicated minifier API; parse+generate already
-        // drops whitespace/comments, which is how the official benchmark
-        // treats it too (no property-level optimization, just compact output).
-        minify: (css) => csstree.generate(csstree.parse(css)),
-    },
+    // {
+    //     id: "css-tree",
+    //     url: versions["css-tree"].url,
+    //     label: `css-tree - ${versions["css-tree"].version}`,
+    //     // css-tree has no dedicated minifier API; parse+generate already
+    //     // drops whitespace/comments, which is how the official benchmark
+    //     // treats it too (no property-level optimization, just compact output).
+    //     minify: (css) => csstree.generate(csstree.parse(css)),
+    // },
     {
         id: "esbuild",
         url: versions.esbuild.url,
