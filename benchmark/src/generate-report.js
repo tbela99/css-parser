@@ -10,15 +10,22 @@ const sizes = JSON.parse(readFileSync(resultsDir + "sizes.json", "utf8"));
 
 // benchRaw.files[].groups[].benchmarks[] -> { [fixtureName]: { [minifierId]: meanMs } }
 const timings = {};
-for (const file of benchRaw.files) {
-    for (const group of file.groups) {
-        // group.fullName looks like "bench/minify.bench.js > <fixtureName>"
-        const fixtureName = group.fullName.split(">").pop().trim();
-        timings[fixtureName] ??= {};
-        for (const b of group.benchmarks) {
-            timings[fixtureName][b.name] = b.mean; // milliseconds
+for (const assertionResult of benchRaw.testResults[0]?.assertionResults ?? []) {
+    // for (const group of file.groups) {
+    // group.fullName looks like "bench/minify.bench.js > <fixtureName>"
+    // const fixtureName = assertionResult.title;
+    // timings[fixtureName] ??= {};
+    for (const b of assertionResult.benchmarks) {
+        timings[b.name] ??= {};
+
+        for (const task of b.tasks) {
+
+            const fixtureName = task.name;
+            timings[b.name][fixtureName] ??= {};
+            timings[b.name][fixtureName] = task.period; // milliseconds
         }
     }
+    // }
 }
 
 function fmtBytes(n) {
@@ -58,13 +65,15 @@ for (const m of minifiers) {
     const totalMs = fixtures.reduce((sum, f) => sum + (timings[f.name]?.[m.id] ?? 0), 0);
     totalRow += `<td>
         <div class="metric"><span class="metric-label">final:</span> ${anyMissing ? fmtBytes(totalSize) + " (partial)" : fmtBytes(totalSize)}</div>
-        <div class="metric reduction${anyMissing ? " missing" : ''}">${anyMissing ? "n/a" : fmtReduction(totalOriginal, totalSize)}</div>
+        <div class="metric reduction${anyMissing ? " missing" : ""}">${anyMissing ? "n/a" : fmtReduction(totalOriginal, totalSize)}</div>
         <div class="metric time"><span class="metric-label">time:</span> ${fmtMs(totalMs)}</div>
     </td>`;
 }
 totalRow += `</tr>\n`;
 
-const headerCells = minifiers.map((m) => `<th>${m.url != null ? `<a href="${m.url}" target="_top">${m.label}</a>` : m.label}</th>`).join("\n");
+const headerCells = minifiers
+    .map((m) => `<th>${m.url != null ? `<a href="${m.url}" target="_top">${m.label}</a>` : m.label}</th>`)
+    .join("\n");
 
 const html = `<!DOCTYPE html>
 <html lang="en">

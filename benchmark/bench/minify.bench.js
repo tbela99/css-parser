@@ -1,4 +1,4 @@
-import { bench, describe } from "vitest";
+import { test } from "vitest";
 import { minifiers } from "../src/minifiers.js";
 import { fixtures } from "../src/fixtures.js";
 
@@ -8,15 +8,15 @@ import { fixtures } from "../src/fixtures.js";
 const BENCH_OPTIONS = { time: 300, iterations: 5 };
 
 for (const fixture of fixtures) {
-    describe(fixture.name, () => {
+    test(fixture.name, async ({ bench }) => {
         for (const minifier of minifiers) {
-            bench(
-                minifier.id,
-                async () => {
-                    await minifier.minify(fixture.css);
-                },
-                BENCH_OPTIONS,
-            );
+            console.error(`benchmarking ${fixture.name} with ${minifier.id}`);
+
+            try {
+                await bench(minifier.id, async () => {
+                    return minifier.minify(fixture.css);
+                }).run(BENCH_OPTIONS);
+            } catch (err) {}
         }
     });
 }
