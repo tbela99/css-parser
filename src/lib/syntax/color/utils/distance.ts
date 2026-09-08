@@ -1,17 +1,17 @@
-import type { ColorToken } from "../../../../@types/index.d.ts";
-import { convertColor } from "../color.ts";
-import { getOKLABComponents } from "../oklab.ts";
-import { ColorType } from "../../../ast/types.ts";
-import { colorDistancePrecision } from "../../constants.ts";
-import { toPrecisionValue } from "../../syntax.ts";
+import type {ColorToken} from "../../../../@types/index.d.ts";
+import {convertColor} from "../color.ts";
+import {getOKLABComponents} from "../oklab.ts";
+import {ColorType} from "../../../ast/types.ts";
+import {colorDistancePrecision} from "../../constants.ts";
+import {toPrecisionValue} from "../../syntax.ts";
 
 /**
  * Calculate the distance between two okLab colors.
- * @param okLab1
- * @param okLab2
  *
  * @private
  * {@link https://drafts.csswg.org/css-color-4/#comparing-color-values}
+ * @param color1
+ * @param color2
  */
 export function okLabDistance(color1: ColorToken, color2: ColorToken): number | null {
     color1 = convertColor(color1, ColorType.OKLAB) as ColorToken;

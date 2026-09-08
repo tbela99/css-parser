@@ -2,7 +2,6 @@ import type { ColorToken, FunctionToken, IdentToken, NumberToken, Token } from "
 import { ColorType, EnumToken } from "../../../ast/types.ts";
 import { COLORS_NAMES } from "../../constants.ts";
 import { expandHexValue } from "../hex.ts";
-import { isColor, parseColor } from "../../syntax.ts";
 import { equalsIgnoreCase } from "../../../parser/utils/text.ts";
 
 export function getColorComponents(token: ColorToken | IdentToken): Token[] | null {

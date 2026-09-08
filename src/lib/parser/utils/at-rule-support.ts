@@ -1,23 +1,22 @@
 import type {
-    Token,
     AstAtRule,
-    ParserOptions,
-    ErrorDescription,
-    IdentToken,
-    FunctionToken,
-    SupportsQueryUnaryConditionToken,
-    SupportsQueryConditionToken,
     AtRuleToken,
+    ErrorDescription,
+    FunctionToken,
+    IdentToken,
     ParensToken,
+    ParserOptions,
+    SupportsQueryConditionToken,
+    SupportsQueryUnaryConditionToken,
+    Token,
 } from "../../../@types/index.d.ts";
-import { EnumToken } from "../../ast/types.ts";
-import { LOCEND, LOCSRCID, LOCSTA, pseudoElements } from "../../syntax/constants.ts";
-import { getParsedSyntax, getSyntaxConfig } from "../../validation/config.ts";
-import { trimArray, matchAllSyntaxes, createValidationContext } from "../../validation/match.ts";
-import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
-import type { ValidationFunctionToken, ValidationToken } from "../../validation/parser/types.d.ts";
-import { tokensfuncDefMap } from "../../syntax/constants.ts";
-import { parseDeclaration } from "./declaration.ts";
+import {EnumToken} from "../../ast/types.ts";
+import {LOCEND, LOCSRCID, LOCSTA, pseudoElements, tokensfuncDefMap} from "../../syntax/constants.ts";
+import {getParsedSyntax, getSyntaxConfig} from "../../validation/config.ts";
+import {createValidationContext, matchAllSyntaxes, trimArray} from "../../validation/match.ts";
+import {ValidationSyntaxGroupEnum} from "../../validation/parser/typedef.ts";
+import type {ValidationFunctionToken, ValidationToken} from "../../validation/parser/types.d.ts";
+import {parseDeclaration} from "./declaration.ts";
 
 export function parseAtRuleSupportSyntax(
     stream: Token[],
@@ -127,13 +126,11 @@ export function parseAtRuleSupportSyntax(
                     if (stack.at(-1)?.typ === EnumToken.StartParensTokenType) {
                         const index: number = tokens.indexOf(stack.at(-1)!);
                         const slice: Token[] = trimArray(tokens.splice(index + 1, tokens.length - index - 2));
-
-                        const filtered: Token[] = slice.filter((token) => {
+                        slice.filter((token) => {
                             return (
                                 token.typ !== EnumToken.WhitespaceTokenType && token.typ !== EnumToken.CommentTokenType
                             );
                         });
-
                         tokens[index] = {
                             typ: EnumToken.ParensTokenType,
                             chi: slice,
@@ -218,12 +215,11 @@ export function parseAtRuleSupportSyntax(
                         const index2: number = stack.length > 1 ? tokens.indexOf(stack.at(-2)!) + 1 : 0;
 
                         const left: Token[] = trimArray(tokens.slice(index2, index));
-                        const notToken = left.find(
+                        left.find(
                             (t) =>
                                 t.typ === EnumToken.SupportsQueryUnaryConditionTokenType &&
                                 (t as SupportsQueryUnaryConditionToken).l.typ === EnumToken.NotTokenType,
                         );
-
                         tokens[index2] = {
                             typ: EnumToken.SupportsQueryConditionTokenType,
                             op: stack.at(-1)!,

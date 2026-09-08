@@ -6961,6 +6961,7 @@ function getColorComponents(token) {
  */
 // A is m x n. B is n x p. product is m x p.
 function multiplyMatrices(A, B) {
+    // let m: number = A.length;
     // if (!Array.isArray(A[0])) {
     //     // A is vector, convert to [[a, b, c, ...]]
     //     A = <number[][]>[A];
@@ -12163,6 +12164,15 @@ function trimArray(tokens) {
     return tokens;
 }
 /**
+ * is a media feature
+ * @param featureName
+ * @returns
+ */
+// export function isMFName(featureName: string): boolean {
+//     // @ts-expect-error
+//     return featureName.startsWith("--") || config.mediaFeatures[featureName.toLowerCase()] != null;
+// }
+/**
  *
  * @param featureName
  * @returns
@@ -12175,6 +12185,7 @@ function getMFInfo(featureName) {
  *
  * @param featureName
  * @param tokens
+ * @param isMFRange
  * @returns object with:
  * - valid: boolean. true the media feaure is known or is a custom property. false otherwise
  * - success: boolean. validation result
@@ -12292,9 +12303,10 @@ function createValidationContext(tokens) {
         },
         /**
          *
-         * @param stopCondition
-         * @param matchCount
          * @returns
+         * @param open
+         * @param close
+         * @param counter
          */
         peekRange(open = exports.EnumToken.StartParensTokenType, close = exports.EnumToken.EndParensTokenType, counter = 0) {
             let index = this.index;
@@ -12517,7 +12529,7 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
             case exports.EnumToken.CDOCOMMTokenType:
                 break;
             case exports.EnumToken.NestingSelectorTokenType:
-                if (nested === false && !options.nestedRule) {
+                if (!nested && !options.nestedRule) {
                     return {
                         success: false,
                         errors: [
@@ -15233,11 +15245,11 @@ function getAngle(token) {
 
 /**
  * Calculate the distance between two okLab colors.
- * @param okLab1
- * @param okLab2
  *
  * @private
  * {@link https://drafts.csswg.org/css-color-4/#comparing-color-values}
+ * @param color1
+ * @param color2
  */
 function okLabDistance(color1, color2) {
     color1 = convertColor(color1, exports.ColorType.OKLAB);
@@ -20248,6 +20260,7 @@ function objectHash(object) {
 /**
  * convert input to hex
  * @param input
+ * @param length
  */
 function toHex(input, length) {
     let result = "";
@@ -25228,6 +25241,8 @@ function updateSourceMap(node, options, cache, sourcemaps, sourceLocation, lines
  * @param sourceLocation
  * @param linesMap
  * @param str
+ * @param start
+ * @param end
  */
 function move(sourceLocation, linesMap, str, start, end) {
     let i = start ?? 0;
@@ -28955,12 +28970,11 @@ function parseDeclaration(tokens, parent, options, errors) {
         name[STATE] = exports.EnumAstNodeStatus.Unknown;
         name[ERRORS] = result?.errors ?? [];
         // @ts-expect-error
-        const node = Object.assign(name, {
+        return Object.assign(name, {
             typ: exports.EnumToken.DeclarationNodeType,
             nam: name.val,
             val: tokens,
         });
-        return node;
     }
     if (equalsIgnoreCase("composes", name.val)) {
         let index = -1;
@@ -29837,7 +29851,7 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
     let i = 0;
     let success = true;
     let expectAndOr = false;
-    let scope = new Set();
+    // let scope: Set<EnumToken> = new Set();
     const errors = [];
     // const scopes: Array<Set<EnumToken>> = [scope];
     for (; i < stream.length; i++) {
@@ -29859,7 +29873,7 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
                         Object.assign(stream[i], {
                             typ: "or" === val ? exports.EnumToken.OrTokenType : exports.EnumToken.AndTokenType,
                         });
-                        scope.add(stream[i].typ);
+                        // scope.add(stream[i].typ);
                         stack.push(stream[i]);
                         // break;
                     }
@@ -30751,7 +30765,7 @@ function parseVisitors(visitorsDef, errors) {
 }
 /**
  * Parse css string
- * @param iter
+ * @param tokenizer
  * @param options
  *
  * @throws Error
@@ -31748,6 +31762,7 @@ async function doParse(iter, options = {}) {
     const imports = [];
     let item;
     let node;
+    // @ts-ignore ignore error
     let parensMatch = 0;
     let curlyBracketMatch = 0;
     let tokenizer = iter instanceof Promise ? await iter : iter;

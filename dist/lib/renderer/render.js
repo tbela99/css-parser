@@ -225,6 +225,8 @@ function updateSourceMap(node, options, cache, sourcemaps, sourceLocation, lines
  * @param sourceLocation
  * @param linesMap
  * @param str
+ * @param start
+ * @param end
  */
 function move(sourceLocation, linesMap, str, start, end) {
     let i = start ?? 0;

@@ -441,12 +441,11 @@ function parseDeclaration(tokens, parent, options, errors) {
         name[STATE] = EnumAstNodeStatus.Unknown;
         name[ERRORS] = result?.errors ?? [];
         // @ts-expect-error
-        const node = Object.assign(name, {
+        return Object.assign(name, {
             typ: EnumToken.DeclarationNodeType,
             nam: name.val,
             val: tokens,
         });
-        return node;
     }
     if (equalsIgnoreCase("composes", name.val)) {
         let index = -1;

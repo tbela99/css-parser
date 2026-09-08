@@ -54,7 +54,6 @@ import { expand } from "../ast/expand.ts";
 import { SourceMap } from "./sourcemap/sourcemap.ts";
 import {
     anglePrecision,
-    colorPrecision,
     LOCSRCID,
     LOCSTA,
     PARENT,
@@ -387,6 +386,8 @@ function updateSourceMap(
  * @param sourceLocation
  * @param linesMap
  * @param str
+ * @param start
+ * @param end
  */
 export function move(sourceLocation: SourceLocation, linesMap: LinesMap, str: string, start?: number, end?: number) {
     let i: number = start ?? 0;
@@ -1809,8 +1810,8 @@ export function renderValue(
         case EnumToken.NegativeInfinityTokenType:
             return "-0/0";
 
-            case EnumToken.NaNTokenType:
-                return "NaN";
+        case EnumToken.NaNTokenType:
+            return "NaN";
 
         case EnumToken.AtRuleTokenType:
             return "@" + (token as AtRuleToken).nam;
