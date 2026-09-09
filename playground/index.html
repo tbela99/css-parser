@@ -1,553 +1,498 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-    <meta charset="utf-8"/>
-    <title>@tbela99/css-parser Playground</title>
-    <meta content="width=device-width, initial-scale=1" name="viewport"/>
-    <meta content="@tbela99/css-parser demonstration" name="description"/>
-    <meta content="@tbela99/css-parser Playground" name="title"/>
-    <meta
+    <head>
+        <meta charset="utf-8" />
+        <title>@tbela99/css-parser Playground</title>
+        <meta content="width=device-width, initial-scale=1" name="viewport" />
+        <meta content="@tbela99/css-parser demonstration" name="description" />
+        <meta content="@tbela99/css-parser Playground" name="title" />
+        <meta
             content="parser,css,css-parser,node,ast,nesting,nested,compiler,browser,css-nesting,css-compiler,nested-css,walker,stream,streaming,streaming-parser"
             name="keywords"
-    />
-    <link
+        />
+        <link
             crossorigin="anonymous"
             href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
             integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
             rel="stylesheet"
-    />
-    <link
+        />
+        <link
             href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
             rel="stylesheet"
-    />
-    <title>@tbela99/css-parser Playground</title>
-    <style>
-
-        .css-parse-options-module-box {
-            display: none;
-        }
-
-        .css-parse-options-module {
-
+        />
+        <title>@tbela99/css-parser Playground</title>
+        <style>
             .css-parse-options-module-box {
-                display: block;
-            }
-        }
-
-        .css-tree {
-            list-style: none;
-            font-size: 14px;
-
-            .property {
-                cursor: pointer;
-            }
-
-            ul {
-                list-style: none;
-                padding-left: 15px;
-
-                > li:not(.tree-collapsed) > .tree-more-dots {
-                    display: none;
-                }
-            }
-        }
-
-        .tree-collapsed {
-            > ul {
                 display: none;
             }
 
-            > .e:before {
-                content: "\2192";
+            .css-parse-options-module {
+                .css-parse-options-module-box {
+                    display: block;
+                }
             }
-        }
 
-        .e:before {
-            content: "\2193";
-            cursor: pointer;
-        }
-    </style>
-    <script>
-        document.documentElement.setAttribute(
-            "data-bs-theme",
-            window.matchMedia("(prefers-color-scheme: dark)").matches
-                ? "dark"
-                : "light"
-        );
-    </script>
-</head>
-<body>
+            .css-tree {
+                list-style: none;
+                font-size: 14px;
 
-<nav class="navbar navbar-expand-lg bg-body-tertiary mb-2">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="https://github.com/tbela99/css-parser">@tbela99/css-parser</a>
-        <button aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"
-                class="navbar-toggler" data-bs-target="#navbarSupportedContent" data-bs-toggle="collapse" type="button">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a aria-current="page" class="nav-link"
-                       href="https://tbela99.github.io/css-parser/benchmark/index.html">Benchmark</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" href="https://tbela99.github.io/css-parser/playground/">Playground</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="https://tbela99.github.io/css-parser/docs/">Docs</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="https://github.com/tbela99/css-parser">GitHub</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
-<div class="container-fluid mt-15">
-    <div class="row">
-        <div class="col-md-2">
-            <div class="row" id="optionsWrapper">
-                <div class="col-sm-12">
-                    <div class="mb-3">
-                        <label class="form-label" data-version>Parse Options</label>
-                        <hr class="mt-0"/>
-                        <div class="form-check">
-                            <input
-                                    checked
-                                    class="form-check-input"
-                                    id="parseoptionsminify"
-                                    name="parseoptions[minify]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label class="form-check-label" for="parseoptionsminify">
-                                Minify
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input
-                                    class="form-check-input"
-                                    id="parseoptionsmodule"
-                                    name="parseoptions[module]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label class="form-check-label" for="parseoptionsmodule">
-                                CSS module
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input
-                                    checked
-                                    class="form-check-input"
-                                    id="parseoptionsparseColor"
-                                    name="parseoptions[parseColor]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label class="form-check-label" for="parseoptionsparseColor">
-                                Parse color
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input
-                                    class="form-check-input"
-                                    id="parseoptionsresolveImport"
-                                    name="parseoptions[resolveImport]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label
-                                    class="form-check-label"
-                                    for="parseoptionsresolveImport"
-                            >
-                                Resolve @import
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input
-                                    checked
-                                    class="form-check-input"
-                                    id="parseoptionsremoveCharset"
-                                    name="parseoptions[removeCharset]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label
-                                    class="form-check-label"
-                                    for="parseoptionsremoveCharset"
-                            >
-                                Remove @charset
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input
-                                    checked
-                                    class="form-check-input"
-                                    id="parseoptionsremoveEmpty"
-                                    name="parseoptions[removeEmpty]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label class="form-check-label" for="parseoptionsremoveEmpty">
-                                Remove empty nodes
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input
-                                    checked
-                                    class="form-check-input"
-                                    id="parseoptionsremovePrefix"
-                                    name="parseoptions[removePrefix]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label
-                                    class="form-check-label"
-                                    for="parseoptionsremovePrefix"
-                            >
-                                Remove vendor prefixes
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input
-                                    checked
-                                    class="form-check-input"
-                                    id="parseoptionsremoveDuplicateDeclarations"
-                                    name="parseoptions[removeDuplicateDeclarations]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label
-                                    class="form-check-label"
-                                    for="parseoptionsremoveDuplicateDeclarations"
-                            >
-                                Deduplicate declarations
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input
-                                    checked
-                                    class="form-check-input"
-                                    id="parseoptionscomputeShorthand"
-                                    name="parseoptions[computeShorthand]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label
-                                    class="form-check-label"
-                                    for="parseoptionscomputeShorthand"
-                            >
-                                Shorthand
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input
-                                    checked
-                                    class="form-check-input"
-                                    id="parseoptionscomputeCalcExpression"
-                                    name="parseoptions[computeCalcExpression]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label
-                                    class="form-check-label"
-                                    for="parseoptionscomputeCalcExpression"
-                            >
-                                Math expressions
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input
-                                    checked
-                                    class="form-check-input"
-                                    id="parseoptionsinlineCssVariables"
-                                    name="parseoptions[inlineCssVariables]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label
-                                    class="form-check-label"
-                                    for="parseoptionsinlineCssVariables"
-                            >
-                                Inline CSS variables
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input
-                                    checked
-                                    class="form-check-input"
-                                    id="parseoptionsTransform"
-                                    name="parseoptions[computeTransform]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label class="form-check-label" for="parseoptionsTransform">
-                                Minify Transform
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input
-                                    checked
-                                    class="form-check-input"
-                                    id="parseoptionsLenient"
-                                    name="parseoptions[lenient]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label class="form-check-label" for="parseoptionsLenient">
-                                Lenient parser
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input
-                                    checked
-                                    class="form-check-input"
-                                    id="parseoptionsnestingRules"
-                                    name="parseoptions[nestingRules]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label
-                                    class="form-check-label"
-                                    for="parseoptionsnestingRules"
-                            >
-                                CSS Nesting
-                            </label>
-                        </div>
+                .property {
+                    cursor: pointer;
+                }
 
-                        <div class="form-check">
-                            <input
-                                    class="form-check-input"
-                                    id="parseoptionsexpandNestingRules"
-                                    name="parseoptions[expandNestingRules]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label
-                                    class="form-check-label"
-                                    for="parseoptionsexpandNestingRules"
-                            >
-                                Expand nesting rules
-                            </label>
-                        </div>
+                ul {
+                    list-style: none;
+                    padding-left: 15px;
 
-                        <div class="form-check">
-                            <input
-                                    class="form-check-input"
-                                    id="parseoptionsexpandIfSyntax"
-                                    name="parseoptions[expandIfSyntax]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label
-                                    class="form-check-label"
-                                    for="parseoptionsexpandIfSyntax"
-                            >
-                                Expand if() function
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input
-                                    class="form-check-input"
-                                    id="parseoptionsresolveUrls"
-                                    name="parseoptions[resolveUrls]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label class="form-check-label" for="parseoptionsresolveUrls">
-                                Rewrite URLs
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input
-                                    class="form-check-input"
-                                    id="parseoptionssourcemap"
-                                    name="parseoptions[sourcemap]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label class="form-check-label" for="parseoptionssourcemap">
-                                Sourcemap
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <label class="form-check-label" for="parseoptionsValidation">
-                                Validation
-                            </label>
- <input
-                                    class="form-check-input"
-                                    id="parseoptionsValidation"
-                                    name="parseoptions[validation]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                        </div>
-                        <hr/>
-                    </div>
-                </div>
-                <div class="col-sm-12">
-                    <div class="mb-3">
-                        <label class="form-label">Render Options</label>
-                        <hr class="mt-0"/>
+                    > li:not(.tree-collapsed) > .tree-more-dots {
+                        display: none;
+                    }
+                }
+            }
 
-                        <div class="form-check">
-                            <input
-                                    checked
-                                    class="form-check-input"
-                                    id="renderoptionsbeautify"
-                                    name="renderoptions[beautify]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label class="form-check-label" for="renderoptionsbeautify">
-                                Beautify
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input
-                                    checked
-                                    class="form-check-input"
-                                    id="renderoptionsminify"
-                                    name="renderoptions[minify]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label class="form-check-label" for="renderoptionsminify">
-                                Minify
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <label
-                                    class="form-check-label"
-                                    for="renderoptionsconvertColor"
+            .tree-collapsed {
+                > ul {
+                    display: none;
+                }
+
+                > .e:before {
+                    content: "\2192";
+                }
+            }
+
+            .e:before {
+                content: "\2193";
+                cursor: pointer;
+            }
+        </style>
+        <script>
+            document.documentElement.setAttribute(
+                "data-bs-theme",
+                window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
+            );
+        </script>
+    </head>
+    <body>
+        <nav class="navbar navbar-expand-lg bg-body-tertiary mb-2">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="https://github.com/tbela99/css-parser">@tbela99/css-parser</a>
+                <button
+                    aria-controls="navbarSupportedContent"
+                    aria-expanded="false"
+                    aria-label="Toggle navigation"
+                    class="navbar-toggler"
+                    data-bs-target="#navbarSupportedContent"
+                    data-bs-toggle="collapse"
+                    type="button"
+                >
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a
+                                aria-current="page"
+                                class="nav-link"
+                                href="https://tbela99.github.io/css-parser/benchmark/index.html"
+                                >Benchmark</a
                             >
-                                Convert color
-                            </label>
-                            <select
-                                    class="form-select form-select-sm"
-                                    id="renderoptionsconvertColor"
-                                    name="renderoptions[convertColor]"
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="https://tbela99.github.io/css-parser/playground/"
+                                >Playground</a
                             >
-                                <option value="NONE">NONE</option>
-                                <option selected value="HEX">HEX</option>
-                                <option value="RGB">RGB</option>
-                                <option value="HSL">HSL</option>
-                                <option value="HWB">HWB</option>
-                                <option value="CMYK">CMYK</option>
-                                <option value="SRGB">SRGB</option>
-                                <option value="SRGB_LINEAR">SRGB_LINEAR</option>
-                                <option value="DISPLAY_P3">DISPLAY_P3</option>
-                                <option value="DISPLAY_P3_LINEAR">DISPLAY_P3_LINEAR</option>
-                                <option value="PROPHOTO_RGB">PROPHOTO_RGB</option>
-                                <option value="A98_RGB">A98_RGB</option>
-                                <option value="REC2020">REC2020</option>
-                                <option value="XYZ">XYZ</option>
-                                <option value="XYZ_D50">XYZ_D50</option>
-                                <option value="LAB">LAB</option>
-                                <option value="LCH">LCH</option>
-                                <option value="OKLAB">OKLAB</option>
-                                <option value="OKLCH">OKLCH</option>
-                            </select>
-                        </div>
-                        <div class="form-check">
-                            <input
-                                    checked
-                                    class="form-check-input"
-                                    id="renderoptionsremoveComments"
-                                    name="renderoptions[removeComments]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label
-                                    class="form-check-label"
-                                    for="renderoptionsremoveComments"
-                            >
-                                Remove comments
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input
-                                    class="form-check-input"
-                                    id="renderoptionspreserveLicense"
-                                    name="renderoptions[preserveLicense]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label
-                                    class="form-check-label"
-                                    for="renderoptionspreserveLicense"
-                            >
-                                Preserve license
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input
-                                    class="form-check-input"
-                                    id="renderoptionssourcemap"
-                                    name="renderoptions[sourcemap]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label class="form-check-label" for="renderoptionssourcemap">
-                                Soucemap
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input
-                                    class="form-check-input"
-                                    id="renderoptionsexpandNestingRules"
-                                    name="renderoptions[expandNestingRules]"
-                                    type="checkbox"
-                                    value=""
-                            />
-                            <label
-                                    class="form-check-label"
-                                    for="renderoptionsexpandNestingRules"
-                            >
-                                Expand nesting rules
-                            </label>
-                        </div>
-                        <hr/>
-                    </div>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="https://tbela99.github.io/css-parser/docs/">Docs</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="https://github.com/tbela99/css-parser">GitHub</a>
+                        </li>
+                    </ul>
                 </div>
             </div>
-        </div>
-        <div class="col-md-10" id="zone">
+        </nav>
+        <div class="container-fluid mt-15">
             <div class="row">
-                <div class="col-sm-12 col-md-6">
-                    <div class="mb-3">
-                        <div class="row">
-                            <div class="col-sm-9">
-                                <div class="input-group mb-3" data-type="preset-group">
-                                    <label class="input-group-text" for="css"
-                                    >CSS Preset
+                <div class="col-md-2">
+                    <div class="row" id="optionsWrapper">
+                        <div class="col-sm-12">
+                            <div class="mb-3">
+                                <label class="form-label">Parse Options</label>
+                                <hr class="mt-0" />
+                                <div class="form-check">
+                                    <input
+                                        checked
+                                        class="form-check-input"
+                                        id="parseoptionsminify"
+                                        name="parseoptions[minify]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="parseoptionsminify"> Minify </label>
+                                </div>
+                                <div class="form-check">
+                                    <input
+                                        class="form-check-input"
+                                        id="parseoptionsmodule"
+                                        name="parseoptions[module]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="parseoptionsmodule"> CSS module </label>
+                                </div>
+                                <div class="form-check">
+                                    <input
+                                        checked
+                                        class="form-check-input"
+                                        id="parseoptionsparseColor"
+                                        name="parseoptions[parseColor]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="parseoptionsparseColor"> Parse color </label>
+                                </div>
+                                <div class="form-check">
+                                    <input
+                                        class="form-check-input"
+                                        id="parseoptionsresolveImport"
+                                        name="parseoptions[resolveImport]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="parseoptionsresolveImport">
+                                        Resolve @import
                                     </label>
-                                    <select class="form-select form-control" name="preset">
-                                        <option value="">None</option>
-                                        <option selected value="calc">Calc()</option>
-                                        <option value="if">If()</option>
-                                        <option value="validation">Validation</option>
-                                        <option value="prefix">Remove Prefixes</option>
-                                        <option value="bootstrap">Import Bootstrap</option>
-                                        <option value="tailwind">Import Tailwind CSS</option>
+                                </div>
+                                <div class="form-check">
+                                    <input
+                                        checked
+                                        class="form-check-input"
+                                        id="parseoptionsremoveCharset"
+                                        name="parseoptions[removeCharset]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="parseoptionsremoveCharset">
+                                        Remove @charset
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input
+                                        checked
+                                        class="form-check-input"
+                                        id="parseoptionsremoveEmpty"
+                                        name="parseoptions[removeEmpty]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="parseoptionsremoveEmpty">
+                                        Remove empty nodes
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input
+                                        checked
+                                        class="form-check-input"
+                                        id="parseoptionsremovePrefix"
+                                        name="parseoptions[removePrefix]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="parseoptionsremovePrefix">
+                                        Remove CSS prefixes
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input
+                                        checked
+                                        class="form-check-input"
+                                        id="parseoptionsremoveDuplicateDeclarations"
+                                        name="parseoptions[removeDuplicateDeclarations]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="parseoptionsremoveDuplicateDeclarations">
+                                        Deduplicate declarations
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input
+                                        checked
+                                        class="form-check-input"
+                                        id="parseoptionscomputeShorthand"
+                                        name="parseoptions[computeShorthand]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="parseoptionscomputeShorthand">
+                                        Shorthand
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input
+                                        checked
+                                        class="form-check-input"
+                                        id="parseoptionscomputeCalcExpression"
+                                        name="parseoptions[computeCalcExpression]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="parseoptionscomputeCalcExpression">
+                                        Math expressions
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input
+                                        checked
+                                        class="form-check-input"
+                                        id="parseoptionsinlineCssVariables"
+                                        name="parseoptions[inlineCssVariables]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="parseoptionsinlineCssVariables">
+                                        Inline CSS variables
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input
+                                        checked
+                                        class="form-check-input"
+                                        id="parseoptionsTransform"
+                                        name="parseoptions[computeTransform]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="parseoptionsTransform">
+                                        Minify Transform
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input
+                                        checked
+                                        class="form-check-input"
+                                        id="parseoptionsLenient"
+                                        name="parseoptions[lenient]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="parseoptionsLenient">
+                                        Lenient validation
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input
+                                        checked
+                                        class="form-check-input"
+                                        id="parseoptionsnestingRules"
+                                        name="parseoptions[nestingRules]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="parseoptionsnestingRules"> CSS Nesting </label>
+                                </div>
+
+                                <div class="form-check">
+                                    <input
+                                        class="form-check-input"
+                                        id="parseoptionsexpandNestingRules"
+                                        name="parseoptions[expandNestingRules]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="parseoptionsexpandNestingRules">
+                                        Expand nesting rules
+                                    </label>
+                                </div>
+
+                                <div class="form-check">
+                                    <input
+                                        class="form-check-input"
+                                        id="parseoptionsexpandIfSyntax"
+                                        name="parseoptions[expandIfSyntax]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="parseoptionsexpandIfSyntax">
+                                        Expand if() function
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input
+                                        class="form-check-input"
+                                        id="parseoptionsresolveUrls"
+                                        name="parseoptions[resolveUrls]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="parseoptionsresolveUrls"> Rewrite URLs </label>
+                                </div>
+                                <div class="form-check">
+                                    <input
+                                        class="form-check-input"
+                                        id="parseoptionssourcemap"
+                                        name="parseoptions[sourcemap]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="parseoptionssourcemap"> Sourcemap </label>
+                                </div>
+                                <div class="form-check">
+                                    <label class="form-check-label" for="parseoptionsValidation"> Validation </label>
+
+                                    <select
+                                        class="form-select form-select-sm"
+                                        id="parseoptionsValidation"
+                                        name="parseoptions[validation]"
+                                    >
+                                        <option value="0">None</option>
+                                        <option value="1">Selector</option>
+                                        <option value="2">AtRule</option>
+                                        <option value="4">Declaration</option>
+                                        <option selected value="3">Default</option>
+                                        <option value="7">All</option>
                                     </select>
                                 </div>
-                            </div>
-                            <div class="col-sm-3">
-                                <div class="input-group mb-3">
-                                    <button
-                                            class="btn btn-outline-secondary"
-                                            data-bs-copy="css"
-                                            type="button"
-                                    >
-                                        <i class="bi bi-copy"></i>
-                                    </button>
-                                </div>
+                                <hr />
                             </div>
                         </div>
-                        <textarea class="form-control" id="css" name="css" rows="10">
+                        <div class="col-sm-12">
+                            <div class="mb-3">
+                                <label class="form-label">Render Options</label>
+                                <hr class="mt-0" />
+
+                                <div class="form-check">
+                                    <input
+                                        checked
+                                        class="form-check-input"
+                                        id="renderoptionsbeautify"
+                                        name="renderoptions[beautify]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="renderoptionsbeautify"> Beautify </label>
+                                </div>
+                                <div class="form-check">
+                                    <input
+                                        checked
+                                        class="form-check-input"
+                                        id="renderoptionsminify"
+                                        name="renderoptions[minify]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="renderoptionsminify"> Minify </label>
+                                </div>
+                                <div class="form-check">
+                                    <label class="form-check-label" for="renderoptionsconvertColor">
+                                        Convert color
+                                    </label>
+                                    <select
+                                        class="form-select form-select-sm"
+                                        id="renderoptionsconvertColor"
+                                        name="renderoptions[convertColor]"
+                                    >
+                                        <option value="NONE">NONE</option>
+                                        <option selected value="HEX">HEX</option>
+                                        <option value="RGB">RGB</option>
+                                        <option value="HSL">HSL</option>
+                                        <option value="HWB">HWB</option>
+                                        <option value="CMYK">CMYK</option>
+                                        <option value="SRGB">SRGB</option>
+                                        <option value="SRGB_LINEAR">SRGB_LINEAR</option>
+                                        <option value="DISPLAY_P3">DISPLAY_P3</option>
+                                        <option value="PROPHOTO_RGB">PROPHOTO_RGB</option>
+                                        <option value="A98_RGB">A98_RGB</option>
+                                        <option value="REC2020">REC2020</option>
+                                        <option value="XYZ">XYZ</option>
+                                        <option value="XYZ_D50">XYZ_D50</option>
+                                        <option value="LAB">LAB</option>
+                                        <option value="LCH">LCH</option>
+                                        <option value="OKLAB">OKLAB</option>
+                                        <option value="OKLCH">OKLCH</option>
+                                    </select>
+                                </div>
+                                <div class="form-check">
+                                    <input
+                                        checked
+                                        class="form-check-input"
+                                        id="renderoptionsremoveComments"
+                                        name="renderoptions[removeComments]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="renderoptionsremoveComments">
+                                        Remove comments
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input
+                                        class="form-check-input"
+                                        id="renderoptionspreserveLicense"
+                                        name="renderoptions[preserveLicense]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="renderoptionspreserveLicense">
+                                        Preserve license
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input
+                                        class="form-check-input"
+                                        id="renderoptionssourcemap"
+                                        name="renderoptions[sourcemap]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="renderoptionssourcemap"> Soucemap </label>
+                                </div>
+                                <div class="form-check">
+                                    <input
+                                        class="form-check-input"
+                                        id="renderoptionsexpandNestingRules"
+                                        name="renderoptions[expandNestingRules]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="renderoptionsexpandNestingRules">
+                                        Expand nesting rules
+                                    </label>
+                                </div>
+                                <hr />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-10" id="zone">
+                    <div class="row">
+                        <div class="col-sm-12 col-md-6">
+                            <div class="mb-3">
+                                <div class="row">
+                                    <div class="col-sm-9">
+                                        <div class="input-group mb-3" data-type="preset-group">
+                                            <label class="input-group-text" for="css">CSS Preset </label>
+                                            <select class="form-select form-control" name="preset">
+                                                <option value="">None</option>
+                                                <option selected value="calc">Calc()</option>
+                                                <option value="if">If()</option>
+                                                <option value="validation">Validation</option>
+                                                <option value="prefix">Remove Prefixes</option>
+                                                <option value="bootstrap">Import Bootstrap</option>
+                                                <option value="tailwind">Import Tailwind CSS</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <div class="input-group mb-3">
+                                            <button class="btn btn-outline-secondary" data-bs-copy="css" type="button">
+                                                <i class="bi bi-copy"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <textarea class="form-control" id="css" name="css" rows="10">
 :root {
 --color: green;
 }
@@ -562,771 +507,683 @@
     height: calc(100% / 4);
     transform: scaleX(1.5)  scaleY(2);
 }}</textarea
-                        >
-                    </div>
-                </div>
-                <div class="col-sm-12 col-md-6">
-                    <div class="mb-3">
-                        <div class="row">
-                        <div class="col-sm-9">
-                            <div class="input-group mb-3">
-                                <label class="input-group-text" for="result"
-                                >CSS</label
                                 >
-                                <a
-                                        class="btn btn-outline-secondary"
-                                        download="result"
-                                        href="#"
-                                >
-                                    <i class="bi bi-download"></i>
-                                </a>
                             </div>
                         </div>
-                        <div class="col-sm-3">
-                            <div class="input-group mb-3">
-                                <button
-                                        class="btn btn-outline-secondary"
-                                        data-bs-copy="result"
-                                        type="button"
-                                >
-                                    <i class="bi bi-copy"></i>
-                                </button>
+                        <div class="col-sm-12 col-md-6">
+                            <div class="mb-3">
+                                <div class="row">
+                                    <div class="col-sm-9">
+                                        <div class="input-group mb-3">
+                                            <label class="input-group-text" for="result">CSS</label>
+                                            <a class="btn btn-outline-secondary" download="result" href="#">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <div class="input-group mb-3">
+                                            <button
+                                                class="btn btn-outline-secondary"
+                                                data-bs-copy="result"
+                                                type="button"
+                                            >
+                                                <i class="bi bi-copy"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <textarea class="form-control" disabled id="result" name="result" rows="10"></textarea>
                             </div>
                         </div>
-                        </div>
-                        <textarea
-                                class="form-control"
-                                disabled
-                                id="result"
-                                name="result"
-                                rows="10"
-                        ></textarea>
-                    </div>
-                </div>
-                <div class="col-sm-12 col-md-6 css-parse-options-module-box">
-                    <div class="mb-3">
-                        <div class="row">
-                            <div class="col-sm-9">
-                                <div class="input-group mb-3">
-                                    <label class="input-group-text" for="mapping"
-                                    >CSS Modules Mapping</label
-                                    >
-                                    <a
-                                            class="btn btn-outline-secondary"
-                                            download="mapping"
-                                            href="#"
-                                    >
-                                        <i class="bi bi-download"></i>
-                                    </a>
+                        <div class="col-sm-12 col-md-6 css-parse-options-module-box">
+                            <div class="mb-3">
+                                <div class="row">
+                                    <div class="col-sm-9">
+                                        <div class="input-group mb-3">
+                                            <label class="input-group-text" for="mapping">CSS Modules Mapping</label>
+                                            <a class="btn btn-outline-secondary" download="mapping" href="#">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <div class="input-group mb-3">
+                                            <button
+                                                class="btn btn-outline-secondary"
+                                                data-bs-copy="mapping"
+                                                type="button"
+                                            >
+                                                <i class="bi bi-copy"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-sm-3">
-                                <div class="input-group mb-3">
-                                    <button
-                                            class="btn btn-outline-secondary"
-                                            data-bs-copy="mapping"
-                                            type="button"
-                                    >
-                                        <i class="bi bi-copy"></i>
-                                    </button>
-                                </div>
+                                <textarea
+                                    class="form-control"
+                                    disabled
+                                    id="mapping"
+                                    name="mapping"
+                                    rows="10"
+                                ></textarea>
                             </div>
                         </div>
-                        <textarea
-                                class="form-control"
-                                disabled
-                                id="mapping"
-                                name="mapping"
-                                rows="10"
-                        ></textarea>
-                    </div>
-                </div>
-                <div class="col-sm-12 col-md-6">
-                    <div class="mb-3">
-                        <div class="row">
-                            <div class="col-sm-9">
-                                <div class="input-group mb-3">
-                                    <label class="input-group-text" for="render-stats"
-                                    >Stats</label
-                                    >
+                        <div class="col-sm-12 col-md-6">
+                            <div class="mb-3">
+                                <div class="row">
+                                    <div class="col-sm-9">
+                                        <div class="input-group mb-3">
+                                            <label class="input-group-text" for="render-stats">Stats</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <div class="input-group mb-3">
+                                            <button
+                                                class="btn btn-outline-secondary"
+                                                data-bs-copy="render-stats"
+                                                type="button"
+                                            >
+                                                <i class="bi bi-copy"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-sm-3">
-                                <div class="input-group mb-3">
-                                    <button
-                                            class="btn btn-outline-secondary"
-                                            data-bs-copy="render-stats"
-                                            type="button"
-                                    >
-                                        <i class="bi bi-copy"></i>
-                                    </button>
-                                </div>
+                                <textarea class="form-control" disabled id="render-stats" rows="10"></textarea>
                             </div>
                         </div>
-                        <textarea
-                                class="form-control"
-                                disabled
-                                id="render-stats"
-                                rows="10"
-                        ></textarea>
-                    </div>
-                </div>
-                <div class="col-sm-12 col-md-6">
-                    <div class="mb-3">
-                        <div class="row">
-                            <div class="col-sm-9">
-                                <div class="input-group mb-3">
-                                    <label class="input-group-text" for="errors"
-                                    >Errors</label
-                                    >
-                                    <a
-                                            class="btn btn-outline-secondary"
-                                            download="errors"
-                                            href="#"
-                                    >
-                                        <i class="bi bi-download"></i>
-                                    </a>
+                        <div class="col-sm-12 col-md-6">
+                            <div class="mb-3">
+                                <div class="row">
+                                    <div class="col-sm-9">
+                                        <div class="input-group mb-3">
+                                            <label class="input-group-text" for="errors">Errors</label>
+                                            <a class="btn btn-outline-secondary" download="errors" href="#">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <div class="input-group mb-3">
+                                            <button
+                                                class="btn btn-outline-secondary"
+                                                data-bs-copy="errors"
+                                                type="button"
+                                            >
+                                                <i class="bi bi-copy"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-sm-3">
-                                <div class="input-group mb-3">
-                                    <button
-                                            class="btn btn-outline-secondary"
-                                            data-bs-copy="errors"
-                                            type="button"
-                                    >
-                                        <i class="bi bi-copy"></i>
-                                    </button>
-                                </div>
+                                <textarea class="form-control" disabled id="errors" name="errors" rows="10"></textarea>
                             </div>
                         </div>
-                        <textarea
-                                class="form-control"
-                                disabled
-                                id="errors"
-                                name="errors"
-                                rows="10"
-                        ></textarea>
-                    </div>
-                </div>
-                <div class="col-sm-12">
-                    <div class="mb-3">
-                        <div class="row">
-                            <div class="col">
-                                <div class="input-group mb-3">
-                                    <label class="input-group-text" for="ast">AST</label>
-                                    <button
-                                            class="btn btn-outline-secondary"
-                                            data-bs-tree="expand"
-                                            title="Expand"
-                                            type="button"
-                                    >
-                                        <i class="bi bi-arrows-expand-vertical"></i>
-                                    </button>
-                                    <button
-                                            class="btn btn-outline-secondary"
-                                            data-bs-tree="collapse"
-                                            title="Collapse"
-                                            type="button"
-                                    >
-                                        <i class="bi bi-arrows-collapse-vertical"></i>
-                                    </button>
-                                    <a
-                                            class="btn btn-outline-secondary"
-                                            download="ast"
-                                            href="#"
-                                    >
-                                        <i class="bi bi-download"></i>
-                                    </a>
-                                    <button
-                                            class="btn btn-outline-secondary"
-                                            data-bs-copy="ast"
-                                            type="button"
-                                    >
-                                        <i class="bi bi-copy"></i>
-                                    </button>
+                        <div class="col-sm-12">
+                            <div class="mb-3">
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="input-group mb-3">
+                                            <label class="input-group-text" for="ast">AST</label>
+                                            <button
+                                                class="btn btn-outline-secondary"
+                                                data-bs-tree="expand"
+                                                title="Expand"
+                                                type="button"
+                                            >
+                                                <i class="bi bi-arrows-expand-vertical"></i>
+                                            </button>
+                                            <button
+                                                class="btn btn-outline-secondary"
+                                                data-bs-tree="collapse"
+                                                title="Collapse"
+                                                type="button"
+                                            >
+                                                <i class="bi bi-arrows-collapse-vertical"></i>
+                                            </button>
+                                            <a class="btn btn-outline-secondary" download="ast" href="#">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                            <button class="btn btn-outline-secondary" data-bs-copy="ast" type="button">
+                                                <i class="bi bi-copy"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <textarea
-                                class="form-control d-none"
-                                disabled
-                                id="ast"
-                                name="ast"
-                                rows="10"
-                        ></textarea>
-                        <div class="nav flex-column css-tree" id="css-tree"></div>
+                                <textarea class="form-control d-none" disabled id="ast" name="ast" rows="10"></textarea>
+                                <div class="nav flex-column css-tree" id="css-tree"></div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col">
-                    <div class="mb-3">
-                        <ul class="navbar-nav">
-                            <li class="nav-item">
-                                <a
-                                        class="nav-link"
-                                        href="https://github.com/tbela99/css-parser"
-                                        target="_blank"
-                                >
-                                    <i class="bi bi-github"></i>
-                                    GitHub</a
-                                >
-                            </li>
-                        </ul>
+                    <div class="row">
+                        <div class="col">
+                            <div class="mb-3">
+                                <ul class="navbar-nav">
+                                    <li class="nav-item">
+                                        <a
+                                            class="nav-link"
+                                            href="https://github.com/tbela99/css-parser"
+                                            target="_blank"
+                                        >
+                                            <i class="bi bi-github"></i>
+                                            GitHub</a
+                                        >
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
-<script type="module">
-    import {
-        parse,
-        render,
-        EnumToken,
-        ColorType,
-    } from "https://unpkg.com/@tbela99/css-parser@1.6.3/web";
-    import {buildTree} from "./tree.js";
+        <script type="module">
+            import { parse, render, EnumToken, ColorType } from "https://esm.sh/@tbela99/css-parser@1.4.3/web";
+            import { buildTree } from "./tree.js";
 
-    const units = ["B", "KB", "MB", "GB", "TB", "PB"];
+            const units = ["B", "KB", "MB", "GB", "TB", "PB"];
 
-    const css = document.querySelector("#css");
-    const result = document.querySelector("#result");
-    const mapping = document.querySelector("#mapping");
-    const ast = document.querySelector("#ast");
-    const errors = document.querySelector("#errors");
-    const renderStats = document.querySelector("#render-stats");
-    const tree = document.querySelector("#css-tree");
+            const css = document.querySelector("#css");
+            const result = document.querySelector("#result");
+            const mapping = document.querySelector("#mapping");
+            const ast = document.querySelector("#ast");
+            const errors = document.querySelector("#errors");
+            const renderStats = document.querySelector("#render-stats");
+            const tree = document.querySelector("#css-tree");
 
-    function toFileSize(size) {
-        if (size === 0) return 0;
+            function toFileSize(size) {
+                if (size === 0) return 0;
 
-        const e = Math.floor(Math.log(size) / Math.log(1024));
+                const e = Math.floor(Math.log(size) / Math.log(1024));
 
-        size = size / Math.pow(1024, Math.floor(e));
+                size = size / Math.pow(1024, Math.floor(e));
 
-        return (
-            (Number.isInteger(size) ? size : size.toFixed(2)) +
-            " " +
-            (units?.[e] ?? s[e])
-        );
-    }
-
-    css.addEventListener("change", async (e) => {
-        e.stopPropagation();
-
-        const parseOptions = {};
-        const renderOptions = {};
-
-        if (css.value.trim() === "") {
-            result.value = "";
-            mapping.value = "";
-            ast.value = "";
-            errors.value = "";
-            renderStats.value = "";
-            tree.innerHTML = "";
-        } else {
-            let value;
-            let name;
-
-            for (const option of document.querySelectorAll(
-                ':scope :is(input[type=checkbox][name],input[type=radio][name]:checked,select[name^="parseoptions["],select[name^="renderoptions["])'
-            )) {
-                name = option.name;
-                value = option.tagName === "SELECT" ? option.value : option.checked;
-
-                if (option.name.startsWith("renderoptions[")) {
-                    name = option.name.slice("renderoptions[".length, -1);
-
-                    if (name === "convertColor") {
-                        value = value === "NONE" ? false : ColorType[option.value];
-                    }
-
-                    renderOptions[name] =
-                        name === "convertColor" ? value : +value > 0;
-                } else if (option.name.startsWith("parseoptions[")) {
-                    name = option.name.slice("parseoptions[".length, -1);
-                    parseOptions[name] = +value > 0;
-                }
+                return (Number.isInteger(size) ? size : size.toFixed(2)) + " " + (units?.[e] ?? s[e]);
             }
 
-            console.error({parseOptions, renderOptions});
-            console.debug("parsing");
+            css.addEventListener("change", async (e) => {
+                e.stopPropagation();
 
-            const startTime = performance.now();
+                const parseOptions = {};
+                const renderOptions = {};
 
-            for (const [key, value] of Object.entries(parseOptions)) {
+                if (css.value.trim() === "") {
+                    result.value = "";
+                    mapping.value = "";
+                    ast.value = "";
+                    errors.value = "";
+                    renderStats.value = "";
+                    tree.innerHTML = "";
+                } else {
+                    let value;
+                    let name;
 
-                document.body.classList.toggle(`css-parse-options-${key.replace(/([A-Z])/g, (all, one) => `-${one.toLowerCase()}`)}`, value)
-            }
+                    for (const option of document.querySelectorAll(
+                        ':scope :is(input[type=checkbox][name],input[type=radio][name]:checked,select[name^="parseoptions["],select[name^="renderoptions["])',
+                    )) {
+                        name = option.name;
+                        value = option.tagName === "SELECT" ? option.value : option.checked;
 
-            parse(css.value, parseOptions).then((parseResult) => {
-                console.debug("rendering");
-                const rendered = render(parseResult.ast, renderOptions);
+                        if (option.name.startsWith("renderoptions[")) {
+                            name = option.name.slice("renderoptions[".length, -1);
 
-                const transformResult = {
-                    parseOptions,
-                    renderOptions,
-                    ...parseResult,
-                    ...rendered,
-                    errors: parseResult.errors.concat(rendered.errors),
-                    stats: {
-                        bytesOut: rendered.code.length,
-                        ...parseResult.stats,
-                        render: rendered.stats.total,
-                        total: (performance.now() - startTime).toFixed(2) + "ms",
-                    },
-                };
-
-                console.error({transformResult});
-
-                result.value =
-                    transformResult.code +
-                    (transformResult.map
-                        ? "\n" +
-                        `/*# sourceMappingURL=data:application/json,${encodeURIComponent(
-                            JSON.stringify(transformResult.map)
-                        )} */`
-                        : "");
-
-                mapping.value = transformResult.mapping ? JSON.stringify(transformResult.mapping, null, 1) : "";
-                ast.value = JSON.stringify(transformResult.ast, null, 1);
-
-                errors.value =
-                    transformResult.errors.length === 0
-                        ? ""
-                        : JSON.stringify(transformResult.errors, null, 1);
-
-                Array.from(errors.labels ?? []).forEach(
-                    (label) =>
-                        (label.textContent =
-                            "Errors" +
-                            (transformResult.errors.length === 0
-                                ? ""
-                                : " (" + transformResult.errors.length + ")"))
-                );
-
-                renderStats.value = Object.entries(transformResult.stats)
-                    .concat([
-                        [
-                            "Ratio",
-                            (
-                                100 *
-                                (1 -
-                                    transformResult.code.length /
-                                    transformResult.stats.bytesIn)
-                            ).toFixed(2) + " %",
-                        ],
-                        ["Input", toFileSize(transformResult.stats.bytesIn)],
-                        ["Output", toFileSize(transformResult.code.length)],
-                    ])
-                    .reduce(
-                        (acc, [key, value]) =>
-                            acc +
-                            (acc.length > 0 ? "\n" : "") +
-                            `${key}: ${
-                                typeof value === "number" && !key.includes("Count")
-                                    ? toFileSize(value)
-                                    : typeof value === "object"
-                                        ? JSON.stringify(value)
-                                        : value
-                            }`,
-                        ""
-                    );
-
-                buildTree(tree, transformResult.ast, {
-                    rootName: EnumToken[transformResult.ast.typ],
-                    transform: (name, value, object) =>
-                        Array.isArray(object)
-                            ? {
-                                name: name + " [" + EnumToken[value.typ] + "]",
-                                value,
+                            if (name === "convertColor") {
+                                value = value === "NONE" ? false : ColorType[option.value];
                             }
-                            : {name, value},
-                });
-            });
-        }
 
-        /*
-        code.value = `
-
-import {parse, render} from 'https://esm.sh/@tbela99/css-parser/web';
-
-const css = ${JSON.stringify(css.value)};
-const parsed = await parse(css, ${JSON.stringify(parseOptions)});
-const rendered = render(parsed.ast, ${JSON.stringify(renderOptions)});
-
-console.debug({parsed, rendered});`;
-        */
-    });
-
-    function generateDownloadUrl(target, input, type) {
-        if (input.length === 0) {
-            return null;
-        }
-
-        return URL.createObjectURL(new Blob([input], {type}));
-    }
-
-    document.documentElement.addEventListener("click", async (event) => {
-        const target = event.target.closest("[data-bs-copy]");
-
-        if (target != null) {
-            target.classList.add("btn-outline-danger");
-            await navigator.clipboard.writeText(
-                document.getElementById(target.getAttribute("data-bs-copy")).value
-            );
-        }
-    });
-
-    document.querySelector("#zone").addEventListener("click", (event) => {
-        let target = event.target.closest("a[download]");
-
-        if (target != null) {
-            const url = generateDownloadUrl(
-                target,
-                document.getElementById(target.getAttribute('download')).value,
-                target.download === "result" ? "text/css" : "application/json"
-            );
-
-            if (url === null) {
-                event.preventDefault();
-                return;
-            }
-
-            if (target.href.startsWith("blob:")) {
-                URL.revokeObjectURL(target.href);
-            }
-
-            target.classList.add("btn-outline-danger");
-            target.href = url;
-
-            setTimeout(
-                () => event.target.classList.remove("btn-outline-danger"),
-                1000
-            );
-            return;
-        }
-
-        target = event.target.closest("[data-bs-tree]");
-
-        if (target != null) {
-            const collapse = target.dataset.bsTree == "collapse";
-            const stack = [tree.firstElementChild];
-
-            let item;
-            let maxDepth = 100;
-
-            while ((item = stack.shift())) {
-                if (maxDepth < 0) {
-                    break;
-                }
-
-                for (const child of item.children) {
-                    if (collapse && child.classList.contains("tree-collapsed")) {
-                        continue;
-                    }
-
-                    if (!collapse && child.dataset.parsed === "no") {
-                        const el = child.querySelector(":scope>.e");
-
-                        if (el != null) {
-                            maxDepth--;
-                            el.click();
+                            renderOptions[name] = name === "convertColor" ? value : +value > 0;
+                        } else if (option.name.startsWith("parseoptions[")) {
+                            name = option.name.slice("parseoptions[".length, -1);
+                            parseOptions[name] =
+                                name === "validation" ? (+option.value === 0 ? false : +option.value) : +value > 0;
                         }
                     }
 
-                    const ul = child.querySelector(":scope>ul");
+                    console.error({ parseOptions, renderOptions });
+                    console.debug("parsing");
 
-                    if (ul != null) {
-                        stack.push(ul);
+                    const startTime = performance.now();
+
+                    for (const [key, value] of Object.entries(parseOptions)) {
+                        document.body.classList.toggle(
+                            `css-parse-options-${key.replace(/([A-Z])/g, (all, one) => `-${one.toLowerCase()}`)}`,
+                            value,
+                        );
                     }
 
-                    child.classList.toggle("tree-collapsed", collapse);
+                    parse(css.value, parseOptions).then((parseResult) => {
+                        console.debug("rendering");
+                        const rendered = render(parseResult.ast, renderOptions);
+
+                        const transformResult = {
+                            parseOptions,
+                            renderOptions,
+                            ...parseResult,
+                            ...rendered,
+                            errors: parseResult.errors.concat(rendered.errors),
+                            stats: {
+                                bytesOut: rendered.code.length,
+                                ...parseResult.stats,
+                                render: rendered.stats.total,
+                                total: (performance.now() - startTime).toFixed(2) + "ms",
+                            },
+                        };
+
+                        console.error({ transformResult });
+
+                        result.value =
+                            transformResult.code +
+                            (transformResult.map
+                                ? "\n" +
+                                  `/*# sourceMappingURL=data:application/json,${encodeURIComponent(
+                                      JSON.stringify(transformResult.map),
+                                  )} */`
+                                : "");
+
+                        mapping.value = transformResult.mapping ? JSON.stringify(transformResult.mapping, null, 1) : "";
+                        ast.value = JSON.stringify(transformResult.ast, null, 1);
+
+                        errors.value =
+                            transformResult.errors.length === 0 ? "" : JSON.stringify(transformResult.errors, null, 1);
+
+                        Array.from(errors.labels ?? []).forEach(
+                            (label) =>
+                                (label.textContent =
+                                    "Errors" +
+                                    (transformResult.errors.length === 0
+                                        ? ""
+                                        : " (" + transformResult.errors.length + ")")),
+                        );
+
+                        renderStats.value = Object.entries(transformResult.stats)
+                            .concat([
+                                [
+                                    "Ratio",
+                                    (100 * (1 - transformResult.code.length / transformResult.stats.bytesIn)).toFixed(
+                                        2,
+                                    ) + " %",
+                                ],
+                                ["Input", toFileSize(transformResult.stats.bytesIn)],
+                                ["Output", toFileSize(transformResult.code.length)],
+                            ])
+                            .reduce(
+                                (acc, [key, value]) =>
+                                    acc +
+                                    (acc.length > 0 ? "\n" : "") +
+                                    `${key}: ${
+                                        typeof value === "number" && !key.includes("Count")
+                                            ? toFileSize(value)
+                                            : typeof value === "object"
+                                              ? JSON.stringify(value)
+                                              : value
+                                    }`,
+                                "",
+                            );
+
+                        buildTree(tree, transformResult.ast, {
+                            rootName: EnumToken[transformResult.ast.typ],
+                            transform: (name, value, object) =>
+                                Array.isArray(object)
+                                    ? {
+                                          name: name + " [" + EnumToken[value.typ] + "]",
+                                          value,
+                                      }
+                                    : { name, value },
+                        });
+                    });
                 }
+
+                /*
+                    code.value = `
+
+            import {parse, render} from 'https://esm.sh/@tbela99/css-parser/web';
+
+            const css = ${JSON.stringify(css.value)};
+            const parsed = await parse(css, ${JSON.stringify(parseOptions)});
+            const rendered = render(parsed.ast, ${JSON.stringify(renderOptions)});
+
+            console.debug({parsed, rendered});`;
+                    */
+            });
+
+            function generateDownloadUrl(target, input, type) {
+                if (input.length === 0) {
+                    return null;
+                }
+
+                return URL.createObjectURL(new Blob([input], { type }));
             }
-        }
-    });
 
-    document
-        .querySelector("#optionsWrapper")
-        .addEventListener("change", (event) => {
-            event.stopPropagation();
+            document.documentElement.addEventListener("click", async (event) => {
+                const target = event.target.closest("[data-bs-copy]");
 
-            if (
-                event.target.matches(
-                    "input[type=checkbox][name],input[type=radio][name],select[name]"
-                )
-            ) {
-                css.dispatchEvent(new Event("change"));
+                if (target != null) {
+                    target.classList.add("btn-outline-danger");
+                    await navigator.clipboard.writeText(
+                        document.getElementById(target.getAttribute("data-bs-copy")).value,
+                    );
+                }
+            });
+
+            document.querySelector("#zone").addEventListener("click", (event) => {
+                let target = event.target.closest("a[download]");
+
+                if (target != null) {
+                    const url = generateDownloadUrl(
+                        target,
+                        document.getElementById(target.getAttribute("download")).value,
+                        target.download === "result" ? "text/css" : "application/json",
+                    );
+
+                    if (url === null) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    if (target.href.startsWith("blob:")) {
+                        URL.revokeObjectURL(target.href);
+                    }
+
+                    target.classList.add("btn-outline-danger");
+                    target.href = url;
+
+                    setTimeout(() => event.target.classList.remove("btn-outline-danger"), 1000);
+                    return;
+                }
+
+                target = event.target.closest("[data-bs-tree]");
+
+                if (target != null) {
+                    requestAnimationFrame(async () => {
+                        const collapse = target.dataset.bsTree == "collapse";
+                        const query = `:scope li${collapse ? ":not(" : ":is("}.tree-collapsed)[data-key]`;
+                        const stack = Array.from(tree.querySelectorAll(query));
+
+                        // expand 20 nodes at most
+                        let maxDepth = 20;
+                        let i = 0;
+
+                        for (; i < stack.length; i++) {
+                            stack[i].classList.toggle("tree-collapsed", collapse);
+
+                            if (maxDepth > 0 && stack[i].dataset.parsed === "no") {
+                                const el = stack[i].querySelector(":scope>.e");
+
+                                if (el != null) {
+                                    maxDepth--;
+                                    el.click();
+
+                                    if (!collapse) {
+                                        await new Promise((resolve, reject) => {
+                                            setTimeout(() => {
+                                                stack.push(...stack[i].querySelectorAll(query));
+                                                resolve();
+                                            }, 0);
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+
+            document.querySelector("#optionsWrapper").addEventListener("change", (event) => {
+                event.stopPropagation();
+
+                if (event.target.matches("input[type=checkbox][name],input[type=radio][name],select[name]")) {
+                    css.dispatchEvent(new Event("change"));
+                }
+            });
+
+            document.querySelector("select[name=preset]").addEventListener("change", (event) => {
+                if (event.target.value === "calc") {
+                    css.value = `:root {
+            --color: green;
             }
-        });
+            ._19_u :focus {
+                color:  hsl(from var(--color) calc(h * 2) s l);
+            }
+            :root {
+            --preferred-width: 20px;
+            }
+            .foo-bar {
+                width: calc(calc(var(--preferred-width) + 1px) / 3 + 5px);
+                height: calc(100% / 4);
+                transform: scaleX(1.5)  scaleY(2);
 
-    document
-        .querySelector("select[name=preset]")
-        .addEventListener("change", (event) => {
-            if (event.target.value === "calc") {
-                css.value = `:root {
---color: green;
-}
-._19_u :focus {
-    color:  hsl(from var(--color) calc(h * 2) s l);
-}
-:root {
---preferred-width: 20px;
-}
-.foo-bar {
-    width: calc(calc(var(--preferred-width) + 1px) / 3 + 5px);
-    height: calc(100% / 4);
-    transform: scaleX(1.5)  scaleY(2);
+                .foo-bar {
+              color: lch(from slateblue calc(l + 10%) c h);
+            }
 
-    .foo-bar {
-  color: lch(from slateblue calc(l + 10%) c h);
-}
+                transform: scaleX(.5)scaleY(1)scaleZ(1.7)rotate3d(1,1,1,67deg);
+                color: color-mix(in oklch, currentcolor 35%, #0000 )
 
-    transform: scaleX(.5)scaleY(1)scaleZ(1.7)rotate3d(1,1,1,67deg);
-    color: color-mix(in oklch, currentcolor 35%, #0000 )
-
-}
-`;
-            }else if (event.target.value === "if") {
-
-                css.value = `button {
-	background: linear-gradient(
-		if(media(min-width: 768px): to right; else: to bottom),
-		if(style(--dark-mode): #333; else: #fff),
-		if(style(--dark-mode): #000; else: #ccc)
-	);
-}
-`;
-
-parseoptionsexpandIfSyntax.checked = true;
-
-            } else if (event.target.value === "validation") {
-                parseoptionsValidation.checked = true;
-                css.value = `
-#404 {
-    --animate-duration: 1s;
-}
-
-.s, #404 {
-    --animate-duration: 1s;
-}
-
-.s [type="text" {
-    --animate-duration: 1s;
-}
-
-.s [type="text"]] {
-    --animate-duration: 1s;
-}
-
-.s [type="text"] {
-    --animate-duration: 1s;
-}
-
-.s [type="text" i] {
-    --animate-duration: 1s;
-}
-
-.s [type="text" s] {
-    --animate-duration: 1s;
-}
-
-.s [type="text" b] {
-    --animate-duration: 1s;
-}
-
-.s [type="text" b], {
-    --animate-duration: 1s;
-}
-
-.s [type="text" b]+ {
-    --animate-duration: 1s;
-}
-
-.s [type="text" b]+ b {
-    --animate-duration: 1s;
-}
-
-.s [type="text" i]+ b {
-    --animate-duration: 1s;
-}
-
-
-.s [type="text"())] {
-    --animate-duration: 1s;
-}
-.s() {
-    --animate-duration: 1s;
-}
-.s:focus {
-    --animate-duration: 1s;
-    transform:   translate(0,-100px) scaleX(0.5) scaleY( 1) scaleZ(1.7) rotate3d(1, 1, 1,  67deg);
-}`;
-            } else if (event.target.value === "bootstrap") {
-                parseoptionsresolveImport.checked = true;
-                css.value = `@import url('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.css');`;
-            } else if (event.target.value === "tailwind") {
-                parseoptionsresolveImport.checked = true;
-                css.value = `@import url('https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.0.4/tailwind.css');`;
-            } else if (event.target.value === "prefix") {
-                parseoptionsresolveImport.removePrefix = true;
-                css.value = `
-::-webkit-input-placeholder {
-  color: gray;
-}
-
-::-moz-placeholder {
-  color: gray;
-}
-
-:-ms-input-placeholder {
-  color: gray;
-}
-
-::-ms-input-placeholder {
-  color: gray;
-}
-
-::placeholder {
-  color: gray;
-}
-
-@supports selector(:-ms-input-placeholder) {
-
-
-:-ms-input-placeholder {
-  color: gray;
-}
-}
-
-.image {
-  background-image: url(image@1x.png);
-}
-@media (-webkit-min-device-pixel-ratio: 2), (-o-min-device-pixel-ratio: 2/1), (min-resolution: 2dppx) {
-  .image {
-    background-image: url(image@2x.png);
-  }
-
-}
-
-
-@-webkit-keyframes bar {
-
-from, 0% {
-
-height: 10px;
-}
-}
-
-@keyframes bar {
-
-from, 0% {
-
-height: 10px;
-}
-}
-.example {
-
-    -moz-animation: bar 1s infinite;
-    display: -ms-grid;
-    display: grid;
-    -webkit-transition: all .5s;
-    -o-transition: all .5s;
-    transition: all .5s;
-    -webkit-user-select: none;
-       -moz-user-select: none;
-        -ms-user-select: none;
-            user-select: none;
-    background: -o-linear-gradient(top, white, black);
-    background: -webkit-gradient(linear, left top, left bottom, from(white), to(black));
-    background: linear-gradient(to bottom, white, black);
-}
-
-.site{
-   display:-ms-grid;
-   display:grid;   -ms-grid-columns:2fr 1fr;
-   grid-template-columns:2fr 1fr;
-   grid-template-areas:"header header"
-                       "title sidebar"
-                       "main sidebar"
-                       "footer footer";
-}
-.site > *{padding:30px; color:#fff; font-size:20px;}
-.mastheader{
-   -ms-grid-row:1;
-   -ms-grid-column:1;
-   -ms-grid-column-span:2;
-   grid-area:header;
-}
-.page-title{
-   -ms-grid-row:2;
-   -ms-grid-column:1;
-   grid-area:title;
-}
-.main-content{
-   -ms-grid-row:3;
-   -ms-grid-column:1;
-   grid-area:main;
-}
-.sidebar{
-   -ms-grid-row:2;
-   -ms-grid-row-span:2;
-   -ms-grid-column:2;
-   grid-area:sidebar;
-}
-.footer{
-   -ms-grid-row:4;
-   -ms-grid-column:1;
-   -ms-grid-column-span:2;
-   grid-area:footer;
-}
-a {
-  -webkit-transition: -webkit-transform 1s;
-  -ms-transition: -ms-transform 1s;
-  transition: transform 1s
-}
+            }
             `;
-            } else {
-                css.value = "";
+                } else if (event.target.value === "if") {
+                    css.value = `button {
+            	background: linear-gradient(
+            		if(media(min-width: 768px): to right; else: to bottom),
+            		if(style(--dark-mode): #333; else: #fff),
+            		if(style(--dark-mode): #000; else: #ccc)
+            	);
+            }
+            `;
+                } else if (event.target.value === "validation") {
+                    parseoptionsValidation.checked = true;
+                    css.value = `
+            #404 {
+                --animate-duration: 1s;
             }
 
-            event.target.classList.add("btn-outline-danger");
+            .s, #404 {
+                --animate-duration: 1s;
+            }
+
+            .s [type="text" {
+                --animate-duration: 1s;
+            }
+
+            .s [type="text"]] {
+                --animate-duration: 1s;
+            }
+
+            .s [type="text"] {
+                --animate-duration: 1s;
+            }
+
+            .s [type="text" i] {
+                --animate-duration: 1s;
+            }
+
+            .s [type="text" s] {
+                --animate-duration: 1s;
+            }
+
+            .s [type="text" b] {
+                --animate-duration: 1s;
+            }
+
+            .s [type="text" b], {
+                --animate-duration: 1s;
+            }
+
+            .s [type="text" b]+ {
+                --animate-duration: 1s;
+            }
+
+            .s [type="text" b]+ b {
+                --animate-duration: 1s;
+            }
+
+            .s [type="text" i]+ b {
+                --animate-duration: 1s;
+            }
+
+
+            .s [type="text"())] {
+                --animate-duration: 1s;
+            }
+            .s() {
+                --animate-duration: 1s;
+            }
+            .s:focus {
+                --animate-duration: 1s;
+                transform:   translate(0,-100px) scaleX(0.5) scaleY( 1) scaleZ(1.7) rotate3d(1, 1, 1,  67deg);
+            }`;
+                } else if (event.target.value === "bootstrap") {
+                    parseoptionsresolveImport.checked = true;
+                    css.value = `@import url('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.css');`;
+                } else if (event.target.value === "tailwind") {
+                    parseoptionsresolveImport.checked = true;
+                    css.value = `@import url('https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.0.4/tailwind.css');`;
+                } else if (event.target.value === "prefix") {
+                    parseoptionsresolveImport.removePrefix = true;
+                    css.value = `
+            ::-webkit-input-placeholder {
+              color: gray;
+            }
+
+            ::-moz-placeholder {
+              color: gray;
+            }
+
+            :-ms-input-placeholder {
+              color: gray;
+            }
+
+            ::-ms-input-placeholder {
+              color: gray;
+            }
+
+            ::placeholder {
+              color: gray;
+            }
+
+            @supports selector(:-ms-input-placeholder) {
+
+
+            :-ms-input-placeholder {
+              color: gray;
+            }
+            }
+
+            .image {
+              background-image: url(image@1x.png);
+            }
+            @media (-webkit-min-device-pixel-ratio: 2), (-o-min-device-pixel-ratio: 2/1), (min-resolution: 2dppx) {
+              .image {
+                background-image: url(image@2x.png);
+              }
+
+            }
+
+
+            @-webkit-keyframes bar {
+
+            from, 0% {
+
+            height: 10px;
+            }
+            }
+
+            @keyframes bar {
+
+            from, 0% {
+
+            height: 10px;
+            }
+            }
+            .example {
+
+                -moz-animation: bar 1s infinite;
+                display: -ms-grid;
+                display: grid;
+                -webkit-transition: all .5s;
+                -o-transition: all .5s;
+                transition: all .5s;
+                -webkit-user-select: none;
+                   -moz-user-select: none;
+                    -ms-user-select: none;
+                        user-select: none;
+                background: -o-linear-gradient(top, white, black);
+                background: -webkit-gradient(linear, left top, left bottom, from(white), to(black));
+                background: linear-gradient(to bottom, white, black);
+            }
+
+            .site{
+               display:-ms-grid;
+               display:grid;   -ms-grid-columns:2fr 1fr;
+               grid-template-columns:2fr 1fr;
+               grid-template-areas:"header header"
+                                   "title sidebar"
+                                   "main sidebar"
+                                   "footer footer";
+            }
+            .site > *{padding:30px; color:#fff; font-size:20px;}
+            .mastheader{
+               -ms-grid-row:1;
+               -ms-grid-column:1;
+               -ms-grid-column-span:2;
+               grid-area:header;
+            }
+            .page-title{
+               -ms-grid-row:2;
+               -ms-grid-column:1;
+               grid-area:title;
+            }
+            .main-content{
+               -ms-grid-row:3;
+               -ms-grid-column:1;
+               grid-area:main;
+            }
+            .sidebar{
+               -ms-grid-row:2;
+               -ms-grid-row-span:2;
+               -ms-grid-column:2;
+               grid-area:sidebar;
+            }
+            .footer{
+               -ms-grid-row:4;
+               -ms-grid-column:1;
+               -ms-grid-column-span:2;
+               grid-area:footer;
+            }
+            a {
+              -webkit-transition: -webkit-transform 1s;
+              -ms-transition: -ms-transform 1s;
+              transition: transform 1s
+            }
+                        `;
+                } else {
+                    css.value = "";
+                }
+
+                event.target.classList.add("btn-outline-danger");
+                css.dispatchEvent(new Event("change"));
+
+                setTimeout(() => event.target.classList.remove("btn-outline-danger"), 1000);
+            });
+
             css.dispatchEvent(new Event("change"));
+        </script>
+        <script>
+            navigator.serviceWorker.register("./sw.js", { scope: "./", type: "module" }).then((registration) => {
+                if (registration.installing) {
+                    location.reload();
+                }
+            });
+        </script>
 
-            setTimeout(
-                () => event.target.classList.remove("btn-outline-danger"),
-                1000
-            );
-        });
+        <script>
+            document.body.addEventListener("click", (event) => {
+                // data-bs-target="#navbarSupportedContent" data-bs-toggle="collapse"
+                const target = event.target.closest('[data-bs-toggle="collapse"][data-bs-target]');
 
-    css.dispatchEvent(new Event("change"));
-</script>
-<script>
-    navigator.serviceWorker
-        .register("./sw.js", {scope: "./", type: "module"})
-        .then((registration) => {
-            if (registration.installing) {
-                location.reload();
-            }
-        });
-</script>
-
-<script>
-    document.body.addEventListener('click', (event) => {
-
-        // data-bs-target="#navbarSupportedContent" data-bs-toggle="collapse"
-        const target = event.target.closest('[data-bs-toggle="collapse"][data-bs-target]');
-
-        if (target != null) {
-
-            document.querySelector(target.dataset.bsTarget).classList.toggle('show');
-            target.classList.toggle('collapsed');
-        }
-    })
-</script>
-</body>
+                if (target != null) {
+                    document.querySelector(target.dataset.bsTarget).classList.toggle("show");
+                    target.classList.toggle("collapsed");
+                }
+            });
+        </script>
+    </body>
 </html>
