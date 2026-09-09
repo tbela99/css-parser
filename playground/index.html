@@ -894,7 +894,7 @@
                 if (target != null) {
                     requestAnimationFrame(async () => {
                         const collapse = target.dataset.bsTree == "collapse";
-                        const query = `:scope li${collapse ? ":not(" : ":is("}.tree-collapsed)[data-key]`;
+                        const query = `:scope li:is([data-parsed=no],${collapse ? ":not(" : ":is("}.tree-collapsed))[data-key]`;
                         const stack = Array.from(tree.querySelectorAll(query));
 
                         // expand 20 nodes at most
