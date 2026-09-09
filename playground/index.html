@@ -328,6 +328,7 @@
                                     />
                                     <label class="form-check-label" for="parseoptionsresolveUrls"> Rewrite URLs </label>
                                 </div>
+                                <!--
                                 <div class="form-check">
                                     <input
                                         class="form-check-input"
@@ -337,7 +338,8 @@
                                         value=""
                                     />
                                     <label class="form-check-label" for="parseoptionssourcemap"> Sourcemap </label>
-                                </div>
+                                </div> 
+                                -->
                                 <div class="form-check">
                                     <label class="form-check-label" for="parseoptionsValidation"> Validation </label>
 
@@ -676,7 +678,7 @@
             </div>
         </div>
         <script type="module">
-            import { parse, render, EnumToken, ColorType } from "https://unpkg.com/@tbela99/css-parser@1.6.3/web";
+            import { transform, EnumToken, ColorType } from "https://unpkg.com/@tbela99/css-parser@1.6.3/web";
             import { buildTree } from "./tree.js";
 
             const units = ["B", "KB", "MB", "GB", "TB", "PB"];
@@ -737,8 +739,9 @@
                         }
                     }
 
-                    console.error({ parseOptions, renderOptions });
-                    console.debug("parsing");
+                    // if (renderOptions.sourcemap) {
+                    //     parseOptions.sourcemap = true;
+                    // }
 
                     const startTime = performance.now();
 
@@ -749,34 +752,15 @@
                         );
                     }
 
-                    parse(css.value, parseOptions).then((parseResult) => {
-                        console.debug("rendering");
-                        const rendered = render(parseResult.ast, renderOptions);
+                    if (renderOptions.sourcemap === true) {
+                        renderOptions.sourcemap = "inline";
+                    }
 
-                        const transformResult = {
-                            parseOptions,
-                            renderOptions,
-                            ...parseResult,
-                            ...rendered,
-                            errors: parseResult.errors.concat(rendered.errors),
-                            stats: {
-                                bytesOut: rendered.code.length,
-                                ...parseResult.stats,
-                                render: rendered.stats.total,
-                                total: (performance.now() - startTime).toFixed(2) + "ms",
-                            },
-                        };
+                    console.error({ parseOptions, renderOptions });
+                    console.debug("parsing");
 
+                    transform(css.value, { ...parseOptions, ...renderOptions }).then((transformResult) => {
                         console.error({ transformResult });
-
-                        result.value =
-                            transformResult.code +
-                            (transformResult.map
-                                ? "\n" +
-                                  `/*# sourceMappingURL=data:application/json,${encodeURIComponent(
-                                      JSON.stringify(transformResult.map),
-                                  )} */`
-                                : "");
 
                         mapping.value = transformResult.mapping ? JSON.stringify(transformResult.mapping, null, 1) : "";
                         ast.value = JSON.stringify(transformResult.ast, null, 1);
@@ -793,17 +777,18 @@
                                         : " (" + transformResult.errors.length + ")")),
                         );
 
+                        result.value = transformResult.code;
                         renderStats.value = Object.entries(transformResult.stats)
-                            .concat([
-                                [
-                                    "Ratio",
-                                    (100 * (1 - transformResult.code.length / transformResult.stats.bytesIn)).toFixed(
-                                        2,
-                                    ) + " %",
-                                ],
-                                ["Input", toFileSize(transformResult.stats.bytesIn)],
-                                ["Output", toFileSize(transformResult.code.length)],
-                            ])
+                            // .concat([
+                            //     [
+                            //         "Ratio",
+                            //         (100 * (1 - transformResult.code.length / transformResult.stats.bytesIn)).toFixed(
+                            //             2,
+                            //         ) + " %",
+                            //     ],
+                            //     ["Input", toFileSize(transformResult.stats.bytesIn)],
+                            //     ["Output", toFileSize(transformResult.code.length)],
+                            // ])
                             .reduce(
                                 (acc, [key, value]) =>
                                     acc +
