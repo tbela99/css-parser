@@ -9648,12 +9648,27 @@ function* walk(node, filter, reverse) {
     const map = new Map();
     let options = filter;
     let isNumeric = false;
-    let includeValues = false;
+    let children = true;
+    let attributes = false;
     let i = 0;
+    // @ts-ignore
+    const result = {
+        node: null,
+        parent: null,
+        root,
+        parents: function* () {
+            let parent = map.get(node);
+            while (parent != null) {
+                yield parent;
+                parent = map.get(parent);
+            }
+        },
+    };
     if (options != null && typeof options == "object") {
         filter = options.filter;
         reverse = options.reverse;
-        includeValues = options.inludeValues;
+        attributes = options.attributes;
+        children = options.children ?? true;
     }
     while ((node = parents[i++])) {
         let option = null;
@@ -9671,25 +9686,32 @@ function* walk(node, filter, reverse) {
             }
         }
         if (!isNumeric || (option & exports.WalkerOptionEnum.Children) === 0) {
+            result.node = node;
             // @ts-ignore
-            yield {
-                node,
-                parent: map.get(node),
-                root,
-                // @ts-expect-error
-                parents: function* () {
-                    let parent = map.get(node);
-                    while (parent != null) {
-                        yield parent;
-                        parent = map.get(parent);
-                    }
-                },
-            };
+            result.parent = map.get(node);
+            yield result;
+            // @ts-ignore
+            // yield {
+            //     node,
+            //     parent: <AstRuleList>map.get(node),
+            //     root,
+            //     // @ts-expect-error
+            //     parents: function* () {
+            //         let parent = map.get(node);
+            //         while (parent != null) {
+            //             yield parent;
+            //             parent = map.get(parent);
+            //         }
+            //     },
+            // };
         }
-        if (includeValues) {
+        if (attributes) {
             if (node[TOKENS] != null) {
                 // @ts-ignore
                 parents.splice(i, 0, ...(reverse ? node[TOKENS].toReversed() : node[TOKENS]));
+                for (const child of node[TOKENS]) {
+                    map.set(child, node);
+                }
                 // @ts-ignore
             }
             else if (Array.isArray(node.val)) {
@@ -9697,8 +9719,10 @@ function* walk(node, filter, reverse) {
                 parents.splice(i, 0, ...(reverse ? node.val.toReversed() : node.val));
             }
         }
-        // @ts-ignore
-        if (node["chi"] != null && (!isNumeric || (option & exports.WalkerOptionEnum.IgnoreChildren) === 0)) {
+        if (children &&
+            // @ts-ignore
+            node["chi"] != null &&
+            (!isNumeric || (option & exports.WalkerOptionEnum.IgnoreChildren) === 0)) {
             // @ts-ignore
             parents.splice(i, 0, ...(reverse ? node.chi.toReversed() : node.chi));
             for (const child of node.chi) {

@@ -5012,9 +5012,14 @@ export declare interface WalkerOptions {
     reverse?: boolean;
 
     /**
+     * traverse node children
+     */
+    children?: boolean;
+
+    /**
      * Traverse node value tokens. If false, only traverse node children
      */
-    inludeValues?: boolean;
+    attributes?: boolean;
     /**
      * filter function to control the walk
      */

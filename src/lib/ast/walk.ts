@@ -286,14 +286,31 @@ export function* walk(
     const map: Map<AstNode, AstNode> = new Map();
     let options: WalkerOptions | null = filter as WalkerOptions | null;
     let isNumeric: boolean = false;
-    let includeValues: boolean = false;
+    let children: boolean = true;
+    let attributes: boolean = false;
     let i: number = 0;
 
     if (options != null && typeof options == "object") {
         filter = options.filter as WalkerFilter;
         reverse = options.reverse;
-        includeValues = options.inludeValues as boolean;
+        attributes = options.attributes as boolean;
+        children = (options.children as boolean) ?? true;
     }
+
+    // @ts-ignore
+    const result = {
+        node: null,
+        parent: null,
+        root,
+        parents: function* () {
+            let parent = map.get(node);
+
+            while (parent != null) {
+                yield parent;
+                parent = map.get(parent);
+            }
+        },
+    } as WalkResult;
 
     while ((node = <AstNode>parents[i++])) {
         let option: WalkerOption = null;
@@ -315,27 +332,37 @@ export function* walk(
         }
 
         if (!isNumeric || ((option as number) & WalkerOptionEnum.Children) === 0) {
+            result.node = node;
             // @ts-ignore
-            yield {
-                node,
-                parent: <AstRuleList>map.get(node),
-                root,
-                // @ts-expect-error
-                parents: function* () {
-                    let parent = map.get(node);
+            result.parent = map.get(node);
 
-                    while (parent != null) {
-                        yield parent;
-                        parent = map.get(parent);
-                    }
-                },
-            };
+            yield result;
+
+            // @ts-ignore
+            // yield {
+            //     node,
+            //     parent: <AstRuleList>map.get(node),
+            //     root,
+            //     // @ts-expect-error
+            //     parents: function* () {
+            //         let parent = map.get(node);
+
+            //         while (parent != null) {
+            //             yield parent;
+            //             parent = map.get(parent);
+            //         }
+            //     },
+            // };
         }
 
-        if (includeValues) {
+        if (attributes) {
             if (node[TOKENS] != null) {
                 // @ts-ignore
                 parents.splice(i, 0, ...(reverse ? node[TOKENS]!.toReversed() : node[TOKENS]));
+
+                for (const child of node[TOKENS] as AstNode[]) {
+                    map.set(child, node);
+                }
                 // @ts-ignore
             } else if (Array.isArray(node.val)) {
                 // @ts-ignore
@@ -343,8 +370,12 @@ export function* walk(
             }
         }
 
-        // @ts-ignore
-        if (node["chi"] != null && (!isNumeric || ((option as number) & WalkerOptionEnum.IgnoreChildren) === 0)) {
+        if (
+            children &&
+            // @ts-ignore
+            node["chi"] != null &&
+            (!isNumeric || ((option as number) & WalkerOptionEnum.IgnoreChildren) === 0)
+        ) {
             // @ts-ignore
             parents.splice(i, 0, ...(reverse ? node.chi!.toReversed() : node.chi));
 
