@@ -9,52 +9,24 @@ function getSyntaxConfig() {
     // @ts-expect-error
     return config;
 }
-// export const getSyntax = memoize((group: ValidationSyntaxGroupEnum, key: string | string[]): null | string => {
-//     // @ts-expect-error
-//     let obj = config[group] as Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode>;
-//
-//     const keys: string[] = Array.isArray(key) ? key : [key];
-//
-//     for (let i = 0; i < keys.length; i++) {
-//         key = keys[i];
-//
-//         if (!(key in obj)) {
-//             if ((i == 0 && key.charAt(0) == "@") || key.charAt(0) == "-") {
-//                 const matches: RegExpMatchArray = key.match(/^(@?)(-[a-zA-Z]+)-(.*?)$/) as RegExpMatchArray;
-//
-//                 if (matches != null) {
-//                     key = matches[1] + matches[3];
-//                 }
-//             }
-//         }
-//
-//         // @ts-expect-error
-//         obj = obj[key];
-//     }
-//
-//     // @ts-expect-error
-//     return obj?.syntax ?? null;
-// }) as (group: ValidationSyntaxGroupEnum, key: string | string[]) => null | string;
 function findNode(group, key) {
     // @ts-expect-error
     let obj = config[group];
-    // const keys: string[] = Array.isArray(key) ? key : [key];
-    // for (let i = 0; i < keys.length; i++) {
-    //     key = keys[i];
-    if (!(key in obj)) {
+    // @ts-expect-error
+    if (obj[key] == null) {
         if (key.charAt(0) == "@" || key.charAt(0) == "-") {
             const matches = key.match(/^(@?)(-[a-zA-Z]+)-(.*?)$/);
             if (matches != null) {
                 key = matches[1] + matches[3];
             }
         }
-        if (!(key in obj)) {
+        // @ts-expect-error
+        if (obj[key] == null) {
             return null;
         }
     }
     // @ts-expect-error
     obj = obj[key];
-    // }
     return obj;
 }
 const getParsedSyntax = memoize((group, key) => {

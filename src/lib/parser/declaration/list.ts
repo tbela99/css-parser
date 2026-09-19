@@ -34,14 +34,6 @@ export class PropertyList {
         this.declarations = new Map<string, AstNode | PropertySet | PropertyMap>();
     }
 
-    // set(nam: string, value: string | Token[]) {
-    //     return this.add({
-    //         typ: EnumToken.DeclarationNodeType,
-    //         nam,
-    //         val: Array.isArray(value) ? value : parseString(String(value)),
-    //     });
-    // }
-
     add(...declarations: AstNode[]) {
         let name: string | null;
         let syntaxRules: ValidationToken[] | null = null;
@@ -90,25 +82,6 @@ export class PropertyList {
 
             // do not compute shorthand for invalid declarations
             if (declaration[STATE] !== EnumAstNodeStatus.Validated) {
-                // const key = objectHash(declaration);
-                // if (!this.ketsey.has(key)) {
-                //     this.ketsey.set(key, [declaration.nam]);
-
-                //     console.error(
-                //         `Adding declaration : ${(<AstDeclaration>declaration).nam} with key : ${key}`
-                //     )
-                // }
-
-                // else {
-
-                //     console.error(
-                //         `Duplicate declaration found: ${(<AstDeclaration>declaration).nam} with key : [ ${key} => ${this.ketsey.get(key)} ]`
-                //     )
-
-                //     console.error(JSON.stringify(toSortedString(declaration)))
-
-                //     this.ketsey.get(key).push(declaration.nam);
-                // }
 
                 this.declarations.set(objectHash(declaration), declaration);
                 return this;

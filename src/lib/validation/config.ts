@@ -8,7 +8,6 @@ import { memoize } from "../parser/utils/cache.ts";
 export interface ValidationSyntaxRule {
     acceptAnyDeclaration: boolean;
     acceptAnyRule: boolean;
-    // getRules: () => ValidationToken[];
     getBlockRules: () => ValidationToken[] | null;
     getPreludeRules: () => ValidationToken[] | null;
     getPropertyDescriptors: () => Record<string, ValidationToken[]> | null;
@@ -23,33 +22,6 @@ export function getSyntaxConfig(): ValidationConfiguration {
     return config as ValidationConfiguration;
 }
 
-// export const getSyntax = memoize((group: ValidationSyntaxGroupEnum, key: string | string[]): null | string => {
-//     // @ts-expect-error
-//     let obj = config[group] as Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode>;
-//
-//     const keys: string[] = Array.isArray(key) ? key : [key];
-//
-//     for (let i = 0; i < keys.length; i++) {
-//         key = keys[i];
-//
-//         if (!(key in obj)) {
-//             if ((i == 0 && key.charAt(0) == "@") || key.charAt(0) == "-") {
-//                 const matches: RegExpMatchArray = key.match(/^(@?)(-[a-zA-Z]+)-(.*?)$/) as RegExpMatchArray;
-//
-//                 if (matches != null) {
-//                     key = matches[1] + matches[3];
-//                 }
-//             }
-//         }
-//
-//         // @ts-expect-error
-//         obj = obj[key];
-//     }
-//
-//     // @ts-expect-error
-//     return obj?.syntax ?? null;
-// }) as (group: ValidationSyntaxGroupEnum, key: string | string[]) => null | string;
-
 function findNode(
     group: ValidationSyntaxGroupEnum,
     key: string,
@@ -60,12 +32,8 @@ function findNode(
         ValidationSyntaxNode
     >;
 
-    // const keys: string[] = Array.isArray(key) ? key : [key];
-
-    // for (let i = 0; i < keys.length; i++) {
-    //     key = keys[i];
-
-    if (!(key in obj)) {
+    // @ts-expect-error
+    if (obj[key] == null) {
         if (key.charAt(0) == "@" || key.charAt(0) == "-") {
             const matches: RegExpMatchArray = key.match(/^(@?)(-[a-zA-Z]+)-(.*?)$/) as RegExpMatchArray;
 
@@ -74,14 +42,14 @@ function findNode(
             }
         }
 
-        if (!(key in obj)) {
+        // @ts-expect-error
+        if (obj[key] == null) {
             return null;
         }
     }
 
     // @ts-expect-error
     obj = obj[key] as ValidationSyntaxNode | Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode>;
-    // }
 
     return obj;
 }

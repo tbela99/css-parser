@@ -12041,52 +12041,24 @@ function getSyntaxConfig() {
     // @ts-expect-error
     return config$4;
 }
-// export const getSyntax = memoize((group: ValidationSyntaxGroupEnum, key: string | string[]): null | string => {
-//     // @ts-expect-error
-//     let obj = config[group] as Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode>;
-//
-//     const keys: string[] = Array.isArray(key) ? key : [key];
-//
-//     for (let i = 0; i < keys.length; i++) {
-//         key = keys[i];
-//
-//         if (!(key in obj)) {
-//             if ((i == 0 && key.charAt(0) == "@") || key.charAt(0) == "-") {
-//                 const matches: RegExpMatchArray = key.match(/^(@?)(-[a-zA-Z]+)-(.*?)$/) as RegExpMatchArray;
-//
-//                 if (matches != null) {
-//                     key = matches[1] + matches[3];
-//                 }
-//             }
-//         }
-//
-//         // @ts-expect-error
-//         obj = obj[key];
-//     }
-//
-//     // @ts-expect-error
-//     return obj?.syntax ?? null;
-// }) as (group: ValidationSyntaxGroupEnum, key: string | string[]) => null | string;
 function findNode(group, key) {
     // @ts-expect-error
     let obj = config$4[group];
-    // const keys: string[] = Array.isArray(key) ? key : [key];
-    // for (let i = 0; i < keys.length; i++) {
-    //     key = keys[i];
-    if (!(key in obj)) {
+    // @ts-expect-error
+    if (obj[key] == null) {
         if (key.charAt(0) == "@" || key.charAt(0) == "-") {
             const matches = key.match(/^(@?)(-[a-zA-Z]+)-(.*?)$/);
             if (matches != null) {
                 key = matches[1] + matches[3];
             }
         }
-        if (!(key in obj)) {
+        // @ts-expect-error
+        if (obj[key] == null) {
             return null;
         }
     }
     // @ts-expect-error
     obj = obj[key];
-    // }
     return obj;
 }
 const getParsedSyntax = memoize((group, key) => {
@@ -12197,6 +12169,20 @@ function cloneNode(node, cloneChildren = false, cloneMap = null) {
 const config$3 = getSyntaxConfig();
 // @ts-expect-error
 const allValues = config$3.declarations.all.syntax.split(/[\s|]+/g);
+const selectorNodeTypes = [
+    exports.EnumToken.CommaTokenType,
+    exports.EnumToken.ColumnCombinatorTokenType,
+    exports.EnumToken.ChildCombinatorTokenType,
+    exports.EnumToken.NextSiblingCombinatorTokenType,
+    exports.EnumToken.SubsequentSiblingCombinatorTokenType,
+];
+const trimWhitespaceBefore = selectorNodeTypes.concat(exports.EnumToken.DelimTokenType, exports.EnumToken.DashMatchTokenType, exports.EnumToken.IncludeMatchTokenType, exports.EnumToken.ContainMatchTokenType, exports.EnumToken.StartMatchTokenType, exports.EnumToken.EndMatchTokenType, exports.EnumToken.AttrEndTokenType);
+const trimWhitespaceAfter = selectorNodeTypes.concat(exports.EnumToken.DelimTokenType, exports.EnumToken.DashMatchTokenType, exports.EnumToken.IncludeMatchTokenType, exports.EnumToken.ContainMatchTokenType, exports.EnumToken.StartMatchTokenType, exports.EnumToken.EndMatchTokenType, exports.EnumToken.AttrStartTokenType);
+const selectorEnumMap = new Map([
+    [exports.EnumToken.Tilda, exports.EnumToken.SubsequentSiblingCombinatorTokenType],
+    [exports.EnumToken.GtTokenType, exports.EnumToken.ChildCombinatorTokenType],
+]);
+const propertyKeywordValues = new Map();
 /**
  * @type {Array.<EnumToken>}
  */
@@ -12497,19 +12483,6 @@ function createValidationContext(tokens) {
 function matchSelectorSyntax(stream, errors, options, nested = true) {
     const stack = [];
     const tokens = [];
-    const nodes = [
-        exports.EnumToken.CommaTokenType,
-        exports.EnumToken.ColumnCombinatorTokenType,
-        exports.EnumToken.ChildCombinatorTokenType,
-        exports.EnumToken.NextSiblingCombinatorTokenType,
-        exports.EnumToken.SubsequentSiblingCombinatorTokenType,
-    ];
-    const trimWhitespaceBefore = nodes.concat(exports.EnumToken.DelimTokenType, exports.EnumToken.DashMatchTokenType, exports.EnumToken.IncludeMatchTokenType, exports.EnumToken.ContainMatchTokenType, exports.EnumToken.StartMatchTokenType, exports.EnumToken.EndMatchTokenType, exports.EnumToken.AttrEndTokenType);
-    const trimWhitespaceAfter = nodes.concat(exports.EnumToken.DelimTokenType, exports.EnumToken.DashMatchTokenType, exports.EnumToken.IncludeMatchTokenType, exports.EnumToken.ContainMatchTokenType, exports.EnumToken.StartMatchTokenType, exports.EnumToken.EndMatchTokenType, exports.EnumToken.AttrStartTokenType);
-    const enumMap = new Map([
-        [exports.EnumToken.Tilda, exports.EnumToken.SubsequentSiblingCombinatorTokenType],
-        [exports.EnumToken.GtTokenType, exports.EnumToken.ChildCombinatorTokenType],
-    ]);
     let token;
     let i = 0;
     let success = true;
@@ -12549,15 +12522,15 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
         }
         tokens.push(token);
         if (tokensfuncDefMap.has(token.typ)) {
-            if (stack.length > 0 && nodes.includes(stack.at(-1).typ)) {
+            if (stack.length > 0 && selectorNodeTypes.includes(stack.at(-1).typ)) {
                 stack.pop();
             }
             stack.push(token);
             continue;
         }
         if (stack.length > 0 &&
-            nodes.includes(stack.at(-1).typ) &&
-            !nodes.includes(token.typ) &&
+            selectorNodeTypes.includes(stack.at(-1).typ) &&
+            !selectorNodeTypes.includes(token.typ) &&
             token.typ !== exports.EnumToken.WhitespaceTokenType &&
             token.typ !== exports.EnumToken.CommentTokenType &&
             token.typ !== exports.EnumToken.CDOCOMMTokenType) {
@@ -12603,7 +12576,7 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                 break;
             case exports.EnumToken.Tilda:
             case exports.EnumToken.GtTokenType:
-                Object.assign(token, { typ: enumMap.get(token.typ) });
+                Object.assign(token, { typ: selectorEnumMap.get(token.typ) });
             case exports.EnumToken.ColumnCombinatorTokenType:
             case exports.EnumToken.ChildCombinatorTokenType:
             case exports.EnumToken.UniversalSelectorTokenType:
@@ -12616,7 +12589,7 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                 if (stack.length > 0 && stack.at(-1)?.typ === exports.EnumToken.UniversalSelectorTokenType) {
                     stack.pop();
                 }
-                if (stack.length > 0 && nodes.includes(stack.at(-1)?.typ)) {
+                if (stack.length > 0 && selectorNodeTypes.includes(stack.at(-1)?.typ)) {
                     return {
                         success: false,
                         errors: [
@@ -12997,6 +12970,7 @@ function matchListSyntax(syntax, context, options) {
     let tmpResult;
     let count = 0;
     let range;
+    let done = false;
     success = false;
     do {
         range = context.peekRange(exports.EnumToken.CommaTokenType, exports.EnumToken.CommaTokenType, 1);
@@ -13012,12 +12986,9 @@ function matchListSyntax(syntax, context, options) {
             else {
                 context.update(range.at(-1));
             }
-            if (context.done()) {
-                // context.end();
-                break;
-            }
+            done = context.done();
         }
-    } while (tmpResult.success && !context.done());
+    } while (tmpResult.success && !done);
     return result == null
         ? {
             success: false,
@@ -13053,6 +13024,9 @@ function matchOccurenceSyntax(syntax, context, options) {
             result = tmpResult;
             if (tmpResult.context.done()) {
                 context.end();
+                break;
+            }
+            if (tmpResult.context.index === context.index) {
                 break;
             }
             context.update(tmpResult.context.current());
@@ -13100,7 +13074,6 @@ function matchSyntax(syntaxes, context, options) {
             errors: [],
         };
     }
-    syntaxes = syntaxes.slice();
     let i = -1;
     let success = false;
     let token = null;
@@ -13432,20 +13405,18 @@ function matchSyntax(syntaxes, context, options) {
             case ValidationTokenEnum.PipeToken:
                 {
                     result = null;
-                    const results = [];
                     let tmp = null;
                     for (const syntax of syntaxes[i].chi) {
                         tmp = matchSyntax(syntax, context.slice(), options);
                         if (tmp.success) {
-                            results.push(tmp);
+                            if (result == null || tmp.context.index >= result.context.index) {
+                                result = tmp;
+                            }
                             if (tmp.context.done()) {
                                 context.end();
                                 return { ...tmp, context, syntaxToken: syntaxes[i + 1] };
                             }
                         }
-                    }
-                    if (results.length > 0) {
-                        result = results.reduce((a, b) => (a.context.index > b.context.index ? a : b));
                     }
                     if (result?.success) {
                         success = true;
@@ -13808,7 +13779,8 @@ function matchAmpersandSyntax(syntax, context, options) {
  */
 function matchProperty(property, context, options) {
     let success = false;
-    let t = context.peek()?.typ;
+    const token = context.peek();
+    let t = token?.typ;
     let checkCalc = (t == exports.EnumToken.MathFunctionTokenDefType || t == exports.EnumToken.MathFunctionTokenType) &&
         [
             "number",
@@ -13823,19 +13795,19 @@ function matchProperty(property, context, options) {
             "calc-product",
         ].includes(property.val);
     if (checkCalc && !["number", "zero", "integer", "percentage", "length-percentage"].includes(property.val)) {
-        checkCalc = context.peek().val === "calc";
+        checkCalc = token.val === "calc";
     }
     if (checkCalc) {
         let result;
-        const syntax = getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, context.peek().val + "()")?.[0]?.chi;
+        const syntax = getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, token.val + "()")?.[0]?.chi;
         if (t === exports.EnumToken.MathFunctionTokenType) {
-            result = matchSyntax(syntax, createValidationContext(context.peek().chi), options);
+            result = matchSyntax(syntax, createValidationContext(token.chi), options);
             if (result.success && result.context.done()) {
                 context.next();
                 return {
                     success: true,
                     valid: true,
-                    token: context.peek(),
+                    token: token,
                     context,
                     syntaxToken: null,
                     errors: [],
@@ -14009,13 +13981,16 @@ function matchProperty(property, context, options) {
         case "display-outside":
         case "display-legacy":
         case "content-position":
-            success =
-                context.peek()?.typ == exports.EnumToken.IdenTokenType &&
-                    // @ts-expect-error
-                    config$3.syntaxes[property.val].syntax
-                        .split(/[\s|]+/)
-                        .includes(context.peek().val.toLowerCase());
-            break;
+            {
+                let values = propertyKeywordValues.get(property.val);
+                if (values == null) {
+                    values = new Set(config$3.syntaxes[property.val].syntax.split(/[\s|]+/));
+                    propertyKeywordValues.set(property.val, values);
+                }
+                success =
+                    token?.typ == exports.EnumToken.IdenTokenType && values.has(token.val.toLowerCase());
+                break;
+            }
         case "mf-name":
             {
                 const token = context.peek();
@@ -14036,9 +14011,9 @@ function matchProperty(property, context, options) {
         case "counter-name":
         case "counter-style-name":
             success =
-                context.peek()?.typ == exports.EnumToken.IdenTokenType || context.peek()?.typ == exports.EnumToken.DashedIdenTokenType;
-            if (success && context.peek()?.typ === exports.EnumToken.IdenTokenType) {
-                const val = context.peek().val.toLowerCase();
+                token?.typ == exports.EnumToken.IdenTokenType || token?.typ == exports.EnumToken.DashedIdenTokenType;
+            if (success && token?.typ === exports.EnumToken.IdenTokenType) {
+                const val = token.val.toLowerCase();
                 success = "none" !== val && !allValues.includes(val);
             }
             break;
@@ -14552,7 +14527,6 @@ function matchRepeatableSyntax(syntax, context, options) {
     let result = null;
     let tmpResult;
     let success = !!isRepeatable;
-    // let index: number = context.index;
     do {
         tmpResult = matchSyntax([rest], context.slice(), options);
         if (tmpResult.success) {
@@ -14562,15 +14536,10 @@ function matchRepeatableSyntax(syntax, context, options) {
                 context.end();
                 break;
             }
-            // if (context.current() === tmpResult.context.current()) {
-            //     context.next();
-            // } else {
+            if (tmpResult.context.index === context.index) {
+                break;
+            }
             context.update(result.context.current());
-            // }
-            // if (index === context.index) {
-            //     break;
-            // }
-            // index = context.index;
         }
     } while (tmpResult.success && !context.done());
     return {
@@ -20399,13 +20368,6 @@ class PropertyList {
         this.options = options;
         this.declarations = new Map();
     }
-    // set(nam: string, value: string | Token[]) {
-    //     return this.add({
-    //         typ: EnumToken.DeclarationNodeType,
-    //         nam,
-    //         val: Array.isArray(value) ? value : parseString(String(value)),
-    //     });
-    // }
     add(...declarations) {
         let name;
         let syntaxRules = null;
@@ -20444,20 +20406,6 @@ class PropertyList {
             }
             // do not compute shorthand for invalid declarations
             if (declaration[STATE] !== exports.EnumAstNodeStatus.Validated) {
-                // const key = objectHash(declaration);
-                // if (!this.ketsey.has(key)) {
-                //     this.ketsey.set(key, [declaration.nam]);
-                //     console.error(
-                //         `Adding declaration : ${(<AstDeclaration>declaration).nam} with key : ${key}`
-                //     )
-                // }
-                // else {
-                //     console.error(
-                //         `Duplicate declaration found: ${(<AstDeclaration>declaration).nam} with key : [ ${key} => ${this.ketsey.get(key)} ]`
-                //     )
-                //     console.error(JSON.stringify(toSortedString(declaration)))
-                //     this.ketsey.get(key).push(declaration.nam);
-                // }
                 this.declarations.set(objectHash(declaration), declaration);
                 return this;
             }
@@ -20877,7 +20825,7 @@ class ComputeCalcExpressionFeature {
     }
 }
 
-const identityMatrix = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+const identityMatrix = new Float64Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 function identity() {
     return identityMatrix.slice();
 }
@@ -20893,7 +20841,7 @@ function dot(point1, point2) {
     return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2];
 }
 function multiply(matrixA, matrixB) {
-    const result = new Float32Array(16);
+    const result = new Float64Array(16);
     result[0] = matrixA[0] * matrixB[0] + matrixA[4] * matrixB[1] + matrixA[8] * matrixB[2] + matrixA[12] * matrixB[3];
     result[1] = matrixA[1] * matrixB[0] + matrixA[5] * matrixB[1] + matrixA[9] * matrixB[2] + matrixA[13] * matrixB[3];
     result[2] = matrixA[2] * matrixB[0] + matrixA[6] * matrixB[1] + matrixA[10] * matrixB[2] + matrixA[14] * matrixB[3];
