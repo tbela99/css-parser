@@ -8,7 +8,7 @@ import type {
     ShorthandMapType,
     ShorthandPropertyType,
     ShorthandType,
-    SinglePropertyTypeMapping,
+    SinglePropertyTypeMapping
 } from "../src/@types/index.d.ts";
 import { writeFile } from "node:fs/promises";
 

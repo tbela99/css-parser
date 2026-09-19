@@ -66,7 +66,6 @@ function color2oklchToken(token) {
     return oklchToken(srgb2oklch(values[0], values[1], values[2], values[3]));
 }
 function oklchToken(values) {
-    values[2] = values[2];
     const chi = [
         { typ: EnumToken.NumberTokenType, val: values[0] },
         { typ: EnumToken.NumberTokenType, val: values[1] },

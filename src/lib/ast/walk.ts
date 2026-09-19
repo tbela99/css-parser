@@ -1,7 +1,6 @@
 import type {
     AstNode,
     AstRuleList,
-    BinaryExpressionToken,
     FunctionToken,
     ParensToken,
     Token,
@@ -12,7 +11,7 @@ import type {
     WalkerValueFilter,
     WalkResult,
 } from "../../@types/index.d.ts";
-import { TOKENS } from "../syntax/constants.ts";
+import { PARENT, TOKENS } from "../syntax/constants.ts";
 import { EnumToken } from "./types.ts";
 
 /**
@@ -283,7 +282,6 @@ export function* walk(
     const parents: AstNode[] = [node];
     const root: AstRuleList = <AstRuleList>node;
 
-    const map: Map<AstNode, AstNode> = new Map();
     let options: WalkerOptions | null = filter as WalkerOptions | null;
     let isNumeric: boolean = false;
     let children: boolean = true;
@@ -297,17 +295,17 @@ export function* walk(
         children = (options.children as boolean) ?? true;
     }
 
-    // @ts-ignore
+    // @ts-expect-error
     const result = {
         node: null,
         parent: null,
         root,
         parents: function* () {
-            let parent = map.get(node);
+            let parent = node[PARENT];
 
             while (parent != null) {
                 yield parent;
-                parent = map.get(parent);
+                parent = parent[PARENT];
             }
         },
     } as WalkResult;
@@ -316,7 +314,7 @@ export function* walk(
         let option: WalkerOption = null;
 
         if (filter != null) {
-            // @ts-ignore
+            // @ts-expect-error
             option = filter(node);
             isNumeric = typeof option == "number";
 
@@ -333,54 +331,49 @@ export function* walk(
 
         if (!isNumeric || ((option as number) & WalkerOptionEnum.Children) === 0) {
             result.node = node;
-            // @ts-ignore
-            result.parent = map.get(node);
+            // @ts-expect-error
+            result.parent = node[PARENT];
 
             yield result;
-
-            // @ts-ignore
-            // yield {
-            //     node,
-            //     parent: <AstRuleList>map.get(node),
-            //     root,
-            //     // @ts-expect-error
-            //     parents: function* () {
-            //         let parent = map.get(node);
-
-            //         while (parent != null) {
-            //             yield parent;
-            //             parent = map.get(parent);
-            //         }
-            //     },
-            // };
         }
 
         if (attributes) {
             if (node[TOKENS] != null) {
-                // @ts-ignore
+                // @ts-expect-error
                 parents.splice(i, 0, ...(reverse ? node[TOKENS]!.toReversed() : node[TOKENS]));
 
                 for (const child of node[TOKENS] as AstNode[]) {
-                    map.set(child, node);
+                    if (child[PARENT] != node) {
+                        child[PARENT] = node;
+                    }
                 }
-                // @ts-ignore
+                // @ts-expect-error
             } else if (Array.isArray(node.val)) {
-                // @ts-ignore
+                // @ts-expect-error
+                for (const val of node.val) {
+                    if (val[PARENT] != node) {
+                        val[PARENT] = node;
+                    }
+                }
+
+                // @ts-expect-error
                 parents.splice(i, 0, ...(reverse ? node.val.toReversed() : node.val));
             }
         }
 
         if (
             children &&
-            // @ts-ignore
+            // @ts-expect-error
             node["chi"] != null &&
             (!isNumeric || ((option as number) & WalkerOptionEnum.IgnoreChildren) === 0)
         ) {
-            // @ts-ignore
+            // @ts-expect-error
             parents.splice(i, 0, ...(reverse ? node.chi!.toReversed() : node.chi));
 
             for (const child of <AstNode[]>(<AstRuleList>node).chi) {
-                map.set(child, node);
+                if (child[PARENT] != node) {
+                    child[PARENT] = node;
+                }
             }
         }
     }
@@ -447,9 +440,6 @@ export function* walkValues(
     reverse?: boolean,
 ): Generator<WalkAttributesResult> {
     const stack: Token[] = values.slice();
-    const map: Map<Token, FunctionToken | ParensToken | BinaryExpressionToken> = new Map();
-
-    const used = new Set<Token>();
     let previous: Token | null = null;
 
     if (filter != null && typeof filter == "function") {
@@ -467,19 +457,29 @@ export function* walkValues(
     let value: Token;
     let option: WalkerOption;
     let node: Token | null;
-    // const parents: Token[] = [];
+    let i: number = -1;
     const eventType = filter.event ?? WalkerEvent.Enter;
+    // @ts-ignore
+    const result = {
+        value: null,
+        parent: null,
+        previousValue: null,
+        nextValue: null,
+        //
+        root: root ?? null,
+        parents: function* () {
+            // @ts-ignore
+            let result = node?.[PARENT] ?? root;
+            while (result != null) {
+                yield result;
+                result = result[PARENT] ?? null;
+            }
+        },
+    } as WalkAttributesResult;
 
-    while (stack.length > 0) {
-        value = reverse ? <Token>stack.pop() : <Token>stack.shift();
+    while (++i < stack.length) {
+        value = <Token>stack[i];
         option = null;
-        node = map.get(value) ?? null;
-
-        if (used.has(value)) {
-            continue;
-        }
-
-        used.add(value);
 
         if (filter.fn != null && eventType & WalkerEvent.Enter) {
             const isValid: boolean =
@@ -489,19 +489,19 @@ export function* walkValues(
                 (typeof filter.type == "function" && filter.type(value));
 
             if (isValid) {
-                // @ts-ignore
+                // @ts-expect-error
                 option = filter.fn(
                     value,
-                    <FunctionToken | ParensToken>map.get(value) ?? root,
+                    value[PARENT] ?? root,
                     WalkerEvent.Enter,
                     // @ts-expect-error
                     function* () {
                         // @ts-expect-error
-                        let parent = map.get(node);
+                        let parent = node[PARENT];
 
                         while (parent != null) {
                             yield parent;
-                            parent = map.get(parent);
+                            parent = parent[PARENT] ?? null;
                         }
                     },
                 );
@@ -516,55 +516,36 @@ export function* walkValues(
                     continue;
                 }
 
-                // @ts-ignore
+                //
                 if (option != null && typeof option == "object" && ("typ" in option || Array.isArray(option))) {
                     const op = Array.isArray(option) ? option : [option];
 
-                    for (const o of op) {
-                        map.set(o as Token, map.get(value) ?? (root as FunctionToken | ParensToken));
+                    stack.splice(i, 0, ...(reverse ? op.toReversed() : op));
 
-                        if (reverse) {
-                            stack.unshift(o);
-                        } else {
-                            stack.push(o);
+                    for (const o of op) {
+                        if (o[PARENT] != value) {
+                            o[PARENT] = value;
                         }
                     }
                 }
             }
         }
 
-        yield {
-            value,
-            parent: <FunctionToken | ParensToken>map.get(value) ?? root,
-            previousValue: previous,
-            nextValue: <Token>stack[0] ?? null,
-            // @ts-ignore
-            root: root ?? null,
-            // @ts-expect-error
-            parents: function* () {
-                // @ts-expect-error
-                let result = map.get(node) ?? root;
-                let next;
+        result.value = value;
+        result.parent = value[PARENT] ?? root;
+        result.previousValue = previous;
+        result.nextValue = <Token>stack[0] ?? null;
 
-                do {
-                    yield result;
-                    next = map.get(result as Token) ?? root;
-
-                    if (next == result) {
-                        break;
-                    }
-
-                    result = next;
-                } while (result != null);
-            },
-        };
+        yield result;
 
         if (!isNumeric || ((option as number) & WalkerOptionEnum.IgnoreChildren) === 0) {
             if ("chi" in value) {
                 const sliced = (<FunctionToken | ParensToken>value).chi.slice();
 
                 for (const child of sliced) {
-                    map.set(child, <FunctionToken | ParensToken>value);
+                    if (child[PARENT] != value) {
+                        child[PARENT] = value;
+                    }
 
                     if (reverse) {
                         stack.unshift(child);
@@ -576,32 +557,46 @@ export function* walkValues(
                 const values: Token[] = [];
 
                 if ("l" in value && value.l != null) {
-                    // @ts-ignore
+                    // @ts-expect-error
                     values.push(value.l);
-                    // @ts-ignore
-                    map.set(value.l, value);
+
+                    // @ts-expect-error
+                    if (value.l[PARENT] != value) {
+                        // @ts-expect-error
+                        value.l[PARENT] = value;
+                    }
                 }
 
                 if ("op" in value && typeof value.op == "object") {
-                    // @ts-ignore
+                    // @ts-expect-error
                     values.push(value.op);
-                    // @ts-ignore
-                    map.set(value.op, value);
+
+                    // @ts-expect-error
+                    if (value.op[PARENT] != value) {
+                        // @ts-expect-error
+                        value.op[PARENT] = value;
+                    }
                 }
 
                 if ("r" in value && value.r != null) {
                     if (Array.isArray(value.r)) {
                         for (const r of value.r) {
-                            // @ts-ignore
+                            //
                             values.push(r);
-                            // @ts-ignore
-                            map.set(r, value);
+
+                            if (r[PARENT] != value) {
+                                //
+                                r[PARENT] = value;
+                            }
                         }
                     } else {
-                        // @ts-ignore
+                        //
                         values.push(value.r);
-                        // @ts-ignore
-                        map.set(value.r, value);
+
+                        if (value.r[PARENT] != value) {
+                            //
+                            value.r[PARENT] = value;
+                        }
                     }
                 }
 
@@ -626,19 +621,16 @@ export function* walkValues(
 
             if (isValid) {
                 // @ts-ignore
-                option = filter.fn(value, <FunctionToken | ParensToken>map.get(value), WalkerEvent.Leave);
+                option = filter.fn(value, value[PARENT], WalkerEvent.Leave);
 
                 // @ts-ignore
                 if (option != null && ("typ" in option || Array.isArray(option))) {
                     const op = Array.isArray(option) ? option : [option];
+                    stack.splice(i, 0, ...(reverse ? op.toReversed() : op));
 
                     for (const o of op) {
-                        map.set(o as Token, map.get(value) ?? (root as FunctionToken | ParensToken));
-
-                        if (reverse) {
-                            stack.unshift(o);
-                        } else {
-                            stack.push(o);
+                        if (o[PARENT] != value) {
+                            o[PARENT] = value;
                         }
                     }
                 }
