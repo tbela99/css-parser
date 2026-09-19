@@ -507,4 +507,49 @@ color: device-cmyk(0 81% 81% 30%);
 }`),
         );
     });
+    it("grid-template #30", function () {
+        return transform(
+            `
+  
+#item3 {
+grid-template-areas:
+    "head head"
+    "nav  main"
+    ".  foot";
+  grid-template-columns: 60px 60px;
+  grid-template-rows: 40px  ;
+}
+`,
+            {
+                beautify: true,
+            },
+        ).then((result) =>
+            expect(result.code).equals(`#item3 {
+ grid-template: "head head"40px"nav main"". foot"/60px 60px
+}`),
+        );
+    });
+    it("grid-row/grid-column #31", function () {
+        return transform(
+            `
+    
+#item3 {
+  background-color: blue;
+  grid-row-start: span 2 ;
+  grid-row-end: 7;
+  grid-column-start: span 2 ;
+  grid-column-end: 7;
+}
+`,
+            {
+                beautify: true,
+            },
+        ).then((result) =>
+            expect(result.code).equals(`#item3 {
+ background-color: blue;
+ grid-row: span 7/2;
+ grid-column: span 7/2
+}`),
+        );
+    });
 }

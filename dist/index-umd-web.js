@@ -2574,6 +2574,9 @@
     	scale: {
     		syntax: "none | [ <number> | <percentage> ]{1,3}"
     	},
+    	"scroll-axis-lock": {
+    		syntax: "auto | none"
+    	},
     	"scroll-behavior": {
     		syntax: "auto | smooth"
     	},
@@ -2978,6 +2981,9 @@
     	},
     	"will-change": {
     		syntax: "auto | <animateable-feature>#"
+    	},
+    	"window-drag": {
+    		syntax: "none | move"
     	},
     	"word-break": {
     		syntax: "normal | break-all | keep-all | break-word | auto-phrase"
@@ -12403,24 +12409,6 @@
             getRemainingTokens() {
                 return this.tokens.slice(this.index + 1);
             },
-            // last() {
-            //     let index: number = this.tokens.length - 1;
-            //     let token: Token = this.tokens[index];
-            //     while (
-            //         (this.index >= 0 && token?.typ === EnumToken.WhitespaceTokenType) ||
-            //         token?.typ === EnumToken.CommentTokenType ||
-            //         token?.typ === EnumToken.CDOCOMMTokenType ||
-            //         token?.typ === EnumToken.InvalidCommentTokenType ||
-            //         token?.typ === EnumToken.BadCommentTokenType ||
-            //         token?.typ === EnumToken.BadStringTokenType
-            //     ) {
-            //         token = this.tokens[--index];
-            //         if (token == null) {
-            //             break;
-            //         }
-            //     }
-            //     return token;
-            // },
             end() {
                 this.index = this.tokens.length + 1;
                 return this;
@@ -12696,106 +12684,10 @@
                             };
                         }
                         slice.shift();
-                        // if (slice.length > 0) {
-                        //     return {
-                        //         success: false,
-                        //         errors: [
-                        //             {
-                        //                 action: "drop",
-                        //                 message: `Unexpected token ${EnumToken[slice[0].typ]} at ${slice[0][LOC]!.src}:${slice[0][LOCSTA].lin}:${
-                        //                     slice[0][LOCSTA].col
-                        //                 }`,
-                        //                 node: slice[0],
-                        //                 location: slice[0][LOC],
-                        //             },
-                        //         ],
-                        //     };
-                        // }
                         stack.pop();
                         break;
                     }
-                // case EnumToken.ColonTokenType:
-                //     if (stream[i + 1]?.typ === EnumToken.IdenTokenType) {
-                //         Object.assign(token, {
-                //             typ:
-                //                 (stream[i + 1] as IdentToken).val === "page"
-                //                     ? EnumToken.PseudoPageTokenType
-                //                     : pseudoElements.includes((token as PseudoElementToken).val)
-                //                       ? EnumToken.PseudoElementTokenType
-                //                       : EnumToken.PseudoClassTokenType,
-                //             val: ":" + (stream[i + 1] as IdentToken).val,
-                //         });
-                //         token[LOC]!.end = stream[++i][LOC]!.end;
-                //         break;
-                //     } else if (stream[i + 1]?.typ === EnumToken.FunctionTokenDefType) {
-                //         Object.assign(token, {
-                //             typ: EnumToken.PseudoClassFunctionTokenDefType,
-                //             val: ":" + (stream[i + 1] as IdentToken).val,
-                //         });
-                //         token[LOC]!.end = stream[++i][LOC]!.end;
-                //         stack.push(token);
-                //         break;
-                //     }
-                //     return {
-                //         success: false,
-                //         errors: [
-                //             {
-                //                 action: "drop",
-                //                 message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOCSTA].lin}:${
-                //                     token[LOCSTA].col
-                //                 }`,
-                //                 node: token,
-                //                 location: token[LOC],
-                //             },
-                //         ],
-                //     };
-                // case EnumToken.DoubleColonTokenType:
-                //     if (stream[i + 1]?.typ === EnumToken.IdenTokenType) {
-                //         Object.assign(token, {
-                //             typ:
-                //                 (stream[i + 1] as IdentToken).val === "page"
-                //                     ? EnumToken.PseudoPageTokenType
-                //                     : EnumToken.PseudoElementTokenType,
-                //             val: "::" + (stream[i + 1] as IdentToken).val,
-                //         });
-                //         token[LOC]!.end = stream[++i][LOC]!.end;
-                //         break;
-                //     } else if (stream[i + 1]?.typ === EnumToken.FunctionTokenDefType) {
-                //         Object.assign(token, {
-                //             typ: EnumToken.PseudoClassFunctionTokenDefType,
-                //             val: "::" + (stream[i + 1] as IdentToken).val,
-                //         });
-                //         token[LOC]!.end = stream[++i][LOC]!.end;
-                //         stack.push(token);
-                //         break;
-                //     }
-                //     return {
-                //         success: false,
-                //         errors: [
-                //             {
-                //                 action: "drop",
-                //                 message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOCSTA].lin}:${
-                //                     token[LOCSTA].col
-                //                 }`,
-                //                 node: token,
-                //                 location: token[LOC],
-                //             },
-                //         ],
-                //     };
                 case exports.EnumToken.StartParensTokenType:
-                    // if (
-                    //     tokens.at(-2)?.typ === EnumToken.PseudoClassTokenType ||
-                    //     tokens.at(-2)?.typ === EnumToken.PseudoElementTokenType
-                    // ) {
-                    //     stack.push(
-                    //         Object.assign(tokens.at(-2) as Token, {
-                    //             typ: EnumToken.PseudoClassFunctionTokenDefType,
-                    //             chi: [],
-                    //         }),
-                    //     );
-                    //     // tokens.pop();
-                    //     break;
-                    // }
                     return {
                         success: false,
                         errors: [
@@ -12815,19 +12707,6 @@
                     if (stack.at(-1)?.typ === exports.EnumToken.PseudoClassFunctionTokenDefType ||
                         stack.at(-1)?.typ === exports.EnumToken.PseudoElementTokenType) {
                         const token = stack.at(-1);
-                        // if (!((stack.at(-1) as PseudoClassFunctionToken).val + "()" in config.selectors)) {
-                        //     return {
-                        //         errors: [
-                        //             {
-                        //                 action: "drop",
-                        //                 message: `Unknown class element ${(token as PseudoElementToken).val}`,
-                        //                 node: token,
-                        //                 location: token[LOC]!,
-                        //             },
-                        //         ],
-                        //         success: false,
-                        //     };
-                        // }
                         const index = tokens.indexOf(token);
                         const result = matchAllSyntaxes(getParsedSyntax(ValidationSyntaxGroupEnum.Selectors, token.val + "()")?.[0]?.chi ?? [], createValidationContext(tokens.slice(index + 1, tokens.length - 1)), options);
                         if (!result.success) {
@@ -18157,7 +18036,7 @@
     			"Number"
     		],
     		multiple: true,
-    		valueSeparator: {
+    		separator: {
     			typ: "Literal",
     			val: "/"
     		},
@@ -18174,6 +18053,35 @@
     	},
     	"grid-row-end": {
     		shorthand: "grid-row"
+    	},
+    	"grid-column": {
+    		shorthand: "grid-column",
+    		properties: [
+    			"grid-column-start",
+    			"grid-column-end"
+    		],
+    		types: [
+    			"Iden",
+    			"Number"
+    		],
+    		multiple: true,
+    		separator: {
+    			typ: "Literal",
+    			val: "/"
+    		},
+    		"default": [
+    			"auto"
+    		],
+    		keywords: [
+    			"auto",
+    			"span"
+    		]
+    	},
+    	"grid-column-start": {
+    		shorthand: "grid-column"
+    	},
+    	"grid-column-end": {
+    		shorthand: "grid-column"
     	}
     };
     var map = {
@@ -19439,6 +19347,77 @@
     	},
     	"background-size": {
     		shorthand: "background"
+    	},
+    	"grid-template": {
+    		shorthand: "grid-template",
+    		pattern: "grid-template-areas grid-template-rows / grid-template-columns",
+    		keywords: [
+    			"none"
+    		],
+    		"default": [
+    			"none"
+    		],
+    		multiple: false,
+    		properties: {
+    			"grid-template-areas": {
+    				types: [
+    					"String"
+    				],
+    				"default": [
+    					"none"
+    				],
+    				multiple: true,
+    				keywords: [
+    					"none",
+    					"auto"
+    				],
+    				mapping: {
+    				}
+    			},
+    			"grid-template-rows": {
+    				types: [
+    					"Perc",
+    					"Iden",
+    					"Length",
+    					"Flex"
+    				],
+    				"default": [
+    					"none"
+    				],
+    				multiple: true,
+    				keywords: [
+    					"none"
+    				]
+    			},
+    			"grid-template-columns": {
+    				types: [
+    					"Perc",
+    					"Iden",
+    					"Length",
+    					"Flex"
+    				],
+    				"default": [
+    					"none"
+    				],
+    				prefix: {
+    					typ: "Literal",
+    					val: "/"
+    				},
+    				multiple: true,
+    				keywords: [
+    					"none"
+    				]
+    			}
+    		}
+    	},
+    	"grid-template-areas": {
+    		shorthand: "grid-template"
+    	},
+    	"grid-template-rows": {
+    		shorthand: "grid-template"
+    	},
+    	"grid-template-columns": {
+    		shorthand: "grid-template"
     	}
     };
     var property = {
@@ -19961,108 +19940,34 @@
                     iterable = this.declarations.values();
                 }
                 else {
-                    let values = Object.entries(tokens)
-                        .reduce((acc, curr) => {
-                        const props = this.config.properties[curr[0]];
-                        for (let i = 0; i < curr[1].length; i++) {
-                            if (acc.length == i) {
-                                acc.push([]);
+                    let values;
+                    if (this.config.shorthand == "grid-template") {
+                        const k = tokens["grid-template-areas"]?.[0]?.length ?? 0;
+                        const v = tokens["grid-template-rows"]?.[0]?.length ?? 0;
+                        const min = k < v ? k : v;
+                        values = [];
+                        for (let i = 0; i < min; i++) {
+                            if (i < k) {
+                                values.push(tokens["grid-template-areas"][0][i]);
+                                if (tokens["grid-template-areas"][0][i].typ == exports.EnumToken.IdenTokenType) {
+                                    values.push({ typ: exports.EnumToken.WhitespaceTokenType });
+                                }
                             }
-                            let values = curr[1][i].reduce((acc, curr) => {
-                                if (acc.length > 0) {
+                            if (i < v) {
+                                values.push(tokens["grid-template-rows"][0][i]);
+                            }
+                        }
+                        if (k > min) {
+                            values.push(...tokens["grid-template-areas"][0].slice(min).reduce((acc, curr) => {
+                                if (acc.length > 0 && curr.typ == exports.EnumToken.IdenTokenType) {
                                     acc.push({ typ: exports.EnumToken.WhitespaceTokenType });
                                 }
                                 acc.push(curr);
                                 return acc;
-                            }, []);
-                            if (props.default.includes(curr[1][i]
-                                .reduce((acc, curr) => acc + renderValue(curr) + " ", "")
-                                .trimEnd())) {
-                                if (!this.config.properties[curr[0]].required) {
-                                    continue;
-                                }
-                            }
-                            // remove default values
-                            let doFilterDefault = true;
-                            if (curr[0] in propertiesConfig.properties) {
-                                for (let v of values) {
-                                    if (![
-                                        exports.EnumToken.WhitespaceTokenType,
-                                        exports.EnumToken.CommentTokenType,
-                                        exports.EnumToken.IdenTokenType,
-                                    ].includes(v.typ) ||
-                                        (v.typ == exports.EnumToken.IdenTokenType &&
-                                            !this.config.properties[curr[0]].default.includes(v.val))) {
-                                        doFilterDefault = false;
-                                        break;
-                                    }
-                                }
-                            }
-                            // remove default values
-                            const filtered = values.filter((val) => {
-                                if (val.typ == exports.EnumToken.WhitespaceTokenType ||
-                                    val.typ == exports.EnumToken.CommentTokenType) {
-                                    return false;
-                                }
-                                return (!doFilterDefault ||
-                                    !(val.typ == exports.EnumToken.IdenTokenType &&
-                                        props.default.includes(val.val)));
-                            });
-                            if (filtered.length > 0 ||
-                                !(this.requiredCount == requiredCount && this.config.properties[curr[0]].required)) {
-                                values = filtered;
-                            }
-                            if (values.length > 0) {
-                                if ("mapping" in props) {
-                                    if (!("constraints" in props) ||
-                                        // @ts-ignore
-                                        !("max" in props.constraints) ||
-                                        values.length <= props.constraints.mapping.max) {
-                                        let i = values.length;
-                                        while (i--) {
-                                            if (values[i].typ == exports.EnumToken.IdenTokenType &&
-                                                // @ts-expect-error
-                                                values[i].val in props.mapping) {
-                                                // @ts-ignore
-                                                values.splice(i, 1, ...parseString(props.mapping[values[i].val]));
-                                            }
-                                        }
-                                    }
-                                }
-                                if ("prefix" in props) {
-                                    // @ts-ignore
-                                    acc[i].push({ ...props.prefix, typ: exports.EnumToken[props.prefix.typ] });
-                                }
-                                else if (acc[i].length > 0) {
-                                    acc[i].push({ typ: exports.EnumToken.WhitespaceTokenType });
-                                }
-                                for (const v of values.reduce((acc, curr) => {
-                                    if (acc.length > 0) {
-                                        // @ts-ignore
-                                        acc.push({
-                                            ...((props.separator && {
-                                                ...props.separator,
-                                                // @ts-ignore
-                                                typ: exports.EnumToken[props.separator.typ],
-                                            }) ?? { typ: exports.EnumToken.WhitespaceTokenType }),
-                                        });
-                                    }
-                                    // @ts-ignore
-                                    acc.push(curr);
-                                    return acc;
-                                }, [])) {
-                                    acc[i].push(v);
-                                }
-                            }
+                            }, []));
                         }
-                        return acc;
-                    }, [])
-                        .reduce((acc, curr) => {
-                        if (acc.length > 0) {
-                            acc.push({ ...separator });
-                        }
-                        if (curr.length == 0 && this.config.default.length > 0) {
-                            curr.push(...parseString(this.config.default[0]).reduce((acc, curr) => {
+                        if (v > min) {
+                            values.push(...tokens["grid-template-rows"][0].slice(min).reduce((acc, curr) => {
                                 if (acc.length > 0) {
                                     acc.push({ typ: exports.EnumToken.WhitespaceTokenType });
                                 }
@@ -20070,11 +19975,135 @@
                                 return acc;
                             }, []));
                         }
-                        for (const c of curr) {
-                            acc.push(c);
+                        if (tokens["grid-template-columns"]?.[0]?.length > 0) {
+                            values.push({ typ: exports.EnumToken.LiteralTokenType, val: "/" }, ...tokens["grid-template-columns"][0].reduce((acc, curr) => {
+                                if (acc.length > 0) {
+                                    acc.push({ typ: exports.EnumToken.WhitespaceTokenType });
+                                }
+                                acc.push(curr);
+                                return acc;
+                            }, []));
                         }
-                        return acc;
-                    }, []);
+                    }
+                    else {
+                        values = Object.entries(tokens)
+                            .reduce((acc, curr) => {
+                            const props = this.config.properties[curr[0]];
+                            for (let i = 0; i < curr[1].length; i++) {
+                                if (acc.length == i) {
+                                    acc.push([]);
+                                }
+                                let values = curr[1][i].reduce((acc, curr) => {
+                                    if (acc.length > 0) {
+                                        acc.push({ typ: exports.EnumToken.WhitespaceTokenType });
+                                    }
+                                    acc.push(curr);
+                                    return acc;
+                                }, []);
+                                if (props.default.includes(curr[1][i]
+                                    .reduce((acc, curr) => acc + renderValue(curr) + " ", "")
+                                    .trimEnd())) {
+                                    if (!this.config.properties[curr[0]].required) {
+                                        continue;
+                                    }
+                                }
+                                // remove default values
+                                let doFilterDefault = true;
+                                if (curr[0] in propertiesConfig.properties) {
+                                    for (let v of values) {
+                                        if (![
+                                            exports.EnumToken.WhitespaceTokenType,
+                                            exports.EnumToken.CommentTokenType,
+                                            exports.EnumToken.IdenTokenType,
+                                        ].includes(v.typ) ||
+                                            (v.typ == exports.EnumToken.IdenTokenType &&
+                                                !this.config.properties[curr[0]].default.includes(v.val))) {
+                                            doFilterDefault = false;
+                                            break;
+                                        }
+                                    }
+                                }
+                                // remove default values
+                                const filtered = values.filter((val) => {
+                                    if (val.typ == exports.EnumToken.WhitespaceTokenType ||
+                                        val.typ == exports.EnumToken.CommentTokenType) {
+                                        return false;
+                                    }
+                                    return (!doFilterDefault ||
+                                        !(val.typ == exports.EnumToken.IdenTokenType &&
+                                            props.default.includes(val.val)));
+                                });
+                                if (filtered.length > 0 ||
+                                    !(this.requiredCount == requiredCount &&
+                                        this.config.properties[curr[0]].required)) {
+                                    values = filtered;
+                                }
+                                if (values.length > 0) {
+                                    if ("mapping" in props) {
+                                        if (!("constraints" in props) ||
+                                            // @ts-ignore
+                                            !("max" in props.constraints) ||
+                                            values.length <= props.constraints.mapping.max) {
+                                            let i = values.length;
+                                            while (i--) {
+                                                if (values[i].typ == exports.EnumToken.IdenTokenType &&
+                                                    // @ts-expect-error
+                                                    values[i].val in props.mapping) {
+                                                    // @ts-ignore
+                                                    values.splice(i, 1, 
+                                                    // @ts-ignore
+                                                    ...parseString(props.mapping[values[i].val]));
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if ("prefix" in props) {
+                                        // @ts-ignore
+                                        acc[i].push({ ...props.prefix, typ: exports.EnumToken[props.prefix.typ] });
+                                    }
+                                    else if (acc[i].length > 0) {
+                                        acc[i].push({ typ: exports.EnumToken.WhitespaceTokenType });
+                                    }
+                                    for (const v of values.reduce((acc, curr) => {
+                                        if (acc.length > 0) {
+                                            // @ts-ignore
+                                            acc.push({
+                                                ...((props.separator && {
+                                                    ...props.separator,
+                                                    // @ts-ignore
+                                                    typ: exports.EnumToken[props.separator.typ],
+                                                }) ?? { typ: exports.EnumToken.WhitespaceTokenType }),
+                                            });
+                                        }
+                                        // @ts-ignore
+                                        acc.push(curr);
+                                        return acc;
+                                    }, [])) {
+                                        acc[i].push(v);
+                                    }
+                                }
+                            }
+                            return acc;
+                        }, [])
+                            .reduce((acc, curr) => {
+                            if (acc.length > 0) {
+                                acc.push({ ...separator });
+                            }
+                            if (curr.length == 0 && this.config.default.length > 0) {
+                                curr.push(...parseString(this.config.default[0]).reduce((acc, curr) => {
+                                    if (acc.length > 0) {
+                                        acc.push({ typ: exports.EnumToken.WhitespaceTokenType });
+                                    }
+                                    acc.push(curr);
+                                    return acc;
+                                }, []));
+                            }
+                            for (const c of curr) {
+                                acc.push(c);
+                            }
+                            return acc;
+                        }, []);
+                    }
                     if (this.config.mapping != null) {
                         const val = values.reduce((acc, curr) => acc +
                             renderValue(curr, {
@@ -20267,12 +20296,17 @@
             return String(input);
         }
         if (Array.isArray(input)) {
-            return JSON.stringify(input.map(toSortedString));
+            const result = new Array(input.length);
+            for (const value of input) {
+                result.push(toSortedString(value));
+            }
+            return JSON.stringify(result);
         }
-        return `{${Object.keys(input)
-        .sort()
-        .map((k) => `${k}:${toSortedString(input[k])}`)
-        .join(",")}}`;
+        const keys = Object.keys(input).sort();
+        for (let i = 0; i < keys.length; i++) {
+            keys[i] = `${keys[i]}:${toSortedString(input[keys[i]])}`;
+        }
+        return `{${keys.join(",")}}`;
     }
     /**
      * Object hash

@@ -247,24 +247,6 @@ function createValidationContext(tokens) {
         getRemainingTokens() {
             return this.tokens.slice(this.index + 1);
         },
-        // last() {
-        //     let index: number = this.tokens.length - 1;
-        //     let token: Token = this.tokens[index];
-        //     while (
-        //         (this.index >= 0 && token?.typ === EnumToken.WhitespaceTokenType) ||
-        //         token?.typ === EnumToken.CommentTokenType ||
-        //         token?.typ === EnumToken.CDOCOMMTokenType ||
-        //         token?.typ === EnumToken.InvalidCommentTokenType ||
-        //         token?.typ === EnumToken.BadCommentTokenType ||
-        //         token?.typ === EnumToken.BadStringTokenType
-        //     ) {
-        //         token = this.tokens[--index];
-        //         if (token == null) {
-        //             break;
-        //         }
-        //     }
-        //     return token;
-        // },
         end() {
             this.index = this.tokens.length + 1;
             return this;
@@ -540,106 +522,10 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                         };
                     }
                     slice.shift();
-                    // if (slice.length > 0) {
-                    //     return {
-                    //         success: false,
-                    //         errors: [
-                    //             {
-                    //                 action: "drop",
-                    //                 message: `Unexpected token ${EnumToken[slice[0].typ]} at ${slice[0][LOC]!.src}:${slice[0][LOCSTA].lin}:${
-                    //                     slice[0][LOCSTA].col
-                    //                 }`,
-                    //                 node: slice[0],
-                    //                 location: slice[0][LOC],
-                    //             },
-                    //         ],
-                    //     };
-                    // }
                     stack.pop();
                     break;
                 }
-            // case EnumToken.ColonTokenType:
-            //     if (stream[i + 1]?.typ === EnumToken.IdenTokenType) {
-            //         Object.assign(token, {
-            //             typ:
-            //                 (stream[i + 1] as IdentToken).val === "page"
-            //                     ? EnumToken.PseudoPageTokenType
-            //                     : pseudoElements.includes((token as PseudoElementToken).val)
-            //                       ? EnumToken.PseudoElementTokenType
-            //                       : EnumToken.PseudoClassTokenType,
-            //             val: ":" + (stream[i + 1] as IdentToken).val,
-            //         });
-            //         token[LOC]!.end = stream[++i][LOC]!.end;
-            //         break;
-            //     } else if (stream[i + 1]?.typ === EnumToken.FunctionTokenDefType) {
-            //         Object.assign(token, {
-            //             typ: EnumToken.PseudoClassFunctionTokenDefType,
-            //             val: ":" + (stream[i + 1] as IdentToken).val,
-            //         });
-            //         token[LOC]!.end = stream[++i][LOC]!.end;
-            //         stack.push(token);
-            //         break;
-            //     }
-            //     return {
-            //         success: false,
-            //         errors: [
-            //             {
-            //                 action: "drop",
-            //                 message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOCSTA].lin}:${
-            //                     token[LOCSTA].col
-            //                 }`,
-            //                 node: token,
-            //                 location: token[LOC],
-            //             },
-            //         ],
-            //     };
-            // case EnumToken.DoubleColonTokenType:
-            //     if (stream[i + 1]?.typ === EnumToken.IdenTokenType) {
-            //         Object.assign(token, {
-            //             typ:
-            //                 (stream[i + 1] as IdentToken).val === "page"
-            //                     ? EnumToken.PseudoPageTokenType
-            //                     : EnumToken.PseudoElementTokenType,
-            //             val: "::" + (stream[i + 1] as IdentToken).val,
-            //         });
-            //         token[LOC]!.end = stream[++i][LOC]!.end;
-            //         break;
-            //     } else if (stream[i + 1]?.typ === EnumToken.FunctionTokenDefType) {
-            //         Object.assign(token, {
-            //             typ: EnumToken.PseudoClassFunctionTokenDefType,
-            //             val: "::" + (stream[i + 1] as IdentToken).val,
-            //         });
-            //         token[LOC]!.end = stream[++i][LOC]!.end;
-            //         stack.push(token);
-            //         break;
-            //     }
-            //     return {
-            //         success: false,
-            //         errors: [
-            //             {
-            //                 action: "drop",
-            //                 message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOCSTA].lin}:${
-            //                     token[LOCSTA].col
-            //                 }`,
-            //                 node: token,
-            //                 location: token[LOC],
-            //             },
-            //         ],
-            //     };
             case EnumToken.StartParensTokenType:
-                // if (
-                //     tokens.at(-2)?.typ === EnumToken.PseudoClassTokenType ||
-                //     tokens.at(-2)?.typ === EnumToken.PseudoElementTokenType
-                // ) {
-                //     stack.push(
-                //         Object.assign(tokens.at(-2) as Token, {
-                //             typ: EnumToken.PseudoClassFunctionTokenDefType,
-                //             chi: [],
-                //         }),
-                //     );
-                //     // tokens.pop();
-                //     break;
-                // }
                 return {
                     success: false,
                     errors: [
@@ -659,19 +545,6 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                 if (stack.at(-1)?.typ === EnumToken.PseudoClassFunctionTokenDefType ||
                     stack.at(-1)?.typ === EnumToken.PseudoElementTokenType) {
                     const token = stack.at(-1);
-                    // if (!((stack.at(-1) as PseudoClassFunctionToken).val + "()" in config.selectors)) {
-                    //     return {
-                    //         errors: [
-                    //             {
-                    //                 action: "drop",
-                    //                 message: `Unknown class element ${(token as PseudoElementToken).val}`,
-                    //                 node: token,
-                    //                 location: token[LOC]!,
-                    //             },
-                    //         ],
-                    //         success: false,
-                    //     };
-                    // }
                     const index = tokens.indexOf(token);
                     const result = matchAllSyntaxes(getParsedSyntax(ValidationSyntaxGroupEnum.Selectors, token.val + "()")?.[0]?.chi ?? [], createValidationContext(tokens.slice(index + 1, tokens.length - 1)), options);
                     if (!result.success) {

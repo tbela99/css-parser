@@ -172,9 +172,9 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 - [x] gap
 - [ ] grid
 - [ ] grid-area
-- [ ] grid-column
-- [ ] grid-row
-- [ ] grid-template
+- [x] grid-column
+- [x] grid-row
+- [x] grid-template
 - [x] inset
 - [x] list-style
 - [x] margin

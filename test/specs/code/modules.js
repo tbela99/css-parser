@@ -809,8 +809,7 @@ a span {
  grid-template-columns: [line-name1-bd45b] 100px [line-name2-d3d89 line-name3-3258b]
 }
 .nav-7fb75 {
- grid-column-start: nav-7fb75;
- grid-column-end: nav-7fb75
+ grid-column: nav-7fb75 nav-7fb75
 }`);
             });
         });
@@ -840,8 +839,7 @@ a span {
  grid-template-columns: [line-name1-bGluZ] 100px [line-name2-bGluZ line-name3-bGluZ]
 }
 .nav-bmF2O {
- grid-column-start: nav-bmF2O;
- grid-column-end: nav-bmF2O
+ grid-column: nav-bmF2O nav-bmF2O
 }`);
             });
         });
@@ -873,8 +871,7 @@ a span {
  grid-template-columns: [line-name1-6c696] 100px [line-name2-6c696 line-name3-6c696]
 }
 .nav-6e617 {
- grid-column-start: nav-6e617;
- grid-column-end: nav-6e617
+ grid-column: nav-6e617 nav-6e617
 }`);
             });
         });
@@ -940,8 +937,7 @@ a span {
  grid-template-columns: [d] 100px [e f]
 }
 .b {
- grid-column-start: b;
- grid-column-end: b
+ grid-column: b b
 }`);
             });
         });

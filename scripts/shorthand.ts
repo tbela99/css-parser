@@ -8,7 +8,7 @@ import type {
     ShorthandMapType,
     ShorthandPropertyType,
     ShorthandType,
-    SinglePropertyTypeMapping
+    SinglePropertyTypeMapping,
 } from "../src/@types/index.d.ts";
 import { writeFile } from "node:fs/promises";
 
@@ -92,7 +92,7 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
                 properties: {
                     keywords: ["none"],
                     default: ["none"],
-                    types: ['DashedIden'],
+                    types: ["DashedIden"],
                 },
             },
             {
@@ -885,6 +885,51 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
             },
         ],
     ],
+    [
+        {
+            shorthand: "grid-template",
+            pattern: "grid-template-areas grid-template-rows / grid-template-columns",
+            keywords: ["none"],
+            default: ["none"],
+            multiple: false,
+            mapping: {
+                "none none": "none",
+                "none/none": "none",
+                "none none/none": "none",
+            },
+        },
+        [
+            {
+                shorthand: "grid-template-areas",
+                properties: {
+                    types: ["String"],
+                    default: ["none"],
+                    multiple: true,
+                    keywords: ["none", "auto"],
+                    mapping: {},
+                },
+            },
+            {
+                shorthand: "grid-template-rows",
+                properties: {
+                    types: ["Perc", "Iden", "Length", "Flex"],
+                    default: ["none"],
+                    multiple: true,
+                    keywords: ["none"],
+                },
+            },
+            {
+                shorthand: "grid-template-columns",
+                properties: {
+                    types: ["Perc", "Iden", "Length", "Flex"],
+                    default: ["none"],
+                    prefix: { typ: "Literal", val: "/" },
+                    multiple: true,
+                    keywords: ["none"],
+                },
+            },
+        ],
+    ],
     // @ts-ignore
 ]).reduce(
     // @ts-expect-error
@@ -942,7 +987,7 @@ export const properties: PropertySetType = [
         default: ["0"],
         // multiple: false,
         // separator:null ,
-        keywords: ['auto'],
+        keywords: ["auto"],
     },
     {
         shorthand: "scroll-padding",
@@ -950,7 +995,7 @@ export const properties: PropertySetType = [
         types: ["Length", "Perc"],
         // multiple: false,
         // separator:null ,
-        keywords: ['auto'],
+        keywords: ["auto"],
     },
     {
         shorthand: "border-radius",
@@ -1003,7 +1048,19 @@ export const properties: PropertySetType = [
         properties: ["grid-row-start", "grid-row-end"],
         types: ["Iden", "Number"],
         multiple: true,
-        valueSeparator: {
+        separator: {
+            typ: "Literal",
+            val: "/",
+        },
+        default: ["auto"],
+        keywords: ["auto", "span"],
+    },
+    {
+        shorthand: "grid-column",
+        properties: ["grid-column-start", "grid-column-end"],
+        types: ["Iden", "Number"],
+        multiple: true,
+        separator: {
             typ: "Literal",
             val: "/",
         },
@@ -1071,6 +1128,6 @@ export const property = {
 
 const result = JSON.stringify({ properties, map, property });
 
-await writeFile(import.meta.dirname + "/../src/lib/data/properties.json", result);
+await writeFile(import.meta.dirname + "/../src/data/properties.json", result);
 
 console.debug(result);

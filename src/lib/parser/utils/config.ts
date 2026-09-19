@@ -1,4 +1,4 @@
-import config from "../../data/properties.json" with { type: "json" };
+import config from "../../../data/properties.json" with { type: "json" };
 import type { PropertiesConfig } from "../../../@types/index.d.ts";
 
 Object.freeze(config);

@@ -4,6 +4,7 @@ import { tokensfuncSet } from "../../syntax/constants.ts";
 import { isColor } from "../../syntax/syntax.ts";
 
 export function matchType(val: Token, properties: PropertyMapType): boolean {
+
     if (
         (val.typ === EnumToken.IdenTokenType && properties.keywords.includes((<IdentToken>val).val)) ||
         properties.types.some(
