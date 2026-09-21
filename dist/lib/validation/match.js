@@ -643,7 +643,8 @@ function matchAllSyntaxes(syntaxes, context, options) {
             for (let i = index; i < syntaxes.length; i++) {
                 if (syntaxes[i].typ == ValidationTokenEnum.Whitespace ||
                     syntaxes[i].isOptional ||
-                    syntaxes[i].isRepeatable) {
+                    syntaxes[i].isRepeatable ||
+                    syntaxes[i].match?.min?.val === 0) {
                     continue;
                 }
                 return {
