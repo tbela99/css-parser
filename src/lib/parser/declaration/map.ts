@@ -267,9 +267,10 @@ export class PropertyMap {
 
         if (hasMapping) {
             const mapped: { [key: string]: AstDeclaration } = {};
+            let key: string;
 
-            for (const key of declarations.keys()) {
-                const value = declarations.get(key);
+            for (const value of declarations.values()) {
+                key = (value as AstDeclaration).nam;
 
                 if (value instanceof PropertyMap) {
                     for (const [k, v] of (value as PropertyMap).declarations) {

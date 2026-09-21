@@ -201,8 +201,9 @@ class PropertyMap {
         }
         if (hasMapping) {
             const mapped = {};
-            for (const key of declarations.keys()) {
-                const value = declarations.get(key);
+            let key;
+            for (const value of declarations.values()) {
+                key = value.nam;
                 if (value instanceof PropertyMap) {
                     for (const [k, v] of value.declarations) {
                         mapped[k] = v;

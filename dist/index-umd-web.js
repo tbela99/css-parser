@@ -19872,8 +19872,9 @@
             }
             if (hasMapping) {
                 const mapped = {};
-                for (const key of declarations.keys()) {
-                    const value = declarations.get(key);
+                let key;
+                for (const value of declarations.values()) {
+                    key = value.nam;
                     if (value instanceof PropertyMap) {
                         for (const [k, v] of value.declarations) {
                             mapped[k] = v;
@@ -20714,6 +20715,7 @@
                         owner = this.declarations.get(mapName);
                     }
                     else if (!this.declarations.has(shorthand)) {
+                        // @ts-ignore
                         this.declarations.set(shorthand, new PropertyMap(config.map[shorthand]));
                     }
                     if (owner == this) {
@@ -23517,7 +23519,8 @@
                 previous = node;
                 nodeIndex = i;
             }
-            if (recursive && node != null && "chi" in node) {
+            // @ts-ignore
+            if (recursive && node != null && node.chi != null) {
                 if (node.typ == exports.EnumToken.KeyframesAtRuleNodeType ||
                     !node.chi.some((n) => n.typ == exports.EnumToken.DeclarationNodeType)) {
                     if (!(node.typ == exports.EnumToken.AtRuleNodeType && node.nam != "font-face")) {
