@@ -595,4 +595,24 @@ grid-template-areas:
 }`),
         );
     });
+    it("grid-row/grid-column #34", function () {
+        return transform(
+            `
+    
+  .sidebar {
+ grid-row: 2;
+ grid-row-end: 2;
+ grid-column: 2;
+ grid-area: sidebar
+}
+`,
+            {
+                beautify: true,
+            },
+        ).then((result) =>
+            expect(result.code).equals(`.sidebar {
+ grid-area: sidebar
+}`),
+        );
+    });
 }

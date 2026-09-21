@@ -28,7 +28,7 @@ interface TokenMap {
 
 export class PropertyMap {
     protected config: ShorthandMapType;
-    protected declarations: Map<string, AstDeclaration | PropertySet | PropertyMap>;
+    public declarations: Map<string, AstDeclaration | PropertySet | PropertyMap>;
     protected requiredCount: any;
     protected pattern: string[];
 
@@ -43,8 +43,9 @@ export class PropertyMap {
     }
 
     add(declaration: AstDeclaration) {
+
         if (declaration.nam == this.config.shorthand) {
-            this.declarations = new Map<string, AstDeclaration>();
+            this.declarations.clear();
             this.declarations.set(<string>declaration.nam, declaration);
 
             this.matchTypes(declaration);
@@ -313,6 +314,7 @@ export class PropertyMap {
         }
 
         if (!isShorthand || requiredCount < this.requiredCount) {
+
             if (isShorthand && declarations.has(this.config.shorthand)) {
                 const cache: Map<Token, string> = new Map();
 
@@ -887,9 +889,6 @@ export class PropertyMap {
 
                         return acc;
                     }, []);
-
-                // console.error({hasMapping, shorthand: this.config.shorthand, requiredCount, isShorthand,
-                //     declarations: declarations.values(), values});
 
                 if (this.config.mapping != null) {
                     const val: string = values.reduce(

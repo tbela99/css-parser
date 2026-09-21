@@ -34,7 +34,7 @@ export class ComputeShorthandFeature {
         const j: number = ast.chi.length;
         let k: number = 0;
         let l: number;
-        // let properties: PropertyList = new PropertyList(options);
+
         const rules: AstNode[] = [];
         const declarations: AstNode[] = [];
 
@@ -60,7 +60,6 @@ export class ComputeShorthandFeature {
             if (node.typ == EnumToken.DeclarationNodeType) {
                 for (let m = k; m <= l; m++) {
                     declarations.push(ast.chi![m]);
-                    // properties.add(ast.chi![m]);
                 }
             } else {
                 for (let m = k; m <= l; m++) {
@@ -70,8 +69,6 @@ export class ComputeShorthandFeature {
 
             k = l;
         }
-
-        // console.error([...new PropertyList(options).add(declarations)]);
 
         if (declarations.length > 0) {
             ast.chi!.length = 0;

@@ -25,7 +25,7 @@ class PropertyMap {
     }
     add(declaration) {
         if (declaration.nam == this.config.shorthand) {
-            this.declarations = new Map();
+            this.declarations.clear();
             this.declarations.set(declaration.nam, declaration);
             this.matchTypes(declaration);
         }
@@ -667,8 +667,6 @@ class PropertyMap {
                     }
                     return acc;
                 }, []);
-                // console.error({hasMapping, shorthand: this.config.shorthand, requiredCount, isShorthand,
-                //     declarations: declarations.values(), values});
                 if (this.config.mapping != null) {
                     const val = values.reduce((acc, curr) => acc +
                         renderValue(curr, {

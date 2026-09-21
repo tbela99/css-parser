@@ -12808,7 +12808,8 @@ function matchAllSyntaxes(syntaxes, context, options) {
             for (let i = index; i < syntaxes.length; i++) {
                 if (syntaxes[i].typ == ValidationTokenEnum.Whitespace ||
                     syntaxes[i].isOptional ||
-                    syntaxes[i].isRepeatable) {
+                    syntaxes[i].isRepeatable ||
+                    syntaxes[i].match?.min?.val === 0) {
                     continue;
                 }
                 return {
@@ -19698,7 +19699,7 @@ class PropertyMap {
     }
     add(declaration) {
         if (declaration.nam == this.config.shorthand) {
-            this.declarations = new Map();
+            this.declarations.clear();
             this.declarations.set(declaration.nam, declaration);
             this.matchTypes(declaration);
         }
@@ -20340,8 +20341,6 @@ class PropertyMap {
                     }
                     return acc;
                 }, []);
-                // console.error({hasMapping, shorthand: this.config.shorthand, requiredCount, isShorthand,
-                //     declarations: declarations.values(), values});
                 if (this.config.mapping != null) {
                     const val = values.reduce((acc, curr) => acc +
                         renderValue(curr, {
@@ -20704,28 +20703,34 @@ class PropertyList {
                 // @ts-ignore
                 shorthand = config.property[propertyName];
             }
-            // console.error({shortHandType, propertyName, config: config.map[propertyName], map: config.map[shorthand].properties[propertyName]});
             // @ts-ignore
             if (shortHandType == "map") {
                 let owner = this;
+                const mapName = 
                 // @ts-ignore
-                const mapName = config.map[propertyName]?.map ?? config.map[shorthand]?.properties?.[propertyName]?.map;
+                config.map[propertyName]?.map ?? config.map[shorthand]?.properties?.[propertyName]?.map;
                 if (typeof mapName === "string") {
                     if (!this.declarations.has(mapName)) {
                         // @ts-ignore
                         this.declarations.set(mapName, new PropertyMap(config.map[mapName]));
                     }
                     owner = this.declarations.get(mapName);
-                    // console.error({mapName});
                 }
-                // @ts-ignore
-                if (!owner.declarations.has(shorthand)) {
+                else if (!this.declarations.has(shorthand)) {
+                    this.declarations.set(shorthand, new PropertyMap(config.map[shorthand]));
+                }
+                if (owner == this) {
                     // @ts-ignore
-                    owner.declarations.set(shorthand, new PropertyMap(config.map[shorthand]));
+                    owner.declarations.get(shorthand).add(declaration);
                 }
-                //  console.error({propertyName,mapName, owned: owner == this});
-                // @ts-ignore
-                owner.declarations.get(shorthand).add(declaration);
+                else {
+                    if (!owner.declarations.has(shorthand)) {
+                        // @ts-ignore
+                        owner.declarations.set(shorthand, new PropertyMap(config.map[shorthand]));
+                    }
+                    // @ts-ignore
+                    owner.declarations.get(shorthand).add(declaration);
+                }
             }
             // @ts-ignore
             else if (shortHandType == "set") {
@@ -20812,7 +20817,6 @@ class PropertyList {
     [Symbol.iterator]() {
         let iterator = this.declarations.values();
         const iterators = [];
-        // console.error(this);
         return {
             next() {
                 let value = iterator.next();
@@ -20862,7 +20866,6 @@ class ComputeShorthandFeature {
         const j = ast.chi.length;
         let k = 0;
         let l;
-        // let properties: PropertyList = new PropertyList(options);
         const rules = [];
         const declarations = [];
         // @ts-ignore
@@ -20883,7 +20886,6 @@ class ComputeShorthandFeature {
             if (node.typ == exports.EnumToken.DeclarationNodeType) {
                 for (let m = k; m <= l; m++) {
                     declarations.push(ast.chi[m]);
-                    // properties.add(ast.chi![m]);
                 }
             }
             else {
@@ -20893,7 +20895,6 @@ class ComputeShorthandFeature {
             }
             k = l;
         }
-        // console.error([...new PropertyList(options).add(declarations)]);
         if (declarations.length > 0) {
             ast.chi.length = 0;
             // @ts-expect-error
