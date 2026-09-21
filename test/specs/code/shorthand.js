@@ -535,8 +535,8 @@ grid-template-areas:
     
 #item3 {
   background-color: blue;
-  grid-row-start: span 2 ;
-  grid-row-end: 7;
+  grid-row-start: span 7 ;
+  grid-row-end: 2;
   grid-column-start: span 2 ;
   grid-column-end: 7;
 }
@@ -547,8 +547,51 @@ grid-template-areas:
         ).then((result) =>
             expect(result.code).equals(`#item3 {
  background-color: blue;
+ grid-area: span 7/span 2/2/7
+}`),
+        );
+    });
+    it("grid-row/grid-column #32", function () {
+        return transform(
+            `
+    
+#item3 {
+  background-color: blue;
+  grid-row: span 7 ;
+  grid-row-end: 2;
+  grid-column-start: span 2 ;
+  grid-column-end: 7;
+}
+`,
+            {
+                beautify: true,
+            },
+        ).then((result) =>
+            expect(result.code).equals(`#item3 {
+ background-color: blue;
+ grid-area: span 7/span 2/2/7
+}`),
+        );
+    });
+    it("grid-row/grid-column #33", function () {
+        return transform(
+            `
+    
+#item3 {
+  background-color: blue;
+  grid-row: span 7 ;
+  grid-row-end: 2;
+  grid-column-start: span 2 ;
+}
+`,
+            {
+                beautify: true,
+            },
+        ).then((result) =>
+            expect(result.code).equals(`#item3 {
+ background-color: blue;
  grid-row: span 7/2;
- grid-column: span 7/2
+ grid-column-start: span 2
 }`),
         );
     });

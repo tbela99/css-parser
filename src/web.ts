@@ -15,14 +15,14 @@ import type {
     TransformSyncOptions,
 } from "./@types/index.d.ts";
 
-import { doParse, doParseSync } from "./lib/parser/parse.ts";
-import { doRender } from "./lib/renderer/render.ts";
-import { ModuleScopeEnumOptions } from "./lib/ast/types.ts";
-import { Tokenizer } from "./lib/parser/tokenize.ts";
-import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
-import { ResponseType } from "./types.ts";
-import { SourceFile } from "./lib/parser/source.ts";
-import { parseResult, validateSyncArguments } from "./utils/sync.ts";
+import {doParse, doParseSync} from "./lib/parser/parse.ts";
+import {doRender} from "./lib/printer/render.ts";
+import {ModuleScopeEnumOptions} from "./lib/ast/types.ts";
+import {Tokenizer} from "./lib/parser/tokenize.ts";
+import {dirname, matchUrl, resolve} from "./lib/fs/resolve.ts";
+import {ResponseType} from "./types.ts";
+import {SourceFile} from "./lib/parser/source.ts";
+import {parseResult, validateSyncArguments} from "./utils/sync.ts";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -44,7 +44,7 @@ export { minify } from "./lib/ast/minify.ts";
 export { expand } from "./lib/ast/expand.ts";
 export { walk, walkValues, WalkerEvent, WalkerOptionEnum } from "./lib/ast/walk.ts";
 export { parseString } from "./lib/parser/parse.ts";
-export { renderValue as renderToken } from "./lib/renderer/render.ts";
+export { renderValue as renderToken } from "./lib/printer/render.ts";
 export { convertColor } from "./lib/syntax/color/color.ts";
 export { isOkLabClose, okLabDistance } from "./lib/syntax/color/utils/distance.ts";
 export { parseDeclarations } from "./lib/parser/parse.ts";
@@ -59,7 +59,7 @@ export {
     ModuleScopeEnumOptions,
     ModuleCaseTransformEnum,
 } from "./lib/ast/types.ts";
-export { SourceMap } from "./lib/renderer/sourcemap/sourcemap.ts";
+export { SourceMap } from "./lib/printer/sourcemap/sourcemap.ts";
 export type { ValidationToken } from "./lib/validation/parser/types.d.ts";
 
 export { FeatureWalkMode } from "./lib/ast/features/type.ts";

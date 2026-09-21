@@ -294,24 +294,6 @@ function parseDeclaration(tokens, parent, options, errors) {
                             if (tokens[index].chi[l].typ === EnumToken.StringTokenType) {
                                 break;
                             }
-                            // else if ((tokens[index] as FunctionToken).chi[l].typ === EnumToken.IdenTokenType) {
-                            //     let m: number = l + 1;
-                            //     while (
-                            //         (tokens[index] as FunctionToken).chi[m]?.typ === EnumToken.ClassSelectorTokenType
-                            //     ) {
-                            //         Object.assign((tokens[index] as FunctionToken).chi[l], {
-                            //             typ: EnumToken.UrlTokenTokenType,
-                            //             val:
-                            //                 ((tokens[index] as FunctionToken).chi[l] as IdentToken | UrlToken).val +
-                            //                 ((tokens[index] as FunctionToken).chi[m] as ClassSelectorToken).val,
-                            //         });
-                            //         (tokens[index] as FunctionToken).chi[l][LOCEND] = (
-                            //             tokens[index] as FunctionToken
-                            //         ).chi[m][LOCEND];
-                            //         (tokens[index] as FunctionToken).chi.splice(m, 1);
-                            //     }
-                            //     break;
-                            // }
                         }
                         if (tokens[index].chi[l]?.typ === EnumToken.StringTokenType &&
                             /^[a-zA-Z0-0/_.-]+$/.test(tokens[index].chi[l].val.slice(1, -1))) {

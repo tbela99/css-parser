@@ -4132,7 +4132,6 @@ declare class LineMap {
  * Source file helper class
  */
 declare class SourceFile {
-    private inputSourceMap;
     /**
      * Source file ID
      */
@@ -4149,6 +4148,7 @@ declare class SourceFile {
      * Source file content
      */
     content: string;
+    private inputSourceMap;
     /**
      * Constructor
      * @param content
@@ -4545,6 +4545,7 @@ interface PropertyMapType {
         };
     };
     mapping?: Record<string, string>;
+    expandedProperties?: Record<string, string[]>;
 }
 
 interface ShorthandMapType {
@@ -4559,6 +4560,7 @@ interface ShorthandMapType {
     properties: {
         [property: string]: PropertyMapType;
     };
+    expandedProperties?: Record<string, string[]>;
 }
 
 interface ShorthandProperties {

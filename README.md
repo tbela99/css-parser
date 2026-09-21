@@ -171,7 +171,7 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 - [ ] font-variant
 - [x] gap
 - [ ] grid
-- [ ] grid-area
+- [x] grid-area
 - [x] grid-column
 - [x] grid-row
 - [x] grid-template

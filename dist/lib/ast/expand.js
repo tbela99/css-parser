@@ -2,7 +2,7 @@ import { splitRule } from './minify.js';
 import { STATE, PARENT, combinators, RAW } from '../syntax/constants.js';
 import { parseString } from '../parser/parse.js';
 import { walkValues } from './walk.js';
-import { renderValue } from '../renderer/render.js';
+import { renderValue } from '../printer/render.js';
 import { EnumAstNodeStatus, EnumToken } from './types.js';
 import { cloneNode } from './clone.js';
 

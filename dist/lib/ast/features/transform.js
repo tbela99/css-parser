@@ -1,6 +1,6 @@
 import { EnumToken, EnumAstNodeStatus } from '../types.js';
 import { compute } from '../transform/compute.js';
-import { filterValues, renderValue } from '../../renderer/render.js';
+import { filterValues, renderValue } from '../../printer/render.js';
 import { minifyTransformFunctions, eqMatrix } from '../transform/minify.js';
 import { FeatureWalkMode } from './type.js';
 import { STATE } from '../../syntax/constants.js';

@@ -1,5 +1,5 @@
 import { eq } from '../parser/utils/eq.js';
-import { renderValue, doRender } from '../renderer/render.js';
+import { renderValue, doRender } from '../printer/render.js';
 import * as index from './features/index.js';
 import { walkValues } from './walk.js';
 import { EnumToken } from './types.js';

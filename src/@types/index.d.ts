@@ -1,18 +1,18 @@
 import type {
-    GenericVisitorAstNodeSyncHandlerMap,
     GenericVisitorAstNodeHandlerMap,
-    VisitorSyncNodeMap,
+    GenericVisitorAstNodeSyncHandlerMap,
     VisitorNodeMap,
+    VisitorSyncNodeMap,
 } from "./visitor.d.ts";
-import type { AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet, SourceLocation } from "./ast.d.ts";
-import { SourceMap } from "../lib/renderer/sourcemap/sourcemap.ts";
-import type { PropertyListOptions } from "./parse.d.ts";
-import { EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ValidationLevel } from "../lib/ast/types.ts";
-import type { CssVariableToken, Token } from "./token.d.ts";
-import { FeatureWalkMode } from "../lib/ast/features/type.ts";
-import { ValidationToken } from "../lib/validation/parser/types";
-import { SourceFile } from "../lib/parser/source.ts";
-import { ResponseType } from "../types.ts";
+import type {AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet} from "./ast.d.ts";
+import {SourceMap} from "../lib/printer/sourcemap/sourcemap.ts";
+import type {PropertyListOptions} from "./parse.d.ts";
+import {EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ValidationLevel} from "../lib/ast/types.ts";
+import type {CssVariableToken, Token} from "./token.d.ts";
+import {FeatureWalkMode} from "../lib/ast/features/type.ts";
+import {ValidationToken} from "../lib/validation/parser/types";
+import {SourceFile} from "../lib/parser/source.ts";
+import {ResponseType} from "../types.ts";
 
 export * from "./ast.d.ts";
 export * from "./token.d.ts";

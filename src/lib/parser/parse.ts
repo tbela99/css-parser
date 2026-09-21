@@ -1,11 +1,11 @@
-import { isColor, isIdentColor, parseColor } from "../syntax/syntax.ts";
-import { camelize, dasherize, equalsIgnoreCase } from "./utils/text.ts";
-import { renderValue } from "../renderer/render.ts";
-import { EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from "../ast/types.ts";
-import { minify } from "../ast/minify.ts";
-import { expand } from "../ast/expand.ts";
-import { walk, WalkerEvent, walkValues } from "../ast/walk.ts";
-import { Tokenizer } from "./tokenize.ts";
+import {isColor, isIdentColor, parseColor} from "../syntax/syntax.ts";
+import {camelize, dasherize, equalsIgnoreCase} from "./utils/text.ts";
+import {renderValue} from "../printer/render.ts";
+import {EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions} from "../ast/types.ts";
+import {minify} from "../ast/minify.ts";
+import {expand} from "../ast/expand.ts";
+import {walk, WalkerEvent, walkValues} from "../ast/walk.ts";
+import {Tokenizer} from "./tokenize.ts";
 import type {
     AstAtRule,
     AstComment,
@@ -60,26 +60,26 @@ import {
     TOKENS,
     tokensfuncDefMap,
 } from "../syntax/constants.ts";
-import { hash, hashAlgorithms, syncHash } from "../parser/utils/hash.ts";
-import { parseSelector } from "./utils/selector.ts";
-import { parseDeclaration } from "./utils/declaration.ts";
-import { getSyntaxRule } from "../validation/config.ts";
-import { createValidationContext, matchAllSyntaxes, matchSelectorSyntax, trimArray } from "../validation/match.ts";
-import { ValidationSyntaxGroupEnum } from "../validation/parser/typedef.ts";
-import type { ValidationToken } from "../validation/parser/types.d.ts";
-import { matchAtRuleImportSyntax } from "./utils/at-rule-import.ts";
-import type { ValidationMatch } from "../validation/types.d.ts";
-import { matchAtRuleWhenElseSyntax } from "./utils/at-rule-when-else.ts";
-import { parseAtRuleSupportSyntax } from "./utils/at-rule-support.ts";
-import { replaceNodeOrValue, trimWhiteSpaceTokens } from "./utils/token.ts";
-import { parseAtRuleContainerQueryList } from "./utils/at-rule-container.ts";
-import { parseMediaqueryList } from "./utils/at-rule-media.ts";
-import { matchAtRuleSyntax } from "./utils/at-rule.ts";
-import { parseAtRuleFontFeatureValues } from "./utils/at-rule-font-feature-values.ts";
-import { matchGenericSyntax } from "./utils/at-rule-generic.ts";
-import { memoize } from "./utils/cache.ts";
-import { SourceFile } from "./source.ts";
-import { dirname } from "../fs/resolve.ts";
+import {hash, hashAlgorithms, syncHash} from "../parser/utils/hash.ts";
+import {parseSelector} from "./utils/selector.ts";
+import {parseDeclaration} from "./utils/declaration.ts";
+import {getSyntaxRule} from "../validation/config.ts";
+import {createValidationContext, matchAllSyntaxes, matchSelectorSyntax, trimArray} from "../validation/match.ts";
+import {ValidationSyntaxGroupEnum} from "../validation/parser/typedef.ts";
+import type {ValidationToken} from "../validation/parser/types.d.ts";
+import {matchAtRuleImportSyntax} from "./utils/at-rule-import.ts";
+import type {ValidationMatch} from "../validation/types.d.ts";
+import {matchAtRuleWhenElseSyntax} from "./utils/at-rule-when-else.ts";
+import {parseAtRuleSupportSyntax} from "./utils/at-rule-support.ts";
+import {replaceNodeOrValue, trimWhiteSpaceTokens} from "./utils/token.ts";
+import {parseAtRuleContainerQueryList} from "./utils/at-rule-container.ts";
+import {parseMediaqueryList} from "./utils/at-rule-media.ts";
+import {matchAtRuleSyntax} from "./utils/at-rule.ts";
+import {parseAtRuleFontFeatureValues} from "./utils/at-rule-font-feature-values.ts";
+import {matchGenericSyntax} from "./utils/at-rule-generic.ts";
+import {memoize} from "./utils/cache.ts";
+import {SourceFile} from "./source.ts";
+import {dirname} from "../fs/resolve.ts";
 
 function renderTokens(tokens: Token[] | null | undefined, options?: any): string {
     if (tokens == null || tokens.length === 0) return "";
@@ -3558,7 +3558,7 @@ export function parseAtRule(
 
                 // @ts-expect-error
                 return Object.assign(atRule, {
-                    typ: success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
+                    typ: EnumToken.AtRuleNodeType,
                     val: renderTokens(trimArray(stream), options),
                 }) as AstAtRule;
             }
@@ -3568,13 +3568,13 @@ export function parseAtRule(
             }
 
             atRule[TOKENS] = stream;
-            atRule[STATE] = EnumAstNodeStatus.Validated;
+            atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = [];
             atRule[LOCEND] = (stream.at(-1)! ?? atRule)[LOCEND];
 
             // @ts-expect-error
             return Object.assign(atRule, {
-                typ: success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
+                typ: EnumToken.AtRuleNodeType,
                 val: renderTokens(trimArray(stream), options),
             }) as AstAtRule;
         }
@@ -4242,9 +4242,9 @@ export function parseAtRule(
 
             if (syntax == null) {
                 // check matching '(' and ')'
-                // check commas , or ,,
-                // check colon :
-                // check or and and
+                // check commas ',' or ',,'
+                // check colon ':'
+                // check 'or' and 'and'
                 result = matchGenericSyntax(stream, options);
 
                 if (result.errors.length > 0) {
