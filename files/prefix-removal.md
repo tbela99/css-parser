@@ -143,7 +143,7 @@ Output:
   color: grey
  }
 }
-@media (min-resolution:2x) {
+@media (resolution>=2x) {
  .image {
   background-image: url(image@2x.png)
  }
@@ -172,31 +172,18 @@ Output:
  font-size: 20px
 }
 .mastheader {
- grid-row: 1;
- grid-column: 1;
- grid-column-end: 2;
  grid-area: header
 }
 .page-title {
- grid-row: 2;
- grid-column: 1;
  grid-area: title
 }
 .main-content {
- grid-row: 3;
- grid-column: 1;
  grid-area: main
 }
 .sidebar {
- grid-row: 2;
- grid-row-end: 2;
- grid-column: 2;
  grid-area: sidebar
 }
 .footer {
- grid-row: 4;
- grid-column: 1;
- grid-column-end: 2;
  grid-area: footer
 }
 ```
