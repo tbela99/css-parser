@@ -98,6 +98,7 @@ class PropertyList {
                     owner = this.declarations.get(mapName);
                 }
                 else if (!this.declarations.has(shorthand)) {
+                    // @ts-ignore
                     this.declarations.set(shorthand, new PropertyMap(config.map[shorthand]));
                 }
                 if (owner == this) {

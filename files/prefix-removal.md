@@ -13,7 +13,6 @@ Vendor prefixes can be removed by enabling the `removePrefix` flag.
 import {transformSync} from '@tbela99/css-parser';
 
 const css = `
-
 ::-webkit-input-placeholder {
     color: gray;
   }
@@ -97,30 +96,26 @@ const css = `
      -ms-grid-row:1;
      -ms-grid-column:1;
      -ms-grid-column-span:2;
-     grid-area:header;
   }
   .page-title{
      -ms-grid-row:2;
      -ms-grid-column:1;
-     grid-area:title;
   }
   .main-content{
      -ms-grid-row:3;
      -ms-grid-column:1;
-     grid-area:main;
   }
   .sidebar{
      -ms-grid-row:2;
      -ms-grid-row-span:2;
      -ms-grid-column:2;
-     grid-area:sidebar;
   }
   .footer{
      -ms-grid-row:4;
      -ms-grid-column:1;
      -ms-grid-column-span:2;
-     grid-area:footer;
   }
+
 `;
 const result = await transformSync(css, {
 
@@ -172,19 +167,24 @@ Output:
  font-size: 20px
 }
 .mastheader {
- grid-area: header
+ grid-row: 1;
+ grid-column: 1/2
 }
 .page-title {
- grid-area: title
+ grid-row: 2;
+ grid-column: 1
 }
 .main-content {
- grid-area: main
+ grid-row: 3;
+ grid-column: 1
 }
 .sidebar {
- grid-area: sidebar
+ grid-row: 2/2;
+ grid-column: 2
 }
 .footer {
- grid-area: footer
+ grid-row: 4;
+ grid-column: 1/2
 }
 ```
 

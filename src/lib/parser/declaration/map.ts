@@ -43,7 +43,6 @@ export class PropertyMap {
     }
 
     add(declaration: AstDeclaration) {
-
         if (declaration.nam == this.config.shorthand) {
             this.declarations.clear();
             this.declarations.set(<string>declaration.nam, declaration);
@@ -267,9 +266,10 @@ export class PropertyMap {
 
         if (hasMapping) {
             const mapped: { [key: string]: AstDeclaration } = {};
+            let key: string;
 
-            for (const key of declarations.keys()) {
-                const value = declarations.get(key);
+            for (const value of declarations.values()) {
+                key = (value as AstDeclaration).nam;
 
                 if (value instanceof PropertyMap) {
                     for (const [k, v] of (value as PropertyMap).declarations) {
@@ -314,7 +314,6 @@ export class PropertyMap {
         }
 
         if (!isShorthand || requiredCount < this.requiredCount) {
-
             if (isShorthand && declarations.has(this.config.shorthand)) {
                 const cache: Map<Token, string> = new Map();
 
