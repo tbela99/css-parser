@@ -5,8 +5,8 @@ export interface PropertyType {
 }
 
 export interface SinglePropertyType {
-        typ: keyof EnumToken;
-        val: string | number;
+    typ: keyof EnumToken;
+    val: string | number;
 }
 
 export interface SinglePropertyTypeMapping {
@@ -55,7 +55,6 @@ export interface PropertyMapType {
         };
     };
     mapping?: Record<string, string>;
-    expandedProperties?: Record<string, string[]>;
 }
 
 export interface ShorthandMapType {
@@ -70,7 +69,6 @@ export interface ShorthandMapType {
     properties: {
         [property: string]: PropertyMapType;
     };
-    expandedProperties?: Record<string, string[]>;
 }
 
 export interface ShorthandProperties {

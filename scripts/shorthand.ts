@@ -1025,7 +1025,6 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
             },
         ],
     ],
-
     [
         {
             shorthand: "grid-template",

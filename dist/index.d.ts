@@ -4495,8 +4495,8 @@ interface PropertyType {
 }
 
 interface SinglePropertyType {
-        typ: keyof EnumToken;
-        val: string | number;
+    typ: keyof EnumToken;
+    val: string | number;
 }
 
 interface SinglePropertyTypeMapping {
@@ -4545,7 +4545,6 @@ interface PropertyMapType {
         };
     };
     mapping?: Record<string, string>;
-    expandedProperties?: Record<string, string[]>;
 }
 
 interface ShorthandMapType {
@@ -4560,7 +4559,6 @@ interface ShorthandMapType {
     properties: {
         [property: string]: PropertyMapType;
     };
-    expandedProperties?: Record<string, string[]>;
 }
 
 interface ShorthandProperties {
