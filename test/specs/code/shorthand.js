@@ -507,4 +507,92 @@ color: device-cmyk(0 81% 81% 30%);
 }`),
         );
     });
+    it("grid-template #30", function () {
+        return transform(
+            `
+  
+#item3 {
+grid-template-areas:
+    "head head"
+    "nav  main"
+    ".  foot";
+  grid-template-columns: 60px 60px;
+  grid-template-rows: 40px  ;
+}
+`,
+            {
+                beautify: true,
+            },
+        ).then((result) =>
+            expect(result.code).equals(`#item3 {
+ grid-template: "head head"40px"nav main"". foot"/60px 60px
+}`),
+        );
+    });
+    it("grid-row/grid-column #31", function () {
+        return transform(
+            `
+    
+#item3 {
+  background-color: blue;
+  grid-row-start: span 7 ;
+  grid-row-end: 2;
+  grid-column-start: span 2 ;
+  grid-column-end: 7;
+}
+`,
+            {
+                beautify: true,
+            },
+        ).then((result) =>
+            expect(result.code).equals(`#item3 {
+ background-color: blue;
+ grid-area: span 7/span 2/2/7
+}`),
+        );
+    });
+    it("grid-row/grid-column #32", function () {
+        return transform(
+            `
+    
+#item3 {
+  background-color: blue;
+  grid-row: span 7 ;
+  grid-row-end: 2;
+  grid-column-start: span 2 ;
+  grid-column-end: 7;
+}
+`,
+            {
+                beautify: true,
+            },
+        ).then((result) =>
+            expect(result.code).equals(`#item3 {
+ background-color: blue;
+ grid-area: span 7/span 2/2/7
+}`),
+        );
+    });
+    it("grid-row/grid-column #33", function () {
+        return transform(
+            `
+    
+#item3 {
+  background-color: blue;
+  grid-row: span 7 ;
+  grid-row-end: 2;
+  grid-column-start: span 2 ;
+}
+`,
+            {
+                beautify: true,
+            },
+        ).then((result) =>
+            expect(result.code).equals(`#item3 {
+ background-color: blue;
+ grid-row: span 7/2;
+ grid-column-start: span 2
+}`),
+        );
+    });
 }

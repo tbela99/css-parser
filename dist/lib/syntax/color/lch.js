@@ -68,7 +68,6 @@ function color2lchToken(token) {
     return lchToken(values);
 }
 function lchToken(values) {
-    values[2] = values[2];
     const chi = [
         { typ: EnumToken.NumberTokenType, val: values[0] },
         { typ: EnumToken.NumberTokenType, val: values[1] },

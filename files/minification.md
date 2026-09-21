@@ -725,10 +725,10 @@ Below is the list of computed shorthands properties. Minification is fully suppo
 - [ ] font-variant
 - [x] gap
 - [ ] grid
-- [ ] grid-area
-- [ ] grid-column
-- [ ] grid-row
-- [ ] grid-template
+- [x] grid-area
+- [x] grid-column
+- [x] grid-row
+- [x] grid-template
 - [x] inset
 - [x] list-style
 - [x] margin

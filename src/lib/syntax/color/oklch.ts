@@ -102,8 +102,6 @@ export function color2oklchToken(token: ColorToken): ColorToken | null {
 }
 
 function oklchToken(values: number[]): ColorToken | null {
-    values[2] = values[2];
-
     const chi: Token[] = <Token[]>[
         { typ: EnumToken.NumberTokenType, val: values[0] },
         { typ: EnumToken.NumberTokenType, val: values[1] },

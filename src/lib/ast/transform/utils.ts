@@ -1,7 +1,7 @@
 import { epsilon } from "../../syntax/constants.ts";
 import type { DecomposedMatrix3D, Matrix, Point } from "./type.d.ts";
 
-const identityMatrix = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+const identityMatrix = new Float64Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 
 export function identity(): Matrix {
     return identityMatrix.slice() as Matrix;
@@ -27,7 +27,7 @@ function dot(
 }
 
 export function multiply(matrixA: Matrix, matrixB: Matrix): Matrix {
-    const result = new Float32Array(16) as Matrix;
+    const result = new Float64Array(16) as Matrix;
 
     result[0] = matrixA[0] * matrixB[0] + matrixA[4] * matrixB[1] + matrixA[8] * matrixB[2] + matrixA[12] * matrixB[3];
     result[1] = matrixA[1] * matrixB[0] + matrixA[5] * matrixB[1] + matrixA[9] * matrixB[2] + matrixA[13] * matrixB[3];

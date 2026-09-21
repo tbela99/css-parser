@@ -1,5 +1,5 @@
 import { EnumToken, EnumAstNodeStatus } from '../../ast/types.js';
-import { renderValue } from '../../renderer/render.js';
+import { renderValue } from '../../printer/render.js';
 import { LOCEND, LOCSTA, LOCSRCID, ERRORS, STATE, TOKENS, pseudoElements, combinators, tokensfuncDefMap, PARENT } from '../../syntax/constants.js';
 import { isHash } from '../../syntax/syntax.js';
 import { getParsedSyntax, getSyntaxRule, getSyntaxConfig } from '../../validation/config.js';

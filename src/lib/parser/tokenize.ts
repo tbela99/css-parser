@@ -1,5 +1,5 @@
-import type { ParseInfo } from "../../@types/index.d.ts";
-import { ColorType, EnumToken } from "../ast/types.ts";
+import type {ParseInfo} from "../../@types/index.d.ts";
+import {ColorType, EnumToken} from "../ast/types.ts";
 import {
     colorsFunc,
     containerFunc,
@@ -30,7 +30,7 @@ import {
     resolutionUnits,
     timeUnits,
 } from "../syntax/syntax.ts";
-import { SourceFile } from "./source.ts";
+import {SourceFile} from "./source.ts";
 
 const SymbolsMapTokens: Record<string, EnumToken> = Object.create(null);
 
@@ -305,7 +305,7 @@ export class Tokenizer {
     private state: EnumToken | null = null;
 
     constructor(
-        private parseInfo: ParseInfo | string,
+        private readonly parseInfo: ParseInfo | string,
         private input: ReadableStream<Uint8Array> | null = null,
     ) {
         this.parseInfo =

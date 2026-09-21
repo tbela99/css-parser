@@ -105,7 +105,7 @@ function doRender(data, options = {}, mapping) {
                     }
                     return acc + curr.val;
                 }
-                return acc + renderValue(curr, options, cache, reducer, errors);
+                return acc + renderValue(curr, options, cache, reducer);
             }, cache),
         errors,
         stats: {
@@ -415,7 +415,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                 }
                 return acc + curr.val;
             }
-            return acc + renderValue(curr, options, cache, reducer, errors);
+            return acc + renderValue(curr, options, cache, reducer);
         };
     }
     switch (token.typ) {
@@ -1293,22 +1293,22 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
             return token.val;
         case EnumToken.SupportsQueryUnaryConditionTokenType:
         case EnumToken.WhenElseUnaryConditionTokenType:
-            return (renderValue(token.l, options, cache, reducer, errors) +
+            return (renderValue(token.l, options, cache, reducer) +
                 " " +
-                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer, errors), ""));
+                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), ""));
         case EnumToken.SupportsQueryConditionTokenType:
         case EnumToken.WhenElseQueryConditionTokenType:
-            return (token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer, errors), "") +
+            return (token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "") +
                 " " +
-                renderValue(token.op, options, cache, reducer, errors) +
+                renderValue(token.op, options, cache, reducer) +
                 " " +
-                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer, errors), ""));
+                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), ""));
         case EnumToken.IfConditionTokenType:
             return token.l.length == 0
                 ? ""
-                : token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer, errors), "") +
+                : token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "") +
                     ":" +
-                    token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer, errors), "");
+                    token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "");
         case EnumToken.IfElseConditionTokenType:
             return renderValue(token.l) + renderValue(token.r);
         case EnumToken.DeclarationNodeType:
@@ -1316,7 +1316,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                 ":" +
                 (options.minify ? filterValues(token.val) : token.val).reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
         case EnumToken.MediaQueryUnaryFeatureTokenType:
-            return (renderValue(token.l, options, cache, reducer, errors) +
+            return (renderValue(token.l, options, cache, reducer) +
                 " " +
                 token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
         case EnumToken.MediaQueryConditionTokenType: {
@@ -1328,16 +1328,16 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                 token.op.typ == EnumToken.GteTokenType
                 ? ""
                 : " ";
-            return (token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer, errors), "") +
+            return (token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "") +
                 indent +
-                renderValue(token.op, options, cache, reducer, errors) +
+                renderValue(token.op, options, cache, reducer) +
                 indent +
                 token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
         }
         case EnumToken.MediaRangeQueryTokenType:
             return (token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache), "") +
                 renderValue(token.op1) +
-                token.val.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer, errors), "") +
+                token.val.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "") +
                 renderValue(token.op2) +
                 token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
         case EnumToken.MediaFeatureTokenType:
@@ -1362,8 +1362,8 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
             console.debug({ token });
             throw new Error(`Unsupported token type for ${EnumToken[token.typ]}`);
     }
-    errors?.push({ action: "ignore", message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });
-    return "";
+    // errors?.push({ action: "ignore", message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });
+    // return "";
 }
 /**
  * Remove whitespace tokens that are not needed

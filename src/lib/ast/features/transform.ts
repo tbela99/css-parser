@@ -7,12 +7,12 @@ import type {
     ParserOptions,
     Token,
 } from "../../../@types/index.d.ts";
-import { EnumAstNodeStatus, EnumToken } from "../types.ts";
-import { compute } from "../transform/compute.ts";
-import { filterValues, renderValue } from "../../renderer/render.ts";
-import { eqMatrix, minifyTransformFunctions } from "../transform/minify.ts";
-import { FeatureWalkMode } from "./type.ts";
-import { STATE } from "../../syntax/constants.ts";
+import {EnumAstNodeStatus, EnumToken} from "../types.ts";
+import {compute} from "../transform/compute.ts";
+import {filterValues, renderValue} from "../../printer/render.ts";
+import {eqMatrix, minifyTransformFunctions} from "../transform/minify.ts";
+import {FeatureWalkMode} from "./type.ts";
+import {STATE} from "../../syntax/constants.ts";
 
 export class TransformCssFeature {
     public accept: Set<EnumToken> = new Set([

@@ -1,7 +1,7 @@
-import { eq } from "../parser/utils/eq.ts";
-import { doRender, renderValue } from "../renderer/render.ts";
+import {eq} from "../parser/utils/eq.ts";
+import {doRender, renderValue} from "../printer/render.ts";
 import * as allFeatures from "./features/index.ts";
-import { walkValues } from "./walk.ts";
+import {walkValues} from "./walk.ts";
 import type {
     AstAtRule,
     AstDeclaration,
@@ -24,14 +24,14 @@ import type {
     RawSelectorTokens,
     Token,
 } from "../../@types/index.d.ts";
-import { EnumToken } from "./types.ts";
-import { isFunction, isIdent, isIdentStart, isWhiteSpace } from "../syntax/syntax.ts";
-import { FeatureWalkMode } from "./features/type.ts";
-import { trimArray } from "../validation/match.ts";
-import { combinators, LOCEND, LOCSRCID, LOCSTA, OPTIMIZED, PARENT, RAW, TOKENS } from "../syntax/constants.ts";
-import { replaceNodeOrValue } from "../parser/utils/token.ts";
-import { parseString } from "../parser/parse.ts";
-import { replaceCompound } from "./expand.ts";
+import {EnumToken} from "./types.ts";
+import {isFunction, isIdent, isIdentStart, isWhiteSpace} from "../syntax/syntax.ts";
+import {FeatureWalkMode} from "./features/type.ts";
+import {trimArray} from "../validation/match.ts";
+import {combinators, LOCEND, LOCSRCID, LOCSTA, OPTIMIZED, PARENT, RAW, TOKENS} from "../syntax/constants.ts";
+import {replaceNodeOrValue} from "../parser/utils/token.ts";
+import {parseString} from "../parser/parse.ts";
+import {replaceCompound} from "./expand.ts";
 
 const notEndingWith: string[] = ["(", "["].concat(combinators);
 const rules: EnumToken[] = [
