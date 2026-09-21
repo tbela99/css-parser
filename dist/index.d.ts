@@ -4132,7 +4132,6 @@ declare class LineMap {
  * Source file helper class
  */
 declare class SourceFile {
-    private inputSourceMap;
     /**
      * Source file ID
      */
@@ -4149,6 +4148,7 @@ declare class SourceFile {
      * Source file content
      */
     content: string;
+    private inputSourceMap;
     /**
      * Constructor
      * @param content
@@ -4495,8 +4495,8 @@ interface PropertyType {
 }
 
 interface SinglePropertyType {
-        typ: keyof EnumToken;
-        val: string | number;
+    typ: keyof EnumToken;
+    val: string | number;
 }
 
 interface SinglePropertyTypeMapping {
@@ -5012,9 +5012,14 @@ export declare interface WalkerOptions {
     reverse?: boolean;
 
     /**
+     * traverse node children
+     */
+    children?: boolean;
+
+    /**
      * Traverse node value tokens. If false, only traverse node children
      */
-    inludeValues?: boolean;
+    attributes?: boolean;
     /**
      * filter function to control the walk
      */

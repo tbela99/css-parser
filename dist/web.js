@@ -1,7 +1,7 @@
 import { doParse, doParseSync } from './lib/parser/parse.js';
 export { parseDeclarations, parseString } from './lib/parser/parse.js';
-import { doRender } from './lib/renderer/render.js';
-export { renderValue as renderToken } from './lib/renderer/render.js';
+import { doRender } from './lib/printer/render.js';
+export { renderValue as renderToken } from './lib/printer/render.js';
 import { ModuleScopeEnumOptions } from './lib/ast/types.js';
 export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ValidationLevel } from './lib/ast/types.js';
 import { Tokenizer } from './lib/parser/tokenize.js';
@@ -17,7 +17,7 @@ export { isOkLabClose, okLabDistance } from './lib/syntax/color/utils/distance.j
 export { find, findAll, findByValue, findLast } from './lib/ast/find.js';
 export { cloneNode } from './lib/ast/clone.js';
 export { replaceNodeOrValue } from './lib/parser/utils/token.js';
-export { SourceMap } from './lib/renderer/sourcemap/sourcemap.js';
+export { SourceMap } from './lib/printer/sourcemap/sourcemap.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 export { getNodeProperty, setNodeProperty } from './lib/ast/node.js';
 

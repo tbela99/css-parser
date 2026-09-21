@@ -1,6 +1,6 @@
-import type { SourceMapObject } from "../../@types/index.d.ts";
-import { SourceMap } from "../renderer/sourcemap/sourcemap.ts";
-import { LineMap } from "./linesmap.ts";
+import type {SourceMapObject} from "../../@types/index.d.ts";
+import {SourceMap} from "../printer/sourcemap/sourcemap.ts";
+import {LineMap} from "./linesmap.ts";
 
 /**
  * Source file ID
@@ -11,8 +11,6 @@ let sourceId: number = 0;
  * Source file helper class
  */
 export class SourceFile {
-    private inputSourceMap: SourceMap | null = null;
-
     /**
      * Source file ID
      */
@@ -29,6 +27,7 @@ export class SourceFile {
      * Source file content
      */
     content: string;
+    private inputSourceMap: SourceMap | null = null;
 
     /**
      * Constructor

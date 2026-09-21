@@ -5,8 +5,8 @@ export interface PropertyType {
 }
 
 export interface SinglePropertyType {
-        typ: keyof EnumToken;
-        val: string | number;
+    typ: keyof EnumToken;
+    val: string | number;
 }
 
 export interface SinglePropertyTypeMapping {

@@ -1,6 +1,6 @@
 import { isIdentColor, parseColor, isColor } from '../syntax/syntax.js';
 import { camelize, equalsIgnoreCase, dasherize } from './utils/text.js';
-import { renderValue } from '../renderer/render.js';
+import { renderValue } from '../printer/render.js';
 import { EnumToken, EnumAstNodeStatus, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from '../ast/types.js';
 import { minify } from '../ast/minify.js';
 import { expand } from '../ast/expand.js';
@@ -2760,7 +2760,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                 atRule[LOCEND] = (stream.at(-1) ?? atRule)[LOCEND];
                 // @ts-expect-error
                 return Object.assign(atRule, {
-                    typ: success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
+                    typ: EnumToken.AtRuleNodeType,
                     val: renderTokens(trimArray(stream), options),
                 });
             }
@@ -2768,12 +2768,12 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                 return null;
             }
             atRule[TOKENS] = stream;
-            atRule[STATE] = EnumAstNodeStatus.Validated;
+            atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = [];
             atRule[LOCEND] = (stream.at(-1) ?? atRule)[LOCEND];
             // @ts-expect-error
             return Object.assign(atRule, {
-                typ: success ? EnumToken.AtRuleNodeType : EnumToken.InvalidRuleNodeType,
+                typ: EnumToken.AtRuleNodeType,
                 val: renderTokens(trimArray(stream), options),
             });
         }
@@ -3331,9 +3331,9 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             let result = null;
             if (syntax == null) {
                 // check matching '(' and ')'
-                // check commas , or ,,
-                // check colon :
-                // check or and and
+                // check commas ',' or ',,'
+                // check colon ':'
+                // check 'or' and 'and'
                 result = matchGenericSyntax(stream, options);
                 if (result.errors.length > 0) {
                     for (const error of result.errors) {

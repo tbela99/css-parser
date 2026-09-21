@@ -92,7 +92,7 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
                 properties: {
                     keywords: ["none"],
                     default: ["none"],
-                    types: ['DashedIden'],
+                    types: ["DashedIden"],
                 },
             },
             {
@@ -885,6 +885,191 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
             },
         ],
     ],
+    [
+        {
+            shorthand: "grid-area",
+            pattern: "grid-row-start grid-column-start grid-row-end grid-column-end",
+            keywords: ["auto"],
+            default: ["auto"],
+            multiple: false,
+            expandShorthands: true,
+            separator: { typ: "Literal", val: "/" },
+            mapping: {
+                "auto/auto": "auto",
+                "auto/auto/auto": "auto",
+                "auto/auto/auto/auto": "auto",
+            },
+            expandedProperties: {
+                "grid-row": ["grid-row-start", "grid-row-end"],
+                "grid-column": ["grid-column-start", "grid-column-end"],
+            },
+        },
+        [
+            {
+                shorthand: "grid-row-start",
+                properties: {
+                    map: "grid-area",
+                    shorthand: "grid-row",
+                    types: ["Iden", "Number"],
+                    default: ["auto"],
+                    keywords: ["auto"],
+                },
+            },
+            {
+                shorthand: "grid-column-start",
+                properties: {
+                    map: "grid-area",
+                    shorthand: "grid-column",
+                    types: ["Iden", "Number"],
+                    prefix: { typ: "Literal", val: "/" },
+                    default: ["auto"],
+                    keywords: ["auto"],
+                },
+            },
+            {
+                shorthand: "grid-row-end",
+                properties: {
+                    map: "grid-area",
+                    shorthand: "grid-row",
+                    types: ["Iden", "Number"],
+                    prefix: { typ: "Literal", val: "/" },
+                    default: ["auto"],
+                    keywords: ["auto"],
+                },
+            },
+            {
+                shorthand: "grid-column-end",
+                properties: {
+                    map: "grid-area",
+                    shorthand: "grid-column",
+                    types: ["Iden", "Number"],
+                    prefix: { typ: "Literal", val: "/" },
+                    default: ["auto"],
+                    keywords: ["auto"],
+                },
+            },
+        ],
+    ],
+    [
+        {
+            shorthand: "grid-row",
+            map: "grid-area",
+            pattern: "grid-row-start grid-row-end",
+            types: ["Iden", "Number"],
+            keywords: ["auto"],
+            default: ["auto"],
+            multiple: false,
+            mapping: {
+                "auto auto": "auto",
+                "auto/auto": "auto",
+            },
+        },
+        [
+            {
+                shorthand: "grid-row-start",
+                properties: {
+                    map: "grid-area",
+                    types: ["Iden", "Number"],
+                    default: ["auto"],
+                    multiple: true,
+                    keywords: ["auto"],
+                },
+            },
+            {
+                shorthand: "grid-row-end",
+                properties: {
+                    map: "grid-area",
+                    types: ["Iden", "Number"],
+                    default: ["auto"],
+                    prefix: { typ: "Literal", val: "/" },
+                    multiple: true,
+                    keywords: ["auto"],
+                },
+            },
+        ],
+    ],
+    [
+        {
+            shorthand: "grid-column",
+            map: "grid-area",
+            pattern: "grid-column-start grid-column-end",
+            types: ["Iden", "Number"],
+            keywords: ["auto"],
+            default: ["auto"],
+            multiple: false,
+            mapping: {
+                "auto/auto": "auto",
+            },
+        },
+        [
+            {
+                shorthand: "grid-column-start",
+                properties: {
+                    map: "grid-area",
+                    types: ["Iden", "Number"],
+                    default: ["auto"],
+                    multiple: true,
+                    keywords: ["auto"],
+                },
+            },
+            {
+                shorthand: "grid-column-end",
+                properties: {
+                    map: "grid-area",
+                    types: ["Iden", "Number"],
+                    default: ["auto"],
+                    multiple: true,
+                    prefix: { typ: "Literal", val: "/" },
+                    keywords: ["auto"],
+                },
+            },
+        ],
+    ],
+    [
+        {
+            shorthand: "grid-template",
+            pattern: "grid-template-areas grid-template-rows grid-template-columns",
+            keywords: ["none"],
+            default: ["none"],
+            multiple: false,
+            mapping: {
+                "none none": "none",
+                "none/none": "none",
+                "none none/none": "none",
+            },
+        },
+        [
+            {
+                shorthand: "grid-template-areas",
+                properties: {
+                    types: ["String"],
+                    default: ["none"],
+                    multiple: true,
+                    keywords: ["none", "auto"],
+                    mapping: {},
+                },
+            },
+            {
+                shorthand: "grid-template-rows",
+                properties: {
+                    types: ["Perc", "Iden", "Length", "Flex"],
+                    default: ["none"],
+                    multiple: true,
+                    keywords: ["none"],
+                },
+            },
+            {
+                shorthand: "grid-template-columns",
+                properties: {
+                    types: ["Perc", "Iden", "Length", "Flex"],
+                    default: ["none"],
+                    prefix: { typ: "Literal", val: "/" },
+                    multiple: true,
+                    keywords: ["none"],
+                },
+            },
+        ],
+    ],
     // @ts-ignore
 ]).reduce(
     // @ts-expect-error
@@ -942,7 +1127,7 @@ export const properties: PropertySetType = [
         default: ["0"],
         // multiple: false,
         // separator:null ,
-        keywords: ['auto'],
+        keywords: ["auto"],
     },
     {
         shorthand: "scroll-padding",
@@ -950,7 +1135,7 @@ export const properties: PropertySetType = [
         types: ["Length", "Perc"],
         // multiple: false,
         // separator:null ,
-        keywords: ['auto'],
+        keywords: ["auto"],
     },
     {
         shorthand: "border-radius",
@@ -997,18 +1182,6 @@ export const properties: PropertySetType = [
         // separator: null,
         default: ["currentcolor"],
         keywords: [],
-    },
-    {
-        shorthand: "grid-row",
-        properties: ["grid-row-start", "grid-row-end"],
-        types: ["Iden", "Number"],
-        multiple: true,
-        valueSeparator: {
-            typ: "Literal",
-            val: "/",
-        },
-        default: ["auto"],
-        keywords: ["auto", "span"],
     },
 ].reduce(
     (acc: PropertySetType, data) => {
@@ -1071,6 +1244,6 @@ export const property = {
 
 const result = JSON.stringify({ properties, map, property });
 
-await writeFile(import.meta.dirname + "/../src/lib/data/properties.json", result);
+await writeFile(import.meta.dirname + "/../src/data/properties.json", result);
 
 console.debug(result);

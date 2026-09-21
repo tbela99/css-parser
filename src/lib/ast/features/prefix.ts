@@ -1,4 +1,4 @@
-import { EnumAstNodeStatus, EnumToken } from "../types.ts";
+import {EnumAstNodeStatus, EnumToken} from "../types.ts";
 import type {
     AngleToken,
     AstAtRule,
@@ -14,18 +14,18 @@ import type {
     PseudoClassToken,
     Token,
 } from "../../../@types/index.d.ts";
-import { walkValues } from "../walk.ts";
-import { pseudoAliasMap } from "../../syntax/syntax.ts";
-import { splitRule } from "../minify.ts";
-import type { ValidationConfiguration } from "../../../@types/validation.d.ts";
-import { renderValue } from "../../renderer/render.ts";
-import { funcLike, regMatchLinearGradient, regMatchRadialGradient, STATE, TOKENS } from "../../syntax/constants.ts";
-import { FeatureWalkMode } from "./type.ts";
-import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
-import { getSyntaxConfig } from "../../validation/config.ts";
-import { splitTokenList } from "../../validation/utils/list.ts";
-import { equalsIgnoreCase } from "../../parser/utils/text.ts";
-import { toDegrees } from "../../parser/utils/angle.ts";
+import {walkValues} from "../walk.ts";
+import {pseudoAliasMap} from "../../syntax/syntax.ts";
+import {splitRule} from "../minify.ts";
+import type {ValidationConfiguration} from "../../../@types/validation.d.ts";
+import {renderValue} from "../../printer/render.ts";
+import {funcLike, regMatchLinearGradient, regMatchRadialGradient, STATE, TOKENS} from "../../syntax/constants.ts";
+import {FeatureWalkMode} from "./type.ts";
+import {ValidationSyntaxGroupEnum} from "../../validation/parser/typedef.ts";
+import {getSyntaxConfig} from "../../validation/config.ts";
+import {splitTokenList} from "../../validation/utils/list.ts";
+import {equalsIgnoreCase} from "../../parser/utils/text.ts";
+import {toDegrees} from "../../parser/utils/angle.ts";
 
 const config: ValidationConfiguration = getSyntaxConfig();
 

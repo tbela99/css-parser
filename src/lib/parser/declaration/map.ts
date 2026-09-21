@@ -13,10 +13,11 @@ import { eq } from "../utils/eq.ts";
 import { getConfig } from "../utils/config.ts";
 import { matchType } from "../utils/type.ts";
 import { EnumToken } from "../../ast/types.ts";
-import { renderValue } from "../../renderer/render.ts";
+import { renderValue } from "../../printer/render.ts";
 import { parseString } from "../parse.ts";
 import { PropertySet } from "./set.ts";
 import { PROPERTYNAME } from "../../syntax/constants.ts";
+import { cloneNode } from "../../ast/clone.ts";
 
 const propertiesConfig: PropertiesConfig = getConfig();
 
@@ -27,7 +28,7 @@ interface TokenMap {
 
 export class PropertyMap {
     protected config: ShorthandMapType;
-    protected declarations: Map<string, AstDeclaration | PropertySet>;
+    protected declarations: Map<string, AstDeclaration | PropertySet | PropertyMap>;
     protected requiredCount: any;
     protected pattern: string[];
 
@@ -245,20 +246,57 @@ export class PropertyMap {
     }
 
     [Symbol.iterator]() {
-        let iterable: IterableIterator<AstDeclaration | PropertySet>;
+        const propertiesMapping = { ...this.config.properties };
+        const patterns = this.config.pattern.split(" ");
+
+        let hasMapping: boolean = false;
+
+        let iterable: IterableIterator<AstDeclaration | PropertySet | PropertyMap>;
         let requiredCount: number = 0;
         let property: string;
         let isShorthand: boolean = true;
+        let declarations: Map<string, AstDeclaration | PropertySet | PropertyMap> = this.declarations;
 
-        for (property of Object.keys(this.config.properties)) {
-            if (this.config.properties[property].required) {
-                if (!this.declarations.has(property)) {
+        for (const key of declarations.keys()) {
+            if (declarations.has(key) && declarations.get(key) instanceof PropertyMap) {
+                hasMapping = true;
+                break;
+            }
+        }
+
+        if (hasMapping) {
+            const mapped: { [key: string]: AstDeclaration } = {};
+
+            for (const key of declarations.keys()) {
+                const value = declarations.get(key);
+
+                if (value instanceof PropertyMap) {
+                    for (const [k, v] of (value as PropertyMap).declarations) {
+                        mapped[k] = v as AstDeclaration;
+                    }
+                } else {
+                    mapped[key] = value as AstDeclaration;
+                }
+            }
+
+            if (patterns.length === Object.keys(mapped).length) {
+                declarations = new Map<string, AstDeclaration | PropertySet | PropertyMap>();
+
+                for (const key of patterns) {
+                    if (mapped[key] != null) {
+                        declarations.set(key, mapped[key]);
+                    }
+                }
+            }
+        }
+
+        for (property of Object.keys(propertiesMapping)) {
+            if (propertiesMapping[property].required) {
+                if (!declarations.has(property)) {
                     isShorthand = false;
                     break;
                 } else {
-                    const val: AstDeclaration | PropertySet = <AstDeclaration | PropertySet>(
-                        this.declarations.get(property)
-                    );
+                    const val: AstDeclaration | PropertySet = <AstDeclaration | PropertySet>declarations.get(property);
 
                     if (val instanceof PropertySet && !val.isShortHand()) {
                         isShorthand = false;
@@ -271,11 +309,11 @@ export class PropertyMap {
         }
 
         if (requiredCount === 0) {
-            requiredCount = this.declarations.size;
+            requiredCount = declarations.size;
         }
 
         if (!isShorthand || requiredCount < this.requiredCount) {
-            if (isShorthand && this.declarations.has(this.config.shorthand)) {
+            if (isShorthand && declarations.has(this.config.shorthand)) {
                 const cache: Map<Token, string> = new Map();
 
                 const removeDefaults = (declaration: AstDeclaration): AstDeclaration => {
@@ -376,9 +414,9 @@ export class PropertyMap {
                     return declaration;
                 };
 
-                const values: AstDeclaration[] = [...this.declarations.values()].reduce(
-                    (acc: AstDeclaration[], curr: AstDeclaration | PropertySet) => {
-                        if (curr instanceof PropertySet) {
+                const values: AstDeclaration[] = [...declarations.values()].reduce(
+                    (acc: AstDeclaration[], curr: AstDeclaration | PropertySet | PropertyMap) => {
+                        if (curr instanceof PropertySet || curr instanceof PropertyMap) {
                             for (const declaration of curr) {
                                 acc.push(declaration);
                             }
@@ -431,15 +469,15 @@ export class PropertyMap {
                 return (filtered.length > 0 ? filtered : values)[Symbol.iterator]();
             }
 
-            for (const declaration of this.declarations.values()) {
-                if (declaration instanceof PropertySet) {
+            for (const declaration of declarations.values()) {
+                if (declaration instanceof PropertySet || declaration instanceof PropertyMap) {
                     continue;
                 }
 
                 const config =
                     declaration.nam == this.config.shorthand
                         ? this.config
-                        : (this.config.properties[declaration.nam] ?? this.config);
+                        : (propertiesMapping[declaration.nam] ?? this.config);
 
                 if (!("mapping" in config)) {
                     continue;
@@ -461,7 +499,7 @@ export class PropertyMap {
             }
 
             // @ts-ignore
-            iterable = this.declarations.values();
+            iterable = declarations.values();
         } else {
             let count: number = 0;
             let match: boolean;
@@ -476,9 +514,9 @@ export class PropertyMap {
             const tokens: { [key: string]: Token[][] } = <{ [key: string]: Token[][] }>{};
 
             // @ts-ignore
-            Object.entries(this.config.properties).reduce(
+            Object.entries(propertiesMapping).reduce(
                 (acc: string[], curr: [string, PropertyMapType]): string[] => {
-                    if (!this.declarations.has(curr[0])) {
+                    if (!declarations.has(curr[0])) {
                         if (curr[1].required) {
                             acc.push(<string>curr[0]);
                         }
@@ -488,14 +526,14 @@ export class PropertyMap {
 
                     let current: number = 0;
 
-                    const props: PropertyMapType = this.config.properties[curr[0]];
+                    const props: PropertyMapType = propertiesMapping[curr[0]];
                     const properties: AstDeclaration | PropertySet = <AstDeclaration | PropertySet>(
-                        this.declarations.get(curr[0])
+                        declarations.get(curr[0])
                     );
 
-                    for (const declaration of <AstDeclaration[]>[
-                        properties instanceof PropertySet ? [...properties][0] : properties,
-                    ]) {
+                    for (const declaration of properties instanceof PropertySet || properties instanceof PropertyMap
+                        ? [...properties].flat()
+                        : [properties]) {
                         // @ts-ignore
                         for (const val of declaration.val) {
                             // @ts-ignore
@@ -556,11 +594,63 @@ export class PropertyMap {
                 <string[]>[],
             );
 
+            // grid-template
+            if (this.config.shorthand == "grid-template" && patterns.length == Object.keys(tokens).length) {
+                const k: number = tokens[patterns[0]][0].length;
+                const l: number = tokens[patterns[1]][0].length;
+                const j: number = k < l ? k : l;
+
+                const result: Token[] = [];
+
+                let i: number;
+
+                for (i = 0; i < j; i++) {
+                    if (i < k) {
+                        result.push(tokens[patterns[0]][0][i]);
+                    }
+
+                    if (i < l) {
+                        result.push(tokens[patterns[1]][0][i]);
+                    }
+                }
+
+                if (j < k) {
+                    result.push(...tokens[patterns[0]][0].slice(j));
+                }
+
+                if (j < l) {
+                    result.push(...tokens[patterns[1]][0].slice(j));
+                }
+
+                const separator = this.config.properties[patterns[2]]?.prefix;
+
+                result.push(
+                    // @ts-ignore
+                    { ...separator, typ: EnumToken[separator.typ as keyof typeof EnumToken] } as Token,
+                    ...tokens[patterns[2]][0].reduce((acc: Token[], curr: Token): Token[] => {
+                        if (acc.length > 0) {
+                            acc.push({ typ: EnumToken.WhitespaceTokenType });
+                        }
+
+                        acc.push(curr);
+
+                        return acc;
+                    }, [] as Token[]),
+                );
+
+                const declaration = cloneNode(declarations.get(patterns[0]) as AstDeclaration) as AstDeclaration;
+
+                declaration.nam = this.config.shorthand;
+                declaration.val = result;
+
+                return [declaration][Symbol.iterator]();
+            }
+
             count++;
 
             if (
                 !isShorthand ||
-                Object.entries(this.config.properties).some((entry: [string, PropertyMapType]) => {
+                Object.entries(propertiesMapping).some((entry: [string, PropertyMapType]) => {
                     // missing required property
                     return entry[1].required && !(entry[0] in tokens);
                 }) ||
@@ -572,20 +662,33 @@ export class PropertyMap {
                 )
             ) {
                 // @ts-ignore
-                iterable = this.declarations.values();
-            } else {
-                let values: Token[] = Object.entries(tokens)
-                    .reduce(
-                        (acc: Token[][], curr: [string, Token[][]]) => {
-                            const props: PropertyMapType = this.config.properties[curr[0]];
+                iterable = declarations.values();
+            } else if (hasMapping) {
+                if (patterns.length == Object.keys(tokens).length) {
+                    const declaration = cloneNode(declarations.get(patterns[0]) as AstDeclaration) as AstDeclaration;
+                    declaration.nam = this.config.shorthand;
 
-                            for (let i = 0; i < curr[1].length; i++) {
-                                if (acc.length == i) {
-                                    acc.push([]);
+                    for (let i = 0; i < patterns.length; i++) {
+                        if (declaration.val.length > 0) {
+                            declaration.val.push(
+                                // @ts-ignore
+                                this.config.separator != null
+                                    ? {
+                                          ...this.config.separator,
+                                          typ: EnumToken[this.config.separator.typ as keyof typeof EnumToken],
+                                      }
+                                    : <Token>{ typ: EnumToken.WhitespaceTokenType },
+                            );
+                        }
+
+                        declaration.val.push(
+                            ...tokens[patterns[i]].reduce((acc: Token[], curr: Token[]) => {
+                                if (acc.length > 0) {
+                                    acc.push(<Token>{ typ: EnumToken.WhitespaceTokenType });
                                 }
 
-                                let values: Token[] = curr[1][i].reduce(
-                                    (acc, curr) => {
+                                acc.push(
+                                    ...curr.reduce((acc: Token[], curr: Token) => {
                                         if (acc.length > 0) {
                                             acc.push(<Token>{ typ: EnumToken.WhitespaceTokenType });
                                         }
@@ -593,9 +696,54 @@ export class PropertyMap {
                                         acc.push(curr);
 
                                         return acc;
-                                    },
-                                    <Token[]>[],
+                                    }, [] as Token[]),
                                 );
+
+                                return acc;
+                            }, [] as Token[]),
+                        );
+                    }
+
+                    return [declaration][Symbol.iterator]();
+                }
+
+                iterable = declarations.values();
+            } else {
+                let values: Token[] = Object.entries(tokens)
+                    .reduce(
+                        (acc: Token[][], curr: [string, Token[][]]) => {
+                            const props: PropertyMapType = propertiesMapping[curr[0]];
+
+                            for (let i = 0; i < curr[1].length; i++) {
+                                if (acc.length == i) {
+                                    acc.push([]);
+                                }
+
+                                // if (acc[acc.length - 1].length > 0) {
+
+                                //     acc[acc.length - 1].push(
+                                //         // @ts-ignore
+                                //         this.config.separator != null  ?
+                                //         {
+                                //             ...this.config.separator,
+                                //             typ: EnumToken[this.config.separator.typ as keyof typeof EnumToken],
+                                //         } : <Token>{ typ: EnumToken.WhitespaceTokenType },
+                                //     )
+                                // }
+
+                                let values: Token[] = curr[1][i];
+                                // .reduce(
+                                //     (acc, curr) => {
+                                //         // if (acc.length > 0) {
+                                //         //     acc.push(<Token>{ typ: EnumToken.WhitespaceTokenType });
+                                //         // }
+
+                                //         acc.push(curr);
+
+                                //         return acc;
+                                //     },
+                                //     <Token[]>[],
+                                // );
 
                                 if (
                                     props.default.includes(
@@ -607,7 +755,7 @@ export class PropertyMap {
                                             .trimEnd(),
                                     )
                                 ) {
-                                    if (!this.config.properties[curr[0]].required) {
+                                    if (!propertiesMapping[curr[0]].required) {
                                         continue;
                                     }
                                 }
@@ -624,9 +772,7 @@ export class PropertyMap {
                                                 EnumToken.IdenTokenType,
                                             ].includes(v.typ) ||
                                             (v.typ == EnumToken.IdenTokenType &&
-                                                !this.config.properties[curr[0]].default.includes(
-                                                    (v as IdentToken).val,
-                                                ))
+                                                !propertiesMapping[curr[0]].default.includes((v as IdentToken).val))
                                         ) {
                                             doFilterDefault = false;
                                             break;
@@ -654,7 +800,7 @@ export class PropertyMap {
 
                                 if (
                                     filtered.length > 0 ||
-                                    !(this.requiredCount == requiredCount && this.config.properties[curr[0]].required)
+                                    !(this.requiredCount == requiredCount && propertiesMapping[curr[0]].required)
                                 ) {
                                     values = filtered;
                                 }
@@ -685,6 +831,7 @@ export class PropertyMap {
                                         // @ts-ignore
                                         acc[i].push({ ...props.prefix, typ: EnumToken[props.prefix.typ] });
                                     } else if (acc[i].length > 0) {
+                                        // @ts-ignore
                                         acc[i].push(<WhitespaceToken>{ typ: EnumToken.WhitespaceTokenType });
                                     }
 
@@ -741,6 +888,9 @@ export class PropertyMap {
                         return acc;
                     }, []);
 
+                // console.error({hasMapping, shorthand: this.config.shorthand, requiredCount, isShorthand,
+                //     declarations: declarations.values(), values});
+
                 if (this.config.mapping != null) {
                     const val: string = values.reduce(
                         (acc: string, curr: Token): string =>
@@ -791,7 +941,7 @@ export class PropertyMap {
         return {
             // @ts-ignore
             next(): IteratorResult<AstDeclaration> {
-                let v: IteratorResult<AstDeclaration | PropertySet> = iterable.next();
+                let v: IteratorResult<AstDeclaration | PropertySet | PropertyMap> = iterable.next();
 
                 // @ts-ignore
                 while (v.done || v.value instanceof PropertySet) {

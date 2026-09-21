@@ -2016,8 +2016,8 @@ export function renderValue(
             throw new Error(`Unsupported token type for ${EnumToken[token.typ]}`);
     }
 
-    errors?.push({ action: "ignore", message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });
-    return "";
+    // errors?.push({ action: "ignore", message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });
+    // return "";
 }
 
 /**

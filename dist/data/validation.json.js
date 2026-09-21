@@ -1577,6 +1577,9 @@ var declarations = {
 	scale: {
 		syntax: "none | [ <number> | <percentage> ]{1,3}"
 	},
+	"scroll-axis-lock": {
+		syntax: "auto | none"
+	},
 	"scroll-behavior": {
 		syntax: "auto | smooth"
 	},
@@ -1981,6 +1984,9 @@ var declarations = {
 	},
 	"will-change": {
 		syntax: "auto | <animateable-feature>#"
+	},
+	"window-drag": {
+		syntax: "none | move"
 	},
 	"word-break": {
 		syntax: "normal | break-all | keep-all | break-word | auto-phrase"

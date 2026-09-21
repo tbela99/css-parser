@@ -15,12 +15,12 @@ import type {
     Token,
     VariableScopeInfo,
 } from "../../../@types/index.d.ts";
-import { EnumToken } from "../types.ts";
-import { walkValues } from "../walk.ts";
-import { renderValue } from "../../renderer/render.ts";
-import { splitRule } from "../minify.ts";
-import { FeatureWalkMode } from "./type.ts";
-import { mathFuncs, RAW } from "../../syntax/constants.ts";
+import {EnumToken} from "../types.ts";
+import {walkValues} from "../walk.ts";
+import {renderValue} from "../../printer/render.ts";
+import {splitRule} from "../minify.ts";
+import {FeatureWalkMode} from "./type.ts";
+import {mathFuncs, RAW} from "../../syntax/constants.ts";
 
 function inlineExpression(token: Token): Token[] {
     const result: Token[] = [];

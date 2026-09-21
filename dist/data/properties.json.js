@@ -313,35 +313,6 @@ var properties = {
 	"border-left-color": {
 		map: "border",
 		shorthand: "border-color"
-	},
-	"grid-row": {
-		shorthand: "grid-row",
-		properties: [
-			"grid-row-start",
-			"grid-row-end"
-		],
-		types: [
-			"Iden",
-			"Number"
-		],
-		multiple: true,
-		valueSeparator: {
-			typ: "Literal",
-			val: "/"
-		},
-		"default": [
-			"auto"
-		],
-		keywords: [
-			"auto",
-			"span"
-		]
-	},
-	"grid-row-start": {
-		shorthand: "grid-row"
-	},
-	"grid-row-end": {
-		shorthand: "grid-row"
 	}
 };
 var map = {
@@ -1607,6 +1578,302 @@ var map = {
 	},
 	"background-size": {
 		shorthand: "background"
+	},
+	"grid-area": {
+		shorthand: "grid-area",
+		pattern: "grid-row-start grid-column-start grid-row-end grid-column-end",
+		keywords: [
+			"auto"
+		],
+		"default": [
+			"auto"
+		],
+		multiple: false,
+		expandShorthands: true,
+		separator: {
+			typ: "Literal",
+			val: "/"
+		},
+		mapping: {
+			"auto/auto": "auto",
+			"auto/auto/auto": "auto",
+			"auto/auto/auto/auto": "auto"
+		},
+		expandedProperties: {
+			"grid-row": [
+				"grid-row-start",
+				"grid-row-end"
+			],
+			"grid-column": [
+				"grid-column-start",
+				"grid-column-end"
+			]
+		},
+		properties: {
+			"grid-row-start": {
+				map: "grid-area",
+				shorthand: "grid-row",
+				types: [
+					"Iden",
+					"Number"
+				],
+				"default": [
+					"auto"
+				],
+				keywords: [
+					"auto"
+				]
+			},
+			"grid-column-start": {
+				map: "grid-area",
+				shorthand: "grid-column",
+				types: [
+					"Iden",
+					"Number"
+				],
+				prefix: {
+					typ: "Literal",
+					val: "/"
+				},
+				"default": [
+					"auto"
+				],
+				keywords: [
+					"auto"
+				]
+			},
+			"grid-row-end": {
+				map: "grid-area",
+				shorthand: "grid-row",
+				types: [
+					"Iden",
+					"Number"
+				],
+				prefix: {
+					typ: "Literal",
+					val: "/"
+				},
+				"default": [
+					"auto"
+				],
+				keywords: [
+					"auto"
+				]
+			},
+			"grid-column-end": {
+				map: "grid-area",
+				shorthand: "grid-column",
+				types: [
+					"Iden",
+					"Number"
+				],
+				prefix: {
+					typ: "Literal",
+					val: "/"
+				},
+				"default": [
+					"auto"
+				],
+				keywords: [
+					"auto"
+				]
+			}
+		}
+	},
+	"grid-row-start": {
+		shorthand: "grid-row"
+	},
+	"grid-column-start": {
+		shorthand: "grid-column"
+	},
+	"grid-row-end": {
+		shorthand: "grid-row"
+	},
+	"grid-column-end": {
+		shorthand: "grid-column"
+	},
+	"grid-row": {
+		shorthand: "grid-row",
+		map: "grid-area",
+		pattern: "grid-row-start grid-row-end",
+		types: [
+			"Iden",
+			"Number"
+		],
+		keywords: [
+			"auto"
+		],
+		"default": [
+			"auto"
+		],
+		multiple: false,
+		mapping: {
+			"auto auto": "auto",
+			"auto/auto": "auto"
+		},
+		properties: {
+			"grid-row-start": {
+				map: "grid-area",
+				types: [
+					"Iden",
+					"Number"
+				],
+				"default": [
+					"auto"
+				],
+				multiple: true,
+				keywords: [
+					"auto"
+				]
+			},
+			"grid-row-end": {
+				map: "grid-area",
+				types: [
+					"Iden",
+					"Number"
+				],
+				"default": [
+					"auto"
+				],
+				prefix: {
+					typ: "Literal",
+					val: "/"
+				},
+				multiple: true,
+				keywords: [
+					"auto"
+				]
+			}
+		}
+	},
+	"grid-column": {
+		shorthand: "grid-column",
+		map: "grid-area",
+		pattern: "grid-column-start grid-column-end",
+		types: [
+			"Iden",
+			"Number"
+		],
+		keywords: [
+			"auto"
+		],
+		"default": [
+			"auto"
+		],
+		multiple: false,
+		mapping: {
+			"auto/auto": "auto"
+		},
+		properties: {
+			"grid-column-start": {
+				map: "grid-area",
+				types: [
+					"Iden",
+					"Number"
+				],
+				"default": [
+					"auto"
+				],
+				multiple: true,
+				keywords: [
+					"auto"
+				]
+			},
+			"grid-column-end": {
+				map: "grid-area",
+				types: [
+					"Iden",
+					"Number"
+				],
+				"default": [
+					"auto"
+				],
+				multiple: true,
+				prefix: {
+					typ: "Literal",
+					val: "/"
+				},
+				keywords: [
+					"auto"
+				]
+			}
+		}
+	},
+	"grid-template": {
+		shorthand: "grid-template",
+		pattern: "grid-template-areas grid-template-rows grid-template-columns",
+		keywords: [
+			"none"
+		],
+		"default": [
+			"none"
+		],
+		multiple: false,
+		mapping: {
+			"none none": "none",
+			"none/none": "none",
+			"none none/none": "none"
+		},
+		properties: {
+			"grid-template-areas": {
+				types: [
+					"String"
+				],
+				"default": [
+					"none"
+				],
+				multiple: true,
+				keywords: [
+					"none",
+					"auto"
+				],
+				mapping: {
+				}
+			},
+			"grid-template-rows": {
+				types: [
+					"Perc",
+					"Iden",
+					"Length",
+					"Flex"
+				],
+				"default": [
+					"none"
+				],
+				multiple: true,
+				keywords: [
+					"none"
+				]
+			},
+			"grid-template-columns": {
+				types: [
+					"Perc",
+					"Iden",
+					"Length",
+					"Flex"
+				],
+				"default": [
+					"none"
+				],
+				prefix: {
+					typ: "Literal",
+					val: "/"
+				},
+				multiple: true,
+				keywords: [
+					"none"
+				]
+			}
+		}
+	},
+	"grid-template-areas": {
+		shorthand: "grid-template"
+	},
+	"grid-template-rows": {
+		shorthand: "grid-template"
+	},
+	"grid-template-columns": {
+		shorthand: "grid-template"
 	}
 };
 var property = {

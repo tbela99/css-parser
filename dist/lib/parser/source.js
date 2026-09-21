@@ -1,4 +1,4 @@
-import { SourceMap } from '../renderer/sourcemap/sourcemap.js';
+import { SourceMap } from '../printer/sourcemap/sourcemap.js';
 import { LineMap } from './linesmap.js';
 
 /**
@@ -9,7 +9,6 @@ let sourceId = 0;
  * Source file helper class
  */
 class SourceFile {
-    inputSourceMap = null;
     /**
      * Source file ID
      */
@@ -26,6 +25,7 @@ class SourceFile {
      * Source file content
      */
     content;
+    inputSourceMap = null;
     /**
      * Constructor
      * @param content

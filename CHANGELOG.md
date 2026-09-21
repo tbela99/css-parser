@@ -1,5 +1,18 @@
 # Changelog
 
+# v1.6.4
+
+## New
+
+Compute shorthand properties:
+- grid-area
+- grid-row
+- grid-column
+
+## Improvement
+
+faster tokenizer and node walker functions.
+
 # v1.6.3
 
 ## Fix

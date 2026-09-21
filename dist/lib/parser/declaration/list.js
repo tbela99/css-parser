@@ -17,14 +17,7 @@ class PropertyList {
         this.options = options;
         this.declarations = new Map();
     }
-    // set(nam: string, value: string | Token[]) {
-    //     return this.add({
-    //         typ: EnumToken.DeclarationNodeType,
-    //         nam,
-    //         val: Array.isArray(value) ? value : parseString(String(value)),
-    //     });
-    // }
-    add(...declarations) {
+    add(declarations) {
         let name;
         let syntaxRules = null;
         let result;
@@ -62,22 +55,8 @@ class PropertyList {
             }
             // do not compute shorthand for invalid declarations
             if (declaration[STATE] !== EnumAstNodeStatus.Validated) {
-                // const key = objectHash(declaration);
-                // if (!this.ketsey.has(key)) {
-                //     this.ketsey.set(key, [declaration.nam]);
-                //     console.error(
-                //         `Adding declaration : ${(<AstDeclaration>declaration).nam} with key : ${key}`
-                //     )
-                // }
-                // else {
-                //     console.error(
-                //         `Duplicate declaration found: ${(<AstDeclaration>declaration).nam} with key : [ ${key} => ${this.ketsey.get(key)} ]`
-                //     )
-                //     console.error(JSON.stringify(toSortedString(declaration)))
-                //     this.ketsey.get(key).push(declaration.nam);
-                // }
                 this.declarations.set(objectHash(declaration), declaration);
-                return this;
+                continue;
             }
             let propertyName = declaration.nam;
             let shortHandType;
@@ -105,15 +84,28 @@ class PropertyList {
                 // @ts-ignore
                 shorthand = config.property[propertyName];
             }
+            // console.error({shortHandType, propertyName, config: config.map[propertyName], map: config.map[shorthand].properties[propertyName]});
             // @ts-ignore
             if (shortHandType == "map") {
+                let owner = this;
                 // @ts-ignore
-                if (!this.declarations.has(shorthand)) {
-                    // @ts-ignore
-                    this.declarations.set(shorthand, new PropertyMap(config.map[shorthand]));
+                const mapName = config.map[propertyName]?.map ?? config.map[shorthand]?.properties?.[propertyName]?.map;
+                if (typeof mapName === "string") {
+                    if (!this.declarations.has(mapName)) {
+                        // @ts-ignore
+                        this.declarations.set(mapName, new PropertyMap(config.map[mapName]));
+                    }
+                    owner = this.declarations.get(mapName);
+                    // console.error({mapName});
                 }
                 // @ts-ignore
-                this.declarations.get(shorthand).add(declaration);
+                if (!owner.declarations.has(shorthand)) {
+                    // @ts-ignore
+                    owner.declarations.set(shorthand, new PropertyMap(config.map[shorthand]));
+                }
+                //  console.error({propertyName,mapName, owned: owner == this});
+                // @ts-ignore
+                owner.declarations.get(shorthand).add(declaration);
             }
             // @ts-ignore
             else if (shortHandType == "set") {
@@ -200,6 +192,7 @@ class PropertyList {
     [Symbol.iterator]() {
         let iterator = this.declarations.values();
         const iterators = [];
+        // console.error(this);
         return {
             next() {
                 let value = iterator.next();

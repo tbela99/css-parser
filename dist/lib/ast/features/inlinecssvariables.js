@@ -1,6 +1,6 @@
 import { EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
-import { renderValue } from '../../renderer/render.js';
+import { renderValue } from '../../printer/render.js';
 import { splitRule } from '../minify.js';
 import { FeatureWalkMode } from './type.js';
 import { RAW, mathFuncs } from '../../syntax/constants.js';

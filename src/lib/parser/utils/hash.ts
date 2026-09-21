@@ -58,13 +58,23 @@ export function toSortedString(input: any): string {
         return String(input);
     }
     if (Array.isArray(input)) {
-        return JSON.stringify(input.map(toSortedString));
+
+        const result = new Array(input.length);
+
+        for (const value of input) {
+            result.push(toSortedString(value));
+        }
+        
+        return JSON.stringify(result);
     }
 
-    return `{${Object.keys(input)
-        .sort()
-        .map((k) => `${k}:${toSortedString(input[k])}`)
-        .join(",")}}`;
+    const keys = Object.keys(input).sort();
+
+    for (let i = 0; i < keys.length; i++) {
+        keys[i] = `${keys[i]}:${toSortedString(input[keys[i]])}`;
+    }
+
+    return `{${keys.join(",")}}`;
 }
 
 /**

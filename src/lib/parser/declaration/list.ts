@@ -34,15 +34,7 @@ export class PropertyList {
         this.declarations = new Map<string, AstNode | PropertySet | PropertyMap>();
     }
 
-    // set(nam: string, value: string | Token[]) {
-    //     return this.add({
-    //         typ: EnumToken.DeclarationNodeType,
-    //         nam,
-    //         val: Array.isArray(value) ? value : parseString(String(value)),
-    //     });
-    // }
-
-    add(...declarations: AstNode[]) {
+    add(declarations: AstNode[]) {
         let name: string | null;
         let syntaxRules: ValidationToken[] | null = null;
         let result: ValidationMatch;
@@ -90,28 +82,8 @@ export class PropertyList {
 
             // do not compute shorthand for invalid declarations
             if (declaration[STATE] !== EnumAstNodeStatus.Validated) {
-                // const key = objectHash(declaration);
-                // if (!this.ketsey.has(key)) {
-                //     this.ketsey.set(key, [declaration.nam]);
-
-                //     console.error(
-                //         `Adding declaration : ${(<AstDeclaration>declaration).nam} with key : ${key}`
-                //     )
-                // }
-
-                // else {
-
-                //     console.error(
-                //         `Duplicate declaration found: ${(<AstDeclaration>declaration).nam} with key : [ ${key} => ${this.ketsey.get(key)} ]`
-                //     )
-
-                //     console.error(JSON.stringify(toSortedString(declaration)))
-
-                //     this.ketsey.get(key).push(declaration.nam);
-                // }
-
                 this.declarations.set(objectHash(declaration), declaration);
-                return this;
+                continue;
             }
 
             let propertyName: string = <string>(<AstDeclaration>declaration).nam;
@@ -139,16 +111,37 @@ export class PropertyList {
                 shorthand = <string>config.property[propertyName];
             }
 
+            // console.error({shortHandType, propertyName, config: config.map[propertyName], map: config.map[shorthand].properties[propertyName]});
+
             // @ts-ignore
             if (shortHandType == "map") {
+                let owner: PropertyMap | PropertyList = this;
+
                 // @ts-ignore
-                if (!this.declarations.has(shorthand)) {
-                    // @ts-ignore
-                    this.declarations.set(shorthand, new PropertyMap(<ShorthandMapType>config.map[shorthand]));
+                 const mapName : string = config.map[propertyName]?.map ?? config.map[shorthand]?.properties?.[propertyName]?.map
+
+                if (typeof mapName === "string") {
+
+                    if (!this.declarations.has(mapName)) {
+                        // @ts-ignore
+                        this.declarations.set(mapName, new PropertyMap(<ShorthandMapType>config.map[mapName]));
+                    }
+
+                        owner = this.declarations.get(mapName) as PropertyMap;
+            // console.error({mapName});
+
                 }
 
                 // @ts-ignore
-                (<PropertyMap>this.declarations.get(shorthand)).add(<AstDeclaration>declaration);
+                if (!owner.declarations.has(shorthand)) {
+                    // @ts-ignore
+                    owner.declarations.set(shorthand, new PropertyMap(<ShorthandMapType>config.map[shorthand]));
+                }
+
+                //  console.error({propertyName,mapName, owned: owner == this});
+
+                // @ts-ignore
+                (<PropertyMap>owner.declarations.get(shorthand)).add(<AstDeclaration>declaration);
             }
 
             // @ts-ignore
@@ -261,6 +254,8 @@ export class PropertyList {
     [Symbol.iterator]() {
         let iterator: IterableIterator<AstNode | PropertySet | PropertyMap> = this.declarations.values();
         const iterators: Array<IterableIterator<AstNode | PropertySet | PropertyMap>> = [];
+
+        // console.error(this);
 
         return {
             next() {

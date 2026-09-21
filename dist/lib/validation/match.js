@@ -10,6 +10,20 @@ import { parseTokens } from '../parser/parse.js';
 const config = getSyntaxConfig();
 // @ts-expect-error
 const allValues = config.declarations.all.syntax.split(/[\s|]+/g);
+const selectorNodeTypes = [
+    EnumToken.CommaTokenType,
+    EnumToken.ColumnCombinatorTokenType,
+    EnumToken.ChildCombinatorTokenType,
+    EnumToken.NextSiblingCombinatorTokenType,
+    EnumToken.SubsequentSiblingCombinatorTokenType,
+];
+const trimWhitespaceBefore = selectorNodeTypes.concat(EnumToken.DelimTokenType, EnumToken.DashMatchTokenType, EnumToken.IncludeMatchTokenType, EnumToken.ContainMatchTokenType, EnumToken.StartMatchTokenType, EnumToken.EndMatchTokenType, EnumToken.AttrEndTokenType);
+const trimWhitespaceAfter = selectorNodeTypes.concat(EnumToken.DelimTokenType, EnumToken.DashMatchTokenType, EnumToken.IncludeMatchTokenType, EnumToken.ContainMatchTokenType, EnumToken.StartMatchTokenType, EnumToken.EndMatchTokenType, EnumToken.AttrStartTokenType);
+const selectorEnumMap = new Map([
+    [EnumToken.Tilda, EnumToken.SubsequentSiblingCombinatorTokenType],
+    [EnumToken.GtTokenType, EnumToken.ChildCombinatorTokenType],
+]);
+const propertyKeywordValues = new Map();
 /**
  * @type {Array.<EnumToken>}
  */
@@ -233,24 +247,6 @@ function createValidationContext(tokens) {
         getRemainingTokens() {
             return this.tokens.slice(this.index + 1);
         },
-        // last() {
-        //     let index: number = this.tokens.length - 1;
-        //     let token: Token = this.tokens[index];
-        //     while (
-        //         (this.index >= 0 && token?.typ === EnumToken.WhitespaceTokenType) ||
-        //         token?.typ === EnumToken.CommentTokenType ||
-        //         token?.typ === EnumToken.CDOCOMMTokenType ||
-        //         token?.typ === EnumToken.InvalidCommentTokenType ||
-        //         token?.typ === EnumToken.BadCommentTokenType ||
-        //         token?.typ === EnumToken.BadStringTokenType
-        //     ) {
-        //         token = this.tokens[--index];
-        //         if (token == null) {
-        //             break;
-        //         }
-        //     }
-        //     return token;
-        // },
         end() {
             this.index = this.tokens.length + 1;
             return this;
@@ -310,19 +306,6 @@ function createValidationContext(tokens) {
 function matchSelectorSyntax(stream, errors, options, nested = true) {
     const stack = [];
     const tokens = [];
-    const nodes = [
-        EnumToken.CommaTokenType,
-        EnumToken.ColumnCombinatorTokenType,
-        EnumToken.ChildCombinatorTokenType,
-        EnumToken.NextSiblingCombinatorTokenType,
-        EnumToken.SubsequentSiblingCombinatorTokenType,
-    ];
-    const trimWhitespaceBefore = nodes.concat(EnumToken.DelimTokenType, EnumToken.DashMatchTokenType, EnumToken.IncludeMatchTokenType, EnumToken.ContainMatchTokenType, EnumToken.StartMatchTokenType, EnumToken.EndMatchTokenType, EnumToken.AttrEndTokenType);
-    const trimWhitespaceAfter = nodes.concat(EnumToken.DelimTokenType, EnumToken.DashMatchTokenType, EnumToken.IncludeMatchTokenType, EnumToken.ContainMatchTokenType, EnumToken.StartMatchTokenType, EnumToken.EndMatchTokenType, EnumToken.AttrStartTokenType);
-    const enumMap = new Map([
-        [EnumToken.Tilda, EnumToken.SubsequentSiblingCombinatorTokenType],
-        [EnumToken.GtTokenType, EnumToken.ChildCombinatorTokenType],
-    ]);
     let token;
     let i = 0;
     let success = true;
@@ -362,15 +345,15 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
         }
         tokens.push(token);
         if (tokensfuncDefMap.has(token.typ)) {
-            if (stack.length > 0 && nodes.includes(stack.at(-1).typ)) {
+            if (stack.length > 0 && selectorNodeTypes.includes(stack.at(-1).typ)) {
                 stack.pop();
             }
             stack.push(token);
             continue;
         }
         if (stack.length > 0 &&
-            nodes.includes(stack.at(-1).typ) &&
-            !nodes.includes(token.typ) &&
+            selectorNodeTypes.includes(stack.at(-1).typ) &&
+            !selectorNodeTypes.includes(token.typ) &&
             token.typ !== EnumToken.WhitespaceTokenType &&
             token.typ !== EnumToken.CommentTokenType &&
             token.typ !== EnumToken.CDOCOMMTokenType) {
@@ -416,7 +399,7 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                 break;
             case EnumToken.Tilda:
             case EnumToken.GtTokenType:
-                Object.assign(token, { typ: enumMap.get(token.typ) });
+                Object.assign(token, { typ: selectorEnumMap.get(token.typ) });
             case EnumToken.ColumnCombinatorTokenType:
             case EnumToken.ChildCombinatorTokenType:
             case EnumToken.UniversalSelectorTokenType:
@@ -429,7 +412,7 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                 if (stack.length > 0 && stack.at(-1)?.typ === EnumToken.UniversalSelectorTokenType) {
                     stack.pop();
                 }
-                if (stack.length > 0 && nodes.includes(stack.at(-1)?.typ)) {
+                if (stack.length > 0 && selectorNodeTypes.includes(stack.at(-1)?.typ)) {
                     return {
                         success: false,
                         errors: [
@@ -539,106 +522,10 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                         };
                     }
                     slice.shift();
-                    // if (slice.length > 0) {
-                    //     return {
-                    //         success: false,
-                    //         errors: [
-                    //             {
-                    //                 action: "drop",
-                    //                 message: `Unexpected token ${EnumToken[slice[0].typ]} at ${slice[0][LOC]!.src}:${slice[0][LOCSTA].lin}:${
-                    //                     slice[0][LOCSTA].col
-                    //                 }`,
-                    //                 node: slice[0],
-                    //                 location: slice[0][LOC],
-                    //             },
-                    //         ],
-                    //     };
-                    // }
                     stack.pop();
                     break;
                 }
-            // case EnumToken.ColonTokenType:
-            //     if (stream[i + 1]?.typ === EnumToken.IdenTokenType) {
-            //         Object.assign(token, {
-            //             typ:
-            //                 (stream[i + 1] as IdentToken).val === "page"
-            //                     ? EnumToken.PseudoPageTokenType
-            //                     : pseudoElements.includes((token as PseudoElementToken).val)
-            //                       ? EnumToken.PseudoElementTokenType
-            //                       : EnumToken.PseudoClassTokenType,
-            //             val: ":" + (stream[i + 1] as IdentToken).val,
-            //         });
-            //         token[LOC]!.end = stream[++i][LOC]!.end;
-            //         break;
-            //     } else if (stream[i + 1]?.typ === EnumToken.FunctionTokenDefType) {
-            //         Object.assign(token, {
-            //             typ: EnumToken.PseudoClassFunctionTokenDefType,
-            //             val: ":" + (stream[i + 1] as IdentToken).val,
-            //         });
-            //         token[LOC]!.end = stream[++i][LOC]!.end;
-            //         stack.push(token);
-            //         break;
-            //     }
-            //     return {
-            //         success: false,
-            //         errors: [
-            //             {
-            //                 action: "drop",
-            //                 message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOCSTA].lin}:${
-            //                     token[LOCSTA].col
-            //                 }`,
-            //                 node: token,
-            //                 location: token[LOC],
-            //             },
-            //         ],
-            //     };
-            // case EnumToken.DoubleColonTokenType:
-            //     if (stream[i + 1]?.typ === EnumToken.IdenTokenType) {
-            //         Object.assign(token, {
-            //             typ:
-            //                 (stream[i + 1] as IdentToken).val === "page"
-            //                     ? EnumToken.PseudoPageTokenType
-            //                     : EnumToken.PseudoElementTokenType,
-            //             val: "::" + (stream[i + 1] as IdentToken).val,
-            //         });
-            //         token[LOC]!.end = stream[++i][LOC]!.end;
-            //         break;
-            //     } else if (stream[i + 1]?.typ === EnumToken.FunctionTokenDefType) {
-            //         Object.assign(token, {
-            //             typ: EnumToken.PseudoClassFunctionTokenDefType,
-            //             val: "::" + (stream[i + 1] as IdentToken).val,
-            //         });
-            //         token[LOC]!.end = stream[++i][LOC]!.end;
-            //         stack.push(token);
-            //         break;
-            //     }
-            //     return {
-            //         success: false,
-            //         errors: [
-            //             {
-            //                 action: "drop",
-            //                 message: `Unexpected token ${EnumToken[token.typ]} at ${token[LOC]!.src}:${token[LOCSTA].lin}:${
-            //                     token[LOCSTA].col
-            //                 }`,
-            //                 node: token,
-            //                 location: token[LOC],
-            //             },
-            //         ],
-            //     };
             case EnumToken.StartParensTokenType:
-                // if (
-                //     tokens.at(-2)?.typ === EnumToken.PseudoClassTokenType ||
-                //     tokens.at(-2)?.typ === EnumToken.PseudoElementTokenType
-                // ) {
-                //     stack.push(
-                //         Object.assign(tokens.at(-2) as Token, {
-                //             typ: EnumToken.PseudoClassFunctionTokenDefType,
-                //             chi: [],
-                //         }),
-                //     );
-                //     // tokens.pop();
-                //     break;
-                // }
                 return {
                     success: false,
                     errors: [
@@ -658,19 +545,6 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                 if (stack.at(-1)?.typ === EnumToken.PseudoClassFunctionTokenDefType ||
                     stack.at(-1)?.typ === EnumToken.PseudoElementTokenType) {
                     const token = stack.at(-1);
-                    // if (!((stack.at(-1) as PseudoClassFunctionToken).val + "()" in config.selectors)) {
-                    //     return {
-                    //         errors: [
-                    //             {
-                    //                 action: "drop",
-                    //                 message: `Unknown class element ${(token as PseudoElementToken).val}`,
-                    //                 node: token,
-                    //                 location: token[LOC]!,
-                    //             },
-                    //         ],
-                    //         success: false,
-                    //     };
-                    // }
                     const index = tokens.indexOf(token);
                     const result = matchAllSyntaxes(getParsedSyntax(ValidationSyntaxGroupEnum.Selectors, token.val + "()")?.[0]?.chi ?? [], createValidationContext(tokens.slice(index + 1, tokens.length - 1)), options);
                     if (!result.success) {
@@ -810,6 +684,7 @@ function matchListSyntax(syntax, context, options) {
     let tmpResult;
     let count = 0;
     let range;
+    let done = false;
     success = false;
     do {
         range = context.peekRange(EnumToken.CommaTokenType, EnumToken.CommaTokenType, 1);
@@ -825,12 +700,9 @@ function matchListSyntax(syntax, context, options) {
             else {
                 context.update(range.at(-1));
             }
-            if (context.done()) {
-                // context.end();
-                break;
-            }
+            done = context.done();
         }
-    } while (tmpResult.success && !context.done());
+    } while (tmpResult.success && !done);
     return result == null
         ? {
             success: false,
@@ -866,6 +738,9 @@ function matchOccurenceSyntax(syntax, context, options) {
             result = tmpResult;
             if (tmpResult.context.done()) {
                 context.end();
+                break;
+            }
+            if (tmpResult.context.index === context.index) {
                 break;
             }
             context.update(tmpResult.context.current());
@@ -913,7 +788,6 @@ function matchSyntax(syntaxes, context, options) {
             errors: [],
         };
     }
-    syntaxes = syntaxes.slice();
     let i = -1;
     let success = false;
     let token = null;
@@ -1245,20 +1119,18 @@ function matchSyntax(syntaxes, context, options) {
             case ValidationTokenEnum.PipeToken:
                 {
                     result = null;
-                    const results = [];
                     let tmp = null;
                     for (const syntax of syntaxes[i].chi) {
                         tmp = matchSyntax(syntax, context.slice(), options);
                         if (tmp.success) {
-                            results.push(tmp);
+                            if (result == null || tmp.context.index >= result.context.index) {
+                                result = tmp;
+                            }
                             if (tmp.context.done()) {
                                 context.end();
                                 return { ...tmp, context, syntaxToken: syntaxes[i + 1] };
                             }
                         }
-                    }
-                    if (results.length > 0) {
-                        result = results.reduce((a, b) => (a.context.index > b.context.index ? a : b));
                     }
                     if (result?.success) {
                         success = true;
@@ -1621,7 +1493,8 @@ function matchAmpersandSyntax(syntax, context, options) {
  */
 function matchProperty(property, context, options) {
     let success = false;
-    let t = context.peek()?.typ;
+    const token = context.peek();
+    let t = token?.typ;
     let checkCalc = (t == EnumToken.MathFunctionTokenDefType || t == EnumToken.MathFunctionTokenType) &&
         [
             "number",
@@ -1636,19 +1509,19 @@ function matchProperty(property, context, options) {
             "calc-product",
         ].includes(property.val);
     if (checkCalc && !["number", "zero", "integer", "percentage", "length-percentage"].includes(property.val)) {
-        checkCalc = context.peek().val === "calc";
+        checkCalc = token.val === "calc";
     }
     if (checkCalc) {
         let result;
-        const syntax = getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, context.peek().val + "()")?.[0]?.chi;
+        const syntax = getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, token.val + "()")?.[0]?.chi;
         if (t === EnumToken.MathFunctionTokenType) {
-            result = matchSyntax(syntax, createValidationContext(context.peek().chi), options);
+            result = matchSyntax(syntax, createValidationContext(token.chi), options);
             if (result.success && result.context.done()) {
                 context.next();
                 return {
                     success: true,
                     valid: true,
-                    token: context.peek(),
+                    token: token,
                     context,
                     syntaxToken: null,
                     errors: [],
@@ -1822,13 +1695,16 @@ function matchProperty(property, context, options) {
         case "display-outside":
         case "display-legacy":
         case "content-position":
-            success =
-                context.peek()?.typ == EnumToken.IdenTokenType &&
-                    // @ts-expect-error
-                    config.syntaxes[property.val].syntax
-                        .split(/[\s|]+/)
-                        .includes(context.peek().val.toLowerCase());
-            break;
+            {
+                let values = propertyKeywordValues.get(property.val);
+                if (values == null) {
+                    values = new Set(config.syntaxes[property.val].syntax.split(/[\s|]+/));
+                    propertyKeywordValues.set(property.val, values);
+                }
+                success =
+                    token?.typ == EnumToken.IdenTokenType && values.has(token.val.toLowerCase());
+                break;
+            }
         case "mf-name":
             {
                 const token = context.peek();
@@ -1849,9 +1725,9 @@ function matchProperty(property, context, options) {
         case "counter-name":
         case "counter-style-name":
             success =
-                context.peek()?.typ == EnumToken.IdenTokenType || context.peek()?.typ == EnumToken.DashedIdenTokenType;
-            if (success && context.peek()?.typ === EnumToken.IdenTokenType) {
-                const val = context.peek().val.toLowerCase();
+                token?.typ == EnumToken.IdenTokenType || token?.typ == EnumToken.DashedIdenTokenType;
+            if (success && token?.typ === EnumToken.IdenTokenType) {
+                const val = token.val.toLowerCase();
                 success = "none" !== val && !allValues.includes(val);
             }
             break;
@@ -2365,7 +2241,6 @@ function matchRepeatableSyntax(syntax, context, options) {
     let result = null;
     let tmpResult;
     let success = !!isRepeatable;
-    // let index: number = context.index;
     do {
         tmpResult = matchSyntax([rest], context.slice(), options);
         if (tmpResult.success) {
@@ -2375,15 +2250,10 @@ function matchRepeatableSyntax(syntax, context, options) {
                 context.end();
                 break;
             }
-            // if (context.current() === tmpResult.context.current()) {
-            //     context.next();
-            // } else {
+            if (tmpResult.context.index === context.index) {
+                break;
+            }
             context.update(result.context.current());
-            // }
-            // if (index === context.index) {
-            //     break;
-            // }
-            // index = context.index;
         }
     } while (tmpResult.success && !context.done());
     return {

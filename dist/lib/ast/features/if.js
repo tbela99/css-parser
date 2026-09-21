@@ -1,5 +1,5 @@
 import { EnumToken } from '../types.js';
-import { renderValue } from '../../renderer/render.js';
+import { renderValue } from '../../printer/render.js';
 import { FeatureWalkMode } from './type.js';
 import { PARENT, LOCSRCID, LOCSTA, LOCEND, TOKENS } from '../../syntax/constants.js';
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
