@@ -401,6 +401,39 @@ button {
 | import CSS variables from file                                       | ✅       | ✅           | ❌               | ❌           |
 
 
+## Minification performance vs execution speed
+
+`css-parser` is designed for maximum performance, but the optimal configuration depends on what matters most for your workload.
+ 
+The parser provides settings that let you choose the balance between minification performance and execution speed:
+
+- Minification performance: prioritize the quality and efficiency of the minification process, allowing the parser to perform additional work when generating the minimized output.
+
+- Execution speed: minimize the amount of work performed during parsing and minification to achieve the fastest possible execution time.
+
+However, the available settings allow you to shift the balance toward execution speed when minimizing runtime is more important than performing every available minification optimization.
+
+The example below demonstrates a balanced configuration that improves execution speed by disabling advanced minification features.
+
+```ts
+
+import {transformSync} from "@tbela99/css-parser";
+
+const css = `...`;
+
+const result = transformSync({
+                    input: css,
+                    minify: false,
+                    beautify: false,
+                    removeEmpty: true,
+                    removeComments: true,
+                    convertColor: true,
+                });
+
+console.debug(result.code);
+console.debug(result.stats);
+```
+
 ------
 [← Getting started](./Guide.Getting_started.html) | [Validation →](./Guide.Validation.html) 
 
