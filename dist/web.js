@@ -17,6 +17,7 @@ export { isOkLabClose, okLabDistance } from './lib/syntax/color/utils/distance.j
 export { find, findAll, findByValue, findLast } from './lib/ast/find.js';
 export { cloneNode } from './lib/ast/clone.js';
 export { replaceNodeOrValue } from './lib/parser/utils/token.js';
+export { PropertyList } from './lib/parser/declaration/list.js';
 export { SourceMap } from './lib/printer/sourcemap/sourcemap.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 export { getNodeProperty, setNodeProperty } from './lib/ast/node.js';

@@ -23519,7 +23519,8 @@
                 previous = node;
                 nodeIndex = i;
             }
-            if (recursive && node != null && "chi" in node) {
+            // @ts-ignore
+            if (recursive && node != null && node.chi != null) {
                 if (node.typ == exports.EnumToken.KeyframesAtRuleNodeType ||
                     !node.chi.some((n) => n.typ == exports.EnumToken.DeclarationNodeType)) {
                     if (!(node.typ == exports.EnumToken.AtRuleNodeType && node.nam != "font-face")) {
@@ -34845,6 +34846,7 @@
         });
     }
 
+    exports.PropertyList = PropertyList;
     exports.SourceMap = SourceMap;
     exports.cloneNode = cloneNode;
     exports.convertColor = convertColor;

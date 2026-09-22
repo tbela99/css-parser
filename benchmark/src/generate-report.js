@@ -72,7 +72,7 @@ for (const m of minifiers) {
 totalRow += `</tr>\n`;
 
 const headerCells = minifiers
-    .map((m) => `<th>${m.url != null ? `<a href="${m.url}" target="_top">${m.label}</a>` : m.label}</th>`)
+    .map((m) => `<th>${m.url != null ? `<a href="${m.url}" target="_top"${m.title != null ? ` title="${m.title}"` : ""}>${m.label}</a>` : m.label}</th>`)
     .join("\n");
 
 const html = `<!DOCTYPE html>

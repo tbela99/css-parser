@@ -25,6 +25,9 @@ import { equalsIgnoreCase } from "../utils/text.ts";
 
 const config: PropertiesConfig = getConfig();
 
+/**
+ * Represents a list of property declarations, compute shorthand and remove duplicate declarations.
+ */
 export class PropertyList {
     protected options: PropertyListOptions = { removeDuplicateDeclarations: true, computeShorthand: true };
     protected declarations: Map<string, AstNode | PropertySet | PropertyMap>;
