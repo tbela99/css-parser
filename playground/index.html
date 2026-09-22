@@ -35,6 +35,8 @@
             .css-tree {
                 list-style: none;
                 font-size: 14px;
+                max-height: 400px;
+                overflow-x: scroll;
 
                 .property {
                     cursor: pointer;
@@ -879,7 +881,7 @@
                         const stack = Array.from(tree.querySelectorAll(query));
 
                         // expand 20 nodes at most
-                        let maxDepth = 20;
+                        let maxDepth = 100;
                         let i = 0;
 
                         for (; i < stack.length; i++) {
