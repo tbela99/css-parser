@@ -68,9 +68,19 @@ A sample result:
 On the [complete benchmark suite](https://tbela99.github.io/css-parser/benchmark/index.html), css-parser generated a total output size of 2,158,698 bytes, compared to 2,494,113 bytes for Lightning CSS and larger outputs for all other tested minifiers. 
 While some tools prioritize raw execution speed, css-parser focuses on maximizing compression while preserving stylesheet semantics, resulting in consistently smaller production bundles.
 
-## Speed vs performance balance
+## Minification performance vs execution speed
 
-You can disable advanced minification settings to get faster processing while maintaining a minification level similar to other libraries.
+`css-parser`is designed for maximum performance, but the optimal configuration depends on what matters most for your workload.
+ 
+The parser provides settings that let you choose the balance between minification performance and execution speed:
+
+- Minification performance: prioritize the quality and efficiency of the minification process, allowing the parser to perform additional work when generating the minimized output.
+
+- Execution speed: minimize the amount of work performed during parsing and minification to achieve the fastest possible execution time.
+
+However, the available settings allow you to shift the balance toward execution speed when minimizing runtime is more important than performing every available minification optimization.
+
+The example below demonstrates a balanced configuration that improves execution speed by disabling advanced minification features.
 
 ```ts
 
