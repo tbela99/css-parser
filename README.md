@@ -72,7 +72,7 @@ While some tools prioritize raw execution speed, css-parser focuses on maximizin
 
 You can disable advanced minification settings to get faster processing while maintaining a minification level similar to other libraries.
 
-```css
+```ts
 
 import {transformSync} from "@tbela99/css-parser";
 
