@@ -10,8 +10,8 @@ import cssnano from "cssnano";
 import * as csso from "csso";
 import * as csstree from "css-tree";
 import * as esbuild from "esbuild";
-import { transform as lightningTransform } from "lightningcss";
-import { transform as tbelaTransform } from "@tbela99/css-parser";
+import { transform as transform } from "lightningcss";
+import { transformSync } from "@tbela99/css-parser";
 
 function pkgVersion(name, pathToPkgJson) {
     const { version, repository } = JSON.parse(
@@ -38,16 +38,14 @@ function pkgVersion(name, pathToPkgJson) {
             const githubShorthand = url.match(/^github:([^/]+\/[^/]+)$/);
             if (githubShorthand) {
                 url = `https://github.com/${githubShorthand[1]}`;
-            }
-
-            else {
+            } else {
                 url = url
                     .replace(/^git\+/, "")
                     .replace(/^git@github\.com:/, "https://github.com/")
                     .replace(/^ssh:\/\/git@github\.com\//, "https://github.com/")
                     .replace(/\.git$/, "");
             }
-            
+
             if (!url.match(/[a-zA-Z]+:/)) {
                 url = "https://github.com/" + url;
             }
@@ -116,13 +114,27 @@ export const minifiers = [
         id: "lightningcss",
         url: versions.lightningcss.url,
         label: `lightningcss - ${versions.lightningcss.version}`,
-        minify: (css) =>
-            lightningTransform({ filename: "style.css", code: Buffer.from(css), minify: true }).code.toString(),
+        minify: (css) => transform({ filename: "style.css", code: Buffer.from(css), minify: true }).code.toString(),
+    },
+    {
+        id: "css-parser2",
+        url: versions["css-parser"].url,
+        label: `@tbela99/css-parser (speed) - ${versions["css-parser"].version}`,
+        title: `settings: { minify: false, beautify: false, removeEmpty: true, removeComments: true, convertColor: true }`,
+        minify: async (css) =>
+            transformSync({
+                input: css,
+                minify: false,
+                beautify: false,
+                removeEmpty: true,
+                removeComments: true,
+                convertColor: true,
+            }).code,
     },
     {
         id: "css-parser",
         url: versions["css-parser"].url,
-        label: `@tbela99/css-parser - ${versions["css-parser"].version}`,
-        minify: async (css) => (await tbelaTransform(css, { minify: true })).code,
-    }
+        label: `@tbela99/css-parser (default settings) - ${versions["css-parser"].version}`,
+        minify: async (css) => transformSync(css, { minify: true }).code,
+    },
 ];

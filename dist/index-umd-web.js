@@ -20627,6 +20627,9 @@
     }
 
     const config = getConfig();
+    /**
+     * Represents a list of property declarations, compute shorthand and remove duplicate declarations.
+     */
     class PropertyList {
         options = { removeDuplicateDeclarations: true, computeShorthand: true };
         declarations;
@@ -34846,6 +34849,7 @@
         });
     }
 
+    exports.PropertyList = PropertyList;
     exports.SourceMap = SourceMap;
     exports.cloneNode = cloneNode;
     exports.convertColor = convertColor;

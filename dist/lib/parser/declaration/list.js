@@ -10,6 +10,9 @@ import { objectHash } from '../utils/hash.js';
 import { equalsIgnoreCase } from '../utils/text.js';
 
 const config = getConfig();
+/**
+ * Represents a list of property declarations, compute shorthand and remove duplicate declarations.
+ */
 class PropertyList {
     options = { removeDuplicateDeclarations: true, computeShorthand: true };
     declarations;

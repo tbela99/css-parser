@@ -6,6 +6,7 @@
     "css-tree": 5772,
     "esbuild": 5773,
     "lightningcss": 5772,
+    "css-parser2": 5772,
     "css-parser": 4522
   },
   "animate.css": {
@@ -15,6 +16,7 @@
     "css-tree": 75731,
     "esbuild": 73454,
     "lightningcss": 68837,
+    "css-parser2": 74549,
     "css-parser": 64267
   },
   "blueprint.css": {
@@ -24,6 +26,7 @@
     "css-tree": 10785,
     "esbuild": 10775,
     "lightningcss": 10762,
+    "css-parser2": 10808,
     "css-parser": 10948
   },
   "bootstrap-4.css": {
@@ -33,6 +36,7 @@
     "css-tree": 163307,
     "esbuild": 160755,
     "lightningcss": 153616,
+    "css-parser2": 161200,
     "css-parser": 144571
   },
   "bootstrap-5.css": {
@@ -42,6 +46,7 @@
     "css-tree": 165616,
     "esbuild": 162024,
     "lightningcss": 159987,
+    "css-parser2": 162997,
     "css-parser": 150852
   },
   "font-awesome-all.css": {
@@ -51,6 +56,7 @@
     "css-tree": 56085,
     "esbuild": 58980,
     "lightningcss": 56049,
+    "css-parser2": 55933,
     "css-parser": 55789
   },
   "font-awesome.css": {
@@ -60,6 +66,7 @@
     "css-tree": 84685,
     "esbuild": 76185,
     "lightningcss": 70376,
+    "css-parser2": 77110,
     "css-parser": 69560
   },
   "inuit.css": {
@@ -69,6 +76,7 @@
     "css-tree": 18322,
     "esbuild": 18309,
     "lightningcss": 17839,
+    "css-parser2": 10622,
     "css-parser": 9728
   },
   "normalize.css": {
@@ -78,6 +86,7 @@
     "css-tree": 1851,
     "esbuild": 1816,
     "lightningcss": 1751,
+    "css-parser2": 1733,
     "css-parser": 1611
   },
   "pure.css": {
@@ -87,6 +96,7 @@
     "css-tree": 17086,
     "esbuild": 16758,
     "lightningcss": 16393,
+    "css-parser2": 15065,
     "css-parser": 12915
   },
   "reset.css": {
@@ -96,6 +106,7 @@
     "css-tree": 773,
     "esbuild": 774,
     "lightningcss": 773,
+    "css-parser2": 773,
     "css-parser": 747
   },
   "tailwind.css": {
@@ -105,6 +116,7 @@
     "css-tree": 1963358,
     "esbuild": 1961145,
     "lightningcss": 1864728,
+    "css-parser2": 1890975,
     "css-parser": 1633188
   }
 }
