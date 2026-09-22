@@ -897,7 +897,11 @@
                                     if (!collapse) {
                                         await new Promise((resolve, reject) => {
                                             setTimeout(() => {
-                                                stack.push(...stack[i].querySelectorAll(query));
+                                                stack.push([...stack[i].querySelectorAll(query)].map(t => {
+
+                                                    t.querySelector('li[data-key]')?.classList?.toggle?.('tree-collapsed', collapse);
+                                                    return t;
+                                                }));
                                                 resolve();
                                             }, 0);
                                         });
