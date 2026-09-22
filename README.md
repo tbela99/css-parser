@@ -68,6 +68,29 @@ A sample result:
 On the [complete benchmark suite](https://tbela99.github.io/css-parser/benchmark/index.html), css-parser generated a total output size of 2,158,698 bytes, compared to 2,494,113 bytes for Lightning CSS and larger outputs for all other tested minifiers. 
 While some tools prioritize raw execution speed, css-parser focuses on maximizing compression while preserving stylesheet semantics, resulting in consistently smaller production bundles.
 
+## Speed vs performance balance
+
+You can disable advanced minification settings to get faster processing while maintaining a minification level similar to other libraries.
+
+```css
+
+import {transformSync} from "@tbela99/css-parser";
+
+const css = `...`;
+
+const result = transformSync({
+                    input: css,
+                    minify: false,
+                    beautify: false,
+                    removeEmpty: true,
+                    removeComments: true,
+                    convertColor: true,
+                });
+
+console.debug(result.code);
+console.debug(result.stats);
+```
+
 ## Playground
 
 Try it [online](https://tbela99.github.io/css-parser/playground/)

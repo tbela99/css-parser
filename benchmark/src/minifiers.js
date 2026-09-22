@@ -11,8 +11,8 @@ import * as csso from "csso";
 import * as csstree from "css-tree";
 import * as esbuild from "esbuild";
 import { transform as lightningTransform } from "lightningcss";
-import { transform as tbelaTransform } from "@tbela99/css-parser";
-import { transformSync as tbelaDevTransform, PropertyList } from "@tbela99/css-parser2";
+import { transformSync as tbelaTransform } from "@tbela99/css-parser";
+import { transformSync as tbelaDevTransform } from "@tbela99/css-parser2";
 
 function pkgVersion(name, pathToPkgJson) {
     const { version, repository } = JSON.parse(
@@ -126,7 +126,8 @@ export const minifiers = [
         title: `settings: { minify: false, beautify: false, removeEmpty: true, removeComments: true, convertColor: true }`,
         minify: async (css) =>
             (
-                await tbelaTransform(css, {
+                await tbelaTransform({
+                    input: css,
                     minify: false,
                     beautify: false,
                     removeEmpty: true,
@@ -139,6 +140,6 @@ export const minifiers = [
         id: "css-parser-dev",
         url: versions["css-parser-dev"].url,
         label: `@tbela99/css-parser-dev (default) - ${versions["css-parser-dev"].version}`,
-        minify: async (css) => (await tbelaDevTransform(css, { minify: true })).code,
+        minify: async (css) => (await tbelaDevTransform({ input: css, minify: true })).code,
     },
 ];
