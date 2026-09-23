@@ -101,7 +101,7 @@ console.debug(result.code);
 console.debug(result.stats);
 ```
 
-Performance vs execution speed
+Performance vs execution speed comparison
 
 
 | File:  tailwind.css   | Speed optimization | Minification optimization |
