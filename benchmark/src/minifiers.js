@@ -10,7 +10,7 @@ import cssnano from "cssnano";
 import * as csso from "csso";
 import * as csstree from "css-tree";
 import * as esbuild from "esbuild";
-import { transform as lightningTransform } from "lightningcss";
+import { transform } from "lightningcss";
 import { transformSync as tbelaTransform } from "@tbela99/css-parser";
 import { transformSync as tbelaDevTransform } from "@tbela99/css-parser2";
 
@@ -116,8 +116,7 @@ export const minifiers = [
         id: "lightningcss",
         url: versions.lightningcss.url,
         label: `lightningcss - ${versions.lightningcss.version}`,
-        minify: (css) =>
-            lightningTransform({ filename: "style.css", code: Buffer.from(css), minify: true }).code.toString(),
+        minify: (css) => transform({ filename: "style.css", code: Buffer.from(css), minify: true }).code.toString(),
     },
     {
         id: "css-parser",
@@ -125,21 +124,19 @@ export const minifiers = [
         label: `@tbela99/css-parser (speed) - ${versions["css-parser"].version}`,
         title: `settings: { minify: false, beautify: false, removeEmpty: true, removeComments: true, convertColor: true }`,
         minify: async (css) =>
-            (
-                await tbelaTransform({
-                    input: css,
-                    minify: false,
-                    beautify: false,
-                    removeEmpty: true,
-                    removeComments: true,
-                    convertColor: true,
-                })
-            ).code,
+            tbelaTransform({
+                input: css,
+                minify: false,
+                beautify: false,
+                removeEmpty: true,
+                removeComments: true,
+                convertColor: true,
+            }).code,
     },
     {
         id: "css-parser-dev",
         url: versions["css-parser-dev"].url,
         label: `@tbela99/css-parser-dev (default) - ${versions["css-parser-dev"].version}`,
-        minify: async (css) => (await tbelaDevTransform({ input: css, minify: true })).code,
+        minify: async (css) => tbelaDevTransform({ input: css, minify: true }).code,
     },
 ];

@@ -4,15 +4,15 @@ import type {
     VisitorNodeMap,
     VisitorSyncNodeMap,
 } from "./visitor.d.ts";
-import type {AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet} from "./ast.d.ts";
-import {SourceMap} from "../lib/printer/sourcemap/sourcemap.ts";
-import type {PropertyListOptions} from "./parse.d.ts";
-import {EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ValidationLevel} from "../lib/ast/types.ts";
-import type {CssVariableToken, Token} from "./token.d.ts";
-import {FeatureWalkMode} from "../lib/ast/features/type.ts";
-import {ValidationToken} from "../lib/validation/parser/types";
-import {SourceFile} from "../lib/parser/source.ts";
-import {ResponseType} from "../types.ts";
+import type { AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet } from "./ast.d.ts";
+import { SourceMap } from "../lib/printer/sourcemap/sourcemap.ts";
+import type { PropertyListOptions } from "./parse.d.ts";
+import { EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ValidationLevel } from "../lib/ast/types.ts";
+import type { CssVariableToken, Token } from "./token.d.ts";
+import { FeatureWalkMode } from "../lib/ast/features/type.ts";
+import { ValidationToken } from "../lib/validation/parser/types";
+import { SourceFile } from "../lib/parser/source.ts";
+import { ResponseType } from "../types.ts";
 
 export * from "./ast.d.ts";
 export * from "./token.d.ts";
@@ -207,7 +207,8 @@ export declare type LoadResult =
     | Promise<ReadableStream<Uint8Array>>
     | ReadableStream<Uint8Array>
     | string
-    | Promise<string> | object;
+    | Promise<string>
+    | object;
 
 /**
  * CSS module parser options
@@ -708,7 +709,7 @@ export declare interface RenderOptions {
      * Minify css values.
      */
     minify?: boolean;
-    
+
     /**
      * Pretty print css
      *

@@ -10,16 +10,16 @@ import type {
     RenderOptions,
     Token,
 } from "../../../@types/index.d.ts";
-import {EnumToken} from "../types.ts";
-import {renderValue} from "../../printer/render.ts";
-import {FeatureWalkMode} from "./type.ts";
-import {LOCEND, LOCSRCID, LOCSTA, PARENT, TOKENS} from "../../syntax/constants.ts";
-import {equalsIgnoreCase} from "../../parser/utils/text.ts";
-import {replaceNodeOrValue} from "../../parser/utils/token.ts";
-import {cloneNode} from "../../ast/clone.ts";
-import {trimArray} from "../../validation/match.ts";
-import {findByValue} from "../find.ts";
-import {eq} from "../../parser/utils/eq.ts";
+import { EnumToken } from "../types.ts";
+import { renderValue } from "../../printer/render.ts";
+import { FeatureWalkMode } from "./type.ts";
+import { LOCEND, LOCSRCID, LOCSTA, PARENT, TOKENS } from "../../syntax/constants.ts";
+import { equalsIgnoreCase } from "../../parser/utils/text.ts";
+import { replaceNodeOrValue } from "../../parser/utils/token.ts";
+import { cloneNode } from "../../ast/clone.ts";
+import { trimArray } from "../../validation/match.ts";
+import { findByValue } from "../find.ts";
+import { eq } from "../../parser/utils/eq.ts";
 
 const nodeMatcher = (value: Token) =>
     value.typ === EnumToken.IfConditionTokenType ||
@@ -198,7 +198,6 @@ function substituteIfElseNode(
                 atRule[LOCSRCID] = declaration[PARENT][LOCSRCID]!;
                 atRule[LOCSTA] = declaration[PARENT][LOCSTA]!;
                 atRule[LOCEND] = declaration[PARENT][LOCEND]!;
-
             }
 
             clonedDeclaration = cloneNode(declaration, true, nodeMap) as AstDeclaration;

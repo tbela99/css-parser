@@ -101,6 +101,15 @@ console.debug(result.code);
 console.debug(result.stats);
 ```
 
+Performance vs execution speed
+
+
+| File:  tailwind.css   | Speed optimization | Minification optimization |
+| --------------------- | ------------------ | ------------------------- |
+| size: 2,380,419 bytes | 1,890,975 bytes    | 1,633,188 bytes           |
+| time                  | 205.91 ms          | 471.89 ms                 |
+| reduction             | -20.6%             | -31.4%                    |
+
 ## Playground
 
 Try it [online](https://tbela99.github.io/css-parser/playground/)
