@@ -5795,6 +5795,7 @@ export declare interface RenderOptions {
      * Minify css values.
      */
     minify?: boolean;
+    
     /**
      * Pretty print css
      *
@@ -6577,6 +6578,9 @@ declare class PropertyMap {
     private removeDefaults;
 }
 
+/**
+ * Represents a list of property declarations, compute shorthand and remove duplicate declarations.
+ */
 declare class PropertyList {
     protected options: PropertyListOptions;
     protected declarations: Map<string, AstNode$1 | PropertySet | PropertyMap>;

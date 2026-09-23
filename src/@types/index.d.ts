@@ -708,6 +708,7 @@ export declare interface RenderOptions {
      * Minify css values.
      */
     minify?: boolean;
+    
     /**
      * Pretty print css
      *
