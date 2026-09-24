@@ -108,7 +108,7 @@ Performance vs execution speed comparison
 | --------------------- | ------------------ | ------------------------- |
 | Size: 2,380,419 bytes | 1,890,975 bytes    | 1,633,188 bytes           |
 | Time                  | 205.91 ms          | 471.89 ms                 |
-| Siz reduction         | -20.6%             | -31.4%                    |
+| Size reduction         | -20.6%             | -31.4%                    |
 
 ## Playground
 
