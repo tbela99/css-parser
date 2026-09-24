@@ -1,5 +1,11 @@
 # Changelog
 
+# v1.6.5
+
+## New
+
+Added fine-grained minification parameters RenderOptions#minifyValues and ParseOptions#minifyAST
+
 # v1.6.4
 
 ## New

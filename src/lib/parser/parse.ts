@@ -675,6 +675,8 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
         options.nestingRules = false;
     }
 
+    options.minifyAST ??= options.minify;
+
     const startTime: number = performance.now();
     const errors: ErrorDescription[] = [];
     const stack: Array<AstNode | AstComment> = [];
@@ -1120,7 +1122,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
         }
     }
 
-    if (options.minify) {
+    if (options.minifyAST) {
         if (ast.chi.length > 0) {
             let passes: number = options.pass ?? (1 as number);
 
@@ -1813,6 +1815,8 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
         ...options,
     };
 
+    options.minifyAST ??= options.minify;
+
     if (typeof options.validation !== "boolean") {
         options.validation = !!options.validation;
     }
@@ -2353,7 +2357,7 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
         }
     }
 
-    if (options.minify) {
+    if (options.minifyAST) {
         if (ast.chi.length > 0) {
             let passes: number = options.pass ?? (1 as number);
 

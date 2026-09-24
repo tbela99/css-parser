@@ -11,7 +11,7 @@ import * as csso from "csso";
 import * as csstree from "css-tree";
 import * as esbuild from "esbuild";
 import { transform } from "lightningcss";
-import { transformSync as tbelaTransform } from "@tbela99/css-parser";
+import { transformSync as tbelaTransform, PropertyList } from "@tbela99/css-parser";
 import { transformSync as tbelaDevTransform } from "@tbela99/css-parser2";
 
 function pkgVersion(name, pathToPkgJson) {
@@ -131,6 +131,7 @@ export const minifiers = [
                 removeEmpty: true,
                 removeComments: true,
                 convertColor: true,
+                // minifyValues: true,
             }).code,
     },
     {

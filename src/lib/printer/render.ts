@@ -117,6 +117,7 @@ export function doRender(
                   removeEmpty: false,
                   removeComments: false,
               }),
+        minifyValues: true,
         sourcemap: false,
         convertColor: true,
         expandNestingRules: false,
@@ -465,7 +466,7 @@ function renderAstNode(
 
     switch (data.typ) {
         case EnumToken.DeclarationNodeType:
-            return `${(<AstDeclaration>data).nam}:${options.indent}${(options.minify
+            return `${(<AstDeclaration>data).nam}:${options.indent}${(options.minifyValues
                 ? filterValues((<AstDeclaration>data).val)
                 : (<AstDeclaration>data).val
             ).reduce(reducer, "")}`;
@@ -548,7 +549,7 @@ function renderAstNode(
                             ? ""
                             : (<AstComment>node).val;
                 } else if (node.typ == EnumToken.DeclarationNodeType) {
-                    str = `${(<AstDeclaration>node).nam}:${options.indent}${(options.minify
+                    str = `${(<AstDeclaration>node).nam}:${options.indent}${(options.minifyValues
                         ? filterValues((<AstDeclaration>node).val)
                         : (<AstDeclaration>node).val
                     )
@@ -648,9 +649,11 @@ export function renderValue(
         token.typ === EnumToken.WhenElseFunctionTokenType &&
         equalsIgnoreCase((token as FunctionToken).val, "supports")
     ) {
-        options = { ...options, minify: false, convertColor: false };
+        options = { ...options, minifyValues: false, minify: false, convertColor: false };
         reducer = null;
     }
+
+    options.minifyValues ??= options.minify;
 
     if (reducer == null) {
         reducer = function (acc: string, curr: Token): string {
@@ -879,7 +882,7 @@ export function renderValue(
             }
 
         case EnumToken.UrlFunctionTokenType:
-            if (options.minify && token.typ === EnumToken.UrlFunctionTokenType) {
+            if (options.minifyValues && token.typ === EnumToken.UrlFunctionTokenType) {
                 if ((token as FunctionToken).chi[0]?.typ === EnumToken.BadUrlTokenType) {
                     return "url()";
                 }
@@ -905,7 +908,7 @@ export function renderValue(
         case EnumToken.FunctionTokenType:
         case EnumToken.MathFunctionTokenType:
         case EnumToken.ImageFunctionTokenType:
-            if (options.minify && token.typ === EnumToken.ImageFunctionTokenType) {
+            if (options.minifyValues && token.typ === EnumToken.ImageFunctionTokenType) {
                 const slice = (token as FunctionToken).chi.slice() as Token[];
 
                 switch ((token as FunctionToken).val) {
@@ -1551,43 +1554,7 @@ export function renderValue(
                 );
             }
 
-            return (
-                /* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/ ((
-                    token as FunctionToken
-                ).val ?? "") +
-                "(" +
-                (token as FunctionToken).chi.reduce(reducer, "") +
-                ")"
-            );
-
-        // case EnumToken.MatchExpressionTokenType:
-        //     return (
-        //         renderValue((token as MatchExpressionToken).l as Token, options, cache, reducer, errors) +
-        //         renderValue((token as MatchExpressionToken).op, options, cache, reducer, errors) +
-        //         renderValue((token as MatchExpressionToken).r, options, cache, reducer, errors) +
-        //         ((token as MatchExpressionToken).attr ? " " + (token as MatchExpressionToken).attr : "")
-        //     );
-
-        // case EnumToken.NameSpaceAttributeTokenType:
-        //     return (
-        //         ((token as NameSpaceAttributeToken).l == null
-        //             ? ""
-        //             : renderValue((token as NameSpaceAttributeToken).l as Token, options, cache, reducer, errors)) +
-        //         "|" +
-        //         renderValue((token as NameSpaceAttributeToken).r, options, cache, reducer, errors)
-        //     );
-
-        // case EnumToken.ComposesSelectorNodeType:
-        //     return (
-        //         (token as ComposesSelectorToken).l.reduce(
-        //             (acc: string, curr: Token) => acc + renderValue(curr, options, cache),
-        //             "",
-        //         ) +
-        //         ((token as ComposesSelectorToken).r == null
-        //             ? ""
-        //             : " from " +
-        //               renderValue((token as ComposesSelectorToken).r as Token, options, cache, reducer, errors))
-        //     );
+            return ((token as FunctionToken).val ?? "") + "(" + (token as FunctionToken).chi.reduce(reducer, "") + ")";
 
         case EnumToken.BlockStartTokenType:
             return "{";
@@ -1798,7 +1765,11 @@ export function renderValue(
                     ? renderValue(<FractionToken>(token as PercentageToken).val, options, cache)
                     : minifyNumber((token as PercentageToken).val as number);
 
-            return options.minify && perc == "0" ? "0" : perc.includes("/") ? perc.replace("/", uni + "/") : perc + uni;
+            return options.minifyValues && perc == "0"
+                ? "0"
+                : perc.includes("/")
+                  ? perc.replace("/", uni + "/")
+                  : perc + uni;
 
         case EnumToken.NumberTokenType:
             return (<FractionToken>(token as NumberToken).val).typ == EnumToken.FractionTokenType
@@ -1929,7 +1900,7 @@ export function renderValue(
             return (
                 (<AstDeclaration>token).nam +
                 ":" +
-                (options.minify ? filterValues((<AstDeclaration>token).val) : (<AstDeclaration>token).val).reduce(
+                (options.minifyValues ? filterValues((<AstDeclaration>token).val) : (<AstDeclaration>token).val).reduce(
                     (acc: string, curr: Token): string => acc + renderValue(curr, options, cache),
                     "",
                 )

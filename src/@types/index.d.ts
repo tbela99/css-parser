@@ -130,6 +130,12 @@ export interface MinifyOptions {
      * Enable minification
      */
     minify?: boolean;
+
+    /**
+     * enable ast minification
+     */
+    minifyAST?: boolean;
+    
     /**
      * Parse color tokens
      */
@@ -706,9 +712,14 @@ export declare interface RenderOptions {
     src?: string;
 
     /**
-     * Minify css values.
+     * strip comments and whitespace.
      */
     minify?: boolean;
+
+    /**
+     * Minify values
+     */
+    minifyValues?: boolean;
 
     /**
      * Pretty print css

@@ -33,8 +33,20 @@ class ComputeCalcExpressionFeature {
                     continue;
                 }
                 if (value.typ == EnumToken.BinaryExpressionTokenType) {
-                    // @ts-ignore
-                    replaceNodeOrValue(parent, value, evaluate([value]));
+                    const result = evaluate([value]);
+                    try {
+                        // @ts-ignore
+                        replaceNodeOrValue(parent, value, result);
+                    }
+                    catch (e) {
+                        // @ts-ignore
+                        if (Array.isArray(parent.chi)) {
+                            // @ts-ignore
+                            parent.chi.length = 0;
+                            // @ts-ignore
+                            parent.chi.push(...result);
+                        }
+                    }
                     continue;
                 }
                 if (value != null && tokensfuncSet.has(value.typ)) {

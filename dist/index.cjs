@@ -10100,6 +10100,7 @@ function evaluate(tokens) {
                         [LOCSRCID]: nodes[0][LOCSRCID],
                         [LOCSTA]: nodes[0][LOCSTA],
                         [LOCEND]: nodes[0][LOCEND],
+                        [PARENT]: nodes[0][PARENT],
                     },
                 ];
             }
@@ -10122,6 +10123,7 @@ function evaluate(tokens) {
                     [LOCSRCID]: nodes[i][LOCSRCID],
                     [LOCSTA]: nodes[i][LOCSTA],
                     [LOCEND]: nodes[i + 1][LOCEND],
+                    [PARENT]: nodes[i + 1][PARENT],
                 };
             }
             else {
@@ -10131,6 +10133,7 @@ function evaluate(tokens) {
                     [LOCSRCID]: nodes[i + 1][LOCSRCID],
                     [LOCSTA]: nodes[i + 1][LOCSTA],
                     [LOCEND]: nodes[i + 1][LOCEND],
+                    [PARENT]: nodes[i + 1][PARENT],
                 }, exports.EnumToken.Mul);
             }
             i++;
@@ -10151,12 +10154,14 @@ function evaluate(tokens) {
                     [LOCSRCID]: token[LOCSRCID],
                     [LOCSTA]: token[LOCSTA],
                     [LOCEND]: token[LOCEND],
+                    [PARENT]: token[PARENT],
                 }, {
                     ...token,
                     val: -token.val,
                     [LOCSRCID]: token[LOCSRCID],
                     [LOCSTA]: token[LOCSTA],
                     [LOCEND]: token[LOCEND],
+                    [PARENT]: token[PARENT],
                 });
                 return acc;
             }
@@ -10167,6 +10172,7 @@ function evaluate(tokens) {
                 [LOCSRCID]: token[LOCSRCID],
                 [LOCSTA]: token[LOCSTA],
                 [LOCEND]: token[LOCEND],
+                [PARENT]: token[PARENT],
             });
         }
         acc.push(token);
@@ -10188,6 +10194,7 @@ function doEvaluate(l, r, op) {
         [LOCSRCID]: l[LOCSRCID],
         [LOCSTA]: l[LOCSTA],
         [LOCEND]: r?.[LOCEND] ?? l[LOCEND],
+        [PARENT]: l[PARENT],
     };
     if (!isScalarToken(l) || !isScalarToken(r) || (l.typ == r.typ && "unit" in l && "unit" in r && l.unit != r.unit)) {
         return defaultReturn;
@@ -10260,6 +10267,7 @@ function doEvaluate(l, r, op) {
                         [LOCSRCID]: l[LOCSRCID],
                         [LOCSTA]: l[LOCSTA],
                         [LOCEND]: l[LOCEND],
+                        [PARENT]: l[PARENT],
                     },
                     r: {
                         typ: exports.EnumToken.NumberTokenType,
@@ -10267,6 +10275,7 @@ function doEvaluate(l, r, op) {
                         [LOCSRCID]: r[LOCSRCID],
                         [LOCSTA]: r[LOCSTA],
                         [LOCEND]: r[LOCEND],
+                        [PARENT]: r[PARENT],
                     },
                 };
             }
@@ -10279,6 +10288,7 @@ function doEvaluate(l, r, op) {
                         [LOCSRCID]: l[LOCSRCID],
                         [LOCSTA]: l[LOCSTA],
                         [LOCEND]: l[LOCEND],
+                        [PARENT]: l[PARENT],
                     },
                     r: {
                         typ: exports.EnumToken.NumberTokenType,
@@ -10286,6 +10296,7 @@ function doEvaluate(l, r, op) {
                         [LOCSRCID]: r[LOCSRCID],
                         [LOCSTA]: r[LOCSTA],
                         [LOCEND]: r[LOCEND],
+                        [PARENT]: r[PARENT],
                     },
                 };
             }
@@ -10312,6 +10323,7 @@ function doEvaluate(l, r, op) {
         [LOCSRCID]: l[LOCSRCID],
         [LOCSTA]: l[LOCSTA],
         [LOCEND]: r?.[LOCEND] ?? l[LOCEND],
+        [PARENT]: l[PARENT],
     };
     if (token.typ == exports.EnumToken.IdenTokenType) {
         // @ts-ignore
@@ -10492,6 +10504,7 @@ function evaluateFunc(token) {
                         [LOCSRCID]: value[0][LOCSRCID],
                         [LOCSTA]: value[0][LOCSTA],
                         [LOCEND]: value[0][LOCEND],
+                        [PARENT]: value[0][PARENT],
                     }
                     : {
                         typ: token.val == "sign" ? exports.EnumToken.NumberTokenType : value[0].typ,
@@ -10499,6 +10512,7 @@ function evaluateFunc(token) {
                         [LOCSRCID]: value[0][LOCSRCID],
                         [LOCSTA]: value[0][LOCSTA],
                         [LOCEND]: value[0][LOCEND],
+                        [PARENT]: value[0][PARENT],
                     },
             ];
         }
@@ -10521,6 +10535,7 @@ function evaluateFunc(token) {
                     [LOCSRCID]: token[LOCSRCID],
                     [LOCSTA]: token[LOCSTA],
                     [LOCEND]: token[LOCEND],
+                    [PARENT]: token[PARENT],
                 },
             ];
         }
@@ -10594,6 +10609,7 @@ function evaluateFunc(token) {
                         [LOCSRCID]: token[LOCSRCID],
                         [LOCSTA]: token[LOCSTA],
                         [LOCEND]: token[LOCEND],
+                        [PARENT]: token[PARENT],
                     },
                 ];
             }
@@ -10608,6 +10624,7 @@ function evaluateFunc(token) {
                         [LOCSRCID]: token[LOCSRCID],
                         [LOCSTA]: token[LOCSTA],
                         [LOCEND]: token[LOCEND],
+                        [PARENT]: token[PARENT],
                     },
                 ];
             }
@@ -10618,6 +10635,7 @@ function evaluateFunc(token) {
                     [LOCSRCID]: token[LOCSRCID],
                     [LOCSTA]: token[LOCSTA],
                     [LOCEND]: token[LOCEND],
+                    [PARENT]: token[PARENT],
                 },
             ];
         }
@@ -10657,6 +10675,7 @@ function evaluateFunc(token) {
                             [LOCSRCID]: token[LOCSRCID],
                             [LOCSTA]: token[LOCSTA],
                             [LOCEND]: token[LOCEND],
+                            [PARENT]: token[PARENT],
                         },
                     ];
                 }
@@ -10699,6 +10718,7 @@ function evaluateFunc(token) {
                             [LOCSRCID]: token[LOCSRCID],
                             [LOCSTA]: token[LOCSTA],
                             [LOCEND]: token[LOCEND],
+                            [PARENT]: token[PARENT],
                         },
                     ];
                 }
@@ -10726,6 +10746,7 @@ function inlineExpression$1(token) {
                 [LOCSRCID]: token[LOCSRCID],
                 [LOCSTA]: token[LOCSTA],
                 [LOCEND]: token[LOCEND],
+                [PARENT]: token[PARENT],
             });
             for (const child of inlineExpression$1(token.r)) {
                 result.push(child);
@@ -10805,6 +10826,7 @@ function factorToken(token) {
                 [LOCSRCID]: token[LOCSRCID],
                 [LOCSTA]: token[LOCSTA],
                 [LOCEND]: token[LOCEND],
+                [PARENT]: token[PARENT],
             };
             // @ts-ignore
             delete token.val;
@@ -10846,6 +10868,7 @@ function factor(tokens, ops) {
                 [LOCSRCID]: tokens[i - 1][LOCSRCID],
                 [LOCSTA]: tokens[i - 1][LOCSTA],
                 [LOCEND]: tokens[i + 1][LOCEND],
+                [PARENT]: tokens[i + 1][PARENT],
             });
             i--;
         }
@@ -21035,8 +21058,20 @@ class ComputeCalcExpressionFeature {
                     continue;
                 }
                 if (value.typ == exports.EnumToken.BinaryExpressionTokenType) {
-                    // @ts-ignore
-                    replaceNodeOrValue(parent, value, evaluate([value]));
+                    const result = evaluate([value]);
+                    try {
+                        // @ts-ignore
+                        replaceNodeOrValue(parent, value, result);
+                    }
+                    catch (e) {
+                        // @ts-ignore
+                        if (Array.isArray(parent.chi)) {
+                            // @ts-ignore
+                            parent.chi.length = 0;
+                            // @ts-ignore
+                            parent.chi.push(...result);
+                        }
+                    }
                     continue;
                 }
                 if (value != null && tokensfuncSet.has(value.typ)) {
@@ -25359,6 +25394,7 @@ function doRender(data, options = {}, mapping) {
                 removeEmpty: false,
                 removeComments: false,
             }),
+        minifyValues: true,
         sourcemap: false,
         convertColor: true,
         expandNestingRules: false,
@@ -25598,7 +25634,7 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
     const indentSub = indents[level + 1];
     switch (data.typ) {
         case exports.EnumToken.DeclarationNodeType:
-            return `${data.nam}:${options.indent}${(options.minify
+            return `${data.nam}:${options.indent}${(options.minifyValues
                 ? filterValues(data.val)
                 : data.val).reduce(reducer, "")}`;
         case exports.EnumToken.CommentNodeType:
@@ -25653,7 +25689,7 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
                             : node.val;
                 }
                 else if (node.typ == exports.EnumToken.DeclarationNodeType) {
-                    str = `${node.nam}:${options.indent}${(options.minify
+                    str = `${node.nam}:${options.indent}${(options.minifyValues
                         ? filterValues(node.val)
                         : node.val)
                         .reduce(reducer, "")
@@ -25721,9 +25757,10 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
 function renderValue(token, options = {}, cache = Object.create(null), reducer, errors) {
     if (token.typ === exports.EnumToken.WhenElseFunctionTokenType &&
         equalsIgnoreCase(token.val, "supports")) {
-        options = { ...options, minify: false, convertColor: false };
+        options = { ...options, minifyValues: false, minify: false, convertColor: false };
         reducer = null;
     }
+    options.minifyValues ??= options.minify;
     if (reducer == null) {
         reducer = function (acc, curr) {
             if (curr.typ == exports.EnumToken.CommentTokenType && options.removeComments) {
@@ -25880,7 +25917,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                     ")");
             }
         case exports.EnumToken.UrlFunctionTokenType:
-            if (options.minify && token.typ === exports.EnumToken.UrlFunctionTokenType) {
+            if (options.minifyValues && token.typ === exports.EnumToken.UrlFunctionTokenType) {
                 if (token.chi[0]?.typ === exports.EnumToken.BadUrlTokenType) {
                     return "url()";
                 }
@@ -25901,7 +25938,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
         case exports.EnumToken.FunctionTokenType:
         case exports.EnumToken.MathFunctionTokenType:
         case exports.EnumToken.ImageFunctionTokenType:
-            if (options.minify && token.typ === exports.EnumToken.ImageFunctionTokenType) {
+            if (options.minifyValues && token.typ === exports.EnumToken.ImageFunctionTokenType) {
                 const slice = token.chi.slice();
                 switch (token.val) {
                     case "linear-gradient":
@@ -26387,37 +26424,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                         renderValue(curr, token.typ == exports.EnumToken.FunctionTokenType ? { minify: false } : options, cache, reducer), "") +
                     ")");
             }
-            return (
-            /* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/ (token.val ?? "") +
-                "(" +
-                token.chi.reduce(reducer, "") +
-                ")");
-        // case EnumToken.MatchExpressionTokenType:
-        //     return (
-        //         renderValue((token as MatchExpressionToken).l as Token, options, cache, reducer, errors) +
-        //         renderValue((token as MatchExpressionToken).op, options, cache, reducer, errors) +
-        //         renderValue((token as MatchExpressionToken).r, options, cache, reducer, errors) +
-        //         ((token as MatchExpressionToken).attr ? " " + (token as MatchExpressionToken).attr : "")
-        //     );
-        // case EnumToken.NameSpaceAttributeTokenType:
-        //     return (
-        //         ((token as NameSpaceAttributeToken).l == null
-        //             ? ""
-        //             : renderValue((token as NameSpaceAttributeToken).l as Token, options, cache, reducer, errors)) +
-        //         "|" +
-        //         renderValue((token as NameSpaceAttributeToken).r, options, cache, reducer, errors)
-        //     );
-        // case EnumToken.ComposesSelectorNodeType:
-        //     return (
-        //         (token as ComposesSelectorToken).l.reduce(
-        //             (acc: string, curr: Token) => acc + renderValue(curr, options, cache),
-        //             "",
-        //         ) +
-        //         ((token as ComposesSelectorToken).r == null
-        //             ? ""
-        //             : " from " +
-        //               renderValue((token as ComposesSelectorToken).r as Token, options, cache, reducer, errors))
-        //     );
+            return (token.val ?? "") + "(" + token.chi.reduce(reducer, "") + ")";
         case exports.EnumToken.BlockStartTokenType:
             return "{";
         case exports.EnumToken.BlockEndTokenType:
@@ -26566,7 +26573,11 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
             const perc = token.val.typ == exports.EnumToken.FractionTokenType
                 ? renderValue(token.val, options, cache)
                 : minifyNumber(token.val);
-            return options.minify && perc == "0" ? "0" : perc.includes("/") ? perc.replace("/", uni + "/") : perc + uni;
+            return options.minifyValues && perc == "0"
+                ? "0"
+                : perc.includes("/")
+                    ? perc.replace("/", uni + "/")
+                    : perc + uni;
         case exports.EnumToken.NumberTokenType:
             return token.val.typ == exports.EnumToken.FractionTokenType
                 ? renderValue(token.val, options, cache)
@@ -26631,7 +26642,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
         case exports.EnumToken.DeclarationNodeType:
             return (token.nam +
                 ":" +
-                (options.minify ? filterValues(token.val) : token.val).reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
+                (options.minifyValues ? filterValues(token.val) : token.val).reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
         case exports.EnumToken.MediaQueryUnaryFeatureTokenType:
             return (renderValue(token.l, options, cache, reducer) +
                 " " +
@@ -31089,6 +31100,7 @@ function doParseSync(tokenizer, options = {}) {
     if (options.expandNestingRules) {
         options.nestingRules = false;
     }
+    options.minifyAST ??= options.minify;
     const startTime = performance.now();
     const errors = [];
     const stack = [];
@@ -31468,7 +31480,7 @@ function doParseSync(tokenizer, options = {}) {
             }
         }
     }
-    if (options.minify) {
+    if (options.minifyAST) {
         if (ast.chi.length > 0) {
             let passes = options.pass ?? 1;
             while (passes--) {
@@ -32008,6 +32020,7 @@ async function doParse(iter, options = {}) {
         lenient: true,
         ...options,
     };
+    options.minifyAST ??= options.minify;
     if (typeof options.validation !== "boolean") {
         options.validation = !!options.validation;
     }
@@ -32462,7 +32475,7 @@ async function doParse(iter, options = {}) {
             }
         }
     }
-    if (options.minify) {
+    if (options.minifyAST) {
         if (ast.chi.length > 0) {
             let passes = options.pass ?? 1;
             while (passes--) {

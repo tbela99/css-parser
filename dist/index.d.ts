@@ -5217,6 +5217,12 @@ interface MinifyOptions {
      * Enable minification
      */
     minify?: boolean;
+
+    /**
+     * enable ast minification
+     */
+    minifyAST?: boolean;
+    
     /**
      * Parse color tokens
      */
@@ -5294,7 +5300,8 @@ export declare type LoadResult =
     | Promise<ReadableStream<Uint8Array>>
     | ReadableStream<Uint8Array>
     | string
-    | Promise<string> | object;
+    | Promise<string>
+    | object;
 
 /**
  * CSS module parser options
@@ -5792,10 +5799,15 @@ export declare interface RenderOptions {
     src?: string;
 
     /**
-     * Minify css values.
+     * strip comments and whitespace.
      */
     minify?: boolean;
-    
+
+    /**
+     * Minify values
+     */
+    minifyValues?: boolean;
+
     /**
      * Pretty print css
      *
