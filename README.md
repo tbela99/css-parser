@@ -244,8 +244,8 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 ```mermaid
 flowchart TD
     %% --- Transform ---
-    Input([CSS input])
-    transform[transform/transformSync]
+    Input(["CSS input"])
+    transform["transform()/transformSync()"]
 
 
     %% The Grouped Container
@@ -254,25 +254,25 @@ flowchart TD
         %% --- Parse step ---
         parse["parse()/parseSync()"]
         tokenize(["tokenize()"])
-        parseNode([parse and validate token stream])
-        visitors([visitors])
-        minify([minify AST])
-        cssModules([generate CSS module])
-        parseResult[Parse result]
+        parseNode(["parse and validate token stream"])
+        visitors(["visitors"])
+        minify(["minify AST"])
+        cssModules(["generate CSS module"])
+        parseResult["Parse result"]
     end
 
     %% The Grouped Container
     subgraph Group2 ["Render step"]
 
         %% --- Render step ---
-        renderAst([Render AST])
-        sourcemap([Sourcemap generation])
+        renderAst(["Render AST"])
+        sourcemap(["Sourcemap generation"])
 
     end
 
 
     %% --- Result step ---
-    transformResult[Transform result]
+    transformResult["Transform result"]
 
     %% --- Routing step ---
     Input --> transform
