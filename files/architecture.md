@@ -19,7 +19,7 @@ flowchart TD
         %% --- Parse step ---
         parse["parse()/parseSync()"]
         tokenize(["tokenize()"])
-        parseNode(["parse and valdiate token stream"])
+        parseNode(["parse and validate token stream"])
         visitors(["visitors"])
         minify(["minify AST"])
         cssModules(["generate CSS module"])
