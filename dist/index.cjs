@@ -19894,6 +19894,7 @@ class PropertyMap {
             for (const value of declarations.values()) {
                 key = value.nam;
                 if (value instanceof PropertyMap) {
+                    // console.error(value);
                     for (const [k, v] of value.declarations) {
                         mapped[k] = v;
                     }

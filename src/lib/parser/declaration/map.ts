@@ -260,7 +260,7 @@ export class PropertyMap {
 
                 if (value instanceof PropertyMap) {
 
-                    console.error(value);
+                    // console.error(value);
                     
                     for (const [k, v] of (value as PropertyMap).declarations) {
                         mapped[k] = v as AstDeclaration;
