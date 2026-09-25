@@ -249,7 +249,7 @@ flowchart TD
 
 
     %% The Grouped Container
-    subgraph Group10["transform step"]
+    subgraph Group10["Transform step"]
 
         transform["transform()/transformSync()"]
 
