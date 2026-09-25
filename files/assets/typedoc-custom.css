@@ -93,7 +93,14 @@ html[data-theme="dark"] {
     }
 }
 
+#css-parser-architecture ~ .mermaid-block .mermaid {
+    min-height: 1745px;
+
+    svg {
+        min-height: 1740px;
+    }
+}
 
 .tsd-kind-icon {
-  width: 16px;
+    width: 16px;
 }

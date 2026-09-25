@@ -138,6 +138,6 @@ export const minifiers = [
         id: "css-parser-dev",
         url: versions["css-parser-dev"].url,
         label: `@tbela99/css-parser-dev (default) - ${versions["css-parser-dev"].version}`,
-        minify: async (css) => tbelaDevTransform({ input: css, minify: true }).code,
+        minify: async (css) => tbelaDevTransform({ input: css }).code,
     },
 ];

@@ -435,5 +435,5 @@ console.debug(result.stats);
 ```
 
 ------
-[← Getting started](./Guide.Getting_started.html) | [Validation →](./Guide.Validation.html) 
+[← Getting started](./Guide.Getting_started.html) | [Architecture →](./Guide.Architecture.html) 
 

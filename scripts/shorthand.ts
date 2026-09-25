@@ -11,6 +11,7 @@ import type {
     SinglePropertyTypeMapping,
 } from "../src/@types/index.d.ts";
 import { writeFile } from "node:fs/promises";
+import process from "node:process";
 
 function createProperties(data: ShorthandPropertyType) {
     const map: string = <string>data.map;
@@ -1244,6 +1245,7 @@ export const property = {
 
 const result = JSON.stringify({ properties, map, property });
 
-await writeFile(import.meta.dirname + "/../src/data/properties.json", result);
+const outputDirectory = process.env.CSS_DATA_OUTPUT_DIR ?? import.meta.dirname + "/../src/data";
+await writeFile(outputDirectory + "/properties.json", result);
 
 console.debug(result);

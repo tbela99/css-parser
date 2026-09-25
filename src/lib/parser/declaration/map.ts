@@ -27,8 +27,8 @@ interface TokenMap {
 }
 
 export class PropertyMap {
-    protected config: ShorthandMapType;
     public declarations: Map<string, AstDeclaration | PropertySet | PropertyMap>;
+    protected config: ShorthandMapType;
     protected requiredCount: any;
     protected pattern: string[];
 
@@ -62,132 +62,119 @@ export class PropertyMap {
             if (this.declarations.has(this.config.shorthand)) {
                 const tokens: { [key: string]: Token[][] } = {};
                 const values: Token[] = [];
+                const val: Token[][] = [[]];
 
-                // @ts-ignore
-                this.declarations
-                    .get(this.config.shorthand)
+                for (const curr of // @ts-ignore
+                (this.declarations.get(this.config.shorthand) as AstDeclaration).val) {
                     // @ts-ignore
-                    .val.slice()
-                    .reduce(
-                        (acc: Token[][], curr: Token) => {
-                            // @ts-ignore
-                            if (separator != null && separator.typ == curr.typ && separator.val == curr.val) {
-                                acc.push([]);
-                                return acc;
-                            }
+                    if (separator != null && separator.typ == curr.typ && separator.val == curr.val) {
+                        val.push([]);
+                        continue;
+                    }
 
-                            // @ts-ignore
-                            acc.at(-1).push(curr);
-                            return acc;
-                        },
-                        [[]],
-                    )
                     // @ts-ignore
-                    .reduce((acc: Token[][], list: Token[], current: number) => {
-                        values.push(
-                            ...this.pattern.reduce((acc: Token[], property: string): Token[] => {
-                                // let current: number = 0;
-                                const props: PropertyMapType = this.config.properties[property];
+                    val.at(-1).push(curr);
+                }
 
-                                for (let i = 0; i < acc.length; i++) {
-                                    if (
-                                        acc[i].typ == EnumToken.CommentTokenType ||
-                                        acc[i].typ == EnumToken.WhitespaceTokenType
-                                    ) {
-                                        acc.splice(i, 1);
-                                        i--;
+                for (let current = 0; current < val.length; current++) {
+                    values.push(
+                        ...this.pattern.reduce((acc: Token[], property: string): Token[] => {
+                            // let current: number = 0;
+                            const props: PropertyMapType = this.config.properties[property];
 
+                            for (let i = 0; i < acc.length; i++) {
+                                if (
+                                    acc[i].typ == EnumToken.CommentTokenType ||
+                                    acc[i].typ == EnumToken.WhitespaceTokenType
+                                ) {
+                                    acc.splice(i, 1);
+                                    i--;
+
+                                    continue;
+                                }
+
+                                if (
+                                    // @ts-ignore
+                                    acc[i][PROPERTYNAME] == property ||
+                                    matchType(acc[i], props)
+                                ) {
+                                    if ("prefix" in props && props.previous != null && !(props.previous in tokens)) {
+                                        return acc;
+                                    }
+
+                                    if (!(property in tokens)) {
+                                        tokens[property] = [[acc[i]]];
+                                    } else {
+                                        if (current == tokens[property].length) {
+                                            tokens[property].push([acc[i]]);
+                                        } else {
+                                            tokens[property][current].push(
+                                                <WhitespaceToken>{ typ: EnumToken.WhitespaceTokenType },
+                                                acc[i],
+                                            );
+                                        }
+                                    }
+
+                                    acc.splice(i, 1);
+                                    i--;
+
+                                    // @ts-ignore
+                                    if ("prefix" in props && acc[i]?.typ == EnumToken[props.prefix.typ]) {
+                                        if (
+                                            // @ts-ignore
+                                            acc[i].typ == EnumToken[props.prefix.typ] &&
+                                            // @ts-ignore
+                                            acc[i].val == this.config.properties[property].prefix.val
+                                        ) {
+                                            acc.splice(i, 1);
+                                            i--;
+                                        }
+                                    }
+
+                                    if ((<PropertyMapType>props).multiple) {
                                         continue;
                                     }
 
-                                    if (
-                                        // @ts-ignore
-                                        acc[i][PROPERTYNAME] == property ||
-                                        matchType(acc[i], props)
-                                    ) {
-                                        if (
-                                            "prefix" in props &&
-                                            props.previous != null &&
-                                            !(props.previous in tokens)
-                                        ) {
-                                            return acc;
-                                        }
-
-                                        if (!(property in tokens)) {
-                                            tokens[property] = [[acc[i]]];
-                                        } else {
-                                            if (current == tokens[property].length) {
-                                                tokens[property].push([acc[i]]);
-                                            } else {
-                                                tokens[property][current].push(
-                                                    <WhitespaceToken>{ typ: EnumToken.WhitespaceTokenType },
-                                                    acc[i],
-                                                );
-                                            }
-                                        }
-
-                                        acc.splice(i, 1);
-                                        i--;
-
-                                        // @ts-ignore
-                                        if ("prefix" in props && acc[i]?.typ == EnumToken[props.prefix.typ]) {
-                                            if (
-                                                // @ts-ignore
-                                                acc[i].typ == EnumToken[props.prefix.typ] &&
-                                                // @ts-ignore
-                                                acc[i].val == this.config.properties[property].prefix.val
-                                            ) {
-                                                acc.splice(i, 1);
-                                                i--;
-                                            }
-                                        }
-
-                                        if ((<PropertyMapType>props).multiple) {
-                                            continue;
-                                        }
-
-                                        return acc;
-                                    } else {
-                                        if (property in tokens && tokens[property].length > current) {
-                                            return acc;
-                                        }
-                                    }
-                                }
-
-                                if (property in tokens && tokens[property].length > current) {
                                     return acc;
+                                } else {
+                                    if (property in tokens && tokens[property].length > current) {
+                                        return acc;
+                                    }
                                 }
+                            }
 
-                                // default
-                                if (props.default.length > 0) {
-                                    const defaults: Token[] = parseString(props.default[0]);
+                            if (property in tokens && tokens[property].length > current) {
+                                return acc;
+                            }
 
-                                    if (!(property in tokens)) {
-                                        tokens[property] = [[...defaults]];
+                            // default
+                            if (props.default.length > 0) {
+                                const defaults: Token[] = parseString(props.default[0]);
+
+                                if (!(property in tokens)) {
+                                    tokens[property] = [[...defaults]];
+                                } else {
+                                    if (current == tokens[property].length) {
+                                        tokens[property].push([]);
+
+                                        for (let i = 0; i < defaults.length; i++) {
+                                            tokens[property][current].push(defaults[i]);
+                                        }
                                     } else {
-                                        if (current == tokens[property].length) {
-                                            tokens[property].push([]);
-
-                                            for (let i = 0; i < defaults.length; i++) {
-                                                tokens[property][current].push(defaults[i]);
-                                            }
-                                        } else {
-                                            tokens[property][current].push(<WhitespaceToken>{
-                                                typ: EnumToken.WhitespaceTokenType,
-                                            });
-                                            for (let i = 0; i < defaults.length; i++) {
-                                                tokens[property][current].push(defaults[i]);
-                                            }
+                                        tokens[property][current].push(<WhitespaceToken>{
+                                            typ: EnumToken.WhitespaceTokenType,
+                                        });
+                                        for (let i = 0; i < defaults.length; i++) {
+                                            tokens[property][current].push(defaults[i]);
                                         }
                                     }
                                 }
+                            }
 
-                                return acc;
-                            }, list),
-                        );
-
-                        return values;
-                    }, []);
+                            return acc;
+                        }, val[current]),
+                    );
+                }
 
                 if (values.length == 0) {
                     this.declarations = Object.entries(tokens).reduce(
@@ -272,6 +259,9 @@ export class PropertyMap {
                 key = (value as AstDeclaration).nam;
 
                 if (value instanceof PropertyMap) {
+
+                    console.error(value);
+                    
                     for (const [k, v] of (value as PropertyMap).declarations) {
                         mapped[k] = v as AstDeclaration;
                     }

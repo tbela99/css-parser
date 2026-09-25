@@ -1,5 +1,5 @@
-import type {ParseInfo} from "../../@types/index.d.ts";
-import {ColorType, EnumToken} from "../ast/types.ts";
+import type { ParseInfo } from "../../@types/index.d.ts";
+import { ColorType, EnumToken } from "../ast/types.ts";
 import {
     colorsFunc,
     containerFunc,
@@ -30,9 +30,10 @@ import {
     resolutionUnits,
     timeUnits,
 } from "../syntax/syntax.ts";
-import {SourceFile} from "./source.ts";
+import { SourceFile } from "./source.ts";
 
 const SymbolsMapTokens: Record<string, EnumToken> = Object.create(null);
+const SymbolsMapTokensLower: Record<string, EnumToken> = Object.create(null);
 
 // Regex for escape sequence decoding - compile once, reuse many times
 const ESCAPE_SEQUENCE_REGEX = /\\((\n|\r|\f|\v|\u2028|\u2029|([0-9a-fA-F]{1,6})) ?)/gms;
@@ -69,7 +70,9 @@ function decodeEscapeSequences(value: string): string {
 
 function assignTokenMap(entries: string[], tokenType: EnumToken, suffix: string = "", lowercase: boolean = false) {
     for (const entry of entries) {
-        SymbolsMapTokens[(lowercase ? entry.toLowerCase() : entry) + suffix] = tokenType;
+        const key = (lowercase ? entry.toLowerCase() : entry) + suffix;
+        SymbolsMapTokens[key] = tokenType;
+        SymbolsMapTokensLower[key.toLowerCase()] = tokenType;
     }
 }
 
@@ -174,23 +177,30 @@ export const enum TokenMap {
 
 function getSymbolHint(parseInfo: ParseInfo, start: number, end: number): EnumToken | null {
     const len: number = end - start;
-    const keysLength = SymbolsMapTokensKeys.length;
 
-    // Early exit for impossible lengths
-    if (len < 0) return null;
+    if (len <= 0) return null;
+
+    const value = parseInfo.stream.slice(start, end);
+
+    // Direct lookup handles the hottest punctuation and keyword cases without
+    // scanning the entire symbol table on every token.
+    const match = SymbolsMapTokens[value] ?? SymbolsMapTokensLower[value.toLowerCase()];
+    if (match != null) {
+        return match;
+    }
+
+    const keysLength = SymbolsMapTokensKeys.length;
 
     for (let i = 0; i < keysLength; i++) {
         const key = SymbolsMapTokensKeys[i];
         if (key.length !== len) continue;
 
-        // Match character by character
         let match = true;
 
         for (let j = 0; j < len; j++) {
             let ca = key.charCodeAt(j);
-            let cb = parseInfo.stream.charCodeAt(start + j);
+            let cb = value.charCodeAt(j);
 
-            // Normalize A-Z to a-z
             if (ca >= 65 && ca <= 90) ca += 32;
             if (cb >= 65 && cb <= 90) cb += 32;
 
@@ -211,35 +221,33 @@ function getSymbolHint(parseInfo: ParseInfo, start: number, end: number): EnumTo
 function searchArray(array: string[], parseInfo: ParseInfo, start: number, end: number): string | null {
     const len: number = end - start;
 
-    // Early exit for impossible lengths
-    if (len < 0) return null;
+    if (len <= 0) return null;
 
-    // Use a simple linear search optimized with length pre-filtering
-    let i: number = array.length;
+    let match: boolean;
+    let item: string;
 
-    while (i--) {
-        if (array[i].length !== len) continue;
+    for (let i = 0; i < array.length; i++) {
+        item = array[i];
 
-        // Match character by character
-        let match = true;
-        const arrayItem = array[i];
+        if (item.length !== len) continue;
 
-        for (let j: number = 0; j < len; j++) {
-            let ca = arrayItem.charCodeAt(j);
-            let cb = parseInfo.stream.charCodeAt(start + j);
+        match = true;
 
-            // Normalize A-Z to a-z
+        for (let j = 0; j < len; j++) {
+            let ca = parseInfo.stream.charCodeAt(start + j);
+            let cb = item.charCodeAt(j);
+
             if (ca >= 65 && ca <= 90) ca += 32;
             if (cb >= 65 && cb <= 90) cb += 32;
 
-            if (ca != cb) {
+            if (ca !== cb) {
                 match = false;
                 break;
             }
         }
 
         if (match) {
-            return arrayItem;
+            return item;
         }
     }
 

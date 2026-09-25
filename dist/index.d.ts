@@ -6577,8 +6577,8 @@ declare class PropertySet {
 }
 
 declare class PropertyMap {
-    protected config: ShorthandMapType;
     declarations: Map<string, AstDeclaration | PropertySet | PropertyMap>;
+    protected config: ShorthandMapType;
     protected requiredCount: any;
     protected pattern: string[];
     constructor(config: ShorthandMapType);

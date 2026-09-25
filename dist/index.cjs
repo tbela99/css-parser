@@ -15321,12 +15321,12 @@ function getColorSpace(color) {
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
 const flexUnits = ["fr"];
-const frequencyUnits = ["hz", "khz"];
+const frequencyUnits = ["Hz", "kHz"];
 const timeUnits = ["ms", "s"];
 const angleUnits = ["rad", "turn", "deg", "grad"];
 const resolutionUnits = ["dpi", "dpcm", "dppx", "x"];
 const dimensionUnits = [
-    "q",
+    "Q",
     "cap",
     "ch",
     "cm",
@@ -19707,8 +19707,8 @@ function matchType(val, properties) {
 
 const propertiesConfig = getConfig();
 class PropertyMap {
-    config;
     declarations;
+    config;
     requiredCount;
     pattern;
     constructor(config) {
@@ -19738,23 +19738,18 @@ class PropertyMap {
             if (this.declarations.has(this.config.shorthand)) {
                 const tokens = {};
                 const values = [];
-                // @ts-ignore
-                this.declarations
-                    .get(this.config.shorthand)
-                    // @ts-ignore
-                    .val.slice()
-                    .reduce((acc, curr) => {
+                const val = [[]];
+                for (const curr of // @ts-ignore
+                 this.declarations.get(this.config.shorthand).val) {
                     // @ts-ignore
                     if (separator != null && separator.typ == curr.typ && separator.val == curr.val) {
-                        acc.push([]);
-                        return acc;
+                        val.push([]);
+                        continue;
                     }
                     // @ts-ignore
-                    acc.at(-1).push(curr);
-                    return acc;
-                }, [[]])
-                    // @ts-ignore
-                    .reduce((acc, list, current) => {
+                    val.at(-1).push(curr);
+                }
+                for (let current = 0; current < val.length; current++) {
                     values.push(...this.pattern.reduce((acc, property) => {
                         // let current: number = 0;
                         const props = this.config.properties[property];
@@ -19769,9 +19764,7 @@ class PropertyMap {
                             // @ts-ignore
                             acc[i][PROPERTYNAME] == property ||
                                 matchType(acc[i], props)) {
-                                if ("prefix" in props &&
-                                    props.previous != null &&
-                                    !(props.previous in tokens)) {
+                                if ("prefix" in props && props.previous != null && !(props.previous in tokens)) {
                                     return acc;
                                 }
                                 if (!(property in tokens)) {
@@ -19836,9 +19829,8 @@ class PropertyMap {
                             }
                         }
                         return acc;
-                    }, list));
-                    return values;
-                }, []);
+                    }, val[current]));
+                }
                 if (values.length == 0) {
                     this.declarations = Object.entries(tokens).reduce((acc, curr) => {
                         acc.set(curr[0], {
@@ -26716,6 +26708,7 @@ function filterValues(values) {
 }
 
 const SymbolsMapTokens = Object.create(null);
+const SymbolsMapTokensLower = Object.create(null);
 // Regex for escape sequence decoding - compile once, reuse many times
 const ESCAPE_SEQUENCE_REGEX = /\\((\n|\r|\f|\v|\u2028|\u2029|([0-9a-fA-F]{1,6})) ?)/gms;
 function decodeEscapeSequences(value) {
@@ -26744,7 +26737,9 @@ function decodeEscapeSequences(value) {
 }
 function assignTokenMap(entries, tokenType, suffix = "", lowercase = false) {
     for (const entry of entries) {
-        SymbolsMapTokens[(lowercase ? entry.toLowerCase() : entry) + suffix] = tokenType;
+        const key = (lowercase ? entry.toLowerCase() : entry) + suffix;
+        SymbolsMapTokens[key] = tokenType;
+        SymbolsMapTokensLower[key.toLowerCase()] = tokenType;
     }
 }
 SymbolsMapTokens[""] = exports.EnumToken.DelimTokenType;
@@ -26844,20 +26839,24 @@ var TokenMap;
 })(TokenMap || (TokenMap = {}));
 function getSymbolHint(parseInfo, start, end) {
     const len = end - start;
-    const keysLength = SymbolsMapTokensKeys.length;
-    // Early exit for impossible lengths
-    if (len < 0)
+    if (len <= 0)
         return null;
+    const value = parseInfo.stream.slice(start, end);
+    // Direct lookup handles the hottest punctuation and keyword cases without
+    // scanning the entire symbol table on every token.
+    const match = SymbolsMapTokens[value] ?? SymbolsMapTokensLower[value.toLowerCase()];
+    if (match != null) {
+        return match;
+    }
+    const keysLength = SymbolsMapTokensKeys.length;
     for (let i = 0; i < keysLength; i++) {
         const key = SymbolsMapTokensKeys[i];
         if (key.length !== len)
             continue;
-        // Match character by character
         let match = true;
         for (let j = 0; j < len; j++) {
             let ca = key.charCodeAt(j);
-            let cb = parseInfo.stream.charCodeAt(start + j);
-            // Normalize A-Z to a-z
+            let cb = value.charCodeAt(j);
             if (ca >= 65 && ca <= 90)
                 ca += 32;
             if (cb >= 65 && cb <= 90)
@@ -26875,32 +26874,29 @@ function getSymbolHint(parseInfo, start, end) {
 }
 function searchArray(array, parseInfo, start, end) {
     const len = end - start;
-    // Early exit for impossible lengths
-    if (len < 0)
+    if (len <= 0)
         return null;
-    // Use a simple linear search optimized with length pre-filtering
-    let i = array.length;
-    while (i--) {
-        if (array[i].length !== len)
+    let match;
+    let item;
+    for (let i = 0; i < array.length; i++) {
+        item = array[i];
+        if (item.length !== len)
             continue;
-        // Match character by character
-        let match = true;
-        const arrayItem = array[i];
+        match = true;
         for (let j = 0; j < len; j++) {
-            let ca = arrayItem.charCodeAt(j);
-            let cb = parseInfo.stream.charCodeAt(start + j);
-            // Normalize A-Z to a-z
+            let ca = parseInfo.stream.charCodeAt(start + j);
+            let cb = item.charCodeAt(j);
             if (ca >= 65 && ca <= 90)
                 ca += 32;
             if (cb >= 65 && cb <= 90)
                 cb += 32;
-            if (ca != cb) {
+            if (ca !== cb) {
                 match = false;
                 break;
             }
         }
         if (match) {
-            return arrayItem;
+            return item;
         }
     }
     return null;
