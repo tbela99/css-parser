@@ -18,6 +18,7 @@ import { parseString } from "../parse.ts";
 import { PropertySet } from "./set.ts";
 import { PROPERTYNAME } from "../../syntax/constants.ts";
 import { cloneNode } from "../../ast/clone.ts";
+import { parse } from "node:path";
 
 const propertiesConfig: PropertiesConfig = getConfig();
 
@@ -260,15 +261,48 @@ export class PropertyMap {
 
                 if (value instanceof PropertyMap) {
 
-                    // console.error(value);
-                    
                     for (const [k, v] of (value as PropertyMap).declarations) {
-                        mapped[k] = v as AstDeclaration;
+
+                        if (k == (value as PropertyMap).config.shorthand) {
+
+                            for (const [key, val] of Object.entries((value as PropertyMap).config.properties)) {
+                                
+                                mapped[key] = cloneNode(v as AstDeclaration) as AstDeclaration;
+
+                                for (let i = 0; i < (v as AstDeclaration).val.length; i++) {
+                                    
+                                    // @ts-ignore
+                                    if (key == (v as AstDeclaration).val[i][PROPERTYNAME] as string) {
+                                        
+                                        if ((mapped[key] as AstDeclaration).val.length > 0  ) {
+                                            
+                                            (mapped[key] as AstDeclaration).val.push(<Token>{
+                                                typ: EnumToken.WhitespaceTokenType,
+                                            });
+                                        }
+
+                                        (mapped[key] as AstDeclaration).val.push((v as AstDeclaration).val[i]);
+                                    }
+                                }
+
+                                if ((mapped[key] as AstDeclaration).val.length == 0) {
+
+                                    (mapped[key] as AstDeclaration).val.push(...parseString((value as PropertyMap).config.properties[key].default[0]));
+                                }
+                            }
+                        }
+
+                        else {
+
+                            mapped[k] = v as AstDeclaration;
+                        }
                     }
                 } else {
                     mapped[key] = value as AstDeclaration;
                 }
             }
+
+            // console.error(mapped);
 
             if (patterns.length === Object.keys(mapped).length) {
                 declarations = new Map<string, AstDeclaration | PropertySet | PropertyMap>();

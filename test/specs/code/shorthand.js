@@ -615,4 +615,25 @@ grid-template-areas:
 }`),
         );
     });
+    it("grid-row/grid-column #35", function () {
+        return transform(
+            `
+    
+  .footer{
+     -ms-grid-row:4;
+     -ms-grid-column:1;
+     -ms-grid-column-span:2;
+  }
+
+`,
+            {
+                beautify: true,
+                removePrefix: true,
+            },
+        ).then((result) =>
+            expect(result.code).equals(`.footer {
+ grid-area: 4/1/auto/2
+}`),
+        );
+    });
 }

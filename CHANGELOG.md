@@ -9,6 +9,24 @@
   - [x] ParseOptions#minifyAST: minify the AST.
 - [ ] visitors can return plain css string
 
+## Improvement
+
+```css
+  .footer{
+     grid-row:4;
+     grid-column:1;
+     grid-column-end:2;
+  }
+```
+
+is now computed as 
+
+```css
+.footer {
+ grid-area: 4/1/auto/2
+}
+```
+
 # v1.6.4
 
 ## New

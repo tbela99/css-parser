@@ -197,15 +197,36 @@ class PropertyMap {
             for (const value of declarations.values()) {
                 key = value.nam;
                 if (value instanceof PropertyMap) {
-                    // console.error(value);
                     for (const [k, v] of value.declarations) {
-                        mapped[k] = v;
+                        if (k == value.config.shorthand) {
+                            for (const [key, val] of Object.entries(value.config.properties)) {
+                                mapped[key] = cloneNode(v);
+                                for (let i = 0; i < v.val.length; i++) {
+                                    // @ts-ignore
+                                    if (key == v.val[i][PROPERTYNAME]) {
+                                        if (mapped[key].val.length > 0) {
+                                            mapped[key].val.push({
+                                                typ: EnumToken.WhitespaceTokenType,
+                                            });
+                                        }
+                                        mapped[key].val.push(v.val[i]);
+                                    }
+                                }
+                                if (mapped[key].val.length == 0) {
+                                    mapped[key].val.push(...parseString(value.config.properties[key].default[0]));
+                                }
+                            }
+                        }
+                        else {
+                            mapped[k] = v;
+                        }
                     }
                 }
                 else {
                     mapped[key] = value;
                 }
             }
+            // console.error(mapped);
             if (patterns.length === Object.keys(mapped).length) {
                 declarations = new Map();
                 for (const key of patterns) {
