@@ -133,7 +133,7 @@ const values = parseSync(`
 }
 .g {width: 2px; background: linear-gradient(to bottom, white, black) color-mix(red, green)
 }
-`);
+`).ast.chi;
 
 console.debug(values[0]); // first rule
 console.debug(values[1]); // second rule
