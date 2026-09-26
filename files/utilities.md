@@ -71,7 +71,7 @@ The function [replaceNodeOrValue()](../functions/node.replaceNodeOrValue.html) r
 replaceNodeOrValue(parent: Token, target: Token, replacement: Tokan | Token[]);
 ```
 
-# Parsing utility functions
+# CSS Parsing utility functions
 ## Parsing CSS string
 
 `css-parser` offers several helper functions to help you parse CSS.
