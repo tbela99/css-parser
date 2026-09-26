@@ -78,6 +78,8 @@ replaceNodeOrValue(parent: Token, target: Token, replacement: Tokan | Token[]);
 
 ### Parsing CSS values
 
+[parseString()](../functions/node.parseString.html) is used to parse CSS values.
+
 ```ts
 import {parseString} from '@tbela99/css-parser';
 
@@ -111,6 +113,8 @@ console.debug(values[2]); // color function
 
 ### Parse CSS declarations
 
+[parseDeclarations()](../functions/node.parseDeclarations.html) is used to parse a CSS string representing declarations.
+
 ```ts
 import {parseDeclarations} from '@tbela99/css-parser';
 
@@ -123,7 +127,7 @@ console.debug(values[1]); // second declaration
 
 ### Parse CSS rules and at-rules
 
-CSS rules and at-rules are parsed using [`parse()`](../functions/node.parse.html) and [`parseSync()`](../functions/node.parseSync.html) functions.
+CSS rules and at-rules are parsed using [parse()](../functions/node.parse.html) and [parseSync()](../functions/node.parseSync.html) functions.
 
 ```ts
 import {parseSync} from '@tbela99/css-parser';
