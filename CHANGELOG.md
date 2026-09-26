@@ -7,7 +7,6 @@
 - [x] Added fine-grained minification parameters:
   - [x] RenderOptions#minifyValues: minify CSS values such as numbers and dimension tokens
   - [x] ParseOptions#minifyAST: minify the AST.
-- [ ] visitors can return plain css string
 
 ## Improvement
 
