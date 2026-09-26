@@ -74,12 +74,12 @@ replaceNodeOrValue(parent: Token, target: Token, replacement: Tokan | Token[]);
 # Parsing utility functions
 ## Parsing CSS string
 
-Parse a CSS string using [parseString()]().
+`css-parser` offers several helper functions to help you parse CSS.
+
+### Parsing CSS values
 
 ```ts
 import {parseString} from '@tbela99/css-parser';
-
-const css = `linear-gradient(to bottom, white, black)`;
 
 const values = parseString(`linear-gradient(to bottom, white, black) color-mix(red, green)`);
 
@@ -108,6 +108,39 @@ console.debug(values[2]); // color function
 //       val: "to",
 // ...
 ```
+
+### Parse CSS declarations
+
+```ts
+import {parseDeclarations} from '@tbela99/css-parser';
+
+const values = parseDeclarations(`width: 2px; background: linear-gradient(to bottom, white, black) color-mix(red, green)`);
+
+console.debug(values[0]); // first declaration
+console.debug(values[1]); // second declaration
+
+```
+
+### Parse CSS rules and at-rules
+
+CSS rules and at-rules are parsed using [`parse()`](../functions/node.parse.html) and [`parseSync()`](../functions/node.parseSync.html) functions.
+
+```ts
+import {parseSync} from '@tbela99/css-parser';
+
+const values = parseSync(`
+.s {width: 2px; background: linear-gradient(to bottom, white, black) color-mix(red, green)
+}
+.g {width: 2px; background: linear-gradient(to bottom, white, black) color-mix(red, green)
+}
+`);
+
+console.debug(values[0]); // first rule
+console.debug(values[1]); // second rule
+
+```
+
+
 
 ------
 [← Ast Manipulation](./ast.md) | [Node Module →](../docs/modules/node.html)

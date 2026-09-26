@@ -6901,13 +6901,6 @@ function equalsIgnoreCase(a, b) {
 }
 
 function getColorComponents(token) {
-    // if (token.typ === EnumToken.IdenTokenType) {
-    //     if (isColor(token)) {
-    //         parseColor(token);
-    //     } else {
-    //         return null;
-    //     }
-    // }
     if (token.kin == exports.ColorType.HEX || token.kin == exports.ColorType.LIT) {
         if (equalsIgnoreCase("currentcolor", token.val)) {
             return null;
@@ -6931,25 +6924,12 @@ function getColorComponents(token) {
         ].includes(child.typ)) {
             continue;
         }
-        // if (child.typ === EnumToken.IdenTokenType && isColor(child)) {
-        //     parseColor(child);
-        // }
         if (child.typ === exports.EnumToken.FunctionTokenType ||
             child.typ === exports.EnumToken.WildCardFunctionTokenType ||
             child.typ === exports.EnumToken.MathFunctionTokenType) {
             if ("var" == child.val.toLowerCase()) {
                 return null;
             }
-            // else {
-            //     for (const { value } of walkValues((child as FunctionToken).chi)) {
-            //         if (
-            //             value.typ == EnumToken.WildCardFunctionTokenDefType &&
-            //             "var" === (value as FunctionToken).val.toLowerCase()
-            //         ) {
-            //             return null;
-            //         }
-            //     }
-            // }
         }
         if (child.typ == exports.EnumToken.ColorTokenType && equalsIgnoreCase("currentcolor", child.val)) {
             return null;
