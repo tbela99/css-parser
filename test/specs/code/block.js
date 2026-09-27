@@ -1376,4 +1376,23 @@ color: blue;
  }
 }`);
     });
+
+    it("match or starts with #59", async () => {
+        const options = {
+            input: `
+    
+ .c [lang|="en"], col || td{
+color: rgb(from rgb(20% 40%  60% / 80%) r g b / calc(alpha / 2));
+
+
+    `,
+            beautify: true,
+        };
+
+        const result = transformSync(options);
+
+        return expect(result.code).equals(`.c [lang|=en],col||td {
+ color: #3696
+}`);
+    });
 }

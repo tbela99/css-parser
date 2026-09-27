@@ -27991,28 +27991,28 @@ class Tokenizer {
             // EOF
             switch (charCode) {
                 case 61 /* TokenMap.EQUALS */:
-                    if (parseInfo.position < parseInfo.currentPosition) {
-                        return this.makeToken(parseInfo);
-                    }
+                    // if (parseInfo.position < parseInfo.currentPosition) {
+                    //     return this.makeToken(parseInfo);
+                    // }
                     this.advance(parseInfo);
                     return this.makeToken(parseInfo, exports.EnumToken.DelimTokenType);
                 // '+' or '-'
                 case 43 /* TokenMap.PLUS */:
-                    if (parseInfo.position < parseInfo.currentPosition) {
-                        return this.makeToken(parseInfo);
-                    }
+                    // if (parseInfo.position < parseInfo.currentPosition) {
+                    //     return this.makeToken(parseInfo);
+                    // }
                     this.advance(parseInfo);
                     charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset);
-                    if (isDigit(charCode)) {
-                        tokensCount = this.consumeNumericToken(parseInfo);
-                        if (tokensCount > 0) {
-                            this.advance(parseInfo, tokensCount);
-                            return this.makeToken(parseInfo, this.hint ?? exports.EnumToken.NumberTokenType, {
-                                slice: this.slice,
-                                sign: "+",
-                            });
-                        }
-                    }
+                    // if (isDigit(charCode)) {
+                    //     tokensCount = this.consumeNumericToken(parseInfo);
+                    //     if (tokensCount > 0) {
+                    //         this.advance(parseInfo, tokensCount);
+                    //         return this.makeToken(parseInfo, this.hint ?? EnumToken.NumberTokenType, {
+                    //             slice: this.slice,
+                    //             sign: "+",
+                    //         });
+                    //     }
+                    // }
                     return this.makeToken(parseInfo, exports.EnumToken.Plus);
                 case 45 /* TokenMap.MINUS */:
                     if (parseInfo.position == parseInfo.currentPosition) {
@@ -28022,15 +28022,17 @@ class Tokenizer {
                             this.advance(parseInfo);
                             return this.makeToken(parseInfo, exports.EnumToken.Sub);
                         }
-                        if (charCode == 45 /* TokenMap.MINUS */ &&
-                            (nextCharCode == 45 /* TokenMap.MINUS */ || isIdentStart(nextCharCode))) {
-                            this.advance(parseInfo);
-                            tokensCount = this.consumeIdentToken(parseInfo);
-                            if (tokensCount > 0) {
-                                this.advance(parseInfo, tokensCount);
-                                return this.makeToken(parseInfo, exports.EnumToken.IdenTokenType);
-                            }
-                        }
+                        // if (
+                        //     charCode == TokenMap.MINUS &&
+                        //     (nextCharCode == TokenMap.MINUS || isIdentStart(nextCharCode))
+                        // ) {
+                        //     this.advance(parseInfo);
+                        //     tokensCount = this.consumeIdentToken(parseInfo);
+                        //     if (tokensCount > 0) {
+                        //         this.advance(parseInfo, tokensCount);
+                        //         return this.makeToken(parseInfo, EnumToken.IdenTokenType);
+                        //     }
+                        // }
                     }
                     this.advance(parseInfo);
                     break;
@@ -28083,28 +28085,28 @@ class Tokenizer {
                     return this.makeToken(parseInfo, exports.EnumToken.EndParensTokenType);
                 // '['
                 case 91 /* TokenMap.LEFT_BRACKETS */:
-                    if (parseInfo.position < parseInfo.currentPosition) {
-                        return this.makeToken(parseInfo);
-                    }
+                    // if (parseInfo.position < parseInfo.currentPosition) {
+                    //     return this.makeToken(parseInfo);
+                    // }
                     this.advance(parseInfo);
                     return this.makeToken(parseInfo, exports.EnumToken.AttrStartTokenType);
                 // ']'
                 case 93 /* TokenMap.RIGHT_BRACKETS */:
-                    if (parseInfo.position < parseInfo.currentPosition) {
-                        return this.makeToken(parseInfo);
-                    }
+                    // if (parseInfo.position < parseInfo.currentPosition) {
+                    //     return this.makeToken(parseInfo);
+                    // }
                     this.advance(parseInfo);
                     return this.makeToken(parseInfo, exports.EnumToken.AttrEndTokenType);
                 case 59 /* TokenMap.SEMICOLON */:
-                    if (parseInfo.position < parseInfo.currentPosition) {
-                        return this.makeToken(parseInfo);
-                    }
+                    // if (parseInfo.position < parseInfo.currentPosition) {
+                    //     return this.makeToken(parseInfo);
+                    // }
                     this.advance(parseInfo);
                     return this.makeToken(parseInfo, exports.EnumToken.SemiColonTokenType);
                 case 58 /* TokenMap.COLON */:
-                    if (parseInfo.position < parseInfo.currentPosition) {
-                        return this.makeToken(parseInfo);
-                    }
+                    // if (parseInfo.position < parseInfo.currentPosition) {
+                    //     return this.makeToken(parseInfo);
+                    // }
                     this.advance(parseInfo);
                     if (this.peekCharCode(parseInfo) == 58 /* TokenMap.COLON */) {
                         this.advance(parseInfo);
@@ -28136,15 +28138,15 @@ class Tokenizer {
                     }
                     return this.makeToken(parseInfo, exports.EnumToken.WhitespaceTokenType);
                 case 44 /* TokenMap.COMMA */:
-                    if (parseInfo.position < parseInfo.currentPosition) {
-                        return this.makeToken(parseInfo);
-                    }
+                    // if (parseInfo.position < parseInfo.currentPosition) {
+                    //     return this.makeToken(parseInfo);
+                    // }
                     this.advance(parseInfo);
                     return this.makeToken(parseInfo, exports.EnumToken.CommaTokenType);
                 case 36 /* TokenMap.DOLLAR */:
-                    if (parseInfo.position < parseInfo.currentPosition) {
-                        return this.makeToken(parseInfo);
-                    }
+                    // if (parseInfo.position < parseInfo.currentPosition) {
+                    //     return this.makeToken(parseInfo);
+                    // }
                     if (this.match(parseInfo, "$=")) {
                         this.advance(parseInfo, 2);
                         return this.makeToken(parseInfo, exports.EnumToken.EndMatchTokenType);
@@ -28152,9 +28154,9 @@ class Tokenizer {
                     this.advance(parseInfo);
                     break;
                 case 126 /* TokenMap.TILDA */:
-                    if (parseInfo.position < parseInfo.currentPosition) {
-                        return this.makeToken(parseInfo);
-                    }
+                    // if (parseInfo.position < parseInfo.currentPosition) {
+                    //     return this.makeToken(parseInfo);
+                    // }
                     if (this.match(parseInfo, "~=")) {
                         this.advance(parseInfo, 2);
                         return this.makeToken(parseInfo, exports.EnumToken.IncludeMatchTokenType);
@@ -28163,9 +28165,9 @@ class Tokenizer {
                     return this.makeToken(parseInfo, exports.EnumToken.Tilda);
                 // case '^':
                 case 94 /* TokenMap.CARET */:
-                    if (parseInfo.position < parseInfo.currentPosition) {
-                        return this.makeToken(parseInfo);
-                    }
+                    // if (parseInfo.position < parseInfo.currentPosition) {
+                    //     return this.makeToken(parseInfo);
+                    // }
                     if (this.match(parseInfo, "^=")) {
                         this.advance(parseInfo, 2);
                         return this.makeToken(parseInfo, exports.EnumToken.StartMatchTokenType);
@@ -28173,9 +28175,9 @@ class Tokenizer {
                     this.advance(parseInfo);
                     break;
                 case 42 /* TokenMap.STAR */:
-                    if (parseInfo.position < parseInfo.currentPosition) {
-                        return this.makeToken(parseInfo);
-                    }
+                    // if (parseInfo.position < parseInfo.currentPosition) {
+                    //     return this.makeToken(parseInfo);
+                    // }
                     if (this.match(parseInfo, "*=")) {
                         this.advance(parseInfo, 2);
                         return this.makeToken(parseInfo, exports.EnumToken.ContainMatchTokenType);
@@ -28189,9 +28191,9 @@ class Tokenizer {
                     this.advance(parseInfo);
                     return this.makeToken(parseInfo, exports.EnumToken.NestingSelectorTokenType);
                 case 124 /* TokenMap.PIPE */:
-                    if (parseInfo.position < parseInfo.currentPosition) {
-                        return this.makeToken(parseInfo);
-                    }
+                    // if (parseInfo.position < parseInfo.currentPosition) {
+                    //     return this.makeToken(parseInfo);
+                    // }
                     // '||'
                     if (this.match(parseInfo, "||")) {
                         this.advance(parseInfo, 2);
@@ -28214,9 +28216,9 @@ class Tokenizer {
                     this.advance(parseInfo);
                     break;
                 case 47 /* TokenMap.SLASH */:
-                    if (parseInfo.position < parseInfo.currentPosition) {
-                        return this.makeToken(parseInfo);
-                    }
+                    // if (parseInfo.position < parseInfo.currentPosition) {
+                    //     return this.makeToken(parseInfo);
+                    // }
                     if (!this.match(parseInfo, "/*")) {
                         this.advance(parseInfo);
                         return this.makeToken(parseInfo, getSymbolHint(parseInfo, parseInfo.position - parseInfo.offset, parseInfo.currentPosition - parseInfo.offset));
@@ -28235,9 +28237,9 @@ class Tokenizer {
                     }
                     break;
                 case 62 /* TokenMap.GREATERTHAN */:
-                    if (parseInfo.position < parseInfo.currentPosition) {
-                        return this.makeToken(parseInfo);
-                    }
+                    // if (parseInfo.position < parseInfo.currentPosition) {
+                    //     return this.makeToken(parseInfo);
+                    // }
                     if (this.match(parseInfo, ">=")) {
                         this.advance(parseInfo, 2);
                         return this.makeToken(parseInfo, exports.EnumToken.GteTokenType);
@@ -28276,20 +28278,11 @@ class Tokenizer {
                     this.advance(parseInfo);
                     break;
                 case 92 /* TokenMap.REVERSE_SOLIDUS */:
-                    // if (!yieldEOFToken && parseInfo.stream.length == parseInfo.currentPosition - parseInfo.offset + 1) {
-                    //     break;
-                    // }
                     this.advance(parseInfo);
                     // EOF
-                    if (!this.peek(parseInfo)) {
-                        // if (!yieldEOFToken) {
-                        //     break;
-                        // }
-                        // end of stream ignore \\
-                        if (parseInfo.position < parseInfo.currentPosition) {
-                            return this.makeToken(parseInfo);
-                        }
-                        break;
+                    // end of stream ignore \\
+                    if (!this.peek(parseInfo) && parseInfo.position < parseInfo.currentPosition) {
+                        return this.makeToken(parseInfo);
                     }
                     this.advance(parseInfo);
                     break;
@@ -28302,9 +28295,9 @@ class Tokenizer {
                 case 46 /* TokenMap.DOT */:
                     const codepoint = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset + 1);
                     if (isIdentStart(codepoint) || codepoint == 45 /* TokenMap.MINUS */) {
-                        if (parseInfo.position < parseInfo.currentPosition) {
-                            return this.makeToken(parseInfo);
-                        }
+                        // if (parseInfo.position < parseInfo.currentPosition) {
+                        //     return this.makeToken(parseInfo);
+                        // }
                         this.advance(parseInfo);
                         let tokensCount = this.consumeIdentToken(parseInfo);
                         if (tokensCount > 0) {
@@ -28312,27 +28305,22 @@ class Tokenizer {
                             return this.makeToken(parseInfo, exports.EnumToken.ClassSelectorTokenType);
                         }
                     }
-                    if (!isDigit(codepoint) && parseInfo.position !== parseInfo.currentPosition) {
-                        this.makeToken(parseInfo);
-                        this.advance(parseInfo, 2);
-                        return this;
-                    }
+                    // if (!isDigit(codepoint) && parseInfo.position !== parseInfo.currentPosition) {
+                    //     this.makeToken(parseInfo);
+                    //     this.advance(parseInfo, 2);
+                    //     return this;
+                    // }
                     this.advance(parseInfo);
                     break;
                 default:
                     this.advance(parseInfo);
                     break;
             }
-            // if (!yieldEOFToken && endPosition <= parseInfo.currentPosition - parseInfo.offset + 1) {
-            //     break;
-            // }
         }
-        // if (yieldEOFToken) {
         if (parseInfo.position < parseInfo.currentPosition) {
             return this.makeToken(parseInfo);
         }
         return this.makeToken(parseInfo, exports.EnumToken.EOFTokenType);
-        // }
     }
     /**
      * tokenize readable stream
