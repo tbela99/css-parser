@@ -4,21 +4,18 @@ import type {
     AstNode,
     AstRule,
     BinaryExpressionToken,
-    ColorToken,
     DimensionToken,
     FunctionToken,
-    IdentToken,
     NumberToken,
     ParserOptions,
     Token,
 } from "../../../@types/index.d.ts";
-import { ColorType, EnumToken } from "../types.ts";
+import { EnumToken } from "../types.ts";
 import { walkValues } from "../walk.ts";
 import { evaluate } from "../math/expression.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { LOCEND, LOCSRCID, LOCSTA, mathFuncs, tokensfuncSet } from "../../syntax/constants.ts";
 import { replaceNodeOrValue } from "../../parser/utils/token.ts";
-import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 
 export class ComputeCalcExpressionFeature {
     public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
