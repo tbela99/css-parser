@@ -401,6 +401,7 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
 
             case ColorType.RGB:
             case ColorType.RGBA:
+
                 return rgb2HexToken(token);
         }
     } else if (to == ColorType.RGB) {

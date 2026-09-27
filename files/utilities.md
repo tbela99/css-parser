@@ -72,11 +72,10 @@ replaceNodeOrValue(parent: Token, target: Token, replacement: Tokan | Token[]);
 ```
 
 # CSS Parsing utility functions
-## Parsing CSS string
 
 `css-parser` offers several helper functions to help you parse CSS.
 
-### Parsing CSS values
+## Parsing CSS values
 
 [parseString()](../functions/node.parseString.html) is used to parse CSS values.
 
@@ -111,7 +110,7 @@ console.debug(values[2]); // color function
 // ...
 ```
 
-### Parse CSS declarations
+## Parse CSS declarations
 
 [parseDeclarations()](../functions/node.parseDeclarations.html) is used to parse a CSS string representing declarations.
 
@@ -125,7 +124,7 @@ console.debug(values[1]); // second declaration
 
 ```
 
-### Parse CSS rules and at-rules
+## Parse CSS rules and at-rules
 
 CSS rules and at-rules are parsed using [parse()](../functions/node.parse.html) and [parseSync()](../functions/node.parseSync.html) functions.
 
@@ -143,8 +142,6 @@ console.debug(values[0]); // first rule
 console.debug(values[1]); // second rule
 
 ```
-
-
 
 ------
 [← Ast Manipulation](./ast.md) | [Node Module →](../docs/modules/node.html)

@@ -6432,6 +6432,11 @@ const anglePrecision = 3;
  * Color range definitions
  */
 const colorRange = {
+    rgb: {
+        r: [0, 255],
+        g: [0, 255],
+        b: [0, 255],
+    },
     lab: {
         l: [0, 100],
         a: [-125, 125],
@@ -8225,7 +8230,10 @@ function color2HexToken(token) {
     if (value == null) {
         return null;
     }
-    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr + Number.EPSILON).toString(16).padStart(2, "0"), "#"));
+    return hexToken(value.reduce((acc, curr) => acc +
+        srgb2rgb(curr + Number.EPSILON)
+            .toString(16)
+            .padStart(2, "0"), "#"));
 }
 function oklab2HexToken(token) {
     let value = oklab2srgbvalues(token);
@@ -10894,20 +10902,20 @@ function parseRelativeColorComponents(relativeKeys, original, rExp, gExp, bExp, 
             continue;
         }
         if (component.typ == exports.EnumToken.IdenTokenType) {
-            val = component.val.toLowerCase();
+            val = component.val;
             if (
             // @ts-expect-error
             typeof Math[val.toUpperCase()] !== "number" &&
-                val != "in" &&
-                val != "hue" &&
-                val != "from" &&
-                val != "alpha" &&
-                val != "none" &&
-                val != "shorter" &&
-                val != "longer" &&
-                val != "increasing" &&
-                val != "decreasing" &&
-                !colorsFunc.includes(val) &&
+                !equalsIgnoreCase(val, "in") &&
+                !equalsIgnoreCase(val, "hue") &&
+                !equalsIgnoreCase(val, "from") &&
+                !equalsIgnoreCase(val, "alpha") &&
+                !equalsIgnoreCase(val, "none") &&
+                !equalsIgnoreCase(val, "shorter") &&
+                !equalsIgnoreCase(val, "longer") &&
+                !equalsIgnoreCase(val, "increasing") &&
+                !equalsIgnoreCase(val, "decreasing") &&
+                !colorsFunc.some((t) => equalsIgnoreCase(t, val)) &&
                 !colorFuncColorSpace.includes(val) &&
                 !validKeys.includes(val)) {
                 return null;

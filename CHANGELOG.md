@@ -26,6 +26,22 @@ is now computed as
 }
 ```
 
+## Fixes
+
+- [x] fix percentage handling in relative rgb color
+
+```css
+ .c {
+color: rgb(from rgb(20% 40%  60% / 80%) r g b / calc(alpha / 2));
+```
+is now computed as 
+
+```css
+.c {
+ color: #3696
+}
+```
+
 # v1.6.4
 
 ## New

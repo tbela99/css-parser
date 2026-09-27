@@ -71,6 +71,11 @@ export const anglePrecision = 3;
  * Color range definitions
  */
 export const colorRange = {
+    rgb: {
+        r: [0, 255],
+        g: [0, 255],
+        b: [0, 255],
+    },
     lab: {
         l: [0, 100],
         a: [-125, 125],
