@@ -14525,7 +14525,7 @@ function alpha(color, alpha) {
     }
     let components = getColorComponents(color);
     if (alpha.typ === exports.EnumToken.MathFunctionTokenType) {
-        const originalAlpha = cloneNode(alpha, true);
+        cloneNode(alpha, true);
         for (const { value } of walkValues(alpha.chi, alpha)) {
             if (value.typ === exports.EnumToken.IdenTokenType) {
                 if (equalsIgnoreCase(value.val, "alpha")) {
@@ -14537,22 +14537,22 @@ function alpha(color, alpha) {
                         });
                     // continue;
                 }
-                else if (equalsIgnoreCase(value.val, "none")) {
-                    Object.assign(value, {
-                        typ: exports.EnumToken.NumberTokenType,
-                        val: 0,
-                    });
-                }
+                // else if (equalsIgnoreCase((value as IdentToken).val, "none")) {
+                //     Object.assign(value, {
+                //         typ: EnumToken.NumberTokenType,
+                //         val: 0,
+                //     });
+                // }
             }
         }
         const result = evaluate([alpha]);
         if (result.length == 1) {
             alpha = result[0];
         }
-        else {
-            // @ts-expect-error
-            alpha = originalAlpha;
-        }
+        // else {
+        //     // @ts-expect-error
+        //     alpha = originalAlpha;
+        // }
     }
     // console.error({ alpha });
     if (alpha.typ !== exports.EnumToken.IdenTokenType &&
@@ -14578,17 +14578,17 @@ function alpha(color, alpha) {
         return null;
     }
     if (alpha?.typ === exports.EnumToken.IdenTokenType) {
-        if (equalsIgnoreCase(alpha.val, "alpha")) {
-            alpha = components[3] ?? {
-                typ: exports.EnumToken.NumberTokenType,
-                val: 1,
-            };
-        }
-        else if (equalsIgnoreCase(alpha.val, "node")) {
-            alpha = {
+        // if (equalsIgnoreCase((alpha as IdentToken).val, "alpha")) {
+        //     alpha = components[3] ?? {
+        //         typ: EnumToken.NumberTokenType,
+        //         val: 1,
+        //     };
+        // } else
+        if (equalsIgnoreCase(alpha.val, "none")) {
+            Object.assign(alpha, {
                 typ: exports.EnumToken.NumberTokenType,
                 val: 0,
-            };
+            });
         }
     }
     return makeColor(color.kin, components, alpha);
@@ -16998,7 +16998,7 @@ function replaceAstNodes(tokens, root) {
 }
 class ComputePrefixFeature {
     get ordering() {
-        return 2;
+        return 0;
     }
     get processMode() {
         return exports.FeatureWalkMode.Pre;
@@ -17442,10 +17442,10 @@ function replace(node, variableScope) {
 class InlineCssVariablesFeature {
     accept = new Set([exports.EnumToken.RuleNodeType, exports.EnumToken.AtRuleNodeType]);
     get ordering() {
-        return 0;
+        return 2;
     }
     get processMode() {
-        return exports.FeatureWalkMode.Pre;
+        return exports.FeatureWalkMode.Post;
     }
     static register(options) {
         if (options.inlineCssVariables) {
@@ -20877,7 +20877,7 @@ class ComputeShorthandFeature {
         exports.EnumToken.KeyframesRuleNodeType,
     ]);
     get ordering() {
-        return 10;
+        return 5;
     }
     get processMode() {
         return exports.FeatureWalkMode.Post;
@@ -21035,7 +21035,7 @@ function trimWhiteSpaceTokens(tokens) {
 class ComputeCalcExpressionFeature {
     accept = new Set([exports.EnumToken.RuleNodeType, exports.EnumToken.AtRuleNodeType]);
     get ordering() {
-        return 1;
+        return 3;
     }
     get processMode() {
         return exports.FeatureWalkMode.Post;
@@ -22357,7 +22357,7 @@ class TransformCssFeature {
         exports.EnumToken.KeyframesRuleNodeType,
     ]);
     get ordering() {
-        return 3;
+        return 4;
     }
     get processMode() {
         return exports.FeatureWalkMode.Post;
@@ -22760,7 +22760,7 @@ function processNode(declarationNode, cache) {
 class ExpandIfFeature {
     accept = new Set([exports.EnumToken.DeclarationNodeType]);
     get ordering() {
-        return 4;
+        return 1;
     }
     get processMode() {
         return exports.FeatureWalkMode.Pre;
@@ -27844,23 +27844,6 @@ class Tokenizer {
         }
         return true;
     }
-    /**
-     *
-     * @param parseInfo
-     * @returns
-     */
-    // isPseudo(parseInfo: ParseInfo): boolean {
-    //     let position: number = parseInfo.currentPosition - parseInfo.offset;
-    //     let endPosition: number = parseInfo.currentPosition - parseInfo.offset;
-    //     return (parseInfo.stream.charAt(position) == ":" &&
-    //         parseInfo.stream.charAt(endPosition - 1) == "(" &&
-    //         (parseInfo.stream.charAt(position + 1) == ":"
-    //             ? this.isIdentToken(parseInfo, 2, -1)
-    //             : this.isIdentToken(parseInfo, 1, -1))) ||
-    //         parseInfo.stream.charAt(position + 1) == ":"
-    //         ? this.isIdentToken(parseInfo, 2)
-    //         : this.isIdentToken(parseInfo, 1);
-    // }
     /**
      *
      * @param parseInfo

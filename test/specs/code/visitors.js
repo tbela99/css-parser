@@ -383,6 +383,7 @@ body {
                 visitor: {
                     StyleSheetNodeType: {
                         type: WalkerEvent.Leave,
+
                         handler: (node) => {
                             // insert a new rule
                             node.chi.unshift(parseSync("html {--base-color: pink}").ast.chi[0]);

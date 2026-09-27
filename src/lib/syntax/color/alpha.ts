@@ -43,12 +43,13 @@ export function alpha(color: ColorToken, alpha: Token): ColorToken | null {
                               },
                     );
                     // continue;
-                } else if (equalsIgnoreCase((value as IdentToken).val, "none")) {
-                    Object.assign(value, {
-                        typ: EnumToken.NumberTokenType,
-                        val: 0,
-                    });
                 }
+                // else if (equalsIgnoreCase((value as IdentToken).val, "none")) {
+                //     Object.assign(value, {
+                //         typ: EnumToken.NumberTokenType,
+                //         val: 0,
+                //     });
+                // }
             }
         }
 
@@ -56,10 +57,11 @@ export function alpha(color: ColorToken, alpha: Token): ColorToken | null {
 
         if (result.length == 1) {
             alpha = result[0];
-        } else {
-            // @ts-expect-error
-            alpha = originalAlpha;
         }
+        // else {
+        //     // @ts-expect-error
+        //     alpha = originalAlpha;
+        // }
     }
 
     // console.error({ alpha });
@@ -97,16 +99,17 @@ export function alpha(color: ColorToken, alpha: Token): ColorToken | null {
     }
 
     if (alpha?.typ === EnumToken.IdenTokenType) {
-        if (equalsIgnoreCase((alpha as IdentToken).val, "alpha")) {
-            alpha = components[3] ?? {
-                typ: EnumToken.NumberTokenType,
-                val: 1,
-            };
-        } else if (equalsIgnoreCase((alpha as IdentToken).val, "node")) {
-            alpha = {
+        // if (equalsIgnoreCase((alpha as IdentToken).val, "alpha")) {
+        //     alpha = components[3] ?? {
+        //         typ: EnumToken.NumberTokenType,
+        //         val: 1,
+        //     };
+        // } else
+        if (equalsIgnoreCase((alpha as IdentToken).val, "none")) {
+            Object.assign(alpha, {
                 typ: EnumToken.NumberTokenType,
                 val: 0,
-            };
+            });
         }
     }
 

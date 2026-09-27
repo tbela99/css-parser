@@ -9,7 +9,7 @@ class ComputeShorthandFeature {
         EnumToken.KeyframesRuleNodeType,
     ]);
     get ordering() {
-        return 10;
+        return 5;
     }
     get processMode() {
         return FeatureWalkMode.Post;

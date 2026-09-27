@@ -15,12 +15,12 @@ import type {
     Token,
     VariableScopeInfo,
 } from "../../../@types/index.d.ts";
-import {EnumToken} from "../types.ts";
-import {walkValues} from "../walk.ts";
-import {renderValue} from "../../printer/render.ts";
-import {splitRule} from "../minify.ts";
-import {FeatureWalkMode} from "./type.ts";
-import {mathFuncs, RAW} from "../../syntax/constants.ts";
+import { EnumToken } from "../types.ts";
+import { walkValues } from "../walk.ts";
+import { renderValue } from "../../printer/render.ts";
+import { splitRule } from "../minify.ts";
+import { FeatureWalkMode } from "./type.ts";
+import { mathFuncs, RAW } from "../../syntax/constants.ts";
 
 function inlineExpression(token: Token): Token[] {
     const result: Token[] = [];
@@ -90,11 +90,11 @@ export class InlineCssVariablesFeature {
     public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
 
     get ordering() {
-        return 0;
+        return 2;
     }
 
     get processMode(): FeatureWalkMode {
-        return FeatureWalkMode.Pre;
+        return FeatureWalkMode.Post;
     }
 
     static register(options: ParserOptions): void {

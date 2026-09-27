@@ -1133,23 +1133,6 @@ class Tokenizer {
     /**
      *
      * @param parseInfo
-     * @returns
-     */
-    // isPseudo(parseInfo: ParseInfo): boolean {
-    //     let position: number = parseInfo.currentPosition - parseInfo.offset;
-    //     let endPosition: number = parseInfo.currentPosition - parseInfo.offset;
-    //     return (parseInfo.stream.charAt(position) == ":" &&
-    //         parseInfo.stream.charAt(endPosition - 1) == "(" &&
-    //         (parseInfo.stream.charAt(position + 1) == ":"
-    //             ? this.isIdentToken(parseInfo, 2, -1)
-    //             : this.isIdentToken(parseInfo, 1, -1))) ||
-    //         parseInfo.stream.charAt(position + 1) == ":"
-    //         ? this.isIdentToken(parseInfo, 2)
-    //         : this.isIdentToken(parseInfo, 1);
-    // }
-    /**
-     *
-     * @param parseInfo
      * @param input
      * @returns
      */

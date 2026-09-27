@@ -285,7 +285,7 @@ export class ExpandIfFeature {
     public accept: Set<EnumToken> = new Set([EnumToken.DeclarationNodeType]);
 
     get ordering(): number {
-        return 4;
+        return 1;
     }
 
     get processMode(): FeatureWalkMode {

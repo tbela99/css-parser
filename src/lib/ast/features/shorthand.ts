@@ -11,7 +11,7 @@ export class ComputeShorthandFeature {
     ]);
 
     get ordering() {
-        return 10;
+        return 5;
     }
 
     get processMode(): FeatureWalkMode {

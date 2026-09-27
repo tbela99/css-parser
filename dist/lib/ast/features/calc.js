@@ -8,7 +8,7 @@ import { replaceNodeOrValue } from '../../parser/utils/token.js';
 class ComputeCalcExpressionFeature {
     accept = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
     get ordering() {
-        return 1;
+        return 3;
     }
     get processMode() {
         return FeatureWalkMode.Post;

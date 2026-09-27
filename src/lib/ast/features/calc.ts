@@ -4,24 +4,27 @@ import type {
     AstNode,
     AstRule,
     BinaryExpressionToken,
+    ColorToken,
     DimensionToken,
     FunctionToken,
+    IdentToken,
     NumberToken,
     ParserOptions,
     Token,
 } from "../../../@types/index.d.ts";
-import { EnumToken } from "../types.ts";
+import { ColorType, EnumToken } from "../types.ts";
 import { walkValues } from "../walk.ts";
 import { evaluate } from "../math/expression.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { LOCEND, LOCSRCID, LOCSTA, mathFuncs, tokensfuncSet } from "../../syntax/constants.ts";
 import { replaceNodeOrValue } from "../../parser/utils/token.ts";
+import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 
 export class ComputeCalcExpressionFeature {
     public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
 
     get ordering(): number {
-        return 1;
+        return 3;
     }
 
     get processMode(): FeatureWalkMode {
@@ -47,10 +50,7 @@ export class ComputeCalcExpressionFeature {
 
             const set: Set<Token> = new Set();
 
-            for (const { value, parent } of walkValues(
-                (<AstDeclaration>node).val,
-                node
-            )) {
+            for (const { value, parent } of walkValues((<AstDeclaration>node).val, node)) {
                 if (parent?.typ == EnumToken.BinaryExpressionTokenType) {
                     continue;
                 }
@@ -93,7 +93,7 @@ export class ComputeCalcExpressionFeature {
 
                                 const values: Token[] = evaluate(cp);
 
-                                // fix a + -b to a - b
+                                // fix a + -b into a - b
                                 for (const { value, parent: p } of walkValues(values)) {
                                     if (value.typ === EnumToken.BinaryExpressionTokenType) {
                                         if (
