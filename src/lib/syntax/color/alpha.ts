@@ -28,8 +28,6 @@ export function alpha(color: ColorToken, alpha: Token): ColorToken | null {
     let components = getColorComponents(color);
 
     if (alpha.typ === EnumToken.MathFunctionTokenType) {
-        const originalAlpha = cloneNode(alpha, true);
-
         for (const { value } of walkValues((alpha as FunctionToken).chi, alpha)) {
             if (value.typ === EnumToken.IdenTokenType) {
                 if (equalsIgnoreCase((value as IdentToken).val, "alpha")) {

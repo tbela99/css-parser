@@ -64,7 +64,7 @@ class ComputeCalcExpressionFeature {
                                         ? value.val
                                         : value.chi;
                                 const values = evaluate(cp);
-                                // fix a + -b to a - b
+                                // fix a + -b into a - b
                                 for (const { value, parent: p } of walkValues(values)) {
                                     if (value.typ === EnumToken.BinaryExpressionTokenType) {
                                         if (value.op === EnumToken.Add &&

@@ -14522,7 +14522,6 @@
         }
         let components = getColorComponents(color);
         if (alpha.typ === exports.EnumToken.MathFunctionTokenType) {
-            cloneNode(alpha, true);
             for (const { value } of walkValues(alpha.chi, alpha)) {
                 if (value.typ === exports.EnumToken.IdenTokenType) {
                     if (equalsIgnoreCase(value.val, "alpha")) {
@@ -21088,7 +21087,7 @@
                                             ? value.val
                                             : value.chi;
                                     const values = evaluate(cp);
-                                    // fix a + -b to a - b
+                                    // fix a + -b into a - b
                                     for (const { value, parent: p } of walkValues(values)) {
                                         if (value.typ === exports.EnumToken.BinaryExpressionTokenType) {
                                             if (value.op === exports.EnumToken.Add &&

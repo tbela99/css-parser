@@ -24,7 +24,6 @@ function alpha(color, alpha) {
     }
     let components = getColorComponents(color);
     if (alpha.typ === EnumToken.MathFunctionTokenType) {
-        cloneNode(alpha, true);
         for (const { value } of walkValues(alpha.chi, alpha)) {
             if (value.typ === EnumToken.IdenTokenType) {
                 if (equalsIgnoreCase(value.val, "alpha")) {
