@@ -74,22 +74,43 @@ html[data-theme="dark"] {
                     }
                 }
             }
+
+            table {
+                border-collapse: collapse;
+                margin-bottom: 15px;
+
+                tr {
+                    border-bottom: 1px solid #f0f0f0;
+
+                    th {
+                        font-weight: 400;
+                    }
+
+                    th,
+                    td {
+                        padding-bottom: 5px;
+                        padding-top: 5px;
+                        text-align: left;
+                    }
+
+                    thead th {
+                        text-align: left;
+                    }
+                }
+
+                tbody {
+                    tr {
+                        &:hover {
+                            background-color: var(--transparent-blue) !important;
+                            color: var(--blue-dark) !important;
+                        }
+                    }
+                    td {
+                        text-align: left;
+                    }
+                }
+            }
         }
-    }
-}
-
-#main-function-differences ~ table tbody tr {
-    &:hover {
-        background-color: var(--transparent-blue) !important;
-        color: var(--blue-dark) !important;
-    }
-
-    td {
-        &:first-child {
-            text-align: left;
-        }
-
-        text-align: center;
     }
 }
 

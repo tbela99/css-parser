@@ -70,7 +70,7 @@ While some tools prioritize raw execution speed, css-parser focuses on maximizin
 
 ## Minification performance vs execution speed
 
-`css-parser`is designed for maximum performance, but the optimal configuration depends on what matters most for your workload.
+`css-parser` is designed for maximum minification performance, but the optimal configuration depends on what matters most for your workload.
  
 The parser provides settings that let you choose the balance between minification performance and execution speed:
 

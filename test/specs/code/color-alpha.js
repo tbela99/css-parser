@@ -276,7 +276,7 @@ background: color(srgb 1 0.752941 0.796078 / 0.5);
 }`),
             );
         });
-        
+
         it("color-mix() #10", function () {
             return transform(
                 `
@@ -303,7 +303,7 @@ background: color(srgb 1 0.752941 0.796078 / none);
 }`),
             );
         });
-        
+
         it("color-mix() #11", function () {
             return transform(
                 `
@@ -328,7 +328,7 @@ background: color(srgb 1 0.752941 0.796078 / none);
 }`),
             );
         });
-        
+
         it("color-mix() #11", function () {
             return transform(
                 `
@@ -353,7 +353,7 @@ background: color(srgb 1 0.752941 0.796078 / none);
 }`),
             );
         });
-        
+
         it("color-mix() #12", function () {
             return transform(
                 `

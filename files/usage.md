@@ -400,10 +400,9 @@ button {
 | CSS `composes` from file                                             | ✅       | ✅           | ❌               | ❌           |
 | import CSS variables from file                                       | ✅       | ✅           | ❌               | ❌           |
 
-
 ## Minification performance vs execution speed
 
-`css-parser` is designed for maximum performance, but the optimal configuration depends on what matters most for your workload.
+`css-parser` is designed for maximum minification performance, but the optimal configuration depends on what matters most for your workload.
  
 The parser provides settings that let you choose the balance between minification performance and execution speed:
 
@@ -422,17 +421,28 @@ import {transformSync} from "@tbela99/css-parser";
 const css = `...`;
 
 const result = transformSync({
-                    input: css,
-                    minify: false,
-                    beautify: false,
-                    removeEmpty: true,
-                    removeComments: true,
-                    convertColor: true,
+                  input: css,
+                  minify: false,
+                  beautify: false,
+                  removeEmpty: true,
+                  removeComments: true,
+                  convertColor: true,
+                  minifyValues: true,
                 });
 
 console.debug(result.code);
 console.debug(result.stats);
 ```
+
+Performance vs execution speed comparison
+
+
+| File:  tailwind.css   | Speed optimization | Minification optimization |
+| --------------------- | ------------------ | ------------------------- |
+| Size: 2,380,419 bytes | 1,890,728 bytes    | 1,633,188 bytes           |
+| Time                  | 205.91 ms          | 471.89 ms                 |
+| Size reduction        | -20.6%             | -31.4%                    |
+
 
 ------
 [← Getting started](./Guide.Getting_started.html) | [Architecture →](./Guide.Architecture.html) 
