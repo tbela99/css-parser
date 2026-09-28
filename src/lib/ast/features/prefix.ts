@@ -153,7 +153,7 @@ function replaceAstNodes(tokens: Token[], root?: AstNode): boolean {
 
 export class ComputePrefixFeature {
     get ordering() {
-        return 2;
+        return 0;
     }
 
     get processMode(): FeatureWalkMode {

@@ -213,4 +213,4 @@ console.debug(result.code);
 ```
 
 ------
-[← Usage](./Guide.Usage.html) | [CSS Module →](./css-module.md)
+[← Architecture](./architecture.md) | [CSS Module →](./css-module.md)

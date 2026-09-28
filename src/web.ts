@@ -15,14 +15,14 @@ import type {
     TransformSyncOptions,
 } from "./@types/index.d.ts";
 
-import {doParse, doParseSync} from "./lib/parser/parse.ts";
-import {doRender} from "./lib/printer/render.ts";
-import {ModuleScopeEnumOptions} from "./lib/ast/types.ts";
-import {Tokenizer} from "./lib/parser/tokenize.ts";
-import {dirname, matchUrl, resolve} from "./lib/fs/resolve.ts";
-import {ResponseType} from "./types.ts";
-import {SourceFile} from "./lib/parser/source.ts";
-import {parseResult, validateSyncArguments} from "./utils/sync.ts";
+import { doParse, doParseSync } from "./lib/parser/parse.ts";
+import { doRender } from "./lib/printer/render.ts";
+import { ModuleScopeEnumOptions } from "./lib/ast/types.ts";
+import { Tokenizer } from "./lib/parser/tokenize.ts";
+import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
+import { ResponseType } from "./types.ts";
+import { SourceFile } from "./lib/parser/source.ts";
+import { parseResult, validateSyncArguments } from "./utils/sync.ts";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -51,6 +51,7 @@ export { parseDeclarations } from "./lib/parser/parse.ts";
 export { find, findLast, findByValue, findAll } from "./lib/ast/find.ts";
 export { cloneNode } from "./lib/ast/clone.ts";
 export { replaceNodeOrValue } from "./lib/parser/utils/token.ts";
+export { PropertyList } from "./lib/parser/declaration/list.ts";
 export {
     EnumToken,
     ColorType,

@@ -37,7 +37,7 @@ function la98rgb2a98rgb(r, g, b, a = null) {
     // convert an array of linear-light a98-rgb  in the range 0.0-1.0
     // to gamma corrected form
     // negative values are also now accepted
-    return [r, b, g]
+    return [r, g, b]
         .map(function (val) {
         let sign = val < 0 ? -1 : 1;
         let abs = Math.abs(val);

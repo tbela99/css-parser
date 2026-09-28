@@ -14,20 +14,20 @@ import type {
     TransformResult,
     TransformSyncOptions,
 } from "./@types/index.d.ts";
-import {deprecate} from "node:util";
-import {Readable} from "node:stream";
-import {createReadStream} from "node:fs";
-import {lstat, readFile} from "node:fs/promises";
-import {doParse, doParseSync} from "./lib/parser/parse.ts";
-import {doRender} from "./lib/printer/render.ts";
-import {ModuleScopeEnumOptions} from "./lib/ast/types.ts";
-import {Tokenizer} from "./lib/parser/tokenize.ts";
-import {dirname, matchUrl, resolve} from "./lib/fs/resolve.ts";
-import {ResponseType} from "./types.ts";
-import {resolve as resolvePath} from "node:path";
-import {SourceFile} from "./lib/parser/source.ts";
-import {cwd} from "node:process";
-import {parseResult, validateSyncArguments} from "./utils/sync.ts";
+import { deprecate } from "node:util";
+import { Readable } from "node:stream";
+import { createReadStream } from "node:fs";
+import { lstat, readFile } from "node:fs/promises";
+import { doParse, doParseSync } from "./lib/parser/parse.ts";
+import { doRender } from "./lib/printer/render.ts";
+import { ModuleScopeEnumOptions } from "./lib/ast/types.ts";
+import { Tokenizer } from "./lib/parser/tokenize.ts";
+import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
+import { ResponseType } from "./types.ts";
+import { resolve as resolvePath } from "node:path";
+import { SourceFile } from "./lib/parser/source.ts";
+import { cwd } from "node:process";
+import { parseResult, validateSyncArguments } from "./utils/sync.ts";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";

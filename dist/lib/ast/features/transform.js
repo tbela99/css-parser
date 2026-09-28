@@ -12,7 +12,7 @@ class TransformCssFeature {
         EnumToken.KeyframesRuleNodeType,
     ]);
     get ordering() {
-        return 3;
+        return 4;
     }
     get processMode() {
         return FeatureWalkMode.Post;

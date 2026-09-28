@@ -174,7 +174,7 @@ function processNode(declarationNode, cache) {
 class ExpandIfFeature {
     accept = new Set([EnumToken.DeclarationNodeType]);
     get ordering() {
-        return 4;
+        return 1;
     }
     get processMode() {
         return FeatureWalkMode.Pre;

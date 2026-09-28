@@ -249,5 +249,134 @@ color: alpha(from OkLcH(from OkLcH(from peru  l    c  h) l c calc(h / 2) / 20% )
 }`),
             );
         });
+
+        it("color-mix() #9", function () {
+            return transform(
+                `
+
+:root {
+--mycolor:  pink;
+}
+    .s {
+    
+    color:
+ alpha(from var(--mycolor)  / calc(alpha * 0.5));
+background: color(srgb 1 0.752941 0.796078 / 0.5);
+
+
+`,
+                {
+                    beautify: true,
+                    inlineCssVariables: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`.s {
+ color: #ffc0cb80;
+ background: #ffc0cb80
+}`),
+            );
+        });
+
+        it("color-mix() #10", function () {
+            return transform(
+                `
+
+:root {
+--mycolor:  pink;
+}
+    .s {
+    
+    color:
+ alpha(from var(--mycolor)  / none);
+background: color(srgb 1 0.752941 0.796078 / none);
+
+
+`,
+                {
+                    beautify: true,
+                    inlineCssVariables: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`.s {
+ color: #ffc0cb00;
+ background: #ffc0cb00
+}`),
+            );
+        });
+
+        it("color-mix() #11", function () {
+            return transform(
+                `
+
+:root {
+--mycolor:  device-cmyk(none 0.81 0.81 0.3);
+}
+    .s {
+    
+    color:
+ alpha(from var(--mycolor)  / none);
+
+
+`,
+                {
+                    beautify: true,
+                    inlineCssVariables: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`.s {
+ color: alpha(from #b32222/none)
+}`),
+            );
+        });
+
+        it("color-mix() #11", function () {
+            return transform(
+                `
+
+:root {
+--mycolor:  device-cmyk(none 0.81 0.81 0.3);
+}
+    .s {
+    
+    color:
+ alpha(from var(--mycolor)  / calc(alpha * 0.5));
+
+
+`,
+                {
+                    beautify: true,
+                    inlineCssVariables: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`.s {
+ color: alpha(from #b32222/calc(alpha*.5))
+}`),
+            );
+        });
+
+        it("color-mix() #12", function () {
+            return transform(
+                `
+
+:root {
+--mycolor:  device-cmyk(none 0.81 0.81 0.3);
+}
+    .s {
+    
+    color:
+ alpha(from var(--mycolor)  / none);
+
+
+`,
+                {
+                    beautify: true,
+                    inlineCssVariables: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`.s {
+ color: alpha(from #b32222/none)
+}`),
+            );
+        });
     });
 }

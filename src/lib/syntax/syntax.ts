@@ -44,12 +44,12 @@ import { getSyntaxConfig } from "../validation/config.ts";
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
 export const flexUnits: Array<string> = ["fr"];
-export const frequencyUnits: Array<string> = ["hz", "khz"];
+export const frequencyUnits: Array<string> = ["Hz", "kHz"];
 export const timeUnits: Array<string> = ["ms", "s"];
 export const angleUnits: Array<string> = ["rad", "turn", "deg", "grad"];
 export const resolutionUnits: Array<string> = ["dpi", "dpcm", "dppx", "x"];
 export const dimensionUnits: Array<string> = [
-    "q",
+    "Q",
     "cap",
     "ch",
     "cm",

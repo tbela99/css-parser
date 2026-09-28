@@ -10,6 +10,9 @@ import { objectHash } from '../utils/hash.js';
 import { equalsIgnoreCase } from '../utils/text.js';
 
 const config = getConfig();
+/**
+ * Represents a list of property declarations, compute shorthand and remove duplicate declarations.
+ */
 class PropertyList {
     options = { removeDuplicateDeclarations: true, computeShorthand: true };
     declarations;
@@ -84,28 +87,35 @@ class PropertyList {
                 // @ts-ignore
                 shorthand = config.property[propertyName];
             }
-            // console.error({shortHandType, propertyName, config: config.map[propertyName], map: config.map[shorthand].properties[propertyName]});
             // @ts-ignore
             if (shortHandType == "map") {
                 let owner = this;
+                const mapName = 
                 // @ts-ignore
-                const mapName = config.map[propertyName]?.map ?? config.map[shorthand]?.properties?.[propertyName]?.map;
+                config.map[propertyName]?.map ?? config.map[shorthand]?.properties?.[propertyName]?.map;
                 if (typeof mapName === "string") {
                     if (!this.declarations.has(mapName)) {
                         // @ts-ignore
                         this.declarations.set(mapName, new PropertyMap(config.map[mapName]));
                     }
                     owner = this.declarations.get(mapName);
-                    // console.error({mapName});
                 }
-                // @ts-ignore
-                if (!owner.declarations.has(shorthand)) {
+                else if (!this.declarations.has(shorthand)) {
                     // @ts-ignore
-                    owner.declarations.set(shorthand, new PropertyMap(config.map[shorthand]));
+                    this.declarations.set(shorthand, new PropertyMap(config.map[shorthand]));
                 }
-                //  console.error({propertyName,mapName, owned: owner == this});
-                // @ts-ignore
-                owner.declarations.get(shorthand).add(declaration);
+                if (owner == this) {
+                    // @ts-ignore
+                    owner.declarations.get(shorthand).add(declaration);
+                }
+                else {
+                    if (!owner.declarations.has(shorthand)) {
+                        // @ts-ignore
+                        owner.declarations.set(shorthand, new PropertyMap(config.map[shorthand]));
+                    }
+                    // @ts-ignore
+                    owner.declarations.get(shorthand).add(declaration);
+                }
             }
             // @ts-ignore
             else if (shortHandType == "set") {
@@ -192,7 +202,7 @@ class PropertyList {
     [Symbol.iterator]() {
         let iterator = this.declarations.values();
         const iterators = [];
-        // console.error(this);
+        // @ts-ignore
         return {
             next() {
                 let value = iterator.next();

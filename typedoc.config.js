@@ -12,8 +12,14 @@ export default {
         "llms.txt": "https://tbela99.github.io/css-parser/llms.txt",
         GitHub: "https://github.com/tbela99/css-parser",
     },
-    highlightLanguages: ["ts", "css", "javascript", "json", 'html', 'shell'],
-    plugin: ["typedoc-unhoax-theme", "typedoc-plugin-coverage", "typedoc-plugin-redirect", "typedoc-plugin-llms-txt"],
+    highlightLanguages: ["ts", "css", "javascript", "json", "html", "shell"],
+    plugin: [
+        "typedoc-unhoax-theme",
+        "typedoc-plugin-coverage",
+        "typedoc-plugin-redirect",
+        "typedoc-plugin-llms-txt",
+        "@boneskull/typedoc-plugin-mermaid",
+    ],
     redirects: {
         "documents/Guide.html": "documents/Guide.Getting_started.html",
     },

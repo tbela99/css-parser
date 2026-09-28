@@ -4,15 +4,15 @@ import type {
     VisitorNodeMap,
     VisitorSyncNodeMap,
 } from "./visitor.d.ts";
-import type {AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet} from "./ast.d.ts";
-import {SourceMap} from "../lib/printer/sourcemap/sourcemap.ts";
-import type {PropertyListOptions} from "./parse.d.ts";
-import {EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ValidationLevel} from "../lib/ast/types.ts";
-import type {CssVariableToken, Token} from "./token.d.ts";
-import {FeatureWalkMode} from "../lib/ast/features/type.ts";
-import {ValidationToken} from "../lib/validation/parser/types";
-import {SourceFile} from "../lib/parser/source.ts";
-import {ResponseType} from "../types.ts";
+import type { AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet } from "./ast.d.ts";
+import { SourceMap } from "../lib/printer/sourcemap/sourcemap.ts";
+import type { PropertyListOptions } from "./parse.d.ts";
+import { EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ValidationLevel } from "../lib/ast/types.ts";
+import type { CssVariableToken, Token } from "./token.d.ts";
+import { FeatureWalkMode } from "../lib/ast/features/type.ts";
+import { ValidationToken } from "../lib/validation/parser/types";
+import { SourceFile } from "../lib/parser/source.ts";
+import { ResponseType } from "../types.ts";
 
 export * from "./ast.d.ts";
 export * from "./token.d.ts";
@@ -130,6 +130,12 @@ export interface MinifyOptions {
      * Enable minification
      */
     minify?: boolean;
+
+    /**
+     * enable ast minification
+     */
+    minifyAST?: boolean;
+    
     /**
      * Parse color tokens
      */
@@ -207,7 +213,8 @@ export declare type LoadResult =
     | Promise<ReadableStream<Uint8Array>>
     | ReadableStream<Uint8Array>
     | string
-    | Promise<string> | object;
+    | Promise<string>
+    | object;
 
 /**
  * CSS module parser options
@@ -705,9 +712,15 @@ export declare interface RenderOptions {
     src?: string;
 
     /**
-     * Minify css values.
+     * strip comments and whitespace.
      */
     minify?: boolean;
+
+    /**
+     * Minify values
+     */
+    minifyValues?: boolean;
+
     /**
      * Pretty print css
      *

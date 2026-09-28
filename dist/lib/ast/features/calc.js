@@ -8,7 +8,7 @@ import { replaceNodeOrValue } from '../../parser/utils/token.js';
 class ComputeCalcExpressionFeature {
     accept = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
     get ordering() {
-        return 1;
+        return 3;
     }
     get processMode() {
         return FeatureWalkMode.Post;
@@ -33,8 +33,20 @@ class ComputeCalcExpressionFeature {
                     continue;
                 }
                 if (value.typ == EnumToken.BinaryExpressionTokenType) {
-                    // @ts-ignore
-                    replaceNodeOrValue(parent, value, evaluate([value]));
+                    const result = evaluate([value]);
+                    try {
+                        // @ts-ignore
+                        replaceNodeOrValue(parent, value, result);
+                    }
+                    catch (e) {
+                        // @ts-ignore
+                        if (Array.isArray(parent.chi)) {
+                            // @ts-ignore
+                            parent.chi.length = 0;
+                            // @ts-ignore
+                            parent.chi.push(...result);
+                        }
+                    }
                     continue;
                 }
                 if (value != null && tokensfuncSet.has(value.typ)) {
@@ -52,7 +64,7 @@ class ComputeCalcExpressionFeature {
                                         ? value.val
                                         : value.chi;
                                 const values = evaluate(cp);
-                                // fix a + -b to a - b
+                                // fix a + -b into a - b
                                 for (const { value, parent: p } of walkValues(values)) {
                                     if (value.typ === EnumToken.BinaryExpressionTokenType) {
                                         if (value.op === EnumToken.Add &&

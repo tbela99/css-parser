@@ -10,9 +10,9 @@ import cssnano from "cssnano";
 import * as csso from "csso";
 import * as csstree from "css-tree";
 import * as esbuild from "esbuild";
-import { transform as lightningTransform } from "lightningcss";
-import { transform as tbelaTransform } from "@tbela99/css-parser";
-import {transformSync as tbelaDevTransform} from "@tbela99/css-parser2";
+import { transform } from "lightningcss";
+import { transformSync as tbelaTransform } from "@tbela99/css-parser";
+import { transformSync as tbelaDevTransform } from "@tbela99/css-parser2";
 
 function pkgVersion(name, pathToPkgJson) {
     const { version, repository } = JSON.parse(
@@ -39,16 +39,14 @@ function pkgVersion(name, pathToPkgJson) {
             const githubShorthand = url.match(/^github:([^/]+\/[^/]+)$/);
             if (githubShorthand) {
                 url = `https://github.com/${githubShorthand[1]}`;
-            }
-
-            else {
+            } else {
                 url = url
                     .replace(/^git\+/, "")
                     .replace(/^git@github\.com:/, "https://github.com/")
                     .replace(/^ssh:\/\/git@github\.com\//, "https://github.com/")
                     .replace(/\.git$/, "");
             }
-            
+
             if (!url.match(/[a-zA-Z]+:/)) {
                 url = "https://github.com/" + url;
             }
@@ -99,15 +97,15 @@ export const minifiers = [
         minify: (css) => csso.minify(css).css,
     },
     // infinite loop bug
-    // {
-    //     id: "css-tree",
-    //     url: versions["css-tree"].url,
-    //     label: `css-tree - ${versions["css-tree"].version}`,
-    //     // css-tree has no dedicated minifier API; parse+generate already
-    //     // drops whitespace/comments, which is how the official benchmark
-    //     // treats it too (no property-level optimization, just compact output).
-    //     minify: (css) => csstree.generate(csstree.parse(css)),
-    // },
+    {
+        id: "css-tree",
+        url: versions["css-tree"].url,
+        label: `css-tree - ${versions["css-tree"].version}`,
+        // css-tree has no dedicated minifier API; parse+generate already
+        // drops whitespace/comments, which is how the official benchmark
+        // treats it too (no property-level optimization, just compact output).
+        minify: (css) => csstree.generate(csstree.parse(css)),
+    },
     {
         id: "esbuild",
         url: versions.esbuild.url,
@@ -118,19 +116,28 @@ export const minifiers = [
         id: "lightningcss",
         url: versions.lightningcss.url,
         label: `lightningcss - ${versions.lightningcss.version}`,
-        minify: (css) =>
-            lightningTransform({ filename: "style.css", code: Buffer.from(css), minify: true }).code.toString(),
+        minify: (css) => transform({ filename: "style.css", code: Buffer.from(css), minify: true }).code.toString(),
     },
     {
         id: "css-parser",
         url: versions["css-parser"].url,
-        label: `@tbela99/css-parser - ${versions["css-parser"].version}`,
-        minify: async (css) => (await tbelaTransform(css, { minify: true })).code,
+        label: `@tbela99/css-parser (speed) - ${versions["css-parser"].version}`,
+        title: `settings: { minify: false, beautify: false, removeEmpty: true, removeComments: true, convertColor: true }`,
+        minify: async (css) =>
+            tbelaTransform({
+                input: css,
+                minify: false,
+                beautify: false,
+                removeEmpty: true,
+                removeComments: true,
+                convertColor: true,
+                // minifyValues: true,
+            }).code,
     },
     {
         id: "css-parser-dev",
         url: versions["css-parser-dev"].url,
-        label: `@tbela99/css-parser-dev - ${versions["css-parser-dev"].version}`,
-        minify: async (css) => (await tbelaDevTransform(css, { minify: true })).code,
+        label: `@tbela99/css-parser-dev (default) - ${versions["css-parser-dev"].version}`,
+        minify: async (css) => tbelaDevTransform({ input: css }).code,
     },
 ];

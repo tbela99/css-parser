@@ -595,4 +595,45 @@ grid-template-areas:
 }`),
         );
     });
+    it("grid-row/grid-column #34", function () {
+        return transform(
+            `
+    
+  .sidebar {
+ grid-row: 2;
+ grid-row-end: 2;
+ grid-column: 2;
+ grid-area: sidebar
+}
+`,
+            {
+                beautify: true,
+            },
+        ).then((result) =>
+            expect(result.code).equals(`.sidebar {
+ grid-area: sidebar
+}`),
+        );
+    });
+    it("grid-row/grid-column #35", function () {
+        return transform(
+            `
+    
+  .footer{
+     -ms-grid-row:4;
+     -ms-grid-column:1;
+     -ms-grid-column-span:2;
+  }
+
+`,
+            {
+                beautify: true,
+                removePrefix: true,
+            },
+        ).then((result) =>
+            expect(result.code).equals(`.footer {
+ grid-area: 4/1/auto/2
+}`),
+        );
+    });
 }

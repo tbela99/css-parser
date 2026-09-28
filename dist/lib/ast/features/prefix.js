@@ -109,7 +109,7 @@ function replaceAstNodes(tokens, root) {
 }
 class ComputePrefixFeature {
     get ordering() {
-        return 2;
+        return 0;
     }
     get processMode() {
         return FeatureWalkMode.Pre;

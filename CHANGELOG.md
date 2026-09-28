@@ -1,5 +1,48 @@
 # Changelog
 
+# v1.6.5
+
+## New
+
+- [x] Added fine-grained minification parameters:
+  - [x] RenderOptions#minifyValues: minify CSS values such as numbers and dimension tokens
+  - [x] ParseOptions#minifyAST: minify the AST.
+
+## Improvement
+
+```css
+  .footer{
+     grid-row:4;
+     grid-column:1;
+     grid-column-end:2;
+  }
+```
+
+is now computed as 
+
+```css
+.footer {
+ grid-area: 4/1/auto/2
+}
+```
+
+## Fixes
+
+- [x] fix a98-rgb, hwb color color space handling in color-mix()
+- [x] fix percentage handling in relative rgb color
+
+```css
+ .c {
+color: rgb(from rgb(20% 40%  60% / 80%) r g b / calc(alpha / 2));
+```
+is now computed as 
+
+```css
+.c {
+ color: #3696
+}
+```
+
 # v1.6.4
 
 ## New
