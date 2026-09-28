@@ -43,7 +43,7 @@ export class PropertyMap {
         this.pattern = config.pattern.split(/\s/);
     }
 
-    add(declaration: AstDeclaration) {
+    add(declaration: AstDeclaration): this {
         if (declaration.nam == this.config.shorthand) {
             this.declarations.clear();
             this.declarations.set(<string>declaration.nam, declaration);
@@ -65,8 +65,7 @@ export class PropertyMap {
                 const values: Token[] = [];
                 const val: Token[][] = [[]];
 
-                for (const curr of // @ts-ignore
-                (this.declarations.get(this.config.shorthand) as AstDeclaration).val) {
+                for (const curr of (this.declarations.get(this.config.shorthand) as AstDeclaration).val) { // @ts-ignore
                     // @ts-ignore
                     if (separator != null && separator.typ == curr.typ && separator.val == curr.val) {
                         val.push([]);
@@ -233,13 +232,13 @@ export class PropertyMap {
         return this;
     }
 
-    [Symbol.iterator]() {
+    [Symbol.iterator](): IterableIterator<AstDeclaration> {
         const propertiesMapping = { ...this.config.properties };
         const patterns = this.config.pattern.split(" ");
 
         let hasMapping: boolean = false;
 
-        let iterable: IterableIterator<AstDeclaration | PropertySet | PropertyMap>;
+        let iterable: IterableIterator<AstDeclaration>;
         let requiredCount: number = 0;
         let property: string;
         let isShorthand: boolean = true;
@@ -260,22 +259,15 @@ export class PropertyMap {
                 key = (value as AstDeclaration).nam;
 
                 if (value instanceof PropertyMap) {
-
                     for (const [k, v] of (value as PropertyMap).declarations) {
-
                         if (k == (value as PropertyMap).config.shorthand) {
-
                             for (const [key, val] of Object.entries((value as PropertyMap).config.properties)) {
-                                
                                 mapped[key] = cloneNode(v as AstDeclaration) as AstDeclaration;
 
                                 for (let i = 0; i < (v as AstDeclaration).val.length; i++) {
-                                    
                                     // @ts-ignore
-                                    if (key == (v as AstDeclaration).val[i][PROPERTYNAME] as string) {
-                                        
-                                        if ((mapped[key] as AstDeclaration).val.length > 0  ) {
-                                            
+                                    if (key == ((v as AstDeclaration).val[i][PROPERTYNAME] as string)) {
+                                        if ((mapped[key] as AstDeclaration).val.length > 0) {
                                             (mapped[key] as AstDeclaration).val.push(<Token>{
                                                 typ: EnumToken.WhitespaceTokenType,
                                             });
@@ -286,14 +278,12 @@ export class PropertyMap {
                                 }
 
                                 if ((mapped[key] as AstDeclaration).val.length == 0) {
-
-                                    (mapped[key] as AstDeclaration).val.push(...parseString((value as PropertyMap).config.properties[key].default[0]));
+                                    (mapped[key] as AstDeclaration).val.push(
+                                        ...parseString((value as PropertyMap).config.properties[key].default[0]),
+                                    );
                                 }
                             }
-                        }
-
-                        else {
-
+                        } else {
                             mapped[k] = v as AstDeclaration;
                         }
                     }
@@ -732,7 +722,7 @@ export class PropertyMap {
                     return [declaration][Symbol.iterator]();
                 }
 
-                iterable = declarations.values();
+                iterable = declarations.values() as IterableIterator<AstDeclaration>;
             } else {
                 let values: Token[] = Object.entries(tokens)
                     .reduce(
@@ -960,6 +950,7 @@ export class PropertyMap {
 
         const iterators = <IterableIterator<AstDeclaration | PropertySet>[]>[];
 
+        // @ts-ignore
         return {
             // @ts-ignore
             next(): IteratorResult<AstDeclaration> {

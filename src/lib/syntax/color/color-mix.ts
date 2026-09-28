@@ -496,7 +496,7 @@ export function colorMix(...args: Token[]): ColorToken | null {
                 kin: ColorType[colorSpace.toUpperCase().replaceAll("-", "_") as keyof typeof ColorType],
             } as ColorToken;
 
-            if (colorSpace == "hsl" || colorSpace == "hwb") {
+            if (colorSpace == "hsl") {
                 // @ts-ignore
                 result.chi[0] = { typ: EnumToken.AngleTokenType, val: result.chi[0].val * 360 };
                 // @ts-ignore

@@ -202,6 +202,7 @@ class PropertyList {
     [Symbol.iterator]() {
         let iterator = this.declarations.values();
         const iterators = [];
+        // @ts-ignore
         return {
             next() {
                 let value = iterator.next();

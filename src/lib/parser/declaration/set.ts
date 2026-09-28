@@ -151,7 +151,7 @@ export class PropertySet {
         return this;
     }
 
-    isShortHand() {
+    isShortHand(): boolean {
         if (this.declarations.has(this.config.shorthand)) {
             return this.declarations.size == 1;
         }

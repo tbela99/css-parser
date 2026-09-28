@@ -9496,7 +9496,7 @@ function colorMix(...args) {
                 }),
                 kin: exports.ColorType[colorSpace.toUpperCase().replaceAll("-", "_")],
             };
-            if (colorSpace == "hsl" || colorSpace == "hwb") {
+            if (colorSpace == "hsl") {
                 // @ts-ignore
                 result.chi[0] = { typ: exports.EnumToken.AngleTokenType, val: result.chi[0].val * 360 };
                 // @ts-ignore
@@ -19729,8 +19729,7 @@ class PropertyMap {
                 const tokens = {};
                 const values = [];
                 const val = [[]];
-                for (const curr of // @ts-ignore
-                 this.declarations.get(this.config.shorthand).val) {
+                for (const curr of this.declarations.get(this.config.shorthand).val) { // @ts-ignore
                     // @ts-ignore
                     if (separator != null && separator.typ == curr.typ && separator.val == curr.val) {
                         val.push([]);
@@ -20405,6 +20404,7 @@ class PropertyMap {
             }
         }
         const iterators = [];
+        // @ts-ignore
         return {
             // @ts-ignore
             next() {
@@ -20849,6 +20849,7 @@ class PropertyList {
     [Symbol.iterator]() {
         let iterator = this.declarations.values();
         const iterators = [];
+        // @ts-ignore
         return {
             next() {
                 let value = iterator.next();

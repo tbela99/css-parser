@@ -37,7 +37,7 @@ export class PropertyList {
         this.declarations = new Map<string, AstNode | PropertySet | PropertyMap>();
     }
 
-    add(declarations: AstNode[]) {
+    add(declarations: AstNode[]): this {
         let name: string | null;
         let syntaxRules: ValidationToken[] | null = null;
         let result: ValidationMatch;
@@ -255,10 +255,11 @@ export class PropertyList {
         }
     }
 
-    [Symbol.iterator]() {
+    [Symbol.iterator](): IterableIterator<AstNode> {
         let iterator: IterableIterator<AstNode | PropertySet | PropertyMap> = this.declarations.values();
         const iterators: Array<IterableIterator<AstNode | PropertySet | PropertyMap>> = [];
 
+        // @ts-ignore
         return {
             next() {
                 let value: IteratorResult<AstNode | PropertySet | PropertyMap> = iterator.next();

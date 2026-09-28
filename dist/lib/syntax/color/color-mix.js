@@ -397,7 +397,7 @@ function colorMix(...args) {
                 }),
                 kin: ColorType[colorSpace.toUpperCase().replaceAll("-", "_")],
             };
-            if (colorSpace == "hsl" || colorSpace == "hwb") {
+            if (colorSpace == "hsl") {
                 // @ts-ignore
                 result.chi[0] = { typ: EnumToken.AngleTokenType, val: result.chi[0].val * 360 };
                 // @ts-ignore

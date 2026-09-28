@@ -42,8 +42,7 @@ class PropertyMap {
                 const tokens = {};
                 const values = [];
                 const val = [[]];
-                for (const curr of // @ts-ignore
-                 this.declarations.get(this.config.shorthand).val) {
+                for (const curr of this.declarations.get(this.config.shorthand).val) { // @ts-ignore
                     // @ts-ignore
                     if (separator != null && separator.typ == curr.typ && separator.val == curr.val) {
                         val.push([]);
@@ -718,6 +717,7 @@ class PropertyMap {
             }
         }
         const iterators = [];
+        // @ts-ignore
         return {
             // @ts-ignore
             next() {
