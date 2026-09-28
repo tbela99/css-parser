@@ -10,8 +10,8 @@ import { cloneNode } from '../../ast/clone.js';
 
 const propertiesConfig = getConfig();
 class PropertyMap {
-    config;
     declarations;
+    config;
     requiredCount;
     pattern;
     constructor(config) {
@@ -41,23 +41,17 @@ class PropertyMap {
             if (this.declarations.has(this.config.shorthand)) {
                 const tokens = {};
                 const values = [];
-                // @ts-ignore
-                this.declarations
-                    .get(this.config.shorthand)
-                    // @ts-ignore
-                    .val.slice()
-                    .reduce((acc, curr) => {
+                const val = [[]];
+                for (const curr of this.declarations.get(this.config.shorthand).val) { // @ts-ignore
                     // @ts-ignore
                     if (separator != null && separator.typ == curr.typ && separator.val == curr.val) {
-                        acc.push([]);
-                        return acc;
+                        val.push([]);
+                        continue;
                     }
                     // @ts-ignore
-                    acc.at(-1).push(curr);
-                    return acc;
-                }, [[]])
-                    // @ts-ignore
-                    .reduce((acc, list, current) => {
+                    val.at(-1).push(curr);
+                }
+                for (let current = 0; current < val.length; current++) {
                     values.push(...this.pattern.reduce((acc, property) => {
                         // let current: number = 0;
                         const props = this.config.properties[property];
@@ -72,9 +66,7 @@ class PropertyMap {
                             // @ts-ignore
                             acc[i][PROPERTYNAME] == property ||
                                 matchType(acc[i], props)) {
-                                if ("prefix" in props &&
-                                    props.previous != null &&
-                                    !(props.previous in tokens)) {
+                                if ("prefix" in props && props.previous != null && !(props.previous in tokens)) {
                                     return acc;
                                 }
                                 if (!(property in tokens)) {
@@ -139,9 +131,8 @@ class PropertyMap {
                             }
                         }
                         return acc;
-                    }, list));
-                    return values;
-                }, []);
+                    }, val[current]));
+                }
                 if (values.length == 0) {
                     this.declarations = Object.entries(tokens).reduce((acc, curr) => {
                         acc.set(curr[0], {
@@ -206,13 +197,35 @@ class PropertyMap {
                 key = value.nam;
                 if (value instanceof PropertyMap) {
                     for (const [k, v] of value.declarations) {
-                        mapped[k] = v;
+                        if (k == value.config.shorthand) {
+                            for (const [key, val] of Object.entries(value.config.properties)) {
+                                mapped[key] = cloneNode(v);
+                                for (let i = 0; i < v.val.length; i++) {
+                                    // @ts-ignore
+                                    if (key == v.val[i][PROPERTYNAME]) {
+                                        if (mapped[key].val.length > 0) {
+                                            mapped[key].val.push({
+                                                typ: EnumToken.WhitespaceTokenType,
+                                            });
+                                        }
+                                        mapped[key].val.push(v.val[i]);
+                                    }
+                                }
+                                if (mapped[key].val.length == 0) {
+                                    mapped[key].val.push(...parseString(value.config.properties[key].default[0]));
+                                }
+                            }
+                        }
+                        else {
+                            mapped[k] = v;
+                        }
                     }
                 }
                 else {
                     mapped[key] = value;
                 }
             }
+            // console.error(mapped);
             if (patterns.length === Object.keys(mapped).length) {
                 declarations = new Map();
                 for (const key of patterns) {
@@ -704,6 +717,7 @@ class PropertyMap {
             }
         }
         const iterators = [];
+        // @ts-ignore
         return {
             // @ts-ignore
             next() {

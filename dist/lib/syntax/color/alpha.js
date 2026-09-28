@@ -24,7 +24,6 @@ function alpha(color, alpha) {
     }
     let components = getColorComponents(color);
     if (alpha.typ === EnumToken.MathFunctionTokenType) {
-        const originalAlpha = cloneNode(alpha, true);
         for (const { value } of walkValues(alpha.chi, alpha)) {
             if (value.typ === EnumToken.IdenTokenType) {
                 if (equalsIgnoreCase(value.val, "alpha")) {
@@ -36,22 +35,22 @@ function alpha(color, alpha) {
                         });
                     // continue;
                 }
-                else if (equalsIgnoreCase(value.val, "none")) {
-                    Object.assign(value, {
-                        typ: EnumToken.NumberTokenType,
-                        val: 0,
-                    });
-                }
+                // else if (equalsIgnoreCase((value as IdentToken).val, "none")) {
+                //     Object.assign(value, {
+                //         typ: EnumToken.NumberTokenType,
+                //         val: 0,
+                //     });
+                // }
             }
         }
         const result = evaluate([alpha]);
         if (result.length == 1) {
             alpha = result[0];
         }
-        else {
-            // @ts-expect-error
-            alpha = originalAlpha;
-        }
+        // else {
+        //     // @ts-expect-error
+        //     alpha = originalAlpha;
+        // }
     }
     // console.error({ alpha });
     if (alpha.typ !== EnumToken.IdenTokenType &&
@@ -77,17 +76,17 @@ function alpha(color, alpha) {
         return null;
     }
     if (alpha?.typ === EnumToken.IdenTokenType) {
-        if (equalsIgnoreCase(alpha.val, "alpha")) {
-            alpha = components[3] ?? {
-                typ: EnumToken.NumberTokenType,
-                val: 1,
-            };
-        }
-        else if (equalsIgnoreCase(alpha.val, "node")) {
-            alpha = {
+        // if (equalsIgnoreCase((alpha as IdentToken).val, "alpha")) {
+        //     alpha = components[3] ?? {
+        //         typ: EnumToken.NumberTokenType,
+        //         val: 1,
+        //     };
+        // } else
+        if (equalsIgnoreCase(alpha.val, "none")) {
+            Object.assign(alpha, {
                 typ: EnumToken.NumberTokenType,
                 val: 0,
-            };
+            });
         }
     }
     return makeColor(color.kin, components, alpha);

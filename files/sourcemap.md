@@ -4,7 +4,6 @@ group: Documents
 category: Guides
 ---
 
-
 # Sourcemaps
 
 **CSS-Parser** supports generating sourcemaps. To enable it, you must pass `sourcemap: true` or `sourcemap: 'inline`.

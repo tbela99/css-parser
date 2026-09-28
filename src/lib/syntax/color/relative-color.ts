@@ -91,21 +91,21 @@ export function parseRelativeColorComponents(
             continue;
         }
         if (component.typ == EnumToken.IdenTokenType) {
-            val = (component as IdentToken).val.toLowerCase();
+            val = (component as IdentToken).val;
 
             if (
                 // @ts-expect-error
                 typeof Math[val.toUpperCase()] !== "number" &&
-                val != "in" &&
-                val != "hue" &&
-                val != "from" &&
-                val != "alpha" &&
-                val != "none" &&
-                val != "shorter" &&
-                val != "longer" &&
-                val != "increasing" &&
-                val != "decreasing" &&
-                !colorsFunc.includes(val) &&
+                !equalsIgnoreCase(val, "in") &&
+                !equalsIgnoreCase(val, "hue") &&
+                !equalsIgnoreCase(val, "from") &&
+                !equalsIgnoreCase(val, "alpha") &&
+                !equalsIgnoreCase(val, "none") &&
+                !equalsIgnoreCase(val, "shorter") &&
+                !equalsIgnoreCase(val, "longer") &&
+                !equalsIgnoreCase(val, "increasing") &&
+                !equalsIgnoreCase(val, "decreasing") &&
+                !colorsFunc.some((t) => equalsIgnoreCase(t, val)) &&
                 !colorFuncColorSpace.includes(val) &&
                 !validKeys.includes(val)
             ) {

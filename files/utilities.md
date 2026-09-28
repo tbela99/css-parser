@@ -71,15 +71,16 @@ The function [replaceNodeOrValue()](../functions/node.replaceNodeOrValue.html) r
 replaceNodeOrValue(parent: Token, target: Token, replacement: Tokan | Token[]);
 ```
 
-# Parsing utility functions
-## Parsing CSS string
+# CSS Parsing utility functions
 
-Parse a CSS string using [parseString()]().
+`css-parser` offers several helper functions to help you parse CSS.
+
+## Parsing CSS values
+
+[parseString()](../functions/node.parseString.html) is used to parse CSS values.
 
 ```ts
 import {parseString} from '@tbela99/css-parser';
-
-const css = `linear-gradient(to bottom, white, black)`;
 
 const values = parseString(`linear-gradient(to bottom, white, black) color-mix(red, green)`);
 
@@ -107,6 +108,39 @@ console.debug(values[2]); // color function
 //       typ: 7,
 //       val: "to",
 // ...
+```
+
+## Parse CSS declarations
+
+[parseDeclarations()](../functions/node.parseDeclarations.html) is used to parse a CSS string representing declarations.
+
+```ts
+import {parseDeclarations} from '@tbela99/css-parser';
+
+const values = parseDeclarations(`width: 2px; background: linear-gradient(to bottom, white, black) color-mix(red, green)`);
+
+console.debug(values[0]); // first declaration
+console.debug(values[1]); // second declaration
+
+```
+
+## Parse CSS rules and at-rules
+
+CSS rules and at-rules are parsed using [parse()](../functions/node.parse.html) and [parseSync()](../functions/node.parseSync.html) functions.
+
+```ts
+import {parseSync} from '@tbela99/css-parser';
+
+const values = parseSync(`
+.s {width: 2px; background: linear-gradient(to bottom, white, black) color-mix(red, green)
+}
+.g {width: 2px; background: linear-gradient(to bottom, white, black) color-mix(red, green)
+}
+`).ast.chi;
+
+console.debug(values[0]); // first rule
+console.debug(values[1]); // second rule
+
 ```
 
 ------

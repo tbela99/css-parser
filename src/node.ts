@@ -56,7 +56,6 @@ export { parseDeclarations } from "./lib/parser/parse.ts";
 export { find, findLast, findByValue, findAll } from "./lib/ast/find.ts";
 export { cloneNode } from "./lib/ast/clone.ts";
 export { replaceNodeOrValue } from "./lib/parser/utils/token.ts";
-export { PropertyList } from "./lib/parser/declaration/list.ts";
 export {
     EnumToken,
     ColorType,

@@ -475,6 +475,7 @@ function doParseSync(tokenizer, options = {}) {
     if (options.expandNestingRules) {
         options.nestingRules = false;
     }
+    options.minifyAST ??= options.minify;
     const startTime = performance.now();
     const errors = [];
     const stack = [];
@@ -854,7 +855,7 @@ function doParseSync(tokenizer, options = {}) {
             }
         }
     }
-    if (options.minify) {
+    if (options.minifyAST) {
         if (ast.chi.length > 0) {
             let passes = options.pass ?? 1;
             while (passes--) {
@@ -1394,6 +1395,7 @@ async function doParse(iter, options = {}) {
         lenient: true,
         ...options,
     };
+    options.minifyAST ??= options.minify;
     if (typeof options.validation !== "boolean") {
         options.validation = !!options.validation;
     }
@@ -1848,7 +1850,7 @@ async function doParse(iter, options = {}) {
             }
         }
     }
-    if (options.minify) {
+    if (options.minifyAST) {
         if (ast.chi.length > 0) {
             let passes = options.pass ?? 1;
             while (passes--) {

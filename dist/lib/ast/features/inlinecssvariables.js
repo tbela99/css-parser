@@ -57,10 +57,10 @@ function replace(node, variableScope) {
 class InlineCssVariablesFeature {
     accept = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
     get ordering() {
-        return 0;
+        return 2;
     }
     get processMode() {
-        return FeatureWalkMode.Pre;
+        return FeatureWalkMode.Post;
     }
     static register(options) {
         if (options.inlineCssVariables) {

@@ -142,6 +142,10 @@ export function colorMix(...args: Token[]): ColorToken | null {
             return null;
         }
 
+        if (colorSpace == "hwb") {
+            colorSpace = "srgb";
+        }
+
         switch (colorSpace) {
             case "srgb":
                 break;
@@ -179,19 +183,19 @@ export function colorMix(...args: Token[]): ColorToken | null {
                 values = XYZ_D65_to_D50(values[0], values[1], values[2], values[3]);
                 break;
 
-            case "rgb":
-                for (let j = 0; j < values.length; j++) {
-                    values[j] = j == 3 ? values[j] : srgb2rgb(values[j]);
-                }
-                break;
+            // case "rgb":
+            //     for (let j = 0; j < values.length; j++) {
+            //         values[j] = j == 3 ? values[j] : srgb2rgb(values[j]);
+            //     }
+            //     break;
 
             case "hsl":
                 values = srgb2hslvalues(values[0], values[1], values[2], values[3]);
                 break;
 
-            case "hwb":
-                values = srgb2hwb(values[0], values[1], values[2], values[3]);
-                break;
+            // case "hwb":
+            //     values = srgb2hwb(values[0], values[1], values[2], values[3]);
+            //     break;
 
             case "lab":
                 values = srgb2labvalues(values[0], values[1], values[2], values[3]);
@@ -455,14 +459,14 @@ export function colorMix(...args: Token[]): ColorToken | null {
                 cal: "col",
             } as ColorToken;
 
-        case "rgb":
+        // case "rgb":
         case "hsl":
-        case "hwb":
+        // case "hwb":
         case "lab":
         case "lch":
         case "oklab":
         case "oklch":
-            if (colorSpace == "hsl" || colorSpace == "hwb") {
+            if (colorSpace == "hsl") {
                 // @ts-ignore
                 if (values[2] < 0) {
                     // @ts-ignore
@@ -492,7 +496,7 @@ export function colorMix(...args: Token[]): ColorToken | null {
                 kin: ColorType[colorSpace.toUpperCase().replaceAll("-", "_") as keyof typeof ColorType],
             } as ColorToken;
 
-            if (colorSpace == "hsl" || colorSpace == "hwb") {
+            if (colorSpace == "hsl") {
                 // @ts-ignore
                 result.chi[0] = { typ: EnumToken.AngleTokenType, val: result.chi[0].val * 360 };
                 // @ts-ignore

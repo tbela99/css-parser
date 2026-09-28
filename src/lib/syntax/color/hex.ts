@@ -93,7 +93,16 @@ export function color2HexToken(token: ColorToken): ColorToken | null {
         return null;
     }
 
-    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr + Number.EPSILON).toString(16).padStart(2, "0"), "#"));
+    return hexToken(
+        value.reduce(
+            (acc, curr) =>
+                acc +
+                srgb2rgb(curr + Number.EPSILON)
+                    .toString(16)
+                    .padStart(2, "0"),
+            "#",
+        ),
+    );
 }
 
 export function oklab2HexToken(token: ColorToken): ColorToken | null {
@@ -162,7 +171,7 @@ export function rgb2hexvalues(token: ColorToken): string | null {
         // @ts-ignore
         t = components[i] as IdenToken | NumberToken | PercentageToken;
 
-        value += 
+        value +=
         ( // @ts-expect-error
             t.typ == EnumToken.Iden && (t as IdenToken).val == "none"
                 ? "0"

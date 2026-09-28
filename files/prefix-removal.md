@@ -167,24 +167,19 @@ Output:
  font-size: 20px
 }
 .mastheader {
- grid-row: 1;
- grid-column: 1/2
+ grid-area: 1/1/auto/2
 }
 .page-title {
- grid-row: 2;
- grid-column: 1
+ grid-area: 2/1/auto/auto
 }
 .main-content {
- grid-row: 3;
- grid-column: 1
+ grid-area: 3/1/auto/auto
 }
 .sidebar {
- grid-row: 2/2;
- grid-column: 2
+ grid-area: 2/2/2/auto
 }
 .footer {
- grid-row: 4;
- grid-column: 1/2
+ grid-area: 4/1/auto/2
 }
 ```
 

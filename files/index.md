@@ -5,6 +5,7 @@ category: Guides
 children:
     - ./getting-started.md
     - ./usage.md
+    - ./architecture.md
     - ./validation.md
     - ./css-module.md
     - ./minification.md
@@ -21,6 +22,7 @@ children:
 
 - [Getting started](./getting-started.md)
 - [Usage](./usage.md)
+- [Architecture](./architecture.md)
 - [Validation](./validation.md)
 - [CSS Modules](./css-module.md)
 - [Minification](./minification.md)

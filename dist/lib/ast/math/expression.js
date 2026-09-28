@@ -1,5 +1,5 @@
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
-import { mathFuncs, LOCEND, LOCSTA, LOCSRCID } from '../../syntax/constants.js';
+import { mathFuncs, PARENT, LOCEND, LOCSTA, LOCSRCID } from '../../syntax/constants.js';
 import { EnumToken } from '../types.js';
 import { rem, compute } from './math.js';
 
@@ -64,6 +64,7 @@ function evaluate(tokens) {
                         [LOCSRCID]: nodes[0][LOCSRCID],
                         [LOCSTA]: nodes[0][LOCSTA],
                         [LOCEND]: nodes[0][LOCEND],
+                        [PARENT]: nodes[0][PARENT],
                     },
                 ];
             }
@@ -86,6 +87,7 @@ function evaluate(tokens) {
                     [LOCSRCID]: nodes[i][LOCSRCID],
                     [LOCSTA]: nodes[i][LOCSTA],
                     [LOCEND]: nodes[i + 1][LOCEND],
+                    [PARENT]: nodes[i + 1][PARENT],
                 };
             }
             else {
@@ -95,6 +97,7 @@ function evaluate(tokens) {
                     [LOCSRCID]: nodes[i + 1][LOCSRCID],
                     [LOCSTA]: nodes[i + 1][LOCSTA],
                     [LOCEND]: nodes[i + 1][LOCEND],
+                    [PARENT]: nodes[i + 1][PARENT],
                 }, EnumToken.Mul);
             }
             i++;
@@ -115,12 +118,14 @@ function evaluate(tokens) {
                     [LOCSRCID]: token[LOCSRCID],
                     [LOCSTA]: token[LOCSTA],
                     [LOCEND]: token[LOCEND],
+                    [PARENT]: token[PARENT],
                 }, {
                     ...token,
                     val: -token.val,
                     [LOCSRCID]: token[LOCSRCID],
                     [LOCSTA]: token[LOCSTA],
                     [LOCEND]: token[LOCEND],
+                    [PARENT]: token[PARENT],
                 });
                 return acc;
             }
@@ -131,6 +136,7 @@ function evaluate(tokens) {
                 [LOCSRCID]: token[LOCSRCID],
                 [LOCSTA]: token[LOCSTA],
                 [LOCEND]: token[LOCEND],
+                [PARENT]: token[PARENT],
             });
         }
         acc.push(token);
@@ -152,6 +158,7 @@ function doEvaluate(l, r, op) {
         [LOCSRCID]: l[LOCSRCID],
         [LOCSTA]: l[LOCSTA],
         [LOCEND]: r?.[LOCEND] ?? l[LOCEND],
+        [PARENT]: l[PARENT],
     };
     if (!isScalarToken(l) || !isScalarToken(r) || (l.typ == r.typ && "unit" in l && "unit" in r && l.unit != r.unit)) {
         return defaultReturn;
@@ -224,6 +231,7 @@ function doEvaluate(l, r, op) {
                         [LOCSRCID]: l[LOCSRCID],
                         [LOCSTA]: l[LOCSTA],
                         [LOCEND]: l[LOCEND],
+                        [PARENT]: l[PARENT],
                     },
                     r: {
                         typ: EnumToken.NumberTokenType,
@@ -231,6 +239,7 @@ function doEvaluate(l, r, op) {
                         [LOCSRCID]: r[LOCSRCID],
                         [LOCSTA]: r[LOCSTA],
                         [LOCEND]: r[LOCEND],
+                        [PARENT]: r[PARENT],
                     },
                 };
             }
@@ -243,6 +252,7 @@ function doEvaluate(l, r, op) {
                         [LOCSRCID]: l[LOCSRCID],
                         [LOCSTA]: l[LOCSTA],
                         [LOCEND]: l[LOCEND],
+                        [PARENT]: l[PARENT],
                     },
                     r: {
                         typ: EnumToken.NumberTokenType,
@@ -250,6 +260,7 @@ function doEvaluate(l, r, op) {
                         [LOCSRCID]: r[LOCSRCID],
                         [LOCSTA]: r[LOCSTA],
                         [LOCEND]: r[LOCEND],
+                        [PARENT]: r[PARENT],
                     },
                 };
             }
@@ -276,6 +287,7 @@ function doEvaluate(l, r, op) {
         [LOCSRCID]: l[LOCSRCID],
         [LOCSTA]: l[LOCSTA],
         [LOCEND]: r?.[LOCEND] ?? l[LOCEND],
+        [PARENT]: l[PARENT],
     };
     if (token.typ == EnumToken.IdenTokenType) {
         // @ts-ignore
@@ -456,6 +468,7 @@ function evaluateFunc(token) {
                         [LOCSRCID]: value[0][LOCSRCID],
                         [LOCSTA]: value[0][LOCSTA],
                         [LOCEND]: value[0][LOCEND],
+                        [PARENT]: value[0][PARENT],
                     }
                     : {
                         typ: token.val == "sign" ? EnumToken.NumberTokenType : value[0].typ,
@@ -463,6 +476,7 @@ function evaluateFunc(token) {
                         [LOCSRCID]: value[0][LOCSRCID],
                         [LOCSTA]: value[0][LOCSTA],
                         [LOCEND]: value[0][LOCEND],
+                        [PARENT]: value[0][PARENT],
                     },
             ];
         }
@@ -485,6 +499,7 @@ function evaluateFunc(token) {
                     [LOCSRCID]: token[LOCSRCID],
                     [LOCSTA]: token[LOCSTA],
                     [LOCEND]: token[LOCEND],
+                    [PARENT]: token[PARENT],
                 },
             ];
         }
@@ -558,6 +573,7 @@ function evaluateFunc(token) {
                         [LOCSRCID]: token[LOCSRCID],
                         [LOCSTA]: token[LOCSTA],
                         [LOCEND]: token[LOCEND],
+                        [PARENT]: token[PARENT],
                     },
                 ];
             }
@@ -572,6 +588,7 @@ function evaluateFunc(token) {
                         [LOCSRCID]: token[LOCSRCID],
                         [LOCSTA]: token[LOCSTA],
                         [LOCEND]: token[LOCEND],
+                        [PARENT]: token[PARENT],
                     },
                 ];
             }
@@ -582,6 +599,7 @@ function evaluateFunc(token) {
                     [LOCSRCID]: token[LOCSRCID],
                     [LOCSTA]: token[LOCSTA],
                     [LOCEND]: token[LOCEND],
+                    [PARENT]: token[PARENT],
                 },
             ];
         }
@@ -621,6 +639,7 @@ function evaluateFunc(token) {
                             [LOCSRCID]: token[LOCSRCID],
                             [LOCSTA]: token[LOCSTA],
                             [LOCEND]: token[LOCEND],
+                            [PARENT]: token[PARENT],
                         },
                     ];
                 }
@@ -663,6 +682,7 @@ function evaluateFunc(token) {
                             [LOCSRCID]: token[LOCSRCID],
                             [LOCSTA]: token[LOCSTA],
                             [LOCEND]: token[LOCEND],
+                            [PARENT]: token[PARENT],
                         },
                     ];
                 }
@@ -690,6 +710,7 @@ function inlineExpression(token) {
                 [LOCSRCID]: token[LOCSRCID],
                 [LOCSTA]: token[LOCSTA],
                 [LOCEND]: token[LOCEND],
+                [PARENT]: token[PARENT],
             });
             for (const child of inlineExpression(token.r)) {
                 result.push(child);
@@ -769,6 +790,7 @@ function factorToken(token) {
                 [LOCSRCID]: token[LOCSRCID],
                 [LOCSTA]: token[LOCSTA],
                 [LOCEND]: token[LOCEND],
+                [PARENT]: token[PARENT],
             };
             // @ts-ignore
             delete token.val;
@@ -810,6 +832,7 @@ function factor(tokens, ops) {
                 [LOCSRCID]: tokens[i - 1][LOCSRCID],
                 [LOCSTA]: tokens[i - 1][LOCSTA],
                 [LOCEND]: tokens[i + 1][LOCEND],
+                [PARENT]: tokens[i + 1][PARENT],
             });
             i--;
         }

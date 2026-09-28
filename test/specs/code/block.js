@@ -1376,4 +1376,99 @@ color: blue;
  }
 }`);
     });
+
+    it("match or starts with #59", async () => {
+        const options = {
+            input: `
+    
+ .c [lang|="en"], col || td{
+color: rgb(from rgb(20% 40%  60% / 80%) r g b / calc(alpha / 2));
+
+
+    `,
+            beautify: true,
+        };
+
+        const result = transformSync(options);
+
+        return expect(result.code).equals(`.c [lang|=en],col||td {
+ color: #3696
+}`);
+    });
+
+    it("match or starts with #60", async () => {
+        const options = {
+            input: `
+    
+   {
+    
+   @media (prefers-color-scheme: dark) {
+    .s {
+
+        color: #343
+    }
+   }
+
+   width: 12px;
+    color:
+ alpha(from var(--mycolor)  / none);
+}
+:root {
+--mycolor:  device-cmyk(none 0.81 0.81 0.3);
+}
+    .s {
+    
+    color:
+ alpha(from var(--mycolor)  / none);
+
+
+    `,
+            beautify: true,
+            inlineCssVariables: true,
+        };
+
+        const result = transformSync(options);
+
+        return expect(result.code).equals(`.s {
+ color: alpha(from #b32222/none)
+}`);
+    });
+
+    it("match or starts with #61", async () => {
+        const options = {
+            input: `
+    
+   {
+    
+   @media (prefers-color-scheme: dark) {
+    .s {
+
+        color: #343
+    }
+   }
+
+   width: 12px;
+    color:
+ alpha(from var(--mycolor)  / none);
+}
+:root {
+--mycolor:  device-cmyk(none 0.81 0.81 0.3);
+}
+    .s {
+    
+    color:
+ alpha(from var(--mycolor)  / none);
+
+
+    `,
+            beautify: true,
+            inlineCssVariables: true,
+        };
+
+        return transform(options).then((result) =>
+            expect(result.code).equals(`.s {
+ color: alpha(from #b32222/none)
+}`),
+        );
+    });
 }

@@ -16,12 +16,12 @@ import { getSyntaxConfig } from '../validation/config.js';
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
 const flexUnits = ["fr"];
-const frequencyUnits = ["hz", "khz"];
+const frequencyUnits = ["Hz", "kHz"];
 const timeUnits = ["ms", "s"];
 const angleUnits = ["rad", "turn", "deg", "grad"];
 const resolutionUnits = ["dpi", "dpcm", "dppx", "x"];
 const dimensionUnits = [
-    "q",
+    "Q",
     "cap",
     "ch",
     "cm",
