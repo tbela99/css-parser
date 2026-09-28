@@ -92,10 +92,10 @@ html[data-theme="dark"] {
                         padding-top: 5px;
                         text-align: left;
                     }
+                }
 
-                    thead th {
-                        text-align: left;
-                    }
+                thead th {
+                    text-align: left;
                 }
 
                 tbody {

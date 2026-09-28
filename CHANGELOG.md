@@ -28,6 +28,7 @@ is now computed as
 
 ## Fixes
 
+- [x] fix a98-rgb, hwb color color space handling in color-mix()
 - [x] fix percentage handling in relative rgb color
 
 ```css

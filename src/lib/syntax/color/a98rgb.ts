@@ -47,7 +47,7 @@ function la98rgb2a98rgb(r: number, g: number, b: number, a: number | null = null
     // to gamma corrected form
 
     // negative values are also now accepted
-    return [r, b, g]
+    return [r, g, b]
         .map(function (val) {
             let sign = val < 0 ? -1 : 1;
             let abs = Math.abs(val);

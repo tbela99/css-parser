@@ -9079,7 +9079,7 @@
         // convert an array of linear-light a98-rgb  in the range 0.0-1.0
         // to gamma corrected form
         // negative values are also now accepted
-        return [r, b, g]
+        return [r, g, b]
             .map(function (val) {
             let sign = val < 0 ? -1 : 1;
             let abs = Math.abs(val);
@@ -9215,6 +9215,9 @@
             if (values == null) {
                 return null;
             }
+            if (colorSpace == "hwb") {
+                colorSpace = "srgb";
+            }
             switch (colorSpace) {
                 case "srgb":
                     break;
@@ -9244,17 +9247,17 @@
                     values = srgb2xyz_d65(values[0], values[1], values[2], values[3]);
                     values = XYZ_D65_to_D50(values[0], values[1], values[2], values[3]);
                     break;
-                case "rgb":
-                    for (let j = 0; j < values.length; j++) {
-                        values[j] = j == 3 ? values[j] : srgb2rgb(values[j]);
-                    }
-                    break;
+                // case "rgb":
+                //     for (let j = 0; j < values.length; j++) {
+                //         values[j] = j == 3 ? values[j] : srgb2rgb(values[j]);
+                //     }
+                //     break;
                 case "hsl":
                     values = srgb2hslvalues(values[0], values[1], values[2], values[3]);
                     break;
-                case "hwb":
-                    values = srgb2hwb(values[0], values[1], values[2], values[3]);
-                    break;
+                // case "hwb":
+                //     values = srgb2hwb(values[0], values[1], values[2], values[3]);
+                //     break;
                 case "lab":
                     values = srgb2labvalues(values[0], values[1], values[2], values[3]);
                     break;
@@ -9453,14 +9456,14 @@
                     kin: exports.ColorType.COLOR,
                     cal: "col",
                 };
-            case "rgb":
+            // case "rgb":
             case "hsl":
-            case "hwb":
+            // case "hwb":
             case "lab":
             case "lch":
             case "oklab":
             case "oklch":
-                if (colorSpace == "hsl" || colorSpace == "hwb") {
+                if (colorSpace == "hsl") {
                     // @ts-ignore
                     if (values[2] < 0) {
                         // @ts-ignore

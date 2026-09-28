@@ -2,9 +2,7 @@ import { EnumToken, ColorType } from '../../ast/types.js';
 import { minmax, getNumber } from './color.js';
 import { srgbvalues, srgb2lsrgbvalues } from './srgb.js';
 import { srgb2lch, xyz2lchvalues } from './lch.js';
-import { srgb2rgb } from './rgb.js';
 import { srgb2hslvalues } from './hsl.js';
-import { srgb2hwb } from './hwb.js';
 import { srgb2labvalues } from './lab.js';
 import { srgb2lp3values, srgb2p3values } from './p3.js';
 import { getColorComponents } from './utils/components.js';
@@ -121,6 +119,9 @@ function colorMix(...args) {
         if (values == null) {
             return null;
         }
+        if (colorSpace == "hwb") {
+            colorSpace = "srgb";
+        }
         switch (colorSpace) {
             case "srgb":
                 break;
@@ -150,17 +151,17 @@ function colorMix(...args) {
                 values = srgb2xyz_d65(values[0], values[1], values[2], values[3]);
                 values = XYZ_D65_to_D50(values[0], values[1], values[2], values[3]);
                 break;
-            case "rgb":
-                for (let j = 0; j < values.length; j++) {
-                    values[j] = j == 3 ? values[j] : srgb2rgb(values[j]);
-                }
-                break;
+            // case "rgb":
+            //     for (let j = 0; j < values.length; j++) {
+            //         values[j] = j == 3 ? values[j] : srgb2rgb(values[j]);
+            //     }
+            //     break;
             case "hsl":
                 values = srgb2hslvalues(values[0], values[1], values[2], values[3]);
                 break;
-            case "hwb":
-                values = srgb2hwb(values[0], values[1], values[2], values[3]);
-                break;
+            // case "hwb":
+            //     values = srgb2hwb(values[0], values[1], values[2], values[3]);
+            //     break;
             case "lab":
                 values = srgb2labvalues(values[0], values[1], values[2], values[3]);
                 break;
@@ -359,14 +360,14 @@ function colorMix(...args) {
                 kin: ColorType.COLOR,
                 cal: "col",
             };
-        case "rgb":
+        // case "rgb":
         case "hsl":
-        case "hwb":
+        // case "hwb":
         case "lab":
         case "lch":
         case "oklab":
         case "oklch":
-            if (colorSpace == "hsl" || colorSpace == "hwb") {
+            if (colorSpace == "hsl") {
                 // @ts-ignore
                 if (values[2] < 0) {
                     // @ts-ignore

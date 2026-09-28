@@ -1868,4 +1868,28 @@ color: rgb(from rgb(20% 40%  60% / 80%) r g b / calc(alpha / 2));
  color: #3696
 }`);
     });
+
+    it("color p3 #144", function () {
+        return expect(
+            transformSync(
+                `
+      
+:root {
+--mycolor:  color(display-p3 1 0.5 calc(.5 * .87));;
+}
+    .s {
+    
+    color:
+ alpha(from var(--mycolor)  / calc(alpha * 0.5));
+
+`,
+                {
+                    beautify: true,
+                    inlineCssVariables: true,
+                },
+            ).code,
+        ).equals(`.s {
+ color: #ff7612
+}`);
+    });
 }
