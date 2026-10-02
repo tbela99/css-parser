@@ -3,6 +3,7 @@ import { mathFuncs, PARENT, LOCEND, LOCSTA, LOCSRCID } from '../../syntax/consta
 import { EnumToken } from '../types.js';
 import { rem, compute } from './math.js';
 
+const numbers = new Set(["sin", "cos", "asin", "acos", "sign", "tan"]);
 /**
  * evaluate an array of tokens
  * @param tokens
@@ -192,9 +193,22 @@ function doEvaluate(l, r, op) {
         r.typ == EnumToken.NegativeInfinityTokenType) {
         return computeInfinity(l, r, op, defaultReturn);
     }
+    if (l.typ == EnumToken.FunctionTokenType || l.typ == EnumToken.MathFunctionTokenType) {
+        const val = evaluateFunc(l);
+        if (val == null ||
+            (val.length == 1 &&
+                (val[0].typ == EnumToken.MathFunctionTokenType || val[0].typ == EnumToken.FunctionTokenType))) {
+            return defaultReturn;
+        }
+        if (val.length == 1) {
+            l = val[0];
+        }
+    }
     if (r.typ == EnumToken.FunctionTokenType || r.typ == EnumToken.MathFunctionTokenType) {
         const val = evaluateFunc(r);
-        if (val == null) {
+        if (val == null ||
+            (val.length == 1 &&
+                (val[0].typ == EnumToken.MathFunctionTokenType || val[0].typ == EnumToken.FunctionTokenType))) {
             return defaultReturn;
         }
         if (val.length == 1) {
@@ -412,45 +426,43 @@ function getValue(t) {
 function evaluateFunc(token) {
     const values = token.chi.slice();
     switch (token.val) {
-        case "abs":
         case "sin":
         case "cos":
         case "tan":
-        case "asin":
-        case "acos":
-        case "atan":
-        case "sign":
-        case "sqrt":
-        case "exp": {
-            if (token.val == "tan" || token.val == "atan") {
-                for (let i = 0; i < values.length; i++) {
-                    if (values[i].typ == EnumToken.NumberTokenType) {
-                        values[i] = Object.assign(values[i], { typ: EnumToken.AngleTokenType, unit: "rad" });
-                    }
-                    else if (values[i].typ == EnumToken.AngleTokenType && values[i].unit != "rad") {
-                        switch (values[i].unit) {
-                            case "deg":
-                                Object.assign(values[i], {
-                                    unit: "rad",
-                                    val: values[i].val * (Math.PI / 180),
-                                });
-                                break;
-                            case "grad":
-                                Object.assign(values[i], {
-                                    unit: "rad",
-                                    val: values[i].val * (Math.PI / 200),
-                                });
-                                break;
-                            case "turn":
-                                Object.assign(values[i], {
-                                    unit: "rad",
-                                    val: values[i].val * (2 * Math.PI),
-                                });
-                                break;
-                        }
+            for (let i = 0; i < values.length; i++) {
+                if (values[i].typ == EnumToken.NumberTokenType) {
+                    values[i] = Object.assign(values[i], { typ: EnumToken.AngleTokenType, unit: "rad" });
+                }
+                else if (values[i].typ == EnumToken.AngleTokenType && values[i].unit != "rad") {
+                    switch (values[i].unit) {
+                        case "deg":
+                            Object.assign(values[i], {
+                                unit: "rad",
+                                val: values[i].val * (Math.PI / 180),
+                            });
+                            break;
+                        case "grad":
+                            Object.assign(values[i], {
+                                unit: "rad",
+                                val: values[i].val * (Math.PI / 200),
+                            });
+                            break;
+                        case "turn":
+                            Object.assign(values[i], {
+                                unit: "rad",
+                                val: values[i].val * (2 * Math.PI),
+                            });
+                            break;
                     }
                 }
             }
+        case "asin":
+        case "acos":
+        case "atan":
+        case "abs":
+        case "sign":
+        case "sqrt":
+        case "exp":
             const value = evaluate(values);
             // @ts-ignore
             let val = value[0].typ == EnumToken.NumberTokenType ||
@@ -460,7 +472,7 @@ function evaluateFunc(token) {
                 : // @ts-expect-error
                     value[0].l.val / value[0].r.val;
             return [
-                token.val == "tan" || token.val == "atan"
+                token.val == "asin" || token.val == "acos" || token.val == "atan"
                     ? {
                         typ: EnumToken.AngleTokenType,
                         val: Math[token.val](val),
@@ -471,7 +483,7 @@ function evaluateFunc(token) {
                         [PARENT]: value[0][PARENT],
                     }
                     : {
-                        typ: token.val == "sign" ? EnumToken.NumberTokenType : value[0].typ,
+                        typ: numbers.has(token.val) ? EnumToken.NumberTokenType : value[0].typ,
                         val: Math[token.val](val),
                         [LOCSRCID]: value[0][LOCSRCID],
                         [LOCSTA]: value[0][LOCSTA],
@@ -479,7 +491,6 @@ function evaluateFunc(token) {
                         [PARENT]: value[0][PARENT],
                     },
             ];
-        }
         case "hypot": {
             const chi = values.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType, EnumToken.CommaTokenType].includes(t.typ));
             let all = [];

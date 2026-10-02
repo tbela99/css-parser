@@ -3,6 +3,7 @@ import { tokensfuncDefMap, LOCSTA, mFGT, mFLT, LOCEND, LOCSRCID } from '../../sy
 import { matchAllSyntaxes, createValidationContext, trimArray } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { getSyntaxRule } from '../../validation/config.js';
+import { equalsIgnoreCase } from './text.js';
 
 function parseAtRuleContainerQueryList(stream, context, options = {}) {
     let matchCount = 0;
@@ -37,7 +38,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
         };
     }
     {
-        for (const stream of parts.slice()) {
+        for (const stream of parts) {
             let success = true;
             let i;
             let currentScope = new Set();
@@ -156,6 +157,22 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                                 [LOCSTA]: names[0][LOCSTA],
                                 [LOCEND]: values.at(-1)[LOCEND],
                             });
+                            const token = tokens[index3 + 1];
+                            if (token.op.typ === EnumToken.ColonTokenType) {
+                                let name = token.l.find((t) => t.typ === EnumToken.IdenTokenType);
+                                if (name != null) {
+                                    if (name.val.startsWith("min-")) {
+                                        name.val = name.val.substring(4);
+                                        // @ts-ignore
+                                        token.op.typ = EnumToken.GteTokenType;
+                                    }
+                                    else if (name.val.startsWith("max-")) {
+                                        name.val = name.val.substring(4);
+                                        // @ts-ignore
+                                        token.op.typ = EnumToken.LteTokenType;
+                                    }
+                                }
+                            }
                             // check <style()> or <scroll-state()>
                         }
                         if (tokensfuncDefMap.has(stack.at(-1)?.typ)) {
@@ -247,6 +264,58 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                             };
                             tokens.length = l + 1;
                             expectAndOr = true;
+                            if (tokens[l].op.typ === EnumToken.AndTokenType) {
+                                let left = tokens[l].l.find((t) => t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.IdenTokenType);
+                                let right = tokens[l].r.find((t) => t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.IdenTokenType);
+                                if (left.typ == EnumToken.ParensTokenType && right.typ == EnumToken.ParensTokenType) {
+                                    left = left.chi.find((t) => t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.IdenTokenType);
+                                    right = right.chi.find((t) => t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.IdenTokenType);
+                                    if (left.typ == EnumToken.MediaQueryConditionTokenType &&
+                                        (mFLT.has(left.op.typ) ||
+                                            mFGT.has(left.op.typ)) &&
+                                        right.typ == EnumToken.MediaQueryConditionTokenType &&
+                                        (mFLT.has(right.op.typ) ||
+                                            mFGT.has(right.op.typ))) {
+                                        const name = left.l.find((t) => t.typ == EnumToken.IdenTokenType);
+                                        const name2 = right.l.find((t) => t.typ == EnumToken.IdenTokenType);
+                                        if (equalsIgnoreCase(name.val, name2.val)) {
+                                            switch (left.op.typ) {
+                                                case EnumToken.LtTokenType:
+                                                    left.op.typ = EnumToken.GtTokenType;
+                                                    break;
+                                                case EnumToken.LteTokenType:
+                                                    left.op.typ = EnumToken.GteTokenType;
+                                                    break;
+                                                case EnumToken.GtTokenType:
+                                                    left.op.typ = EnumToken.LtTokenType;
+                                                    break;
+                                                case EnumToken.GteTokenType:
+                                                    left.op.typ = EnumToken.LteTokenType;
+                                                    break;
+                                            }
+                                            tokens[l] = {
+                                                typ: EnumToken.ParensTokenType,
+                                                chi: [
+                                                    {
+                                                        typ: EnumToken.MediaRangeQueryTokenType,
+                                                        l: left.r,
+                                                        val: [name],
+                                                        op1: left.op,
+                                                        op2: right.op,
+                                                        r: right.r,
+                                                        [LOCSRCID]: name[LOCSRCID],
+                                                        [LOCSTA]: left[LOCSTA],
+                                                        [LOCEND]: right[LOCEND],
+                                                    },
+                                                ],
+                                                [LOCSRCID]: name[LOCSRCID],
+                                                [LOCSTA]: left[LOCSTA],
+                                                [LOCEND]: right[LOCEND],
+                                            };
+                                        }
+                                    }
+                                }
+                            }
                         }
                         break;
                 }

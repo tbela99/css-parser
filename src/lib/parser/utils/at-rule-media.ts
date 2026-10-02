@@ -193,7 +193,6 @@ export function parseMediaqueryList(
                             });
 
                             tokens.length = index + 1;
-
                             const result: ValidationMatch = matchAllSyntaxes(
                                 (
                                     getParsedSyntax(
@@ -270,10 +269,6 @@ export function parseMediaqueryList(
                                         }
                                     }
                                 }
-
-                                // let isValidMFValue = isMFValue(name, left, true);
-
-                                // isValidMFValue = isMFValue(name, right, true);
 
                                 for (const val of [left, right]) {
                                     if (mfInfo?.type === MediaFeatureType.RatioType) {

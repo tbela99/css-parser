@@ -153,7 +153,9 @@ export function isMFValue(
     }
 
     featureName = featureName.toLowerCase();
-    if (!(featureName in config.mediaFeatures)) {
+
+    // @ts-expect-error
+    if (  config.mediaFeatures[featureName] == null) {
         return { valid: false, success: false };
     }
 
@@ -211,8 +213,7 @@ export function isMFValue(
                 valid: true,
                 success:
                     (tokens.length == 1 &&
-                        tokens[0].typ == EnumToken.NumberTokenType &&
-                        ((tokens[0] as NumberToken).val as FractionToken).typ == EnumToken.FractionTokenType) ||
+                        tokens[0].typ == EnumToken.NumberTokenType) ||
                     (tokens.length === 3 &&
                         tokens[0].typ == EnumToken.NumberTokenType &&
                         typeof (tokens[0] as NumberToken).val === "number" &&
