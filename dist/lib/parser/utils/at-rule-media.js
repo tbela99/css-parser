@@ -190,8 +190,6 @@ function parseMediaqueryList(stream, options) {
                                         }
                                     }
                                 }
-                                // let isValidMFValue = isMFValue(name, left, true);
-                                // isValidMFValue = isMFValue(name, right, true);
                                 for (const val of [left, right]) {
                                     if (mfInfo?.type === MediaFeatureType.RatioType) {
                                         const filteredValues = val.filter((n) => n.typ !== EnumToken.WhitespaceTokenType &&

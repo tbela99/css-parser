@@ -2518,7 +2518,7 @@ var syntaxes = {
 		syntax: "<number> | <percentage> | none"
 	},
 	"an+b": {
-		syntax: "odd | even | <integer> | <n-dimension> | '+'?† n | -n | <ndashdigit-dimension> | '+'?† <ndashdigit-ident> | <dashndashdigit-ident> | <n-dimension> <signed-integer> | '+'?† n <signed-integer> | -n <signed-integer> | <ndash-dimension> <signless-integer> | '+'?† n- <signless-integer> | -n- <signless-integer> | <n-dimension> ['+' | '-'] <signless-integer> | '+'?† n ['+' | '-'] <signless-integer> | -n ['+' | '-'] <signless-integer>"
+		syntax: "odd | even | <integer> | <n-dimension> | '+'? n | -n | <ndashdigit-dimension> | '+'? <ndashdigit-ident> | <dashndashdigit-ident> | <n-dimension> <signed-integer> | '+'? n <signed-integer> | -n <signed-integer> | <ndash-dimension> <signless-integer> | '+'? n- <signless-integer> | -n- <signless-integer> | <n-dimension> ['+' | '-'] <signless-integer> | '+'? n ['+' | '-'] <signless-integer> | -n ['+' | '-'] <signless-integer>"
 	},
 	"anchor()": {
 		syntax: "anchor( <anchor-name>? && <anchor-side>, <length-percentage>? )"
@@ -4550,6 +4550,9 @@ var atRules = {
 			},
 			marks: {
 				syntax: "none | [ crop || cross ]"
+			},
+			"page-margin-safety": {
+				syntax: "none | clamp | add"
 			},
 			"page-orientation": {
 				syntax: "upright | rotate-left | rotate-right"

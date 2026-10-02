@@ -3515,7 +3515,7 @@
     		syntax: "<number> | <percentage> | none"
     	},
     	"an+b": {
-    		syntax: "odd | even | <integer> | <n-dimension> | '+'?† n | -n | <ndashdigit-dimension> | '+'?† <ndashdigit-ident> | <dashndashdigit-ident> | <n-dimension> <signed-integer> | '+'?† n <signed-integer> | -n <signed-integer> | <ndash-dimension> <signless-integer> | '+'?† n- <signless-integer> | -n- <signless-integer> | <n-dimension> ['+' | '-'] <signless-integer> | '+'?† n ['+' | '-'] <signless-integer> | -n ['+' | '-'] <signless-integer>"
+    		syntax: "odd | even | <integer> | <n-dimension> | '+'? n | -n | <ndashdigit-dimension> | '+'? <ndashdigit-ident> | <dashndashdigit-ident> | <n-dimension> <signed-integer> | '+'? n <signed-integer> | -n <signed-integer> | <ndash-dimension> <signless-integer> | '+'? n- <signless-integer> | -n- <signless-integer> | <n-dimension> ['+' | '-'] <signless-integer> | '+'? n ['+' | '-'] <signless-integer> | -n ['+' | '-'] <signless-integer>"
     	},
     	"anchor()": {
     		syntax: "anchor( <anchor-name>? && <anchor-side>, <length-percentage>? )"
@@ -5547,6 +5547,9 @@
     			},
     			marks: {
     				syntax: "none | [ crop || cross ]"
+    			},
+    			"page-margin-safety": {
+    				syntax: "none | clamp | add"
     			},
     			"page-orientation": {
     				syntax: "upright | rotate-left | rotate-right"
@@ -10027,6 +10030,7 @@
         return g > 1 ? [a / g, b / g] : [a, b];
     }
 
+    const numbers = new Set(["sin", "cos", "asin", "acos", "sign", "tan"]);
     /**
      * evaluate an array of tokens
      * @param tokens
@@ -10216,9 +10220,22 @@
             r.typ == exports.EnumToken.NegativeInfinityTokenType) {
             return computeInfinity(l, r, op, defaultReturn);
         }
+        if (l.typ == exports.EnumToken.FunctionTokenType || l.typ == exports.EnumToken.MathFunctionTokenType) {
+            const val = evaluateFunc(l);
+            if (val == null ||
+                (val.length == 1 &&
+                    (val[0].typ == exports.EnumToken.MathFunctionTokenType || val[0].typ == exports.EnumToken.FunctionTokenType))) {
+                return defaultReturn;
+            }
+            if (val.length == 1) {
+                l = val[0];
+            }
+        }
         if (r.typ == exports.EnumToken.FunctionTokenType || r.typ == exports.EnumToken.MathFunctionTokenType) {
             const val = evaluateFunc(r);
-            if (val == null) {
+            if (val == null ||
+                (val.length == 1 &&
+                    (val[0].typ == exports.EnumToken.MathFunctionTokenType || val[0].typ == exports.EnumToken.FunctionTokenType))) {
                 return defaultReturn;
             }
             if (val.length == 1) {
@@ -10436,45 +10453,43 @@
     function evaluateFunc(token) {
         const values = token.chi.slice();
         switch (token.val) {
-            case "abs":
             case "sin":
             case "cos":
             case "tan":
-            case "asin":
-            case "acos":
-            case "atan":
-            case "sign":
-            case "sqrt":
-            case "exp": {
-                if (token.val == "tan" || token.val == "atan") {
-                    for (let i = 0; i < values.length; i++) {
-                        if (values[i].typ == exports.EnumToken.NumberTokenType) {
-                            values[i] = Object.assign(values[i], { typ: exports.EnumToken.AngleTokenType, unit: "rad" });
-                        }
-                        else if (values[i].typ == exports.EnumToken.AngleTokenType && values[i].unit != "rad") {
-                            switch (values[i].unit) {
-                                case "deg":
-                                    Object.assign(values[i], {
-                                        unit: "rad",
-                                        val: values[i].val * (Math.PI / 180),
-                                    });
-                                    break;
-                                case "grad":
-                                    Object.assign(values[i], {
-                                        unit: "rad",
-                                        val: values[i].val * (Math.PI / 200),
-                                    });
-                                    break;
-                                case "turn":
-                                    Object.assign(values[i], {
-                                        unit: "rad",
-                                        val: values[i].val * (2 * Math.PI),
-                                    });
-                                    break;
-                            }
+                for (let i = 0; i < values.length; i++) {
+                    if (values[i].typ == exports.EnumToken.NumberTokenType) {
+                        values[i] = Object.assign(values[i], { typ: exports.EnumToken.AngleTokenType, unit: "rad" });
+                    }
+                    else if (values[i].typ == exports.EnumToken.AngleTokenType && values[i].unit != "rad") {
+                        switch (values[i].unit) {
+                            case "deg":
+                                Object.assign(values[i], {
+                                    unit: "rad",
+                                    val: values[i].val * (Math.PI / 180),
+                                });
+                                break;
+                            case "grad":
+                                Object.assign(values[i], {
+                                    unit: "rad",
+                                    val: values[i].val * (Math.PI / 200),
+                                });
+                                break;
+                            case "turn":
+                                Object.assign(values[i], {
+                                    unit: "rad",
+                                    val: values[i].val * (2 * Math.PI),
+                                });
+                                break;
                         }
                     }
                 }
+            case "asin":
+            case "acos":
+            case "atan":
+            case "abs":
+            case "sign":
+            case "sqrt":
+            case "exp":
                 const value = evaluate(values);
                 // @ts-ignore
                 let val = value[0].typ == exports.EnumToken.NumberTokenType ||
@@ -10484,7 +10499,7 @@
                     : // @ts-expect-error
                         value[0].l.val / value[0].r.val;
                 return [
-                    token.val == "tan" || token.val == "atan"
+                    token.val == "asin" || token.val == "acos" || token.val == "atan"
                         ? {
                             typ: exports.EnumToken.AngleTokenType,
                             val: Math[token.val](val),
@@ -10495,7 +10510,7 @@
                             [PARENT]: value[0][PARENT],
                         }
                         : {
-                            typ: token.val == "sign" ? exports.EnumToken.NumberTokenType : value[0].typ,
+                            typ: numbers.has(token.val) ? exports.EnumToken.NumberTokenType : value[0].typ,
                             val: Math[token.val](val),
                             [LOCSRCID]: value[0][LOCSRCID],
                             [LOCSTA]: value[0][LOCSTA],
@@ -10503,7 +10518,6 @@
                             [PARENT]: value[0][PARENT],
                         },
                 ];
-            }
             case "hypot": {
                 const chi = values.filter((t) => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType, exports.EnumToken.CommaTokenType].includes(t.typ));
                 let all = [];
@@ -12258,7 +12272,8 @@
             return { valid: true, success: false, isValueAllowed: false };
         }
         featureName = featureName.toLowerCase();
-        if (!(featureName in config$3.mediaFeatures)) {
+        // @ts-expect-error
+        if (config$3.mediaFeatures[featureName] == null) {
             return { valid: false, success: false };
         }
         // @ts-expect-error
@@ -12302,8 +12317,7 @@
                 return {
                     valid: true,
                     success: (tokens.length == 1 &&
-                        tokens[0].typ == exports.EnumToken.NumberTokenType &&
-                        tokens[0].val.typ == exports.EnumToken.FractionTokenType) ||
+                        tokens[0].typ == exports.EnumToken.NumberTokenType) ||
                         (tokens.length === 3 &&
                             tokens[0].typ == exports.EnumToken.NumberTokenType &&
                             typeof tokens[0].val === "number" &&
@@ -21047,7 +21061,8 @@
             }
         }
         run(ast) {
-            if (!("chi" in ast)) {
+            // @ts-ignore
+            if (ast.chi == null) {
                 return null;
             }
             for (const node of ast.chi) {
@@ -21065,15 +21080,7 @@
                             // @ts-ignore
                             replaceNodeOrValue(parent, value, result);
                         }
-                        catch (e) {
-                            // @ts-ignore
-                            if (Array.isArray(parent.chi)) {
-                                // @ts-ignore
-                                parent.chi.length = 0;
-                                // @ts-ignore
-                                parent.chi.push(...result);
-                            }
-                        }
+                        catch (e) { }
                         continue;
                     }
                     if (value != null && tokensfuncSet.has(value.typ)) {
@@ -29468,8 +29475,6 @@
                                             }
                                         }
                                     }
-                                    // let isValidMFValue = isMFValue(name, left, true);
-                                    // isValidMFValue = isMFValue(name, right, true);
                                     for (const val of [left, right]) {
                                         if (mfInfo?.type === MediaFeatureType.RatioType) {
                                             const filteredValues = val.filter((n) => n.typ !== exports.EnumToken.WhitespaceTokenType &&
@@ -30265,7 +30270,7 @@
             };
         }
         {
-            for (const stream of parts.slice()) {
+            for (const stream of parts) {
                 let success = true;
                 let i;
                 let currentScope = new Set();
@@ -30384,6 +30389,22 @@
                                     [LOCSTA]: names[0][LOCSTA],
                                     [LOCEND]: values.at(-1)[LOCEND],
                                 });
+                                const token = tokens[index3 + 1];
+                                if (token.op.typ === exports.EnumToken.ColonTokenType) {
+                                    let name = token.l.find((t) => t.typ === exports.EnumToken.IdenTokenType);
+                                    if (name != null) {
+                                        if (name.val.startsWith("min-")) {
+                                            name.val = name.val.substring(4);
+                                            // @ts-ignore
+                                            token.op.typ = exports.EnumToken.GteTokenType;
+                                        }
+                                        else if (name.val.startsWith("max-")) {
+                                            name.val = name.val.substring(4);
+                                            // @ts-ignore
+                                            token.op.typ = exports.EnumToken.LteTokenType;
+                                        }
+                                    }
+                                }
                                 // check <style()> or <scroll-state()>
                             }
                             if (tokensfuncDefMap.has(stack.at(-1)?.typ)) {
@@ -30475,6 +30496,58 @@
                                 };
                                 tokens.length = l + 1;
                                 expectAndOr = true;
+                                if (tokens[l].op.typ === exports.EnumToken.AndTokenType) {
+                                    let left = tokens[l].l.find((t) => t.typ != exports.EnumToken.WhitespaceTokenType && t.typ != exports.EnumToken.IdenTokenType);
+                                    let right = tokens[l].r.find((t) => t.typ != exports.EnumToken.WhitespaceTokenType && t.typ != exports.EnumToken.IdenTokenType);
+                                    if (left.typ == exports.EnumToken.ParensTokenType && right.typ == exports.EnumToken.ParensTokenType) {
+                                        left = left.chi.find((t) => t.typ != exports.EnumToken.WhitespaceTokenType && t.typ != exports.EnumToken.IdenTokenType);
+                                        right = right.chi.find((t) => t.typ != exports.EnumToken.WhitespaceTokenType && t.typ != exports.EnumToken.IdenTokenType);
+                                        if (left.typ == exports.EnumToken.MediaQueryConditionTokenType &&
+                                            (mFLT.has(left.op.typ) ||
+                                                mFGT.has(left.op.typ)) &&
+                                            right.typ == exports.EnumToken.MediaQueryConditionTokenType &&
+                                            (mFLT.has(right.op.typ) ||
+                                                mFGT.has(right.op.typ))) {
+                                            const name = left.l.find((t) => t.typ == exports.EnumToken.IdenTokenType);
+                                            const name2 = right.l.find((t) => t.typ == exports.EnumToken.IdenTokenType);
+                                            if (equalsIgnoreCase(name.val, name2.val)) {
+                                                switch (left.op.typ) {
+                                                    case exports.EnumToken.LtTokenType:
+                                                        left.op.typ = exports.EnumToken.GtTokenType;
+                                                        break;
+                                                    case exports.EnumToken.LteTokenType:
+                                                        left.op.typ = exports.EnumToken.GteTokenType;
+                                                        break;
+                                                    case exports.EnumToken.GtTokenType:
+                                                        left.op.typ = exports.EnumToken.LtTokenType;
+                                                        break;
+                                                    case exports.EnumToken.GteTokenType:
+                                                        left.op.typ = exports.EnumToken.LteTokenType;
+                                                        break;
+                                                }
+                                                tokens[l] = {
+                                                    typ: exports.EnumToken.ParensTokenType,
+                                                    chi: [
+                                                        {
+                                                            typ: exports.EnumToken.MediaRangeQueryTokenType,
+                                                            l: left.r,
+                                                            val: [name],
+                                                            op1: left.op,
+                                                            op2: right.op,
+                                                            r: right.r,
+                                                            [LOCSRCID]: name[LOCSRCID],
+                                                            [LOCSTA]: left[LOCSTA],
+                                                            [LOCEND]: right[LOCEND],
+                                                        },
+                                                    ],
+                                                    [LOCSRCID]: name[LOCSRCID],
+                                                    [LOCSTA]: left[LOCSTA],
+                                                    [LOCEND]: right[LOCEND],
+                                                };
+                                            }
+                                        }
+                                    }
+                                }
                             }
                             break;
                     }
@@ -31108,7 +31181,6 @@
         // let currentItemIndex: number;
         ast[LOCSRCID] = options.source.id;
         ast[LOCSTA] = 0;
-        // let tokenizer: Tokenizer;
         while (!tokenizer.done()) {
             tokenizer.next();
             // item = (iter as Array<TokenizeResult>)[currentItemIndex];

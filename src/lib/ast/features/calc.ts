@@ -36,7 +36,8 @@ export class ComputeCalcExpressionFeature {
     }
 
     run(ast: AstRule | AstAtRule): AstNode | null {
-        if (!("chi" in ast)) {
+        // @ts-ignore
+        if (ast.chi == null) {
             return null;
         }
 
@@ -51,21 +52,14 @@ export class ComputeCalcExpressionFeature {
                 if (parent?.typ == EnumToken.BinaryExpressionTokenType) {
                     continue;
                 }
+
                 if (value.typ == EnumToken.BinaryExpressionTokenType) {
                     const result = evaluate([value]);
 
                     try {
                         // @ts-ignore
                         replaceNodeOrValue(parent, value, result);
-                    } catch (e) {
-                        // @ts-ignore
-                        if (Array.isArray(parent.chi)) {
-                            // @ts-ignore
-                            parent.chi.length = 0;
-                            // @ts-ignore
-                            parent.chi.push(...result);
-                        }
-                    }
+                    } catch (e) {}
                     continue;
                 }
 
