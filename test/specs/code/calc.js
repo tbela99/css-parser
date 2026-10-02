@@ -1,4 +1,20 @@
-export function run(describe, expect, it, transform, parse, render) {
+export function run(
+    describe,
+    expect,
+    it,
+    transform,
+    parse,
+    render,
+    dirname,
+    readFile,
+    resolve,
+    ColorType,
+    EnumToken,
+    ModuleCaseTransformEnum,
+    ModuleScopeEnumOptions,
+    transformSync,
+    parseSync,
+) {
     describe("calc expression", function () {
         it("calc() #1", function () {
             return transform(`
@@ -273,12 +289,12 @@ transform: rotate(atan2(e, 30));
 a {
 
 width: calc(100px * log(8, 2));
- transform: rotate( tan(45deg))
+ line-height:  tan(45deg)
 }
 `).then((result) =>
                 expect(render(result.ast, { minify: false }).code).equals(`a {
  width: 300px;
- transform: rotate(1rad)
+ line-height: 1
 }`),
             );
         });
@@ -627,6 +643,102 @@ transform: rotate(calc(2.5*pi * 1rad))  }
  transform: translate(100px,100px)rotate(1215deg)skew(10deg)
 }`),
             );
+        });
+
+        it("hypth() #41", function () {
+            return expect(
+                transformSync({
+                    input: `
+
+    @media (aspect-ratio: 1.77) {
+  html {
+    background-color: cyan;
+  }
+}
+
+body {
+  left: sin(45deg);
+  left: cos(45deg);
+  left: tan(45deg);
+  left: asin(0.5);
+  left: acos(0.5);
+  left: atan(10);
+  left: atan2(-1, 1);
+}
+
+p {
+  font-size: calc(pow(10, 12) * 1rem);
+  font-size: calc(sqrt(100) * 1rem);
+  font-size: calc(hypot(3, 4) * 1rem);
+  font-size: calc(log(10) * 1rem);
+  font-size: calc(exp(10) * 1rem);
+}
+
+
+p {
+  color: alpha(from red / calc(alpha * 0.5));
+}
+p {
+  font-size: calc(pow(e, pi) * 1rem);
+}
+
+@container (min-width: 700px) {
+  .container {
+
+display: grid;
+  }
+}
+    
+@container (max-width: 1400px) {
+  .container {
+
+display: grid;
+  }
+}
+    
+@container (min-width: 700px) and  (max-width: 1400px) {
+  .container {
+
+display: grid;
+    /* styles applied when a container is at least 700px */
+  }
+}
+`,
+                    beautify: true,
+                }).code,
+            ).equals(`@media (aspect-ratio:1.77) {
+ html {
+  background-color: cyan
+ }
+}
+body {
+ left: .707107;
+ left: .707107;
+ left: 1;
+ left: 30deg;
+ left: 60deg;
+ left: .234turn;
+ left: -45deg
+}
+p {
+ font-size: 23.140693rem;
+ color: #ff000080
+}
+@container (width>=700px) {
+ .container {
+  display: grid
+ }
+}
+@container (width<=1400px) {
+ .container {
+  display: grid
+ }
+}
+@container (700px<=width<=1400px) {
+ .container {
+  display: grid
+ }
+}`);
         });
     });
 }

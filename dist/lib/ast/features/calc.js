@@ -20,7 +20,8 @@ class ComputeCalcExpressionFeature {
         }
     }
     run(ast) {
-        if (!("chi" in ast)) {
+        // @ts-ignore
+        if (ast.chi == null) {
             return null;
         }
         for (const node of ast.chi) {
@@ -40,12 +41,12 @@ class ComputeCalcExpressionFeature {
                     }
                     catch (e) {
                         // @ts-ignore
-                        if (Array.isArray(parent.chi)) {
-                            // @ts-ignore
-                            parent.chi.length = 0;
-                            // @ts-ignore
-                            parent.chi.push(...result);
-                        }
+                        // if (Array.isArray(parent.chi)) {
+                        //     // @ts-ignore
+                        //     parent.chi.length = 0;
+                        //     // @ts-ignore
+                        //     parent.chi.push(...result);
+                        // }
                     }
                     continue;
                 }

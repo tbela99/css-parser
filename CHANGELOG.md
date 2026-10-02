@@ -1,5 +1,108 @@
 # Changelog
 
+# v1.6.6
+
+## Fixes
+
+- [x] parsing aspect ratio using a single number
+- [x] bugs in calc()
+- [x] computing media range in container at-rule  
+
+```css
+ 
+    @media (aspect-ratio: 1.77) {
+  html {
+    background-color: cyan;
+  }
+}
+
+body {
+  left: sin(45deg);
+  left: cos(45deg);
+  left: tan(45deg);
+  left: asin(0.5);
+  left: acos(0.5);
+  left: atan(10);
+  left: atan2(-1, 1);
+}
+
+p {
+  font-size: calc(pow(10, 12) * 1rem);
+  font-size: calc(sqrt(100) * 1rem);
+  font-size: calc(hypot(3, 4) * 1rem);
+  font-size: calc(log(10) * 1rem);
+  font-size: calc(exp(10) * 1rem);
+}
+
+
+p {
+  color: alpha(from red / calc(alpha * 0.5));
+}
+p {
+  font-size: calc(pow(e, pi) * 1rem);
+}
+
+@container (min-width: 700px) {
+  .container {
+
+display: grid;
+  }
+}
+    
+@container (max-width: 1400px) {
+  .container {
+
+display: grid;
+  }
+}
+    
+@container (min-width: 700px) and  (max-width: 1400px) {
+  .container {
+
+display: grid;
+    /* styles applied when a container is at least 700px */
+  }
+}
+
+```
+is now computed as 
+
+```css
+@media (aspect-ratio:1.77) {
+ html {
+  background-color: cyan
+ }
+}
+body {
+ left: .707107;
+ left: .707107;
+ left: 1;
+ left: 30deg;
+ left: 60deg;
+ left: .234turn;
+ left: -45deg
+}
+p {
+ font-size: 23.140693rem;
+ color: #ff000080
+}
+@container (width>=700px) {
+ .container {
+  display: grid
+ }
+}
+@container (width<=1400px) {
+ .container {
+  display: grid
+ }
+}
+@container (700px<=width<=1400px) {
+ .container {
+  display: grid
+ }
+}
+```
+
 # v1.6.5
 
 ## New

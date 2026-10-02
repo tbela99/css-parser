@@ -5,6 +5,7 @@ import type {
     FunctionToken,
     IdentToken,
     MediaQueryConditionToken,
+    MediaRangeQueryToken,
     ParensToken,
     ParserOptions,
     Token,
@@ -17,6 +18,7 @@ import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import type { ValidationFunctionToken, ValidationToken } from "../../validation/parser/types.d.ts";
 import type { ValidationMatch } from "../../validation/types.d.ts";
 import { getSyntaxRule } from "../../validation/config.ts";
+import { equalsIgnoreCase } from "./text.ts";
 
 export function parseAtRuleContainerQueryList(
     stream: Token[],
@@ -70,7 +72,7 @@ export function parseAtRuleContainerQueryList(
     }
 
     {
-        for (const stream of parts.slice()) {
+        for (const stream of parts) {
             let success: boolean = true;
             let i: number;
             let currentScope: Set<EnumToken> = new Set();
@@ -222,6 +224,26 @@ export function parseAtRuleContainerQueryList(
                                 } as MediaQueryConditionToken,
                             );
 
+                            const token = tokens[index3 + 1] as MediaQueryConditionToken;
+
+                            if (token.op.typ === EnumToken.ColonTokenType) {
+                                let name: IdentToken = token.l.find(
+                                    (t) => t.typ === EnumToken.IdenTokenType,
+                                ) as IdentToken;
+
+                                if (name != null) {
+                                    if (name.val.startsWith("min-")) {
+                                        name.val = name.val.substring(4);
+                                        // @ts-ignore
+                                        token.op.typ = EnumToken.GteTokenType;
+                                    } else if (name.val.startsWith("max-")) {
+                                        name.val = name.val.substring(4);
+                                        // @ts-ignore
+                                        token.op.typ = EnumToken.LteTokenType;
+                                    }
+                                }
+                            }
+
                             // check <style()> or <scroll-state()>
                         }
 
@@ -342,8 +364,85 @@ export function parseAtRuleContainerQueryList(
                             } as MediaQueryConditionToken;
 
                             tokens.length = l + 1;
-
                             expectAndOr = true;
+
+                            if ((tokens[l] as MediaQueryConditionToken).op.typ === EnumToken.AndTokenType) {
+                                let left: Token = (tokens[l] as MediaQueryConditionToken).l.find(
+                                    (t) => t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.IdenTokenType,
+                                ) as Token;
+
+                                let right: Token = (tokens[l] as MediaQueryConditionToken).r.find(
+                                    (t) => t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.IdenTokenType,
+                                ) as Token;
+
+                                if (left.typ == EnumToken.ParensTokenType && right.typ == EnumToken.ParensTokenType) {
+                                    left = (left as ParensToken).chi.find(
+                                        (t) =>
+                                            t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.IdenTokenType,
+                                    ) as Token;
+
+                                    right = (right as ParensToken).chi.find(
+                                        (t) =>
+                                            t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.IdenTokenType,
+                                    ) as Token;
+
+                                    if (
+                                        left.typ == EnumToken.MediaQueryConditionTokenType &&
+                                        (mFLT.has((left as MediaQueryConditionToken).op.typ) ||
+                                            mFGT.has((left as MediaQueryConditionToken).op.typ)) &&
+                                        right.typ == EnumToken.MediaQueryConditionTokenType &&
+                                        (mFLT.has((right as MediaQueryConditionToken).op.typ) ||
+                                            mFGT.has((right as MediaQueryConditionToken).op.typ))
+                                    ) {
+                                        const name: IdentToken = (left as MediaQueryConditionToken).l.find(
+                                            (t) => t.typ == EnumToken.IdenTokenType,
+                                        ) as IdentToken;
+
+                                        const name2: IdentToken = (right as MediaQueryConditionToken).l.find(
+                                            (t) => t.typ == EnumToken.IdenTokenType,
+                                        ) as IdentToken;
+
+                                        if (equalsIgnoreCase(name.val, name2.val)) {
+                                            switch ((left as MediaQueryConditionToken).op.typ) {
+                                                case EnumToken.LtTokenType:
+                                                    (left as MediaQueryConditionToken).op.typ = EnumToken.GtTokenType;
+                                                    break;
+                                                case EnumToken.LteTokenType:
+                                                    (left as MediaQueryConditionToken).op.typ = EnumToken.GteTokenType;
+                                                    break;
+
+                                                case EnumToken.GtTokenType:
+                                                    (left as MediaQueryConditionToken).op.typ = EnumToken.LtTokenType;
+                                                    break;
+                                                case EnumToken.GteTokenType:
+                                                    (left as MediaQueryConditionToken).op.typ = EnumToken.LteTokenType;
+                                                    break;
+                                            }
+
+                                            tokens[l] = {
+                                                typ: EnumToken.ParensTokenType,
+                                                chi: [
+                                                    {
+                                                        typ: EnumToken.MediaRangeQueryTokenType,
+                                                        l: (left as MediaQueryConditionToken).r,
+                                                        val: [name],
+                                                        op1: (left as MediaQueryConditionToken).op,
+                                                        op2: (right as MediaQueryConditionToken).op,
+                                                        r: (right as MediaQueryConditionToken).r,
+                                                        [LOCSRCID]: name[LOCSRCID],
+                                                        [LOCSTA]: left[LOCSTA],
+                                                        [LOCEND]: (right as MediaQueryConditionToken)[LOCEND],
+                                                    } as MediaRangeQueryToken,
+                                                ],
+
+                                                [LOCSRCID]: name[LOCSRCID],
+                                                [LOCSTA]: left[LOCSTA],
+                                                [LOCEND]: (right as MediaQueryConditionToken)[LOCEND],
+                                            } as ParensToken;
+                                        }
+                                    }
+                                }
+                            }
                         }
 
                         break;

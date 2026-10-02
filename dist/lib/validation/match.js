@@ -82,7 +82,8 @@ function isMFValue(featureName, tokens, isMFRange) {
         return { valid: true, success: false, isValueAllowed: false };
     }
     featureName = featureName.toLowerCase();
-    if (!(featureName in config.mediaFeatures)) {
+    // @ts-expect-error
+    if (config.mediaFeatures[featureName] == null) {
         return { valid: false, success: false };
     }
     // @ts-expect-error
@@ -126,8 +127,7 @@ function isMFValue(featureName, tokens, isMFRange) {
             return {
                 valid: true,
                 success: (tokens.length == 1 &&
-                    tokens[0].typ == EnumToken.NumberTokenType &&
-                    tokens[0].val.typ == EnumToken.FractionTokenType) ||
+                    tokens[0].typ == EnumToken.NumberTokenType) ||
                     (tokens.length === 3 &&
                         tokens[0].typ == EnumToken.NumberTokenType &&
                         typeof tokens[0].val === "number" &&

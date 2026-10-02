@@ -506,7 +506,6 @@ function doParseSync(tokenizer, options = {}) {
     // let currentItemIndex: number;
     ast[LOCSRCID] = options.source.id;
     ast[LOCSTA] = 0;
-    // let tokenizer: Tokenizer;
     while (!tokenizer.done()) {
         tokenizer.next();
         // item = (iter as Array<TokenizeResult>)[currentItemIndex];

@@ -7,12 +7,10 @@ import type {
     FrequencyToken,
     FunctionToken,
     IdentToken,
-    InfinityToken,
     LengthToken,
     ListToken,
     LiteralToken,
     NaNToken,
-    NegativeInfinityToken,
     NumberToken,
     ParensToken,
     PercentageToken,
@@ -24,6 +22,8 @@ import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 import { LOCEND, LOCSRCID, LOCSTA, mathFuncs, PARENT } from "../../syntax/constants.ts";
 import { EnumToken } from "../types.ts";
 import { compute, rem } from "./math.ts";
+
+const numbers = new Set(["sin", "cos", "asin", "acos", "sign", "tan"]);
 
 /**
  * evaluate an array of tokens
@@ -260,10 +260,30 @@ function doEvaluate(
         return computeInfinity(l, r, op, defaultReturn);
     }
 
+    if (l.typ == EnumToken.FunctionTokenType || l.typ == EnumToken.MathFunctionTokenType) {
+        const val = evaluateFunc(l as FunctionToken);
+
+        if (
+            val == null ||
+            (val.length == 1 &&
+                (val[0].typ == EnumToken.MathFunctionTokenType || val[0].typ == EnumToken.FunctionTokenType))
+        ) {
+            return defaultReturn;
+        }
+
+        if (val.length == 1) {
+            l = val[0];
+        }
+    }
+
     if (r.typ == EnumToken.FunctionTokenType || r.typ == EnumToken.MathFunctionTokenType) {
         const val = evaluateFunc(r as FunctionToken);
 
-        if (val == null) {
+        if (
+            val == null ||
+            (val.length == 1 &&
+                (val[0].typ == EnumToken.MathFunctionTokenType || val[0].typ == EnumToken.FunctionTokenType))
+        ) {
             return defaultReturn;
         }
 
@@ -468,7 +488,7 @@ function computeInfinity(
         const value = getValue(r as NumberToken) as number;
         const sign = Math.sign(value);
 
-            const isNumber: boolean = r.typ == EnumToken.NumberTokenType || r.typ == EnumToken.IdenTokenType;
+        const isNumber: boolean = r.typ == EnumToken.NumberTokenType || r.typ == EnumToken.IdenTokenType;
 
         // Infinity * 0
         if (value == 0 && op == EnumToken.Mul) {
@@ -476,21 +496,18 @@ function computeInfinity(
             return isNumber ? l : defaultReturn;
         }
 
-            if (isNumber) {
-                // @ts-ignore
-                (r as NumberToken).val /= (r as NumberToken).val * sign;
-            }
-
+        if (isNumber) {
+            // @ts-ignore
+            (r as NumberToken).val /= (r as NumberToken).val * sign;
+        }
 
         if (op == EnumToken.Div) {
-            
             return isNumber
                 ? Object.assign(r, { typ: EnumToken.NumberTokenType, val: sign < 0 ? -0 : 0 })
                 : defaultReturn;
         }
 
         if (sign == -1) {
-            
             l.typ =
                 l.typ == EnumToken.InfinityTokenType
                     ? EnumToken.NegativeInfinityTokenType
@@ -501,23 +518,17 @@ function computeInfinity(
     }
 
     if (r.typ == EnumToken.InfinityTokenType || r.typ == EnumToken.NegativeInfinityTokenType) {
-
-
         const value: number = getValue(l as NumberToken) as number;
-        let sign =
-            Math.sign(value);
+        let sign = Math.sign(value);
         const isNumber: boolean = l.typ == EnumToken.NumberTokenType || l.typ == EnumToken.IdenTokenType;
 
         if (isNumber) {
-            
             Object.assign(l, { typ: EnumToken.NumberTokenType, val: sign });
         }
 
         if (value == 0 && op == EnumToken.Mul) {
-            
             return Object.assign(l, { typ: EnumToken.NaNTokenType });
         }
-
 
         if (op == EnumToken.Div) {
             return isNumber
@@ -545,45 +556,43 @@ export function evaluateFunc(token: FunctionToken): Token[] | null {
     const values: Token[] = token.chi.slice();
 
     switch (token.val) {
-        case "abs":
         case "sin":
         case "cos":
         case "tan":
-        case "asin":
-        case "acos":
-        case "atan":
-        case "sign":
-        case "sqrt":
-        case "exp": {
-            if (token.val == "tan" || token.val == "atan") {
-                for (let i = 0; i < values.length; i++) {
-                    if (values[i].typ == EnumToken.NumberTokenType) {
-                        values[i] = Object.assign(values[i], { typ: EnumToken.AngleTokenType, unit: "rad" });
-                    } else if (values[i].typ == EnumToken.AngleTokenType && (values[i] as AngleToken).unit != "rad") {
-                        switch ((values[i] as AngleToken).unit) {
-                            case "deg":
-                                Object.assign(values[i], {
-                                    unit: "rad",
-                                    val: ((values[i] as AngleToken).val as number) * (Math.PI / 180),
-                                });
-                                break;
-                            case "grad":
-                                Object.assign(values[i], {
-                                    unit: "rad",
-                                    val: ((values[i] as AngleToken).val as number) * (Math.PI / 200),
-                                });
-                                break;
-                            case "turn":
-                                Object.assign(values[i], {
-                                    unit: "rad",
-                                    val: ((values[i] as AngleToken).val as number) * (2 * Math.PI),
-                                });
-                                break;
-                        }
+            for (let i = 0; i < values.length; i++) {
+                if (values[i].typ == EnumToken.NumberTokenType) {
+                    values[i] = Object.assign(values[i], { typ: EnumToken.AngleTokenType, unit: "rad" });
+                } else if (values[i].typ == EnumToken.AngleTokenType && (values[i] as AngleToken).unit != "rad") {
+                    switch ((values[i] as AngleToken).unit) {
+                        case "deg":
+                            Object.assign(values[i], {
+                                unit: "rad",
+                                val: ((values[i] as AngleToken).val as number) * (Math.PI / 180),
+                            });
+                            break;
+                        case "grad":
+                            Object.assign(values[i], {
+                                unit: "rad",
+                                val: ((values[i] as AngleToken).val as number) * (Math.PI / 200),
+                            });
+                            break;
+                        case "turn":
+                            Object.assign(values[i], {
+                                unit: "rad",
+                                val: ((values[i] as AngleToken).val as number) * (2 * Math.PI),
+                            });
+                            break;
                     }
                 }
             }
 
+        case "asin":
+        case "acos":
+        case "atan":
+        case "abs":
+        case "sign":
+        case "sqrt":
+        case "exp":
             const value: Token[] = evaluate(values);
 
             // @ts-ignore
@@ -596,7 +605,7 @@ export function evaluateFunc(token: FunctionToken): Token[] | null {
                       ((value[0] as FractionToken).l.val as number) / (value[0] as FractionToken).r.val;
 
             return [
-                token.val == "tan" || token.val == "atan"
+                token.val == "asin" || token.val == "acos" || token.val == "atan"
                     ? {
                           typ: EnumToken.AngleTokenType,
                           val: Math[token.val](val),
@@ -607,7 +616,7 @@ export function evaluateFunc(token: FunctionToken): Token[] | null {
                           [PARENT]: value[0][PARENT],
                       }
                     : {
-                          typ: token.val == "sign" ? EnumToken.NumberTokenType : value[0].typ,
+                          typ: numbers.has(token.val) ? EnumToken.NumberTokenType : value[0].typ,
                           val: Math[token.val](val),
                           [LOCSRCID]: value[0][LOCSRCID],
                           [LOCSTA]: value[0][LOCSTA],
@@ -615,7 +624,6 @@ export function evaluateFunc(token: FunctionToken): Token[] | null {
                           [PARENT]: value[0][PARENT],
                       },
             ];
-        }
 
         case "hypot": {
             const chi = values.filter(
