@@ -1392,9 +1392,9 @@ body {
                 beautify: true,
                 validation: true
             }).then((result) => expect(result.code).equals(`body {
- background-color: if(supports(color:oklch(.7 .185 232)):#00aefc;else:#00adf3);
+ background-color: if(supports(color:oklch(.7 .185 232)): #00aefc; else: #00adf3);
  &:after {
-  content: if(supports(color:oklch(.7 .185 232)):"Your browser supports OKLCH";else:"Your browser does not support OKLCH")
+  content: if(supports(color:oklch(.7 .185 232)): "Your browser supports OKLCH"; else: "Your browser does not support OKLCH")
  }
 }`));
         });

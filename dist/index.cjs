@@ -3518,7 +3518,7 @@ var syntaxes = {
 		syntax: "<number> | <percentage> | none"
 	},
 	"an+b": {
-		syntax: "odd | even | <integer> | <n-dimension> | '+'?† n | -n | <ndashdigit-dimension> | '+'?† <ndashdigit-ident> | <dashndashdigit-ident> | <n-dimension> <signed-integer> | '+'?† n <signed-integer> | -n <signed-integer> | <ndash-dimension> <signless-integer> | '+'?† n- <signless-integer> | -n- <signless-integer> | <n-dimension> ['+' | '-'] <signless-integer> | '+'?† n ['+' | '-'] <signless-integer> | -n ['+' | '-'] <signless-integer>"
+		syntax: "odd | even | <integer> | <n-dimension> | '+'? n | -n | <ndashdigit-dimension> | '+'? <ndashdigit-ident> | <dashndashdigit-ident> | <n-dimension> <signed-integer> | '+'? n <signed-integer> | -n <signed-integer> | <ndash-dimension> <signless-integer> | '+'? n- <signless-integer> | -n- <signless-integer> | <n-dimension> ['+' | '-'] <signless-integer> | '+'? n ['+' | '-'] <signless-integer> | -n ['+' | '-'] <signless-integer>"
 	},
 	"anchor()": {
 		syntax: "anchor( <anchor-name>? && <anchor-side>, <length-percentage>? )"
@@ -5550,6 +5550,9 @@ var atRules = {
 			},
 			marks: {
 				syntax: "none | [ crop || cross ]"
+			},
+			"page-margin-safety": {
+				syntax: "none | clamp | add"
 			},
 			"page-orientation": {
 				syntax: "upright | rotate-left | rotate-right"
@@ -21080,15 +21083,7 @@ class ComputeCalcExpressionFeature {
                         // @ts-ignore
                         replaceNodeOrValue(parent, value, result);
                     }
-                    catch (e) {
-                        // @ts-ignore
-                        // if (Array.isArray(parent.chi)) {
-                        //     // @ts-ignore
-                        //     parent.chi.length = 0;
-                        //     // @ts-ignore
-                        //     parent.chi.push(...result);
-                        // }
-                    }
+                    catch (e) { }
                     continue;
                 }
                 if (value != null && tokensfuncSet.has(value.typ)) {
@@ -26652,18 +26647,18 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
             return token.l.length == 0
                 ? ""
                 : token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "") +
-                    ":" +
+                    ":" + (options.indent ?? '') +
                     token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "");
         case exports.EnumToken.IfElseConditionTokenType:
-            return renderValue(token.l) + renderValue(token.r);
+            return renderValue(token.l, options, cache, reducer) + (options.indent ?? '') + renderValue(token.r, options, cache, reducer);
         case exports.EnumToken.DeclarationNodeType:
             return (token.nam +
                 ":" +
-                (options.minifyValues ? filterValues(token.val) : token.val).reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
+                (options.minifyValues ? filterValues(token.val) : token.val).reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), ""));
         case exports.EnumToken.MediaQueryUnaryFeatureTokenType:
             return (renderValue(token.l, options, cache, reducer) +
                 " " +
-                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
+                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), ""));
         case exports.EnumToken.MediaQueryConditionTokenType: {
             const indent = token.op.typ == exports.EnumToken.LtTokenType ||
                 token.op.typ == exports.EnumToken.GtTokenType ||
@@ -26677,14 +26672,14 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                 indent +
                 renderValue(token.op, options, cache, reducer) +
                 indent +
-                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
+                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), ""));
         }
         case exports.EnumToken.MediaRangeQueryTokenType:
-            return (token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache), "") +
-                renderValue(token.op1) +
+            return (token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "") +
+                renderValue(token.op1, options, cache, reducer) +
                 token.val.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "") +
-                renderValue(token.op2) +
-                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
+                renderValue(token.op2, options, cache, reducer) +
+                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), ""));
         case exports.EnumToken.MediaFeatureTokenType:
             return token.val;
         case exports.EnumToken.NotTokenType:
@@ -29483,8 +29478,6 @@ function parseMediaqueryList(stream, options) {
                                         }
                                     }
                                 }
-                                // let isValidMFValue = isMFValue(name, left, true);
-                                // isValidMFValue = isMFValue(name, right, true);
                                 for (const val of [left, right]) {
                                     if (mfInfo?.type === MediaFeatureType.RatioType) {
                                         const filteredValues = val.filter((n) => n.typ !== exports.EnumToken.WhitespaceTokenType &&

@@ -1887,21 +1887,21 @@ export function renderValue(
                       (acc, curr) => acc + renderValue(curr, options, cache, reducer, errors),
                       "",
                   ) +
-                      ":" +
+                      ":" + (options.indent ?? '') +
                       (token as SupportsQueryConditionToken).r.reduce(
                           (acc, curr) => acc + renderValue(curr, options, cache, reducer, errors),
                           "",
                       );
 
         case EnumToken.IfElseConditionTokenType:
-            return renderValue((token as IfElseConditionToken).l) + renderValue((token as IfElseConditionToken).r);
+            return renderValue((token as IfElseConditionToken).l, options, cache, reducer, errors) + (options.indent ?? '') + renderValue((token as IfElseConditionToken).r, options, cache, reducer, errors);
 
         case EnumToken.DeclarationNodeType:
             return (
                 (<AstDeclaration>token).nam +
                 ":" +
                 (options.minifyValues ? filterValues((<AstDeclaration>token).val) : (<AstDeclaration>token).val).reduce(
-                    (acc: string, curr: Token): string => acc + renderValue(curr, options, cache),
+                    (acc: string, curr: Token): string => acc + renderValue(curr, options, cache, reducer, errors),
                     "",
                 )
             );
@@ -1911,7 +1911,7 @@ export function renderValue(
                 renderValue((token as MediaQueryUnaryFeatureToken).l, options, cache, reducer, errors) +
                 " " +
                 (token as MediaQueryUnaryFeatureToken).r.reduce(
-                    (acc: string, curr: Token): string => acc + renderValue(curr, options, cache),
+                    (acc: string, curr: Token): string => acc + renderValue(curr, options, cache, reducer, errors),
                     "",
                 )
             );
@@ -1935,7 +1935,7 @@ export function renderValue(
                 renderValue((token as MediaQueryConditionToken).op, options, cache, reducer, errors) +
                 indent +
                 (token as MediaQueryConditionToken).r.reduce(
-                    (acc: string, curr: Token): string => acc + renderValue(curr, options, cache),
+                    (acc: string, curr: Token): string => acc + renderValue(curr, options, cache, reducer, errors),
                     "",
                 )
             );
@@ -1944,17 +1944,17 @@ export function renderValue(
         case EnumToken.MediaRangeQueryTokenType:
             return (
                 (token as MediaRangeQueryToken).l.reduce(
-                    (acc: string, curr: Token): string => acc + renderValue(curr, options, cache),
+                    (acc: string, curr: Token): string => acc + renderValue(curr, options, cache, reducer, errors),
                     "",
                 ) +
-                renderValue((token as MediaRangeQueryToken).op1) +
+                renderValue((token as MediaRangeQueryToken).op1, options, cache, reducer, errors) +
                 (token as MediaRangeQueryToken).val.reduce(
                     (acc: string, curr: Token): string => acc + renderValue(curr, options, cache, reducer, errors),
                     "",
                 ) +
-                renderValue((token as MediaRangeQueryToken).op2) +
+                renderValue((token as MediaRangeQueryToken).op2, options, cache, reducer, errors) +
                 (token as MediaRangeQueryToken).r.reduce(
-                    (acc: string, curr: Token): string => acc + renderValue(curr, options, cache),
+                    (acc: string, curr: Token): string => acc + renderValue(curr, options, cache, reducer, errors),
                     "",
                 )
             );

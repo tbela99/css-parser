@@ -1085,12 +1085,12 @@ div-4 {
             beautify: true,
         }).then((result) =>
             expect(result.code).equals(`div-1 {
- background-image: if(else:none)
+ background-image: if(else: none)
 }
 div-2 {
- background-image: if(style(--scheme:ice):linear-gradient(#caf0f8,#fff,#caf0f8);else:none);
+ background-image: if(style(--scheme:ice): linear-gradient(#caf0f8,#fff,#caf0f8); else: none);
  div-3 {
-  background-image: if(style(--scheme:ice):linear-gradient(#caf0f8,#fff,#caf0f8);style(--scheme:fire):linear-gradient(#ffc971,#fff,#ffc971);else:none)
+  background-image: if(style(--scheme:ice): linear-gradient(#caf0f8,#fff,#caf0f8);style(--scheme:fire): linear-gradient(#ffc971,#fff,#ffc971); else: none)
  }
  div-4 {
   background-image: if()

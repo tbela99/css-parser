@@ -1283,18 +1283,18 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
             return token.l.length == 0
                 ? ""
                 : token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "") +
-                    ":" +
+                    ":" + (options.indent ?? '') +
                     token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "");
         case EnumToken.IfElseConditionTokenType:
-            return renderValue(token.l) + renderValue(token.r);
+            return renderValue(token.l, options, cache, reducer) + (options.indent ?? '') + renderValue(token.r, options, cache, reducer);
         case EnumToken.DeclarationNodeType:
             return (token.nam +
                 ":" +
-                (options.minifyValues ? filterValues(token.val) : token.val).reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
+                (options.minifyValues ? filterValues(token.val) : token.val).reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), ""));
         case EnumToken.MediaQueryUnaryFeatureTokenType:
             return (renderValue(token.l, options, cache, reducer) +
                 " " +
-                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
+                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), ""));
         case EnumToken.MediaQueryConditionTokenType: {
             const indent = token.op.typ == EnumToken.LtTokenType ||
                 token.op.typ == EnumToken.GtTokenType ||
@@ -1308,14 +1308,14 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                 indent +
                 renderValue(token.op, options, cache, reducer) +
                 indent +
-                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
+                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), ""));
         }
         case EnumToken.MediaRangeQueryTokenType:
-            return (token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache), "") +
-                renderValue(token.op1) +
+            return (token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "") +
+                renderValue(token.op1, options, cache, reducer) +
                 token.val.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "") +
-                renderValue(token.op2) +
-                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
+                renderValue(token.op2, options, cache, reducer) +
+                token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), ""));
         case EnumToken.MediaFeatureTokenType:
             return token.val;
         case EnumToken.NotTokenType:
