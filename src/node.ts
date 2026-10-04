@@ -28,6 +28,7 @@ import { resolve as resolvePath } from "node:path";
 import { SourceFile } from "./lib/parser/source.ts";
 import { cwd } from "node:process";
 import { parseResult, validateSyncArguments } from "./utils/sync.ts";
+import { Arena } from "./lib/parser/arena.ts";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -294,6 +295,7 @@ export function parseSync(
 
     options.src ??= "";
     options.sourcesMap ??= new Map();
+    options.arena ??= new Arena();
 
     Object.assign(options, {
         resolve,

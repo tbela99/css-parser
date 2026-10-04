@@ -135,7 +135,7 @@ export interface MinifyOptions {
      * enable ast minification
      */
     minifyAST?: boolean;
-    
+
     /**
      * Parse color tokens
      */
@@ -497,6 +497,10 @@ export declare interface ParserSyncOptions
         ValidationOptions,
         PropertyListOptions,
         ParseSourceOptions {
+    /**
+     * Arena instance. if not provided, a new instance will be created
+     */
+    arena?: Arena;
     /**
      * Source file to be used for sourcemap
      */

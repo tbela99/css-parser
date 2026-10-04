@@ -15,6 +15,7 @@ import { resolve as resolve$1 } from 'node:path';
 import { SourceFile } from './lib/parser/source.js';
 import { cwd } from 'node:process';
 import { parseResult, validateSyncArguments } from './utils/sync.js';
+import { Arena } from './lib/parser/arena.js';
 export { minify } from './lib/ast/minify.js';
 export { expand } from './lib/ast/expand.js';
 export { WalkerEvent, WalkerOptionEnum, walk, walkValues } from './lib/ast/walk.js';
@@ -170,6 +171,7 @@ function parseSync(...args) {
     options ??= {};
     options.src ??= "";
     options.sourcesMap ??= new Map();
+    options.arena ??= new Arena();
     Object.assign(options, {
         resolve,
         dirname,
