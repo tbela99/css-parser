@@ -1283,10 +1283,13 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
             return token.l.length == 0
                 ? ""
                 : token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "") +
-                    ":" + (options.indent ?? '') +
+                    ":" +
+                    (options.indent ?? "") +
                     token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "");
         case EnumToken.IfElseConditionTokenType:
-            return renderValue(token.l, options, cache, reducer) + (options.indent ?? '') + renderValue(token.r, options, cache, reducer);
+            return (renderValue(token.l, options, cache, reducer) +
+                (options.indent ?? "") +
+                renderValue(token.r, options, cache, reducer));
         case EnumToken.DeclarationNodeType:
             return (token.nam +
                 ":" +

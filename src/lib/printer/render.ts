@@ -1887,14 +1887,19 @@ export function renderValue(
                       (acc, curr) => acc + renderValue(curr, options, cache, reducer, errors),
                       "",
                   ) +
-                      ":" + (options.indent ?? '') +
+                      ":" +
+                      (options.indent ?? "") +
                       (token as SupportsQueryConditionToken).r.reduce(
                           (acc, curr) => acc + renderValue(curr, options, cache, reducer, errors),
                           "",
                       );
 
         case EnumToken.IfElseConditionTokenType:
-            return renderValue((token as IfElseConditionToken).l, options, cache, reducer, errors) + (options.indent ?? '') + renderValue((token as IfElseConditionToken).r, options, cache, reducer, errors);
+            return (
+                renderValue((token as IfElseConditionToken).l, options, cache, reducer, errors) +
+                (options.indent ?? "") +
+                renderValue((token as IfElseConditionToken).r, options, cache, reducer, errors)
+            );
 
         case EnumToken.DeclarationNodeType:
             return (
