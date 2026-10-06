@@ -8,7 +8,7 @@ export interface ValidationContext {
     /**
      * the tokens
      */
-    tokens: Token[];
+    tokens: number[];
     /**
      * current index
      */
@@ -26,28 +26,28 @@ export interface ValidationContext {
      * @param close 
      * @param counter
      */
-    peekRange(open?: EnumToken, close?: EnumToken, counter?: number): Token[];
+    peekRange(open?: EnumToken, close?: EnumToken, counter?: number): number[];
 
     /**
      * 
      * @param split 
      */
-    split(split?: EnumToken): Token[][];
+    split(split?: EnumToken): number[][];
 
     /**
      * return the current token that is not consumed yet
      */
-    current(): Token | null;
+    current(): number | null;
 
     /**
      * consume the current token and move to the next
      */
-    next(): Token | null;
+    next(): number | null;
 
     /**
      * return tokens that are not consumed
      */
-    getRemainingTokens(): Token[];
+    getRemainingTokens(): number[];
     /**
      *
      */
@@ -62,7 +62,7 @@ export interface ValidationContext {
      * consume all tokens up to the specified token
      * @param token
      */
-    update(token: Token): ValidationContext;
+    update(token: number): ValidationContext;
 
     /**
      * returns true if all tokens are consumed. returns false otherwise

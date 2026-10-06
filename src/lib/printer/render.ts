@@ -77,6 +77,7 @@ import { LineMap as LinesMap } from "../parser/linesmap.ts";
 import { dirname } from "../fs/resolve.ts";
 import { SourceFile } from "../parser/source.ts";
 import { cloneNode } from "../ast/clone.ts";
+import { Arena } from "../parser/arena.ts";
 
 /**
  * render ast
@@ -637,17 +638,21 @@ function renderAstNode(
  * @private
  */
 export function renderValue(
-    token: Token,
-    options: RenderOptions = {},
+    token: number,
+    options: RenderOptions,
     cache: {
         [key: string]: any;
     } = Object.create(null),
-    reducer?: null | ((acc: string, curr: Token) => string),
+    reducer?: null | ((acc: string, curr: number) => string),
     errors?: ErrorDescription[],
 ): string {
+
+    const arena = options.arena! as Arena;
+    const typ = arena.getType(token);
+
     if (
-        token.typ === EnumToken.WhenElseFunctionTokenType &&
-        equalsIgnoreCase((token as FunctionToken).val, "supports")
+        typ === EnumToken.WhenElseFunctionTokenType &&
+        arena.equalsIgnoreCase(token, 'val', "supports")
     ) {
         options = { ...options, minifyValues: false, minify: false, convertColor: false };
         reducer = null;
@@ -656,20 +661,20 @@ export function renderValue(
     options.minifyValues ??= options.minify;
 
     if (reducer == null) {
-        reducer = function (acc: string, curr: Token): string {
-            if (curr.typ == EnumToken.CommentTokenType && options.removeComments) {
-                if (!options.preserveLicense || !(curr as AstComment).val.startsWith("/*!")) {
+        reducer = function (acc: string, curr: number): string {
+            if (arena.getType(curr) == EnumToken.CommentTokenType && options.removeComments) {
+                if (!options.preserveLicense || !arena.startsWith(curr, 'val', "/*!")) {
                     return acc;
                 }
 
-                return acc + (curr as AstComment).val;
+                return acc + arena.getValue(curr);
             }
 
             return acc + renderValue(curr, options, cache, reducer, errors);
         };
     }
 
-    switch (token.typ) {
+    switch (typ) {
         case EnumToken.UrlFunctionTokenDefType:
         case EnumToken.FunctionTokenDefType:
         case EnumToken.MathFunctionTokenDefType:
@@ -686,7 +691,7 @@ export function renderValue(
         case EnumToken.GeneralEnclosedFunctionTokenDefType:
         case EnumToken.CustomFunctionTokenDefType:
         case EnumToken.WildCardFunctionTokenDefType:
-            return (token as FunctionDefToken).val + "(";
+            return arena.getValue(token) + "(";
 
         case EnumToken.ListToken:
             return (token as ListToken).chi.reduce(

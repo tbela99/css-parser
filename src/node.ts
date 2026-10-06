@@ -60,7 +60,6 @@ export { replaceNodeOrValue } from "./lib/parser/utils/token.ts";
 export {
     EnumToken,
     ColorType,
-    ValidationLevel,
     EnumAstNodeStatus,
     ModuleScopeEnumOptions,
     ModuleCaseTransformEnum,
@@ -295,7 +294,7 @@ export function parseSync(
 
     options.src ??= "";
     options.sourcesMap ??= new Map();
-    options.arena ??= new Arena();
+    options.arena ??= new Arena(2 << Math.ceil(2 + Math.log2((stream as string).length)));
 
     Object.assign(options, {
         resolve,
@@ -647,6 +646,9 @@ export async function parse(
     options ??= {};
     options.src ??= "";
     options.sourcesMap ??= new Map();
+    options.arena ??= new Arena(
+        typeof stream == "string" ? 2 << Math.ceil(2 + Math.log2((stream as string).length)) : 4096,
+    );
 
     Object.assign(options, {
         load,

@@ -23,6 +23,7 @@ import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
 import { ResponseType } from "./types.ts";
 import { SourceFile } from "./lib/parser/source.ts";
 import { parseResult, validateSyncArguments } from "./utils/sync.ts";
+import { Arena } from "./lib/parser/arena.ts";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -310,7 +311,8 @@ export function parseSync(
     options ??= {};
 
     options.src ??= "";
-    options.sourcesMap ??= new Map();
+    options.sourcesMap ??= new Map();    
+    options.arena ??= new Arena(2 << Math.ceil(2 + Math.log2((stream as string).length)));
 
     Object.assign(options, {
         resolve,
@@ -322,6 +324,9 @@ export function parseSync(
     });
 
     options.src = resolve(options.src!, options.cwd).relative;
+    options.arena ??= new Arena(
+        typeof stream == "string" ? 2 << Math.ceil(2 + Math.log2((stream as string).length)) : 4096,
+    );
 
     if (options.source == null) {
         const source = new SourceFile(typeof stream == "string" ? stream : "", [], options.src);

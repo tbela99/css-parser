@@ -1,5 +1,5 @@
 import { EnumToken } from "../../ast/types.ts";
-import type { Token } from "../../../@types/index.d.ts";
+import type { ParserOptions, Token } from "../../../@types/index.d.ts";
 
 export function stripCommaToken(tokenList: Token[]): Token[] | null {
     let result: Token[] = [];
@@ -20,10 +20,12 @@ export function stripCommaToken(tokenList: Token[]): Token[] | null {
     return result;
 }
 
-export function splitTokenList(tokenList: Token[], split: EnumToken[] = [EnumToken.CommaTokenType], includeSplitToken: boolean = false): Token[][] {
+export function splitTokenList(tokenList: number[], options: ParserOptions, split: EnumToken[] = [EnumToken.CommaTokenType], includeSplitToken: boolean = false): number[][] {
+
+    const arena = options.arena!;
     return tokenList.reduce(
-        (acc: Token[][], curr: Token): Token[][] => {
-            if (split.includes(curr.typ)) {
+        (acc: number[][], curr: number): number[][] => {
+            if (split.includes(arena.getType(curr))) {
 
                 if (includeSplitToken && Array.isArray(acc[acc.length - 1])) {
 
@@ -37,6 +39,6 @@ export function splitTokenList(tokenList: Token[], split: EnumToken[] = [EnumTok
 
             return acc;
         },
-        [[]] as Token[][],
+        [[]] as number[][],
     );
 }

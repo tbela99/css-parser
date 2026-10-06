@@ -17,75 +17,45 @@ export enum EnumAstNodeStatus {
     /**
      * Node passed validation
      */
-    Validated,
+    Validated = 1 << 0,
     /**
      * Node is invalid
      */
-    Invalid,
+    Invalid = 1 << 1,
     /**
      * node is not validated
      */
-    Unvalidated,
+    Unvalidated = 1 << 2,
     /**
      * Node did not pass validation, but is preserved.
      */
-    ValidationFailed,
+    ValidationFailed = 1 << 3,
     /**
      * Parsing the node is not supported yet or the node syntax definition does not exist.
      */
-    Unknown,
+    Unknown = 1 << 4,
     /**
      * Failed to parse the node.
      */
-    Unparsed,
+    Unparsed = 1 << 5,
     /**
      * Node is disallowed in the context
      */
-    Disallowed,
+    Disallowed = 1 << 6,
     /**
      * Node is malformed
      */
-    Malformed,
+    Malformed = 1 << 7,
+
+    /**
+     * Node has children
+     */
+    HasChildren = 1 << 8,
+
+    HasValues = 1 << 9,
 }
 
 export declare type AstNodePropertyType = "state" | "errors" | "location" | "tokens" | "parent" | "selector";
-
-/**
- * Enum of validation levels
- * @deprecated
- */
-export enum ValidationLevel {
-    /**
-     * disable validation
-     */
-    None,
-    /**
-     * validate selectors
-     */
-    Selector = 0x1,
-    /**
-     * validate at-rules
-     */
-    AtRule = 0x2,
-
-    /**
-     * validate declarations
-     */
-    Declaration = 0x4,
-    /**
-     * validate selectors and at-rules
-     */
-    Default = Selector | AtRule, // selectors + at-rules
-    /**
-     * validate selectors, at-rules and declarations
-     */
-    All = Selector | AtRule | Declaration, // selectors + at-rules + declarations
-
-    /**
-     * Report only. Apply validation and report nodes that are marked as invalid
-     */
-    ReportOnly = 0x8,
-}
 
 /**
  * Enum of all token types
@@ -834,15 +804,15 @@ export enum ColorType {
     /**
      * deprecated system colors
      */
-    SYS,
+    SYS = 1,
     /**
      * deprecated system colors
      */
-    DPSYS,
+    DPSYS ,
     /**
      * named colors
      */
-    LIT,
+    LIT ,
     /**
      * colors as hex values
      */

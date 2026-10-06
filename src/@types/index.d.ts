@@ -42,7 +42,7 @@ export declare interface ErrorDescription {
     /**
      * Error node
      */
-    node?: Token | AstNode | null;
+    node?: number | null;
     /**
      * Error location
      */
@@ -61,6 +61,12 @@ export declare interface ErrorDescription {
  * CSS validation options
  */
 export interface ValidationOptions {
+
+    /**
+     * Arena
+     */
+    arena: Arena;
+
     /**
      * Nested rule context
      * @private
@@ -710,6 +716,12 @@ export declare interface ResolvedPath {
  * Ast node render options
  */
 export declare interface RenderOptions {
+
+    /**
+     * Arena
+     */
+    arena: Arena;
+
     /**
      * Source file to be used as CSS input file for sourcemap resolution
      */

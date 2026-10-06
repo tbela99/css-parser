@@ -47,51 +47,53 @@ import { equalsIgnoreCase } from "./text.ts";
  */
 
 export function parseSelector(
-    tokens: Token[],
-    context: AtRuleToken | AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule | AstStyleSheet | null,
+    tokens: number[],
+    context: number | null,
     options: ParserOptions,
     errors: ErrorDescription[],
-): AstRule | AstKeyframesRule {
-    if (context?.typ === EnumToken.KeyframesAtRuleNodeType) {
+): number {
+    const arena = options.arena!;
+    const contextTyp = arena.getType(context!);
+    let typ: EnumToken;
+
+    if (arena.getType(context) === EnumToken.KeyframesAtRuleNodeType) {
         const result = matchAllSyntaxes(
             getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "keyframe-selectors"),
-            createValidationContext(tokens),
+            createValidationContext(tokens, options),
             options,
         );
 
-        const parts = splitTokenList(tokens);
+        const parts = splitTokenList(tokens, options);
 
         for (const part of parts) {
-            trimArray(part);
+            trimArray(part, options);
 
             if (options.minify) {
-                const filtered = part.filter(
-                    (token) => token.typ !== EnumToken.WhitespaceTokenType && token.typ !== EnumToken.CommentTokenType,
-                );
+                const filtered = part.filter((token) => {
+                    typ = arena.getType(token);
+                    typ !== EnumToken.WhitespaceTokenType && typ !== EnumToken.CommentTokenType;
+                });
 
                 if (filtered.length === 1) {
-                    if (
-                        filtered[0].typ === EnumToken.IdenTokenType &&
-                        "from" === (filtered[0] as IdentToken).val.toLowerCase()
-                    ) {
-                        filtered[0] = {
-                            typ: EnumToken.PercentageTokenType,
-                            val: 0,
-                            [LOCSRCID]: filtered[0][LOCSRCID],
-                            [LOCSTA]: filtered[0][LOCSTA],
-                            [LOCEND]: filtered[0][LOCEND],
-                        };
-                    } else if (
-                        filtered[0].typ === EnumToken.PercentageTokenType &&
-                        100 === (filtered[0] as PercentageToken).val
-                    ) {
-                        filtered[0] = {
-                            typ: EnumToken.IdenTokenType,
-                            val: "to",
-                            [LOCSRCID]: filtered[0][LOCSRCID],
-                            [LOCSTA]: filtered[0][LOCSTA],
-                            [LOCEND]: filtered[0][LOCEND],
-                        };
+                    typ = arena.getType(filtered[0]);
+                    if (typ === EnumToken.IdenTokenType && arena.equalsIgnoreCase(filtered[0], "val", "from")) {
+                        arena.set(filtered[0], EnumToken.PercentageTokenType, 0, 0);
+                        // filtered[0] = {
+                        //     typ: EnumToken.PercentageTokenType,
+                        //     val: 0,
+                        //     [LOCSRCID]: filtered[0][LOCSRCID],
+                        //     [LOCSTA]: filtered[0][LOCSTA],
+                        //     [LOCEND]: filtered[0][LOCEND],
+                        // };
+                    } else if (typ === EnumToken.PercentageTokenType && 100 === arena.getNumerciValue(filtered[0])) {
+                        arena.set(filtered[0], 0, EnumToken.IdenTokenType, arena.internString("to"), 0);
+                        // filtered[0] = {
+                        //     typ: EnumToken.IdenTokenType,
+                        //     val: "to",
+                        //     [LOCSRCID]: filtered[0][LOCSRCID],
+                        //     [LOCSTA]: filtered[0][LOCSTA],
+                        //     [LOCEND]: filtered[0][LOCEND],
+                        // };
                     }
 
                     part.splice(0, part.length, ...filtered);
@@ -104,7 +106,9 @@ export function parseSelector(
             tokens.length,
             ...parts.reduce((acc, curr) => {
                 if (acc.length > 0) {
-                    acc.push({ typ: EnumToken.CommaTokenType });
+                    const id = arena.allocate();
+                    arena.set(id, EnumToken.CommaTokenType);
+                    acc.push(id);
                 }
 
                 for (const c of curr) {
@@ -112,13 +116,17 @@ export function parseSelector(
                 }
 
                 return acc;
-            }, [] as Token[]),
+            }, [] as number[]),
         );
+
+        const node = arena.allocate();
+
+        arena.set(node, EnumToken.KeyframesRuleNodeType);
 
         return {
             typ: EnumToken.KeyframesRuleNodeType,
             sel: [
-                ...splitTokenList(trimArray(tokens)).reduce((acc, curr: Token[]) => {
+                ...splitTokenList(trimArray(tokens, options), options).reduce((acc, curr: number[]) => {
                     acc.add(curr.reduce((acc, curr) => acc + renderValue(curr, { minify: false }), ""));
                     return acc;
                 }, new Set<string>()),
@@ -133,20 +141,20 @@ export function parseSelector(
         } as AstKeyframesRule;
     }
 
-    const stack: Token[] = [];
+    const stack: number[] = [];
     const uniq = new Map<string, string[]>();
 
     let allowed: boolean = true;
     let index: number;
-    let parent: AstRuleList = context as AstRuleList;
+    let parent: number = context as number;
     let nested: boolean = false;
     let val: string;
 
-    if (context?.typ !== EnumToken.StyleSheetNodeType && context?.typ !== EnumToken.RuleNodeType) {
+    if (contextTyp !== EnumToken.StyleSheetNodeType && contextTyp !== EnumToken.RuleNodeType) {
         allowed = false;
 
-        if (context?.typ === EnumToken.AtRuleNodeType) {
-            const syntaxRule = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + (context as AstAtRule).nam);
+        if (contextTyp === EnumToken.AtRuleNodeType) {
+            const syntaxRule = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + arena.getName(context));
 
             allowed = syntaxRule?.acceptAnyRule ?? false;
 
@@ -171,152 +179,262 @@ export function parseSelector(
     }
 
     do {
-        if (parent?.typ === EnumToken.AtRuleNodeType && "media" === (parent as AstAtRule).nam) {
-            parent = parent[PARENT] as AstRuleList;
+        if (contextTyp === EnumToken.AtRuleNodeType && arena.equalsIgnoreCase(parent, "nam", "media")) {
+            parent = arena.getParent(parent);
             continue;
         }
 
-        nested = parent?.typ == EnumToken.RuleNodeType;
-        parent = parent?.[PARENT] as AstRuleList;
-    } while (!nested && parent != null);
+        nested = arena.getType(parent) == EnumToken.RuleNodeType;
+        parent = arena.getParent(parent);
+
+    } while (!nested && parent != 0);
 
     const all = new Array(tokens.length);
     let write = 0;
+    let token: number;
+    let next: number;
+    let newToken: number;
 
     for (let read = 0; read < tokens.length; read++) {
-        let token = tokens[read];
+        token = tokens[read];
+        typ = arena.getType(token);
 
-        if (token.typ == EnumToken.ColonTokenType) {
-            const next = tokens[read + 1];
+        if (typ == EnumToken.ColonTokenType) {
+            next = tokens[read + 1];
 
-            if (next?.typ == EnumToken.IdenTokenType) {
-                all[write++] = {
-                    ...token,
-                    typ: EnumToken.PseudoElementTokenType,
-                    val: ":" + (next as IdentToken).val,
-                    [LOCEND]: next[LOCEND],
-                } as Token;
+            if (next != null && arena.getType(next) == EnumToken.IdenTokenType) {
+                newToken = arena.allocate();
+                all[write++] = newToken;
+
+                arena.set(newToken, EnumToken.PseudoClassTokenType, arena.interString(":" + arena.getValue(next)));
+                arena.setSpan(newToken, arena.getSourceId(token), arena.getStart(token), arena.getEnd(next));
+
                 read++;
                 continue;
             }
 
-            if (next?.typ == EnumToken.FunctionTokenDefType) {
-                val = ":" + (next as IdentToken).val;
+            if (next != null && arena.getType(next) == EnumToken.FunctionTokenDefType) {
+                val = ":" + arena.getValue(next);
 
-                all[write++] = {
-                    ...token,
-                    typ:
-                        val + "()" in getSyntaxConfig().selectors
-                            ? EnumToken.PseudoClassFunctionTokenDefType
-                            : next.typ,
-                    val,
-                    [LOCEND]: next[LOCEND],
-                } as Token;
-                read++;
-                continue;
-            }
-        }
+                // all[write++] = {
+                //     ...token,
+                //     typ:
+                //         val + "()" in getSyntaxConfig().selectors
+                //             ? EnumToken.PseudoClassFunctionTokenDefType
+                //             : next.typ,
+                //     val,
+                //     [LOCEND]: next[LOCEND],
+                // } as Token;
 
-        if (token.typ == EnumToken.DoubleColonTokenType) {
-            const next = tokens[read + 1];
-            val = ":" + (next as IdentToken).val;
+                newToken = arena.allocate();
+                all[write++] = newToken;
 
-            if (next?.typ == EnumToken.IdenTokenType) {
-                all[write++] = {
-                    ...token,
-                    typ: EnumToken.PseudoClassTokenType,
-                    val: (pseudoElements.includes(val) ? "" : ":") + val,
-                    [LOCEND]: next[LOCEND],
-                } as Token;
-                read++;
-                continue;
-            }
+                arena.set(
+                    newToken,
+                    val + "()" in getSyntaxConfig().selectors
+                        ? EnumToken.PseudoClassFunctionTokenDefType
+                        : arena.getType(next),
+                    arena.interString(":" + arena.getValue(next)),
+                );
+                arena.setSpan(newToken, arena.getSourceId(token), arena.getStart(token), arena.getEnd(next));
 
-            if (next?.typ == EnumToken.FunctionTokenDefType) {
-                val = "::" + (next as IdentToken).val;
-                all[write++] = {
-                    ...token,
-                    typ:
-                        val + "()" in getSyntaxConfig().selectors
-                            ? EnumToken.PseudoClassFunctionTokenDefType
-                            : EnumToken.FunctionTokenDefType,
-                    val,
-                    [LOCEND]: next[LOCEND],
-                } as Token;
                 read++;
                 continue;
             }
         }
 
-        if (token.typ == EnumToken.ColorTokenType) {
-            if (isHash((token as ColorToken).val)) {
-                token.typ = EnumToken.HashTokenType;
-                all[write++] = token as Token;
+        if (arena.getType(token) == EnumToken.DoubleColonTokenType) {
+            const next = tokens[read + 1];
+            val = ":" + arena.getValue(next);
+
+            if (arena.getType(next) == EnumToken.IdenTokenType) {
+                // all[write++] = {
+                //     ...token,
+                //     typ: EnumToken.PseudoClassTokenType,
+                //     val: (pseudoElements.includes(val) ? "" : ":") + val,
+                //     [LOCEND]: next[LOCEND],
+                // } as Token;
+
+                newToken = arena.allocate();
+                all[write++] = newToken;
+
+                arena.set(
+                    newToken,
+                    EnumToken.PseudoClassTokenType,
+                    arena.interString((pseudoElements.includes(val) ? "" : ":") + val),
+                );
+                arena.setSpan(newToken, arena.getSourceId(token), arena.getStart(token), arena.getEnd(next));
+
+                read++;
                 continue;
             }
 
-            return {
-                typ: EnumToken.RuleNodeType,
-                sel: [
-                    ...tokens
-                        .reduce(
-                            (acc: string[][], curr: Token, index: number, array: Token[]) => {
-                                if (curr.typ == EnumToken.WhitespaceTokenType) {
-                                    if (
-                                        trimWhiteSpace.includes(array[index - 1]?.typ) ||
-                                        trimWhiteSpace.includes(array[index + 1]?.typ) ||
-                                        combinators.includes((<LiteralToken>array[index - 1])?.val) ||
-                                        combinators.includes((<LiteralToken>array[index + 1])?.val)
-                                    ) {
-                                        return acc;
+            if (arena.getType(next) == EnumToken.FunctionTokenDefType) {
+                val = "::" + arena.getValue(next);
+                // all[write++] = {
+                //     ...token,
+                //     typ:
+                //         val + "()" in getSyntaxConfig().selectors
+                //             ? EnumToken.PseudoClassFunctionTokenDefType
+                //             : EnumToken.FunctionTokenDefType,
+                //     val,
+                //     [LOCEND]: next[LOCEND],
+                // } as Token;
+
+                newToken = arena.allocate();
+                all[write++] = newToken;
+
+                arena.set(
+                    newToken,
+                    val + "()" in getSyntaxConfig().selectors
+                        ? EnumToken.PseudoClassFunctionTokenDefType
+                        : EnumToken.FunctionTokenDefType,
+                    arena.interString(val),
+                );
+                arena.setSpan(newToken, arena.getSourceId(token), arena.getStart(token), arena.getEnd(next));
+
+                read++;
+                continue;
+            }
+        }
+
+        if (arena.getType(token) == EnumToken.ColorTokenType) {
+            if (isHash(arena.getValue(token))) {
+                arena.set(token, EnumToken.HashTokenType);
+                all[write++] = token;
+                continue;
+            }
+
+            const node = arena.allocate();
+
+            node.set(
+                node,
+                EnumToken.RuleNodeType,
+                arena.internString(
+                    [
+                        ...all
+                            .reduce(
+                                (acc: string[][], curr: number, index: number, array: number[]) => {
+                                    if (arena.getType(curr) == EnumToken.WhitespaceTokenType) {
+                                        if (
+                                            trimWhiteSpace.includes(arena.getType(array[index - 1])) ||
+                                            trimWhiteSpace.includes(arena.getType(array[index + 1])) ||
+                                            combinators.includes(arena.getValue(array[index - 1])) ||
+                                            combinators.includes(arena.getValue(array[index + 1]))
+                                        ) {
+                                            return acc;
+                                        }
                                     }
-                                }
 
-                                let t: string = renderValue(curr, { minify: false });
+                                    let t: string = renderValue(curr, { minify: false, arena });
 
-                                if (t == ",") {
-                                    acc.push([]);
-                                } else {
-                                    acc[acc.length - 1].push(t);
-                                }
-                                return acc;
-                            },
-                            [[]],
-                        )
-                        .reduce((acc: Map<string, string[]>, curr: string[]) => {
-                            let i: number = 0;
+                                    if (t == ",") {
+                                        acc.push([]);
+                                    } else {
+                                        acc[acc.length - 1].push(t);
+                                    }
+                                    return acc;
+                                },
+                                [[]],
+                            )
+                            .reduce((acc: Map<string, string[]>, curr: string[]) => {
+                                let i: number = 0;
 
-                            for (; i < curr.length; i++) {
-                                if (i + 1 < curr.length && curr[i] == "*") {
-                                    if (curr[i] == "*") {
-                                        let index: number = curr[i + 1] == " " ? 2 : 1;
+                                for (; i < curr.length; i++) {
+                                    if (i + 1 < curr.length && curr[i] == "*") {
+                                        if (curr[i] == "*") {
+                                            let index: number = curr[i + 1] == " " ? 2 : 1;
 
-                                        if (![">", "~", "+"].includes(curr[index])) {
-                                            curr.splice(i, index);
+                                            if (![">", "~", "+"].includes(curr[index])) {
+                                                curr.splice(i, index);
+                                            }
                                         }
                                     }
                                 }
-                            }
 
-                            acc.set(curr.join(""), curr);
-                            return acc;
-                        }, uniq)
-                        .keys(),
-                ].join(","),
-                chi: [],
-                [LOCSRCID]: tokens[0][LOCSRCID],
-                [LOCSTA]: tokens[0][LOCSTA],
-                [LOCEND]: tokens[tokens.length - 1][LOCEND],
-                [TOKENS]: tokens,
-                [STATE]: EnumAstNodeStatus.Invalid,
-                [ERRORS]: [
-                    {
-                        action: "drop",
-                        node: token,
-                        message: "invalid hash id",
-                    },
-                ],
-            } as AstRule;
+                                acc.set(curr.join(""), curr);
+                                return acc;
+                            }, uniq)
+                            .keys(),
+                    ].join(","),
+                ),
+            );
+
+            arena.setTokens(node, all);
+            arena.setFlags(node, EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.Invalid);
+
+            arena.setErrors(node, [
+                {
+                    action: "drop",
+                    node: node,
+                    message: "invalid hash id",
+                },
+            ]);
+
+            return node;
+
+            // return {
+            //     typ: EnumToken.RuleNodeType,
+            //     sel: [
+            //         ...tokens
+            //             .reduce(
+            //                 (acc: string[][], curr: Token, index: number, array: Token[]) => {
+            //                     if (curr.typ == EnumToken.WhitespaceTokenType) {
+            //                         if (
+            //                             trimWhiteSpace.includes(array[index - 1]?.typ) ||
+            //                             trimWhiteSpace.includes(array[index + 1]?.typ) ||
+            //                             combinators.includes((<LiteralToken>array[index - 1])?.val) ||
+            //                             combinators.includes((<LiteralToken>array[index + 1])?.val)
+            //                         ) {
+            //                             return acc;
+            //                         }
+            //                     }
+
+            //                     let t: string = renderValue(curr, { minify: false });
+
+            //                     if (t == ",") {
+            //                         acc.push([]);
+            //                     } else {
+            //                         acc[acc.length - 1].push(t);
+            //                     }
+            //                     return acc;
+            //                 },
+            //                 [[]],
+            //             )
+            //             .reduce((acc: Map<string, string[]>, curr: string[]) => {
+            //                 let i: number = 0;
+
+            //                 for (; i < curr.length; i++) {
+            //                     if (i + 1 < curr.length && curr[i] == "*") {
+            //                         if (curr[i] == "*") {
+            //                             let index: number = curr[i + 1] == " " ? 2 : 1;
+
+            //                             if (![">", "~", "+"].includes(curr[index])) {
+            //                                 curr.splice(i, index);
+            //                             }
+            //                         }
+            //                     }
+            //                 }
+
+            //                 acc.set(curr.join(""), curr);
+            //                 return acc;
+            //             }, uniq)
+            //             .keys(),
+            //     ].join(","),
+            //     chi: [],
+            //     [LOCSRCID]: tokens[0][LOCSRCID],
+            //     [LOCSTA]: tokens[0][LOCSTA],
+            //     [LOCEND]: tokens[tokens.length - 1][LOCEND],
+            //     [TOKENS]: tokens,
+            //     [STATE]: EnumAstNodeStatus.Invalid,
+            //     [ERRORS]: [
+            //         {
+            //             action: "drop",
+            //             node: token,
+            //             message: "invalid hash id",
+            //         },
+            //     ],
+            // } as AstRule;
         }
 
         all[write++] = token;
@@ -332,32 +450,42 @@ export function parseSelector(
 
     const result = matchSelectorSyntax(tokens, errors, options, nested);
 
-    trimArray(tokens);
+    for (const token of tokens) {
+        
+        
+        console.error(EnumToken[arena.getType(token)]);
+    }
+
+    trimArray(tokens, options);
 
     if (result.success) {
         for (let i = 0; i < tokens.length; i++) {
-            const token = tokens[i];
+            token = tokens[i];
+            typ = arena.getType(token);
 
-            switch (token.typ) {
+            switch (token) {
                 case EnumToken.AttrStartTokenType:
                     stack.push(token);
                     break;
                 case EnumToken.AttrEndTokenType:
-                    if (stack.at(-1)?.typ == EnumToken.AttrStartTokenType) {
+                    if (arena.getType(stack.at(-1)) == EnumToken.AttrStartTokenType) {
                         index = tokens.indexOf(stack.at(-1)!);
-                        // @ts-expect-error
-                        const { val, ...attr } = stack.at(-1) as AttrStartToken;
-                        attr[LOCSRCID] = stack.at(-1)![LOCSRCID];
-                        attr[LOCSTA] = stack.at(-1)![LOCSTA];
-                        attr[LOCEND] = token[LOCEND];
+
+                        // const { val, ...attr } = stack.at(-1) as AttrStartToken;
+                        // attr[LOCSRCID] = stack.at(-1)![LOCSRCID];
+                        // attr[LOCSTA] = stack.at(-1)![LOCSTA];
+                        // attr[LOCEND] = token[LOCEND];
+
+                        arena.setSpanEnd(tokens[index], arena.getSpanEnd(token));
+                        arena.setChildren(tokens[index], tokens.splice(index + 1, i - index - 1));
 
                         tokens.splice(i, 1);
-                        Object.assign(attr, {
-                            typ: EnumToken.AttrTokenType,
-                            chi: tokens.splice(index + 1, i - index - 1),
-                        });
+                        // Object.assign(attr, {
+                        //     typ: EnumToken.AttrTokenType,
+                        //     chi: tokens.splice(index + 1, i - index - 1),
+                        // });
 
-                        tokens[index] = attr;
+                        // tokens[index] = attr;
                         i = index;
                         stack.pop();
                     }
@@ -370,237 +498,302 @@ export function parseSelector(
                     break;
 
                 case EnumToken.EndParensTokenType:
-                    if (stack.at(-1)?.typ == EnumToken.PseudoClassFunctionTokenDefType) {
-                        const func = stack.at(-1) as PseudoClassFunctionToken;
+                    if (stack.length > 0 && arena.getType(stack.at(-1)) == EnumToken.PseudoClassFunctionTokenDefType) {
+                        const func = stack.at(-1) as number;
+                        const funcType = arena.getType(func) as EnumToken;
                         index = tokens.indexOf(func);
-                        (stack.at(-1) as AttrStartToken)[LOCEND] = token[LOCEND];
+
+                        arena.setSpanEnd(tokens[index], arena.getSpanEnd(token));
+                        // (stack.at(-1) as AttrStartToken)[LOCEND] = token[LOCEND];
                         tokens.splice(i, 1);
 
-                        if (tokensfuncDefMap.has(func.typ)) {
-                            // @ts-expect-error
-                            func.typ = tokensfuncDefMap.get(func.typ) as EnumToken;
-                            func.chi = trimArray(tokens.splice(index + 1, i - index - 1));
+                        if (tokensfuncDefMap.has(funcType)) {
+                            arena.setType(func, tokensfuncDefMap.get(funcType) as EnumToken);
+                            arena.setChildren(func, trimArray(tokens.splice(index + 1, i - index - 1), options));
                         }
 
                         if (result.success && options.minify) {
+                            val = arena.getValue(func);
+
                             // parse an+b
                             // an+b produces an ident such as 'n-0', a literal such as '+2n-0' or a list of tokens such as[2n\s?[+-]\s?3]
                             if (
-                                func.val == ":nth-child" ||
-                                func.val == ":nth-last-child" ||
-                                func.val == ":nth-of-type" ||
-                                func.val == ":nth-last-of-type"
+                                val == ":nth-child" ||
+                                val == ":nth-last-child" ||
+                                val == ":nth-of-type" ||
+                                val == ":nth-last-of-type"
                             ) {
-                                const list: Token[] = [];
-                                let index: number;
+                                const list: number[] = [];
+                                let index: number = -1;
+                                let child: number = arena.getFirstChild(func);
 
-                                for (index = 0; index < func.chi.length; index++) {
-                                    if (
-                                        func.chi[index].typ == EnumToken.CommentTokenType ||
-                                        func.chi[index].typ == EnumToken.WhitespaceTokenType
-                                    ) {
+                                while (child != 0) {
+                                    index++;
+                                    typ = arena.getType(child);
+
+                                    if (typ == EnumToken.CommentTokenType || typ == EnumToken.WhitespaceTokenType) {
                                         continue;
                                     }
 
-                                    if (
-                                        func.chi[index].typ == EnumToken.IdenTokenType &&
-                                        equalsIgnoreCase("of", (func.chi[index] as IdentToken).val)
-                                    ) {
+                                    if (typ == EnumToken.IdenTokenType && arena.equalsIgnoreCase(child, "val", "of")) {
                                         index--;
                                         break;
                                     }
 
-                                    list.push(func.chi[index]);
+                                    list.push(child);
+                                    child = arena.getNextSibling(child);
                                 }
 
                                 if (list.length == 2) {
-                                    if (list[1].typ == EnumToken.NumberTokenType) {
-                                        if ((list[1] as NumberToken).val == 0) {
+                                    if (arena.getType(list[1]) == EnumToken.NumberTokenType) {
+                                        if (arena.getNumericValue(list[1]) == 0) {
                                             list.length = 1;
 
                                             if (
-                                                list[0].typ == EnumToken.DimensionTokenType &&
-                                                (list[0] as DimensionToken).val == -2
+                                                arena.getType(list[0]) == EnumToken.DimensionTokenType &&
+                                                arena.getNumericValue(list[0]) == -2
                                             ) {
-                                                (list[0] as DimensionToken).val = 2;
+                                                arena.setNumericValue(list[0], 2);
                                             }
                                         } else {
-                                            const sign = Math.sign((list[1] as NumberToken).val as number);
+                                            const sign = Math.sign(arena.getNumericValue(list[1]));
                                             // @ts-ignore
                                             (list[1] as NumberToken).val *= sign;
-                                            list.splice(1, 0, {
-                                                typ: EnumToken.LiteralTokenType,
-                                                val: sign > 0 ? "+" : "-",
-                                            } as LiteralToken);
+
+                                            const literal = arena.allocate();
+                                            arena.setType(
+                                                literal,
+                                                EnumToken.LiteralTokenType,
+                                                arena.internString(sign < 0 ? "-" : "+"),
+                                            );
+
+                                            list.splice(1, 0, literal);
                                         }
                                     }
 
                                     if (
                                         list.length == 3 &&
-                                        list[2].typ == EnumToken.NumberTokenType &&
-                                        list[0].typ == EnumToken.DimensionTokenType &&
-                                        (((list[0] as DimensionToken).val as number) == 2 ||
-                                            (list[0] as DimensionToken).val == -2)
+                                        arena.getType(list[2]) == EnumToken.NumberTokenType &&
+                                        arena.getType(list[0]) == EnumToken.DimensionTokenType
                                     ) {
-                                        if (1 == (list[2] as NumberToken).val) {
-                                            list.splice(0, 3, {
-                                                typ: EnumToken.IdenTokenType,
-                                                val: "odd",
-                                                [LOCSRCID]: list[0][LOCSRCID],
-                                                [LOCSTA]: list[0][LOCSTA],
-                                                [LOCEND]: list[0][LOCEND],
-                                            } as IdentToken);
-                                        } else if (0 == (list[2] as NumberToken).val) {
-                                            list.splice(0, 3, {
-                                                typ: EnumToken.IdenTokenType,
-                                                val: "even",
-                                                [LOCSRCID]: list[0][LOCSRCID],
-                                                [LOCSTA]: list[0][LOCSTA],
-                                                [LOCEND]: list[0][LOCEND],
-                                            } as IdentToken);
+                                        const value = arena.getNumericValue(list[0]);
+
+                                        if (value == 2 || value == -2) {
+                                            const value0 = arena.getNumericValue(list[2]);
+
+                                            if (1 == value0) {
+                                                const literal = arena.allocate();
+                                                arena.setType(
+                                                    literal,
+                                                    EnumToken.IdenTokenType,
+                                                    arena.internString("odd"),
+                                                );
+                                                arena.setSpan(
+                                                    literal,
+                                                    arena.getSourceId(list[0]),
+                                                    arena.getSpanStart(list[0]),
+                                                    arena.getSpanEnd(list[0]),
+                                                );
+
+                                                list.splice(0, 3, literal);
+                                            } else if (0 == value0) {
+                                                const literal = arena.allocate();
+                                                arena.setType(
+                                                    literal,
+                                                    EnumToken.IdenTokenType,
+                                                    arena.internString("even"),
+                                                );
+                                                arena.setSpan(
+                                                    literal,
+                                                    arena.getSourceId(list[0]),
+                                                    arena.getSpanStart(list[0]),
+                                                    arena.getSpanEnd(list[0]),
+                                                );
+
+                                                list.splice(0, 3, literal);
+                                            }
                                         }
                                     }
 
-                                    func.chi.splice(0, index, ...list);
+                                    arena.setChildren(func, arena.children(func).splice(0, index, ...list));
                                 }
 
                                 if (list.length == 1) {
                                     if (
-                                        list[0].typ == EnumToken.IdenTokenType &&
-                                        equalsIgnoreCase("-n", (list[0] as IdentToken).val)
+                                        arena.getType(list[0]) == EnumToken.IdenTokenType &&
+                                        arena.equalsIgnoreCase(list[0], "val", "-n")
                                     ) {
-                                        (list[0] as IdentToken).val = "n";
+                                        arena.setValue(list[0], arena.interString("n"));
                                     }
                                 }
 
                                 if (list.length == 3) {
-                                    if (
-                                        list[0].typ == EnumToken.IdenTokenType &&
-                                        ("n" == (list[0] as IdentToken).val ||
-                                            "-n" == (list[0] as IdentToken).val ||
-                                            "+n" == (list[0] as IdentToken).val)
-                                    ) {
-                                        if (list[1].typ == EnumToken.NextSiblingCombinatorTokenType) {
-                                            if (
-                                                list[2].typ == EnumToken.NumberTokenType &&
-                                                0 == (list[2] as NumberToken).val
-                                            ) {
-                                                (list[0] as IdentToken).val = "n";
-                                                func.chi.splice(0, index, list[0]);
-                                                break;
+                                    if (arena.getType(list[0]) == EnumToken.IdenTokenType) {
+                                        val = arena.getValue(list[0]);
+
+                                        if ("n" == val || "-n" == val || "+n" == val) {
+                                            if (arena.getType(list[1]) == EnumToken.NextSiblingCombinatorTokenType) {
+                                                if (
+                                                    arena.getType(list[2]) == EnumToken.NumberTokenType &&
+                                                    0 == arena.getNumericValue(list[2])
+                                                ) {
+                                                    arena.setValue(list[0], "n");
+                                                    arena.setChildren(
+                                                        func,
+                                                        arena.children(func).splice(0, index, list[0]),
+                                                    );
+                                                    // func.chi.splice(0, index, list[0]);
+                                                    break;
+                                                }
                                             }
                                         }
                                     }
                                 }
 
-                                const token = func.chi.find(
-                                    (t) =>
-                                        t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.CommentTokenType,
-                                ) as Token;
+                                const token = arena.findChild(func, (t: number) => {
+                                    typ = arena.getType(t);
 
-                                if (token?.typ == EnumToken.IdenTokenType || token?.typ == EnumToken.LiteralTokenType) {
-                                    if (
-                                        token.typ == EnumToken.IdenTokenType &&
-                                        ((token as IdentToken).val == "odd" || (token as IdentToken).val == "even")
-                                    ) {
-                                        if ((token as IdentToken).val == "even") {
-                                            Object.assign(token, {
-                                                typ: EnumToken.DimensionTokenType,
-                                                val: 2,
-                                                unit: "n",
-                                            });
-                                        }
-                                    } else {
-                                        const matches = /^(([+-]?[0-9]*)?n)?([+-]?[0-9]+)?$/.exec(
-                                            (token as IdentToken | LiteralToken).val,
-                                        );
+                                    return typ != EnumToken.WhitespaceTokenType && typ != EnumToken.CommentTokenType;
+                                }) as number;
 
-                                        if (matches != null) {
-                                            let [_ /* , an, a, b */]: string[] = matches;
+                                if (token != null) {
+                                    typ = arena.getType(token);
 
-                                            const a1 = matches[2] === "" ? 1 : matches[2] === "-" ? -1 : +matches[2];
-                                            const b1 = +matches[3];
+                                    if (typ == EnumToken.IdenTokenType || typ == EnumToken.LiteralTokenType) {
+                                        val = arena.getValue(token);
 
-                                            if (b1 === 0) {
-                                                Object.assign(
+                                        if (typ == EnumToken.IdenTokenType) {
+                                            if (val == "even") {
+                                                arena.set(
                                                     token,
-                                                    Math.abs(a1) === 1
-                                                        ? {
-                                                              typ: EnumToken.IdenTokenType,
-                                                              val: "n",
-                                                          }
-                                                        : {
-                                                              typ: EnumToken.DimensionTokenType,
-                                                              val: a1 * Math.sign(a1),
-                                                              unit: "n",
-                                                          },
+                                                    EnumToken.DimensionTokenType,
+                                                    0,
+                                                    2,
+                                                    arena.internString("n"),
                                                 );
                                             }
-                                        }
-                                    }
-                                } else if (token?.typ === EnumToken.DimensionTokenType) {
-                                    const index: number = func.chi.indexOf(token);
-
-                                    let sign: Token | null = null;
-                                    let num: NumberToken | null = null;
-                                    let i: number = index + 1;
-
-                                    for (; i < func.chi.length; i++) {
-                                        if (
-                                            func.chi[i].typ == EnumToken.WhitespaceTokenType ||
-                                            func.chi[i].typ == EnumToken.CommentTokenType
-                                        ) {
-                                            continue;
-                                        }
-
-                                        if (func.chi[i].typ == EnumToken.NumberTokenType) {
-                                            num = func.chi[i] as NumberToken;
-                                            break;
                                         } else {
-                                            sign = func.chi[i];
-                                        }
-                                    }
+                                            const matches = /^(([+-]?[0-9]*)?n)?([+-]?[0-9]+)?$/.exec(
+                                                val
+                                            );
 
-                                    if (num != null) {
-                                        if (num.val === 0) {
-                                            func.chi.splice(index + 1, i - index);
+                                            if (matches != null) {
+                                                let [_ /* , an, a, b */]: string[] = matches;
 
-                                            if (((token as DimensionToken).val as number) < 0) {
-                                                ((token as DimensionToken).val as number) *= -1;
+                                                const a1 =
+                                                    matches[2] === "" ? 1 : matches[2] === "-" ? -1 : +matches[2];
+                                                const b1 = +matches[3];
+
+                                                if (b1 === 0) {
+
+                                                    if (Math.abs(a1) === 1) {
+                                                        
+                                                        arena.set(token,
+                                                            EnumToken.IdenTokenType,
+                                                            arena.internString("n")
+                                                        )
+                                                    }
+                                                    
+                                                    else {
+
+                                                        arena.set(token,
+                                                            EnumToken.DimensionTokenType,
+                                                            0,
+                                                            a1 * Math.sign(a1),
+                                                            arena.internString("n"));
+                                                    }
+
+                                                    // Object.assign(
+                                                    //     token,
+                                                    //     Math.abs(a1) === 1
+                                                    //         ? {
+                                                    //               typ: EnumToken.IdenTokenType,
+                                                    //               val: "n",
+                                                    //           }
+                                                    //         : {
+                                                    //               typ: EnumToken.DimensionTokenType,
+                                                    //               val: a1 * Math.sign(a1),
+                                                    //               unit: "n",
+                                                    //           },
+                                                    // );
+                                                }
                                             }
-                                            break;
-                                        } else if (
-                                            ((token as DimensionToken).val as number) === 2 &&
-                                            Math.abs(num.val as number) === 1
-                                        ) {
-                                            Object.assign(token, {
-                                                typ: EnumToken.IdenTokenType,
-                                                val: "odd",
-                                            });
+                                        }
+                                    } else if (typ === EnumToken.DimensionTokenType) {
 
-                                            func.chi.splice(index + 1, i - index);
-                                            break;
+                                        const children = arena.children(func);
+                                        const index: number = children.indexOf(token);
+
+                                        let sign: Token | null = null;
+                                        let num: NumberToken | null = null;
+                                        let i: number = index + 1;
+
+                                        for (; i < children.length; i++) {
+
+                                            typ = arena.getType(children[i]);
+                                            if (
+                                                typ == EnumToken.WhitespaceTokenType ||
+                                               typ == EnumToken.CommentTokenType
+                                            ) {
+                                                continue;
+                                            }
+
+                                            if (typ == EnumToken.NumberTokenType) {
+                                                num = children[i] as NumberToken;
+                                                break;
+                                            } else {
+                                                sign = children[i];
+                                            }
                                         }
 
-                                        // if (((token as DimensionToken).val as number) === 1) {
-                                        //     Object.assign(token, {
-                                        //         typ: EnumToken.IdenTokenType,
-                                        //         val:
-                                        //             Math.sign((token as DimensionToken).val as number) === 1
-                                        //                 ? "n"
-                                        //                 : "-n",
-                                        //     });
-                                        // }
+                                        if (num != null) {
+                                            if (arena.getNumericValue(num) === 0 ) {
+                                                children.splice(index + 1, i - index);
 
-                                        // if (sign == null) {
-                                        //     func.chi.splice(index + 1, i - index - 1);
-                                        //     if (Math.sign(num.val as number) === 1) {
-                                        //         func.chi.splice(index + 1, 0, {
-                                        //             typ: EnumToken.LiteralTokenType,
-                                        //             val: "+",
-                                        //         });
-                                        //     }
-                                        // }
+                                                if (arena.getNumericValue(token) < 0) {
+                                                    arena.setNumericValue(token, arena.getNumericValue(token) *-1);
+                                                }
+
+                                                arena.setChildren(func, children);
+
+                                                break;
+                                            } else if (
+                                                arena.getNumericValue(token) === 2 &&
+                                                Math.abs(arena.getNumericValue(num)) === 1
+                                            ) {
+
+                                                arena.set(token, EnumToken.IdenTokenType, arena.internString("n"));
+
+                                                // Object.assign(token, {
+                                                //     typ: EnumToken.IdenTokenType,
+                                                //     val: "odd",
+                                                // });
+
+                                                children.splice(index + 1, i - index);
+                                                arena.setChildren(func, children);
+                                                break;
+                                            }
+
+                                            // if (((token as DimensionToken).val as number) === 1) {
+                                            //     Object.assign(token, {
+                                            //         typ: EnumToken.IdenTokenType,
+                                            //         val:
+                                            //             Math.sign((token as DimensionToken).val as number) === 1
+                                            //                 ? "n"
+                                            //                 : "-n",
+                                            //     });
+                                            // }
+
+                                            // if (sign == null) {
+                                            //     func.chi.splice(index + 1, i - index - 1);
+                                            //     if (Math.sign(num.val as number) === 1) {
+                                            //         func.chi.splice(index + 1, 0, {
+                                            //             typ: EnumToken.LiteralTokenType,
+                                            //             val: "+",
+                                            //         });
+                                            //     }
+                                            // }
+                                        }
                                     }
                                 }
                             }
@@ -615,28 +808,28 @@ export function parseSelector(
         }
     }
 
-    return {
-        typ: EnumToken.RuleNodeType,
-        sel: [
-            ...tokens
+    const node = arena.allocate();
+
+    arena.set(node, EnumToken.RuleNodeType, arena.internString([
+            ...all
                 .reduce(
-                    (acc: string[][], curr: Token, index: number, array: Token[]) => {
+                    (acc: string[][], curr: number, index: number, array: number[]) => {
                         // if (curr.typ == EnumToken.CommentTokenType) {
                         //     return acc;
                         // }
 
-                        if (curr.typ == EnumToken.WhitespaceTokenType) {
+                        if (arena.getType(curr) == EnumToken.WhitespaceTokenType) {
                             if (
-                                trimWhiteSpace.includes(array[index - 1]?.typ) ||
-                                trimWhiteSpace.includes(array[index + 1]?.typ) ||
-                                combinators.includes((<LiteralToken>array[index - 1])?.val) ||
-                                combinators.includes((<LiteralToken>array[index + 1])?.val)
+                                trimWhiteSpace.includes(arena.getType(array[index - 1])) ||
+                                trimWhiteSpace.includes(arena.getType(array[index + 1])) ||
+                                combinators.includes(arena.getValue(array[index - 1])) ||
+                                combinators.includes(arena.getValue(array[index + 1]))
                             ) {
                                 return acc;
                             }
                         }
 
-                        let t: string = renderValue(curr, { minify: false });
+                        let t: string = renderValue(curr, { minify: false, arena });
 
                         if (t == ",") {
                             acc.push([]);
@@ -666,18 +859,76 @@ export function parseSelector(
                     return acc;
                 }, uniq)
                 .keys(),
-        ].join(","),
-        chi: [],
-        [LOCSRCID]: tokens[0][LOCSRCID],
-        [LOCSTA]: tokens[0][LOCSTA],
-        [LOCEND]: tokens[tokens.length - 1][LOCEND],
-        [TOKENS]: tokens,
-        [STATE]:
-            result.success && allowed
-                ? EnumAstNodeStatus.Validated
-                : allowed
-                  ? EnumAstNodeStatus.Invalid
-                  : EnumAstNodeStatus.Disallowed,
-        [ERRORS]: result.success ? [] : result.errors,
-    } as AstRule;
+        ].join(",")));
+
+        arena.setSpan(node, arena.getSourceId(tokens[0]), arena.getSpanStart(tokens[0]), arena.getSpanEnd(tokens[tokens.length - 1]));
+        arena.setFlags(node, EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.Validated );
+
+        return node;
+
+    // return {
+    //     typ: EnumToken.RuleNodeType,
+    //     sel: [
+    //         ...tokens
+    //             .reduce(
+    //                 (acc: string[][], curr: Token, index: number, array: Token[]) => {
+    //                     // if (curr.typ == EnumToken.CommentTokenType) {
+    //                     //     return acc;
+    //                     // }
+
+    //                     if (curr.typ == EnumToken.WhitespaceTokenType) {
+    //                         if (
+    //                             trimWhiteSpace.includes(array[index - 1]?.typ) ||
+    //                             trimWhiteSpace.includes(array[index + 1]?.typ) ||
+    //                             combinators.includes((<LiteralToken>array[index - 1])?.val) ||
+    //                             combinators.includes((<LiteralToken>array[index + 1])?.val)
+    //                         ) {
+    //                             return acc;
+    //                         }
+    //                     }
+
+    //                     let t: string = renderValue(curr, { minify: false });
+
+    //                     if (t == ",") {
+    //                         acc.push([]);
+    //                     } else {
+    //                         acc[acc.length - 1].push(t);
+    //                     }
+    //                     return acc;
+    //                 },
+    //                 [[]],
+    //             )
+    //             .reduce((acc: Map<string, string[]>, curr: string[]) => {
+    //                 let i: number = 0;
+
+    //                 for (; i < curr.length; i++) {
+    //                     if (i + 1 < curr.length && curr[i] == "*") {
+    //                         if (curr[i] == "*") {
+    //                             let index: number = curr[i + 1] == " " ? 2 : 1;
+
+    //                             if (![">", "~", "+"].includes(curr[index])) {
+    //                                 curr.splice(i, index);
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+
+    //                 acc.set(curr.join(""), curr);
+    //                 return acc;
+    //             }, uniq)
+    //             .keys(),
+    //     ].join(","),
+    //     chi: [],
+    //     [LOCSRCID]: tokens[0][LOCSRCID],
+    //     [LOCSTA]: tokens[0][LOCSTA],
+    //     [LOCEND]: tokens[tokens.length - 1][LOCEND],
+    //     [TOKENS]: tokens,
+    //     [STATE]:
+    //         result.success && allowed
+    //             ? EnumAstNodeStatus.Validated
+    //             : allowed
+    //               ? EnumAstNodeStatus.Invalid
+    //               : EnumAstNodeStatus.Disallowed,
+    //     [ERRORS]: result.success ? [] : result.errors,
+    // } as AstRule;
 }

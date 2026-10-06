@@ -29,7 +29,7 @@ export declare interface WalkerOptions {
 /**
  * node walker option
  */
-export declare type WalkerOption = WalkerOptionEnum | AstNode | Token | null;
+export declare type WalkerOption = WalkerOptionEnum | number | null;
 /**
  * returned value:
  * - {@link WalkerOptionEnum.Ignore}: ignore this node and its children
@@ -51,11 +51,9 @@ export declare type WalkerFilter = (node: AstNode) => WalkerOption;
  * - {@link Token}:
  */
 export declare type WalkerValueFilter = (
-    node: AstNode | Token,
-    parent?: AstNode | Token | AstNode[] | Token[] | null,
+    node: number,
     event?: WalkerEvent,
-    parents?: Generator<Token>,
-) => WalkerOption | AstNode | Token | AstNode[] | Token[] | null;
+) => WalkerOption  | number[];
 
 /**
  * walker result
