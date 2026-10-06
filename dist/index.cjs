@@ -9548,6 +9548,7 @@ exports.WalkerEvent = void 0;
      */
     WalkerEvent[WalkerEvent["Leave"] = 2] = "Leave";
 })(exports.WalkerEvent || (exports.WalkerEvent = {}));
+const maxQueueLength = 25000;
 /**
  * Walk ast nodes
  * @param node initial node
@@ -9651,6 +9652,10 @@ function* walk(node, filter, reverse) {
         },
     };
     while ((node = parents[i++])) {
+        if (i > maxQueueLength) {
+            parents.splice(0, maxQueueLength);
+            i -= maxQueueLength;
+        }
         let option = null;
         if (filter != null) {
             // @ts-expect-error
@@ -9794,6 +9799,10 @@ function* walkValues(values, root = null, filter, reverse) {
     while (++i < stack.length) {
         value = stack[i];
         option = null;
+        if (i > maxQueueLength) {
+            stack.splice(0, maxQueueLength);
+            i -= maxQueueLength;
+        }
         if (filter.fn != null && eventType & exports.WalkerEvent.Enter) {
             const isValid = filter.type == null ||
                 value.typ == filter.type ||
