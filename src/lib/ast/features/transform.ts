@@ -9,10 +9,10 @@ import type {
 } from "../../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../types.ts";
 import { compute } from "../transform/compute.ts";
-import { filterValues, renderValue } from "../../printer/render.ts";
 import { eqMatrix, minifyTransformFunctions } from "../transform/minify.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { STATE } from "../../syntax/constants.ts";
+import { filterValues, printValue } from "../../printer/print.ts";
 
 export class TransformCssFeature {
     public accept: Set<EnumToken> = new Set([
@@ -93,11 +93,11 @@ export class TransformCssFeature {
                 r.push(minified);
             }
 
-            const l: number = renderValue(matrix).length;
+            const l: number = printValue(matrix).length;
 
             (node as AstDeclaration).val = r.reduce(
                 (acc: Token[], curr: Token[]): Token[] => {
-                    if (curr.reduce((acc: string, t: Token) => acc + renderValue(t), "").length < l) {
+                    if (curr.reduce((acc: string, t: Token) => acc + printValue(t), "").length < l) {
                         return curr;
                     }
 

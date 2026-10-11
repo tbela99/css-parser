@@ -1432,7 +1432,7 @@ export declare interface ListToken extends BaseToken {
     /**
      * @inheritdoc
      */
-    typ: EnumToken.ListToken;
+    typ: EnumToken.ListTokenType;
     /**
      * Children
      */

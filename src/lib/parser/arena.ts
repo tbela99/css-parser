@@ -21,7 +21,7 @@ import { equalsIgnoreCase } from "./utils/text.ts";
 export class Arena {
     public stringIds: Map<string, number> = new Map();
     public strings: string[] = [];
-    public root: number = 1;
+    public readonly root: number = 1;
     public current: number = 1;
 
     public dataTypes: Uint8Array;
@@ -75,6 +75,8 @@ export class Arena {
         this.renderedTokens = new Uint32Array(size);
         this.colorType = new Uint8Array(size);
         this.spans = new BigUint64Array(size);
+
+        this.dataTypes[this.root] = EnumToken.StyleSheetNodeType;
     }
 
     public allocate(): number {
@@ -176,7 +178,7 @@ export class Arena {
         return this.strings[this.stringValue[id]] ?? null;
     }
 
-    setNumbericValue(id: number, numericValue: number): void {
+    setNumericValue(id: number, numericValue: number): void {
         this.numericValue[id] = numericValue;
     }
 
@@ -188,24 +190,94 @@ export class Arena {
         this.parents[id] = parentId;
     }
 
+    getFirstChild(id: number): number {
+        return this.firstChild[id];
+    }
+
     setFirstChild(id: number, firstChildId: number): void {
+        this.detach(firstChildId);
+
+        const firstChild = this.firstChild[id];
+
+        if (this.firstChild[id] != 0) {
+            const nextSibling = this.nextSibling[firstChild];
+
+            if (nextSibling != 0) {
+                this.nextSibling[firstChildId] = nextSibling;
+                this.previousSibling[nextSibling] = firstChildId;
+            }
+
+            this.detach(firstChild);
+        }
+
         this.firstChild[id] = firstChildId;
+        this.parents[firstChild] = id;
+    }
+
+    getLastChild(id: number): number {
+        return this.lastChild[id];
     }
 
     setLastChild(id: number, lastChildId: number): void {
+        this.detach(lastChildId);
+
+        const lastChild = this.lastChild[id];
+
+        if (lastChild != 0) {
+            const previousSibling = this.previousSibling[lastChild];
+
+            if (previousSibling != 0) {
+                this.previousSibling[lastChildId] = previousSibling;
+                this.nextSibling[previousSibling] = lastChildId;
+            }
+
+            this.detach(lastChild);
+        }
+
         this.lastChild[id] = lastChildId;
+        this.nextSibling[lastChildId] = 0;
+        this.parents[lastChildId] = id;
     }
 
     setNextSibling(id: number, nextSiblingId: number): void {
+        this.detach(nextSiblingId);
+
+        this.nextSibling[nextSiblingId] = this.nextSibling[id];
         this.nextSibling[id] = nextSiblingId;
+        this.previousSibling[nextSiblingId] = id;
+        this.parents[nextSiblingId] = this.parents[id];
     }
 
     setPreviousSibling(id: number, previousSiblingId: number): void {
+        this.detach(previousSiblingId);
+
+        if (this.previousSibling[id] != 0) {
+            const previousSibling = this.previousSibling[id];
+
+            if (previousSibling != 0) {
+                this.nextSibling[previousSibling] = previousSiblingId;
+                this.previousSibling[previousSiblingId] = previousSibling;
+            }
+
+            this.nextSibling[previousSiblingId] = this.nextSibling[id];
+        }
+
         this.previousSibling[id] = previousSiblingId;
+        this.parents[previousSiblingId] = this.parents[id];
     }
 
     setFirstToken(id: number, firstTokenId: number): void {
+        this.detach(firstTokenId);
+
+        const firstToken = this.firstToken[id];
+
+        this.previousSibling[firstTokenId] = 0;
+        this.nextSibling[firstTokenId] = this.nextSibling[firstTokenId];
+        this.parents[firstTokenId] = id;
+
         this.firstToken[id] = firstTokenId;
+
+        this.detach(firstToken);
     }
 
     setColorType(id: number, colorType: number): void {
@@ -282,20 +354,41 @@ export class Arena {
         this.parents[child] = id;
     }
 
+    /**
+     * let child should be of type EnumToken.ListToken or EnumToken.ParensToken
+     * @param id
+     * @param child
+     */
     setLeft(id: number, child: number): void {
         this.setChildAt(id, 0, child);
+    }
+
+    getLeft(id: number): number {
+        return this.getChildAt(id, 0 ) as number;
     }
 
     setRight(id: number, rightId: number): void {
         this.setChildAt(id, 1, rightId);
     }
 
+    getRight(id: number): number {
+        return this.getChildAt(id, 1) as number;
+    }
+
     setOp(id: number, opId: number): void {
         this.setChildAt(id, 2, opId);
     }
 
+    getOp(id: number): number {
+        return this.getChildAt(id, 2) as number;
+    }
+
     setOp2(id: number, op2Id: number): void {
         this.setChildAt(id, 3, op2Id);
+    }
+
+    getOp2(id: number): number {
+        return this.getChildAt(id, 3) as number;
     }
 
     setRenderedTokens(id: number, renderedTokensId: number): void {
@@ -448,7 +541,6 @@ export class Arena {
 
     *walkValues(
         values: number[],
-        root: number | null = null,
         filter?:
             | WalkerValueFilter
             | null
@@ -460,7 +552,6 @@ export class Arena {
         reverse?: boolean,
     ): Generator<number> {
         const stack: number[] = values.slice();
-        let previous: number | null = null;
 
         if (filter != null && typeof filter == "function") {
             filter = {
@@ -476,7 +567,6 @@ export class Arena {
         let isNumeric: boolean = false;
         let value: number;
         let option: WalkerOption | number[];
-        let node: number | null;
         let i: number = -1;
         const eventType = filter.event ?? WalkerEvent.Enter;
         // @ts-ignore
@@ -534,17 +624,15 @@ export class Arena {
 
             if (!isNumeric || ((option as number) & WalkerOptionEnum.IgnoreChildren) === 0) {
                 if (this.flags[value] & EnumAstNodeStatus.HasChildren) {
-
                     for (const child of this.children(value)) {
-                       
                         if (reverse) {
                             stack.unshift(child);
                         } else {
                             stack.push(child);
                         }
                     }
-                } 
-                
+                }
+
                 // else {
                 //     const values: Token[] = [];
 
@@ -616,7 +704,7 @@ export class Arena {
                     option = filter.fn(value, value[PARENT], WalkerEvent.Leave);
 
                     // @ts-ignore
-                    if (option != null && (Array.isArray(option))) {
+                    if (option != null && Array.isArray(option)) {
                         // const op = Array.isArray(option) ? option : [option];
                         stack.splice(i, 0, ...(reverse ? option.toReversed() : option));
 
@@ -628,8 +716,6 @@ export class Arena {
                     }
                 }
             }
-
-            previous = value;
         }
     }
 

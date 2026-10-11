@@ -50,10 +50,7 @@ export declare type WalkerFilter = (node: AstNode) => WalkerOption;
  * - {@link AstNode}:
  * - {@link Token}:
  */
-export declare type WalkerValueFilter = (
-    node: number,
-    event?: WalkerEvent,
-) => WalkerOption  | number[];
+export declare type WalkerValueFilter = (node: number, event?: WalkerEvent) => WalkerOption | number[];
 
 /**
  * walker result

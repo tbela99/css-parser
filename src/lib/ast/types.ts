@@ -52,7 +52,15 @@ export enum EnumAstNodeStatus {
      */
     HasChildren = 1 << 8,
 
+    /**
+     * Node has values
+     */
     HasValues = 1 << 9,
+
+    /**
+     * Node has fraction value
+     */
+    HasFractionValue = 1 << 10,
 }
 
 export declare type AstNodePropertyType = "state" | "errors" | "location" | "tokens" | "parent" | "selector";
@@ -300,7 +308,8 @@ export enum EnumToken {
     /**
      *  token list token type
      */
-    ListToken,
+    ListTokenType,
+    
     /* arithmetic tokens */
     /**
      * addition token type

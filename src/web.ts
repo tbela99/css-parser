@@ -45,18 +45,16 @@ export { minify } from "./lib/ast/minify.ts";
 export { expand } from "./lib/ast/expand.ts";
 export { walk, walkValues, WalkerEvent, WalkerOptionEnum } from "./lib/ast/walk.ts";
 export { parseString } from "./lib/parser/parse.ts";
-export { renderValue as renderToken } from "./lib/printer/render.ts";
 export { convertColor } from "./lib/syntax/color/color.ts";
 export { isOkLabClose, okLabDistance } from "./lib/syntax/color/utils/distance.ts";
 export { parseDeclarations } from "./lib/parser/parse.ts";
 export { find, findLast, findByValue, findAll } from "./lib/ast/find.ts";
 export { cloneNode } from "./lib/ast/clone.ts";
 export { replaceNodeOrValue } from "./lib/parser/utils/token.ts";
-export { PropertyList } from "./lib/parser/declaration/list.ts";
+export { printValue } from "./lib/printer/print.ts";
 export {
     EnumToken,
     ColorType,
-    ValidationLevel,
     EnumAstNodeStatus,
     ModuleScopeEnumOptions,
     ModuleCaseTransformEnum,
@@ -311,7 +309,7 @@ export function parseSync(
     options ??= {};
 
     options.src ??= "";
-    options.sourcesMap ??= new Map();    
+    options.sourcesMap ??= new Map();
     options.arena ??= new Arena(2 << Math.ceil(2 + Math.log2((stream as string).length)));
 
     Object.assign(options, {

@@ -1,16 +1,20 @@
 import { EnumToken } from "../../ast/types.ts";
 import type { ParserOptions, Token } from "../../../@types/index.d.ts";
 
-export function stripCommaToken(tokenList: Token[]): Token[] | null {
-    let result: Token[] = [];
-    let last: Token | null = null;
+export function stripCommaToken(tokenList: number[], options: ParserOptions): number[] | null {
+    let result: number[] = [];
+    let typ: EnumToken;
+    let last: number;
+    const arena = options.arena!;
 
     for (let i = 0; i < tokenList.length; i++) {
-        if (tokenList[i].typ != EnumToken.WhitespaceTokenType) {
+
+        typ = arena.getType(tokenList[i]);
+        if (typ != EnumToken.WhitespaceTokenType) {
             last = tokenList[i];
         }
 
-        if (tokenList[i].typ == EnumToken.CommentTokenType || tokenList[i].typ == EnumToken.CommaTokenType) {
+        if (typ == EnumToken.CommentTokenType || typ == EnumToken.CommaTokenType) {
             continue;
         }
 

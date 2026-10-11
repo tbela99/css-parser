@@ -1,5 +1,5 @@
 import { eq } from "../parser/utils/eq.ts";
-import { doRender, renderValue } from "../printer/render.ts";
+import { doRender } from "../printer/render.ts";
 import * as allFeatures from "./features/index.ts";
 import { walkValues } from "./walk.ts";
 import type {
@@ -406,7 +406,7 @@ function minifyAtRuleMedia(tokens: Token[]): Token[] {
                 }
 
                 acc.set(
-                    values.reduce((acc, t) => acc + renderValue(t), ""),
+                    values.reduce((acc, t) => acc + printValue(t), ""),
                     result.values,
                 );
 
@@ -610,7 +610,7 @@ function doMinify(
                                         (index + 3 < arr.length ||
                                             arr[index + 2]?.typ === EnumToken.WhitespaceTokenType))
                                         ? ""
-                                        : renderValue(curr)),
+                                        : printValue(curr)),
                                 "",
                             );
                         }
@@ -648,7 +648,7 @@ function doMinify(
                                     arr[index + 1]?.typ === EnumToken.CommentTokenType &&
                                     (index + 3 < arr.length || arr[index + 2].typ === EnumToken.WhitespaceTokenType))
                                     ? ""
-                                    : renderValue(curr)),
+                                    : printValue(curr)),
                             "",
                         );
                     }
@@ -1648,7 +1648,7 @@ function fixSelector(node: AstRule): void {
             }
         }
 
-        node.sel = attributes.reduce((acc: string, curr: Token) => acc + renderValue(curr), "");
+        node.sel = attributes.reduce((acc: string, curr: Token) => acc + printValue(curr), "");
         node[TOKENS] = null;
     }
 }

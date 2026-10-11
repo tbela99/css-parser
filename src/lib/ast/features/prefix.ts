@@ -18,7 +18,6 @@ import {walkValues} from "../walk.ts";
 import {pseudoAliasMap} from "../../syntax/syntax.ts";
 import {splitRule} from "../minify.ts";
 import type {ValidationConfiguration} from "../../../@types/validation.d.ts";
-import {renderValue} from "../../printer/render.ts";
 import {funcLike, regMatchLinearGradient, regMatchRadialGradient, STATE, TOKENS} from "../../syntax/constants.ts";
 import {FeatureWalkMode} from "./type.ts";
 import {ValidationSyntaxGroupEnum} from "../../validation/parser/typedef.ts";
@@ -26,6 +25,7 @@ import {getSyntaxConfig} from "../../validation/config.ts";
 import {splitTokenList} from "../../validation/utils/list.ts";
 import {equalsIgnoreCase} from "../../parser/utils/text.ts";
 import {toDegrees} from "../../parser/utils/angle.ts";
+import { printValue } from "../../printer/print.ts";
 
 const config: ValidationConfiguration = getSyntaxConfig();
 
@@ -257,7 +257,7 @@ export class ComputePrefixFeature {
             if (node.typ == EnumToken.AtRuleNodeType && (node as AstAtRule).val !== "") {
                 if (replaceAstNodes((node as AstAtRule)[TOKENS] as Token[])) {
                     (node as AstAtRule).val = ((node as AstAtRule)[TOKENS] as Token[]).reduce(
-                        (acc, curr) => acc + renderValue(curr),
+                        (acc, curr) => acc + printValue(curr),
                         "",
                     );
                 }

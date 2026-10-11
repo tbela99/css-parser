@@ -1958,7 +1958,6 @@ export class Tokenizer {
                     break;
 
                 case TokenMap.REVERSE_SOLIDUS:
-
                     this.advance(parseInfo);
 
                     // EOF

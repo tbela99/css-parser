@@ -11,7 +11,6 @@ import type {
     Token,
 } from "../../../@types/index.d.ts";
 import { EnumToken } from "../types.ts";
-import { renderValue } from "../../printer/render.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { LOCEND, LOCSRCID, LOCSTA, PARENT, TOKENS } from "../../syntax/constants.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
@@ -169,7 +168,7 @@ function substituteIfElseNode(
                 convertColor: minify,
             };
 
-            atRule.val = atRule[TOKENS]!.reduce((acc: string, curr: Token) => acc + renderValue(curr, options), "");
+            atRule.val = atRule[TOKENS]!.reduce((acc: string, curr: Token) => acc + printValue(curr, options), "");
 
             clonedDeclaration = cloneNode(declaration, true, nodeMap) as AstDeclaration;
 
@@ -192,7 +191,7 @@ function substituteIfElseNode(
             }) as AstAtRule;
 
             atRule[TOKENS] = [left];
-            atRule.val = atRule[TOKENS]!.reduce((acc: string, curr: Token) => acc + renderValue(curr), "");
+            atRule.val = atRule[TOKENS]!.reduce((acc: string, curr: Token) => acc + printValue(curr), "");
 
             if (declaration[PARENT] != null) {
                 atRule[LOCSRCID] = declaration[PARENT][LOCSRCID]!;

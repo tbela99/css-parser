@@ -129,7 +129,7 @@ export function evaluate(tokens: Token[]): Token[] {
         if (token.typ == EnumToken.Sub) {
             if (!isScalarToken(<Token>nodes[i + 1])) {
                 token = {
-                    typ: EnumToken.ListToken,
+                    typ: EnumToken.ListTokenType,
                     chi: [nodes[i], nodes[i + 1]],
                     [LOCSRCID]: nodes[i][LOCSRCID],
                     [LOCSTA]: nodes[i][LOCSTA],
@@ -187,7 +187,7 @@ export function evaluate(tokens: Token[]): Token[] {
             }
         }
 
-        if (acc.length > 0 && curr[0] != EnumToken.ListToken) {
+        if (acc.length > 0 && curr[0] != EnumToken.ListTokenType) {
             acc.push({
                 typ: EnumToken.Add,
                 [LOCSRCID]: token[LOCSRCID],
@@ -1083,7 +1083,7 @@ function factor(tokens: Array<Token | BinaryExpressionToken>, ops: Array<"+" | "
     }
 
     for (let i = 0; i < tokens.length; i++) {
-        if (tokens[i].typ == EnumToken.ListToken) {
+        if (tokens[i].typ == EnumToken.ListTokenType) {
             // @ts-ignore
             tokens.splice(i, 1, ...tokens[i].chi);
         }

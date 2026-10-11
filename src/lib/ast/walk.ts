@@ -492,18 +492,18 @@ export function* walkValues(
                 // @ts-expect-error
                 option = filter.fn(
                     value,
-                    value[PARENT] ?? root,
-                    WalkerEvent.Enter,
-                    // @ts-expect-error
-                    function* () {
-                        // @ts-expect-error
-                        let parent = node[PARENT];
+                    // value[PARENT] ?? root,
+                    // WalkerEvent.Enter,
+                    // // @ts-expect-error
+                    // function* () {
+                    //     // @ts-expect-error
+                    //     let parent = node[PARENT];
 
-                        while (parent != null) {
-                            yield parent;
-                            parent = parent[PARENT] ?? null;
-                        }
-                    },
+                    //     while (parent != null) {
+                    //         yield parent;
+                    //         parent = parent[PARENT] ?? null;
+                    //     }
+                    // },
                 );
 
                 isNumeric = typeof option == "number";

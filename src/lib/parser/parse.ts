@@ -1,6 +1,5 @@
 import { isColor, isIdentColor, parseColor } from "../syntax/syntax.ts";
 import { camelize, dasherize, equalsIgnoreCase } from "./utils/text.ts";
-import { renderValue } from "../printer/render.ts";
 import { EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from "../ast/types.ts";
 import { minify } from "../ast/minify.ts";
 import { expand } from "../ast/expand.ts";
@@ -80,12 +79,12 @@ import { matchGenericSyntax } from "./utils/at-rule-generic.ts";
 import { memoize } from "./utils/cache.ts";
 import { SourceFile } from "./source.ts";
 import { dirname } from "../fs/resolve.ts";
-import { Arena, ARENA_ROOT } from "./arena.ts";
+import { Arena } from "./arena.ts";
 
 function renderTokens(tokens: Token[] | null | undefined, options?: any): string {
     if (tokens == null || tokens.length === 0) return "";
-    if (options != null) return tokens.map((t) => renderValue(t, options)).join("");
-    return tokens.map((t) => renderValue(t)).join("");
+    if (options != null) return tokens.map((t) => printValue(t, options)).join("");
+    return tokens.map((t) => printValue(t)).join("");
 }
 
 declare type T = AstDeclaration | AstAtRule | AstRule | AstKeyframesRule | AstKeyframesAtRule;
@@ -725,7 +724,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
 
         if (tokenizer.unit != null) {
 
-            arena.set(tokenId, tokenizer.typ, 0, tokenizer.val, arena.internString(tokenizer.unit));
+            arena.set(tokenId, tokenizer.typ as EnumToken, 0, tokenizer.val as number, arena.internString(tokenizer.unit));
 
             // item = {
             //     typ: tokenizer.typ as EnumToken,
@@ -734,20 +733,20 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
             // } as DimensionToken;
         } else if (tokenizer.nam != null) {
 
-            arena.set(tokenId, tokenizer.typ);
-            arena.setName(tokenId, tokenizer.nam);
+            arena.set(tokenId, tokenizer.typ as EnumToken);
+            arena.setName(tokenId, arena.internString(tokenizer.nam as string));
             // item = {
             //     typ: tokenizer.typ as EnumToken,
             //     nam: tokenizer.nam,
             // } as Token;
         } else if (tokenizer.val === null) {
-            arena.set(tokenId, tokenizer.typ);
+            arena.set(tokenId, tokenizer.typ as EnumToken);
             // item = {
             //     typ: tokenizer.typ as EnumToken,
             // } as Token;
         } else if (tokenizer.kin != null) {
 
-            arena.set(tokenId, tokenizer.typ, arena.internString(tokenizer.val));
+            arena.set(tokenId, tokenizer.typ as EnumToken, arena.internString(tokenizer.val as string));
             arena.setColorType(tokenId, tokenizer.kin);
 
             // item = {
@@ -756,14 +755,14 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
             //     kin: tokenizer.kin,
             // } as ColorToken;
         } else {
-            arena.set(tokenId, tokenizer.typ, arena.internString(tokenizer.val));
+            arena.set(tokenId, tokenizer.typ as EnumToken, arena.internString(tokenizer.val as string));
             // item = {
             //     typ: tokenizer.typ as EnumToken,
             //     val: tokenizer.val,
             // } as Token;
         }
 
-        arena.setSpan(tokenId, tokenizer.srcId, tokenizer.sta, tokenizer.end);
+        arena.setSpan(tokenId, tokenizer.srcId as number, tokenizer.sta as number, tokenizer.end as number);
 
         // item[LOCSRCID] = tokenizer.srcId as number;
         // item[LOCSTA] = tokenizer.sta as number;
@@ -826,7 +825,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
 
                     if (tokenizer.unit != null) {
 
-                        arena.set(tokenId, tokenizer.typ, 0, tokenizer.val, arena.internString(tokenizer.unit));
+                        arena.set(tokenId, tokenizer.typ, 0, tokenizer.val as number, arena.internString(tokenizer.unit));
                         // item = {
                         //     typ: tokenizer.typ as EnumToken,
                         //     val: tokenizer.val,
@@ -835,7 +834,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                     } else if (tokenizer.nam != null) {
 
                         arena.set(tokenId, tokenizer.typ);
-                        arena.setName(tokenId, tokenizer.nam);
+                        arena.setName(tokenId, arena.internString(tokenizer.nam as string));
                         // item = {
                         //     typ: tokenizer.typ as EnumToken,
                         //     nam: tokenizer.nam,
@@ -847,7 +846,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                         // } as Token;
                     } else if (tokenizer.kin != null) {
 
-                        arena.set(tokenId, tokenizer.typ, arena.internString(tokenizer.val));
+                        arena.set(tokenId, tokenizer.typ, arena.internString(tokenizer.val as string));
                         arena.setColorType(tokenId, tokenizer.kin);
                         // item = {
                         //     typ: tokenizer.typ as EnumToken,
@@ -856,14 +855,14 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                         // } as ColorToken;
                     } else {
 
-                        arena.set(tokenId, tokenizer.typ, arena.internString(tokenizer.val));
+                        arena.set(tokenId, tokenizer.typ, arena.internString(tokenizer.val as string));
                         // item = {
                         //     typ: tokenizer.typ as EnumToken,
                         //     val: tokenizer.val,
                         // } as Token;
                     }
 
-                    arena.setSpan(tokenId, tokenizer.srcId, tokenizer.sta, tokenizer.end);
+                    arena.setSpan(tokenId, tokenizer.srcId as number, tokenizer.sta as number, tokenizer.end as number);
 
                     // item[LOCSRCID] = tokenizer.srcId as number;
                     // item[LOCSTA] = tokenizer.sta as number;
@@ -900,8 +899,8 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
             if (
                 options.removeEmpty &&
                 previousNode != null &&
-                arena.firstChild(previousNode) == 0 &&
-                arena.lastChild(context) == previousNode
+                arena.getFirstChild(previousNode) == 0 &&
+                arena.getLastChild(context) == previousNode
             ) {
 
                 arena.detach(previousNode);
@@ -1170,6 +1169,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
 
     let endTime: number = performance.now();
     const result = {
+        arena,
         ast,
         errors,
         stats: {
@@ -1734,7 +1734,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                 node.sel = "";
 
                 for (const token of node[TOKENS]! as Token[]) {
-                    node.sel += renderValue(token);
+                    node.sel += printValue(token);
                 }
             } else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframesAtRuleNodeType) {
                 const val: string = node.nam.toLowerCase();
@@ -3130,7 +3130,7 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                 node.sel = "";
 
                 for (const token of node[TOKENS]! as Token[]) {
-                    node.sel += renderValue(token);
+                    node.sel += printValue(token);
                 }
             } else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframesAtRuleNodeType) {
                 const val: string = node.nam.toLowerCase();
@@ -3870,7 +3870,7 @@ export function parseAtRule(
                             stream[index + 1]?.typ === EnumToken.CommentTokenType &&
                             (stream.length < index + 3 || stream[index + 2]?.typ === EnumToken.WhitespaceTokenType))
                             ? ""
-                            : renderValue(t, options)),
+                            : printValue(t, options)),
                     "",
                 ),
                 ...(parseAsBlock ? { chi: [] } : {}),
@@ -3911,7 +3911,7 @@ export function parseAtRule(
                             stream[index + 1]?.typ === EnumToken.CommentTokenType &&
                             (stream.length < index + 3 || stream[index + 2]?.typ === EnumToken.WhitespaceTokenType))
                             ? ""
-                            : renderValue(t, options)),
+                            : printValue(t, options)),
                     "",
                 ),
             }) as AstAtRule;

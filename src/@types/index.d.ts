@@ -13,6 +13,7 @@ import { FeatureWalkMode } from "../lib/ast/features/type.ts";
 import { ValidationToken } from "../lib/validation/parser/types";
 import { SourceFile } from "../lib/parser/source.ts";
 import { ResponseType } from "../types.ts";
+import { Arena } from "../lib/parser/arena.ts";
 
 export * from "./ast.d.ts";
 export * from "./token.d.ts";
@@ -718,11 +719,6 @@ export declare interface ResolvedPath {
 export declare interface RenderOptions {
 
     /**
-     * Arena
-     */
-    arena: Arena;
-
-    /**
      * Source file to be used as CSS input file for sourcemap resolution
      */
     src?: string;
@@ -884,6 +880,12 @@ export declare interface ParseResultStats {
  * Parse result object
  */
 export declare interface ParseResult {
+
+    /**
+     * Arena memory
+     */
+    arena: Arena;
+
     /**
      * Parsed ast tree
      */

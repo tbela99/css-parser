@@ -13,12 +13,11 @@ import { eq } from "../utils/eq.ts";
 import { getConfig } from "../utils/config.ts";
 import { matchType } from "../utils/type.ts";
 import { EnumToken } from "../../ast/types.ts";
-import { renderValue } from "../../printer/render.ts";
 import { parseString } from "../parse.ts";
 import { PropertySet } from "./set.ts";
 import { PROPERTYNAME } from "../../syntax/constants.ts";
 import { cloneNode } from "../../ast/clone.ts";
-import { parse } from "node:path";
+import { printValue } from "../../printer/print.ts";
 
 const propertiesConfig: PropertiesConfig = getConfig();
 
@@ -352,7 +351,7 @@ export class PropertyMap {
                               } as Token);
                     // @ts-ignore
                     const separator: string = this.config.separator
-                        ? renderValue({
+                        ? printValue({
                               ...this.config.separator,
                               typ: EnumToken[this.config.separator.typ as keyof typeof EnumToken] as EnumToken,
                           } as Token)
@@ -366,7 +365,7 @@ export class PropertyMap {
                         t = declaration.val[i];
 
                         if (!cache.has(t)) {
-                            cache.set(t, renderValue(t, { minify: true }));
+                            cache.set(t, printValue(t, { minify: true }));
                         }
 
                         if (t.typ == typ && separator == <string>cache.get(t)) {
@@ -764,7 +763,7 @@ export class PropertyMap {
                                     props.default.includes(
                                         curr[1][i]
                                             .reduce(
-                                                (acc: string, curr: Token): string => acc + renderValue(curr) + " ",
+                                                (acc: string, curr: Token): string => acc + printNode(curr) + " ",
                                                 "",
                                             )
                                             .trimEnd(),
@@ -907,7 +906,7 @@ export class PropertyMap {
                     const val: string = values.reduce(
                         (acc: string, curr: Token): string =>
                             acc +
-                            renderValue(curr, {
+                            printNode(curr, {
                                 removeComments: true,
                                 minify: true,
                             }),

@@ -19,7 +19,7 @@ import type {
     Token,
 } from "../../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
-import { renderValue } from "../../printer/render.ts";
+import { printValue } from "../../printer/print.ts";
 import {
     combinators,
     ERRORS,
@@ -39,6 +39,7 @@ import { createValidationContext, matchAllSyntaxes, matchSelectorSyntax, trimArr
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from "../../validation/parser/typedef.ts";
 import type { ValidationPropertyToken } from "../../validation/parser/types.d.ts";
 import { splitTokenList } from "../../validation/utils/list.ts";
+import { Arena } from "../arena.ts";
 import { trimWhiteSpace } from "../parse.ts";
 import { equalsIgnoreCase } from "./text.ts";
 
@@ -52,11 +53,11 @@ export function parseSelector(
     options: ParserOptions,
     errors: ErrorDescription[],
 ): number {
-    const arena = options.arena!;
+    const arena = options.arena as Arena;
     const contextTyp = arena.getType(context!);
     let typ: EnumToken;
 
-    if (arena.getType(context) === EnumToken.KeyframesAtRuleNodeType) {
+    if (arena.getType(context as number) === EnumToken.KeyframesAtRuleNodeType) {
         const result = matchAllSyntaxes(
             getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "keyframe-selectors"),
             createValidationContext(tokens, options),
@@ -127,7 +128,7 @@ export function parseSelector(
             typ: EnumToken.KeyframesRuleNodeType,
             sel: [
                 ...splitTokenList(trimArray(tokens, options), options).reduce((acc, curr: number[]) => {
-                    acc.add(curr.reduce((acc, curr) => acc + renderValue(curr, { minify: false }), ""));
+                    acc.add(curr.reduce((acc, curr) => acc + printValue(curr, { minify: false }), ""));
                     return acc;
                 }, new Set<string>()),
             ].join(),
@@ -326,7 +327,7 @@ export function parseSelector(
                                         }
                                     }
 
-                                    let t: string = renderValue(curr, { minify: false, arena });
+                                    let t: string = printValue(curr, { minify: false, arena });
 
                                     if (t == ",") {
                                         acc.push([]);
@@ -390,7 +391,7 @@ export function parseSelector(
             //                         }
             //                     }
 
-            //                     let t: string = renderValue(curr, { minify: false });
+            //                     let t: string = printValue(curr, { minify: false });
 
             //                     if (t == ",") {
             //                         acc.push([]);
@@ -468,7 +469,7 @@ export function parseSelector(
                     stack.push(token);
                     break;
                 case EnumToken.AttrEndTokenType:
-                    if (arena.getType(stack.at(-1)) == EnumToken.AttrStartTokenType) {
+                    if (arena.getType(stack.at(-1) as number) == EnumToken.AttrStartTokenType) {
                         index = tokens.indexOf(stack.at(-1)!);
 
                         // const { val, ...attr } = stack.at(-1) as AttrStartToken;
@@ -477,7 +478,7 @@ export function parseSelector(
                         // attr[LOCEND] = token[LOCEND];
 
                         arena.setSpanEnd(tokens[index], arena.getSpanEnd(token));
-                        arena.setChildren(tokens[index], tokens.splice(index + 1, i - index - 1));
+                        arena.setChildren(tokens[index], ...tokens.splice(index + 1, i - index - 1) as number[]);
 
                         tokens.splice(i, 1);
                         // Object.assign(attr, {
@@ -498,7 +499,7 @@ export function parseSelector(
                     break;
 
                 case EnumToken.EndParensTokenType:
-                    if (stack.length > 0 && arena.getType(stack.at(-1)) == EnumToken.PseudoClassFunctionTokenDefType) {
+                    if (stack.length > 0 && arena.getType(stack.at(-1) as number) == EnumToken.PseudoClassFunctionTokenDefType) {
                         const func = stack.at(-1) as number;
                         const funcType = arena.getType(func) as EnumToken;
                         index = tokens.indexOf(func);
@@ -509,7 +510,7 @@ export function parseSelector(
 
                         if (tokensfuncDefMap.has(funcType)) {
                             arena.setType(func, tokensfuncDefMap.get(funcType) as EnumToken);
-                            arena.setChildren(func, trimArray(tokens.splice(index + 1, i - index - 1), options));
+                            arena.setChildren(func, ...trimArray(tokens.splice(index + 1, i - index - 1), options));
                         }
 
                         if (result.success && options.minify) {
@@ -524,11 +525,12 @@ export function parseSelector(
                                 val == ":nth-last-of-type"
                             ) {
                                 const list: number[] = [];
-                                let index: number = -1;
-                                let child: number = arena.getFirstChild(func);
+                                const children = arena.children(func);
+                                let index: number = 0;
+                                let child: number = 0;
 
-                                while (child != 0) {
-                                    index++;
+                                for (index = 0; index < children.length; index++) {
+                                    child = children[index];
                                     typ = arena.getType(child);
 
                                     if (typ == EnumToken.CommentTokenType || typ == EnumToken.WhitespaceTokenType) {
@@ -541,7 +543,6 @@ export function parseSelector(
                                     }
 
                                     list.push(child);
-                                    child = arena.getNextSibling(child);
                                 }
 
                                 if (list.length == 2) {
@@ -829,7 +830,7 @@ export function parseSelector(
                             }
                         }
 
-                        let t: string = renderValue(curr, { minify: false, arena });
+                        let t: string = printValue(curr, arena, { minify: false, arena });
 
                         if (t == ",") {
                             acc.push([]);
@@ -887,7 +888,7 @@ export function parseSelector(
     //                         }
     //                     }
 
-    //                     let t: string = renderValue(curr, { minify: false });
+    //                     let t: string = printValue(curr, { minify: false });
 
     //                     if (t == ",") {
     //                         acc.push([]);

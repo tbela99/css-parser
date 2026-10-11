@@ -2,7 +2,6 @@ import {splitRule} from "./minify.ts";
 import {combinators, PARENT, RAW, STATE} from "../syntax/constants.ts";
 import {parseString} from "../parser/parse.ts";
 import {walkValues} from "./walk.ts";
-import {renderValue} from "../printer/render.ts";
 import type {AstAtRule, AstNode, AstRule, AstStyleSheet, LiteralToken, Token} from "../../@types/index.d.ts";
 import {EnumAstNodeStatus, EnumToken} from "./types.ts";
 import {cloneNode} from "./clone.ts";
@@ -355,7 +354,7 @@ export function replaceCompound(input: string, replace: string): string {
         }
     }
 
-    return tokens.reduce((acc: string, curr: Token) => acc + renderValue(curr), "");
+    return tokens.reduce((acc: string, curr: Token) => acc + printValue(curr), "");
 }
 
 function replaceCompoundLiteral(selector: string, replace: string) {
