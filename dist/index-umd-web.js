@@ -24,35 +24,39 @@
         /**
          * Node passed validation
          */
-        EnumAstNodeStatus[EnumAstNodeStatus["Validated"] = 0] = "Validated";
+        EnumAstNodeStatus[EnumAstNodeStatus["Validated"] = 1] = "Validated";
         /**
          * Node is invalid
          */
-        EnumAstNodeStatus[EnumAstNodeStatus["Invalid"] = 1] = "Invalid";
+        EnumAstNodeStatus[EnumAstNodeStatus["Invalid"] = 2] = "Invalid";
         /**
          * node is not validated
          */
-        EnumAstNodeStatus[EnumAstNodeStatus["Unvalidated"] = 2] = "Unvalidated";
+        EnumAstNodeStatus[EnumAstNodeStatus["Unvalidated"] = 4] = "Unvalidated";
         /**
          * Node did not pass validation, but is preserved.
          */
-        EnumAstNodeStatus[EnumAstNodeStatus["ValidationFailed"] = 3] = "ValidationFailed";
+        EnumAstNodeStatus[EnumAstNodeStatus["ValidationFailed"] = 8] = "ValidationFailed";
         /**
          * Parsing the node is not supported yet or the node syntax definition does not exist.
          */
-        EnumAstNodeStatus[EnumAstNodeStatus["Unknown"] = 4] = "Unknown";
+        EnumAstNodeStatus[EnumAstNodeStatus["Unknown"] = 16] = "Unknown";
         /**
          * Failed to parse the node.
          */
-        EnumAstNodeStatus[EnumAstNodeStatus["Unparsed"] = 5] = "Unparsed";
+        EnumAstNodeStatus[EnumAstNodeStatus["Unparsed"] = 32] = "Unparsed";
         /**
          * Node is disallowed in the context
          */
-        EnumAstNodeStatus[EnumAstNodeStatus["Disallowed"] = 6] = "Disallowed";
+        EnumAstNodeStatus[EnumAstNodeStatus["Disallowed"] = 64] = "Disallowed";
         /**
          * Node is malformed
          */
-        EnumAstNodeStatus[EnumAstNodeStatus["Malformed"] = 7] = "Malformed";
+        EnumAstNodeStatus[EnumAstNodeStatus["Malformed"] = 128] = "Malformed";
+        /**
+         * Important declaration
+         */
+        EnumAstNodeStatus[EnumAstNodeStatus["ImportantDeclaration"] = 256] = "ImportantDeclaration";
     })(exports.EnumAstNodeStatus || (exports.EnumAstNodeStatus = {}));
     /**
      * Enum of validation levels
@@ -17032,9 +17036,7 @@
             }
         }
         run(node) {
-            if (node[STATE] == exports.EnumAstNodeStatus.Disallowed ||
-                node[STATE] == exports.EnumAstNodeStatus.Invalid ||
-                node[STATE] == exports.EnumAstNodeStatus.Malformed) {
+            if (node[STATE] & (exports.EnumAstNodeStatus.Disallowed | exports.EnumAstNodeStatus.Invalid | exports.EnumAstNodeStatus.Malformed)) {
                 return null;
             }
             if (node.typ == exports.EnumToken.RuleNodeType) {
@@ -19749,7 +19751,8 @@
                     const tokens = {};
                     const values = [];
                     const val = [[]];
-                    for (const curr of this.declarations.get(this.config.shorthand).val) { // @ts-ignore
+                    for (const curr of this.declarations.get(this.config.shorthand).val) {
+                        // @ts-ignore
                         // @ts-ignore
                         if (separator != null && separator.typ == curr.typ && separator.val == curr.val) {
                             val.push([]);
@@ -20693,9 +20696,8 @@
             let result;
             for (const declaration of declarations) {
                 name = declaration.typ != exports.EnumToken.DeclarationNodeType ? null : declaration.nam;
-                if (declaration[STATE] == exports.EnumAstNodeStatus.Invalid ||
-                    declaration[STATE] == exports.EnumAstNodeStatus.Unknown ||
-                    declaration[STATE] == exports.EnumAstNodeStatus.ValidationFailed ||
+                if (declaration[STATE] &
+                    (exports.EnumAstNodeStatus.Invalid | exports.EnumAstNodeStatus.Unknown | exports.EnumAstNodeStatus.ValidationFailed) ||
                     declaration.typ != exports.EnumToken.DeclarationNodeType ||
                     equalsIgnoreCase("composes", name) ||
                     (typeof this.options.removeDuplicateDeclarations === "string" &&
@@ -20714,17 +20716,17 @@
                     this.declarations.set(declaration.nam, declaration);
                     continue;
                 }
-                if (declaration[STATE] == exports.EnumAstNodeStatus.Unvalidated) {
+                if (declaration[STATE] & exports.EnumAstNodeStatus.Unvalidated) {
                     syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, declaration.nam.toLowerCase());
                     if (syntaxRules != null) {
                         result = matchAllSyntaxes(syntaxRules, createValidationContext(declaration.val), this.options);
-                        declaration[STATE] = result.success
-                            ? exports.EnumAstNodeStatus.Validated
-                            : exports.EnumAstNodeStatus.ValidationFailed;
+                        declaration[STATE] |=
+                            (result.success ? exports.EnumAstNodeStatus.Validated : exports.EnumAstNodeStatus.ValidationFailed) &
+                                ~exports.EnumAstNodeStatus.Unvalidated;
                     }
                 }
                 // do not compute shorthand for invalid declarations
-                if (declaration[STATE] !== exports.EnumAstNodeStatus.Validated) {
+                if (!(declaration[STATE] & exports.EnumAstNodeStatus.Validated)) {
                     this.declarations.set(objectHash(declaration), declaration);
                     continue;
                 }
@@ -20753,6 +20755,16 @@
                     shortHandType = "single";
                     // @ts-ignore
                     shorthand = config.property[propertyName];
+                }
+                if (this.declarations.has(shorthand)) {
+                    let existing = this.declarations.get(shorthand);
+                    if (existing instanceof PropertySet || existing instanceof PropertyMap) {
+                        existing = existing.declarations.get(declaration.nam);
+                    }
+                    if (existing?.[STATE] & exports.EnumAstNodeStatus.ImportantDeclaration &&
+                        declaration[STATE] & ~exports.EnumAstNodeStatus.ImportantDeclaration) {
+                        continue;
+                    }
                 }
                 // @ts-ignore
                 if (shortHandType == "map") {
@@ -22395,7 +22407,7 @@
             for (; i < ast.chi.length; i++) {
                 // @ts-ignore
                 node = ast.chi[i];
-                if (node[STATE] == exports.EnumAstNodeStatus.Invalid || node[STATE] == exports.EnumAstNodeStatus.ValidationFailed) {
+                if (node[STATE] & (exports.EnumAstNodeStatus.Invalid | exports.EnumAstNodeStatus.ValidationFailed)) {
                     continue;
                 }
                 if (node.typ != exports.EnumToken.DeclarationNodeType ||
@@ -24338,11 +24350,12 @@
      * @private
      */
     function expand(ast) {
-        if (ast[STATE] == exports.EnumAstNodeStatus.Invalid ||
-            ast[STATE] == exports.EnumAstNodeStatus.Disallowed ||
-            ast[STATE] == exports.EnumAstNodeStatus.Unknown ||
-            ast[STATE] == exports.EnumAstNodeStatus.Unparsed ||
-            ast[STATE] == exports.EnumAstNodeStatus.Malformed) {
+        if (ast[STATE] &
+            (exports.EnumAstNodeStatus.Invalid |
+                exports.EnumAstNodeStatus.Disallowed |
+                exports.EnumAstNodeStatus.Unknown |
+                exports.EnumAstNodeStatus.Unparsed |
+                exports.EnumAstNodeStatus.Malformed)) {
             return ast;
         }
         const result = Object.assign(cloneNode(ast), { chi: [] });
@@ -24390,11 +24403,12 @@
         return result;
     }
     function expandRule(node) {
-        if (node[STATE] == exports.EnumAstNodeStatus.Invalid ||
-            node[STATE] == exports.EnumAstNodeStatus.Disallowed ||
-            node[STATE] == exports.EnumAstNodeStatus.Unknown ||
-            node[STATE] == exports.EnumAstNodeStatus.Unparsed ||
-            node[STATE] == exports.EnumAstNodeStatus.Malformed) {
+        if (node[STATE] &
+            (exports.EnumAstNodeStatus.Invalid |
+                exports.EnumAstNodeStatus.Disallowed |
+                exports.EnumAstNodeStatus.Unknown |
+                exports.EnumAstNodeStatus.Unparsed |
+                exports.EnumAstNodeStatus.Malformed)) {
             return [node];
         }
         const ast = Object.assign(cloneNode(node), { chi: node.chi.slice() });
@@ -28892,6 +28906,7 @@
         let rules = null;
         let syntaxRules = null;
         let success = true;
+        let hasImportantFlag = false;
         let validate = typeof options.validation === "boolean" ? options.validation : !!options.validation;
         if (renamedStandardProperties.has(name.val)) {
             name.val = renamedStandardProperties.get(name.val);
@@ -29193,6 +29208,9 @@
                         }
                     }
                     break;
+                case exports.EnumToken.ImportantTokenType:
+                    hasImportantFlag = true;
+                    break;
             }
             if (trimTokenSpace$1.has(token.typ)) {
                 if (tokens[i + 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
@@ -29259,6 +29277,9 @@
             }
             name[STATE] = exports.EnumAstNodeStatus.Unknown;
             name[ERRORS] = result?.errors ?? [];
+            if (hasImportantFlag) {
+                name[STATE] |= exports.EnumAstNodeStatus.ImportantDeclaration;
+            }
             // @ts-expect-error
             return Object.assign(name, {
                 typ: exports.EnumToken.DeclarationNodeType,
@@ -29296,6 +29317,9 @@
                 : exports.EnumAstNodeStatus.Validated
             : exports.EnumAstNodeStatus.ValidationFailed;
         name[ERRORS] = result?.errors ?? [];
+        if (hasImportantFlag) {
+            name[STATE] |= exports.EnumAstNodeStatus.ImportantDeclaration;
+        }
         // @ts-expect-error
         return Object.assign(name, {
             typ: exports.EnumToken.DeclarationNodeType,
@@ -31523,14 +31547,14 @@
         if (invalidNodes.length > 0) {
             let count = invalidNodes.length;
             for (const { node, parent } of walk(ast)) {
-                if (options.lenient && node[STATE] == exports.EnumAstNodeStatus.Unknown) {
+                if (options.lenient && node[STATE] & exports.EnumAstNodeStatus.Unknown) {
                     continue;
                 }
-                if (node[STATE] === exports.EnumAstNodeStatus.Invalid ||
-                    node[STATE] === exports.EnumAstNodeStatus.Unknown ||
-                    node[STATE] === exports.EnumAstNodeStatus.Unparsed ||
-                    node[STATE] === exports.EnumAstNodeStatus.Malformed ||
-                    node[STATE] === exports.EnumAstNodeStatus.Disallowed) {
+                if (node[STATE] & exports.EnumAstNodeStatus.Invalid ||
+                    node[STATE] & exports.EnumAstNodeStatus.Unknown ||
+                    node[STATE] & exports.EnumAstNodeStatus.Unparsed ||
+                    node[STATE] & exports.EnumAstNodeStatus.Malformed ||
+                    node[STATE] & exports.EnumAstNodeStatus.Disallowed) {
                     // @ts-ignore
                     parent.chi.splice(parent.chi.indexOf(node), 1);
                     node[PARENT] = null;
@@ -32518,14 +32542,14 @@
         if (invalidNodes.length > 0) {
             let count = invalidNodes.length;
             for (const { node, parent } of walk(ast)) {
-                if (options.lenient && node[STATE] == exports.EnumAstNodeStatus.Unknown) {
+                if (options.lenient && node[STATE] & exports.EnumAstNodeStatus.Unknown) {
                     continue;
                 }
-                if (node[STATE] === exports.EnumAstNodeStatus.Invalid ||
-                    node[STATE] === exports.EnumAstNodeStatus.Unknown ||
-                    node[STATE] === exports.EnumAstNodeStatus.Unparsed ||
-                    node[STATE] === exports.EnumAstNodeStatus.Malformed ||
-                    node[STATE] === exports.EnumAstNodeStatus.Disallowed) {
+                if (node[STATE] & exports.EnumAstNodeStatus.Invalid ||
+                    node[STATE] & exports.EnumAstNodeStatus.Unknown ||
+                    node[STATE] & exports.EnumAstNodeStatus.Unparsed ||
+                    node[STATE] & exports.EnumAstNodeStatus.Malformed ||
+                    node[STATE] & exports.EnumAstNodeStatus.Disallowed) {
                     // @ts-ignore
                     parent.chi.splice(parent.chi.indexOf(node), 1);
                     node[PARENT] = null;
@@ -33256,11 +33280,12 @@
             if (node == null) {
                 return null;
             }
-            if (node[STATE] == exports.EnumAstNodeStatus.Invalid ||
-                node[STATE] == exports.EnumAstNodeStatus.Disallowed ||
-                node[STATE] == exports.EnumAstNodeStatus.Unknown ||
-                node[STATE] == exports.EnumAstNodeStatus.Unparsed ||
-                node[STATE] == exports.EnumAstNodeStatus.Malformed) {
+            if (node[STATE] &
+                (exports.EnumAstNodeStatus.Invalid |
+                    exports.EnumAstNodeStatus.Disallowed |
+                    exports.EnumAstNodeStatus.Unknown |
+                    exports.EnumAstNodeStatus.Unparsed |
+                    exports.EnumAstNodeStatus.Malformed)) {
                 invalidNodes.push(node);
             }
             stats.nodesCount++;
@@ -33278,11 +33303,11 @@
                 context.chi.push(node);
                 node[PARENT] = context;
                 node[ROOT] = context[ROOT];
-                if (node[STATE] == exports.EnumAstNodeStatus.Invalid ||
-                    node[STATE] == exports.EnumAstNodeStatus.Disallowed ||
-                    node[STATE] == exports.EnumAstNodeStatus.Unknown ||
-                    node[STATE] == exports.EnumAstNodeStatus.Unparsed ||
-                    node[STATE] == exports.EnumAstNodeStatus.Malformed) {
+                if (node[STATE] & exports.EnumAstNodeStatus.Invalid ||
+                    node[STATE] & exports.EnumAstNodeStatus.Disallowed ||
+                    node[STATE] & exports.EnumAstNodeStatus.Unknown ||
+                    node[STATE] & exports.EnumAstNodeStatus.Unparsed ||
+                    node[STATE] & exports.EnumAstNodeStatus.Malformed) {
                     invalidNodes.push(node);
                 }
                 return node;
@@ -33292,7 +33317,9 @@
                 node[PARENT] = context;
                 node[ROOT] = context[ROOT];
                 if (context.typ === exports.EnumToken.StyleSheetNodeType && node.typ === exports.EnumToken.DeclarationNodeType) {
-                    node[STATE] = exports.EnumAstNodeStatus.Invalid;
+                    node[STATE] |=
+                        exports.EnumAstNodeStatus.Invalid &
+                            ~(exports.EnumAstNodeStatus.Validated | exports.EnumAstNodeStatus.Unvalidated | exports.EnumAstNodeStatus.Unparsed);
                     errors.push({
                         message: "<declaration> not allowed in <stylesheet>",
                         action: "drop",
@@ -33303,11 +33330,12 @@
                 else if (options.lenient || node.typ === exports.EnumToken.DeclarationNodeType) {
                     context.chi.push(node);
                 }
-                if (node[STATE] == exports.EnumAstNodeStatus.Invalid ||
-                    node[STATE] == exports.EnumAstNodeStatus.Disallowed ||
-                    node[STATE] == exports.EnumAstNodeStatus.Unknown ||
-                    node[STATE] == exports.EnumAstNodeStatus.Unparsed ||
-                    node[STATE] == exports.EnumAstNodeStatus.Malformed) {
+                if (node[STATE] &
+                    (exports.EnumAstNodeStatus.Invalid |
+                        exports.EnumAstNodeStatus.Disallowed |
+                        exports.EnumAstNodeStatus.Unknown |
+                        exports.EnumAstNodeStatus.Unparsed |
+                        exports.EnumAstNodeStatus.Malformed)) {
                     invalidNodes.push(node);
                 }
             }

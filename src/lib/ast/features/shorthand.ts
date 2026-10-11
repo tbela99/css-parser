@@ -71,6 +71,7 @@ export class ComputeShorthandFeature {
         }
 
         if (declarations.length > 0) {
+
             ast.chi!.length = 0;
             // @ts-expect-error
             ast.chi!.push(...new PropertyList(options).add(declarations), ...rules);

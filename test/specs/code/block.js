@@ -1471,4 +1471,23 @@ color: rgb(from rgb(20% 40%  60% / 80%) r g b / calc(alpha / 2));
 }`),
         );
     });
+
+    it("honor!important flag when merging declarations #62", async () => {
+        const options = {
+            input: `
+    
+    button {
+            	line-height: 2.5 !important;
+            	line-height: 1.5;
+            }
+    `,
+            beautify: true,
+        };
+
+        return transform(options).then((result) =>
+            expect(result.code).equals(`button {
+ line-height: 2.5!important
+}`),
+        );
+    });
 }

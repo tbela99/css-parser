@@ -18,35 +18,39 @@ var EnumAstNodeStatus;
     /**
      * Node passed validation
      */
-    EnumAstNodeStatus[EnumAstNodeStatus["Validated"] = 0] = "Validated";
+    EnumAstNodeStatus[EnumAstNodeStatus["Validated"] = 1] = "Validated";
     /**
      * Node is invalid
      */
-    EnumAstNodeStatus[EnumAstNodeStatus["Invalid"] = 1] = "Invalid";
+    EnumAstNodeStatus[EnumAstNodeStatus["Invalid"] = 2] = "Invalid";
     /**
      * node is not validated
      */
-    EnumAstNodeStatus[EnumAstNodeStatus["Unvalidated"] = 2] = "Unvalidated";
+    EnumAstNodeStatus[EnumAstNodeStatus["Unvalidated"] = 4] = "Unvalidated";
     /**
      * Node did not pass validation, but is preserved.
      */
-    EnumAstNodeStatus[EnumAstNodeStatus["ValidationFailed"] = 3] = "ValidationFailed";
+    EnumAstNodeStatus[EnumAstNodeStatus["ValidationFailed"] = 8] = "ValidationFailed";
     /**
      * Parsing the node is not supported yet or the node syntax definition does not exist.
      */
-    EnumAstNodeStatus[EnumAstNodeStatus["Unknown"] = 4] = "Unknown";
+    EnumAstNodeStatus[EnumAstNodeStatus["Unknown"] = 16] = "Unknown";
     /**
      * Failed to parse the node.
      */
-    EnumAstNodeStatus[EnumAstNodeStatus["Unparsed"] = 5] = "Unparsed";
+    EnumAstNodeStatus[EnumAstNodeStatus["Unparsed"] = 32] = "Unparsed";
     /**
      * Node is disallowed in the context
      */
-    EnumAstNodeStatus[EnumAstNodeStatus["Disallowed"] = 6] = "Disallowed";
+    EnumAstNodeStatus[EnumAstNodeStatus["Disallowed"] = 64] = "Disallowed";
     /**
      * Node is malformed
      */
-    EnumAstNodeStatus[EnumAstNodeStatus["Malformed"] = 7] = "Malformed";
+    EnumAstNodeStatus[EnumAstNodeStatus["Malformed"] = 128] = "Malformed";
+    /**
+     * Important declaration
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["ImportantDeclaration"] = 256] = "ImportantDeclaration";
 })(EnumAstNodeStatus || (EnumAstNodeStatus = {}));
 /**
  * Enum of validation levels

@@ -34,7 +34,7 @@ class TransformCssFeature {
         for (; i < ast.chi.length; i++) {
             // @ts-ignore
             node = ast.chi[i];
-            if (node[STATE] == EnumAstNodeStatus.Invalid || node[STATE] == EnumAstNodeStatus.ValidationFailed) {
+            if (node[STATE] & (EnumAstNodeStatus.Invalid | EnumAstNodeStatus.ValidationFailed)) {
                 continue;
             }
             if (node.typ != EnumToken.DeclarationNodeType ||

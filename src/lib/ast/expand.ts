@@ -1,11 +1,11 @@
-import {splitRule} from "./minify.ts";
-import {combinators, PARENT, RAW, STATE} from "../syntax/constants.ts";
-import {parseString} from "../parser/parse.ts";
-import {walkValues} from "./walk.ts";
-import {renderValue} from "../printer/render.ts";
-import type {AstAtRule, AstNode, AstRule, AstStyleSheet, LiteralToken, Token} from "../../@types/index.d.ts";
-import {EnumAstNodeStatus, EnumToken} from "./types.ts";
-import {cloneNode} from "./clone.ts";
+import { splitRule } from "./minify.ts";
+import { combinators, PARENT, RAW, STATE } from "../syntax/constants.ts";
+import { parseString } from "../parser/parse.ts";
+import { walkValues } from "./walk.ts";
+import { renderValue } from "../printer/render.ts";
+import type { AstAtRule, AstNode, AstRule, AstStyleSheet, LiteralToken, Token } from "../../@types/index.d.ts";
+import { EnumAstNodeStatus, EnumToken } from "./types.ts";
+import { cloneNode } from "./clone.ts";
 
 /**
  * expand css nesting ast nodes
@@ -15,11 +15,12 @@ import {cloneNode} from "./clone.ts";
  */
 export function expand(ast: AstStyleSheet | AstAtRule | AstRule): AstNode {
     if (
-        (ast as AstNode)[STATE] == EnumAstNodeStatus.Invalid ||
-        (ast as AstNode)[STATE] == EnumAstNodeStatus.Disallowed ||
-        (ast as AstNode)[STATE] == EnumAstNodeStatus.Unknown ||
-        (ast as AstNode)[STATE] == EnumAstNodeStatus.Unparsed ||
-        (ast as AstNode)[STATE] == EnumAstNodeStatus.Malformed
+        (ast as AstNode)[STATE] &
+        (EnumAstNodeStatus.Invalid |
+            EnumAstNodeStatus.Disallowed |
+            EnumAstNodeStatus.Unknown |
+            EnumAstNodeStatus.Unparsed |
+            EnumAstNodeStatus.Malformed)
     ) {
         return ast;
     }
@@ -77,11 +78,12 @@ export function expand(ast: AstStyleSheet | AstAtRule | AstRule): AstNode {
 
 function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
     if (
-        (node as AstNode)[STATE] == EnumAstNodeStatus.Invalid ||
-        (node as AstNode)[STATE] == EnumAstNodeStatus.Disallowed ||
-        (node as AstNode)[STATE] == EnumAstNodeStatus.Unknown ||
-        (node as AstNode)[STATE] == EnumAstNodeStatus.Unparsed ||
-        (node as AstNode)[STATE] == EnumAstNodeStatus.Malformed
+        (node as AstNode)[STATE] &
+        (EnumAstNodeStatus.Invalid |
+            EnumAstNodeStatus.Disallowed |
+            EnumAstNodeStatus.Unknown |
+            EnumAstNodeStatus.Unparsed |
+            EnumAstNodeStatus.Malformed)
     ) {
         return [node];
     }

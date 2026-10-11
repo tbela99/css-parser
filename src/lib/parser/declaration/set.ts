@@ -46,7 +46,7 @@ function dedup(values: Token[][]): Token[][] {
 
 export class PropertySet {
     protected config: ShorthandPropertyType;
-    protected declarations: Map<string, AstDeclaration>;
+    public declarations: Map<string, AstDeclaration>;
 
     constructor(config: ShorthandPropertyType) {
         this.config = config;
