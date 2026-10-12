@@ -10,7 +10,7 @@ import type {
 import { getColorComponents } from "./utils/components.ts";
 import { color2srgbvalues, getAngle, getNumber } from "./color.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
-import { cmyk2srgbvalues, lab2srgbvalues, lch2srgbvalues, oklab2srgbvalues, oklch2srgbvalues } from "./srgb.ts";
+import { cmyk2srgbvalues, hslvalues, lab2srgbvalues, lch2srgbvalues, oklab2srgbvalues, oklch2srgbvalues } from "./srgb.ts";
 
 export function rgb2hwbToken(token: ColorToken): ColorToken | null {
     const values: number[] | null = rgb2hwbvalues(token);
@@ -29,6 +29,7 @@ export function hsl2hwbToken(token: ColorToken): ColorToken | null {
         return null;
     }
 
+    // console.error(new Error("hsl2hwbToken"));
     return hwbToken(values);
 }
 
@@ -93,12 +94,10 @@ export function color2hwbToken(token: ColorToken): ColorToken | null {
 }
 
 export function hwbToken(values: number[]): ColorToken {
-    values[0] = values[0] * 360;
-
     const chi: Token[] = <Token[]>[
         { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.PercentageTokenType, val: values[1] * 100 },
-        { typ: EnumToken.PercentageTokenType, val: values[2] * 100 },
+        { typ: EnumToken.PercentageTokenType, val: values[1] },
+        { typ: EnumToken.PercentageTokenType, val: values[2] },
     ];
 
     if (values.length == 4) {
@@ -137,21 +136,15 @@ export function cmyk2hwbvalues(token: ColorToken): number[] | null {
     return values == null ? null : srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 
-export function hsl2hwbvalues(token: ColorToken): number[] {
-    const values = getColorComponents(token)!.map((t: Token, index: number) => {
-        if (index == 3 && t.typ == EnumToken.IdenTokenType && (t as IdentToken).val == "none") {
-            return 1;
-        }
+export function hsl2hwbvalues(token: ColorToken): number[] | null {
+    const values = hslvalues(token);
 
-        if (index == 0) {
-            return getAngle(<AngleToken | IdentToken>t);
-        }
-
-        return getNumber(<IdentToken | NumberToken | PercentageToken>t);
-    }) as [number, number, number, number];
+    if (values == null) {
+        return null;
+    }
 
     // @ts-ignore
-    return hslvalues2hwbvalues(values[0], values[1], values[2], values[3]);
+    return hslvalues2hwbvalues(values.h, values.s, values.l, values.a);
 }
 
 export function lab2hwbvalues(token: ColorToken): number[] | null {
@@ -190,55 +183,90 @@ export function oklch2hwbvalues(token: ColorToken): number[] {
     return values == null ? null : srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 
-function rgb2hue(r: number, g: number, b: number, fallback: number = 0) {
-    let value: number = rgb2value(r, g, b);
-    let whiteness: number = rgb2whiteness(r, g, b);
-
-    let delta: number = value - whiteness;
-
-    if (delta > 0) {
-        // calculate segment
-        let segment: number = value === r ? (g - b) / delta : value === g ? (b - r) / delta : (r - g) / delta;
-
-        // calculate shift
-        let shift: number = value === r ? (segment < 0 ? 360 / 60 : 0 / 60) : value === g ? 120 / 60 : 240 / 60;
-
-        // calculate hue
-        return (segment + shift) * 60;
-    }
-
-    return fallback;
-}
-
-function rgb2value(r: number, g: number, b: number): number {
-    return Math.max(r, g, b);
-}
-
-function rgb2whiteness(r: number, g: number, b: number): number {
-    return Math.min(r, g, b);
-}
-
 export function color2hwbvalues(token: ColorToken): number[] | null {
     const values: number[] | null = color2srgbvalues(token);
 
     if (values == null) {
         return null;
     }
+
     // @ts-ignore
     return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 
-export function srgb2hwb(r: number, g: number, b: number, a: number | null = null, fallback: number = 0): number[] {
-    r *= 100;
-    g *= 100;
+export function hwbvalues(token: ColorToken): { h: number; w: number; b: number; a?: number | null } | null {
+    const components: Token[] | null = getColorComponents(token);
+
+    if (components == null) {
+        return null;
+    }
+
+    let t: PercentageToken | NumberToken;
+
+    // @ts-ignore
+    let h: number = getAngle(<NumberToken | DimensionToken>components[0]) * 360;
+
+    // @ts-ignore
+    t = <NumberToken | DimensionToken>components[1];
+    // @ts-ignore
+    let w: number = getNumber(t);
+    // @ts-ignore
+    t = <NumberToken | DimensionToken>components[2];
+    // @ts-ignore
+    let b: number = getNumber(t);
+
+    // if (components[1].typ == EnumToken.NumberTokenType) {
+    w *= 100;
+    // }
+
+    // if (components[2].typ == EnumToken.NumberTokenType) {
     b *= 100;
+    // }
 
-    let hue: number = rgb2hue(r, g, b, fallback);
-    let whiteness: number = rgb2whiteness(r, g, b);
-    let value: number = Math.round(rgb2value(r, g, b));
-    let blackness: number = 100 - value;
+    let a = null;
 
-    const result: number[] = [hue / 360, whiteness / 100, blackness / 100];
+    if (components.length == 4) {
+        // @ts-ignore
+        t = components[3];
+
+        // @ts-ignore
+        a = getNumber(t);
+    }
+
+    return a == null ? { h, w, b } : { h, w, b, a };
+}
+
+export function srgb2hwb(r: number, g: number, b: number, a: number | null = null, fallback: number = 0): number[] {
+    // 1. Clamp inputs to the standard web-safe sRGB gamut [0.0, 1.0]
+    const rClamp = Math.min(1, Math.max(0, r));
+    const gClamp = Math.min(1, Math.max(0, g));
+    const bClamp = Math.min(1, Math.max(0, b));
+
+    const cMax = Math.max(rClamp, gClamp, bClamp);
+    const cMin = Math.min(rClamp, gClamp, bClamp);
+    const delta = cMax - cMin;
+
+    // 2. Whiteness and Blackness calculations
+    const w = cMin;
+    const bl = 1 - cMax;
+
+    // 3. Calculate Hue
+    let h = 0;
+    if (delta !== 0) {
+        if (cMax === rClamp) {
+            h = 60 * (((gClamp - bClamp) / delta) % 6);
+        } else if (cMax === gClamp) {
+            h = 60 * ((bClamp - rClamp) / delta + 2);
+        } else if (cMax === bClamp) {
+            h = 60 * ((rClamp - gClamp) / delta + 4);
+        }
+
+        if (h < 0) {
+            h += 360;
+        }
+    }
+
+    const result: number[] = [h, w * 100, bl * 100];
 
     if (a != null) {
         result.push(a);
@@ -258,7 +286,27 @@ export function hsv2hwb(h: number, s: number, v: number, a: number | null = null
 }
 
 export function hslvalues2hwbvalues(h: number, s: number, l: number, a: number | null = null): number[] {
-    let values = hsl2hsv(h, s, l);
-    // @ts-ignore
-    return hsv2hwb(values[0], values[1], values[2], a);
+    const sNorm = s / 100;
+  const lNorm = l / 100;
+
+  // Keep Hue cleanly bound to standard circle loops
+  const hue = ((h % 360) + 360) % 360;
+
+  // 1. Compute the intermediate HSV Value component (brightness peak)
+  const v = lNorm + sNorm * Math.min(lNorm, 1 - lNorm);
+
+  // 2. Compute Chroma
+  const chroma = 2 * (v - lNorm);
+
+  // 3. Extract Whiteness and Blackness
+  const w = v - chroma;
+  const b = 1 - v;
+
+  const hwb = [hue, w * 100, b * 100];
+
+  if (a != null && a != 1) {
+      hwb.push(a);
+  }
+
+  return hwb;
 }

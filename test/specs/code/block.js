@@ -1490,4 +1490,32 @@ color: rgb(from rgb(20% 40%  60% / 80%) r g b / calc(alpha / 2));
 }`),
         );
     });
+
+    it("color-mix() with powerless components #63", async () => {
+        const options = {
+            input: `
+    
+    button {
+    
+color: color-mix(in hsl, hwb(none none none), hsl(11 33 44));
+color: color-mix(in hsl, lch(none none 180), hsl(11 33 44));
+color: color-mix(in srgb, white, black);
+color: color-mix(in oklch, oklch(0.783 0.108 326.5 / 0.5), oklch(0.392 0.4 0 / none));
+
+
+            }
+    `,
+            beautify: true,
+            removeDuplicateDeclarations: false,
+        };
+
+        return transform(options).then((result) =>
+            expect(result.code).equals(`button {
+ color: #c83828;
+ color: #95534b;
+ color: grey;
+ color: #d700a280
+}`),
+        );
+    });
 }

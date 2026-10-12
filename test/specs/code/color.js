@@ -1168,7 +1168,7 @@ color: color-mix(in oklch, white, blue)   ;
 color: color-mix(in oklch, oklch(78.3% 0.108 326.5), oklch(39.2% 0.4 none))   ;
 `).then((result) =>
             expect(render(result.ast, { beautify: true }).code).equals(`.selector {
- color: #c322c9
+ color: #d700a2
 }`),
         );
     });
@@ -1179,7 +1179,7 @@ color: color-mix(in oklch, oklch(78.3% 0.108 326.5), oklch(39.2% 0.4 none))   ;
 color: color-mix(in oklch, oklch(0.783 0.108 326.5 / 0.5), oklch(0.392 0.4 0 / none));
 `).then((result) =>
             expect(render(result.ast, { beautify: true }).code).equals(`.selector {
- color: #c322c980
+ color: #d700a280
 }`),
         );
     });

@@ -50,7 +50,12 @@ export enum EnumAstNodeStatus {
     /**
      * Important declaration
      */
-    ImportantDeclaration = 1 << 8
+    ImportantDeclaration = 1 << 8,
+
+    /**
+     * Color component without unit
+     */
+    PowerlessColorComponent = 1 << 9
 }
 
 export declare type AstNodePropertyType = "state" | "errors" | "location" | "tokens" | "parent" | "selector";

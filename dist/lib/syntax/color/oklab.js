@@ -75,7 +75,7 @@ function oklabToken(values) {
         { typ: EnumToken.NumberTokenType, val: values[1] },
         { typ: EnumToken.NumberTokenType, val: values[2] },
     ];
-    if (values.length == 4) {
+    if (values.length == 4 && values[3] != 1) {
         chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
             typ: EnumToken.PercentageTokenType,
             val: values[3] * 100,

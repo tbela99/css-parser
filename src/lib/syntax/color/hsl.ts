@@ -1,10 +1,11 @@
-import { hwb2hsv } from "./hsv.ts";
 import type { ColorToken, IdentToken, NumberToken, PercentageToken, Token } from "../../../@types/index.d.ts";
 import { color2srgbvalues, getNumber } from "./color.ts";
 import { cmyk2rgbvalues, lab2rgbvalues, lch2rgbvalues } from "./rgb.ts";
 import { getColorComponents } from "./utils/components.ts";
 import { hex2srgbvalues, hslvalues, oklab2srgbvalues, oklch2srgbvalues } from "./srgb.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
+import { hwbvalues } from "./hwb.ts";
+import { hwb2hsv } from "./hsv.ts";
 
 export function hex2HslToken(token: ColorToken): ColorToken | null {
     let values = hex2srgbvalues(token);
@@ -97,12 +98,19 @@ export function color2HslToken(token: ColorToken): ColorToken | null {
 }
 
 function hslToken(values: number[]): ColorToken {
-    values[0] = values[0] * 360;
+    if (values[1] == 0) {
+        values[0] = 0;
+    }
+
+    if (values[2] == 1 || values[2] == 0) {
+        values[0] = 0;
+        values[1] = 0;
+    }
 
     const chi: Token[] = <Token[]>[
         { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.PercentageTokenType, val: values[1] * 100 },
-        { typ: EnumToken.PercentageTokenType, val: values[2] * 100 },
+        { typ: EnumToken.PercentageTokenType, val: values[1] },
+        { typ: EnumToken.PercentageTokenType, val: values[2] },
     ];
 
     if (values.length == 4 && values[3] != 1) {
@@ -191,11 +199,49 @@ export function cmyk2hslvalues(token: ColorToken): number[] | null {
     return values == null ? null : rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
 }
 
-export function hwb2hslvalues(token: ColorToken): [number, number, number, number] {
-    const hsla = hslvalues(token) as { h: number; s: number; l: number; a: number };
-    const hwba = hwb2hsv(hsla.h, hsla.s, hsla.l, hsla.a) as [number, number, number, number];
+export function hwb2hslvalues(token: ColorToken): [number, number, number] | [number, number, number, number] | null {
+    //  const hsla = hslvalues(token) as { h: number; s: number; l: number; a: number };
+    // const hwba = hwb2hsv(hsla.h, hsla.s, hsla.l, hsla.a) as [number, number, number, number];
 
-    return hsv2hsl(hwba[0], hwba[1], hwba[2], hwba[3]) as [number, number, number, number];
+    // return hsv2hsl(hwba[0], hwba[1], hwba[2], hwba[3]) as [number, number, number, number];
+
+    const { h, w, b, a } = hwbvalues(token) ?? {};
+
+    if (h == null || w == null || b == null) {
+        return null;
+    }
+
+    // 1. Convert percentages to 0-1 decimals
+    const wNorm = w / 100;
+    const bNorm = b / 100;
+
+    // Keep Hue within a clean 0-360 boundaries
+    const hue = ((h % 360) + 360) % 360;
+
+    // 2. Handle fallback for total grayscale saturation collapse
+    if (wNorm + bNorm >= 1) {
+        const grayLightness = wNorm / (wNorm + bNorm);
+        return [hue, 0, grayLightness * 100];
+    }
+
+    // 3. Compute Lightness directly
+    const lightness = (1 - bNorm + wNorm) / 2;
+
+    // 4. Compute Saturation based on the lightness tier
+    let saturation = 0;
+    if (lightness > 0 && lightness < 1) {
+        const chroma = 1 - wNorm - bNorm;
+        saturation = chroma / (1 - Math.abs(2 * lightness - 1));
+    }
+
+    // 5. Format back into standard web percentages
+    const hsl = [hue, saturation * 100, lightness * 100];
+
+    if (a != null && a != 1) {
+        hsl.push(a);
+    }
+
+    return hsl as [number, number, number] | [number, number, number, number];
 }
 
 export function lab2hslvalues(token: ColorToken): number[] | null {
@@ -236,32 +282,34 @@ export function rgbvalues2hslvalues(r: number, g: number, b: number, a: number |
 }
 
 export function srgb2hslvalues(r: number, g: number, b: number, a: number | null = null): number[] {
-    let max: number = Math.max(r, g, b);
-    let min: number = Math.min(r, g, b);
-    let h: number = 0;
-    let s: number = 0;
-    let l: number = (max + min) / 2;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const delta = max - min;
 
-    if (max != min) {
-        let d: number = max - min;
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    const l = (max + min) / 2;
+
+    let h = 0;
+    let s = 0;
+
+    if (delta !== 0) {
+        s = delta / (1 - Math.abs(2 * l - 1));
 
         switch (max) {
             case r:
-                h = (g - b) / d + (g < b ? 6 : 0);
+                h = 60 * (((g - b) / delta) % 6);
                 break;
             case g:
-                h = (b - r) / d + 2;
+                h = 60 * ((b - r) / delta + 2);
                 break;
             case b:
-                h = (r - g) / d + 4;
+                h = 60 * ((r - g) / delta + 4);
                 break;
         }
-
-        h /= 6;
     }
 
-    const hsl: number[] = [h, s, l];
+    h = ((h % 360) + 360) % 360;
+
+    const hsl: number[] = [h, s * 100, l * 100];
 
     if (a != null && a < 1) {
         // @ts-ignore

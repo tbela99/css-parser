@@ -48,7 +48,11 @@ declare enum EnumAstNodeStatus$1 {
     /**
      * Important declaration
      */
-    ImportantDeclaration = 256
+    ImportantDeclaration = 256,
+    /**
+     * Color component without unit
+     */
+    PowerlessColorComponent = 512
 }
 /**
  * Enum of validation levels

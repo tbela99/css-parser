@@ -9,6 +9,7 @@ import { getOKLCHComponents } from './oklch.js';
 import { XYZ_to_lin_sRGB } from './xyz.js';
 import { COLORS_NAMES } from '../constants.js';
 import { parseColor } from '../syntax.js';
+import { hwbvalues } from './hwb.js';
 
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // srgb-linear -> srgb
@@ -83,25 +84,59 @@ function xyz2srgb(x, y, z, alpha = null) {
     return lsrgb2srgbvalues(values[0], values[1], values[2], alpha);
 }
 function hwb2srgbvalues(token) {
-    const { h: hue, s: white, l: black, a: alpha } = hslvalues(token) ?? {};
-    if (hue == null || white == null || black == null) {
+    const { h, w, b, a } = hwbvalues(token) ?? {};
+    if (h == null || w == null || b == null) {
         return [];
     }
-    const rgb = hslvalues2srgbvalues(hue, 1, 0.5);
-    for (let i = 0; i < 3; i++) {
-        rgb[i] *= 1 - white - black;
-        rgb[i] = rgb[i] + white;
-    }
-    if (alpha != null && alpha != 1) {
-        rgb.push(alpha);
+    const rgb = hwb2srgb(h, w, b);
+    if (a != null && a != 1) {
+        rgb.push(a);
     }
     return rgb;
+}
+/**
+ * convert hwb to sRGB
+ */
+function hwb2srgb(h, w, b, alpha) {
+    const wNorm = w / 100;
+    const bNorm = b / 100;
+    if (wNorm + bNorm >= 1) {
+        const gray = wNorm / (wNorm + bNorm);
+        return [Math.round(gray * 10000) / 10000, Math.round(gray * 10000) / 10000, Math.round(gray * 10000) / 10000];
+    }
+    const hPrime = (h % 360) / 60;
+    const x = 1 - Math.abs((hPrime % 2) - 1);
+    let rChroma = 0;
+    let gChroma = 0;
+    let bChroma = 0;
+    if (hPrime >= 0 && hPrime < 1) {
+        [rChroma, gChroma, bChroma] = [1, x, 0];
+    }
+    else if (hPrime >= 1 && hPrime < 2) {
+        [rChroma, gChroma, bChroma] = [x, 1, 0];
+    }
+    else if (hPrime >= 2 && hPrime < 3) {
+        [rChroma, gChroma, bChroma] = [0, 1, x];
+    }
+    else if (hPrime >= 3 && hPrime < 4) {
+        [rChroma, gChroma, bChroma] = [0, x, 1];
+    }
+    else if (hPrime >= 4 && hPrime < 5) {
+        [rChroma, gChroma, bChroma] = [x, 0, 1];
+    }
+    else if (hPrime >= 5 && hPrime <= 6) {
+        [rChroma, gChroma, bChroma] = [1, 0, x];
+    }
+    const factor = 1 - wNorm - bNorm;
+    const srgb = [rChroma * factor + wNorm, gChroma * factor + wNorm, bChroma * factor + wNorm];
+    return srgb;
 }
 function hsl2srgb(token) {
     let { h, s, l, a } = hslvalues(token) ?? {};
     if (h == null || s == null || l == null) {
         return null;
     }
+    // hue in degrees
     return hslvalues2srgbvalues(h, s, l, a);
 }
 function cmyk2srgbvalues(token) {
@@ -162,7 +197,7 @@ function hslvalues(token) {
     }
     let t;
     // @ts-ignore
-    let h = getAngle(components[0]);
+    let h = getAngle(components[0]) * 360;
     // @ts-ignore
     t = components[1];
     // @ts-ignore
@@ -171,6 +206,12 @@ function hslvalues(token) {
     t = components[2];
     // @ts-ignore
     let l = getNumber(t);
+    if (components[1].typ == EnumToken.PercentageTokenType) {
+        s *= 100;
+    }
+    if (components[2].typ == EnumToken.PercentageTokenType) {
+        l *= 100;
+    }
     let a = null;
     if (components.length == 4) {
         // @ts-ignore
@@ -181,56 +222,38 @@ function hslvalues(token) {
     return a == null ? { h, s, l } : { h, s, l, a };
 }
 function hslvalues2srgbvalues(h, s, l, a = null) {
-    let v = l <= 0.5 ? l * (1.0 + s) : l + s - l * s;
-    let r = l;
-    let g = l;
-    let b = l;
-    if (v > 0) {
-        let m = l + l - v;
-        let sv = (v - m) / v;
-        h *= 6.0;
-        let sextant = Math.floor(h);
-        let fract = h - sextant;
-        let vsf = v * sv * fract;
-        let mid1 = m + vsf;
-        let mid2 = v - vsf;
-        switch (sextant) {
-            case 0:
-                r = v;
-                g = mid1;
-                b = m;
-                break;
-            case 1:
-                r = mid2;
-                g = v;
-                b = m;
-                break;
-            case 2:
-                r = m;
-                g = v;
-                b = mid1;
-                break;
-            case 3:
-                r = m;
-                g = mid2;
-                b = v;
-                break;
-            case 4:
-                r = mid1;
-                g = m;
-                b = v;
-                break;
-            case 5:
-                r = v;
-                g = m;
-                b = mid2;
-                break;
-        }
+    const sNorm = s / 100;
+    const lNorm = l / 100;
+    const chroma = (1 - Math.abs(2 * lNorm - 1)) * sNorm;
+    const hPrime = h / 60;
+    const x = chroma * (1 - Math.abs((hPrime % 2) - 1));
+    let rTmp = 0;
+    let gTmp = 0;
+    let bTmp = 0;
+    if (hPrime >= 0 && hPrime < 1) {
+        [rTmp, gTmp, bTmp] = [chroma, x, 0];
     }
-    const values = [r, g, b];
-    if (a != null && a != 1) {
+    else if (hPrime >= 1 && hPrime < 2) {
+        [rTmp, gTmp, bTmp] = [x, chroma, 0];
+    }
+    else if (hPrime >= 2 && hPrime < 3) {
+        [rTmp, gTmp, bTmp] = [0, chroma, x];
+    }
+    else if (hPrime >= 3 && hPrime < 4) {
+        [rTmp, gTmp, bTmp] = [0, x, chroma];
+    }
+    else if (hPrime >= 4 && hPrime < 5) {
+        [rTmp, gTmp, bTmp] = [x, 0, chroma];
+    }
+    else if (hPrime >= 5 && hPrime <= 6) {
+        [rTmp, gTmp, bTmp] = [chroma, 0, x];
+    }
+    const m = lNorm - chroma / 2;
+    const values = [rTmp + m, gTmp + m, bTmp + m];
+    if (a != null) {
         values.push(a);
     }
+    // Return exact float decimals instead of multiplying by 255
     return values;
 }
 function lab2srgbvalues(token) {
@@ -301,4 +324,4 @@ function lsrgb2srgbvalues(r, g, b, alpha = null) {
     return rgb;
 }
 
-export { cmyk2srgbvalues, hex2srgbvalues, hsl2srgb, hslvalues, hslvalues2srgbvalues, hwb2srgbvalues, lab2srgbvalues, lch2srgbvalues, lsrgb2srgbvalues, oklab2srgbvalues, oklch2srgbvalues, rgb2srgb, rgb2srgbvalues, srgb2lsrgbvalues, srgbvalues, xyz2srgb };
+export { cmyk2srgbvalues, hex2srgbvalues, hsl2srgb, hslvalues, hslvalues2srgbvalues, hwb2srgb, hwb2srgbvalues, lab2srgbvalues, lch2srgbvalues, lsrgb2srgbvalues, oklab2srgbvalues, oklch2srgbvalues, rgb2srgb, rgb2srgbvalues, srgb2lsrgbvalues, srgbvalues, xyz2srgb };

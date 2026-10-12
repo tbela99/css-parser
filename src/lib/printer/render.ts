@@ -792,6 +792,7 @@ export function renderValue(
             }
 
             if (options.convertColor !== false) {
+                
                 const value: ColorToken | null = convertColor(
                     token as ColorToken,
                     typeof options.convertColor === "boolean"

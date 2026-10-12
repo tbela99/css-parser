@@ -51,6 +51,10 @@ var EnumAstNodeStatus;
      * Important declaration
      */
     EnumAstNodeStatus[EnumAstNodeStatus["ImportantDeclaration"] = 256] = "ImportantDeclaration";
+    /**
+     * Color component without unit
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["PowerlessColorComponent"] = 512] = "PowerlessColorComponent";
 })(EnumAstNodeStatus || (EnumAstNodeStatus = {}));
 /**
  * Enum of validation levels

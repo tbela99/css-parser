@@ -1,5 +1,16 @@
 # Changelog
 
+# v1.6.7
+
+## Improvement
+
+- limit the amount of memory used when parsing large files
+- use node flags as bitmasks
+
+## Fixes
+
+- [x] fix powerless and missing components handling with color-mix()
+
 # v1.6.6
 
 ## Fixes
