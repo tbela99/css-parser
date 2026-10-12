@@ -634,7 +634,7 @@ html, body, div, span, applet, object, iframe,
 
         it("file validation #22", function () {
             const url = new URL(dirname(import.meta.url) + "/../../files/css/bootstrap.css");
-            transform(
+            return transform(
                 `@import '${url.pathname.replace(root.pathname, "")}';
 `,
                 {
@@ -653,7 +653,6 @@ html, body, div, span, applet, object, iframe,
                     validation: true,
                     resolveImport: true,
                 },
-           
             ).then((result) => expect(result.errors.length).equals(1));
         });
 

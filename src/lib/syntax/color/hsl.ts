@@ -200,41 +200,30 @@ export function cmyk2hslvalues(token: ColorToken): number[] | null {
 }
 
 export function hwb2hslvalues(token: ColorToken): [number, number, number] | [number, number, number, number] | null {
-    //  const hsla = hslvalues(token) as { h: number; s: number; l: number; a: number };
-    // const hwba = hwb2hsv(hsla.h, hsla.s, hsla.l, hsla.a) as [number, number, number, number];
-
-    // return hsv2hsl(hwba[0], hwba[1], hwba[2], hwba[3]) as [number, number, number, number];
-
     const { h, w, b, a } = hwbvalues(token) ?? {};
 
     if (h == null || w == null || b == null) {
         return null;
     }
 
-    // 1. Convert percentages to 0-1 decimals
     const wNorm = w / 100;
     const bNorm = b / 100;
 
-    // Keep Hue within a clean 0-360 boundaries
     const hue = ((h % 360) + 360) % 360;
 
-    // 2. Handle fallback for total grayscale saturation collapse
     if (wNorm + bNorm >= 1) {
         const grayLightness = wNorm / (wNorm + bNorm);
         return [hue, 0, grayLightness * 100];
     }
 
-    // 3. Compute Lightness directly
     const lightness = (1 - bNorm + wNorm) / 2;
 
-    // 4. Compute Saturation based on the lightness tier
     let saturation = 0;
     if (lightness > 0 && lightness < 1) {
         const chroma = 1 - wNorm - bNorm;
         saturation = chroma / (1 - Math.abs(2 * lightness - 1));
     }
 
-    // 5. Format back into standard web percentages
     const hsl = [hue, saturation * 100, lightness * 100];
 
     if (a != null && a != 1) {

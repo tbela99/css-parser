@@ -10,7 +10,14 @@ import type {
 import { getColorComponents } from "./utils/components.ts";
 import { color2srgbvalues, getAngle, getNumber } from "./color.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
-import { cmyk2srgbvalues, hslvalues, lab2srgbvalues, lch2srgbvalues, oklab2srgbvalues, oklch2srgbvalues } from "./srgb.ts";
+import {
+    cmyk2srgbvalues,
+    hslvalues,
+    lab2srgbvalues,
+    lch2srgbvalues,
+    oklab2srgbvalues,
+    oklch2srgbvalues,
+} from "./srgb.ts";
 
 export function rgb2hwbToken(token: ColorToken): ColorToken | null {
     const values: number[] | null = rgb2hwbvalues(token);
@@ -287,26 +294,26 @@ export function hsv2hwb(h: number, s: number, v: number, a: number | null = null
 
 export function hslvalues2hwbvalues(h: number, s: number, l: number, a: number | null = null): number[] {
     const sNorm = s / 100;
-  const lNorm = l / 100;
+    const lNorm = l / 100;
 
-  // Keep Hue cleanly bound to standard circle loops
-  const hue = ((h % 360) + 360) % 360;
+    // Keep Hue cleanly bound to standard circle loops
+    const hue = ((h % 360) + 360) % 360;
 
-  // 1. Compute the intermediate HSV Value component (brightness peak)
-  const v = lNorm + sNorm * Math.min(lNorm, 1 - lNorm);
+    // 1. Compute the intermediate HSV Value component (brightness peak)
+    const v = lNorm + sNorm * Math.min(lNorm, 1 - lNorm);
 
-  // 2. Compute Chroma
-  const chroma = 2 * (v - lNorm);
+    // 2. Compute Chroma
+    const chroma = 2 * (v - lNorm);
 
-  // 3. Extract Whiteness and Blackness
-  const w = v - chroma;
-  const b = 1 - v;
+    // 3. Extract Whiteness and Blackness
+    const w = v - chroma;
+    const b = 1 - v;
 
-  const hwb = [hue, w * 100, b * 100];
+    const hwb = [hue, w * 100, b * 100];
 
-  if (a != null && a != 1) {
-      hwb.push(a);
-  }
+    if (a != null && a != 1) {
+        hwb.push(a);
+    }
 
-  return hwb;
+    return hwb;
 }
