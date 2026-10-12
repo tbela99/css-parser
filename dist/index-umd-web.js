@@ -24,35 +24,43 @@
         /**
          * Node passed validation
          */
-        EnumAstNodeStatus[EnumAstNodeStatus["Validated"] = 0] = "Validated";
+        EnumAstNodeStatus[EnumAstNodeStatus["Validated"] = 1] = "Validated";
         /**
          * Node is invalid
          */
-        EnumAstNodeStatus[EnumAstNodeStatus["Invalid"] = 1] = "Invalid";
+        EnumAstNodeStatus[EnumAstNodeStatus["Invalid"] = 2] = "Invalid";
         /**
          * node is not validated
          */
-        EnumAstNodeStatus[EnumAstNodeStatus["Unvalidated"] = 2] = "Unvalidated";
+        EnumAstNodeStatus[EnumAstNodeStatus["Unvalidated"] = 4] = "Unvalidated";
         /**
          * Node did not pass validation, but is preserved.
          */
-        EnumAstNodeStatus[EnumAstNodeStatus["ValidationFailed"] = 3] = "ValidationFailed";
+        EnumAstNodeStatus[EnumAstNodeStatus["ValidationFailed"] = 8] = "ValidationFailed";
         /**
          * Parsing the node is not supported yet or the node syntax definition does not exist.
          */
-        EnumAstNodeStatus[EnumAstNodeStatus["Unknown"] = 4] = "Unknown";
+        EnumAstNodeStatus[EnumAstNodeStatus["Unknown"] = 16] = "Unknown";
         /**
          * Failed to parse the node.
          */
-        EnumAstNodeStatus[EnumAstNodeStatus["Unparsed"] = 5] = "Unparsed";
+        EnumAstNodeStatus[EnumAstNodeStatus["Unparsed"] = 32] = "Unparsed";
         /**
          * Node is disallowed in the context
          */
-        EnumAstNodeStatus[EnumAstNodeStatus["Disallowed"] = 6] = "Disallowed";
+        EnumAstNodeStatus[EnumAstNodeStatus["Disallowed"] = 64] = "Disallowed";
         /**
          * Node is malformed
          */
-        EnumAstNodeStatus[EnumAstNodeStatus["Malformed"] = 7] = "Malformed";
+        EnumAstNodeStatus[EnumAstNodeStatus["Malformed"] = 128] = "Malformed";
+        /**
+         * Important declaration
+         */
+        EnumAstNodeStatus[EnumAstNodeStatus["ImportantDeclaration"] = 256] = "ImportantDeclaration";
+        /**
+         * Color component without unit
+         */
+        EnumAstNodeStatus[EnumAstNodeStatus["PowerlessColorComponent"] = 512] = "PowerlessColorComponent";
     })(exports.EnumAstNodeStatus || (exports.EnumAstNodeStatus = {}));
     /**
      * Enum of validation levels
@@ -3515,7 +3523,7 @@
     		syntax: "<number> | <percentage> | none"
     	},
     	"an+b": {
-    		syntax: "odd | even | <integer> | <n-dimension> | '+'?† n | -n | <ndashdigit-dimension> | '+'?† <ndashdigit-ident> | <dashndashdigit-ident> | <n-dimension> <signed-integer> | '+'?† n <signed-integer> | -n <signed-integer> | <ndash-dimension> <signless-integer> | '+'?† n- <signless-integer> | -n- <signless-integer> | <n-dimension> ['+' | '-'] <signless-integer> | '+'?† n ['+' | '-'] <signless-integer> | -n ['+' | '-'] <signless-integer>"
+    		syntax: "odd | even | <integer> | <n-dimension> | '+'? n | -n | <ndashdigit-dimension> | '+'? <ndashdigit-ident> | <dashndashdigit-ident> | <n-dimension> <signed-integer> | '+'? n <signed-integer> | -n <signed-integer> | <ndash-dimension> <signless-integer> | '+'? n- <signless-integer> | -n- <signless-integer> | <n-dimension> ['+' | '-'] <signless-integer> | '+'? n ['+' | '-'] <signless-integer> | -n ['+' | '-'] <signless-integer>"
     	},
     	"anchor()": {
     		syntax: "anchor( <anchor-name>? && <anchor-side>, <length-percentage>? )"
@@ -5548,6 +5556,9 @@
     			marks: {
     				syntax: "none | [ crop || cross ]"
     			},
+    			"page-margin-safety": {
+    				syntax: "none | clamp | add"
+    			},
     			"page-orientation": {
     				syntax: "upright | rotate-left | rotate-right"
     			},
@@ -7482,7 +7493,7 @@
             { typ: exports.EnumToken.NumberTokenType, val: values[1] },
             { typ: exports.EnumToken.NumberTokenType, val: values[2] },
         ];
-        if (values.length == 4) {
+        if (values.length == 4 && values[3] != 1) {
             chi.push({ typ: exports.EnumToken.LiteralTokenType, val: "/" }, {
                 typ: exports.EnumToken.PercentageTokenType,
                 val: values[3] * 100,
@@ -7871,6 +7882,222 @@
         return xyz.map((value, i) => value * D50[i]);
     }
 
+    function rgb2hwbToken(token) {
+        const values = rgb2hwbvalues(token);
+        if (values == null) {
+            return null;
+        }
+        return hwbToken(values);
+    }
+    function hsl2hwbToken(token) {
+        const values = hsl2hwbvalues(token);
+        if (values == null) {
+            return null;
+        }
+        // console.error(new Error("hsl2hwbToken"));
+        return hwbToken(values);
+    }
+    function cmyk2hwbToken(token) {
+        const values = cmyk2hwbvalues(token);
+        if (values == null) {
+            return null;
+        }
+        return hwbToken(values);
+    }
+    function oklab2hwbToken(token) {
+        const values = oklab2hwbvalues(token);
+        if (values == null) {
+            return null;
+        }
+        return hwbToken(values);
+    }
+    function oklch2hwbToken(token) {
+        const values = oklch2hwbvalues(token);
+        if (values == null) {
+            return null;
+        }
+        return hwbToken(values);
+    }
+    function lab2hwbToken(token) {
+        const values = lab2hwbvalues(token);
+        if (values == null) {
+            return null;
+        }
+        return hwbToken(values);
+    }
+    function lch2hwbToken(token) {
+        const values = lch2hwbvalues(token);
+        if (values == null) {
+            return null;
+        }
+        return hwbToken(values);
+    }
+    function color2hwbToken(token) {
+        const values = color2hwbvalues(token);
+        if (values == null) {
+            return null;
+        }
+        return hwbToken(values);
+    }
+    function hwbToken(values) {
+        const chi = [
+            { typ: exports.EnumToken.NumberTokenType, val: values[0] },
+            { typ: exports.EnumToken.PercentageTokenType, val: values[1] },
+            { typ: exports.EnumToken.PercentageTokenType, val: values[2] },
+        ];
+        if (values.length == 4) {
+            chi.push({ typ: exports.EnumToken.LiteralTokenType, val: "/" }, {
+                typ: exports.EnumToken.PercentageTokenType,
+                val: values[3] * 100,
+            });
+        }
+        return {
+            typ: exports.EnumToken.ColorTokenType,
+            val: "hwb",
+            chi,
+            kin: exports.ColorType.HWB,
+        };
+    }
+    function rgb2hwbvalues(token) {
+        const values = getColorComponents(token).map((t, index) => {
+            if (index == 3) {
+                return getNumber(t);
+            }
+            return getNumber(t) / 255;
+        });
+        // @ts-ignore
+        return srgb2hwb(values[0], values[1], values[2], values[3]);
+    }
+    function cmyk2hwbvalues(token) {
+        const values = cmyk2srgbvalues(token);
+        return values == null ? null : srgb2hwb(values[0], values[1], values[2], values[3]);
+    }
+    function hsl2hwbvalues(token) {
+        const values = hslvalues(token);
+        if (values == null) {
+            return null;
+        }
+        // @ts-ignore
+        return hslvalues2hwbvalues(values.h, values.s, values.l, values.a);
+    }
+    function lab2hwbvalues(token) {
+        const values = lab2srgbvalues(token);
+        if (values == null) {
+            return null;
+        }
+        return srgb2hwb(values[0], values[1], values[2], values[3]);
+    }
+    function lch2hwbvalues(token) {
+        const values = lch2srgbvalues(token);
+        if (values == null) {
+            return null;
+        }
+        return srgb2hwb(values[0], values[1], values[2], values[3]);
+    }
+    function oklab2hwbvalues(token) {
+        const values = oklab2srgbvalues(token);
+        if (values == null) {
+            return null;
+        }
+        // @ts-ignore
+        return srgb2hwb(values[0], values[1], values[2], values[3]);
+    }
+    function oklch2hwbvalues(token) {
+        const values = oklch2srgbvalues(token);
+        // @ts-ignore
+        return values == null ? null : srgb2hwb(values[0], values[1], values[2], values[3]);
+    }
+    function color2hwbvalues(token) {
+        const values = color2srgbvalues(token);
+        if (values == null) {
+            return null;
+        }
+        // @ts-ignore
+        return srgb2hwb(values[0], values[1], values[2], values[3]);
+    }
+    function hwbvalues(token) {
+        const components = getColorComponents(token);
+        if (components == null) {
+            return null;
+        }
+        let t;
+        // @ts-ignore
+        let h = getAngle(components[0]) * 360;
+        // @ts-ignore
+        t = components[1];
+        // @ts-ignore
+        let w = getNumber(t);
+        // @ts-ignore
+        t = components[2];
+        // @ts-ignore
+        let b = getNumber(t);
+        // if (components[1].typ == EnumToken.NumberTokenType) {
+        w *= 100;
+        // }
+        // if (components[2].typ == EnumToken.NumberTokenType) {
+        b *= 100;
+        // }
+        let a = null;
+        if (components.length == 4) {
+            // @ts-ignore
+            t = components[3];
+            // @ts-ignore
+            a = getNumber(t);
+        }
+        return a == null ? { h, w, b } : { h, w, b, a };
+    }
+    function srgb2hwb(r, g, b, a = null, fallback = 0) {
+        // 1. Clamp inputs to the standard web-safe sRGB gamut [0.0, 1.0]
+        const rClamp = Math.min(1, Math.max(0, r));
+        const gClamp = Math.min(1, Math.max(0, g));
+        const bClamp = Math.min(1, Math.max(0, b));
+        const cMax = Math.max(rClamp, gClamp, bClamp);
+        const cMin = Math.min(rClamp, gClamp, bClamp);
+        const delta = cMax - cMin;
+        // 2. Whiteness and Blackness calculations
+        const w = cMin;
+        const bl = 1 - cMax;
+        // 3. Calculate Hue
+        let h = 0;
+        if (delta !== 0) {
+            if (cMax === rClamp) {
+                h = 60 * (((gClamp - bClamp) / delta) % 6);
+            }
+            else if (cMax === gClamp) {
+                h = 60 * ((bClamp - rClamp) / delta + 2);
+            }
+            else if (cMax === bClamp) {
+                h = 60 * ((rClamp - gClamp) / delta + 4);
+            }
+            if (h < 0) {
+                h += 360;
+            }
+        }
+        const result = [h, w * 100, bl * 100];
+        if (a != null) {
+            result.push(a);
+        }
+        return result;
+    }
+    function hslvalues2hwbvalues(h, s, l, a = null) {
+        const sNorm = s / 100;
+        const lNorm = l / 100;
+        // Keep Hue cleanly bound to standard circle loops
+        const hue = ((h % 360) + 360) % 360;
+        // 1. Compute the intermediate HSV Value component (brightness peak)
+        const v = lNorm + sNorm * Math.min(lNorm, 1 - lNorm);
+        // 2. Compute Chroma
+        const chroma = 2 * (v - lNorm);
+        // 3. Extract Whiteness and Blackness
+        const w = v - chroma;
+        const b = 1 - v;
+        const hwb = [hue, w * 100, b * 100];
+        if (a != null && a != 1) {
+            hwb.push(a);
+        }
+        return hwb;
+    }
+
     // from https://www.w3.org/TR/css-color-4/#color-conversion-code
     // srgb-linear -> srgb
     // 0 <= r, g, b <= 1
@@ -7944,25 +8171,59 @@
         return lsrgb2srgbvalues(values[0], values[1], values[2], alpha);
     }
     function hwb2srgbvalues(token) {
-        const { h: hue, s: white, l: black, a: alpha } = hslvalues(token) ?? {};
-        if (hue == null || white == null || black == null) {
+        const { h, w, b, a } = hwbvalues(token) ?? {};
+        if (h == null || w == null || b == null) {
             return [];
         }
-        const rgb = hslvalues2srgbvalues(hue, 1, 0.5);
-        for (let i = 0; i < 3; i++) {
-            rgb[i] *= 1 - white - black;
-            rgb[i] = rgb[i] + white;
-        }
-        if (alpha != null && alpha != 1) {
-            rgb.push(alpha);
+        const rgb = hwb2srgb(h, w, b);
+        if (a != null && a != 1) {
+            rgb.push(a);
         }
         return rgb;
+    }
+    /**
+     * convert hwb to sRGB
+     */
+    function hwb2srgb(h, w, b, alpha) {
+        const wNorm = w / 100;
+        const bNorm = b / 100;
+        if (wNorm + bNorm >= 1) {
+            const gray = wNorm / (wNorm + bNorm);
+            return [Math.round(gray * 10000) / 10000, Math.round(gray * 10000) / 10000, Math.round(gray * 10000) / 10000];
+        }
+        const hPrime = (h % 360) / 60;
+        const x = 1 - Math.abs((hPrime % 2) - 1);
+        let rChroma = 0;
+        let gChroma = 0;
+        let bChroma = 0;
+        if (hPrime >= 0 && hPrime < 1) {
+            [rChroma, gChroma, bChroma] = [1, x, 0];
+        }
+        else if (hPrime >= 1 && hPrime < 2) {
+            [rChroma, gChroma, bChroma] = [x, 1, 0];
+        }
+        else if (hPrime >= 2 && hPrime < 3) {
+            [rChroma, gChroma, bChroma] = [0, 1, x];
+        }
+        else if (hPrime >= 3 && hPrime < 4) {
+            [rChroma, gChroma, bChroma] = [0, x, 1];
+        }
+        else if (hPrime >= 4 && hPrime < 5) {
+            [rChroma, gChroma, bChroma] = [x, 0, 1];
+        }
+        else if (hPrime >= 5 && hPrime <= 6) {
+            [rChroma, gChroma, bChroma] = [1, 0, x];
+        }
+        const factor = 1 - wNorm - bNorm;
+        const srgb = [rChroma * factor + wNorm, gChroma * factor + wNorm, bChroma * factor + wNorm];
+        return srgb;
     }
     function hsl2srgb(token) {
         let { h, s, l, a } = hslvalues(token) ?? {};
         if (h == null || s == null || l == null) {
             return null;
         }
+        // hue in degrees
         return hslvalues2srgbvalues(h, s, l, a);
     }
     function cmyk2srgbvalues(token) {
@@ -8023,7 +8284,7 @@
         }
         let t;
         // @ts-ignore
-        let h = getAngle(components[0]);
+        let h = getAngle(components[0]) * 360;
         // @ts-ignore
         t = components[1];
         // @ts-ignore
@@ -8032,6 +8293,12 @@
         t = components[2];
         // @ts-ignore
         let l = getNumber(t);
+        if (components[1].typ == exports.EnumToken.PercentageTokenType) {
+            s *= 100;
+        }
+        if (components[2].typ == exports.EnumToken.PercentageTokenType) {
+            l *= 100;
+        }
         let a = null;
         if (components.length == 4) {
             // @ts-ignore
@@ -8042,56 +8309,38 @@
         return a == null ? { h, s, l } : { h, s, l, a };
     }
     function hslvalues2srgbvalues(h, s, l, a = null) {
-        let v = l <= 0.5 ? l * (1.0 + s) : l + s - l * s;
-        let r = l;
-        let g = l;
-        let b = l;
-        if (v > 0) {
-            let m = l + l - v;
-            let sv = (v - m) / v;
-            h *= 6.0;
-            let sextant = Math.floor(h);
-            let fract = h - sextant;
-            let vsf = v * sv * fract;
-            let mid1 = m + vsf;
-            let mid2 = v - vsf;
-            switch (sextant) {
-                case 0:
-                    r = v;
-                    g = mid1;
-                    b = m;
-                    break;
-                case 1:
-                    r = mid2;
-                    g = v;
-                    b = m;
-                    break;
-                case 2:
-                    r = m;
-                    g = v;
-                    b = mid1;
-                    break;
-                case 3:
-                    r = m;
-                    g = mid2;
-                    b = v;
-                    break;
-                case 4:
-                    r = mid1;
-                    g = m;
-                    b = v;
-                    break;
-                case 5:
-                    r = v;
-                    g = m;
-                    b = mid2;
-                    break;
-            }
+        const sNorm = s / 100;
+        const lNorm = l / 100;
+        const chroma = (1 - Math.abs(2 * lNorm - 1)) * sNorm;
+        const hPrime = h / 60;
+        const x = chroma * (1 - Math.abs((hPrime % 2) - 1));
+        let rTmp = 0;
+        let gTmp = 0;
+        let bTmp = 0;
+        if (hPrime >= 0 && hPrime < 1) {
+            [rTmp, gTmp, bTmp] = [chroma, x, 0];
         }
-        const values = [r, g, b];
-        if (a != null && a != 1) {
+        else if (hPrime >= 1 && hPrime < 2) {
+            [rTmp, gTmp, bTmp] = [x, chroma, 0];
+        }
+        else if (hPrime >= 2 && hPrime < 3) {
+            [rTmp, gTmp, bTmp] = [0, chroma, x];
+        }
+        else if (hPrime >= 3 && hPrime < 4) {
+            [rTmp, gTmp, bTmp] = [0, x, chroma];
+        }
+        else if (hPrime >= 4 && hPrime < 5) {
+            [rTmp, gTmp, bTmp] = [x, 0, chroma];
+        }
+        else if (hPrime >= 5 && hPrime <= 6) {
+            [rTmp, gTmp, bTmp] = [chroma, 0, x];
+        }
+        const m = lNorm - chroma / 2;
+        const values = [rTmp + m, gTmp + m, bTmp + m];
+        if (a != null) {
             values.push(a);
         }
+        // Return exact float decimals instead of multiplying by 255
         return values;
     }
     function lab2srgbvalues(token) {
@@ -8464,25 +8713,6 @@
         return lch2srgbvalues(token)?.map?.((t, index) => (index == 3 ? t : srgb2rgb(t))) ?? null;
     }
 
-    function hwb2hsv(h, w, b, a) {
-        // @ts-ignore
-        return [h, 1 - w / (1 - b), 1 - b, a];
-    }
-    // https://gist.github.com/defims/0ca2ef8832833186ed396a2f8a204117#file-annotated-js
-    function hsl2hsv(h, s, l, a = null) {
-        s *= l < .5 ? l : 1 - l;
-        const result = [
-            //Range should be between 0 - 1
-            h, //Hue stays the same
-            2 * s / (l + s), //Saturation
-            l + s //Value
-        ];
-        if (a != null) {
-            result.push(a);
-        }
-        return result;
-    }
-
     function hex2HslToken(token) {
         let values = hex2srgbvalues(token);
         if (values == null) {
@@ -8547,11 +8777,17 @@
         return hslToken(srgb2hslvalues(values[0], values[1], values[2], values[3]));
     }
     function hslToken(values) {
-        values[0] = values[0] * 360;
+        if (values[1] == 0) {
+            values[0] = 0;
+        }
+        if (values[2] == 1 || values[2] == 0) {
+            values[0] = 0;
+            values[1] = 0;
+        }
         const chi = [
             { typ: exports.EnumToken.NumberTokenType, val: values[0] },
-            { typ: exports.EnumToken.PercentageTokenType, val: values[1] * 100 },
-            { typ: exports.EnumToken.PercentageTokenType, val: values[2] * 100 },
+            { typ: exports.EnumToken.PercentageTokenType, val: values[1] },
+            { typ: exports.EnumToken.PercentageTokenType, val: values[2] },
         ];
         if (values.length == 4 && values[3] != 1) {
             chi.push({ typ: exports.EnumToken.LiteralTokenType, val: "/" }, {
@@ -8594,32 +8830,33 @@
         }
         return rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
     }
-    // https://gist.github.com/defims/0ca2ef8832833186ed396a2f8a204117#file-annotated-js
-    function hsv2hsl(h, s, v, a) {
-        const result = [
-            //[hue, saturation, lightness]
-            //Range should be between 0 - 1
-            h, //Hue stays the same
-            //Saturation is very different between the two color spaces
-            //If (2-sat)*val < 1 set it to sat*val/((2-sat)*val)
-            //Otherwise sat*val/(2-(2-sat)*val)
-            //Conditional is not operating with hue, it is reassigned!
-            (s * v) / ((h = (2 - s) * v) < 1 ? h : 2 - h),
-            h / 2, //Lightness is (2-sat)*val/2
-        ];
-        if (a != null) {
-            result.push(a);
-        }
-        return result;
-    }
     function cmyk2hslvalues(token) {
         const values = cmyk2rgbvalues(token);
         return values == null ? null : rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
     }
     function hwb2hslvalues(token) {
-        const hsla = hslvalues(token);
-        const hwba = hwb2hsv(hsla.h, hsla.s, hsla.l, hsla.a);
-        return hsv2hsl(hwba[0], hwba[1], hwba[2], hwba[3]);
+        const { h, w, b, a } = hwbvalues(token) ?? {};
+        if (h == null || w == null || b == null) {
+            return null;
+        }
+        const wNorm = w / 100;
+        const bNorm = b / 100;
+        const hue = ((h % 360) + 360) % 360;
+        if (wNorm + bNorm >= 1) {
+            const grayLightness = wNorm / (wNorm + bNorm);
+            return [hue, 0, grayLightness * 100];
+        }
+        const lightness = (1 - bNorm + wNorm) / 2;
+        let saturation = 0;
+        if (lightness > 0 && lightness < 1) {
+            const chroma = 1 - wNorm - bNorm;
+            saturation = chroma / (1 - Math.abs(2 * lightness - 1));
+        }
+        const hsl = [hue, saturation * 100, lightness * 100];
+        if (a != null && a != 1) {
+            hsl.push(a);
+        }
+        return hsl;
     }
     function lab2hslvalues(token) {
         const values = lab2rgbvalues(token);
@@ -8650,219 +8887,34 @@
         return srgb2hslvalues(r / 255, g / 255, b / 255, a);
     }
     function srgb2hslvalues(r, g, b, a = null) {
-        let max = Math.max(r, g, b);
-        let min = Math.min(r, g, b);
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const delta = max - min;
+        const l = (max + min) / 2;
         let h = 0;
         let s = 0;
-        let l = (max + min) / 2;
-        if (max != min) {
-            let d = max - min;
-            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        if (delta !== 0) {
+            s = delta / (1 - Math.abs(2 * l - 1));
             switch (max) {
                 case r:
-                    h = (g - b) / d + (g < b ? 6 : 0);
+                    h = 60 * (((g - b) / delta) % 6);
                     break;
                 case g:
-                    h = (b - r) / d + 2;
+                    h = 60 * ((b - r) / delta + 2);
                     break;
                 case b:
-                    h = (r - g) / d + 4;
+                    h = 60 * ((r - g) / delta + 4);
                     break;
             }
-            h /= 6;
         }
-        const hsl = [h, s, l];
+        h = ((h % 360) + 360) % 360;
+        const hsl = [h, s * 100, l * 100];
         if (a != null && a < 1) {
             // @ts-ignore
             return hsl.concat([a]);
         }
         // @ts-ignore
         return hsl;
-    }
-
-    function rgb2hwbToken(token) {
-        const values = rgb2hwbvalues(token);
-        if (values == null) {
-            return null;
-        }
-        return hwbToken(values);
-    }
-    function hsl2hwbToken(token) {
-        const values = hsl2hwbvalues(token);
-        if (values == null) {
-            return null;
-        }
-        return hwbToken(values);
-    }
-    function cmyk2hwbToken(token) {
-        const values = cmyk2hwbvalues(token);
-        if (values == null) {
-            return null;
-        }
-        return hwbToken(values);
-    }
-    function oklab2hwbToken(token) {
-        const values = oklab2hwbvalues(token);
-        if (values == null) {
-            return null;
-        }
-        return hwbToken(values);
-    }
-    function oklch2hwbToken(token) {
-        const values = oklch2hwbvalues(token);
-        if (values == null) {
-            return null;
-        }
-        return hwbToken(values);
-    }
-    function lab2hwbToken(token) {
-        const values = lab2hwbvalues(token);
-        if (values == null) {
-            return null;
-        }
-        return hwbToken(values);
-    }
-    function lch2hwbToken(token) {
-        const values = lch2hwbvalues(token);
-        if (values == null) {
-            return null;
-        }
-        return hwbToken(values);
-    }
-    function color2hwbToken(token) {
-        const values = color2hwbvalues(token);
-        if (values == null) {
-            return null;
-        }
-        return hwbToken(values);
-    }
-    function hwbToken(values) {
-        values[0] = values[0] * 360;
-        const chi = [
-            { typ: exports.EnumToken.NumberTokenType, val: values[0] },
-            { typ: exports.EnumToken.PercentageTokenType, val: values[1] * 100 },
-            { typ: exports.EnumToken.PercentageTokenType, val: values[2] * 100 },
-        ];
-        if (values.length == 4) {
-            chi.push({ typ: exports.EnumToken.LiteralTokenType, val: "/" }, {
-                typ: exports.EnumToken.PercentageTokenType,
-                val: values[3] * 100,
-            });
-        }
-        return {
-            typ: exports.EnumToken.ColorTokenType,
-            val: "hwb",
-            chi,
-            kin: exports.ColorType.HWB,
-        };
-    }
-    function rgb2hwbvalues(token) {
-        const values = getColorComponents(token).map((t, index) => {
-            if (index == 3) {
-                return getNumber(t);
-            }
-            return getNumber(t) / 255;
-        });
-        // @ts-ignore
-        return srgb2hwb(values[0], values[1], values[2], values[3]);
-    }
-    function cmyk2hwbvalues(token) {
-        const values = cmyk2srgbvalues(token);
-        return values == null ? null : srgb2hwb(values[0], values[1], values[2], values[3]);
-    }
-    function hsl2hwbvalues(token) {
-        const values = getColorComponents(token).map((t, index) => {
-            if (index == 3 && t.typ == exports.EnumToken.IdenTokenType && t.val == "none") {
-                return 1;
-            }
-            if (index == 0) {
-                return getAngle(t);
-            }
-            return getNumber(t);
-        });
-        // @ts-ignore
-        return hslvalues2hwbvalues(values[0], values[1], values[2], values[3]);
-    }
-    function lab2hwbvalues(token) {
-        const values = lab2srgbvalues(token);
-        if (values == null) {
-            return null;
-        }
-        return srgb2hwb(values[0], values[1], values[2], values[3]);
-    }
-    function lch2hwbvalues(token) {
-        const values = lch2srgbvalues(token);
-        if (values == null) {
-            return null;
-        }
-        return srgb2hwb(values[0], values[1], values[2], values[3]);
-    }
-    function oklab2hwbvalues(token) {
-        const values = oklab2srgbvalues(token);
-        if (values == null) {
-            return null;
-        }
-        // @ts-ignore
-        return srgb2hwb(values[0], values[1], values[2], values[3]);
-    }
-    function oklch2hwbvalues(token) {
-        const values = oklch2srgbvalues(token);
-        // @ts-ignore
-        return values == null ? null : srgb2hwb(values[0], values[1], values[2], values[3]);
-    }
-    function rgb2hue(r, g, b, fallback = 0) {
-        let value = rgb2value(r, g, b);
-        let whiteness = rgb2whiteness(r, g, b);
-        let delta = value - whiteness;
-        if (delta > 0) {
-            // calculate segment
-            let segment = value === r ? (g - b) / delta : value === g ? (b - r) / delta : (r - g) / delta;
-            // calculate shift
-            let shift = value === r ? (segment < 0 ? 360 / 60 : 0 / 60) : value === g ? 120 / 60 : 240 / 60;
-            // calculate hue
-            return (segment + shift) * 60;
-        }
-        return fallback;
-    }
-    function rgb2value(r, g, b) {
-        return Math.max(r, g, b);
-    }
-    function rgb2whiteness(r, g, b) {
-        return Math.min(r, g, b);
-    }
-    function color2hwbvalues(token) {
-        const values = color2srgbvalues(token);
-        if (values == null) {
-            return null;
-        }
-        // @ts-ignore
-        return srgb2hwb(values[0], values[1], values[2], values[3]);
-    }
-    function srgb2hwb(r, g, b, a = null, fallback = 0) {
-        r *= 100;
-        g *= 100;
-        b *= 100;
-        let hue = rgb2hue(r, g, b, fallback);
-        let whiteness = rgb2whiteness(r, g, b);
-        let value = Math.round(rgb2value(r, g, b));
-        let blackness = 100 - value;
-        const result = [hue / 360, whiteness / 100, blackness / 100];
-        if (a != null) {
-            result.push(a);
-        }
-        return result;
-    }
-    function hsv2hwb(h, s, v, a = null) {
-        const result = [h, (1 - s) * v, 1 - v];
-        if (a != null) {
-            result.push(a);
-        }
-        return result;
-    }
-    function hslvalues2hwbvalues(h, s, l, a = null) {
-        let values = hsl2hsv(h, s, l);
-        // @ts-ignore
-        return hsv2hwb(values[0], values[1], values[2], a);
     }
 
     function prophotorgb2srgbvalues(r, g, b, a = null) {
@@ -9166,6 +9218,7 @@
         const percentages = [];
         const srgbComponentValues = [];
         const colorComponents = [];
+        const colors = [];
         if (args[i]?.typ === exports.EnumToken.IdenTokenType) {
             if (!equalsIgnoreCase(args[i++].val, "in")) {
                 return null;
@@ -9215,9 +9268,10 @@
             if (values == null) {
                 return null;
             }
-            if (colorSpace == "hwb") {
-                colorSpace = "srgb";
-            }
+            // if (colorSpace == "hwb") {
+            //     colorSpace = "srgb";
+            // }
+            colors.push(processPowerlessComponents(args[i]));
             switch (colorSpace) {
                 case "srgb":
                     break;
@@ -9247,17 +9301,12 @@
                     values = srgb2xyz_d65(values[0], values[1], values[2], values[3]);
                     values = XYZ_D65_to_D50(values[0], values[1], values[2], values[3]);
                     break;
-                // case "rgb":
-                //     for (let j = 0; j < values.length; j++) {
-                //         values[j] = j == 3 ? values[j] : srgb2rgb(values[j]);
-                //     }
-                //     break;
                 case "hsl":
                     values = srgb2hslvalues(values[0], values[1], values[2], values[3]);
                     break;
-                // case "hwb":
-                //     values = srgb2hwb(values[0], values[1], values[2], values[3]);
-                //     break;
+                case "hwb":
+                    values = srgb2hwb(values[0], values[1], values[2], values[3]);
+                    break;
                 case "lab":
                     values = srgb2labvalues(values[0], values[1], values[2], values[3]);
                     break;
@@ -9319,7 +9368,8 @@
             }
         }
         const stack = [];
-        const lchSpaces = ["lch", "oklch"];
+        // const lchSpaces: string[] = ["lch", "oklch"];
+        const isLCHOrOKLCH = colorSpace === "lch" || colorSpace == "oklch";
         i = srgbComponentValues.length;
         while (i--) {
             stack.push({
@@ -9337,46 +9387,73 @@
         let premult1;
         let premult2;
         let mixedPremult;
-        let colorSpace1 = exports.ColorType[
-        // @ts-expect-error
-        colorComponents.at(-1).kin
-        // @ts-expect-error
-        ]?.toLowerCase?.();
-        if (colorComponents[0][3] != null &&
-            colorComponents[0][3].typ == exports.EnumToken.IdenTokenType &&
-            colorComponents[0][3].val == "none" &&
-            colorComponents[1].length == 4) {
+        let offset1 = colors[0].kin == exports.ColorType.COLOR ? 1 : 0;
+        if (colorComponents[0][offset1 + 3] != null &&
+            colorComponents[0][offset1 + 3].typ == exports.EnumToken.IdenTokenType &&
+            colorComponents[0][offset1 + 3].val == "none" &&
+            colorComponents[1].length == offset1 + 4) {
             // fix powerless alpha for last color if previous color has alpha
             stack[stack.length - 1].color[3] = stack[stack.length - 2].color[3];
         }
-        // powerless hue for lch spaces
-        if (lchSpaces.includes(colorSpace1) || lchSpaces.includes(colorSpace)) {
-            if ((stack.length > 1 &&
-                colorComponents[0][2].typ == exports.EnumToken.IdenTokenType &&
-                colorComponents[0][2].val == "none") ||
-                stack[stack.length - 1].color[2] == 0) {
+        // console.error(stack);
+        if (stack.length > 1) {
+            // powerless hue for lch spaces
+            // if (lchSpaces.includes(colorSpace)) {
+            // console.error(JSON.stringify({colorSpace1, colorSpace, stack, colorComponents}, null, 1));
+            if ((stack[stack.length - 1].color[0] == 0 && colorComponents[0][offset1].typ == exports.EnumToken.IdenTokenType &&
+                colorComponents[0][offset1].val == "none") ||
+                colorComponents[0][0][STATE] & exports.EnumAstNodeStatus.PowerlessColorComponent) {
+                stack[stack.length - 1].color[0] = stack[stack.length - 2].color[0];
+            }
+            if ((stack[stack.length - 1].color[1] == 0 && colorComponents[0][offset1 + 1].typ == exports.EnumToken.IdenTokenType &&
+                colorComponents[0][offset1 + 1].val == "none") ||
+                colorComponents[0][1][STATE] & exports.EnumAstNodeStatus.PowerlessColorComponent) {
+                stack[stack.length - 1].color[1] = stack[stack.length - 2].color[1];
+            }
+            if ((stack[stack.length - 1].color[2] == 0 && colorComponents[0][offset1 + 2].typ == exports.EnumToken.IdenTokenType &&
+                colorComponents[0][offset1 + 2].val == "none") ||
+                colorComponents[0][2][STATE] & exports.EnumAstNodeStatus.PowerlessColorComponent ||
+                (isLCHOrOKLCH &&
+                    (stack[stack.length - 1].color[1] == 0 ||
+                        stack[stack.length - 1].color[0] == 0 ||
+                        stack[stack.length - 1].color[0] ==
+                            colorRange[colors[0].kin == exports.ColorType.LCH ? "lch" : "oklch"].l[1]))) {
                 stack[stack.length - 1].color[2] = stack[stack.length - 2].color[2];
             }
+            // }
         }
+        // console.error([colorComponents[0][offset1].typ == EnumToken.IdenTokenType, (colorComponents[0][offset1] as IdentToken).val == "none"]);
+        // console.error(isLCHOrOKLCH, colorComponents, stack);
         while (stack.length > 1) {
             r1 = stack.pop();
             r2 = stack.pop();
+            offset1 = colors[++currentIndex].kin == exports.ColorType.COLOR ? 1 : 0;
             // r2 powerless alpha
-            if (colorComponents[++currentIndex][3] != null &&
-                colorComponents[currentIndex][3].typ == exports.EnumToken.IdenTokenType &&
-                colorComponents[currentIndex][3].val == "none") {
+            if (colorComponents[currentIndex][offset1 + 3] != null &&
+                colorComponents[currentIndex][offset1 + 3].typ == exports.EnumToken.IdenTokenType &&
+                colorComponents[currentIndex][offset1 + 3].val == "none") {
                 // fix powerless alpha for last color if previous color has alpha
                 r2.color[3] = r1.color[3];
             }
-            // @ts-expect-error
-            colorSpace1 = exports.ColorType[colorComponents[currentIndex].kin]?.toLowerCase?.();
             // powerless hue for lch spaces
-            if (lchSpaces.includes(colorSpace1) || lchSpaces.includes(colorSpace)) {
-                if ((colorComponents[currentIndex][2].typ == exports.EnumToken.IdenTokenType &&
-                    colorComponents[currentIndex][2].val == "none") ||
-                    r2.color[2] == 0) {
-                    r2.color[2] = r1.color[2];
-                }
+            if ((r2.color[0] == 0 && colorComponents[currentIndex][offset1].typ == exports.EnumToken.IdenTokenType &&
+                colorComponents[currentIndex][offset1].val == "none") ||
+                colorComponents[currentIndex][offset1][STATE] & exports.EnumAstNodeStatus.PowerlessColorComponent) {
+                r2.color[0] = r1.color[0];
+            }
+            if ((r2.color[1] == 0 && colorComponents[currentIndex][offset1 + 1].typ == exports.EnumToken.IdenTokenType &&
+                colorComponents[currentIndex][offset1 + 1].val == "none") ||
+                colorComponents[currentIndex][offset1 + 1][STATE] & exports.EnumAstNodeStatus.PowerlessColorComponent) {
+                r2.color[1] = r1.color[1];
+            }
+            if ((r2.color[2] == 0 && colorComponents[currentIndex][offset1 + 2].typ == exports.EnumToken.IdenTokenType &&
+                colorComponents[currentIndex][offset1 + 2].val == "none") ||
+                colorComponents[currentIndex][offset1 + 2][STATE] & exports.EnumAstNodeStatus.PowerlessColorComponent ||
+                (isLCHOrOKLCH &&
+                    (r2.color[1] == 0 ||
+                        r2.color[0] == 0 ||
+                        r2.color[0] == colorRange[colors[currentIndex].kin == exports.ColorType.LCH ? "lch" : "oklch"].l[1]))) {
+                r2.color[2] = r1.color[2];
             }
             if (hueInterpolationMethod != null) {
                 let hueIndex = 2;
@@ -9404,6 +9481,7 @@
                     alpha: mult,
                 };
             }
+            // console.error({ r1, r2, r, premult1, mult1, premult2, mult2, mixedPremult, mult });
             stack.push(r);
         }
         const result = stack.pop();
@@ -9458,16 +9536,16 @@
                 };
             // case "rgb":
             case "hsl":
-            // case "hwb":
+            case "hwb":
             case "lab":
             case "lch":
             case "oklab":
             case "oklch":
-                if (colorSpace == "hsl") {
+                if (colorSpace == "hsl" || colorSpace == "hwb") {
                     // @ts-ignore
                     if (values[2] < 0) {
                         // @ts-ignore
-                        values[2] += 1;
+                        values[2] += 360;
                     }
                 }
                 else if (colorSpace == "lch" || colorSpace == "oklch") {
@@ -9495,15 +9573,71 @@
                 };
                 if (colorSpace == "hsl") {
                     // @ts-ignore
-                    result.chi[0] = { typ: exports.EnumToken.AngleTokenType, val: result.chi[0].val * 360 };
+                    result.chi[0] = { typ: exports.EnumToken.AngleTokenType, val: result.chi[0].val };
                     // @ts-ignore
-                    result.chi[1] = { typ: exports.EnumToken.PercentageTokenType, val: result.chi[1].val * 100 };
+                    result.chi[1] = { typ: exports.EnumToken.PercentageTokenType, val: result.chi[1].val };
                     // @ts-ignore
-                    result.chi[2] = { typ: exports.EnumToken.PercentageTokenType, val: result.chi[2].val * 100 };
+                    result.chi[2] = { typ: exports.EnumToken.PercentageTokenType, val: result.chi[2].val };
                 }
                 return result;
         }
         return null;
+    }
+    function processPowerlessComponents(color) {
+        let components;
+        let values;
+        switch (color.kin) {
+            case exports.ColorType.LCH:
+            case exports.ColorType.OKLCH:
+                values = color.kin == exports.ColorType.LCH ? getLCHComponents(color) : getOKLCHComponents(color);
+                components = getColorComponents(color);
+                if (values == null || values.length < 3 || components == null) {
+                    break;
+                }
+                const max = color.kin == exports.ColorType.LCH ? colorRange.lch.l[1] : colorRange.oklch.l[1];
+                // https://www.w3.org/TR/css-color-4/#specifying-lab-lch
+                // https://www.w3.org/TR/css-color-4/#specifying-oklab-oklch
+                const epsilon = color.kin == exports.ColorType.LCH ? 0.0015 : 0.000004;
+                if (values[0] < epsilon || Math.abs(values[0] - max) < epsilon) {
+                    Object.assign(components[0], { val: values[0] < epsilon ? 0 : max, typ: exports.EnumToken.NumberTokenType });
+                    Object.assign(components[1], { val: "none", typ: exports.EnumToken.IdenTokenType });
+                    Object.assign(components[2], { val: "none", typ: exports.EnumToken.IdenTokenType });
+                    setColorFlag(components[1], exports.EnumAstNodeStatus.PowerlessColorComponent);
+                    setColorFlag(components[2], exports.EnumAstNodeStatus.PowerlessColorComponent);
+                }
+                else if (values[1] < epsilon) {
+                    values[1] = 0;
+                    Object.assign(components[1], { val: 0, typ: exports.EnumToken.NumberTokenType });
+                    Object.assign(components[2], { val: "none", typ: exports.EnumToken.IdenTokenType });
+                    setColorFlag(components[2], exports.EnumAstNodeStatus.PowerlessColorComponent);
+                }
+                break;
+            case exports.ColorType.HSL:
+            case exports.ColorType.HWB:
+                values = Object.values((color.kin == exports.ColorType.HSL ? hslvalues(color) : hwbvalues(color)) ?? {});
+                components = getColorComponents(color);
+                if (values == null || values.length < 3 || components == null) {
+                    break;
+                }
+                // https://www.w3.org/TR/css-color-4/#the-hsl-notation
+                // https://www.w3.org/TR/css-color-4/#the-hwb-notation
+                if ((color.kin == exports.ColorType.HSL && values[1] <= 0.001) ||
+                    (color.kin == exports.ColorType.HWB && values[1] + values[2] >= 99.999)) {
+                    Object.assign(components[0], { val: "none", typ: exports.EnumToken.IdenTokenType });
+                    setColorFlag(components[0], exports.EnumAstNodeStatus.PowerlessColorComponent);
+                }
+                break;
+        }
+        // console.error({ color: color.chi ?? color, values });
+        return color;
+    }
+    function setColorFlag(token, flag) {
+        if (token[STATE] == null) {
+            token[STATE] = flag;
+        }
+        else {
+            token[STATE] |= flag;
+        }
     }
 
     /**
@@ -9542,6 +9676,7 @@
          */
         WalkerEvent[WalkerEvent["Leave"] = 2] = "Leave";
     })(exports.WalkerEvent || (exports.WalkerEvent = {}));
+    const maxQueueLength = 25000;
     /**
      * Walk ast nodes
      * @param node initial node
@@ -9645,6 +9780,10 @@
             },
         };
         while ((node = parents[i++])) {
+            if (i > maxQueueLength) {
+                parents.splice(0, maxQueueLength);
+                i -= maxQueueLength;
+            }
             let option = null;
             if (filter != null) {
                 // @ts-expect-error
@@ -9788,6 +9927,10 @@
         while (++i < stack.length) {
             value = stack[i];
             option = null;
+            if (i > maxQueueLength) {
+                stack.splice(0, maxQueueLength);
+                i -= maxQueueLength;
+            }
             if (filter.fn != null && eventType & exports.WalkerEvent.Enter) {
                 const isValid = filter.type == null ||
                     value.typ == filter.type ||
@@ -11020,7 +11163,36 @@
                     : aExp),
         };
         const result = computeComponentValue(keys, values);
+        if (result != null) {
+            if ("hsl" == relativeKeys) {
+                Object.assign(result.s, {
+                    typ: exports.EnumToken.PercentageTokenType,
+                    // @ts-ignore
+                    val: result.s.val * 100,
+                });
+                Object.assign(result.l, {
+                    typ: exports.EnumToken.PercentageTokenType,
+                    // @ts-ignore
+                    val: result.l.val * 100,
+                });
+            }
+            else if ("hwb" == relativeKeys) {
+                // @ts
+                Object.assign(result.w, {
+                    typ: exports.EnumToken.PercentageTokenType,
+                    // @ts-ignore
+                    val: result.w.val * 100,
+                });
+                Object.assign(result.b, {
+                    typ: exports.EnumToken.PercentageTokenType,
+                    // @ts-ignore
+                    val: result.b.val * 100,
+                });
+            }
+        }
+        // @ts-ignore
         if (result?.alpha?.typ == exports.EnumToken.NumberTokenType && result.alpha.val === 1) {
+            // @ts-ignore
             const { alpha, ...components } = result;
             return components;
         }
@@ -15162,7 +15334,6 @@
                     return +token.val;
             }
         }
-        // @ts-ignore
         return token.val / 360;
     }
 
@@ -17020,9 +17191,7 @@
             }
         }
         run(node) {
-            if (node[STATE] == exports.EnumAstNodeStatus.Disallowed ||
-                node[STATE] == exports.EnumAstNodeStatus.Invalid ||
-                node[STATE] == exports.EnumAstNodeStatus.Malformed) {
+            if (node[STATE] & (exports.EnumAstNodeStatus.Disallowed | exports.EnumAstNodeStatus.Invalid | exports.EnumAstNodeStatus.Malformed)) {
                 return null;
             }
             if (node.typ == exports.EnumToken.RuleNodeType) {
@@ -19737,7 +19906,8 @@
                     const tokens = {};
                     const values = [];
                     const val = [[]];
-                    for (const curr of this.declarations.get(this.config.shorthand).val) { // @ts-ignore
+                    for (const curr of this.declarations.get(this.config.shorthand).val) {
+                        // @ts-ignore
                         // @ts-ignore
                         if (separator != null && separator.typ == curr.typ && separator.val == curr.val) {
                             val.push([]);
@@ -20681,9 +20851,8 @@
             let result;
             for (const declaration of declarations) {
                 name = declaration.typ != exports.EnumToken.DeclarationNodeType ? null : declaration.nam;
-                if (declaration[STATE] == exports.EnumAstNodeStatus.Invalid ||
-                    declaration[STATE] == exports.EnumAstNodeStatus.Unknown ||
-                    declaration[STATE] == exports.EnumAstNodeStatus.ValidationFailed ||
+                if (declaration[STATE] &
+                    (exports.EnumAstNodeStatus.Invalid | exports.EnumAstNodeStatus.Unknown | exports.EnumAstNodeStatus.ValidationFailed) ||
                     declaration.typ != exports.EnumToken.DeclarationNodeType ||
                     equalsIgnoreCase("composes", name) ||
                     (typeof this.options.removeDuplicateDeclarations === "string" &&
@@ -20702,17 +20871,17 @@
                     this.declarations.set(declaration.nam, declaration);
                     continue;
                 }
-                if (declaration[STATE] == exports.EnumAstNodeStatus.Unvalidated) {
+                if (declaration[STATE] & exports.EnumAstNodeStatus.Unvalidated) {
                     syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, declaration.nam.toLowerCase());
                     if (syntaxRules != null) {
                         result = matchAllSyntaxes(syntaxRules, createValidationContext(declaration.val), this.options);
-                        declaration[STATE] = result.success
-                            ? exports.EnumAstNodeStatus.Validated
-                            : exports.EnumAstNodeStatus.ValidationFailed;
+                        declaration[STATE] |=
+                            (result.success ? exports.EnumAstNodeStatus.Validated : exports.EnumAstNodeStatus.ValidationFailed) &
+                                ~exports.EnumAstNodeStatus.Unvalidated;
                     }
                 }
                 // do not compute shorthand for invalid declarations
-                if (declaration[STATE] !== exports.EnumAstNodeStatus.Validated) {
+                if (!(declaration[STATE] & exports.EnumAstNodeStatus.Validated)) {
                     this.declarations.set(objectHash(declaration), declaration);
                     continue;
                 }
@@ -20741,6 +20910,16 @@
                     shortHandType = "single";
                     // @ts-ignore
                     shorthand = config.property[propertyName];
+                }
+                if (this.declarations.has(shorthand)) {
+                    let existing = this.declarations.get(shorthand);
+                    if (existing instanceof PropertySet || existing instanceof PropertyMap) {
+                        existing = existing.declarations.get(declaration.nam);
+                    }
+                    if (existing?.[STATE] & exports.EnumAstNodeStatus.ImportantDeclaration &&
+                        declaration[STATE] & ~exports.EnumAstNodeStatus.ImportantDeclaration) {
+                        continue;
+                    }
                 }
                 // @ts-ignore
                 if (shortHandType == "map") {
@@ -21077,15 +21256,7 @@
                             // @ts-ignore
                             replaceNodeOrValue(parent, value, result);
                         }
-                        catch (e) {
-                            // @ts-ignore
-                            // if (Array.isArray(parent.chi)) {
-                            //     // @ts-ignore
-                            //     parent.chi.length = 0;
-                            //     // @ts-ignore
-                            //     parent.chi.push(...result);
-                            // }
-                        }
+                        catch (e) { }
                         continue;
                     }
                     if (value != null && tokensfuncSet.has(value.typ)) {
@@ -22391,7 +22562,7 @@
             for (; i < ast.chi.length; i++) {
                 // @ts-ignore
                 node = ast.chi[i];
-                if (node[STATE] == exports.EnumAstNodeStatus.Invalid || node[STATE] == exports.EnumAstNodeStatus.ValidationFailed) {
+                if (node[STATE] & (exports.EnumAstNodeStatus.Invalid | exports.EnumAstNodeStatus.ValidationFailed)) {
                     continue;
                 }
                 if (node.typ != exports.EnumToken.DeclarationNodeType ||
@@ -24334,11 +24505,12 @@
      * @private
      */
     function expand(ast) {
-        if (ast[STATE] == exports.EnumAstNodeStatus.Invalid ||
-            ast[STATE] == exports.EnumAstNodeStatus.Disallowed ||
-            ast[STATE] == exports.EnumAstNodeStatus.Unknown ||
-            ast[STATE] == exports.EnumAstNodeStatus.Unparsed ||
-            ast[STATE] == exports.EnumAstNodeStatus.Malformed) {
+        if (ast[STATE] &
+            (exports.EnumAstNodeStatus.Invalid |
+                exports.EnumAstNodeStatus.Disallowed |
+                exports.EnumAstNodeStatus.Unknown |
+                exports.EnumAstNodeStatus.Unparsed |
+                exports.EnumAstNodeStatus.Malformed)) {
             return ast;
         }
         const result = Object.assign(cloneNode(ast), { chi: [] });
@@ -24386,11 +24558,12 @@
         return result;
     }
     function expandRule(node) {
-        if (node[STATE] == exports.EnumAstNodeStatus.Invalid ||
-            node[STATE] == exports.EnumAstNodeStatus.Disallowed ||
-            node[STATE] == exports.EnumAstNodeStatus.Unknown ||
-            node[STATE] == exports.EnumAstNodeStatus.Unparsed ||
-            node[STATE] == exports.EnumAstNodeStatus.Malformed) {
+        if (node[STATE] &
+            (exports.EnumAstNodeStatus.Invalid |
+                exports.EnumAstNodeStatus.Disallowed |
+                exports.EnumAstNodeStatus.Unknown |
+                exports.EnumAstNodeStatus.Unparsed |
+                exports.EnumAstNodeStatus.Malformed)) {
             return [node];
         }
         const ast = Object.assign(cloneNode(node), { chi: node.chi.slice() });
@@ -26650,17 +26823,20 @@
                     ? ""
                     : token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "") +
                         ":" +
+                        (options.indent ?? "") +
                         token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "");
             case exports.EnumToken.IfElseConditionTokenType:
-                return renderValue(token.l) + renderValue(token.r);
+                return (renderValue(token.l, options, cache, reducer) +
+                    (options.indent ?? "") +
+                    renderValue(token.r, options, cache, reducer));
             case exports.EnumToken.DeclarationNodeType:
                 return (token.nam +
                     ":" +
-                    (options.minifyValues ? filterValues(token.val) : token.val).reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
+                    (options.minifyValues ? filterValues(token.val) : token.val).reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), ""));
             case exports.EnumToken.MediaQueryUnaryFeatureTokenType:
                 return (renderValue(token.l, options, cache, reducer) +
                     " " +
-                    token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
+                    token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), ""));
             case exports.EnumToken.MediaQueryConditionTokenType: {
                 const indent = token.op.typ == exports.EnumToken.LtTokenType ||
                     token.op.typ == exports.EnumToken.GtTokenType ||
@@ -26674,14 +26850,14 @@
                     indent +
                     renderValue(token.op, options, cache, reducer) +
                     indent +
-                    token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
+                    token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), ""));
             }
             case exports.EnumToken.MediaRangeQueryTokenType:
-                return (token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache), "") +
-                    renderValue(token.op1) +
+                return (token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "") +
+                    renderValue(token.op1, options, cache, reducer) +
                     token.val.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "") +
-                    renderValue(token.op2) +
-                    token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache), ""));
+                    renderValue(token.op2, options, cache, reducer) +
+                    token.r.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), ""));
             case exports.EnumToken.MediaFeatureTokenType:
                 return token.val;
             case exports.EnumToken.NotTokenType:
@@ -28885,6 +29061,7 @@
         let rules = null;
         let syntaxRules = null;
         let success = true;
+        let hasImportantFlag = false;
         let validate = typeof options.validation === "boolean" ? options.validation : !!options.validation;
         if (renamedStandardProperties.has(name.val)) {
             name.val = renamedStandardProperties.get(name.val);
@@ -29186,6 +29363,9 @@
                         }
                     }
                     break;
+                case exports.EnumToken.ImportantTokenType:
+                    hasImportantFlag = true;
+                    break;
             }
             if (trimTokenSpace$1.has(token.typ)) {
                 if (tokens[i + 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
@@ -29252,6 +29432,9 @@
             }
             name[STATE] = exports.EnumAstNodeStatus.Unknown;
             name[ERRORS] = result?.errors ?? [];
+            if (hasImportantFlag) {
+                name[STATE] |= exports.EnumAstNodeStatus.ImportantDeclaration;
+            }
             // @ts-expect-error
             return Object.assign(name, {
                 typ: exports.EnumToken.DeclarationNodeType,
@@ -29289,6 +29472,9 @@
                 : exports.EnumAstNodeStatus.Validated
             : exports.EnumAstNodeStatus.ValidationFailed;
         name[ERRORS] = result?.errors ?? [];
+        if (hasImportantFlag) {
+            name[STATE] |= exports.EnumAstNodeStatus.ImportantDeclaration;
+        }
         // @ts-expect-error
         return Object.assign(name, {
             typ: exports.EnumToken.DeclarationNodeType,
@@ -29480,8 +29666,6 @@
                                             }
                                         }
                                     }
-                                    // let isValidMFValue = isMFValue(name, left, true);
-                                    // isValidMFValue = isMFValue(name, right, true);
                                     for (const val of [left, right]) {
                                         if (mfInfo?.type === MediaFeatureType.RatioType) {
                                             const filteredValues = val.filter((n) => n.typ !== exports.EnumToken.WhitespaceTokenType &&
@@ -31518,14 +31702,14 @@
         if (invalidNodes.length > 0) {
             let count = invalidNodes.length;
             for (const { node, parent } of walk(ast)) {
-                if (options.lenient && node[STATE] == exports.EnumAstNodeStatus.Unknown) {
+                if (options.lenient && node[STATE] & exports.EnumAstNodeStatus.Unknown) {
                     continue;
                 }
-                if (node[STATE] === exports.EnumAstNodeStatus.Invalid ||
-                    node[STATE] === exports.EnumAstNodeStatus.Unknown ||
-                    node[STATE] === exports.EnumAstNodeStatus.Unparsed ||
-                    node[STATE] === exports.EnumAstNodeStatus.Malformed ||
-                    node[STATE] === exports.EnumAstNodeStatus.Disallowed) {
+                if (node[STATE] & exports.EnumAstNodeStatus.Invalid ||
+                    node[STATE] & exports.EnumAstNodeStatus.Unknown ||
+                    node[STATE] & exports.EnumAstNodeStatus.Unparsed ||
+                    node[STATE] & exports.EnumAstNodeStatus.Malformed ||
+                    node[STATE] & exports.EnumAstNodeStatus.Disallowed) {
                     // @ts-ignore
                     parent.chi.splice(parent.chi.indexOf(node), 1);
                     node[PARENT] = null;
@@ -32513,14 +32697,14 @@
         if (invalidNodes.length > 0) {
             let count = invalidNodes.length;
             for (const { node, parent } of walk(ast)) {
-                if (options.lenient && node[STATE] == exports.EnumAstNodeStatus.Unknown) {
+                if (options.lenient && node[STATE] & exports.EnumAstNodeStatus.Unknown) {
                     continue;
                 }
-                if (node[STATE] === exports.EnumAstNodeStatus.Invalid ||
-                    node[STATE] === exports.EnumAstNodeStatus.Unknown ||
-                    node[STATE] === exports.EnumAstNodeStatus.Unparsed ||
-                    node[STATE] === exports.EnumAstNodeStatus.Malformed ||
-                    node[STATE] === exports.EnumAstNodeStatus.Disallowed) {
+                if (node[STATE] & exports.EnumAstNodeStatus.Invalid ||
+                    node[STATE] & exports.EnumAstNodeStatus.Unknown ||
+                    node[STATE] & exports.EnumAstNodeStatus.Unparsed ||
+                    node[STATE] & exports.EnumAstNodeStatus.Malformed ||
+                    node[STATE] & exports.EnumAstNodeStatus.Disallowed) {
                     // @ts-ignore
                     parent.chi.splice(parent.chi.indexOf(node), 1);
                     node[PARENT] = null;
@@ -33251,11 +33435,12 @@
             if (node == null) {
                 return null;
             }
-            if (node[STATE] == exports.EnumAstNodeStatus.Invalid ||
-                node[STATE] == exports.EnumAstNodeStatus.Disallowed ||
-                node[STATE] == exports.EnumAstNodeStatus.Unknown ||
-                node[STATE] == exports.EnumAstNodeStatus.Unparsed ||
-                node[STATE] == exports.EnumAstNodeStatus.Malformed) {
+            if (node[STATE] &
+                (exports.EnumAstNodeStatus.Invalid |
+                    exports.EnumAstNodeStatus.Disallowed |
+                    exports.EnumAstNodeStatus.Unknown |
+                    exports.EnumAstNodeStatus.Unparsed |
+                    exports.EnumAstNodeStatus.Malformed)) {
                 invalidNodes.push(node);
             }
             stats.nodesCount++;
@@ -33273,11 +33458,11 @@
                 context.chi.push(node);
                 node[PARENT] = context;
                 node[ROOT] = context[ROOT];
-                if (node[STATE] == exports.EnumAstNodeStatus.Invalid ||
-                    node[STATE] == exports.EnumAstNodeStatus.Disallowed ||
-                    node[STATE] == exports.EnumAstNodeStatus.Unknown ||
-                    node[STATE] == exports.EnumAstNodeStatus.Unparsed ||
-                    node[STATE] == exports.EnumAstNodeStatus.Malformed) {
+                if (node[STATE] & exports.EnumAstNodeStatus.Invalid ||
+                    node[STATE] & exports.EnumAstNodeStatus.Disallowed ||
+                    node[STATE] & exports.EnumAstNodeStatus.Unknown ||
+                    node[STATE] & exports.EnumAstNodeStatus.Unparsed ||
+                    node[STATE] & exports.EnumAstNodeStatus.Malformed) {
                     invalidNodes.push(node);
                 }
                 return node;
@@ -33287,7 +33472,9 @@
                 node[PARENT] = context;
                 node[ROOT] = context[ROOT];
                 if (context.typ === exports.EnumToken.StyleSheetNodeType && node.typ === exports.EnumToken.DeclarationNodeType) {
-                    node[STATE] = exports.EnumAstNodeStatus.Invalid;
+                    node[STATE] |=
+                        exports.EnumAstNodeStatus.Invalid &
+                            ~(exports.EnumAstNodeStatus.Validated | exports.EnumAstNodeStatus.Unvalidated | exports.EnumAstNodeStatus.Unparsed);
                     errors.push({
                         message: "<declaration> not allowed in <stylesheet>",
                         action: "drop",
@@ -33298,11 +33485,12 @@
                 else if (options.lenient || node.typ === exports.EnumToken.DeclarationNodeType) {
                     context.chi.push(node);
                 }
-                if (node[STATE] == exports.EnumAstNodeStatus.Invalid ||
-                    node[STATE] == exports.EnumAstNodeStatus.Disallowed ||
-                    node[STATE] == exports.EnumAstNodeStatus.Unknown ||
-                    node[STATE] == exports.EnumAstNodeStatus.Unparsed ||
-                    node[STATE] == exports.EnumAstNodeStatus.Malformed) {
+                if (node[STATE] &
+                    (exports.EnumAstNodeStatus.Invalid |
+                        exports.EnumAstNodeStatus.Disallowed |
+                        exports.EnumAstNodeStatus.Unknown |
+                        exports.EnumAstNodeStatus.Unparsed |
+                        exports.EnumAstNodeStatus.Malformed)) {
                     invalidNodes.push(node);
                 }
             }

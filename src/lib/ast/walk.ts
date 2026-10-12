@@ -21,19 +21,19 @@ export enum WalkerOptionEnum {
     /**
      * ignore the current node and its children
      */
-    Ignore = 0x1,
+    Ignore = 1 << 0,
     /**
      * stop walking the tree
      */
-    Stop = 0x2,
+    Stop = 1 << 1,
     /**
      * ignore the current node and process its children
      */
-    Children = 0x4,
+    Children = 1 << 2,
     /**
      * ignore the current node children
      */
-    IgnoreChildren = 0x8,
+    IgnoreChildren = 1 << 3,
 }
 
 /**
@@ -49,6 +49,8 @@ export enum WalkerEvent {
      */
     Leave = 0x2,
 }
+
+const maxQueueLength = 25000;
 
 /**
  * Walk ast nodes
@@ -311,6 +313,11 @@ export function* walk(
     } as WalkResult;
 
     while ((node = <AstNode>parents[i++])) {
+        if (i > maxQueueLength) {
+            parents.splice(0, maxQueueLength);
+            i -= maxQueueLength;
+        }
+
         let option: WalkerOption = null;
 
         if (filter != null) {
@@ -480,6 +487,11 @@ export function* walkValues(
     while (++i < stack.length) {
         value = <Token>stack[i];
         option = null;
+
+        if (i > maxQueueLength) {
+            stack.splice(0, maxQueueLength);
+            i -= maxQueueLength;
+        }
 
         if (filter.fn != null && eventType & WalkerEvent.Enter) {
             const isValid: boolean =

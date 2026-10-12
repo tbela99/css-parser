@@ -20,6 +20,8 @@ import { getOKLCHComponents } from "./oklch.ts";
 import { XYZ_to_lin_sRGB } from "./xyz.ts";
 import { COLORS_NAMES } from "../constants.ts";
 import { parseColor } from "../syntax.ts";
+import { hwbvalues } from "./hwb.ts";
+import { backup } from "node:sqlite";
 
 export function srgbvalues(token: ColorToken | IdentToken): number[] | null {
     if (token.typ === EnumToken.IdenTokenType) {
@@ -120,24 +122,67 @@ export function xyz2srgb(x: number, y: number, z: number, alpha: number | null =
 }
 
 export function hwb2srgbvalues(token: ColorToken): number[] | null {
-    const { h: hue, s: white, l: black, a: alpha } = hslvalues(token) ?? {};
+    const { h, w, b, a } = hwbvalues(token) ?? {};
 
-    if (hue == null || white == null || black == null) {
+    if (h == null || w == null || b == null) {
         return [];
     }
 
-    const rgb: number[] = hslvalues2srgbvalues(hue, 1, 0.5);
+    const rgb: number[] = hwb2srgb(h, w, b);
 
-    for (let i = 0; i < 3; i++) {
-        rgb[i] *= 1 - white - black;
-        rgb[i] = rgb[i] + white;
-    }
-
-    if (alpha != null && alpha != 1) {
-        rgb.push(alpha);
+    if (a != null && a != 1) {
+        rgb.push(a);
     }
 
     return rgb;
+}
+/**
+ * convert hwb to sRGB
+ */
+export function hwb2srgb(
+    h: number,
+    w: number,
+    b: number,
+    alpha?: number,
+): [number, number, number] | [number, number, number, number] {
+    const wNorm = w / 100;
+    const bNorm = b / 100;
+
+    if (wNorm + bNorm >= 1) {
+        const gray = wNorm / (wNorm + bNorm);
+        return [Math.round(gray * 10000) / 10000, Math.round(gray * 10000) / 10000, Math.round(gray * 10000) / 10000];
+    }
+
+    const hPrime = (h % 360) / 60;
+    const x = 1 - Math.abs((hPrime % 2) - 1);
+
+    let rChroma = 0;
+    let gChroma = 0;
+    let bChroma = 0;
+
+    if (hPrime >= 0 && hPrime < 1) {
+        [rChroma, gChroma, bChroma] = [1, x, 0];
+    } else if (hPrime >= 1 && hPrime < 2) {
+        [rChroma, gChroma, bChroma] = [x, 1, 0];
+    } else if (hPrime >= 2 && hPrime < 3) {
+        [rChroma, gChroma, bChroma] = [0, 1, x];
+    } else if (hPrime >= 3 && hPrime < 4) {
+        [rChroma, gChroma, bChroma] = [0, x, 1];
+    } else if (hPrime >= 4 && hPrime < 5) {
+        [rChroma, gChroma, bChroma] = [x, 0, 1];
+    } else if (hPrime >= 5 && hPrime <= 6) {
+        [rChroma, gChroma, bChroma] = [1, 0, x];
+    }
+
+    const factor = 1 - wNorm - bNorm;
+
+    const srgb = [rChroma * factor + wNorm, gChroma * factor + wNorm, bChroma * factor + wNorm];
+
+    if (alpha != null && alpha != 1) {
+        srgb.push(alpha);
+    }
+
+    return srgb as [number, number, number] | [number, number, number, number];
 }
 
 export function hsl2srgb(token: ColorToken): number[] | null {
@@ -147,6 +192,7 @@ export function hsl2srgb(token: ColorToken): number[] | null {
         return null;
     }
 
+    // hue in degrees
     return hslvalues2srgbvalues(h, s, l, a);
 }
 
@@ -234,7 +280,7 @@ export function hslvalues(token: ColorToken): { h: number; s: number; l: number;
     let t: PercentageToken | NumberToken;
 
     // @ts-ignore
-    let h: number = getAngle(<NumberToken | DimensionToken>components[0]);
+    let h: number = getAngle(<NumberToken | DimensionToken>components[0]) * 360;
 
     // @ts-ignore
     t = <NumberToken | DimensionToken>components[1];
@@ -244,6 +290,14 @@ export function hslvalues(token: ColorToken): { h: number; s: number; l: number;
     t = <NumberToken | DimensionToken>components[2];
     // @ts-ignore
     let l: number = getNumber(t);
+
+    if (components[1].typ == EnumToken.PercentageTokenType) {
+        s *= 100;
+    }
+
+    if (components[2].typ == EnumToken.PercentageTokenType) {
+        l *= 100;
+    }
 
     let a = null;
 
@@ -259,62 +313,40 @@ export function hslvalues(token: ColorToken): { h: number; s: number; l: number;
 }
 
 export function hslvalues2srgbvalues(h: number, s: number, l: number, a: number | null = null): number[] {
-    let v: number = l <= 0.5 ? l * (1.0 + s) : l + s - l * s;
+    const sNorm = s / 100;
+    const lNorm = l / 100;
 
-    let r: number = l;
-    let g: number = l;
-    let b: number = l;
+    const chroma = (1 - Math.abs(2 * lNorm - 1)) * sNorm;
+    const hPrime = h / 60;
+    const x = chroma * (1 - Math.abs((hPrime % 2) - 1));
 
-    if (v > 0) {
-        let m: number = l + l - v;
-        let sv: number = (v - m) / v;
-        h *= 6.0;
-        let sextant: number = Math.floor(h);
-        let fract: number = h - sextant;
-        let vsf: number = v * sv * fract;
-        let mid1: number = m + vsf;
-        let mid2: number = v - vsf;
+    let rTmp = 0;
+    let gTmp = 0;
+    let bTmp = 0;
 
-        switch (sextant) {
-            case 0:
-                r = v;
-                g = mid1;
-                b = m;
-                break;
-            case 1:
-                r = mid2;
-                g = v;
-                b = m;
-                break;
-            case 2:
-                r = m;
-                g = v;
-                b = mid1;
-                break;
-            case 3:
-                r = m;
-                g = mid2;
-                b = v;
-                break;
-            case 4:
-                r = mid1;
-                g = m;
-                b = v;
-                break;
-            case 5:
-                r = v;
-                g = m;
-                b = mid2;
-                break;
-        }
+    if (hPrime >= 0 && hPrime < 1) {
+        [rTmp, gTmp, bTmp] = [chroma, x, 0];
+    } else if (hPrime >= 1 && hPrime < 2) {
+        [rTmp, gTmp, bTmp] = [x, chroma, 0];
+    } else if (hPrime >= 2 && hPrime < 3) {
+        [rTmp, gTmp, bTmp] = [0, chroma, x];
+    } else if (hPrime >= 3 && hPrime < 4) {
+        [rTmp, gTmp, bTmp] = [0, x, chroma];
+    } else if (hPrime >= 4 && hPrime < 5) {
+        [rTmp, gTmp, bTmp] = [x, 0, chroma];
+    } else if (hPrime >= 5 && hPrime <= 6) {
+        [rTmp, gTmp, bTmp] = [chroma, 0, x];
     }
 
-    const values: number[] = [r, g, b];
+    const m = lNorm - chroma / 2;
 
-    if (a != null && a != 1) {
+    const values = [rTmp + m, gTmp + m, bTmp + m];
+
+    if (a != null) {
         values.push(a);
     }
 
+    // Return exact float decimals instead of multiplying by 255
     return values;
 }
 

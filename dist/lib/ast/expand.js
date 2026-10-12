@@ -13,11 +13,12 @@ import { cloneNode } from './clone.js';
  * @private
  */
 function expand(ast) {
-    if (ast[STATE] == EnumAstNodeStatus.Invalid ||
-        ast[STATE] == EnumAstNodeStatus.Disallowed ||
-        ast[STATE] == EnumAstNodeStatus.Unknown ||
-        ast[STATE] == EnumAstNodeStatus.Unparsed ||
-        ast[STATE] == EnumAstNodeStatus.Malformed) {
+    if (ast[STATE] &
+        (EnumAstNodeStatus.Invalid |
+            EnumAstNodeStatus.Disallowed |
+            EnumAstNodeStatus.Unknown |
+            EnumAstNodeStatus.Unparsed |
+            EnumAstNodeStatus.Malformed)) {
         return ast;
     }
     const result = Object.assign(cloneNode(ast), { chi: [] });
@@ -65,11 +66,12 @@ function expand(ast) {
     return result;
 }
 function expandRule(node) {
-    if (node[STATE] == EnumAstNodeStatus.Invalid ||
-        node[STATE] == EnumAstNodeStatus.Disallowed ||
-        node[STATE] == EnumAstNodeStatus.Unknown ||
-        node[STATE] == EnumAstNodeStatus.Unparsed ||
-        node[STATE] == EnumAstNodeStatus.Malformed) {
+    if (node[STATE] &
+        (EnumAstNodeStatus.Invalid |
+            EnumAstNodeStatus.Disallowed |
+            EnumAstNodeStatus.Unknown |
+            EnumAstNodeStatus.Unparsed |
+            EnumAstNodeStatus.Malformed)) {
         return [node];
     }
     const ast = Object.assign(cloneNode(node), { chi: node.chi.slice() });

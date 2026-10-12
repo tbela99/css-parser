@@ -46,9 +46,8 @@ export class PropertyList {
             name = declaration.typ != EnumToken.DeclarationNodeType ? null : (declaration as AstDeclaration).nam;
 
             if (
-                (declaration as AstDeclaration)[STATE] == EnumAstNodeStatus.Invalid ||
-                (declaration as AstDeclaration)[STATE] == EnumAstNodeStatus.Unknown ||
-                (declaration as AstDeclaration)[STATE] == EnumAstNodeStatus.ValidationFailed ||
+                (declaration as AstDeclaration)[STATE] &
+                    (EnumAstNodeStatus.Invalid | EnumAstNodeStatus.Unknown | EnumAstNodeStatus.ValidationFailed) ||
                 declaration.typ != EnumToken.DeclarationNodeType ||
                 equalsIgnoreCase("composes", name as string) ||
                 (typeof this.options.removeDuplicateDeclarations === "string" &&
@@ -72,19 +71,19 @@ export class PropertyList {
                 continue;
             }
 
-            if (declaration[STATE] == EnumAstNodeStatus.Unvalidated) {
+            if (declaration[STATE] & EnumAstNodeStatus.Unvalidated) {
                 syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, declaration.nam.toLowerCase());
 
                 if (syntaxRules != null) {
                     result = matchAllSyntaxes(syntaxRules, createValidationContext(declaration.val), this.options);
-                    declaration[STATE] = result.success
-                        ? EnumAstNodeStatus.Validated
-                        : EnumAstNodeStatus.ValidationFailed;
+                    declaration[STATE] |=
+                        (result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.ValidationFailed) &
+                        ~EnumAstNodeStatus.Unvalidated;
                 }
             }
 
             // do not compute shorthand for invalid declarations
-            if (declaration[STATE] !== EnumAstNodeStatus.Validated) {
+            if (!(declaration[STATE] & EnumAstNodeStatus.Validated)) {
                 this.declarations.set(objectHash(declaration), declaration);
                 continue;
             }
@@ -114,6 +113,22 @@ export class PropertyList {
                 shorthand = <string>config.property[propertyName];
             }
 
+            if (this.declarations.has(shorthand)) {
+                let existing = this.declarations.get(shorthand);
+
+                if (existing instanceof PropertySet || existing instanceof PropertyMap) {
+                    existing = (existing as PropertySet | PropertyMap).declarations.get(
+                        declaration.nam,
+                    ) as AstDeclaration;
+                }
+
+                if (
+                    existing?.[STATE] & EnumAstNodeStatus.ImportantDeclaration &&
+                    declaration[STATE] & ~EnumAstNodeStatus.ImportantDeclaration
+                ) {
+                    continue;
+                }
+            }
             // @ts-ignore
             if (shortHandType == "map") {
                 let owner: PropertyMap | PropertyList = this;

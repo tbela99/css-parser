@@ -55,6 +55,7 @@ function parseDeclaration(tokens, parent, options, errors) {
     let rules = null;
     let syntaxRules = null;
     let success = true;
+    let hasImportantFlag = false;
     let validate = typeof options.validation === "boolean" ? options.validation : !!options.validation;
     if (renamedStandardProperties.has(name.val)) {
         name.val = renamedStandardProperties.get(name.val);
@@ -356,6 +357,9 @@ function parseDeclaration(tokens, parent, options, errors) {
                     }
                 }
                 break;
+            case EnumToken.ImportantTokenType:
+                hasImportantFlag = true;
+                break;
         }
         if (trimTokenSpace.has(token.typ)) {
             if (tokens[i + 1]?.typ === EnumToken.WhitespaceTokenType) {
@@ -422,6 +426,9 @@ function parseDeclaration(tokens, parent, options, errors) {
         }
         name[STATE] = EnumAstNodeStatus.Unknown;
         name[ERRORS] = result?.errors ?? [];
+        if (hasImportantFlag) {
+            name[STATE] |= EnumAstNodeStatus.ImportantDeclaration;
+        }
         // @ts-expect-error
         return Object.assign(name, {
             typ: EnumToken.DeclarationNodeType,
@@ -459,6 +466,9 @@ function parseDeclaration(tokens, parent, options, errors) {
             : EnumAstNodeStatus.Validated
         : EnumAstNodeStatus.ValidationFailed;
     name[ERRORS] = result?.errors ?? [];
+    if (hasImportantFlag) {
+        name[STATE] |= EnumAstNodeStatus.ImportantDeclaration;
+    }
     // @ts-expect-error
     return Object.assign(name, {
         typ: EnumToken.DeclarationNodeType,

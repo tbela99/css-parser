@@ -16,35 +16,43 @@ declare enum EnumAstNodeStatus$1 {
     /**
      * Node passed validation
      */
-    Validated = 0,
+    Validated = 1,
     /**
      * Node is invalid
      */
-    Invalid = 1,
+    Invalid = 2,
     /**
      * node is not validated
      */
-    Unvalidated = 2,
+    Unvalidated = 4,
     /**
      * Node did not pass validation, but is preserved.
      */
-    ValidationFailed = 3,
+    ValidationFailed = 8,
     /**
      * Parsing the node is not supported yet or the node syntax definition does not exist.
      */
-    Unknown = 4,
+    Unknown = 16,
     /**
      * Failed to parse the node.
      */
-    Unparsed = 5,
+    Unparsed = 32,
     /**
      * Node is disallowed in the context
      */
-    Disallowed = 6,
+    Disallowed = 64,
     /**
      * Node is malformed
      */
-    Malformed = 7
+    Malformed = 128,
+    /**
+     * Important declaration
+     */
+    ImportantDeclaration = 256,
+    /**
+     * Color component without unit
+     */
+    PowerlessColorComponent = 512
 }
 /**
  * Enum of validation levels
