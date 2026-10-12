@@ -556,9 +556,9 @@ body {
                 removePrefix: true,
                 validation: true
             }).then((result) => expect(result.code).equals(`body {
- background-color: if(supports(color:oklch(.7 .185 232)):#00aefc;else:#00adf3);
+ background-color: if(supports(color:oklch(.7 .185 232)): #00aefc; else: #00adf3);
  &:after {
-  content: if(supports(color:oklch(.7 .185 232)):"Your browser supports OKLCH";else:"Your browser does not support OKLCH")
+  content: if(supports(color:oklch(.7 .185 232)): "Your browser supports OKLCH"; else: "Your browser does not support OKLCH")
  }
 }`));
         });
@@ -580,7 +580,7 @@ div {
                 removePrefix: true,
                 validation: true
             }).then((result) => expect(result.code).equals(`div {
- background-image: if(style(--scheme:ice):linear-gradient(#caf0f8,#fff,#caf0f8);else:none)
+ background-image: if(style(--scheme:ice): linear-gradient(#caf0f8,#fff,#caf0f8); else: none)
 }`));
         });
         

@@ -1,15 +1,14 @@
 import type { ColorToken, IdentToken, NumberToken, PercentageToken, Token } from "../../../@types/index.d.ts";
-import { ColorType, EnumToken } from "../../ast/types.ts";
+import { ColorType, EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import { getNumber, minmax } from "./color.ts";
-import { srgb2lsrgbvalues, srgbvalues } from "./srgb.ts";
-import { srgb2lch, xyz2lchvalues } from "./lch.ts";
-import { srgb2rgb } from "./rgb.ts";
+import { hslvalues, srgb2lsrgbvalues, srgbvalues } from "./srgb.ts";
+import { getLCHComponents, srgb2lch, xyz2lchvalues } from "./lch.ts";
 import { srgb2hslvalues } from "./hsl.ts";
-import { srgb2hwb } from "./hwb.ts";
+import { hwbvalues, srgb2hwb } from "./hwb.ts";
 import { srgb2labvalues } from "./lab.ts";
 import { srgb2lp3values, srgb2p3values } from "./p3.ts";
 import { getColorComponents } from "./utils/components.ts";
-import { srgb2oklch } from "./oklch.ts";
+import { getOKLCHComponents, srgb2oklch } from "./oklch.ts";
 import { srgb2oklab } from "./oklab.ts";
 import { srgb2prophotorgbvalues } from "./prophotorgb.ts";
 import { srgb2xyz_d65 } from "./xyz.ts";
@@ -18,6 +17,7 @@ import { srgb2rec2020values } from "./rec2020.ts";
 import { isPolarColorspace, isRectangularOrthogonalColorspace } from "../syntax.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 import { srgb2a98values } from "./a98rgb.ts";
+import { colorRange, epsilon, PARENT, STATE } from "../constants.ts";
 
 function interpolateHue(interpolationMethod: string, h1: number, h2: number): number[] {
     switch (interpolationMethod) {
@@ -80,6 +80,7 @@ export function colorMix(...args: Token[]): ColorToken | null {
     const percentages: Array<number | null> = [];
     const srgbComponentValues: number[][] = [];
     const colorComponents: Token[][] = [];
+    const colors: ColorToken[] = [];
 
     if (args[i]?.typ === EnumToken.IdenTokenType) {
         if (!equalsIgnoreCase((args[i++] as IdentToken).val, "in")) {
@@ -142,9 +143,11 @@ export function colorMix(...args: Token[]): ColorToken | null {
             return null;
         }
 
-        if (colorSpace == "hwb") {
-            colorSpace = "srgb";
-        }
+        // if (colorSpace == "hwb") {
+        //     colorSpace = "srgb";
+        // }
+
+        colors.push(processPowerlessComponents(args[i] as ColorToken));
 
         switch (colorSpace) {
             case "srgb":
@@ -183,19 +186,14 @@ export function colorMix(...args: Token[]): ColorToken | null {
                 values = XYZ_D65_to_D50(values[0], values[1], values[2], values[3]);
                 break;
 
-            // case "rgb":
-            //     for (let j = 0; j < values.length; j++) {
-            //         values[j] = j == 3 ? values[j] : srgb2rgb(values[j]);
-            //     }
-            //     break;
-
             case "hsl":
                 values = srgb2hslvalues(values[0], values[1], values[2], values[3]);
+
                 break;
 
-            // case "hwb":
-            //     values = srgb2hwb(values[0], values[1], values[2], values[3]);
-            //     break;
+            case "hwb":
+                values = srgb2hwb(values[0], values[1], values[2], values[3]);
+                break;
 
             case "lab":
                 values = srgb2labvalues(values[0], values[1], values[2], values[3]);
@@ -277,7 +275,8 @@ export function colorMix(...args: Token[]): ColorToken | null {
     }
 
     const stack: Array<{ color: number[]; alpha: number }> = [];
-    const lchSpaces: string[] = ["lch", "oklch"];
+    // const lchSpaces: string[] = ["lch", "oklch"];
+    const isLCHOrOKLCH: boolean = colorSpace === "lch" || colorSpace == "oklch";
 
     i = srgbComponentValues.length;
 
@@ -300,60 +299,97 @@ export function colorMix(...args: Token[]): ColorToken | null {
     let premult1: number[];
     let premult2: number[];
     let mixedPremult: number[];
-    let colorSpace1: string = ColorType[
-        // @ts-expect-error
-        colorComponents.at(-1)!.kin as keyof typeof ColorType
-        // @ts-expect-error
-    ]?.toLowerCase?.() as string;
+    let offset1: number = colors[0].kin == ColorType.COLOR ? 1 : 0;
 
     if (
-        colorComponents[0][3] != null &&
-        colorComponents[0][3].typ == EnumToken.IdenTokenType &&
-        (colorComponents[0][3] as IdentToken).val == "none" &&
-        colorComponents[1].length == 4
+        colorComponents[0][offset1 + 3] != null &&
+        colorComponents[0][offset1 + 3].typ == EnumToken.IdenTokenType &&
+        (colorComponents[0][offset1 + 3] as IdentToken).val == "none" &&
+        colorComponents[1].length == offset1 + 4
     ) {
         // fix powerless alpha for last color if previous color has alpha
         stack[stack.length - 1].color[3] = stack[stack.length - 2].color[3];
     }
 
-    // powerless hue for lch spaces
-    if (lchSpaces.includes(colorSpace1) || lchSpaces.includes(colorSpace)) {
+    // console.error(stack);
+
+    if (stack.length > 1) {
+        // powerless hue for lch spaces
+        // if (lchSpaces.includes(colorSpace)) {
+        // console.error(JSON.stringify({colorSpace1, colorSpace, stack, colorComponents}, null, 1));
         if (
-            (stack.length > 1 &&
-                colorComponents[0][2].typ == EnumToken.IdenTokenType &&
-                (colorComponents[0][2] as IdentToken).val == "none") ||
-            stack[stack.length - 1].color[2] == 0
+            (stack[stack.length - 1].color[0] == 0 && colorComponents[0][offset1].typ == EnumToken.IdenTokenType &&
+                (colorComponents[0][offset1] as IdentToken).val == "none") ||
+            colorComponents[0][0][STATE] & EnumAstNodeStatus.PowerlessColorComponent
+        ) {
+            stack[stack.length - 1].color[0] = stack[stack.length - 2].color[0]!;
+        }
+        if (
+            (stack[stack.length - 1].color[1] == 0 && colorComponents[0][offset1 + 1].typ == EnumToken.IdenTokenType &&
+                (colorComponents[0][offset1 + 1] as IdentToken).val == "none") ||
+            colorComponents[0][1][STATE] & EnumAstNodeStatus.PowerlessColorComponent
+        ) {
+            stack[stack.length - 1].color[1] = stack[stack.length - 2].color[1]!;
+        }
+        if (
+            (stack[stack.length - 1].color[2] == 0 && colorComponents[0][offset1 + 2].typ == EnumToken.IdenTokenType &&
+                (colorComponents[0][offset1 + 2] as IdentToken).val == "none") ||
+            colorComponents[0][2][STATE] & EnumAstNodeStatus.PowerlessColorComponent ||
+            (isLCHOrOKLCH &&
+                (stack[stack.length - 1].color[1] == 0 ||
+                    stack[stack.length - 1].color[0] == 0 ||
+                    stack[stack.length - 1].color[0] ==
+                        colorRange[colors[0].kin == ColorType.LCH ? "lch" : "oklch"].l[1]))
         ) {
             stack[stack.length - 1].color[2] = stack[stack.length - 2].color[2]!;
         }
+        // }
     }
+
+    // console.error([colorComponents[0][offset1].typ == EnumToken.IdenTokenType, (colorComponents[0][offset1] as IdentToken).val == "none"]);
+    // console.error(isLCHOrOKLCH, colorComponents, stack);
 
     while (stack.length > 1) {
         r1 = stack.pop()!;
         r2 = stack.pop()!;
 
+        offset1 = colors[++currentIndex].kin == ColorType.COLOR ? 1 : 0;
+
         // r2 powerless alpha
         if (
-            colorComponents[++currentIndex][3] != null &&
-            colorComponents[currentIndex][3].typ == EnumToken.IdenTokenType &&
-            (colorComponents[currentIndex][3] as IdentToken).val == "none"
+            colorComponents[currentIndex][offset1 + 3] != null &&
+            colorComponents[currentIndex][offset1 + 3].typ == EnumToken.IdenTokenType &&
+            (colorComponents[currentIndex][offset1 + 3] as IdentToken).val == "none"
         ) {
             // fix powerless alpha for last color if previous color has alpha
             r2.color[3] = r1.color[3];
         }
 
-        // @ts-expect-error
-        colorSpace1 = ColorType[colorComponents[currentIndex].kin as keyof typeof ColorType]?.toLowerCase?.() as string;
-
         // powerless hue for lch spaces
-        if (lchSpaces.includes(colorSpace1) || lchSpaces.includes(colorSpace)) {
-            if (
-                (colorComponents[currentIndex][2].typ == EnumToken.IdenTokenType &&
-                    (colorComponents[currentIndex][2] as IdentToken).val == "none") ||
-                r2.color[2] == 0
-            ) {
-                r2.color[2] = r1.color[2];
-            }
+        if (
+            (r2.color[0] == 0 && colorComponents[currentIndex][offset1].typ == EnumToken.IdenTokenType &&
+                (colorComponents[currentIndex][offset1] as IdentToken).val == "none") ||
+            colorComponents[currentIndex][offset1][STATE] & EnumAstNodeStatus.PowerlessColorComponent
+        ) {
+            r2.color[0] = r1.color[0];
+        }
+        if (
+            (r2.color[1] == 0 && colorComponents[currentIndex][offset1 + 1].typ == EnumToken.IdenTokenType &&
+                (colorComponents[currentIndex][offset1 + 1] as IdentToken).val == "none") ||
+            colorComponents[currentIndex][offset1 + 1][STATE] & EnumAstNodeStatus.PowerlessColorComponent
+        ) {
+            r2.color[1] = r1.color[1];
+        }
+        if (
+            (r2.color[2] == 0 && colorComponents[currentIndex][offset1 + 2].typ == EnumToken.IdenTokenType &&
+                (colorComponents[currentIndex][offset1 + 2] as IdentToken).val == "none") ||
+            colorComponents[currentIndex][offset1 + 2][STATE] & EnumAstNodeStatus.PowerlessColorComponent ||
+            (isLCHOrOKLCH &&
+                (r2.color[1] == 0 ||
+                    r2.color[0] == 0 ||
+                    r2.color[0] == colorRange[colors[currentIndex].kin == ColorType.LCH ? "lch" : "oklch"].l[1]))
+        ) {
+            r2.color[2] = r1.color[2];
         }
 
         if (hueInterpolationMethod != null) {
@@ -399,6 +435,8 @@ export function colorMix(...args: Token[]): ColorToken | null {
                 alpha: mult,
             };
         }
+
+        // console.error({ r1, r2, r, premult1, mult1, premult2, mult2, mixedPremult, mult });
 
         stack.push(r);
     }
@@ -461,16 +499,16 @@ export function colorMix(...args: Token[]): ColorToken | null {
 
         // case "rgb":
         case "hsl":
-        // case "hwb":
+        case "hwb":
         case "lab":
         case "lch":
         case "oklab":
         case "oklch":
-            if (colorSpace == "hsl") {
+            if (colorSpace == "hsl" || colorSpace == "hwb") {
                 // @ts-ignore
                 if (values[2] < 0) {
                     // @ts-ignore
-                    values[2] += 1;
+                    values[2] += 360;
                 }
             } else if (colorSpace == "lch" || colorSpace == "oklch") {
                 // @ts-ignore
@@ -498,15 +536,85 @@ export function colorMix(...args: Token[]): ColorToken | null {
 
             if (colorSpace == "hsl") {
                 // @ts-ignore
-                result.chi[0] = { typ: EnumToken.AngleTokenType, val: result.chi[0].val * 360 };
+                result.chi[0] = { typ: EnumToken.AngleTokenType, val: result.chi[0].val };
                 // @ts-ignore
-                result.chi[1] = { typ: EnumToken.PercentageTokenType, val: result.chi[1].val * 100 };
+                result.chi[1] = { typ: EnumToken.PercentageTokenType, val: result.chi[1].val };
                 // @ts-ignore
-                result.chi[2] = { typ: EnumToken.PercentageTokenType, val: result.chi[2].val * 100 };
+                result.chi[2] = { typ: EnumToken.PercentageTokenType, val: result.chi[2].val };
             }
 
             return result;
     }
 
     return null;
+}
+
+function processPowerlessComponents(color: ColorToken): ColorToken {
+    let components: Token[] | null;
+    let values: number[] | null;
+
+    switch (color.kin) {
+        case ColorType.LCH:
+        case ColorType.OKLCH:
+            values = color.kin == ColorType.LCH ? getLCHComponents(color) : getOKLCHComponents(color);
+            components = getColorComponents(color);
+            if (values == null || values.length < 3 || components == null) {
+                break;
+            }
+
+            const max = color.kin == ColorType.LCH ? colorRange.lch.l[1] : colorRange.oklch.l[1];
+            // https://www.w3.org/TR/css-color-4/#specifying-lab-lch
+            // https://www.w3.org/TR/css-color-4/#specifying-oklab-oklch
+            const epsilon = color.kin == ColorType.LCH ? 0.0015 : 0.000004;
+
+            if (values[0] < epsilon || Math.abs(values[0] - max) < epsilon) {
+                Object.assign(components[0], { val: values[0] < epsilon ? 0 : max, typ: EnumToken.NumberTokenType });
+                Object.assign(components[1], { val: "none", typ: EnumToken.IdenTokenType });
+                Object.assign(components[2], { val: "none", typ: EnumToken.IdenTokenType });
+
+                setColorFlag(components[1], EnumAstNodeStatus.PowerlessColorComponent);
+                setColorFlag(components[2], EnumAstNodeStatus.PowerlessColorComponent);
+            } else if (values[1] < epsilon) {
+                values[1] = 0;
+
+                Object.assign(components[1], { val: 0, typ: EnumToken.NumberTokenType });
+                Object.assign(components[2], { val: "none", typ: EnumToken.IdenTokenType });
+                setColorFlag(components[2], EnumAstNodeStatus.PowerlessColorComponent);
+            }
+
+            break;
+
+        case ColorType.HSL:
+        case ColorType.HWB:
+            values = Object.values(
+                (color.kin == ColorType.HSL ? hslvalues(color) : hwbvalues(color)) ?? {},
+            ) as number[];
+            components = getColorComponents(color);
+            if (values == null || values.length < 3 || components == null) {
+                break;
+            }
+
+            // https://www.w3.org/TR/css-color-4/#the-hsl-notation
+            // https://www.w3.org/TR/css-color-4/#the-hwb-notation
+            if (
+                (color.kin == ColorType.HSL && values[1] <= 0.001) ||
+                (color.kin == ColorType.HWB && values[1] + values[2] >= 99.999)
+            ) {
+                Object.assign(components[0], { val: "none", typ: EnumToken.IdenTokenType });
+                setColorFlag(components[0], EnumAstNodeStatus.PowerlessColorComponent);
+            }
+
+            break;
+    }
+
+    // console.error({ color: color.chi ?? color, values });
+    return color;
+}
+
+function setColorFlag(token: Token, flag: EnumAstNodeStatus) {
+    if (token[STATE] == null) {
+        token[STATE] = flag;
+    } else {
+        token[STATE] |= flag;
+    }
 }

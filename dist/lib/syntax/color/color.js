@@ -582,7 +582,6 @@ function getAngle(token) {
                 return +token.val;
         }
     }
-    // @ts-ignore
     return token.val / 360;
 }
 

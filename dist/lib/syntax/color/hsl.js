@@ -1,9 +1,9 @@
-import { hwb2hsv } from './hsv.js';
 import { color2srgbvalues, getNumber } from './color.js';
 import { lch2rgbvalues, lab2rgbvalues, cmyk2rgbvalues } from './rgb.js';
 import { getColorComponents } from './utils/components.js';
-import { hex2srgbvalues, oklch2srgbvalues, oklab2srgbvalues, hslvalues } from './srgb.js';
+import { hex2srgbvalues, oklch2srgbvalues, oklab2srgbvalues } from './srgb.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
+import { hwbvalues } from './hwb.js';
 
 function hex2HslToken(token) {
     let values = hex2srgbvalues(token);
@@ -69,11 +69,17 @@ function color2HslToken(token) {
     return hslToken(srgb2hslvalues(values[0], values[1], values[2], values[3]));
 }
 function hslToken(values) {
-    values[0] = values[0] * 360;
+    if (values[1] == 0) {
+        values[0] = 0;
+    }
+    if (values[2] == 1 || values[2] == 0) {
+        values[0] = 0;
+        values[1] = 0;
+    }
     const chi = [
         { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.PercentageTokenType, val: values[1] * 100 },
-        { typ: EnumToken.PercentageTokenType, val: values[2] * 100 },
+        { typ: EnumToken.PercentageTokenType, val: values[1] },
+        { typ: EnumToken.PercentageTokenType, val: values[2] },
     ];
     if (values.length == 4 && values[3] != 1) {
         chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
@@ -116,32 +122,33 @@ function rgb2hslvalues(token) {
     }
     return rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
 }
-// https://gist.github.com/defims/0ca2ef8832833186ed396a2f8a204117#file-annotated-js
-function hsv2hsl(h, s, v, a) {
-    const result = [
-        //[hue, saturation, lightness]
-        //Range should be between 0 - 1
-        h, //Hue stays the same
-        //Saturation is very different between the two color spaces
-        //If (2-sat)*val < 1 set it to sat*val/((2-sat)*val)
-        //Otherwise sat*val/(2-(2-sat)*val)
-        //Conditional is not operating with hue, it is reassigned!
-        (s * v) / ((h = (2 - s) * v) < 1 ? h : 2 - h),
-        h / 2, //Lightness is (2-sat)*val/2
-    ];
-    if (a != null) {
-        result.push(a);
-    }
-    return result;
-}
 function cmyk2hslvalues(token) {
     const values = cmyk2rgbvalues(token);
     return values == null ? null : rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
 }
 function hwb2hslvalues(token) {
-    const hsla = hslvalues(token);
-    const hwba = hwb2hsv(hsla.h, hsla.s, hsla.l, hsla.a);
-    return hsv2hsl(hwba[0], hwba[1], hwba[2], hwba[3]);
+    const { h, w, b, a } = hwbvalues(token) ?? {};
+    if (h == null || w == null || b == null) {
+        return null;
+    }
+    const wNorm = w / 100;
+    const bNorm = b / 100;
+    const hue = ((h % 360) + 360) % 360;
+    if (wNorm + bNorm >= 1) {
+        const grayLightness = wNorm / (wNorm + bNorm);
+        return [hue, 0, grayLightness * 100];
+    }
+    const lightness = (1 - bNorm + wNorm) / 2;
+    let saturation = 0;
+    if (lightness > 0 && lightness < 1) {
+        const chroma = 1 - wNorm - bNorm;
+        saturation = chroma / (1 - Math.abs(2 * lightness - 1));
+    }
+    const hsl = [hue, saturation * 100, lightness * 100];
+    if (a != null && a != 1) {
+        hsl.push(a);
+    }
+    return hsl;
 }
 function lab2hslvalues(token) {
     const values = lab2rgbvalues(token);
@@ -172,28 +179,28 @@ function rgbvalues2hslvalues(r, g, b, a = null) {
     return srgb2hslvalues(r / 255, g / 255, b / 255, a);
 }
 function srgb2hslvalues(r, g, b, a = null) {
-    let max = Math.max(r, g, b);
-    let min = Math.min(r, g, b);
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const delta = max - min;
+    const l = (max + min) / 2;
     let h = 0;
     let s = 0;
-    let l = (max + min) / 2;
-    if (max != min) {
-        let d = max - min;
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (delta !== 0) {
+        s = delta / (1 - Math.abs(2 * l - 1));
         switch (max) {
             case r:
-                h = (g - b) / d + (g < b ? 6 : 0);
+                h = 60 * (((g - b) / delta) % 6);
                 break;
             case g:
-                h = (b - r) / d + 2;
+                h = 60 * ((b - r) / delta + 2);
                 break;
             case b:
-                h = (r - g) / d + 4;
+                h = 60 * ((r - g) / delta + 4);
                 break;
         }
-        h /= 6;
     }
-    const hsl = [h, s, l];
+    h = ((h % 360) + 360) % 360;
+    const hsl = [h, s * 100, l * 100];
     if (a != null && a < 1) {
         // @ts-ignore
         return hsl.concat([a]);
@@ -202,4 +209,4 @@ function srgb2hslvalues(r, g, b, a = null) {
     return hsl;
 }
 
-export { cmyk2HslToken, cmyk2hslvalues, color2HslToken, hex2HslToken, hsv2hsl, hwb2HslToken, hwb2hslvalues, lab2HslToken, lab2hslvalues, lch2HslToken, lch2hslvalues, oklab2HslToken, oklab2hslvalues, oklch2HslToken, oklch2hslvalues, rgb2HslToken, rgb2hslvalues, rgbvalues2hslvalues, srgb2hslvalues };
+export { cmyk2HslToken, cmyk2hslvalues, color2HslToken, hex2HslToken, hwb2HslToken, hwb2hslvalues, lab2HslToken, lab2hslvalues, lch2HslToken, lch2hslvalues, oklab2HslToken, oklab2hslvalues, oklch2HslToken, oklch2hslvalues, rgb2HslToken, rgb2hslvalues, rgbvalues2hslvalues, srgb2hslvalues };

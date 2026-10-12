@@ -836,14 +836,14 @@ function doParseSync(tokenizer, options = {}) {
     if (invalidNodes.length > 0) {
         let count = invalidNodes.length;
         for (const { node, parent } of walk(ast)) {
-            if (options.lenient && node[STATE] == EnumAstNodeStatus.Unknown) {
+            if (options.lenient && node[STATE] & EnumAstNodeStatus.Unknown) {
                 continue;
             }
-            if (node[STATE] === EnumAstNodeStatus.Invalid ||
-                node[STATE] === EnumAstNodeStatus.Unknown ||
-                node[STATE] === EnumAstNodeStatus.Unparsed ||
-                node[STATE] === EnumAstNodeStatus.Malformed ||
-                node[STATE] === EnumAstNodeStatus.Disallowed) {
+            if (node[STATE] & EnumAstNodeStatus.Invalid ||
+                node[STATE] & EnumAstNodeStatus.Unknown ||
+                node[STATE] & EnumAstNodeStatus.Unparsed ||
+                node[STATE] & EnumAstNodeStatus.Malformed ||
+                node[STATE] & EnumAstNodeStatus.Disallowed) {
                 // @ts-ignore
                 parent.chi.splice(parent.chi.indexOf(node), 1);
                 node[PARENT] = null;
@@ -1831,14 +1831,14 @@ async function doParse(iter, options = {}) {
     if (invalidNodes.length > 0) {
         let count = invalidNodes.length;
         for (const { node, parent } of walk(ast)) {
-            if (options.lenient && node[STATE] == EnumAstNodeStatus.Unknown) {
+            if (options.lenient && node[STATE] & EnumAstNodeStatus.Unknown) {
                 continue;
             }
-            if (node[STATE] === EnumAstNodeStatus.Invalid ||
-                node[STATE] === EnumAstNodeStatus.Unknown ||
-                node[STATE] === EnumAstNodeStatus.Unparsed ||
-                node[STATE] === EnumAstNodeStatus.Malformed ||
-                node[STATE] === EnumAstNodeStatus.Disallowed) {
+            if (node[STATE] & EnumAstNodeStatus.Invalid ||
+                node[STATE] & EnumAstNodeStatus.Unknown ||
+                node[STATE] & EnumAstNodeStatus.Unparsed ||
+                node[STATE] & EnumAstNodeStatus.Malformed ||
+                node[STATE] & EnumAstNodeStatus.Disallowed) {
                 // @ts-ignore
                 parent.chi.splice(parent.chi.indexOf(node), 1);
                 node[PARENT] = null;
@@ -2569,11 +2569,12 @@ function parseNode(tokens, context, options, errors, stats, invalidNodes) {
         if (node == null) {
             return null;
         }
-        if (node[STATE] == EnumAstNodeStatus.Invalid ||
-            node[STATE] == EnumAstNodeStatus.Disallowed ||
-            node[STATE] == EnumAstNodeStatus.Unknown ||
-            node[STATE] == EnumAstNodeStatus.Unparsed ||
-            node[STATE] == EnumAstNodeStatus.Malformed) {
+        if (node[STATE] &
+            (EnumAstNodeStatus.Invalid |
+                EnumAstNodeStatus.Disallowed |
+                EnumAstNodeStatus.Unknown |
+                EnumAstNodeStatus.Unparsed |
+                EnumAstNodeStatus.Malformed)) {
             invalidNodes.push(node);
         }
         stats.nodesCount++;
@@ -2591,11 +2592,11 @@ function parseNode(tokens, context, options, errors, stats, invalidNodes) {
             context.chi.push(node);
             node[PARENT] = context;
             node[ROOT] = context[ROOT];
-            if (node[STATE] == EnumAstNodeStatus.Invalid ||
-                node[STATE] == EnumAstNodeStatus.Disallowed ||
-                node[STATE] == EnumAstNodeStatus.Unknown ||
-                node[STATE] == EnumAstNodeStatus.Unparsed ||
-                node[STATE] == EnumAstNodeStatus.Malformed) {
+            if (node[STATE] & EnumAstNodeStatus.Invalid ||
+                node[STATE] & EnumAstNodeStatus.Disallowed ||
+                node[STATE] & EnumAstNodeStatus.Unknown ||
+                node[STATE] & EnumAstNodeStatus.Unparsed ||
+                node[STATE] & EnumAstNodeStatus.Malformed) {
                 invalidNodes.push(node);
             }
             return node;
@@ -2605,7 +2606,9 @@ function parseNode(tokens, context, options, errors, stats, invalidNodes) {
             node[PARENT] = context;
             node[ROOT] = context[ROOT];
             if (context.typ === EnumToken.StyleSheetNodeType && node.typ === EnumToken.DeclarationNodeType) {
-                node[STATE] = EnumAstNodeStatus.Invalid;
+                node[STATE] |=
+                    EnumAstNodeStatus.Invalid &
+                        ~(EnumAstNodeStatus.Validated | EnumAstNodeStatus.Unvalidated | EnumAstNodeStatus.Unparsed);
                 errors.push({
                     message: "<declaration> not allowed in <stylesheet>",
                     action: "drop",
@@ -2616,11 +2619,12 @@ function parseNode(tokens, context, options, errors, stats, invalidNodes) {
             else if (options.lenient || node.typ === EnumToken.DeclarationNodeType) {
                 context.chi.push(node);
             }
-            if (node[STATE] == EnumAstNodeStatus.Invalid ||
-                node[STATE] == EnumAstNodeStatus.Disallowed ||
-                node[STATE] == EnumAstNodeStatus.Unknown ||
-                node[STATE] == EnumAstNodeStatus.Unparsed ||
-                node[STATE] == EnumAstNodeStatus.Malformed) {
+            if (node[STATE] &
+                (EnumAstNodeStatus.Invalid |
+                    EnumAstNodeStatus.Disallowed |
+                    EnumAstNodeStatus.Unknown |
+                    EnumAstNodeStatus.Unparsed |
+                    EnumAstNodeStatus.Malformed)) {
                 invalidNodes.push(node);
             }
         }

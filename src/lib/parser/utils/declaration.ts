@@ -101,6 +101,7 @@ export function parseDeclaration(
     let rules: ValidationSyntaxRule | null = null;
     let syntaxRules = null;
     let success: boolean = true;
+    let hasImportantFlag: boolean = false;
 
     let validate = typeof options.validation === "boolean" ? options.validation : !!options.validation;
 
@@ -478,6 +479,10 @@ export function parseDeclaration(
                 }
 
                 break;
+
+            case EnumToken.ImportantTokenType:
+                hasImportantFlag = true;
+                break;
         }
 
         if (trimTokenSpace.has(token.typ)) {
@@ -563,6 +568,10 @@ export function parseDeclaration(
         name[STATE] = EnumAstNodeStatus.Unknown;
         name[ERRORS] = result?.errors ?? [];
 
+        if (hasImportantFlag) {
+            name[STATE] |= EnumAstNodeStatus.ImportantDeclaration;
+        }
+
         // @ts-expect-error
         return Object.assign(name, {
             typ: EnumToken.DeclarationNodeType,
@@ -605,6 +614,10 @@ export function parseDeclaration(
             : EnumAstNodeStatus.Validated
         : EnumAstNodeStatus.ValidationFailed;
     name[ERRORS] = result?.errors ?? [];
+
+    if (hasImportantFlag) {
+        name[STATE] |= EnumAstNodeStatus.ImportantDeclaration;
+    }
 
     // @ts-expect-error
     return Object.assign(name, {

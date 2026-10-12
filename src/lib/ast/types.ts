@@ -17,35 +17,45 @@ export enum EnumAstNodeStatus {
     /**
      * Node passed validation
      */
-    Validated,
+    Validated = 1 << 0,
     /**
      * Node is invalid
      */
-    Invalid,
+    Invalid = 1 << 1,
     /**
      * node is not validated
      */
-    Unvalidated,
+    Unvalidated = 1 << 2,
     /**
      * Node did not pass validation, but is preserved.
      */
-    ValidationFailed,
+    ValidationFailed = 1 << 3,
     /**
      * Parsing the node is not supported yet or the node syntax definition does not exist.
      */
-    Unknown,
+    Unknown = 1 << 4,
     /**
      * Failed to parse the node.
      */
-    Unparsed,
+    Unparsed = 1 << 5,
     /**
      * Node is disallowed in the context
      */
-    Disallowed,
+    Disallowed = 1 << 6,
     /**
      * Node is malformed
      */
-    Malformed,
+    Malformed   = 1 << 7,
+
+    /**
+     * Important declaration
+     */
+    ImportantDeclaration = 1 << 8,
+
+    /**
+     * Color component without unit
+     */
+    PowerlessColorComponent = 1 << 9
 }
 
 export declare type AstNodePropertyType = "state" | "errors" | "location" | "tokens" | "parent" | "selector";

@@ -1,5 +1,55 @@
 # Changelog
 
+# v1.6.7
+
+## Improvement
+
+- limit the amount of memory used when parsing large files
+- use node flags as bitmasks
+
+## Fixes
+
+- [x] fix powerless and missing components handling with color-mix(). missing and powerless colors are now [carried forwarded](https://drafts.csswg.org/css-color-5/#rcs-intro)
+
+```ts
+const css = `
+
+    button {
+    
+color: color-mix(in hsl, hwb(none none none), hsl(11 33 44));
+color: color-mix(in hsl, lch(none none 180), hsl(11 33 44));
+color: color-mix(in srgb, white, black);
+color: color-mix(in oklch, oklch(0.783 0.108 326.5 / 0.5), oklch(0.392 0.4 0 / none));
+
+    color: color-mix(in srgb, color(display-p3 none none none), color(srgb 0.11 0.33 0.44));
+color: color-mix(in oklch, oklch(78.3% 0.108 326.5), oklch(39.2% 0.4 none)) ;
+
+}
+`;
+
+const result =  transformSync({input: css, 
+  beautify: true, 
+  inlineCssVariables: true,
+  removeDuplicateDeclarations: false,
+  convertColor: ColorType.SRGB
+});
+// console.debug(result);
+console.debug(result.code);
+```
+
+result
+
+```css
+button {
+ color: color(srgb .78255 .272052 .15745);
+ color: color(srgb .5852 .32384 .2948);
+ color: color(srgb .5 .5 .5);
+ color: color(srgb .843871 -.026576 .636173/50%);
+ color: color(srgb .11 .33 .44);
+ color: color(srgb .764947 .131643 .788822)
+}
+```
+
 # v1.6.6
 
 ## Fixes

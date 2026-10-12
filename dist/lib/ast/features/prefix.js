@@ -121,9 +121,7 @@ class ComputePrefixFeature {
         }
     }
     run(node) {
-        if (node[STATE] == EnumAstNodeStatus.Disallowed ||
-            node[STATE] == EnumAstNodeStatus.Invalid ||
-            node[STATE] == EnumAstNodeStatus.Malformed) {
+        if (node[STATE] & (EnumAstNodeStatus.Disallowed | EnumAstNodeStatus.Invalid | EnumAstNodeStatus.Malformed)) {
             return null;
         }
         if (node.typ == EnumToken.RuleNodeType) {

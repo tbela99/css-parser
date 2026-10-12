@@ -26,9 +26,8 @@ class PropertyList {
         let result;
         for (const declaration of declarations) {
             name = declaration.typ != EnumToken.DeclarationNodeType ? null : declaration.nam;
-            if (declaration[STATE] == EnumAstNodeStatus.Invalid ||
-                declaration[STATE] == EnumAstNodeStatus.Unknown ||
-                declaration[STATE] == EnumAstNodeStatus.ValidationFailed ||
+            if (declaration[STATE] &
+                (EnumAstNodeStatus.Invalid | EnumAstNodeStatus.Unknown | EnumAstNodeStatus.ValidationFailed) ||
                 declaration.typ != EnumToken.DeclarationNodeType ||
                 equalsIgnoreCase("composes", name) ||
                 (typeof this.options.removeDuplicateDeclarations === "string" &&
@@ -47,17 +46,17 @@ class PropertyList {
                 this.declarations.set(declaration.nam, declaration);
                 continue;
             }
-            if (declaration[STATE] == EnumAstNodeStatus.Unvalidated) {
+            if (declaration[STATE] & EnumAstNodeStatus.Unvalidated) {
                 syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, declaration.nam.toLowerCase());
                 if (syntaxRules != null) {
                     result = matchAllSyntaxes(syntaxRules, createValidationContext(declaration.val), this.options);
-                    declaration[STATE] = result.success
-                        ? EnumAstNodeStatus.Validated
-                        : EnumAstNodeStatus.ValidationFailed;
+                    declaration[STATE] |=
+                        (result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.ValidationFailed) &
+                            ~EnumAstNodeStatus.Unvalidated;
                 }
             }
             // do not compute shorthand for invalid declarations
-            if (declaration[STATE] !== EnumAstNodeStatus.Validated) {
+            if (!(declaration[STATE] & EnumAstNodeStatus.Validated)) {
                 this.declarations.set(objectHash(declaration), declaration);
                 continue;
             }
@@ -86,6 +85,16 @@ class PropertyList {
                 shortHandType = "single";
                 // @ts-ignore
                 shorthand = config.property[propertyName];
+            }
+            if (this.declarations.has(shorthand)) {
+                let existing = this.declarations.get(shorthand);
+                if (existing instanceof PropertySet || existing instanceof PropertyMap) {
+                    existing = existing.declarations.get(declaration.nam);
+                }
+                if (existing?.[STATE] & EnumAstNodeStatus.ImportantDeclaration &&
+                    declaration[STATE] & ~EnumAstNodeStatus.ImportantDeclaration) {
+                    continue;
+                }
             }
             // @ts-ignore
             if (shortHandType == "map") {
