@@ -6,7 +6,6 @@
 
 - limit the amount of memory used when parsing large files
 - use node flags as bitmasks
-- remove units from hsl() and hwb()
 
 ## Fixes
 
