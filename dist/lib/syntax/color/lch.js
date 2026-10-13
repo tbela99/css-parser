@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { getColorComponents } from './utils/components.js';
 import { color2srgbvalues, getNumber, getAngle } from './color.js';
 import { EnumToken, ColorType } from '../../ast/types.js';

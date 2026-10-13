@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { deprecate } from 'node:util';
 import { Readable } from 'node:stream';
 import { createReadStream } from 'node:fs';
@@ -27,6 +28,9 @@ export { SourceMap } from './lib/printer/sourcemap/sourcemap.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 export { getNodeProperty, setNodeProperty } from './lib/ast/node.js';
 
+
+
+const version = '1.6.7';
 /**
  * Load file or url
  * @param url
@@ -483,4 +487,4 @@ async function transform(...args) {
     });
 }
 
-export { ModuleScopeEnumOptions, ResponseType, dirname, load, parse, parseFile, parseSync, render, resolve, transform, transformFile, transformSync };
+export { ModuleScopeEnumOptions, ResponseType, dirname, load, parse, parseFile, parseSync, render, resolve, transform, transformFile, transformSync, version };

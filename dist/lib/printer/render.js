@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { convertColor, getAngle } from '../syntax/color/color.js';
 import { reduceHexValue } from '../syntax/color/hex.js';
 import { EnumToken, ColorType } from '../ast/types.js';

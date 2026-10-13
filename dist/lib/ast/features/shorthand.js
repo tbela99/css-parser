@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { PropertyList } from '../../parser/declaration/list.js';
 import { EnumToken } from '../types.js';
 import { FeatureWalkMode } from './type.js';

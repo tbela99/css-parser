@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { EnumToken, ColorType } from '../../ast/types.js';
 import { color2srgbvalues, getNumber } from './color.js';
 import { srgb2rgb, cmyk2rgbvalues, hwb2rgbvalues, hsl2rgbvalues } from './rgb.js';

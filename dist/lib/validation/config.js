@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import config from '../../data/validation.json.js';
 import { trimSyntaxArray, parseSyntax } from './parser/parse.js';
 import { ValidationTokenEnum } from './parser/typedef.js';

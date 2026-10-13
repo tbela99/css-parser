@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 /**
  * convert angle to degrees
  * @param angle

@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { e, k, D50 } from '../constants.js';
 import { getColorComponents } from './utils/components.js';
 import { srgb2xyz_d65, XYZ_D50_to_D65 } from './xyz.js';

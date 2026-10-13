@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { identity, multiply, decompose, round, toZero } from './utils.js';
 import { epsilon } from '../../syntax/constants.js';
 import { EnumToken } from '../types.js';

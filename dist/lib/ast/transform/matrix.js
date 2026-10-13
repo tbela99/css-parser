@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { identity, is2DMatrix } from './utils.js';
 import { EnumToken } from '../types.js';
 import { eq } from '../../parser/utils/eq.js';

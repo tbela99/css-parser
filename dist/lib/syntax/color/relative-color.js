@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { convertColor, getNumber } from './color.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import { walkValues } from '../../ast/walk.js';

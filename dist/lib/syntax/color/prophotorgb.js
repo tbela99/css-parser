@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { XYZ_D65_to_D50, xyzd502srgb } from './xyzd50.js';
 import { srgb2xyz } from './xyz.js';
 

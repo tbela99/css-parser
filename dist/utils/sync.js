@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { EnumToken } from '../lib/ast/types.js';
 import { dirname } from '../lib/fs/resolve.js';
 import { ResponseType } from '../types.js';

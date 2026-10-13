@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 // from https://www.w3.org/TR/css-color-4/multiply-matrices.js
 /**
  * Simple matrix (and vector) multiplication

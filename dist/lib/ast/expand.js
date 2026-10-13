@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { splitRule } from './minify.js';
 import { STATE, PARENT, combinators, RAW } from '../syntax/constants.js';
 import { parseString } from '../parser/parse.js';

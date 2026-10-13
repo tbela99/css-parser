@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:09:44 */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -34704,6 +34705,8 @@
         }
     }
 
+    var version = "1.6.7";
+
     /**
      * Load file or url
      * @param url
@@ -35137,6 +35140,7 @@
     exports.transform = transform;
     exports.transformFile = transformFile;
     exports.transformSync = transformSync;
+    exports.version = version;
     exports.walk = walk;
     exports.walkValues = walkValues;
 

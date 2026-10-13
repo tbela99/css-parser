@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { EnumToken } from './types.js';
 import { walk, walkValues } from './walk.js';
 import { TOKENS } from '../syntax/constants.js';

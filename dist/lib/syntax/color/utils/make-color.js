@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { EnumToken, ColorType } from '../../../ast/types.js';
 import { equalsIgnoreCase } from '../../../parser/utils/text.js';
 import { minmax, getNumber } from '../color.js';

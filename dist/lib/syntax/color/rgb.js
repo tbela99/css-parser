@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { color2srgbvalues, minmax } from './color.js';
 import { expandHexValue } from './hex.js';
 import { hslvalues, hslvalues2srgbvalues, lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues, cmyk2srgbvalues, hwb2srgbvalues } from './srgb.js';
