@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { EnumToken } from '../../ast/types.js';
 import { tokensfuncDefMap, LOCSTA, mFGT, mFLT, LOCEND, LOCSRCID } from '../../syntax/constants.js';
 import { matchAllSyntaxes, createValidationContext, trimArray } from '../../validation/match.js';

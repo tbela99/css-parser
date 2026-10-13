@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { eq } from '../parser/utils/eq.js';
 import { renderValue, doRender } from '../printer/render.js';
 import * as index from './features/index.js';

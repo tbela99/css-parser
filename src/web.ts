@@ -66,6 +66,8 @@ export type { ValidationToken } from "./lib/validation/parser/types.d.ts";
 export { FeatureWalkMode } from "./lib/ast/features/type.ts";
 export { dirname, resolve, ResponseType };
 export { getNodeProperty, setNodeProperty } from "./lib/ast/node.ts";
+// @ts-ignore
+export { version } from "../package.json" with { type: "json" };
 
 /**
  * Load file or url

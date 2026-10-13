@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { eq } from '../utils/eq.js';
 import { getConfig } from '../utils/config.js';
 import { matchType } from '../utils/type.js';

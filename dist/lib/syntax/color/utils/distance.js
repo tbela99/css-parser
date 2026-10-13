@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { convertColor } from '../color.js';
 import { getOKLABComponents } from '../oklab.js';
 import { ColorType } from '../../../ast/types.js';

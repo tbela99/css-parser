@@ -34707,6 +34707,8 @@ function setNodeProperty(node, key, value) {
     }
 }
 
+var version = "1.6.7";
+
 /**
  * Load file or url
  * @param url
@@ -35190,5 +35192,6 @@ exports.setNodeProperty = setNodeProperty;
 exports.transform = transform;
 exports.transformFile = transformFile;
 exports.transformSync = transformSync;
+exports.version = version;
 exports.walk = walk;
 exports.walkValues = walkValues;

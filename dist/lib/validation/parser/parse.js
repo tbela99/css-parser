@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { EnumToken } from '../../ast/types.js';
 import { isIdentStart, isIdent, parseDimension, isPseudo } from '../../syntax/syntax.js';
 import { ValidationTokenEnum } from './typedef.js';

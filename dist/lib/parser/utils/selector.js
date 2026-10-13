@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { EnumToken, EnumAstNodeStatus } from '../../ast/types.js';
 import { renderValue } from '../../printer/render.js';
 import { LOCEND, LOCSTA, LOCSRCID, ERRORS, STATE, TOKENS, pseudoElements, combinators, tokensfuncDefMap, PARENT } from '../../syntax/constants.js';

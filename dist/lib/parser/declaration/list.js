@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { PropertySet } from './set.js';
 import { getConfig } from '../utils/config.js';
 import { PropertyMap } from './map.js';

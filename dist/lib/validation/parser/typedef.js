@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 var ValidationTokenEnum;
 (function (ValidationTokenEnum) {
     ValidationTokenEnum[ValidationTokenEnum["Root"] = 0] = "Root";

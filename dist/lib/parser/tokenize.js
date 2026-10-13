@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { EnumToken, ColorType } from '../ast/types.js';
 import { wildCardFuncs, whenElseFunc, mathFuncs, timingFunc, supportFunc, timelineFunc, imageFunc, gridTemplateFunc, urlFunc, containerFunc, colorsFunc, transformFunctions, pseudoElements } from '../syntax/constants.js';
 import { isWhiteSpace, isNewLine, isDigit, isLetter, isIdentStart, isIdentCodepoint, isNonPrintable, timeUnits, angleUnits, flexUnits, dimensionUnits, resolutionUnits, frequencyUnits } from '../syntax/syntax.js';

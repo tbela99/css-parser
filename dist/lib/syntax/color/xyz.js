@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { multiplyMatrices } from './utils/matrix.js';
 import { srgb2lsrgbvalues } from './srgb.js';
 import { XYZ_D65_to_D50 } from './xyzd50.js';

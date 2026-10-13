@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { EnumToken, ColorType, EnumAstNodeStatus } from '../../ast/types.js';
 import { minmax, getNumber } from './color.js';
 import { srgbvalues, srgb2lsrgbvalues, hslvalues } from './srgb.js';

@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { ColorType, EnumToken } from '../../ast/types.js';
 import { convertColor } from './color.js';
 import { getColorComponents } from './utils/components.js';

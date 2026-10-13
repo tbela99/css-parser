@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 // from https://github.com/Rich-Harris/vlq/tree/master
 // credit: Rich Harris
 const integer_to_char = {};

@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { eq } from '../utils/eq.js';
 import { EnumToken } from '../../ast/types.js';
 import { isLength } from '../../syntax/syntax.js';

@@ -1,3 +1,4 @@
+/* Version: 1.6.7 - October 13, 2026 17:01:28 */
 import { EnumToken, EnumAstNodeStatus } from '../types.js';
 import { compute } from '../transform/compute.js';
 import { filterValues, renderValue } from '../../printer/render.js';
