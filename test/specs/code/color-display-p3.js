@@ -1,6 +1,6 @@
-import {ColorType, EnumToken} from "../../../dist/lib/ast/types.js";
-import {isOkLabClose} from "../../../dist/lib/syntax/color/utils/distance.js";
-import { parseString } from "../../../dist/lib/parser/parse.js";
+import {ColorType, EnumToken} from "../../../dist/src/lib/ast/types.js";
+import {isOkLabClose} from "../../../dist/src/lib/syntax/color/utils/distance.js";
+import { parseString } from "../../../dist/src/lib/parser/parse.js";
 
 export function run(describe, expect, transform, parse, render, dirname,  readFile, resolve, ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, transformSync, parseSync) {
 

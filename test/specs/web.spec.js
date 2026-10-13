@@ -1,5 +1,5 @@
-import {dirname, parse, render, resolve, transform, transformSync, parseSync} from '../../dist/web.js';
-import {ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions} from '../../dist/lib/ast/types.js';
+import {dirname, parse, render, resolve, transform, transformSync, parseSync} from '../../dist/src/web.js';
+import {ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions} from '../../dist/src/lib/ast/types.js';
 import {expect, use} from "chai";
 import * as tests from './code/index.js';
 import chaiAsPromised from 'chai-as-promised';

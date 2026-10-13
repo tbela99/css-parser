@@ -4,8 +4,8 @@
   "version": "1.6.7",
   "exports": {
     ".": "./dist/node.js",
-    "./node": "./dist/node.js",
-    "./web": "./dist/web.js",
+    "./node": "./dist/src/node.js",
+    "./web": "./dist/src/web.js",
     "./cjs": "./dist/index.cjs"
   },
   "type": "module",
