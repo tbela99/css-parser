@@ -1,0 +1,861 @@
+/* 
+	CSS parser, minifier and validator for node and the browser
+
+	Author(s): Thierry Bela
+	Version: 1.6.7
+	License: MIT
+ */
+import { equalsIgnoreCase } from '../../parser/utils/text.js';
+import { mathFuncs, PARENT, LOCEND, LOCSTA, LOCSRCID } from '../../syntax/constants.js';
+import { EnumToken } from '../types.js';
+import { rem, compute } from './math.js';
+
+const numbers = new Set(["sin", "cos", "asin", "acos", "sign", "tan"]);
+/**
+ * evaluate an array of tokens
+ * @param tokens
+ */
+function evaluate(tokens) {
+    let nodes;
+    if (tokens.length == 1 &&
+        (tokens[0].typ == EnumToken.MathFunctionTokenType || tokens[0].typ == EnumToken.FunctionTokenType) &&
+        mathFuncs.includes(tokens[0].val)) {
+        const chi = tokens[0].chi.reduce((acc, t) => {
+            if (acc.length == 0 || t.typ == EnumToken.CommaTokenType) {
+                acc.push([]);
+            }
+            if ([EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommaTokenType].includes(t.typ)) {
+                return acc;
+            }
+            acc.at(-1).push(t);
+            return acc;
+        }, []);
+        for (let i = 0; i < chi.length; i++) {
+            chi[i] = evaluate(chi[i]);
+        }
+        tokens[0].chi = chi.reduce((acc, t) => {
+            if (acc.length > 0) {
+                acc.push({ typ: EnumToken.CommaTokenType });
+            }
+            for (const token of t) {
+                acc.push(token);
+            }
+            return acc;
+        });
+        const result = evaluateFunc(tokens[0]);
+        if (result == null) {
+            return tokens;
+        }
+        if (result[0].typ === EnumToken.MathFunctionTokenType &&
+            result[0].val === "calc" &&
+            result[0].chi.length === 1) {
+            return result[0].chi.slice();
+        }
+        return result;
+    }
+    nodes = inlineExpression(evaluateExpression(buildExpression(tokens)));
+    if (nodes.length <= 1) {
+        if (nodes.length == 1) {
+            if (nodes[0].typ == EnumToken.BinaryExpressionTokenType) {
+                return inlineExpression(nodes[0]);
+            }
+            // @ts-ignore
+            if (nodes[0].typ == EnumToken.IdenTokenType &&
+                // @ts-expect-error
+                typeof Math[nodes[0].val.toUpperCase()] == "number") {
+                return [
+                    {
+                        ...nodes[0],
+                        // @ts-ignore
+                        val: Math[nodes[0].val.toUpperCase()],
+                        typ: EnumToken.NumberTokenType,
+                        [LOCSRCID]: nodes[0][LOCSRCID],
+                        [LOCSTA]: nodes[0][LOCSTA],
+                        [LOCEND]: nodes[0][LOCEND],
+                        [PARENT]: nodes[0][PARENT],
+                    },
+                ];
+            }
+        }
+        return nodes;
+    }
+    const map = new Map();
+    let token;
+    let i;
+    for (i = 0; i < nodes.length; i++) {
+        token = nodes[i];
+        if (token.typ == EnumToken.Add || token.typ == EnumToken.Plus) {
+            continue;
+        }
+        if (token.typ == EnumToken.Sub) {
+            if (!isScalarToken(nodes[i + 1])) {
+                token = {
+                    typ: EnumToken.ListToken,
+                    chi: [nodes[i], nodes[i + 1]],
+                    [LOCSRCID]: nodes[i][LOCSRCID],
+                    [LOCSTA]: nodes[i][LOCSTA],
+                    [LOCEND]: nodes[i + 1][LOCEND],
+                    [PARENT]: nodes[i + 1][PARENT],
+                };
+            }
+            else {
+                token = doEvaluate(nodes[i + 1], {
+                    typ: EnumToken.NumberTokenType,
+                    val: -1,
+                    [LOCSRCID]: nodes[i + 1][LOCSRCID],
+                    [LOCSTA]: nodes[i + 1][LOCSTA],
+                    [LOCEND]: nodes[i + 1][LOCEND],
+                    [PARENT]: nodes[i + 1][PARENT],
+                }, EnumToken.Mul);
+            }
+            i++;
+        }
+        if (!map.has(token.typ)) {
+            map.set(token.typ, [token]);
+        }
+        else {
+            map.get(token.typ).push(token);
+        }
+    }
+    return [...map].reduce((acc, curr) => {
+        const token = curr[1].reduce((acc, curr) => doEvaluate(acc, curr, EnumToken.Add));
+        if (token.typ != EnumToken.BinaryExpressionTokenType) {
+            if ("val" in token && +token.val < 0) {
+                acc.push({
+                    typ: EnumToken.Sub,
+                    [LOCSRCID]: token[LOCSRCID],
+                    [LOCSTA]: token[LOCSTA],
+                    [LOCEND]: token[LOCEND],
+                    [PARENT]: token[PARENT],
+                }, {
+                    ...token,
+                    val: -token.val,
+                    [LOCSRCID]: token[LOCSRCID],
+                    [LOCSTA]: token[LOCSTA],
+                    [LOCEND]: token[LOCEND],
+                    [PARENT]: token[PARENT],
+                });
+                return acc;
+            }
+        }
+        if (acc.length > 0 && curr[0] != EnumToken.ListToken) {
+            acc.push({
+                typ: EnumToken.Add,
+                [LOCSRCID]: token[LOCSRCID],
+                [LOCSTA]: token[LOCSTA],
+                [LOCEND]: token[LOCEND],
+                [PARENT]: token[PARENT],
+            });
+        }
+        acc.push(token);
+        return acc;
+    }, []);
+}
+/**
+ * evaluate arithmetic operation
+ * @param l
+ * @param r
+ * @param op
+ */
+function doEvaluate(l, r, op) {
+    const defaultReturn = {
+        typ: EnumToken.BinaryExpressionTokenType,
+        op,
+        l,
+        r,
+        [LOCSRCID]: l[LOCSRCID],
+        [LOCSTA]: l[LOCSTA],
+        [LOCEND]: r?.[LOCEND] ?? l[LOCEND],
+        [PARENT]: l[PARENT],
+    };
+    if (!isScalarToken(l) || !isScalarToken(r) || (l.typ == r.typ && "unit" in l && "unit" in r && l.unit != r.unit)) {
+        return defaultReturn;
+    }
+    if (l.typ == EnumToken.IdenTokenType) {
+        if (equalsIgnoreCase(l.val, "Infinity")) {
+            Object.assign(l, { typ: EnumToken.InfinityTokenType });
+        }
+        else if (equalsIgnoreCase(l.val, "-Infinity")) {
+            Object.assign(l, { typ: EnumToken.NegativeInfinityTokenType });
+        }
+        else if (equalsIgnoreCase(l.val, "NaN")) {
+            Object.assign(l, { typ: EnumToken.NaNTokenType });
+        }
+    }
+    if (r.typ == EnumToken.IdenTokenType) {
+        if (equalsIgnoreCase(r.val, "Infinity")) {
+            Object.assign(r, { typ: EnumToken.InfinityTokenType });
+        }
+        else if (equalsIgnoreCase(r.val, "-Infinity")) {
+            Object.assign(r, { typ: EnumToken.NegativeInfinityTokenType });
+        }
+    }
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/calc-keyword#notes
+    if (l.typ == EnumToken.NaNTokenType || r.typ == EnumToken.NaNTokenType) {
+        return computeNaN(l, r, defaultReturn);
+    }
+    if (l.typ == EnumToken.InfinityTokenType ||
+        l.typ == EnumToken.NegativeInfinityTokenType ||
+        r.typ == EnumToken.InfinityTokenType ||
+        r.typ == EnumToken.NegativeInfinityTokenType) {
+        return computeInfinity(l, r, op, defaultReturn);
+    }
+    if (l.typ == EnumToken.FunctionTokenType || l.typ == EnumToken.MathFunctionTokenType) {
+        const val = evaluateFunc(l);
+        if (val == null ||
+            (val.length == 1 &&
+                (val[0].typ == EnumToken.MathFunctionTokenType || val[0].typ == EnumToken.FunctionTokenType))) {
+            return defaultReturn;
+        }
+        if (val.length == 1) {
+            l = val[0];
+        }
+    }
+    if (r.typ == EnumToken.FunctionTokenType || r.typ == EnumToken.MathFunctionTokenType) {
+        const val = evaluateFunc(r);
+        if (val == null ||
+            (val.length == 1 &&
+                (val[0].typ == EnumToken.MathFunctionTokenType || val[0].typ == EnumToken.FunctionTokenType))) {
+            return defaultReturn;
+        }
+        if (val.length == 1) {
+            r = val[0];
+        }
+    }
+    if (op == EnumToken.Add || op == EnumToken.Plus || op == EnumToken.Sub) {
+        // @ts-ignore
+        if (l.typ != r.typ) {
+            return defaultReturn;
+        }
+    }
+    let typ = l.typ == EnumToken.NumberTokenType || l.typ === EnumToken.IdenTokenType
+        ? r.typ
+        : r.typ == EnumToken.NumberTokenType
+            ? l.typ
+            : l.typ == EnumToken.PercentageTokenType
+                ? r.typ
+                : l.typ;
+    // @ts-expect-error
+    let v1 = l.val?.typ == EnumToken.FractionTokenType ? l.val : getValue(l);
+    let v2 = r.val?.typ == EnumToken.FractionTokenType
+        ? // @ts-expect-error
+            r.val
+        : getValue(r);
+    if (op == EnumToken.Mul) {
+        if (l.typ != EnumToken.NumberTokenType && r.typ != EnumToken.NumberTokenType) {
+            if (typeof v1 == "number" && l.typ == EnumToken.PercentageTokenType) {
+                v1 = {
+                    typ: EnumToken.FractionTokenType,
+                    l: {
+                        typ: EnumToken.NumberTokenType,
+                        val: v1,
+                        [LOCSRCID]: l[LOCSRCID],
+                        [LOCSTA]: l[LOCSTA],
+                        [LOCEND]: l[LOCEND],
+                        [PARENT]: l[PARENT],
+                    },
+                    r: {
+                        typ: EnumToken.NumberTokenType,
+                        val: 100,
+                        [LOCSRCID]: r[LOCSRCID],
+                        [LOCSTA]: r[LOCSTA],
+                        [LOCEND]: r[LOCEND],
+                        [PARENT]: r[PARENT],
+                    },
+                };
+            }
+            else if (typeof v2 == "number" && r.typ == EnumToken.PercentageTokenType) {
+                v2 = {
+                    typ: EnumToken.FractionTokenType,
+                    l: {
+                        typ: EnumToken.NumberTokenType,
+                        val: v2,
+                        [LOCSRCID]: l[LOCSRCID],
+                        [LOCSTA]: l[LOCSTA],
+                        [LOCEND]: l[LOCEND],
+                        [PARENT]: l[PARENT],
+                    },
+                    r: {
+                        typ: EnumToken.NumberTokenType,
+                        val: 100,
+                        [LOCSRCID]: r[LOCSRCID],
+                        [LOCSTA]: r[LOCSTA],
+                        [LOCEND]: r[LOCEND],
+                        [PARENT]: r[PARENT],
+                    },
+                };
+            }
+        }
+    }
+    if (op == EnumToken.Div && v2 == 0) {
+        if (v1 == 0) {
+            return Object.assign(l, { typ: EnumToken.IdenTokenType, val: "NaN" });
+        }
+        let sign = Math.sign(v1) * Math.sign(v2);
+        sign = Object.is(sign, -0) ? -1 : 1;
+        Object.assign(l, {
+            typ: l.typ == EnumToken.IdenTokenType ? EnumToken.NumberTokenType : l.typ,
+            val: Object.is(sign, -0) ? -1 : sign,
+        });
+        return defaultReturn;
+    }
+    // @ts-ignore
+    const val = compute(v1, v2, op);
+    const token = {
+        ...(l.typ === EnumToken.NumberTokenType || l.typ === EnumToken.IdenTokenType ? r : l),
+        typ,
+        val /* : typeof val == 'number' ? minifyNumber(val) : val */,
+        [LOCSRCID]: l[LOCSRCID],
+        [LOCSTA]: l[LOCSTA],
+        [LOCEND]: r?.[LOCEND] ?? l[LOCEND],
+        [PARENT]: l[PARENT],
+    };
+    if (token.typ == EnumToken.IdenTokenType) {
+        // @ts-ignore
+        token.typ = EnumToken.NumberTokenType;
+    }
+    return token;
+}
+/**
+ *
+ * @param l
+ * @param r
+ * @param defaultReturn
+ * @returns
+ */
+function computeNaN(l, r, defaultReturn) {
+    if (l.typ == EnumToken.NaNTokenType) {
+        if (r.typ == EnumToken.NumberTokenType ||
+            // @ts-expect-error
+            (r.typ == EnumToken.IdenTokenType && typeof Math[r.val.toUpperCase()] == "string")) {
+            return l;
+        }
+        // NaN Infinity e pi ...
+        if (r.typ == EnumToken.IdenTokenType ||
+            r.typ == EnumToken.InfinityTokenType ||
+            r.typ == EnumToken.NegativeInfinityTokenType) {
+            return l;
+        }
+        if (typeof r.val == "number") {
+            Object.assign(r, { val: 1 });
+        }
+        return r.typ == EnumToken.NaNTokenType ? l : defaultReturn;
+    }
+    if (r.typ == EnumToken.NaNTokenType) {
+        // if ((r as IdentToken).val == "NaN") {
+        if (l.typ == EnumToken.NumberTokenType ||
+            // @ts-expect-error
+            (l.typ == EnumToken.IdenTokenType && typeof Math[l.val.toUpperCase()] == "string")) {
+            return r;
+        }
+        if (typeof l.val == "number") {
+            Object.assign(l, { val: 1 });
+        }
+        // return defaultReturn;
+    }
+    // }
+    return defaultReturn;
+}
+/**
+ *
+ * @param l
+ * @param r
+ * @param op
+ * @param defaultReturn
+ * @returns
+ */
+function computeInfinity(l, r, op, defaultReturn) {
+    if (l.typ == EnumToken.InfinityTokenType || l.typ == EnumToken.NegativeInfinityTokenType) {
+        if (r.typ == EnumToken.InfinityTokenType || r.typ == EnumToken.NegativeInfinityTokenType) {
+            // Infinity / Infinity Infinity - Infinity
+            if (op == EnumToken.Div ||
+                (op == EnumToken.Add && l.typ != r.typ) ||
+                (op == EnumToken.Sub && l.typ == r.typ)) {
+                return Object.assign(l, { typ: EnumToken.NaNTokenType });
+            }
+            if (l.typ != r.typ) {
+                l.typ = EnumToken.NegativeInfinityTokenType;
+            }
+            return l;
+        }
+        const value = getValue(r);
+        const sign = Math.sign(value);
+        const isNumber = r.typ == EnumToken.NumberTokenType || r.typ == EnumToken.IdenTokenType;
+        // Infinity * 0
+        if (value == 0 && op == EnumToken.Mul) {
+            l.typ = EnumToken.NaNTokenType;
+            return isNumber ? l : defaultReturn;
+        }
+        if (isNumber) {
+            // @ts-ignore
+            r.val /= r.val * sign;
+        }
+        if (op == EnumToken.Div) {
+            return isNumber
+                ? Object.assign(r, { typ: EnumToken.NumberTokenType, val: sign < 0 ? -0 : 0 })
+                : defaultReturn;
+        }
+        if (sign == -1) {
+            l.typ =
+                l.typ == EnumToken.InfinityTokenType
+                    ? EnumToken.NegativeInfinityTokenType
+                    : EnumToken.InfinityTokenType;
+        }
+        return isNumber ? l : defaultReturn;
+    }
+    if (r.typ == EnumToken.InfinityTokenType || r.typ == EnumToken.NegativeInfinityTokenType) {
+        const value = getValue(l);
+        let sign = Math.sign(value);
+        const isNumber = l.typ == EnumToken.NumberTokenType || l.typ == EnumToken.IdenTokenType;
+        if (isNumber) {
+            Object.assign(l, { typ: EnumToken.NumberTokenType, val: sign });
+        }
+        if (value == 0 && op == EnumToken.Mul) {
+            return Object.assign(l, { typ: EnumToken.NaNTokenType });
+        }
+        if (op == EnumToken.Div) {
+            return isNumber
+                ? Object.assign(l, { typ: EnumToken.NumberTokenType, val: sign < 0 ? -0 : 0 })
+                : defaultReturn;
+        }
+        return l.typ == isNumber || value == 0 ? r : defaultReturn;
+    }
+    return defaultReturn;
+}
+function getValue(t) {
+    if (t.typ == EnumToken.IdenTokenType) {
+        // @ts-ignore
+        return Math[t.val.toUpperCase()];
+    }
+    // @ts-ignore
+    return t.typ == EnumToken.FractionTokenType ? t.l.val / t.r.val : +t.val;
+}
+function evaluateFunc(token) {
+    const values = token.chi.slice();
+    switch (token.val) {
+        case "sin":
+        case "cos":
+        case "tan":
+            for (let i = 0; i < values.length; i++) {
+                if (values[i].typ == EnumToken.NumberTokenType) {
+                    values[i] = Object.assign(values[i], { typ: EnumToken.AngleTokenType, unit: "rad" });
+                }
+                else if (values[i].typ == EnumToken.AngleTokenType && values[i].unit != "rad") {
+                    switch (values[i].unit) {
+                        case "deg":
+                            Object.assign(values[i], {
+                                unit: "rad",
+                                val: values[i].val * (Math.PI / 180),
+                            });
+                            break;
+                        case "grad":
+                            Object.assign(values[i], {
+                                unit: "rad",
+                                val: values[i].val * (Math.PI / 200),
+                            });
+                            break;
+                        case "turn":
+                            Object.assign(values[i], {
+                                unit: "rad",
+                                val: values[i].val * (2 * Math.PI),
+                            });
+                            break;
+                    }
+                }
+            }
+        case "asin":
+        case "acos":
+        case "atan":
+        case "abs":
+        case "sign":
+        case "sqrt":
+        case "exp":
+            const value = evaluate(values);
+            // @ts-ignore
+            let val = value[0].typ == EnumToken.NumberTokenType ||
+                value[0].typ == EnumToken.AngleTokenType ||
+                value[0].typ == EnumToken.PercentageTokenType
+                ? +value[0].val
+                : // @ts-expect-error
+                    value[0].l.val / value[0].r.val;
+            return [
+                token.val == "asin" || token.val == "acos" || token.val == "atan"
+                    ? {
+                        typ: EnumToken.AngleTokenType,
+                        val: Math[token.val](val),
+                        unit: "rad",
+                        [LOCSRCID]: value[0][LOCSRCID],
+                        [LOCSTA]: value[0][LOCSTA],
+                        [LOCEND]: value[0][LOCEND],
+                        [PARENT]: value[0][PARENT],
+                    }
+                    : {
+                        typ: numbers.has(token.val) ? EnumToken.NumberTokenType : value[0].typ,
+                        val: Math[token.val](val),
+                        [LOCSRCID]: value[0][LOCSRCID],
+                        [LOCSTA]: value[0][LOCSTA],
+                        [LOCEND]: value[0][LOCEND],
+                        [PARENT]: value[0][PARENT],
+                    },
+            ];
+        case "hypot": {
+            const chi = values.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType, EnumToken.CommaTokenType].includes(t.typ));
+            let all = [];
+            let ref = chi[0];
+            for (let i = 0; i < chi.length; i++) {
+                // @ts-ignore
+                const val = getValue(chi[i]);
+                if (Number.isNaN(val)) {
+                    return null;
+                }
+                all.push(val);
+            }
+            return [
+                {
+                    ...ref,
+                    val: Math.hypot(...all),
+                    [LOCSRCID]: token[LOCSRCID],
+                    [LOCSTA]: token[LOCSTA],
+                    [LOCEND]: token[LOCEND],
+                    [PARENT]: token[PARENT],
+                },
+            ];
+        }
+        case "mod":
+        case "atan2":
+        case "pow":
+        case "rem": {
+            {
+                let typ = token.chi[0]?.typ;
+                for (let i = 1; i < token.chi.length; i++) {
+                    if (token.chi[i].typ == EnumToken.WhitespaceTokenType ||
+                        token.chi[i].typ == EnumToken.CommaTokenType ||
+                        token.chi[i].typ == EnumToken.CommentTokenType) {
+                        continue;
+                    }
+                    if (token.chi[i].typ != typ) {
+                        return null;
+                    }
+                }
+            }
+            const chi = values.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
+            if (token.val == "atan2") {
+                for (let i = 0; i < chi.length; i++) {
+                    if (chi[i].typ == EnumToken.NumberTokenType) {
+                        chi[i] = Object.assign(chi[i], { typ: EnumToken.AngleTokenType, unit: "rad" });
+                    }
+                    else if (chi[i].typ == EnumToken.AngleTokenType && chi[i].unit != "rad") {
+                        switch (chi[i].unit) {
+                            case "deg":
+                                Object.assign(chi[i], {
+                                    unit: "rad",
+                                    val: chi[i].val * (Math.PI / 180),
+                                });
+                                break;
+                            case "grad":
+                                Object.assign(chi[i], {
+                                    unit: "rad",
+                                    val: chi[i].val * (Math.PI / 200),
+                                });
+                                break;
+                            case "turn":
+                                Object.assign(chi[i], {
+                                    unit: "rad",
+                                    val: chi[i].val * (2 * Math.PI),
+                                });
+                                break;
+                        }
+                    }
+                }
+            }
+            // https://developer.mozilla.org/en-US/docs/Web/CSS/mod
+            const v1 = evaluate([chi[0]]);
+            const v2 = evaluate([chi[2]]);
+            // @ts-ignore
+            const val1 = getValue(v1[0]);
+            // @ts-ignore
+            const val2 = getValue(v2[0]);
+            if (token.val == "rem") {
+                return [
+                    {
+                        ...v1[0],
+                        val: +(val1 % val2).toFixed(rem(val1, val2)),
+                    },
+                ];
+            }
+            if (token.val == "pow") {
+                return [
+                    {
+                        ...v1[0],
+                        val: Math.pow(val1, val2),
+                        [LOCSRCID]: token[LOCSRCID],
+                        [LOCSTA]: token[LOCSTA],
+                        [LOCEND]: token[LOCEND],
+                        [PARENT]: token[PARENT],
+                    },
+                ];
+            }
+            if (token.val == "atan2") {
+                return [
+                    {
+                        ...{},
+                        ...v1[0],
+                        typ: EnumToken.AngleTokenType,
+                        unit: "rad",
+                        val: Math.atan2(val1, val2),
+                        [LOCSRCID]: token[LOCSRCID],
+                        [LOCSTA]: token[LOCSTA],
+                        [LOCEND]: token[LOCEND],
+                        [PARENT]: token[PARENT],
+                    },
+                ];
+            }
+            return [
+                {
+                    ...v1[0],
+                    val: val2 == 0 ? val1 : val1 - Math.floor(val1 / val2) * val2,
+                    [LOCSRCID]: token[LOCSRCID],
+                    [LOCSTA]: token[LOCSTA],
+                    [LOCEND]: token[LOCEND],
+                    [PARENT]: token[PARENT],
+                },
+            ];
+        }
+        case "clamp":
+            token.chi = values;
+            return [token];
+        case "log":
+        case "round":
+        case "min":
+        case "max": {
+            const strategy = token.val == "round" && values[0]?.typ == EnumToken.IdenTokenType
+                ? values.shift().val
+                : null;
+            const valuesMap = new Map();
+            for (const curr of values) {
+                if (curr.typ == EnumToken.CommaTokenType ||
+                    curr.typ == EnumToken.WhitespaceTokenType ||
+                    curr.typ == EnumToken.CommentTokenType) {
+                    continue;
+                }
+                const result = evaluate([curr]);
+                const key = result[0].typ + ("unit" in result[0] ? result[0].unit : "");
+                if (!valuesMap.has(key)) {
+                    valuesMap.set(key, []);
+                }
+                valuesMap.get(key).push(result[0]);
+            }
+            if (valuesMap.size == 1) {
+                const values = valuesMap.values().next().value;
+                if (token.val == "log") {
+                    const val1 = getValue(values[0]);
+                    const val2 = values.length == 2 ? getValue(values[1]) : null;
+                    return [
+                        {
+                            ...values[0],
+                            val: Math.log(val1) / Math.log(val2),
+                            [LOCSRCID]: token[LOCSRCID],
+                            [LOCSTA]: token[LOCSTA],
+                            [LOCEND]: token[LOCEND],
+                            [PARENT]: token[PARENT],
+                        },
+                    ];
+                }
+                if (token.val == "min" || token.val == "max") {
+                    let val = getValue(values[0]);
+                    let val2 = val;
+                    let ret = values[0];
+                    for (const curr of values.slice(1)) {
+                        val2 = getValue(curr);
+                        if (val2 < val && token.val == "min") {
+                            val = val2;
+                            ret = curr;
+                        }
+                        else if (val2 > val && token.val == "max") {
+                            val = val2;
+                            ret = curr;
+                        }
+                    }
+                    return [ret];
+                }
+                if (token.val == "round") {
+                    let val = getValue(values[0]);
+                    let val2 = getValue(values[1]);
+                    if (strategy == null || strategy == "down") {
+                        val = val - (val % val2);
+                    }
+                    else {
+                        val =
+                            strategy == "to-zero"
+                                ? Math.trunc(val / val2) * val2
+                                : strategy == "nearest"
+                                    ? Math.round(val / val2) * val2
+                                    : Math.ceil(val / val2) * val2;
+                    }
+                    // @ts-ignore
+                    return [
+                        {
+                            ...values[0],
+                            val,
+                            [LOCSRCID]: token[LOCSRCID],
+                            [LOCSTA]: token[LOCSTA],
+                            [LOCEND]: token[LOCEND],
+                            [PARENT]: token[PARENT],
+                        },
+                    ];
+                }
+            }
+        }
+    }
+    return [token];
+}
+/**
+ * convert BinaryExpression into an array
+ * @param token
+ */
+function inlineExpression(token) {
+    const result = [];
+    if (token.typ == EnumToken.BinaryExpressionTokenType) {
+        if ([EnumToken.Mul, EnumToken.Div].includes(token.op)) {
+            result.push(token);
+        }
+        else {
+            for (const child of inlineExpression(token.l)) {
+                result.push(child);
+            }
+            result.push({
+                typ: token.op,
+                [LOCSRCID]: token[LOCSRCID],
+                [LOCSTA]: token[LOCSTA],
+                [LOCEND]: token[LOCEND],
+                [PARENT]: token[PARENT],
+            });
+            for (const child of inlineExpression(token.r)) {
+                result.push(child);
+            }
+        }
+    }
+    else {
+        result.push(token);
+    }
+    return result;
+}
+/**
+ * evaluate expression
+ * @param token
+ */
+function evaluateExpression(token) {
+    if (token.typ != EnumToken.BinaryExpressionTokenType) {
+        return token;
+    }
+    if (token.r.typ == EnumToken.BinaryExpressionTokenType) {
+        token.r = (evaluateExpression(token.r));
+    }
+    if (token.l.typ == EnumToken.BinaryExpressionTokenType) {
+        token.l = (evaluateExpression(token.l));
+    }
+    return doEvaluate(token.l, token.r, token.op);
+}
+function isScalarToken(token) {
+    return ("unit" in token ||
+        token.typ == EnumToken.MathFunctionTokenType ||
+        (token.typ == EnumToken.FunctionTokenType && mathFuncs.includes(token.val)) ||
+        // @ts-ignore
+        (token.typ == EnumToken.IdenTokenType && typeof Math[token.val.toUpperCase()] == "number") ||
+        (token.typ == EnumToken.IdenTokenType && token.val == "NaN") ||
+        (token.typ == EnumToken.IdenTokenType &&
+            (equalsIgnoreCase(token.val, "Infinity") ||
+                equalsIgnoreCase(token.val, "-Infinity"))) ||
+        [EnumToken.NumberTokenType, EnumToken.FractionTokenType, EnumToken.PercentageTokenType].includes(token.typ) ||
+        token.typ == EnumToken.NaNTokenType ||
+        token.typ == EnumToken.InfinityTokenType ||
+        token.typ == EnumToken.NegativeInfinityTokenType);
+}
+/**
+ *
+ * generate a binary expression tree
+ * @param tokens
+ */
+function buildExpression(tokens) {
+    return factor(factor(tokens.filter((t) => t.typ != EnumToken.WhitespaceTokenType), ["/", "*"]), ["+", "-"])[0];
+}
+function getArithmeticOperation(op) {
+    if (op == "+") {
+        return EnumToken.Add;
+    }
+    if (op == "-") {
+        return EnumToken.Sub;
+    }
+    if (op == "/") {
+        return EnumToken.Div;
+    }
+    return EnumToken.Mul;
+}
+/**
+ *
+ * generate a binary expression tree
+ * @param token
+ */
+function factorToken(token) {
+    if (token.typ == EnumToken.ParensTokenType ||
+        ((token.typ == EnumToken.MathFunctionTokenType || token.typ == EnumToken.FunctionTokenType) &&
+            token.val == "calc")) {
+        if ((token.typ == EnumToken.MathFunctionTokenType || token.typ == EnumToken.FunctionTokenType) &&
+            token.val == "calc") {
+            token = {
+                ...token,
+                typ: EnumToken.ParensTokenType,
+                [LOCSRCID]: token[LOCSRCID],
+                [LOCSTA]: token[LOCSTA],
+                [LOCEND]: token[LOCEND],
+                [PARENT]: token[PARENT],
+            };
+            // @ts-ignore
+            delete token.val;
+        }
+        return buildExpression(token.chi);
+    }
+    return token;
+}
+/**
+ * generate a binary expression tree
+ * @param tokens
+ * @param ops
+ */
+function factor(tokens, ops) {
+    let isOp;
+    const opList = ops.map((x) => getArithmeticOperation(x));
+    if (tokens.length == 1) {
+        return [factorToken(tokens[0])];
+    }
+    for (let i = 0; i < tokens.length; i++) {
+        if (tokens[i].typ == EnumToken.ListToken) {
+            // @ts-ignore
+            tokens.splice(i, 1, ...tokens[i].chi);
+        }
+        isOp = opList.includes(tokens[i].typ === EnumToken.Plus ? EnumToken.Add : tokens[i].typ);
+        if (isOp ||
+            tokens[i].typ === EnumToken.Star ||
+            // @ts-ignore
+            (tokens[i].typ == EnumToken.LiteralTokenType && ops.includes(tokens[i].val))) {
+            tokens.splice(i - 1, 3, {
+                typ: EnumToken.BinaryExpressionTokenType,
+                op: isOp
+                    ? tokens[i].typ === EnumToken.Plus
+                        ? EnumToken.Add
+                        : tokens[i].typ
+                    : getArithmeticOperation(tokens[i].val),
+                l: factorToken(tokens[i - 1]),
+                r: factorToken(tokens[i + 1]),
+                [LOCSRCID]: tokens[i - 1][LOCSRCID],
+                [LOCSTA]: tokens[i - 1][LOCSTA],
+                [LOCEND]: tokens[i + 1][LOCEND],
+                [PARENT]: tokens[i + 1][PARENT],
+            });
+            i--;
+        }
+    }
+    return tokens;
+}
+
+export { buildExpression, evaluate, evaluateFunc, inlineExpression };

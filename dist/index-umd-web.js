@@ -1,4 +1,10 @@
-/* Version: 1.6.7 - October 13, 2026 17:09:44 */
+/* 
+	CSS parser, minifier and validator for node and the browser
+
+	Author(s): Thierry Bela
+	Version: 1.6.7
+	License: MIT
+ */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
