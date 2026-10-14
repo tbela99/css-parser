@@ -220,7 +220,36 @@ export function parseRelativeColorComponents(
 
     const result = computeComponentValue(keys, values);
 
+    if (result != null) {
+        if ("hsl" == relativeKeys) {
+            Object.assign(result.s, {
+                typ: EnumToken.PercentageTokenType,
+                // @ts-ignore
+                val: result.s.val * 100,
+            });
+            Object.assign(result.l, {
+                typ: EnumToken.PercentageTokenType,
+                // @ts-ignore
+                val: result.l.val * 100,
+            });
+        } else if ("hwb" == relativeKeys) {
+            // @ts
+            Object.assign(result.w, {
+                typ: EnumToken.PercentageTokenType,
+                // @ts-ignore
+                val: result.w.val * 100,
+            });
+            Object.assign(result.b, {
+                typ: EnumToken.PercentageTokenType,
+                // @ts-ignore
+                val: result.b.val * 100,
+            });
+        }
+    }
+
+    // @ts-ignore
     if (result?.alpha?.typ == EnumToken.NumberTokenType && (result.alpha as NumberToken).val === 1) {
+        // @ts-ignore
         const { alpha, ...components } = result;
         return components as Record<RelativeColorTypes, Token>;
     }

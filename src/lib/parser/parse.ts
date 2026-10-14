@@ -715,7 +715,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
 
     ast[LOCSRCID] = options.source!.id;
     ast[LOCSTA] = 0;
-    
+
     while (!tokenizer.done()) {
         tokenizer.next();
         // item = (iter as Array<TokenizeResult>)[currentItemIndex];
@@ -1132,16 +1132,16 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
         let count: number = invalidNodes.length;
 
         for (const { node, parent } of walk(ast)) {
-            if (options.lenient && node[STATE] == EnumAstNodeStatus.Unknown) {
+            if (options.lenient && node[STATE] & EnumAstNodeStatus.Unknown) {
                 continue;
             }
 
             if (
-                node[STATE] === EnumAstNodeStatus.Invalid ||
-                node[STATE] === EnumAstNodeStatus.Unknown ||
-                node[STATE] === EnumAstNodeStatus.Unparsed ||
-                node[STATE] === EnumAstNodeStatus.Malformed ||
-                node[STATE] === EnumAstNodeStatus.Disallowed
+                node[STATE] & EnumAstNodeStatus.Invalid ||
+                node[STATE] & EnumAstNodeStatus.Unknown ||
+                node[STATE] & EnumAstNodeStatus.Unparsed ||
+                node[STATE] & EnumAstNodeStatus.Malformed ||
+                node[STATE] & EnumAstNodeStatus.Disallowed
             ) {
                 // @ts-ignore
                 parent!.chi.splice(parent!.chi.indexOf(node), 1);
@@ -2368,16 +2368,16 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
         let count: number = invalidNodes.length;
 
         for (const { node, parent } of walk(ast)) {
-            if (options.lenient && node[STATE] == EnumAstNodeStatus.Unknown) {
+            if (options.lenient && node[STATE] & EnumAstNodeStatus.Unknown) {
                 continue;
             }
 
             if (
-                node[STATE] === EnumAstNodeStatus.Invalid ||
-                node[STATE] === EnumAstNodeStatus.Unknown ||
-                node[STATE] === EnumAstNodeStatus.Unparsed ||
-                node[STATE] === EnumAstNodeStatus.Malformed ||
-                node[STATE] === EnumAstNodeStatus.Disallowed
+                node[STATE] & EnumAstNodeStatus.Invalid ||
+                node[STATE] & EnumAstNodeStatus.Unknown ||
+                node[STATE] & EnumAstNodeStatus.Unparsed ||
+                node[STATE] & EnumAstNodeStatus.Malformed ||
+                node[STATE] & EnumAstNodeStatus.Disallowed
             ) {
                 // @ts-ignore
                 parent!.chi.splice(parent!.chi.indexOf(node), 1);
@@ -3403,11 +3403,12 @@ function parseNode(
         }
 
         if (
-            (node as AstNode)[STATE] == EnumAstNodeStatus.Invalid ||
-            (node as AstNode)[STATE] == EnumAstNodeStatus.Disallowed ||
-            (node as AstNode)[STATE] == EnumAstNodeStatus.Unknown ||
-            (node as AstNode)[STATE] == EnumAstNodeStatus.Unparsed ||
-            (node as AstNode)[STATE] == EnumAstNodeStatus.Malformed
+            node[STATE] &
+            (EnumAstNodeStatus.Invalid |
+                EnumAstNodeStatus.Disallowed |
+                EnumAstNodeStatus.Unknown |
+                EnumAstNodeStatus.Unparsed |
+                EnumAstNodeStatus.Malformed)
         ) {
             invalidNodes.push(node);
         }
@@ -3436,6 +3437,7 @@ function parseNode(
 
             if (
                 arena.hasFlags(node,  EnumAstNodeStatus.Invalid | EnumAstNodeStatus.Disallowed | EnumAstNodeStatus.Unknown | EnumAstNodeStatus.Unparsed | EnumAstNodeStatus.Malformed)
+               
             ) {
                 invalidNodes.push(node);
             }
@@ -3461,11 +3463,12 @@ function parseNode(
             }
 
             if (
-                (node as AstNode)[STATE] == EnumAstNodeStatus.Invalid ||
-                (node as AstNode)[STATE] == EnumAstNodeStatus.Disallowed ||
-                (node as AstNode)[STATE] == EnumAstNodeStatus.Unknown ||
-                (node as AstNode)[STATE] == EnumAstNodeStatus.Unparsed ||
-                (node as AstNode)[STATE] == EnumAstNodeStatus.Malformed
+                node[STATE] &
+                (EnumAstNodeStatus.Invalid |
+                    EnumAstNodeStatus.Disallowed |
+                    EnumAstNodeStatus.Unknown |
+                    EnumAstNodeStatus.Unparsed |
+                    EnumAstNodeStatus.Malformed)
             ) {
                 invalidNodes.push(node as AstDeclaration);
             }

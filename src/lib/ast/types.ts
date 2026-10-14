@@ -61,6 +61,16 @@ export enum EnumAstNodeStatus {
      * Node has fraction value
      */
     HasFractionValue = 1 << 10,
+
+    /**
+     * Important declaration
+     */
+    ImportantDeclaration = 1 << 11,
+
+    /**
+     * Color component without unit
+     */
+    PowerlessColorComponent = 1 << 12
 }
 
 export declare type AstNodePropertyType = "state" | "errors" | "location" | "tokens" | "parent" | "selector";

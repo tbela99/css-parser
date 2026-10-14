@@ -16,35 +16,43 @@ declare enum EnumAstNodeStatus$1 {
     /**
      * Node passed validation
      */
-    Validated = 0,
+    Validated = 1,
     /**
      * Node is invalid
      */
-    Invalid = 1,
+    Invalid = 2,
     /**
      * node is not validated
      */
-    Unvalidated = 2,
+    Unvalidated = 4,
     /**
      * Node did not pass validation, but is preserved.
      */
-    ValidationFailed = 3,
+    ValidationFailed = 8,
     /**
      * Parsing the node is not supported yet or the node syntax definition does not exist.
      */
-    Unknown = 4,
+    Unknown = 16,
     /**
      * Failed to parse the node.
      */
-    Unparsed = 5,
+    Unparsed = 32,
     /**
      * Node is disallowed in the context
      */
-    Disallowed = 6,
+    Disallowed = 64,
     /**
      * Node is malformed
      */
-    Malformed = 7
+    Malformed = 128,
+    /**
+     * Important declaration
+     */
+    ImportantDeclaration = 256,
+    /**
+     * Color component without unit
+     */
+    PowerlessColorComponent = 512
 }
 /**
  * Enum of validation levels
@@ -6637,6 +6645,8 @@ declare function setNodeProperty(node: AstNode$1, key: 'errors', value: ErrorDes
  */
 declare function setNodeProperty(node: AstNode$1, key: 'tokens', value: Token$1[] | null): void;
 
+declare let version: string;
+
 /**
  * Load file or url
  * @param url
@@ -7024,5 +7034,5 @@ declare function transform(options: ParseInputStreamOptions & TransformOptions):
  */
 declare function transform(options: ParseInputFileOptions & TransformOptions): Promise<TransformResult>;
 
-export { ColorType$1 as ColorType, EnumAstNodeStatus$1 as EnumAstNodeStatus, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType, SourceMap, ValidationLevel, WalkerEvent, WalkerOptionEnum, cloneNode, convertColor, dirname, expand, find, findAll, findByValue, findLast, getNodeProperty, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, parseSync, render, renderValue as renderToken, replaceNodeOrValue, resolve, setNodeProperty, transform, transformFile, transformSync, walk, walkValues };
+export { ColorType$1 as ColorType, EnumAstNodeStatus$1 as EnumAstNodeStatus, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType, SourceMap, ValidationLevel, WalkerEvent, WalkerOptionEnum, cloneNode, convertColor, dirname, expand, find, findAll, findByValue, findLast, getNodeProperty, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, parseSync, render, renderValue as renderToken, replaceNodeOrValue, resolve, setNodeProperty, transform, transformFile, transformSync, version, walk, walkValues };
 export type { AddToken, AndToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstNodeStatus, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, DoubleColonToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription$1 as ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorAstNodeSyncHandlerMap, GenericVisitorAsyncResult, GenericVisitorHandler, GenericVisitorResult, GenericVisitorSyncHandler, GenericVisitorSyncResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InfinityToken, InvalidAttrToken, InvalidClassSelectorToken, InvalidMediaQueryToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleAsyncOptions, ModuleSyncOptions, MulToken, NaNToken, NameSpaceAttributeToken, NegativeInfinityToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseInputFileOptions, ParseInputOptions, ParseInputStreamOptions, ParseResult, ParseResultStats, ParseSourceOptions, ParseTokenOptions, ParserOptions, ParserSourceMapOptions, ParserSyncOptions, PercentageToken, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SinglePropertyType, SinglePropertyTypeMapping, SourceLocation, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenSearchResult, TokenizeResult, TransformOptions, TransformResult, TransformSyncOptions, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, ValueVisitorSyncHandler, VariableScopeInfo, VisitorNodeMap, VisitorSyncNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerOptions, WalkerValueFilter, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken, WrappedValuesToken };

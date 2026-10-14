@@ -64,7 +64,8 @@ export class PropertyMap {
                 const values: Token[] = [];
                 const val: Token[][] = [[]];
 
-                for (const curr of (this.declarations.get(this.config.shorthand) as AstDeclaration).val) { // @ts-ignore
+                for (const curr of (this.declarations.get(this.config.shorthand) as AstDeclaration).val) {
+                    // @ts-ignore
                     // @ts-ignore
                     if (separator != null && separator.typ == curr.typ && separator.val == curr.val) {
                         val.push([]);

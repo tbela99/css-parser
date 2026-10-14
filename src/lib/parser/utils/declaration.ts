@@ -107,6 +107,7 @@ export function parseDeclaration(
 
     let token: number;
     let typ: EnumToken;
+    let hasImportantFlag: boolean = false;
 
     let validate = typeof options.validation === "boolean" ? options.validation : !!options.validation;
 
@@ -616,6 +617,10 @@ export function parseDeclaration(
                 }
 
                 break;
+
+            case EnumToken.ImportantTokenType:
+                hasImportantFlag = true;
+                break;
         }
 
         typ = arena.getType(token);
@@ -718,7 +723,7 @@ export function parseDeclaration(
 
         arena.setName(name, arena.internString(arena.getValue(name)));
         arena.set(name, EnumToken.DeclarationNodeType, 0);
-        arena.setFlags(name, EnumAstNodeStatus.Unknown);
+        arena.setFlags(name, hasImportantFlag ? EnumAstNodeStatus.ImportantDeclaration | EnumAstNodeStatus.Unknown : EnumAstNodeStatus.Unknown);
         arena.setErrors(name, result?.errors ?? []);
         arena.setChildren(name, ...tokens);
 
@@ -726,6 +731,16 @@ export function parseDeclaration(
 
         // name[STATE] = EnumAstNodeStatus.Unknown;
         // name[ERRORS] = result?.errors ?? [];
+
+        // // @ts-expect-error
+        // return Object.assign(name, {
+        //     typ: EnumToken.DeclarationNodeType,
+        //     nam: name.val,
+        //     val: tokens,
+        // }) as AstDeclaration;
+        // if (hasImportantFlag) {
+        //     name[STATE] |= EnumAstNodeStatus.ImportantDeclaration;
+        // }
 
         // // @ts-expect-error
         // return Object.assign(name, {
@@ -794,13 +809,19 @@ export function parseDeclaration(
         // name[LOCEND] = tokens[tokens.length - 1][LOCEND];
     }
 
-    arena.setName(name, arena.internString(arena.getValue(name)));
-    arena.set(name, EnumToken.DeclarationNodeType, 0);
-    arena.setFlags(name, EnumAstNodeStatus.HasValues | (success
+    let flags = EnumAstNodeStatus.HasValues | (success
         ? result == null
             ? EnumAstNodeStatus.Unvalidated
             : EnumAstNodeStatus.Validated
-        : EnumAstNodeStatus.ValidationFailed));
+        : EnumAstNodeStatus.ValidationFailed);
+
+        if (hasImportantFlag) {
+            flags |= EnumAstNodeStatus.ImportantDeclaration;
+        }
+
+    arena.setName(name, arena.internString(arena.getValue(name)));
+    arena.set(name, EnumToken.DeclarationNodeType, 0);
+    arena.setFlags(name, flags);
     arena.setErrors(name, result?.errors ?? []);
     arena.setChildren(name, ...tokens);
 
@@ -813,6 +834,16 @@ export function parseDeclaration(
     //     : EnumAstNodeStatus.ValidationFailed;
     // name[ERRORS] = result?.errors ?? [];
 
+    // return Object.assign(name, {
+    //     typ: EnumToken.DeclarationNodeType,
+    //     nam: name.val,
+    //     val: tokens,
+    // }) as AstDeclaration;
+    // if (hasImportantFlag) {
+    //     name[STATE] |= EnumAstNodeStatus.ImportantDeclaration;
+    // }
+
+    // // @ts-expect-error
     // return Object.assign(name, {
     //     typ: EnumToken.DeclarationNodeType,
     //     nam: name.val,

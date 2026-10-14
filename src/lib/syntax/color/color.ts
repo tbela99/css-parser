@@ -914,6 +914,5 @@ export function getAngle(token: NumberToken | AngleToken | IdentToken): number {
         }
     }
 
-    // @ts-ignore
-    return token.val / 360;
+    return (token.val as number) / 360;
 }

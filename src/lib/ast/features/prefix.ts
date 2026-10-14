@@ -1,4 +1,4 @@
-import {EnumAstNodeStatus, EnumToken} from "../types.ts";
+import { EnumAstNodeStatus, EnumToken } from "../types.ts";
 import type {
     AngleToken,
     AstAtRule,
@@ -168,11 +168,7 @@ export class ComputePrefixFeature {
     }
 
     run(node: AstNode): AstNode | null {
-        if (
-            node[STATE] == EnumAstNodeStatus.Disallowed ||
-            node[STATE] == EnumAstNodeStatus.Invalid ||
-            node[STATE] == EnumAstNodeStatus.Malformed
-        ) {
+        if (node[STATE] & (EnumAstNodeStatus.Disallowed | EnumAstNodeStatus.Invalid | EnumAstNodeStatus.Malformed)) {
             return null;
         }
 

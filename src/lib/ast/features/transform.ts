@@ -50,7 +50,7 @@ export class TransformCssFeature {
             // @ts-ignore
             node = ast.chi[i] as AstNode | AstDeclaration;
 
-            if (node[STATE] == EnumAstNodeStatus.Invalid || node[STATE] == EnumAstNodeStatus.ValidationFailed) {
+            if (node[STATE] & (EnumAstNodeStatus.Invalid | EnumAstNodeStatus.ValidationFailed)) {
                 continue;
             }
 

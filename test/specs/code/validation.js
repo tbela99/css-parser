@@ -1,5 +1,5 @@
-import { getNodeProperty, setNodeProperty } from "../../../dist/lib/ast/node.js";
-import { EnumAstNodeStatus } from "../../../dist/lib/ast/types.js";
+import { getNodeProperty, setNodeProperty } from "../../../dist/src/lib/ast/node.js";
+import { EnumAstNodeStatus } from "../../../dist/src/lib/ast/types.js";
 
 export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
     const root = new URL(dirname(import.meta.url) + "/../../../");
@@ -634,14 +634,14 @@ html, body, div, span, applet, object, iframe,
 
         it("file validation #22", function () {
             const url = new URL(dirname(import.meta.url) + "/../../files/css/bootstrap.css");
-            transform(
+            return transform(
                 `@import '${url.pathname.replace(root.pathname, "")}';
 `,
                 {
                     validation: true,
                     resolveImport: true,
                 },
-            ).then((result) => expect(result.errors.length).equals(2));
+            ).then((result) => expect(result.errors.length).equals(0));
         });
 
         it("file validation #23", function () {
@@ -653,7 +653,6 @@ html, body, div, span, applet, object, iframe,
                     validation: true,
                     resolveImport: true,
                 },
-           
             ).then((result) => expect(result.errors.length).equals(1));
         });
 

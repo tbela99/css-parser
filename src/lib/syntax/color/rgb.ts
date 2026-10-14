@@ -146,13 +146,14 @@ export function hwb2rgbvalues(token: ColorToken): number[] | null {
 }
 
 export function hsl2rgbvalues(token: ColorToken): number[] | null {
+
     let { h, s, l, a } = hslvalues(token) ?? {};
 
     if (h == null || s == null || l == null) {
         return null;
     }
 
-    return hslvalues2srgbvalues(h, s, l)
+    return hslvalues2srgbvalues(h , s, l)
         .map((t: number) => minmax(Math.round(t * 255), 0, 255))
         .concat(a == 1 || a == null ? [] : [a]);
 }

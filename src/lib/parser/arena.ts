@@ -2,7 +2,7 @@ import {
     AstNode,
     AstRuleList,
     ErrorDescription,
-    ErrorDescription,
+
     FunctionToken,
     ParensToken,
     Token,

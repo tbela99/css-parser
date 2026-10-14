@@ -50,6 +50,8 @@ export enum WalkerEvent {
     Leave = 0x2,
 }
 
+const maxQueueLength = 25000;
+
 /**
  * Walk ast nodes
  * @param node initial node
@@ -311,6 +313,11 @@ export function* walk(
     } as WalkResult;
 
     while ((node = <AstNode>parents[i++])) {
+        if (i > maxQueueLength) {
+            parents.splice(0, maxQueueLength);
+            i -= maxQueueLength;
+        }
+
         let option: WalkerOption = null;
 
         if (filter != null) {
@@ -480,6 +487,11 @@ export function* walkValues(
     while (++i < stack.length) {
         value = <Token>stack[i];
         option = null;
+
+        if (i > maxQueueLength) {
+            stack.splice(0, maxQueueLength);
+            i -= maxQueueLength;
+        }
 
         if (filter.fn != null && eventType & WalkerEvent.Enter) {
             const isValid: boolean =
