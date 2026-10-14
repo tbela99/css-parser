@@ -395,6 +395,8 @@ export function printValue(
 ): string {
     const typ = arena.getType(token);
 
+    // console.error(EnumToken[typ]);
+
     if (typ === EnumToken.WhenElseFunctionTokenType && arena.equalsIgnoreCase(token, "val", "supports")) {
         options = { ...options, minifyValues: false, minify: false, convertColor: false };
         reducer = null;
@@ -1300,7 +1302,7 @@ export function printValue(
                 );
             }
 
-            return ((token as FunctionToken).val ?? "") + "(" + (token as FunctionToken).chi.reduce(reducer, "") + ")";
+            return (arena.getValue(token) ?? "") + "(" + arena.children(token).reduce(reducer, "") + ")";
 
         case EnumToken.BlockStartTokenType:
             return "{";
@@ -1386,7 +1388,7 @@ export function printValue(
             return "|";
         case EnumToken.AttrTokenType:
         case EnumToken.IdenListTokenType:
-            return "[" + (<AttrToken>(token as AttrToken | IdentListToken)).chi.reduce(reducer, "") + "]";
+            return "[" + arena.children(token).reduce(reducer, "") + "]";
 
         case EnumToken.TimeTokenType:
         case EnumToken.AngleTokenType:
@@ -1394,20 +1396,20 @@ export function printValue(
         case EnumToken.DimensionTokenType:
         case EnumToken.FrequencyTokenType:
         case EnumToken.ResolutionTokenType:
-            let val: string =
-                (<FractionToken>(token as LengthToken).val).typ == EnumToken.FractionTokenType
-                    ? printValue(<FractionToken>(token as LengthToken).val, options, cache)
-                    : minifyNumber(<string | number>(token as LengthToken).val);
-            let unit: string = (token as LengthToken).unit;
+            let val: string = arena.hasFlags(token, EnumAstNodeStatus.HasFractionValue) ?
+            
+                    printValue(arena.getNumericValue(token), arena, options, cache)
+                    : minifyNumber(arena.getNumericValue(token));
+            let unit: string = arena.getUnit(token);
 
-            if (token.typ == EnumToken.AngleTokenType && !val.includes("/")) {
-                const angle: number = getAngle(<AngleToken>token);
+            if (typ == EnumToken.AngleTokenType && !val.includes("/")) {
+                const angle: number = getAngle(token, arena);
 
                 let v: string;
                 let value: string = val + unit;
 
                 for (const u of ["deg", "turn", "rad", "grad"]) {
-                    if ((token as AngleToken).unit == u) {
+                    if (unit == u) {
                         continue;
                     }
 
@@ -1466,23 +1468,23 @@ export function printValue(
             }
 
             if (val === "0") {
-                if (token.typ == EnumToken.TimeTokenType) {
+                if (typ == EnumToken.TimeTokenType) {
                     return "0s";
                 }
 
-                if (token.typ == EnumToken.FrequencyTokenType) {
+                if (typ == EnumToken.FrequencyTokenType) {
                     return "0Hz";
                 }
 
                 // @ts-ignore
-                if (token.typ == EnumToken.ResolutionTokenType) {
+                if (typ == EnumToken.ResolutionTokenType) {
                     return "0x";
                 }
 
                 return "0";
             }
 
-            if (token.typ == EnumToken.TimeTokenType) {
+            if (typ == EnumToken.TimeTokenType) {
                 if (unit == "ms") {
                     // @ts-ignore
                     const v: string = minifyNumber(val / 1000);
@@ -1497,7 +1499,7 @@ export function printValue(
                 return val + "s";
             }
 
-            if (token.typ == EnumToken.ResolutionTokenType && unit == "dppx") {
+            if (typ == EnumToken.ResolutionTokenType && unit == "dppx") {
                 unit = "x";
             }
 
@@ -1505,7 +1507,7 @@ export function printValue(
 
         case EnumToken.FlexTokenType:
         case EnumToken.PercentageTokenType:
-            const uni: string = token.typ == EnumToken.PercentageTokenType ? "%" : "fr";
+            const uni: string = typ == EnumToken.PercentageTokenType ? "%" : "fr";
             const perc: string = arena.hasFlags(token, EnumAstNodeStatus.HasFractionValue)
                 ? printValue(arena.getNumericValue(token), arena, options, cache)
                 : minifyNumber(arena.getNumericValue(token));

@@ -451,15 +451,9 @@ export function parseSelector(
 
     const result = matchSelectorSyntax(tokens, errors, options, nested);
 
-    for (const token of tokens) {
-        
-        
-        console.error(EnumToken[arena.getType(token)]);
-    }
-
     trimArray(tokens, options);
 
-    if (result.success) {
+    // if (result.success) {
         for (let i = 0; i < tokens.length; i++) {
             token = tokens[i];
             typ = arena.getType(token);
@@ -807,12 +801,12 @@ export function parseSelector(
                     break;
             }
         }
-    }
+    // }
 
     const node = arena.allocate();
 
     arena.set(node, EnumToken.RuleNodeType, arena.internString([
-            ...all
+            ...trimArray(all, options)
                 .reduce(
                     (acc: string[][], curr: number, index: number, array: number[]) => {
                         // if (curr.typ == EnumToken.CommentTokenType) {
@@ -861,7 +855,7 @@ export function parseSelector(
                 }, uniq)
                 .keys(),
         ].join(",")));
-
+        
         arena.setSpan(node, arena.getSourceId(tokens[0]), arena.getSpanStart(tokens[0]), arena.getSpanEnd(tokens[tokens.length - 1]));
         arena.setFlags(node, EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.Validated );
 

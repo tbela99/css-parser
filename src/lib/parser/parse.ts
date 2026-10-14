@@ -723,8 +723,13 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
         tokenId = arena.allocate();
 
         if (tokenizer.unit != null) {
-
-            arena.set(tokenId, tokenizer.typ as EnumToken, 0, tokenizer.val as number, arena.internString(tokenizer.unit));
+            arena.set(
+                tokenId,
+                tokenizer.typ as EnumToken,
+                0,
+                tokenizer.val as number,
+                arena.internString(tokenizer.unit),
+            );
 
             // item = {
             //     typ: tokenizer.typ as EnumToken,
@@ -732,7 +737,6 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
             //     unit: tokenizer.unit,
             // } as DimensionToken;
         } else if (tokenizer.nam != null) {
-
             arena.set(tokenId, tokenizer.typ as EnumToken);
             arena.setName(tokenId, arena.internString(tokenizer.nam as string));
             // item = {
@@ -745,7 +749,6 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
             //     typ: tokenizer.typ as EnumToken,
             // } as Token;
         } else if (tokenizer.kin != null) {
-
             arena.set(tokenId, tokenizer.typ as EnumToken, arena.internString(tokenizer.val as string));
             arena.setColorType(tokenId, tokenizer.kin);
 
@@ -755,7 +758,12 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
             //     kin: tokenizer.kin,
             // } as ColorToken;
         } else {
-            arena.set(tokenId, tokenizer.typ as EnumToken, arena.internString(tokenizer.val as string));
+            arena.set(
+                tokenId,
+                tokenizer.typ as EnumToken,
+                typeof tokenizer.val === "string" ? arena.internString(tokenizer.val as string) : 0,
+                typeof tokenizer.val === "number" ? tokenizer.val : 0,
+            );
             // item = {
             //     typ: tokenizer.typ as EnumToken,
             //     val: tokenizer.val,
@@ -809,7 +817,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
 
             if (node != null) {
                 if (arena.hasFlags(node, EnumAstNodeStatus.HasChildren)) {
-                    stack.push(node );
+                    stack.push(node);
                     context = node;
                 }
             } else if (tokenizer.typ == EnumToken.BlockStartTokenType) {
@@ -824,15 +832,19 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                     tokenId = arena.allocate();
 
                     if (tokenizer.unit != null) {
-
-                        arena.set(tokenId, tokenizer.typ, 0, tokenizer.val as number, arena.internString(tokenizer.unit));
+                        arena.set(
+                            tokenId,
+                            tokenizer.typ,
+                            0,
+                            tokenizer.val as number,
+                            arena.internString(tokenizer.unit),
+                        );
                         // item = {
                         //     typ: tokenizer.typ as EnumToken,
                         //     val: tokenizer.val,
                         //     unit: tokenizer.unit,
                         // } as DimensionToken;
                     } else if (tokenizer.nam != null) {
-
                         arena.set(tokenId, tokenizer.typ);
                         arena.setName(tokenId, arena.internString(tokenizer.nam as string));
                         // item = {
@@ -845,7 +857,6 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                         //     typ: tokenizer.typ as EnumToken,
                         // } as Token;
                     } else if (tokenizer.kin != null) {
-
                         arena.set(tokenId, tokenizer.typ, arena.internString(tokenizer.val as string));
                         arena.setColorType(tokenId, tokenizer.kin);
                         // item = {
@@ -854,7 +865,6 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                         //     kin: tokenizer.kin,
                         // } as ColorToken;
                     } else {
-
                         arena.set(tokenId, tokenizer.typ, arena.internString(tokenizer.val as string));
                         // item = {
                         //     typ: tokenizer.typ as EnumToken,
@@ -890,11 +900,10 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
         } else if ((parensMatch === 0 || curlyBracketMatch === 0) && tokenizer.typ === EnumToken.BlockEndTokenType) {
             parseNode(tokens, context, options as ParserOptions, errors, stats, invalidNodes);
 
-
             // context[LOCEND] = tokenizer.end as number;
 
             const previousNode = stack.pop() as number;
-            context = (stack[stack.length - 1] ?? arena.root);
+            context = stack[stack.length - 1] ?? arena.root;
 
             if (
                 options.removeEmpty &&
@@ -902,7 +911,6 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                 arena.getFirstChild(previousNode) == 0 &&
                 arena.getLastChild(context) == previousNode
             ) {
-
                 arena.detach(previousNode);
             }
 
@@ -3219,7 +3227,7 @@ function parseNode(
     errors: ErrorDescription[],
     stats: ParseResultStats,
     invalidNodes: number[],
-): number| null {
+): number | null {
     let i: number = 0;
 
     const arena: Arena = options.arena!;
@@ -3234,8 +3242,8 @@ function parseNode(
         let matchCount: number = 0;
 
         for (let i = 0; i < tokens.length; i++) {
-             token = tokens[i];
-             typ = arena.getType(token);
+            token = tokens[i];
+            typ = arena.getType(token);
 
             if (typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(typ)) {
                 matchCount++;
@@ -3248,42 +3256,35 @@ function parseNode(
             let k: number = tokens.length;
 
             if (k > 0) {
-                
-            typ = arena.getType(tokens[k - 1]) ;
-
-            while (
-                k-- > 0 &&
-                typ === EnumToken.WhitespaceTokenType || typ === EnumToken.CommentTokenType
-            ) {
-
                 typ = arena.getType(tokens[k - 1]);
+
+                while ((k-- > 0 && typ === EnumToken.WhitespaceTokenType) || typ === EnumToken.CommentTokenType) {
+                    typ = arena.getType(tokens[k - 1]);
+                }
+
+                if (typ == EnumToken.SemiColonTokenType) {
+                    matchCount = 0;
+                }
+
+                let tokenId: number;
+                let sourceId: number = arena.getSourceId(tokens[k]);
+                let spanStart: number = arena.getSpanStart(tokens[k]);
+                let spanEnd: number = arena.getSpanEnd(tokens[k]);
+
+                while (matchCount > 0) {
+                    tokenId = arena.allocate();
+
+                    arena.set(tokenId, EnumToken.EndParensTokenType);
+                    arena.setSpan(tokenId, sourceId, spanStart, spanEnd);
+                    // tokens.push({
+                    //     typ: EnumToken.EndParensTokenType,
+                    //     [LOCSRCID]: tokens[k]?.[LOCSRCID],
+                    //     [LOCSTA]: tokens[k]?.[LOCSTA],
+                    //     [LOCEND]: tokens[k]?.[LOCEND],
+                    // });
+                    matchCount--;
+                }
             }
-
-            if (typ == EnumToken.SemiColonTokenType) {
-                matchCount = 0;
-            }
-
-            let tokenId: number;
-            let sourceId: number = arena.getSourceId(tokens[k]);
-            let spanStart: number = arena.getSpanStart(tokens[k]);
-            let spanEnd: number = arena.getSpanEnd(tokens[k]);
-
-            while (matchCount > 0) {
-
-                tokenId = arena.allocate();
-
-                arena.set(tokenId, EnumToken.EndParensTokenType);
-                arena.setSpan(tokenId, sourceId, spanStart, spanEnd);
-                // tokens.push({
-                //     typ: EnumToken.EndParensTokenType,
-                //     [LOCSRCID]: tokens[k]?.[LOCSRCID],
-                //     [LOCSTA]: tokens[k]?.[LOCSTA],
-                //     [LOCEND]: tokens[k]?.[LOCEND],
-                // });
-                matchCount--;
-            }
-            }
-
         }
     }
 
@@ -3314,16 +3315,14 @@ function parseNode(
     }
 
     if (i > 0) {
-
         arena.appendChildren(
-        context,
-            ...(tokens.splice(0, i) ).filter((n: number) => arena.getType(n) !== EnumToken.WhitespaceTokenType)
+            context,
+            ...tokens.splice(0, i).filter((n: number) => arena.getType(n) !== EnumToken.WhitespaceTokenType),
         );
         i = 0;
     }
 
     for (; i < tokens.length; i++) {
-
         typ = arena.getType(tokens[i]);
         if (typ == EnumToken.CommentTokenType || typ == EnumToken.CDOCOMMTokenType) {
             if (typ == EnumToken.CDOCOMMTokenType && contextType != EnumToken.StyleSheetNodeType) {
@@ -3334,7 +3333,7 @@ function parseNode(
                     location: options.source!.getSourceLocation(arena.getSpanStart(tokens[i])),
                 });
 
-                arena.setType(tokens[i],EnumToken.InvalidCommentTokenType);
+                arena.setType(tokens[i], EnumToken.InvalidCommentTokenType);
                 continue;
             }
 
@@ -3352,7 +3351,7 @@ function parseNode(
     }
 
     // for (const token of tokens.slice(1)) {
-       
+
     //     console.error(EnumToken[arena.getType(token)]);
     // }
 
@@ -3380,14 +3379,13 @@ function parseNode(
         let node;
 
         while (parent != 0) {
-
             typ = arena.getType(parent);
             if (typ == EnumToken.RuleNodeType) {
                 nestedRule = true;
                 break;
             }
 
-            parent = arena.getParent(parent) ;
+            parent = arena.getParent(parent);
         }
 
         node = parseAtRule(
@@ -3428,7 +3426,7 @@ function parseNode(
 
         // rule
         if (arena.getType(delim) == EnumToken.BlockStartTokenType) {
-            const node = parseSelector(tokens, context , options, errors);
+            const node = parseSelector(tokens, context, options, errors);
 
             arena.appendChildren(context, node);
             // context.chi!.push(node);
@@ -3436,15 +3434,21 @@ function parseNode(
             // node[ROOT] = context[ROOT];
 
             if (
-                arena.hasFlags(node,  EnumAstNodeStatus.Invalid | EnumAstNodeStatus.Disallowed | EnumAstNodeStatus.Unknown | EnumAstNodeStatus.Unparsed | EnumAstNodeStatus.Malformed)
-               
+                arena.hasFlags(
+                    node,
+                    EnumAstNodeStatus.Invalid |
+                        EnumAstNodeStatus.Disallowed |
+                        EnumAstNodeStatus.Unknown |
+                        EnumAstNodeStatus.Unparsed |
+                        EnumAstNodeStatus.Malformed,
+                )
             ) {
                 invalidNodes.push(node);
             }
 
             return node;
         } else {
-            const node = parseDeclaration(tokens, context , options, errors) as AstDeclaration;
+            const node = parseDeclaration(tokens, context, options, errors) as AstDeclaration;
             // node[PARENT] = context;
             // node[ROOT] = context[ROOT];
 

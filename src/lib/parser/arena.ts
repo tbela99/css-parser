@@ -94,9 +94,10 @@ export class Arena {
             return id;
         }
 
-        this.stringIds.set(str, this.strings.length);
+        id = this.strings.length;
+        this.stringIds.set(str, id);
         this.strings.push(str);
-        return this.strings.length;
+        return id;
     }
 
     /**
@@ -175,11 +176,20 @@ export class Arena {
     }
 
     getValue(id: number): string {
+
         return this.strings[this.stringValue[id]] ?? null;
     }
 
     setNumericValue(id: number, numericValue: number): void {
         this.numericValue[id] = numericValue;
+    }
+
+    setUnit(id: number, unit: number): void {
+        this.unit[id] = unit;
+    }
+
+    getUnit(id: number): string {
+        return this.strings[this.unit[id]] ?? null;
     }
 
     getNumericValue(id: number): number {

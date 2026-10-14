@@ -137,6 +137,7 @@ import { colorFuncColorSpace } from "../constants.ts";
 import { trimArray } from "../../validation/match.ts";
 import { alpha } from "./alpha.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
+import { Arena } from "../../parser/arena.ts";
 
 /**
  * Converts a color to another color space
@@ -887,32 +888,34 @@ export function getNumber(token: NumberToken | PercentageToken | IdentToken | Fr
  * convert angle to turn
  * @param token
  */
-export function getAngle(token: NumberToken | AngleToken | IdentToken): number {
-    if (token.typ == EnumToken.IdenTokenType) {
-        if (token.val == "none") {
+export function getAngle(token: number, arena: Arena): number {
+
+    const typ = arena.getType(token);
+    
+    if (typ == EnumToken.IdenTokenType) {
+        if (arena.equalsIgnoreCase(token, 'val',  "none")) {
             return 0;
         }
     }
 
-    if (token.typ == EnumToken.AngleTokenType) {
-        switch ((token as AngleToken).unit) {
+    const val = arena.getNumericValue(token);
+
+    if (typ == EnumToken.AngleTokenType) {
+        switch (arena.getUnit(token)) {
             case "deg":
-                // @ts-ignore
-                return token.val / 360;
+                return val / 360;
 
             case "rad":
-                // @ts-ignore
-                return token.val / (2 * Math.PI);
+                return val / (2 * Math.PI);
 
             case "grad":
-                // @ts-ignore
-                return token.val / 400;
+                return val / 400;
 
             case "turn":
-                // @ts-ignore
-                return +token.val;
+                // @ts-ign
+                return +val;
         }
     }
 
-    return (token.val as number) / 360;
+    return val / 360;
 }
