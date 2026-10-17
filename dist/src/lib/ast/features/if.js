@@ -2,11 +2,10 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 import { EnumToken } from '../types.js';
-import { renderValue } from '../../printer/render.js';
 import { FeatureWalkMode } from './type.js';
 import { PARENT, LOCSRCID, LOCSTA, LOCEND, TOKENS } from '../../syntax/constants.js';
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
@@ -104,7 +103,7 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
                 minify,
                 convertColor: minify,
             };
-            atRule.val = atRule[TOKENS].reduce((acc, curr) => acc + renderValue(curr, options), "");
+            atRule.val = atRule[TOKENS].reduce((acc, curr) => acc + printValue(curr, options), "");
             clonedDeclaration = cloneNode(declaration, true, nodeMap);
             replaceNodeOrValue(nodeMap.get(targetWrapper), nodeMap.get(node), node.r.at(-1)?.typ === EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
             clonedDeclaration[PARENT] = atRule;
@@ -119,7 +118,7 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
                 chi: [],
             });
             atRule[TOKENS] = [left];
-            atRule.val = atRule[TOKENS].reduce((acc, curr) => acc + renderValue(curr), "");
+            atRule.val = atRule[TOKENS].reduce((acc, curr) => acc + printValue(curr), "");
             if (declaration[PARENT] != null) {
                 atRule[LOCSRCID] = declaration[PARENT][LOCSRCID];
                 atRule[LOCSTA] = declaration[PARENT][LOCSTA];

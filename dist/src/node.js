@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 import { deprecate } from 'node:util';
@@ -12,9 +12,8 @@ import { lstat, readFile } from 'node:fs/promises';
 import { doParse, doParseSync } from './lib/parser/parse.js';
 export { parseDeclarations, parseString } from './lib/parser/parse.js';
 import { doRender } from './lib/printer/render.js';
-export { renderValue as renderToken } from './lib/printer/render.js';
 import { ModuleScopeEnumOptions } from './lib/ast/types.js';
-export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ValidationLevel } from './lib/ast/types.js';
+export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum } from './lib/ast/types.js';
 import { Tokenizer } from './lib/parser/tokenize.js';
 import { dirname, resolve, matchUrl } from './lib/fs/resolve.js';
 import { ResponseType } from './types.js';
@@ -31,6 +30,7 @@ export { isOkLabClose, okLabDistance } from './lib/syntax/color/utils/distance.j
 export { find, findAll, findByValue, findLast } from './lib/ast/find.js';
 export { cloneNode } from './lib/ast/clone.js';
 export { replaceNodeOrValue } from './lib/parser/utils/token.js';
+export { printValue } from './lib/printer/print.js';
 export { SourceMap } from './lib/printer/sourcemap/sourcemap.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 export { getNodeProperty, setNodeProperty } from './lib/ast/node.js';
@@ -179,7 +179,7 @@ function parseSync(...args) {
     options ??= {};
     options.src ??= "";
     options.sourcesMap ??= new Map();
-    options.arena ??= new Arena();
+    options.arena ??= new Arena(2 << Math.ceil(2 + Math.log2(stream.length)));
     Object.assign(options, {
         resolve,
         dirname,
@@ -336,6 +336,7 @@ async function parse(...args) {
     options ??= {};
     options.src ??= "";
     options.sourcesMap ??= new Map();
+    options.arena ??= new Arena(typeof stream == "string" ? 2 << Math.ceil(2 + Math.log2(stream.length)) : 4096);
     Object.assign(options, {
         load,
         resolve,

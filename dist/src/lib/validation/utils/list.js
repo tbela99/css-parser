@@ -2,24 +2,28 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 import { EnumToken } from '../../ast/types.js';
 
-function stripCommaToken(tokenList) {
+function stripCommaToken(tokenList, options) {
     let result = [];
+    let typ;
+    const arena = options.arena;
     for (let i = 0; i < tokenList.length; i++) {
-        if (tokenList[i].typ == EnumToken.CommentTokenType || tokenList[i].typ == EnumToken.CommaTokenType) {
+        typ = arena.getType(tokenList[i]);
+        if (typ == EnumToken.CommentTokenType || typ == EnumToken.CommaTokenType) {
             continue;
         }
         result.push(tokenList[i]);
     }
     return result;
 }
-function splitTokenList(tokenList, split = [EnumToken.CommaTokenType], includeSplitToken = false) {
+function splitTokenList(tokenList, options, split = [EnumToken.CommaTokenType], includeSplitToken = false) {
+    const arena = options.arena;
     return tokenList.reduce((acc, curr) => {
-        if (split.includes(curr.typ)) {
+        if (split.includes(arena.getType(curr))) {
             if (includeSplitToken && Array.isArray(acc[acc.length - 1])) {
                 acc[acc.length - 1].push(curr);
             }

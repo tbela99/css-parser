@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 import { PARENT, TOKENS } from '../syntax/constants.js';
@@ -271,7 +271,6 @@ function* walkValues(values, root = null, filter, reverse) {
     let isNumeric = false;
     let value;
     let option;
-    let node;
     let i = -1;
     const eventType = filter.event ?? WalkerEvent.Enter;
     // @ts-ignore
@@ -305,16 +304,7 @@ function* walkValues(values, root = null, filter, reverse) {
                 (typeof filter.type == "function" && filter.type(value));
             if (isValid) {
                 // @ts-expect-error
-                option = filter.fn(value, value[PARENT] ?? root, WalkerEvent.Enter, 
-                // @ts-expect-error
-                function* () {
-                    // @ts-expect-error
-                    let parent = node[PARENT];
-                    while (parent != null) {
-                        yield parent;
-                        parent = parent[PARENT] ?? null;
-                    }
-                });
+                option = filter.fn(value);
                 isNumeric = typeof option == "number";
                 if (isNumeric && option & WalkerOptionEnum.Stop) {
                     return;

@@ -2,20 +2,20 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 import { doParse, doParseSync } from './lib/parser/parse.js';
 export { parseDeclarations, parseString } from './lib/parser/parse.js';
 import { doRender } from './lib/printer/render.js';
-export { renderValue as renderToken } from './lib/printer/render.js';
 import { ModuleScopeEnumOptions } from './lib/ast/types.js';
-export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ValidationLevel } from './lib/ast/types.js';
+export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum } from './lib/ast/types.js';
 import { Tokenizer } from './lib/parser/tokenize.js';
 import { matchUrl, resolve, dirname } from './lib/fs/resolve.js';
 import { ResponseType } from './types.js';
 import { SourceFile } from './lib/parser/source.js';
 import { parseResult, validateSyncArguments } from './utils/sync.js';
+import { Arena } from './lib/parser/arena.js';
 export { minify } from './lib/ast/minify.js';
 export { expand } from './lib/ast/expand.js';
 export { WalkerEvent, WalkerOptionEnum, walk, walkValues } from './lib/ast/walk.js';
@@ -24,7 +24,7 @@ export { isOkLabClose, okLabDistance } from './lib/syntax/color/utils/distance.j
 export { find, findAll, findByValue, findLast } from './lib/ast/find.js';
 export { cloneNode } from './lib/ast/clone.js';
 export { replaceNodeOrValue } from './lib/parser/utils/token.js';
-export { PropertyList } from './lib/parser/declaration/list.js';
+export { printValue } from './lib/printer/print.js';
 export { SourceMap } from './lib/printer/sourcemap/sourcemap.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 export { getNodeProperty, setNodeProperty } from './lib/ast/node.js';
@@ -173,6 +173,7 @@ function parseSync(...args) {
     options ??= {};
     options.src ??= "";
     options.sourcesMap ??= new Map();
+    options.arena ??= new Arena(2 << Math.ceil(2 + Math.log2(stream.length)));
     Object.assign(options, {
         resolve,
         dirname,
@@ -181,6 +182,7 @@ function parseSync(...args) {
             : dirname(self.location.pathname),
     });
     options.src = resolve(options.src, options.cwd).relative;
+    options.arena ??= new Arena(typeof stream == "string" ? 2 << Math.ceil(2 + Math.log2(stream.length)) : 4096);
     if (options.source == null) {
         const source = new SourceFile(typeof stream == "string" ? stream : "", [], options.src);
         options.sourcesMap.set(source.id, source);

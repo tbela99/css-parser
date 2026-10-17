@@ -48,7 +48,6 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
             ];
 
             return parse(css, { minify: false }).then((r) => {
-
                 let i = 0;
                 for (const s of walk(r.ast)) {
                     expect(s.node.typ).equals(values[i++]);

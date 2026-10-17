@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 import { isOkLabClose } from './color/utils/distance.js';
@@ -15,7 +15,7 @@ import { trimArray } from '../validation/match.js';
 import { splitTokenList } from '../validation/utils/list.js';
 import { getColorSpace } from './color/utils/colorspace.js';
 import { getColorComponents } from './color/utils/components.js';
-import { anglePrecision, nonStandardColors, systemColors, deprecatedSystemColors, COLORS_NAMES, colorsFunc, colorFuncColorSpace, colorPrecision, epsilon } from './constants.js';
+import { anglePrecision, systemColors, deprecatedSystemColors, nonStandardColors, COLORS_NAMES, colorsFunc, colorFuncColorSpace, colorPrecision, epsilon } from './constants.js';
 import { getSyntaxConfig } from '../validation/config.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
@@ -523,7 +523,7 @@ function isFrequency(dimension) {
  */
 // export function isColorspace(token: Token): boolean {
 //     return (
-//         token.typ === EnumToken.IdenTokenType &&
+//         typ === EnumToken.IdenTokenType &&
 //         [
 //             "srgb",
 //             "srgb-linear",
@@ -729,7 +729,7 @@ function reduceConicColorStops(stops) {
  * @returns
  */
 function isRectangularOrthogonalColorspace(token) {
-    return (token.typ === EnumToken.IdenTokenType &&
+    return (typ === EnumToken.IdenTokenType &&
         colorFuncColorSpace.some((t) => equalsIgnoreCase(t, token.val)));
 }
 /**
@@ -738,7 +738,7 @@ function isRectangularOrthogonalColorspace(token) {
  * @returns
  */
 function isPolarColorspace(token) {
-    return (token.typ === EnumToken.IdenTokenType &&
+    return (typ === EnumToken.IdenTokenType &&
         ["hsl", "hwb", "lch", "oklch"].some((t) => equalsIgnoreCase(t, token.val)));
 }
 /**
@@ -748,7 +748,7 @@ function isPolarColorspace(token) {
  */
 // export function isHueInterpolationMethod(token: Token | Token[]): boolean {
 //     if (!Array.isArray(token)) {
-//         return token.typ == EnumToken.IdenTokenType && "hue" === (token as IdentToken).val?.toLowerCase?.();
+//         return typ == EnumToken.IdenTokenType && "hue" === (token as IdentToken).val?.toLowerCase?.();
 //     }
 //
 //     if (token.length != 2 || token[0].typ != EnumToken.IdenTokenType || token[1].typ != EnumToken.IdenTokenType) {
@@ -767,26 +767,27 @@ function isPolarColorspace(token) {
  * @returns
  */
 function isIdentColor(token) {
-    return (token.typ == EnumToken.ColorTokenType &&
+    return (typ == EnumToken.ColorTokenType &&
         [ColorType.SYS, ColorType.DPSYS, ColorType.LIT].includes(token.kin) &&
         isIdent(token.val));
 }
 // export function isPercentageToken(token: Token): boolean {
 //     return (
-//         token.typ == EnumToken.PercentageTokenType ||
-//         (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == 0)
+//         typ == EnumToken.PercentageTokenType ||
+//         (typ == EnumToken.NumberTokenType && (token as NumberToken).val == 0)
 //     );
 // }
-function isColor(token, errors) {
-    if (token.typ == EnumToken.WildCardFunctionTokenType) {
+function isColor(token, arena) {
+    const typ = arena.getType(token);
+    if (typ == EnumToken.WildCardFunctionTokenType) {
         return true;
     }
-    if (token.typ == EnumToken.ColorTokenType) {
+    if (typ == EnumToken.ColorTokenType) {
         if ("kin" in token && !("chi" in token)) {
             return true;
         }
     }
-    if (token.typ == EnumToken.IdenTokenType) {
+    if (typ == EnumToken.IdenTokenType) {
         const val = token.val.toLowerCase();
         if (systemColors.has(val) || deprecatedSystemColors.has(val) || nonStandardColors.has(val)) {
             return true;
@@ -794,7 +795,7 @@ function isColor(token, errors) {
         // named color
         return val in COLORS_NAMES || "currentcolor" === val || "transparent" === val;
     }
-    if (token.typ === EnumToken.FunctionTokenType || token.typ === EnumToken.ColorTokenType) {
+    if (typ === EnumToken.FunctionTokenType || typ === EnumToken.ColorTokenType) {
         // if (!colorsFunc.includes((token as FunctionToken).val.toLowerCase())) {
         //     return false;
         // }
@@ -1074,8 +1075,9 @@ function isColor(token, errors) {
     }
     return false;
 }
-function parseColor(token) {
-    if (token.typ === EnumToken.IdenTokenType) {
+function parseColor(token, arena) {
+    const typ = arena.getType(token);
+    if (typ === EnumToken.IdenTokenType) {
         const val = token.val.toLowerCase();
         if (nonStandardColors.has(val)) {
             Object.assign(token, {
@@ -1107,7 +1109,7 @@ function parseColor(token) {
             return token;
         }
     }
-    if (token.typ === EnumToken.ColorTokenType) {
+    if (typ === EnumToken.ColorTokenType) {
         if (!("kin" in token) && "val" in token) {
             // @ts-expect-error
             token.kin = ColorType[token.val.replaceAll("-", "_").toUpperCase()];
@@ -1453,24 +1455,24 @@ function isWhiteSpace(codepoint) {
 //     }
 //
 //     return (
-//         token.typ === EnumToken.IdenTokenType ||
-//         token.typ === EnumToken.DimensionTokenType ||
-//         token.typ === EnumToken.LengthTokenType ||
-//         token.typ === EnumToken.AngleTokenType ||
-//         token.typ === EnumToken.FlexTokenType ||
-//         token.typ === EnumToken.TimeTokenType ||
-//         token.typ === EnumToken.ResolutionTokenType ||
-//         token.typ === EnumToken.FrequencyTokenType ||
-//         token.typ === EnumToken.NumberTokenType ||
-//         token.typ === EnumToken.ColorTokenType ||
-//         token.typ === EnumToken.FunctionTokenType ||
-//         token.typ === EnumToken.UrlFunctionTokenType ||
-//         token.typ === EnumToken.GridTemplateFuncTokenType ||
-//         token.typ === EnumToken.ImageFunctionTokenType ||
-//         token.typ === EnumToken.TimelineFunctionTokenType ||
-//         token.typ === EnumToken.TimingFunctionTokenType ||
-//         token.typ === EnumToken.MathFunctionTokenType ||
-//         token.typ === EnumToken.TransformFunctionTokenType
+//         typ === EnumToken.IdenTokenType ||
+//         typ === EnumToken.DimensionTokenType ||
+//         typ === EnumToken.LengthTokenType ||
+//         typ === EnumToken.AngleTokenType ||
+//         typ === EnumToken.FlexTokenType ||
+//         typ === EnumToken.TimeTokenType ||
+//         typ === EnumToken.ResolutionTokenType ||
+//         typ === EnumToken.FrequencyTokenType ||
+//         typ === EnumToken.NumberTokenType ||
+//         typ === EnumToken.ColorTokenType ||
+//         typ === EnumToken.FunctionTokenType ||
+//         typ === EnumToken.UrlFunctionTokenType ||
+//         typ === EnumToken.GridTemplateFuncTokenType ||
+//         typ === EnumToken.ImageFunctionTokenType ||
+//         typ === EnumToken.TimelineFunctionTokenType ||
+//         typ === EnumToken.TimingFunctionTokenType ||
+//         typ === EnumToken.MathFunctionTokenType ||
+//         typ === EnumToken.TransformFunctionTokenType
 //     );
 // }
 // https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Values_and_units#absolute_length_units

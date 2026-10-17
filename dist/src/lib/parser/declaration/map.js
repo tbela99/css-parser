@@ -2,18 +2,18 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 import { eq } from '../utils/eq.js';
 import { getConfig } from '../utils/config.js';
 import { matchType } from '../utils/type.js';
 import { EnumToken } from '../../ast/types.js';
-import { renderValue } from '../../printer/render.js';
 import { parseString } from '../parse.js';
 import { PropertySet } from './set.js';
 import { PROPERTYNAME } from '../../syntax/constants.js';
 import { cloneNode } from '../../ast/clone.js';
+import { printValue } from '../../printer/print.js';
 
 const propertiesConfig = getConfig();
 class PropertyMap {
@@ -284,7 +284,7 @@ class PropertyMap {
                         };
                     // @ts-ignore
                     const separator = this.config.separator
-                        ? renderValue({
+                        ? printValue({
                             ...this.config.separator,
                             typ: EnumToken[this.config.separator.typ],
                         })
@@ -294,7 +294,7 @@ class PropertyMap {
                     for (i = 0; i < declaration.val.length; i++) {
                         t = declaration.val[i];
                         if (!cache.has(t)) {
-                            cache.set(t, renderValue(t, { minify: true }));
+                            cache.set(t, printValue(t, { minify: true }));
                         }
                         if (t.typ == typ && separator == cache.get(t)) {
                             this.removeDefaults(map, value);
@@ -589,7 +589,7 @@ class PropertyMap {
                         //     <Token[]>[],
                         // );
                         if (props.default.includes(curr[1][i]
-                            .reduce((acc, curr) => acc + renderValue(curr) + " ", "")
+                            .reduce((acc, curr) => acc + printNode(curr) + " ", "")
                             .trimEnd())) {
                             if (!propertiesMapping[curr[0]].required) {
                                 continue;
@@ -691,7 +691,7 @@ class PropertyMap {
                 }, []);
                 if (this.config.mapping != null) {
                     const val = values.reduce((acc, curr) => acc +
-                        renderValue(curr, {
+                        printNode(curr, {
                             removeComments: true,
                             minify: true,
                         }), "");

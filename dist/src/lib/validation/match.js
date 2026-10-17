@@ -2,13 +2,13 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 import { getParsedSyntax, getSyntaxConfig } from './config.js';
 import { EnumToken } from '../ast/types.js';
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum, MediaFeatureType } from './parser/typedef.js';
-import { LOCSTA, tokensfuncDefMap, tokensfuncSet, funcLike, mFLT, mFGT } from '../syntax/constants.js';
+import { tokensfuncDefMap, LOCSTA, tokensfuncSet, funcLike, mFLT, mFGT } from '../syntax/constants.js';
 import { isColor } from '../syntax/syntax.js';
 import { equalsIgnoreCase } from '../parser/utils/text.js';
 import { cloneNode } from '../ast/clone.js';
@@ -41,11 +41,12 @@ funcTypes.push(EnumToken.FunctionTokenType, EnumToken.PseudoClassFuncTokenType);
  * @param tokens
  * @returns
  */
-function trimArray(tokens) {
-    while (tokens[0]?.typ === EnumToken.WhitespaceTokenType) {
+function trimArray(tokens, options) {
+    const arena = options.arena;
+    while (arena.getType(tokens[0]) === EnumToken.WhitespaceTokenType) {
         tokens.shift();
     }
-    while (tokens[tokens.length - 1]?.typ === EnumToken.WhitespaceTokenType) {
+    while (arena.getType(tokens[tokens.length - 1]) === EnumToken.WhitespaceTokenType) {
         tokens.pop();
     }
     return tokens;
@@ -133,8 +134,7 @@ function isMFValue(featureName, tokens, isMFRange) {
         case MediaFeatureType.RatioType:
             return {
                 valid: true,
-                success: (tokens.length == 1 &&
-                    tokens[0].typ == EnumToken.NumberTokenType) ||
+                success: (tokens.length == 1 && tokens[0].typ == EnumToken.NumberTokenType) ||
                     (tokens.length === 3 &&
                         tokens[0].typ == EnumToken.NumberTokenType &&
                         typeof tokens[0].val === "number" &&
@@ -156,9 +156,10 @@ function isMFValue(featureName, tokens, isMFRange) {
  * @param tokens
  * @returns
  */
-function createValidationContext(tokens) {
-    tokens = trimArray(tokens.filter((t) => t.typ !== EnumToken.CommentTokenType));
-    if (tokens.at(-1)?.typ === EnumToken.ImportantTokenType) {
+function createValidationContext(tokens, options) {
+    const arena = options.arena;
+    tokens = trimArray(tokens.filter((t) => arena.getType(t) !== EnumToken.CommentTokenType));
+    if (arena.getType(tokens.at(-1)) === EnumToken.ImportantTokenType) {
         tokens.pop();
         trimArray(tokens);
     }
@@ -313,15 +314,22 @@ function createValidationContext(tokens) {
 function matchSelectorSyntax(stream, errors, options, nested = true) {
     const stack = [];
     const tokens = [];
+    const arena = options.arena;
     let token;
     let i = 0;
     let success = true;
-    while (i < stream.length &&
-        (stream[i].typ === EnumToken.WhitespaceTokenType || stream[i].typ === EnumToken.CommentTokenType)) {
+    let typ;
+    let val;
+    while (i < stream.length) {
+        typ = arena.getType(stream[i]);
+        if (typ !== EnumToken.WhitespaceTokenType && typ !== EnumToken.CommentTokenType) {
+            break;
+        }
         i++;
     }
     if (i < stream.length) {
-        switch (stream[i].typ) {
+        typ = arena.getType(stream[i]);
+        switch (typ) {
             case EnumToken.Plus:
             case EnumToken.Tilda:
             case EnumToken.GtTokenType:
@@ -335,10 +343,10 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                         errors: [
                             {
                                 action: "drop",
-                                message: `Unexpected token ${EnumToken[stream[i].typ]}`,
+                                message: `Unexpected token ${EnumToken[typ]}`,
                                 node: stream[i],
                                 // @ts-expect-error
-                                location: options.source.getSourceLocation(stream[i][LOCSTA]),
+                                location: options.source.getSourceLocation(arena.getSpanStart(stream[i])),
                             },
                         ],
                     };
@@ -347,29 +355,31 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
     }
     for (; i < stream.length; i++) {
         token = stream[i];
-        if (token.typ === EnumToken.Star) {
-            token.typ = EnumToken.UniversalSelectorTokenType;
+        typ = arena.getType(token);
+        if (typ === EnumToken.Star) {
+            typ = EnumToken.UniversalSelectorTokenType;
         }
         tokens.push(token);
-        if (tokensfuncDefMap.has(token.typ)) {
-            if (stack.length > 0 && selectorNodeTypes.includes(stack.at(-1).typ)) {
+        if (tokensfuncDefMap.has(typ)) {
+            if (stack.length > 0 && selectorNodeTypes.includes(arena.getType(stack.at(-1)))) {
                 stack.pop();
             }
             stack.push(token);
             continue;
         }
         if (stack.length > 0 &&
-            selectorNodeTypes.includes(stack.at(-1).typ) &&
-            !selectorNodeTypes.includes(token.typ) &&
-            token.typ !== EnumToken.WhitespaceTokenType &&
-            token.typ !== EnumToken.CommentTokenType &&
-            token.typ !== EnumToken.CDOCOMMTokenType) {
+            selectorNodeTypes.includes(arena.getType(stack.at(-1))) &&
+            !selectorNodeTypes.includes(typ) &&
+            typ !== EnumToken.WhitespaceTokenType &&
+            typ !== EnumToken.CommentTokenType &&
+            typ !== EnumToken.CDOCOMMTokenType) {
             stack.pop();
         }
-        switch (token.typ) {
+        switch (typ) {
             case EnumToken.PseudoClassFuncTokenType:
                 {
-                    const result = matchAllSyntaxes(getParsedSyntax(ValidationSyntaxGroupEnum.Selectors, token.val + "()")?.[0]?.chi ?? [], createValidationContext(token.chi), options);
+                    val = arena.getValue(token);
+                    const result = matchAllSyntaxes(getParsedSyntax(ValidationSyntaxGroupEnum.Selectors, val + "()")?.[0]?.chi ?? [], createValidationContext(arena.children(token), options), options);
                     if (!result.success) {
                         success = false;
                         if (result.errors.length > 0) {
@@ -394,41 +404,43 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                                 message: `Nesting selector is not allowed`,
                                 node: token,
                                 // @ts-expect-error
-                                location: options.source.getSourceLocation(token[LOCSTA]),
+                                location: options.source.getSourceLocation(arena.getSpanStart(token)),
                             },
                         ],
                     };
                 }
                 break;
             case EnumToken.Plus:
-                Object.assign(token, { typ: EnumToken.NextSiblingCombinatorTokenType });
+                arena.set(token, EnumToken.SubsequentSiblingCombinatorTokenType, 0);
+                // Object.assign(token, { typ: EnumToken.NextSiblingCombinatorTokenType });
                 stack.push(token);
                 break;
             case EnumToken.Tilda:
             case EnumToken.GtTokenType:
-                Object.assign(token, { typ: selectorEnumMap.get(token.typ) });
+                arena.set(token, selectorEnumMap.get(typ));
+            // Object.assign(token, { typ: selectorEnumMap.get(token.typ)! });
             case EnumToken.ColumnCombinatorTokenType:
             case EnumToken.ChildCombinatorTokenType:
             case EnumToken.UniversalSelectorTokenType:
             case EnumToken.DescendantCombinatorTokenType:
             case EnumToken.NextSiblingCombinatorTokenType:
             case EnumToken.SubsequentSiblingCombinatorTokenType:
-                if (stream[i + 1]?.typ === EnumToken.WhitespaceTokenType) {
+                if (arena.getType(stream[i + 1]) === EnumToken.WhitespaceTokenType) {
                     i++;
                 }
-                if (stack.length > 0 && stack.at(-1)?.typ === EnumToken.UniversalSelectorTokenType) {
+                if (stack.length > 0 && arena.getType(stack.at(-1)) === EnumToken.UniversalSelectorTokenType) {
                     stack.pop();
                 }
-                if (stack.length > 0 && selectorNodeTypes.includes(stack.at(-1)?.typ)) {
+                if (stack.length > 0 && selectorNodeTypes.includes(arena.getType(stack.at(-1)))) {
                     return {
                         success: false,
                         errors: [
                             {
                                 action: "drop",
-                                message: `Unexpected combinator ${EnumToken[token.typ]}`,
+                                message: `Unexpected combinator ${EnumToken[typ]}`,
                                 node: token,
                                 // @ts-expect-error
-                                location: options.source.getSourceLocation(token[LOCSTA]),
+                                location: options.source.getSourceLocation(arena.getSpanStart(token)),
                             },
                         ],
                     };
@@ -436,10 +448,20 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                 stack.push(token);
                 break;
             case EnumToken.CommaTokenType:
-                if (stack.length > 0 && stack.at(-1).typ === EnumToken.UniversalSelectorTokenType) {
+                if (stack.length > 0 && arena.getType(stack.at(-1)) === EnumToken.UniversalSelectorTokenType) {
                     stack.pop();
                 }
                 stack.push(token);
+                if (!nested) {
+                    let k = i + 1;
+                    while (k < stream.length) {
+                        typ = arena.getType(stream[k]);
+                        if (typ !== EnumToken.WhitespaceTokenType && typ !== EnumToken.CommentTokenType) {
+                            break;
+                        }
+                        k++;
+                    }
+                }
                 break;
             case EnumToken.Pipe:
             case EnumToken.DelimTokenType:
@@ -460,19 +482,19 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                 stack.push(token);
                 break;
             case EnumToken.AttrEndTokenType:
-                if (stack.length > 0 && stack.at(-1).typ === EnumToken.UniversalSelectorTokenType) {
+                if (stack.length > 0 && arena.getType(stack.at(-1)) === EnumToken.UniversalSelectorTokenType) {
                     stack.pop();
                 }
-                if (stack.at(-1)?.typ !== EnumToken.AttrStartTokenType) {
+                if (arena.getType(stack.at(-1)) !== EnumToken.AttrStartTokenType) {
                     return {
                         success: false,
                         errors: [
                             {
                                 action: "drop",
-                                message: `Unexpected token ${EnumToken[token.typ]}`,
+                                message: `Unexpected token ${EnumToken[typ]}`,
                                 node: token,
                                 // @ts-expect-error
-                                location: options.source.getSourceLocation(token[LOCSTA]),
+                                location: options.source.getSourceLocation(arena.getSpanStart(token)),
                             },
                         ],
                     };
@@ -482,17 +504,18 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                     let index = tokens.indexOf(stack.at(-1));
                     const slice = [];
                     for (let n = index + 1; n < k; n++) {
-                        if (tokens[n].typ === EnumToken.WhitespaceTokenType ||
-                            tokens[n].typ === EnumToken.CommentTokenType ||
-                            tokens[n].typ === EnumToken.CDOCOMMTokenType) {
+                        typ = arena.getType(tokens[n]);
+                        if (typ === EnumToken.WhitespaceTokenType ||
+                            typ === EnumToken.CommentTokenType ||
+                            typ === EnumToken.CDOCOMMTokenType) {
                             continue;
                         }
                         slice.push(tokens[n]);
                     }
-                    if (slice[1]?.typ === EnumToken.Pipe) {
+                    if (arena.getType(slice[1]) === EnumToken.Pipe) {
                         slice.shift();
                     }
-                    if (slice[0].typ === EnumToken.Pipe) {
+                    if (arena.getType(slice[0]) === EnumToken.Pipe) {
                         slice.shift();
                     }
                     if (slice.length === 1) {
@@ -501,29 +524,29 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                     }
                     slice.shift();
                     slice.shift();
-                    if (slice[0]?.typ === EnumToken.StringTokenType &&
-                        /^[a-zA-Z0-9_-]+$/.test(slice[0].val.slice(1, -1))) {
-                        Object.assign(slice[0], {
-                            typ: EnumToken.IdenTokenType,
-                            val: slice[0].val.slice(1, -1),
-                        });
+                    if (arena.getType(slice[0]) === EnumToken.StringTokenType) {
+                        val = arena.getValue(slice[0]);
+                        if (/^[a-zA-Z0-9_-]+$/.test(val.slice(1, -1))) {
+                            arena.set(slice[0], EnumToken.IdenTokenType, val.slice(1, -1));
+                        }
                     }
                     slice.shift();
                     if (slice.length === 0) {
                         stack.pop();
                         break;
                     }
-                    if (slice[0].typ !== EnumToken.IdenTokenType ||
-                        (slice[0].val != "i" && slice[0].val != "s")) {
+                    val = arena.getValue(slice[0]);
+                    if (arena.getType(slice[0]) !== EnumToken.IdenTokenType ||
+                        (val != "i" && val != "s")) {
                         return {
                             success: false,
                             errors: [
                                 {
                                     action: "drop",
-                                    message: `Unexpected token ${EnumToken[slice[0].typ]}`,
+                                    message: `Unexpected token ${EnumToken[arena.getType(slice[0])]}`,
                                     node: slice[0],
                                     // @ts-expect-error
-                                    location: options.source.getSourceLocation(slice[0][LOCSTA]),
+                                    location: options.source.getSourceLocation(arena.getSpanStart(slice[0])),
                                 },
                             ],
                         };
@@ -538,19 +561,19 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                     errors: [
                         {
                             action: "drop",
-                            message: `Unexpected token ${EnumToken[token.typ]}`,
+                            message: `Unexpected token ${EnumToken[typ]}`,
                             node: token,
                             // @ts-expect-error
-                            location: options.source.getSourceLocation(token[LOCSTA]),
+                            location: options.source.getSourceLocation(arena.getSpanStart(token)),
                         },
                     ],
                 };
             case EnumToken.EndParensTokenType:
-                if (stack.length > 0 && stack.at(-1)?.typ === EnumToken.UniversalSelectorTokenType) {
+                if (stack.length > 0 && arena.getType(stack.at(-1)) === EnumToken.UniversalSelectorTokenType) {
                     stack.pop();
                 }
-                if (stack.at(-1)?.typ === EnumToken.PseudoClassFunctionTokenDefType ||
-                    stack.at(-1)?.typ === EnumToken.PseudoElementTokenType) {
+                if (arena.getType(stack.at(-1)) === EnumToken.PseudoClassFunctionTokenDefType ||
+                    arena.getType(stack.at(-1)) === EnumToken.PseudoElementTokenType) {
                     const token = stack.at(-1);
                     const index = tokens.indexOf(token);
                     const result = matchAllSyntaxes(getParsedSyntax(ValidationSyntaxGroupEnum.Selectors, token.val + "()")?.[0]?.chi ?? [], createValidationContext(tokens.slice(index + 1, tokens.length - 1)), options);
@@ -570,10 +593,10 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                     errors: [
                         {
                             action: "drop",
-                            message: `Unexpected token ${EnumToken[token.typ]}`,
+                            message: `Unexpected token ${EnumToken[typ]}`,
                             node: token,
                             // @ts-expect-error
-                            location: options.source.getSourceLocation(token[LOCSTA]),
+                            location: options.source.getSourceLocation(arena.getSpanStart(token)),
                         },
                     ],
                 };
@@ -583,7 +606,7 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                 // if (stack.at(-1)?.typ === EnumToken.CommaTokenType) {
                 //     stack.pop();
                 // }
-                if (stack.at(-1)?.typ === EnumToken.PseudoClassFunctionTokenDefType) {
+                if (arena.getType(stack.at(-1)) === EnumToken.PseudoClassFunctionTokenDefType) {
                     break;
                 }
             default:
@@ -592,10 +615,10 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                     errors: [
                         {
                             action: "drop",
-                            message: `Unsupported selector token ${EnumToken[token.typ]}`,
+                            message: `Unsupported selector token ${EnumToken[typ]}`,
                             node: token,
                             // @ts-expect-error
-                            location: options.source.getSourceLocation(token[LOCSTA]),
+                            location: options.source.getSourceLocation(arena.getSpanStart(token)),
                         },
                     ],
                 };
@@ -609,7 +632,7 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
             tokens.splice(tokens.length - 2, 1);
         }
     }
-    if (stack.length > 0 && stack.at(-1).typ === EnumToken.UniversalSelectorTokenType) {
+    if (stack.length > 0 && arena.getType(stack.at(-1)) === EnumToken.UniversalSelectorTokenType) {
         stack.pop();
     }
     if (stack.length > 0) {
@@ -618,10 +641,10 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
             errors: [
                 {
                     action: "drop",
-                    message: `Unmatched token ${EnumToken[stack.at(-1).typ]}`,
+                    message: `Unmatched token ${EnumToken[arena.getType(stack.at(-1))]}`,
                     node: stack.at(-1),
                     // @ts-expect-error
-                    location: options.source.getSourceLocation(stack.at(-1)[LOCSTA]),
+                    location: options.source.getSourceLocation(arena.getSpanStart(stack.at(-1))),
                 },
             ],
         };
@@ -1702,17 +1725,15 @@ function matchProperty(property, context, options) {
         case "display-internal":
         case "display-outside":
         case "display-legacy":
-        case "content-position":
-            {
-                let values = propertyKeywordValues.get(property.val);
-                if (values == null) {
-                    values = new Set(config.syntaxes[property.val].syntax.split(/[\s|]+/));
-                    propertyKeywordValues.set(property.val, values);
-                }
-                success =
-                    token?.typ == EnumToken.IdenTokenType && values.has(token.val.toLowerCase());
-                break;
+        case "content-position": {
+            let values = propertyKeywordValues.get(property.val);
+            if (values == null) {
+                values = new Set(config.syntaxes[property.val].syntax.split(/[\s|]+/));
+                propertyKeywordValues.set(property.val, values);
             }
+            success = token?.typ == EnumToken.IdenTokenType && values.has(token.val.toLowerCase());
+            break;
+        }
         case "mf-name":
             {
                 const token = context.peek();
@@ -1732,8 +1753,7 @@ function matchProperty(property, context, options) {
         case "custom-ident":
         case "counter-name":
         case "counter-style-name":
-            success =
-                token?.typ == EnumToken.IdenTokenType || token?.typ == EnumToken.DashedIdenTokenType;
+            success = token?.typ == EnumToken.IdenTokenType || token?.typ == EnumToken.DashedIdenTokenType;
             if (success && token?.typ === EnumToken.IdenTokenType) {
                 const val = token.val.toLowerCase();
                 success = "none" !== val && !allValues.includes(val);

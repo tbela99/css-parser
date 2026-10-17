@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 import { EnumToken } from '../ast/types.js';
@@ -20,7 +20,6 @@ const LOCEND = Symbol.for("locEnd");
 const LOC = Symbol.for("loc");
 const RAW = Symbol.for("raw");
 const STATE = Symbol.for("state");
-const ROOT = Symbol.for("root");
 const ERRORS = Symbol.for("errors");
 const TOKENS = Symbol.for("tokens");
 const PARENT = Symbol.for("parent");
@@ -506,4 +505,4 @@ const trimTokenSpace = new Set([
 ]);
 const combinators = ["+", ">", "~", "||", "|"];
 
-export { COLORS_NAMES, D50, ERRORS, LOC, LOCEND, LOCSRCID, LOCSTA, NAMES_COLORS, OPTIMIZED, PARENT, PROPERTYNAME, RAW, ROOT, STATE, TOKENS, anglePrecision, colorDistancePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, deprecatedSystemColors, e, epsilon, funcLike, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, pseudoElements, regMatchLinearGradient, regMatchRadialGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };
+export { COLORS_NAMES, D50, ERRORS, LOC, LOCEND, LOCSRCID, LOCSTA, NAMES_COLORS, OPTIMIZED, PARENT, PROPERTYNAME, RAW, STATE, TOKENS, anglePrecision, colorDistancePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, deprecatedSystemColors, e, epsilon, funcLike, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, pseudoElements, regMatchLinearGradient, regMatchRadialGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };

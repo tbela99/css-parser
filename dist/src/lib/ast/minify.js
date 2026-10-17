@@ -2,11 +2,11 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 import { eq } from '../parser/utils/eq.js';
-import { renderValue, doRender } from '../printer/render.js';
+import { doRender } from '../printer/render.js';
 import * as index from './features/index.js';
 import { walkValues } from './walk.js';
 import { EnumToken } from './types.js';
@@ -280,7 +280,7 @@ function minifyAtRuleMedia(tokens) {
         if (result.hasUpdates) {
             hasUpdates = true;
         }
-        acc.set(values.reduce((acc, t) => acc + renderValue(t), ""), result.values);
+        acc.set(values.reduce((acc, t) => acc + printValue(t), ""), result.values);
         return acc;
     }, new Map());
     if (sections.has("all")) {
@@ -428,7 +428,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                         (index + 3 < arr.length ||
                                             arr[index + 2]?.typ === EnumToken.WhitespaceTokenType))
                                     ? ""
-                                    : renderValue(curr)), "");
+                                    : printValue(curr)), "");
                         }
                     }
                     if (["all", "", null].includes(node.val)) {
@@ -456,7 +456,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                     arr[index + 1]?.typ === EnumToken.CommentTokenType &&
                                     (index + 3 < arr.length || arr[index + 2].typ === EnumToken.WhitespaceTokenType))
                                 ? ""
-                                : renderValue(curr)), "");
+                                : printValue(curr)), "");
                     }
                 }
                 else if (ast.typ === node.typ &&
@@ -1247,7 +1247,7 @@ function fixSelector(node) {
                 }
             }
         }
-        node.sel = attributes.reduce((acc, curr) => acc + renderValue(curr), "");
+        node.sel = attributes.reduce((acc, curr) => acc + printValue(curr), "");
         node[TOKENS] = null;
     }
 }

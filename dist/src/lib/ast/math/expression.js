@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
@@ -90,7 +90,7 @@ function evaluate(tokens) {
         if (token.typ == EnumToken.Sub) {
             if (!isScalarToken(nodes[i + 1])) {
                 token = {
-                    typ: EnumToken.ListToken,
+                    typ: EnumToken.ListTokenType,
                     chi: [nodes[i], nodes[i + 1]],
                     [LOCSRCID]: nodes[i][LOCSRCID],
                     [LOCSTA]: nodes[i][LOCSTA],
@@ -138,7 +138,7 @@ function evaluate(tokens) {
                 return acc;
             }
         }
-        if (acc.length > 0 && curr[0] != EnumToken.ListToken) {
+        if (acc.length > 0 && curr[0] != EnumToken.ListTokenType) {
             acc.push({
                 typ: EnumToken.Add,
                 [LOCSRCID]: token[LOCSRCID],
@@ -829,7 +829,7 @@ function factor(tokens, ops) {
         return [factorToken(tokens[0])];
     }
     for (let i = 0; i < tokens.length; i++) {
-        if (tokens[i].typ == EnumToken.ListToken) {
+        if (tokens[i].typ == EnumToken.ListTokenType) {
             // @ts-ignore
             tokens.splice(i, 1, ...tokens[i].chi);
         }

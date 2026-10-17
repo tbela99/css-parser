@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 /**
@@ -55,49 +55,26 @@ var EnumAstNodeStatus;
      */
     EnumAstNodeStatus[EnumAstNodeStatus["Malformed"] = 128] = "Malformed";
     /**
+     * Node has children
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["HasChildren"] = 256] = "HasChildren";
+    /**
+     * Node has values
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["HasValues"] = 512] = "HasValues";
+    /**
+     * Node has fraction value
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["HasFractionValue"] = 1024] = "HasFractionValue";
+    /**
      * Important declaration
      */
-    EnumAstNodeStatus[EnumAstNodeStatus["ImportantDeclaration"] = 256] = "ImportantDeclaration";
+    EnumAstNodeStatus[EnumAstNodeStatus["ImportantDeclaration"] = 2048] = "ImportantDeclaration";
     /**
      * Color component without unit
      */
-    EnumAstNodeStatus[EnumAstNodeStatus["PowerlessColorComponent"] = 512] = "PowerlessColorComponent";
+    EnumAstNodeStatus[EnumAstNodeStatus["PowerlessColorComponent"] = 4096] = "PowerlessColorComponent";
 })(EnumAstNodeStatus || (EnumAstNodeStatus = {}));
-/**
- * Enum of validation levels
- * @deprecated
- */
-var ValidationLevel;
-(function (ValidationLevel) {
-    /**
-     * disable validation
-     */
-    ValidationLevel[ValidationLevel["None"] = 0] = "None";
-    /**
-     * validate selectors
-     */
-    ValidationLevel[ValidationLevel["Selector"] = 1] = "Selector";
-    /**
-     * validate at-rules
-     */
-    ValidationLevel[ValidationLevel["AtRule"] = 2] = "AtRule";
-    /**
-     * validate declarations
-     */
-    ValidationLevel[ValidationLevel["Declaration"] = 4] = "Declaration";
-    /**
-     * validate selectors and at-rules
-     */
-    ValidationLevel[ValidationLevel["Default"] = 3] = "Default";
-    /**
-     * validate selectors, at-rules and declarations
-     */
-    ValidationLevel[ValidationLevel["All"] = 7] = "All";
-    /**
-     * Report only. Apply validation and report nodes that are marked as invalid
-     */
-    ValidationLevel[ValidationLevel["ReportOnly"] = 8] = "ReportOnly";
-})(ValidationLevel || (ValidationLevel = {}));
 /**
  * Enum of all token types
  */
@@ -342,7 +319,7 @@ var EnumToken;
     /**
      *  token list token type
      */
-    EnumToken[EnumToken["ListToken"] = 59] = "ListToken";
+    EnumToken[EnumToken["ListTokenType"] = 59] = "ListTokenType";
     /* arithmetic tokens */
     /**
      * addition token type
@@ -805,135 +782,135 @@ var ColorType;
     /**
      * deprecated system colors
      */
-    ColorType[ColorType["SYS"] = 0] = "SYS";
+    ColorType[ColorType["SYS"] = 1] = "SYS";
     /**
      * deprecated system colors
      */
-    ColorType[ColorType["DPSYS"] = 1] = "DPSYS";
+    ColorType[ColorType["DPSYS"] = 2] = "DPSYS";
     /**
      * named colors
      */
-    ColorType[ColorType["LIT"] = 2] = "LIT";
+    ColorType[ColorType["LIT"] = 3] = "LIT";
     /**
      * colors as hex values
      */
-    ColorType[ColorType["HEX"] = 3] = "HEX";
+    ColorType[ColorType["HEX"] = 4] = "HEX";
     /**
      * colors as rgb values
      */
-    ColorType[ColorType["RGBA"] = 4] = "RGBA";
+    ColorType[ColorType["RGBA"] = 5] = "RGBA";
     /**
      * colors using rgb
      */
-    ColorType[ColorType["HSLA"] = 5] = "HSLA";
+    ColorType[ColorType["HSLA"] = 6] = "HSLA";
     /**
      * colors using hwb
      */
-    ColorType[ColorType["HWB"] = 6] = "HWB";
+    ColorType[ColorType["HWB"] = 7] = "HWB";
     /**
      * colors using cmyk
      */
-    ColorType[ColorType["CMYK"] = 7] = "CMYK";
+    ColorType[ColorType["CMYK"] = 8] = "CMYK";
     /**
      * colors using oklab
      * */
-    ColorType[ColorType["OKLAB"] = 8] = "OKLAB";
+    ColorType[ColorType["OKLAB"] = 9] = "OKLAB";
     /**
      * colors using oklch
      * */
-    ColorType[ColorType["OKLCH"] = 9] = "OKLCH";
+    ColorType[ColorType["OKLCH"] = 10] = "OKLCH";
     /**
      * colors using lab
      */
-    ColorType[ColorType["LAB"] = 10] = "LAB";
+    ColorType[ColorType["LAB"] = 11] = "LAB";
     /**
      * colors using lch
      */
-    ColorType[ColorType["LCH"] = 11] = "LCH";
+    ColorType[ColorType["LCH"] = 12] = "LCH";
     /**
      * colors using color() function
      */
-    ColorType[ColorType["COLOR"] = 12] = "COLOR";
+    ColorType[ColorType["COLOR"] = 13] = "COLOR";
     /**
      * color using srgb
      */
-    ColorType[ColorType["SRGB"] = 13] = "SRGB";
+    ColorType[ColorType["SRGB"] = 14] = "SRGB";
     /**
      * color using prophoto-rgb
      */
-    ColorType[ColorType["PROPHOTO_RGB"] = 14] = "PROPHOTO_RGB";
+    ColorType[ColorType["PROPHOTO_RGB"] = 15] = "PROPHOTO_RGB";
     /**
      * color using a98-rgb
      */
-    ColorType[ColorType["A98_RGB"] = 15] = "A98_RGB";
+    ColorType[ColorType["A98_RGB"] = 16] = "A98_RGB";
     /**
      * color using rec2020
      */
-    ColorType[ColorType["REC2020"] = 16] = "REC2020";
+    ColorType[ColorType["REC2020"] = 17] = "REC2020";
     /**
      * color using display-p3
      */
-    ColorType[ColorType["DISPLAY_P3"] = 17] = "DISPLAY_P3";
+    ColorType[ColorType["DISPLAY_P3"] = 18] = "DISPLAY_P3";
     /**
      * color using srgb-linear
      */
-    ColorType[ColorType["SRGB_LINEAR"] = 18] = "SRGB_LINEAR";
+    ColorType[ColorType["SRGB_LINEAR"] = 19] = "SRGB_LINEAR";
     /**
      * color using xyz-d50
      */
-    ColorType[ColorType["XYZ_D50"] = 19] = "XYZ_D50";
+    ColorType[ColorType["XYZ_D50"] = 20] = "XYZ_D50";
     /**
      * color using xyz-d65
      */
-    ColorType[ColorType["XYZ_D65"] = 20] = "XYZ_D65";
+    ColorType[ColorType["XYZ_D65"] = 21] = "XYZ_D65";
     /**
      * light-dark() color function
      */
-    ColorType[ColorType["LIGHT_DARK"] = 21] = "LIGHT_DARK";
+    ColorType[ColorType["LIGHT_DARK"] = 22] = "LIGHT_DARK";
     /**
      * color-mix() color function
      */
-    ColorType[ColorType["COLOR_MIX"] = 22] = "COLOR_MIX";
+    ColorType[ColorType["COLOR_MIX"] = 23] = "COLOR_MIX";
     /**
      * non-standard color
      */
-    ColorType[ColorType["NON_STD"] = 23] = "NON_STD";
+    ColorType[ColorType["NON_STD"] = 24] = "NON_STD";
     /**
      * custom color
      */
-    ColorType[ColorType["CUSTOM_COLOR"] = 24] = "CUSTOM_COLOR";
+    ColorType[ColorType["CUSTOM_COLOR"] = 25] = "CUSTOM_COLOR";
     /**
      * alpha() color function
      */
-    ColorType[ColorType["ALPHA"] = 25] = "ALPHA";
+    ColorType[ColorType["ALPHA"] = 26] = "ALPHA";
     /**
      * color using display-p3-linear
      */
-    ColorType[ColorType["DISPLAY_P3_LINEAR"] = 26] = "DISPLAY_P3_LINEAR";
+    ColorType[ColorType["DISPLAY_P3_LINEAR"] = 27] = "DISPLAY_P3_LINEAR";
     /**
      * Contrast color
      */
-    ColorType[ColorType["CONTRAST_COLOR"] = 27] = "CONTRAST_COLOR";
+    ColorType[ColorType["CONTRAST_COLOR"] = 28] = "CONTRAST_COLOR";
     /**
      * color layers
      */
-    ColorType[ColorType["COLOR_LAYERS"] = 28] = "COLOR_LAYERS";
+    ColorType[ColorType["COLOR_LAYERS"] = 29] = "COLOR_LAYERS";
     /**
      * alias for rgba
      */
-    ColorType[ColorType["RGB"] = 4] = "RGB";
+    ColorType[ColorType["RGB"] = 5] = "RGB";
     /**
      * alias for hsl
      */
-    ColorType[ColorType["HSL"] = 5] = "HSL";
+    ColorType[ColorType["HSL"] = 6] = "HSL";
     /**
      * alias for xyz-d65
      */
-    ColorType[ColorType["XYZ"] = 20] = "XYZ";
+    ColorType[ColorType["XYZ"] = 21] = "XYZ";
     /**
      * alias for cmyk
      */
-    ColorType[ColorType["DEVICE_CMYK"] = 7] = "DEVICE_CMYK";
+    ColorType[ColorType["DEVICE_CMYK"] = 8] = "DEVICE_CMYK";
 })(ColorType || (ColorType = {}));
 /**
  * Supported module case transform
@@ -1004,4 +981,4 @@ var ModuleScopeEnumOptions;
     ModuleScopeEnumOptions[ModuleScopeEnumOptions["Shortest"] = 512] = "Shortest";
 })(ModuleScopeEnumOptions || (ModuleScopeEnumOptions = {}));
 
-export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SyntaxValidationResult, ValidationLevel };
+export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SyntaxValidationResult };

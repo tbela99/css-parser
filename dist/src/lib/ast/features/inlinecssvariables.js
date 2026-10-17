@@ -2,12 +2,11 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 import { EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
-import { renderValue } from '../../printer/render.js';
 import { splitRule } from '../minify.js';
 import { FeatureWalkMode } from './type.js';
 import { RAW, mathFuncs } from '../../syntax/constants.js';
@@ -143,7 +142,7 @@ class InlineCssVariablesFeature {
                             // @ts-ignore
                             parent.chi.splice(i, 1, {
                                 typ: EnumToken.CommentTokenType,
-                                val: `/* ${info.node.nam}: ${info.values.reduce((acc, curr) => acc + renderValue(curr, { convertColor: false }), "")} */`,
+                                val: `/* ${info.node.nam}: ${info.values.reduce((acc, curr) => acc + printNode(curr, { convertColor: false }), "")} */`,
                             });
                             break;
                         }

@@ -396,7 +396,7 @@ export function parseDeclaration(
                     );
 
                     arena.setChildren(tokens[index], ...trimArray(tokens.splice(index + 1, i - index - 1), options));
-
+                    
                     // Object.assign(tokens[index], {
                     //     typ:
                     //         stack.at(-1)?.typ === EnumToken.StartParensTokenType

@@ -2,14 +2,13 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 import { splitRule } from './minify.js';
 import { STATE, PARENT, combinators, RAW } from '../syntax/constants.js';
 import { parseString } from '../parser/parse.js';
 import { walkValues } from './walk.js';
-import { renderValue } from '../printer/render.js';
 import { EnumAstNodeStatus, EnumToken } from './types.js';
 import { cloneNode } from './clone.js';
 
@@ -288,7 +287,7 @@ function replaceCompound(input, replace) {
             });
         }
     }
-    return tokens.reduce((acc, curr) => acc + renderValue(curr), "");
+    return tokens.reduce((acc, curr) => acc + printValue(curr), "");
 }
 function replaceCompoundLiteral(selector, replace) {
     const tokens = [""];

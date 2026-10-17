@@ -1,5 +1,3 @@
-import { ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from "../../../dist/src/lib/ast/types.js";
-
 export function run(
     describe,
     expect,

@@ -2,18 +2,17 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 import { isIdentColor, parseColor, isColor } from '../syntax/syntax.js';
 import { camelize, equalsIgnoreCase, dasherize } from './utils/text.js';
-import { renderValue } from '../printer/render.js';
 import { EnumToken, EnumAstNodeStatus, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from '../ast/types.js';
 import { minify } from '../ast/minify.js';
 import { expand } from '../ast/expand.js';
 import { walk, walkValues, WalkerEvent } from '../ast/walk.js';
 import { Tokenizer } from './tokenize.js';
-import { LOCSRCID, LOCSTA, LOCEND, tokensfuncDefMap, STATE, PARENT, TOKENS, ROOT, ERRORS, pageMarginBoxType } from '../syntax/constants.js';
+import { LOCSRCID, LOCSTA, LOCEND, tokensfuncDefMap, STATE, PARENT, TOKENS, ERRORS, pageMarginBoxType } from '../syntax/constants.js';
 import { hashAlgorithms, hash, syncHash } from './utils/hash.js';
 import { parseSelector } from './utils/selector.js';
 import { parseDeclaration } from './utils/declaration.js';
@@ -37,8 +36,8 @@ function renderTokens(tokens, options) {
     if (tokens == null || tokens.length === 0)
         return "";
     if (options != null)
-        return tokens.map((t) => renderValue(t, options)).join("");
-    return tokens.map((t) => renderValue(t)).join("");
+        return tokens.map((t) => printValue(t, options)).join("");
+    return tokens.map((t) => printValue(t)).join("");
 }
 const trimWhiteSpace = [
     EnumToken.CommentTokenType,
@@ -499,140 +498,159 @@ function doParseSync(tokenizer, options = {}) {
         imports: [],
     };
     const invalidNodes = [];
+    const arena = options.arena;
     let ast = {
         typ: EnumToken.StyleSheetNodeType,
         chi: [],
     };
     let tokens = [];
-    let context = ast;
-    let item;
+    let context = arena.root;
     let node;
     // @ts-ignore ignore error
     let parensMatch = 0;
     let curlyBracketMatch = 0;
+    let tokenId;
     // let currentItemIndex: number;
     ast[LOCSRCID] = options.source.id;
     ast[LOCSTA] = 0;
     while (!tokenizer.done()) {
         tokenizer.next();
         // item = (iter as Array<TokenizeResult>)[currentItemIndex];
+        tokenId = arena.allocate();
         if (tokenizer.unit != null) {
-            item = {
-                typ: tokenizer.typ,
-                val: tokenizer.val,
-                unit: tokenizer.unit,
-            };
+            arena.set(tokenId, tokenizer.typ, 0, tokenizer.val, arena.internString(tokenizer.unit));
+            // item = {
+            //     typ: tokenizer.typ as EnumToken,
+            //     val: tokenizer.val,
+            //     unit: tokenizer.unit,
+            // } as DimensionToken;
         }
         else if (tokenizer.nam != null) {
-            item = {
-                typ: tokenizer.typ,
-                nam: tokenizer.nam,
-            };
+            arena.set(tokenId, tokenizer.typ);
+            arena.setName(tokenId, arena.internString(tokenizer.nam));
+            // item = {
+            //     typ: tokenizer.typ as EnumToken,
+            //     nam: tokenizer.nam,
+            // } as Token;
         }
         else if (tokenizer.val === null) {
-            item = {
-                typ: tokenizer.typ,
-            };
+            arena.set(tokenId, tokenizer.typ);
+            // item = {
+            //     typ: tokenizer.typ as EnumToken,
+            // } as Token;
         }
         else if (tokenizer.kin != null) {
-            item = {
-                typ: tokenizer.typ,
-                val: tokenizer.val,
-                kin: tokenizer.kin,
-            };
+            arena.set(tokenId, tokenizer.typ, arena.internString(tokenizer.val));
+            arena.setColorType(tokenId, tokenizer.kin);
+            // item = {
+            //     typ: tokenizer.typ as EnumToken,
+            //     val: tokenizer.val,
+            //     kin: tokenizer.kin,
+            // } as ColorToken;
         }
         else {
-            item = {
-                typ: tokenizer.typ,
-                val: tokenizer.val,
-            };
+            arena.set(tokenId, tokenizer.typ, typeof tokenizer.val === "string" ? arena.internString(tokenizer.val) : 0, typeof tokenizer.val === "number" ? tokenizer.val : 0);
+            // item = {
+            //     typ: tokenizer.typ as EnumToken,
+            //     val: tokenizer.val,
+            // } as Token;
         }
-        item[LOCSRCID] = tokenizer.srcId;
-        item[LOCSTA] = tokenizer.sta;
-        item[LOCEND] = tokenizer.end;
+        arena.setSpan(tokenId, tokenizer.srcId, tokenizer.sta, tokenizer.end);
+        // item[LOCSRCID] = tokenizer.srcId as number;
+        // item[LOCSTA] = tokenizer.sta as number;
+        // item[LOCEND] = tokenizer.end as number;
         stats.bytesIn = tokenizer.bytesIn;
         stats.tokensCount++;
-        if (BadTokensTypes.includes(item.typ)) {
-            tokens.push(item);
+        if (BadTokensTypes.includes(tokenizer.typ)) {
+            tokens.push(tokenId);
             errors.push({
                 action: "drop",
                 message: "Bad token",
                 syntax: null,
-                node: item,
-                location: options.source.getSourceLocation(item[LOCSTA]),
+                node: tokenId,
+                location: options.source.getSourceLocation(tokenizer.sta),
             });
             // bad token
             continue;
         }
-        if (item.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(item.typ)) {
+        if (tokenizer.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(tokenizer.typ)) {
             parensMatch++;
         }
-        else if (item.typ === EnumToken.EndParensTokenType && parensMatch > 0) {
+        else if (tokenizer.typ === EnumToken.EndParensTokenType && parensMatch > 0) {
             parensMatch--;
         }
-        if (item.typ === EnumToken.BlockStartTokenType) {
+        if (tokenizer.typ === EnumToken.BlockStartTokenType) {
             curlyBracketMatch++;
         }
-        else if (item.typ === EnumToken.BlockEndTokenType && curlyBracketMatch > 0) {
+        else if (tokenizer.typ === EnumToken.BlockEndTokenType && curlyBracketMatch > 0) {
             curlyBracketMatch--;
         }
-        tokens.push(item);
+        tokens.push(tokenId);
         if (parensMatch === 0 &&
-            (item.typ === EnumToken.SemiColonTokenType ||
-                item.typ === EnumToken.BlockStartTokenType ||
-                item.typ === EnumToken.EOFTokenType)) {
+            (tokenizer.typ === EnumToken.SemiColonTokenType ||
+                tokenizer.typ === EnumToken.BlockStartTokenType ||
+                tokenizer.typ === EnumToken.EOFTokenType)) {
             node = parseNode(tokens, context, options, errors, stats, invalidNodes);
             if (node != null) {
-                if ("chi" in node) {
+                if (arena.hasFlags(node, EnumAstNodeStatus.HasChildren)) {
                     stack.push(node);
                     context = node;
                 }
             }
-            else if (item.typ == EnumToken.BlockStartTokenType) {
+            else if (tokenizer.typ == EnumToken.BlockStartTokenType) {
                 let inBlock = 1;
                 tokens.length = 0;
-                tokens.push(item);
+                tokens.push(tokenId);
                 do {
                     tokenizer.next();
+                    tokenId = arena.allocate();
                     if (tokenizer.unit != null) {
-                        item = {
-                            typ: tokenizer.typ,
-                            val: tokenizer.val,
-                            unit: tokenizer.unit,
-                        };
+                        arena.set(tokenId, tokenizer.typ, 0, tokenizer.val, arena.internString(tokenizer.unit));
+                        // item = {
+                        //     typ: tokenizer.typ as EnumToken,
+                        //     val: tokenizer.val,
+                        //     unit: tokenizer.unit,
+                        // } as DimensionToken;
                     }
                     else if (tokenizer.nam != null) {
-                        item = {
-                            typ: tokenizer.typ,
-                            nam: tokenizer.nam,
-                        };
+                        arena.set(tokenId, tokenizer.typ);
+                        arena.setName(tokenId, arena.internString(tokenizer.nam));
+                        // item = {
+                        //     typ: tokenizer.typ as EnumToken,
+                        //     nam: tokenizer.nam,
+                        // } as Token;
                     }
                     else if (tokenizer.val === null) {
-                        item = {
-                            typ: tokenizer.typ,
-                        };
+                        arena.set(tokenId, tokenizer.typ);
+                        // item = {
+                        //     typ: tokenizer.typ as EnumToken,
+                        // } as Token;
                     }
                     else if (tokenizer.kin != null) {
-                        item = {
-                            typ: tokenizer.typ,
-                            val: tokenizer.val,
-                            kin: tokenizer.kin,
-                        };
+                        arena.set(tokenId, tokenizer.typ, arena.internString(tokenizer.val));
+                        arena.setColorType(tokenId, tokenizer.kin);
+                        // item = {
+                        //     typ: tokenizer.typ as EnumToken,
+                        //     val: tokenizer.val,
+                        //     kin: tokenizer.kin,
+                        // } as ColorToken;
                     }
                     else {
-                        item = {
-                            typ: tokenizer.typ,
-                            val: tokenizer.val,
-                        };
+                        arena.set(tokenId, tokenizer.typ, arena.internString(tokenizer.val));
+                        // item = {
+                        //     typ: tokenizer.typ as EnumToken,
+                        //     val: tokenizer.val,
+                        // } as Token;
                     }
-                    item[LOCSRCID] = tokenizer.srcId;
-                    item[LOCSTA] = tokenizer.sta;
-                    item[LOCEND] = tokenizer.end;
-                    tokens.push(item);
-                    if (item.typ === EnumToken.BlockStartTokenType) {
+                    arena.setSpan(tokenId, tokenizer.srcId, tokenizer.sta, tokenizer.end);
+                    // item[LOCSRCID] = tokenizer.srcId as number;
+                    // item[LOCSTA] = tokenizer.sta as number;
+                    // item[LOCEND] = tokenizer.end as number;
+                    tokens.push(tokenId);
+                    if (tokenizer.typ === EnumToken.BlockStartTokenType) {
                         inBlock++;
                     }
-                    else if (item.typ === EnumToken.BlockEndTokenType) {
+                    else if (tokenizer.typ === EnumToken.BlockEndTokenType) {
                         inBlock--;
                     }
                 } while (inBlock != 0 && !tokenizer.done());
@@ -640,22 +658,22 @@ function doParseSync(tokenizer, options = {}) {
                     errors.push({
                         action: "drop",
                         message: "invalid block",
-                        location: options.source.getSourceLocation(tokens[0][LOCSTA]),
+                        location: options.source.getSourceLocation(tokenizer.sta),
                     });
                 }
             }
             tokens.length = 0;
         }
-        else if ((parensMatch === 0 || curlyBracketMatch === 0) && item.typ === EnumToken.BlockEndTokenType) {
+        else if ((parensMatch === 0 || curlyBracketMatch === 0) && tokenizer.typ === EnumToken.BlockEndTokenType) {
             parseNode(tokens, context, options, errors, stats, invalidNodes);
-            context[LOCEND] = item[LOCEND];
+            // context[LOCEND] = tokenizer.end as number;
             const previousNode = stack.pop();
-            context = (stack[stack.length - 1] ?? ast);
+            context = stack[stack.length - 1] ?? arena.root;
             if (options.removeEmpty &&
                 previousNode != null &&
-                previousNode.chi.length == 0 &&
-                context.chi[context.chi.length - 1] == previousNode) {
-                context.chi.pop();
+                arena.getFirstChild(previousNode) == 0 &&
+                arena.getLastChild(context) == previousNode) {
+                arena.detach(previousNode);
             }
             tokens.length = 0;
             parensMatch = 0;
@@ -666,7 +684,7 @@ function doParseSync(tokenizer, options = {}) {
     if (tokens.length > 0) {
         node = parseNode(tokens, context, options, errors, stats, invalidNodes);
         if (node != null) {
-            if ("chi" in node /* && node.typ != EnumToken.InvalidRuleNodeType */) {
+            if (arena.hasFlags(node, EnumAstNodeStatus.HasChildren)) {
                 stack.push(node);
                 context = node;
             }
@@ -872,6 +890,7 @@ function doParseSync(tokenizer, options = {}) {
     stats.bytesIn += stats.importedBytesIn;
     let endTime = performance.now();
     const result = {
+        arena,
         ast,
         errors,
         stats: {
@@ -1310,7 +1329,7 @@ function doParseSync(tokenizer, options = {}) {
                 }
                 node.sel = "";
                 for (const token of node[TOKENS]) {
-                    node.sel += renderValue(token);
+                    node.sel += printValue(token);
                 }
             }
             else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframesAtRuleNodeType) {
@@ -2416,7 +2435,7 @@ async function doParse(iter, options = {}) {
                 }
                 node.sel = "";
                 for (const token of node[TOKENS]) {
-                    node.sel += renderValue(token);
+                    node.sel += printValue(token);
                 }
             }
             else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframesAtRuleNodeType) {
@@ -2475,104 +2494,128 @@ async function doParse(iter, options = {}) {
 }
 function parseNode(tokens, context, options, errors, stats, invalidNodes) {
     let i = 0;
-    if (tokens.at(-1)?.typ === EnumToken.EOFTokenType) {
+    const arena = options.arena;
+    const contextType = arena.getType(context);
+    let token;
+    let typ;
+    if (arena.getType(tokens.at(-1)) === EnumToken.EOFTokenType) {
         tokens.pop();
         // check parenthesis are balanced
         let matchCount = 0;
         for (let i = 0; i < tokens.length; i++) {
-            const token = tokens[i];
-            if (token.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(token.typ)) {
+            token = tokens[i];
+            typ = arena.getType(token);
+            if (typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(typ)) {
                 matchCount++;
             }
-            else if (token.typ === EnumToken.EndParensTokenType) {
+            else if (typ === EnumToken.EndParensTokenType) {
                 matchCount--;
             }
         }
         if (matchCount > 0) {
             let k = tokens.length;
-            while (k-- > 0 &&
-                (tokens[k].typ === EnumToken.WhitespaceTokenType || tokens[k].typ === EnumToken.CommentTokenType))
-                ;
-            if (tokens[k]?.typ == EnumToken.SemiColonTokenType) {
-                matchCount = 0;
-            }
-            while (matchCount > 0) {
-                tokens.push({
-                    typ: EnumToken.EndParensTokenType,
-                    [LOCSRCID]: tokens[k]?.[LOCSRCID],
-                    [LOCSTA]: tokens[k]?.[LOCSTA],
-                    [LOCEND]: tokens[k]?.[LOCEND],
-                });
-                matchCount--;
+            if (k > 0) {
+                typ = arena.getType(tokens[k - 1]);
+                while ((k-- > 0 && typ === EnumToken.WhitespaceTokenType) || typ === EnumToken.CommentTokenType) {
+                    typ = arena.getType(tokens[k - 1]);
+                }
+                if (typ == EnumToken.SemiColonTokenType) {
+                    matchCount = 0;
+                }
+                let tokenId;
+                let sourceId = arena.getSourceId(tokens[k]);
+                let spanStart = arena.getSpanStart(tokens[k]);
+                let spanEnd = arena.getSpanEnd(tokens[k]);
+                while (matchCount > 0) {
+                    tokenId = arena.allocate();
+                    arena.set(tokenId, EnumToken.EndParensTokenType);
+                    arena.setSpan(tokenId, sourceId, spanStart, spanEnd);
+                    // tokens.push({
+                    //     typ: EnumToken.EndParensTokenType,
+                    //     [LOCSRCID]: tokens[k]?.[LOCSRCID],
+                    //     [LOCSTA]: tokens[k]?.[LOCSTA],
+                    //     [LOCEND]: tokens[k]?.[LOCEND],
+                    // });
+                    matchCount--;
+                }
             }
         }
     }
     for (; i < tokens.length; i++) {
-        if (tokens[i].typ === EnumToken.CDOCOMMTokenType && context.typ !== EnumToken.StyleSheetNodeType) {
+        if (arena.getType(tokens[i]) === EnumToken.CDOCOMMTokenType && contextType !== EnumToken.StyleSheetNodeType) {
             errors.push({
                 action: "drop",
                 message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
                 node: tokens[i],
-                location: options.source.getSourceLocation(tokens[i][LOCSTA]),
+                location: options.source.getSourceLocation(arena.getSpanStart(tokens[i])),
             });
-            tokens[i].typ = EnumToken.InvalidCommentTokenType;
+            arena.set(tokens[i], EnumToken.InvalidCommentTokenType);
             continue;
         }
-        if (tokens[i].typ === EnumToken.CommentTokenType ||
-            tokens[i].typ === EnumToken.CDOCOMMTokenType ||
-            tokens[i].typ === EnumToken.WhitespaceTokenType) {
+        typ = arena.getType(tokens[i]);
+        if (typ === EnumToken.CommentTokenType ||
+            typ === EnumToken.CDOCOMMTokenType ||
+            typ === EnumToken.WhitespaceTokenType) {
             continue;
         }
         break;
     }
     if (i > 0) {
-        context.chi.push(...tokens.splice(0, i).filter((n) => n.typ !== EnumToken.WhitespaceTokenType));
+        arena.appendChildren(context, ...tokens.splice(0, i).filter((n) => arena.getType(n) !== EnumToken.WhitespaceTokenType));
         i = 0;
     }
     for (; i < tokens.length; i++) {
-        if (tokens[i].typ == EnumToken.CommentTokenType || tokens[i].typ == EnumToken.CDOCOMMTokenType) {
-            if (tokens[i].typ == EnumToken.CDOCOMMTokenType && context.typ != EnumToken.StyleSheetNodeType) {
+        typ = arena.getType(tokens[i]);
+        if (typ == EnumToken.CommentTokenType || typ == EnumToken.CDOCOMMTokenType) {
+            if (typ == EnumToken.CDOCOMMTokenType && contextType != EnumToken.StyleSheetNodeType) {
                 errors.push({
                     action: "drop",
                     message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
                     node: tokens[i],
-                    location: options.source.getSourceLocation(tokens[i][LOCSTA]),
+                    location: options.source.getSourceLocation(arena.getSpanStart(tokens[i])),
                 });
-                tokens[i].typ = EnumToken.InvalidCommentTokenType;
+                arena.setType(tokens[i], EnumToken.InvalidCommentTokenType);
                 continue;
             }
-            tokens[i][ROOT] = context[ROOT];
-            context.chi.push(tokens[i]);
+            // tokens[i][ROOT] = context[ROOT];
+            arena.appendChildren(context, tokens[i]);
+            // context.chi!.push(tokens[i] as AstNode);
             stats.nodesCount++;
         }
-        else if (tokens[i].typ != EnumToken.WhitespaceTokenType) {
+        else if (typ != EnumToken.WhitespaceTokenType) {
             break;
         }
     }
     if (tokens.length == 0) {
         return null;
     }
+    // for (const token of tokens.slice(1)) {
+    //     console.error(EnumToken[arena.getType(token)]);
+    // }
     let delim = tokens.at(-1);
-    if (delim.typ == EnumToken.SemiColonTokenType ||
-        delim.typ == EnumToken.BlockStartTokenType ||
-        delim.typ == EnumToken.BlockEndTokenType) {
+    typ = arena.getType(delim);
+    if (typ == EnumToken.SemiColonTokenType ||
+        typ == EnumToken.BlockStartTokenType ||
+        typ == EnumToken.BlockEndTokenType) {
         tokens.pop();
     }
     if (tokens.length == 0) {
         return null;
     }
-    if (tokens[0]?.typ == EnumToken.AtRuleTokenType) {
+    typ = arena.getType(tokens[0]);
+    if (typ == EnumToken.AtRuleTokenType) {
         let nestedRule = false;
         let parent = context;
         let node;
-        while (parent != null) {
-            if (parent.typ == EnumToken.RuleNodeType) {
+        while (parent != 0) {
+            typ = arena.getType(parent);
+            if (typ == EnumToken.RuleNodeType) {
                 nestedRule = true;
                 break;
             }
-            parent = parent[PARENT];
+            parent = arena.getParent(parent);
         }
-        node = parseAtRule(tokens, context, { ...options, nestedRule }, errors, delim.typ == EnumToken.BlockStartTokenType);
+        node = parseAtRule(tokens, context, { ...options, nestedRule }, errors, arena.getType(delim) == EnumToken.BlockStartTokenType);
         if (node == null) {
             return null;
         }
@@ -2585,46 +2628,48 @@ function parseNode(tokens, context, options, errors, stats, invalidNodes) {
             invalidNodes.push(node);
         }
         stats.nodesCount++;
-        context.chi.push(node);
-        node[ROOT] = context[ROOT];
-        node[PARENT] = context;
+        arena.appendChildren(context, node);
+        // context.chi!.push(node);
+        // arena.setParent(node, context);
+        // node[ROOT] = context[ROOT];
+        // node[PARENT] = context;
         // @ts-ignore
         return node;
     }
     else {
         stats.nodesCount++;
         // rule
-        if (delim.typ == EnumToken.BlockStartTokenType) {
+        if (arena.getType(delim) == EnumToken.BlockStartTokenType) {
             const node = parseSelector(tokens, context, options, errors);
-            context.chi.push(node);
-            node[PARENT] = context;
-            node[ROOT] = context[ROOT];
-            if (node[STATE] & EnumAstNodeStatus.Invalid ||
-                node[STATE] & EnumAstNodeStatus.Disallowed ||
-                node[STATE] & EnumAstNodeStatus.Unknown ||
-                node[STATE] & EnumAstNodeStatus.Unparsed ||
-                node[STATE] & EnumAstNodeStatus.Malformed) {
+            arena.appendChildren(context, node);
+            // context.chi!.push(node);
+            // node[PARENT] = context;
+            // node[ROOT] = context[ROOT];
+            if (arena.hasFlags(node, EnumAstNodeStatus.Invalid |
+                EnumAstNodeStatus.Disallowed |
+                EnumAstNodeStatus.Unknown |
+                EnumAstNodeStatus.Unparsed |
+                EnumAstNodeStatus.Malformed)) {
                 invalidNodes.push(node);
             }
             return node;
         }
         else {
             const node = parseDeclaration(tokens, context, options, errors);
-            node[PARENT] = context;
-            node[ROOT] = context[ROOT];
-            if (context.typ === EnumToken.StyleSheetNodeType && node.typ === EnumToken.DeclarationNodeType) {
-                node[STATE] |=
-                    EnumAstNodeStatus.Invalid &
-                        ~(EnumAstNodeStatus.Validated | EnumAstNodeStatus.Unvalidated | EnumAstNodeStatus.Unparsed);
+            // node[PARENT] = context;
+            // node[ROOT] = context[ROOT];
+            if (contextType === EnumToken.StyleSheetNodeType && node.typ === EnumToken.DeclarationNodeType) {
+                node[STATE] = EnumAstNodeStatus.Invalid;
                 errors.push({
                     message: "<declaration> not allowed in <stylesheet>",
                     action: "drop",
                     node,
-                    location: options.source.getSourceLocation(node[LOCSTA]),
+                    location: options.source.getSourceLocation(arena.getSpanStart(node)),
                 });
             }
             else if (options.lenient || node.typ === EnumToken.DeclarationNodeType) {
-                context.chi.push(node);
+                // context.chi!.push(node);
+                arena.appendChildren(context, node);
             }
             if (node[STATE] &
                 (EnumAstNodeStatus.Invalid |
@@ -2959,7 +3004,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                             stream[index + 1]?.typ === EnumToken.CommentTokenType &&
                             (stream.length < index + 3 || stream[index + 2]?.typ === EnumToken.WhitespaceTokenType))
                         ? ""
-                        : renderValue(t, options)), ""),
+                        : printValue(t, options)), ""),
                 ...(parseAsBlock ? { chi: [] } : {}),
             });
         }
@@ -2989,7 +3034,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                             stream[index + 1]?.typ === EnumToken.CommentTokenType &&
                             (stream.length < index + 3 || stream[index + 2]?.typ === EnumToken.WhitespaceTokenType))
                         ? ""
-                        : renderValue(t, options)), ""),
+                        : printValue(t, options)), ""),
             });
         }
         case "supports":

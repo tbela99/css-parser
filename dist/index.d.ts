@@ -46,47 +46,25 @@ declare enum EnumAstNodeStatus$1 {
      */
     Malformed = 128,
     /**
+     * Node has children
+     */
+    HasChildren = 256,
+    /**
+     * Node has values
+     */
+    HasValues = 512,
+    /**
+     * Node has fraction value
+     */
+    HasFractionValue = 1024,
+    /**
      * Important declaration
      */
-    ImportantDeclaration = 256,
+    ImportantDeclaration = 2048,
     /**
      * Color component without unit
      */
-    PowerlessColorComponent = 512
-}
-/**
- * Enum of validation levels
- * @deprecated
- */
-declare enum ValidationLevel {
-    /**
-     * disable validation
-     */
-    None = 0,
-    /**
-     * validate selectors
-     */
-    Selector = 1,
-    /**
-     * validate at-rules
-     */
-    AtRule = 2,
-    /**
-     * validate declarations
-     */
-    Declaration = 4,
-    /**
-     * validate selectors and at-rules
-     */
-    Default = 3,// selectors + at-rules
-    /**
-     * validate selectors, at-rules and declarations
-     */
-    All = 7,// selectors + at-rules + declarations
-    /**
-     * Report only. Apply validation and report nodes that are marked as invalid
-     */
-    ReportOnly = 8
+    PowerlessColorComponent = 4096
 }
 /**
  * Enum of all token types
@@ -331,7 +309,7 @@ declare enum EnumToken {
     /**
      *  token list token type
      */
-    ListToken = 59,
+    ListTokenType = 59,
     /**
      * addition token type
      */
@@ -789,135 +767,135 @@ declare enum ColorType$1 {
     /**
      * deprecated system colors
      */
-    SYS = 0,
+    SYS = 1,
     /**
      * deprecated system colors
      */
-    DPSYS = 1,
+    DPSYS = 2,
     /**
      * named colors
      */
-    LIT = 2,
+    LIT = 3,
     /**
      * colors as hex values
      */
-    HEX = 3,
+    HEX = 4,
     /**
      * colors as rgb values
      */
-    RGBA = 4,
+    RGBA = 5,
     /**
      * colors using rgb
      */
-    HSLA = 5,
+    HSLA = 6,
     /**
      * colors using hwb
      */
-    HWB = 6,
+    HWB = 7,
     /**
      * colors using cmyk
      */
-    CMYK = 7,
+    CMYK = 8,
     /**
      * colors using oklab
      * */
-    OKLAB = 8,
+    OKLAB = 9,
     /**
      * colors using oklch
      * */
-    OKLCH = 9,
+    OKLCH = 10,
     /**
      * colors using lab
      */
-    LAB = 10,
+    LAB = 11,
     /**
      * colors using lch
      */
-    LCH = 11,
+    LCH = 12,
     /**
      * colors using color() function
      */
-    COLOR = 12,
+    COLOR = 13,
     /**
      * color using srgb
      */
-    SRGB = 13,
+    SRGB = 14,
     /**
      * color using prophoto-rgb
      */
-    PROPHOTO_RGB = 14,
+    PROPHOTO_RGB = 15,
     /**
      * color using a98-rgb
      */
-    A98_RGB = 15,
+    A98_RGB = 16,
     /**
      * color using rec2020
      */
-    REC2020 = 16,
+    REC2020 = 17,
     /**
      * color using display-p3
      */
-    DISPLAY_P3 = 17,
+    DISPLAY_P3 = 18,
     /**
      * color using srgb-linear
      */
-    SRGB_LINEAR = 18,
+    SRGB_LINEAR = 19,
     /**
      * color using xyz-d50
      */
-    XYZ_D50 = 19,
+    XYZ_D50 = 20,
     /**
      * color using xyz-d65
      */
-    XYZ_D65 = 20,
+    XYZ_D65 = 21,
     /**
      * light-dark() color function
      */
-    LIGHT_DARK = 21,
+    LIGHT_DARK = 22,
     /**
      * color-mix() color function
      */
-    COLOR_MIX = 22,
+    COLOR_MIX = 23,
     /**
      * non-standard color
      */
-    NON_STD = 23,
+    NON_STD = 24,
     /**
      * custom color
      */
-    CUSTOM_COLOR = 24,
+    CUSTOM_COLOR = 25,
     /**
      * alpha() color function
      */
-    ALPHA = 25,
+    ALPHA = 26,
     /**
      * color using display-p3-linear
      */
-    DISPLAY_P3_LINEAR = 26,
+    DISPLAY_P3_LINEAR = 27,
     /**
      * Contrast color
      */
-    CONTRAST_COLOR = 27,
+    CONTRAST_COLOR = 28,
     /**
      * color layers
      */
-    COLOR_LAYERS = 28,
+    COLOR_LAYERS = 29,
     /**
      * alias for rgba
      */
-    RGB = 4,
+    RGB = 5,
     /**
      * alias for hsl
      */
-    HSL = 5,
+    HSL = 6,
     /**
      * alias for xyz-d65
      */
-    XYZ = 20,
+    XYZ = 21,
     /**
      * alias for cmyk
      */
-    DEVICE_CMYK = 7
+    DEVICE_CMYK = 8
 }
 /**
  * Supported module case transform
@@ -2435,7 +2413,7 @@ export declare interface ListToken extends BaseToken {
     /**
      * @inheritdoc
      */
-    typ: EnumToken.ListToken;
+    typ: EnumToken.ListTokenType;
     /**
      * Children
      */
@@ -4498,6 +4476,138 @@ declare enum ResponseType {
     JSON = 3
 }
 
+declare class Arena {
+    stringIds: Map<string, number>;
+    strings: string[];
+    readonly root: number;
+    current: number;
+    dataTypes: Uint8Array;
+    parents: Uint32Array;
+    nextSibling: Uint32Array;
+    previousSibling: Uint32Array;
+    firstToken: Uint32Array;
+    lastToken: Uint32Array;
+    firstChild: Uint32Array;
+    lastChild: Uint32Array;
+    name: Uint32Array;
+    stringValue: Uint32Array;
+    numericValue: Float64Array;
+    unit: Uint32Array;
+    flags: Uint32Array;
+    colorType: Uint8Array;
+    /**
+     * token spans. 8 bits for source type. 28 bits for start position, 28 bits for end position. This allows us to store the start and end positions of tokens in a single 64-bit integer, which is more efficient than storing them separately.
+     */
+    spans: BigUint64Array;
+    /**
+     * error cache
+     */
+    errors: Map<number, ErrorDescription$1[]>;
+    /**
+     * rendered tokens cache
+     */
+    renderedTokens: Uint32Array;
+    constructor(size?: number);
+    allocate(): number;
+    internString(str: string): number;
+    /**
+     * set node data for a given id. The first argument is the id, the second is the type, the third is the string value, the fourth is the numeric value, and the fifth is the unit.
+     * @param id
+     * @param type
+     * @param stringValue
+     */
+    set(id: number, type: EnumToken): void;
+    /**
+     * set node data for a given id. The first argument is the id, the second is the type, the third is the string value, the fourth is the numeric value, and the fifth is the unit.
+     * @param id
+     * @param type
+     * @param stringValue
+     */
+    set(id: number, type: EnumToken, stringValue: number): void;
+    /**
+     * set node data for a given id. The first argument is the id, the second is the type, the third is the string value, and the fourth is the numeric value.
+     * @param id
+     * @param type
+     * @param stringValue
+     * @param numericValue
+     */
+    set(id: number, type: EnumToken, stringValue: number, numericValue: number): void;
+    /**
+     * set node data for a given id. The first argument is the id, the second is the type, the third is the string value, the fourth is the numeric value, and the fifth is the unit.
+     * @param id
+     * @param type
+     * @param stringValue
+     * @param numericValue
+     * @param unit
+     */
+    set(id: number, type: EnumToken, stringValue: number, numericValue: number, unit: number): void;
+    getType(id: number): EnumToken;
+    setType(id: number, type: EnumToken): void;
+    setName(id: number, nameId: number): void;
+    getName(id: number): string;
+    setValue(id: number, valueId: number): void;
+    getValue(id: number): string;
+    setNumericValue(id: number, numericValue: number): void;
+    setUnit(id: number, unit: number): void;
+    getUnit(id: number): string;
+    getNumericValue(id: number): number;
+    setParent(id: number, parentId: number): void;
+    getFirstChild(id: number): number;
+    setFirstChild(id: number, firstChildId: number): void;
+    getLastChild(id: number): number;
+    setLastChild(id: number, lastChildId: number): void;
+    setNextSibling(id: number, nextSiblingId: number): void;
+    setPreviousSibling(id: number, previousSiblingId: number): void;
+    setFirstToken(id: number, firstTokenId: number): void;
+    setColorType(id: number, colorType: number): void;
+    setFlags(id: number, flags: number): void;
+    getFlags(id: number): number;
+    hasFlags(id: number, flag: number): boolean;
+    getChildAt(id: number, index: number): number | null;
+    setChildAt(id: number, index: number, child: number): void;
+    /**
+     * let child should be of type EnumToken.ListToken or EnumToken.ParensToken
+     * @param id
+     * @param child
+     */
+    setLeft(id: number, child: number): void;
+    getLeft(id: number): number;
+    setRight(id: number, rightId: number): void;
+    getRight(id: number): number;
+    setOp(id: number, opId: number): void;
+    getOp(id: number): number;
+    setOp2(id: number, op2Id: number): void;
+    getOp2(id: number): number;
+    setRenderedTokens(id: number, renderedTokensId: number): void;
+    setSpan(id: number, sourceId: number, start: number, end: number): void;
+    getSourceId(id: number): number;
+    getSpanStart(id: number): number;
+    setSpandStart(id: number, start: number): void;
+    getSpanEnd(id: number): number;
+    setSpanEnd(id: number, end: number): void;
+    getParent(id: number): number;
+    resolveString(id: number): string;
+    detach(id: number): void;
+    walk(node: number, filter?: WalkerFilter | WalkerOptions | null, reverse?: boolean): Generator<number>;
+    walkValues(values: number[], filter?: WalkerValueFilter | null | {
+        event?: WalkerEvent;
+        fn?: WalkerValueFilter;
+        type?: EnumToken | EnumToken[] | ((token: number) => boolean);
+    }, reverse?: boolean): Generator<number>;
+    findChild(id: number, predicate: (id: number) => boolean): number | null;
+    siblings(id: number): number[];
+    children(id: number): number[];
+    setChildren(id: number, ...children: number[]): void;
+    setTokens(id: number, ...children: number[]): void;
+    appendChildren(id: number, ...children: number[]): void;
+    appendTokens(id: number, ...children: number[]): void;
+    equalsIgnoreCase(node: number, key: "nam" | "val", string: string): boolean;
+    startsWith(node: number, key: "nam" | "val", string: string): boolean;
+    resize(newSize: number): void;
+    setErrors(id: number, errors: ErrorDescription$1[]): void;
+    getErrors(id: number): ErrorDescription$1[] | null;
+}
+
 interface PropertyType {
     shorthand: string;
 }
@@ -5037,7 +5147,7 @@ export declare interface WalkerOptions {
 /**
  * node walker option
  */
-export declare type WalkerOption = WalkerOptionEnum | AstNode$1 | Token$1 | null;
+export declare type WalkerOption = WalkerOptionEnum | number | null;
 /**
  * returned value:
  * - {@link WalkerOptionEnum.Ignore}: ignore this node and its children
@@ -5058,12 +5168,7 @@ export declare type WalkerFilter = (node: AstNode$1) => WalkerOption;
  * - {@link AstNode}:
  * - {@link Token}:
  */
-export declare type WalkerValueFilter = (
-    node: AstNode$1 | Token$1,
-    parent?: AstNode$1 | Token$1 | AstNode$1[] | Token$1[] | null,
-    event?: WalkerEvent,
-    parents?: Generator<Token$1>,
-) => WalkerOption | AstNode$1 | Token$1 | AstNode$1[] | Token$1[] | null;
+export declare type WalkerValueFilter = (node: number, event?: WalkerEvent) => WalkerOption | number[];
 
 /**
  * walker result
@@ -5137,7 +5242,7 @@ export declare interface ErrorDescription$1 {
     /**
      * Error node
      */
-    node?: Token$1 | AstNode$1 | null;
+    node?: number | null;
     /**
      * Error location
      */
@@ -5156,6 +5261,12 @@ export declare interface ErrorDescription$1 {
  * CSS validation options
  */
 interface ValidationOptions {
+
+    /**
+     * Arena
+     */
+    arena: Arena;
+
     /**
      * Nested rule context
      * @private
@@ -5163,11 +5274,10 @@ interface ValidationOptions {
     nestedRule?: boolean;
 
     /**
-     * Enable CSS validation. Using ValidationLevel as value is deprecated and will be removed
+     * Enable CSS validation
      *
-     * see {@link ValidationLevel}
      */
-    validation?: boolean | ValidationLevel;
+    validation?: boolean ;
 
     /**
      * Lenient validation. retain nodes that failed validation
@@ -5805,6 +5915,7 @@ export declare interface ResolvedPath {
  * Ast node render options
  */
 export declare interface RenderOptions {
+
     /**
      * Source file to be used as CSS input file for sourcemap resolution
      */
@@ -5967,6 +6078,12 @@ export declare interface ParseResultStats {
  * Parse result object
  */
 export declare interface ParseResult {
+
+    /**
+     * Arena memory
+     */
+    arena: Arena;
+
     /**
      * Parsed ast tree
      */
@@ -6371,19 +6488,6 @@ declare function parseString(src: string, options?: {
 } | null, errors?: ErrorDescription$1[]): Token$1[];
 
 /**
- * render ast token
- * @param token
- * @param options
- * @param cache
- * @param reducer
- * @param errors
- * @private
- */
-declare function renderValue(token: Token$1, options?: RenderOptions, cache?: {
-    [key: string]: any;
-}, reducer?: null | ((acc: string, curr: Token$1) => string), errors?: ErrorDescription$1[]): string;
-
-/**
  * Converts a color to another color space
  * @param token
  * @param to
@@ -6578,6 +6682,19 @@ declare function replaceNodeOrValue(parent: BinaryExpressionToken | (AstNode$1 &
 } | {
     val: Token$1[];
 })), node: Token$1, replacement: Token$1 | Token$1[]): boolean;
+
+/**
+ * render ast token
+ * @param token
+ * @param options
+ * @param cache
+ * @param reducer
+ * @param errors
+ * @private
+ */
+declare function printValue(token: number, arena: Arena, options: RenderOptions, cache?: {
+    [key: string]: any;
+}, reducer?: null | ((acc: string, curr: number) => string), errors?: ErrorDescription$1[]): string;
 
 /**
  *
@@ -7034,5 +7151,5 @@ declare function transform(options: ParseInputStreamOptions & TransformOptions):
  */
 declare function transform(options: ParseInputFileOptions & TransformOptions): Promise<TransformResult>;
 
-export { ColorType$1 as ColorType, EnumAstNodeStatus$1 as EnumAstNodeStatus, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType, SourceMap, ValidationLevel, WalkerEvent, WalkerOptionEnum, cloneNode, convertColor, dirname, expand, find, findAll, findByValue, findLast, getNodeProperty, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, parseSync, render, renderValue as renderToken, replaceNodeOrValue, resolve, setNodeProperty, transform, transformFile, transformSync, version, walk, walkValues };
+export { ColorType$1 as ColorType, EnumAstNodeStatus$1 as EnumAstNodeStatus, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType, SourceMap, WalkerEvent, WalkerOptionEnum, cloneNode, convertColor, dirname, expand, find, findAll, findByValue, findLast, getNodeProperty, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, parseSync, printValue, render, replaceNodeOrValue, resolve, setNodeProperty, transform, transformFile, transformSync, version, walk, walkValues };
 export type { AddToken, AndToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstNodeStatus, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, DoubleColonToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription$1 as ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorAstNodeSyncHandlerMap, GenericVisitorAsyncResult, GenericVisitorHandler, GenericVisitorResult, GenericVisitorSyncHandler, GenericVisitorSyncResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InfinityToken, InvalidAttrToken, InvalidClassSelectorToken, InvalidMediaQueryToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleAsyncOptions, ModuleSyncOptions, MulToken, NaNToken, NameSpaceAttributeToken, NegativeInfinityToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseInputFileOptions, ParseInputOptions, ParseInputStreamOptions, ParseResult, ParseResultStats, ParseSourceOptions, ParseTokenOptions, ParserOptions, ParserSourceMapOptions, ParserSyncOptions, PercentageToken, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SinglePropertyType, SinglePropertyTypeMapping, SourceLocation, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenSearchResult, TokenizeResult, TransformOptions, TransformResult, TransformSyncOptions, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, ValueVisitorSyncHandler, VariableScopeInfo, VisitorNodeMap, VisitorSyncNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerOptions, WalkerValueFilter, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken, WrappedValuesToken };

@@ -2,14 +2,13 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 import { EnumAstNodeStatus, EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
 import { pseudoAliasMap } from '../../syntax/syntax.js';
 import { splitRule } from '../minify.js';
-import { renderValue } from '../../printer/render.js';
 import { STATE, TOKENS, funcLike, regMatchLinearGradient, regMatchRadialGradient } from '../../syntax/constants.js';
 import { FeatureWalkMode } from './type.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
@@ -17,6 +16,7 @@ import { getSyntaxConfig } from '../../validation/config.js';
 import { splitTokenList } from '../../validation/utils/list.js';
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
 import { toDegrees } from '../../parser/utils/angle.js';
+import { printValue } from '../../printer/print.js';
 
 const config = getSyntaxConfig();
 function replacePseudo(tokens) {
@@ -196,7 +196,7 @@ class ComputePrefixFeature {
             }
             if (node.typ == EnumToken.AtRuleNodeType && node.val !== "") {
                 if (replaceAstNodes(node[TOKENS])) {
-                    node.val = node[TOKENS].reduce((acc, curr) => acc + renderValue(curr), "");
+                    node.val = node[TOKENS].reduce((acc, curr) => acc + printValue(curr), "");
                 }
             }
         }

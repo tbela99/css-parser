@@ -1,4 +1,3 @@
-import { ColorType, EnumToken } from "../../../dist/src/lib/ast/types.js";
 import { WalkerEvent } from "../../../dist/src/lib/ast/walk.js";
 
 export function run(
@@ -465,7 +464,6 @@ html,body {
                     Rule: {
                         type: WalkerEvent.Enter,
                         handler(node) {
-
                             node.sel = ".ruled";
                             // node.val = "slide-in-out";
                             // return node;
@@ -474,7 +472,6 @@ html,body {
                     Declaration: {
                         type: WalkerEvent.Leave,
                         handler(node) {
-
                             // node.sel = ".ruled";
                             // node.val = "slide-in-out";
                             // return node;
@@ -573,8 +570,6 @@ html,body {
             );
         });
 
-
-
         it("visitor #10", function () {
             const css = `
 
@@ -614,25 +609,25 @@ html,body {
                 removePrefix: true,
                 beautify: true,
                 visitor: [
-        {
-            Rule: {
-                type: WalkerEvent.Enter,
-                handler(node) {
-                    node.sel = ".ruled";
-                    // node.val = "slide-in-out";
-                    // return node;
-                },
-            },
-        },
-        {
-            KeyframesAtRule: {
-                slideIn(node) {
-                    node.val = "slide-in-out";
-                    return node;
-                },
-            },
-        },
-    ],
+                    {
+                        Rule: {
+                            type: WalkerEvent.Enter,
+                            handler(node) {
+                                node.sel = ".ruled";
+                                // node.val = "slide-in-out";
+                                // return node;
+                            },
+                        },
+                    },
+                    {
+                        KeyframesAtRule: {
+                            slideIn(node) {
+                                node.val = "slide-in-out";
+                                return node;
+                            },
+                        },
+                    },
+                ],
             };
 
             const result = transformSync(css, options);
@@ -675,14 +670,14 @@ html,body {
             }
 `;
             const options = {
-    removePrefix: true,
-    beautify: true,
-    visitor: function Rule(node) {
+                removePrefix: true,
+                beautify: true,
+                visitor: function Rule(node) {
                     node.sel = ".ruled";
                     // node.val = "slide-in-out";
                     // return node;
                 },
-};
+            };
 
             const result = transformSync(css, options);
 

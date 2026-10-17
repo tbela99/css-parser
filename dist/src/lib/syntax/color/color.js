@@ -2,10 +2,10 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
-import { ColorType, EnumToken } from '../../ast/types.js';
+import { EnumToken, ColorType } from '../../ast/types.js';
 import { color2RgbToken, lch2RgbToken, lab2RgbToken, oklch2RgbToken, oklab2RgbToken, cmyk2RgbToken, hwb2RgbToken, hsl2RgbToken, hex2RgbToken } from './rgb.js';
 import { color2HslToken, lch2HslToken, lab2HslToken, oklch2HslToken, oklab2HslToken, cmyk2HslToken, hwb2HslToken, hex2HslToken, rgb2HslToken } from './hsl.js';
 import { color2hwbToken, cmyk2hwbToken, lch2hwbToken, lab2hwbToken, oklch2hwbToken, oklab2hwbToken, hsl2hwbToken, rgb2hwbToken } from './hwb.js';
@@ -567,29 +567,28 @@ function getNumber(token) {
  * convert angle to turn
  * @param token
  */
-function getAngle(token) {
-    if (token.typ == EnumToken.IdenTokenType) {
-        if (token.val == "none") {
+function getAngle(token, arena) {
+    const typ = arena.getType(token);
+    if (typ == EnumToken.IdenTokenType) {
+        if (arena.equalsIgnoreCase(token, 'val', "none")) {
             return 0;
         }
     }
-    if (token.typ == EnumToken.AngleTokenType) {
-        switch (token.unit) {
+    const val = arena.getNumericValue(token);
+    if (typ == EnumToken.AngleTokenType) {
+        switch (arena.getUnit(token)) {
             case "deg":
-                // @ts-ignore
-                return token.val / 360;
+                return val / 360;
             case "rad":
-                // @ts-ignore
-                return token.val / (2 * Math.PI);
+                return val / (2 * Math.PI);
             case "grad":
-                // @ts-ignore
-                return token.val / 400;
+                return val / 400;
             case "turn":
-                // @ts-ignore
-                return +token.val;
+                // @ts-ign
+                return +val;
         }
     }
-    return token.val / 360;
+    return val / 360;
 }
 
 export { cmyk2colorToken, color2colorToken, color2srgbvalues, convertColor, getAngle, getNumber, hex2colorToken, hsl2colorToken, hwb2colorToken, lab2colorToken, lch2colorToken, minmax, oklab2colorToken, oklch2colorToken, rgb2colorToken };

@@ -2,15 +2,15 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 import { EnumToken, EnumAstNodeStatus } from '../types.js';
 import { compute } from '../transform/compute.js';
-import { filterValues, renderValue } from '../../printer/render.js';
 import { minifyTransformFunctions, eqMatrix } from '../transform/minify.js';
 import { FeatureWalkMode } from './type.js';
 import { STATE } from '../../syntax/constants.js';
+import { filterValues, printValue } from '../../printer/print.js';
 
 class TransformCssFeature {
     accept = new Set([
@@ -70,9 +70,9 @@ class TransformCssFeature {
             if (eqMatrix(matrix, minified)) {
                 r.push(minified);
             }
-            const l = renderValue(matrix).length;
+            const l = printValue(matrix).length;
             node.val = r.reduce((acc, curr) => {
-                if (curr.reduce((acc, t) => acc + renderValue(t), "").length < l) {
+                if (curr.reduce((acc, t) => acc + printValue(t), "").length < l) {
                     return curr;
                 }
                 return acc;

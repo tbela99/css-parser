@@ -1,12 +1,5 @@
 import {
-    AstNode,
-    AstRuleList,
     ErrorDescription,
-
-    FunctionToken,
-    ParensToken,
-    Token,
-    WalkAttributesResult,
     WalkerEvent,
     WalkerFilter,
     WalkerOption,
@@ -15,7 +8,7 @@ import {
     WalkerValueFilter,
 } from "../../node.ts";
 import { EnumAstNodeStatus, EnumToken } from "../ast/types.ts";
-import { PARENT, TOKENS } from "../syntax/constants.ts";
+import { PARENT } from "../syntax/constants.ts";
 import { equalsIgnoreCase } from "./utils/text.ts";
 
 export class Arena {
@@ -37,10 +30,6 @@ export class Arena {
     public numericValue: Float64Array;
     public unit: Uint32Array;
     public flags: Uint32Array;
-    // public left: Uint32Array;
-    // public right: Uint32Array;
-    // public op: Uint32Array;
-    // public op2: Uint32Array;
     public colorType: Uint8Array;
 
     /**
@@ -48,6 +37,9 @@ export class Arena {
      */
     public spans: BigUint64Array;
 
+    /**
+     * error cache
+     */
     public errors: Map<number, ErrorDescription[]> = new Map();
     /**
      * rendered tokens cache
@@ -176,7 +168,6 @@ export class Arena {
     }
 
     getValue(id: number): string {
-
         return this.strings[this.stringValue[id]] ?? null;
     }
 
@@ -374,7 +365,7 @@ export class Arena {
     }
 
     getLeft(id: number): number {
-        return this.getChildAt(id, 0 ) as number;
+        return this.getChildAt(id, 0) as number;
     }
 
     setRight(id: number, rightId: number): void {
@@ -802,7 +793,7 @@ export class Arena {
 
         this.parents[children[0]] = id;
 
-        for (let i = 1; i < children.length - 1; i++) {
+        for (let i = 1; i < children.length; i++) {
             this.detach(children[i]);
             this.previousSibling[children[i]] = children[i - 1];
             this.nextSibling[children[i - 1]] = children[i];
