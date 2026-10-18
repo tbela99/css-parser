@@ -3401,8 +3401,8 @@ function parseNode(
         }
 
         if (
-            node[STATE] &
-            (EnumAstNodeStatus.Invalid |
+            arena.hasFlags(node, 
+            EnumAstNodeStatus.Invalid |
                 EnumAstNodeStatus.Disallowed |
                 EnumAstNodeStatus.Unknown |
                 EnumAstNodeStatus.Unparsed |
@@ -3448,12 +3448,12 @@ function parseNode(
 
             return node;
         } else {
-            const node = parseDeclaration(tokens, context, options, errors) as AstDeclaration;
+            const node = parseDeclaration(tokens, context, options, errors);
             // node[PARENT] = context;
             // node[ROOT] = context[ROOT];
 
-            if (contextType === EnumToken.StyleSheetNodeType && node.typ === EnumToken.DeclarationNodeType) {
-                node[STATE] = EnumAstNodeStatus.Invalid;
+            if (contextType === EnumToken.StyleSheetNodeType && arena.getType(node) === EnumToken.DeclarationNodeType) {
+                arena.setFlags(node, EnumAstNodeStatus.Invalid) ;
 
                 errors.push({
                     message: "<declaration> not allowed in <stylesheet>",
@@ -3461,20 +3461,19 @@ function parseNode(
                     node,
                     location: options.source!.getSourceLocation(arena.getSpanStart(node)),
                 });
-            } else if (options.lenient || node.typ === EnumToken.DeclarationNodeType) {
+            } else if (options.lenient || arena.getType(node) === EnumToken.DeclarationNodeType) {
                 // context.chi!.push(node);
                 arena.appendChildren(context, node);
             }
 
             if (
-                node[STATE] &
-                (EnumAstNodeStatus.Invalid |
+                arena.hasFlags(node, EnumAstNodeStatus.Invalid |
                     EnumAstNodeStatus.Disallowed |
                     EnumAstNodeStatus.Unknown |
                     EnumAstNodeStatus.Unparsed |
                     EnumAstNodeStatus.Malformed)
             ) {
-                invalidNodes.push(node as AstDeclaration);
+                invalidNodes.push(node);
             }
         }
     }
@@ -3491,21 +3490,24 @@ function parseNode(
  */
 
 export function parseAtRule(
-    stream: Token[],
-    context: AstRule | AstAtRule | AstStyleSheet,
+    stream: number[],
+    context: number,
     options: ParserOptions,
     errors: ErrorDescription[],
     parseAsBlock: boolean | null = null,
-): AstAtRule | CssVariableImportTokenType | CssVariableToken | null {
+): number| null {
+
+    const arena = options.arena as Arena;
     let success: boolean = true;
-    let atRuleName = (stream[0] as AtRuleToken).nam;
+    let atRuleName = arena.getName(stream[0]);
 
     if (atRuleName.startsWith("-")) {
         atRuleName = atRuleName.replace(/^-[a-z]+-/, "").toLowerCase();
     }
 
-    const atRule = stream.shift() as AtRuleToken;
-    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + atRule.nam);
+    const atRule = stream.shift() as number;
+    const name = arena.getName(atRule);
+    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + name);
     const syntax: ValidationToken[] = syntaxRules?.getPreludeRules()?.slice?.(1) as ValidationToken[];
     const blockAllowed: boolean = syntaxRules?.getBlockRules() != null;
 
@@ -3514,7 +3516,7 @@ export function parseAtRule(
         errors.push({
             action: "drop",
             node: atRule,
-            location: options.source!.getSourceLocation(atRule[LOCSTA]!),
+            location: options.source!.getSourceLocation(atRule),
             message: "unknown at-rule",
         });
 
@@ -4525,58 +4527,75 @@ export function parseString(
  * @private
  */
 export function parseTokens(
-    tokens: Token[],
-    options?: { parseColor?: boolean; source?: SourceFile } | null,
+    tokens: number[],
+    options?: { parseColor?: boolean; source?: SourceFile, arena?: Arena } | null,
     errors?: ErrorDescription[],
 ): Token[] {
-    const stack: Token[] = [];
+    const stack: number[] = [];
+    const arena = options?.arena as Arena;
 
     let i: number = 0;
     let index: number;
-    let t: Token;
+    let t: number;
+    let typ: EnumToken;
+    let typ2: EnumToken;
 
     options ??= { parseColor: true };
 
     for (; i < tokens.length; i++) {
         t = tokens[i];
+        typ = arena.getType(t);
 
-        if (t.typ === EnumToken.FunctionTokenDefType) {
+        if (typ === EnumToken.FunctionTokenDefType) {
+
+            typ2 = arena.getType(tokens[i - 1] as number);
             if (
-                tokens[i - 1]?.typ === EnumToken.ColonTokenType ||
-                tokens[i - 1]?.typ === EnumToken.DoubleColonTokenType
+               typ2 === EnumToken.ColonTokenType ||
+                typ2 === EnumToken.DoubleColonTokenType
             ) {
-                t = Object.assign(tokens[i - 1], {
-                    typ: EnumToken.PseudoClassFunctionTokenDefType,
-                    val:
-                        (tokens[i - 1].typ === EnumToken.ColonTokenType ? ":" : "::") +
-                        (tokens[i] as FunctionToken).val,
-                });
-                t[LOCEND] = tokens[i][LOCEND];
+
+                arena.set(tokens[i - 1], EnumToken.PseudoClassFunctionTokenDefType, arena.internString((typ2 === EnumToken.ColonTokenType ? ":" : "::") +
+                        arena.getValue(tokens[i])),
+                );
+
+                // t = Object.assign(tokens[i - 1], {
+                //     typ: EnumToken.PseudoClassFunctionTokenDefType,
+                //     val:
+                //         (tokens[i - 1].typ === EnumToken.ColonTokenType ? ":" : "::") +
+                //         (tokens[i] as FunctionToken).val,
+                // });
+
+                arena.setSpanEnd(tokens[i - 1], arena.getSpanEnd(tokens[i]));
+                // t[LOCEND] = tokens[i][LOCEND];
+                t = tokens[i - 1];
                 tokens.splice(i--, 1);
+                typ = EnumToken.PseudoClassFunctionTokenDefType;
             }
         }
 
         if (
-            t.typ === EnumToken.AttrStartTokenType ||
-            t.typ === EnumToken.StartParensTokenType ||
-            tokensfuncDefMap.has(t.typ)
+            typ === EnumToken.AttrStartTokenType ||
+            typ === EnumToken.StartParensTokenType ||
+            tokensfuncDefMap.has(typ)
         ) {
             stack.push(t);
             continue;
         }
 
-        if (t.typ === EnumToken.EndParensTokenType) {
+        if (typ === EnumToken.EndParensTokenType) {
+
+            typ2 = arena.getType(stack.at(-1) as number);
             if (
                 stack.length === 0 ||
-                (stack.at(-1)?.typ !== EnumToken.StartParensTokenType && !tokensfuncDefMap.has(stack.at(-1)?.typ))
+                (typ2 !== EnumToken.StartParensTokenType && !tokensfuncDefMap.has(typ2))
             ) {
                 // unbalanced parens
-                const node: Token = stack.at(-1) as Token;
+                const node: number = stack.at(-1) as number;
                 errors?.push?.({
                     action: "drop",
                     message: `Unbalanced token ')'`,
                     node,
-                    location: options.source!.getSourceLocation(node[LOCSTA]!),
+                    location: options.source!.getSourceLocation(node),
                 });
 
                 // return [];
@@ -4586,47 +4605,63 @@ export function parseTokens(
             tokens.splice(i, 1);
             index = tokens.indexOf(stack.at(-1)!);
 
-            Object.assign(tokens[index], {
-                typ:
-                    tokens[index].typ === EnumToken.StartParensTokenType
+            typ2 = arena.getType(tokens[index]);
+            typ2 = typ2 === EnumToken.StartParensTokenType
                         ? EnumToken.ParensTokenType
-                        : (tokensfuncDefMap.get(tokens[index].typ) as EnumToken),
-                chi: trimArray(tokens.splice(index + 1, i - index - 1)),
-            });
+                        : tokensfuncDefMap.get(typ2) as EnumToken;
+
+            arena.setType(tokens[index], typ2);
+
+            arena.setChildren(tokens[index], ...trimArray(tokens.splice(index + 1, i - index - 1), options));
+
+            // Object.assign(tokens[index], {
+            //     typ:
+            //         tokens[index].typ === EnumToken.StartParensTokenType
+            //             ? EnumToken.ParensTokenType
+            //             : (tokensfuncDefMap.get(tokens[index].typ) as EnumToken),
+            //     chi: trimArray(tokens.splice(index + 1, i - index - 1)),
+            // });
+
             i = index;
 
-            if (tokens[index].typ === EnumToken.ColorTokenType && options?.parseColor) {
-                parseColor(tokens[index]);
+            if (typ2 === EnumToken.ColorTokenType && options?.parseColor) {
+                parseColor(tokens[index], arena);
             }
 
             stack.pop();
             continue;
         }
 
-        if (t.typ === EnumToken.AttrEndTokenType) {
-            if (stack.at(-1)?.typ !== EnumToken.AttrStartTokenType) {
+        if (typ === EnumToken.AttrEndTokenType) {
+            if (arena.getType(stack.at(-1)!) !== EnumToken.AttrStartTokenType) {
                 // unbalanced
-                const node: Token = stack.at(-1) as Token;
+                const node: number = stack.at(-1) as number;
 
                 errors?.push?.({
                     action: "drop",
                     message: `Unbalanced token ']'`,
                     node,
-                    location: options.source!.getSourceLocation(node[LOCSTA]!),
+                    location: options.source!.getSourceLocation(node),
                 });
                 continue;
             }
 
             index = tokens.indexOf(stack.at(-1)!);
-            const attr = stack.at(-1) as AttrStartToken;
+            const attr = stack.at(-1) as number;
 
-            attr[LOCEND] = t[LOCEND];
+            arena.setSpanEnd(attr, arena.getSpanEnd(t));
+
+            // attr[LOCEND] = t[LOCEND];
 
             tokens.splice(i, 1);
-            Object.assign(attr, {
-                typ: EnumToken.AttrTokenType,
-                chi: tokens.splice(index + 1, i - index - 1),
-            });
+            arena.setType(attr, EnumToken.AttrTokenType);
+            arena.setChildren(attr, ...trimArray(tokens.splice(index + 1, i - index - 1), options));
+
+
+            // Object.assign(attr, {
+            //     typ: EnumToken.AttrTokenType,
+            //     chi: tokens.splice(index + 1, i - index - 1),
+            // });
 
             tokens[index] = attr;
             i = index;
@@ -4634,28 +4669,30 @@ export function parseTokens(
             continue;
         }
 
-        if (t.typ == EnumToken.IdenTokenType) {
-            if ((t as IdentToken).val == "from" && i > 0) {
-                const left: Token[] = [];
-                const right: Token[] = [];
+        if (typ == EnumToken.IdenTokenType) {
+            if (arena.equalsIgnoreCase(t, 'val', "from") && i > 0) {
+                const left: number[] = [];
+                const right: number[] = [];
 
                 let foundLeft: number = 0;
                 let foundRight: number = 0;
                 let k: number = i;
                 let l: number = i;
 
+                typ2 = arena.getType(tokens[k - 1]);
+
                 while (k > 0) {
                     if (
-                        tokens[k - 1].typ == EnumToken.CommentTokenType ||
-                        tokens[k - 1].typ == EnumToken.WhitespaceTokenType
+                        typ2 == EnumToken.CommentTokenType ||
+                        typ2 == EnumToken.WhitespaceTokenType
                     ) {
                         left.push(tokens[--k]);
                         continue;
                     }
 
                     if (
-                        tokens[k - 1].typ == EnumToken.IdenTokenType ||
-                        tokens[k - 1].typ == EnumToken.DashedIdenTokenType
+                        typ2 == EnumToken.IdenTokenType ||
+                        typ2 == EnumToken.DashedIdenTokenType
                     ) {
                         foundLeft++;
                         left.push(tokens[--k]);
@@ -4666,12 +4703,14 @@ export function parseTokens(
                 }
 
                 while (++l < tokens.length) {
-                    if (tokens[l].typ == EnumToken.CommentTokenType || tokens[l].typ == EnumToken.WhitespaceTokenType) {
+
+                    typ2 = arena.getType(tokens[l]);
+                    if (typ2 == EnumToken.CommentTokenType || typ2 == EnumToken.WhitespaceTokenType) {
                         right.push(tokens[l]);
                         continue;
                     }
 
-                    if (tokens[l].typ == EnumToken.IdenTokenType || tokens[l].typ == EnumToken.StringTokenType) {
+                    if (typ2 == EnumToken.IdenTokenType || typ2 == EnumToken.StringTokenType) {
                         foundRight++;
                         right.push(tokens[l]);
                         continue;
@@ -4681,62 +4720,96 @@ export function parseTokens(
                 }
 
                 if (foundLeft > 0 && foundRight == 1) {
-                    while (left?.[0].typ == EnumToken.WhitespaceTokenType) {
-                        left.shift();
-                    }
 
-                    while (left.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
-                        left.pop();
-                    }
+                    trimArray(left, options);
+                    // while (left?.[0].typ == EnumToken.WhitespaceTokenType) {
+                    //     left.shift();
+                    // }
 
-                    tokens.splice(k, l - k + 1, {
-                        typ: EnumToken.ComposesSelectorNodeType,
-                        l: left,
-                        r: right.reduce((a: Token | null, b: Token) => {
+                    // while (left.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
+                    //     left.pop();
+                    // }
+
+                    arena.setLeft(t, ...left);
+                    // @ts-ignore
+                    arena.setRight(t, right.reduce((a: number | null, b: number) => {
+
+                        typ = arena.getType(b);
                             return a == null
                                 ? b
-                                : b.typ == EnumToken.IdenTokenType || b.typ == EnumToken.StringTokenType
+                                : typ == EnumToken.IdenTokenType || typ == EnumToken.StringTokenType
                                   ? b
                                   : a;
-                        }, null),
-                    });
+                        }, null));
+
+                        const composeSelector = arena.allocate();
+                        arena.setType(composeSelector, EnumToken.ComposesSelectorNodeType);
+                        // arena.setChildren(composeSelector, t, ...right);
+                        arena.setLeft(t, ...left);
+                        // @ts-ignore
+                        arena.setRight(composeSelector, right.reduce((a: number | null, b: number) => {
+
+                            typ = arena.getType(b);
+                            return a == null
+                                ? b
+                                : typ == EnumToken.IdenTokenType || typ == EnumToken.StringTokenType
+                                  ? b
+                                  : a;
+                        }, null));
+
+                    tokens.splice(k, l - k + 1, composeSelector);
+
+                    // tokens.splice(k, l - k + 1, {
+                    //     typ: EnumToken.ComposesSelectorNodeType,
+                    //     l: left,
+                    //     r: right.reduce((a: Token | null, b: Token) => {
+                    //         return a == null
+                    //             ? b
+                    //             : b.typ == EnumToken.IdenTokenType || b.typ == EnumToken.StringTokenType
+                    //               ? b
+                    //               : a;
+                    //     }, null),
+                    // });
 
                     i = k;
                     continue;
                 }
-            } else if (options?.parseColor && isColor(t)) {
-                parseColor(t);
+            } else if (options?.parseColor && isColor(t, arena)) {
+                parseColor(t, arena);
             }
         }
 
+        typ = arena.getType(t);
+        typ2 = arena.getType(tokens[i + 1]);
+
         if (
-            t.typ == EnumToken.WhitespaceTokenType &&
+            typ == EnumToken.WhitespaceTokenType &&
             (i == 0 ||
                 i + 1 == tokens.length ||
-                [
-                    EnumToken.CommaTokenType,
-                    EnumToken.GteTokenType,
-                    EnumToken.LteTokenType,
-                    EnumToken.ColumnCombinatorTokenType,
-                ].includes(tokens[i + 1].typ) ||
-                (i > 0 && trimWhiteSpace.includes(tokens[i - 1].typ)))
+                (
+                    EnumToken.CommaTokenType == typ2 ||
+                    EnumToken.GteTokenType == typ2 ||
+                    EnumToken.LteTokenType == typ2 ||
+                    EnumToken.ColumnCombinatorTokenType == typ2)
+                ) ||
+                (i > 0 && trimWhiteSpace.includes(arena.getType(tokens[i - 1])))
         ) {
             tokens.splice(i--, 1);
             continue;
         }
 
-        if (t.typ == EnumToken.ColonTokenType) {
-            const typ: EnumToken = tokens[i + 1]?.typ;
+        if (typ == EnumToken.ColonTokenType) {
+            // const typ2: EnumToken = tokens[i + 1]?.typ;
 
-            if (typ != null) {
-                if (typ == EnumToken.FunctionTokenType) {
-                    tokens[i + 1].typ = EnumToken.PseudoClassFuncTokenType;
-                } else if (typ == EnumToken.IdenTokenType) {
+            if (typ2 != null) {
+                if (typ2 == EnumToken.FunctionTokenType) {
+                    typ2 = EnumToken.PseudoClassFuncTokenType;
+                } else if (typ2 == EnumToken.IdenTokenType) {
                     (tokens[i + 1] as PseudoClassToken).val = ":" + (tokens[i + 1] as PseudoClassToken).val;
                     tokens[i + 1].typ = EnumToken.PseudoClassTokenType;
                 }
 
-                if (typ == EnumToken.FunctionTokenType || typ == EnumToken.IdenTokenType) {
+                if (typ2 == EnumToken.FunctionTokenType || typ2 == EnumToken.IdenTokenType) {
                     tokens.splice(i, 1);
                     i--;
                 }
