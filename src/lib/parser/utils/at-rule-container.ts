@@ -19,10 +19,11 @@ import type { ValidationFunctionToken, ValidationToken } from "../../validation/
 import type { ValidationMatch } from "../../validation/types.d.ts";
 import { getSyntaxRule } from "../../validation/config.ts";
 import { equalsIgnoreCase } from "./text.ts";
+import { Arena } from "../arena.ts";
 
 export function parseAtRuleContainerQueryList(
-    stream: Token[],
-    context: AstAtRule | AtRuleToken,
+    stream: number[],
+    context: number,
     options: ParserOptions = {},
 ): {
     success: boolean;
@@ -30,19 +31,24 @@ export function parseAtRuleContainerQueryList(
 } {
     let matchCount: number = 0;
     let hasErrors: boolean = false;
+    let typ: EnumToken;
+    const arena = options.arena as Arena;
+    const name = arena.getName(context);
     const errors: ErrorDescription[] = [];
     const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + context.nam);
     const syntax: ValidationToken[] = syntaxRules?.getPreludeRules()?.slice?.(1) as ValidationToken[];
     const parts = stream.reduce(
         (acc, t) => {
-            if (t.typ === EnumToken.CommaTokenType && matchCount === 0) {
+
+            typ = arena.getType(t);
+            if (typ === EnumToken.CommaTokenType && matchCount === 0) {
                 acc.push([]);
             } else {
                 acc[acc.length - 1].push(t);
 
-                if (t.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(t.typ)) {
+                if (typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(typ)) {
                     matchCount++;
-                } else if (t.typ === EnumToken.EndParensTokenType) {
+                } else if (typ === EnumToken.EndParensTokenType) {
                     if (matchCount > 0) {
                         matchCount--;
                     }
@@ -51,12 +57,12 @@ export function parseAtRuleContainerQueryList(
 
             return acc;
         },
-        [[]] as Token[][],
+        [[]] as number[][],
     );
 
     const result: ValidationMatch = matchAllSyntaxes(
         syntax as ValidationFunctionToken[],
-        createValidationContext(stream),
+        createValidationContext(stream,options),
         options,
     );
 
@@ -77,8 +83,8 @@ export function parseAtRuleContainerQueryList(
             let i: number;
             let currentScope: Set<EnumToken> = new Set();
             const scopes: Array<Set<EnumToken>> = [currentScope];
-            const stack: Token[] = [];
-            const tokens: Token[] = [];
+            const stack: number[] = [];
+            const tokens: number[] = [];
             let expectAndOr: boolean = false;
 
             i = 0;
@@ -109,7 +115,7 @@ export function parseAtRuleContainerQueryList(
                         {
                             action: "drop",
                             node: stream[i],
-                            location: options.source!.getSourceLocation(stream[i]?.[LOCSTA]!),
+                            location: options.source!.getSourceLocation(stream[i]),
                             message: `expecting <container-condition>`,
                         },
                     ],
@@ -119,7 +125,9 @@ export function parseAtRuleContainerQueryList(
             for (; i < stream.length; i++) {
                 tokens.push(stream[i]);
 
-                if (stream[i].typ === EnumToken.WhitespaceTokenType || stream[i].typ === EnumToken.CommentTokenType) {
+                typ = arena.getType(stream[i]);
+
+                if (typ === EnumToken.WhitespaceTokenType || typ === EnumToken.CommentTokenType) {
                     continue;
                 }
 
@@ -130,7 +138,7 @@ export function parseAtRuleContainerQueryList(
                     //     const val: string = (stream[i] as IdentToken).val.toLowerCase();
                     //     valid = val === "and" || val === "or";
                     // } else {
-                    valid = stream[i].typ !== EnumToken.CommaTokenType;
+                    valid = typ !== EnumToken.CommaTokenType;
                     // }
 
                     if (!valid) {
@@ -139,19 +147,19 @@ export function parseAtRuleContainerQueryList(
                             action: "drop",
                             node: stream[i],
                             message: `expecting <and>, <or> or comma`,
-                            location: options.source!.getSourceLocation(stream[i]?.[LOCSTA]!),
+                            location: options.source!.getSourceLocation(stream[i]),
                         });
                         break;
                     }
                 }
 
-                if (stream[i].typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(stream[i].typ)) {
+                if (typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(typ)) {
                     scopes.push((currentScope = new Set()));
                     stack.push(stream[i]);
                     continue;
                 }
 
-                switch (stream[i].typ) {
+                switch (typ) {
                     case EnumToken.ColonTokenType:
                     case EnumToken.LtTokenType:
                     case EnumToken.LteTokenType:
@@ -163,7 +171,7 @@ export function parseAtRuleContainerQueryList(
 
                     case EnumToken.IdenTokenType:
                         {
-                            const val: string = (stream[i] as IdentToken).val.toLowerCase();
+                            const val: string = arena.getValue(stream[i] );
 
                             if (val === "not") {
                                 Object.assign(stream[i], {

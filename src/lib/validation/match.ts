@@ -41,6 +41,7 @@ import { isColor } from "../syntax/syntax.ts";
 import { equalsIgnoreCase } from "../parser/utils/text.ts";
 import { cloneNode } from "../ast/clone.ts";
 import { parseTokens } from "../parser/parse.ts";
+import { Arena } from "../parser/arena.ts";
 
 const config: ValidationConfiguration = getSyntaxConfig();
 
@@ -239,12 +240,12 @@ export function isMFValue(
  * @returns
  */
 export function createValidationContext(tokens: number[], options: ParserOptions): ValidationContext {
-    const arena = options.arena!;
-    tokens = trimArray(tokens.filter((t) => arena.getType(t) !== EnumToken.CommentTokenType));
+    const arena = options.arena as Arena;
+    tokens = trimArray(tokens.filter((t) => arena.getType(t) !== EnumToken.CommentTokenType), options);
 
-    if (arena.getType(tokens.at(-1)) === EnumToken.ImportantTokenType) {
+    if (arena.getType(tokens.at(-1)!) === EnumToken.ImportantTokenType) {
         tokens.pop();
-        trimArray(tokens);
+        trimArray(tokens, options);
     }
 
     const token = {
@@ -260,12 +261,15 @@ export function createValidationContext(tokens: number[], options: ParserOptions
         peek(offset: number = 0) {
             let index: number = this.index;
             let token: number = this.tokens[++index];
+            let typ: EnumToken = arena.getType(this.tokens[++index]);
 
             while (offset >= 0 && index < this.tokens.length) {
+
+                typ= arena.getType(token);
                 while (
-                    token?.typ == EnumToken.WhitespaceTokenType ||
-                    token?.typ == EnumToken.CommentTokenType ||
-                    token?.typ == EnumToken.CDOCOMMTokenType
+                    typ == EnumToken.WhitespaceTokenType ||
+                    typ == EnumToken.CommentTokenType ||
+                   typ == EnumToken.CDOCOMMTokenType
                 ) {
                     token = this.tokens[++index];
                 }
@@ -294,7 +298,7 @@ export function createValidationContext(tokens: number[], options: ParserOptions
             counter: number = 0,
         ): Token[] {
             let index: number = this.index;
-            let token: Token = this.tokens[index];
+            let token: number = this.tokens[index];
             // track balanced parens
             let matchCount: number = 0;
             const tokens: Token[] = [];

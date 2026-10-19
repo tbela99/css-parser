@@ -4496,7 +4496,7 @@ export function parseString(
         mapped.push(token);
     }
 
-    const result: Token[] = parseTokens(mapped, options, errors);
+    const result: number[] = parseTokens(mapped, options, errors);
 
     // remove EOF token
     result.splice(result.length - (result[result.length - 2]?.typ === EnumToken.WhitespaceTokenType ? 2 : 1), 2);
@@ -4530,7 +4530,7 @@ export function parseTokens(
     tokens: number[],
     options?: { parseColor?: boolean; source?: SourceFile, arena?: Arena } | null,
     errors?: ErrorDescription[],
-): Token[] {
+): number[] {
     const stack: number[] = [];
     const arena = options?.arena as Arena;
 
@@ -4595,7 +4595,7 @@ export function parseTokens(
                     action: "drop",
                     message: `Unbalanced token ')'`,
                     node,
-                    location: options.source!.getSourceLocation(node),
+                    location: options.source!.getSourceLocation(arena.getSpanStart(node)),
                 });
 
                 // return [];
@@ -4641,7 +4641,7 @@ export function parseTokens(
                     action: "drop",
                     message: `Unbalanced token ']'`,
                     node,
-                    location: options.source!.getSourceLocation(node),
+                    location: options.source!.getSourceLocation(arena.getSpanStart(node)),
                 });
                 continue;
             }
@@ -4805,8 +4805,11 @@ export function parseTokens(
                 if (typ2 == EnumToken.FunctionTokenType) {
                     typ2 = EnumToken.PseudoClassFuncTokenType;
                 } else if (typ2 == EnumToken.IdenTokenType) {
-                    (tokens[i + 1] as PseudoClassToken).val = ":" + (tokens[i + 1] as PseudoClassToken).val;
-                    tokens[i + 1].typ = EnumToken.PseudoClassTokenType;
+
+                    arena.set(tokens[i + 1], EnumToken.PseudoClassTokenType, arena.internString( ":" + arena.getValue(tokens[i + 1])));
+                    // (tokens[i + 1] as PseudoClassToken).val = ":" + (tokens[i + 1] as PseudoClassToken).val;
+                    // tokens[i + 1].typ = EnumToken.PseudoClassTokenType;
+                    typ2 = EnumToken.FunctionTokenType;
                 }
 
                 if (typ2 == EnumToken.FunctionTokenType || typ2 == EnumToken.IdenTokenType) {
@@ -4816,12 +4819,12 @@ export function parseTokens(
             }
         }
 
-        if (t.typ === EnumToken.CommaTokenType) {
-            if (tokens[i + 1]?.typ === EnumToken.WhitespaceTokenType) {
+        if (typ === EnumToken.CommaTokenType) {
+            if (typ2 === EnumToken.WhitespaceTokenType) {
                 tokens.splice(i + 1, 1);
             }
 
-            if (tokens[i - 1]?.typ === EnumToken.WhitespaceTokenType) {
+            if (arena.getType(tokens[i - 1]) === EnumToken.WhitespaceTokenType) {
                 tokens.splice(i - 1, 1);
                 i--;
             }
@@ -4829,13 +4832,13 @@ export function parseTokens(
     }
 
     if (stack.length > 0) {
-        const node: Token = stack.at(-1) as Token;
+        const node: number = stack.at(-1) as number;
 
         errors?.push?.({
             action: "drop",
-            message: `Unbalanced token. Expecting ${node.typ === EnumToken.AttrStartTokenType ? "']'" : ")"}'`,
+            message: `Unbalanced token. Expecting ${typ! === EnumToken.AttrStartTokenType ? "']'" : ")"}'`,
             node,
-            location: options.source!.getSourceLocation(node[LOCSTA]!),
+            location: options.source!.getSourceLocation(arena.getSpanStart(node)),
         });
     }
 
