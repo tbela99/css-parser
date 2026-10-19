@@ -27629,7 +27629,6 @@
                 if (codepoint == 92 /* TokenMap.REVERSE_SOLIDUS */) {
                     // eof
                     if ((codepoint = parseInfo.stream.charCodeAt(position + 1)) != codepoint) {
-                        // this.next(parseInfo, position);
                         return 0;
                     }
                     // \n \r \f \v

@@ -3997,13 +3997,30 @@ export declare interface VisitorNodeMap {
     [key: keyof typeof EnumToken]: GenericVisitorAstNodeHandlerMap<Token> | GenericVisitorAstNodeHandlerMap<AstNode>;
 }
 
-
+/**
+ * Parsed visitor handlers
+ */
 interface ParsedVisitorHandlers {
 
+    /**
+     * include tokens
+     */
     includeTokens: boolean;
+    /**
+     * all handlers
+     */
     allHandlers: Array<GenericVisitorAstNodeHandlerMap | Record<string, GenericVisitorAstNodeHandlerMap>>;
+    /**
+     * all visitors
+     */
     allVisitorsHandlers?: Set<GenericVisitorHandler<Token>> | Set<GenericVisitorHandler<AstNode>>;
+    /**
+     * pre all visitors
+     */
     preAllVisitorsHandlers?: Set<GenericVisitorHandler<Token>> | Set<GenericVisitorHandler<AstNode>>;
+    /**
+     * post all visitors
+     */
     postAllVisitorsHandlers?: Set<GenericVisitorHandler<Token>> | Set<GenericVisitorHandler<AstNode>>;
 }
 
