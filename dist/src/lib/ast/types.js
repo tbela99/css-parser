@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 1.6.8
 	License: MIT
  */
 /**
@@ -548,7 +548,7 @@ var EnumToken;
     /**
      * '|'
      */
-    EnumToken[EnumToken["Pipe"] = 109] = "Pipe";
+    EnumToken[EnumToken["PipeTokenType"] = 109] = "PipeTokenType";
     /**
      * '::'
      */
@@ -687,6 +687,10 @@ var EnumToken;
      * negative infinity token
      */
     EnumToken[EnumToken["NegativeInfinityTokenType"] = 143] = "NegativeInfinityTokenType";
+    /**
+     * CSS type token
+     */
+    EnumToken[EnumToken["CssTypeTokenType"] = 144] = "CssTypeTokenType";
     /* aliases */
     /**
      * alias for time token type

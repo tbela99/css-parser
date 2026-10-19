@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 1.6.8
 	License: MIT
  */
 import { EnumToken } from '../../ast/types.js';
@@ -16,12 +16,15 @@ const trimTokenSpace = new Set([
     EnumToken.LtTokenType,
     EnumToken.LteTokenType,
     EnumToken.ChildCombinatorTokenType,
+    EnumToken.PipeTokenType,
 ]);
 const trimSpaceAfter = new Set([
     ...tokensfuncSet.values(),
     EnumToken.ChildCombinatorTokenType,
     EnumToken.SupportsQueryConditionTokenType,
     EnumToken.SupportsQueryUnaryConditionTokenType,
+    EnumToken.CommaTokenType,
+    EnumToken.PipeTokenType,
 ]);
 /**
  * Replace token in its parent node
@@ -91,16 +94,17 @@ function trimWhiteSpaceTokens(tokens) {
         return tokens;
     }
     for (; i < tokens.length; i++) {
-        if (trimSpaceAfter.has(tokens[i].typ) && tokens[i + 1]?.typ === EnumToken.WhitespaceTokenType) {
-            tokens.splice(i + 1, 1);
-        }
-        else if (trimTokenSpace.has(tokens[i].typ)) {
+        if (trimTokenSpace.has(tokens[i].typ)) {
             if (tokens[i + 1]?.typ === EnumToken.WhitespaceTokenType) {
                 tokens.splice(i + 1, 1);
             }
             if (i > 0 && tokens[i - 1].typ === EnumToken.Whitespace) {
                 tokens.splice(--i, 1);
+                continue;
             }
+        }
+        if (trimSpaceAfter.has(tokens[i].typ) && tokens[i + 1]?.typ === EnumToken.WhitespaceTokenType) {
+            tokens.splice(i + 1, 1);
         }
     }
     return tokens;

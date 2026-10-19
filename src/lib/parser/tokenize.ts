@@ -79,7 +79,7 @@ function assignTokenMap(entries: string[], tokenType: EnumToken, suffix: string 
 SymbolsMapTokens[""] = EnumToken.DelimTokenType;
 SymbolsMapTokens["+"] = EnumToken.Plus;
 SymbolsMapTokens["="] = EnumToken.DelimTokenType;
-SymbolsMapTokens["|"] = EnumToken.Pipe;
+SymbolsMapTokens["|"] = EnumToken.PipeTokenType;
 SymbolsMapTokens["||"] = EnumToken.ColumnCombinatorTokenType;
 SymbolsMapTokens["|="] = EnumToken.DashMatchTokenType;
 SymbolsMapTokens["&"] = EnumToken.NestingSelectorTokenType;
@@ -880,7 +880,6 @@ export class Tokenizer {
             if (codepoint == TokenMap.REVERSE_SOLIDUS) {
                 // eof
                 if ((codepoint = parseInfo.stream.charCodeAt(position + 1)) != codepoint) {
-                    // this.next(parseInfo, position);
                     return 0;
                 }
 
@@ -1855,7 +1854,7 @@ export class Tokenizer {
                     }
 
                     this.advance(parseInfo);
-                    return this.makeToken(parseInfo, EnumToken.Pipe);
+                    return this.makeToken(parseInfo, EnumToken.PipeTokenType);
 
                 case TokenMap.EXCLAMATION:
                     if (parseInfo.position < parseInfo.currentPosition) {
@@ -1947,6 +1946,25 @@ export class Tokenizer {
                         }
                     }
 
+                    {
+                        const startPosition: number = parseInfo.position - parseInfo.offset;
+                        let offset: number = 1;
+                        let charCode: number = parseInfo.stream.charCodeAt(startPosition + offset);
+
+                        if (isLetter(charCode)) {
+                            charCode = parseInfo.stream.charCodeAt(++offset + startPosition);
+
+                            while (offset < endPosition && (charCode == TokenMap.MINUS || isLetter(charCode))) {
+                                charCode = parseInfo.stream.charCodeAt(++offset + startPosition);
+                            }
+
+                            if (offset > 1 && charCode == TokenMap.GREATERTHAN) {
+                                this.advance(parseInfo, offset);
+                                return this.makeToken(parseInfo, EnumToken.CssTypeTokenType);
+                            }
+                        }
+                    }
+
                     break;
 
                 case TokenMap.HASH:
@@ -1958,7 +1976,6 @@ export class Tokenizer {
                     break;
 
                 case TokenMap.REVERSE_SOLIDUS:
-
                     this.advance(parseInfo);
 
                     // EOF

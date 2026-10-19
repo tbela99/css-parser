@@ -792,7 +792,6 @@ export function renderValue(
             }
 
             if (options.convertColor !== false) {
-                
                 const value: ColorToken | null = convertColor(
                     token as ColorToken,
                     typeof options.convertColor === "boolean"
@@ -1637,7 +1636,7 @@ export function renderValue(
         case EnumToken.ImportantTokenType:
             return "!important";
 
-        case EnumToken.Pipe:
+        case EnumToken.PipeTokenType:
             return "|";
         case EnumToken.AttrTokenType:
         case EnumToken.IdenListTokenType:
@@ -1807,6 +1806,7 @@ export function renderValue(
                 return (token as PseudoElementToken).val.slice(1);
             }
 
+        case EnumToken.CssTypeTokenType:
         case EnumToken.UrlTokenTokenType:
 
         case EnumToken.HashTokenType:

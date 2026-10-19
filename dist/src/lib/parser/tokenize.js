@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 1.6.8
 	License: MIT
  */
 import { EnumToken, ColorType } from '../ast/types.js';
@@ -48,7 +48,7 @@ function assignTokenMap(entries, tokenType, suffix = "", lowercase = false) {
 SymbolsMapTokens[""] = EnumToken.DelimTokenType;
 SymbolsMapTokens["+"] = EnumToken.Plus;
 SymbolsMapTokens["="] = EnumToken.DelimTokenType;
-SymbolsMapTokens["|"] = EnumToken.Pipe;
+SymbolsMapTokens["|"] = EnumToken.PipeTokenType;
 SymbolsMapTokens["||"] = EnumToken.ColumnCombinatorTokenType;
 SymbolsMapTokens["|="] = EnumToken.DashMatchTokenType;
 SymbolsMapTokens["&"] = EnumToken.NestingSelectorTokenType;
@@ -1480,7 +1480,7 @@ class Tokenizer {
                         return this.makeToken(parseInfo, EnumToken.DashMatchTokenType);
                     }
                     this.advance(parseInfo);
-                    return this.makeToken(parseInfo, EnumToken.Pipe);
+                    return this.makeToken(parseInfo, EnumToken.PipeTokenType);
                 case 33 /* TokenMap.EXCLAMATION */:
                     if (parseInfo.position < parseInfo.currentPosition) {
                         return this.makeToken(parseInfo);
@@ -1544,6 +1544,21 @@ class Tokenizer {
                         else {
                             this.advance(parseInfo, 2);
                             return this.makeToken(parseInfo, EnumToken.CDOCOMMTokenType);
+                        }
+                    }
+                    {
+                        const startPosition = parseInfo.position - parseInfo.offset;
+                        let offset = 1;
+                        let charCode = parseInfo.stream.charCodeAt(startPosition + offset);
+                        if (isLetter(charCode)) {
+                            charCode = parseInfo.stream.charCodeAt(++offset + startPosition);
+                            while (offset < endPosition && (charCode == 45 /* TokenMap.MINUS */ || isLetter(charCode))) {
+                                charCode = parseInfo.stream.charCodeAt(++offset + startPosition);
+                            }
+                            if (offset > 1 && charCode == 62 /* TokenMap.GREATERTHAN */) {
+                                this.advance(parseInfo, offset);
+                                return this.makeToken(parseInfo, EnumToken.CssTypeTokenType);
+                            }
                         }
                     }
                     break;

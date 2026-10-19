@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 1.6.8
 	License: MIT
  */
 import { convertColor, getAngle } from '../syntax/color/color.js';
@@ -1135,7 +1135,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
             return ",";
         case EnumToken.ImportantTokenType:
             return "!important";
-        case EnumToken.Pipe:
+        case EnumToken.PipeTokenType:
             return "|";
         case EnumToken.AttrTokenType:
         case EnumToken.IdenListTokenType:
@@ -1258,6 +1258,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
                 pseudoElements.includes(token.val.slice(1))) {
                 return token.val.slice(1);
             }
+        case EnumToken.CssTypeTokenType:
         case EnumToken.UrlTokenTokenType:
         case EnumToken.HashTokenType:
         case EnumToken.IdenTokenType:

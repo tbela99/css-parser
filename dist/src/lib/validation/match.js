@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.7
+	Version: 1.6.8
 	License: MIT
  */
 import { getParsedSyntax, getSyntaxConfig } from './config.js';
@@ -133,8 +133,7 @@ function isMFValue(featureName, tokens, isMFRange) {
         case MediaFeatureType.RatioType:
             return {
                 valid: true,
-                success: (tokens.length == 1 &&
-                    tokens[0].typ == EnumToken.NumberTokenType) ||
+                success: (tokens.length == 1 && tokens[0].typ == EnumToken.NumberTokenType) ||
                     (tokens.length === 3 &&
                         tokens[0].typ == EnumToken.NumberTokenType &&
                         typeof tokens[0].val === "number" &&
@@ -441,7 +440,7 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                 }
                 stack.push(token);
                 break;
-            case EnumToken.Pipe:
+            case EnumToken.PipeTokenType:
             case EnumToken.DelimTokenType:
             case EnumToken.StringTokenType:
             case EnumToken.IncludeMatchTokenType:
@@ -489,10 +488,10 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                         }
                         slice.push(tokens[n]);
                     }
-                    if (slice[1]?.typ === EnumToken.Pipe) {
+                    if (slice[1]?.typ === EnumToken.PipeTokenType) {
                         slice.shift();
                     }
-                    if (slice[0].typ === EnumToken.Pipe) {
+                    if (slice[0].typ === EnumToken.PipeTokenType) {
                         slice.shift();
                     }
                     if (slice.length === 1) {
@@ -854,8 +853,8 @@ function matchSyntax(syntaxes, context, options) {
         // custom function token
         if (token.typ === EnumToken.CustomFunctionTokenDefType) {
             if (syntaxes[i].typ != ValidationTokenEnum.PropertyType ||
-                syntaxes[i + 1].typ != ValidationTokenEnum.OpenParenthesis ||
-                syntaxes[i + 2].typ == null) {
+                syntaxes[i + 1]?.typ != ValidationTokenEnum.OpenParenthesis ||
+                syntaxes[i + 2]?.typ == null) {
                 if (!isOptional) {
                     return {
                         success: false,
@@ -1702,17 +1701,15 @@ function matchProperty(property, context, options) {
         case "display-internal":
         case "display-outside":
         case "display-legacy":
-        case "content-position":
-            {
-                let values = propertyKeywordValues.get(property.val);
-                if (values == null) {
-                    values = new Set(config.syntaxes[property.val].syntax.split(/[\s|]+/));
-                    propertyKeywordValues.set(property.val, values);
-                }
-                success =
-                    token?.typ == EnumToken.IdenTokenType && values.has(token.val.toLowerCase());
-                break;
+        case "content-position": {
+            let values = propertyKeywordValues.get(property.val);
+            if (values == null) {
+                values = new Set(config.syntaxes[property.val].syntax.split(/[\s|]+/));
+                propertyKeywordValues.set(property.val, values);
             }
+            success = token?.typ == EnumToken.IdenTokenType && values.has(token.val.toLowerCase());
+            break;
+        }
         case "mf-name":
             {
                 const token = context.peek();
@@ -1732,8 +1729,7 @@ function matchProperty(property, context, options) {
         case "custom-ident":
         case "counter-name":
         case "counter-style-name":
-            success =
-                token?.typ == EnumToken.IdenTokenType || token?.typ == EnumToken.DashedIdenTokenType;
+            success = token?.typ == EnumToken.IdenTokenType || token?.typ == EnumToken.DashedIdenTokenType;
             if (success && token?.typ === EnumToken.IdenTokenType) {
                 const val = token.val.toLowerCase();
                 success = "none" !== val && !allValues.includes(val);
@@ -2192,6 +2188,21 @@ function matchProperty(property, context, options) {
                     token.chi[l].typ == EnumToken.StringTokenType ||
                         token.chi[l].typ == EnumToken.IdenTokenType ||
                         token.chi[l].typ == EnumToken.UrlTokenTokenType;
+                context.next();
+                return {
+                    success: true,
+                    valid: true,
+                    token: null,
+                    context,
+                    syntaxToken: null,
+                    errors: [],
+                };
+            }
+            break;
+        }
+        case "css-type": {
+            success = context.peek()?.typ == EnumToken.CssTypeTokenType;
+            if (success) {
                 context.next();
                 return {
                     success: true,

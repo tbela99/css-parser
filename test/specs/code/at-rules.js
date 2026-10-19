@@ -1476,5 +1476,60 @@ body {
 }`));
         });
         
+        
+        it('at-rule function #62', function () {
+            return transform(`
+
+
+@function --transparent(--color, --alpha) {
+  result: oklch(from var(--color) l c h / var(--alpha));
+}
+
+section {
+  --base-color: #faa6ff;
+  background-color: --transparent(var(--base-color), 0.8);
+}
+
+@function --transparent(--color <color>, --alpha type(<number> | <transform-function>))
+  returns <color> {
+  result: oklch(from var(--color) l c h / var(--alpha));
+}
+  @function --max-plus-x(--list <length>#, --x <length>) {
+  result: calc(max(var(--list)) + var(--x));
+}
+  div {
+  width: --max-plus-x({1px, 7px, 2px}, 3px); /* 10px */
+}
+  @function --anim-1s(--animation, --count) {
+  --duration: 1s;
+  --easing: linear;
+  result: var(--animation) var(--duration) var(--count) var(--easing);
+}
+  `, {
+                beautify: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`@function --transparent(--color,--alpha) {
+ result: oklch(from var(--color) l c h/var(--alpha))
+}
+section {
+ --base-color: #faa6ff;
+ background-color: --transparent(var(--base-color),.8)
+}
+@function --transparent(--color <color>,--alpha type(<number>|<transform-function>))returns <color> {
+ result: oklch(from var(--color) l c h/var(--alpha))
+}
+@function --max-plus-x(--list <length>#,--x <length>) {
+ result: calc(max(var(--list)) + var(--x))
+}
+div {
+ width: --max-plus-x({1px,7px,2px},3px)
+}
+@function --anim-1s(--animation,--count) {
+ --duration: 1s;
+ --easing: linear;
+ result: var(--animation) var(--duration) var(--count) var(--easing)
+}`));
+        });
+        
     });
     }

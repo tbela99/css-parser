@@ -2,7 +2,6 @@ import type {
     BinaryExpressionToken,
     DimensionToken,
     ErrorDescription,
-    FractionToken,
     FunctionToken,
     IdentToken,
     LiteralToken,
@@ -155,7 +154,7 @@ export function isMFValue(
     featureName = featureName.toLowerCase();
 
     // @ts-expect-error
-    if (  config.mediaFeatures[featureName] == null) {
+    if (config.mediaFeatures[featureName] == null) {
         return { valid: false, success: false };
     }
 
@@ -212,8 +211,7 @@ export function isMFValue(
             return {
                 valid: true,
                 success:
-                    (tokens.length == 1 &&
-                        tokens[0].typ == EnumToken.NumberTokenType) ||
+                    (tokens.length == 1 && tokens[0].typ == EnumToken.NumberTokenType) ||
                     (tokens.length === 3 &&
                         tokens[0].typ == EnumToken.NumberTokenType &&
                         typeof (tokens[0] as NumberToken).val === "number" &&
@@ -617,7 +615,7 @@ export function matchSelectorSyntax(
 
                 break;
 
-            case EnumToken.Pipe:
+            case EnumToken.PipeTokenType:
             case EnumToken.DelimTokenType:
             case EnumToken.StringTokenType:
             case EnumToken.IncludeMatchTokenType:
@@ -675,11 +673,11 @@ export function matchSelectorSyntax(
                         slice.push(tokens[n]);
                     }
 
-                    if (slice[1]?.typ === EnumToken.Pipe) {
+                    if (slice[1]?.typ === EnumToken.PipeTokenType) {
                         slice.shift();
                     }
 
-                    if (slice[0].typ === EnumToken.Pipe) {
+                    if (slice[0].typ === EnumToken.PipeTokenType) {
                         slice.shift();
                     }
 
@@ -732,7 +730,6 @@ export function matchSelectorSyntax(
                 }
 
             case EnumToken.StartParensTokenType:
-              
                 return {
                     success: false,
                     errors: [
@@ -883,7 +880,6 @@ export function matchAllSyntaxes(
 
         if (index != -1) {
             for (let i = index; i < syntaxes.length; i++) {
-
                 if (
                     syntaxes[i].typ == ValidationTokenEnum.Whitespace ||
                     syntaxes[i].isOptional ||
@@ -1100,7 +1096,6 @@ function matchSyntax(
     }
 
     while (++i < syntaxes.length) {
-
         if (syntaxes[i].typ == ValidationTokenEnum.Whitespace) {
             continue;
         }
@@ -1156,8 +1151,8 @@ function matchSyntax(
         if (token.typ === EnumToken.CustomFunctionTokenDefType) {
             if (
                 syntaxes[i].typ != ValidationTokenEnum.PropertyType ||
-                syntaxes[i + 1].typ != ValidationTokenEnum.OpenParenthesis ||
-                syntaxes[i + 2].typ == null
+                syntaxes[i + 1]?.typ != ValidationTokenEnum.OpenParenthesis ||
+                syntaxes[i + 2]?.typ == null
             ) {
                 if (!isOptional) {
                     return {
@@ -2023,7 +2018,7 @@ function matchProperty(
         const syntax = (
             getParsedSyntax(
                 ValidationSyntaxGroupEnum.Syntaxes,
-                    (token as FunctionToken).val + "()",
+                (token as FunctionToken).val + "()",
             ) as ValidationFunctionToken[]
         )?.[0]?.chi as ValidationToken[];
 
@@ -2285,23 +2280,21 @@ function matchProperty(
         case "display-internal":
         case "display-outside":
         case "display-legacy":
-        case "content-position":
-            {
-                let values = propertyKeywordValues.get(property.val);
+        case "content-position": {
+            let values = propertyKeywordValues.get(property.val);
 
-                if (values == null) {
-                    values = new Set(
-                        (config.syntaxes as unknown as Record<string, { syntax: string }>)[property.val].syntax.split(
-                            /[\s|]+/,
-                        ),
-                    );
-                    propertyKeywordValues.set(property.val, values);
-                }
-
-                success =
-                    token?.typ == EnumToken.IdenTokenType && values.has((token as IdentToken).val.toLowerCase());
-                break;
+            if (values == null) {
+                values = new Set(
+                    (config.syntaxes as unknown as Record<string, { syntax: string }>)[property.val].syntax.split(
+                        /[\s|]+/,
+                    ),
+                );
+                propertyKeywordValues.set(property.val, values);
             }
+
+            success = token?.typ == EnumToken.IdenTokenType && values.has((token as IdentToken).val.toLowerCase());
+            break;
+        }
 
         case "mf-name":
             {
@@ -2325,8 +2318,7 @@ function matchProperty(
         case "custom-ident":
         case "counter-name":
         case "counter-style-name":
-            success =
-                token?.typ == EnumToken.IdenTokenType || token?.typ == EnumToken.DashedIdenTokenType;
+            success = token?.typ == EnumToken.IdenTokenType || token?.typ == EnumToken.DashedIdenTokenType;
 
             if (success && token?.typ === EnumToken.IdenTokenType) {
                 const val: string = (token as IdentToken).val.toLowerCase();
@@ -2898,6 +2890,25 @@ function matchProperty(
                     (token as FunctionToken).chi[l].typ == EnumToken.StringTokenType ||
                     (token as FunctionToken).chi[l].typ == EnumToken.IdenTokenType ||
                     (token as FunctionToken).chi[l].typ == EnumToken.UrlTokenTokenType;
+                context.next();
+
+                return {
+                    success: true,
+                    valid: true,
+                    token: null,
+                    context,
+                    syntaxToken: null,
+                    errors: [],
+                };
+            }
+
+            break;
+        }
+
+        case "css-type": {
+            success = context.peek()?.typ == EnumToken.CssTypeTokenType;
+
+            if (success) {
                 context.next();
 
                 return {
