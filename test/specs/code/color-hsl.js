@@ -1,5 +1,5 @@
-import {ColorType, EnumToken} from "../../../dist/lib/ast/types.js";
-import {isOkLabClose} from "../../../dist/lib/syntax/color/utils/distance.js";
+import {ColorType, EnumToken} from "../../../dist/src/lib/ast/types.js";
+import {isOkLabClose} from "../../../dist/src/lib/syntax/color/utils/distance.js";
 
 export function run(describe, expect, it, transform, parse, render) {
 

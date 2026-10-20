@@ -68,6 +68,20 @@ export declare interface IdentToken extends BaseToken {
 }
 
 /**
+ * Css type token
+ */
+export declare interface CssTypeTokenType extends BaseToken {
+ /**
+     * @inheritdoc
+     */
+    typ: EnumToken.CssTypeTokenType;
+    /**
+     * css type value
+     */
+    val: string;
+}
+
+/**
  * Ident list token
  */
 export declare interface IdentListToken extends BaseToken {
@@ -1690,4 +1704,5 @@ export declare type Token =
     | NaNToken
     | InfinityToken
     | NegativeInfinityToken
+    | CssTypeTokenType
     | EOFToken;

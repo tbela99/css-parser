@@ -1,0 +1,296 @@
+/* 
+	CSS parser, minifier and validator for node and the browser
+
+	Author(s): Thierry Bela
+	Version: 1.6.8
+	License: MIT
+ */
+import { toBase64 } from '../../parser/utils/base64.js';
+import { decode, encode } from './lib/codec.js';
+
+/**
+ * Generate and parse source map
+ *
+ * ```ts
+ * const sourcemap = new SourceMap();
+ *
+ * // you can also pass an input sourcemap
+ * // const sourcemap = new SourceMap(sourcemapObjectOrJSONString);
+ *
+ * sourcemap.addSourceContent(0, '/css/styles.css', null);
+ * sourcemap.addSourceContent(1, '/css/typography.css', null);
+ *
+ * const maps = [];
+ *
+ * maps.add([
+     1, 1, 0, 1, 1]);
+ * maps.add([
+     2, 1, 1, 1, 1
+ ]);
+
+    sourcemap.add(maps);
+
+    // convert to inline sourcemap
+    sourcemap.toUrl();
+
+    // convert to JSON
+    sourcemap.toJSON();
+
+    // find the original file, line and column
+    sourcemap.find(2, 1);
+    ```
+ */
+class SourceMap {
+    /**
+     *
+     * @private
+     */
+    keys = new Set();
+    /**
+     * Last location
+     */
+    lastLocation = null;
+    /**
+     * Version
+     * @private
+     */
+    version = 3;
+    /**
+     * Sources map
+     * @private
+     */
+    sourcesMap = [];
+    /**
+     * Sources content
+     * @private
+     */
+    sourcesContent = [];
+    /**
+     * Sources
+     * @private
+     */
+    sources = [];
+    /**
+     * Map
+     * @private
+     *
+     */
+    map = new Map();
+    /**
+     * Map
+     * @private
+     *
+     */
+    reverseMap = new Map();
+    /**
+     * Line
+     * @private
+     */
+    line = -1;
+    /**
+     *
+     * @param sourcemaps input sourcemap
+     */
+    constructor(sourcemaps) {
+        if (typeof sourcemaps === "string") {
+            if (sourcemaps.startsWith("data:")) {
+                let encoding = "";
+                let offset = sourcemaps.indexOf(",") + 1;
+                if (offset == 0) {
+                    offset = sourcemaps.lastIndexOf(";") + 1;
+                }
+                else {
+                    encoding = sourcemaps.slice(sourcemaps.lastIndexOf(";") + 1, offset - 1);
+                }
+                if (encoding == "base64") {
+                    sourcemaps = atob(sourcemaps.slice(offset));
+                }
+                else {
+                    sourcemaps = decodeURIComponent(sourcemaps.slice(offset));
+                }
+            }
+            sourcemaps = JSON.parse(sourcemaps);
+        }
+        if (sourcemaps != null) {
+            this.sources = sourcemaps.sources?.slice() ?? [];
+            this.sourcesContent = sourcemaps.sourcesContent?.slice() ?? [];
+            const decodedMappings = sourcemaps.mappings
+                .split(";")
+                .map((mapping) => mapping.split(",").map((mapping) => decode(mapping)));
+            this.line = decodedMappings.length - 1;
+            for (let index = 0; index < decodedMappings.length; index++) {
+                if (decodedMappings[index].length == 0 ||
+                    (decodedMappings[index].length == 1 && decodedMappings[index][0].length == 0)) {
+                    continue;
+                }
+                this.map.set(index, decodedMappings[index]);
+            }
+            this.computePositions();
+        }
+    }
+    /**
+     * add source
+     * @param id source id
+     * @param fileName source file
+     * @param content source content
+     * @returns
+     */
+    addSourceContent(id, fileName, content) {
+        if (this.sourcesMap.includes(id)) {
+            return;
+        }
+        this.sourcesMap[this.sourcesMap.length] = id;
+        this.sources[this.sources.length] = fileName || null;
+        this.sourcesContent[this.sourcesContent.length] = content || null;
+    }
+    /**
+     * Add multiple sourcemaps
+     * @param maps
+     * @throws
+     */
+    add(maps) {
+        let srcIndex;
+        for (let [newLine, newColumn, srcId, ln, col] of maps) {
+            const key = `${srcId}:${ln}:${col}:${newLine}:${newColumn}`;
+            if (this.keys.has(key)) {
+                continue;
+            }
+            this.keys.add(key);
+            const line = newLine - 1;
+            let record;
+            if (line > this.line) {
+                this.line = line;
+            }
+            srcIndex = this.sourcesMap.indexOf(srcId);
+            if (srcIndex == -1) {
+                throw new Error(`Source file ${srcId} not added to sourcemap`);
+            }
+            if (!this.map.has(line)) {
+                record = [Math.max(0, newColumn - 1), srcIndex, ln - 1, col - 1];
+                this.map.set(line, [record]);
+            }
+            else {
+                const arr = this.map.get(line);
+                record = [Math.max(0, newColumn - 1) - arr[0][0], srcIndex - arr[0][1], ln - 1, col - 1];
+                arr.push(record);
+            }
+            if (this.lastLocation != null) {
+                record[2] -= this.lastLocation.ln - 1;
+                record[3] -= this.lastLocation.col - 1;
+            }
+            this.lastLocation ??= { ln, col };
+            this.lastLocation.ln = ln;
+            this.lastLocation.col = col;
+        }
+    }
+    /**
+     * compute original positions
+     */
+    computePositions() {
+        this.reverseMap.clear();
+        let sourceFileIndex = 0; // second field
+        let sourceCodeLine = 0; // third field
+        let sourceCodeColumn = 0; // fourth field
+        // let nameIndex: number = 0; // fifth field
+        let generatedCodeColumn;
+        let result;
+        // mappings to original source
+        for (let [i, line] of this.map.entries()) {
+            if (line.length === 0 || (line.length === 1 && line[0].length === 0)) {
+                continue;
+            }
+            generatedCodeColumn = line[0][0]; // first field - reset each time
+            line = line
+                .map((segment, index, array) => {
+                if (segment.length === 0) {
+                    return [];
+                }
+                generatedCodeColumn = index == 0 ? segment[0] : segment[0] + array[0][0];
+                result = [generatedCodeColumn];
+                if (segment.length <= 1) {
+                    return result;
+                }
+                sourceFileIndex = index == 0 ? segment[1] : segment[1] + array[0][1];
+                sourceCodeLine += segment[2];
+                sourceCodeColumn += segment[3];
+                result.push(sourceFileIndex, sourceCodeLine, sourceCodeColumn);
+                // nameIndex not needed
+                // if (segment.length === 5) {
+                //     nameIndex += segment[4];
+                //     result.push(nameIndex);
+                // }
+                return result;
+            })
+                .sort((a, b) => {
+                if (a[1] !== b[1]) {
+                    return a[1] - b[1];
+                }
+                return a[0] - b[0];
+            });
+            if (line.length == 0 || (line.length == 1 && line[0].length == 0)) {
+                continue;
+            }
+            this.reverseMap.set(i, line);
+        }
+    }
+    /**
+     * retrieve original sources, lines and columns
+     * @param line generated line
+     * @param column generated column
+     */
+    find(line, column) {
+        if (this.reverseMap.size == 0) {
+            this.computePositions();
+        }
+        if (!this.reverseMap.has(--line)) {
+            return null;
+        }
+        column--;
+        const result = [];
+        for (const record of this.reverseMap.get(line)) {
+            if (record.length == 0 || record[0] < column) {
+                continue;
+            }
+            if (record[0] > column) {
+                break;
+            }
+            result.push([
+                this.sources?.[record[1]] ?? null,
+                record[2] + 1,
+                record[3] + 1,
+                this.sourcesContent?.[record[1]] ?? null,
+            ]);
+        }
+        return result.length == 0 ? null : result;
+    }
+    /**
+     * Convert to URL encoded string
+     */
+    toUrl() {
+        // /*# sourceMappingURL = ${url} */
+        return `data:application/json;charset=utf-8;base64,${toBase64(JSON.stringify(this.toJSON()))}`;
+    }
+    /**
+     * Convert to JSON object
+     */
+    toJSON() {
+        const mappings = [];
+        let i = 0;
+        for (; i <= this.line; i++) {
+            if (!this.map.has(i)) {
+                mappings.push("");
+            }
+            else {
+                mappings.push(this.map.get(i).reduce((acc, curr) => acc + (acc === "" ? "" : ",") + encode(curr), ""));
+            }
+        }
+        return {
+            version: this.version,
+            sources: this.sources.slice(),
+            sourcesContent: this.sourcesContent?.slice(),
+            mappings: mappings.join(";"),
+        };
+    }
+}
+
+export { SourceMap };

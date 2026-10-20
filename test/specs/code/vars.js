@@ -1,9 +1,8 @@
 export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
-
-    describe('Inline css variable', function () {
-
-        it('inline variable #1', function () {
-            return transform(`
+    describe("Inline css variable", function () {
+        it("inline variable #1", function () {
+            return transform(
+                `
 :root {
     --animate-duration: 1s;
     --animate-delay: 1s;
@@ -52,7 +51,10 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
     animation-delay: calc(var(--animate-delay)*4)
 }
 
-`, {inlineCssVariables: true, nestingRules: false}).then(result => expect(render(result.ast, {minify: false}).code).equals(`:root {
+`,
+                { inlineCssVariables: true, nestingRules: false },
+            ).then((result) =>
+                expect(render(result.ast, { minify: false }).code).equals(`:root {
  /* --animate-duration: 1s */
  /* --animate-delay: 1s */
  /* --animate-repeat: 1 */
@@ -80,40 +82,49 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
 .animate__animated.animate__delay-4s {
  -webkit-animation-delay: 4s;
  animation-delay: 4s
-}`));
+}`),
+            );
         });
-
     });
 
-    it('inline variable #2', function () {
-        return parse(`
+    it("inline variable #2", function () {
+        return parse(
+            `
 html { --color: green; }
 .foo {
   --darker-accent: lch(from var(--color) calc(l / 2) c h);
 }
 
-`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`html {
+`,
+            { inlineCssVariables: true },
+        ).then((result) =>
+            expect(render(result.ast, { minify: false }).code).equals(`html {
  /* --color: green */
 }
 .foo {
  --darker-accent: #004500
-}`));
+}`),
+        );
     });
 
-    it('declaration-value #3', function () {
-        return transform(`
+    it("declaration-value #3", function () {
+        return transform(
+            `
     
 @font-face {
 
     font-family: var(--fontStack-monospace, ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace);
 
 
-`, {
-                beautify: true,  
-                validation: true
-    }).then(result => expect(result.code).equals(`@font-face {
+`,
+            {
+                beautify: true,
+                validation: true,
+            },
+        ).then((result) =>
+            expect(result.code).equals(`@font-face {
  font-family: var(--fontStack-monospace,ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace)
-}`));
+}`),
+        );
     });
-
 }

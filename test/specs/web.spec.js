@@ -1,24 +1,37 @@
-import {dirname, parse, render, resolve, transform, transformSync, parseSync} from '../../dist/web.js';
-import {ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions} from '../../dist/lib/ast/types.js';
-import {expect, use} from "chai";
-import * as tests from './code/index.js';
-import chaiAsPromised from 'chai-as-promised';
+import { dirname, parse, render, resolve, transform, transformSync, parseSync } from "../../dist/src/web.js";
+import { ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from "../../dist/src/lib/ast/types.js";
+import { expect, use } from "chai";
+import * as tests from "./code/index.js";
+import chaiAsPromised from "chai-as-promised";
 
 use(chaiAsPromised);
 
-
 async function readFile(path) {
-
-    return fetch(path).then(response => response.text())
+    return fetch(path).then((response) => response.text());
 }
 
 //
 // run(describe, expect, transform, parse, render);
-for (const [name,test] of Object.entries(tests)) {
-
-    if (name === 'sourceMap') {
+for (const [name, test] of Object.entries(tests)) {
+    if (name === "sourceMap") {
         continue;
     }
 
-    test.run(describe, expect, it, transform, parse, render, dirname, readFile, resolve, ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, transformSync, parseSync);
+    test.run(
+        describe,
+        expect,
+        it,
+        transform,
+        parse,
+        render,
+        dirname,
+        readFile,
+        resolve,
+        ColorType,
+        EnumToken,
+        ModuleCaseTransformEnum,
+        ModuleScopeEnumOptions,
+        transformSync,
+        parseSync,
+    );
 }

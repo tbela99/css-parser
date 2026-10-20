@@ -1,15 +1,71 @@
 # Changelog
 
+# v1.6.8
+
+- [x] allow a visitor to visit all nodes
+
+```ts
+import {transformSync} from '@tbela99/css-parser';
+
+ const options = {
+            input: `
+    
+    button {
+            	line-height: 2.5 !important;
+            	line-height: 1.5;
+            }
+    `,
+            beautify: true,
+// visit all nodes
+  visitor (node) {
+      
+    console.error(EnumToken[node.typ]);
+  }
+        };
+
+  const result = transformSync(options);
+  console.debug(result.code);
+```
+
+- [x] implement CSS [at-rule function](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@function) support
+
 # v1.6.7
 
 ## Improvement
 
-- limit the amount of memory used when parsing large files
-- use node flags as bitmasks
+- [x] limit the amount of memory used when parsing large files
+- [x] use node flags as bitmasks
+- [x] merging properties now takes into consideration the !important flag
+
+```ts
+import {transformSync} from '@tbela99/css-parser';
+
+ const options = {
+            input: `
+    
+    button {
+            	line-height: 2.5 !important;
+            	line-height: 1.5;
+            }
+    `,
+            beautify: true,
+        };
+
+  const result = transformSync(options);
+  console.debug(result.code);
+```
+
+result
+
+```css
+button {
+ line-height: 2.5!important
+}
+```
 
 ## Fixes
 
-- [x] fix powerless and missing components handling with color-mix(). missing and powerless colors are now [carried forwarded](https://drafts.csswg.org/css-color-5/#rcs-intro)
+- [x] fix powerless and missing components handling with color-mix(). missing and powerless colors are now [carried forward](https://drafts.csswg.org/css-color-5/#rcs-intro)
 
 ```ts
 const css = `
@@ -33,7 +89,7 @@ const result =  transformSync({input: css,
   removeDuplicateDeclarations: false,
   convertColor: ColorType.SRGB
 });
-// console.debug(result);
+
 console.debug(result.code);
 ```
 

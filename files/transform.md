@@ -96,6 +96,31 @@ const result = transformSync(options);
 // ...
 ```
 
+It is also possible to visit all nodes by providing a function as the visitor property.
+
+```ts
+import {transformSync} from '@tbela99/css-parser';
+
+ const options = {
+            input: `
+    
+    button {
+            	line-height: 2.5 !important;
+            	line-height: 1.5;
+            }
+    `,
+            beautify: true,
+// visit all nodes
+  visitor (node) {
+      
+    console.error(EnumToken[node.typ]);
+  }
+        };
+
+  const result = transformSync(options);
+  console.debug(result.code);
+```
+
 ## Visitors execution order
 
 Visitors can be called when the node is entered, visited or exited.

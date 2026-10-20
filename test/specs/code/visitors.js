@@ -1,5 +1,5 @@
-import { ColorType, EnumToken } from "../../../dist/lib/ast/types.js";
-import { WalkerEvent } from "../../../dist/lib/ast/walk.js";
+import { ColorType, EnumToken } from "../../../dist/src/lib/ast/types.js";
+import { WalkerEvent } from "../../../dist/src/lib/ast/walk.js";
 
 export function run(
     describe,

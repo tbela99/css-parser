@@ -1,8 +1,8 @@
-import {ColorType, EnumToken} from "../../../dist/lib/ast/types.js";
+import {ColorType, EnumToken} from "../../../dist/src/lib/ast/types.js";
 
-import {isOkLabClose} from "../../../dist/lib/syntax/color/utils/distance.js";
-import {convertColor} from "../../../dist/lib/syntax/color/color.js";
-import {parseString} from "../../../dist/lib/parser/parse.js";
+import {isOkLabClose} from "../../../dist/src/lib/syntax/color/utils/distance.js";
+import {convertColor} from "../../../dist/src/lib/syntax/color/color.js";
+import {parseString} from "../../../dist/src/lib/parser/parse.js";
 export function run(describe, expect, it, transform, parse, render) {
 
     describe('convert to prophoto-rgb', function () {
