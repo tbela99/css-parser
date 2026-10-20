@@ -35,6 +35,7 @@ import type {
     IdentToken,
     LoadResult,
     ModuleSyncOptions,
+    ParsedVisitorHandlers,
     ParseInfo,
     ParseResult,
     ParseResultStats,
@@ -432,12 +433,15 @@ export const generateSyncScopedName = memoize(
 function parseVisitors(
     visitorsDef: GenericVisitorHandler<T> | GenericVisitorAstNodeSyncHandlerMap<T> | VisitorNodeMap | VisitorNodeMap[],
     errors: ErrorDescription[],
-) {
+): ParsedVisitorHandlers {
     const visitors = Object.entries(typeof visitorsDef === "function" ? [visitorsDef] : visitorsDef);
     let key: string;
     let value: any;
     let i: number;
 
+    const allVisitorsHandlers: Set<GenericVisitorHandler<Token>> = new Set();
+    const preAllVisitorsHandlers: Set<GenericVisitorHandler<Token>> = new Set();
+    const postAllVisitorsHandlers: Set<GenericVisitorHandler<Token>> = new Set();
     const valuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>> = new Map();
     const preValuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>> = new Map();
     const postValuesHandlers: Map<EnumToken, Array<GenericVisitorHandler<Token>>> = new Map();
@@ -577,10 +581,23 @@ function parseVisitors(
             } else {
                 errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
             }
+        } else if (key == "All" || key == "visitor") {
+            if (typeof value == "function") {
+                allVisitorsHandlers.add(value);
+            } else if (typeof value == "object") {
+                if ("type" in value && "handler" in value && value.type in WalkerEvent) {
+                    if (value.type == WalkerEvent.Enter) {
+                        preAllVisitorsHandlers.add(value.handler);
+                    } else if (value.type == WalkerEvent.Leave) {
+                        postAllVisitorsHandlers.add(value.handler);
+                    }
+                }
+            }
         } else {
             errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
         }
     }
+
     const allHandlers = [] as Array<
         | Map<
               "Declaration" | "Rule" | "AtRule" | "KeyframesRule" | "KeyframesAtRule",
@@ -621,10 +638,30 @@ function parseVisitors(
         allHandlers.push(postValuesHandlers!);
     }
 
-    return {
+    const result = {
         allHandlers,
-        includeTokens: preValuesHandlers!.size > 0 || valuesHandlers!.size > 0 || postValuesHandlers!.size > 0,
-    };
+        includeTokens:
+            preValuesHandlers!.size > 0 ||
+            valuesHandlers!.size > 0 ||
+            postValuesHandlers!.size > 0 ||
+            allVisitorsHandlers.size > 0 ||
+            preAllVisitorsHandlers.size > 0 ||
+            postAllVisitorsHandlers.size > 0,
+    } as ParsedVisitorHandlers;
+
+    if (allVisitorsHandlers.size > 0) {
+        result.allVisitorsHandlers = allVisitorsHandlers;
+    }
+
+    if (preAllVisitorsHandlers.size > 0) {
+        result.preAllVisitorsHandlers = preAllVisitorsHandlers;
+    }
+
+    if (postAllVisitorsHandlers.size > 0) {
+        result.postAllVisitorsHandlers = postAllVisitorsHandlers;
+    }
+
+    return result as ParsedVisitorHandlers;
 }
 
 /**
@@ -709,14 +746,12 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
     // @ts-ignore ignore error
     let parensMatch: number = 0;
     let curlyBracketMatch: number = 0;
-    // let currentItemIndex: number;
 
     ast[LOCSRCID] = options.source!.id;
     ast[LOCSTA] = 0;
 
     while (!tokenizer.done()) {
         tokenizer.next();
-        // item = (iter as Array<TokenizeResult>)[currentItemIndex];
 
         if (tokenizer.unit != null) {
             item = {
@@ -875,7 +910,6 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
             parensMatch = 0;
             curlyBracketMatch = 0;
         }
-        // }
     }
 
     if (tokens.length > 0) {
@@ -965,6 +999,10 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
             parens = null;
             handlers.length = 0;
 
+            if (visitors.preAllVisitorsHandlers?.size! > 0) {
+                handlers.push(...visitors.preAllVisitorsHandlers!);
+            }
+
             genericKey =
                 nodes[i].typ == EnumToken.DeclarationNodeType
                     ? "Declaration"
@@ -986,6 +1024,10 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                       ? camelize((nodes[i] as AstKeyframesAtRule).val)
                       : null;
 
+            if (visitors.allVisitorsHandlers?.size! > 0) {
+                handlers.push(...visitors.allVisitorsHandlers!);
+            }
+
             for (const map of visitors.allHandlers) {
                 // @ts-ignore
                 if (genericKey != null && map!.has(genericKey)) {
@@ -994,21 +1036,6 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                         if (typeof handler == "function") {
                             handlers.push(handler as GenericVisitorHandler<T>);
                         }
-                        // else if (Array.isArray(handler)) {
-                        //     for (const h of handler) {
-                        //         if (typeof h == "function") {
-                        //             handlers.push(h);
-                        //         }
-
-                        //         // @ts-ignore
-                        //         else if (h[keyName] != null) {
-                        //             // @ts-ignore
-                        //             handlers.push(h[keyName]);
-                        //         }
-                        //     }
-                        // } else if (typeof handler.handler! == "function") {
-                        //     handlers.push(handler.handler);
-                        // }
 
                         // @ts-ignore
                         else if (typeof handler[keyName]! == "function") {
@@ -1041,6 +1068,10 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                         }
                     }
                 }
+            }
+
+            if (visitors.postAllVisitorsHandlers?.size! > 0) {
+                handlers.push(...visitors.postAllVisitorsHandlers!);
             }
 
             if (handlers.length == 0) {
@@ -2195,6 +2226,10 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
             parens = null;
             handlers.length = 0;
 
+            if (visitors.preAllVisitorsHandlers?.size! > 0) {
+                handlers.push(...visitors.preAllVisitorsHandlers!);
+            }
+
             genericKey =
                 nodes[i].typ == EnumToken.DeclarationNodeType
                     ? "Declaration"
@@ -2215,6 +2250,10 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                     : nodes[i].typ == EnumToken.KeyframesAtRuleNodeType
                       ? camelize((nodes[i] as AstKeyframesAtRule).val)
                       : null;
+
+            if (visitors.allVisitorsHandlers?.size! > 0) {
+                handlers.push(...visitors.allVisitorsHandlers!);
+            }
 
             for (const map of visitors.allHandlers) {
                 // @ts-ignore
@@ -2272,6 +2311,10 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                         }
                     }
                 }
+            }
+
+            if (visitors.postAllVisitorsHandlers?.size! > 0) {
+                handlers.push(...visitors.postAllVisitorsHandlers!);
             }
 
             if (handlers.length == 0) {
@@ -3428,7 +3471,6 @@ export function parseAtRule(
     const blockAllowed: boolean = syntaxRules?.getBlockRules() != null;
 
     if (syntaxRules == null) {
-        // if (!options.lenient) {
         errors.push({
             action: "drop",
             node: atRule,
@@ -4283,7 +4325,7 @@ export function parseAtRule(
                             stream[index][LOCEND] = stream[i][LOCEND];
                             Object.assign(stream[index], {
                                 typ: tokensfuncDefMap.get(stream[index].typ)!,
-                                chi: stream.splice(index + 1, i - index - 1),
+                                chi: trimWhiteSpaceTokens(stream.splice(index + 1, i - index - 1)),
                             });
                             i = index;
                             stream.splice(index + 1, 1);

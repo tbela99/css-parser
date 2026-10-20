@@ -30,6 +30,7 @@ export declare type GenericVisitorSyncHandler<T> = (
 export declare type GenericVisitorAstNodeSyncHandlerMap<T> =
     | Record<string, GenericVisitorSyncHandler<T>>
     | GenericVisitorSyncHandler<T>
+    | Function<T>
     | { type: WalkerEvent; handler: GenericVisitorSyncHandler<T> }
     | { type: WalkerEvent; handler: Record<string, GenericVisitorSyncHandler<T>> };
 
@@ -599,4 +600,30 @@ export declare interface VisitorNodeMap {
      * ```
      */
     [key: keyof typeof EnumToken]: GenericVisitorAstNodeHandlerMap<Token> | GenericVisitorAstNodeHandlerMap<AstNode>;
+}
+
+/**
+ * Parsed visitor handlers
+ */
+export interface ParsedVisitorHandlers {
+    /**
+     * include tokens
+     */
+    includeTokens: boolean;
+    /**
+     * all handlers
+     */
+    allHandlers: Array<GenericVisitorAstNodeHandlerMap | Record<string, GenericVisitorAstNodeHandlerMap>>;
+    /**
+     * all visitors
+     */
+    allVisitorsHandlers?: Set<GenericVisitorHandler<Token>> | Set<GenericVisitorHandler<AstNode>>;
+    /**
+     * pre all visitors
+     */
+    preAllVisitorsHandlers?: Set<GenericVisitorHandler<Token>> | Set<GenericVisitorHandler<AstNode>>;
+    /**
+     * post all visitors
+     */
+    postAllVisitorsHandlers?: Set<GenericVisitorHandler<Token>> | Set<GenericVisitorHandler<AstNode>>;
 }

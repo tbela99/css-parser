@@ -1,4 +1,4 @@
-import { ColorType } from "../../../dist/lib/ast/types.js";
+import { ColorType } from "../../../dist/src/lib/ast/types.js";
 
 export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
     const options = {

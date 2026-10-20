@@ -45,7 +45,7 @@ export enum EnumAstNodeStatus {
     /**
      * Node is malformed
      */
-    Malformed   = 1 << 7,
+    Malformed = 1 << 7,
 
     /**
      * Important declaration
@@ -55,7 +55,7 @@ export enum EnumAstNodeStatus {
     /**
      * Color component without unit
      */
-    PowerlessColorComponent = 1 << 9
+    PowerlessColorComponent = 1 << 9,
 }
 
 export declare type AstNodePropertyType = "state" | "errors" | "location" | "tokens" | "parent" | "selector";
@@ -560,7 +560,7 @@ export enum EnumToken {
     /**
      * '|'
      */
-    Pipe,
+    PipeTokenType,
     /**
      * '::'
      */
@@ -724,6 +724,11 @@ export enum EnumToken {
      * negative infinity token
      */
     NegativeInfinityTokenType,
+
+    /**
+     * CSS type token
+     */
+    CssTypeTokenType,
 
     /* aliases */
 

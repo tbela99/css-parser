@@ -1,0 +1,187 @@
+/* 
+	CSS parser, minifier and validator for node and the browser
+
+	Author(s): Thierry Bela
+	Version: 1.6.9
+	License: MIT
+ */
+import { EnumToken } from './types.js';
+import { walk, walkValues } from './walk.js';
+import { TOKENS } from '../syntax/constants.js';
+
+/**
+ * Search the ast subtree and return the first match
+ *
+ * ```ts
+ *  // find the first ast declaration node which name is 'aspect-ratio'
+import { find, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+ * const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+ // find declaration which contain a '30px'
+  const nodeMatcher = (node: AstNode) =>
+      return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio';
+
+     const result  = await transform(css);
+     const node = find(result.ast, nodeMatcher);
+
+     console.log({node});
+ 
+    ```
+ *
+ * @param ast
+ * @param matcher
+ * @returns
+ */
+function find(ast, matcher) {
+    for (const { node, parent } of walk(ast)) {
+        if (matcher(node, parent)) {
+            return node;
+        }
+    }
+    return null;
+}
+/**
+ *
+ * @param ast
+ * @param matcher
+ * @returns
+ *
+ * Search the ast sub-tree by checking each node's value token and return the first match
+ *
+ ```ts
+ // find the first ast node which contains the length token '30px'
+import { findByValue, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+ const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+ // find declaration which contain the length token '30px'
+  const nodeMatcher = (value: Token) =>
+      return value.typ == EnumToken.LengthTokenType && (value as LengthToken).val == 30 && (value as LengthToken).unit == 'px' ;
+
+     const result  = await transform(css);
+     const { node, value } = findByValue(result.ast, nodeMatcher) ?? {};
+
+     console.log({node, value});
+ 
+    ```
+ */
+function findByValue(ast, matcher) {
+    let source;
+    for (const { node } of walk(ast)) {
+        source = null;
+        if (node.typ === EnumToken.DeclarationNodeType) {
+            source = node.val;
+        }
+        else if (Array.isArray(node[TOKENS])) {
+            source = node[TOKENS];
+        }
+        if (source == null) {
+            continue;
+        }
+        for (const { value, parent, root: rootNode, parents } of walkValues(source, node)) {
+            if (matcher(value, node)) {
+                // @ts-ignore
+                return { node, value: { node: value, parent, root: rootNode, parents } };
+            }
+        }
+    }
+    return null;
+}
+/**
+ * Search the ast sub-tree and return all matches
+ *
+ * ```ts
+ *  // find the first ast declaration node which name is 'aspect-ratio'
+*  import { findAll, EnumToken, transform } from "@tbela99/css-parser";
+*  import type { AstNode } from "@tbela99/css-parser";
+
+const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+button-small {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 20px; else: 30px);
+}
+    `;
+
+  const nodeMatcher = (node: AstNode) =>
+      return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio';
+
+     const result  = await transform(css);
+     const nodes = findAll(result.ast, nodeMatcher);
+
+     console.log({nodes});
+ 
+    ```
+ *
+ * @param ast
+ * @param matcher
+ * @returns
+ */
+function findAll(ast, matcher) {
+    const result = [];
+    for (const { node, parent } of walk(ast)) {
+        if (matcher(node, parent)) {
+            result.push(node);
+        }
+    }
+    return result;
+}
+/**
+ * Search the ast sub-tree and return the last match.
+ *
+ * ```ts
+ *  // find the first ast declaration node which name is 'aspect-ratio'
+import { findLast, EnumToken, transform } from "@tbela99/css-parser";
+import type { AstNode } from "@tbela99/css-parser";
+
+ * const css = `
+
+button {
+  aspect-ratio: 1;
+  width: if(media(any-pointer: fine): 30px; else: 44px);
+}
+    `;
+
+  const nodeMatcher = (node: AstNode) =>
+      return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio';
+
+     const result  = await transform(css);
+     const node = findLast(result.ast, nodeMatcher);
+
+     console.log({node});
+ 
+    ```
+ *
+ * @param ast
+ * @param matcher
+ * @returns
+ */
+function findLast(ast, matcher) {
+    for (const { node, parent } of walk(ast, null, true)) {
+        if (matcher(node, parent)) {
+            return node;
+        }
+    }
+    return null;
+}
+
+export { find, findAll, findByValue, findLast };

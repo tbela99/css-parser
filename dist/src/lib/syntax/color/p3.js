@@ -1,0 +1,73 @@
+/* 
+	CSS parser, minifier and validator for node and the browser
+
+	Author(s): Thierry Bela
+	Version: 1.6.9
+	License: MIT
+ */
+import { lsrgb2srgbvalues, xyz2srgb, srgb2lsrgbvalues } from './srgb.js';
+import { multiplyMatrices } from './utils/matrix.js';
+import { srgb2xyz } from './xyz.js';
+
+function p32srgbvalues(r, g, b, alpha) {
+    let values = p32lp3(r, g, b);
+    values = lp32xyz(values[0], values[1], values[2]);
+    // @ts-ignore
+    return xyz2srgb(values[0], values[1], values[2], alpha);
+}
+function srgb2p3values(r, g, b, alpha) {
+    let values = srgb2xyz(r, g, b);
+    values = xyz2lp3(values[0], values[1], values[2]);
+    values = lp32p3(values[0], values[1], values[2]);
+    if (alpha != null && alpha < 1) {
+        values.push(alpha);
+    }
+    return values;
+}
+function srgb2lp3values(r, g, b, alpha) {
+    let values = srgb2xyz(r, g, b);
+    values = xyz2lp3(values[0], values[1], values[2]);
+    if (alpha != null && alpha < 1) {
+        values.push(alpha);
+    }
+    return values;
+}
+function lp32srgbvalues(r, g, b, alpha) {
+    let values = lp32xyz(r, g, b);
+    // @ts-ignore
+    return xyz2srgb(values[0], values[1], values[2], alpha);
+}
+function p32lp3(r, g, b, alpha) {
+    // convert an array of display-p3 RGB values in the range 0.0 - 1.0
+    // to linear light (un-companded) form.
+    return srgb2lsrgbvalues(r, g, b, alpha); // same as sRGB
+}
+function lp32p3(r, g, b, alpha) {
+    // convert an array of linear-light display-p3 RGB  in the range 0.0-1.0
+    // to gamma corrected form
+    return lsrgb2srgbvalues(r, g, b, alpha); // same as sRGB
+}
+function lp32xyz(r, g, b, alpha) {
+    // convert an array of linear-light display-p3 values to CIE XYZ
+    // using  D65 (no chromatic adaptation)
+    // http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+    const M = [
+        [608311 / 1250200, 189793 / 714400, 198249 / 1000160],
+        [35783 / 156275, 247089 / 357200, 198249 / 2500400],
+        [0, 32229 / 714400, 5220557 / 5000800],
+    ];
+    const result = multiplyMatrices(M, [r, g, b]);
+    return result;
+}
+function xyz2lp3(x, y, z, alpha) {
+    // convert XYZ to linear-light P3
+    const M = [
+        [446124 / 178915, -333277 / 357830, -72051 / 178915],
+        [-14852 / 17905, 63121 / 35810, 423 / 17905],
+        [11844 / 330415, -50337 / 660830, 316169 / 330415],
+    ];
+    const result = multiplyMatrices(M, [x, y, z]);
+    return result;
+}
+
+export { lp32p3, lp32srgbvalues, lp32xyz, p32lp3, p32srgbvalues, srgb2lp3values, srgb2p3values, xyz2lp3 };

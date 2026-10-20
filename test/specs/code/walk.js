@@ -1,6 +1,6 @@
-import { EnumToken } from "../../../dist/lib/ast/types.js";
-import { walk } from "../../../dist/lib//ast/walk.js";
-import { find, findByValue, findAll, findLast } from "../../../dist/lib/ast/find.js";
+import { EnumToken } from "../../../dist/src/lib/ast/types.js";
+import { walk } from "../../../dist/src/lib//ast/walk.js";
+import { find, findByValue, findAll, findLast } from "../../../dist/src/lib/ast/find.js";
 
 export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
     describe("node walker", function () {

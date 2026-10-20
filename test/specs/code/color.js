@@ -1,5 +1,5 @@
-import { okLabDistance } from "../../../dist/lib/syntax/color/utils/distance.js";
-import { parseString } from "../../../dist/lib/parser/parse.js";
+import { okLabDistance } from "../../../dist/src/lib/syntax/color/utils/distance.js";
+import { parseString } from "../../../dist/src/lib/parser/parse.js";
 
 export function run(
     describe,
