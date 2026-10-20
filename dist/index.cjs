@@ -12479,10 +12479,10 @@ function isMFValue(featureName, tokens, isMFRange) {
  */
 function createValidationContext(tokens, options) {
     const arena = options.arena;
-    tokens = trimArray(tokens.filter((t) => arena.getType(t) !== exports.EnumToken.CommentTokenType));
+    tokens = trimArray(tokens.filter((t) => arena.getType(t) !== exports.EnumToken.CommentTokenType), options);
     if (arena.getType(tokens.at(-1)) === exports.EnumToken.ImportantTokenType) {
         tokens.pop();
-        trimArray(tokens);
+        trimArray(tokens, options);
     }
     const token = {
         tokens,
@@ -12496,10 +12496,12 @@ function createValidationContext(tokens, options) {
         peek(offset = 0) {
             let index = this.index;
             let token = this.tokens[++index];
+            let typ = arena.getType(this.tokens[++index]);
             while (offset >= 0 && index < this.tokens.length) {
-                while (token?.typ == exports.EnumToken.WhitespaceTokenType ||
-                    token?.typ == exports.EnumToken.CommentTokenType ||
-                    token?.typ == exports.EnumToken.CDOCOMMTokenType) {
+                typ = arena.getType(token);
+                while (typ == exports.EnumToken.WhitespaceTokenType ||
+                    typ == exports.EnumToken.CommentTokenType ||
+                    typ == exports.EnumToken.CDOCOMMTokenType) {
                     token = this.tokens[++index];
                 }
                 if (token == null || offset === 0) {
@@ -31709,19 +31711,23 @@ function matchAtRuleWhenElseSyntax(stream, context, options = {}) {
 
 function parseAtRuleContainerQueryList(stream, context, options = {}) {
     let matchCount = 0;
+    let typ;
+    const arena = options.arena;
+    arena.getName(context);
     const errors = [];
     const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + context.nam);
     const syntax = syntaxRules?.getPreludeRules()?.slice?.(1);
     const parts = stream.reduce((acc, t) => {
-        if (t.typ === exports.EnumToken.CommaTokenType && matchCount === 0) {
+        typ = arena.getType(t);
+        if (typ === exports.EnumToken.CommaTokenType && matchCount === 0) {
             acc.push([]);
         }
         else {
             acc[acc.length - 1].push(t);
-            if (t.typ === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(t.typ)) {
+            if (typ === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(typ)) {
                 matchCount++;
             }
-            else if (t.typ === exports.EnumToken.EndParensTokenType) {
+            else if (typ === exports.EnumToken.EndParensTokenType) {
                 if (matchCount > 0) {
                     matchCount--;
                 }
@@ -31729,7 +31735,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
         }
         return acc;
     }, [[]]);
-    const result = matchAllSyntaxes(syntax, createValidationContext(stream), options);
+    const result = matchAllSyntaxes(syntax, createValidationContext(stream, options), options);
     if (!result.success) {
         for (const error of result.errors) {
             errors.push(error);
@@ -31768,7 +31774,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                         {
                             action: "drop",
                             node: stream[i],
-                            location: options.source.getSourceLocation(stream[i]?.[LOCSTA]),
+                            location: options.source.getSourceLocation(stream[i]),
                             message: `expecting <container-condition>`,
                         },
                     ],
@@ -31776,7 +31782,8 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
             }
             for (; i < stream.length; i++) {
                 tokens.push(stream[i]);
-                if (stream[i].typ === exports.EnumToken.WhitespaceTokenType || stream[i].typ === exports.EnumToken.CommentTokenType) {
+                typ = arena.getType(stream[i]);
+                if (typ === exports.EnumToken.WhitespaceTokenType || typ === exports.EnumToken.CommentTokenType) {
                     continue;
                 }
                 if (expectAndOr) {
@@ -31785,7 +31792,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                     //     const val: string = (stream[i] as IdentToken).val.toLowerCase();
                     //     valid = val === "and" || val === "or";
                     // } else {
-                    valid = stream[i].typ !== exports.EnumToken.CommaTokenType;
+                    valid = typ !== exports.EnumToken.CommaTokenType;
                     // }
                     if (!valid) {
                         success = false;
@@ -31793,17 +31800,17 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                             action: "drop",
                             node: stream[i],
                             message: `expecting <and>, <or> or comma`,
-                            location: options.source.getSourceLocation(stream[i]?.[LOCSTA]),
+                            location: options.source.getSourceLocation(stream[i]),
                         });
                         break;
                     }
                 }
-                if (stream[i].typ === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(stream[i].typ)) {
+                if (typ === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(typ)) {
                     scopes.push((currentScope = new Set()));
                     stack.push(stream[i]);
                     continue;
                 }
-                switch (stream[i].typ) {
+                switch (typ) {
                     case exports.EnumToken.ColonTokenType:
                     case exports.EnumToken.LtTokenType:
                     case exports.EnumToken.LteTokenType:
@@ -31814,7 +31821,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                         break;
                     case exports.EnumToken.IdenTokenType:
                         {
-                            const val = stream[i].val.toLowerCase();
+                            const val = arena.getValue(stream[i]);
                             if (val === "not") {
                                 Object.assign(stream[i], {
                                     typ: exports.EnumToken.NotTokenType,
@@ -32072,32 +32079,35 @@ function parseAtRuleFontFeatureValues(stream, context, options = {}) {
 }
 
 function matchGenericSyntax(stream, options) {
+    const arena = options.arena;
     const stack = [];
     let i = 0;
     let success = true;
     let expectAndOr = false;
     let expectComma = false;
+    let typ;
     const errors = [];
     const scopes = [new Set()];
     for (; i < stream.length; i++) {
         const token = stream[i];
-        if (token.typ === exports.EnumToken.WhitespaceTokenType || token.typ === exports.EnumToken.CommentTokenType) {
+        typ = arena.getType(token);
+        if (typ === exports.EnumToken.WhitespaceTokenType || typ === exports.EnumToken.CommentTokenType) {
             continue;
         }
-        if (token.typ === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(token.typ)) {
+        if (typ === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(typ)) {
             stack.push(token);
             scopes.push(new Set());
             expectAndOr = false;
             continue;
         }
-        if (token.typ === exports.EnumToken.EndParensTokenType) {
+        if (typ === exports.EnumToken.EndParensTokenType) {
             if (stack.length === 0 ||
-                (stack.at(-1)?.typ !== exports.EnumToken.StartParensTokenType && !tokensfuncDefMap.has(stack.at(-1)?.typ))) {
+                (arena.getType(stack.at(-1)) !== exports.EnumToken.StartParensTokenType && !tokensfuncDefMap.has(arena.getType(stack.at(-1))))) {
                 errors.push({
                     action: "drop",
-                    message: `unexpected token ${exports.EnumToken[token.typ]}`,
+                    message: `unexpected token ${exports.EnumToken[typ]}`,
                     node: token,
-                    location: options.source.getSourceLocation(token[LOCSTA]),
+                    location: options.source.getSourceLocation(token),
                 });
                 success = false;
                 break;
@@ -32106,29 +32116,30 @@ function matchGenericSyntax(stream, options) {
             scopes.pop();
             continue;
         }
-        if (token.typ === exports.EnumToken.IdenTokenType && equalsIgnoreCase("and", token.val)) {
+        if (typ === exports.EnumToken.IdenTokenType && arena.equalsIgnoreCase(token, 'val', "and")) {
             if (!expectAndOr || scopes.at(-1)?.has(exports.EnumToken.OrTokenType)) {
                 errors.push({
                     action: "drop",
-                    message: `unexpected token ${exports.EnumToken[token.typ]}`,
+                    message: `unexpected token ${exports.EnumToken[typ]}`,
                     node: token,
-                    location: options.source.getSourceLocation(token[LOCSTA]),
+                    location: options.source.getSourceLocation(token),
                 });
                 success = false;
                 break;
             }
-            Object.assign(token, { typ: exports.EnumToken.AndTokenType });
+            typ = exports.EnumToken.AndTokenType;
+            arena.setType(token, typ);
             scopes.at(-1).add(exports.EnumToken.AndTokenType);
             expectComma = false;
             continue;
         }
-        if (token.typ === exports.EnumToken.IdenTokenType && equalsIgnoreCase("or", token.val)) {
+        if (typ === exports.EnumToken.IdenTokenType && arena.equalsIgnoreCase(token, 'val', "or")) {
             if (!expectAndOr || scopes.at(-1)?.has(exports.EnumToken.AndTokenType)) {
                 errors.push({
                     action: "drop",
-                    message: `unexpected token ${exports.EnumToken[token.typ]}`,
+                    message: `unexpected token ${exports.EnumToken[typ]}`,
                     node: token,
-                    location: options.source.getSourceLocation(token[LOCSTA]),
+                    location: options.source.getSourceLocation(token),
                 });
                 success = false;
                 break;
@@ -32138,13 +32149,13 @@ function matchGenericSyntax(stream, options) {
             scopes.at(-1).add(exports.EnumToken.OrTokenType);
             continue;
         }
-        if (token.typ === exports.EnumToken.CommaTokenType) {
+        if (typ === exports.EnumToken.CommaTokenType) {
             if (!expectComma) {
                 errors.push({
                     action: "drop",
-                    message: `unexpected token ${exports.EnumToken[token.typ]}`,
+                    message: `unexpected token ${exports.EnumToken[typ]}`,
                     node: token,
-                    location: options.source.getSourceLocation(token[LOCSTA]),
+                    location: options.source.getSourceLocation(token),
                 });
                 success = false;
                 break;
@@ -32155,16 +32166,16 @@ function matchGenericSyntax(stream, options) {
         }
         expectAndOr = true;
         expectComma = true;
-        if (stack.length > 0 && stack.at(-1)?.typ === exports.EnumToken.CommaTokenType) {
+        if (stack.length > 0 && arena.getType(stack.at(-1)) === exports.EnumToken.CommaTokenType) {
             stack.pop();
         }
     }
     if (stack.length > 0) {
         errors.push({
             action: "drop",
-            message: `unexpected token ${exports.EnumToken[stack.at(-1)?.typ]}`,
+            message: `unexpected token ${exports.EnumToken[arena.getType(stack.at(-1))]}`,
             node: stack.at(-1),
-            location: options.source.getSourceLocation(stack.at(-1)?.[LOCSTA]),
+            location: options.source.getSourceLocation(stack.at(-1)),
         });
         success = false;
     }
@@ -34758,12 +34769,11 @@ function parseNode(tokens, context, options, errors, stats, invalidNodes) {
         if (node == null) {
             return null;
         }
-        if (node[STATE] &
-            (exports.EnumAstNodeStatus.Invalid |
-                exports.EnumAstNodeStatus.Disallowed |
-                exports.EnumAstNodeStatus.Unknown |
-                exports.EnumAstNodeStatus.Unparsed |
-                exports.EnumAstNodeStatus.Malformed)) {
+        if (arena.hasFlags(node, exports.EnumAstNodeStatus.Invalid |
+            exports.EnumAstNodeStatus.Disallowed |
+            exports.EnumAstNodeStatus.Unknown |
+            exports.EnumAstNodeStatus.Unparsed |
+            exports.EnumAstNodeStatus.Malformed)) {
             invalidNodes.push(node);
         }
         stats.nodesCount++;
@@ -34797,8 +34807,8 @@ function parseNode(tokens, context, options, errors, stats, invalidNodes) {
             const node = parseDeclaration(tokens, context, options, errors);
             // node[PARENT] = context;
             // node[ROOT] = context[ROOT];
-            if (contextType === exports.EnumToken.StyleSheetNodeType && node.typ === exports.EnumToken.DeclarationNodeType) {
-                node[STATE] = exports.EnumAstNodeStatus.Invalid;
+            if (contextType === exports.EnumToken.StyleSheetNodeType && arena.getType(node) === exports.EnumToken.DeclarationNodeType) {
+                arena.setFlags(node, exports.EnumAstNodeStatus.Invalid);
                 errors.push({
                     message: "<declaration> not allowed in <stylesheet>",
                     action: "drop",
@@ -34806,16 +34816,15 @@ function parseNode(tokens, context, options, errors, stats, invalidNodes) {
                     location: options.source.getSourceLocation(arena.getSpanStart(node)),
                 });
             }
-            else if (options.lenient || node.typ === exports.EnumToken.DeclarationNodeType) {
+            else if (options.lenient || arena.getType(node) === exports.EnumToken.DeclarationNodeType) {
                 // context.chi!.push(node);
                 arena.appendChildren(context, node);
             }
-            if (node[STATE] &
-                (exports.EnumAstNodeStatus.Invalid |
-                    exports.EnumAstNodeStatus.Disallowed |
-                    exports.EnumAstNodeStatus.Unknown |
-                    exports.EnumAstNodeStatus.Unparsed |
-                    exports.EnumAstNodeStatus.Malformed)) {
+            if (arena.hasFlags(node, exports.EnumAstNodeStatus.Invalid |
+                exports.EnumAstNodeStatus.Disallowed |
+                exports.EnumAstNodeStatus.Unknown |
+                exports.EnumAstNodeStatus.Unparsed |
+                exports.EnumAstNodeStatus.Malformed)) {
                 invalidNodes.push(node);
             }
         }
@@ -34830,13 +34839,15 @@ function parseNode(tokens, context, options, errors, stats, invalidNodes) {
  * @param parseAsBlock
  */
 function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
+    const arena = options.arena;
     let success = true;
-    let atRuleName = stream[0].nam;
+    let atRuleName = arena.getName(stream[0]);
     if (atRuleName.startsWith("-")) {
         atRuleName = atRuleName.replace(/^-[a-z]+-/, "").toLowerCase();
     }
     const atRule = stream.shift();
-    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + atRule.nam);
+    const name = arena.getName(atRule);
+    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + name);
     const syntax = syntaxRules?.getPreludeRules()?.slice?.(1);
     const blockAllowed = syntaxRules?.getBlockRules() != null;
     if (syntaxRules == null) {
@@ -34844,7 +34855,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
         errors.push({
             action: "drop",
             node: atRule,
-            location: options.source.getSourceLocation(atRule[LOCSTA]),
+            location: options.source.getSourceLocation(atRule),
             message: "unknown at-rule",
         });
         const result = matchGenericSyntax(stream, options);
@@ -35700,100 +35711,123 @@ function parseString(src, options = { parseColor: true }, errors) {
  */
 function parseTokens(tokens, options, errors) {
     const stack = [];
+    const arena = options?.arena;
     let i = 0;
     let index;
     let t;
+    let typ;
+    let typ2;
     options ??= { parseColor: true };
     for (; i < tokens.length; i++) {
         t = tokens[i];
-        if (t.typ === exports.EnumToken.FunctionTokenDefType) {
-            if (tokens[i - 1]?.typ === exports.EnumToken.ColonTokenType ||
-                tokens[i - 1]?.typ === exports.EnumToken.DoubleColonTokenType) {
-                t = Object.assign(tokens[i - 1], {
-                    typ: exports.EnumToken.PseudoClassFunctionTokenDefType,
-                    val: (tokens[i - 1].typ === exports.EnumToken.ColonTokenType ? ":" : "::") +
-                        tokens[i].val,
-                });
-                t[LOCEND] = tokens[i][LOCEND];
+        typ = arena.getType(t);
+        if (typ === exports.EnumToken.FunctionTokenDefType) {
+            typ2 = arena.getType(tokens[i - 1]);
+            if (typ2 === exports.EnumToken.ColonTokenType ||
+                typ2 === exports.EnumToken.DoubleColonTokenType) {
+                arena.set(tokens[i - 1], exports.EnumToken.PseudoClassFunctionTokenDefType, arena.internString((typ2 === exports.EnumToken.ColonTokenType ? ":" : "::") +
+                    arena.getValue(tokens[i])));
+                // t = Object.assign(tokens[i - 1], {
+                //     typ: EnumToken.PseudoClassFunctionTokenDefType,
+                //     val:
+                //         (tokens[i - 1].typ === EnumToken.ColonTokenType ? ":" : "::") +
+                //         (tokens[i] as FunctionToken).val,
+                // });
+                arena.setSpanEnd(tokens[i - 1], arena.getSpanEnd(tokens[i]));
+                // t[LOCEND] = tokens[i][LOCEND];
+                t = tokens[i - 1];
                 tokens.splice(i--, 1);
+                typ = exports.EnumToken.PseudoClassFunctionTokenDefType;
             }
         }
-        if (t.typ === exports.EnumToken.AttrStartTokenType ||
-            t.typ === exports.EnumToken.StartParensTokenType ||
-            tokensfuncDefMap.has(t.typ)) {
+        if (typ === exports.EnumToken.AttrStartTokenType ||
+            typ === exports.EnumToken.StartParensTokenType ||
+            tokensfuncDefMap.has(typ)) {
             stack.push(t);
             continue;
         }
-        if (t.typ === exports.EnumToken.EndParensTokenType) {
+        if (typ === exports.EnumToken.EndParensTokenType) {
+            typ2 = arena.getType(stack.at(-1));
             if (stack.length === 0 ||
-                (stack.at(-1)?.typ !== exports.EnumToken.StartParensTokenType && !tokensfuncDefMap.has(stack.at(-1)?.typ))) {
+                (typ2 !== exports.EnumToken.StartParensTokenType && !tokensfuncDefMap.has(typ2))) {
                 // unbalanced parens
                 const node = stack.at(-1);
                 errors?.push?.({
                     action: "drop",
                     message: `Unbalanced token ')'`,
                     node,
-                    location: options.source.getSourceLocation(node[LOCSTA]),
+                    location: options.source.getSourceLocation(arena.getSpanStart(node)),
                 });
                 // return [];
                 continue;
             }
             tokens.splice(i, 1);
             index = tokens.indexOf(stack.at(-1));
-            Object.assign(tokens[index], {
-                typ: tokens[index].typ === exports.EnumToken.StartParensTokenType
-                    ? exports.EnumToken.ParensTokenType
-                    : tokensfuncDefMap.get(tokens[index].typ),
-                chi: trimArray(tokens.splice(index + 1, i - index - 1)),
-            });
+            typ2 = arena.getType(tokens[index]);
+            typ2 = typ2 === exports.EnumToken.StartParensTokenType
+                ? exports.EnumToken.ParensTokenType
+                : tokensfuncDefMap.get(typ2);
+            arena.setType(tokens[index], typ2);
+            arena.setChildren(tokens[index], ...trimArray(tokens.splice(index + 1, i - index - 1), options));
+            // Object.assign(tokens[index], {
+            //     typ:
+            //         tokens[index].typ === EnumToken.StartParensTokenType
+            //             ? EnumToken.ParensTokenType
+            //             : (tokensfuncDefMap.get(tokens[index].typ) as EnumToken),
+            //     chi: trimArray(tokens.splice(index + 1, i - index - 1)),
+            // });
             i = index;
-            if (tokens[index].typ === exports.EnumToken.ColorTokenType && options?.parseColor) {
-                parseColor(tokens[index]);
+            if (typ2 === exports.EnumToken.ColorTokenType && options?.parseColor) {
+                parseColor(tokens[index], arena);
             }
             stack.pop();
             continue;
         }
-        if (t.typ === exports.EnumToken.AttrEndTokenType) {
-            if (stack.at(-1)?.typ !== exports.EnumToken.AttrStartTokenType) {
+        if (typ === exports.EnumToken.AttrEndTokenType) {
+            if (arena.getType(stack.at(-1)) !== exports.EnumToken.AttrStartTokenType) {
                 // unbalanced
                 const node = stack.at(-1);
                 errors?.push?.({
                     action: "drop",
                     message: `Unbalanced token ']'`,
                     node,
-                    location: options.source.getSourceLocation(node[LOCSTA]),
+                    location: options.source.getSourceLocation(arena.getSpanStart(node)),
                 });
                 continue;
             }
             index = tokens.indexOf(stack.at(-1));
             const attr = stack.at(-1);
-            attr[LOCEND] = t[LOCEND];
+            arena.setSpanEnd(attr, arena.getSpanEnd(t));
+            // attr[LOCEND] = t[LOCEND];
             tokens.splice(i, 1);
-            Object.assign(attr, {
-                typ: exports.EnumToken.AttrTokenType,
-                chi: tokens.splice(index + 1, i - index - 1),
-            });
+            arena.setType(attr, exports.EnumToken.AttrTokenType);
+            arena.setChildren(attr, ...trimArray(tokens.splice(index + 1, i - index - 1), options));
+            // Object.assign(attr, {
+            //     typ: EnumToken.AttrTokenType,
+            //     chi: tokens.splice(index + 1, i - index - 1),
+            // });
             tokens[index] = attr;
             i = index;
             stack.pop();
             continue;
         }
-        if (t.typ == exports.EnumToken.IdenTokenType) {
-            if (t.val == "from" && i > 0) {
+        if (typ == exports.EnumToken.IdenTokenType) {
+            if (arena.equalsIgnoreCase(t, 'val', "from") && i > 0) {
                 const left = [];
                 const right = [];
                 let foundLeft = 0;
                 let foundRight = 0;
                 let k = i;
                 let l = i;
+                typ2 = arena.getType(tokens[k - 1]);
                 while (k > 0) {
-                    if (tokens[k - 1].typ == exports.EnumToken.CommentTokenType ||
-                        tokens[k - 1].typ == exports.EnumToken.WhitespaceTokenType) {
+                    if (typ2 == exports.EnumToken.CommentTokenType ||
+                        typ2 == exports.EnumToken.WhitespaceTokenType) {
                         left.push(tokens[--k]);
                         continue;
                     }
-                    if (tokens[k - 1].typ == exports.EnumToken.IdenTokenType ||
-                        tokens[k - 1].typ == exports.EnumToken.DashedIdenTokenType) {
+                    if (typ2 == exports.EnumToken.IdenTokenType ||
+                        typ2 == exports.EnumToken.DashedIdenTokenType) {
                         foundLeft++;
                         left.push(tokens[--k]);
                         continue;
@@ -35801,11 +35835,12 @@ function parseTokens(tokens, options, errors) {
                     break;
                 }
                 while (++l < tokens.length) {
-                    if (tokens[l].typ == exports.EnumToken.CommentTokenType || tokens[l].typ == exports.EnumToken.WhitespaceTokenType) {
+                    typ2 = arena.getType(tokens[l]);
+                    if (typ2 == exports.EnumToken.CommentTokenType || typ2 == exports.EnumToken.WhitespaceTokenType) {
                         right.push(tokens[l]);
                         continue;
                     }
-                    if (tokens[l].typ == exports.EnumToken.IdenTokenType || tokens[l].typ == exports.EnumToken.StringTokenType) {
+                    if (typ2 == exports.EnumToken.IdenTokenType || typ2 == exports.EnumToken.StringTokenType) {
                         foundRight++;
                         right.push(tokens[l]);
                         continue;
@@ -35813,65 +35848,92 @@ function parseTokens(tokens, options, errors) {
                     break;
                 }
                 if (foundLeft > 0 && foundRight == 1) {
-                    while (left?.[0].typ == exports.EnumToken.WhitespaceTokenType) {
-                        left.shift();
-                    }
-                    while (left.at(-1)?.typ == exports.EnumToken.WhitespaceTokenType) {
-                        left.pop();
-                    }
-                    tokens.splice(k, l - k + 1, {
-                        typ: exports.EnumToken.ComposesSelectorNodeType,
-                        l: left,
-                        r: right.reduce((a, b) => {
-                            return a == null
+                    trimArray(left, options);
+                    // while (left?.[0].typ == EnumToken.WhitespaceTokenType) {
+                    //     left.shift();
+                    // }
+                    // while (left.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
+                    //     left.pop();
+                    // }
+                    arena.setLeft(t, ...left);
+                    // @ts-ignore
+                    arena.setRight(t, right.reduce((a, b) => {
+                        typ = arena.getType(b);
+                        return a == null
+                            ? b
+                            : typ == exports.EnumToken.IdenTokenType || typ == exports.EnumToken.StringTokenType
                                 ? b
-                                : b.typ == exports.EnumToken.IdenTokenType || b.typ == exports.EnumToken.StringTokenType
-                                    ? b
-                                    : a;
-                        }, null),
-                    });
+                                : a;
+                    }, null));
+                    const composeSelector = arena.allocate();
+                    arena.setType(composeSelector, exports.EnumToken.ComposesSelectorNodeType);
+                    // arena.setChildren(composeSelector, t, ...right);
+                    arena.setLeft(t, ...left);
+                    // @ts-ignore
+                    arena.setRight(composeSelector, right.reduce((a, b) => {
+                        typ = arena.getType(b);
+                        return a == null
+                            ? b
+                            : typ == exports.EnumToken.IdenTokenType || typ == exports.EnumToken.StringTokenType
+                                ? b
+                                : a;
+                    }, null));
+                    tokens.splice(k, l - k + 1, composeSelector);
+                    // tokens.splice(k, l - k + 1, {
+                    //     typ: EnumToken.ComposesSelectorNodeType,
+                    //     l: left,
+                    //     r: right.reduce((a: Token | null, b: Token) => {
+                    //         return a == null
+                    //             ? b
+                    //             : b.typ == EnumToken.IdenTokenType || b.typ == EnumToken.StringTokenType
+                    //               ? b
+                    //               : a;
+                    //     }, null),
+                    // });
                     i = k;
                     continue;
                 }
             }
-            else if (options?.parseColor && isColor(t)) {
-                parseColor(t);
+            else if (options?.parseColor && isColor(t, arena)) {
+                parseColor(t, arena);
             }
         }
-        if (t.typ == exports.EnumToken.WhitespaceTokenType &&
+        typ = arena.getType(t);
+        typ2 = arena.getType(tokens[i + 1]);
+        if (typ == exports.EnumToken.WhitespaceTokenType &&
             (i == 0 ||
                 i + 1 == tokens.length ||
-                [
-                    exports.EnumToken.CommaTokenType,
-                    exports.EnumToken.GteTokenType,
-                    exports.EnumToken.LteTokenType,
-                    exports.EnumToken.ColumnCombinatorTokenType,
-                ].includes(tokens[i + 1].typ) ||
-                (i > 0 && trimWhiteSpace.includes(tokens[i - 1].typ)))) {
+                (exports.EnumToken.CommaTokenType == typ2 ||
+                    exports.EnumToken.GteTokenType == typ2 ||
+                    exports.EnumToken.LteTokenType == typ2 ||
+                    exports.EnumToken.ColumnCombinatorTokenType == typ2)) ||
+            (i > 0 && trimWhiteSpace.includes(arena.getType(tokens[i - 1])))) {
             tokens.splice(i--, 1);
             continue;
         }
-        if (t.typ == exports.EnumToken.ColonTokenType) {
-            const typ = tokens[i + 1]?.typ;
-            if (typ != null) {
-                if (typ == exports.EnumToken.FunctionTokenType) {
-                    tokens[i + 1].typ = exports.EnumToken.PseudoClassFuncTokenType;
+        if (typ == exports.EnumToken.ColonTokenType) {
+            // const typ2: EnumToken = tokens[i + 1]?.typ;
+            if (typ2 != null) {
+                if (typ2 == exports.EnumToken.FunctionTokenType) {
+                    typ2 = exports.EnumToken.PseudoClassFuncTokenType;
                 }
-                else if (typ == exports.EnumToken.IdenTokenType) {
-                    tokens[i + 1].val = ":" + tokens[i + 1].val;
-                    tokens[i + 1].typ = exports.EnumToken.PseudoClassTokenType;
+                else if (typ2 == exports.EnumToken.IdenTokenType) {
+                    arena.set(tokens[i + 1], exports.EnumToken.PseudoClassTokenType, arena.internString(":" + arena.getValue(tokens[i + 1])));
+                    // (tokens[i + 1] as PseudoClassToken).val = ":" + (tokens[i + 1] as PseudoClassToken).val;
+                    // tokens[i + 1].typ = EnumToken.PseudoClassTokenType;
+                    typ2 = exports.EnumToken.FunctionTokenType;
                 }
-                if (typ == exports.EnumToken.FunctionTokenType || typ == exports.EnumToken.IdenTokenType) {
+                if (typ2 == exports.EnumToken.FunctionTokenType || typ2 == exports.EnumToken.IdenTokenType) {
                     tokens.splice(i, 1);
                     i--;
                 }
             }
         }
-        if (t.typ === exports.EnumToken.CommaTokenType) {
-            if (tokens[i + 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
+        if (typ === exports.EnumToken.CommaTokenType) {
+            if (typ2 === exports.EnumToken.WhitespaceTokenType) {
                 tokens.splice(i + 1, 1);
             }
-            if (tokens[i - 1]?.typ === exports.EnumToken.WhitespaceTokenType) {
+            if (arena.getType(tokens[i - 1]) === exports.EnumToken.WhitespaceTokenType) {
                 tokens.splice(i - 1, 1);
                 i--;
             }
@@ -35881,9 +35943,9 @@ function parseTokens(tokens, options, errors) {
         const node = stack.at(-1);
         errors?.push?.({
             action: "drop",
-            message: `Unbalanced token. Expecting ${node.typ === exports.EnumToken.AttrStartTokenType ? "']'" : ")"}'`,
+            message: `Unbalanced token. Expecting ${typ === exports.EnumToken.AttrStartTokenType ? "']'" : ")"}'`,
             node,
-            location: options.source.getSourceLocation(node[LOCSTA]),
+            location: options.source.getSourceLocation(arena.getSpanStart(node)),
         });
     }
     return tokens;
@@ -36176,6 +36238,9 @@ class Arena {
     getFlags(id) {
         return this.flags[id];
     }
+    // addFlags(id: number, flags: number): void {
+    //     this.flags[id] |= flags;
+    // }
     hasFlags(id, flag) {
         return (this.flags[id] & flag) != 0;
     }
@@ -36194,6 +36259,9 @@ class Arena {
                 if (this.firstChild[id] != 0) {
                     this.nextSibling[child] = this.nextSibling[this.firstChild[id]];
                     this.previousSibling[this.nextSibling[this.firstChild[id]]] = child;
+                }
+                if (this.lastChild[id] == this.firstChild[id]) {
+                    this.lastChild[id] = child;
                 }
                 this.firstChild[id] = child;
                 this.parents[child] = id;
@@ -36223,6 +36291,9 @@ class Arena {
             this.nextSibling[currentChild] = 0;
             this.parents[currentChild] = 0;
         }
+        if (currentChild == this.lastChild[id]) {
+            this.lastChild[id] = child;
+        }
         this.parents[child] = id;
     }
     /**
@@ -36230,17 +36301,42 @@ class Arena {
      * @param id
      * @param child
      */
-    setLeft(id, child) {
+    setLeft(id, ...children) {
+        let child = this.firstChild[id];
+        if (child != 0 && this.dataTypes[child] != exports.EnumToken.ListTokenType) {
+            this.detach(child);
+            child = this.allocate();
+            this.dataTypes[child] = exports.EnumToken.ListTokenType;
+        }
+        this.setChildren(child, ...children);
         this.setChildAt(id, 0, child);
     }
     getLeft(id) {
-        return this.getChildAt(id, 0);
+        const child = this.getChildAt(id, 0);
+        if (child == null) {
+            return null;
+        }
+        return this.children(child);
     }
-    setRight(id, rightId) {
-        this.setChildAt(id, 1, rightId);
+    setRight(id, ...rightId) {
+        let child = this.getChildAt(id, 1);
+        if (child == null || this.dataTypes[child] != exports.EnumToken.ListTokenType) {
+            if (child != null) {
+                this.detach(child);
+            }
+            child = this.allocate();
+            this.dataTypes[child] = exports.EnumToken.ListTokenType;
+            this.setChildAt(id, 1, child);
+        }
+        this.setChildren(child, ...(rightId == null || rightId[0] == null ? [] : rightId));
+        this.setChildAt(id, 1, child);
     }
     getRight(id) {
-        return this.getChildAt(id, 1);
+        const child = this.getChildAt(id, 1);
+        if (child == null) {
+            return null;
+        }
+        return this.children(child);
     }
     setOp(id, opId) {
         this.setChildAt(id, 2, opId);
@@ -36576,7 +36672,7 @@ class Arena {
             this.nextSibling[lastChild] = children[0];
         }
         this.parents[children[0]] = id;
-        for (let i = 1; i < children.length - 1; i++) {
+        for (let i = 1; i < children.length; i++) {
             this.detach(children[i]);
             this.previousSibling[children[i]] = children[i - 1];
             this.nextSibling[children[i - 1]] = children[i];

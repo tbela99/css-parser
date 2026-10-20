@@ -158,10 +158,10 @@ function isMFValue(featureName, tokens, isMFRange) {
  */
 function createValidationContext(tokens, options) {
     const arena = options.arena;
-    tokens = trimArray(tokens.filter((t) => arena.getType(t) !== EnumToken.CommentTokenType));
+    tokens = trimArray(tokens.filter((t) => arena.getType(t) !== EnumToken.CommentTokenType), options);
     if (arena.getType(tokens.at(-1)) === EnumToken.ImportantTokenType) {
         tokens.pop();
-        trimArray(tokens);
+        trimArray(tokens, options);
     }
     const token = {
         tokens,
@@ -175,10 +175,12 @@ function createValidationContext(tokens, options) {
         peek(offset = 0) {
             let index = this.index;
             let token = this.tokens[++index];
+            let typ = arena.getType(this.tokens[++index]);
             while (offset >= 0 && index < this.tokens.length) {
-                while (token?.typ == EnumToken.WhitespaceTokenType ||
-                    token?.typ == EnumToken.CommentTokenType ||
-                    token?.typ == EnumToken.CDOCOMMTokenType) {
+                typ = arena.getType(token);
+                while (typ == EnumToken.WhitespaceTokenType ||
+                    typ == EnumToken.CommentTokenType ||
+                    typ == EnumToken.CDOCOMMTokenType) {
                     token = this.tokens[++index];
                 }
                 if (token == null || offset === 0) {

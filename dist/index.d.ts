@@ -4570,10 +4570,11 @@ declare class Arena {
      * @param id
      * @param child
      */
-    setLeft(id: number, child: number): void;
-    getLeft(id: number): number;
-    setRight(id: number, rightId: number): void;
-    getRight(id: number): number;
+    setLeft(id: number, ...children: number[]): void;
+    getLeft(id: number): number[] | null;
+    setRight(id: number, rightId: null): void;
+    setRight(id: number, ...rightId: number[]): void;
+    getRight(id: number): number[] | null;
     setOp(id: number, opId: number): void;
     getOp(id: number): number;
     setOp2(id: number, op2Id: number): void;

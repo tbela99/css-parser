@@ -6,7 +6,7 @@
 	License: MIT
  */
 import { EnumToken } from '../../ast/types.js';
-import { tokensfuncDefMap, LOCSTA, mFGT, mFLT, LOCEND, LOCSRCID } from '../../syntax/constants.js';
+import { tokensfuncDefMap, mFGT, mFLT, LOCEND, LOCSTA, LOCSRCID } from '../../syntax/constants.js';
 import { matchAllSyntaxes, createValidationContext, trimArray } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { getSyntaxRule } from '../../validation/config.js';
@@ -14,19 +14,23 @@ import { equalsIgnoreCase } from './text.js';
 
 function parseAtRuleContainerQueryList(stream, context, options = {}) {
     let matchCount = 0;
+    let typ;
+    const arena = options.arena;
+    arena.getName(context);
     const errors = [];
     const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + context.nam);
     const syntax = syntaxRules?.getPreludeRules()?.slice?.(1);
     const parts = stream.reduce((acc, t) => {
-        if (t.typ === EnumToken.CommaTokenType && matchCount === 0) {
+        typ = arena.getType(t);
+        if (typ === EnumToken.CommaTokenType && matchCount === 0) {
             acc.push([]);
         }
         else {
             acc[acc.length - 1].push(t);
-            if (t.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(t.typ)) {
+            if (typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(typ)) {
                 matchCount++;
             }
-            else if (t.typ === EnumToken.EndParensTokenType) {
+            else if (typ === EnumToken.EndParensTokenType) {
                 if (matchCount > 0) {
                     matchCount--;
                 }
@@ -34,7 +38,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
         }
         return acc;
     }, [[]]);
-    const result = matchAllSyntaxes(syntax, createValidationContext(stream), options);
+    const result = matchAllSyntaxes(syntax, createValidationContext(stream, options), options);
     if (!result.success) {
         for (const error of result.errors) {
             errors.push(error);
@@ -73,7 +77,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                         {
                             action: "drop",
                             node: stream[i],
-                            location: options.source.getSourceLocation(stream[i]?.[LOCSTA]),
+                            location: options.source.getSourceLocation(stream[i]),
                             message: `expecting <container-condition>`,
                         },
                     ],
@@ -81,7 +85,8 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
             }
             for (; i < stream.length; i++) {
                 tokens.push(stream[i]);
-                if (stream[i].typ === EnumToken.WhitespaceTokenType || stream[i].typ === EnumToken.CommentTokenType) {
+                typ = arena.getType(stream[i]);
+                if (typ === EnumToken.WhitespaceTokenType || typ === EnumToken.CommentTokenType) {
                     continue;
                 }
                 if (expectAndOr) {
@@ -90,7 +95,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                     //     const val: string = (stream[i] as IdentToken).val.toLowerCase();
                     //     valid = val === "and" || val === "or";
                     // } else {
-                    valid = stream[i].typ !== EnumToken.CommaTokenType;
+                    valid = typ !== EnumToken.CommaTokenType;
                     // }
                     if (!valid) {
                         success = false;
@@ -98,17 +103,17 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                             action: "drop",
                             node: stream[i],
                             message: `expecting <and>, <or> or comma`,
-                            location: options.source.getSourceLocation(stream[i]?.[LOCSTA]),
+                            location: options.source.getSourceLocation(stream[i]),
                         });
                         break;
                     }
                 }
-                if (stream[i].typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(stream[i].typ)) {
+                if (typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(typ)) {
                     scopes.push((currentScope = new Set()));
                     stack.push(stream[i]);
                     continue;
                 }
-                switch (stream[i].typ) {
+                switch (typ) {
                     case EnumToken.ColonTokenType:
                     case EnumToken.LtTokenType:
                     case EnumToken.LteTokenType:
@@ -119,7 +124,7 @@ function parseAtRuleContainerQueryList(stream, context, options = {}) {
                         break;
                     case EnumToken.IdenTokenType:
                         {
-                            const val = stream[i].val.toLowerCase();
+                            const val = arena.getValue(stream[i]);
                             if (val === "not") {
                                 Object.assign(stream[i], {
                                     typ: EnumToken.NotTokenType,

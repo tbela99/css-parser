@@ -206,6 +206,9 @@ class Arena {
     getFlags(id) {
         return this.flags[id];
     }
+    // addFlags(id: number, flags: number): void {
+    //     this.flags[id] |= flags;
+    // }
     hasFlags(id, flag) {
         return (this.flags[id] & flag) != 0;
     }
@@ -224,6 +227,9 @@ class Arena {
                 if (this.firstChild[id] != 0) {
                     this.nextSibling[child] = this.nextSibling[this.firstChild[id]];
                     this.previousSibling[this.nextSibling[this.firstChild[id]]] = child;
+                }
+                if (this.lastChild[id] == this.firstChild[id]) {
+                    this.lastChild[id] = child;
                 }
                 this.firstChild[id] = child;
                 this.parents[child] = id;
@@ -253,6 +259,9 @@ class Arena {
             this.nextSibling[currentChild] = 0;
             this.parents[currentChild] = 0;
         }
+        if (currentChild == this.lastChild[id]) {
+            this.lastChild[id] = child;
+        }
         this.parents[child] = id;
     }
     /**
@@ -260,17 +269,42 @@ class Arena {
      * @param id
      * @param child
      */
-    setLeft(id, child) {
+    setLeft(id, ...children) {
+        let child = this.firstChild[id];
+        if (child != 0 && this.dataTypes[child] != EnumToken.ListTokenType) {
+            this.detach(child);
+            child = this.allocate();
+            this.dataTypes[child] = EnumToken.ListTokenType;
+        }
+        this.setChildren(child, ...children);
         this.setChildAt(id, 0, child);
     }
     getLeft(id) {
-        return this.getChildAt(id, 0);
+        const child = this.getChildAt(id, 0);
+        if (child == null) {
+            return null;
+        }
+        return this.children(child);
     }
-    setRight(id, rightId) {
-        this.setChildAt(id, 1, rightId);
+    setRight(id, ...rightId) {
+        let child = this.getChildAt(id, 1);
+        if (child == null || this.dataTypes[child] != EnumToken.ListTokenType) {
+            if (child != null) {
+                this.detach(child);
+            }
+            child = this.allocate();
+            this.dataTypes[child] = EnumToken.ListTokenType;
+            this.setChildAt(id, 1, child);
+        }
+        this.setChildren(child, ...(rightId == null || rightId[0] == null ? [] : rightId));
+        this.setChildAt(id, 1, child);
     }
     getRight(id) {
-        return this.getChildAt(id, 1);
+        const child = this.getChildAt(id, 1);
+        if (child == null) {
+            return null;
+        }
+        return this.children(child);
     }
     setOp(id, opId) {
         this.setChildAt(id, 2, opId);
@@ -606,7 +640,7 @@ class Arena {
             this.nextSibling[lastChild] = children[0];
         }
         this.parents[children[0]] = id;
-        for (let i = 1; i < children.length - 1; i++) {
+        for (let i = 1; i < children.length; i++) {
             this.detach(children[i]);
             this.previousSibling[children[i]] = children[i - 1];
             this.nextSibling[children[i - 1]] = children[i];
