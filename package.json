@@ -3,7 +3,7 @@
   "description": "CSS parser, minifier and validator for node and the browser",
   "version": "1.6.9",
   "exports": {
-    ".": "./dist/node.js",
+    ".": "./dist/src/node.js",
     "./node": "./dist/src/node.js",
     "./web": "./dist/src/web.js",
     "./cjs": "./dist/index.cjs"

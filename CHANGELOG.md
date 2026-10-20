@@ -1,5 +1,9 @@
 # Changelog
 
+# v1.6.9
+
+Add missing files from the dist folder.
+
 # v1.6.8
 
 - [x] allow a visitor to visit all nodes
