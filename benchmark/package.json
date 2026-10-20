@@ -10,15 +10,15 @@
     "all": "npm run sizes && npm run bench; npm run report"
   },
   "dependencies": {
-    "@tbela99/css-parser": "^1.6.6",
-    "@tbela99/css-parser2": "github:tbela99/css-parser#0c1ca9e",
+    "@tbela99/css-parser": "^1.6.9",
+    "@tbela99/css-parser2": "github:tbela99/css-parser#5920da6",
     "clean-css": "^5.3.3",
     "css-tree": "^3.2.1",
-    "cssnano": "^9.8.0",
+    "cssnano": "^9.9.0",
     "csso": "^5.0.5",
     "esbuild": "^0.28.2",
     "lightningcss": "^1.33.0",
-    "postcss": "^8.5.30",
-    "vitest": "^5.0.4"
+    "postcss": "^8.5.31",
+    "vitest": "^5.0.5"
   }
 }
