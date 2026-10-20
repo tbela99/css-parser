@@ -1,8 +1,8 @@
 export function run(describe, expect, it, transform, parse, render, dirname) {
-
-    describe('media queries level 5', function () {
-        it('empty query #1', function () {
-            return transform(`
+    describe("media queries level 5", function () {
+        it("empty query #1", function () {
+            return transform(
+                `
 @media {
     
     p .a { color: red; }
@@ -10,11 +10,14 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
     }
 }
 
-`, {nestingRules: false}).then((result) => expect(result.code).equals(`p .a,p .b{color:red}`));
+`,
+                { nestingRules: false },
+            ).then((result) => expect(result.code).equals(`p .a,p .b{color:red}`));
         });
 
-        it('error handling #2', function () {
-            return transform(`
+        it("error handling #2", function () {
+            return transform(
+                `
  @media &test, all, (example, all,), speech {
         
     p .a { color: red; }
@@ -22,10 +25,12 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
     }
     }
 
-`, {nestingRules: false}).then((result) => expect(result.code).equals(`p .a,p .b{color:red}`));
+`,
+                { nestingRules: false },
+            ).then((result) => expect(result.code).equals(`p .a,p .b{color:red}`));
         });
 
-        it('error handling #3', function () {
+        it("error handling #3", function () {
             return transform(`
    @media (hover) and (width > 1024px) or (--modern), (color) {
        .a {
@@ -35,17 +40,21 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
 `).then((result) => expect(result.code).equals(`@media (color){.a{color:green}}`));
         });
 
-        it('error handling #4', function () {
+        it("error handling #4", function () {
             return transform(`
   @media (hover) and ((width > 1024px) and (--modern) and (color)), (color) {
        .a {
            color: green; }
        
    }
-`).then((result) => expect(result.code).equals(`@media (hover) and ((width>1024px) and (--modern) and (color)),(color){.a{color:green}}`));
+`).then((result) =>
+                expect(result.code).equals(
+                    `@media (hover) and ((width>1024px) and (--modern) and (color)),(color){.a{color:green}}`,
+                ),
+            );
         });
 
-        it('error handling #5', function () {
+        it("error handling #5", function () {
             return transform(`
   @media (hover) and ((width > 1024px) and (--modern) or (color)), (color) {
        .a {
@@ -55,8 +64,9 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
 `).then((result) => expect(result.code).equals(`@media (color){.a{color:green}}`));
         });
 
-        it('error handling #6', function () {
-            return transform(`
+        it("error handling #6", function () {
+            return transform(
+                `
 @when media(width >= 400px) and media(pointer: fine) and supports(display: flex) {
 
 .a {
@@ -72,7 +82,11 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
 .a {
       color: green; }
 }
-`, {beautify: true}).then((result) => expect(result.code).equals(`@when media(width>=400px) and media(pointer:fine) and supports(display:flex) {
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code)
+                    .equals(`@when media(width>=400px) and media(pointer:fine) and supports(display:flex) {
  .a {
   color: green
  }
@@ -81,11 +95,13 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
  .a {
   color: red
  }
-}`));
+}`),
+            );
         });
 
-        it('support font-tech, font-format #7', function () {
-            return transform(`
+        it("support font-tech, font-format #7", function () {
+            return transform(
+                `
 
 @when font-tech(color-COLRv1) and font-tech(variations) {
   @font-face { font-family: icons; src: url(icons-gradient-var.woff2); }
@@ -100,7 +116,10 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
   @font-face { font-family: icons; src: url(icons-fallback.woff2); }
 }
 
-`, {beautify: true}).then((result) => expect(result.code).equals(`@when font-tech(color-COLRv1) and font-tech(variations) {
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`@when font-tech(color-COLRv1) and font-tech(variations) {
  @font-face {
   font-family: icons;
   src: url(icons-gradient-var.woff2)
@@ -123,19 +142,23 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
   font-family: icons;
   src: url(icons-fallback.woff2)
  }
-}`));
+}`),
+            );
         });
 
-        it('font-face #8', function () {
-
-            return transform(`
+        it("font-face #8", function () {
+            return transform(
+                `
 
 @font-face { font-family: icons; src: url(icons-fallback.woff2);}
 @supports font-tech(color-COLRv1) {
   @font-face { font-family: icons; src: url(icons-gradient-var.woff2); }
 }
 
-`, {beautify: true}).then((result) => expect(result.code).equals(`@font-face {
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`@font-face {
  font-family: icons;
  src: url(icons-fallback.woff2)
 }
@@ -144,12 +167,13 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
   font-family: icons;
   src: url(icons-gradient-var.woff2)
  }
-}`));
+}`),
+            );
         });
 
-        it('container #9', function () {
-
-            return transform(`
+        it("container #9", function () {
+            return transform(
+                `
 
 /* condition list */
 @container card scroll-state(stuck: top) and
@@ -162,12 +186,14 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
   }
 }
 
-`, {beautify: true}).then((result) => expect(result.code).equals(``));
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
         });
 
-        it('container #10', function () {
-
-            return transform(`
+        it("container #10", function () {
+            return transform(
+                `
 
 /* condition list */
 @container {
@@ -176,12 +202,14 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
   }
 }
 
-`, {beautify: true}).then((result) => expect(result.code).equals(``));
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
         });
 
-        it('container #11', function () {
-
-            return transform(`
+        it("container #11", function () {
+            return transform(
+                `
 
 /* condition list */
 @container card {
@@ -190,16 +218,20 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
   }
 }
 
-`, {beautify: true}).then((result) => expect(result.code).equals(`@container card {
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`@container card {
  h2 {
   font-size: 1.5em
  }
-}`));
+}`),
+            );
         });
 
-        it('container #12', function () {
-
-            return transform(`
+        it("container #12", function () {
+            return transform(
+                `
 
 /* condition list */
 @container card  card{
@@ -230,21 +262,24 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
   }
 }
 
-`, {beautify: true}).then((result) => expect(result.code).equals(``));
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
         });
 
-        it('container #13', function () {
-
-            return transform(`
+        it("container #13", function () {
+            return transform(
+                `
 
 /* condition list */
 @container card ;
 
-`, {beautify: true}).then((result) => expect(result.code).equals(``));
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
         });
 
-        it('custom-media #14', function () {
-
+        it("custom-media #14", function () {
             return transform(`
  /* --modern targets modern devices that support color or hover */
 @custom-media --modern (color), (hover);
@@ -253,12 +288,16 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
   .a { color: green; }
 }
 
-`).then((result) => expect(result.code).equals(`@custom-media --modern (color),(hover);@media (--modern) and (width>1024px){.a{color:green}}`));
+`).then((result) =>
+                expect(result.code).equals(
+                    `@custom-media --modern (color),(hover);@media (--modern) and (width>1024px){.a{color:green}}`,
+                ),
+            );
         });
 
-        it('when-else #15', function () {
-
-            return transform(`
+        it("when-else #15", function () {
+            return transform(
+                `
 @when media(width >= 400px) and media(pointer: fine) and supports(display: flex) {
 
 .a {
@@ -274,7 +313,11 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
 .a {
       color: green; }
 }
-`, {beautify: true}).then((result) => expect(result.code).equals(`@when media(width>=400px) and media(pointer:fine) and supports(display:flex) {
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code)
+                    .equals(`@when media(width>=400px) and media(pointer:fine) and supports(display:flex) {
  .a {
   color: green
  }
@@ -288,12 +331,13 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
  .a {
   color: green
  }
-}`));
+}`),
+            );
         });
 
-        it('counter-syle #16', function () {
-
-            return transform(`
+        it("counter-syle #16", function () {
+            return transform(
+                `
 
 /* condition list */@counter-style thumbs {
   system: cyclic;
@@ -301,16 +345,20 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
   suffix: " ";
 }
 
-`, {beautify: true}).then((result) => expect(result.code).equals(`@counter-style thumbs {
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`@counter-style thumbs {
  system: cyclic;
  symbols: "👍";
  suffix: " "
-}`));
+}`),
+            );
         });
 
-        it('counter-style #17', function () {
-
-            return transform(`
+        it("counter-style #17", function () {
+            return transform(
+                `
 
 /* condition list */
 @counter-style  {
@@ -324,48 +372,62 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
 @counter-style /* thumbs thumbs */;
 @counter-style var();
 
-`, {beautify: true}).then((result) => expect(result.code).equals(``));
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
         });
 
-        it('at-rule #18', function () {
-
-            return transform(`@charset  "UTF-8"
-`, {beautify: true, removeCharset: false}).then((result) => expect(result.code).equals(``));
+        it("at-rule #18", function () {
+            return transform(
+                `@charset  "UTF-8"
+`,
+                { beautify: true, removeCharset: false },
+            ).then((result) => expect(result.code).equals(``));
         });
 
-        it('at-rule #19', function () {
-
-            return transform(`@charset "UTF-8"
-`, {beautify: true, removeCharset: false}).then((result) => expect(result.code).equals(`@charset "UTF-8";`));
+        it("at-rule #19", function () {
+            return transform(
+                `@charset "UTF-8"
+`,
+                { beautify: true, removeCharset: false },
+            ).then((result) => expect(result.code).equals(`@charset "UTF-8";`));
         });
 
-        it('at-rule #20', function () {
-
-            return transform(`@charset 'UTF-8'
-`, {beautify: true, removeCharset: false}).then((result) => expect(result.code).equals(``));
+        it("at-rule #20", function () {
+            return transform(
+                `@charset 'UTF-8'
+`,
+                { beautify: true, removeCharset: false },
+            ).then((result) => expect(result.code).equals(``));
         });
 
-        it('at-rule #21', function () {
-
-            return transform(`@charset /* erw */ 'UTF-8';
-`, {beautify: true, removeCharset: false}).then((result) => expect(result.code).equals(``));
+        it("at-rule #21", function () {
+            return transform(
+                `@charset /* erw */ 'UTF-8';
+`,
+                { beautify: true, removeCharset: false },
+            ).then((result) => expect(result.code).equals(``));
         });
 
-        it('at-rule #22', function () {
-
-            return transform(`@charset /* erw */ "UTF-8";
-`, {beautify: true, removeCharset: false}).then((result) => expect(result.code).equals(``));
+        it("at-rule #22", function () {
+            return transform(
+                `@charset /* erw */ "UTF-8";
+`,
+                { beautify: true, removeCharset: false },
+            ).then((result) => expect(result.code).equals(``));
         });
 
-        it('at-rule #23', function () {
-
-            return transform(`@charset /* erw */"UTF-8";
-`, {beautify: true, removeCharset: false}).then((result) => expect(result.code).equals(``));
+        it("at-rule #23", function () {
+            return transform(
+                `@charset /* erw */"UTF-8";
+`,
+                { beautify: true, removeCharset: false },
+            ).then((result) => expect(result.code).equals(``));
         });
     });
 
-    describe('@import', function () {
-        it('import #24', function () {
+    describe("@import", function () {
+        it("import #24", function () {
             return transform(`
 @import "custom.css
 ";
@@ -374,7 +436,7 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
 
 `).then((result) => expect(result.code).equals(``));
         });
-        it('import #25', function () {
+        it("import #25", function () {
             return transform(`
 
 @import url("landscape.css") screen and (orientation: landscape);
@@ -382,16 +444,20 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
 `).then((result) => expect(result.code).equals(`@import "landscape.css" screen and (orientation:landscape);`));
         });
 
-        it('import #26', function () {
+        it("import #26", function () {
             return transform(`
 
 @import url("gridy.css") supports((not (display: grid)) and (display: flex))
   screen and (max-width: 400px)
 
-`).then((result) => expect(result.code).equals(`@import "gridy.css" supports((not (display:grid)) and (display:flex))screen and (width<=400px);`));
+`).then((result) =>
+                expect(result.code).equals(
+                    `@import "gridy.css" supports((not (display:grid)) and (display:flex))screen and (width<=400px);`,
+                ),
+            );
         });
 
-        it('import #27', function () {
+        it("import #27", function () {
             return transform(`
 
 
@@ -399,10 +465,14 @@ export function run(describe, expect, it, transform, parse, render, dirname) {
 supports((selector(h2 > p)) and (font-tech(color-COLRv1)));
 
 
-`).then((result) => expect(result.code).equals(`@import "whatever.css" supports((selector(h2>p)) and (font-tech(color-COLRv1)));`));
+`).then((result) =>
+                expect(result.code).equals(
+                    `@import "whatever.css" supports((selector(h2>p)) and (font-tech(color-COLRv1)));`,
+                ),
+            );
         });
 
-        it('import #28', function () {
+        it("import #28", function () {
             return transform(`
 
 
@@ -414,21 +484,24 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 `).then((result) => expect(result.code).equals(``));
         });
 
-        it('import #29', function () {
-            return transform(`
+        it("import #29", function () {
+            return transform(
+                `
 
 @import "theme.css" layer("bar");
 @import "theme.css" layer();
 @import "style.css" layer;
 
-`, {beautify: true}).then((result) => expect(result.code).equals(`@import "style.css" layer;`));
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(`@import "style.css" layer;`));
         });
     });
 
-
-    describe('@document', function () {
-        it('document #30', function () {
-            return transform(`
+    describe("@document", function () {
+        it("document #30", function () {
+            return transform(
+                `
 @document url("https://www.example.com/")
 {
   h1 {
@@ -436,14 +509,19 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
   }
 }
 
-`, {beautify: true}).then((result) => expect(result.code).equals(`@document url(https://www.example.com/) {
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`@document url(https://www.example.com/) {
  h1 {
   color: green
  }
-}`));
+}`),
+            );
         });
-        it('document #31', function () {
-            return transform(`
+        it("document #31", function () {
+            return transform(
+                `
 
 @document url("http://www.w3.org/"),
           url-prefix("http://www.w3.org/Style/"),
@@ -465,19 +543,24 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
   }
 }
 
-`, {beautify: true}).then((result) => expect(result.code).equals(`@document url(http://www.w3.org/),url-prefix("http://www.w3.org/Style/"),domain("mozilla.org"),media-document("video"),regexp("https:.*") {
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code)
+                    .equals(`@document url(http://www.w3.org/),url-prefix("http://www.w3.org/Style/"),domain("mozilla.org"),media-document("video"),regexp("https:.*") {
  body {
   color: purple;
   background: #ff0
  }
-}`));
+}`),
+            );
         });
     });
 
-
-    describe('@keyframes', function () {
-        it('keyframes #32', function () {
-            return transform(`
+    describe("@keyframes", function () {
+        it("keyframes #32", function () {
+            return transform(
+                `
 
     @-webkit-keyframes flash {
             from,
@@ -491,18 +574,23 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
                 opacity: 0;
             }
         }
-`, {beautify: true}).then((result) => expect(result.code).equals(`@-webkit-keyframes flash {
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`@-webkit-keyframes flash {
  0%,50%,to {
   opacity: 1
  }
  25%,75% {
   opacity: 0
  }
-}`));
+}`),
+            );
         });
 
-        it('keyframes #33', function () {
-            return transform(`
+        it("keyframes #33", function () {
+            return transform(
+                `
 
 @keyframes slide-right {
 
@@ -542,7 +630,10 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
   }
 
 }
-`, {beautify: true}).then((result) => expect(result.code).equals(`@keyframes slide-right {
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`@keyframes slide-right {
  50% {
   margin-left: 100px;
   opacity: .9
@@ -550,11 +641,13 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
  to {
   margin-left: 250px
  }
-}`));
+}`),
+            );
         });
 
-        it('keyframes #34', function () {
-            return transform(`
+        it("keyframes #34", function () {
+            return transform(
+                `
 
 @keyframes slide-right {
 
@@ -631,7 +724,10 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
     margin-bottom: 50px;
   }
 }
-`, {beautify: true}).then((result) => expect(result.code).equals(`@keyframes slide-right {
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`@keyframes slide-right {
  50% {
   margin-left: 100px;
   opacity: .9
@@ -664,67 +760,88 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
  to {
   margin-bottom: 50px
  }
-}`));
+}`),
+            );
         });
     });
 
-
-    describe('other', function () {
-        it('font-palette-values #33', function () {
-            return transform(`
+    describe("other", function () {
+        it("font-palette-values #33", function () {
+            return transform(
+                `
 @font-palette-values --identifier {
   font-family: Bixa;
 }
 .my-class {
   font-palette: --identifier;
 }
-`, {beautify: true}).then((result) => expect(result.code).equals(`@font-palette-values --identifier {
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`@font-palette-values --identifier {
  font-family: Bixa
 }
 .my-class {
  font-palette: --identifier
-}`));
+}`),
+            );
         });
 
-        it('font-palette-values #34', function () {
-            return transform(`
+        it("font-palette-values #34", function () {
+            return transform(
+                `
 @font-palette-values identifier {
   font-family: Bixa;
 }
 .my-class {
   font-palette: --identifier;
 }
-`, {beautify: true}).then((result) => expect(result.code).equals(`.my-class {
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`.my-class {
  font-palette: --identifier
-}`));
+}`),
+            );
         });
 
-        it('font-palette-values #35', function () {
-            return transform(`
+        it("font-palette-values #35", function () {
+            return transform(
+                `
 @font-palette-values identifier unexpected {
   font-family: Bixa;
 }
 .my-class {
   font-palette: --identifier;
 }
-`, {beautify: true}).then((result) => expect(result.code).equals(`.my-class {
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`.my-class {
  font-palette: --identifier
-}`));
+}`),
+            );
         });
 
-        it('font-palette-values #36', function () {
-            return transform(`
+        it("font-palette-values #36", function () {
+            return transform(
+                `
 @font-palette-values identifier;
 .my-class {
   font-palette: --identifier;
 }
-`, {beautify: true}).then((result) => expect(result.code).equals(`.my-class {
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`.my-class {
  font-palette: --identifier
-}`));
+}`),
+            );
         });
 
-        it('font-palette-values #37', function () {
-            return transform(`
+        it("font-palette-values #37", function () {
+            return transform(
+                `
 @font-palette-values {
 
   font-family: Bixa;
@@ -732,13 +849,18 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 .my-class {
   font-palette: --identifier;
 }
-`, {beautify: true}).then((result) => expect(result.code).equals(`.my-class {
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`.my-class {
  font-palette: --identifier
-}`));
+}`),
+            );
         });
 
-        it('font-palette-values #38', function () {
-            return transform(`
+        it("font-palette-values #38", function () {
+            return transform(
+                `
 @font-feature-values Font Name {
   font-display: swap;
   @styleset {
@@ -749,7 +871,10 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
   }
 }
 
-`, {beautify: true, validation: true}).then((result) => expect(result.code).equals(`@font-feature-values Font Name {
+`,
+                { beautify: true, validation: true },
+            ).then((result) =>
+                expect(result.code).equals(`@font-feature-values Font Name {
  font-display: swap;
  @styleset {
   nice-style: 12
@@ -757,11 +882,13 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
  @swash {
   fancy: 2
  }
-}`));
+}`),
+            );
         });
 
-        it('font-palette-values #39', function () {
-            return transform(`
+        it("font-palette-values #39", function () {
+            return transform(
+                `
 /* Targets all the pages */
 @page {
   size: 8.5in 9in;
@@ -792,7 +919,10 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 }
 
 
-`, {beautify: true}).then((result) => expect(result.code).equals(`@page {
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`@page {
  size: 8.5in 9in;
  margin-top: 4in
 }
@@ -810,11 +940,13 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
  @top-right {
   content: "Page " counter(pageNumber)
  }
-}`));
+}`),
+            );
         });
 
-        it('font-palette-values #40', function () {
-            return transform(`
+        it("font-palette-values #40", function () {
+            return transform(
+                `
   /* margin box at top right showing page number */
   @top-right {
     content: "Page " counter(pageNumber);
@@ -822,21 +954,27 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 }
 
 
-`, {beautify: true}).then((result) => expect(result.code).equals(``));
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
         });
 
-        it('font-palette-values #41', function () {
-            return transform(`
+        it("font-palette-values #41", function () {
+            return transform(
+                `
   /* margin box at top right showing page number */
   @top-right no;
 }
 
 
-`, {beautify: true}).then((result) => expect(result.code).equals(``));
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
         });
 
-        it('font-palette-values #40', function () {
-            return transform(`
+        it("font-palette-values #40", function () {
+            return transform(
+                `
   /* margin box at top right showing page number */
   @top-right {
     content: "Page " counter(pageNumber);
@@ -844,11 +982,14 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 }
 
 
-`, {beautify: true}).then((result) => expect(result.code).equals(``));
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
         });
 
-        it('keyframes #42', function () {
-            return transform(`
+        it("keyframes #42", function () {
+            return transform(
+                `
 
     @keyframes {
 
@@ -871,11 +1012,14 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 
         }
 
-`, {beautify: true}).then((result) => expect(result.code).equals(``));
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
         });
 
-        it('keyframes #43', function () {
-            return transform(`
+        it("keyframes #43", function () {
+            return transform(
+                `
 
     @keyframes /* 1 */ {
 
@@ -898,11 +1042,14 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 
         }
 
-`, {beautify: true}).then((result) => expect(result.code).equals(``));
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
         });
 
-        it('keyframes #44', function () {
-            return transform(`
+        it("keyframes #44", function () {
+            return transform(
+                `
 
     @keyframes /* 1 */ test test1 {
 
@@ -925,11 +1072,14 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 
         }
 
-`, {beautify: true}).then((result) => expect(result.code).equals(``));
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
         });
 
-        it('keyframes #45', function () {
-            return transform(`
+        it("keyframes #45", function () {
+            return transform(
+                `
 
 @font-feature-values Bongo {
     @swash { ornate: 1; }
@@ -940,10 +1090,13 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
     redrum  /* random editing mistake */
 }
 
-`, {
-                beautify: true,
-                validation: true
-            }).then((result) => expect(result.code).equals(`@font-feature-values Bongo {
+`,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@font-feature-values Bongo {
  @swash {
   ornate: 1;
   double-loops: 1;
@@ -953,12 +1106,13 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
   double-W: 14;
   sharp-terminals: 16 1
  }
-}`));
+}`),
+            );
         });
 
-
-        it('media range query #46', function () {
-            return transform(`
+        it("media range query #46", function () {
+            return transform(
+                `
 
   @media ((color) and (hover)) or (monochrome) {
  /* … */
@@ -969,47 +1123,60 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 }
 @media tv,(30em<=width<=50em),screen {
 }
-`, {
-                beautify: true,
-                removeEmpty: false,
-                removeComments: false,
-                validation: true
-            }).then((result) => expect(result.code).equals(`/* or */
+`,
+                {
+                    beautify: true,
+                    removeEmpty: false,
+                    removeComments: false,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`/* or */
 @media (color) and (hover),(monochrome) {
  /* … */
 }
 @media tv,(30em<=width<=50em),screen {
-}`));
+}`),
+            );
         });
 
-        it('import #47', function () {
-            return transform(`
+        it("import #47", function () {
+            return transform(
+                `
 
 @import 'charset.css' /* line comment */ layer(layer.one.two.three) supports((selector(h2 > p)) and (font-tech(color-COLRv1))) screen and (min-width: 30em) and (max-width: 50em), tv and (all),all and (((min-width: 30em) and (max-width: 50em)) or (all));
-`, {
-                beautify: true,
-                removeEmpty: false,
-                validation: true
-            }).then((result) => expect(result.code).equals(`@import 'charset.css' layer(layer.one.two.three) supports((selector(h2>p)) and (font-tech(color-COLRv1)))screen and (width>=30em) and (width<=50em),tv and (all),all and (((30em<=width<=50em)) or (all));`));
+`,
+                {
+                    beautify: true,
+                    removeEmpty: false,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(
+                    `@import 'charset.css' layer(layer.one.two.three) supports((selector(h2>p)) and (font-tech(color-COLRv1)))screen and (width>=30em) and (width<=50em),tv and (all),all and (((30em<=width<=50em)) or (all));`,
+                ),
+            );
         });
 
-        it('import #48', function () {
-            return transform(`
+        it("import #48", function () {
+            return transform(
+                `
 
 
 @media all, tv,all and (min-width: 30em) and (max-width: 50em) or all, all, tv, screen or all {
  
-}`, {
-                beautify: true,
-                removeEmpty: false,
-                validation: true
-            }).then((result) => expect(result.code).equals(``));
+}`,
+                {
+                    beautify: true,
+                    removeEmpty: false,
+                    validation: true,
+                },
+            ).then((result) => expect(result.code).equals(``));
         });
 
-
-
-        it('media ratio and calc() #49', function () {
-            return transform(`
+        it("media ratio and calc() #49", function () {
+            return transform(
+                `
 
   @media (calc(4 / 3) <= device-aspect-ratio <= 32 / 18) {}
   @media ( device-aspect-ratio <= 32 / 18) {}
@@ -1018,10 +1185,13 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
     color: Highlight;
   }
 }
-  `, {
-                beautify: true,
-                removeEmpty: false
-            }).then((result) => expect(result.code).equals(`@media (4/3<=device-aspect-ratio<=16/9) {
+  `,
+                {
+                    beautify: true,
+                    removeEmpty: false,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@media (4/3<=device-aspect-ratio<=16/9) {
 }
 @media (device-aspect-ratio<=16/9) {
 }
@@ -1029,13 +1199,13 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
  h1 {
   color: Highlight
  }
-}`));
+}`),
+            );
         });
 
-
-
-        it('color-profile and color() #50', function () {
-            return transform(`
+        it("color-profile and color() #50", function () {
+            return transform(
+                `
 
 @color-profile --swop5c {
   src: url("https://example.org/SWOP2006_Coated5v2.icc");
@@ -1043,38 +1213,47 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 .header {
   background-color: color(--swop5c 0% 70% 20% 0%);
 }
-  `, {
-                beautify: true,
-                validation: true
-            }).then((result) => expect(result.code).equals(`@color-profile --swop5c {
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@color-profile --swop5c {
  src: url(https://example.org/SWOP2006_Coated5v2.icc)
 }
 .header {
  background-color: color(--swop5c 0 70% 20% 0)
-}`));
+}`),
+            );
         });
 
-        it('supports and env() #51', function () {
-            return transform(`
+        it("supports and env() #51", function () {
+            return transform(
+                `
 
   @supports env(color-profile 1 2) {
     
 .header {
   background-color: color(--swop5c 0% 70% 20% 0%);
 }
-  `, {
-                beautify: true,
-                validation: true
-            }).then((result) => expect(result.code).equals(`@supports env(color-profile 1 2) {
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@supports env(color-profile 1 2) {
  .header {
   background-color: color(--swop5c 0 70% 20% 0)
  }
-}`));
+}`),
+            );
         });
-        
 
-        it('@view-transition #52', function () {
-            return transform(`
+        it("@view-transition #52", function () {
+            return transform(
+                `
 
 /* Create a custom animation */
 @keyframes move-out {
@@ -1110,10 +1289,13 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
   types: slide;
 }
 
-  `, {
-                beautify: true,
-                validation: true
-            }).then((result) => expect(result.code).equals(`@keyframes move-out {
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@keyframes move-out {
  0% {
   transform: translateY(0)
  }
@@ -1138,11 +1320,13 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 @view-transition {
  navigation: auto;
  types: slide
-}`));
+}`),
+            );
         });
 
-        it('@font-palette-values #53', function () {
-            return transform(`
+        it("@font-palette-values #53", function () {
+            return transform(
+                `
 @font-palette-values --Alternate {
   font-family: "Bungee Spice";
   override-colors:
@@ -1152,21 +1336,25 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 .alternate {
   font-palette: --Alternate;
 }
-  `, {
-                beautify: true,
-                validation: true
-            }).then((result) => expect(result.code).equals(`@font-palette-values --Alternate {
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@font-palette-values --Alternate {
  font-family: "Bungee Spice";
  override-colors: 0 #0fb,1 #074
 }
 .alternate {
  font-palette: --Alternate
-}`));
+}`),
+            );
         });
-        
 
-        it('@property  #54', function () {
-            return transform(`
+        it("@property  #54", function () {
+            return transform(
+                `
 
 @property --canBeAnything {
   syntax: "*";
@@ -1185,10 +1373,13 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
   initial-value: 200px;
 }
 
-  `, {
-                beautify: true,
-                validation: true
-            }).then((result) => expect(result.code).equals(`@property --canBeAnything {
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@property --canBeAnything {
  syntax: "*";
  inherits: true
 }
@@ -1201,12 +1392,13 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
  syntax: "<length> | <percentage>";
  inherits: true;
  initial-value: 200px
-}`));
+}`),
+            );
         });
-            
 
-        it('@position-try  #55', function () {
-            return transform(`
+        it("@position-try  #55", function () {
+            return transform(
+                `
 @position-try --custom-left {
   position-area: left;
   width: 100px;
@@ -1240,10 +1432,13 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
   position-try-fallbacks:
     --custom-left, --custom-bottom, --custom-right, --custom-bottom-right;
 }
-  `, {
-                beautify: true,
-                validation: true
-            }).then((result) => expect(result.code).equals(`@position-try --custom-left {
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@position-try --custom-left {
  position-area: left;
  width: 100px;
  margin-right: 10px
@@ -1271,12 +1466,13 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
  width: 200px;
  margin-bottom: 10px;
  position-try-fallbacks: --custom-left,--custom-bottom,--custom-right,--custom-bottom-right
-}`));
+}`),
+            );
         });
-          
 
-        it('@starting-style  #56', function () {
-            return transform(`
+        it("@starting-style  #56", function () {
+            return transform(
+                `
 @starting-style {
   [popover]:popover-open {
     opacity: 0;
@@ -1293,10 +1489,13 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
     transform: scaleX(0);
   }
 }
-  `, {
-                beautify: true,
-                validation: true
-            }).then((result) => expect(result.code).equals(`@starting-style {
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@starting-style {
  [popover]:popover-open {
   opacity: 0;
   transform: scaleX(0)
@@ -1309,32 +1508,36 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
   opacity: 0;
   transform: scaleX(0)
  }
-}`));
+}`),
+            );
         });
-        
 
-        it('@starting-style  #57', function () {
-            return transform(`
+        it("@starting-style  #57", function () {
+            return transform(
+                `
 
 @media (width >= calc(1024px + 50px)) {
   h1 {
     color: Highlight;
   }
 }
-  `, {
-                beautify: true,
-                validation: true
-            }).then((result) => expect(result.code).equals(`@media (width>=1074px) {
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@media (width>=1074px) {
  h1 {
   color: Highlight
  }
-}`));
+}`),
+            );
         });
-        
-        
 
-        it('do not minify supports() arguments #58', function () {
-            return transform(`
+        it("do not minify supports() arguments #58", function () {
+            return transform(
+                `
 
 body {
   background-color: if(
@@ -1350,11 +1553,14 @@ body {
   }
 }
 
-  `, {
-                beautify: true,
-                expandIfSyntax: true,
-                validation: true
-            }).then((result) => expect(result.code).equals(`body {
+  `,
+                {
+                    beautify: true,
+                    expandIfSyntax: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`body {
  background-color: #00adf3;
  @supports (color:oklch(.7 .185 232)) {
   background-color: #00aefc
@@ -1365,14 +1571,13 @@ body {
    content: "Your browser supports OKLCH"
   }
  }
-}`));
+}`),
+            );
         });
-        
-        
-        
 
-        it('do not minify supports() arguments #59', function () {
-            return transform(`
+        it("do not minify supports() arguments #59", function () {
+            return transform(
+                `
 
 body {
   background-color: if(
@@ -1388,20 +1593,24 @@ body {
   }
 }
 
-  `, {
-                beautify: true,
-                validation: true
-            }).then((result) => expect(result.code).equals(`body {
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`body {
  background-color: if(supports(color:oklch(.7 .185 232)): #00aefc; else: #00adf3);
  &:after {
   content: if(supports(color:oklch(.7 .185 232)): "Your browser supports OKLCH"; else: "Your browser does not support OKLCH")
  }
-}`));
+}`),
+            );
         });
-        
 
-        it('boolean media queries #60', function () {
-            return transform(`
+        it("boolean media queries #60", function () {
+            return transform(
+                `
 
 @media (grid: 1) {
   a:hover {
@@ -1409,18 +1618,23 @@ body {
   }
 }
 
-  `, {
-                beautify: true,
-                validation: true
-            }).then((result) => expect(result.code).equals(`@media (grid:1) {
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@media (grid:1) {
  a:hover {
   color: blue
  }
-}`));
+}`),
+            );
         });
-        
-        it('integer media queries #61', function () {
-            return transform(`
+
+        it("integer media queries #61", function () {
+            return transform(
+                `
 
 @media (color: 1) {
   a:hover {
@@ -1428,18 +1642,23 @@ body {
   }
 }
 
-  `, {
-                beautify: true,
-                validation: true
-            }).then((result) => expect(result.code).equals(`@media (color:1) {
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@media (color:1) {
  a:hover {
   color: blue
  }
-}`));
+}`),
+            );
         });
-        
-        it('keyword media queries #61', function () {
-            return transform(`
+
+        it("keyword media queries #61", function () {
+            return transform(
+                `
 
 @media (scripting: none) {
   a:hover {
@@ -1447,18 +1666,23 @@ body {
   }
 }
 
-  `, {
-                beautify: true,
-                validation: true
-            }).then((result) => expect(result.code).equals(`@media (scripting:none) {
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@media (scripting:none) {
  a:hover {
   color: blue
  }
-}`));
+}`),
+            );
         });
-        
-        it('string media queries #61', function () {
-            return transform(`
+
+        it("string media queries #61", function () {
+            return transform(
+                `
 
 @media (-moz-os-version) {
   a:hover {
@@ -1466,19 +1690,23 @@ body {
   }
 }
 
-  `, {
-                beautify: true,
-                validation: true
-            }).then((result) => expect(result.code).equals(`@media (-moz-os-version) {
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@media (-moz-os-version) {
  a:hover {
   color: blue
  }
-}`));
+}`),
+            );
         });
-        
-        
-        it('at-rule function #62', function () {
-            return transform(`
+
+        it("at-rule function #62", function () {
+            return transform(
+                `
 
 
 @function --transparent(--color, --alpha) {
@@ -1505,10 +1733,13 @@ section {
   --easing: linear;
   result: var(--animation) var(--duration) var(--count) var(--easing);
 }
-  `, {
-                beautify: true,
-                validation: true
-            }).then((result) => expect(result.code).equals(`@function --transparent(--color,--alpha) {
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@function --transparent(--color,--alpha) {
  result: oklch(from var(--color) l c h/var(--alpha))
 }
 section {
@@ -1528,8 +1759,8 @@ div {
  --duration: 1s;
  --easing: linear;
  result: var(--animation) var(--duration) var(--count) var(--easing)
-}`));
+}`),
+            );
         });
-        
     });
-    }
+}

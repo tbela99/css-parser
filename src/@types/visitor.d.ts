@@ -30,6 +30,7 @@ export declare type GenericVisitorSyncHandler<T> = (
 export declare type GenericVisitorAstNodeSyncHandlerMap<T> =
     | Record<string, GenericVisitorSyncHandler<T>>
     | GenericVisitorSyncHandler<T>
+    | Function<T>
     | { type: WalkerEvent; handler: GenericVisitorSyncHandler<T> }
     | { type: WalkerEvent; handler: Record<string, GenericVisitorSyncHandler<T>> };
 
@@ -605,7 +606,6 @@ export declare interface VisitorNodeMap {
  * Parsed visitor handlers
  */
 export interface ParsedVisitorHandlers {
-
     /**
      * include tokens
      */
