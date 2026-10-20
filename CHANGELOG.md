@@ -2,7 +2,7 @@
 
 # v1.6.9
 
-Add missing files from the dist folder.
+fix import path #166 from package.json
 
 # v1.6.8
 

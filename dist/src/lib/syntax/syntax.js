@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.8
+	Version: 1.6.9
 	License: MIT
  */
 import { isOkLabClose } from './color/utils/distance.js';

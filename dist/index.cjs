@@ -34774,7 +34774,7 @@ function setNodeProperty(node, key, value) {
     }
 }
 
-var version = "1.6.8";
+var version = "1.6.9";
 
 /**
  * Load file or url
