@@ -2,7 +2,11 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
+<<<<<<< HEAD
 	Version: 2.0.0-alpha.1
+=======
+	Version: 1.6.8
+>>>>>>> v.next
 	License: MIT
  */
 import { getParsedSyntax, getSyntaxConfig } from './config.js';
@@ -465,7 +469,7 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                     }
                 }
                 break;
-            case EnumToken.Pipe:
+            case EnumToken.PipeTokenType:
             case EnumToken.DelimTokenType:
             case EnumToken.StringTokenType:
             case EnumToken.IncludeMatchTokenType:
@@ -514,10 +518,17 @@ function matchSelectorSyntax(stream, errors, options, nested = true) {
                         }
                         slice.push(tokens[n]);
                     }
+<<<<<<< HEAD
                     if (arena.getType(slice[1]) === EnumToken.Pipe) {
                         slice.shift();
                     }
                     if (arena.getType(slice[0]) === EnumToken.Pipe) {
+=======
+                    if (slice[1]?.typ === EnumToken.PipeTokenType) {
+                        slice.shift();
+                    }
+                    if (slice[0].typ === EnumToken.PipeTokenType) {
+>>>>>>> v.next
                         slice.shift();
                     }
                     if (slice.length === 1) {
@@ -879,8 +890,8 @@ function matchSyntax(syntaxes, context, options) {
         // custom function token
         if (token.typ === EnumToken.CustomFunctionTokenDefType) {
             if (syntaxes[i].typ != ValidationTokenEnum.PropertyType ||
-                syntaxes[i + 1].typ != ValidationTokenEnum.OpenParenthesis ||
-                syntaxes[i + 2].typ == null) {
+                syntaxes[i + 1]?.typ != ValidationTokenEnum.OpenParenthesis ||
+                syntaxes[i + 2]?.typ == null) {
                 if (!isOptional) {
                     return {
                         success: false,
@@ -2214,6 +2225,21 @@ function matchProperty(property, context, options) {
                     token.chi[l].typ == EnumToken.StringTokenType ||
                         token.chi[l].typ == EnumToken.IdenTokenType ||
                         token.chi[l].typ == EnumToken.UrlTokenTokenType;
+                context.next();
+                return {
+                    success: true,
+                    valid: true,
+                    token: null,
+                    context,
+                    syntaxToken: null,
+                    errors: [],
+                };
+            }
+            break;
+        }
+        case "css-type": {
+            success = context.peek()?.typ == EnumToken.CssTypeTokenType;
+            if (success) {
                 context.next();
                 return {
                     success: true,

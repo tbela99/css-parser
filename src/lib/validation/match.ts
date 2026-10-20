@@ -2,7 +2,6 @@ import type {
     BinaryExpressionToken,
     DimensionToken,
     ErrorDescription,
-    FractionToken,
     FunctionToken,
     IdentToken,
     LiteralToken,
@@ -215,6 +214,7 @@ export function isMFValue(
                 valid: true,
                 success:
                     (tokens.length == 1 && tokens[0].typ == EnumToken.NumberTokenType) ||
+                    (tokens.length == 1 && tokens[0].typ == EnumToken.NumberTokenType) ||
                     (tokens.length === 3 &&
                         tokens[0].typ == EnumToken.NumberTokenType &&
                         typeof (tokens[0] as NumberToken).val === "number" &&
@@ -296,12 +296,14 @@ export function createValidationContext(tokens: number[], options: ParserOptions
             open: EnumToken = EnumToken.StartParensTokenType,
             close: EnumToken = EnumToken.EndParensTokenType,
             counter: number = 0,
-        ): Token[] {
+        ): number[] {
             let index: number = this.index;
             let token: number = this.tokens[index];
             // track balanced parens
             let matchCount: number = 0;
-            const tokens: Token[] = [];
+            let typ: EnumToken;
+
+            const tokens: number[] = [];
 
             while (index + 1 < this.tokens.length && this.tokens[index + 1]?.typ === EnumToken.WhitespaceTokenType) {
                 index++;
@@ -310,9 +312,11 @@ export function createValidationContext(tokens: number[], options: ParserOptions
             while (index + 1 < this.tokens.length) {
                 token = this.tokens[++index];
 
-                if (token?.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(token?.typ)) {
+                typ = arena.getType(token);
+
+                if (typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(typ)) {
                     matchCount++;
-                } else if (token?.typ === EnumToken.EndParensTokenType) {
+                } else if (typ === EnumToken.EndParensTokenType) {
                     matchCount--;
                 }
 
@@ -321,7 +325,7 @@ export function createValidationContext(tokens: number[], options: ParserOptions
                 }
 
                 if (matchCount === 0) {
-                    if (close !== EnumToken.EndParensTokenType && token?.typ === close) {
+                    if (close !== EnumToken.EndParensTokenType && typ === close) {
                         counter--;
                     }
                 }
@@ -635,7 +639,7 @@ export function matchSelectorSyntax(
 
                 break;
 
-            case EnumToken.Pipe:
+            case EnumToken.PipeTokenType:
             case EnumToken.DelimTokenType:
             case EnumToken.StringTokenType:
             case EnumToken.IncludeMatchTokenType:
@@ -695,11 +699,13 @@ export function matchSelectorSyntax(
                         slice.push(tokens[n]);
                     }
 
-                    if (arena.getType(slice[1]) === EnumToken.Pipe) {
+                    if (slice[1]?.typ === EnumToken.PipeTokenType) {
+                    if (arena.getType(slice[1]) === EnumToken.PipeTokenType) {
                         slice.shift();
                     }
 
-                    if (arena.getType(slice[0]) === EnumToken.Pipe) {
+                    if (slice[0].typ === EnumToken.PipeTokenType) {
+                    if (arena.getType(slice[0]) === EnumToken.PipeTokenType) {
                         slice.shift();
                     }
 
@@ -1178,8 +1184,8 @@ function matchSyntax(
         if (token.typ === EnumToken.CustomFunctionTokenDefType) {
             if (
                 syntaxes[i].typ != ValidationTokenEnum.PropertyType ||
-                syntaxes[i + 1].typ != ValidationTokenEnum.OpenParenthesis ||
-                syntaxes[i + 2].typ == null
+                syntaxes[i + 1]?.typ != ValidationTokenEnum.OpenParenthesis ||
+                syntaxes[i + 2]?.typ == null
             ) {
                 if (!isOptional) {
                     return {
@@ -1769,7 +1775,7 @@ function matchSyntax(
                     )
                 ) {
                     if (tokensfuncDefMap.has(token.typ)) {
-                        const children = trimArray(context.peekRange());
+                        const children = trimArray(context.peekRange(), options);
 
                         result = matchSyntax(
                             (
@@ -2046,6 +2052,7 @@ function matchProperty(
             getParsedSyntax(
                 ValidationSyntaxGroupEnum.Syntaxes,
                 (token as FunctionToken).val + "()",
+                (token as FunctionToken).val + "()",
             ) as ValidationFunctionToken[]
         )?.[0]?.chi as ValidationToken[];
 
@@ -2309,6 +2316,8 @@ function matchProperty(
         case "display-legacy":
         case "content-position": {
             let values = propertyKeywordValues.get(property.val);
+        case "content-position": {
+            let values = propertyKeywordValues.get(property.val);
 
             if (values == null) {
                 values = new Set(
@@ -2318,7 +2327,18 @@ function matchProperty(
                 );
                 propertyKeywordValues.set(property.val, values);
             }
+            if (values == null) {
+                values = new Set(
+                    (config.syntaxes as unknown as Record<string, { syntax: string }>)[property.val].syntax.split(
+                        /[\s|]+/,
+                    ),
+                );
+                propertyKeywordValues.set(property.val, values);
+            }
 
+            success = token?.typ == EnumToken.IdenTokenType && values.has((token as IdentToken).val.toLowerCase());
+            break;
+        }
             success = token?.typ == EnumToken.IdenTokenType && values.has((token as IdentToken).val.toLowerCase());
             break;
         }
@@ -2345,6 +2365,7 @@ function matchProperty(
         case "custom-ident":
         case "counter-name":
         case "counter-style-name":
+            success = token?.typ == EnumToken.IdenTokenType || token?.typ == EnumToken.DashedIdenTokenType;
             success = token?.typ == EnumToken.IdenTokenType || token?.typ == EnumToken.DashedIdenTokenType;
 
             if (success && token?.typ === EnumToken.IdenTokenType) {
@@ -2917,6 +2938,25 @@ function matchProperty(
                     (token as FunctionToken).chi[l].typ == EnumToken.StringTokenType ||
                     (token as FunctionToken).chi[l].typ == EnumToken.IdenTokenType ||
                     (token as FunctionToken).chi[l].typ == EnumToken.UrlTokenTokenType;
+                context.next();
+
+                return {
+                    success: true,
+                    valid: true,
+                    token: null,
+                    context,
+                    syntaxToken: null,
+                    errors: [],
+                };
+            }
+
+            break;
+        }
+
+        case "css-type": {
+            success = context.peek()?.typ == EnumToken.CssTypeTokenType;
+
+            if (success) {
                 context.next();
 
                 return {

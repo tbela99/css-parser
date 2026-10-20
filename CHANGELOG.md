@@ -1,5 +1,34 @@
 # Changelog
 
+# v1.6.8
+
+- [x] allow a visitor to visit all nodes
+
+```ts
+import {transformSync} from '@tbela99/css-parser';
+
+ const options = {
+            input: `
+    
+    button {
+            	line-height: 2.5 !important;
+            	line-height: 1.5;
+            }
+    `,
+            beautify: true,
+// visit all nodes
+  visitor (node) {
+      
+    console.error(EnumToken[node.typ]);
+  }
+        };
+
+  const result = transformSync(options);
+  console.debug(result.code);
+```
+
+- [x] implement CSS [at-rule function](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@function) support
+
 # v1.6.7
 
 ## Improvement

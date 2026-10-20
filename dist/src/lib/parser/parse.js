@@ -2,7 +2,11 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
+<<<<<<< HEAD
 	Version: 2.0.0-alpha.1
+=======
+	Version: 1.6.8
+>>>>>>> v.next
 	License: MIT
  */
 import { isIdentColor, parseColor, isColor } from '../syntax/syntax.js';
@@ -310,6 +314,9 @@ function parseVisitors(visitorsDef, errors) {
     let key;
     let value;
     let i;
+    const allVisitorsHandlers = new Set();
+    const preAllVisitorsHandlers = new Set();
+    const postAllVisitorsHandlers = new Set();
     const valuesHandlers = new Map();
     const preValuesHandlers = new Map();
     const postValuesHandlers = new Map();
@@ -410,6 +417,21 @@ function parseVisitors(visitorsDef, errors) {
                 errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
             }
         }
+        else if (key == "All" || key == "visitor") {
+            if (typeof value == "function") {
+                allVisitorsHandlers.add(value);
+            }
+            else if (typeof value == "object") {
+                if ("type" in value && "handler" in value && value.type in WalkerEvent) {
+                    if (value.type == WalkerEvent.Enter) {
+                        preAllVisitorsHandlers.add(value.handler);
+                    }
+                    else if (value.type == WalkerEvent.Leave) {
+                        postAllVisitorsHandlers.add(value.handler);
+                    }
+                }
+            }
+        }
         else {
             errors.push({ action: "ignore", message: `doParse: visitor.${key} is not a valid key name` });
         }
@@ -433,10 +455,25 @@ function parseVisitors(visitorsDef, errors) {
     if (postValuesHandlers.size > 0) {
         allHandlers.push(postValuesHandlers);
     }
-    return {
+    const result = {
         allHandlers,
-        includeTokens: preValuesHandlers.size > 0 || valuesHandlers.size > 0 || postValuesHandlers.size > 0,
+        includeTokens: preValuesHandlers.size > 0 ||
+            valuesHandlers.size > 0 ||
+            postValuesHandlers.size > 0 ||
+            allVisitorsHandlers.size > 0 ||
+            preAllVisitorsHandlers.size > 0 ||
+            postAllVisitorsHandlers.size > 0,
     };
+    if (allVisitorsHandlers.size > 0) {
+        result.allVisitorsHandlers = allVisitorsHandlers;
+    }
+    if (preAllVisitorsHandlers.size > 0) {
+        result.preAllVisitorsHandlers = preAllVisitorsHandlers;
+    }
+    if (postAllVisitorsHandlers.size > 0) {
+        result.postAllVisitorsHandlers = postAllVisitorsHandlers;
+    }
+    return result;
 }
 /**
  * Parse css string
@@ -509,14 +546,20 @@ function doParseSync(tokenizer, options = {}) {
     // @ts-ignore ignore error
     let parensMatch = 0;
     let curlyBracketMatch = 0;
+<<<<<<< HEAD
     let tokenId;
     // let currentItemIndex: number;
+=======
+>>>>>>> v.next
     ast[LOCSRCID] = options.source.id;
     ast[LOCSTA] = 0;
     while (!tokenizer.done()) {
         tokenizer.next();
+<<<<<<< HEAD
         // item = (iter as Array<TokenizeResult>)[currentItemIndex];
         tokenId = arena.allocate();
+=======
+>>>>>>> v.next
         if (tokenizer.unit != null) {
             arena.set(tokenId, tokenizer.typ, 0, tokenizer.val, arena.internString(tokenizer.unit));
             // item = {
@@ -679,7 +722,6 @@ function doParseSync(tokenizer, options = {}) {
             parensMatch = 0;
             curlyBracketMatch = 0;
         }
-        // }
     }
     if (tokens.length > 0) {
         node = parseNode(tokens, context, options, errors, stats, invalidNodes);
@@ -749,6 +791,9 @@ function doParseSync(tokenizer, options = {}) {
             }
             parens = null;
             handlers.length = 0;
+            if (visitors.preAllVisitorsHandlers?.size > 0) {
+                handlers.push(...visitors.preAllVisitorsHandlers);
+            }
             genericKey =
                 nodes[i].typ == EnumToken.DeclarationNodeType
                     ? "Declaration"
@@ -768,6 +813,9 @@ function doParseSync(tokenizer, options = {}) {
                 : nodes[i].typ == EnumToken.KeyframesAtRuleNodeType
                     ? camelize(nodes[i].val)
                     : null;
+            if (visitors.allVisitorsHandlers?.size > 0) {
+                handlers.push(...visitors.allVisitorsHandlers);
+            }
             for (const map of visitors.allHandlers) {
                 // @ts-ignore
                 if (genericKey != null && map.has(genericKey)) {
@@ -776,20 +824,6 @@ function doParseSync(tokenizer, options = {}) {
                         if (typeof handler == "function") {
                             handlers.push(handler);
                         }
-                        // else if (Array.isArray(handler)) {
-                        //     for (const h of handler) {
-                        //         if (typeof h == "function") {
-                        //             handlers.push(h);
-                        //         }
-                        //         // @ts-ignore
-                        //         else if (h[keyName] != null) {
-                        //             // @ts-ignore
-                        //             handlers.push(h[keyName]);
-                        //         }
-                        //     }
-                        // } else if (typeof handler.handler! == "function") {
-                        //     handlers.push(handler.handler);
-                        // }
                         // @ts-ignore
                         else if (typeof handler[keyName] == "function") {
                             // @ts-ignore
@@ -821,6 +855,9 @@ function doParseSync(tokenizer, options = {}) {
                         }
                     }
                 }
+            }
+            if (visitors.postAllVisitorsHandlers?.size > 0) {
+                handlers.push(...visitors.postAllVisitorsHandlers);
             }
             if (handlers.length == 0) {
                 continue;
@@ -1742,6 +1779,9 @@ async function doParse(iter, options = {}) {
             }
             parens = null;
             handlers.length = 0;
+            if (visitors.preAllVisitorsHandlers?.size > 0) {
+                handlers.push(...visitors.preAllVisitorsHandlers);
+            }
             genericKey =
                 nodes[i].typ == EnumToken.DeclarationNodeType
                     ? "Declaration"
@@ -1761,6 +1801,9 @@ async function doParse(iter, options = {}) {
                 : nodes[i].typ == EnumToken.KeyframesAtRuleNodeType
                     ? camelize(nodes[i].val)
                     : null;
+            if (visitors.allVisitorsHandlers?.size > 0) {
+                handlers.push(...visitors.allVisitorsHandlers);
+            }
             for (const map of visitors.allHandlers) {
                 // @ts-ignore
                 if (genericKey != null && map.has(genericKey)) {
@@ -1814,6 +1857,9 @@ async function doParse(iter, options = {}) {
                         }
                     }
                 }
+            }
+            if (visitors.postAllVisitorsHandlers?.size > 0) {
+                handlers.push(...visitors.postAllVisitorsHandlers);
             }
             if (handlers.length == 0) {
                 continue;
@@ -2701,7 +2747,6 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
     const syntax = syntaxRules?.getPreludeRules()?.slice?.(1);
     const blockAllowed = syntaxRules?.getBlockRules() != null;
     if (syntaxRules == null) {
-        // if (!options.lenient) {
         errors.push({
             action: "drop",
             node: atRule,
@@ -3418,7 +3463,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
                             stream[index][LOCEND] = stream[i][LOCEND];
                             Object.assign(stream[index], {
                                 typ: tokensfuncDefMap.get(stream[index].typ),
-                                chi: stream.splice(index + 1, i - index - 1),
+                                chi: trimWhiteSpaceTokens(stream.splice(index + 1, i - index - 1)),
                             });
                             i = index;
                             stream.splice(index + 1, 1);

@@ -2,7 +2,11 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
+<<<<<<< HEAD
 	Version: 2.0.0-alpha.1
+=======
+	Version: 1.6.8
+>>>>>>> v.next
 	License: MIT
  */
 import { PropertyList } from '../../parser/declaration/list.js';

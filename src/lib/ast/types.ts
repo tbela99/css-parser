@@ -42,6 +42,7 @@ export enum EnumAstNodeStatus {
      * Node is disallowed in the context
      */
     Disallowed = 1 << 6,
+    
     /**
      * Node is malformed
      */
@@ -539,7 +540,7 @@ export enum EnumToken {
     /**
      * '|'
      */
-    Pipe,
+    PipeTokenType,
     /**
      * '::'
      */
@@ -703,6 +704,11 @@ export enum EnumToken {
      * negative infinity token
      */
     NegativeInfinityTokenType,
+
+    /**
+     * CSS type token
+     */
+    CssTypeTokenType,
 
     /* aliases */
 
