@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.9
+	Version: 1.6.10
 	License: MIT
  */
 import { TOKENS, ERRORS, STATE, LOCSRCID, LOCSTA, LOCEND, PARENT } from '../syntax/constants.js';

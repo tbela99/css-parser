@@ -1762,5 +1762,107 @@ div {
 }`),
             );
         });
+
+        it("at-rule function with no arguments #63", function () {
+            return transform(
+                `
+
+@function --mypi() {
+  result: 3;
+  result: 3.14;
+}
+
+@function --outer(--outer-arg) {
+  --outer-local: 2;
+  result: --inner();
+}
+@function --inner() returns <number> {
+  result: calc(var(--outer-arg) + var(--outer-local));
+}
+div {
+  z-index: --outer(1); /* 3 */
+}
+
+@function --double-z() returns <number> {
+  result: calc(var(--z) * 2);
+}
+div {
+  --z: 3;
+  z-index: --double-z(); /* 6 */
+}
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@function --mypi() {
+ result: 3.14
+}
+@function --outer(--outer-arg) {
+ --outer-local: 2;
+ result: --inner()
+}
+@function --inner()returns <number> {
+ result: calc(var(--outer-arg) + var(--outer-local))
+}
+div {
+ z-index: --outer(1)
+}
+@function --double-z()returns <number> {
+ result: calc(var(--z)*2)
+}
+div {
+ --z: 3;
+ z-index: --double-z()
+}`),
+            );
+        });
+
+        it("at-rule function with no arguments #64", function () {
+            return transform(
+                `
+
+@function --suitable-font-size() {
+  result: 16px;
+  @media (min-width : 1000px) {
+    result: 20px;
+  }
+}
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@function --suitable-font-size() {
+ result: 16px;
+ @media (width>=1000px) {
+  result: 20px
+ }
+}`),
+            );
+        });
+
+        it("at-rule function with no arguments #65", function () {
+            return transform(
+                `
+
+@function --suitable-font-size() {
+  @media (min-width : 1000px) {
+    result: 20px;
+  }
+  result: 16px;
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@function --suitable-font-size() {
+ result: 16px
+}`),
+            );
+        });
     });
 }

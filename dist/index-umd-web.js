@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.9
+	Version: 1.6.10
 	License: MIT
  */
 (function (global, factory) {
@@ -5722,6 +5722,12 @@
     	},
     	"@function": {
     		syntax: " @function <dashed-ident>(<function-parameter>#?) [returns <css-type>]? { <declaration-rule-list> }"
+    	},
+    	"@mixin": {
+    		syntax: " @mixin [<function-token> <function-parameter>#? ) | <ident-token> ]{<block-contents>}"
+    	},
+    	"@apply": {
+    		syntax: " @apply [ <dashed-ident> | <dashed-function> ] [ { <declaration-list> } ]?;"
     	},
     	"@left-top": {
     		syntax: " @left-top { <declaration-list> }"
@@ -13238,9 +13244,22 @@
                     break;
                 }
                 const range = trimArray(context.peekRange());
+                const args = range.slice(1, -1);
                 context.next();
                 i++;
-                result = matchSyntax([syntaxes[i + 1]], createValidationContext(range.slice(1, -1)), options);
+                if (args.length === 0) {
+                    context.update(range.at(-1));
+                    i += 2;
+                    return {
+                        success: true,
+                        valid: true,
+                        token,
+                        context,
+                        syntaxToken: syntaxes[i + 3],
+                        errors: [],
+                    };
+                }
+                result = matchSyntax([syntaxes[i + 1]], createValidationContext(args), options);
                 if (result.success) {
                     context.update(range.at(-1));
                     i += 2;
@@ -20873,6 +20892,11 @@
             let result;
             for (const declaration of declarations) {
                 name = declaration.typ != exports.EnumToken.DeclarationNodeType ? null : declaration.nam;
+                // @functiom / result
+                if (declaration[STATE] & exports.EnumAstNodeStatus.Unknown && equalsIgnoreCase("result", name)) {
+                    this.declarations.set(declaration.nam, declaration);
+                    continue;
+                }
                 if (declaration[STATE] &
                     (exports.EnumAstNodeStatus.Invalid | exports.EnumAstNodeStatus.Unknown | exports.EnumAstNodeStatus.ValidationFailed) ||
                     declaration.typ != exports.EnumToken.DeclarationNodeType ||
@@ -21110,32 +21134,41 @@
             let l;
             const rules = [];
             const declarations = [];
-            // @ts-ignore
-            for (; k < j; k++) {
-                l = k;
-                // capture comments with the next token
-                while (l + 1 < j) {
+            const doNotSort = ast.typ == exports.EnumToken.AtRuleNodeType && equalsIgnoreCase(ast.nam, "function");
+            // https://drafts.csswg.org/css-mixins/#:~:text=The%20value%20of%20the%20result%20descriptor%20is%20always%2016px%20in%20the%20above%20example
+            if (doNotSort) {
+                for (const node of ast.chi) {
+                    declarations.push(node);
+                }
+            }
+            else {
+                // @ts-ignore
+                for (; k < j; k++) {
+                    l = k;
+                    // capture comments with the next token
+                    while (l + 1 < j) {
+                        // @ts-ignore
+                        const node = ast.chi[l];
+                        if (node.typ == exports.EnumToken.CommentNodeType) {
+                            l++;
+                            continue;
+                        }
+                        break;
+                    }
                     // @ts-ignore
                     const node = ast.chi[l];
-                    if (node.typ == exports.EnumToken.CommentNodeType) {
-                        l++;
-                        continue;
+                    if (node.typ == exports.EnumToken.DeclarationNodeType) {
+                        for (let m = k; m <= l; m++) {
+                            declarations.push(ast.chi[m]);
+                        }
                     }
-                    break;
-                }
-                // @ts-ignore
-                const node = ast.chi[l];
-                if (node.typ == exports.EnumToken.DeclarationNodeType) {
-                    for (let m = k; m <= l; m++) {
-                        declarations.push(ast.chi[m]);
+                    else {
+                        for (let m = k; m <= l; m++) {
+                            rules.push(ast.chi[m]);
+                        }
                     }
+                    k = l;
                 }
-                else {
-                    for (let m = k; m <= l; m++) {
-                        rules.push(ast.chi[m]);
-                    }
-                }
-                k = l;
             }
             if (declarations.length > 0) {
                 ast.chi.length = 0;
@@ -21155,6 +21188,7 @@
         exports.EnumToken.LteTokenType,
         exports.EnumToken.ChildCombinatorTokenType,
         exports.EnumToken.PipeTokenType,
+        exports.EnumToken.ColonTokenType
     ]);
     const trimSpaceAfter = new Set([
         ...tokensfuncSet.values(),
@@ -23343,8 +23377,35 @@
                     previous = ast.chi[--nodeIndex];
                 }
                 node = ast.chi[i];
-                if (node.typ === exports.EnumToken.AtRuleNodeType && node.nam === "font-face") {
-                    continue;
+                if (node.typ === exports.EnumToken.AtRuleNodeType) {
+                    if (node.nam === "font-face") {
+                        continue;
+                    }
+                    // https://drafts.csswg.org/css-mixins/#:~:text=The%20value%20of%20the%20result%20descriptor%20is%20always%2016px%20in%20the%20above%20example
+                    if (equalsIgnoreCase(node.nam, "function")) {
+                        const chi = node.chi;
+                        let k = chi?.length;
+                        let slice = false;
+                        while (k--) {
+                            if (chi[k].typ === exports.EnumToken.CommentNodeType ||
+                                chi[k].typ === exports.EnumToken.WhitespaceTokenType) {
+                                continue;
+                            }
+                            if (chi[k].typ === exports.EnumToken.DeclarationNodeType &&
+                                equalsIgnoreCase(chi[k].nam, "result")) {
+                                slice = true;
+                                break;
+                            }
+                        }
+                        if (k > 0 && slice) {
+                            while (k--) {
+                                if (chi[k].typ === exports.EnumToken.AtRuleNodeType) {
+                                    chi.splice(k, 1);
+                                    continue;
+                                }
+                            }
+                        }
+                    }
                 }
                 if (node.typ === exports.EnumToken.KeyframesAtRuleNodeType) {
                     if (previous?.typ === exports.EnumToken.KeyframesAtRuleNodeType &&
@@ -34778,7 +34839,7 @@
         }
     }
 
-    var version = "1.6.9";
+    var version = "1.6.10";
 
     /**
      * Load file or url

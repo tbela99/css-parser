@@ -1,5 +1,9 @@
 # Changelog
 
+# v1.7.0
+
+- [ ] implement CSS [Custom Functions and Mixins Modules and Level 1](https://drafts.csswg.org/css-mixins/#apply-rule)  
+
 # v1.6.9
 
 fix import path #166 from package.json

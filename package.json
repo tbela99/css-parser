@@ -1,7 +1,7 @@
 {
   "name": "@tbela99/css-parser",
   "description": "CSS parser, minifier and validator for node and the browser",
-  "version": "1.6.9",
+  "version": "1.6.10",
   "exports": {
     ".": "./dist/src/node.js",
     "./node": "./dist/src/node.js",

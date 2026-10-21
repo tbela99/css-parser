@@ -1176,11 +1176,26 @@ function matchSyntax(
             }
 
             const range = trimArray(context.peekRange());
+            const args = range.slice(1, -1);
 
             context.next();
             i++;
 
-            result = matchSyntax([syntaxes[i + 1]], createValidationContext(range.slice(1, -1)), options);
+            if (args.length === 0) {
+                context.update(range.at(-1) as Token);
+                i += 2;
+
+                return {
+                    success: true,
+                    valid: true,
+                    token,
+                    context,
+                    syntaxToken: syntaxes[i + 3],
+                    errors: [],
+                };
+            }
+
+            result = matchSyntax([syntaxes[i + 1]], createValidationContext(args), options);
 
             if (result.success) {
                 context.update(range.at(-1) as Token);

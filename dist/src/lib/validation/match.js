@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.9
+	Version: 1.6.10
 	License: MIT
  */
 import { getParsedSyntax, getSyntaxConfig } from './config.js';
@@ -875,9 +875,22 @@ function matchSyntax(syntaxes, context, options) {
                 break;
             }
             const range = trimArray(context.peekRange());
+            const args = range.slice(1, -1);
             context.next();
             i++;
-            result = matchSyntax([syntaxes[i + 1]], createValidationContext(range.slice(1, -1)), options);
+            if (args.length === 0) {
+                context.update(range.at(-1));
+                i += 2;
+                return {
+                    success: true,
+                    valid: true,
+                    token,
+                    context,
+                    syntaxToken: syntaxes[i + 3],
+                    errors: [],
+                };
+            }
+            result = matchSyntax([syntaxes[i + 1]], createValidationContext(args), options);
             if (result.success) {
                 context.update(range.at(-1));
                 i += 2;

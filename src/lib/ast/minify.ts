@@ -32,6 +32,7 @@ import { combinators, LOCEND, LOCSRCID, LOCSTA, OPTIMIZED, PARENT, RAW, TOKENS }
 import { replaceNodeOrValue } from "../parser/utils/token.ts";
 import { parseString } from "../parser/parse.ts";
 import { replaceCompound } from "./expand.ts";
+import { equalsIgnoreCase } from "../parser/utils/text.ts";
 
 const notEndingWith: string[] = ["(", "["].concat(combinators);
 const rules: EnumToken[] = [
@@ -526,8 +527,44 @@ function doMinify(
 
             node = ast.chi![i] as AstNode;
 
-            if (node.typ === EnumToken.AtRuleNodeType && (<AstAtRule>node).nam === "font-face") {
-                continue;
+            if (node.typ === EnumToken.AtRuleNodeType) {
+                if ((<AstAtRule>node).nam === "font-face") {
+                    continue;
+                }
+
+                // https://drafts.csswg.org/css-mixins/#:~:text=The%20value%20of%20the%20result%20descriptor%20is%20always%2016px%20in%20the%20above%20example
+                if (equalsIgnoreCase((<AstAtRule>node).nam, "function")) {
+                    const chi = (<AstAtRule>node).chi as AstNode[];
+
+                    let k: number = chi?.length;
+                    let slice: boolean = false;
+
+                    while (k--) {
+                        if (
+                            chi![k].typ === EnumToken.CommentNodeType ||
+                            chi![k].typ === EnumToken.WhitespaceTokenType
+                        ) {
+                            continue;
+                        }
+
+                        if (
+                            chi![k].typ === EnumToken.DeclarationNodeType &&
+                            equalsIgnoreCase((chi![k] as AstDeclaration).nam, "result")
+                        ) {
+                            slice = true;
+                            break;
+                        }
+                    }
+
+                    if (k > 0 && slice) {
+                        while (k--) {
+                            if (chi![k].typ === EnumToken.AtRuleNodeType) {
+                                chi.splice(k, 1);
+                                continue;
+                            }
+                        }
+                    }
+                }
             }
 
             if (node.typ === EnumToken.KeyframesAtRuleNodeType) {
