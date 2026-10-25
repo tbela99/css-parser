@@ -3029,31 +3029,40 @@ function matchProperty(
             break;
         }
 
-        case 'block-contents':
+        case "block-contents":
+            // do nothing
+            return {
+                success: true,
+                valid: true,
+                token: context.current(),
+                context,
+                syntaxToken: null,
+                errors: [],
+            };
 
-            success = context.peek()?.typ == EnumToken.StartParensTokenType;
+        // success = context.peek()?.typ == EnumToken.StartParensTokenType;
 
-            if (success) {
-                context.next();
+        // if (success) {
+        //     context.next();
 
-                return {
-                    success: true,
-                    valid: true,
-                    token: null,
-                    context,
-                    syntaxToken: null,
-                    errors: [],
-                };
-            }
+        //     return {
+        //         success: true,
+        //         valid: true,
+        //         token: null,
+        //         context,
+        //         syntaxToken: null,
+        //         errors: [],
+        //     };
+        // }
 
-                return {
-                    success: false,
-                    valid: true,
-                    token,
-                    context,
-                    syntaxToken: property,
-                    errors: [],
-                };
+        //     return {
+        //         success: false,
+        //         valid: true,
+        //         token,
+        //         context,
+        //         syntaxToken: property,
+        //         errors: [],
+        //     };
 
         default:
             if (!(property.val in config.syntaxes)) {

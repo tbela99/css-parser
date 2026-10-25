@@ -2312,27 +2312,36 @@ function matchProperty(property, context, options) {
             }
             break;
         }
-        case 'block-contents':
-            success = context.peek()?.typ == EnumToken.StartParensTokenType;
-            if (success) {
-                context.next();
-                return {
-                    success: true,
-                    valid: true,
-                    token: null,
-                    context,
-                    syntaxToken: null,
-                    errors: [],
-                };
-            }
+        case "block-contents":
+            // do nothing
             return {
-                success: false,
+                success: true,
                 valid: true,
-                token,
+                token: context.current(),
                 context,
-                syntaxToken: property,
+                syntaxToken: null,
                 errors: [],
             };
+        // success = context.peek()?.typ == EnumToken.StartParensTokenType;
+        // if (success) {
+        //     context.next();
+        //     return {
+        //         success: true,
+        //         valid: true,
+        //         token: null,
+        //         context,
+        //         syntaxToken: null,
+        //         errors: [],
+        //     };
+        // }
+        //     return {
+        //         success: false,
+        //         valid: true,
+        //         token,
+        //         context,
+        //         syntaxToken: property,
+        //         errors: [],
+        //     };
         default:
             if (!(property.val in config.syntaxes)) {
                 console.debug("Unknown syntax", context.peek(), property);
