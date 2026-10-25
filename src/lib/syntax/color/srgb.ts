@@ -21,7 +21,6 @@ import { XYZ_to_lin_sRGB } from "./xyz.ts";
 import { COLORS_NAMES } from "../constants.ts";
 import { parseColor } from "../syntax.ts";
 import { hwbvalues } from "./hwb.ts";
-import { backup } from "node:sqlite";
 
 export function srgbvalues(token: ColorToken | IdentToken): number[] | null {
     if (token.typ === EnumToken.IdenTokenType) {
