@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.8
+	Version: 1.7.0
 	License: MIT
  */
 import { deprecate } from 'node:util';
@@ -33,6 +33,7 @@ export { replaceNodeOrValue } from './lib/parser/utils/token.js';
 export { SourceMap } from './lib/printer/sourcemap/sourcemap.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 export { getNodeProperty, setNodeProperty } from './lib/ast/node.js';
+export { parseSyntax } from './lib/validation/parser/parse.js';
 export { version } from '../package.json.js';
 
 /**

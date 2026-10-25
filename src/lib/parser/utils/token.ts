@@ -25,6 +25,7 @@ const trimTokenSpace: Set<EnumToken> = new Set([
     EnumToken.LteTokenType,
     EnumToken.ChildCombinatorTokenType,
     EnumToken.PipeTokenType,
+    EnumToken.ColonTokenType
 ]);
 const trimSpaceAfter: Set<EnumToken> = new Set([
     ...tokensfuncSet.values(),

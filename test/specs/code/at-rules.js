@@ -1131,7 +1131,10 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
                     validation: true,
                 },
             ).then((result) =>
-                expect(result.code).equals(`/* or */
+                expect(result.code).equals(`@media ((color) and (hover)) or (monochrome) {
+ /* … */
+}
+/* or */
 @media (color) and (hover),(monochrome) {
  /* … */
 }
@@ -1759,6 +1762,250 @@ div {
  --duration: 1s;
  --easing: linear;
  result: var(--animation) var(--duration) var(--count) var(--easing)
+}`),
+            );
+        });
+
+        it("at-rule function with no arguments #63", function () {
+            return transform(
+                `
+
+@function --mypi() {
+  result: 3;
+  result: 3.14;
+}
+
+@function --outer(--outer-arg) {
+  --outer-local: 2;
+  result: --inner();
+}
+@function --inner() returns <number> {
+  result: calc(var(--outer-arg) + var(--outer-local));
+}
+div {
+  z-index: --outer(1); /* 3 */
+}
+
+@function --double-z() returns <number> {
+  result: calc(var(--z) * 2);
+}
+div {
+  --z: 3;
+  z-index: --double-z(); /* 6 */
+}
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@function --mypi() {
+ result: 3.14
+}
+@function --outer(--outer-arg) {
+ --outer-local: 2;
+ result: --inner()
+}
+@function --inner()returns <number> {
+ result: calc(var(--outer-arg) + var(--outer-local))
+}
+div {
+ z-index: --outer(1)
+}
+@function --double-z()returns <number> {
+ result: calc(var(--z)*2)
+}
+div {
+ --z: 3;
+ z-index: --double-z()
+}`),
+            );
+        });
+
+        it("at-rule function with no arguments #64", function () {
+            return transform(
+                `
+
+@function --suitable-font-size() {
+  result: 16px;
+  @media (min-width : 1000px) {
+    result: 20px;
+  }
+}
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@function --suitable-font-size() {
+ result: 16px;
+ @media (width>=1000px) {
+  result: 20px
+ }
+}`),
+            );
+        });
+
+        it("at-rule function with no arguments #65", function () {
+            return transform(
+                `
+
+@function --suitable-font-size() {
+  @media (min-width : 1000px) {
+    result: 20px;
+  }
+  result: 16px;
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@function --suitable-font-size() {
+ result: 16px
+}`),
+            );
+        });
+
+        it("at-rule function with no arguments #66", function () {
+            return transform(
+                `
+
+@mixin --gradient-text(
+  --from <color>: mediumvioletred,
+  --to <color>: teal,
+  --angle: to bottom right,
+) {
+  @private {
+    --gradient: linear-gradient(var(--angle), var(--from), var(--to));
+  }
+  color: var(--from, var(--to));
+
+  @supports (background-clip: text) or (-webkit-background-clip: text) {
+    background: var(--gradient, var(--from));
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+}
+
+h1 {
+  @apply --gradient-text(pink, powderblue);
+}
+
+.foo {
+  @apply --one;
+  /* Invokes the --one mixin, with no arguments or contents. */
+
+  @apply --two(blue);
+  /* Invokes --two with one argument, and no contents. */
+
+  @apply --three {color: red;}
+  /* Invokes --three with no arguments, but with contents. */
+
+  @apply --four(blue) {color: red;}
+  /* Invokes --four with both an argument and contents. */
+}
+
+h1 {
+  @apply --gradient-text(pink, powderblue);
+}
+
+.foo {
+    color: blue;
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code)
+                    .equals(`@mixin --gradient-text(--from <color>:mediumvioletred,--to <color>:teal,--angle:to bottom right,) {
+ @private {
+  --gradient: linear-gradient(var(--angle),var(--from),var(--to))
+ }
+ color: var(--from,var(--to));
+ @supports (background-clip:text) or (-webkit-background-clip:text) {
+  background: var(--gradient,var(--from));
+  color: #0000;
+  -webkit-background-clip: text;
+  background-clip: text
+ }
+}
+h1 {
+ @apply --gradient-text(pink,powderblue)
+}
+.foo {
+ @apply --one;
+ @apply --two(blue);
+ @apply --three {
+  color: red
+ }
+ @apply --four(blue) {
+  color: red
+ }
+}
+h1 {
+ @apply --gradient-text(pink,powderblue)
+}
+.foo {
+ color: blue
+}`),
+            );
+        });
+
+        it("at-rule function with no arguments #67", function () {
+            return transform(
+                `
+
+  @mixin --box {
+  aspect-ratio: 1;
+  inline-size: 100px;
+  block-size: 100px;
+}
+
+
+.box {
+  @apply --box;
+}
+
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@mixin --box {
+ aspect-ratio: 1;
+ inline-size: 100px;
+ block-size: 100px
+}
+.box {
+ @apply --box
+}`),
+            );
+        });
+
+        it("at-rule function with no arguments #68", function () {
+            return transform(
+                `
+
+@mixin --one-column() {
+  @media (width <= 800px) or (height <= 600px) or (orientation: portrait) {
+    @contents;
+  }
+}
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@mixin --one-column() {
+ @media (width<=800px) or (height<=600px) or (orientation:portrait) {
+  @contents
+ }
 }`),
             );
         });

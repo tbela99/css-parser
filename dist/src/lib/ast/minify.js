@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.8
+	Version: 1.7.0
 	License: MIT
  */
 import { eq } from '../parser/utils/eq.js';
@@ -17,6 +17,7 @@ import { TOKENS, PARENT, OPTIMIZED, RAW, combinators, LOCEND, LOCSTA, LOCSRCID }
 import { replaceNodeOrValue } from '../parser/utils/token.js';
 import { parseString } from '../parser/parse.js';
 import { replaceCompound } from './expand.js';
+import { equalsIgnoreCase } from '../parser/utils/text.js';
 
 const notEndingWith = ["(", "["].concat(combinators);
 const rules = [
@@ -366,8 +367,35 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                 previous = ast.chi[--nodeIndex];
             }
             node = ast.chi[i];
-            if (node.typ === EnumToken.AtRuleNodeType && node.nam === "font-face") {
-                continue;
+            if (node.typ === EnumToken.AtRuleNodeType) {
+                if (node.nam === "font-face") {
+                    continue;
+                }
+                // https://drafts.csswg.org/css-mixins/#:~:text=The%20value%20of%20the%20result%20descriptor%20is%20always%2016px%20in%20the%20above%20example
+                if (equalsIgnoreCase(node.nam, "function")) {
+                    const chi = node.chi;
+                    let k = chi?.length;
+                    let slice = false;
+                    while (k--) {
+                        if (chi[k].typ === EnumToken.CommentNodeType ||
+                            chi[k].typ === EnumToken.WhitespaceTokenType) {
+                            continue;
+                        }
+                        if (chi[k].typ === EnumToken.DeclarationNodeType &&
+                            equalsIgnoreCase(chi[k].nam, "result")) {
+                            slice = true;
+                            break;
+                        }
+                    }
+                    if (k > 0 && slice) {
+                        while (k--) {
+                            if (chi[k].typ === EnumToken.AtRuleNodeType) {
+                                chi.splice(k, 1);
+                                continue;
+                            }
+                        }
+                    }
+                }
             }
             if (node.typ === EnumToken.KeyframesAtRuleNodeType) {
                 if (previous?.typ === EnumToken.KeyframesAtRuleNodeType &&

@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.8
+	Version: 1.7.0
 	License: MIT
  */
 import { EnumToken } from '../lib/ast/types.js';

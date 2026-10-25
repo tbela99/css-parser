@@ -2,6 +2,7 @@ import { PropertyList } from "../../parser/declaration/list.ts";
 import { EnumToken } from "../types.ts";
 import type { AstAtRule, AstNode, AstRule, ParserOptions, PropertyListOptions } from "../../../@types/index.d.ts";
 import { FeatureWalkMode } from "./type.ts";
+import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 
 export class ComputeShorthandFeature {
     public accept: Set<EnumToken> = new Set([
@@ -37,37 +38,54 @@ export class ComputeShorthandFeature {
 
         const rules: AstNode[] = [];
         const declarations: AstNode[] = [];
+        let doNotSort: boolean = false;
 
-        // @ts-ignore
-        for (; k < j; k++) {
-            l = k;
-            // capture comments with the next token
-            while (l + 1 < j) {
+        if (ast.typ == EnumToken.AtRuleNodeType) {
+            switch (ast.nam) {
+                case "function":
+                case "mixin":
+                    doNotSort = true;
+                    break;
+            }
+        }
+
+        // https://drafts.csswg.org/css-mixins/#:~:text=The%20value%20of%20the%20result%20descriptor%20is%20always%2016px%20in%20the%20above%20example
+        if (doNotSort) {
+            for (const node of ast.chi!) {
+                declarations.push(node);
+            }
+        } else {
+            // @ts-ignore
+            for (; k < j; k++) {
+                l = k;
+                // capture comments with the next token
+                while (l + 1 < j) {
+                    // @ts-ignore
+                    const node = ast.chi[l];
+
+                    if (node.typ == EnumToken.CommentNodeType) {
+                        l++;
+                        continue;
+                    }
+
+                    break;
+                }
+
                 // @ts-ignore
                 const node = ast.chi[l];
 
-                if (node.typ == EnumToken.CommentNodeType) {
-                    l++;
-                    continue;
+                if (node.typ == EnumToken.DeclarationNodeType) {
+                    for (let m = k; m <= l; m++) {
+                        declarations.push(ast.chi![m]);
+                    }
+                } else {
+                    for (let m = k; m <= l; m++) {
+                        rules.push(ast.chi![m]);
+                    }
                 }
 
-                break;
+                k = l;
             }
-
-            // @ts-ignore
-            const node = ast.chi[l];
-
-            if (node.typ == EnumToken.DeclarationNodeType) {
-                for (let m = k; m <= l; m++) {
-                    declarations.push(ast.chi![m]);
-                }
-            } else {
-                for (let m = k; m <= l; m++) {
-                    rules.push(ast.chi![m]);
-                }
-            }
-
-            k = l;
         }
 
         if (declarations.length > 0) {

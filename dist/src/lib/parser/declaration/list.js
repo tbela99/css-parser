@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.8
+	Version: 1.7.0
 	License: MIT
  */
 import { PropertySet } from './set.js';
@@ -33,6 +33,16 @@ class PropertyList {
         let result;
         for (const declaration of declarations) {
             name = declaration.typ != EnumToken.DeclarationNodeType ? null : declaration.nam;
+            // do not compute shorthand for invalid declarations
+            if (name == null) {
+                this.declarations.set(objectHash(declaration), declaration);
+                continue;
+            }
+            // @functiom / result
+            if (declaration[STATE] & EnumAstNodeStatus.Unknown && equalsIgnoreCase("result", name)) {
+                this.declarations.set(declaration.nam, declaration);
+                continue;
+            }
             if (declaration[STATE] &
                 (EnumAstNodeStatus.Invalid | EnumAstNodeStatus.Unknown | EnumAstNodeStatus.ValidationFailed) ||
                 declaration.typ != EnumToken.DeclarationNodeType ||
