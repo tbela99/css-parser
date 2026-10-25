@@ -29825,7 +29825,7 @@
                                     Object.assign(stream[i], {
                                         typ: val === "and" ? exports.EnumToken.AndTokenType : exports.EnumToken.OrTokenType,
                                     });
-                                    if (val === "or" && scopes.length <= 1) {
+                                    if (val === "or" && (scopes.length == 1 && scopes[0].size > 0 && !scopes[0].has(exports.EnumToken.OrTokenType))) {
                                         success = false;
                                         errors.push({
                                             action: "drop",

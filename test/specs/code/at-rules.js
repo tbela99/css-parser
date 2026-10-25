@@ -1131,7 +1131,10 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
                     validation: true,
                 },
             ).then((result) =>
-                expect(result.code).equals(`/* or */
+                expect(result.code).equals(`@media ((color) and (hover)) or (monochrome) {
+ /* … */
+}
+/* or */
 @media (color) and (hover),(monochrome) {
  /* … */
 }
@@ -1917,7 +1920,8 @@ h1 {
                     validation: true,
                 },
             ).then((result) =>
-                expect(result.code).equals(`@mixin --gradient-text(--from <color>:mediumvioletred,--to <color>:teal,--angle:to bottom right,) {
+                expect(result.code)
+                    .equals(`@mixin --gradient-text(--from <color>:mediumvioletred,--to <color>:teal,--angle:to bottom right,) {
  @private {
   --gradient: linear-gradient(var(--angle),var(--from),var(--to))
  }
@@ -1979,6 +1983,29 @@ h1 {
 }
 .box {
  @apply --box
+}`),
+            );
+        });
+
+        it("at-rule function with no arguments #68", function () {
+            return transform(
+                `
+
+@mixin --one-column() {
+  @media (width <= 800px) or (height <= 600px) or (orientation: portrait) {
+    @contents;
+  }
+}
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@mixin --one-column() {
+ @media (width<=800px) or (height<=600px) or (orientation:portrait) {
+  @contents
+ }
 }`),
             );
         });

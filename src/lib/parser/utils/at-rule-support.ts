@@ -248,9 +248,11 @@ export function parseAtRuleSupportSyntax(
                         Object.assign(stream[i], { typ: EnumToken.NotTokenType });
                         break;
                     }
-
+                            
                     if ("and" === val || "or" === val) {
+                           
                         if ("or" === val && scopes.length === 1 && scopes[0].size > 0) {
+
                             const fileName = options.source!.getFileName() ?? "";
                             const [line, column] = options.source!.getOffsets(stream[i]?.[LOCSTA]!);
                             return {

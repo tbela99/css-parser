@@ -115,7 +115,7 @@ function parseMediaqueryList(stream, options) {
                                 Object.assign(stream[i], {
                                     typ: val === "and" ? EnumToken.AndTokenType : EnumToken.OrTokenType,
                                 });
-                                if (val === "or" && scopes.length <= 1) {
+                                if (val === "or" && (scopes.length == 1 && scopes[0].size > 0 && !scopes[0].has(EnumToken.OrTokenType))) {
                                     success = false;
                                     errors.push({
                                         action: "drop",
