@@ -3029,10 +3029,35 @@ function matchProperty(
             break;
         }
 
+        case 'block-contents':
+
+            success = context.peek()?.typ == EnumToken.StartParensTokenType;
+
+            if (success) {
+                context.next();
+
+                return {
+                    success: true,
+                    valid: true,
+                    token: null,
+                    context,
+                    syntaxToken: null,
+                    errors: [],
+                };
+            }
+
+                return {
+                    success: false,
+                    valid: true,
+                    token,
+                    context,
+                    syntaxToken: property,
+                    errors: [],
+                };
+
         default:
             if (!(property.val in config.syntaxes)) {
                 console.debug("Unknown syntax", context.peek(), property);
-                console.debug(context.getRemainingTokens());
 
                 throw new Error(`Unexpected validation property ${property.val}`);
             }

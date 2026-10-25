@@ -1950,5 +1950,37 @@ h1 {
 }`),
             );
         });
+
+        it("at-rule function with no arguments #67", function () {
+            return transform(
+                `
+
+  @mixin --box {
+  aspect-ratio: 1;
+  inline-size: 100px;
+  block-size: 100px;
+}
+
+
+.box {
+  @apply --box;
+}
+
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@mixin --box {
+ aspect-ratio: 1;
+ inline-size: 100px;
+ block-size: 100px
+}
+.box {
+ @apply --box
+}`),
+            );
+        });
     });
 }
