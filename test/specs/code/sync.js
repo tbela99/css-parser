@@ -13,7 +13,7 @@ export function run(
     ModuleCaseTransformEnum,
     ModuleScopeEnumOptions,
     transformSync,
-    parseSync
+    parseSync,
 ) {
     describe("transform sync", function () {
         it("transform sync #1", function () {
@@ -25,9 +25,16 @@ export function run(
         });
         it("parse sync #2", function () {
             return readFile(import.meta.dirname + "/../../files/css/tailwind.css", "utf-8").then((css) =>
-                Promise.all([parse(css), parseSync(css)]).then(([result1, result2]) =>
+                Promise.all([parse({ input: css }), parseSync({ input: css })]).then(([result1, result2]) =>
                     expect(render(result1.ast).code).equals(render(result2.ast).code),
                 ),
+            );
+        });
+        it("parse sync #3", function () {
+            const url = "https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap-grid.css";
+
+            return transform({ file: url, resolveImport: true }).then((result) =>
+                expect(render(result.ast).code.startsWith(".container,.container-fluid")).equals(true),
             );
         });
     });

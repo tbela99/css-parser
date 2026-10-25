@@ -324,19 +324,10 @@ function parseVisitors(visitorsDef, errors) {
         key = visitors[i][0];
         value = visitors[i][1];
         if (Number.isInteger(+key)) {
-            // if (Array.isArray(value)) {
-            //     visitors.splice(i + 1, 0, ...Object.entries(value));
-            //     continue;
-            // }
             if (typeof value == "function") {
                 key = value.name;
             }
         }
-        // if (Array.isArray(value)) {
-        //     // @ts-ignore
-        //     visitors.splice(i + 1, 0, ...value.map((item) => [key, item]));
-        //     continue;
-        // }
         if (key in EnumToken) {
             if (typeof value == "function") {
                 if (!valuesHandlers.has(EnumToken[key])) {
@@ -696,7 +687,7 @@ function doParseSync(tokenizer, options = {}) {
     if (tokens.length > 0) {
         node = parseNode(tokens, context, options, errors, stats, invalidNodes);
         if (node != null) {
-            if ("chi" in node /* && node.typ != EnumToken.InvalidRuleNodeType */) {
+            if ("chi" in node) {
                 stack.push(node);
                 context = node;
             }
@@ -1468,14 +1459,9 @@ async function doParse(iter, options = {}) {
     let parensMatch = 0;
     let curlyBracketMatch = 0;
     let tokenizer = iter instanceof Promise ? await iter : iter;
-    // ast[ROOT] = ast;
     ast[LOCSRCID] = options.source.id;
     ast[LOCSTA] = 0;
     ast[LOCEND] = 0;
-    // if (Array.isArray(iter)) {
-    //     // @ts-expect-error
-    //     iter = iter[Symbol.iterator]() as Iterator<TokenizeResult>;
-    // }
     while (!tokenizer.done()) {
         tokenizer.next();
         if (tokenizer.unit != null) {
@@ -1716,6 +1702,11 @@ async function doParse(iter, options = {}) {
                     case EnumToken.AtRuleNodeType:
                     case EnumToken.KeyframesRuleNodeType:
                     case EnumToken.KeyframesAtRuleNodeType:
+                        if (nodes[i][TOKENS] == null) {
+                            if (nodes[i].typ == EnumToken.RuleNodeType) {
+                                nodes[i][TOKENS] = parseString(nodes[i].sel);
+                            }
+                        }
                         for (const token of nodes[i][TOKENS]) {
                             subNodes.push(token);
                         }
