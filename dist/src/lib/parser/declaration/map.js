@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.10
+	Version: 1.7.0
 	License: MIT
  */
 import { eq } from '../utils/eq.js';
@@ -206,7 +206,7 @@ class PropertyMap {
                 if (value instanceof PropertyMap) {
                     for (const [k, v] of value.declarations) {
                         if (k == value.config.shorthand) {
-                            for (const [key, val] of Object.entries(value.config.properties)) {
+                            for (const [key] of Object.entries(value.config.properties)) {
                                 mapped[key] = cloneNode(v);
                                 for (let i = 0; i < v.val.length; i++) {
                                     // @ts-ignore

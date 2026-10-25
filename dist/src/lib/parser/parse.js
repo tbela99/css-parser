@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.10
+	Version: 1.7.0
 	License: MIT
  */
 import { isIdentColor, parseColor, isColor } from '../syntax/syntax.js';
@@ -2710,7 +2710,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
     else if (context.typ === EnumToken.AtRuleNodeType &&
         "page" === context.nam &&
         pageMarginBoxType.has(atRuleName.toLowerCase())) {
-        if (parseAsBlock === false) {
+        if (parseAsBlock === false && syntaxRules.optionalBody === false) {
             errors.push({
                 action: "drop",
                 node: atRule,
@@ -2749,7 +2749,7 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
     if (parseAsBlock === null) {
         parseAsBlock = blockAllowed;
     }
-    if (syntax != null && atRule.nam !== "layer" && parseAsBlock !== blockAllowed) {
+    if (syntax != null && atRule.nam !== "layer" && parseAsBlock !== blockAllowed && !syntaxRules.optionalBody) {
         errors.push({
             action: "drop",
             node: atRule,

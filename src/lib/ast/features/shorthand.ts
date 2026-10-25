@@ -38,7 +38,16 @@ export class ComputeShorthandFeature {
 
         const rules: AstNode[] = [];
         const declarations: AstNode[] = [];
-        const doNotSort = ast.typ == EnumToken.AtRuleNodeType && equalsIgnoreCase(ast.nam, "function");
+        let doNotSort: boolean = false;
+
+        if (ast.typ == EnumToken.AtRuleNodeType) {
+            switch (ast.nam) {
+                case "function":
+                case "mixin":
+                    doNotSort = true;
+                    break;
+            }
+        }
 
         // https://drafts.csswg.org/css-mixins/#:~:text=The%20value%20of%20the%20result%20descriptor%20is%20always%2016px%20in%20the%20above%20example
         if (doNotSort) {

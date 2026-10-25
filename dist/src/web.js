@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.10
+	Version: 1.7.0
 	License: MIT
  */
 import { doParse, doParseSync } from './lib/parser/parse.js';
@@ -28,6 +28,7 @@ export { PropertyList } from './lib/parser/declaration/list.js';
 export { SourceMap } from './lib/printer/sourcemap/sourcemap.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 export { getNodeProperty, setNodeProperty } from './lib/ast/node.js';
+export { parseSyntax } from './lib/validation/parser/parse.js';
 export { version } from '../package.json.js';
 
 /**

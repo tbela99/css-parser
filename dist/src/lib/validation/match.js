@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.10
+	Version: 1.7.0
 	License: MIT
  */
 import { getParsedSyntax, getSyntaxConfig } from './config.js';
@@ -813,6 +813,7 @@ function matchSyntax(syntaxes, context, options) {
             errors: [],
         };
     }
+    // console.error(syntaxes, context.peek());
     while (++i < syntaxes.length) {
         if (syntaxes[i].typ == ValidationTokenEnum.Whitespace) {
             continue;
@@ -851,55 +852,58 @@ function matchSyntax(syntaxes, context, options) {
             }
         }
         // custom function token
-        if (token.typ === EnumToken.CustomFunctionTokenDefType) {
-            if (syntaxes[i].typ != ValidationTokenEnum.PropertyType ||
-                syntaxes[i + 1]?.typ != ValidationTokenEnum.OpenParenthesis ||
-                syntaxes[i + 2]?.typ == null) {
-                if (!isOptional) {
-                    return {
-                        success: false,
-                        errors: [
-                            {
-                                action: "drop",
-                                message: "could not match syntax",
-                                node: token,
-                                syntax: syntaxes[i],
-                            },
-                        ],
-                        syntaxToken: syntaxes[i],
-                        valid: true,
-                        context,
-                        token: null,
-                    };
-                }
-                break;
-            }
-            const range = trimArray(context.peekRange());
-            const args = range.slice(1, -1);
-            context.next();
-            i++;
-            if (args.length === 0) {
-                context.update(range.at(-1));
-                i += 2;
-                return {
-                    success: true,
-                    valid: true,
-                    token,
-                    context,
-                    syntaxToken: syntaxes[i + 3],
-                    errors: [],
-                };
-            }
-            result = matchSyntax([syntaxes[i + 1]], createValidationContext(args), options);
-            if (result.success) {
-                context.update(range.at(-1));
-                i += 2;
-            }
-            return result;
-        }
-        if (tokensfuncDefMap.has(token.typ) &&
-            // @ts-ignore
-            token.typ === EnumToken.WildCardFunctionTokenDefType) {
+        // if (token.typ === EnumToken.CustomFunctionTokenDefType) {
+        //     if (
+        //         syntaxes[i].typ != ValidationTokenEnum.PropertyType ||
+        //         syntaxes[i + 1]?.typ != ValidationTokenEnum.OpenParenthesis ||
+        //         syntaxes[i + 2]?.typ == null
+        //     ) {
+        //         if (!isOptional) {
+        //             return {
+        //                 success: false,
+        //                 errors: [
+        //                     {
+        //                         action: "drop",
+        //                         message: "could not match syntax",
+        //                         node: token,
+        //                         syntax: syntaxes[i],
+        //                     },
+        //                 ],
+        //                 syntaxToken: syntaxes[i],
+        //                 valid: true,
+        //                 context,
+        //                 token: null,
+        //             };
+        //         }
+        //         break;
+        //     }
+        //     const range = trimArray(context.peekRange());
+        //     const args = range.slice(1, -1);
+        //     context.next();
+        //     i++;
+        //     if (args.length === 0) {
+        //         context.update(range.at(-1) as Token);
+        //         i += 2;
+        //         return {
+        //             success: true,
+        //             valid: true,
+        //             token,
+        //             context,
+        //             syntaxToken: syntaxes[i + 3],
+        //             errors: [],
+        //         };
+        //     }
+        //     result = matchSyntax([syntaxes[i + 1]], createValidationContext(args), options);
+        //     if (result.success) {
+        //         context.update(range.at(-1) as Token);
+        //         i += 2;
+        //     }
+        //     return result;
+        // }
+        if (
+        // tokensfuncDefMap.has(token.typ) &&
+        // @ts-ignore
+        token.typ === EnumToken.WildCardFunctionTokenDefType) {
             const range = trimArray(context.peekRange());
             result = matchSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, token.val + "()")?.[0]?.chi, createValidationContext(range.slice(1, -1)), options);
             if (result.success) {
@@ -924,10 +928,14 @@ function matchSyntax(syntaxes, context, options) {
                 context.update(result.context.current());
                 continue;
             }
+            if (isOptional) {
+                continue;
+            }
             return result;
         }
         if (syntaxes[i].isList) {
             result = matchListSyntax(syntaxes[i], context.slice(), options);
+            // console.error({result, token, syntax: syntaxes[i]});
             if (result.success) {
                 options.visited.get(token)?.delete?.(syntaxes[i]);
                 if (result.context.done()) {
@@ -942,6 +950,9 @@ function matchSyntax(syntaxes, context, options) {
                     };
                 }
                 context.update(result.context.current());
+                continue;
+            }
+            if (isOptional) {
                 continue;
             }
             return {
@@ -966,6 +977,9 @@ function matchSyntax(syntaxes, context, options) {
                     };
                 }
                 context.update(result.context.current());
+                continue;
+            }
+            if (isOptional) {
                 continue;
             }
             return {
@@ -1372,6 +1386,20 @@ function matchSyntax(syntaxes, context, options) {
                     syntaxToken: syntaxes[i],
                     errors: [],
                 };
+            case ValidationTokenEnum.OpenCurlyBrace:
+                if (token.typ === EnumToken.BlockStartTokenType) {
+                    options.visited.get(token).delete(syntaxes[i]);
+                    context.next();
+                    break;
+                }
+                return {
+                    success: false,
+                    valid: true,
+                    token,
+                    context,
+                    syntaxToken: syntaxes[i],
+                    errors: [],
+                };
             case ValidationTokenEnum.CloseParenthesis:
                 if (token.typ === EnumToken.EndParensTokenType) {
                     options.visited.get(token).delete(syntaxes[i]);
@@ -1573,6 +1601,7 @@ function matchProperty(property, context, options) {
         };
     }
     switch (property.val) {
+        case "function-parameter":
         case "declaration-value":
             {
                 // consume a declaration value
@@ -1582,18 +1611,43 @@ function matchProperty(property, context, options) {
                 // if semicolon or end curly brace is encountered, stop
                 let expectToken = true;
                 let token;
+                const stack = [];
                 token = context.peek();
-                while ((token = context.peek()) != null) {
-                    if (token.typ == EnumToken.StartParensTokenType || tokensfuncDefMap.has(token?.typ)) ;
-                    if (expectToken) {
-                        expectToken = false;
+                if (token != null) {
+                    success = false;
+                    while ((token = context.peek()) != null) {
+                        if (token.typ == EnumToken.StartParensTokenType || tokensfuncDefMap.has(token?.typ)) {
+                            stack.push(token);
+                        }
+                        if (expectToken) {
+                            expectToken = false;
+                        }
+                        if (token.typ == EnumToken.CommaTokenType) {
+                            expectToken = true;
+                        }
+                        if (token.typ == EnumToken.EndParensTokenType) {
+                            if (stack.length > 0) {
+                                stack.pop();
+                            }
+                            else {
+                                expectToken = false;
+                                break;
+                            }
+                        }
+                        context.next();
                     }
-                    if (token.typ == EnumToken.CommaTokenType) {
-                        expectToken = true;
-                    }
-                    context.next();
                 }
                 success = !expectToken;
+                if (success) {
+                    return {
+                        success,
+                        valid: true,
+                        token: null,
+                        context,
+                        syntaxToken: property,
+                        errors: [],
+                    };
+                }
             }
             break;
         case "calc-sum": {
@@ -2225,6 +2279,36 @@ function matchProperty(property, context, options) {
                     syntaxToken: null,
                     errors: [],
                 };
+            }
+            break;
+        }
+        case "dashed-function": {
+            const token = context.peek();
+            success = token?.typ == EnumToken.CustomFunctionTokenDefType;
+            if (success) {
+                context.next();
+                // const range = trimArray(context.peekRange());
+                // const args = range.slice(1, -1);
+                // if (args.length === 0) {
+                //     context.update(range.at(-1) as Token);
+                return {
+                    success: true,
+                    valid: true,
+                    token,
+                    context,
+                    syntaxToken: null,
+                    errors: [],
+                };
+                // }
+                // const result: ValidationMatch = matchSyntax(
+                //     [{ typ: ValidationTokenEnum.PropertyType, val: "declaration-value" } as ValidationPropertyToken],
+                //     createValidationContext(args),
+                //     options,
+                // );
+                // if (result.success) {
+                //     context.update(range.at(-1) as Token);
+                // }
+                // return result;
             }
             break;
         }

@@ -1,6 +1,8 @@
 import { EnumToken } from "../../ast/types.ts";
-import { isIdent, isIdentStart, isPseudo, parseDimension } from "../../syntax/syntax.ts";
+
+import { LOC } from "../../syntax/constants.ts";
 import { ValidationTokenEnum } from "./typedef.ts";
+import { isIdent, isIdentStart, isPseudo, parseDimension } from "../../syntax/syntax.ts";
 import type {
     Position,
     ValidationAmpersandToken,
@@ -27,13 +29,6 @@ import type {
     ValidationToken,
 } from "./types.d.ts";
 import type { DimensionToken } from "../../../@types/index.d.ts";
-import { LOC } from "../../syntax/constants.ts";
-
-const objectProperties = {
-    enumerable: false,
-    writable: true,
-    configurable: true,
-};
 
 const SymbolsMapTokens: Record<string, ValidationTokenEnum> = {
     "&&": ValidationTokenEnum.Ampersand,
@@ -348,6 +343,11 @@ export function* tokenizeSyntax(
     } as ValidationToken;
 }
 
+/**
+ * parse mdn data syntax
+ * @param syntax
+ * @returns
+ */
 export function parseSyntax(syntax: string): ValidationToken[] {
     const stack = [] as ValidationToken[];
     let tokens = [] as ValidationToken[];

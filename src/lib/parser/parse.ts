@@ -3495,7 +3495,7 @@ export function parseAtRule(
         "page" === (context as AstAtRule).nam &&
         pageMarginBoxType.has(atRuleName.toLowerCase())
     ) {
-        if (parseAsBlock === false) {
+        if (parseAsBlock === false && syntaxRules.optionalBody === false) {
             errors.push({
                 action: "drop",
                 node: atRule,
@@ -3542,7 +3542,7 @@ export function parseAtRule(
         parseAsBlock = blockAllowed;
     }
 
-    if (syntax != null && atRule.nam !== "layer" && parseAsBlock !== blockAllowed) {
+    if (syntax != null && atRule.nam !== "layer" && parseAsBlock !== blockAllowed && !syntaxRules.optionalBody) {
         errors.push({
             action: "drop",
             node: atRule,

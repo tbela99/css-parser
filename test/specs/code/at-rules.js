@@ -1864,5 +1864,91 @@ div {
 }`),
             );
         });
+
+        it("at-rule function with no arguments #66", function () {
+            return transform(
+                `
+
+@mixin --gradient-text(
+  --from <color>: mediumvioletred,
+  --to <color>: teal,
+  --angle: to bottom right,
+) {
+  @private {
+    --gradient: linear-gradient(var(--angle), var(--from), var(--to));
+  }
+  color: var(--from, var(--to));
+
+  @supports (background-clip: text) or (-webkit-background-clip: text) {
+    background: var(--gradient, var(--from));
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+}
+
+h1 {
+  @apply --gradient-text(pink, powderblue);
+}
+
+.foo {
+  @apply --one;
+  /* Invokes the --one mixin, with no arguments or contents. */
+
+  @apply --two(blue);
+  /* Invokes --two with one argument, and no contents. */
+
+  @apply --three {color: red;}
+  /* Invokes --three with no arguments, but with contents. */
+
+  @apply --four(blue) {color: red;}
+  /* Invokes --four with both an argument and contents. */
+}
+
+h1 {
+  @apply --gradient-text(pink, powderblue);
+}
+
+.foo {
+    color: blue;
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@mixin --gradient-text(--from <color>:mediumvioletred,--to <color>:teal,--angle:to bottom right,) {
+ @private {
+  --gradient: linear-gradient(var(--angle),var(--from),var(--to))
+ }
+ color: var(--from,var(--to));
+ @supports (background-clip:text) or (-webkit-background-clip:text) {
+  background: var(--gradient,var(--from));
+  color: #0000;
+  -webkit-background-clip: text;
+  background-clip: text
+ }
+}
+h1 {
+ @apply --gradient-text(pink,powderblue)
+}
+.foo {
+ @apply --one;
+ @apply --two(blue);
+ @apply --three {
+  color: red
+ }
+ @apply --four(blue) {
+  color: red
+ }
+}
+h1 {
+ @apply --gradient-text(pink,powderblue)
+}
+.foo {
+ color: blue
+}`),
+            );
+        });
     });
 }

@@ -261,7 +261,7 @@ export class PropertyMap {
                 if (value instanceof PropertyMap) {
                     for (const [k, v] of (value as PropertyMap).declarations) {
                         if (k == (value as PropertyMap).config.shorthand) {
-                            for (const [key, val] of Object.entries((value as PropertyMap).config.properties)) {
+                            for (const [key] of Object.entries((value as PropertyMap).config.properties)) {
                                 mapped[key] = cloneNode(v as AstDeclaration) as AstDeclaration;
 
                                 for (let i = 0; i < (v as AstDeclaration).val.length; i++) {
