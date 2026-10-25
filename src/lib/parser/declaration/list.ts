@@ -45,6 +45,17 @@ export class PropertyList {
         for (const declaration of declarations) {
             name = declaration.typ != EnumToken.DeclarationNodeType ? null : (declaration as AstDeclaration).nam;
 
+            // do not compute shorthand for invalid declarations
+            if (name == null) {
+                this.declarations.set(objectHash(declaration), declaration);
+                continue;
+            }
+            // @functiom / result
+            if (declaration[STATE] & EnumAstNodeStatus.Unknown && equalsIgnoreCase("result", name as string)) {
+                this.declarations.set((<AstDeclaration>declaration).nam, declaration);
+                continue;
+            }
+
             if (
                 (declaration as AstDeclaration)[STATE] &
                     (EnumAstNodeStatus.Invalid | EnumAstNodeStatus.Unknown | EnumAstNodeStatus.ValidationFailed) ||

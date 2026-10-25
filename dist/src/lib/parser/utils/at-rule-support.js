@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.9
+	Version: 1.7.0
 	License: MIT
  */
 import { EnumToken } from '../../ast/types.js';
@@ -191,7 +191,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                         break;
                     }
                     if ("and" === val || "or" === val) {
-                        if ("or" === val && scopes.length === 1) {
+                        if ("or" === val && scopes.length === 1 && scopes[0].size > 0) {
                             const fileName = options.source.getFileName() ?? "";
                             const [line, column] = options.source.getOffsets(stream[i]?.[LOCSTA]);
                             return {

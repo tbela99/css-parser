@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.9
+	Version: 1.7.0
 	License: MIT
  */
 import config from '../../data/validation.json.js';
@@ -77,8 +77,8 @@ const getSyntaxRule = memoize((group, key) => {
             }
         }
     }
-    const block = blockStart == -1 ? null : trimSyntaxArray(syntaxRules.slice(blockStart + 1, blockEnd));
-    const prelude = trimSyntaxArray(blockStart == -1 ? syntaxRules.slice() : syntaxRules.slice(0, blockStart));
+    let block = blockStart == -1 ? null : trimSyntaxArray(syntaxRules.slice(blockStart + 1, blockEnd));
+    let prelude = trimSyntaxArray(blockStart == -1 ? syntaxRules.slice() : syntaxRules.slice(0, blockStart));
     let propertyDescriptors = null;
     // @ts-expect-error
     if (node.descriptors != null) {
@@ -89,7 +89,24 @@ const getSyntaxRule = memoize((group, key) => {
             propertyDescriptors[key] = parseSyntax(typeof value === "string" ? value : value.syntax);
         }
     }
+    let optionalBody = false;
+    if (block == null || block.length === 0) {
+        let k = prelude.length - 1;
+        if (ValidationTokenEnum.SemiColon === prelude[k].typ) {
+            k--;
+        }
+        if (k >= 0 && ValidationTokenEnum.Bracket === prelude[k].typ) {
+            if (prelude[k].chi[0].typ ===
+                ValidationTokenEnum.OpenCurlyBrace &&
+                prelude[k].chi.at(-1).typ ===
+                    ValidationTokenEnum.CloseCurlyBrace) {
+                block = prelude[k].chi.slice(1, -1);
+                optionalBody = prelude[k].isOptional ?? false;
+            }
+        }
+    }
     return {
+        optionalBody,
         acceptAnyDeclaration: node.syntax.includes("<declaration-list>"),
         acceptAnyRule: node.syntax.includes("<group-rule-body>") ||
             node.syntax.includes("<stylesheet>"),

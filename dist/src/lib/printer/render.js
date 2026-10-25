@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.9
+	Version: 1.7.0
 	License: MIT
  */
 import { convertColor, getAngle } from '../syntax/color/color.js';
@@ -321,7 +321,7 @@ function renderAstNode(data, options, sourcemaps, sourceLocation, linesMap, erro
         case EnumToken.KeyframesRuleNodeType:
         case EnumToken.KeyframesAtRuleNodeType:
             if ([EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ) && !("chi" in data)) {
-                return `${indent}@${data.nam}${data.val === "" ? "" : options.indent || " "}${data.val};`;
+                return `${(indent.length > 0 ? options.newLine : "") + indent}@${data.nam}${data.val === "" ? "" : options.indent || " "}${data.val};`;
             }
             const lineMapLength = linesMap ? linesMap.getLineStarts().length : 0;
             const prelude = (indent.length > 0 ? options.newLine : "") +

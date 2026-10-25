@@ -1,6 +1,6 @@
 {
   "name": "@tbela99/css-parser",
-  "version": "1.6.9",
+  "version": "1.7.0",
   "publish": {
     "include": [
       "src",
@@ -24,6 +24,7 @@
       "benchmark",
       "llms.txt",
       "package-lock.json",
+      "CONTRIBUTING.md",
       "ROADMAP.md",
       "rollup.config.js",
       "scripts",

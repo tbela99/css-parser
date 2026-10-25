@@ -1,11 +1,12 @@
 import { config } from "./json.ts";
 import type { ValidationConfiguration, ValidationSyntaxNode } from "../../@types/validation.d.ts";
-import type { ValidationToken } from "./parser/types.d.ts";
+import type { ValidationBracketToken, ValidationToken } from "./parser/types.d.ts";
 import { parseSyntax, trimSyntaxArray } from "./parser/parse.ts";
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from "./parser/typedef.ts";
 import { memoize } from "../parser/utils/cache.ts";
 
 export interface ValidationSyntaxRule {
+    optionalBody: boolean;
     acceptAnyDeclaration: boolean;
     acceptAnyRule: boolean;
     getBlockRules: () => ValidationToken[] | null;
@@ -112,8 +113,8 @@ export const getSyntaxRule = memoize((group: ValidationSyntaxGroupEnum, key: str
         }
     }
 
-    const block = blockStart == -1 ? null : trimSyntaxArray(syntaxRules.slice(blockStart + 1, blockEnd));
-    const prelude = trimSyntaxArray(blockStart == -1 ? syntaxRules.slice() : syntaxRules.slice(0, blockStart));
+    let block = blockStart == -1 ? null : trimSyntaxArray(syntaxRules.slice(blockStart + 1, blockEnd));
+    let prelude = trimSyntaxArray(blockStart == -1 ? syntaxRules.slice() : syntaxRules.slice(0, blockStart));
 
     let propertyDescriptors: Record<string, ValidationToken[]> | null = null;
 
@@ -128,7 +129,30 @@ export const getSyntaxRule = memoize((group: ValidationSyntaxGroupEnum, key: str
         }
     }
 
+    let optionalBody = false;
+
+    if (block == null || block.length === 0) {
+        let k = prelude.length - 1;
+
+        if (ValidationTokenEnum.SemiColon === prelude[k].typ) {
+            k--;
+        }
+
+        if (k >= 0 && ValidationTokenEnum.Bracket === prelude[k].typ) {
+            if (
+                ((prelude[k] as ValidationBracketToken).chi[0] as ValidationToken).typ ===
+                    ValidationTokenEnum.OpenCurlyBrace &&
+                ((prelude[k] as ValidationBracketToken).chi as ValidationToken[]).at(-1)!.typ ===
+                    ValidationTokenEnum.CloseCurlyBrace
+            ) {
+                block = (prelude[k] as ValidationBracketToken).chi.slice(1, -1);
+                optionalBody = prelude[k].isOptional ?? false;
+            }
+        }
+    }
+
     return {
+        optionalBody,
         acceptAnyDeclaration: (node as ValidationSyntaxNode).syntax.includes("<declaration-list>"),
         acceptAnyRule:
             (node as ValidationSyntaxNode).syntax.includes("<group-rule-body>") ||

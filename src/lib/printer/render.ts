@@ -519,7 +519,7 @@ function renderAstNode(
         case EnumToken.KeyframesRuleNodeType:
         case EnumToken.KeyframesAtRuleNodeType:
             if ([EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ) && !("chi" in data)) {
-                return `${indent}@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === "" ? "" : options.indent || " "}${
+                return `${(indent.length > 0 ? options.newLine : "") + indent}@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === "" ? "" : options.indent || " "}${
                     (<AstAtRule>data).val
                 };`;
             }

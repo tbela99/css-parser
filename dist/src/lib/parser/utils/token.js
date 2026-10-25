@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.6.9
+	Version: 1.7.0
 	License: MIT
  */
 import { EnumToken } from '../../ast/types.js';
@@ -17,6 +17,7 @@ const trimTokenSpace = new Set([
     EnumToken.LteTokenType,
     EnumToken.ChildCombinatorTokenType,
     EnumToken.PipeTokenType,
+    EnumToken.ColonTokenType
 ]);
 const trimSpaceAfter = new Set([
     ...tokensfuncSet.values(),

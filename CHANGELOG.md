@@ -1,5 +1,16 @@
 # Changelog
 
+# v1.7.0
+
+- [x] implement CSS [Custom Functions and Mixins Modules and Level 1](https://drafts.csswg.org/css-mixins/#apply-rule)  
+- [x] allow \<or\> [outside parenthesis](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Media_queries/Using#testing_for_multiple_features_with_or)
+
+```ts
+@media ((color) and (hover)) or (monochrome) {
+  /* … */
+}
+```
+
 # v1.6.9
 
 fix import path #166 from package.json
