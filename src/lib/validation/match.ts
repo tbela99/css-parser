@@ -9,9 +9,8 @@ import type {
     ParserOptions,
     PseudoClassFunctionToken,
     PseudoElementToken,
-    StringToken,
     Token,
-    ValidationOptions,
+    ValidationOptions
 } from "../../@types/index.d.ts";
 import { getParsedSyntax, getSyntaxConfig } from "./config.ts";
 import { EnumToken } from "../ast/types.ts";
@@ -699,12 +698,10 @@ export function matchSelectorSyntax(
                         slice.push(tokens[n]);
                     }
 
-                    if (slice[1]?.typ === EnumToken.PipeTokenType) {
                     if (arena.getType(slice[1]) === EnumToken.PipeTokenType) {
                         slice.shift();
                     }
 
-                    if (slice[0].typ === EnumToken.PipeTokenType) {
                     if (arena.getType(slice[0]) === EnumToken.PipeTokenType) {
                         slice.shift();
                     }
@@ -2316,8 +2313,6 @@ function matchProperty(
         case "display-legacy":
         case "content-position": {
             let values = propertyKeywordValues.get(property.val);
-        case "content-position": {
-            let values = propertyKeywordValues.get(property.val);
 
             if (values == null) {
                 values = new Set(
@@ -2336,9 +2331,6 @@ function matchProperty(
                 propertyKeywordValues.set(property.val, values);
             }
 
-            success = token?.typ == EnumToken.IdenTokenType && values.has((token as IdentToken).val.toLowerCase());
-            break;
-        }
             success = token?.typ == EnumToken.IdenTokenType && values.has((token as IdentToken).val.toLowerCase());
             break;
         }

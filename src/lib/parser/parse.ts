@@ -747,11 +747,8 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
     // @ts-ignore ignore error
     let parensMatch: number = 0;
     let curlyBracketMatch: number = 0;
-<<<<<<< HEAD
     let tokenId: number;
     // let currentItemIndex: number;
-=======
->>>>>>> v.next
 
     ast[LOCSRCID] = options.source!.id;
     ast[LOCSTA] = 0;
