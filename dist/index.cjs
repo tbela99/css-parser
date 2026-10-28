@@ -693,6 +693,10 @@ exports.EnumToken = void 0;
      * CSS type token
      */
     EnumToken[EnumToken["CssTypeTokenType"] = 144] = "CssTypeTokenType";
+    /**
+     * user defined dimension token type
+     */
+    EnumToken[EnumToken["UserDefinedDimensionTokenType"] = 145] = "UserDefinedDimensionTokenType";
     /* aliases */
     /**
      * alias for time token type
@@ -10312,6 +10316,9 @@ function evaluate(tokens) {
             }
         }
         if (acc.length > 0 && curr[0] != exports.EnumToken.ListToken) {
+            if ("val" in token && +token.val == 0) {
+                return acc;
+            }
             acc.push({
                 typ: exports.EnumToken.Add,
                 [LOCSRCID]: token[LOCSRCID],
@@ -14182,19 +14189,20 @@ function matchProperty(property, context, options) {
                     token?.typ == exports.EnumToken.ResolutionTokenType ||
                     token?.typ == exports.EnumToken.TimeTokenType ||
                     token?.typ == exports.EnumToken.FrequencyTokenType ||
+                    token?.typ == exports.EnumToken.UserDefinedDimensionTokenType ||
                     token?.typ == exports.EnumToken.FlexTokenType;
             break;
         }
         case "angle":
             {
                 const token = context.peek();
-                success = token?.typ === exports.EnumToken.AngleTokenType;
+                success = token?.typ === exports.EnumToken.AngleTokenType || token?.typ === exports.EnumToken.UserDefinedDimensionTokenType;
             }
             break;
         case "angle-percentage":
             {
                 const token = context.peek();
-                success = token?.typ === exports.EnumToken.AngleTokenType || token?.typ === exports.EnumToken.PercentageTokenType;
+                success = token?.typ === exports.EnumToken.AngleTokenType || token?.typ === exports.EnumToken.UserDefinedDimensionTokenType || token?.typ === exports.EnumToken.PercentageTokenType;
             }
             break;
         case "percentage":
@@ -14212,16 +14220,18 @@ function matchProperty(property, context, options) {
                 success =
                     token?.typ == exports.EnumToken.PercentageTokenType ||
                         token?.typ == exports.EnumToken.LengthTokenType ||
+                        token?.typ == exports.EnumToken.UserDefinedDimensionTokenType ||
                         (token?.typ == exports.EnumToken.NumberTokenType && token?.val === 0);
             }
             break;
         case "flex":
-            success = context.peek()?.typ == exports.EnumToken.FlexTokenType;
+            success = context.peek()?.typ == exports.EnumToken.FlexTokenType || context.peek()?.typ == exports.EnumToken.UserDefinedDimensionTokenType;
             break;
         case "length": {
             const token = context.peek();
             success =
                 token?.typ == exports.EnumToken.LengthTokenType ||
+                    token?.typ == exports.EnumToken.UserDefinedDimensionTokenType ||
                     (token?.typ == exports.EnumToken.NumberTokenType && token?.val === 0);
             break;
         }
@@ -14231,7 +14241,7 @@ function matchProperty(property, context, options) {
                 if (token == null) {
                     break;
                 }
-                success = token.typ == exports.EnumToken.TimeTokenType;
+                success = token.typ == exports.EnumToken.TimeTokenType || token.typ == exports.EnumToken.UserDefinedDimensionTokenType;
             }
             break;
         case "color":
@@ -26683,6 +26693,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
         case exports.EnumToken.AngleTokenType:
         case exports.EnumToken.LengthTokenType:
         case exports.EnumToken.DimensionTokenType:
+        case exports.EnumToken.UserDefinedDimensionTokenType:
         case exports.EnumToken.FrequencyTokenType:
         case exports.EnumToken.ResolutionTokenType:
             let val = token.val.typ == exports.EnumToken.FractionTokenType
@@ -26948,7 +26959,6 @@ function assignTokenMap(entries, tokenType, suffix = "", lowercase = false) {
         SymbolsMapTokensLower[key.toLowerCase()] = tokenType;
     }
 }
-SymbolsMapTokens[""] = exports.EnumToken.DelimTokenType;
 SymbolsMapTokens["+"] = exports.EnumToken.Plus;
 SymbolsMapTokens["="] = exports.EnumToken.DelimTokenType;
 SymbolsMapTokens["|"] = exports.EnumToken.PipeTokenType;
@@ -27397,6 +27407,11 @@ class Tokenizer {
                 hasLetter = true;
                 break;
             }
+            // dashed ident as unit
+            if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
+                hasLetter = true;
+                break;
+            }
             return 0;
         }
         if (!hasLetter && !hasPercent) {
@@ -27423,6 +27438,10 @@ class Tokenizer {
                         hasPercent = true;
                     }
                     else if (isLetter(codepoint)) {
+                        hasLetter = true;
+                    }
+                    // custom ident as unit
+                    else if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
                         hasLetter = true;
                     }
                     else {
@@ -27459,6 +27478,10 @@ class Tokenizer {
                         return position - offset;
                     }
                     if (isLetter(codepoint)) {
+                        hasLetter = true;
+                        break;
+                    }
+                    else if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
                         hasLetter = true;
                         break;
                     }
@@ -27525,6 +27548,11 @@ class Tokenizer {
                                 hasLetter = true;
                                 break;
                             }
+                            // custom ident as unit
+                            else if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
+                                hasLetter = true;
+                                break;
+                            }
                             else if (codepoint == 37 /* TokenMap.PERCENTAGE */) {
                                 hasPercent = true;
                                 break;
@@ -27566,7 +27594,7 @@ class Tokenizer {
             const slice = codepoint == 0x45 || codepoint == 0x65 ? position - 1 : position;
             while (position + 1 <= parseInfo.stream.length) {
                 codepoint = parseInfo.stream.charCodeAt(++position);
-                if (!isLetter(codepoint)) {
+                if (!isLetter(codepoint) && codepoint != 0x2d) {
                     break;
                 }
             }
@@ -27851,6 +27879,9 @@ class Tokenizer {
                     this.val = parseFloat(parseInfo.stream.slice(parseInfo.position - parseInfo.offset, options?.slice));
                     if (hint != exports.EnumToken.PercentageTokenType) {
                         this.unit = val;
+                        if (val.startsWith('--')) {
+                            this.typ = exports.EnumToken.UserDefinedDimensionTokenType;
+                        }
                     }
                 }
                 else if (hint == exports.EnumToken.NumberTokenType) {

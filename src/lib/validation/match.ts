@@ -2383,6 +2383,7 @@ function matchProperty(
                 token?.typ == EnumToken.ResolutionTokenType ||
                 token?.typ == EnumToken.TimeTokenType ||
                 token?.typ == EnumToken.FrequencyTokenType ||
+                token?.typ == EnumToken.UserDefinedDimensionTokenType ||
                 token?.typ == EnumToken.FlexTokenType;
             break;
         }
@@ -2391,7 +2392,7 @@ function matchProperty(
             {
                 const token = context.peek();
 
-                success = token?.typ === EnumToken.AngleTokenType;
+                success = token?.typ === EnumToken.AngleTokenType || token?.typ === EnumToken.UserDefinedDimensionTokenType;
             }
 
             break;
@@ -2400,7 +2401,7 @@ function matchProperty(
             {
                 const token = context.peek();
 
-                success = token?.typ === EnumToken.AngleTokenType || token?.typ === EnumToken.PercentageTokenType;
+                success = token?.typ === EnumToken.AngleTokenType || token?.typ === EnumToken.UserDefinedDimensionTokenType || token?.typ === EnumToken.PercentageTokenType;
             }
 
             break;
@@ -2425,12 +2426,13 @@ function matchProperty(
                 success =
                     token?.typ == EnumToken.PercentageTokenType ||
                     token?.typ == EnumToken.LengthTokenType ||
+                    token?.typ == EnumToken.UserDefinedDimensionTokenType ||
                     (token?.typ == EnumToken.NumberTokenType && (token as NumberToken)?.val === 0);
             }
             break;
 
         case "flex":
-            success = context.peek()?.typ == EnumToken.FlexTokenType;
+            success = context.peek()?.typ == EnumToken.FlexTokenType || context.peek()?.typ == EnumToken.UserDefinedDimensionTokenType;
             break;
 
         case "length": {
@@ -2438,6 +2440,7 @@ function matchProperty(
 
             success =
                 token?.typ == EnumToken.LengthTokenType ||
+                token?.typ == EnumToken.UserDefinedDimensionTokenType ||
                 (token?.typ == EnumToken.NumberTokenType && (token as NumberToken)?.val === 0);
             break;
         }
@@ -2450,7 +2453,7 @@ function matchProperty(
                     break;
                 }
 
-                success = token.typ == EnumToken.TimeTokenType;
+                success = token.typ == EnumToken.TimeTokenType || token.typ == EnumToken.UserDefinedDimensionTokenType;
             }
             break;
 

@@ -45,7 +45,6 @@ function assignTokenMap(entries, tokenType, suffix = "", lowercase = false) {
         SymbolsMapTokensLower[key.toLowerCase()] = tokenType;
     }
 }
-SymbolsMapTokens[""] = EnumToken.DelimTokenType;
 SymbolsMapTokens["+"] = EnumToken.Plus;
 SymbolsMapTokens["="] = EnumToken.DelimTokenType;
 SymbolsMapTokens["|"] = EnumToken.PipeTokenType;
@@ -494,6 +493,11 @@ class Tokenizer {
                 hasLetter = true;
                 break;
             }
+            // dashed ident as unit
+            if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
+                hasLetter = true;
+                break;
+            }
             return 0;
         }
         if (!hasLetter && !hasPercent) {
@@ -520,6 +524,10 @@ class Tokenizer {
                         hasPercent = true;
                     }
                     else if (isLetter(codepoint)) {
+                        hasLetter = true;
+                    }
+                    // custom ident as unit
+                    else if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
                         hasLetter = true;
                     }
                     else {
@@ -556,6 +564,10 @@ class Tokenizer {
                         return position - offset;
                     }
                     if (isLetter(codepoint)) {
+                        hasLetter = true;
+                        break;
+                    }
+                    else if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
                         hasLetter = true;
                         break;
                     }
@@ -622,6 +634,11 @@ class Tokenizer {
                                 hasLetter = true;
                                 break;
                             }
+                            // custom ident as unit
+                            else if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
+                                hasLetter = true;
+                                break;
+                            }
                             else if (codepoint == 37 /* TokenMap.PERCENTAGE */) {
                                 hasPercent = true;
                                 break;
@@ -663,7 +680,7 @@ class Tokenizer {
             const slice = codepoint == 0x45 || codepoint == 0x65 ? position - 1 : position;
             while (position + 1 <= parseInfo.stream.length) {
                 codepoint = parseInfo.stream.charCodeAt(++position);
-                if (!isLetter(codepoint)) {
+                if (!isLetter(codepoint) && codepoint != 0x2d) {
                     break;
                 }
             }
@@ -948,6 +965,9 @@ class Tokenizer {
                     this.val = parseFloat(parseInfo.stream.slice(parseInfo.position - parseInfo.offset, options?.slice));
                     if (hint != EnumToken.PercentageTokenType) {
                         this.unit = val;
+                        if (val.startsWith('--')) {
+                            this.typ = EnumToken.UserDefinedDimensionTokenType;
+                        }
                     }
                 }
                 else if (hint == EnumToken.NumberTokenType) {

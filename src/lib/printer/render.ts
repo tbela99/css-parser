@@ -1646,6 +1646,7 @@ export function renderValue(
         case EnumToken.AngleTokenType:
         case EnumToken.LengthTokenType:
         case EnumToken.DimensionTokenType:
+        case EnumToken.UserDefinedDimensionTokenType:
         case EnumToken.FrequencyTokenType:
         case EnumToken.ResolutionTokenType:
             let val: string =

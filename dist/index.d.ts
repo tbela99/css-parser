@@ -678,6 +678,10 @@ declare enum EnumToken {
      */
     CssTypeTokenType = 144,
     /**
+     * user defined dimension token type
+     */
+    UserDefinedDimensionTokenType = 145,
+    /**
      * alias for time token type
      */
     Time = 25,

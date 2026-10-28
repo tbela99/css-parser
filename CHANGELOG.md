@@ -1,5 +1,27 @@
 # Changelog
 
+# 1.8.0
+
+- [x] support dashed indent as unit
+
+```css
+.module {
+  margin-block: 1.5--bs;
+  border-block: .5--bs;
+  /* gives a vertical margin of 12px,
+     and vertical border of 4px */
+}
+```
+
+is rendered as 
+
+```css
+.module {
+ margin-block: 1.5--bs;
+ border-block: .5--bs
+}
+```
+
 # v1.7.0
 
 - [x] implement CSS [Custom Functions and Mixins Modules and Level 1](https://drafts.csswg.org/css-mixins/#apply-rule)  

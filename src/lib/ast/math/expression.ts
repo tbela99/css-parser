@@ -188,6 +188,10 @@ export function evaluate(tokens: Token[]): Token[] {
         }
 
         if (acc.length > 0 && curr[0] != EnumToken.ListToken) {
+            if ("val" in token && +(token as NumberToken).val == 0) {
+                return acc;
+            }
+
             acc.push({
                 typ: EnumToken.Add,
                 [LOCSRCID]: token[LOCSRCID],

@@ -730,6 +730,10 @@ export enum EnumToken {
      */
     CssTypeTokenType,
 
+    /**
+     * user defined dimension token type
+     */
+    UserDefinedDimensionTokenType,
     /* aliases */
 
     /**

@@ -71,9 +71,11 @@ function replace(
                     if (parentValue != null) {
                         let i: number = 0;
 
-                        for (; i < (<FunctionToken>parentValue).chi.length; i++) {
-                            if ((<FunctionToken>parentValue).chi[i] == value) {
-                                (<FunctionToken>parentValue).chi.splice(i, 1, ...info.node.val);
+                        const source = parentValue.typ == EnumToken.DeclarationNodeType ? (<AstDeclaration>parentValue).val : (parentValue as FunctionToken).chi;
+
+                        for (; i < source.length; i++) {
+                            if (source[i] == value) {
+                                source.splice(i, 1, ...info.node.val);
                                 break;
                             }
                         }

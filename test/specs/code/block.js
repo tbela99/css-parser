@@ -1559,4 +1559,26 @@ color: color-mix(in oklch, oklch(78.3% 0.108 326.5), oklch(39.2% 0.4 none)) ;
 }`),
         );
     });
+
+    it("user defined dimension #65", async () => {
+        const options = {
+            input: `
+    
+.module {
+  margin-block: 1.5--bs;
+  border-block: .5--bs;
+  /* gives a vertical margin of 12px,
+     and vertical border of 4px */
+}
+    `,
+            beautify: true,
+        };
+
+        return transform(options).then((result) =>
+            expect(result.code).equals(`.module {
+ margin-block: 1.5--bs;
+ border-block: .5--bs
+}`),
+        );
+    });
 }

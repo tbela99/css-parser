@@ -691,6 +691,10 @@ var EnumToken;
      * CSS type token
      */
     EnumToken[EnumToken["CssTypeTokenType"] = 144] = "CssTypeTokenType";
+    /**
+     * user defined dimension token type
+     */
+    EnumToken[EnumToken["UserDefinedDimensionTokenType"] = 145] = "UserDefinedDimensionTokenType";
     /* aliases */
     /**
      * alias for time token type
