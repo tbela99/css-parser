@@ -701,54 +701,107 @@ function doParseSync(tokenizer, options = {}) {
     if (options.visitor != null) {
         const handlers = [];
         const visitors = parseVisitors(options.visitor, errors);
-        const subNodes = [];
         let parens;
         let genericKey;
-        let nodes = new Array(stats.tokensCount);
-        let i;
-        let k;
-        let j;
-        let freeBlock = 1;
-        nodes[0] = ast;
-        for (i = 0; i < nodes.length; i++) {
-            if (nodes[i] == null) {
-                break;
-            }
-            subNodes.length = 0;
+        let nodes = [ast];
+        let node;
+        while (nodes.length > 0) {
+            node = nodes.pop();
             if (visitors.includeTokens) {
-                switch (nodes[i].typ) {
+                switch (node.typ) {
                     case EnumToken.RuleNodeType:
                     case EnumToken.AtRuleNodeType:
                     case EnumToken.KeyframesRuleNodeType:
                     case EnumToken.KeyframesAtRuleNodeType:
-                        for (const token of nodes[i][TOKENS]) {
-                            subNodes.push(token);
+                        for (let i = 
+                        // @ts-ignore
+                        node[TOKENS].length -
+                            1; i >= 0; i--) {
+                            // @ts-ignore
+                            node[TOKENS][i][PARENT] = node;
+                            nodes.push(
+                            // @ts-ignore
+                            node[TOKENS][i]);
                         }
                         break;
                     case EnumToken.DeclarationNodeType:
-                        for (const token of nodes[i].val) {
-                            subNodes.push(token);
+                        for (let i = 
+                        // @ts-ignore
+                        node.val.length - 1; i >= 0; i--) {
+                            node.val[i][PARENT] = node;
+                            // @ts-ignore
+                            nodes.push(node.val[i]);
                         }
                         break;
                 }
+                // @ts-ignore
+                if (node.l != null) {
+                    // @ts-ignore
+                    if (node.op2 != null) {
+                        // @ts-ignore
+                        nodes.push(node.op2);
+                        // @ts-ignore
+                        node.op2[PARENT] = node;
+                    }
+                    // @ts-ignore
+                    if (node.op1 != null) {
+                        // @ts-ignore
+                        nodes.push(node.op1);
+                        // @ts-ignore
+                        node.op1[PARENT] = node;
+                    }
+                    // @ts-ignore
+                    if (nodes.op != null && node.op.typ != null) {
+                        // @ts-ignore
+                        nodes.push(node.op);
+                        // @ts-ignore
+                        node.op[PARENT] = node;
+                    }
+                    // @ts-ignore
+                    if (node.r != null) {
+                        // @ts-ignore
+                        if (Array.isArray(node.r)) {
+                            // @ts-ignore
+                            for (let i = node.r.length - 1; i >= 0; i--) {
+                                // @ts-ignore
+                                nodes.push(node.r[i]);
+                                //  @ts-ignore
+                                node.r[i][PARENT] = node;
+                            }
+                        }
+                        else {
+                            // @ts-ignore
+                            nodes.push(node.r);
+                            // @ts-ignore
+                            node.r[PARENT] = node;
+                        }
+                    }
+                    // @ts-ignore
+                    if (Array.isArray(node.l)) {
+                        // @ts-ignore
+                        for (let i = node.l.length - 1; i >= 0; i--) {
+                            // @ts-ignore
+                            nodes.push(node.l[i]);
+                            // @ts-ignore
+                            node.l[i][PARENT] = node;
+                        }
+                    }
+                    else {
+                        // @ts-ignore
+                        nodes.push(node.l);
+                        // @ts-ignore
+                        node.l[PARENT] = node;
+                    }
+                }
             }
             // @ts-ignore
-            if (nodes[i].chi != null) {
+            if (node.chi != null) {
+                for (
                 // @ts-ignore
-                for (const child of nodes[i].chi) {
-                    subNodes.push(child);
+                let i = node.chi.length - 1; i >= 0; i--) {
+                    // @ts-ignore
+                    nodes.push(node.chi[i]);
                 }
-            }
-            if (subNodes.length > 0) {
-                if (freeBlock <= i) {
-                    freeBlock = i + 1;
-                }
-                for (k = 0; k < subNodes.length; k++) {
-                    j = k + freeBlock;
-                    nodes[j] = subNodes[k];
-                    nodes[j][PARENT] = nodes[i];
-                }
-                freeBlock += subNodes.length;
             }
             parens = null;
             handlers.length = 0;
@@ -756,23 +809,23 @@ function doParseSync(tokenizer, options = {}) {
                 handlers.push(...visitors.preAllVisitorsHandlers);
             }
             genericKey =
-                nodes[i].typ == EnumToken.DeclarationNodeType
+                node.typ == EnumToken.DeclarationNodeType
                     ? "Declaration"
-                    : nodes[i].typ == EnumToken.AtRuleNodeType
+                    : node.typ == EnumToken.AtRuleNodeType
                         ? "AtRule"
-                        : nodes[i].typ == EnumToken.KeyframesAtRuleNodeType
+                        : node.typ == EnumToken.KeyframesAtRuleNodeType
                             ? "KeyframesAtRule"
-                            : nodes[i].typ === EnumToken.KeyframesRuleNodeType
+                            : node.typ === EnumToken.KeyframesRuleNodeType
                                 ? "KeyframesRule"
-                                : nodes[i].typ == EnumToken.RuleNodeType
+                                : node.typ == EnumToken.RuleNodeType
                                     ? "Rule"
-                                    : nodes[i].typ == EnumToken.KeyframesRuleNodeType
+                                    : node.typ == EnumToken.KeyframesRuleNodeType
                                         ? "KeyframesRule"
                                         : null;
-            let keyName = nodes[i].typ == EnumToken.DeclarationNodeType || nodes[i].typ == EnumToken.AtRuleNodeType
-                ? camelize(nodes[i].nam)
-                : nodes[i].typ == EnumToken.KeyframesAtRuleNodeType
-                    ? camelize(nodes[i].val)
+            let keyName = node.typ == EnumToken.DeclarationNodeType || node.typ == EnumToken.AtRuleNodeType
+                ? camelize(node.nam)
+                : node.typ == EnumToken.KeyframesAtRuleNodeType
+                    ? camelize(node.val)
                     : null;
             if (visitors.allVisitorsHandlers?.size > 0) {
                 handlers.push(...visitors.allVisitorsHandlers);
@@ -792,10 +845,9 @@ function doParseSync(tokenizer, options = {}) {
                         }
                     }
                 }
-                // @ts-ignore
-                if (map.has(nodes[i].typ)) {
+                if (map.has(node.typ)) {
                     // @ts-ignore
-                    for (const handler of map.get(nodes[i].typ)) {
+                    for (const handler of map.get(node.typ)) {
                         if (typeof handler == "function") {
                             handlers.push(handler);
                         }
@@ -823,16 +875,15 @@ function doParseSync(tokenizer, options = {}) {
             if (handlers.length == 0) {
                 continue;
             }
-            let node = nodes[i];
             for (const callable of handlers) {
-                replacement = callable(node, nodes[i][PARENT], ast, 
+                replacement = callable(node, node[PARENT], ast, 
                 // @ts-expect-error
                 function* () {
                     if (parens == null) {
-                        let node = nodes[i][PARENT];
-                        while (node != null) {
-                            yield node;
-                            node = node[PARENT];
+                        let parent = node[PARENT];
+                        while (parent != null) {
+                            yield parent;
+                            parent = parent[PARENT];
                         }
                     }
                 });
@@ -843,37 +894,33 @@ function doParseSync(tokenizer, options = {}) {
                     continue;
                 }
                 // @ts-ignore
-                node = replacement;
+                // node = replacement as AstNode;
                 //
-                if (Array.isArray(node)) {
+                if (Array.isArray(replacement)) {
                     break;
                 }
             }
-            if (node != nodes[i]) {
+            // @ts-ignore
+            if (replacement != null && node != replacement) {
                 // @ts-ignore
-                replaceNodeOrValue(nodes[i][PARENT], nodes[i], node);
+                replaceNodeOrValue(node[PARENT], node, replacement);
             }
         }
         nodes = null;
     }
     if (invalidNodes.length > 0) {
-        let count = invalidNodes.length;
-        for (const { node, parent } of walk(ast)) {
+        for (const node of invalidNodes) {
             if (options.lenient && node[STATE] & EnumAstNodeStatus.Unknown) {
                 continue;
             }
-            if (node[STATE] & EnumAstNodeStatus.Invalid ||
-                node[STATE] & EnumAstNodeStatus.Unknown ||
-                node[STATE] & EnumAstNodeStatus.Unparsed ||
-                node[STATE] & EnumAstNodeStatus.Malformed ||
-                node[STATE] & EnumAstNodeStatus.Disallowed) {
+            if (node[STATE] &
+                (EnumAstNodeStatus.Invalid |
+                    EnumAstNodeStatus.Unknown |
+                    EnumAstNodeStatus.Unparsed |
+                    EnumAstNodeStatus.Malformed |
+                    EnumAstNodeStatus.Disallowed)) {
                 // @ts-ignore
-                parent.chi.splice(parent.chi.indexOf(node), 1);
-                node[PARENT] = null;
-                count--;
-                if (count == 0) {
-                    break;
-                }
+                node[PARENT].chi.splice(node[PARENT].chi.indexOf(node), 1);
             }
         }
     }
@@ -894,7 +941,6 @@ function doParseSync(tokenizer, options = {}) {
             ...stats,
             parse: `${(endParseTime - startTime).toFixed(2)}ms`,
             minify: `${(endTime - endParseTime).toFixed(2)}ms`,
-            // tokenize: `${(options?.parseInfo?.time ?? 0).toFixed(2)}ms`,
             total: `${(endTime - startTime).toFixed(2)}ms`,
         },
     };
@@ -1684,58 +1730,107 @@ async function doParse(iter, options = {}) {
         let genericKey;
         const handlers = [];
         const visitors = parseVisitors(options.visitor, errors);
-        let nodes = new Array(stats.tokensCount);
-        const subNodes = [];
-        let i;
-        let k;
-        let j;
-        let freeblock = 1;
-        nodes[0] = ast;
-        for (i = 0; i < nodes.length; i++) {
-            if (nodes[i] == null) {
-                break;
-            }
-            subNodes.length = 0;
+        let nodes = [ast];
+        let node;
+        // nodes[0] = ast;
+        while (nodes.length > 0) {
+            node = nodes.pop();
             if (visitors.includeTokens) {
-                switch (nodes[i].typ) {
+                switch (node.typ) {
                     case EnumToken.RuleNodeType:
                     case EnumToken.AtRuleNodeType:
                     case EnumToken.KeyframesRuleNodeType:
                     case EnumToken.KeyframesAtRuleNodeType:
-                        if (nodes[i][TOKENS] == null) {
-                            if (nodes[i].typ == EnumToken.RuleNodeType) {
-                                nodes[i][TOKENS] = parseString(nodes[i].sel);
-                            }
-                        }
-                        for (const token of nodes[i][TOKENS]) {
-                            subNodes.push(token);
+                        for (let i = 
+                        // @ts-ignore
+                        node[TOKENS].length -
+                            1; i >= 0; i--) {
+                            // @ts-ignore
+                            node[TOKENS][i][PARENT] = node;
+                            nodes.push(
+                            // @ts-ignore
+                            node[TOKENS][i]);
                         }
                         break;
                     case EnumToken.DeclarationNodeType:
-                        for (const token of nodes[i].val) {
-                            subNodes.push(token);
+                        for (let i = 
+                        // @ts-ignore
+                        node.val.length - 1; i >= 0; i--) {
+                            // @ts-ignore
+                            node.val[i][PARENT] = node;
+                            // @ts-ignore
+                            nodes.push(node.val[i]);
                         }
                         break;
                 }
+                // @ts-ignore
+                if (node.l != null) {
+                    // @ts-ignore
+                    if (node.op2 != null) {
+                        // @ts-ignore
+                        nodes.push(node.op2);
+                        // @ts-ignore
+                        nodes.op2[PARENT] = node;
+                    }
+                    // @ts-ignore
+                    if (node.op1 != null) {
+                        // @ts-ignore
+                        nodes.push(node.op1);
+                        // @ts-ignore
+                        nodes.op1[PARENT] = node;
+                    }
+                    // @ts-ignore
+                    if (nodes.op != null && node.op.typ != null) {
+                        // @ts-ignore
+                        nodes.push(node.op);
+                        // @ts-ignore
+                        nodes.op[PARENT] = node;
+                    }
+                    // @ts-ignore
+                    if (node.r != null) {
+                        // @ts-ignore
+                        if (Array.isArray(node.r)) {
+                            // @ts-ignore
+                            for (let i = node.r.length - 1; i >= 0; i--) {
+                                // @ts-ignore
+                                nodes.push(node.r[i]);
+                                // @ts-ignore
+                                node.r[i][PARENT] = node;
+                            }
+                        }
+                        else {
+                            // @ts-ignore
+                            nodes.push(node.r);
+                            // @ts-ignore
+                            node.r[PARENT] = node;
+                        }
+                    }
+                    // @ts-ignore
+                    if (Array.isArray(node.l)) {
+                        // @ts-ignore
+                        for (let i = node.l.length - 1; i >= 0; i--) {
+                            // @ts-ignore
+                            node.l[i][PARENT] = node;
+                            // @ts-ignore
+                            nodes.push(node.l[i]);
+                        }
+                    }
+                    else {
+                        // @ts-ignore
+                        nodes.push(node.l);
+                        // @ts-ignore
+                        node.l[PARENT] = node;
+                    }
+                }
             }
             // @ts-ignore
-            if (nodes[i].chi != null) {
+            if (node.chi != null) {
+                for (
                 // @ts-ignore
-                for (k = 0; k < nodes[i].chi.length; k++) {
+                let i = node.chi.length - 1; i >= 0; i--) {
                     // @ts-ignore
-                    subNodes.push(nodes[i].chi[k]);
+                    nodes.push(node.chi[i]);
                 }
-            }
-            if (subNodes.length > 0) {
-                if (freeblock <= i) {
-                    freeblock = i + 1;
-                }
-                for (k = 0; k < subNodes.length; k++) {
-                    j = k + freeblock;
-                    nodes[j] = subNodes[k];
-                    nodes[j][PARENT] = nodes[i];
-                }
-                freeblock += subNodes.length;
             }
             parens = null;
             handlers.length = 0;
@@ -1743,23 +1838,23 @@ async function doParse(iter, options = {}) {
                 handlers.push(...visitors.preAllVisitorsHandlers);
             }
             genericKey =
-                nodes[i].typ == EnumToken.DeclarationNodeType
+                node.typ == EnumToken.DeclarationNodeType
                     ? "Declaration"
-                    : nodes[i].typ == EnumToken.AtRuleNodeType
+                    : node.typ == EnumToken.AtRuleNodeType
                         ? "AtRule"
-                        : nodes[i].typ == EnumToken.KeyframesAtRuleNodeType
+                        : node.typ == EnumToken.KeyframesAtRuleNodeType
                             ? "KeyframesAtRule"
-                            : nodes[i].typ === EnumToken.KeyframesRuleNodeType
+                            : node.typ === EnumToken.KeyframesRuleNodeType
                                 ? "KeyframesRule"
-                                : nodes[i].typ == EnumToken.RuleNodeType
+                                : node.typ == EnumToken.RuleNodeType
                                     ? "Rule"
-                                    : nodes[i].typ == EnumToken.KeyframesRuleNodeType
+                                    : node.typ == EnumToken.KeyframesRuleNodeType
                                         ? "KeyframesRule"
                                         : null;
-            let keyName = nodes[i].typ == EnumToken.DeclarationNodeType || nodes[i].typ == EnumToken.AtRuleNodeType
-                ? camelize(nodes[i].nam)
-                : nodes[i].typ == EnumToken.KeyframesAtRuleNodeType
-                    ? camelize(nodes[i].val)
+            let keyName = node.typ == EnumToken.DeclarationNodeType || node.typ == EnumToken.AtRuleNodeType
+                ? camelize(node.nam)
+                : node.typ == EnumToken.KeyframesAtRuleNodeType
+                    ? camelize(node.val)
                     : null;
             if (visitors.allVisitorsHandlers?.size > 0) {
                 handlers.push(...visitors.allVisitorsHandlers);
@@ -1772,20 +1867,6 @@ async function doParse(iter, options = {}) {
                         if (typeof handler == "function") {
                             handlers.push(handler);
                         }
-                        // else if (Array.isArray(handler)) {
-                        //     for (const h of handler) {
-                        //         if (typeof h == "function") {
-                        //             handlers.push(h);
-                        //         }
-                        //         // @ts-ignore
-                        //         else if (h[keyName] != null) {
-                        //             // @ts-ignore
-                        //             handlers.push(h[keyName]);
-                        //         }
-                        //     }
-                        // } else if (typeof handler.handler! == "function") {
-                        //     handlers.push(handler.handler);
-                        // }
                         // @ts-ignore
                         else if (typeof handler[keyName] == "function") {
                             // @ts-ignore
@@ -1793,10 +1874,9 @@ async function doParse(iter, options = {}) {
                         }
                     }
                 }
-                // @ts-ignore
-                if (map.has(nodes[i].typ)) {
+                if (map.has(node.typ)) {
                     // @ts-ignore
-                    for (const handler of map.get(nodes[i].typ)) {
+                    for (const handler of map.get(node.typ)) {
                         if (typeof handler == "function") {
                             handlers.push(handler);
                         }
@@ -1824,16 +1904,16 @@ async function doParse(iter, options = {}) {
             if (handlers.length == 0) {
                 continue;
             }
-            let node = nodes[i];
             for (const callable of handlers) {
-                replacement = callable(node, nodes[i][PARENT], ast, 
+                replacement = callable(node, node[PARENT], ast, 
                 // @ts-expect-error
                 function* () {
                     if (parens == null) {
-                        let node = nodes[i][PARENT];
-                        while (node != null) {
-                            yield node;
-                            node = node[PARENT];
+                        let parent = node[PARENT];
+                        // let node = node[PARENT] as AstNode;
+                        while (parent != null) {
+                            yield parent;
+                            parent = parent[PARENT];
                         }
                     }
                 });
@@ -1847,37 +1927,37 @@ async function doParse(iter, options = {}) {
                     continue;
                 }
                 // @ts-ignore
-                node = replacement;
+                // node = replacement as AstNode;
                 //
-                if (Array.isArray(node)) {
+                if (Array.isArray(replacement)) {
                     break;
                 }
             }
-            if (node != nodes[i]) {
+            // @ts-ignore
+            if (replacement != null && node != replacement) {
+                console.error({
+                    node,
+                    replacement,
+                });
                 // @ts-ignore
-                replaceNodeOrValue(nodes[i][PARENT], nodes[i], node);
+                replaceNodeOrValue(node[PARENT], node, replacement);
             }
         }
         nodes = null;
     }
     if (invalidNodes.length > 0) {
-        let count = invalidNodes.length;
-        for (const { node, parent } of walk(ast)) {
+        for (const node of invalidNodes) {
             if (options.lenient && node[STATE] & EnumAstNodeStatus.Unknown) {
                 continue;
             }
-            if (node[STATE] & EnumAstNodeStatus.Invalid ||
-                node[STATE] & EnumAstNodeStatus.Unknown ||
-                node[STATE] & EnumAstNodeStatus.Unparsed ||
-                node[STATE] & EnumAstNodeStatus.Malformed ||
-                node[STATE] & EnumAstNodeStatus.Disallowed) {
+            if (node[STATE] & (EnumAstNodeStatus.Invalid | EnumAstNodeStatus.Unknown | EnumAstNodeStatus.Unparsed | EnumAstNodeStatus.Malformed | EnumAstNodeStatus.Disallowed)) {
                 // @ts-ignore
-                parent.chi.splice(parent.chi.indexOf(node), 1);
-                node[PARENT] = null;
-                count--;
-                if (count == 0) {
-                    break;
-                }
+                node[PARENT].chi.splice(node[PARENT].chi.indexOf(node), 1);
+                // node[PARENT] = null;
+                // count--;
+                // if (count == 0) {
+                //     break;
+                // }
             }
         }
     }

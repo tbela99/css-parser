@@ -6,6 +6,7 @@
 	License: MIT
  */
 import { PARENT, TOKENS } from '../syntax/constants.js';
+import { EnumToken } from './types.js';
 
 /**
  * Options for the walk function
@@ -126,7 +127,6 @@ function* walk(node, filter, reverse) {
     let isNumeric = false;
     let children = true;
     let attributes = false;
-    let i = 0;
     if (options != null && typeof options == "object") {
         filter = options.filter;
         reverse = options.reverse;
@@ -146,12 +146,11 @@ function* walk(node, filter, reverse) {
             }
         },
     };
-    while ((node = parents[i++])) {
-        if (i > maxQueueLength) {
-            parents.splice(0, maxQueueLength);
-            i -= maxQueueLength;
-        }
-        let option = null;
+    let option = null;
+    let source = null;
+    while (parents.length > 0) {
+        node = parents.pop();
+        // enter node
         if (filter != null) {
             // @ts-expect-error
             option = filter(node);
@@ -172,25 +171,64 @@ function* walk(node, filter, reverse) {
             yield result;
         }
         if (attributes) {
-            if (node[TOKENS] != null) {
-                // @ts-expect-error
-                parents.splice(i, 0, ...(reverse ? node[TOKENS].toReversed() : node[TOKENS]));
-                for (const child of node[TOKENS]) {
-                    if (child[PARENT] != node) {
-                        child[PARENT] = node;
-                    }
-                }
-                // @ts-expect-error
+            source = null;
+            if (Array.isArray(node[TOKENS])) {
+                source = node[TOKENS];
             }
-            else if (Array.isArray(node.val)) {
+            else if (node.typ == EnumToken.DeclarationNodeType) {
+                source = node.val;
+            }
+            else if (node.l != null) {
                 // @ts-expect-error
-                for (const val of node.val) {
-                    if (val[PARENT] != node) {
-                        val[PARENT] = node;
+                if (Array.isArray(node.l)) {
+                    // @ts-expect-error
+                    source = node.l.slice();
+                }
+                else {
+                    // @ts-expect-error
+                    source = [node.l];
+                }
+                // @ts-expect-error
+                if (node.r != null) {
+                    // @ts-expect-error
+                    if (Array.isArray(node.r)) {
+                        // @ts-expect-error
+                        source.push(...node.r.slice());
+                    }
+                    else {
+                        // @ts-expect-error
+                        source = [node.r];
                     }
                 }
                 // @ts-expect-error
-                parents.splice(i, 0, ...(reverse ? node.val.toReversed() : node.val));
+                if (node.op != null && typeof node.op == "object") {
+                    // @ts-expect-error
+                    source.push(node.op);
+                }
+                // @ts-expect-error
+                if (node.op1 != null && typeof node.op1 == "object") {
+                    // @ts-expect-error
+                    source.push(node.op1);
+                }
+                // @ts-expect-error
+                if (node.op2 != null && typeof node.op2 == "object") {
+                    // @ts-expect-error
+                    source.push(node.op2);
+                }
+            }
+            if (source != null) {
+                if (reverse) {
+                    for (let i = 0; i < node[TOKENS].length; i++) {
+                        parents.push(node[TOKENS][i]);
+                        node[TOKENS][i][PARENT] = node;
+                    }
+                }
+                else {
+                    for (let i = node[TOKENS].length - 1; i >= 0; i--) {
+                        parents.push(node[TOKENS][i]);
+                        node[TOKENS][i][PARENT] = node;
+                    }
+                }
             }
         }
         if (children &&
@@ -198,13 +236,89 @@ function* walk(node, filter, reverse) {
             node["chi"] != null &&
             (!isNumeric || (option & WalkerOptionEnum.IgnoreChildren) === 0)) {
             // @ts-expect-error
-            parents.splice(i, 0, ...(reverse ? node.chi.toReversed() : node.chi));
-            for (const child of node.chi) {
-                if (child[PARENT] != node) {
-                    child[PARENT] = node;
+            source = node.chi;
+            if (reverse) {
+                for (let i = 0; i < source.length; i++) {
+                    parents.push(source[i]);
+                    source[i][PARENT] = node;
                 }
             }
+            else {
+                for (let i = source.length - 1; i >= 0; i--) {
+                    parents.push(source[i]);
+                    source[i][PARENT] = node;
+                }
+            }
+            // for (const child of source as Array<AstNode | Token>) {
+            //     parents.push(child);
+            //     if (child[PARENT] != node) {
+            //         child[PARENT] = node;
+            //     }
+            // }
         }
+        // }
+        // node = parents.pop() as AstNode;
+        // }
+        // while ((node = <AstNode>parents[i++])) {
+        // if (i > maxQueueLength) {
+        //     parents.splice(0, maxQueueLength);
+        //     i -= maxQueueLength;
+        // }
+        // let option: WalkerOption = null;
+        // if (filter != null) {
+        //     // @ts-expect-error
+        //     option = filter(node);
+        //     isNumeric = typeof option == "number";
+        //     if (isNumeric) {
+        //         if ((option as number) & WalkerOptionEnum.Ignore) {
+        //             continue;
+        //         }
+        //         if ((option as number) & WalkerOptionEnum.Stop) {
+        //             break;
+        //         }
+        //     }
+        // }
+        // if (!isNumeric || ((option as number) & WalkerOptionEnum.Children) === 0) {
+        //     result.node = node;
+        //     // @ts-expect-error
+        //     result.parent = node[PARENT];
+        //     yield result;
+        // }
+        // if (attributes) {
+        //     if (node[TOKENS] != null) {
+        //         // @ts-expect-error
+        //         parents.splice(i, 0, ...(reverse ? node[TOKENS]!.toReversed() : node[TOKENS]));
+        //         for (const child of node[TOKENS] as AstNode[]) {
+        //             if (child[PARENT] != node) {
+        //                 child[PARENT] = node;
+        //             }
+        //         }
+        //         // @ts-expect-error
+        //     } else if (Array.isArray(node.val)) {
+        //         // @ts-expect-error
+        //         for (const val of node.val) {
+        //             if (val[PARENT] != node) {
+        //                 val[PARENT] = node;
+        //             }
+        //         }
+        //         // @ts-expect-error
+        //         parents.splice(i, 0, ...(reverse ? node.val.toReversed() : node.val));
+        //     }
+        // }
+        // if (
+        //     children &&
+        //     // @ts-expect-error
+        //     node["chi"] != null &&
+        //     (!isNumeric || ((option as number) & WalkerOptionEnum.IgnoreChildren) === 0)
+        // ) {
+        //     // @ts-expect-error
+        //     parents.splice(i, 0, ...(reverse ? node.chi!.toReversed() : node.chi));
+        //     for (const child of <AstNode[]>(<AstRuleList>node).chi) {
+        //         if (child[PARENT] != node) {
+        //             child[PARENT] = node;
+        //         }
+        //     }
+        // }
     }
 }
 /**

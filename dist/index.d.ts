@@ -5122,7 +5122,7 @@ export declare interface WalkResult {
     /**
      * current node
      */
-    node: AstNode$1;
+    node: AstNode$1 | Token$1;
     /**
      * parent node
      */
@@ -5134,7 +5134,7 @@ export declare interface WalkResult {
     /**
      * parent nodes
      */
-    parents: Generator<AstNode$1>;
+    parents: Generator<AstNode$1 | Token$1>;
 }
 
 /**
@@ -6564,7 +6564,7 @@ button-small {
  * @param matcher
  * @returns
  */
-declare function findAll(ast: AstNode$1, matcher: (node: AstNode$1, parent?: AstNode$1 | null) => boolean): AstNode$1[];
+declare function findAll(ast: AstNode$1, matcher: (node: AstNode$1 | Token$1, parent?: AstNode$1 | Token$1 | null) => boolean): Array<AstNode$1 | Token$1>;
 /**
  * Search the ast sub-tree and return the last match.
  *
@@ -6595,7 +6595,7 @@ button {
  * @param matcher
  * @returns
  */
-declare function findLast(ast: AstNode$1, matcher: (node: AstNode$1, parent?: AstNode$1 | null) => boolean): AstNode$1 | null;
+declare function findLast(ast: AstNode$1 | Token$1, matcher: (node: AstNode$1 | Token$1, parent?: AstNode$1 | Token$1 | null) => boolean): AstNode$1 | Token$1 | null;
 
 /**
  *

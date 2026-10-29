@@ -924,65 +924,129 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
         const handlers = [] as Array<GenericVisitorHandler<T>>;
         const visitors = parseVisitors(options.visitor, errors);
 
-        const subNodes: Array<AstNode | Token> = [];
         let parens: Token[] | null;
 
         let genericKey: string | null;
-        let nodes: AstNode[] | null = new Array(stats.tokensCount);
+        let nodes: Array<AstNode | Token> | null = [ast];
         let i: number;
-        let k: number;
-        let j: number;
-        let freeBlock: number = 1;
-        nodes[0] = ast;
+        let node: AstNode | Token | null;
+        while (nodes.length > 0) {
+            node = nodes.pop() as AstNode | Token;
 
-        for (i = 0; i < nodes.length; i++) {
-            if (nodes[i] == null) {
-                break;
-            }
-
-            subNodes.length = 0;
             if (visitors.includeTokens) {
-                switch (nodes[i].typ) {
+                switch (node.typ) {
                     case EnumToken.RuleNodeType:
                     case EnumToken.AtRuleNodeType:
                     case EnumToken.KeyframesRuleNodeType:
                     case EnumToken.KeyframesAtRuleNodeType:
-                        for (const token of (nodes[i] as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule)[
-                            TOKENS
-                        ]!) {
-                            subNodes.push(token);
+                        for (
+                            let i =
+                                // @ts-ignore
+                                (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule)[TOKENS].length -
+                                1;
+                            i >= 0;
+                            i--
+                        ) {
+                            // @ts-ignore
+                            (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule)[TOKENS][i][PARENT] =
+                                node;
+                            nodes.push(
+                                // @ts-ignore
+                                (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule)[TOKENS][i],
+                            );
                         }
 
                         break;
                     case EnumToken.DeclarationNodeType:
-                        for (const token of (nodes[i] as AstDeclaration).val) {
-                            subNodes.push(token);
+                        for (
+                            let i =
+                                // @ts-ignore
+                                (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule).val.length - 1;
+                            i >= 0;
+                            i--
+                        ) {
+                            (node as AstDeclaration).val[i][PARENT] = node;
+                            // @ts-ignore
+                            nodes.push((node as AstDeclaration).val[i]);
                         }
 
                         break;
                 }
+
+                // @ts-ignore
+                if (node.l != null) {
+                    // @ts-ignore
+                    if (node.op2 != null) {
+                        // @ts-ignore
+                        nodes.push(node.op2);
+                        // @ts-ignore
+                        node.op2[PARENT] = node;
+                    }
+
+                    // @ts-ignore
+                    if (node.op1 != null) {
+                        // @ts-ignore
+                        nodes.push(node.op1);
+                        // @ts-ignore
+                        node.op1[PARENT] = node;
+                    }
+
+                    // @ts-ignore
+                    if (nodes.op != null && node.op.typ != null) {
+                        // @ts-ignore
+                        nodes.push(node.op);
+                        // @ts-ignore
+                        node.op[PARENT] = node;
+                    }
+
+                    // @ts-ignore
+                    if (node.r != null) {
+                        // @ts-ignore
+                        if (Array.isArray(node.r)) {
+                            // @ts-ignore
+                            for (let i = node.r.length - 1; i >= 0; i--) {
+                                // @ts-ignore
+                                nodes.push(node.r[i]);
+                                //  @ts-ignore
+                                node.r[i][PARENT] = node;
+                            }
+                        } else {
+                            // @ts-ignore
+                            nodes.push(node.r);
+                            // @ts-ignore
+                            node.r[PARENT] = node;
+                        }
+                    }
+
+                    // @ts-ignore
+                    if (Array.isArray(node.l)) {
+                        // @ts-ignore
+                        for (let i = node.l.length - 1; i >= 0; i--) {
+                            // @ts-ignore
+                            nodes.push(node.l[i]);
+                            // @ts-ignore
+                            node.l[i][PARENT] = node;
+                        }
+                    } else {
+                        // @ts-ignore
+                        nodes.push(node.l);
+                        // @ts-ignore
+                        node.l[PARENT] = node;
+                    }
+                }
             }
 
             // @ts-ignore
-            if (nodes[i].chi != null) {
-                // @ts-ignore
-                for (const child of nodes[i].chi) {
-                    subNodes.push(child);
+            if (node.chi != null) {
+                for (
+                    // @ts-ignore
+                    let i = (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule).chi.length - 1;
+                    i >= 0;
+                    i--
+                ) {
+                    // @ts-ignore
+                    nodes.push((node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule).chi[i]);
                 }
-            }
-
-            if (subNodes.length > 0) {
-                if (freeBlock <= i) {
-                    freeBlock = i + 1;
-                }
-
-                for (k = 0; k < subNodes.length; k++) {
-                    j = k + freeBlock;
-                    nodes[j] = subNodes[k] as AstNode;
-                    nodes[j][PARENT] = nodes[i];
-                }
-
-                freeBlock += subNodes.length;
             }
 
             parens = null;
@@ -993,24 +1057,24 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
             }
 
             genericKey =
-                nodes[i].typ == EnumToken.DeclarationNodeType
+                node.typ == EnumToken.DeclarationNodeType
                     ? "Declaration"
-                    : nodes[i].typ == EnumToken.AtRuleNodeType
+                    : node.typ == EnumToken.AtRuleNodeType
                       ? "AtRule"
-                      : nodes[i].typ == EnumToken.KeyframesAtRuleNodeType
+                      : node.typ == EnumToken.KeyframesAtRuleNodeType
                         ? "KeyframesAtRule"
-                        : nodes[i].typ === EnumToken.KeyframesRuleNodeType
+                        : node.typ === EnumToken.KeyframesRuleNodeType
                           ? "KeyframesRule"
-                          : nodes[i].typ == EnumToken.RuleNodeType
+                          : node.typ == EnumToken.RuleNodeType
                             ? "Rule"
-                            : nodes[i].typ == EnumToken.KeyframesRuleNodeType
+                            : node.typ == EnumToken.KeyframesRuleNodeType
                               ? "KeyframesRule"
                               : null;
             let keyName: string | null =
-                nodes[i].typ == EnumToken.DeclarationNodeType || nodes[i].typ == EnumToken.AtRuleNodeType
-                    ? camelize((nodes[i] as AstDeclaration | AstAtRule).nam)
-                    : nodes[i].typ == EnumToken.KeyframesAtRuleNodeType
-                      ? camelize((nodes[i] as AstKeyframesAtRule).val)
+                node.typ == EnumToken.DeclarationNodeType || node.typ == EnumToken.AtRuleNodeType
+                    ? camelize((node as AstDeclaration | AstAtRule).nam)
+                    : node.typ == EnumToken.KeyframesAtRuleNodeType
+                      ? camelize((node as AstKeyframesAtRule).val)
                       : null;
 
             if (visitors.allVisitorsHandlers?.size! > 0) {
@@ -1034,10 +1098,9 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                     }
                 }
 
-                // @ts-ignore
-                if (map!.has(nodes[i].typ)) {
+                if (map!.has(node.typ)) {
                     // @ts-ignore
-                    for (const handler of map!.get(nodes[i].typ)!) {
+                    for (const handler of map!.get(node.typ)!) {
                         if (typeof handler == "function") {
                             handlers.push(handler as GenericVisitorHandler<T>);
                         } else if (Array.isArray(handler)) {
@@ -1067,21 +1130,19 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                 continue;
             }
 
-            let node = nodes[i];
-
             for (const callable of handlers) {
                 replacement = (callable as GenericVisitorHandler<T>)(
                     node as T,
-                    nodes[i][PARENT] as AstNode,
+                    node[PARENT] as AstNode,
                     ast as AstStyleSheet,
                     // @ts-expect-error
                     function* () {
                         if (parens == null) {
-                            let node = nodes![i][PARENT] as AstNode;
+                            let parent = node![PARENT] as AstNode;
 
-                            while (node != null) {
-                                yield node;
-                                node = node[PARENT] as AstNode;
+                            while (parent != null) {
+                                yield parent;
+                                parent = parent[PARENT] as AstNode;
                             }
                         }
                     },
@@ -1096,17 +1157,18 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                 }
 
                 // @ts-ignore
-                node = replacement as AstNode;
+                // node = replacement as AstNode;
 
                 //
-                if (Array.isArray(node)) {
+                if (Array.isArray(replacement)) {
                     break;
                 }
             }
 
-            if (node != nodes[i]) {
+            // @ts-ignore
+            if (replacement != null && node != replacement) {
                 // @ts-ignore
-                replaceNodeOrValue(nodes[i][PARENT], nodes[i], node);
+                replaceNodeOrValue(node[PARENT], node, replacement);
             }
         }
 
@@ -1114,28 +1176,21 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
     }
 
     if (invalidNodes.length > 0) {
-        let count: number = invalidNodes.length;
-
-        for (const { node, parent } of walk(ast)) {
+        for (const node of invalidNodes) {
             if (options.lenient && node[STATE] & EnumAstNodeStatus.Unknown) {
                 continue;
             }
 
             if (
-                node[STATE] & EnumAstNodeStatus.Invalid ||
-                node[STATE] & EnumAstNodeStatus.Unknown ||
-                node[STATE] & EnumAstNodeStatus.Unparsed ||
-                node[STATE] & EnumAstNodeStatus.Malformed ||
-                node[STATE] & EnumAstNodeStatus.Disallowed
+                node[STATE] &
+                (EnumAstNodeStatus.Invalid |
+                    EnumAstNodeStatus.Unknown |
+                    EnumAstNodeStatus.Unparsed |
+                    EnumAstNodeStatus.Malformed |
+                    EnumAstNodeStatus.Disallowed)
             ) {
                 // @ts-ignore
-                parent!.chi.splice(parent!.chi.indexOf(node), 1);
-                node[PARENT] = null;
-                count--;
-
-                if (count == 0) {
-                    break;
-                }
+                node[PARENT].chi.splice(node[PARENT]!.chi.indexOf(node), 1);
             }
         }
     }
@@ -1160,7 +1215,6 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
             ...stats,
             parse: `${(endParseTime - startTime).toFixed(2)}ms`,
             minify: `${(endTime - endParseTime).toFixed(2)}ms`,
-            // tokenize: `${(options?.parseInfo?.time ?? 0).toFixed(2)}ms`,
             total: `${(endTime - startTime).toFixed(2)}ms`,
         },
     } as ParseResult;
@@ -1251,6 +1305,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
 
             // @ts-ignore
             if (node.typ == EnumToken.CssVariableDeclarationMapTokenType) {
+                // @ts-ignore
                 const from = (node as CssVariableMapTokenType).from.find(
                     (t) => t.typ == EnumToken.IdenTokenType || isIdentColor(t),
                 ) as IdentToken;
@@ -1262,6 +1317,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                         action: "drop",
                     });
                 } else {
+                    // @ts-ignore
                     for (const token of (node as CssVariableMapTokenType).vars) {
                         if (token.typ == EnumToken.IdenTokenType || isIdentColor(token)) {
                             if (!((token as IdentToken).val in cssVariablesMap[from.val])) {
@@ -1292,42 +1348,43 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                         result.cssModuleVariables = {} as Record<string, CssVariableToken>;
                     }
 
-                    result.cssModuleVariables[node.nam] = node;
+                    // @ts-ignore
+                    result.cssModuleVariables[(node as AstDeclaration).nam] = node;
                 }
                 parent!.chi!.splice(parent!.chi!.indexOf(node), 1);
                 continue;
             }
 
             if (node.typ == EnumToken.DeclarationNodeType) {
-                if (node.nam.startsWith("--")) {
-                    if (!(node.nam in namesMapping)) {
+                if ((node as AstDeclaration).nam.startsWith("--")) {
+                    if (!((node as AstDeclaration).nam in namesMapping)) {
                         let value: string =
                             moduleSettings.scoped! & ModuleScopeEnumOptions.Global
-                                ? node.nam
+                                ? (node as AstDeclaration).nam
                                 : moduleSettings.generateScopedName!(
-                                      node.nam,
+                                      (node as AstDeclaration).nam,
                                       moduleSettings.filePath as string,
                                       moduleSettings.pattern as string,
                                       moduleSettings.hashLength,
                                   );
 
-                        mapping[node.nam] =
+                        mapping[(node as AstDeclaration).nam] =
                             "--" +
                             (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly ||
                             moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly
                                 ? getKeyName(value, moduleSettings.naming as ModuleCaseTransformEnum)
                                 : value);
-                        revMapping[node.nam] = node.nam;
+                        revMapping[(node as AstDeclaration).nam] = (node as AstDeclaration).nam;
                     }
 
-                    node.nam = mapping[node.nam];
+                    (node as AstDeclaration).nam = mapping[(node as AstDeclaration).nam];
                 }
 
-                if (equalsIgnoreCase("composes", node.nam)) {
+                if (equalsIgnoreCase("composes", (node as AstDeclaration).nam)) {
                     const composeSelectors = [] as ComposesSelectorToken[];
                     // let isValid: boolean = true;
 
-                    for (const token of node.val) {
+                    for (const token of (node as AstDeclaration).val) {
                         if (token.typ == EnumToken.ComposesSelectorNodeType) {
                             composeSelectors.push(token as ComposesSelectorToken);
                         }
@@ -1347,7 +1404,10 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                             node,
                         });
 
-                        (parentRule as AstRule).chi.splice((parentRule as AstRule).chi.indexOf(node), 1);
+                        (parentRule as AstRule).chi.splice(
+                            (parentRule as AstRule).chi.indexOf(node as AstDeclaration),
+                            1,
+                        );
                         continue;
                     }
 
@@ -1448,7 +1508,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                         }
                     }
 
-                    (parent as AstRule).chi.splice((parent as AstRule).chi.indexOf(node), 1);
+                    (parent as AstRule).chi.splice((parent as AstRule).chi.indexOf(node as AstDeclaration), 1);
                 }
 
                 if (
@@ -1463,9 +1523,9 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                         "grid-template",
                         "grid-template-columns",
                         "grid-template-rows",
-                    ].includes(node.nam)
+                    ].includes((node as AstDeclaration).nam)
                 ) {
-                    for (const { value } of walkValues(node.val, node)) {
+                    for (const { value } of walkValues((node as AstDeclaration).val, node)) {
                         if (value.typ != EnumToken.IdenTokenType) {
                             continue;
                         }
@@ -1507,10 +1567,15 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
 
                         (value as IdentToken).val = mapping[idenToken];
                     }
-                } else if (node.nam == "grid-template-areas" || node.nam == "grid-template") {
-                    for (let i = 0; i < node.val.length; i++) {
-                        if (node.val[i].typ == EnumToken.String) {
-                            const tokens = parseString((node.val[i] as StringToken).val.slice(1, -1));
+                } else if (
+                    (node as AstDeclaration).nam == "grid-template-areas" ||
+                    (node as AstDeclaration).nam == "grid-template"
+                ) {
+                    for (let i = 0; i < (node as AstDeclaration).val.length; i++) {
+                        if ((node as AstDeclaration).val[i].typ == EnumToken.String) {
+                            const tokens = parseString(
+                                ((node as AstDeclaration).val[i] as StringToken).val.slice(1, -1),
+                            );
 
                             for (const { value } of walkValues(tokens)) {
                                 if (
@@ -1537,14 +1602,19 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                                 }
                             }
 
-                            (node.val[i] as StringToken).val =
-                                (node.val[i] as StringToken).val.charAt(0) +
+                            ((node as AstDeclaration).val[i] as StringToken).val =
+                                ((node as AstDeclaration).val[i] as StringToken).val.charAt(0) +
                                 renderTokens(tokens) +
-                                (node.val[i] as StringToken).val.charAt((node.val[i] as StringToken).val.length - 1);
+                                ((node as AstDeclaration).val[i] as StringToken).val.charAt(
+                                    ((node as AstDeclaration).val[i] as StringToken).val.length - 1,
+                                );
                         }
                     }
-                } else if (node.nam == "animation" || node.nam == "animation-name") {
-                    for (const { value } of walkValues(node.val, node)) {
+                } else if (
+                    (node as AstDeclaration).nam == "animation" ||
+                    (node as AstDeclaration).nam == "animation-name"
+                ) {
+                    for (const { value } of walkValues((node as AstDeclaration).val, node)) {
                         if (
                             value.typ == EnumToken.IdenTokenType &&
                             ![
@@ -1595,20 +1665,20 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                     }
                 }
 
-                for (const { value, parent } of walkValues(node.val, node)) {
-                    if (value.typ == EnumToken.DashedIdenTokenType) {
-                        (value as DashedIdentToken).val = mapping[(value as DashedIdentToken).val];
+                for (const r of walkValues((node as AstDeclaration).val, node)) {
+                    if (r.value.typ == EnumToken.DashedIdenTokenType) {
+                        (r.value as DashedIdentToken).val = mapping[(r.value as DashedIdentToken).val];
                     } else if (
-                        (value.typ == EnumToken.IdenTokenType || isIdentColor(value)) &&
-                        (value as IdentToken).val in importedCssVariables
+                        (r.value.typ == EnumToken.IdenTokenType || isIdentColor(r.value)) &&
+                        (r.value as IdentToken).val in importedCssVariables
                     ) {
                         // @ts-ignore
-                        replaceNodeOrValue(parent, value, importedCssVariables[(value as IdentToken).val].val);
+                        replaceNodeOrValue(r.parent, r.value, importedCssVariables[(value as IdentToken).val].val);
                     }
                 }
             } else if (node.typ == EnumToken.RuleNodeType) {
                 // if (node[TOKENS] == null) {
-                const tokens = parseString(node.sel);
+                const tokens = parseString((node as AstRule).sel);
                 matchSelectorSyntax(tokens, [] as ErrorDescription[], options);
 
                 node[TOKENS] = trimArray(tokens);
@@ -1710,21 +1780,21 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                 if (moduleSettings.scoped! & ModuleScopeEnumOptions.Pure) {
                     if (!hasIdOrClass) {
                         throw new Error(
-                            `pure module: No id or class found in selector '${node.sel}' at '${options.source!.getOffsets(node[LOCSTA] as number).join(":")}'`,
+                            `pure module: No id or class found in selector '${(node as AstRule).sel}' at '${options.source!.getOffsets(node[LOCSTA] as number).join(":")}'`,
                         );
                     }
                 }
 
-                node.sel = "";
+                (node as AstRule).sel = "";
 
                 for (const token of node[TOKENS]! as Token[]) {
-                    node.sel += renderValue(token);
+                    (node as AstRule).sel += renderValue(token);
                 }
             } else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframesAtRuleNodeType) {
-                const val: string = node.nam.toLowerCase();
+                const val: string = (node as AstAtRule).nam.toLowerCase();
 
                 if (node[TOKENS] == null) {
-                    node[TOKENS] = parseString(node.val);
+                    node[TOKENS] = parseString((node as AstAtRule).val);
                 }
 
                 if (val == "property" || val == "keyframes") {
@@ -2147,68 +2217,133 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
         const handlers = [] as Array<GenericVisitorHandler<T>>;
         const visitors = parseVisitors(options.visitor, errors);
 
-        let nodes: AstNode[] | null = new Array(stats.tokensCount);
-        const subNodes: Array<AstNode | Token> = [];
+        let nodes: Array<AstNode | Token> | null = [ast];
         let i: number;
         let k: number;
         let j: number;
         let freeblock: number = 1;
-        nodes[0] = ast;
+        let node: AstNode | Token;
+        // nodes[0] = ast;
 
-        for (i = 0; i < nodes.length; i++) {
-            if (nodes[i] == null) {
-                break;
-            }
+        while (nodes.length > 0) {
+            node = nodes.pop() as AstNode | Token;
 
-            subNodes.length = 0;
             if (visitors.includeTokens) {
-                switch (nodes[i].typ) {
+                switch (node.typ) {
                     case EnumToken.RuleNodeType:
                     case EnumToken.AtRuleNodeType:
                     case EnumToken.KeyframesRuleNodeType:
                     case EnumToken.KeyframesAtRuleNodeType:
-                        if (nodes[i][TOKENS] == null) {
-                            if (nodes[i].typ == EnumToken.RuleNodeType) {
-                                nodes[i][TOKENS] = parseString((nodes[i] as AstRule).sel);
-                            }
-                        }
-
-                        for (const token of (nodes[i] as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule)[
-                            TOKENS
-                        ]!) {
-                            subNodes.push(token);
+                        for (
+                            let i =
+                                // @ts-ignore
+                                (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule)[TOKENS].length -
+                                1;
+                            i >= 0;
+                            i--
+                        ) {
+                            // @ts-ignore
+                            (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule)[TOKENS][i][PARENT] =
+                                node;
+                            nodes.push(
+                                // @ts-ignore
+                                (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule)[TOKENS][i],
+                            );
                         }
 
                         break;
                     case EnumToken.DeclarationNodeType:
-                        for (const token of (nodes[i] as AstDeclaration).val) {
-                            subNodes.push(token);
+                        for (
+                            let i =
+                                // @ts-ignore
+                                (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule).val.length - 1;
+                            i >= 0;
+                            i--
+                        ) {
+                            // @ts-ignore
+                            (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule).val[i][PARENT] = node;
+                            // @ts-ignore
+                            nodes.push((node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule).val[i]);
                         }
+
                         break;
+                }
+
+                // @ts-ignore
+                if (node.l != null) {
+                    // @ts-ignore
+                    if (node.op2 != null) {
+                        // @ts-ignore
+                        nodes.push(node.op2);
+                        // @ts-ignore
+                        nodes.op2[PARENT] = node;
+                    }
+
+                    // @ts-ignore
+                    if (node.op1 != null) {
+                        // @ts-ignore
+                        nodes.push(node.op1);
+                        // @ts-ignore
+                        nodes.op1[PARENT] = node;
+                    }
+
+                    // @ts-ignore
+                    if (nodes.op != null && node.op.typ != null) {
+                        // @ts-ignore
+                        nodes.push(node.op);
+                        // @ts-ignore
+                        nodes.op[PARENT] = node;
+                    }
+
+                    // @ts-ignore
+                    if (node.r != null) {
+                        // @ts-ignore
+                        if (Array.isArray(node.r)) {
+                            // @ts-ignore
+                            for (let i = node.r.length - 1; i >= 0; i--) {
+                                // @ts-ignore
+                                nodes.push(node.r[i]);
+                                // @ts-ignore
+                                node.r[i][PARENT] = node;
+                            }
+                        } else {
+                            // @ts-ignore
+                            nodes.push(node.r);
+                            // @ts-ignore
+                            node.r[PARENT] = node;
+                        }
+                    }
+
+                    // @ts-ignore
+                    if (Array.isArray(node.l)) {
+                        // @ts-ignore
+                        for (let i = node.l.length - 1; i >= 0; i--) {
+                            // @ts-ignore
+                            node.l[i][PARENT] = node;
+                            // @ts-ignore
+                            nodes.push(node.l[i]);
+                        }
+                    } else {
+                        // @ts-ignore
+                        nodes.push(node.l);
+
+                        // @ts-ignore
+                        node.l[PARENT] = node;
+                    }
                 }
             }
 
             // @ts-ignore
-            if (nodes[i].chi != null) {
-                // @ts-ignore
-                for (k = 0; k < nodes[i].chi.length; k++) {
+            if (node.chi != null) {
+                for (
                     // @ts-ignore
-                    subNodes.push(nodes[i].chi[k]);
+                    let i = (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule).chi.length - 1;
+                    i >= 0;
+                    i--
+                ) {
+                    // @ts-ignore
+                    nodes.push((node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule).chi[i]);
                 }
-            }
-
-            if (subNodes.length > 0) {
-                if (freeblock <= i) {
-                    freeblock = i + 1;
-                }
-
-                for (k = 0; k < subNodes.length; k++) {
-                    j = k + freeblock;
-                    nodes[j] = subNodes[k] as AstNode;
-                    nodes[j][PARENT] = nodes[i];
-                }
-
-                freeblock += subNodes.length;
             }
 
             parens = null;
@@ -2219,24 +2354,24 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
             }
 
             genericKey =
-                nodes[i].typ == EnumToken.DeclarationNodeType
+                node.typ == EnumToken.DeclarationNodeType
                     ? "Declaration"
-                    : nodes[i].typ == EnumToken.AtRuleNodeType
+                    : node.typ == EnumToken.AtRuleNodeType
                       ? "AtRule"
-                      : nodes[i].typ == EnumToken.KeyframesAtRuleNodeType
+                      : node.typ == EnumToken.KeyframesAtRuleNodeType
                         ? "KeyframesAtRule"
-                        : nodes[i].typ === EnumToken.KeyframesRuleNodeType
+                        : node.typ === EnumToken.KeyframesRuleNodeType
                           ? "KeyframesRule"
-                          : nodes[i].typ == EnumToken.RuleNodeType
+                          : node.typ == EnumToken.RuleNodeType
                             ? "Rule"
-                            : nodes[i].typ == EnumToken.KeyframesRuleNodeType
+                            : node.typ == EnumToken.KeyframesRuleNodeType
                               ? "KeyframesRule"
                               : null;
             let keyName: string | null =
-                nodes[i].typ == EnumToken.DeclarationNodeType || nodes[i].typ == EnumToken.AtRuleNodeType
-                    ? camelize((nodes[i] as AstDeclaration | AstAtRule).nam)
-                    : nodes[i].typ == EnumToken.KeyframesAtRuleNodeType
-                      ? camelize((nodes[i] as AstKeyframesAtRule).val)
+                node.typ == EnumToken.DeclarationNodeType || node.typ == EnumToken.AtRuleNodeType
+                    ? camelize((node as AstDeclaration | AstAtRule).nam)
+                    : node.typ == EnumToken.KeyframesAtRuleNodeType
+                      ? camelize((node as AstKeyframesAtRule).val)
                       : null;
 
             if (visitors.allVisitorsHandlers?.size! > 0) {
@@ -2252,22 +2387,6 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                             handlers.push(handler as GenericVisitorHandler<T>);
                         }
 
-                        // else if (Array.isArray(handler)) {
-                        //     for (const h of handler) {
-                        //         if (typeof h == "function") {
-                        //             handlers.push(h);
-                        //         }
-
-                        //         // @ts-ignore
-                        //         else if (h[keyName] != null) {
-                        //             // @ts-ignore
-                        //             handlers.push(h[keyName]);
-                        //         }
-                        //     }
-                        // } else if (typeof handler.handler! == "function") {
-                        //     handlers.push(handler.handler);
-                        // }
-
                         // @ts-ignore
                         else if (typeof handler[keyName]! == "function") {
                             // @ts-ignore
@@ -2276,10 +2395,9 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                     }
                 }
 
-                // @ts-ignore
-                if (map!.has(nodes[i].typ)) {
+                if (map!.has(node.typ)) {
                     // @ts-ignore
-                    for (const handler of map!.get(nodes[i].typ)!) {
+                    for (const handler of map!.get(node.typ)!) {
                         if (typeof handler == "function") {
                             handlers.push(handler as GenericVisitorHandler<T>);
                         } else if (Array.isArray(handler)) {
@@ -2309,21 +2427,20 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                 continue;
             }
 
-            let node = nodes[i] as AstNode;
-
             for (const callable of handlers) {
                 replacement = (callable as GenericVisitorHandler<T>)(
                     node as T,
-                    nodes[i][PARENT] as AstNode,
+                    node[PARENT] as AstNode,
                     ast as AstStyleSheet,
                     // @ts-expect-error
                     function* () {
                         if (parens == null) {
-                            let node = nodes![i][PARENT] as AstNode;
+                            let parent: AstNode | AstNode[] = node[PARENT] as AstNode;
+                            // let node = node[PARENT] as AstNode;
 
-                            while (node != null) {
-                                yield node;
-                                node = node[PARENT] as AstNode;
+                            while (parent != null) {
+                                yield parent;
+                                parent = parent[PARENT] as AstNode;
                             }
                         }
                     },
@@ -2342,17 +2459,23 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                 }
 
                 // @ts-ignore
-                node = replacement as AstNode;
+                // node = replacement as AstNode;
 
                 //
-                if (Array.isArray(node)) {
+                if (Array.isArray(replacement)) {
                     break;
                 }
             }
 
-            if (node != nodes[i]) {
+            // @ts-ignore
+            if (replacement != null && node != replacement) {
+                console.error({
+                    node,
+                    replacement,
+                });
+
                 // @ts-ignore
-                replaceNodeOrValue(nodes[i]![PARENT] as AstNode, nodes[i], node);
+                replaceNodeOrValue(node![PARENT] as AstNode, node, replacement);
             }
         }
 
@@ -2362,26 +2485,27 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
     if (invalidNodes.length > 0) {
         let count: number = invalidNodes.length;
 
-        for (const { node, parent } of walk(ast)) {
+        for (const node of invalidNodes) {
             if (options.lenient && node[STATE] & EnumAstNodeStatus.Unknown) {
                 continue;
             }
 
             if (
-                node[STATE] & EnumAstNodeStatus.Invalid ||
-                node[STATE] & EnumAstNodeStatus.Unknown ||
-                node[STATE] & EnumAstNodeStatus.Unparsed ||
-                node[STATE] & EnumAstNodeStatus.Malformed ||
-                node[STATE] & EnumAstNodeStatus.Disallowed
+                node[STATE] &
+                (EnumAstNodeStatus.Invalid |
+                    EnumAstNodeStatus.Unknown |
+                    EnumAstNodeStatus.Unparsed |
+                    EnumAstNodeStatus.Malformed |
+                    EnumAstNodeStatus.Disallowed)
             ) {
                 // @ts-ignore
-                parent!.chi.splice(parent!.chi.indexOf(node), 1);
-                node[PARENT] = null;
-                count--;
+                node[PARENT]!.chi.splice(node[PARENT]!.chi.indexOf(node), 1);
+                // node[PARENT] = null;
+                // count--;
 
-                if (count == 0) {
-                    break;
-                }
+                // if (count == 0) {
+                //     break;
+                // }
             }
         }
     }
@@ -2535,6 +2659,7 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
 
             // @ts-ignore
             if (node.typ == EnumToken.CssVariableDeclarationMapTokenType) {
+                // @ts-ignore
                 const from = (node as CssVariableMapTokenType).from.find(
                     (t) => t.typ == EnumToken.IdenTokenType || isIdentColor(t),
                 ) as IdentToken;
@@ -2546,6 +2671,7 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                         action: "drop",
                     });
                 } else {
+                    // @ts-ignore
                     for (const token of (node as CssVariableMapTokenType).vars) {
                         if (token.typ == EnumToken.IdenTokenType || isIdentColor(token)) {
                             if (!((token as IdentToken).val in cssVariablesMap[from.val])) {
@@ -2576,20 +2702,21 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                         result.cssModuleVariables = {} as Record<string, CssVariableToken>;
                     }
 
-                    result.cssModuleVariables[node.nam] = node;
+                    // @ts-ignore
+                    result.cssModuleVariables[(node as AstDeclaration).nam] = node;
                 }
                 parent!.chi!.splice(parent!.chi!.indexOf(node), 1);
                 continue;
             }
 
             if (node.typ == EnumToken.DeclarationNodeType) {
-                if (node.nam.startsWith("--")) {
-                    if (!(node.nam in namesMapping)) {
+                if ((node as AstDeclaration).nam.startsWith("--")) {
+                    if (!((node as AstDeclaration).nam in namesMapping)) {
                         let result =
                             moduleSettings.scoped! & ModuleScopeEnumOptions.Global
-                                ? node.nam
+                                ? (node as AstDeclaration).nam
                                 : moduleSettings.generateScopedName!(
-                                      node.nam,
+                                      (node as AstDeclaration).nam,
                                       moduleSettings.filePath as string,
                                       moduleSettings.pattern as string,
                                       moduleSettings.hashLength,
@@ -2597,23 +2724,23 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                         // @ts-ignore
                         let value: string = result instanceof Promise ? await result : result;
 
-                        mapping[node.nam] =
+                        mapping[(node as AstDeclaration).nam] =
                             "--" +
                             (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly ||
                             moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly
                                 ? getKeyName(value, moduleSettings.naming as ModuleCaseTransformEnum)
                                 : value);
-                        revMapping[node.nam] = node.nam;
+                        revMapping[(node as AstDeclaration).nam] = (node as AstDeclaration).nam;
                     }
 
-                    node.nam = mapping[node.nam];
+                    (node as AstDeclaration).nam = mapping[(node as AstDeclaration).nam];
                 }
 
-                if (equalsIgnoreCase("composes", node.nam)) {
+                if (equalsIgnoreCase("composes", (node as AstDeclaration).nam)) {
                     const composeSelectors = [] as ComposesSelectorToken[];
                     // let isValid: boolean = true;
 
-                    for (const token of node.val) {
+                    for (const token of (node as AstDeclaration).val) {
                         if (token.typ == EnumToken.ComposesSelectorNodeType) {
                             composeSelectors.push(token as ComposesSelectorToken);
                         }
@@ -2633,7 +2760,10 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                             node,
                         });
 
-                        (parentRule as AstRule).chi.splice((parentRule as AstRule).chi.indexOf(node), 1);
+                        (parentRule as AstRule).chi.splice(
+                            (parentRule as AstRule).chi.indexOf(node as AstDeclaration),
+                            1,
+                        );
                         continue;
                     }
 
@@ -2836,7 +2966,7 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                         }
                     }
 
-                    (parent as AstRule).chi.splice((parent as AstRule).chi.indexOf(node), 1);
+                    (parent as AstRule).chi.splice((parent as AstRule).chi.indexOf(node as AstDeclaration), 1);
                 }
 
                 if (
@@ -2851,9 +2981,9 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                         "grid-template",
                         "grid-template-columns",
                         "grid-template-rows",
-                    ].includes(node.nam)
+                    ].includes((node as AstDeclaration).nam)
                 ) {
-                    for (const { value } of walkValues(node.val, node)) {
+                    for (const { value } of walkValues((node as AstDeclaration).val, node)) {
                         if (value.typ != EnumToken.IdenTokenType) {
                             continue;
                         }
@@ -2900,10 +3030,15 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
 
                         (value as IdentToken).val = mapping[idenToken];
                     }
-                } else if (node.nam == "grid-template-areas" || node.nam == "grid-template") {
-                    for (let i = 0; i < node.val.length; i++) {
-                        if (node.val[i].typ == EnumToken.String) {
-                            const tokens = parseString((node.val[i] as StringToken).val.slice(1, -1));
+                } else if (
+                    (node as AstDeclaration).nam == "grid-template-areas" ||
+                    (node as AstDeclaration).nam == "grid-template"
+                ) {
+                    for (let i = 0; i < (node as AstDeclaration).val.length; i++) {
+                        if ((node as AstDeclaration).val[i].typ == EnumToken.String) {
+                            const tokens = parseString(
+                                ((node as AstDeclaration).val[i] as StringToken).val.slice(1, -1),
+                            );
 
                             for (const { value } of walkValues(tokens)) {
                                 if (
@@ -2935,14 +3070,19 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                                 }
                             }
 
-                            (node.val[i] as StringToken).val =
-                                (node.val[i] as StringToken).val.charAt(0) +
+                            ((node as AstDeclaration).val[i] as StringToken).val =
+                                ((node as AstDeclaration).val[i] as StringToken).val.charAt(0) +
                                 renderTokens(tokens) +
-                                (node.val[i] as StringToken).val.charAt((node.val[i] as StringToken).val.length - 1);
+                                ((node as AstDeclaration).val[i] as StringToken).val.charAt(
+                                    ((node as AstDeclaration).val[i] as StringToken).val.length - 1,
+                                );
                         }
                     }
-                } else if (node.nam == "animation" || node.nam == "animation-name") {
-                    for (const { value } of walkValues(node.val, node)) {
+                } else if (
+                    (node as AstDeclaration).nam == "animation" ||
+                    (node as AstDeclaration).nam == "animation-name"
+                ) {
+                    for (const { value } of walkValues((node as AstDeclaration).val, node)) {
                         if (
                             value.typ == EnumToken.IdenTokenType &&
                             ![
@@ -2995,7 +3135,7 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                     }
                 }
 
-                for (const { value, parent } of walkValues(node.val, node)) {
+                for (const { value, parent } of walkValues((node as AstDeclaration).val, node)) {
                     if (value.typ == EnumToken.DashedIdenTokenType) {
                         (value as DashedIdentToken).val = mapping[(value as DashedIdentToken).val];
                     } else if (
@@ -3012,7 +3152,7 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                 }
             } else if (node.typ == EnumToken.RuleNodeType) {
                 // if (node[TOKENS] == null) {
-                const tokens = parseString(node.sel);
+                const tokens = parseString((node as AstRule).sel);
                 matchSelectorSyntax(tokens, [] as ErrorDescription[], options);
 
                 node[TOKENS] = trimArray(tokens);
@@ -3117,21 +3257,21 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                 if (moduleSettings.scoped! & ModuleScopeEnumOptions.Pure) {
                     if (!hasIdOrClass) {
                         throw new Error(
-                            `pure module: No id or class found in selector '${node.sel}' at '${(options.source?.getOffsets?.(node[LOCSTA] as number) ?? []).join(":")}'`,
+                            `pure module: No id or class found in selector '${(node as AstRule).sel}' at '${(options.source?.getOffsets?.(node[LOCSTA] as number) ?? []).join(":")}'`,
                         );
                     }
                 }
 
-                node.sel = "";
+                (node as AstRule).sel = "";
 
                 for (const token of node[TOKENS]! as Token[]) {
-                    node.sel += renderValue(token);
+                    (node as AstRule).sel += renderValue(token);
                 }
             } else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframesAtRuleNodeType) {
-                const val: string = node.nam.toLowerCase();
+                const val: string = (node as AstAtRule).nam.toLowerCase();
 
                 if (node[TOKENS] == null) {
-                    node[TOKENS] = parseString(node.val);
+                    node[TOKENS] = parseString((node as AstAtRule).val);
                 }
 
                 if (val == "property" || val == "keyframes") {

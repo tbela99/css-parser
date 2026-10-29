@@ -1646,9 +1646,9 @@ export function renderValue(
         case EnumToken.AngleTokenType:
         case EnumToken.LengthTokenType:
         case EnumToken.DimensionTokenType:
-        case EnumToken.UserDefinedDimensionTokenType:
         case EnumToken.FrequencyTokenType:
         case EnumToken.ResolutionTokenType:
+        case EnumToken.UserDefinedDimensionTokenType:
             let val: string =
                 (<FractionToken>(token as LengthToken).val).typ == EnumToken.FractionTokenType
                     ? renderValue(<FractionToken>(token as LengthToken).val, options, cache)

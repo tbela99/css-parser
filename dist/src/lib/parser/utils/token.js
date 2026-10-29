@@ -39,9 +39,16 @@ function replaceNodeOrValue(parent, node, replacement) {
     if (replacement == null || (Array.isArray(replacement) && replacement.length === 0)) {
         throw new TypeError(`replacement is null`);
     }
-    for (const newNode of Array.isArray(replacement) ? replacement : [replacement]) {
-        if (newNode[PARENT] != node[PARENT]) {
-            newNode[PARENT] = node[PARENT];
+    if (!Array.isArray(replacement)) {
+        if (replacement[PARENT] != parent) {
+            replacement[PARENT] = parent;
+        }
+    }
+    else {
+        for (const newNode of replacement) {
+            if (newNode[PARENT] != parent) {
+                newNode[PARENT] = parent;
+            }
         }
     }
     if (parent.typ == EnumToken.BinaryExpressionTokenType) {

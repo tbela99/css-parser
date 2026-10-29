@@ -3,6 +3,7 @@
 # 1.8.0
 
 - [x] support dashed indent as unit
+- [x] the walker functions now use DFS instead of BFS
 
 ```css
 .module {

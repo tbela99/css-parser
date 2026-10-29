@@ -36,9 +36,9 @@ button {
  * @returns
  */
 export function find(ast: AstNode, matcher: (node: AstNode, parent?: AstNode | null) => boolean): AstNode | null {
-    for (const { node, parent } of walk(ast)) {
-        if (matcher(node, parent)) {
-            return node;
+    for (const r of walk(ast)) {
+        if (matcher(r.node as AstNode, r.parent)) {
+            return r.node as AstNode;
         }
     }
 
@@ -83,23 +83,23 @@ export function findByValue(
 ): { node: AstNode; value: TokenSearchResult } | null {
     let source: Token[] | null;
 
-    for (const { node } of walk(ast)) {
+    for (const r1 of walk(ast)) {
         source = null;
 
-        if (node.typ === EnumToken.DeclarationNodeType) {
-            source = (node as AstDeclaration).val;
-        } else if (Array.isArray(node[TOKENS])) {
-            source = node[TOKENS];
+        if (r1.node.typ === EnumToken.DeclarationNodeType) {
+            source = (r1.node as AstDeclaration).val;
+        } else if (Array.isArray(r1.node[TOKENS])) {
+            source = r1.node[TOKENS];
         }
 
         if (source == null) {
             continue;
         }
 
-        for (const { value, parent, root: rootNode, parents } of walkValues(source, node)) {
-            if (matcher(value, node)) {
+        for (const r2 of walkValues(source, r1.node)) {
+            if (matcher(r2.value, r1.node as AstNode)) {
                 // @ts-ignore
-                return { node, value: { node: value, parent, root: rootNode, parents } };
+                return { node: r1.node, value: { node: r2.value, parent: r2.parent, root: r2.root, parents: r2.parents } };
             }
         }
     }
@@ -141,12 +141,15 @@ button-small {
  * @param matcher
  * @returns
  */
-export function findAll(ast: AstNode, matcher: (node: AstNode, parent?: AstNode | null) => boolean): AstNode[] {
-    const result: AstNode[] = [];
+export function findAll(
+    ast: AstNode,
+    matcher: (node: AstNode | Token, parent?: AstNode | Token | null) => boolean,
+): Array<AstNode | Token> {
+    const result: Array<AstNode | Token> = [];
 
-    for (const { node, parent } of walk(ast)) {
-        if (matcher(node, parent)) {
-            result.push(node);
+    for (const r of walk(ast)) {
+        if (matcher(r.node as AstNode, r.node[PARENT])) {
+            result.push(r.node);
         }
     }
 
@@ -183,12 +186,16 @@ button {
  * @param matcher 
  * @returns 
  */
-export function findLast(ast: AstNode, matcher: (node: AstNode, parent?: AstNode | null) => boolean): AstNode | null {
-    for (const { node, parent } of walk(ast, null, true)) {
-        if (matcher(node, parent)) {
-            return node;
-        }
-    }
+export function findLast(
+    ast: AstNode | Token,
+    matcher: (node: AstNode | Token, parent?: AstNode | Token | null) => boolean,
+): AstNode | Token | null {
+    for (const result of walk(ast as AstNode, null, true))
+        // for (const { node, parent } of walk(ast as AstNode, null, true)) {
+            if (matcher(result.node, result.parent)) {
+                return result.node;
+            }
+        // }
 
     return null;
 }

@@ -7,7 +7,7 @@
  */
 import { EnumToken } from './types.js';
 import { walk, walkValues } from './walk.js';
-import { TOKENS } from '../syntax/constants.js';
+import { PARENT, TOKENS } from '../syntax/constants.js';
 
 /**
  * Search the ast subtree and return the first match
@@ -41,9 +41,9 @@ button {
  * @returns
  */
 function find(ast, matcher) {
-    for (const { node, parent } of walk(ast)) {
-        if (matcher(node, parent)) {
-            return node;
+    for (const r of walk(ast)) {
+        if (matcher(r.node, r.parent)) {
+            return r.node;
         }
     }
     return null;
@@ -82,21 +82,21 @@ button {
  */
 function findByValue(ast, matcher) {
     let source;
-    for (const { node } of walk(ast)) {
+    for (const r1 of walk(ast)) {
         source = null;
-        if (node.typ === EnumToken.DeclarationNodeType) {
-            source = node.val;
+        if (r1.node.typ === EnumToken.DeclarationNodeType) {
+            source = r1.node.val;
         }
-        else if (Array.isArray(node[TOKENS])) {
-            source = node[TOKENS];
+        else if (Array.isArray(r1.node[TOKENS])) {
+            source = r1.node[TOKENS];
         }
         if (source == null) {
             continue;
         }
-        for (const { value, parent, root: rootNode, parents } of walkValues(source, node)) {
-            if (matcher(value, node)) {
+        for (const r2 of walkValues(source, r1.node)) {
+            if (matcher(r2.value, r1.node)) {
                 // @ts-ignore
-                return { node, value: { node: value, parent, root: rootNode, parents } };
+                return { node: r1.node, value: { node: r2.value, parent: r2.parent, root: r2.root, parents: r2.parents } };
             }
         }
     }
@@ -138,9 +138,9 @@ button-small {
  */
 function findAll(ast, matcher) {
     const result = [];
-    for (const { node, parent } of walk(ast)) {
-        if (matcher(node, parent)) {
-            result.push(node);
+    for (const r of walk(ast)) {
+        if (matcher(r.node, r.node[PARENT])) {
+            result.push(r.node);
         }
     }
     return result;
@@ -176,11 +176,12 @@ button {
  * @returns
  */
 function findLast(ast, matcher) {
-    for (const { node, parent } of walk(ast, null, true)) {
-        if (matcher(node, parent)) {
-            return node;
+    for (const result of walk(ast, null, true))
+        // for (const { node, parent } of walk(ast as AstNode, null, true)) {
+        if (matcher(result.node, result.parent)) {
+            return result.node;
         }
-    }
+    // }
     return null;
 }
 

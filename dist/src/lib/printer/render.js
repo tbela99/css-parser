@@ -1144,9 +1144,9 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.AngleTokenType:
         case EnumToken.LengthTokenType:
         case EnumToken.DimensionTokenType:
-        case EnumToken.UserDefinedDimensionTokenType:
         case EnumToken.FrequencyTokenType:
         case EnumToken.ResolutionTokenType:
+        case EnumToken.UserDefinedDimensionTokenType:
             let val = token.val.typ == EnumToken.FractionTokenType
                 ? renderValue(token.val, options, cache)
                 : minifyNumber(token.val);
