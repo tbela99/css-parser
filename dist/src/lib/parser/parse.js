@@ -718,7 +718,8 @@ function doParseSync(tokenizer, options = {}) {
                         node[TOKENS].length -
                             1; i >= 0; i--) {
                             // @ts-ignore
-                            node[TOKENS][i][PARENT] = node;
+                            node[TOKENS][i][PARENT] =
+                                node;
                             nodes.push(
                             // @ts-ignore
                             node[TOKENS][i]);
@@ -1018,6 +1019,7 @@ function doParseSync(tokenizer, options = {}) {
             }
             // @ts-ignore
             if (node.typ == EnumToken.CssVariableDeclarationMapTokenType) {
+                // @ts-ignore
                 const from = node.from.find((t) => t.typ == EnumToken.IdenTokenType || isIdentColor(t));
                 if (!(from.val in cssVariablesMap)) {
                     errors.push({
@@ -1027,6 +1029,7 @@ function doParseSync(tokenizer, options = {}) {
                     });
                 }
                 else {
+                    // @ts-ignore
                     for (const token of node.vars) {
                         if (token.typ == EnumToken.IdenTokenType || isIdentColor(token)) {
                             if (!(token.val in cssVariablesMap[from.val])) {
@@ -1050,6 +1053,7 @@ function doParseSync(tokenizer, options = {}) {
                     if (result.cssModuleVariables == null) {
                         result.cssModuleVariables = {};
                     }
+                    // @ts-ignore
                     result.cssModuleVariables[node.nam] = node;
                 }
                 parent.chi.splice(parent.chi.indexOf(node), 1);
@@ -1215,7 +1219,8 @@ function doParseSync(tokenizer, options = {}) {
                         value.val = mapping[idenToken];
                     }
                 }
-                else if (node.nam == "grid-template-areas" || node.nam == "grid-template") {
+                else if (node.nam == "grid-template-areas" ||
+                    node.nam == "grid-template") {
                     for (let i = 0; i < node.val.length; i++) {
                         if (node.val[i].typ == EnumToken.String) {
                             const tokens = parseString(node.val[i].val.slice(1, -1));
@@ -1242,7 +1247,8 @@ function doParseSync(tokenizer, options = {}) {
                         }
                     }
                 }
-                else if (node.nam == "animation" || node.nam == "animation-name") {
+                else if (node.nam == "animation" ||
+                    node.nam == "animation-name") {
                     for (const { value } of walkValues(node.val, node)) {
                         if (value.typ == EnumToken.IdenTokenType &&
                             ![
@@ -1285,14 +1291,14 @@ function doParseSync(tokenizer, options = {}) {
                         }
                     }
                 }
-                for (const { value, parent } of walkValues(node.val, node)) {
-                    if (value.typ == EnumToken.DashedIdenTokenType) {
-                        value.val = mapping[value.val];
+                for (const r of walkValues(node.val, node)) {
+                    if (r.value.typ == EnumToken.DashedIdenTokenType) {
+                        r.value.val = mapping[r.value.val];
                     }
-                    else if ((value.typ == EnumToken.IdenTokenType || isIdentColor(value)) &&
-                        value.val in importedCssVariables) {
+                    else if ((r.value.typ == EnumToken.IdenTokenType || isIdentColor(r.value)) &&
+                        r.value.val in importedCssVariables) {
                         // @ts-ignore
-                        replaceNodeOrValue(parent, value, importedCssVariables[value.val].val);
+                        replaceNodeOrValue(r.parent, r.value, importedCssVariables[value.val].val);
                     }
                 }
             }
@@ -1746,7 +1752,8 @@ async function doParse(iter, options = {}) {
                         node[TOKENS].length -
                             1; i >= 0; i--) {
                             // @ts-ignore
-                            node[TOKENS][i][PARENT] = node;
+                            node[TOKENS][i][PARENT] =
+                                node;
                             nodes.push(
                             // @ts-ignore
                             node[TOKENS][i]);
@@ -1950,7 +1957,12 @@ async function doParse(iter, options = {}) {
             if (options.lenient && node[STATE] & EnumAstNodeStatus.Unknown) {
                 continue;
             }
-            if (node[STATE] & (EnumAstNodeStatus.Invalid | EnumAstNodeStatus.Unknown | EnumAstNodeStatus.Unparsed | EnumAstNodeStatus.Malformed | EnumAstNodeStatus.Disallowed)) {
+            if (node[STATE] &
+                (EnumAstNodeStatus.Invalid |
+                    EnumAstNodeStatus.Unknown |
+                    EnumAstNodeStatus.Unparsed |
+                    EnumAstNodeStatus.Malformed |
+                    EnumAstNodeStatus.Disallowed)) {
                 // @ts-ignore
                 node[PARENT].chi.splice(node[PARENT].chi.indexOf(node), 1);
                 // node[PARENT] = null;
@@ -2083,6 +2095,7 @@ async function doParse(iter, options = {}) {
             }
             // @ts-ignore
             if (node.typ == EnumToken.CssVariableDeclarationMapTokenType) {
+                // @ts-ignore
                 const from = node.from.find((t) => t.typ == EnumToken.IdenTokenType || isIdentColor(t));
                 if (!(from.val in cssVariablesMap)) {
                     errors.push({
@@ -2092,6 +2105,7 @@ async function doParse(iter, options = {}) {
                     });
                 }
                 else {
+                    // @ts-ignore
                     for (const token of node.vars) {
                         if (token.typ == EnumToken.IdenTokenType || isIdentColor(token)) {
                             if (!(token.val in cssVariablesMap[from.val])) {
@@ -2115,6 +2129,7 @@ async function doParse(iter, options = {}) {
                     if (result.cssModuleVariables == null) {
                         result.cssModuleVariables = {};
                     }
+                    // @ts-ignore
                     result.cssModuleVariables[node.nam] = node;
                 }
                 parent.chi.splice(parent.chi.indexOf(node), 1);
@@ -2355,7 +2370,8 @@ async function doParse(iter, options = {}) {
                         value.val = mapping[idenToken];
                     }
                 }
-                else if (node.nam == "grid-template-areas" || node.nam == "grid-template") {
+                else if (node.nam == "grid-template-areas" ||
+                    node.nam == "grid-template") {
                     for (let i = 0; i < node.val.length; i++) {
                         if (node.val[i].typ == EnumToken.String) {
                             const tokens = parseString(node.val[i].val.slice(1, -1));
@@ -2386,7 +2402,8 @@ async function doParse(iter, options = {}) {
                         }
                     }
                 }
-                else if (node.nam == "animation" || node.nam == "animation-name") {
+                else if (node.nam == "animation" ||
+                    node.nam == "animation-name") {
                     for (const { value } of walkValues(node.val, node)) {
                         if (value.typ == EnumToken.IdenTokenType &&
                             ![
