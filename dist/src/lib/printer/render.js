@@ -1346,8 +1346,10 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.BadUrlTokenType:
         case EnumToken.EOFTokenType:
             return "";
+        case EnumToken.ComposesSelectorNodeType:
+            return `${token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "")}${token.r == null ? "" : " from " + renderValue(token.r, options, cache, reducer)}`;
         default:
-            console.debug({ token });
+            console.error({ token });
             throw new Error(`Unsupported token type for ${EnumToken[token.typ]}`);
     }
     // errors?.push({ action: "ignore", message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });

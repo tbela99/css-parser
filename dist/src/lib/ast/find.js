@@ -95,8 +95,12 @@ function findByValue(ast, matcher) {
         }
         for (const r2 of walkValues(source, r1.node)) {
             if (matcher(r2.value, r1.node)) {
-                // @ts-ignore
-                return { node: r1.node, value: { node: r2.value, parent: r2.parent, root: r2.root, parents: r2.parents } };
+                return {
+                    // @ts-ignore
+                    node: r1.node,
+                    // @ts-ignore
+                    value: { node: r2.value, parent: r2.parent, root: r2.root, parents: r2.parents },
+                };
             }
         }
     }

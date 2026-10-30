@@ -1461,6 +1461,7 @@ export declare interface ComposesSelectorToken extends BaseToken {
      * @inheritdoc
      */
     typ: EnumToken.ComposesSelectorTokenType;
+
     /**
      * Left handle
      */

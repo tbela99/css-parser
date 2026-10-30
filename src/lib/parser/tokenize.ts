@@ -625,7 +625,6 @@ export class Tokenizer {
 
             // dashed ident as unit
             if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
-                
                 hasLetter = true;
                 break;
             }
@@ -663,7 +662,7 @@ export class Tokenizer {
                         hasPercent = true;
                     } else if (isLetter(codepoint)) {
                         hasLetter = true;
-                    } 
+                    }
                     // custom ident as unit
                     else if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
                         hasLetter = true;
@@ -710,9 +709,7 @@ export class Tokenizer {
                     if (isLetter(codepoint)) {
                         hasLetter = true;
                         break;
-                    }
-
-                    else if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
+                    } else if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
                         hasLetter = true;
                         break;
                     }
@@ -788,14 +785,12 @@ export class Tokenizer {
                             } else if (isLetter(codepoint)) {
                                 hasLetter = true;
                                 break;
-                            } 
+                            }
                             // custom ident as unit
                             else if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
-                                
                                 hasLetter = true;
                                 break;
-
-                            }else if (codepoint == TokenMap.PERCENTAGE) {
+                            } else if (codepoint == TokenMap.PERCENTAGE) {
                                 hasPercent = true;
                                 break;
                             } else {
@@ -1201,7 +1196,7 @@ export class Tokenizer {
                     if (hint != EnumToken.PercentageTokenType) {
                         this.unit = val;
 
-                        if (val!.startsWith('--')) {
+                        if (val!.startsWith("--")) {
                             this.typ = EnumToken.UserDefinedDimensionTokenType;
                         }
                     }

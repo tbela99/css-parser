@@ -9697,7 +9697,6 @@
          */
         WalkerEvent[WalkerEvent["Leave"] = 2] = "Leave";
     })(exports.WalkerEvent || (exports.WalkerEvent = {}));
-    const maxQueueLength = 25000;
     /**
      * Walk ast nodes
      * @param node initial node
@@ -9800,7 +9799,7 @@
             },
         };
         let option = null;
-        let source = null;
+        let source = [];
         while (parents.length > 0) {
             node = parents.pop();
             // enter node
@@ -9824,56 +9823,13 @@
                 yield result;
             }
             if (attributes) {
-                source = null;
+                source.length = 0;
                 if (Array.isArray(node[TOKENS])) {
-                    source = node[TOKENS];
-                }
-                else if (node.typ == exports.EnumToken.DeclarationNodeType) {
-                    source = node.val;
-                }
-                else if (node.l != null) {
-                    // @ts-expect-error
-                    if (Array.isArray(node.l)) {
-                        // @ts-expect-error
-                        source = node.l.slice();
-                    }
-                    else {
-                        // @ts-expect-error
-                        source = [node.l];
-                    }
-                    // @ts-expect-error
-                    if (node.r != null) {
-                        // @ts-expect-error
-                        if (Array.isArray(node.r)) {
-                            // @ts-expect-error
-                            source.push(...node.r.slice());
-                        }
-                        else {
-                            // @ts-expect-error
-                            source = [node.r];
-                        }
-                    }
-                    // @ts-expect-error
-                    if (node.op != null && typeof node.op == "object") {
-                        // @ts-expect-error
-                        source.push(node.op);
-                    }
-                    // @ts-expect-error
-                    if (node.op1 != null && typeof node.op1 == "object") {
-                        // @ts-expect-error
-                        source.push(node.op1);
-                    }
-                    // @ts-expect-error
-                    if (node.op2 != null && typeof node.op2 == "object") {
-                        // @ts-expect-error
-                        source.push(node.op2);
-                    }
-                }
-                if (source != null) {
+                    // source = node[TOKENS] as Token[];
                     if (reverse) {
-                        for (let i = 0; i < node[TOKENS].length; i++) {
-                            parents.push(node[TOKENS][i]);
-                            node[TOKENS][i][PARENT] = node;
+                        for (const token of node[TOKENS]) {
+                            parents.push(token);
+                            token[PARENT] = node;
                         }
                     }
                     else {
@@ -9883,23 +9839,161 @@
                         }
                     }
                 }
+                else if (node.typ == exports.EnumToken.DeclarationNodeType) {
+                    // source = (node as AstDeclaration).val as Token[];
+                    if (reverse) {
+                        for (const token of node.val) {
+                            parents.push(token);
+                            token[PARENT] = node;
+                        }
+                    }
+                    else {
+                        for (let i = node.val.length - 1; i >= 0; i--) {
+                            parents.push(node.val[i]);
+                            node.val[i][PARENT] = node;
+                        }
+                    }
+                }
+                else {
+                    source.length = 0;
+                    switch (node.typ) {
+                        case exports.EnumToken.BinaryExpressionTokenType:
+                        case exports.EnumToken.IfElseConditionTokenType:
+                            source.push(node.l);
+                            node.l[PARENT] = node;
+                            source.push(node.r);
+                            node.r[PARENT] = node;
+                            break;
+                        case exports.EnumToken.MatchExpressionTokenType:
+                            source.push(node.l);
+                            node.l[PARENT] = node;
+                            source.push(node.op);
+                            node.op[PARENT] = node;
+                            source.push(node.r);
+                            node.r[PARENT] = node;
+                            break;
+                        case exports.EnumToken.SupportsQueryConditionTokenType:
+                        case exports.EnumToken.MediaQueryConditionTokenType:
+                            for (let i = 0; i < node.l.length; i++) {
+                                const element = node.l[i];
+                                source.push(element);
+                                element[PARENT] = node;
+                            }
+                            source.push(node.op);
+                            node.op[PARENT] = node;
+                            for (let i = 0; i < node.r.length; i++) {
+                                const element = node.r[i];
+                                source.push(element);
+                                element[PARENT] = node;
+                            }
+                            break;
+                        case exports.EnumToken.WhenElseQueryConditionTokenType:
+                            source.push(node.l);
+                            node.l[PARENT] = node;
+                            for (let i = 0; i < node.r.length; i++) {
+                                const element = node.r[i];
+                                source.push(element);
+                                element[PARENT] = node;
+                            }
+                            break;
+                        case exports.EnumToken.ComposesSelectorNodeType:
+                            for (let i = 0; i < node.l.length; i++) {
+                                const element = node.l[i];
+                                source.push(element);
+                                element[PARENT] = node;
+                            }
+                            if (node.r != null) {
+                                source.push(node.r);
+                                node.r[PARENT] = node;
+                            }
+                            break;
+                        case exports.EnumToken.IfConditionTokenType:
+                            for (let i = 0; i < node.l.length; i++) {
+                                const element = node.l[i];
+                                source.push(element);
+                                element[PARENT] = node;
+                            }
+                            for (let i = 0; i < node.r.length; i++) {
+                                const element = node.r[i];
+                                source.push(element);
+                                element[PARENT] = node;
+                            }
+                            break;
+                        case exports.EnumToken.ContainerStyleRangeTokenType:
+                            for (let i = 0; i < node.l.length; i++) {
+                                const element = node.l[i];
+                                source.push(element);
+                                element[PARENT] = node;
+                            }
+                            for (let i = 0; i < node.op.length; i++) {
+                                const element = node.op[i];
+                                source.push(element);
+                                element[PARENT] = node;
+                            }
+                            for (let i = 0; i < node.r.length; i++) {
+                                const element = node.r[i];
+                                source.push(element);
+                                element[PARENT] = node;
+                            }
+                            break;
+                        case exports.EnumToken.MediaRangeQueryTokenType:
+                            for (let i = 0; i < node.l.length; i++) {
+                                const element = node.l[i];
+                                source.push(element);
+                                element[PARENT] = node;
+                            }
+                            source.push(node.op1);
+                            node.op1[PARENT] = node;
+                            for (let i = 0; i < node.val.length; i++) {
+                                const element = node.val[i];
+                                source.push(element);
+                                element[PARENT] = node;
+                            }
+                            source.push(node.op2);
+                            node.op2[PARENT] = node;
+                            for (let i = 0; i < node.r.length; i++) {
+                                const element = node.r[i];
+                                source.push(element);
+                                element[PARENT] = node;
+                            }
+                            break;
+                    }
+                    if (source.length > 0) {
+                        if (reverse) {
+                            for (let i = 0; i < source.length; i++) {
+                                parents.push(source[i]);
+                                source[i][PARENT] = node;
+                            }
+                        }
+                        else {
+                            for (let i = source.length - 1; i >= 0; i--) {
+                                parents.push(source[i]);
+                                source[i][PARENT] = node;
+                            }
+                        }
+                    }
+                }
             }
             if (children &&
                 // @ts-expect-error
                 node["chi"] != null &&
                 (!isNumeric || (option & exports.WalkerOptionEnum.IgnoreChildren) === 0)) {
-                // @ts-expect-error
-                source = node.chi;
                 if (reverse) {
-                    for (let i = 0; i < source.length; i++) {
-                        parents.push(source[i]);
-                        source[i][PARENT] = node;
+                    // @ts-expect-error
+                    for (let i = 0; i < node.chi.length; i++) {
+                        // @ts-expect-error
+                        parents.push(node.chi[i]);
+                        // @ts-expect-error
+                        node.chi[i][PARENT] = node;
                     }
                 }
                 else {
-                    for (let i = source.length - 1; i >= 0; i--) {
-                        parents.push(source[i]);
-                        source[i][PARENT] = node;
+                    // @ts-expect-error
+                    for (let i = node.chi.length - 1; i >= 0; i--) {
+                        // @ts-expect-error
+                        parents.push(node.chi[i]);
+                        // @ts-expect-error
+                        node.chi[i][PARENT] = node;
                     }
                 }
             }
@@ -9952,9 +10046,19 @@
      * // [ "Iden", "from" ]
      * ```
      */
-    function* walkValues(values, root = null, filter, reverse) {
-        const stack = values.slice();
+    function* walkValues(tokens, root = null, filter, reverse) {
+        const nodes = [];
         let previous = null;
+        if (reverse) {
+            for (let i = 0; i < tokens.length; i++) {
+                nodes.push(tokens[i]);
+            }
+        }
+        else {
+            for (let i = tokens.length - 1; i >= 0; i--) {
+                nodes.push(tokens[i]);
+            }
+        }
         if (filter != null && typeof filter == "function") {
             filter = {
                 event: exports.WalkerEvent.Enter,
@@ -9970,7 +10074,7 @@
         let value;
         let option;
         let node;
-        let i = -1;
+        const values = [];
         const eventType = filter.event ?? exports.WalkerEvent.Enter;
         // @ts-ignore
         const result = {
@@ -9989,13 +10093,9 @@
                 }
             },
         };
-        while (++i < stack.length) {
-            value = stack[i];
+        while (nodes.length > 0) {
+            value = nodes.pop();
             option = null;
-            if (i > maxQueueLength) {
-                stack.splice(0, maxQueueLength);
-                i -= maxQueueLength;
-            }
             if (filter.fn != null && eventType & exports.WalkerEvent.Enter) {
                 const isValid = filter.type == null ||
                     value.typ == filter.type ||
@@ -10023,10 +10123,16 @@
                     //
                     if (option != null && typeof option == "object" && ("typ" in option || Array.isArray(option))) {
                         const op = Array.isArray(option) ? option : [option];
-                        stack.splice(i, 0, ...(reverse ? op.toReversed() : op));
-                        for (const o of op) {
-                            if (o[PARENT] != value) {
-                                o[PARENT] = value;
+                        if (reverse) {
+                            for (let i = 0; i < op.length; i++) {
+                                nodes.push(op[i]);
+                                op[i][PARENT] = value;
+                            }
+                        }
+                        else {
+                            for (let i = op.length - 1; i >= 0; i--) {
+                                nodes.push(op[i]);
+                                op[i][PARENT] = value;
                             }
                         }
                     }
@@ -10035,70 +10141,140 @@
             result.value = value;
             result.parent = value[PARENT] ?? root;
             result.previousValue = previous;
-            result.nextValue = stack[0] ?? null;
+            result.nextValue = nodes[nodes.length - 1] ?? null;
             yield result;
             if (!isNumeric || (option & exports.WalkerOptionEnum.IgnoreChildren) === 0) {
-                if ("chi" in value) {
-                    const sliced = value.chi.slice();
-                    for (const child of sliced) {
-                        if (child[PARENT] != value) {
-                            child[PARENT] = value;
+                //
+                if (value.chi != null) {
+                    const source = value.chi;
+                    if (reverse) {
+                        for (let i = 0; i < source.length; i++) {
+                            nodes.push(source[i]);
+                            source[i][PARENT] = value;
                         }
-                        if (reverse) {
-                            stack.unshift(child);
-                        }
-                        else {
-                            stack.push(child);
+                    }
+                    else {
+                        for (let i = source.length - 1; i >= 0; i--) {
+                            nodes.push(source[i]);
+                            source[i][PARENT] = value;
                         }
                     }
                 }
                 else {
-                    const values = [];
-                    if ("l" in value && value.l != null) {
-                        // @ts-expect-error
-                        values.push(value.l);
-                        // @ts-expect-error
-                        if (value.l[PARENT] != value) {
-                            // @ts-expect-error
+                    values.length = 0;
+                    switch (value.typ) {
+                        case exports.EnumToken.BinaryExpressionTokenType:
+                        case exports.EnumToken.IfElseConditionTokenType:
+                            values.push(value.l);
                             value.l[PARENT] = value;
-                        }
-                    }
-                    if ("op" in value && typeof value.op == "object") {
-                        // @ts-expect-error
-                        values.push(value.op);
-                        // @ts-expect-error
-                        if (value.op[PARENT] != value) {
-                            // @ts-expect-error
+                            values.push(value.r);
+                            value.r[PARENT] = value;
+                            break;
+                        case exports.EnumToken.MatchExpressionTokenType:
+                            values.push(value.l);
+                            value.l[PARENT] = value;
+                            values.push(value.op);
                             value.op[PARENT] = value;
-                        }
+                            values.push(value.r);
+                            value.r[PARENT] = value;
+                            break;
+                        case exports.EnumToken.SupportsQueryConditionTokenType:
+                        case exports.EnumToken.MediaQueryConditionTokenType:
+                            for (let i = 0; i < value.l.length; i++) {
+                                const element = value.l[i];
+                                values.push(element);
+                                element[PARENT] = value;
+                            }
+                            values.push(value.op);
+                            value.op[PARENT] = value;
+                            for (let i = 0; i < value.r.length; i++) {
+                                const element = value.r[i];
+                                values.push(element);
+                                element[PARENT] = value;
+                            }
+                            break;
+                        case exports.EnumToken.ComposesSelectorNodeType:
+                            for (let i = 0; i < value.l.length; i++) {
+                                const element = value.l[i];
+                                values.push(element);
+                                element[PARENT] = value;
+                            }
+                            if (value.r != null) {
+                                values.push(value.r);
+                                value.r[PARENT] = value;
+                            }
+                            break;
+                        case exports.EnumToken.WhenElseQueryConditionTokenType:
+                            values.push(value.l);
+                            value.l[PARENT] = value;
+                            for (let i = 0; i < value.r.length; i++) {
+                                const element = value.r[i];
+                                values.push(element);
+                                element[PARENT] = value;
+                            }
+                            break;
+                        case exports.EnumToken.IfConditionTokenType:
+                            for (let i = 0; i < value.l.length; i++) {
+                                const element = value.l[i];
+                                values.push(element);
+                                element[PARENT] = value;
+                            }
+                            for (let i = 0; i < value.r.length; i++) {
+                                const element = value.r[i];
+                                values.push(element);
+                                element[PARENT] = value;
+                            }
+                            break;
+                        case exports.EnumToken.ContainerStyleRangeTokenType:
+                            for (let i = 0; i < value.l.length; i++) {
+                                const element = value.l[i];
+                                values.push(element);
+                                element[PARENT] = value;
+                            }
+                            for (let i = 0; i < value.op.length; i++) {
+                                const element = value.op[i];
+                                values.push(element);
+                                element[PARENT] = value;
+                            }
+                            for (let i = 0; i < value.r.length; i++) {
+                                const element = value.r[i];
+                                values.push(element);
+                                element[PARENT] = value;
+                            }
+                            break;
+                        case exports.EnumToken.MediaRangeQueryTokenType:
+                            for (let i = 0; i < value.l.length; i++) {
+                                const element = value.l[i];
+                                values.push(element);
+                                element[PARENT] = value;
+                            }
+                            values.push(value.op1);
+                            value.op1[PARENT] = value;
+                            for (let i = 0; i < value.val.length; i++) {
+                                const element = value.val[i];
+                                values.push(element);
+                                element[PARENT] = value;
+                            }
+                            values.push(value.op2);
+                            value.op2[PARENT] = value;
+                            for (let i = 0; i < value.r.length; i++) {
+                                const element = value.r[i];
+                                values.push(element);
+                                element[PARENT] = value;
+                            }
+                            break;
                     }
-                    if ("r" in value && value.r != null) {
-                        if (Array.isArray(value.r)) {
-                            for (const r of value.r) {
-                                //
-                                values.push(r);
-                                if (r[PARENT] != value) {
-                                    //
-                                    r[PARENT] = value;
-                                }
+                    if (values.length > 0) {
+                        if (reverse) {
+                            for (let i = 0; i < values.length; i++) {
+                                nodes.push(values[i]);
+                                values[i][PARENT] = value;
                             }
                         }
                         else {
-                            //
-                            values.push(value.r);
-                            if (value.r[PARENT] != value) {
-                                //
-                                value.r[PARENT] = value;
-                            }
-                        }
-                    }
-                    if (values.length > 0) {
-                        for (const v of values) {
-                            if (reverse) {
-                                stack.unshift(v);
-                            }
-                            else {
-                                stack.push(v);
+                            for (let i = values.length - 1; i >= 0; i--) {
+                                nodes.push(values[i]);
+                                values[i][PARENT] = value;
                             }
                         }
                     }
@@ -10115,10 +10291,16 @@
                     // @ts-ignore
                     if (option != null && ("typ" in option || Array.isArray(option))) {
                         const op = Array.isArray(option) ? option : [option];
-                        stack.splice(i, 0, ...(reverse ? op.toReversed() : op));
-                        for (const o of op) {
-                            if (o[PARENT] != value) {
-                                o[PARENT] = value;
+                        if (reverse) {
+                            for (let i = 0; i < op.length; i++) {
+                                nodes.push(op[i]);
+                                op[i][PARENT] = value;
+                            }
+                        }
+                        else {
+                            for (let i = op.length - 1; i >= 0; i--) {
+                                nodes.push(op[i]);
+                                op[i][PARENT] = value;
                             }
                         }
                     }
@@ -22735,8 +22917,12 @@
             }
             for (const r2 of walkValues(source, r1.node)) {
                 if (matcher(r2.value, r1.node)) {
-                    // @ts-ignore
-                    return { node: r1.node, value: { node: r2.value, parent: r2.parent, root: r2.root, parents: r2.parents } };
+                    return {
+                        // @ts-ignore
+                        node: r1.node,
+                        // @ts-ignore
+                        value: { node: r2.value, parent: r2.parent, root: r2.root, parents: r2.parents },
+                    };
                 }
             }
         }
@@ -26952,8 +27138,10 @@
             case exports.EnumToken.BadUrlTokenType:
             case exports.EnumToken.EOFTokenType:
                 return "";
+            case exports.EnumToken.ComposesSelectorNodeType:
+                return `${token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "")}${token.r == null ? "" : " from " + renderValue(token.r, options, cache, reducer)}`;
             default:
-                console.debug({ token });
+                console.error({ token });
                 throw new Error(`Unsupported token type for ${exports.EnumToken[token.typ]}`);
         }
         // errors?.push({ action: "ignore", message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });
@@ -31705,64 +31893,164 @@
                             break;
                     }
                     // @ts-ignore
-                    if (node.l != null) {
-                        // @ts-ignore
-                        if (node.op2 != null) {
-                            // @ts-ignore
-                            nodes.push(node.op2);
-                            // @ts-ignore
-                            node.op2[PARENT] = node;
+                    // if (node.l != null) {
+                    //     // @ts-ignore
+                    //     if (node.op2 != null) {
+                    //         // @ts-ignore
+                    //         nodes.push(node.op2);
+                    //         // @ts-ignore
+                    //         node.op2[PARENT] = node;
+                    //     }
+                    //     // @ts-ignore
+                    //     if (node.op1 != null) {
+                    //         // @ts-ignore
+                    //         nodes.push(node.op1);
+                    //         // @ts-ignore
+                    //         node.op1[PARENT] = node;
+                    //     }
+                    //     // @ts-ignore
+                    //     if (nodes.op != null && node.op.typ != null) {
+                    //         // @ts-ignore
+                    //         nodes.push(node.op);
+                    //         // @ts-ignore
+                    //         node.op[PARENT] = node;
+                    //     }
+                    //     // @ts-ignore
+                    //     if (node.r != null) {
+                    //         // @ts-ignore
+                    //         if (Array.isArray(node.r)) {
+                    //             // @ts-ignore
+                    //             for (let i = node.r.length - 1; i >= 0; i--) {
+                    //                 // @ts-ignore
+                    //                 nodes.push(node.r[i]);
+                    //                 //  @ts-ignore
+                    //                 node.r[i][PARENT] = node;
+                    //             }
+                    //         } else {
+                    //             // @ts-ignore
+                    //             nodes.push(node.r);
+                    //             // @ts-ignore
+                    //             node.r[PARENT] = node;
+                    //         }
+                    //     }
+                    //     // @ts-ignore
+                    //     if (Array.isArray(node.l)) {
+                    //         // @ts-ignore
+                    //         for (let i = node.l.length - 1; i >= 0; i--) {
+                    //             // @ts-ignore
+                    //             nodes.push(node.l[i]);
+                    //             // @ts-ignore
+                    //             node.l[i][PARENT] = node;
+                    //         }
+                    //     } else {
+                    //         // @ts-ignore
+                    //         nodes.push(node.l);
+                    //         // @ts-ignore
+                    //         node.l[PARENT] = node;
+                    //     }
+                    // }
+                }
+                switch (node.typ) {
+                    case exports.EnumToken.BinaryExpressionTokenType:
+                    case exports.EnumToken.IfElseConditionTokenType:
+                        nodes.push(node.r);
+                        node.r[PARENT] = node;
+                        nodes.push(node.l);
+                        node.l[PARENT] = node;
+                        break;
+                    case exports.EnumToken.MatchExpressionTokenType:
+                        nodes.push(node.r);
+                        node.r[PARENT] = node;
+                        nodes.push(node.op);
+                        node.op[PARENT] = node;
+                        nodes.push(node.l);
+                        node.l[PARENT] = node;
+                        break;
+                    case exports.EnumToken.SupportsQueryConditionTokenType:
+                    case exports.EnumToken.MediaQueryConditionTokenType:
+                        for (let i = node.r.length - 1; i >= 0; i--) {
+                            const element = node.r[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
                         }
-                        // @ts-ignore
-                        if (node.op1 != null) {
-                            // @ts-ignore
-                            nodes.push(node.op1);
-                            // @ts-ignore
-                            node.op1[PARENT] = node;
+                        nodes.push(node.op);
+                        node.op[PARENT] = node;
+                        for (let i = node.l.length - 1; i >= 0; i--) {
+                            const element = node.l[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
                         }
-                        // @ts-ignore
-                        if (nodes.op != null && node.op.typ != null) {
-                            // @ts-ignore
-                            nodes.push(node.op);
-                            // @ts-ignore
-                            node.op[PARENT] = node;
+                        break;
+                    case exports.EnumToken.WhenElseQueryConditionTokenType:
+                        for (let i = node.r.length - 1; i >= 0; i--) {
+                            const element = node.r[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
                         }
-                        // @ts-ignore
+                        nodes.push(node.l);
+                        node.l[PARENT] = node;
+                        break;
+                    case exports.EnumToken.IfConditionTokenType:
+                        for (let i = node.r.length - 1; i >= 0; i--) {
+                            const element = node.r[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
+                        }
+                        for (let i = node.l.length - 1; i >= 0; i--) {
+                            const element = node.l[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
+                        }
+                        break;
+                    case exports.EnumToken.ComposesSelectorNodeType:
                         if (node.r != null) {
-                            // @ts-ignore
-                            if (Array.isArray(node.r)) {
-                                // @ts-ignore
-                                for (let i = node.r.length - 1; i >= 0; i--) {
-                                    // @ts-ignore
-                                    nodes.push(node.r[i]);
-                                    //  @ts-ignore
-                                    node.r[i][PARENT] = node;
-                                }
-                            }
-                            else {
-                                // @ts-ignore
-                                nodes.push(node.r);
-                                // @ts-ignore
-                                node.r[PARENT] = node;
-                            }
+                            nodes.push(node.r);
+                            node.r[PARENT] = node;
                         }
-                        // @ts-ignore
-                        if (Array.isArray(node.l)) {
-                            // @ts-ignore
-                            for (let i = node.l.length - 1; i >= 0; i--) {
-                                // @ts-ignore
-                                nodes.push(node.l[i]);
-                                // @ts-ignore
-                                node.l[i][PARENT] = node;
-                            }
+                        for (let i = node.l.length - 1; i >= 0; i--) {
+                            const element = node.l[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
                         }
-                        else {
-                            // @ts-ignore
-                            nodes.push(node.l);
-                            // @ts-ignore
-                            node.l[PARENT] = node;
+                        break;
+                    case exports.EnumToken.ContainerStyleRangeTokenType:
+                        for (let i = node.r.length - 1; i >= 0; i--) {
+                            const element = node.r[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
                         }
-                    }
+                        for (let i = node.op.length - 1; i >= 0; i--) {
+                            const element = node.op[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
+                        }
+                        for (let i = node.l.length - 1; i >= 0; i--) {
+                            const element = node.l[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
+                        }
+                        break;
+                    case exports.EnumToken.MediaRangeQueryTokenType:
+                        for (let i = node.r.length - 1; i >= 0; i--) {
+                            const element = node.r[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
+                        }
+                        nodes.push(node.op2);
+                        node.op2[PARENT] = node;
+                        for (let i = node.val.length - 1; i >= 0; i--) {
+                            const element = node.val[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
+                        }
+                        nodes.push(node.op1);
+                        node.op1[PARENT] = node;
+                        for (let i = node.l.length - 1; i >= 0; i--) {
+                            const element = node.l[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
+                        }
+                        break;
                 }
                 // @ts-ignore
                 if (node.chi != null) {
@@ -32740,64 +33028,164 @@
                             break;
                     }
                     // @ts-ignore
-                    if (node.l != null) {
-                        // @ts-ignore
-                        if (node.op2 != null) {
-                            // @ts-ignore
-                            nodes.push(node.op2);
-                            // @ts-ignore
-                            nodes.op2[PARENT] = node;
+                    // if (node.l != null) {
+                    //     // @ts-ignore
+                    //     if (node.op2 != null) {
+                    //         // @ts-ignore
+                    //         nodes.push(node.op2);
+                    //         // @ts-ignore
+                    //         nodes.op2[PARENT] = node;
+                    //     }
+                    //     // @ts-ignore
+                    //     if (node.op1 != null) {
+                    //         // @ts-ignore
+                    //         nodes.push(node.op1);
+                    //         // @ts-ignore
+                    //         nodes.op1[PARENT] = node;
+                    //     }
+                    //     // @ts-ignore
+                    //     if (nodes.op != null && node.op.typ != null) {
+                    //         // @ts-ignore
+                    //         nodes.push(node.op);
+                    //         // @ts-ignore
+                    //         nodes.op[PARENT] = node;
+                    //     }
+                    //     // @ts-ignore
+                    //     if (node.r != null) {
+                    //         // @ts-ignore
+                    //         if (Array.isArray(node.r)) {
+                    //             // @ts-ignore
+                    //             for (let i = node.r.length - 1; i >= 0; i--) {
+                    //                 // @ts-ignore
+                    //                 nodes.push(node.r[i]);
+                    //                 // @ts-ignore
+                    //                 node.r[i][PARENT] = node;
+                    //             }
+                    //         } else {
+                    //             // @ts-ignore
+                    //             nodes.push(node.r);
+                    //             // @ts-ignore
+                    //             node.r[PARENT] = node;
+                    //         }
+                    //     }
+                    //     // @ts-ignore
+                    //     if (Array.isArray(node.l)) {
+                    //         // @ts-ignore
+                    //         for (let i = node.l.length - 1; i >= 0; i--) {
+                    //             // @ts-ignore
+                    //             node.l[i][PARENT] = node;
+                    //             // @ts-ignore
+                    //             nodes.push(node.l[i]);
+                    //         }
+                    //     } else {
+                    //         // @ts-ignore
+                    //         nodes.push(node.l);
+                    //         // @ts-ignore
+                    //         node.l[PARENT] = node;
+                    //     }
+                    // }
+                }
+                switch (node.typ) {
+                    case exports.EnumToken.BinaryExpressionTokenType:
+                    case exports.EnumToken.IfElseConditionTokenType:
+                        nodes.push(node.r);
+                        node.r[PARENT] = node;
+                        nodes.push(node.l);
+                        node.l[PARENT] = node;
+                        break;
+                    case exports.EnumToken.MatchExpressionTokenType:
+                        nodes.push(node.r);
+                        node.r[PARENT] = node;
+                        nodes.push(node.op);
+                        node.op[PARENT] = node;
+                        nodes.push(node.l);
+                        node.l[PARENT] = node;
+                        break;
+                    case exports.EnumToken.SupportsQueryConditionTokenType:
+                    case exports.EnumToken.MediaQueryConditionTokenType:
+                        for (let i = node.r.length - 1; i >= 0; i--) {
+                            const element = node.r[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
                         }
-                        // @ts-ignore
-                        if (node.op1 != null) {
-                            // @ts-ignore
-                            nodes.push(node.op1);
-                            // @ts-ignore
-                            nodes.op1[PARENT] = node;
+                        nodes.push(node.op);
+                        node.op[PARENT] = node;
+                        for (let i = node.l.length - 1; i >= 0; i--) {
+                            const element = node.l[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
                         }
-                        // @ts-ignore
-                        if (nodes.op != null && node.op.typ != null) {
-                            // @ts-ignore
-                            nodes.push(node.op);
-                            // @ts-ignore
-                            nodes.op[PARENT] = node;
+                        break;
+                    case exports.EnumToken.WhenElseQueryConditionTokenType:
+                        for (let i = node.r.length - 1; i >= 0; i--) {
+                            const element = node.r[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
                         }
-                        // @ts-ignore
+                        nodes.push(node.l);
+                        node.l[PARENT] = node;
+                        break;
+                    case exports.EnumToken.IfConditionTokenType:
+                        for (let i = node.r.length - 1; i >= 0; i--) {
+                            const element = node.r[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
+                        }
+                        for (let i = node.l.length - 1; i >= 0; i--) {
+                            const element = node.l[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
+                        }
+                        break;
+                    case exports.EnumToken.ComposesSelectorNodeType:
                         if (node.r != null) {
-                            // @ts-ignore
-                            if (Array.isArray(node.r)) {
-                                // @ts-ignore
-                                for (let i = node.r.length - 1; i >= 0; i--) {
-                                    // @ts-ignore
-                                    nodes.push(node.r[i]);
-                                    // @ts-ignore
-                                    node.r[i][PARENT] = node;
-                                }
-                            }
-                            else {
-                                // @ts-ignore
-                                nodes.push(node.r);
-                                // @ts-ignore
-                                node.r[PARENT] = node;
-                            }
+                            nodes.push(node.r);
+                            node.r[PARENT] = node;
                         }
-                        // @ts-ignore
-                        if (Array.isArray(node.l)) {
-                            // @ts-ignore
-                            for (let i = node.l.length - 1; i >= 0; i--) {
-                                // @ts-ignore
-                                node.l[i][PARENT] = node;
-                                // @ts-ignore
-                                nodes.push(node.l[i]);
-                            }
+                        for (let i = node.l.length - 1; i >= 0; i--) {
+                            const element = node.l[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
                         }
-                        else {
-                            // @ts-ignore
-                            nodes.push(node.l);
-                            // @ts-ignore
-                            node.l[PARENT] = node;
+                        break;
+                    case exports.EnumToken.ContainerStyleRangeTokenType:
+                        for (let i = node.r.length - 1; i >= 0; i--) {
+                            const element = node.r[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
                         }
-                    }
+                        for (let i = node.op.length - 1; i >= 0; i--) {
+                            const element = node.op[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
+                        }
+                        for (let i = node.l.length - 1; i >= 0; i--) {
+                            const element = node.l[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
+                        }
+                        break;
+                    case exports.EnumToken.MediaRangeQueryTokenType:
+                        for (let i = node.r.length - 1; i >= 0; i--) {
+                            const element = node.r[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
+                        }
+                        nodes.push(node.op2);
+                        node.op2[PARENT] = node;
+                        for (let i = node.val.length - 1; i >= 0; i--) {
+                            const element = node.val[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
+                        }
+                        nodes.push(node.op1);
+                        node.op1[PARENT] = node;
+                        for (let i = node.l.length - 1; i >= 0; i--) {
+                            const element = node.l[i];
+                            nodes.push(element);
+                            element[PARENT] = node;
+                        }
+                        break;
                 }
                 // @ts-ignore
                 if (node.chi != null) {
@@ -32934,11 +33322,6 @@
                         exports.EnumAstNodeStatus.Disallowed)) {
                     // @ts-ignore
                     node[PARENT].chi.splice(node[PARENT].chi.indexOf(node), 1);
-                    // node[PARENT] = null;
-                    // count--;
-                    // if (count == 0) {
-                    //     break;
-                    // }
                 }
             }
         }
