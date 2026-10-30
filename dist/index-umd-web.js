@@ -28124,7 +28124,7 @@
                         this.val = parseFloat(parseInfo.stream.slice(parseInfo.position - parseInfo.offset, options?.slice));
                         if (hint != exports.EnumToken.PercentageTokenType) {
                             this.unit = val;
-                            if (val.startsWith('--')) {
+                            if (val.startsWith("--")) {
                                 this.typ = exports.EnumToken.UserDefinedDimensionTokenType;
                             }
                         }
@@ -34859,6 +34859,15 @@
                 atRule[TOKENS] = stream.slice();
                 atRule[STATE] = result.success ? exports.EnumAstNodeStatus.Validated : exports.EnumAstNodeStatus.Invalid;
                 atRule[ERRORS] = result.errors;
+                if (equalsIgnoreCase(atRule.nam, "mixin")) {
+                    if (context != null && context.typ != exports.EnumToken.StyleSheetNodeType) {
+                        atRule[STATE] |= exports.EnumAstNodeStatus.Disallowed;
+                        atRule[ERRORS].push({
+                            message: "mixin rule cannot be a nested group rule or rule style body",
+                            location: atRule[LOCSTA],
+                        });
+                    }
+                }
                 // @ts-expect-error
                 return Object.assign(atRule, {
                     typ: exports.EnumToken.AtRuleNodeType,

@@ -3702,6 +3702,15 @@ function parseAtRule(stream, context, options, errors, parseAsBlock = null) {
             atRule[TOKENS] = stream.slice();
             atRule[STATE] = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = result.errors;
+            if (equalsIgnoreCase(atRule.nam, "mixin")) {
+                if (context != null && context.typ != EnumToken.StyleSheetNodeType) {
+                    atRule[STATE] |= EnumAstNodeStatus.Disallowed;
+                    atRule[ERRORS].push({
+                        message: "mixin rule cannot be a nested group rule or rule style body",
+                        location: atRule[LOCSTA],
+                    });
+                }
+            }
             // @ts-expect-error
             return Object.assign(atRule, {
                 typ: EnumToken.AtRuleNodeType,

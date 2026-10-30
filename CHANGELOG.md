@@ -4,6 +4,7 @@
 
 - [x] support dashed indent as unit
 - [x] the walker functions now use DFS instead of BFS
+- [x] [disallow](https://drafts.csswg.org/css-mixins-1/#mixin-rule) mixin inside rules or nested groups 
 
 ```css
 .module {

@@ -965,7 +965,7 @@ class Tokenizer {
                     this.val = parseFloat(parseInfo.stream.slice(parseInfo.position - parseInfo.offset, options?.slice));
                     if (hint != EnumToken.PercentageTokenType) {
                         this.unit = val;
-                        if (val.startsWith('--')) {
+                        if (val.startsWith("--")) {
                             this.typ = EnumToken.UserDefinedDimensionTokenType;
                         }
                     }

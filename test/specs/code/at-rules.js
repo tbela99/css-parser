@@ -2009,5 +2009,38 @@ h1 {
 }`),
             );
         });
+
+        it("at-rule function with no arguments #69", function () {
+            return transform(
+                `
+
+.goal .bg-indigo {
+  @mixin --shadowed-values(--color2: green, --color3: green) {
+  @private { --color3: blue; }
+  background: linear-gradient(var(--color1), var(--color2), var(--color3));
+}
+p {
+  --color1: red;
+  --color2: red;
+  --color3: red;
+  @apply --shadowed-values();
+}
+}
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`.goal .bg-indigo {
+ p {
+  --color1: red;
+  --color2: red;
+  --color3: red;
+  @apply --shadowed-values()
+ }
+}`),
+            );
+        });
     });
 }
