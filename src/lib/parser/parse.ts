@@ -4725,14 +4725,55 @@ export function parseAtRule(
             atRule[STATE] = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = result.errors;
 
-            if (equalsIgnoreCase(atRule.nam, "mixin")) {
-                if (context != null && context.typ != EnumToken.StyleSheetNodeType) {
-                    atRule[STATE] |= EnumAstNodeStatus.Disallowed;
-                    atRule[ERRORS].push({
-                        message: "mixin rule cannot be a nested group rule or rule style body",
-                        location: atRule[LOCSTA],
-                    });
-                }
+            switch (atRule.nam) {
+                case "mixin":
+                    if (context != null && context.typ != EnumToken.StyleSheetNodeType) {
+                        atRule[STATE] |= EnumAstNodeStatus.Disallowed;
+                        atRule[ERRORS].push({
+                            message: "mixin rule cannot be a nested group rule or rule style body",
+                            location: atRule[LOCSTA],
+                        });
+                    }
+                    break;
+
+                case "contents":
+                    let parent = context as AstNode;
+                    let valid = parent == null;
+                    while (parent != null) {
+                        if (parent.typ == EnumToken.AtRuleNodeType && "mixin" == parent.nam) {
+                            valid = true;
+                            break;
+                        }
+
+                        parent = parent[PARENT] as AstNode;
+                    }
+
+                    if (!valid) {
+                        atRule[STATE] |= EnumAstNodeStatus.Disallowed;
+                        atRule[ERRORS].push({
+                            message: "contents rule cannot be used outside mixin rule",
+                            location: atRule[LOCSTA],
+                        });
+                    }
+                    break;
+
+                case "layer":
+                    if (context != null && context.typ != EnumToken.StyleSheetNodeType) {
+                        let parent = context as AstNode;
+
+                        while (parent != null) {
+                            if (parent.typ == EnumToken.AtRuleNodeType && parent.nam == "mixin") {
+                                atRule[STATE] |= EnumAstNodeStatus.Disallowed;
+                                atRule[ERRORS].push({
+                                    message: "at-rule layeris not allowed inside mixin rule",
+                                    location: atRule[LOCSTA],
+                                });
+                                break;
+                            }
+
+                            parent = parent[PARENT] as AstNode;
+                        }
+                    }
             }
 
             // @ts-expect-error

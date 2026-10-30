@@ -5733,6 +5733,9 @@
     	"@apply": {
     		syntax: " @apply [ <dashed-ident> | <dashed-function> ] [ { <declaration-list> } ]?;"
     	},
+    	"@contents": {
+    		syntax: " @contents [ { <declaration-list> } ]?;"
+    	},
     	"@left-top": {
     		syntax: " @left-top { <declaration-list> }"
     	},
@@ -21349,7 +21352,7 @@
         exports.EnumToken.LteTokenType,
         exports.EnumToken.ChildCombinatorTokenType,
         exports.EnumToken.PipeTokenType,
-        exports.EnumToken.ColonTokenType
+        exports.EnumToken.ColonTokenType,
     ]);
     const trimSpaceAfter = new Set([
         ...tokensfuncSet.values(),
@@ -34859,14 +34862,49 @@
                 atRule[TOKENS] = stream.slice();
                 atRule[STATE] = result.success ? exports.EnumAstNodeStatus.Validated : exports.EnumAstNodeStatus.Invalid;
                 atRule[ERRORS] = result.errors;
-                if (equalsIgnoreCase(atRule.nam, "mixin")) {
-                    if (context != null && context.typ != exports.EnumToken.StyleSheetNodeType) {
-                        atRule[STATE] |= exports.EnumAstNodeStatus.Disallowed;
-                        atRule[ERRORS].push({
-                            message: "mixin rule cannot be a nested group rule or rule style body",
-                            location: atRule[LOCSTA],
-                        });
-                    }
+                switch (atRule.nam) {
+                    case "mixin":
+                        if (context != null && context.typ != exports.EnumToken.StyleSheetNodeType) {
+                            atRule[STATE] |= exports.EnumAstNodeStatus.Disallowed;
+                            atRule[ERRORS].push({
+                                message: "mixin rule cannot be a nested group rule or rule style body",
+                                location: atRule[LOCSTA],
+                            });
+                        }
+                        break;
+                    case "contents":
+                        let parent = context;
+                        let valid = parent == null;
+                        while (parent != null) {
+                            if (parent.typ == exports.EnumToken.AtRuleNodeType && "mixin" == parent.nam) {
+                                valid = true;
+                                break;
+                            }
+                            parent = parent[PARENT];
+                        }
+                        if (!valid) {
+                            atRule[STATE] |= exports.EnumAstNodeStatus.Disallowed;
+                            atRule[ERRORS].push({
+                                message: "contents rule cannot be used outside mixin rule",
+                                location: atRule[LOCSTA],
+                            });
+                        }
+                        break;
+                    case "layer":
+                        if (context != null && context.typ != exports.EnumToken.StyleSheetNodeType) {
+                            let parent = context;
+                            while (parent != null) {
+                                if (parent.typ == exports.EnumToken.AtRuleNodeType && parent.nam == "mixin") {
+                                    atRule[STATE] |= exports.EnumAstNodeStatus.Disallowed;
+                                    atRule[ERRORS].push({
+                                        message: "at-rule layeris not allowed inside mixin rule",
+                                        location: atRule[LOCSTA],
+                                    });
+                                    break;
+                                }
+                                parent = parent[PARENT];
+                            }
+                        }
                 }
                 // @ts-expect-error
                 return Object.assign(atRule, {

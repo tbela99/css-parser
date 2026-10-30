@@ -17,7 +17,7 @@ const trimTokenSpace = new Set([
     EnumToken.LteTokenType,
     EnumToken.ChildCombinatorTokenType,
     EnumToken.PipeTokenType,
-    EnumToken.ColonTokenType
+    EnumToken.ColonTokenType,
 ]);
 const trimSpaceAfter = new Set([
     ...tokensfuncSet.values(),
