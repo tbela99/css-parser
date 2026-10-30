@@ -18,9 +18,11 @@ import type {
     AstStyleSheet,
     AtRuleToken,
     AttrStartToken,
+    BinaryExpressionToken,
     ClassSelectorToken,
     ColorToken,
     ComposesSelectorToken,
+    ContainerStyleRangeToken,
     CssVariableImportTokenType,
     CssVariableMapTokenType,
     CssVariableToken,
@@ -33,7 +35,11 @@ import type {
     GenericVisitorHandler,
     GenericVisitorResult,
     IdentToken,
+    IfConditionToken,
+    IfElseConditionToken,
     LoadResult,
+    MatchExpressionToken,
+    MediaRangeQueryToken,
     ModuleSyncOptions,
     ParsedVisitorHandlers,
     ParseInfo,
@@ -44,9 +50,11 @@ import type {
     PseudoClassToken,
     ResolvedPath,
     StringToken,
+    SupportsQueryConditionToken,
     Token,
     UrlToken,
     VisitorNodeMap,
+    WhenElseUnaryConditionToken,
     WhitespaceToken,
 } from "../../@types/index.d.ts";
 import {
@@ -974,66 +982,180 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                 }
 
                 // @ts-ignore
-                if (node.l != null) {
-                    // @ts-ignore
-                    if (node.op2 != null) {
-                        // @ts-ignore
-                        nodes.push(node.op2);
-                        // @ts-ignore
-                        node.op2[PARENT] = node;
+                // if (node.l != null) {
+                //     // @ts-ignore
+                //     if (node.op2 != null) {
+                //         // @ts-ignore
+                //         nodes.push(node.op2);
+                //         // @ts-ignore
+                //         node.op2[PARENT] = node;
+                //     }
+
+                //     // @ts-ignore
+                //     if (node.op1 != null) {
+                //         // @ts-ignore
+                //         nodes.push(node.op1);
+                //         // @ts-ignore
+                //         node.op1[PARENT] = node;
+                //     }
+
+                //     // @ts-ignore
+                //     if (nodes.op != null && node.op.typ != null) {
+                //         // @ts-ignore
+                //         nodes.push(node.op);
+                //         // @ts-ignore
+                //         node.op[PARENT] = node;
+                //     }
+
+                //     // @ts-ignore
+                //     if (node.r != null) {
+                //         // @ts-ignore
+                //         if (Array.isArray(node.r)) {
+                //             // @ts-ignore
+                //             for (let i = node.r.length - 1; i >= 0; i--) {
+                //                 // @ts-ignore
+                //                 nodes.push(node.r[i]);
+                //                 //  @ts-ignore
+                //                 node.r[i][PARENT] = node;
+                //             }
+                //         } else {
+                //             // @ts-ignore
+                //             nodes.push(node.r);
+                //             // @ts-ignore
+                //             node.r[PARENT] = node;
+                //         }
+                //     }
+
+                //     // @ts-ignore
+                //     if (Array.isArray(node.l)) {
+                //         // @ts-ignore
+                //         for (let i = node.l.length - 1; i >= 0; i--) {
+                //             // @ts-ignore
+                //             nodes.push(node.l[i]);
+                //             // @ts-ignore
+                //             node.l[i][PARENT] = node;
+                //         }
+                //     } else {
+                //         // @ts-ignore
+                //         nodes.push(node.l);
+                //         // @ts-ignore
+                //         node.l[PARENT] = node;
+                //     }
+                // }
+            }
+
+            switch (node.typ) {
+                case EnumToken.BinaryExpressionTokenType:
+                case EnumToken.IfElseConditionTokenType:
+                    nodes.push((node as BinaryExpressionToken | IfElseConditionToken).r);
+                    (node as BinaryExpressionToken | IfElseConditionToken).r[PARENT] = node;
+
+                    nodes.push((node as BinaryExpressionToken | IfElseConditionToken).l);
+                    (node as BinaryExpressionToken | IfElseConditionToken).l[PARENT] = node;
+
+                    break;
+
+                case EnumToken.MatchExpressionTokenType:
+                    nodes.push((node as MatchExpressionToken).r);
+                    (node as MatchExpressionToken).r[PARENT] = node;
+
+                    nodes.push((node as MatchExpressionToken).op);
+                    (node as MatchExpressionToken).op[PARENT] = node;
+
+                    nodes.push((node as MatchExpressionToken).l);
+                    (node as MatchExpressionToken).l[PARENT] = node;
+                    break;
+
+                case EnumToken.SupportsQueryConditionTokenType:
+                case EnumToken.MediaQueryConditionTokenType:
+                    for (let i = (node as SupportsQueryConditionToken).r.length - 1; i >= 0; i--) {
+                        const element = (node as SupportsQueryConditionToken).r[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
                     }
 
-                    // @ts-ignore
-                    if (node.op1 != null) {
-                        // @ts-ignore
-                        nodes.push(node.op1);
-                        // @ts-ignore
-                        node.op1[PARENT] = node;
+                    nodes.push((node as SupportsQueryConditionToken).op);
+                    (node as SupportsQueryConditionToken).op[PARENT] = node;
+
+                    for (let i = (node as SupportsQueryConditionToken).l.length - 1; i >= 0; i--) {
+                        const element = (node as SupportsQueryConditionToken).l[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
                     }
 
-                    // @ts-ignore
-                    if (nodes.op != null && node.op.typ != null) {
-                        // @ts-ignore
-                        nodes.push(node.op);
-                        // @ts-ignore
-                        node.op[PARENT] = node;
+                    break;
+                case EnumToken.WhenElseQueryConditionTokenType:
+                    for (let i = (node as WhenElseUnaryConditionToken).r.length - 1; i >= 0; i--) {
+                        const element = (node as WhenElseUnaryConditionToken).r[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
+                    }
+                    nodes.push((node as WhenElseUnaryConditionToken).l);
+                    (node as WhenElseUnaryConditionToken).l[PARENT] = node;
+
+                    break;
+
+                case EnumToken.IfConditionTokenType:
+                    for (let i = (node as IfConditionToken).r.length - 1; i >= 0; i--) {
+                        const element = (node as IfConditionToken).r[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
                     }
 
-                    // @ts-ignore
-                    if (node.r != null) {
-                        // @ts-ignore
-                        if (Array.isArray(node.r)) {
-                            // @ts-ignore
-                            for (let i = node.r.length - 1; i >= 0; i--) {
-                                // @ts-ignore
-                                nodes.push(node.r[i]);
-                                //  @ts-ignore
-                                node.r[i][PARENT] = node;
-                            }
-                        } else {
-                            // @ts-ignore
-                            nodes.push(node.r);
-                            // @ts-ignore
-                            node.r[PARENT] = node;
-                        }
+                    for (let i = (node as IfConditionToken).l.length - 1; i >= 0; i--) {
+                        const element = (node as IfConditionToken).l[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
                     }
 
-                    // @ts-ignore
-                    if (Array.isArray(node.l)) {
-                        // @ts-ignore
-                        for (let i = node.l.length - 1; i >= 0; i--) {
-                            // @ts-ignore
-                            nodes.push(node.l[i]);
-                            // @ts-ignore
-                            node.l[i][PARENT] = node;
-                        }
-                    } else {
-                        // @ts-ignore
-                        nodes.push(node.l);
-                        // @ts-ignore
-                        node.l[PARENT] = node;
+                    break;
+
+                case EnumToken.ContainerStyleRangeTokenType:
+                    for (let i = (node as ContainerStyleRangeToken).r.length - 1; i >= 0; i--) {
+                        const element = (node as ContainerStyleRangeToken).r[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
                     }
-                }
+
+                    for (let i = (node as ContainerStyleRangeToken).op.length - 1; i >= 0; i--) {
+                        const element = (node as ContainerStyleRangeToken).op[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
+                    }
+                    for (let i = (node as ContainerStyleRangeToken).l.length - 1; i >= 0; i--) {
+                        const element = (node as ContainerStyleRangeToken).l[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
+                    }
+
+                    break;
+
+                case EnumToken.MediaRangeQueryTokenType:
+                    for (let i = (node as MediaRangeQueryToken).r.length - 1; i >= 0; i--) {
+                        const element = (node as MediaRangeQueryToken).r[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
+                    }
+
+                    nodes.push((node as MediaRangeQueryToken).op2);
+                    (node as MediaRangeQueryToken).op2[PARENT] = node;
+
+                    for (let i = (node as MediaRangeQueryToken).val.length - 1; i >= 0; i--) {
+                        const element = (node as MediaRangeQueryToken).val[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
+                    }
+
+                    nodes.push((node as MediaRangeQueryToken).op1);
+                    (node as MediaRangeQueryToken).op1[PARENT] = node;
+
+                    for (let i = (node as MediaRangeQueryToken).l.length - 1; i >= 0; i--) {
+                        const element = (node as MediaRangeQueryToken).l[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
+                    }
+
+                    break;
             }
 
             // @ts-ignore
@@ -2270,67 +2392,181 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                 }
 
                 // @ts-ignore
-                if (node.l != null) {
-                    // @ts-ignore
-                    if (node.op2 != null) {
-                        // @ts-ignore
-                        nodes.push(node.op2);
-                        // @ts-ignore
-                        nodes.op2[PARENT] = node;
+                // if (node.l != null) {
+                //     // @ts-ignore
+                //     if (node.op2 != null) {
+                //         // @ts-ignore
+                //         nodes.push(node.op2);
+                //         // @ts-ignore
+                //         nodes.op2[PARENT] = node;
+                //     }
+
+                //     // @ts-ignore
+                //     if (node.op1 != null) {
+                //         // @ts-ignore
+                //         nodes.push(node.op1);
+                //         // @ts-ignore
+                //         nodes.op1[PARENT] = node;
+                //     }
+
+                //     // @ts-ignore
+                //     if (nodes.op != null && node.op.typ != null) {
+                //         // @ts-ignore
+                //         nodes.push(node.op);
+                //         // @ts-ignore
+                //         nodes.op[PARENT] = node;
+                //     }
+
+                //     // @ts-ignore
+                //     if (node.r != null) {
+                //         // @ts-ignore
+                //         if (Array.isArray(node.r)) {
+                //             // @ts-ignore
+                //             for (let i = node.r.length - 1; i >= 0; i--) {
+                //                 // @ts-ignore
+                //                 nodes.push(node.r[i]);
+                //                 // @ts-ignore
+                //                 node.r[i][PARENT] = node;
+                //             }
+                //         } else {
+                //             // @ts-ignore
+                //             nodes.push(node.r);
+                //             // @ts-ignore
+                //             node.r[PARENT] = node;
+                //         }
+                //     }
+
+                //     // @ts-ignore
+                //     if (Array.isArray(node.l)) {
+                //         // @ts-ignore
+                //         for (let i = node.l.length - 1; i >= 0; i--) {
+                //             // @ts-ignore
+                //             node.l[i][PARENT] = node;
+                //             // @ts-ignore
+                //             nodes.push(node.l[i]);
+                //         }
+                //     } else {
+                //         // @ts-ignore
+                //         nodes.push(node.l);
+
+                //         // @ts-ignore
+                //         node.l[PARENT] = node;
+                //     }
+                // }
+            }
+
+            switch (node.typ) {
+                case EnumToken.BinaryExpressionTokenType:
+                case EnumToken.IfElseConditionTokenType:
+                    nodes.push((node as BinaryExpressionToken | IfElseConditionToken).r);
+                    (node as BinaryExpressionToken | IfElseConditionToken).r[PARENT] = node;
+
+                    nodes.push((node as BinaryExpressionToken | IfElseConditionToken).l);
+                    (node as BinaryExpressionToken | IfElseConditionToken).l[PARENT] = node;
+
+                    break;
+
+                case EnumToken.MatchExpressionTokenType:
+                    nodes.push((node as MatchExpressionToken).r);
+                    (node as MatchExpressionToken).r[PARENT] = node;
+
+                    nodes.push((node as MatchExpressionToken).op);
+                    (node as MatchExpressionToken).op[PARENT] = node;
+
+                    nodes.push((node as MatchExpressionToken).l);
+                    (node as MatchExpressionToken).l[PARENT] = node;
+                    break;
+
+                case EnumToken.SupportsQueryConditionTokenType:
+                case EnumToken.MediaQueryConditionTokenType:
+                    for (let i = (node as SupportsQueryConditionToken).r.length - 1; i >= 0; i--) {
+                        const element = (node as SupportsQueryConditionToken).r[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
                     }
 
-                    // @ts-ignore
-                    if (node.op1 != null) {
-                        // @ts-ignore
-                        nodes.push(node.op1);
-                        // @ts-ignore
-                        nodes.op1[PARENT] = node;
+                    nodes.push((node as SupportsQueryConditionToken).op);
+                    (node as SupportsQueryConditionToken).op[PARENT] = node;
+
+                    for (let i = (node as SupportsQueryConditionToken).l.length - 1; i >= 0; i--) {
+                        const element = (node as SupportsQueryConditionToken).l[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
                     }
 
-                    // @ts-ignore
-                    if (nodes.op != null && node.op.typ != null) {
-                        // @ts-ignore
-                        nodes.push(node.op);
-                        // @ts-ignore
-                        nodes.op[PARENT] = node;
+                    break;
+                case EnumToken.WhenElseQueryConditionTokenType:
+                    for (let i = (node as WhenElseUnaryConditionToken).r.length - 1; i >= 0; i--) {
+                        const element = (node as WhenElseUnaryConditionToken).r[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
+                    }
+                    nodes.push((node as WhenElseUnaryConditionToken).l);
+                    (node as WhenElseUnaryConditionToken).l[PARENT] = node;
+
+                    break;
+
+                case EnumToken.IfConditionTokenType:
+                    for (let i = (node as IfConditionToken).r.length - 1; i >= 0; i--) {
+                        const element = (node as IfConditionToken).r[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
                     }
 
-                    // @ts-ignore
-                    if (node.r != null) {
-                        // @ts-ignore
-                        if (Array.isArray(node.r)) {
-                            // @ts-ignore
-                            for (let i = node.r.length - 1; i >= 0; i--) {
-                                // @ts-ignore
-                                nodes.push(node.r[i]);
-                                // @ts-ignore
-                                node.r[i][PARENT] = node;
-                            }
-                        } else {
-                            // @ts-ignore
-                            nodes.push(node.r);
-                            // @ts-ignore
-                            node.r[PARENT] = node;
-                        }
+                    for (let i = (node as IfConditionToken).l.length - 1; i >= 0; i--) {
+                        const element = (node as IfConditionToken).l[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
                     }
 
-                    // @ts-ignore
-                    if (Array.isArray(node.l)) {
-                        // @ts-ignore
-                        for (let i = node.l.length - 1; i >= 0; i--) {
-                            // @ts-ignore
-                            node.l[i][PARENT] = node;
-                            // @ts-ignore
-                            nodes.push(node.l[i]);
-                        }
-                    } else {
-                        // @ts-ignore
-                        nodes.push(node.l);
+                    break;
 
-                        // @ts-ignore
-                        node.l[PARENT] = node;
+                case EnumToken.ContainerStyleRangeTokenType:
+                    for (let i = (node as ContainerStyleRangeToken).r.length - 1; i >= 0; i--) {
+                        const element = (node as ContainerStyleRangeToken).r[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
                     }
-                }
+
+                    for (let i = (node as ContainerStyleRangeToken).op.length - 1; i >= 0; i--) {
+                        const element = (node as ContainerStyleRangeToken).op[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
+                    }
+                    for (let i = (node as ContainerStyleRangeToken).l.length - 1; i >= 0; i--) {
+                        const element = (node as ContainerStyleRangeToken).l[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
+                    }
+
+                    break;
+
+                case EnumToken.MediaRangeQueryTokenType:
+                    for (let i = (node as MediaRangeQueryToken).r.length - 1; i >= 0; i--) {
+                        const element = (node as MediaRangeQueryToken).r[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
+                    }
+
+                    nodes.push((node as MediaRangeQueryToken).op2);
+                    (node as MediaRangeQueryToken).op2[PARENT] = node;
+
+                    for (let i = (node as MediaRangeQueryToken).val.length - 1; i >= 0; i--) {
+                        const element = (node as MediaRangeQueryToken).val[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
+                    }
+
+                    nodes.push((node as MediaRangeQueryToken).op1);
+                    (node as MediaRangeQueryToken).op1[PARENT] = node;
+
+                    for (let i = (node as MediaRangeQueryToken).l.length - 1; i >= 0; i--) {
+                        const element = (node as MediaRangeQueryToken).l[i];
+                        nodes.push(element);
+                        element[PARENT] = node;
+                    }
+
+                    break;
             }
 
             // @ts-ignore

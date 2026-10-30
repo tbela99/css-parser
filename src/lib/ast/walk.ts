@@ -2,8 +2,11 @@ import type {
     AstDeclaration,
     AstNode,
     AstRuleList,
+    ContainerStyleRangeToken,
     FunctionToken,
-    ParensToken,
+    IfConditionToken,
+    MatchExpressionToken,
+    SupportsQueryConditionToken,
     Token,
     WalkAttributesResult,
     WalkerFilter,
@@ -11,8 +14,9 @@ import type {
     WalkerOptions,
     WalkerValueFilter,
     WalkResult,
+    WhenElseUnaryConditionToken
 } from "../../@types/index.d.ts";
-import type { BinaryExpressionToken, MediaRangeQueryToken } from "../../@types/token.d.ts";
+import type { BinaryExpressionToken, IfElseConditionToken, MediaRangeQueryToken } from "../../@types/token.d.ts";
 import { PARENT, TOKENS } from "../syntax/constants.ts";
 import { EnumToken } from "./types.ts";
 
@@ -51,8 +55,6 @@ export enum WalkerEvent {
      */
     Leave = 0x2,
 }
-
-const maxQueueLength = 25000;
 
 /**
  * Walk ast nodes
@@ -478,9 +480,8 @@ export function* walk(
  * // [ "Iden", "from" ]
  * ```
  */
-
 export function* walkValues(
-    values: Token[],
+    tokens: Token[],
     root: AstNode | Token | null = null,
     filter?:
         | WalkerValueFilter
@@ -492,8 +493,18 @@ export function* walkValues(
           },
     reverse?: boolean,
 ): Generator<WalkAttributesResult> {
-    const stack: Token[] = values.slice();
+    const nodes: Token[] = [];
     let previous: Token | null = null;
+
+    if (reverse) {
+        for (let i = 0; i < tokens.length; i++) {
+            nodes.push(tokens[i]);
+        }
+    } else {
+        for (let i = tokens.length - 1; i >= 0; i--) {
+            nodes.push(tokens[i]);
+        }
+    }
 
     if (filter != null && typeof filter == "function") {
         filter = {
@@ -510,7 +521,8 @@ export function* walkValues(
     let value: Token;
     let option: WalkerOption;
     let node: Token | null;
-    let i: number = -1;
+
+    const values: Token[] = [];
     const eventType = filter.event ?? WalkerEvent.Enter;
     // @ts-ignore
     const result = {
@@ -530,14 +542,9 @@ export function* walkValues(
         },
     } as WalkAttributesResult;
 
-    while (++i < stack.length) {
-        value = <Token>stack[i];
+    while (nodes.length > 0) {
+        value = nodes.pop() as Token;
         option = null;
-
-        if (i > maxQueueLength) {
-            stack.splice(0, maxQueueLength);
-            i -= maxQueueLength;
-        }
 
         if (filter.fn != null && eventType & WalkerEvent.Enter) {
             const isValid: boolean =
@@ -578,11 +585,15 @@ export function* walkValues(
                 if (option != null && typeof option == "object" && ("typ" in option || Array.isArray(option))) {
                     const op = Array.isArray(option) ? option : [option];
 
-                    stack.splice(i, 0, ...(reverse ? op.toReversed() : op));
-
-                    for (const o of op) {
-                        if (o[PARENT] != value) {
-                            o[PARENT] = value;
+                    if (reverse) {
+                        for (let i = 0; i < op.length; i++) {
+                            nodes.push(op[i]);
+                            op[i][PARENT] = value;
+                        }
+                    } else {
+                        for (let i = op.length - 1; i >= 0; i--) {
+                            nodes.push(op[i]);
+                            op[i][PARENT] = value;
                         }
                     }
                 }
@@ -592,78 +603,154 @@ export function* walkValues(
         result.value = value;
         result.parent = value[PARENT] ?? root;
         result.previousValue = previous;
-        result.nextValue = <Token>stack[0] ?? null;
+        result.nextValue = <Token>nodes[nodes.length - 1] ?? null;
 
         yield result;
 
         if (!isNumeric || ((option as number) & WalkerOptionEnum.IgnoreChildren) === 0) {
-            if ("chi" in value) {
-                const sliced = (<FunctionToken | ParensToken>value).chi.slice();
+            //
+            if ((value as FunctionToken).chi != null) {
+                const source = (value as FunctionToken).chi as Token[];
 
-                for (const child of sliced) {
-                    if (child[PARENT] != value) {
-                        child[PARENT] = value;
+                if (reverse) {
+                    for (let i = 0; i < source.length; i++) {
+                        nodes.push(source[i]);
+                        source[i][PARENT] = value;
                     }
-
-                    if (reverse) {
-                        stack.unshift(child);
-                    } else {
-                        stack.push(child);
+                } else {
+                    for (let i = source.length - 1; i >= 0; i--) {
+                        nodes.push(source[i]);
+                        source[i][PARENT] = value;
                     }
                 }
             } else {
-                const values: Token[] = [];
+                values.length = 0;
 
-                if ("l" in value && value.l != null) {
-                    // @ts-expect-error
-                    values.push(value.l);
+                switch (value.typ) {
+                    case EnumToken.BinaryExpressionTokenType:
+                    case EnumToken.IfElseConditionTokenType:
+                        values.push((value as BinaryExpressionToken | IfElseConditionToken).l);
+                        (value as BinaryExpressionToken | IfElseConditionToken).l[PARENT] = value;
 
-                    // @ts-expect-error
-                    if (value.l[PARENT] != value) {
-                        // @ts-expect-error
-                        value.l[PARENT] = value;
-                    }
-                }
+                        values.push((value as BinaryExpressionToken | IfElseConditionToken).r);
+                        (value as BinaryExpressionToken | IfElseConditionToken).r[PARENT] = value;
 
-                if ("op" in value && typeof value.op == "object") {
-                    // @ts-expect-error
-                    values.push(value.op);
+                        break;
 
-                    // @ts-expect-error
-                    if (value.op[PARENT] != value) {
-                        // @ts-expect-error
-                        value.op[PARENT] = value;
-                    }
-                }
+                    case EnumToken.MatchExpressionTokenType:
+                        values.push((value as MatchExpressionToken).l);
+                        (value as MatchExpressionToken).l[PARENT] = value;
 
-                if ("r" in value && value.r != null) {
-                    if (Array.isArray(value.r)) {
-                        for (const r of value.r) {
-                            //
-                            values.push(r);
+                        values.push((value as MatchExpressionToken).op);
+                        (value as MatchExpressionToken).op[PARENT] = value;
 
-                            if (r[PARENT] != value) {
-                                //
-                                r[PARENT] = value;
-                            }
+                        values.push((value as MatchExpressionToken).r);
+                        (value as MatchExpressionToken).r[PARENT] = value;
+
+                        break;
+
+                    case EnumToken.SupportsQueryConditionTokenType:
+                    case EnumToken.MediaQueryConditionTokenType:
+                        for (let i = 0; i < (value as SupportsQueryConditionToken).l.length; i++) {
+                            const element = (value as SupportsQueryConditionToken).l[i];
+                            values.push(element);
+                            element[PARENT] = value;
                         }
-                    } else {
-                        //
-                        values.push(value.r);
 
-                        if (value.r[PARENT] != value) {
-                            //
-                            value.r[PARENT] = value;
+                        values.push((value as SupportsQueryConditionToken).op);
+                        (value as SupportsQueryConditionToken).op[PARENT] = value;
+
+                        for (let i = 0; i < (value as SupportsQueryConditionToken).r.length; i++) {
+                            const element = (value as SupportsQueryConditionToken).r[i];
+                            values.push(element);
+                            element[PARENT] = value;
                         }
-                    }
+
+                        break;
+                    case EnumToken.WhenElseQueryConditionTokenType:
+                        values.push((value as WhenElseUnaryConditionToken).l);
+                        (value as WhenElseUnaryConditionToken).l[PARENT] = value;
+
+                        for (let i = 0; i < (value as WhenElseUnaryConditionToken).r.length; i++) {
+                            const element = (value as WhenElseUnaryConditionToken).r[i];
+                            values.push(element);
+                            element[PARENT] = value;
+                        }
+
+                        break;
+
+                    case EnumToken.IfConditionTokenType:
+                        for (let i = 0; i < (value as IfConditionToken).l.length; i++) {
+                            const element = (value as IfConditionToken).l[i];
+                            values.push(element);
+                            element[PARENT] = value;
+                        }
+
+                        for (let i = 0; i < (value as IfConditionToken).r.length; i++) {
+                            const element = (value as IfConditionToken).r[i];
+                            values.push(element);
+                            element[PARENT] = value;
+                        }
+
+                        break;
+
+                    case EnumToken.ContainerStyleRangeTokenType:
+                        for (let i = 0; i < (value as ContainerStyleRangeToken).l.length; i++) {
+                            const element = (value as ContainerStyleRangeToken).l[i];
+                            values.push(element);
+                            element[PARENT] = value;
+                        }
+
+                        for (let i = 0; i < (value as ContainerStyleRangeToken).op.length; i++) {
+                            const element = (value as ContainerStyleRangeToken).op[i];
+                            values.push(element);
+                            element[PARENT] = value;
+                        }
+
+                        for (let i = 0; i < (value as ContainerStyleRangeToken).r.length; i++) {
+                            const element = (value as ContainerStyleRangeToken).r[i];
+                            values.push(element);
+                            element[PARENT] = value;
+                        }
+                        break;
+
+                    case EnumToken.MediaRangeQueryTokenType:
+                        for (let i = 0; i < (value as MediaRangeQueryToken).l.length; i++) {
+                            const element = (value as MediaRangeQueryToken).l[i];
+                            values.push(element);
+                            element[PARENT] = value;
+                        }
+
+                        values.push((value as MediaRangeQueryToken).op1);
+                        (value as MediaRangeQueryToken).op1[PARENT] = value;
+
+                        for (let i = 0; i < (value as MediaRangeQueryToken).val.length; i++) {
+                            const element = (value as MediaRangeQueryToken).val[i];
+                            values.push(element);
+                            element[PARENT] = value;
+                        }
+
+                        values.push((value as MediaRangeQueryToken).op2);
+                        (value as MediaRangeQueryToken).op2[PARENT] = value;
+
+                        for (let i = 0; i < (value as MediaRangeQueryToken).r.length; i++) {
+                            const element = (value as MediaRangeQueryToken).r[i];
+                            values.push(element);
+                            element[PARENT] = value;
+                        }
+                        break;
                 }
 
                 if (values.length > 0) {
-                    for (const v of values) {
-                        if (reverse) {
-                            stack.unshift(v);
-                        } else {
-                            stack.push(v);
+                    if (reverse) {
+                        for (let i = 0; i < values.length; i++) {
+                            nodes.push(values[i]);
+                            values[i][PARENT] = value;
+                        }
+                    } else {
+                        for (let i = values.length - 1; i >= 0; i--) {
+                            nodes.push(values[i]);
+                            values[i][PARENT] = value;
                         }
                     }
                 }
@@ -684,11 +771,16 @@ export function* walkValues(
                 // @ts-ignore
                 if (option != null && ("typ" in option || Array.isArray(option))) {
                     const op = Array.isArray(option) ? option : [option];
-                    stack.splice(i, 0, ...(reverse ? op.toReversed() : op));
 
-                    for (const o of op) {
-                        if (o[PARENT] != value) {
-                            o[PARENT] = value;
+                    if (reverse) {
+                        for (let i = 0; i < op.length; i++) {
+                            nodes.push(op[i]);
+                            op[i][PARENT] = value;
+                        }
+                    } else {
+                        for (let i = op.length - 1; i >= 0; i--) {
+                            nodes.push(op[i]);
+                            op[i][PARENT] = value;
                         }
                     }
                 }

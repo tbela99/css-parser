@@ -44,7 +44,6 @@ var WalkerEvent;
      */
     WalkerEvent[WalkerEvent["Leave"] = 2] = "Leave";
 })(WalkerEvent || (WalkerEvent = {}));
-const maxQueueLength = 25000;
 /**
  * Walk ast nodes
  * @param node initial node
@@ -299,9 +298,19 @@ function* walk(node, filter, reverse) {
  * // [ "Iden", "from" ]
  * ```
  */
-function* walkValues(values, root = null, filter, reverse) {
-    const stack = values.slice();
+function* walkValues(tokens, root = null, filter, reverse) {
+    const nodes = [];
     let previous = null;
+    if (reverse) {
+        for (let i = 0; i < tokens.length; i++) {
+            nodes.push(tokens[i]);
+        }
+    }
+    else {
+        for (let i = tokens.length - 1; i >= 0; i--) {
+            nodes.push(tokens[i]);
+        }
+    }
     if (filter != null && typeof filter == "function") {
         filter = {
             event: WalkerEvent.Enter,
@@ -317,7 +326,7 @@ function* walkValues(values, root = null, filter, reverse) {
     let value;
     let option;
     let node;
-    let i = -1;
+    const values = [];
     const eventType = filter.event ?? WalkerEvent.Enter;
     // @ts-ignore
     const result = {
@@ -336,13 +345,9 @@ function* walkValues(values, root = null, filter, reverse) {
             }
         },
     };
-    while (++i < stack.length) {
-        value = stack[i];
+    while (nodes.length > 0) {
+        value = nodes.pop();
         option = null;
-        if (i > maxQueueLength) {
-            stack.splice(0, maxQueueLength);
-            i -= maxQueueLength;
-        }
         if (filter.fn != null && eventType & WalkerEvent.Enter) {
             const isValid = filter.type == null ||
                 value.typ == filter.type ||
@@ -370,10 +375,16 @@ function* walkValues(values, root = null, filter, reverse) {
                 //
                 if (option != null && typeof option == "object" && ("typ" in option || Array.isArray(option))) {
                     const op = Array.isArray(option) ? option : [option];
-                    stack.splice(i, 0, ...(reverse ? op.toReversed() : op));
-                    for (const o of op) {
-                        if (o[PARENT] != value) {
-                            o[PARENT] = value;
+                    if (reverse) {
+                        for (let i = 0; i < op.length; i++) {
+                            nodes.push(op[i]);
+                            op[i][PARENT] = value;
+                        }
+                    }
+                    else {
+                        for (let i = op.length - 1; i >= 0; i--) {
+                            nodes.push(op[i]);
+                            op[i][PARENT] = value;
                         }
                     }
                 }
@@ -382,70 +393,129 @@ function* walkValues(values, root = null, filter, reverse) {
         result.value = value;
         result.parent = value[PARENT] ?? root;
         result.previousValue = previous;
-        result.nextValue = stack[0] ?? null;
+        result.nextValue = nodes[nodes.length - 1] ?? null;
         yield result;
         if (!isNumeric || (option & WalkerOptionEnum.IgnoreChildren) === 0) {
-            if ("chi" in value) {
-                const sliced = value.chi.slice();
-                for (const child of sliced) {
-                    if (child[PARENT] != value) {
-                        child[PARENT] = value;
+            //
+            if (value.chi != null) {
+                const source = value.chi;
+                if (reverse) {
+                    for (let i = 0; i < source.length; i++) {
+                        nodes.push(source[i]);
+                        source[i][PARENT] = value;
                     }
-                    if (reverse) {
-                        stack.unshift(child);
-                    }
-                    else {
-                        stack.push(child);
+                }
+                else {
+                    for (let i = source.length - 1; i >= 0; i--) {
+                        nodes.push(source[i]);
+                        source[i][PARENT] = value;
                     }
                 }
             }
             else {
-                const values = [];
-                if ("l" in value && value.l != null) {
-                    // @ts-expect-error
-                    values.push(value.l);
-                    // @ts-expect-error
-                    if (value.l[PARENT] != value) {
-                        // @ts-expect-error
+                values.length = 0;
+                switch (value.typ) {
+                    case EnumToken.BinaryExpressionTokenType:
+                    case EnumToken.IfElseConditionTokenType:
+                        values.push(value.l);
                         value.l[PARENT] = value;
-                    }
-                }
-                if ("op" in value && typeof value.op == "object") {
-                    // @ts-expect-error
-                    values.push(value.op);
-                    // @ts-expect-error
-                    if (value.op[PARENT] != value) {
-                        // @ts-expect-error
+                        values.push(value.r);
+                        value.r[PARENT] = value;
+                        break;
+                    case EnumToken.MatchExpressionTokenType:
+                        values.push(value.l);
+                        value.l[PARENT] = value;
+                        values.push(value.op);
                         value.op[PARENT] = value;
-                    }
+                        values.push(value.r);
+                        value.r[PARENT] = value;
+                        break;
+                    case EnumToken.SupportsQueryConditionTokenType:
+                    case EnumToken.MediaQueryConditionTokenType:
+                        for (let i = 0; i < value.l.length; i++) {
+                            const element = value.l[i];
+                            values.push(element);
+                            element[PARENT] = value;
+                        }
+                        values.push(value.op);
+                        value.op[PARENT] = value;
+                        for (let i = 0; i < value.r.length; i++) {
+                            const element = value.r[i];
+                            values.push(element);
+                            element[PARENT] = value;
+                        }
+                        break;
+                    case EnumToken.WhenElseQueryConditionTokenType:
+                        values.push(value.l);
+                        value.l[PARENT] = value;
+                        for (let i = 0; i < value.r.length; i++) {
+                            const element = value.r[i];
+                            values.push(element);
+                            element[PARENT] = value;
+                        }
+                        break;
+                    case EnumToken.IfConditionTokenType:
+                        for (let i = 0; i < value.l.length; i++) {
+                            const element = value.l[i];
+                            values.push(element);
+                            element[PARENT] = value;
+                        }
+                        for (let i = 0; i < value.r.length; i++) {
+                            const element = value.r[i];
+                            values.push(element);
+                            element[PARENT] = value;
+                        }
+                        break;
+                    case EnumToken.ContainerStyleRangeTokenType:
+                        for (let i = 0; i < value.l.length; i++) {
+                            const element = value.l[i];
+                            values.push(element);
+                            element[PARENT] = value;
+                        }
+                        for (let i = 0; i < value.op.length; i++) {
+                            const element = value.op[i];
+                            values.push(element);
+                            element[PARENT] = value;
+                        }
+                        for (let i = 0; i < value.r.length; i++) {
+                            const element = value.r[i];
+                            values.push(element);
+                            element[PARENT] = value;
+                        }
+                        break;
+                    case EnumToken.MediaRangeQueryTokenType:
+                        for (let i = 0; i < value.l.length; i++) {
+                            const element = value.l[i];
+                            values.push(element);
+                            element[PARENT] = value;
+                        }
+                        values.push(value.op1);
+                        value.op1[PARENT] = value;
+                        for (let i = 0; i < value.val.length; i++) {
+                            const element = value.val[i];
+                            values.push(element);
+                            element[PARENT] = value;
+                        }
+                        values.push(value.op2);
+                        value.op2[PARENT] = value;
+                        for (let i = 0; i < value.r.length; i++) {
+                            const element = value.r[i];
+                            values.push(element);
+                            element[PARENT] = value;
+                        }
+                        break;
                 }
-                if ("r" in value && value.r != null) {
-                    if (Array.isArray(value.r)) {
-                        for (const r of value.r) {
-                            //
-                            values.push(r);
-                            if (r[PARENT] != value) {
-                                //
-                                r[PARENT] = value;
-                            }
+                if (values.length > 0) {
+                    if (reverse) {
+                        for (let i = 0; i < values.length; i++) {
+                            nodes.push(values[i]);
+                            values[i][PARENT] = value;
                         }
                     }
                     else {
-                        //
-                        values.push(value.r);
-                        if (value.r[PARENT] != value) {
-                            //
-                            value.r[PARENT] = value;
-                        }
-                    }
-                }
-                if (values.length > 0) {
-                    for (const v of values) {
-                        if (reverse) {
-                            stack.unshift(v);
-                        }
-                        else {
-                            stack.push(v);
+                        for (let i = values.length - 1; i >= 0; i--) {
+                            nodes.push(values[i]);
+                            values[i][PARENT] = value;
                         }
                     }
                 }
@@ -462,10 +532,16 @@ function* walkValues(values, root = null, filter, reverse) {
                 // @ts-ignore
                 if (option != null && ("typ" in option || Array.isArray(option))) {
                     const op = Array.isArray(option) ? option : [option];
-                    stack.splice(i, 0, ...(reverse ? op.toReversed() : op));
-                    for (const o of op) {
-                        if (o[PARENT] != value) {
-                            o[PARENT] = value;
+                    if (reverse) {
+                        for (let i = 0; i < op.length; i++) {
+                            nodes.push(op[i]);
+                            op[i][PARENT] = value;
+                        }
+                    }
+                    else {
+                        for (let i = op.length - 1; i >= 0; i--) {
+                            nodes.push(op[i]);
+                            op[i][PARENT] = value;
                         }
                     }
                 }

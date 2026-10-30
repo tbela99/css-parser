@@ -737,5 +737,68 @@ html,body {
  background-color: red
 }`);
         });
+
+        it("visitor #13", function () {
+            const visitor = [];
+
+            const css = `
+
+body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
+
+html,
+body {
+    line-height: 1.474;
+}
+
+.ruler {
+
+    height: 10px;
+    background-color: orange
+}
+
+`;
+            const options = {
+                beautify: true,
+                visitor(node) {
+                    visitor.push(
+                        `${EnumToken[node.typ]} -> ${"nam" in node ? node.nam : "sel" in node ? node.sel : "val" in node ? node.val : ""}`,
+                    );
+                },
+            };
+
+            transformSync(css, options);
+            return expect(visitor).deep.equals([
+                "StyleSheetNodeType -> ",
+                "RuleNodeType -> body",
+                "DeclarationNodeType -> color",
+                "Color -> color",
+                "Iden -> from",
+                "Whitespace ->  ",
+                "WildCardFunctionTokenType -> var",
+                "DashedIden -> --base-color",
+                "Whitespace ->  ",
+                "Iden -> display-p3",
+                "Whitespace ->  ",
+                "Iden -> r",
+                "Whitespace ->  ",
+                "MathFunctionTokenType -> calc",
+                "BinaryExpressionTokenType -> ",
+                "Iden -> g",
+                "Number -> 0.24",
+                "Whitespace ->  ",
+                "MathFunctionTokenType -> calc",
+                "BinaryExpressionTokenType -> ",
+                "Iden -> b",
+                "Number -> 0.15",
+                "RuleNodeType -> html,body",
+                "DeclarationNodeType -> line-height",
+                "Number -> 1.474",
+                "RuleNodeType -> .ruler",
+                "DeclarationNodeType -> height",
+                "Length -> 10",
+                "DeclarationNodeType -> background-color",
+                "Color -> orange",
+            ]);
+        });
     });
 }

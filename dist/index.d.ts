@@ -3396,7 +3396,7 @@ declare function walk(node: AstNode$1, filter?: WalkerOptions | null): Generator
  * // [ "Iden", "from" ]
  * ```
  */
-declare function walkValues(values: Token$1[], root?: AstNode$1 | Token$1 | null, filter?: WalkerValueFilter | null | {
+declare function walkValues(tokens: Token$1[], root?: AstNode$1 | Token$1 | null, filter?: WalkerValueFilter | null | {
     event?: WalkerEvent;
     fn?: WalkerValueFilter;
     type?: EnumToken | EnumToken[] | ((token: Token$1) => boolean);
