@@ -9693,6 +9693,7 @@ exports.WalkerEvent = void 0;
      */
     WalkerEvent[WalkerEvent["Leave"] = 2] = "Leave";
 })(exports.WalkerEvent || (exports.WalkerEvent = {}));
+const maxQueueLength = 25000;
 /**
  * Walk ast nodes
  * @param node initial node
@@ -9948,7 +9949,7 @@ function* walk(node, filter, reverse) {
  * ```
  */
 function* walkValues(values, root = null, filter, reverse) {
-    const nodes = reverse ? values.slice() : values.toReversed();
+    const stack = values.slice();
     let previous = null;
     if (filter != null && typeof filter == "function") {
         filter = {
@@ -9965,6 +9966,7 @@ function* walkValues(values, root = null, filter, reverse) {
     let value;
     let option;
     let node;
+    let i = -1;
     const eventType = filter.event ?? exports.WalkerEvent.Enter;
     // @ts-ignore
     const result = {
@@ -9983,9 +9985,13 @@ function* walkValues(values, root = null, filter, reverse) {
             }
         },
     };
-    while (nodes.length > 0) {
-        value = nodes.pop();
+    while (++i < stack.length) {
+        value = stack[i];
         option = null;
+        if (i > maxQueueLength) {
+            stack.splice(0, maxQueueLength);
+            i -= maxQueueLength;
+        }
         if (filter.fn != null && eventType & exports.WalkerEvent.Enter) {
             const isValid = filter.type == null ||
                 value.typ == filter.type ||
@@ -10013,16 +10019,10 @@ function* walkValues(values, root = null, filter, reverse) {
                 //
                 if (option != null && typeof option == "object" && ("typ" in option || Array.isArray(option))) {
                     const op = Array.isArray(option) ? option : [option];
-                    if (reverse) {
-                        for (let i = 0; i < op.length; i++) {
-                            nodes.push(op[i]);
-                            op[i][PARENT] = value;
-                        }
-                    }
-                    else {
-                        for (let i = op.length - 1; i >= 0; i--) {
-                            nodes.push(op[i]);
-                            op[i][PARENT] = value;
+                    stack.splice(i, 0, ...(reverse ? op.toReversed() : op));
+                    for (const o of op) {
+                        if (o[PARENT] != value) {
+                            o[PARENT] = value;
                         }
                     }
                 }
@@ -10031,62 +10031,31 @@ function* walkValues(values, root = null, filter, reverse) {
         result.value = value;
         result.parent = value[PARENT] ?? root;
         result.previousValue = previous;
-        result.nextValue = nodes[nodes.length - 1] ?? null;
+        result.nextValue = stack[0] ?? null;
         yield result;
         if (!isNumeric || (option & exports.WalkerOptionEnum.IgnoreChildren) === 0) {
             if ("chi" in value) {
-                const source = value.chi;
-                if (reverse) {
-                    for (let i = 0; i < source.length; i++) {
-                        nodes.push(source[i]);
-                        source[i][PARENT] = value;
+                const sliced = value.chi.slice();
+                for (const child of sliced) {
+                    if (child[PARENT] != value) {
+                        child[PARENT] = value;
                     }
-                }
-                else {
-                    for (let i = source.length - 1; i >= 0; i--) {
-                        nodes.push(source[i]);
-                        source[i][PARENT] = value;
+                    if (reverse) {
+                        stack.unshift(child);
+                    }
+                    else {
+                        stack.push(child);
                     }
                 }
             }
             else {
                 const values = [];
-                if ("op2" in value && value.op2 != null) {
-                    values.push(value.op2);
-                    value.op2[PARENT] = value;
-                }
-                if ("op1" in value && value.op1 != null) {
-                    values.push(value.op1);
-                    value.op1[PARENT] = value;
-                }
-                // @ts-expect-error
-                if ("op" in value && value.op.typ != null) {
-                    // @ts-expect-error
-                    values.push(value.op);
-                    // @ts-expect-error
-                    value.op[PARENT] = value;
-                }
-                if ("r" in value && value.r != null) {
-                    if (Array.isArray(value.r)) {
-                        for (let i = value.r.length - 1; i >= 0; i--) {
-                            values.push(value.r[i]);
-                            value.r[i][PARENT] = value;
-                        }
-                    }
-                    else {
-                        values.push(value.r);
-                        value.r[PARENT] = value;
-                    }
-                }
                 if ("l" in value && value.l != null) {
-                    if (Array.isArray(value.l)) {
-                        for (let i = value.l.length - 1; i >= 0; i--) {
-                            values.push(value.l[i]);
-                            value.l[i][PARENT] = value;
-                        }
-                    }
-                    else {
-                        values.push(value.l);
+                    // @ts-expect-error
+                    values.push(value.l);
+                    // @ts-expect-error
+                    if (value.l[PARENT] != value) {
+                        // @ts-expect-error
                         value.l[PARENT] = value;
                     }
                 }
@@ -10120,16 +10089,12 @@ function* walkValues(values, root = null, filter, reverse) {
                     }
                 }
                 if (values.length > 0) {
-                    if (reverse) {
-                        for (let i = 0; i < values.length; i++) {
-                            nodes.push(values[i]);
-                            values[i][PARENT] = value;
+                    for (const v of values) {
+                        if (reverse) {
+                            stack.unshift(v);
                         }
-                    }
-                    else {
-                        for (let i = values.length - 1; i >= 0; i--) {
-                            nodes.push(values[i]);
-                            values[i][PARENT] = value;
+                        else {
+                            stack.push(v);
                         }
                     }
                 }
@@ -10146,16 +10111,10 @@ function* walkValues(values, root = null, filter, reverse) {
                 // @ts-ignore
                 if (option != null && ("typ" in option || Array.isArray(option))) {
                     const op = Array.isArray(option) ? option : [option];
-                    if (reverse) {
-                        for (let i = 0; i < op.length; i++) {
-                            nodes.push(op[i]);
-                            op[i][PARENT] = value;
-                        }
-                    }
-                    else {
-                        for (let i = op.length - 1; i >= 0; i--) {
-                            nodes.push(op[i]);
-                            op[i][PARENT] = value;
+                    stack.splice(i, 0, ...(reverse ? op.toReversed() : op));
+                    for (const o of op) {
+                        if (o[PARENT] != value) {
+                            o[PARENT] = value;
                         }
                     }
                 }

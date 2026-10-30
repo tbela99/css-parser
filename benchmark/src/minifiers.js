@@ -11,6 +11,7 @@ import * as csso from "csso";
 import * as csstree from "css-tree";
 import * as esbuild from "esbuild";
 import { transform } from "lightningcss";
+import {  transform  as yukuTransform} from "yuku-css";
 import { transformSync as tbelaTransform } from "@tbela99/css-parser";
 import { transformSync as tbelaDevTransform } from "@tbela99/css-parser2";
 
@@ -65,6 +66,7 @@ const versions = {
     "css-tree": pkgVersion("css-tree", "css-tree/package.json"),
     esbuild: pkgVersion("esbuild", "esbuild/package.json"),
     lightningcss: pkgVersion("lightningcss", "lightningcss/package.json"),
+    'yuku-css': pkgVersion("yuku-css", "yuku-css/package.json"),
     "css-parser": pkgVersion("css-parser", "@tbela99/css-parser/package.json"),
     "css-parser-dev": pkgVersion("css-parser-dev", "@tbela99/css-parser2/package.json"),
 };
@@ -117,6 +119,12 @@ export const minifiers = [
         url: versions.lightningcss.url,
         label: `lightningcss - ${versions.lightningcss.version}`,
         minify: (css) => transform({ filename: "style.css", code: Buffer.from(css), minify: true }).code.toString(),
+    },
+    {
+        id: "yuku-css",
+        url: versions["yuku-css"].url,
+        label: `yuku-css - ${versions["yuku-css"].version}`,
+        minify: (css) => yukuTransform(css).code,
     },
     {
         id: "css-parser",

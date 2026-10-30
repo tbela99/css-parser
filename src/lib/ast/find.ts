@@ -98,8 +98,12 @@ export function findByValue(
 
         for (const r2 of walkValues(source, r1.node)) {
             if (matcher(r2.value, r1.node as AstNode)) {
+                return {
                 // @ts-ignore
-                return { node: r1.node, value: { node: r2.value, parent: r2.parent, root: r2.root, parents: r2.parents } };
+                    node: r1.node,
+                    // @ts-ignore
+                    value: { node: r2.value, parent: r2.parent, root: r2.root, parents: r2.parents },
+                };
             }
         }
     }
@@ -192,10 +196,10 @@ export function findLast(
 ): AstNode | Token | null {
     for (const result of walk(ast as AstNode, null, true))
         // for (const { node, parent } of walk(ast as AstNode, null, true)) {
-            if (matcher(result.node, result.parent)) {
-                return result.node;
-            }
-        // }
+        if (matcher(result.node, result.parent)) {
+            return result.node;
+        }
+    // }
 
     return null;
 }
