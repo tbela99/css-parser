@@ -4720,7 +4720,6 @@ export function parseAtRule(
             }
 
             atRule[LOCEND] = stream.at(-1)?.[LOCEND] ?? atRule[LOCEND];
-
             atRule[TOKENS] = stream.slice();
             atRule[STATE] = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
             atRule[ERRORS] = result.errors;

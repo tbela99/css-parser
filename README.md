@@ -41,6 +41,7 @@ $ deno add @tbela99/css-parser
 * **CSS variable inlining** where values can be safely resolved.
 * **Duplicate declaration removal** to eliminate redundant rules.
 * **`@import` flattening** to produce self-contained stylesheets.
+* **51kb** once minified and gzipped.
 
 ## Vendor prefix removal
 **Vendor prefix cleanup** to modernize generated CSS.

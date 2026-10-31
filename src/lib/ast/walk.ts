@@ -351,7 +351,6 @@ export function* walk(
             source.length = 0;
 
             if (Array.isArray(node[TOKENS])) {
-                // source = node[TOKENS] as Token[];
 
                 if (reverse) {
                     for (const token of node[TOKENS] as Token[]) {
@@ -365,7 +364,6 @@ export function* walk(
                     }
                 }
             } else if (node.typ == EnumToken.DeclarationNodeType) {
-                // source = (node as AstDeclaration).val as Token[];
 
                 if (reverse) {
                     for (const token of (node as AstDeclaration).val as Token[]) {

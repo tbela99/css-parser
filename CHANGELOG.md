@@ -2,11 +2,11 @@
 
 # 1.8.0
 
-- [x] support dashed indent as unit
 - [x] the walker functions now use DFS instead of BFS
 - [x] [disallow](https://drafts.csswg.org/css-mixins-1/#mixin-rule) mixin inside rules or nested groups 
 - [x] [disallow](https://drafts.csswg.org/css-mixins-1/#mixin-rule) layer inside mixin
 - [x] [disallow](https://drafts.csswg.org/css-mixins-1/#contents-rule) contents outside mixin
+- [x] support dashed indent as unit
 
 ```css
 .module {
