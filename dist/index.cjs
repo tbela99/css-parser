@@ -9824,7 +9824,6 @@ function* walk(node, filter, reverse) {
         if (attributes) {
             source.length = 0;
             if (Array.isArray(node[TOKENS])) {
-                // source = node[TOKENS] as Token[];
                 if (reverse) {
                     for (const token of node[TOKENS]) {
                         parents.push(token);
@@ -9839,7 +9838,6 @@ function* walk(node, filter, reverse) {
                 }
             }
             else if (node.typ == exports.EnumToken.DeclarationNodeType) {
-                // source = (node as AstDeclaration).val as Token[];
                 if (reverse) {
                     for (const token of node.val) {
                         parents.push(token);
