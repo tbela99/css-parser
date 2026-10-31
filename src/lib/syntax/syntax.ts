@@ -16,7 +16,7 @@ import type {
     Token,
 } from "../../@types/index.d.ts";
 import { isOkLabClose } from "./color/utils/distance.ts";
-import { ColorType, EnumToken } from "../ast/types.ts";
+import { ColorType, EnumAstNodeStatus, EnumToken } from "../ast/types.ts";
 import { WalkerOptionEnum, walkValues } from "../ast/walk.ts";
 import { toDegrees } from "../parser/utils/angle.ts";
 import { memoize } from "../parser/utils/cache.ts";
@@ -872,51 +872,49 @@ export function isIdentColor(token: Token): boolean {
 //     );
 // }
 
-export function isColor(token: number, arena: Arena): boolean {
-
+export function isColor(token: number, arena: Arena, errors?: ErrorDescription[]): boolean {
     const typ: EnumToken = arena.getType(token);
     if (typ == EnumToken.WildCardFunctionTokenType) {
         return true;
     }
 
     if (typ == EnumToken.ColorTokenType) {
-        if ("kin" in token && !("chi" in token)) {
+        // color kind and no children
+        if (arena.getColorType(token) != 0 && !arena.hasFlags(token, EnumAstNodeStatus.HasChildren)) {
             return true;
         }
     }
 
+        const val = arena.getValue(token).toLowerCase();
+
+
     if (typ == EnumToken.IdenTokenType) {
-        const val = (token as IdentToken).val.toLowerCase();
 
         if (systemColors.has(val) || deprecatedSystemColors.has(val) || nonStandardColors.has(val)) {
             return true;
         }
 
         // named color
-        return val in COLORS_NAMES || "currentcolor" === val || "transparent" === val;
+        return COLORS_NAMES[val] != null || "currentcolor" === val || "transparent" === val;
     }
-
-    let isLegacySyntax: boolean = false;
 
     if (typ === EnumToken.FunctionTokenType || typ === EnumToken.ColorTokenType) {
         // if (!colorsFunc.includes((token as FunctionToken).val.toLowerCase())) {
         //     return false;
         // }
 
-        if ((token as FunctionToken).chi.length > 0) {
+        if (arena.firstChild[token] != 0) {
             // @ts-ignore
-            if ((token as ColorToken).val === "light-dark") {
-                // @ts-ignore
-                const children: Token[] = ((token as ColorToken).chi as Token[]).filter((t: Token) =>
-                    [
-                        EnumToken.IdenTokenType,
-                        EnumToken.NumberTokenType,
-                        EnumToken.LiteralTokenType,
-                        EnumToken.ColorTokenType,
-                        EnumToken.FunctionTokenType,
-                        EnumToken.PercentageTokenType,
-                        EnumToken.WildCardFunctionTokenType,
-                    ].includes(t.typ),
+            if (val === "light-dark") {
+                
+                const children: number[] = arena.children(token , (t: number) =>
+                    arena.dataTypes[t] == EnumToken.IdenTokenType ||
+                arena.dataTypes[t] == EnumToken.NumberTokenType ||
+                arena.dataTypes[t] == EnumToken.LiteralTokenType ||
+                arena.dataTypes[t] == EnumToken.ColorTokenType ||
+                arena.dataTypes[t] == EnumToken.FunctionTokenType ||
+                arena.dataTypes[t] == EnumToken.PercentageTokenType ||
+                arena.dataTypes[t] == EnumToken.WildCardFunctionTokenType 
                 );
 
                 if (children.length != 2) {
@@ -928,7 +926,7 @@ export function isColor(token: number, arena: Arena): boolean {
                     return false;
                 }
 
-                if (isColor(children[0]) && isColor(children[1])) {
+                if (isColor(children[0], arena) && isColor(children[1], arena)) {
                     return true;
                 }
             }
@@ -936,7 +934,7 @@ export function isColor(token: number, arena: Arena): boolean {
             // adding numbers and percentages is disallowed
             // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/lch#defining_relative_color_output_channel_components:~:text=Adding%20a%20%3Cpercentage%3E%20to%20a%20%3Cnumber%3E%2C%20for%20example%2C%20doesn%27t%20work
 
-            const components = getColorComponents(token as ColorToken);
+            const components = getColorComponents(token, arena);
 
             if (components !== null) {
                 const colorSpace = getColorSpace(token as ColorToken)?.split?.("") as string[] | null;
@@ -1241,7 +1239,6 @@ export function isColor(token: number, arena: Arena): boolean {
 }
 
 export function parseColor(token: number, arena: Arena): number {
-
     const typ = arena.getType(token);
     if (typ === EnumToken.IdenTokenType) {
         const val: string = (token as IdentToken).val.toLowerCase();

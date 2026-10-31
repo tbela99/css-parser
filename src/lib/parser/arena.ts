@@ -47,6 +47,7 @@ export class Arena {
     public renderedTokens: Uint32Array;
 
     constructor(size: number = 4096) {
+
         this.dataTypes = new Uint8Array(size);
         this.parents = new Uint32Array(size);
         this.nextSibling = new Uint32Array(size);
@@ -60,10 +61,7 @@ export class Arena {
         this.numericValue = new Float64Array(size);
         this.unit = new Uint32Array(size);
         this.flags = new Uint32Array(size);
-        // this.left = new Uint32Array(size);
-        // this.right = new Uint32Array(size);
-        // this.op = new Uint32Array(size);
-        // this.op2 = new Uint32Array(size);
+        
         this.renderedTokens = new Uint32Array(size);
         this.colorType = new Uint8Array(size);
         this.spans = new BigUint64Array(size);
@@ -283,6 +281,10 @@ export class Arena {
 
     setColorType(id: number, colorType: number): void {
         this.colorType[id] = colorType;
+    }
+
+    getColorType(id: number): number {
+        return this.colorType[id];
     }
 
     setFlags(id: number, flags: number): void {
@@ -799,10 +801,15 @@ export class Arena {
         return siblings;
     }
 
-    children(id: number): number[] {
+    children(id: number, filter?: ((id: number) => boolean)): number[] {
         let children: number[] = [];
         let child = this.firstChild[id];
         while (child != 0) {
+
+            if (filter != null && !filter(child)) {
+                child = this.nextSibling[child];
+                continue;
+            }
             children.push(child);
             child = this.nextSibling[child];
         }

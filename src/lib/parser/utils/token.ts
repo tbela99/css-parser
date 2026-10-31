@@ -116,7 +116,7 @@ export function replaceNodeOrValue(
     return true;
 }
 
-export function trimWhiteSpaceTokens(tokens: Token[]): Token[] {
+export function trimWhiteSpaceTokens(tokens: Token[], options: ParserOptions): Token[] {
     let i: number = 0;
 
     if (tokens[0]?.typ === EnumToken.WhitespaceTokenType) {

@@ -207,7 +207,7 @@ export function parseSelector(
                 newToken = arena.allocate();
                 all[write++] = newToken;
 
-                arena.set(newToken, EnumToken.PseudoClassTokenType, arena.interString(":" + arena.getValue(next)));
+                arena.set(newToken, EnumToken.PseudoClassTokenType, arena.internString(":" + arena.getValue(next)));
                 arena.setSpan(newToken, arena.getSourceId(token), arena.getStart(token), arena.getEnd(next));
 
                 read++;
@@ -235,7 +235,7 @@ export function parseSelector(
                     val + "()" in getSyntaxConfig().selectors
                         ? EnumToken.PseudoClassFunctionTokenDefType
                         : arena.getType(next),
-                    arena.interString(":" + arena.getValue(next)),
+                    arena.internString(":" + arena.getValue(next)),
                 );
                 arena.setSpan(newToken, arena.getSourceId(token), arena.getStart(token), arena.getEnd(next));
 
@@ -262,7 +262,7 @@ export function parseSelector(
                 arena.set(
                     newToken,
                     EnumToken.PseudoClassTokenType,
-                    arena.interString((pseudoElements.includes(val) ? "" : ":") + val),
+                    arena.internString((pseudoElements.includes(val) ? "" : ":") + val),
                 );
                 arena.setSpan(newToken, arena.getSourceId(token), arena.getStart(token), arena.getEnd(next));
 
@@ -290,7 +290,7 @@ export function parseSelector(
                     val + "()" in getSyntaxConfig().selectors
                         ? EnumToken.PseudoClassFunctionTokenDefType
                         : EnumToken.FunctionTokenDefType,
-                    arena.interString(val),
+                    arena.internString(val),
                 );
                 arena.setSpan(newToken, arena.getSourceId(token), arena.getStart(token), arena.getEnd(next));
 
@@ -308,7 +308,7 @@ export function parseSelector(
 
             const node = arena.allocate();
 
-            node.set(
+            arena.set(
                 node,
                 EnumToken.RuleNodeType,
                 arena.internString(
@@ -327,7 +327,7 @@ export function parseSelector(
                                         }
                                     }
 
-                                    let t: string = printValue(curr, { minify: false, arena });
+                                    let t: string = printValue(curr, arena, { minify: false, arena });
 
                                     if (t == ",") {
                                         acc.push([]);
@@ -618,7 +618,7 @@ export function parseSelector(
                                         arena.getType(list[0]) == EnumToken.IdenTokenType &&
                                         arena.equalsIgnoreCase(list[0], "val", "-n")
                                     ) {
-                                        arena.setValue(list[0], arena.interString("n"));
+                                        arena.setValue(list[0], arena.internString("n"));
                                     }
                                 }
 

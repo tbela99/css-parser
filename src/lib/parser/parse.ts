@@ -81,6 +81,7 @@ import { memoize } from "./utils/cache.ts";
 import { SourceFile } from "./source.ts";
 import { dirname } from "../fs/resolve.ts";
 import { Arena } from "./arena.ts";
+import { printValue } from "../../node.ts";
 
 function renderTokens(tokens: Token[] | null | undefined, options?: any): string {
     if (tokens == null || tokens.length === 0) return "";
@@ -3788,17 +3789,28 @@ export function parseAtRule(
                 }
             }
 
-            atRule[LOCEND] = (stream.at(-1)! ?? atRule)[LOCEND];
-            atRule[TOKENS] = stream;
-            atRule[STATE] = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
-            atRule[ERRORS] = result.success ? [] : result.errors;
+            arena.setType(atRule, EnumToken.AtRuleNodeType);
+            arena.setSpan(atRule, arena.getSourceId(atRule), arena.getSpanStart(atRule), arena.getSpanEnd(stream.at(-1)! ?? atRule));
+            arena.setTokens(atRule, ...trimArray(stream, options));
+            arena.setFlags(atRule, EnumAstNodeStatus.Validated | EnumAstNodeStatus.HasChildren);
 
-            // @ts-expect-error
-            return Object.assign(atRule, {
-                typ: EnumToken.AtRuleNodeType,
-                val: renderTokens(trimWhiteSpaceTokens(stream), options),
-                chi: [] as Token[],
-            }) as AstAtRule;
+            arena.setValue(atRule, arena.internString(trimArray(stream, options).reduce((acc, token) => {
+                
+                return acc + printValue(token, arena, options);
+            }, '')));
+
+            return atRule;
+
+            // atRule[LOCEND] = (stream.at(-1)! ?? atRule)[LOCEND];
+            // atRule[TOKENS] = stream;
+            // atRule[STATE] = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
+            // atRule[ERRORS] = result.success ? [] : result.errors;
+
+            // return Object.assign(atRule, {
+            //     typ: EnumToken.AtRuleNodeType,
+            //     val: renderTokens(trimWhiteSpaceTokens(stream), options),
+            //     chi: [] as Token[],
+            // }) as AstAtRule;
         }
         case "custom-media": {
             const tokens = trimArray(stream.slice(1));
