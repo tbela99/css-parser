@@ -1,5 +1,9 @@
 # Changelog
 
+# 1.8.1
+
+no code change
+
 # 1.8.0
 
 - [x] the walker functions now use DFS instead of BFS
