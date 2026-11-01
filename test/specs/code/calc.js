@@ -393,7 +393,7 @@ width: calc(-2px *sign(-1);}
 --preferred-width: 20px;
 }
 .foo-bar {
-    width: calc(calc(var(--preferred-width) + 2px) / 3 + 5/2px - 5/6px);
+    width: calc(calc(var(--preferred-width) + 2px) / 3 + 5px/2 - 5px/6);
 `,
                 { inlineCssVariables: true, beautify: true },
             ).then((result) =>
