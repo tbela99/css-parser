@@ -465,7 +465,6 @@ html,body {
                     Rule: {
                         type: WalkerEvent.Enter,
                         handler(node) {
-
                             node.sel = ".ruled";
                             // node.val = "slide-in-out";
                             // return node;
@@ -474,7 +473,6 @@ html,body {
                     Declaration: {
                         type: WalkerEvent.Leave,
                         handler(node) {
-
                             // node.sel = ".ruled";
                             // node.val = "slide-in-out";
                             // return node;
@@ -573,8 +571,6 @@ html,body {
             );
         });
 
-
-
         it("visitor #10", function () {
             const css = `
 
@@ -614,25 +610,25 @@ html,body {
                 removePrefix: true,
                 beautify: true,
                 visitor: [
-        {
-            Rule: {
-                type: WalkerEvent.Enter,
-                handler(node) {
-                    node.sel = ".ruled";
-                    // node.val = "slide-in-out";
-                    // return node;
-                },
-            },
-        },
-        {
-            KeyframesAtRule: {
-                slideIn(node) {
-                    node.val = "slide-in-out";
-                    return node;
-                },
-            },
-        },
-    ],
+                    {
+                        Rule: {
+                            type: WalkerEvent.Enter,
+                            handler(node) {
+                                node.sel = ".ruled";
+                                // node.val = "slide-in-out";
+                                // return node;
+                            },
+                        },
+                    },
+                    {
+                        KeyframesAtRule: {
+                            slideIn(node) {
+                                node.val = "slide-in-out";
+                                return node;
+                            },
+                        },
+                    },
+                ],
             };
 
             const result = transformSync(css, options);
@@ -675,20 +671,134 @@ html,body {
             }
 `;
             const options = {
-    removePrefix: true,
-    beautify: true,
-    visitor: function Rule(node) {
+                removePrefix: true,
+                beautify: true,
+                visitor: function Rule(node) {
                     node.sel = ".ruled";
                     // node.val = "slide-in-out";
                     // return node;
                 },
-};
+            };
 
             const result = transformSync(css, options);
 
             expect(result.code).equals(`.ruled {
  height: 10px
 }`);
+        });
+
+        it("visitor #12", function () {
+            const css = `
+
+body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
+
+html,
+body {
+    line-height: 1.474;
+}
+
+.ruler {
+
+    height: 10px;
+    background-color: orange
+}
+`;
+            const options = {
+                beautify: true,
+                visitor: [
+                    function DeclarationNodeType(declaration) {
+                        if (declaration.nam == "height") {
+                            declaration.nam = "width";
+                        }
+                    },
+                    {
+                        ColorTokenType: {
+                            type: WalkerEvent.Enter,
+                            handler: function (color) {
+                                return {
+                                    typ: EnumToken.Color,
+                                    val: "red",
+                                    kin: ColorType.HEX,
+                                };
+                            },
+                        },
+                    },
+                ],
+            };
+
+            return expect(transformSync(css, options).code).equals(`body {
+ color: red
+}
+html,body {
+ line-height: 1.474
+}
+.ruler {
+ width: 10px;
+ background-color: red
+}`);
+        });
+
+        it("visitor #13", function () {
+            const visitor = [];
+
+            const css = `
+
+body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
+
+html,
+body {
+    line-height: 1.474;
+}
+
+.ruler {
+
+    height: 10px;
+    background-color: orange
+}
+
+`;
+            const options = {
+                beautify: true,
+                visitor(node) {
+                    visitor.push(
+                        `${EnumToken[node.typ]} -> ${"nam" in node ? node.nam : "sel" in node ? node.sel : "val" in node ? node.val : ""}`,
+                    );
+                },
+            };
+
+            transformSync(css, options);
+            return expect(visitor).deep.equals([
+                "StyleSheetNodeType -> ",
+                "RuleNodeType -> body",
+                "DeclarationNodeType -> color",
+                "Color -> color",
+                "Iden -> from",
+                "Whitespace ->  ",
+                "WildCardFunctionTokenType -> var",
+                "DashedIden -> --base-color",
+                "Whitespace ->  ",
+                "Iden -> display-p3",
+                "Whitespace ->  ",
+                "Iden -> r",
+                "Whitespace ->  ",
+                "MathFunctionTokenType -> calc",
+                "BinaryExpressionTokenType -> ",
+                "Iden -> g",
+                "Number -> 0.24",
+                "Whitespace ->  ",
+                "MathFunctionTokenType -> calc",
+                "BinaryExpressionTokenType -> ",
+                "Iden -> b",
+                "Number -> 0.15",
+                "RuleNodeType -> html,body",
+                "DeclarationNodeType -> line-height",
+                "Number -> 1.474",
+                "RuleNodeType -> .ruler",
+                "DeclarationNodeType -> height",
+                "Length -> 10",
+                "DeclarationNodeType -> background-color",
+                "Color -> orange",
+            ]);
         });
     });
 }

@@ -4720,6 +4720,9 @@ var atRules = {
 	"@apply": {
 		syntax: " @apply [ <dashed-ident> | <dashed-function> ] [ { <declaration-list> } ]?;"
 	},
+	"@contents": {
+		syntax: " @contents [ { <declaration-list> } ]?;"
+	},
 	"@left-top": {
 		syntax: " @left-top { <declaration-list> }"
 	},

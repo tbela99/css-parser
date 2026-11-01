@@ -56,9 +56,10 @@ function replace(
 
     for (const { value, parent: parentValue } of walkValues((<AstDeclaration>node).val)) {
         if (
-            value.typ == EnumToken.MathFunctionTokenDefType ||
+            value.typ == EnumToken.MathFunctionTokenType ||
             (value.typ == EnumToken.WildCardFunctionTokenType && (value as FunctionToken).val == "var")
         ) {
+
             if (
                 (value as FunctionToken).chi.length == 1 &&
                 (value as FunctionToken).chi[0].typ == EnumToken.DashedIdenTokenType
@@ -71,9 +72,11 @@ function replace(
                     if (parentValue != null) {
                         let i: number = 0;
 
-                        for (; i < (<FunctionToken>parentValue).chi.length; i++) {
-                            if ((<FunctionToken>parentValue).chi[i] == value) {
-                                (<FunctionToken>parentValue).chi.splice(i, 1, ...info.node.val);
+                        const source = parentValue.typ == EnumToken.DeclarationNodeType ? (<AstDeclaration>parentValue).val : (parentValue as FunctionToken).chi;
+
+                        for (; i < source.length; i++) {
+                            if (source[i] == value) {
+                                source.splice(i, 1, ...info.node.val);
                                 break;
                             }
                         }

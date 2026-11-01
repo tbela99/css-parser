@@ -38,7 +38,7 @@ function replace(node, variableScope) {
         }
     }
     for (const { value, parent: parentValue } of walkValues(node.val)) {
-        if (value.typ == EnumToken.MathFunctionTokenDefType ||
+        if (value.typ == EnumToken.MathFunctionTokenType ||
             (value.typ == EnumToken.WildCardFunctionTokenType && value.val == "var")) {
             if (value.chi.length == 1 &&
                 value.chi[0].typ == EnumToken.DashedIdenTokenType) {
@@ -46,9 +46,10 @@ function replace(node, variableScope) {
                 if (info?.replaceable) {
                     if (parentValue != null) {
                         let i = 0;
-                        for (; i < parentValue.chi.length; i++) {
-                            if (parentValue.chi[i] == value) {
-                                parentValue.chi.splice(i, 1, ...info.node.val);
+                        const source = parentValue.typ == EnumToken.DeclarationNodeType ? parentValue.val : parentValue.chi;
+                        for (; i < source.length; i++) {
+                            if (source[i] == value) {
+                                source.splice(i, 1, ...info.node.val);
                                 break;
                             }
                         }

@@ -678,6 +678,10 @@ declare enum EnumToken {
      */
     CssTypeTokenType = 144,
     /**
+     * user defined dimension token type
+     */
+    UserDefinedDimensionTokenType = 145,
+    /**
      * alias for time token type
      */
     Time = 25,
@@ -2468,6 +2472,7 @@ export declare interface ComposesSelectorToken extends BaseToken {
      * @inheritdoc
      */
     typ: EnumToken.ComposesSelectorTokenType;
+
     /**
      * Left handle
      */
@@ -3392,7 +3397,7 @@ declare function walk(node: AstNode$1, filter?: WalkerOptions | null): Generator
  * // [ "Iden", "from" ]
  * ```
  */
-declare function walkValues(values: Token$1[], root?: AstNode$1 | Token$1 | null, filter?: WalkerValueFilter | null | {
+declare function walkValues(tokens: Token$1[], root?: AstNode$1 | Token$1 | null, filter?: WalkerValueFilter | null | {
     event?: WalkerEvent;
     fn?: WalkerValueFilter;
     type?: EnumToken | EnumToken[] | ((token: Token$1) => boolean);
@@ -5118,7 +5123,7 @@ export declare interface WalkResult {
     /**
      * current node
      */
-    node: AstNode$1;
+    node: AstNode$1 | Token$1;
     /**
      * parent node
      */
@@ -5130,7 +5135,7 @@ export declare interface WalkResult {
     /**
      * parent nodes
      */
-    parents: Generator<AstNode$1>;
+    parents: Generator<AstNode$1 | Token$1>;
 }
 
 /**
@@ -6560,7 +6565,7 @@ button-small {
  * @param matcher
  * @returns
  */
-declare function findAll(ast: AstNode$1, matcher: (node: AstNode$1, parent?: AstNode$1 | null) => boolean): AstNode$1[];
+declare function findAll(ast: AstNode$1, matcher: (node: AstNode$1 | Token$1, parent?: AstNode$1 | Token$1 | null) => boolean): Array<AstNode$1 | Token$1>;
 /**
  * Search the ast sub-tree and return the last match.
  *
@@ -6591,7 +6596,7 @@ button {
  * @param matcher
  * @returns
  */
-declare function findLast(ast: AstNode$1, matcher: (node: AstNode$1, parent?: AstNode$1 | null) => boolean): AstNode$1 | null;
+declare function findLast(ast: AstNode$1 | Token$1, matcher: (node: AstNode$1 | Token$1, parent?: AstNode$1 | Token$1 | null) => boolean): AstNode$1 | Token$1 | null;
 
 /**
  *
