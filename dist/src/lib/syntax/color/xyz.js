@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.8.1
+	Version: 1.8.2
 	License: MIT
  */
 import { multiplyMatrices } from './utils/matrix.js';

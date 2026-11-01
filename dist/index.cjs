@@ -33320,10 +33320,6 @@ async function doParse(iter, options = {}) {
             }
             // @ts-ignore
             if (replacement != null && node != replacement) {
-                console.error({
-                    node,
-                    replacement,
-                });
                 // @ts-ignore
                 replaceNodeOrValue(node[PARENT], node, replacement);
             }
@@ -35383,7 +35379,7 @@ function setNodeProperty(node, key, value) {
     }
 }
 
-var version = "1.8.1";
+var version = "1.8.2";
 
 /**
  * Load file or url
