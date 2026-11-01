@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.7.0
+	Version: 1.8.2
 	License: MIT
  */
 (function (global, factory) {
@@ -21029,12 +21029,27 @@
      * Represents a list of property declarations, compute shorthand and remove duplicate declarations.
      */
     class PropertyList {
+        /**
+         * options
+         */
         options = { removeDuplicateDeclarations: true, computeShorthand: true };
+        /**
+         * declarations
+         */
         declarations;
+        /**
+         *
+         * @param options
+         */
         constructor(options = {}) {
             this.options = options;
             this.declarations = new Map();
         }
+        /**
+         * add declarations
+         * @param declarations
+         * @returns
+         */
         add(declarations) {
             let name;
             let syntaxRules = null;
@@ -21174,6 +21189,11 @@
             }
             return this;
         }
+        /**
+         *
+         * @param declaration
+         * @param mapping
+         */
         mapValues(declaration, mapping) {
             let name;
             let values = declaration.val;
@@ -21233,6 +21253,10 @@
                 }
             }
         }
+        /**
+         *
+         * @returns
+         */
         [Symbol.iterator]() {
             let iterator = this.declarations.values();
             const iterators = [];
@@ -33300,10 +33324,6 @@
                 }
                 // @ts-ignore
                 if (replacement != null && node != replacement) {
-                    console.error({
-                        node,
-                        replacement,
-                    });
                     // @ts-ignore
                     replaceNodeOrValue(node[PARENT], node, replacement);
                 }
@@ -35363,7 +35383,7 @@
         }
     }
 
-    var version = "1.7.0";
+    var version = "1.8.2";
 
     /**
      * Load file or url
