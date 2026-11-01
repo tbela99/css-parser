@@ -21025,12 +21025,27 @@ const config = getConfig();
  * Represents a list of property declarations, compute shorthand and remove duplicate declarations.
  */
 class PropertyList {
+    /**
+     * options
+     */
     options = { removeDuplicateDeclarations: true, computeShorthand: true };
+    /**
+     * declarations
+     */
     declarations;
+    /**
+     *
+     * @param options
+     */
     constructor(options = {}) {
         this.options = options;
         this.declarations = new Map();
     }
+    /**
+     * add declarations
+     * @param declarations
+     * @returns
+     */
     add(declarations) {
         let name;
         let syntaxRules = null;
@@ -21170,6 +21185,11 @@ class PropertyList {
         }
         return this;
     }
+    /**
+     *
+     * @param declaration
+     * @param mapping
+     */
     mapValues(declaration, mapping) {
         let name;
         let values = declaration.val;
@@ -21229,6 +21249,10 @@ class PropertyList {
             }
         }
     }
+    /**
+     *
+     * @returns
+     */
     [Symbol.iterator]() {
         let iterator = this.declarations.values();
         const iterators = [];
@@ -33296,10 +33320,6 @@ async function doParse(iter, options = {}) {
             }
             // @ts-ignore
             if (replacement != null && node != replacement) {
-                console.error({
-                    node,
-                    replacement,
-                });
                 // @ts-ignore
                 replaceNodeOrValue(node[PARENT], node, replacement);
             }
@@ -35359,7 +35379,7 @@ function setNodeProperty(node, key, value) {
     }
 }
 
-var version = "1.7.0";
+var version = "1.8.2";
 
 /**
  * Load file or url

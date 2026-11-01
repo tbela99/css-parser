@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.7.0
+	Version: 1.8.2
 	License: MIT
  */
 // from https://www.w3.org/TR/css-color-4/multiply-matrices.js

@@ -2733,11 +2733,6 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
 
             // @ts-ignore
             if (replacement != null && node != replacement) {
-                console.error({
-                    node,
-                    replacement,
-                });
-
                 // @ts-ignore
                 replaceNodeOrValue(node![PARENT] as AstNode, node, replacement);
             }
