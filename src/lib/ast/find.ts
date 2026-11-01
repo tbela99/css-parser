@@ -99,11 +99,11 @@ export function findByValue(
         for (const r2 of walkValues(source, r1.node)) {
             if (matcher(r2.value, r1.node as AstNode)) {
                 return {
-                // @ts-ignore
+                    // @ts-ignore
                     node: r1.node,
                     // @ts-ignore
                     value: { node: r2.value, parent: r2.parent, root: r2.root, parents: r2.parents },
-                };
+                } as { node: AstNode; value: TokenSearchResult };
             }
         }
     }

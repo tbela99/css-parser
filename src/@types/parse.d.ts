@@ -1,7 +1,16 @@
 import { SourceFile } from "../lib/parser/source.ts";
 
+/**
+ * property list options
+ */
 export declare interface PropertyListOptions {
+    /**
+     * remove duplicate declarations
+     */
     removeDuplicateDeclarations?: boolean | string | string[];
+    /**
+     * compute shorthand
+     */
     computeShorthand?: boolean;
 }
 

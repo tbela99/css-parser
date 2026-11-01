@@ -29,14 +29,30 @@ const config: PropertiesConfig = getConfig();
  * Represents a list of property declarations, compute shorthand and remove duplicate declarations.
  */
 export class PropertyList {
+    /**
+     * options
+     */
     protected options: PropertyListOptions = { removeDuplicateDeclarations: true, computeShorthand: true };
+
+    /**
+     * declarations
+     */
     protected declarations: Map<string, AstNode | PropertySet | PropertyMap>;
 
+    /**
+     *
+     * @param options
+     */
     constructor(options: PropertyListOptions = {}) {
         this.options = options;
         this.declarations = new Map<string, AstNode | PropertySet | PropertyMap>();
     }
 
+    /**
+     * add declarations
+     * @param declarations
+     * @returns
+     */
     add(declarations: AstNode[]): this {
         let name: string | null;
         let syntaxRules: ValidationToken[] | null = null;
@@ -202,7 +218,12 @@ export class PropertyList {
         return this;
     }
 
-    mapValues(declaration: AstDeclaration, mapping: SinglePropertyTypeMapping) {
+    /**
+     *
+     * @param declaration
+     * @param mapping
+     */
+    mapValues(declaration: AstDeclaration, mapping: SinglePropertyTypeMapping): void {
         let name: string | null;
 
         let values = declaration.val;
@@ -281,6 +302,10 @@ export class PropertyList {
         }
     }
 
+    /**
+     *
+     * @returns
+     */
     [Symbol.iterator](): IterableIterator<AstNode> {
         let iterator: IterableIterator<AstNode | PropertySet | PropertyMap> = this.declarations.values();
         const iterators: Array<IterableIterator<AstNode | PropertySet | PropertyMap>> = [];
