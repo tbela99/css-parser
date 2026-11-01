@@ -1,5 +1,9 @@
 # Changelog
 
+# 1.8.2
+
+remove left over console debug
+
 # 1.8.1
 
 no code change
