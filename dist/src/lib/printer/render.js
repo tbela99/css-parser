@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.7.0
+	Version: 1.8.1
 	License: MIT
  */
 import { convertColor, getAngle } from '../syntax/color/color.js';
@@ -1146,6 +1146,7 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.DimensionTokenType:
         case EnumToken.FrequencyTokenType:
         case EnumToken.ResolutionTokenType:
+        case EnumToken.UserDefinedDimensionTokenType:
             let val = token.val.typ == EnumToken.FractionTokenType
                 ? renderValue(token.val, options, cache)
                 : minifyNumber(token.val);
@@ -1345,8 +1346,10 @@ function renderValue(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.BadUrlTokenType:
         case EnumToken.EOFTokenType:
             return "";
+        case EnumToken.ComposesSelectorNodeType:
+            return `${token.l.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer), "")}${token.r == null ? "" : " from " + renderValue(token.r, options, cache, reducer)}`;
         default:
-            console.debug({ token });
+            console.error({ token });
             throw new Error(`Unsupported token type for ${EnumToken[token.typ]}`);
     }
     // errors?.push({ action: "ignore", message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });

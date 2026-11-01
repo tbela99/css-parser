@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">97.45% </span>
+                <span class="strong">97.46% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>153/157</span>
+                <span class='fraction'>154/158</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">91.48% </span>
+                <span class="strong">90.19% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>43/47</span>
+                <span class='fraction'>46/51</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">97.45% </span>
+                <span class="strong">97.46% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>153/157</span>
+                <span class='fraction'>154/158</span>
             </div>
         
             
@@ -220,7 +220,8 @@
 <a name='L155'></a><a href='#L155'>155</a>
 <a name='L156'></a><a href='#L156'>156</a>
 <a name='L157'></a><a href='#L157'>157</a>
-<a name='L158'></a><a href='#L158'>158</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
@@ -262,25 +263,26 @@
 <span class="cline-any cline-yes">123x</span>
 <span class="cline-any cline-yes">1018x</span>
 <span class="cline-any cline-yes">1018x</span>
+<span class="cline-any cline-yes">143x</span>
+<span class="cline-any cline-yes">143x</span>
 <span class="cline-any cline-yes">79x</span>
 <span class="cline-any cline-yes">79x</span>
 <span class="cline-any cline-yes">79x</span>
-<span class="cline-any cline-yes">79x</span>
-<span class="cline-any cline-yes">79x</span>
-<span class="cline-any cline-yes">59x</span>
-<span class="cline-any cline-yes">59x</span>
-<span class="cline-any cline-yes">117x</span>
 <span class="cline-any cline-yes">59x</span>
 <span class="cline-any cline-yes">59x</span>
 <span class="cline-any cline-yes">59x</span>
 <span class="cline-any cline-yes">117x</span>
 <span class="cline-any cline-yes">59x</span>
+<span class="cline-any cline-yes">59x</span>
+<span class="cline-any cline-yes">59x</span>
+<span class="cline-any cline-yes">117x</span>
+<span class="cline-any cline-yes">59x</span>
 <span class="cline-any cline-yes">20x</span>
 <span class="cline-any cline-yes">20x</span>
 <span class="cline-any cline-yes">20x</span>
 <span class="cline-any cline-yes">79x</span>
 <span class="cline-any cline-yes">79x</span>
-<span class="cline-any cline-yes">79x</span>
+<span class="cline-any cline-yes">143x</span>
 <span class="cline-any cline-yes">1018x</span>
 <span class="cline-any cline-yes">123x</span>
 <span class="cline-any cline-yes">4x</span>
@@ -292,11 +294,11 @@
 <span class="cline-any cline-yes">469x</span>
 <span class="cline-any cline-yes">469x</span>
 <span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">971x</span>
+<span class="cline-any cline-yes">975x</span>
 <span class="cline-any cline-yes">47x</span>
 <span class="cline-any cline-yes">47x</span>
 <span class="cline-any cline-yes">47x</span>
-<span class="cline-any cline-yes">971x</span>
+<span class="cline-any cline-yes">975x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">123x</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -330,14 +332,14 @@
 <span class="cline-any cline-yes">59x</span>
 <span class="cline-any cline-yes">59x</span>
 <span class="cline-any cline-yes">59x</span>
-<span class="cline-any cline-yes">206x</span>
-<span class="cline-any cline-yes">206x</span>
+<span class="cline-any cline-yes">200x</span>
+<span class="cline-any cline-yes">200x</span>
 <span class="cline-any cline-yes">12x</span>
-<span class="cline-any cline-yes">206x</span>
+<span class="cline-any cline-yes">200x</span>
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">12x</span>
-<span class="cline-any cline-yes">206x</span>
+<span class="cline-any cline-yes">200x</span>
 <span class="cline-any cline-yes">59x</span>
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">12x</span>
@@ -417,7 +419,7 @@ function replace(node, variableScope) {
         }
     }
     for (const { value, parent: parentValue } of walkValues(node.val)) {
-        if (value.typ == EnumToken.MathFunctionTokenDefType ||
+        if (value.typ == EnumToken.MathFunctionTokenType ||
             (value.typ == EnumToken.WildCardFunctionTokenType &amp;&amp; value.val == "var")) {
             if (value.chi.length == 1 &amp;&amp;
                 value.chi[0].typ == EnumToken.DashedIdenTokenType) {
@@ -425,9 +427,10 @@ function replace(node, variableScope) {
                 if (info?.replaceable) {
                     if (parentValue != null) {
                         let i = 0;
-                        for (; i &lt; parentValue.chi.length; i++) {
-                            if (parentValue.chi[i] == value) {
-                                parentValue.chi.splice(i, 1, ...info.node.val);
+                        const source = parentValue.typ == EnumToken.DeclarationNodeType <span class="branch-0 cbranch-no" title="branch not covered" >? parentValue.val </span>: parentValue.chi;
+                        for (; i &lt; source.length; i++) {
+                            if (source[i] == value) {
+                                source.splice(i, 1, ...info.node.val);
                                 break;
                             }
                         }
@@ -541,7 +544,7 @@ export { InlineCssVariablesFeature };
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-10-25T18:56:24.141Z
+                at 2026-11-01T15:49:10.465Z
             </div>
         <script src="../../../../../prettify.js"></script>
         <script>

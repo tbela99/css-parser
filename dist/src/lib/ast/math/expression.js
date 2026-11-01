@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.7.0
+	Version: 1.8.1
 	License: MIT
  */
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
@@ -139,6 +139,9 @@ function evaluate(tokens) {
             }
         }
         if (acc.length > 0 && curr[0] != EnumToken.ListToken) {
+            if ("val" in token && +token.val == 0) {
+                return acc;
+            }
             acc.push({
                 typ: EnumToken.Add,
                 [LOCSRCID]: token[LOCSRCID],

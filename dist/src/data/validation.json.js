@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.7.0
+	Version: 1.8.1
 	License: MIT
  */
 var declarations = {
@@ -4719,6 +4719,9 @@ var atRules = {
 	},
 	"@apply": {
 		syntax: " @apply [ <dashed-ident> | <dashed-function> ] [ { <declaration-list> } ]?;"
+	},
+	"@contents": {
+		syntax: " @contents [ { <declaration-list> } ]?;"
 	},
 	"@left-top": {
 		syntax: " @left-top { <declaration-list> }"

@@ -25,7 +25,7 @@ const trimTokenSpace: Set<EnumToken> = new Set([
     EnumToken.LteTokenType,
     EnumToken.ChildCombinatorTokenType,
     EnumToken.PipeTokenType,
-    EnumToken.ColonTokenType
+    EnumToken.ColonTokenType,
 ]);
 const trimSpaceAfter: Set<EnumToken> = new Set([
     ...tokensfuncSet.values(),
@@ -67,9 +67,15 @@ export function replaceNodeOrValue(
         throw new TypeError(`replacement is null`);
     }
 
-    for (const newNode of Array.isArray(replacement) ? replacement : [replacement]) {
-        if (newNode[PARENT] != node[PARENT]) {
-            newNode[PARENT] = node[PARENT];
+    if (!Array.isArray(replacement)) {
+        if (replacement[PARENT] != parent) {
+            replacement[PARENT] = parent;
+        }
+    } else {
+        for (const newNode of replacement as Token[]) {
+            if (newNode[PARENT] != parent) {
+                newNode[PARENT] = parent;
+            }
         }
     }
 

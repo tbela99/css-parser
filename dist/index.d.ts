@@ -678,6 +678,10 @@ declare enum EnumToken {
      */
     CssTypeTokenType = 144,
     /**
+     * user defined dimension token type
+     */
+    UserDefinedDimensionTokenType = 145,
+    /**
      * alias for time token type
      */
     Time = 25,
@@ -2468,6 +2472,7 @@ export declare interface ComposesSelectorToken extends BaseToken {
      * @inheritdoc
      */
     typ: EnumToken.ComposesSelectorTokenType;
+
     /**
      * Left handle
      */
@@ -3392,7 +3397,7 @@ declare function walk(node: AstNode$1, filter?: WalkerOptions | null): Generator
  * // [ "Iden", "from" ]
  * ```
  */
-declare function walkValues(values: Token$1[], root?: AstNode$1 | Token$1 | null, filter?: WalkerValueFilter | null | {
+declare function walkValues(tokens: Token$1[], root?: AstNode$1 | Token$1 | null, filter?: WalkerValueFilter | null | {
     event?: WalkerEvent;
     fn?: WalkerValueFilter;
     type?: EnumToken | EnumToken[] | ((token: Token$1) => boolean);
@@ -3939,8 +3944,14 @@ export declare interface VisitorNodeMap {
      */
     Rule?: GenericVisitorAstNodeHandlerMap<AstRule>;
 
+    /**
+     * keyframes rule visitor
+     */
     KeyframesRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesRule>;
 
+    /**
+     * keyframes at-rule visitor
+     */
     KeyframesAtRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule>;
 
     /**
@@ -4266,8 +4277,17 @@ declare class SourceFile {
     getInputSourceMap(): SourceMap | null;
 }
 
+/**
+ * property list options
+ */
 export declare interface PropertyListOptions {
+    /**
+     * remove duplicate declarations
+     */
     removeDuplicateDeclarations?: boolean | string | string[];
+    /**
+     * compute shorthand
+     */
     computeShorthand?: boolean;
 }
 
@@ -4544,104 +4564,328 @@ declare enum ResponseType {
     JSON = 3
 }
 
+/**
+ * shorthand property type
+ */
 interface PropertyType {
+    /**
+     * shorthand name
+     */
     shorthand: string;
 }
 
+/**
+ * single property
+ */
 interface SinglePropertyType {
+    /**
+     * keyof shorthand property type
+     */
     typ: keyof EnumToken;
+    /**
+     * value
+     */
     val: string | number;
 }
 
+/**
+ * shorthand property map
+ */
 interface SinglePropertyTypeMapping {
+    /**
+     * shorthand pattern
+     */
     pattern?: string[][];
+    /**
+     * shorthand mappings
+     */
     mapping: Record<string, SinglePropertyType>;
 }
-
+/**
+ * shorthand configuration
+ */
 interface ShorthandPropertyType {
+    /**
+     * shorthand name
+     */
     shorthand: string;
+    /**
+     * mapped shorthand property
+     */
     map?: string;
+    /**
+     * property names
+     */
     properties: string[];
+    /**
+     * property types
+     */
     types: string[];
+    /**
+     * allow multiple values
+     */
     multiple: boolean;
+    /**
+     * values separator
+     */
     separator: {
+        /**
+         * token type
+         */
         typ: keyof EnumToken;
+        /**
+         * token value
+         */
         val: string;
     };
+    /**
+     * value separator
+     */
     valueSeparator?: {
+        /**
+         * token type
+         */
         typ: keyof EnumToken;
+        /**
+         * token value
+         */
         val: string;
     };
+    /**
+     * keywords
+     */
     keywords: string[];
 }
 
+/**
+ * shorthand property set. a set of identical properties such as `margin`
+ */
 interface PropertySetType {
+    /**
+     * shorthand property definition
+     */
     [key: string]: PropertyType | ShorthandPropertyType;
 }
 
+/**
+ * mapped shorthand property. a set of different properties such as `font`
+ */
 interface PropertyMapType {
+    /**
+     * default values
+     */
     default: string[];
+    /**
+     * property types
+     */
     types: string[];
+    /**
+     * keywords
+     */
     keywords: string[];
+    /**
+     * required
+     */
     required?: boolean;
+    /**
+     * allow multiple values
+     */
     multiple?: boolean;
+    /**
+     * property has a prefix
+     */
     prefix?: {
+        /**
+         * token type
+         */
         typ: keyof EnumToken;
+        /**
+         * token value
+         */
         val: string;
     };
+    /**
+     * previous property
+     */
     previous?: string;
+    /**
+     * separator
+     */
     separator?: {
+        /**
+         * token type
+         */
         typ: keyof EnumToken;
     };
+    /**
+     * property constraints
+     */
     constraints?: {
+        /**
+         * property constraints
+         */
         [key: string]: {
+            /**
+             * property constraints
+             */
             [key: string]: any;
         };
     };
+    /**
+     * values mapping
+     */
     mapping?: Record<string, string>;
 }
 
+/**
+ * mapped shorthand definition
+ */
 interface ShorthandMapType {
+    /**
+     * shorthand name
+     */
     shorthand: string;
+    /**
+     * shorthand pattern
+     */
     pattern: string;
+    /**
+     * shorthand keywords
+     */
     keywords: string[];
+    /**
+     * default values
+     */
     default: string[];
+    /**
+     * values mapping
+     */
     mapping?: Record<string, string>;
+    /**
+     * allow multiple values
+     */
     multiple?: boolean;
-    separator?: { typ: keyof EnumToken; val?: string };
+    /**
+     * shorthand values separator
+     */
+    separator?: {
+        /**
+         * token type
+         */
+        typ: keyof EnumToken;
+        /**
+         * token value
+         */
+        val?: string;
+    };
+    /**
+     * shorthand property sets
+     */
     set?: Record<string, string[]>;
+    /**
+     * shorthand properties
+     */
     properties: {
+        /**
+         * shorthand properties
+         */
         [property: string]: PropertyMapType;
     };
 }
 
+/**
+ * shorthand properties
+ */
 interface ShorthandProperties {
+    /**
+     * property types
+     */
     types: EnumToken[];
+    /**
+     * default values
+     */
     default: string[];
+    /**
+     * keywords
+     */
     keywords: string[];
+    /**
+     * required
+     */
     required?: boolean;
+    /**
+     * allow multiple values
+     */
     multiple?: boolean;
+    /**
+     * propery constraints
+     */
     constraints?: Array<any>;
+    /**
+     * values mapping
+     */
     mapping?: {
+        /**
+         * values mapping
+         */
         [key: string]: any;
     };
+    /**
+     * property validation
+     */
     validation?: {
+        /**
+         * property validation
+         */
         [key: string]: any;
     };
+    /**
+     * property has a prefix
+     */
     prefix?: string;
 }
 
+/**
+ * shorthand definition
+ */
 interface ShorthandDef {
+    /**
+     * shorthand name
+     */
     shorthand: string;
+    /**
+     * shorthand pattern
+     */
     pattern: string;
+    /**
+     * shorthand keywords
+     */
     keywords: string;
+    /**
+     * default values
+     */
     defaults: string[];
+    /**
+     * allow multiple values
+     */
     multiple?: boolean;
+    /**
+     * values separator
+     */
     separator?: string;
 }
 
+/**
+ * shorthand type
+ */
 interface ShorthandType {
+    /**
+     * shorthand name
+     */
     shorthand: string;
+    /**
+     * shorthand properties
+     */
     properties: ShorthandProperties;
 }
 
@@ -5118,7 +5362,7 @@ export declare interface WalkResult {
     /**
      * current node
      */
-    node: AstNode$1;
+    node: AstNode$1 | Token$1;
     /**
      * parent node
      */
@@ -5130,7 +5374,7 @@ export declare interface WalkResult {
     /**
      * parent nodes
      */
-    parents: Generator<AstNode$1>;
+    parents: Generator<AstNode$1 | Token$1>;
 }
 
 /**
@@ -6560,7 +6804,7 @@ button-small {
  * @param matcher
  * @returns
  */
-declare function findAll(ast: AstNode$1, matcher: (node: AstNode$1, parent?: AstNode$1 | null) => boolean): AstNode$1[];
+declare function findAll(ast: AstNode$1, matcher: (node: AstNode$1 | Token$1, parent?: AstNode$1 | Token$1 | null) => boolean): Array<AstNode$1 | Token$1>;
 /**
  * Search the ast sub-tree and return the last match.
  *
@@ -6591,7 +6835,7 @@ button {
  * @param matcher
  * @returns
  */
-declare function findLast(ast: AstNode$1, matcher: (node: AstNode$1, parent?: AstNode$1 | null) => boolean): AstNode$1 | null;
+declare function findLast(ast: AstNode$1 | Token$1, matcher: (node: AstNode$1 | Token$1, parent?: AstNode$1 | Token$1 | null) => boolean): AstNode$1 | Token$1 | null;
 
 /**
  *

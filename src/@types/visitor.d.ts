@@ -543,8 +543,14 @@ export declare interface VisitorNodeMap {
      */
     Rule?: GenericVisitorAstNodeHandlerMap<AstRule>;
 
+    /**
+     * keyframes rule visitor
+     */
     KeyframesRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesRule>;
 
+    /**
+     * keyframes at-rule visitor
+     */
     KeyframesAtRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule>;
 
     /**

@@ -13,6 +13,7 @@ import type {
     ClassSelectorToken,
     ColorToken,
     CommentToken,
+    ComposesSelectorToken,
     DashedIdentToken,
     ErrorDescription,
     FractionToken,
@@ -1648,6 +1649,7 @@ export function renderValue(
         case EnumToken.DimensionTokenType:
         case EnumToken.FrequencyTokenType:
         case EnumToken.ResolutionTokenType:
+        case EnumToken.UserDefinedDimensionTokenType:
             let val: string =
                 (<FractionToken>(token as LengthToken).val).typ == EnumToken.FractionTokenType
                     ? renderValue(<FractionToken>(token as LengthToken).val, options, cache)
@@ -1988,8 +1990,11 @@ export function renderValue(
         case EnumToken.EOFTokenType:
             return "";
 
+        case EnumToken.ComposesSelectorNodeType:
+            return `${(token as ComposesSelectorToken).l.reduce((acc, curr) => acc + renderValue(curr, options, cache, reducer, errors), "")}${(token as ComposesSelectorToken).r == null ? "" : " from " + renderValue((token as ComposesSelectorToken).r as Token, options, cache, reducer, errors)}`;
+
         default:
-            console.debug({ token });
+            console.error({ token });
             throw new Error(`Unsupported token type for ${EnumToken[token.typ]}`);
     }
 

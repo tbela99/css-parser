@@ -64,7 +64,7 @@ export declare interface WalkResult {
     /**
      * current node
      */
-    node: AstNode;
+    node: AstNode | Token;
     /**
      * parent node
      */
@@ -76,7 +76,7 @@ export declare interface WalkResult {
     /**
      * parent nodes
      */
-    parents: Generator<AstNode>;
+    parents: Generator<AstNode | Token>;
 }
 
 /**

@@ -1,5 +1,35 @@
 # Changelog
 
+# 1.8.1
+
+no code change
+
+# 1.8.0
+
+- [x] the walker functions now use DFS instead of BFS
+- [x] [disallow](https://drafts.csswg.org/css-mixins-1/#mixin-rule) mixin inside rules or nested groups 
+- [x] [disallow](https://drafts.csswg.org/css-mixins-1/#mixin-rule) layer inside mixin
+- [x] [disallow](https://drafts.csswg.org/css-mixins-1/#contents-rule) contents outside mixin
+- [x] support dashed indent as unit
+
+```css
+.module {
+  margin-block: 1.5--bs;
+  border-block: .5--bs;
+  /* gives a vertical margin of 12px,
+     and vertical border of 4px */
+}
+```
+
+is rendered as 
+
+```css
+.module {
+ margin-block: 1.5--bs;
+ border-block: .5--bs
+}
+```
+
 # v1.7.0
 
 - [x] implement CSS [Custom Functions and Mixins Modules and Level 1](https://drafts.csswg.org/css-mixins/#apply-rule)  

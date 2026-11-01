@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.7.0
+	Version: 1.8.1
 	License: MIT
  */
 /**
@@ -691,6 +691,10 @@ var EnumToken;
      * CSS type token
      */
     EnumToken[EnumToken["CssTypeTokenType"] = 144] = "CssTypeTokenType";
+    /**
+     * user defined dimension token type
+     */
+    EnumToken[EnumToken["UserDefinedDimensionTokenType"] = 145] = "UserDefinedDimensionTokenType";
     /* aliases */
     /**
      * alias for time token type

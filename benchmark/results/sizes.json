@@ -6,6 +6,7 @@
     "css-tree": 5772,
     "esbuild": 5773,
     "lightningcss": 5772,
+    "yuku-css": 5772,
     "css-parser2": 5772,
     "css-parser": 4522
   },
@@ -16,6 +17,7 @@
     "css-tree": 75731,
     "esbuild": 73454,
     "lightningcss": 68837,
+    "yuku-css": 75731,
     "css-parser2": 74075,
     "css-parser": 64267
   },
@@ -26,6 +28,7 @@
     "css-tree": 10785,
     "esbuild": 10775,
     "lightningcss": 10762,
+    "yuku-css": 10785,
     "css-parser2": 10805,
     "css-parser": 10948
   },
@@ -36,6 +39,7 @@
     "css-tree": 163307,
     "esbuild": 160755,
     "lightningcss": 153616,
+    "yuku-css": 163307,
     "css-parser2": 160113,
     "css-parser": 144571
   },
@@ -46,6 +50,7 @@
     "css-tree": 165616,
     "esbuild": 162024,
     "lightningcss": 159987,
+    "yuku-css": 165616,
     "css-parser2": 161627,
     "css-parser": 150852
   },
@@ -56,6 +61,7 @@
     "css-tree": 56085,
     "esbuild": 58980,
     "lightningcss": 56049,
+    "yuku-css": 56085,
     "css-parser2": 55882,
     "css-parser": 55789
   },
@@ -66,6 +72,7 @@
     "css-tree": 84685,
     "esbuild": 76185,
     "lightningcss": 70376,
+    "yuku-css": 84685,
     "css-parser2": 77043,
     "css-parser": 69560
   },
@@ -76,6 +83,7 @@
     "css-tree": 18322,
     "esbuild": 18309,
     "lightningcss": 17839,
+    "yuku-css": 18322,
     "css-parser2": 10541,
     "css-parser": 9728
   },
@@ -86,6 +94,7 @@
     "css-tree": 1851,
     "esbuild": 1816,
     "lightningcss": 1751,
+    "yuku-css": 1851,
     "css-parser2": 1733,
     "css-parser": 1611
   },
@@ -96,6 +105,7 @@
     "css-tree": 17086,
     "esbuild": 16758,
     "lightningcss": 16393,
+    "yuku-css": 17086,
     "css-parser2": 15052,
     "css-parser": 12915
   },
@@ -106,6 +116,7 @@
     "css-tree": 773,
     "esbuild": 774,
     "lightningcss": 773,
+    "yuku-css": 773,
     "css-parser2": 773,
     "css-parser": 747
   },
@@ -116,6 +127,7 @@
     "css-tree": 1963358,
     "esbuild": 1961145,
     "lightningcss": 1864728,
+    "yuku-css": 1963358,
     "css-parser2": 1890835,
     "css-parser": 1633188
   }

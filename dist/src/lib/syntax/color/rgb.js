@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.7.0
+	Version: 1.8.1
 	License: MIT
  */
 import { color2srgbvalues, minmax } from './color.js';
